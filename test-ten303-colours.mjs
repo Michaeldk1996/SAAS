@@ -33,10 +33,10 @@ const tokenOf = v => (/^var\(--([\w-]+)\)$/.exec(String(v).trim()) || [])[1] || 
 
 test('0: the modal\'s builders and CSS hold no literal colour (every colour is a token of match-analysis-tokens.css)', () => {
   assert.deepEqual(modalLiterals(HTML).map(x => `${x.where} L${x.line} ${x.lit}`), []);
-  // mutant: one literal back in a shared builder (the W/L chip) — the grep sees it
-  const m = HTML.replace("const c = won ? 'var(--positive)' : 'var(--negative)';", "const c = won ? '#3ed68c' : 'var(--negative)';");
+  // mutant: one literal back in a shared builder (the Form bar; TEN-331 deleted the W/L chip) — the grep sees it
+  const m = HTML.replace("const c = r.won ? 'var(--positive)' : 'var(--negative)';", "const c = r.won ? '#3ed68c' : 'var(--negative)';");
   assert.notEqual(m, HTML, 'mutant anchor');
-  assert.equal(modalLiterals(m).length, 1, 'mutant survived: a literal in fhWlChip');
+  assert.equal(modalLiterals(m).length, 1, 'mutant survived: a literal in the Form bar');
 });
 
 test('0b: the token file carries the README §3 Night values, and Day re-tones every surface', () => {

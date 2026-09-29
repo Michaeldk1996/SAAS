@@ -69,6 +69,29 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`, 13 mutants). Pixel/structure harness (manual):
   `tools/ten330-form-capture.mjs` + `tools/ten330-form-structure.py`.
 
+## H2H tab build (TEN-331, TEN-312 design file `h2hV2For` / template L1153–1360)
+- **Built from the file:** surface filter with counts ("filters everything below"), **one record card** (the file's varA:
+  "Overall", or "On clay" under a filter, over the filtered meetings; "Meetings ↓" scrolls to the list and keeps the filter),
+  the **tug bar from the centre** (DF L4351 — drawn at any n ≥ 1, the pull is a count; the card shows no %), the three stat
+  tiles with their **"Breakdown ▾" drawers** (sets / tiebreaks / deciding sets, every row opens the sheet), Price range,
+  Hot lines, Meetings. The file's "Today's surface" card belongs to its variant B, which the file does not draw: not built.
+  Every colour is the design's own shade (`fhS`), the players the D4 neutral pair.
+- **Shared helpers only** (DoD item 8): meetings are `maMatchRowsHtml` rows (`fhH2hRowData`; one group per meeting as the
+  file, meta "surface · level", `rowPad: '0 8px 2px'`, group `cls` = the hover-dim hooks), the price range's "every priced
+  close" pop-up is `maTipHtml`, and every meeting, dot, breakdown row and Lowest / Highest opens the shared sheet (date
+  DD.MM.YY). The H2H row renderer, W/L chip, sticky header and `.fh-elotip` are deleted.
+- **A walkover** is listed (marked "w/o") and enters no count, record, tally, line or price (N2); the list header says
+  "k w/o not counted"; a surface whose only meetings are walkovers still opens (count 0). Every meeting a walkover → the
+  card (0–0) and the list only (DESIGN GAP G11). A retirement's set scores end " ret.".
+- **Price range header:** today's book is counted only where today's price is drawn (the range marker, n ≥ 2).
+- **An empty drawer** (no tiebreak / no decider in these meetings) opens with the file's empty-line pattern and says why
+  (DESIGN GAP G10 — the file opens nothing).
+- **Parked (design file v ruling 2026-09-24):** the file's row has no Elo slot; the opponent's Elo (D-12 basis) is the
+  name's `data-elo` + hover text, as on Form, until the founder rules on a visible slot.
+- **Test:** `test-ten331-h2h.mjs` (+ `tools/test-ten331-mutants.js`, 25 mutants). Pixel/structure harness (manual):
+  `tools/ten331-h2h-capture.mjs` (`--theme source --ruled-off`) + `tools/ten312-pixel-diff.py --regions` +
+  `tools/ten330-form-structure.py`.
+
 ## Form rows: opponent Elo AT THE MATCH DATE (ruling 2026-09-24, D-12)
 - **Basis:** overall Elo from the latest weekly Tennis Abstract snapshot in `elo-history.json` dated
   **strictly before** the match day (ruling 2026-09-24: a same-day snapshot can hold the match's own result), and only if it is **no more than 7 days old** (`FH_ELO_MAX_AGE_DAYS`). No

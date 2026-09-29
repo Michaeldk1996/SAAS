@@ -64,7 +64,7 @@ const MUTANTS = [
   ['gate: the small tier not greyed', "  const col = R.mode === 'none' || small ? MA_GREY : o.color;", "  const col = R.mode === 'none' ? MA_GREY : o.color;"],
   ['gate: the small-sample note dropped', "  const note = small && o.note !== false && o.note !== 'title' ? maSmallNote() : '';", "  const note = '';"],
   ['gate: n = 0 renders 0%', "  if (g.mode === 'none') return { mode: 'none', txt: o.dash != null ? o.dash : '—' };", "  if (g.mode === 'none') return { mode: 'none', txt: '0%' };"],
-  ['chip: H2H back to n === 2 only', "  const smallChip = maSmallChip(n);", "  const smallChip = n === 2 ? maSmallChip(n) : '';"],
+  ['chip: H2H back to n === 2 only', 'white-space:nowrap;">Meetings ↓</span>${maSmallChip(n)}</div>', 'white-space:nowrap;">Meetings ↓</span>${n === 2 ? maSmallChip(n) : \'\'}</div>'],
   ['chip: no chip for n 1–4', "  if (m !== 'small' && m !== 'nopct') return '';", "  if (m !== 'small') return '';"],
   ['Key factors: Last N ungated', "<b>${maRateHtml(w10, last10.length, { nopct: `${w10}–${last10.length - w10}` })}</b>", "<b>${Math.round(w10 / last10.length * 100)}%</b>"],
   ['Market edge: band Won ungated', "${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}", "${mePct0(b.won)}"],

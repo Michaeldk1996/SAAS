@@ -13701,7 +13701,7 @@ function buildH2HSection(m){ return fhBuildH2H(m); }
    export's value, read from the file — change them only against the export.
 
    ONE implementation each, shared by both tabs (brief "what's shared"):
-     · fhSegTrack / fhWlChip / fhStickyHeadHtml  — segmented control, W/L chip, sticky list header
+     · fhSegTrack                                — segmented control (match rows: maMatchRowsHtml, TEN-331)
      · fhHotLinesTable                           — the Hot lines component
      · fhOpenSheet / fhSheetHtml                  — the Match stats sheet (header 2a + the
                                                     existing match-detail body, formPanelHtml)
@@ -13848,8 +13848,10 @@ const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46
 function maMatchRowsHtml(groups, opts){
   // opts (variant geometry is a parameter, never a second renderer — founder 2026-09-29, DoD item 8):
   //   labels · bg · headPad (default '6px 6px 7px') · groupPad ('11px 6px 5px') · inset (px wrapper around every row;
-  //   Form: 8 → the file's 14 px text inset with padding 6) · divider (markup before a group with divBefore) · empty (text)
-  // groups: [{ title, meta, divBefore, rows }]; row extras: wrapCls (wrapper classes), cls (row classes), attrs (raw
+  //   Form: 8 → the file's 14 px text inset with padding 6) · rowPad (that wrapper's padding; H2H: '0 8px 2px', DF L1311)
+  //   · divider (markup before a group with divBefore) · empty (text)
+  // groups: [{ title, meta, metaTitle (hover text on the meta), cls (a wrapper round the group header + its rows, e.g. H2H's
+  //   hover-dim hooks, DF L1305), divBefore, rows }]; row extras: wrapCls (wrapper classes), cls (row classes), attrs (raw
   //   attributes), oppTitle / oppAttrs, scoresTitle, setsColor, hTitle / aTitle, hMark (a one-letter marker in the H cell).
   const o = opts || {}, esc = s => escapeHtml(s == null ? '' : String(s));
   const mono = "font-family:'IBM Plex Mono',monospace;";
@@ -13871,10 +13873,11 @@ function maMatchRowsHtml(groups, opts){
       + `<span${t(r.scoresTitle)} style="${mono} font-size:11px; color:${S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.scores)}</span>`
       + `<span${t(r.hTitle)} style="position:relative; ${mono} font-size:11px; color:${r.h === '—' ? S('5b6880', '--label') : S('c6ccdb', '--text-soft')}; text-align:right;">${esc(r.h)}${mark(r.hMark)}</span>`
       + `<span${t(r.aTitle)} style="${mono} font-size:11px; color:${S('5b6880', '--label')}; text-align:right;">${esc(r.a)}</span></div>`;
-  const wrap = r => (o.inset != null || r.wrapCls ? `<div class="${r.wrapCls || ''}" style="transition:opacity .12s; padding:0 ${o.inset || 0}px;">${row(r)}</div>` : row(r));
+  const wrap = r => (o.inset != null || r.wrapCls ? `<div class="${r.wrapCls || ''}" style="transition:opacity .12s; padding:${o.rowPad || '0 ' + (o.inset || 0) + 'px'};">${row(r)}</div>` : row(r));
   const body = groups.map(g => (g.divBefore && o.divider ? o.divider : '')
-    + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-070', '--line')};"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span style="${mono} font-size:10px; color:${S('4b5672', '--label')}; white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
-    + g.rows.map(wrap).join('')).join('');
+    + (g.cls ? `<div class="${g.cls}">` : '')
+    + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-070', '--line')};"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span${t(g.metaTitle)} style="${mono} font-size:10px; color:${S('4b5672', '--label')}; white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
+    + g.rows.map(wrap).join('') + (g.cls ? '</div>' : '')).join('');
   const empty = !groups.length && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
   // line-height:normal = the design's (its rows sit in no line-height rule); a host section's 21px drifted every row down.
   return `<div class="ma-rows" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
@@ -13963,6 +13966,9 @@ const FH_SURF = { Hard: 'var(--court-hard)', Clay: 'var(--court-clay)', Grass: '
 const FH_MONO = "font-family:'IBM Plex Mono',monospace;";
 const FH_THIN = 5;                         // design THIN: fewer than 5 matches → no ratios
 const FH_DASHC = '—';
+// A design shade (founder 2026-09-29: every design shade is its own token, named by its source value — see
+// match-analysis-tokens.css), with the 12a name as the fallback outside the modal.
+function fhS(k, f){ return `var(--ma-s-${k}, var(${f}))`; }
 
 let _fh = null;                            // per-open-analysis UI state (README "State")
 
@@ -14011,31 +14017,21 @@ function fhTournCode(name){ const k = psNormTour(fhTournClean(name)); return FH_
 function fhSegStyle(on){ return { weight: on ? 700 : 600, color: on ? 'var(--text)' : 'var(--label)', bg: on ? 'var(--seg-active)' : 'transparent', bd: on ? 'var(--seg-active-line)' : 'transparent' }; }   // DF L4800: on = blue .16 wash + .22 outline
 // items: [{label, on, onclick, count?, off?}]. `count` renders the H2H meeting count;
 // `off` is a greyed, non-clickable segment (a surface with 0 meetings).
-function fhSegTrack(items, trackExtra){
+// shades = true: the design's own shade per role (founder 2026-09-29, every shade a token) — H2H's surface filter, DF L1162
+// (the file's track, selected wash and outline, idle and 0-meeting text — each its own --ma-s- token).
+function fhSegTrack(items, trackExtra, shades){
+  const sh = (k, f) => (shades ? fhS(k, f) : `var(${f})`);
   const segs = items.map(it => {
     const s = fhSegStyle(!!it.on && !it.off);
-    const off = !!it.off;
-    const color = off ? 'var(--label)' : s.color;
-    const cnt = it.count != null ? `<span style="${FH_MONO} font-size:10px; color:var(--label);">${fhEsc(it.count)}</span>` : '';
+    const off = !!it.off, on = !!it.on && !off;
+    const color = off ? sh('3a4256', '--label') : shades ? (on ? fhS('e7e9ee', '--text') : fhS('5b6880', '--label')) : s.color;
+    const cnt = it.count != null ? `<span style="${FH_MONO} font-size:10px; color:${off ? sh('3a4256', '--label') : sh('5b6880', '--label')};">${fhEsc(it.count)}</span>` : '';
     const layout = it.count != null ? 'display:inline-flex; align-items:baseline; gap:6px; ' : '';
-    return `<span class="${off ? 'fh-segoff' : 'seg'}"${off ? '' : ` onclick="${it.onclick}"`} style="${layout}padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${off ? 600 : s.weight}; color:${color}; background:${off ? 'transparent' : s.bg}; border:1px solid ${off ? 'transparent' : s.bd}; cursor:${off ? 'default' : 'pointer'}; white-space:nowrap;">${fhEsc(it.label)}${cnt}</span>`;
+    const bg = off || !on ? 'transparent' : shades ? fhS('5b9bff-160', '--seg-active') : s.bg, bd = off || !on ? 'transparent' : shades ? fhS('5b9bff-220-line', '--seg-active-line') : s.bd;
+    return `<span class="${off ? 'fh-segoff' : 'seg'}"${off ? '' : ` onclick="${it.onclick}"`} style="${layout}padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${off ? 600 : s.weight}; color:${color}; background:${bg}; border:${shades ? 'var(--ma-hw,0.33px)' : '1px'} solid ${bd}; cursor:${off ? 'default' : 'pointer'}; white-space:nowrap;">${fhEsc(it.label)}${cnt}</span>`;
   }).join('');
-  return `<div style="display:inline-flex; gap:4px; background:var(--surface-inner); border:1px solid var(--line); border-radius:9px; padding:3px;${trackExtra || ''}">${segs}</div>`;
+  return `<div style="display:inline-flex; gap:4px; background:${sh('06070a', '--surface-inner')}; border:${shades ? 'var(--ma-hw,0.33px)' : '1px'} solid ${sh('ffffff-090', '--line')}; border-radius:9px; padding:3px;${trackExtra || ''}">${segs}</div>`;
 }
-// ---- shared primitive 2: the W/L chip (keeps green/red on BOTH tabs) ----
-function fhWlChip(won){
-  const c = won ? 'var(--positive)' : 'var(--negative)';
-  return `<span style="width:20px; height:20px; border-radius:5px; background:${fhHexA(c, 0.14)}; color:${c}; ${FH_MONO} font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">${won ? 'W' : 'L'}</span>`;
-}
-// ---- shared primitive 3: the sticky list header ----
-function fhStickyHeadHtml(cols, labels, centred){
-  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; text-transform:uppercase; color:var(--text-sub);`;
-  const cells = labels.map((l, i) => i === 0
-    ? `<span style="grid-column:1 / 4; ${cap}">${fhEsc(l)}</span>`
-    : `<span style="${cap}${centred ? ' text-align:center;' : (i >= labels.length - 2 ? ' text-align:right;' : '')}">${fhEsc(l)}</span>`).join('');
-  return `<div style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${cols}; gap:9px; align-items:center; padding:9px 14px; background:var(--surface); border-bottom:var(--ma-hw,0.33px) solid var(--line-soft);">${cells}</div>`;
-}
-
 // =====================================================================
 // DATA LAYER — normalised match rows, one shape for both tabs.
 // =====================================================================
@@ -14210,8 +14206,6 @@ function fhTodayPair(m){
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
 function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
-// Level tag on H2H meetings (ATP / CH / ITF), same style as the B365 tag.
-function fhLevelTag(r){ return r && r.level ? `<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#a3abba; border:0.33px solid rgba(255,255,255,0.045); border-radius:3px; padding:0 3px;">${r.level}</span>` : ''; }
 function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:var(--text-sub); border:var(--ma-hw,0.33px) solid var(--line); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
@@ -14288,6 +14282,8 @@ function fhHotLinesTable(rows, sc, opts){
   const cols = opts.fixedCols ? `repeat(${Math.max(1, rows.length)},calc(100% / ${Math.max(rows.length, opts.fixedCols)}))` : `repeat(${Math.max(1, rows.length)},minmax(${opts.colMin},1fr))`;
   const jc = opts.fixedCols ? ' justify-content:end;' : '';
   const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-sub);`;
+  // opts.shades: H2H draws the design's own shades (DF L1260–1291: top line blue .06 / .25, track white .06, ineligible dot white .08)
+  const sh = (k, f) => (opts.shades ? fhS(k, f) : `var(${f})`);
   const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || 'var(--fh-muted)'};"></span><span style="${FH_MONO} font-size:8.5px; color:var(--text-sub); white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:var(--label);${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
   const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid var(--line);">
       <span style="${cap}">LINE</span><span style="${cap}">COVERED</span><span></span>
@@ -14301,9 +14297,9 @@ function fhHotLinesTable(rows, sc, opts){
       const e = fhEligible(r, x.L), c = e && x.L.cov(r);
       const why = e ? '' : fhIneligibleWhy(r, x.L);
       const tip = opts.dotTip(r) + ' · ' + (!e ? 'not eligible' + (why ? ' (' + why + ')' : '') : c ? 'covered' : 'not covered');
-      return `<span style="display:flex; justify-content:center;"><span class="seg" title="${fhEsc(tip)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="width:${e ? '10px' : '6px'}; height:${e ? '10px' : '6px'}; border-radius:50%; background:${!e ? 'var(--fh-dot-off)' : c ? opts.color : 'transparent'}; border:1.5px solid ${!e ? 'transparent' : opts.color}; box-sizing:border-box; cursor:pointer; flex:none;"></span></span>`;
+      return `<span style="display:flex; justify-content:center;"><span class="seg" title="${fhEsc(tip)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="width:${e ? '10px' : '6px'}; height:${e ? '10px' : '6px'}; border-radius:50%; background:${!e ? (opts.shades ? 'var(--ma-s-ffffff-080, var(--fh-dot-off))' : 'var(--fh-dot-off)') : c ? opts.color : 'transparent'}; border:1.5px solid ${!e ? 'transparent' : opts.color}; box-sizing:border-box; cursor:pointer; flex:none;"></span></span>`;
     }).join('');
-    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'var(--seg-active)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${isTop ? 'var(--seg-active-line)' : 'transparent'}; cursor:default;">
+    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? sh('5b9bff-060', '--seg-active') : 'transparent'}; box-shadow:inset 0 0 0 1px ${isTop ? sh('5b9bff-250', '--seg-active-line') : 'transparent'}; cursor:default;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
           ${famLbl ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">${fhEsc(famLbl)}</span>` : ''}
           <span style="font-size:13.5px; font-weight:700;">${fhEsc(x.name)}</span>
@@ -14314,7 +14310,7 @@ function fhHotLinesTable(rows, sc, opts){
           <span style="${FH_MONO} font-size:15px; font-weight:700; color:var(--text); white-space:nowrap;">${x.c} of ${x.n}</span>
           ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:var(--label); white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
         </span>
-        ${(bar => `<span data-ma-gate="${bar.mode}" style="height:5px; background:var(--bar-track); border-radius:3px; display:flex;"><span style="width:${bar.w}%; background:${bar.color}; border-radius:3px;"></span></span>`)(maGateBar(x.c, x.n, 'var(--fh-fill)'))}
+        ${(bar => `<span data-ma-gate="${bar.mode}" style="height:5px; background:${sh('ffffff-060-fill', '--bar-track')}; border-radius:3px; display:flex;"><span style="width:${bar.w}%; background:${bar.color}; border-radius:3px;"></span></span>`)(maGateBar(x.c, x.n, 'var(--fh-fill)'))}
         <span style="display:grid; grid-template-columns:${cols}; align-items:center;${jc}">${dots}</span>
       </div>`;
   };
@@ -14380,11 +14376,9 @@ function fhEnsureStyles(){
   #aSectionForm, #aSectionH2H, #fhSheet{ line-height:normal; }
   #aSectionForm .seg, #aSectionH2H .seg, #fhSheet .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
   #aSectionForm .plink, #aSectionH2H .plink{ cursor:pointer; } #aSectionForm .plink:hover, #aSectionH2H .plink:hover{ text-decoration:underline; }
-  .fh-elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
-  .fh-elotip:hover .fh-elotip-pop{ opacity:1; visibility:visible; }
   .h2m, .fh-fm{ transition:opacity .12s; }
   /* DF font stack: glyphs Hanken lacks (▾ →) fall back as in the file, not to system-ui */
-  #aSectionForm{ font-family:'Hanken Grotesk',sans-serif; }
+  #aSectionForm, #aSectionH2H{ font-family:'Hanken Grotesk',sans-serif; }
   #fhSheet .aform-panel-meta{ display:none; }
   .fh-av{ display:block; width:56px; height:56px; }
   .fh-av img, .fh-av .avatar-fallback{ width:56px; height:56px; border-radius:50%; border:2px solid var(--line-open); box-sizing:border-box; object-fit:cover;
@@ -14900,41 +14894,46 @@ function fhRecLevelMix(rows){
   const parts = [c('CH') ? c('CH') + ' CH' : '', c('ITF') ? c('ITF') + ' ITF' : ''].filter(Boolean);
   return parts.length ? ' · incl. ' + parts.join(', ') : '';
 }
-function fhH2hRecCard(label, arr, tag, surfColor, onclick, aName, bName, aS, bS){
-  // A walkover is not a meeting that was played (a walkover given is never a
-  // loss — pipeline ruling), so it is out of the record; retirements per flag (e).
+// TEN-331 · the H2H tab rebuilt on the TEN-312 design file (DF template L1153–1332, `h2hV2For` L4283–4510; the file wins
+// over the README). Colours are the design's own shades (fhS — founder 2026-09-29), the neutral D4 player pair (FH_AC /
+// FH_BC) and the shared helpers: meetings are maMatchRowsHtml rows, the price-range pop-up is maTipHtml, every meeting,
+// dot, breakdown row and price opens the shared sheet (DoD item 8). The file's review switcher (State) is not built.
+// The record card (DF L1197–1212 — the file's varA; mkRec L4336): label, "Meetings ↓", names over the W–L, the tug bar
+// from the centre (DF L4351 — founder 2026-09-29: drawn at any n ≥ 1, it is a count, not a rate), "X leads · n meetings"
+// with the level mix (ruling 2026-09-24). A walkover is no meeting (N2); a retirement counts (flag e). The small-sample
+// chip shows for every n 1–9 (D2), not only n = 2 as in the file.
+function fhH2hRecCard(label, arr, onclick, aName, bName, aS, bS){
   const counted = arr.filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));
   const a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
   const side = a > b ? 'a' : b > a ? 'b' : 'level';
   const lead = !n ? 'No meetings' : side === 'level' ? 'Level' : (side === 'a' ? aS : bS) + ' leads';
-  const leadColor = side === 'a' ? FH_AC : side === 'b' ? FH_BC : 'var(--text-sub)';
-  const lbl = `${FH_MONO} font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-soft);`;
-  // D2: the small-sample chip for every n 1–9 (the design's and the old `n === 2` were both wrong).
-  const smallChip = maSmallChip(n);
-  const head = tag
-    ? `<span style="width:9px; height:9px; border-radius:50%; background:${surfColor};"></span><span style="${lbl}">${fhEsc(label)}</span><span style="font-size:10.5px; font-weight:600; color:var(--periwinkle); border:var(--ma-hw,0.33px) solid var(--seg-active-line); border-radius:999px; padding:2px 9px; white-space:nowrap;">${fhEsc(tag)}</span>${smallChip}`
-    : `<span style="${lbl}">${fhEsc(label)}</span><span style="margin-left:auto; font-size:11px; font-weight:600; color:var(--periwinkle); white-space:nowrap;">All meetings ↓</span>${smallChip}`;
-  return `<div${onclick ? ` class="seg" onclick="${onclick}"` : ''} style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">${head}</div>
+  const leadColor = side === 'a' ? FH_AC : side === 'b' ? FH_BC : fhS('8b96b5', '--text-sub');
+  const tug = s => (side === s && n ? (Math.abs(a - b) / n * 50) + '%' : '0%');
+  const tugTxt = !n ? '' : side === 'level' ? 'Level' : '+' + Math.abs(a - b) + ' ' + (side === 'a' ? aS : bS);
+  const lbl = `${FH_MONO} font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:${fhS('b4bdd3', '--text-soft')};`;
+  return `<div${onclick ? ` class="seg" onclick="${onclick}"` : ''} style="background:${fhS('0a0d14', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span style="${lbl}">${fhEsc(label)}</span><span style="margin-left:auto; font-size:11px; font-weight:600; color:${fhS('5b9bff', '--periwinkle')}; white-space:nowrap;">Meetings ↓</span>${maSmallChip(n)}</div>
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">
         <span style="font-size:14px; font-weight:700; color:${FH_AC}; text-align:right; white-space:nowrap;">${fhEsc(aName)}</span>
-        <span style="${FH_MONO} font-size:44px; font-weight:800; line-height:1; white-space:nowrap;"><span style="color:${FH_AC};">${a}</span><span style="color:var(--label);"> – </span><span style="color:${FH_BC};">${b}</span></span>
+        <span style="${FH_MONO} font-size:44px; font-weight:800; line-height:1; white-space:nowrap;"><span style="color:${FH_AC};">${a}</span><span style="color:${fhS('4b5672', '--label')};"> – </span><span style="color:${FH_BC};">${b}</span></span>
         <span style="font-size:14px; font-weight:700; color:${FH_BC}; white-space:nowrap;">${fhEsc(bName)}</span>
       </div>
-      <div style="display:flex; gap:3px; height:6px;"><div style="width:${n ? (a / n * 100) + '%' : '50%'}; background:${n ? FH_AC : 'var(--surface-inner)'}; border-radius:3px;"></div><div style="width:${n ? (b / n * 100) + '%' : '50%'}; background:${n ? 'var(--fh-pb-fill)' : 'var(--surface-inner)'}; border-radius:3px;"></div></div>
-      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap; overflow:hidden;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:var(--label);">·</span><span style="color:var(--label); overflow:hidden; text-overflow:ellipsis;">${n + (n === 1 ? ' meeting' : ' meetings') + fhEsc(fhRecLevelMix(counted))}</span></div>
+      <div class="fh-tug" data-tug-a="${tug('a')}" data-tug-b="${tug('b')}" style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="position:relative; width:100%; height:8px; background:${fhS('ffffff-050-fill', '--bar-track')}; border-radius:4px;"><span style="position:absolute; right:50%; top:0; bottom:0; width:${tug('a')}; background:${FH_AC}; border-radius:4px 0 0 4px;"></span><span style="position:absolute; left:50%; top:0; bottom:0; width:${tug('b')}; background:var(--ma-s-e7e9ee-700, var(--fh-pb-fill)); border-radius:0 4px 4px 0;"></span><span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; margin-left:-0.75px; background:${fhS('8b96b5', '--text-sub')};"></span></div><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${leadColor};">${fhEsc(tugTxt)}</span></div>
+      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:${fhS('4b5672', '--label')};">·</span><span style="color:${fhS('5b6880', '--label')};">${fhEsc(n + (n === 1 ? ' meeting' : ' meetings') + fhRecLevelMix(counted))}</span></div>
     </div>`;
 }
+// Loading (DF L1167–1177), the file's own placeholder shades.
 function fhH2hSkeleton(){
-  const b = (w, h, r) => `<div style="${w ? 'width:' + w + ';' : ''} height:${h}px; border-radius:${r}px; background:var(--surface-inner);"></div>`;
+  const f5 = fhS('ffffff-050-fill', '--surface-inner'), f4 = fhS('ffffff-040', '--surface-inner'), f3 = fhS('ffffff-030', '--surface-inner'), f6 = fhS('ffffff-060-fill', '--surface-inner');
+  const b = (h, r) => `<div style="height:${h}px; border-radius:${r}px; background:${f4};"></div>`;
   return `<div style="display:flex; flex-direction:column; gap:14px;">
-      <div style="width:260px; height:30px; border-radius:9px; background:var(--surface-inner);"></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b('', 150, 14)}${b('', 150, 14)}</div>
-      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">${b('', 76, 14)}${b('', 76, 14)}${b('', 76, 14)}</div>
-      <div style="border-radius:14px; background:var(--surface-inner); padding:16px; display:flex; flex-direction:column; gap:12px;"><div style="width:220px; height:14px; border-radius:4px; background:var(--surface-inner);"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b('', 130, 12)}${b('', 130, 12)}</div></div>
-      <div style="border-radius:14px; background:var(--surface-inner); padding:16px; display:flex; flex-direction:column; gap:10px;"><div style="width:180px; height:14px; border-radius:4px; background:var(--surface-inner);"></div>${b('', 34, 14)}${b('', 34, 14)}${b('', 34, 14)}${b('', 34, 14)}${b('', 34, 14)}</div>
-      ${b('', 300, 14)}
-      <span style="${FH_MONO} font-size:10.5px; color:var(--label); text-align:center;">Loading head-to-head…</span>
+      <div style="width:260px; height:30px; border-radius:9px; background:${f5};"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b(150, 14)}${b(150, 14)}</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">${b(76, 14)}${b(76, 14)}${b(76, 14)}</div>
+      <div style="border-radius:14px; background:${f3}; padding:16px; display:flex; flex-direction:column; gap:12px;"><div style="width:220px; height:14px; border-radius:4px; background:${f6};"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b(130, 12)}${b(130, 12)}</div></div>
+      <div style="border-radius:14px; background:${f3}; padding:16px; display:flex; flex-direction:column; gap:10px;"><div style="width:180px; height:14px; border-radius:4px; background:${f6};"></div>${b(34, 14)}${b(34, 14)}${b(34, 14)}${b(34, 14)}${b(34, 14)}</div>
+      ${b(300, 14)}
+      <span style="${FH_MONO} font-size:10.5px; color:${fhS('5b6880', '--label')}; text-align:center;">Loading head-to-head…</span>
     </div>`;
 }
 // "No previous meetings": each player's last-52-weeks record against the OTHER
@@ -14985,85 +14984,98 @@ function fhBuildH2H(m){
   fhEnsureStyles();
   const F0 = fhStateFor(m), S = F0.h2h;
   const A = m.p1, B = m.p2, aS = fhSurname(A), bS = fhSurname(B);
+  const card = fhS('0a0d14', '--surface'), hair = fhS('ffffff-090', '--line'), t3 = fhS('5b6880', '--label'), t4 = fhS('4b5672', '--label'), t2 = fhS('8b96b5', '--text-sub');
+  const link = fhS('5b9bff', '--periwinkle');
+  const wrap = inner => `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${inner}</div>`;
   // Meetings come from api-tennis AND both players' histories, so "none" is only known
   // once the histories have loaded — until then the loading skeleton shows.
   if (!m._fhH2hData){
     fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${fhH2hSkeleton()}</div>`;
+    return wrap(fhH2hSkeleton());
   }
   const E = fhMeetings(m);
   if (!E.length){
-    // No meetings: the empty state; every section below is hidden.
+    // No meetings (DF L1178–1193): the empty state; every section below is hidden. The file's "have not played" is a claim
+    // our coverage cannot make, so the copy says "on record" and names what was searched.
     if (!m._styleMeetLoaded) Promise.all([ensureStyleMeetings(m), ensurePsMatrix()]).then(() => { if (_fh && _fh.m === m) fhH2h({}); }).catch(() => {});
-    const cards = fhNoMeetingCards(m).map(r => `<div style="border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
-        <span style="font-size:13px; color:var(--text-sub);"><span style="font-weight:700; color:${r.color};">${fhEsc(r.who)}</span> ${fhEsc(r.vs)}</span>
-        <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + FH_DASH + ';' : ''}">${fhEsc(r.rec)}</span>
-        <span style="${FH_MONO} font-size:11px; color:var(--label);">${r.metaHtml != null ? r.metaHtml : fhEsc(r.meta)}</span>
+    const cards = fhNoMeetingCards(m).map(r => `<div style="border:var(--ma-hw,0.33px) solid ${fhS('ffffff-070', '--line')}; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
+        <span style="font-size:13px; color:${t2};"><span style="font-weight:700; color:${r.color};">${fhEsc(r.who)}</span> ${fhEsc(r.vs)}</span>
+        <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + t4 + ';' : ''}">${fhEsc(r.rec)}</span>
+        <span style="${FH_MONO} font-size:11px; color:${t3};">${r.metaHtml != null ? r.metaHtml : fhEsc(r.meta)}</span>
       </div>`).join('');
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">
-      <div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
+    return wrap(`<div style="background:${card}; border:var(--ma-hw,0.33px) solid ${hair}; border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
           <span style="font-size:17px; font-weight:800;">No previous meetings on record</span>
-          <span style="font-size:13px; color:var(--text-sub); line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have no meeting on record. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
-          <span style="font-size:10.5px; color:var(--label);">${fhEsc(fhH2hScopeNote(m))}</span>
+          <span style="font-size:13px; color:${t2}; line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have no meeting on record. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
+          <span style="font-size:10.5px; color:${t3};">${fhEsc(fhH2hScopeNote(m))}</span>
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;">${cards}</div>
-        <span class="seg" onclick="aGoTab('style')" style="font-size:12.5px; font-weight:600; color:var(--periwinkle); text-align:center; cursor:pointer;">Open the Playing style tab →</span>
-      </div></div>`;
+        <span class="seg" onclick="aGoTab('style')" style="font-size:12.5px; font-weight:600; color:${link}; text-align:center; cursor:pointer;">Open the Playing style tab →</span>
+      </div>`);
   }
-  E.forEach(r => { F0.sheetMap[r.mid] = { r, aName: A, aKey: m.p1Key, bName: B, bKey: m.p2Key }; });
-  const SURF = S.surf, F = E.filter(r => SURF === 'all' || r.surface === SURF);
-  const todaySurf = fhSurfName(m.surface);   // unknown → no "today's surface" card, never a default
-  // Surface filter with meeting counts; 0 meetings = greyed, not clickable.
+  E.forEach(r => { F0.sheetMap[r.mid] = { r, aName: A, aKey: m.p1Key, bName: B, bKey: m.p2Key }; });   // sheet date DD.MM.YY (DF L4481)
+  // N2: a walkover is not a meeting played — it is listed (marked "w/o") but enters no count, rate, line or price.
+  const played = E.filter(r => !r.wo);
+  const SURF = S.surf, FL = E.filter(r => SURF === 'all' || r.surface === SURF), F = FL.filter(r => !r.wo);
+  // Surface filter with meeting counts (DF L1159–1165); 0 meetings = greyed, not clickable. N1: opens on All.
   const surfTabs = fhSegTrack([['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass']].map(t => {
-    const n = E.filter(r => t[0] === 'all' || r.surface === t[0]).length;
-    return { label: t[1], count: String(n), on: SURF === t[0], off: n === 0, onclick: `fhH2h({surf:'${t[0]}',allLines:false,stat:null})` };
-  }));
-  const top = `<div style="display:flex; align-items:center; gap:12px 14px; flex-wrap:wrap;">${surfTabs}<span style="font-size:11px; color:var(--label); white-space:nowrap;">filters everything below</span></div>`;
-  const cards = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:14px;">
-      ${fhH2hRecCard('Overall', E, '', null, "fhH2hOverall()", A, B, aS, bS)}
-      ${todaySurf ? fhH2hRecCard('On ' + todaySurf.toLowerCase(), E.filter(r => r.surface === todaySurf), "Today's surface", FH_SURF[todaySurf], null, A, B, aS, bS) : ''}
-    </div>`;
-  if (!F.length){
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:var(--label);">No meetings on ${SURF.toLowerCase()}.</div></div>`;
+    // the count is meetings played; a surface is greyed only when nothing is listed on it (a w/o-only surface still opens)
+    const n = played.filter(r => t[0] === 'all' || r.surface === t[0]).length, listed = E.some(r => t[0] === 'all' || r.surface === t[0]);
+    return { label: t[1], count: String(n), on: SURF === t[0], off: !listed, onclick: `fhH2h({surf:'${t[0]}',allLines:false,stat:null})` };
+  }), '', true);
+  const top = `<div style="display:flex; align-items:center; gap:12px 14px; flex-wrap:wrap;">${surfTabs}<span style="font-size:11px; color:${t4}; white-space:nowrap;">filters everything below</span></div>`;
+  // One record card over what the filter shows (DF varA; "Overall", or "On clay" under a surface filter). The file's
+  // "Today's surface" card belongs to its variant B, which the file does not draw.
+  const recCard = `<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px;">${fhH2hRecCard(SURF === 'all' ? 'Overall' : 'On ' + SURF.toLowerCase(), F, 'fhH2hToList()', A, B, aS, bS)}</div>`;
+  if (!FL.length){
+    return wrap(`${top}${recCard}<div style="background:${card}; border:var(--ma-hw,0.33px) solid ${hair}; border-radius:14px; padding:28px; text-align:center; font-size:13px; color:${t3};">No meetings on ${SURF.toLowerCase()}.</div>`);
   }
-  // ---- stats row (Sets won / Tiebreaks / Deciding sets) + breakdown drawers ----
+  const onlyWo = !F.length;
+  // ---- stats row (Sets won / Tiebreaks / Deciding sets) + the "Breakdown ▾" drawers (DF L1245–1270, L4363–4379) ----
   const withGames = F.filter(r => r.sets), withTally = F.filter(r => r.pS != null);
   let sA = 0, sB = 0, tA = 0, tB = 0;
   withTally.forEach(r => { if (r.done){ r.done.forEach(x => { if (x[0] > x[1]) sA++; else if (x[1] > x[0]) sB++; }); } else { sA += r.pS; sB += r.oS; } });
   withGames.forEach(r => r.done.forEach(x => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ if (x[0] > x[1]) tA++; else tB++; } }));
   const dec = F.filter(r => r.decider), dA = dec.filter(r => r.won).length;
   const one = F.length === 1, pre = one ? 'n=1 · ' : '';
+  // every count carries its population: a tally over fewer meetings than listed says so
   const gCov = withGames.length < F.length ? ' · ' + withGames.length + ' of ' + F.length + ' with set scores' : '';
+  const sCov = withTally.length < F.length ? ' · ' + withTally.length + ' of ' + F.length + ' with a score' : '';
   const stats = [
-    { key: 'sets', label: 'Sets won', val: withTally.length ? sA + '–' + sB : FH_DASHC, sub: pre + (sA + sB) + ' completed sets' },
+    { key: 'sets', label: 'Sets won', val: withTally.length ? sA + '–' + sB : FH_DASHC, sub: pre + (sA + sB) + ' completed sets' + sCov },
     { key: 'tb', label: 'Tiebreaks', val: withGames.length ? tA + '–' + tB : FH_DASHC, sub: pre + (tA + tB) + ' played' + gCov },
-    { key: 'dec', label: 'Deciding sets', val: dec.length ? dA + '–' + (dec.length - dA) : FH_DASHC, sub: pre + dec.length + ' went the distance' },
+    { key: 'dec', label: 'Deciding sets', val: dec.length ? dA + '–' + (dec.length - dA) : FH_DASHC, sub: pre + dec.length + ' went the distance' + sCov },
   ];
   const statsHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">${stats.map(c => {
     const on = S.stat === c.key;
-    return `<div class="seg" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? 'var(--nav-hover)' : 'var(--surface)'}; border:var(--ma-hw,0.33px) solid ${on ? 'var(--seg-active-line)' : 'var(--line)'}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
-        <span class="fh-tilehead" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; align-content:end; width:100%; height:18px; overflow:visible;"><span></span><span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">${c.label}</span><span style="justify-self:end; font-size:10.5px; font-weight:600; color:var(--periwinkle); white-space:nowrap;">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span></span>
-        <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? FH_DASH : 'var(--text)'}; white-space:nowrap;">${c.val}</span>
-        <span style="font-size:11px; color:var(--label);">${fhEsc(c.sub)}</span>
+    return `<div class="seg fh-h2stat" data-stat="${c.key}" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? fhS('5b9bff-060', '--nav-hover') : card}; border:var(--ma-hw,0.33px) solid ${on ? fhS('5b9bff-500', '--seg-active-line') : hair}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
+        <span style="display:flex; justify-content:flex-end; width:100%; margin-bottom:-14px; font-size:10.5px; font-weight:600; color:${link};">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span>
+        <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t3};">${c.label}</span>
+        <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? t4 : fhS('e7e9ee', '--text')}; white-space:nowrap;">${c.val}</span>
+        <span style="font-size:11px; color:${t3};">${fhEsc(c.sub)}</span>
       </div>`; }).join('')}</div>`;
   const newest = F.slice().reverse();
-  const bRow = (r, val, valColor, meta) => `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:96px minmax(0,1fr) 80px minmax(0,1.2fr); gap:12px; align-items:baseline; padding:8px 0; border-top:var(--ma-hw,0.33px) solid var(--line-soft); cursor:pointer;">
-      <span style="${FH_MONO} font-size:11px; color:var(--text-sub); white-space:nowrap;">${fhLongDate(r.date)}</span>
+  // A breakdown row is one meeting's line in a stat drawer (DF L1253–1260: date, event, the stat, its detail), not a
+  // match-list row; it opens the shared sheet like every meeting.
+  const bRow = (r, val, valColor, meta) => `<div class="seg fh-h2brow" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:96px minmax(0,1fr) 80px minmax(0,1.2fr); gap:12px; align-items:baseline; padding:8px 0; border-top:var(--ma-hw,0.33px) solid ${fhS('ffffff-050', '--line-soft')}; cursor:pointer;">
+      <span style="${FH_MONO} font-size:11px; color:${t2}; white-space:nowrap;">${fhLongDate(r.date)}</span>
       <span style="font-size:12.5px; font-weight:600; min-width:0;">${fhEsc(r.tourn + ' ' + r.round)}</span>
       <span style="${FH_MONO} font-size:13px; font-weight:700; color:${valColor}; white-space:nowrap;">${fhEsc(val)}</span>
-      <span style="${FH_MONO} font-size:11px; color:var(--text-soft);">${fhEsc(meta)}</span>
+      <span style="${FH_MONO} font-size:11px; color:${fhS('b4bdd3', '--text-soft')};">${fhEsc(meta)}</span>
     </div>`;
   let statRows = [], statTitle = '';
-  if (S.stat === 'sets'){ statTitle = 'Sets won per meeting'; statRows = newest.filter(r => r.pS != null).map(r => bRow(r, r.pS + '–' + r.oS, r.pS > r.oS ? FH_AC : r.oS > r.pS ? FH_BC : 'var(--text-sub)', r.sets ? r.sets.map(fhSetTxt).join('  ') + (r.ret ? '  RET' : '') : (r.wo ? 'W/O' : 'set scores not on record'))); }
+  if (S.stat === 'sets'){ statTitle = 'Sets won per meeting'; statRows = newest.filter(r => r.pS != null).map(r => bRow(r, r.pS + '–' + r.oS, r.pS > r.oS ? FH_AC : r.oS > r.pS ? FH_BC : t2, r.sets ? r.sets.map(fhSetTxt).join('  ') + (r.ret ? '  ret.' : '') : 'set scores not on record')); }
   if (S.stat === 'tb'){ statTitle = 'Every tiebreak'; newest.forEach(r => (r.done || []).forEach((x, k) => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ const aw = x[0] > x[1]; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (k + 1) + ' · ' + fhSetTxt(x))); } })); }
   if (S.stat === 'dec'){ statTitle = 'Every deciding set'; newest.filter(r => r.decider).forEach(r => { const x = r.sets ? r.sets[r.sets.length - 1] : null; const aw = x ? x[0] > x[1] : r.won; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (r.pS + r.oS) + (x ? ' · ' + fhSetTxt(x) : '') + (r.bo === 5 ? ' · Bo5' : ''))); }); }
-  const statPanel = S.stat && statRows.length ? `<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--seg-active-line); border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
+  // DESIGN GAP G10: a drawer with no rows (no tiebreak / no deciding set in these meetings). The file opens nothing
+  // (statPanel.empty, drawn nowhere); the same drawer carries the file's empty-line pattern (noF, DF L1242) instead.
+  const statPanel = !S.stat ? '' : `<div class="fh-h2drawer" style="background:${card}; border:var(--ma-hw,0.33px) solid ${fhS('5b9bff-300', '--seg-active-line')}; border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:8px;">
-        <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-sub);">${statTitle}</span>
-        <span style="font-size:10.5px; color:var(--label);">Click a row for match stats</span>
-      </div>${statRows.join('')}</div>` : '';
-  // ---- Price range ----
+        <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t2};">${statTitle}</span>
+        <span style="font-size:10.5px; color:${t4};">Click a row for match stats</span>
+      </div>${statRows.length ? statRows.join('') : `<div style="padding:14px 0 10px; border-top:var(--ma-hw,0.33px) solid ${fhS('ffffff-050', '--line-soft')}; text-align:center; font-size:13px; color:${t3};">${S.stat === 'tb' ? 'No tiebreak in these meetings.' : S.stat === 'dec' ? 'No meeting went the distance.' : 'No set scores on record for these meetings.'}</div>`}</div>`;
+  // ---- Price range (DF L1271–1300, pr L4431–4476): closing odds across the priced meetings, one book per meeting
+  // (FH_BOOK_ORDER); unpriced excluded, never zero. The header names the book actually used (fhPriceRangeSource). ----
   const PR = F.filter(r => r.price != null), nP = PR.length;
   const today = fhTodayPair(m);
   const evLbl = r => r.tourn.replace(' Masters', '') + " '" + String(r.date).slice(2, 4);
@@ -15079,133 +15091,139 @@ function fhBuildH2H(m){
       allRows: PR.slice().reverse().map(r => ({ r, isLo: r.mid === lo.mid, isHi: r.mid === hi.mid, v: get(r) })) });
   });
   const tx = v => v < 16 ? 'translateX(-6px)' : v > 84 ? 'translateX(calc(-100% + 6px))' : 'translateX(-50%)';
-  const figCap = `${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);`;
+  const figCap = `${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t3};`;
+  const chip = txt => `<span class="fh-nchip" style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">${txt}</span>`;
   const prCard = s => {
     let inner = '';
     if (nP !== 1){
       const dash = !nP;
-      const pop = nP > 1 ? `<div class="fh-elotip-pop" style="position:absolute; top:calc(100% + 8px); left:-8px; right:-8px; z-index:30; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:10px;  padding:10px 14px; display:flex; flex-direction:column;">
-          <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label); padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
-          ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:var(--ma-hw,0.33px) solid var(--line-soft);">
-            <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r)}</span>
-            <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-sub);">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
-            <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : 'var(--text-soft)'}; text-align:right;">${o.v.toFixed(2)}</span>
-          </div>`).join('')}
-          <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); ${FH_MONO} font-size:11px; color:var(--text-sub);"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:var(--text);">${s.avgV.toFixed(2)}</span></div>
-        </div>` : '';
-      const fig = (v, c) => `<span style="${FH_MONO} font-size:22px; font-weight:800; line-height:1; color:${dash ? FH_DASH : c};">${v}</span>`;
-      inner += `<div class="fh-elotip" style="position:relative; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; align-items:start;">
-          ${pop}
-          <div class="seg prh-${s.k}Lo"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')"`} style="display:flex; flex-direction:column; gap:4px; min-width:0;">
-            <span style="${figCap}">Lowest</span>${fig(dash ? FH_DASHC : s.loV.toFixed(2), s.color)}<span style="font-size:11px; color:var(--text-sub);">${dash ? 'no priced meeting' : fhEsc(evLbl(s.lo))}</span>
+      const fig = (v, c) => `<span style="${FH_MONO} font-size:22px; font-weight:800; line-height:1; color:${dash ? t4 : c};">${v}</span>`;
+      const figs = `<div class="seg prh-${s.k}Lo"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')"`} style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+            <span style="${figCap}">Lowest</span>${fig(dash ? FH_DASHC : s.loV.toFixed(2), s.color)}<span style="font-size:11px; color:${t2};">${dash ? 'no priced meeting' : fhEsc(evLbl(s.lo))}</span>
           </div>
           <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; min-width:0;">
-            <span style="${figCap}">Average</span>${fig(dash ? FH_DASHC : s.avgV.toFixed(2), s.color)}<span style="font-size:11px; color:var(--text-sub);">${FH_PRICE_AVG_LABEL}</span>
+            <span style="${figCap}">Average</span>${fig(dash ? FH_DASHC : s.avgV.toFixed(2), s.color)}<span style="font-size:11px; color:${t2};">${FH_PRICE_AVG_LABEL}</span>
           </div>
           <div class="seg prh-${s.k}Hi"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.hi.mid)}')"`} style="display:flex; flex-direction:column; align-items:flex-end; text-align:right; gap:4px; min-width:0;">
-            <span style="${figCap}">Highest</span>${fig(dash ? FH_DASHC : s.hiV.toFixed(2), s.color)}<span style="font-size:11px; color:var(--text-sub);">${dash ? 'no priced meeting' : fhEsc(evLbl(s.hi))}</span>
-          </div>
-        </div>`;
+            <span style="${figCap}">Highest</span>${fig(dash ? FH_DASHC : s.hiV.toFixed(2), s.color)}<span style="font-size:11px; color:${t2};">${dash ? 'no priced meeting' : fhEsc(evLbl(s.hi))}</span>
+          </div>`;
+      const grid = 'display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; align-items:start;';
+      if (nP > 1){
+        // "every priced close" (DF L1287–1297) through the shared tooltip, geometry as the file: under the figures,
+        // 8px out on both sides, its own surface / radius / padding and a column of rows.
+        const body = `<span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t3}; padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
+          ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:var(--ma-hw,0.33px) solid ${fhS('ffffff-050', '--line-soft')};">
+            <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:${fhS('b4bccf', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r)}</span>
+            <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:${t2};">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
+            <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : fhS('b4bccf', '--text-soft')}; text-align:right;">${o.v.toFixed(2)}</span>
+          </div>`).join('')}
+          <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:var(--ma-hw,0.33px) solid ${fhS('ffffff-100', '--line-open')}; ${FH_MONO} font-size:11px; color:${t2};"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:${fhS('e7e9ee', '--text')};">${s.avgV.toFixed(2)}</span></div>`;
+        inner += maTipHtml(figs, `<span style="display:flex; flex-direction:column;">${body}</span>`, { tag: 'div', cls: 'fh-prtip', style: grid,
+          popStyle: `top:calc(100% + 8px); left:-8px; right:-8px; transform:none; background:${fhS('0d111b', '--popup')}; border-radius:10px; box-shadow:0 12px 32px var(--ma-s-000000-550, transparent); padding:10px 14px; white-space:normal;` });
+      } else inner += `<div style="position:relative; ${grid}">${figs}</div>`;
     }
     if (nP > 1){
       const has = s.today != null;
       const p = has ? Math.max(0, Math.min(100, (s.today - s.loV) / ((s.hiV - s.loV) || 1) * 100)) : 0;
       inner += `<div style="position:relative; height:40px; margin:0 6px;">
-          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:var(--text); white-space:nowrap;">${has ? `Today ${s.today.toFixed(2)} <span style="font-weight:600; color:var(--text-sub);">· ${FH_BOOK[today.book]}</span>` : `Today <span style="color:${FH_DASH};">${FH_DASHC}</span>`}</span>
+          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:${fhS('e7e9ee', '--text')}; white-space:nowrap;">Today ${has ? s.today.toFixed(2) : `<span style="color:${t4};">${FH_DASHC}</span>`}</span>
           <span style="position:absolute; top:24px; left:0; right:0; height:6px; border-radius:3px; background:${s.rangeBg};"></span>
-          ${has ? `<span style="position:absolute; top:21px; left:${p.toFixed(1)}%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:var(--fh-today); box-shadow:0 0 0 3px var(--fh-ring);"></span>` : ''}
+          ${has ? `<span style="position:absolute; top:21px; left:${p.toFixed(1)}%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:var(--ma-s-e7e9ee, var(--fh-today)); box-shadow:0 0 0 3px var(--ma-s-06070a, var(--fh-ring));"></span>` : ''}
         </div>`;
     }
     if (nP === 1){
       inner += `<div class="seg prh-${s.k}Lo" onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
           <span style="${FH_MONO} font-size:26px; font-weight:800; line-height:1; color:${s.color};">${s.loV.toFixed(2)}</span>
-          <span style="font-size:12px; color:var(--text-sub);">${fhEsc(evLbl(s.lo))}</span>
-          <span style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">n=1</span>
+          <span style="font-size:12px; color:${t2};">${fhEsc(evLbl(s.lo))}</span>${chip('n=1')}
         </div>`;
     }
-    return `<div style="background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span>${nP > 1 && nP < FH_PRICE_THIN ? `<span class="fh-nchip" title="Range built from ${nP} priced meetings" style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">n=${nP}</span>` : ''}</div>
+    // FH_PRICE_THIN: a range from fewer than 3 priced meetings carries its n (the file's empty header slot, DF L1284)
+    return `<div style="background:${fhS('0c0e16', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-050', '--line')}; border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span>${nP > 1 && nP < FH_PRICE_THIN ? chip('n=' + nP).replace('class="fh-nchip"', `class="fh-nchip" title="Range built from ${nP} priced meetings"`) : ''}</div>
         ${inner}
       </div>`;
   };
-  const priceHtml = `<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
+  const priceHtml = `<div style="background:${card}; border:var(--ma-hw,0.33px) solid ${hair}; border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:baseline; gap:8px 10px; flex-wrap:wrap;"><span style="font-size:17px; font-weight:800;">Price range</span><span style="font-size:12px; color:var(--text-sub);">· Closing odds${PR.length ? ' · ' + fhPriceRangeSource(PR, today) : ''}</span></div>
-        <span style="${FH_MONO} font-size:11px; color:var(--text-sub); white-space:nowrap;">${nP} of ${F.length} meetings priced</span>
+        <div style="display:flex; align-items:baseline; gap:8px 10px; flex-wrap:wrap;"><span style="font-size:17px; font-weight:800;">Price range</span><span style="font-size:12px; color:${t2};">· Closing odds${PR.length ? ' · ' + fhPriceRangeSource(PR, nP > 1 ? today : null) : ''}</span></div>
+        <span style="${FH_MONO} font-size:11px; color:${t2}; white-space:nowrap;">${nP} of ${F.length} meetings priced</span>
       </div>
-      ${nP ? '' : `<span style="font-size:13px; color:var(--text-sub); text-align:center; padding:4px 0 2px;">No closing odds on record for these meetings</span>`}
+      ${nP ? '' : `<span style="font-size:13px; color:${t2}; text-align:center; padding:4px 0 2px;">No closing odds on record for these meetings</span>`}
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;">${prSides.map(prCard).join('')}</div>
-      ${nP && globalThis.MarketEdgeCore ? `<span data-ret-note="h2h" style="font-size:10.5px; color:var(--label);">${fhEsc(globalThis.MarketEdgeCore.RET_SETTLE_NOTE)}</span>` : ''}
+      ${nP && globalThis.MarketEdgeCore ? `<span data-ret-note="h2h" style="font-size:10.5px; color:${t3};">${fhEsc(globalThis.MarketEdgeCore.RET_SETTLE_NOTE)}</span>` : ''}
     </div>`;
-  // ---- Hot lines (one table, one dot per meeting) ----
+  // ---- Hot lines (DF L1301–1332): one table, one dot per played meeting; a line needs FH_HOT_MIN_ELIGIBLE eligible
+  // meetings to appear and its bar follows the gate (maGateBar). Column-head dots: the neutral surface token (U22). ----
   const sc = fhScoreLines(F, fhH2hLineDefs(aS, bS));
   const hotOk = F.length >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
-  const withSets = F.filter(r => r.pS != null && !r.wo).length;
+  const withSets = F.filter(r => r.pS != null).length;
   const hotFew = F.length < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + F.length + ')'
     : (!sc.scored.length ? 'Not enough scored meetings to rank lines (n=' + withSets + ')' : '');
-  const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, color: FH_AC, showAll: !!S.allLines, shortPriced: null,
+  const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, color: fhS('5b9bff-fill', '--fh-fill'), shades: true, showAll: !!S.allLines, shortPriced: null,
     lineCls: k => `h2hl hl-${k}`,
     colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
     dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
   const hotMore = hotOk && (sc.scored.length > table.shown || S.allLines);
-  const hotHtml = `<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
+  const soft = fhS('ffffff-060', '--line-soft');
+  const hotHtml = `<div style="background:${card}; border:var(--ma-hw,0.33px) solid ${hair}; border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
-        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:17px; font-weight:800;">Hot lines</span><span style="font-size:12px; color:var(--text-sub);">Best-covered line in each market family across these meetings</span></div>
+        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:17px; font-weight:800;">Hot lines</span><span style="font-size:12px; color:${t2};">Best-covered line in each market family across these meetings</span></div>
       </div>
-      ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:var(--ma-hw,0.33px) solid var(--line-soft);">${table.head}${table.lines}</div>
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:4px; border-top:var(--ma-hw,0.33px) solid var(--line-soft);">
-        <span style="font-size:10.5px; color:var(--label);">One dot per meeting, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its meetings, click a dot for the match</span>
-        ${hotMore ? `<span class="seg" onclick="fhH2h({allLines:${!S.allLines}})" style="font-size:12.5px; font-weight:600; color:var(--periwinkle); cursor:pointer; white-space:nowrap;">${S.allLines ? 'Best line per family' : 'Show all lines (' + sc.scored.length + ')'}</span>` : ''}
-      </div>` : `<div style="padding:22px 0 14px; text-align:center; ${FH_MONO} font-size:12px; color:var(--label); border-top:var(--ma-hw,0.33px) solid var(--line-soft);">${fhEsc(hotFew)}</div>`}
+      ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:var(--ma-hw,0.33px) solid ${soft};">${table.head}${table.lines}</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:4px; border-top:var(--ma-hw,0.33px) solid ${soft};">
+        <span style="font-size:10.5px; color:${t4};">One dot per meeting, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its meetings, click a dot for the match</span>
+        ${hotMore ? `<span class="seg" onclick="fhH2h({allLines:${!S.allLines}})" style="font-size:12.5px; font-weight:600; color:${link}; cursor:pointer; white-space:nowrap;">${S.allLines ? 'Best line per family' : 'Show all lines (' + sc.scored.length + ')'}</span>` : ''}
+      </div>` : `<div style="padding:22px 0 14px; text-align:center; ${FH_MONO} font-size:12px; color:${t3}; border-top:var(--ma-hw,0.33px) solid ${soft};">${fhEsc(hotFew)}</div>`}
     </div>`;
-  // ---- Meetings · A's side ----
-  const entries = newest.map(r => {
+  // ---- Meetings · A's side (DF L1333–1360): the shared match rows, one group per meeting ("event year" + surface ·
+  // level), newest first. Geometry as the file: header 8px 14px 7px, group 11px 14px 5px, row wrapper 0 8px 2px. ----
+  const groups = FL.slice().reverse().map(r => {
     const meta = psTourMeta(r.tournRaw);
     const surfLbl = r.surface ? (r.surface === 'Hard' && meta && meta.indoor ? 'Indoor hard' : r.surface) : '';
-    const cls = 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') + ' ' + (prMark[r.mid] || []).join(' ');
-    return `<div class="${cls}">
-        <div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:var(--ma-hw,0.33px) solid var(--line-soft);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--text); white-space:nowrap;">${fhEsc(r.tourn + ' ' + String(r.date).slice(0, 4))}</span><span style="font-size:11px; color:var(--text-sub); white-space:nowrap;">${fhEsc(surfLbl)}${surfLbl ? ' · ' : ''}<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}">${fhEsc(r.level)}</span></span></div>
-        ${fhH2hRowHtml(r)}
-      </div>`;
-  }).join('');
+    return { title: r.tourn + ' ' + String(r.date).slice(0, 4), meta: [surfLbl, r.level].filter(Boolean).join(' · '),
+      metaTitle: r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : r.level === 'ITF' ? 'ITF' : '',
+      cls: 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') + ' ' + (prMark[r.mid] || []).join(' '), rows: [fhH2hRowData(r)] };
+  });
+  const nWo = FL.length - F.length;
   const listHtml = `<div id="fhH2hList" style="display:flex; flex-direction:column; min-width:0;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
-        <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">Meetings · ${fhEsc(aS)}'s side</span>
-        <span style="font-size:11px; color:var(--label);">${F.length} on record${SURF === 'all' ? '' : ' · ' + SURF.toLowerCase()}</span>
+        <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:${t3};">Meetings · ${fhEsc(aS)}'s side</span>
+        <span style="font-size:11px; color:${t3};">${F.length} on record${SURF === 'all' ? '' : ' · ' + SURF.toLowerCase()}${nWo ? ' · ' + nWo + ' w/o not counted' : ''}</span>
       </div>
-      <div style="border:var(--ma-hw,0.33px) solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column;">
-        ${fhStickyHeadHtml('22px 40px minmax(0,1fr) 40px 38px 42px 42px', ['Meeting', 'Round', 'Sets', 'Home', 'Away'], true)}
-        ${entries}
+      <div style="border:var(--ma-hw,0.33px) solid ${hair}; border-radius:14px; overflow:clip; background:${card}; display:flex; flex-direction:column;">
+        ${maMatchRowsHtml(groups, { labels: ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'Home', 'Away'], headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8, rowPad: '0 8px 2px' })}
       </div>
-      <span style="font-size:10.5px; color:var(--label); margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Elo is ${fhEsc(bS)}'s at the time (weekly Tennis Abstract snapshot before the match). Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
+      <span style="font-size:10.5px; color:${t4}; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Elo is ${fhEsc(bS)}'s at the time (hover the name). Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
     </div>`;
-  return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
+  // DESIGN GAP G11: every meeting under this filter is a walkover (N2: listed, counted nowhere). The file draws no such
+  // state; the record card (0–0, "No meetings") and the list show, the tally / price / line sections have nothing to show.
+  return wrap(onlyWo ? `${top}${recCard}${listHtml}` : `${top}${recCard}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}`);
 }
-// H2H Match Row LOCKED with the opponent Elo (ruling 2026-09-24: same basis as Form). The level tag
-// sits in the group header, the book marker in the Home cell.
-function fhH2hEloSpan(e){
-  const v = e && e.v != null ? e.v : null;
-  const tip = v != null ? 'Opponent Elo at the time of the match (Tennis Abstract weekly snapshot of ' + fhLongDate(e.asOf) + ')'
-    : 'No Elo at the time of the match: ' + ((e && e.why) || 'no snapshot on record');
-  return `<span class="fh-elo" title="${fhEsc(tip)}" style="${FH_MONO} font-size:10.5px; color:${v == null ? FH_DASH : 'var(--label)'}; flex:none;">${v == null ? FH_DASHC : v}</span>`;
+// Set scores as the H2H list prints them (DF L4479: "6-7(4), 7-6(5)"); a retirement adds " ret." (N2), a walkover
+// reads "w/o" and is counted nowhere.
+function fhH2hSetScores(r){
+  if (r.wo) return 'w/o';
+  if (!r.sets) return FH_DASHC;
+  return r.sets.map(fhSetTxt).join(', ') + (r.ret ? ' ret.' : '');
+}
+// A meeting as the shared helper's row (maMatchRowsHtml — DoD item 8: the tab has no row renderer of its own). The
+// file's row has no Elo slot: PARKED as on Form (design file v ruling 2026-09-24 "Elo after the name") — the opponent's
+// Elo at the match date (D-12 basis, "Elo —" + why) rides on the name as `data-elo` + its hover text until the founder
+// rules. The Bet365 marker sits in the Home cell; both price cells name book + source on hover.
+function fhH2hRowData(r){
+  return { date: fhDDMM(r.date) + '.', won: r.wo ? null : r.won, opp: fhOppFmt(r.opp), rd: r.round,
+    sets: r.wo || r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,
+    scores: fhH2hSetScores(r), scoresTitle: fhH2hSetScores(r),
+    h: r.price == null ? FH_DASHC : fhOdd(r.price), a: r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
+    hTitle: fhSrcTitle(r), aTitle: fhSrcTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
+    oppTitle: [fhFullName(r.opp, r.oppKey), fhEloText(r.oppElo)].join(' · '),
+    oppAttrs: ` class="fh-opp" data-elo="${r.oppElo && r.oppElo.v != null ? r.oppElo.v : ''}"`,
+    cls: 'fh-h2row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
+    selected: !!(_fh && _fh.sheet === r.mid) };
 }
 function fhFullName(name, key){ const p = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]; return (p && p.name) || fhOppFmt(name); }
-function fhH2hRowHtml(r){
-  return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 40px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); cursor:pointer;">
-      ${fhWlChip(r.won)}
-      <span style="${FH_MONO} font-size:11px; color:var(--text-sub);">${fhDDMM(r.date)}</span>
-      <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span title="${fhEsc(fhFullName(r.opp, r.oppKey))}" style="font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span>${fhH2hEloSpan(r.oppElo)}</span>
-        <span title="${fhEsc(fhScoreText(r, true))}" style="${FH_MONO} font-size:11px; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhScoreText(r, true))}</span>
-      </span>
-      <span style="${FH_MONO} font-size:10.5px; color:var(--label); text-align:center;">${fhEsc(r.round)}</span>
-      <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : 'var(--text)'}; text-align:center; white-space:nowrap;">${r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS}</span>
-      ${fhPriceCell(r.price, 'center', true, r, true)}
-      ${fhPriceCell(r.oppPrice, 'center', false, r)}
-    </div>`;
-}
-function fhH2hOverall(){
-  fhH2h({ surf: 'all', stat: null });
+// The record card's "Meetings ↓" (DF onOverall L4492): scroll to the list; the filter stays as it is.
+function fhH2hToList(){
   setTimeout(() => { const el = document.getElementById('fhH2hList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
 }
 
@@ -15322,7 +15340,8 @@ function fhOpenSheet(mid){
   fhSheetInit(e, r, 'pop');
 }
 // DF L4715 rowBg: the Form row whose sheet is open carries the selected wash (blue .1 → --seg-active) until it closes.
-function fhMarkRow(mid){ document.querySelectorAll('#aSectionForm .fh-frow').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? 'var(--seg-active)' : 'transparent'; }); }
+// The open meeting's row takes the shared row's selected shade (DF rowBg, L4480 / maMatchRowsHtml).
+function fhMarkRow(mid){ document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? fhS('5b9bff-100', '--seg-active') : 'transparent'; }); }
 function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } fhMarkRow(null); }
 // =====================================================================
 // MATCH STATS SHEET BODY (TEN-263, founder rulings 2026-09-24): one segmented control

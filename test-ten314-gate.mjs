@@ -37,7 +37,7 @@ const S = new Function(`
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', '_psvSides', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName', 'akSurname', 'akHead', 'akCard', 'akSeasonOf', 'akFormBlock',
-     'fhRecLevelMix', 'fhH2hRecCard', 'meBandsCol', 'atournPlayerColumn', 'seasonSurfaceTierViewHtml', 'styleNoteHtml', 'styleVsArchetypeCard',
+     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol', 'atournPlayerColumn', 'seasonSurfaceTierViewHtml', 'styleNoteHtml', 'styleVsArchetypeCard',
      'stylePersonalCard'].map(slice).join('\n')}
   function psvShowText(){ return ''; } function psvListHtml(){ return ''; } function atournYearRowHtml(){ return ''; }
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
@@ -73,7 +73,7 @@ test('maRateHtml: "—" · nothing · greyed var(--ma-t3) + "small sample" · fu
 test('small-sample chip: n = 1, 3, 9 show it; 0 and 10 do not — the helper and the H2H record card', () => {
   for (const n of [1, 3, 9]) assert.match(S.maSmallChip(n), new RegExp(`>Small sample · n=${n}<`), `helper n=${n}`);
   for (const n of [0, 10, 12]) assert.equal(S.maSmallChip(n), '', `helper n=${n}`);
-  const card = n => S.fhH2hRecCard('Overall', Array.from({ length: n }, (_, i) => ({ won: i % 3 !== 0, level: 'ATP' })), '', null, null, 'A. One', 'B. Two', 'One', 'Two');
+  const card = n => S.fhH2hRecCard('Overall', Array.from({ length: n }, (_, i) => ({ won: i % 3 !== 0, level: 'ATP' })), null, 'A. One', 'B. Two', 'One', 'Two');
   for (const n of [1, 3, 9]) assert.ok(card(n).includes(`Small sample · n=${n}`), `H2H card n=${n}`);
   for (const n of [0, 10]) assert.ok(!card(n).includes('Small sample'), `H2H card n=${n}`);
   assert.match(S.maSmallChip(3), /font-size:10px; color:var\(--ma-t2, var\(--text-soft\)\); border:1px solid var\(--ma-hair-strong, var\(--line-open\)\); border-radius:999px; padding:2px 9px;/,

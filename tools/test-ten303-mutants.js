@@ -46,7 +46,7 @@ const MUTANTS = [
   ['D1: the Odds-tab text back to the spec literal', "  text: 'var(--ma-t1)',      // Text", "  text: '#E7E9EE',      // Text"],
   ['D1: the nav-selected bg back to the 12a navy literal', '.modal-analysis .asidenav-item.active{ background:var(--ma-s-5b9bff-120);', '.modal-analysis .asidenav-item.active{ background:#0B1C4E;'],
   ['D1: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--ma-s-0a0d14);', '.modal-analysis{ background:var(--popup);'],
-  ['D1: a literal back in a shared builder (the W/L chip)', "const c = won ? 'var(--positive)' : 'var(--negative)';", "const c = won ? '#3ed68c' : 'var(--negative)';"],
+  ['D1: a literal back in a shared builder (the Form bar)', "const c = r.won ? 'var(--positive)' : 'var(--negative)';", "const c = r.won ? '#3ed68c' : 'var(--negative)';"],
   ['D1: the modal scrim back to a literal', '  #analysisModal{ background:var(--ma-s-040508-720); }', '  #analysisModal{ background:rgba(4,5,8,0.72); }'],
   ['D4: Odds player A back to the link blue', "  a: 'var(--ma-t1)',", "  a: 'var(--ma-link)',"],
   ['U3: the book-strip hover on the selected token', "  rowHover: 'var(--ma-hover)',", "  rowHover: 'var(--ma-sel)',"],
