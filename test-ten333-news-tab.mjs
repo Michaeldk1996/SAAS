@@ -213,7 +213,7 @@ test('type: the News pane is 16px / line-height normal / "Hanken Grotesk", sans-
 // Mutation: the count's population tooltip dropped (every count carries its denominator and population).
 test('count: the group count carries its denominator and population on the tooltip', () => {
   const h = ok().buildNewsSection(M);
-  assert.ok(h.includes('title="3 of 5 articles in the ATP news feed, last 5 days"'), 'Sinner: 3 of the 5 in-window articles');
+  assert.ok(h.includes('data-aotip="3 of 5 articles in the ATP news feed, last 5 days"'), 'Sinner: 3 of the 5 in-window articles, on the shared tooltip');
 });
 
 // Mutation: the tab builder no longer returns its load (Download report would print the loading line).

@@ -12752,8 +12752,8 @@ function wmoWeather(code){
 // weather-index.json (m.tour → {indoor, file}) + weather/<slug>.json (build-weather.js, Open-Meteo).
 // Every time on this tab is VENUE-LOCAL (the file's IANA tz); the MATCH badge is cardStartMs(m) — the
 // same instant as the modal header — converted to the venue zone.
-// Tooltips: the ONE shared custom tooltip, TEN-303's (data-aotip + initAOddsTips / aOddsTipHide /
-// aOddsTipHtml): one delegated listener set, 250 ms delay, hover and keyboard focus. No second one.
+// Tooltips: the modal's ONE tooltip component (`.elotip-pop`), positioned mode (data-aotip + initAOddsTips /
+// aOddsTipHide / aOddsTipHtml): one delegated listener set, 250 ms delay, hover and keyboard focus. No second one.
 
 // Every cut-off, window and count the tab uses — change them HERE and nowhere else.
 // ⚠️ THRESHOLDS ARE PLACEHOLDERS (TEN-304 brief §2 defaults) until the founder rules; the
@@ -16713,7 +16713,7 @@ function aNewsGroupHtml(side, name, arts, total){
   }).join('');
   // count = this player's articles in the feed window; the population rides on the tooltip (no new visual)
   const pop = `${arts.length} of ${total} article${total === 1 ? '' : 's'} in the ATP news feed, last ${A_NEWS_WINDOW_DAYS} days`;
-  return `<div class="anews-ghead" style="display:flex; align-items:center; gap:12px; margin-top:4px;"><span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text); white-space:nowrap;">${esc(name)}</span><span class="anews-gcount" title="${esc(pop)}" style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--label);">${arts.length}</span><span style="flex:1; height:1px; background:var(--line);"></span></div>`
+  return `<div class="anews-ghead" style="display:flex; align-items:center; gap:12px; margin-top:4px;"><span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text); white-space:nowrap;">${esc(name)}</span><span class="anews-gcount" tabindex="0" data-aotip="${esc(esc(pop))}" style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--label);">${arts.length}</span><span style="flex:1; height:1px; background:var(--line);"></span></div>`
     + `<div class="anews-rows" style="display:flex; flex-direction:column;">${rows}</div>`;
 }
 function buildNewsSection(m){
@@ -17587,15 +17587,16 @@ function aOddsBookTip(r, D){
   return aOddsTipHtml(aOddsSrcTitle(r.key), L);
 }
 let _aoTipTimer = null, _aoTipFor = null;
+// DoD item 8 (founder 2026-09-29): the modal has ONE tooltip component, the design's `.elotip-pop` (DF L950). This
+// positioned mode (data-aotip: Odds, Weather, Market edge, News counts — anchored at the trigger's box, flips at the viewport /
+// modal edge) draws
+// the SAME element class and CSS as maTipHtml's hover mode; only the trigger and the positioning differ.
 function aOddsTipEl(){
   let t = document.getElementById('aoddsTip');
   if (!t){
-    const C = AODDS_C;
     t = document.createElement('div');
-    t.id = 'aoddsTip'; t.setAttribute('role', 'tooltip');
-    t.style.cssText = 'position:fixed; z-index:70; display:none; box-sizing:border-box; max-width:320px; pointer-events:none;'
-      + " font-family:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing:antialiased;"
-      + ' background:' + C.pop + '; border:' + C.hw125 + ' solid ' + C.tipBd + '; border-radius:10px; padding:10px 12px; box-shadow:' + C.tipShadow + ';';
+    t.id = 'aoddsTip'; t.className = 'elotip-pop ma-tip-float'; t.setAttribute('role', 'tooltip');
+    t.style.display = 'none';
     (document.getElementById('analysisModal') || document.body).appendChild(t);
   }
   return t;
@@ -17605,7 +17606,9 @@ function aOddsTipHide(){ clearTimeout(_aoTipTimer); _aoTipFor = null; const t = 
 function aOddsTipShow(el){
   if (!el || !el.isConnected) return;
   const t = aOddsTipEl();
-  t.innerHTML = el.getAttribute('data-aotip') || '';
+  const body = el.getAttribute('data-aotip') || '';
+  // a plain-text body takes README §6's mono 11px, as maTipHtml gives it (one component, one rule)
+  t.innerHTML = /^\s*</.test(body) ? body : `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${body}</span>`;
   t.style.display = 'block'; t.style.left = '0px'; t.style.top = '0px';
   const r = el.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
   const box = el.closest('.modal-analysis');
@@ -19586,6 +19589,7 @@ const A_TAB_BUILD = {
   news(m){
     // The shared feed is fetched the first time the News tab (or the News page) needs it.
     _aNewsState = (_newsData && Array.isArray(_newsData.articles)) ? 'ok' : 'load';   // = aNewsFeedOk()
+    if (typeof initAOddsTips === 'function') initAOddsTips();   // the modal's one tooltip component (the group count's population note)
     renderNewsSection();
     return ensureNewsData().then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
   },
@@ -34650,6 +34654,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
     background:var(--ma-s-11151f, var(--popup)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-140, var(--line-open)); border-radius:8px; padding:8px 11px;
     font-family:'Hanken Grotesk',sans-serif; font-size:11px; color:var(--ma-t2, var(--text-soft)); white-space:nowrap; box-shadow:var(--ma-shadow-tip, none); }
   .elotip:hover .elotip-pop, .elotip:focus-within .elotip-pop{ opacity:1; visibility:visible; }
+  /* the positioned mode (data-aotip): same component, placed by JS at the trigger; shown by display, not :hover */
+  .elotip-pop.ma-tip-float{ position:fixed; z-index:70; left:0; top:0; transform:none; opacity:1; visibility:visible; white-space:normal; max-width:320px; box-sizing:border-box; }
   @media (prefers-reduced-motion: reduce){ .ma-sigin, .ma-fade{ animation:none; } }
 </style>
 </body>

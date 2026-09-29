@@ -19,7 +19,10 @@
 // 'me'), popframe (Market edge line pop-up P4 → mePopShell→maPopFrame, body emptied to 120px both sides), rows-form
 // (Form recent matches, maMatchRowsHtml), rows-tournament (Tournament records, maMatchRowsHtml), tooltip (Form bar
 // .elotip-pop → maTipHtml), sheet-head / sheet-key (P1 match stats sheet: our real fhOpenSheet header; the Key stats
-// section through fhSheetKeyHtml fed the design's numbers). Plus the frame / header / menu from the full-modal
+// section through fhSheetKeyHtml fed the design's numbers), sheet-match / sheet-set1 / sheet-pbp (TEN-312 founder
+// requirement for TEN-338: the sheet body on the Match, Set 1 and Point by point scopes, OUR side fed through the real
+// model: the design's drawn counts as an api-tennis box score and point log, served through the sheet's own shard
+// caches, see oursSheetFed; captured with a TALL_H viewport on both sides). Plus the frame / header / menu from the full-modal
 // captures: the design capture (--only 03-key-factors) and the build capture (--only key) are RUN (child processes);
 // the source-palette variant of the build capture is this tool's own copy of its framing, checked against the build
 // capture's own night PNG (fullEquivalence in components.json). frame-corners / frame-edges / frame-sides are crops
@@ -54,6 +57,11 @@ if (!OUT) { console.error('usage: node tools/ten312-component-diff.mjs <outDir> 
 const FROZEN_NOW = Date.parse('2026-09-28T12:19:30+08:00');
 const TZ = 'Asia/Makassar';
 const VIEW_W = 1370, VIEW_H = 745, FIT_H = 760;
+// The Match / Set / Point-by-point bodies run past the 745px viewport inside the sheet's fixed, scrolling scrim, and
+// what lies below the fold is never painted (a clip there is blank on BOTH sides — a vacuous match). Those components
+// are captured with the viewport this tall, on both sides; the sheet's layout is width-driven (max-width 760, padding
+// 40 24, align flex-start), so only the painted area changes.
+const TALL_H = 2600;
 
 // The build capture's fixture (DF demoMatch / README §9) — copied verbatim from tools/ten312-build-capture.mjs.
 const FIXTURE = { id: 'ten312-fixture', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: null, p2Key: null,
@@ -96,7 +104,12 @@ const COMPONENTS = [
   { name: 'tooltip', steps: [tab('Form')], nightBg: 'var(--ma-card)', ourTab: 'form', pad: 32 },
   { name: 'sheet-head', steps: FORM_SHEET, nightBg: 'real', pad: 0 },
   { name: 'sheet-key', steps: FORM_SHEET, nightBg: 'real', pad: 0 },
+  // TEN-312 / TEN-338 scopes: our side is fed through the real model (fhSheetModel via the setstats / pbp shard path)
+  { name: 'sheet-match', steps: [...FORM_SHEET, { click: 'Match', nth: 0 }], nightBg: 'real', pad: 0 },     // = design capture P1c
+  { name: 'sheet-set1', steps: [...FORM_SHEET, { state: { maFormScope: 's1' } }], nightBg: 'real', pad: 0 },
+  { name: 'sheet-pbp', steps: [...FORM_SHEET, { click: 'Point by point', nth: 0 }], nightBg: 'real', pad: 0 },  // = design capture P1b
 ];
+const SHEET_FED = new Set(['sheet-match', 'sheet-set1', 'sheet-pbp']);
 
 // ---------------------------------------------------------------------------------------------------------------------
 async function freePort() { return new Promise((res, rej) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); }); s.on('error', rej); }); }
@@ -252,6 +265,30 @@ function pageCap() {
   return true;
 }
 
+// Design side, Point by point: the displayed set of the open sheet, as drawn — set tabs, the set's caption, and per
+// game the running score, who served (the ball's side), who won it (the digit drawn #e7e9ee), the LOST SERVE tags,
+// and the point tokens with their BP chips.
+function pagePbpReader() {
+  window.__cdPbpRead = () => {
+    const D = window.__cd, T = D.text;
+    const it = [...document.querySelectorAll('span.seg')].filter(D.vis).find((s) => T(s) === 'Key stats');
+    const box = it.parentElement.parentElement, col = box.children[2];
+    const track = col.children[0];
+    const pbpTabs = [...track.children].map((s) => ({ label: T(s), on: getComputedStyle(s).fontWeight === '700' }));
+    const lit = (el) => { const c = D.parse(getComputedStyle(el).color); return !!c && c[0] === 231 && c[1] === 233 && c[2] === 238; };
+    const sets = [...col.children].slice(1).map((sd) => ({ label: T(sd.children[0]), games: [...sd.children].slice(1).map((g) => {
+      const [L, C, R] = g.children[0].children, digits = C.querySelectorAll(':scope > span');
+      const aSpan = digits[0], bSpan = digits[2];
+      return { gA: T(aSpan), gB: T(bSpan), serverA: !!L.querySelector('svg'), serverB: !!R.querySelector('svg'),
+        aLost: /LOST SERVE/.test(T(L)), bLost: /LOST SERVE/.test(T(R)), aLit: lit(aSpan), bLit: lit(bSpan),
+        points: [...g.children[1].children].map((p) => { const chip = [...p.children].find((x) => T(x) === 'BP');
+          return { txt: T(p).slice(0, chip ? -2 : undefined).trim(), bp: !!chip }; }) };
+    }) }));
+    return { pbpTabs, sets };
+  };
+  return true;
+}
+
 // Design side: find the instance, prepare it (hide extra rows, force the tooltip open, empty the pop-up body), mark
 // what is shown and clipped, and return the content our side needs.
 function designProbe(name) {
@@ -345,6 +382,29 @@ function designProbe(name) {
     D.mark([sec], [sec]);
     return { data: { rows, w: sec.getBoundingClientRect().width }, bg: D.bgBehind(sec), lh: lh(sec) };
   }
+  // TEN-312 scopes (founder, TEN-338): the sheet body under the scope tabs — Match / Set 1 = the Dominance ratio card
+  // + the SERVICE / RETURN / POINTS WON sections; Point by point = the set tabs + the displayed set's game list.
+  // Every value / count / colour is read from the rendered design, so our side can be fed the same match.
+  if (name === 'sheet-match' || name === 'sheet-set1' || name === 'sheet-pbp') {
+    const box = sheetBox(), tabs = segItems(box.children[1]);
+    const want = name === 'sheet-match' ? 'Match' : name === 'sheet-set1' ? 'Set 1' : 'Point by point';
+    const on = tabs.filter((t) => t.on).map((t) => t.label);
+    if (on.length !== 1 || on[0] !== want) throw new Error(name + ': design scope is ' + JSON.stringify(on) + ', wanted ' + want);
+    const body = [...box.children].slice(2);
+    D.mark(body, body);
+    const out = { tabs, w: box.clientWidth };
+    if (name === 'sheet-pbp') Object.assign(out, window.__cdPbpRead());
+    else {
+      const drEl = body.find((e) => e.children.length === 3 && T(e.children[1]) === 'Dominance ratio');
+      out.dr = drEl ? { a: T(drEl.children[0]), b: T(drEl.children[2]) } : null;
+      out.sections = body.filter((e) => e !== drEl).map((sec) => ({ title: T(sec.children[0]), rows: [...sec.children].slice(1).map((r) => {
+        const g = r.children[0], bars = r.children[1];
+        return { label: T(g.children[1]), a: T(g.children[0].children[0]), aSub: T(g.children[0].children[1]), b: T(g.children[2].children[1]), bSub: T(g.children[2].children[0]),
+          aBar: bars.children[0].children[0].style.width, bBar: bars.children[1].children[0].style.width };
+      }) }));
+    }
+    return { data: out, bg: D.bgBehind(body[0]), lh: lh(body[0]) };
+  }
   throw new Error('designProbe: unknown ' + name);
 }
 
@@ -430,6 +490,99 @@ function oursMount(name, d, tmap) {
   throw new Error('oursMount: unknown ' + name);
 }
 
+// Our side, Match / Set 1 / Point by point, fed through the REAL model: the design's displayed counts become an
+// api-tennis box score ({ own, opp }, raw {won,total} + counts — the shape fhSheetModel reads), served as this
+// match's setstats shard (whole match + set 1) and pbp shard through the sheet's own caches and indices, so
+// fhSheetInit → matchStatsFromShard / setStatsForFormRow → fhSheetModel → fhSheetStatsHtml, and fhSheetLoadPbp →
+// fhPbpForA → buildPointByPointHtml, all run unmodified. Nothing the design does not draw is typed here, except the
+// service / return games (see games() below — the design never draws them, and the ratings need them).
+async function oursSheetFed(name, d) {
+  const D = window.__cd, EK = 'cd-ten312-ek', AK = 'cd-a', BK = 'cd-b';
+  const h = d.sheet, parts = h.meta.split(' · ');
+  const dm = /^(\d{1,2})\.(\d{1,2})\.?(\d{2}|\d{4})?$/.exec(parts[3] || '');
+  const yy = dm && dm[3] ? (dm[3].length === 2 ? '20' + dm[3] : dm[3]) : String(new Date().getFullYear());
+  const date = dm ? `${yy}-${dm[2].padStart(2, '0')}-${dm[1].padStart(2, '0')}` : null;
+  const sets = h.chips.map((x) => x.split('-').map(Number));
+  const frac = (s) => { const m = /^\((\d+)\/(\d+)\)$/.exec(String(s || '').trim()); return m ? { won: +m[1], total: +m[2] } : null; };
+  const RAW = { '1st serve points won': 'Service:1st serve points won', '2nd serve points won': 'Service:2nd serve points won',
+    'Break points saved': 'Service:Break Points Saved', '1st return points won': 'Return:1st return points won',
+    '2nd return points won': 'Return:2nd return points won', 'Break points converted': 'Return:Break Points Converted',
+    'Net points won': 'Points:Net points won', 'Service points won': 'Points:Service Points Won',
+    'Return points won': 'Points:Return Points Won', 'Total points won': 'Points:Total Points Won' };
+  const CNT = { 'Aces': 'Service:Aces', 'Double faults': 'Service:Double Faults', 'Winners': 'Points:Winners', 'Unforced errors': 'Points:Unforced errors' };
+  // Built by our model from the fed counts, so not fed: the design's own figure is compared, never copied in.
+  const DERIVED = ['Serve rating', 'Return rating', '1st serve %', 'Pressure points', 'Winners / unforced errors'];
+  // Service / return games: not drawn by the design. Its generator (maSheetFor) splits the scope's games G from the
+  // DRAWN score as A serves round(G/2), B the rest, and a side is broken once per break point its opponent converted
+  // (the DRAWN "Break points converted" count) — the same rule, applied to drawn numbers, so the ratings can be built.
+  const box = (data, games) => {
+    const rows = Object.fromEntries(data.sections.flatMap((s) => s.rows).map((r) => [r.label, r]));
+    const side = (k) => {
+      const o = { raw: {} };
+      for (const [lab, key] of Object.entries(RAW)) { const r = rows[lab]; const f = r && frac(k === 'a' ? r.aSub : r.bSub); if (f) o.raw[key] = f; }
+      for (const [lab, key] of Object.entries(CNT)) { const r = rows[lab]; const v = r && Number(k === 'a' ? r.a : r.b); if (r && Number.isFinite(v)) o[key] = v; }
+      return o;
+    };
+    const A = side('a'), B = side('b');
+    const G = games.reduce((s, x) => s + x[0] + x[1], 0), svA = Math.round(G / 2), svB = G - svA;
+    const cA = A.raw['Return:Break Points Converted'], cB = B.raw['Return:Break Points Converted'];
+    if (cA && cB) {
+      A.raw['Games:Service games won'] = { won: svA - cB.won, total: svA }; A.raw['Games:Return games won'] = { won: cA.won, total: svB };
+      B.raw['Games:Service games won'] = { won: svB - cA.won, total: svB }; B.raw['Games:Return games won'] = { won: cB.won, total: svA };
+    }
+    const labels = data.sections.flatMap((s) => s.rows.map((r) => r.label));
+    return { own: A, opp: B, fed: labels.filter((l) => RAW[l] || CNT[l]), notFed: labels.filter((l) => !RAW[l] && !CNT[l]),
+      unknown: labels.filter((l) => !RAW[l] && !CNT[l] && !DERIVED.includes(l)), gamesRule: { G, svA, svB } };
+  };
+  const shard = { p1Key: AK, p2Key: BK, match: null, sets: null };
+  const fed = {};
+  if (d.match) { const b = box(d.match, sets); shard.match = { p1: b.own, p2: b.opp }; fed.match = b; }
+  if (d.set1) { const b = box(d.set1, sets.slice(0, 1)); shard.sets = { 1: { p1: b.own, p2: b.opp } }; fed.set1 = b; }
+  // the point log, feed-shaped (build-point-by-point.js compactPbp): per game server / winner 'p1'|'p2', the running
+  // game score "a - b" and every point "x - y", both FIRST-PLAYER-FIRST (fhPbpFlip's contract). The design draws a
+  // point server-first (maFormGen genPoints: txt = server:receiver), so a B-served point is turned round here.
+  let pbp = null, pbpConflicts = null;
+  if (d.pbp && d.pbp.allSets) {
+    // the game's winner is the drawn running score (the lit digit); where the design's own LOST SERVE tag says the
+    // opposite, the log follows the score (our renderer derives LOST SERVE from winner != server) — listed, not hidden
+    pbpConflicts = d.pbp.allSets.flatMap((st) => st.games.map((g, i) => { const srvA = g.serverA, wonA = g.aLit && !g.bLit, tag = srvA ? g.aLost : g.bLost;
+      return tag === (srvA !== wonA) ? null : { set: st.set, game: i + 1, score: g.gA + '-' + g.gB, server: srvA ? 'A' : 'B', tagLostServe: tag, scoreSaysBroken: srvA !== wonA }; }).filter(Boolean));
+    const turn = (t) => { const m = /^(\S+):(\S+)$/.exec(t); return m ? m[2] + ' - ' + m[1] : t; };
+    pbp = { p1: h.aName, p2: h.bName, sets: d.pbp.allSets.map((st) => ({ set: st.set, games: st.games.map((g, i) => ({ g: i + 1,
+      server: g.serverA ? 'p1' : g.serverB ? 'p2' : null, winner: g.aLit && !g.bLit ? 'p1' : g.bLit && !g.aLit ? 'p2' : null,
+      score: g.gA + ' - ' + g.gB,
+      points: g.points.map((p) => Object.assign({ s: g.serverA ? p.txt.replace(':', ' - ') : turn(p.txt) }, p.bp ? { bp: true } : {})) })) })) };
+  }
+  // the sheet's own caches: indices (after their real load settles, so a late fetch cannot overwrite them) + shards
+  const [pi, mi, si] = await Promise.all([loadPbpIndex(), loadMatchStatsIndex(), loadSetStatsIndex()]);
+  if (pbp) pi.add(EK); else pi.delete(EK);
+  if (shard.match) mi.add(EK); else mi.delete(EK);
+  if (shard.sets) si.add(EK); else si.delete(EK);
+  _setStatsShards[EK] = shard; _pbpShards[EK] = pbp;
+  const r = { mid: 'cd-sheet-fed', sets, pS: +h.aSets, oS: +h.bSets, won: +h.aSets > +h.bSets, price: +h.aPrice, oppPrice: +h.bPrice,
+    tourn: parts[0], surface: parts[1], round: parts[2], date, ek: EK };
+  fhStateFor(_aM).sheetMap['cd-sheet-fed'] = { r, aName: h.aName, aKey: AK, bName: h.bName, bKey: BK, noYear: true };
+  fhOpenSheet('cd-sheet-fed');
+  const S = _fh.sheetBody, wait = async (ok, what) => { for (let i = 0; i < 200 && !ok(); i++) await new Promise((res) => setTimeout(res, 25)); if (!ok()) throw new Error(name + ': ' + what); };
+  await wait(() => !S.matchLoading && !S.setsLoading && !S.pbpLoading, 'sheet never finished loading');
+  const scope = name === 'sheet-match' ? 'match' : name === 'sheet-set1' ? 1 : 'pbp';
+  fhSheetScope(scope, 'pop');
+  if (scope === 'pbp') await wait(() => !!S.pbp && !!document.querySelector('#fhSheetBody .fh-pbp'), 'pbp never rendered');
+  if (scope === 1 && !(S.sets && S.sets[1])) throw new Error(name + ': our Set 1 scope has no set stats');
+  const body = document.getElementById('fhSheetBody'), els = [...body.children].slice(1);
+  D.mark(els, els);
+  // what our model computed from the fed counts (every row, both sides), for the value-by-value comparison
+  const j = scope === 'match' ? S.match : scope === 1 ? S.sets[1] : null;
+  const M = j ? fhSheetModel(j) : null;
+  const ours = M ? { dr: M.dr.map((x) => x.txt), sections: M.sections.map((s) => ({ title: s.title, rows: s.rows.map((x) => ({ label: x.label, a: x.a.txt, aSub: x.a.sub, b: x.b.txt, bSub: x.b.sub,
+    aBar: fhStatBarWidth(x.kind, x.a.v, x.b.v, x.k), bBar: fhStatBarWidth(x.kind, x.b.v, x.a.v, x.k) })) })) } : null;
+  const f = scope === 'match' ? fed.match : scope === 1 ? fed.set1 : null;
+  return { bgReal: D.bgBehind(els[0]), lh: getComputedStyle(els[0]).lineHeight, fedDate: date, tabs: fhSheetTabs(S).map((t) => ({ label: t.label, on: t.on, disabled: !!t.disabled })),
+    fedBox: f ? { own: f.own, opp: f.opp, gamesRule: f.gamesRule } : null, fedLabels: f && f.fed, notFedLabels: f && f.notFed, unknownLabels: f && f.unknown,
+    ours, pbpFed: scope === 'pbp' ? pbp : undefined, pbpConflicts: scope === 'pbp' ? pbpConflicts : undefined, pbpOrientation: scope === 'pbp' ? fhPbpAIsFirst(S.pbp, S) : undefined,
+    pbpText: scope === 'pbp' ? D.text(document.querySelector('#fhSheetBody .fh-pbp')) : undefined };
+}
+
 // The build capture's full-modal framing (tools/ten312-build-capture.mjs, the per-tab block), verbatim in effect.
 function oursFrameFull(refW, FIT_H, VIEW_W, VIEW_H) {
   const ov = document.getElementById('analysisModal'), m = ov.querySelector('.modal-analysis'), body = m.querySelector('.aanalysis-body-wrap');
@@ -472,7 +625,7 @@ async function main() {
   fs.mkdirSync(OUT, { recursive: true });
   const dirs = Object.fromEntries(['ref', 'source', 'night', 'full'].map((k) => [k, path.join(OUT, k)]));
   for (const k of ['ref', 'source', 'night']) { fs.rmSync(dirs[k], { recursive: true, force: true }); fs.mkdirSync(dirs[k], { recursive: true }); }
-  const meta = { tool: 'tools/ten312-component-diff.mjs', frozenNow: new Date(FROZEN_NOW).toISOString(), timezone: TZ, viewport: [VIEW_W, VIEW_H], raster: 'software',
+  const meta = { tool: 'tools/ten312-component-diff.mjs', frozenNow: new Date(FROZEN_NOW).toISOString(), timezone: TZ, viewport: [VIEW_W, VIEW_H], tallViewport: { height: TALL_H, components: [...SHEET_FED] }, raster: 'software',
     palette: FIXTURE_SOURCE_PALETTE, components: {}, full: {} };
 
   // ---- 1. the existing full-modal captures (their own Chrome, one after the other) ----
@@ -512,6 +665,7 @@ async function main() {
     fs.writeFileSync(file, Buffer.from(shot.data, 'base64'));
   };
   const wanted = COMPONENTS.filter((k) => !ONLY || ONLY.has(k.name));
+  const viewH = (hh) => c.send('Emulation.setDeviceMetricsOverride', { width: VIEW_W, height: hh, deviceScaleFactor: 1, mobile: false });
 
   // ---- 2a. design side ----
   await c.send('Page.navigate', { url: `http://127.0.0.1:${port}/${HANDOFF_REL}/${encodeURIComponent(DESIGN)}` });
@@ -519,10 +673,11 @@ async function main() {
   while (!(await ev(`!!document.querySelector('.nav') && document.readyState === 'complete'`).catch(() => false))) {
     if (Date.now() - t0 > 60000) throw new Error('design did not mount within 60 s'); await sleep(250);
   }
-  await ev(call(pageCommon)); await ev(call(pageCap));
+  await ev(call(pageCommon)); await ev(call(pageCap)); await ev(call(pagePbpReader));
   await ev(`document.fonts.ready.then(() => document.fonts.status)`);
   const design = {};
   for (const k of wanted) {
+    await viewH(SHEET_FED.has(k.name) ? TALL_H : VIEW_H);
     await ev(`__cap.reset()`);
     for (const st of k.steps) {
       if (st.state) await ev(`__cap.set(${JSON.stringify(st.state)})`);
@@ -530,7 +685,21 @@ async function main() {
       await ev(`__cd.settle()`);
     }
     await ev(`document.fonts.ready`);
+    // Point by point: read every set's log as the design draws it (its own set tabs), then back to Set 1 for the capture
+    let pbpAll = null;
+    if (k.name === 'sheet-pbp') {
+      const first = await ev(`__cdPbpRead()`);
+      pbpAll = [];
+      for (let i = 1; i <= first.pbpTabs.length; i++) {
+        await ev(`__cap.set({ maFormPbpSet: 'set${i}' })`); await ev(`__cd.settle()`);
+        const r = await ev(`__cdPbpRead()`);
+        if (!r.pbpTabs[i - 1].on || r.sets.length !== 1) throw new Error('sheet-pbp: design set ' + i + ' not shown alone');
+        pbpAll.push(Object.assign({ set: i }, r.sets[0]));
+      }
+      await ev(`__cap.set({ maFormPbpSet: 'set1' })`); await ev(`__cd.settle()`);
+    }
     const p = await ev(call(designProbe, k.name));
+    if (pbpAll) p.data.allSets = pbpAll;
     await ev(`__cd.isolate(${JSON.stringify(p.bg.color)})`);
     await ev(`__cd.scroll()`); await ev(`__cd.settle()`);
     const clip = await ev(`__cd.clipRect(${k.pad})`);
@@ -540,6 +709,7 @@ async function main() {
     console.log(`design  ${k.name.padEnd(16)} ${clip.w}x${clip.h}  bg ${p.bg.color}`);
     await ev(`__cd.undo()`);
   }
+  await viewH(VIEW_H);
   // sheet-key / seg-sheet mount inside our sheet, which needs the sheet header's data too
   const sheetData = design['sheet-head'] ? design['sheet-head'].data : null;
 
@@ -578,12 +748,16 @@ async function main() {
     }
     for (const k of wanted) {
       await ev(`fhCloseSheet(), true`);
+      await viewH(SHEET_FED.has(k.name) ? TALL_H : VIEW_H); await sleep(SHEET_FED.has(k.name) ? 300 : 0);
       if (k.ourTab) { await ev(`aShowTab(${JSON.stringify(k.ourTab)}), true`); await sleep(1500); await ev(`__cd.settle()`); }
-      const d = k.name === 'seg-sheet' || k.name === 'sheet-head' || k.name === 'sheet-key'
+      const d = SHEET_FED.has(k.name) ? null : k.name === 'seg-sheet' || k.name === 'sheet-head' || k.name === 'sheet-key'
         ? { sheet: sheetData || (() => { throw new Error(k.name + ' needs sheet-head in the run'); })(), key: design['sheet-key'] && design['sheet-key'].data }
         : design[k.name].data;
       if (k.name === 'seg-sheet') d.sheet = Object.assign({}, sheetData, { tabs: design['seg-sheet'].data.items });
-      const o = await ev(call(oursMount, k.name, d, tmap));
+      const o = SHEET_FED.has(k.name)
+        ? await ev(call(oursSheetFed, k.name, { sheet: sheetData || (() => { throw new Error(k.name + ' needs sheet-head in the run'); })(),
+          match: design['sheet-match'] && design['sheet-match'].data, set1: design['sheet-set1'] && design['sheet-set1'].data, pbp: design['sheet-pbp'] && design['sheet-pbp'].data }))
+        : await ev(call(oursMount, k.name, d, tmap));
       let bg = pal === 'source' ? design[k.name].bg.color : k.nightBg === 'real' ? o.bgReal.color : k.nightBg;
       if (/^var\(/.test(bg)) bg = await ev(`(() => { const s = document.createElement('span'); s.style.background = ${JSON.stringify(bg)}; document.getElementById('analysisModal').appendChild(s); const v = getComputedStyle(s).backgroundColor; s.remove(); return v; })()`);
       await ev(`__cd.isolate(${JSON.stringify(bg)})`);
@@ -596,6 +770,7 @@ async function main() {
       meta.components[k.name][pal] = { bg, bgReal: o.bgReal, lineHeight: o.lh, clip, phase, extra: Object.fromEntries(Object.entries(o).filter(([x]) => !['bgReal', 'lh'].includes(x))) };
       console.log(`${pal.padEnd(7)} ${k.name.padEnd(16)} ${clip.w}x${clip.h}  bg ${bg}`);
       await ev(`__cd.undo()`);
+      await viewH(VIEW_H);
     }
     await ev(`fhCloseSheet(), true`);
   }

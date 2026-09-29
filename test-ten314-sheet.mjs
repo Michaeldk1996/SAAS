@@ -177,10 +177,13 @@ test('a Playing-style meeting (full names) joins its career-history row (short n
 // shows over the next match — review 2026-09-28).
 test('a late fetch opens nothing once the modal is closed, reopened, or a later row was clicked', async () => {
   const O = rowOpener([{ eventKey: 5, date: '2026-01-01', opponent: 'X' }], { slow: true });
-  O.click({ key: 1, name: 'A', ek: 5, opp: 'X' }); O.close(); await tick();
+  O.click({ key: 1, name: 'A', ek: 5, opp: 'X' }); O.close(); for (let i = 0; i < 6; i++) await tick();   // well past the 5 ms fetch
   assert.deepEqual(O.opened, [], 'closed');
   const P = rowOpener([{ eventKey: 5, date: '2026-01-01', opponent: 'X' }, { eventKey: 6, date: '2026-01-02', opponent: 'Y' }], { slow: true });
-  P.click({ key: 1, name: 'A', ek: 5, opp: 'X' }); P.click({ key: 1, name: 'A', ek: 6, opp: 'Y' }); await tick();
+  P.click({ key: 1, name: 'A', ek: 5, opp: 'X' }); P.click({ key: 1, name: 'A', ek: 6, opp: 'Y' });
+  // wait on the outcome, not a fixed 10 ms: under the CI suite's load the 5 ms fake fetch can land later (flaked 2026-09-29)
+  for (let i = 0; i < 100 && !P.opened.length; i++) await tick();
+  await tick(); await tick();   // and give the first (stale) request time to land too, so it could only fail by opening
   assert.deepEqual(P.opened, ['career:6'], 'only the last click opens');
   assert.match(slice('closeAnalysisModal'), /fhCloseSheet\(\)/);
   assert.match(slice('openAnalysisModal'), /fhCloseSheet\(\); _maMsSheet = null;/);

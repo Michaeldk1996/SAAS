@@ -266,3 +266,26 @@ test('Form list: the sticky header and its card share the design shade', () => {
   assert.ok(head, 'the rows header default');
   assert.equal(decl(card[1]).background, `var(--ma-s-${head[1]}, var(--surface))`);
 });
+
+// DoD item 8 (founder 2026-09-29): the modal draws ONE tooltip component, the design's `.elotip-pop` (DF L950). The
+// positioned mode (data-aotip: Odds, Weather, Market edge, News counts) creates the same class and carries no styling
+// of its own; News's group count uses it instead of a native title.
+// Mutations: aOddsTipEl styles its own box again (inline background/border), or the News count goes back to title=.
+test('one tooltip component: the positioned mode is the shared .elotip-pop, and News uses it', () => {
+  const el = /\nfunction aOddsTipEl\(\)\{[\s\S]*?\n\}\n/.exec(html);
+  assert.ok(el, 'aOddsTipEl');
+  assert.match(el[0], /t\.className = 'elotip-pop ma-tip-float';/);
+  assert.ok(!/cssText|background:|border:/.test(el[0]), 'no tooltip styling outside the shared .elotip-pop rule');
+  assert.equal((html.match(/\n  \.elotip-pop\{/g) || []).length, 1, 'one CSS source');
+  // review: the positioned mode must be VISIBLE (the base .elotip-pop is opacity 0 / hidden until :hover) — mutation:
+  // drop `opacity:1; visibility:visible;` from the float rule (every Odds / Weather / News tooltip invisible)
+  const fl = /\.elotip-pop\.ma-tip-float\{([^}]*)\}/.exec(html);
+  assert.ok(fl, 'the float rule');
+  assert.deepEqual([decl(fl[1]).position, decl(fl[1]).opacity, decl(fl[1]).visibility], ['fixed', '1', 'visible']);
+  // a plain-text body gets the same mono 11px as maTipHtml — mutation: drop the wrap in aOddsTipShow
+  assert.match(slice('aOddsTipShow'), /\/\^\\s\*<\/\.test\(body\) \? body : `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">\$\{body\}<\/span>`/);
+  // News arms the shared listener itself (only News opened) — mutation: drop the call from A_TAB_BUILD.news
+  assert.match(html, /  news\(m\)\{[\s\S]{0,400}?if \(typeof initAOddsTips === 'function'\) initAOddsTips\(\);/);
+  assert.match(html, /<span class="anews-gcount" tabindex="0" data-aotip="/);
+  assert.ok(!/class="anews-gcount" title=/.test(html));
+});
