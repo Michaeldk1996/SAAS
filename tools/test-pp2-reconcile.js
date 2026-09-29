@@ -25,10 +25,29 @@ const _SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
 const SPEED_MAP = fs.existsSync(_SPEED_MAP_PATH)
   ? JSON.parse(fs.readFileSync(_SPEED_MAP_PATH, 'utf8')) : null;
 
+/** N4 · evaluate a shipped COURT_CONDITIONS table + courtSpeedCategory() from source text. */
+function speedSchemeFromSource(src) {
+  const i = src.indexOf('const COURT_CONDITIONS = {');
+  const j = src.indexOf('\n};', i);
+  const f = src.indexOf('function courtSpeedCategory(speed) {');
+  const g = src.indexOf('\n}', f);
+  if (i < 0 || j < 0 || f < 0 || g < 0) throw new Error('COURT_CONDITIONS / courtSpeedCategory not found');
+  // eslint-disable-next-line no-new-func
+  return new Function(src.slice(i, j + 3) + '\n' + src.slice(f, g + 2) +
+    '\nreturn { cc: COURT_CONDITIONS, cat: courtSpeedCategory };')();
+}
+function speedSchemeFrom(file) {
+  return speedSchemeFromSource(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+}
+const DASH_SPEED = speedSchemeFrom('bsp-consult-dashboard.html');
+
 // ─── load the module under test into a window shim ──────────────────────────
 function loadModule(profiles, extra) {
   const sandbox = Object.assign(
-    { FEATURE_PP2: true, playerProfiles: { players: profiles }, courtSpeedMap: SPEED_MAP },
+    { FEATURE_PP2: true, playerProfiles: { players: profiles }, courtSpeedMap: SPEED_MAP,
+      // N4: on the page the profile bands through the dashboard's own
+      // COURT_CONDITIONS + courtSpeedCategory; the shim supplies the same two.
+      COURT_CONDITIONS: DASH_SPEED.cc, courtSpeedCategory: DASH_SPEED.cat },
     extra || {});
   global.window = sandbox;
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
@@ -574,33 +593,99 @@ mustFail('future-date gate would catch a planted row', () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// 7 · SPEED BANDS (ruling 4) — derived from real Tennis Abstract values.
+// 7 · COURT-SPEED LABEL — N4 (founder 2026-09-28): ONE scheme site-wide, the
+// pipeline 3-band courtSpeedCategory() on the 0-100 COURT_CONDITIONS index.
 // ════════════════════════════════════════════════════════════════════════════
-console.log('\n7 · Court-speed bands');
+console.log('\n7 · Court-speed label (N4, one scheme)');
 
-check('five bands, monotonic, covering the real AS range', () => {
-  assert.strictEqual(I.SPEED_BANDS.length, 5);
-  for (let i = 1; i < I.SPEED_BANDS.length; i++) {
-    assert(I.SPEED_BANDS[i].max > I.SPEED_BANDS[i - 1].max, 'bands not monotonic');
-  }
-  assert.strictEqual(I.speedBandFor(0.41).id, 'vslow', 'min AS must land in Very slow');
-  assert.strictEqual(I.speedBandFor(1.42).id, 'vfast', 'max AS must land in Very fast');
-  assert.strictEqual(I.speedBandFor(null), null, 'a missing speed must not be banded');
-});
-
-// The bands must actually PARTITION the 64 real venues we hold, not just exist.
-check('bands partition the 64 real COURT_CONDITIONS venues into 5 non-empty groups', () => {
+// Where each surface's word comes from, read out of the SHIPPED sources:
+//   modal Tournament card, Key factors, Weather pace tile -> the pipeline stamps
+//     match.courtSpeed = { ...COURT_CONDITIONS[k], category: courtSpeedCategory(speed) }
+//     and all three render `.category` (asserted below, not assumed);
+//   Tournament Report -> the dashboard's copy of the table and the function;
+//   player profile     -> player-profile-v2.js speedBandFor(venue).
+const PIPE_SPEED = speedSchemeFrom('bsp-pipeline.js');
+const DASH_SPEED_SRC = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+const PIPE_HINTS = (() => {
   const src = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
-  const i = src.indexOf('const COURT_CONDITIONS = {');
+  const i = src.indexOf('const TOURNAMENT_VENUE_HINTS = {');
   const j = src.indexOf('\n};', i);
-  const blk = src.slice(i, j);
-  const vals = [...blk.matchAll(/abstractSpeed:\s*([0-9.]+)/g)].map(m => parseFloat(m[1]));
-  assert.strictEqual(vals.length, 64, 'expected 64 real AS values, got ' + vals.length);
-  const tally = {};
-  vals.forEach(v => { const b = I.speedBandFor(v); tally[b.id] = (tally[b.id] || 0) + 1; });
-  I.SPEED_BANDS.forEach(b => assert(tally[b.id] > 0, 'band ' + b.id + ' is empty'));
-  console.log('        ' + I.SPEED_BANDS.map(b => b.label + '=' + tally[b.id]).join('  '));
+  // eslint-disable-next-line no-new-func
+  return new Function('return ' + src.slice(i + 'const TOURNAMENT_VENUE_HINTS = '.length, j + 2))();
+})();
+
+/** Per venue: the pipeline word, the Report word, the profile word. Returns the disagreements. */
+function n4Disagreements(mod, pipe, dash) {
+  const out = [];
+  Object.keys(pipe.cc).forEach((k) => {
+    const surface = (PIPE_HINTS[k] || {}).surface || null;
+    const modal = pipe.cat(pipe.cc[k].speed);                       // Tournament card / Key factors / Weather tile
+    const report = dash.cc[k] ? dash.cat(dash.cc[k].speed) : null; // Tournament Report
+    const b = mod.speedBandForRow({ venue: k, surface: surface, speed: pipe.cc[k].abstractSpeed });
+    const profile = b ? b.label : null;
+    if (!(modal && modal === report && report === profile)) out.push(`${k}: modal=${modal} report=${report} profile=${profile}`);
+  });
+  return out;
+}
+
+check('N4: the profile carries three bands and no cut-offs of its own', () => {
+  assert.deepStrictEqual(I.SPEED_BANDS.map(b => b.label), ['Slow', 'Medium', 'Fast']);
+  I.SPEED_BANDS.forEach(b => assert(!('max' in b), 'band ' + b.id + ' carries its own cut-off'));
+  assert.strictEqual(I.speedBandFor(null), null, 'a missing venue must not be banded');
+  assert.strictEqual(I.speedBandFor('Nowhere Open'), null, 'an unrated venue must not be banded');
 });
+
+check('N4: the three renderers print the pipeline stamp, and the stamp is courtSpeedCategory()', () => {
+  const pipeSrc = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
+  assert.strictEqual((pipeSrc.match(/category: courtSpeedCategory\(courtConditions\.speed\)/g) || []).length, 3,
+    'the three match builders must each stamp category from courtSpeedCategory()');
+  assert(/<div class="k">Court speed<\/div>[^\n]*cs2\.category/.test(DASH_SPEED_SRC), 'modal Tournament card no longer prints cs2.category');
+  assert(/<span>court speed<\/span><em>\$\{psEsc\(cs\.category/.test(DASH_SPEED_SRC), 'Key factors no longer prints cs.category');
+  assert(/spdLabel = cs\.category/.test(DASH_SPEED_SRC), 'Weather pace tile no longer reads cs.category');
+  assert(/const cat = courtSpeedCategory\(c\.speed\);/.test(DASH_SPEED_SRC), 'Tournament Report registry no longer calls courtSpeedCategory()');
+});
+
+check('N4: for every venue, modal, Key factors, Weather tile, Tournament Report and profile print the same label', () => {
+  const n = Object.keys(PIPE_SPEED.cc).length;
+  assert.strictEqual(n, 64, 'expected 64 rated venues, got ' + n);
+  const bad = n4Disagreements(I, PIPE_SPEED, DASH_SPEED);
+  assert.strictEqual(bad.length, 0, bad.length + ' venues disagree: ' + bad.slice(0, 5).join('; '));
+  const tally = {};
+  Object.keys(PIPE_SPEED.cc).forEach(k => { const l = I.speedBandFor(k).label; tally[l] = (tally[l] || 0) + 1; });
+  I.SPEED_BANDS.forEach(b => assert(tally[b.label] > 0, 'band ' + b.label + ' is empty'));
+  console.log('        ' + n + ' venues, 0 disagreements  ' + I.SPEED_BANDS.map(b => b.label + '=' + tally[b.label]).join('  '));
+});
+
+// Real SOURCE mutants: each reloads the module (or the Report's function) from a
+// mutated copy of the shipped text and must turn the per-venue check red.
+function n4Mutant(name, file, from, to) {
+  mustFail('mutant · ' + name, () => {
+    const src = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.strictEqual(src.split(from).length - 1, 1, 'mutant anchor not found exactly once: ' + from.slice(0, 50));
+    const mutated = src.replace(from, to);
+    let mod = I, dash = DASH_SPEED;
+    if (file === 'player-profile-v2.js') {
+      const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, courtSpeedMap: SPEED_MAP,
+        COURT_CONDITIONS: DASH_SPEED.cc, courtSpeedCategory: DASH_SPEED.cat };
+      // eslint-disable-next-line no-new-func
+      new Function('window', mutated)(sb);
+      mod = sb.PlayerProfileV2._internals;
+    } else {
+      dash = speedSchemeFromSource(mutated);
+    }
+    const bad = n4Disagreements(mod, PIPE_SPEED, dash);
+    assert.strictEqual(bad.length, 0, bad.length + ' venues disagree');
+  });
+}
+n4Mutant('the retired grass-is-Very-fast rule comes back (as Fast)', 'player-profile-v2.js',
+  '    return m ? speedBandFor(m.venue) : null;',
+  "    if (m && String(m.surface || '').toLowerCase() === 'grass') return SPEED_BANDS[2];\n    return m ? speedBandFor(m.venue) : null;");
+n4Mutant('the profile bands off raw Abstract Speed with its own cut-offs', 'player-profile-v2.js',
+  '    return bandByLabel(s.cat(c.speed));',
+  "    return bandByLabel(c.abstractSpeed <= 0.938 ? 'Slow' : c.abstractSpeed <= 1.076 ? 'Medium' : 'Fast');");
+n4Mutant('the Report copy of courtSpeedCategory drifts one index point (68 -> 67)', 'bsp-consult-dashboard.html',
+  "return speed <= 43 ? 'Slow' : speed <= 68 ? 'Medium' : 'Fast';",
+  "return speed <= 43 ? 'Slow' : speed <= 67 ? 'Medium' : 'Fast';");
 
 // ════════════════════════════════════════════════════════════════════════════
 // 8 · HEADLINE SIZE RULE (README §5)
@@ -1902,46 +1987,28 @@ mustFail('the reconciliation would catch a band that dropped rows', () => {
   assert.strictEqual(300 + 24, 337, '300 banded + 24 unbanded != 337 rows');
 });
 
-// ─── FOUNDER RULING 2026-09-16 · grass is Very fast, headline is a band ──────
-// Two rules, locked together because they arrived as one ruling:
-//   (1) a Grass row lands in Very fast REGARDLESS of its Abstract rating;
-//   (2) the Court speed box headline is always one of the five band labels or a
+// ─── N4 (2026-09-28) retired the 2026-09-16 grass rule; the headline rule stays ─
+//   (1) every banded CAREER row carries its venue's site-wide label — grass
+//       included, which now bands off its own index (Newport/Eastbourne Slow);
+//   (2) the Court speed box headline is always one of the band labels or a
 //       dash — never a surface name (it used to read "Grass courts").
-checkCareer('every Grass row lands in Very fast, whatever its Abstract rating', () => {
-  let grassRows = 0, offRating = 0, players = 0;
+checkCareer('every banded career row carries its venue\'s site-wide label (grass included)', () => {
+  let rows = 0, grassRows = 0, grassNotFast = 0, unbanded = 0;
   for (const k of Object.keys(PLAYERS)) {
     const p = Object.assign({ key: k }, PLAYERS[k]);
-    const rows = I.speedRows(p);
-    if (!rows.length) continue;
-    // §8.1 moved this population from the market shard (surface title-cased) to the
-    // career spine (lower-cased). The check matches either, so it keeps testing the
-    // RULE rather than the casing of whichever store currently feeds it.
-    const grass = rows.filter(m => String(m.surface || '').toLowerCase() === 'grass');
-    if (!grass.length) continue;
-    players++;
-    grass.forEach((m) => {
-      grassRows++;
+    I.speedRows(p).forEach((m) => {
       const b = I.speedBandForRow(m);
-      assert(b, `${p.name}: a Grass row was left unbanded (speed=${m.speed})`);
-      assert.strictEqual(b.id, 'vfast',
-        `${p.name}: Grass row at ${m.event || m.date} banded ${b.label}, not Very fast`);
-      // Count the rows whose raw Abstract reading would NOT have been vfast, so
-      // the check is provably doing work rather than agreeing by coincidence.
-      const raw = I.speedBandFor(m.speed);
-      if (!raw || raw.id !== 'vfast') offRating++;
+      if (!b) { unbanded++; assert(!m.venue || !PIPE_SPEED.cc[m.venue], `${p.name}: rated venue ${m.venue} left unbanded`); return; }
+      rows++;
+      assert.strictEqual(b.label, PIPE_SPEED.cat(PIPE_SPEED.cc[m.venue].speed),
+        `${p.name}: ${m.event || m.date} at ${m.venue} banded ${b.label}`);
+      if (String(m.surface || '').toLowerCase() === 'grass') { grassRows++; if (b.label !== 'Fast') grassNotFast++; }
     });
   }
-  assert(grassRows > 0, 'no Grass rows in the whole file — this check never ran');
-  assert(offRating > 0,
-    `all ${grassRows} Grass rows were already Very fast by rating — the override is untested here`);
-  console.log(`        ${grassRows} Grass rows across ${players} players, all Very fast; ` +
-    `${offRating} of them (${(100 * offRating / grassRows).toFixed(1)}%) would have banded ` +
-    'elsewhere on rating alone');
-});
-mustFail('the grass rule would catch a row banded off its rating', () => {
-  // A real pre-ruling grass reading: Abstract 0.90 falls in Slow, not Very fast.
-  const b = I.speedBandFor(0.90);
-  assert.strictEqual(b.id, 'vfast', `Grass row banded ${b.label}, not Very fast`);
+  assert(rows > 0, 'no banded rows in the whole file — this check never ran');
+  assert(grassNotFast > 0, `all ${grassRows} grass rows are Fast — the grass-rule retirement is untested here`);
+  console.log(`        ${rows} banded rows (${unbanded} unbanded); ${grassRows} grass rows, ` +
+    `${grassNotFast} of them Slow/Medium off their venue`);
 });
 
 checkCareer('the Court speed headline is a band name or a dash, never a surface', () => {
@@ -2037,8 +2104,8 @@ checkCareer('a sub-minimum band dashes its rate and is not openable', () => {
   console.log(`        ${found} players with a sub-minimum band: listed, dashed, not openable`);
 });
 mustFail('the openability check would catch a clickable thin band', () => {
-  const html = '<div data-pp2="speed-band" data-v="vfast">';
-  assert(html.indexOf('data-pp2="speed-band" data-v="vfast"') < 0, 'thin band vfast is still clickable');
+  const html = '<div data-pp2="speed-band" data-v="fast">';
+  assert(html.indexOf('data-pp2="speed-band" data-v="fast"') < 0, 'thin band fast is still clickable');
 });
 
 // Units are the LISTED rows only, and the footer says so. The two scopes living

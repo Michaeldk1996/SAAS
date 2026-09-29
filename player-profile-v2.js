@@ -19,8 +19,8 @@
 //   3. DNA radar  = plot is pct/100, tour ring flat at 0.5, labels show the RAW
 //      rating.  dna-apitennis-ratings.json `pct` is already a percentile
 //      (p2->0, p98->100), so no new normalisation is invented.
-//   4. Court speed= derived from the REAL Tennis Abstract speed values we hold
-//      (COURT_CONDITIONS.abstractSpeed, 64 venues).  See SPEED_BANDS.
+//   4. Court speed= SUPERSEDED by N4 (2026-09-28): the site's one 3-band scheme,
+//      courtSpeedCategory() on the 0-100 COURT_CONDITIONS index.  See SPEED_BANDS.
 //   5. Taxonomy   = archetype v5.1 (v5.2 does not exist in this repo).
 //   6. Winners/UE = api-tennis native fields, not Match Charting Project.
 //   7. Market     = Pinnacle closing, falling back to archive-Bet365 closing,
@@ -158,53 +158,54 @@
     return n.subjSets + ENDASH + n.oppSets;
   }
 
-  // ─── RULING 4 · court-speed bands ──────────────────────────────────────────
-  // The design needs five bands; the repo's only prior definition has three
-  // (courtSpeedCategory: <=43 Slow, <=68 Medium, else Fast) over a DERIVED
-  // 0-100 index. Founder ruled the bands come from Abstract Speed — which we
-  // genuinely hold: COURT_CONDITIONS carries a real per-venue `abstractSpeed`
-  // (Tennis Abstract AS, 64 venues, 59 of them 2025 values) plus per-year
-  // as2023/as2024/as2025.
+  // ─── RULING N4 · court-speed label = the pipeline 3-band (founder 2026-09-28) ─
+  // Every surface on the site labels court speed with ONE scheme:
+  // courtSpeedCategory() on the 0-100 COURT_CONDITIONS index (<= 43 Slow,
+  // <= 68 Medium, else Fast). The modal Tournament card, Key factors and the
+  // Weather pace tile read the pipeline's stamp of it; the Tournament Report
+  // calls the dashboard's copy. This module calls that same dashboard copy on
+  // the same dashboard table, so it holds NO cut-offs of its own — a cut-off
+  // written here is a second scheme waiting to drift.
   //
-  // Cut-offs are the QUINTILES of those 64 real AS values, computed once and
-  // frozen here so a venue added later cannot silently re-band a player's
-  // history. Same disclosure posture as the existing terciles: a derived split
-  // of real data, labelled as such, not presented as a sourced band.
-  //   n per band: 13 / 13 / 12 / 13 / 13
+  // RETIRED by N4: the five Abstract-Speed quintile bands (Very slow ... Very
+  // fast, 0.752/0.938/1.076/1.188) and the 2026-09-16 "grass is always Very
+  // fast" rule. A grass venue now bands off its own index like any other, and a
+  // grass row with no rated venue is unbanded and counted out loud like any
+  // other. Evidence: TEN-312 document `n4-court-speed` (64 venues).
   var SPEED_BANDS = [
-    { id: 'vslow', label: 'Very slow', max: 0.752 },
-    { id: 'slow', label: 'Slow', max: 0.938 },
-    { id: 'med', label: 'Medium', max: 1.076 },
-    { id: 'fast', label: 'Fast', max: 1.188 },
-    { id: 'vfast', label: 'Very fast', max: Infinity }
+    { id: 'slow', label: 'Slow' },
+    { id: 'med', label: 'Medium' },
+    { id: 'fast', label: 'Fast' }
   ];
-  var SPEED_BASIS = 'Tennis Abstract speed, quintiles of 64 rated venues';
-  function speedBandFor(abstractSpeed) {
-    if (abstractSpeed == null || !isFinite(abstractSpeed)) return null;
-    for (var i = 0; i < SPEED_BANDS.length; i++) {
-      if (abstractSpeed <= SPEED_BANDS[i].max) return SPEED_BANDS[i];
-    }
-    return SPEED_BANDS[SPEED_BANDS.length - 1];
+  var SPEED_BASIS = 'Court-speed index (0' + ENDASH + '100) of 64 rated venues: Slow ≤ 43 ' +
+    MIDDOT + ' Medium ≤ 68 ' + MIDDOT + ' Fast';
+  /**
+   * The dashboard's COURT_CONDITIONS and courtSpeedCategory are top-level
+   * declarations in an earlier classic script, so on the page they resolve as
+   * bare globals; `window.*` is the injection point for a harness. Absent
+   * either, nothing is banded — never a guessed band.
+   */
+  function speedScheme() {
+    /* global COURT_CONDITIONS, courtSpeedCategory */
+    var w = (typeof window !== 'undefined') ? window : {};
+    var cc = (typeof COURT_CONDITIONS !== 'undefined') ? COURT_CONDITIONS : (w.COURT_CONDITIONS || null);
+    var cat = (typeof courtSpeedCategory === 'function') ? courtSpeedCategory
+      : (typeof w.courtSpeedCategory === 'function' ? w.courtSpeedCategory : null);
+    return (cc && cat) ? { cc: cc, cat: cat } : null;
   }
-  function bandById(id) {
-    for (var i = 0; i < SPEED_BANDS.length; i++) if (SPEED_BANDS[i].id === id) return SPEED_BANDS[i];
+  function bandByLabel(label) {
+    for (var i = 0; i < SPEED_BANDS.length; i++) if (SPEED_BANDS[i].label === label) return SPEED_BANDS[i];
     return null;
   }
-
-  // ─── RULING · grass is always Very fast (founder, 2026-09-16) ───────────────
-  // Grass courts are classified Very fast REGARDLESS of their Tennis Abstract
-  // rating. The quintile cut-offs above still govern every other venue. This is
-  // deliberately unconditional: it also bands the grass rows we hold no Abstract
-  // reading for, which previously fell into the `unbanded` shortfall.
-  // Case-insensitive on purpose. This rule used to read only market-edge rows,
-  // whose surface is title-cased ("Grass"); §8.1 feeds it the CAREER SPINE, which
-  // lower-cases its surface ("grass"). A strict === here silently stopped applying
-  // the founder's ruling to every grass match on the page while every band still
-  // looked plausible — the test suite's grass check is what surfaced it.
+  /** A COURT_CONDITIONS venue key -> its band, through the site's one scheme. */
+  function speedBandFor(venue) {
+    var s = speedScheme();
+    var c = (s && venue != null) ? s.cc[venue] : null;
+    if (!c || c.speed == null) return null;
+    return bandByLabel(s.cat(c.speed));
+  }
   function speedBandForRow(m) {
-    if (!m) return null;
-    if (String(m.surface || '').toLowerCase() === 'grass') return bandById('vfast');
-    return speedBandFor(m.speed);
+    return m ? speedBandFor(m.venue) : null;
   }
 
   // ─── RULING 6 · match-stat provenance ──────────────────────────────────────
@@ -1914,7 +1915,7 @@
       : { headline: null, support: 'no event with 10+ priced matches' };
 
     // 4 · Court speed — FOUNDER RULING 2026-09-16: the headline is always one of
-    // the five PACE BANDS (Very slow · Slow · Medium · Fast · Very fast) or a
+    // the PACE BANDS (since N4, 2026-09-28: Slow · Medium · Fast) or a
     // dash. It is never a surface name. It used to read "Grass courts" because
     // it ranked p.surfaces by win rate, which is a different taxonomy from the
     // thing the box is named after; the box is Court SPEED, so it headlines a
@@ -7516,7 +7517,7 @@
    * calSpine(), the identical spine Calendar and Streaks use (775 for Zverev), and
    * `cents` carries the Pinnacle P&L for the priced subset.
    *
-   * Grass keeps the founder's 2026-09-16 ruling: always Very fast, rating or not.
+   * N4 (2026-09-28) retired the grass-is-Very-fast rule: grass bands off its venue.
    */
   /**
    * The PRICED market-shard rows — the population §8.1 (Court speed) and §5.6
@@ -7600,7 +7601,8 @@
     });
     var out = SPEED_BANDS.map(function (b) { return agg[b.id]; });
     // FILE over README: README §5.5 lists the bands slowest-to-fastest, but the
-    // .dc.html returns them fast(72) · medium(66) · vslow(61) · slow(54) · vfast(—)
+    // .dc.html returns them in win-rate order (its five-band sample: fast(72) ·
+    // medium(66) · vslow(61) · slow(54) · vfast(—); N4 leaves three bands)
     // — win rate descending, with un-rateable bands last. The file wins.
     out.sort(function (x, y) {
       var nx = x.won + x.lost, ny = y.won + y.lost;
