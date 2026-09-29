@@ -1,8 +1,9 @@
 {
-  "generatedAt": "2026-09-21T23:04:21.104Z",
+  "generatedAt": "2026-09-29T00:11:10.222Z",
   "source": "tennisabstract.com/reports/atp_elo_ratings.html",
-  "refresh": "weekly (Mondays)",
-  "count": 551,
+  "taLastUpdate": "2026-09-21",
+  "refresh": "weekly (Mondays), retried daily until the report moves",
+  "count": 554,
   "ratings": {
     "sinner|j": 2297,
     "alcaraz|c": 2141,
@@ -266,6 +267,7 @@
     "hewitt|c": 1514,
     "ymer|e": 1513,
     "moller|e": 1510,
+    "kennedy|j": 1509,
     "sweeny|d": 1508,
     "searle|h": 1507,
     "nagal|s": 1506,
@@ -369,6 +371,7 @@
     "erel|y": 1431,
     "sun|f": 1431,
     "coulibaly|e": 1430,
+    "mackenzie|j": 1429,
     "bernet|h": 1426,
     "collarini|a": 1426,
     "sanchis|d": 1426,
@@ -532,6 +535,7 @@
     "tokuda|r": 1224,
     "berkieta|t": 1212,
     "schiessl|j": 1202,
+    "zarate|c": 1200,
     "rodriguez|l": 1193,
     "bouzige|m": 1185,
     "isomura|k": 1182,
@@ -804,6 +808,7 @@
     "hewitt": 1514,
     "ymer": 1513,
     "moller": 1510,
+    "kennedy": 1509,
     "sweeny": 1508,
     "searle": 1507,
     "nagal": 1506,
@@ -901,6 +906,7 @@
     "erel": 1431,
     "sun": 1431,
     "coulibaly": 1430,
+    "mackenzie": 1429,
     "bernet": 1426,
     "collarini": 1426,
     "sanchis": 1426,
@@ -1054,6 +1060,7 @@
     "tokuda": 1224,
     "berkieta": 1212,
     "schiessl": 1202,
+    "zarate": 1200,
     "rodriguez": 1193,
     "bouzige": 1185,
     "isomura": 1182,
@@ -5499,7 +5506,7 @@
     "blanch|d": {
       "all": {
         "rating": 1427,
-        "rank": 366
+        "rank": 368
       },
       "hard": {
         "rating": 1230,
@@ -6838,10 +6845,32 @@
         "month": "2025-04"
       }
     },
+    "kennedy|j": {
+      "all": {
+        "rating": 1509,
+        "rank": 263
+      },
+      "hard": {
+        "rating": 1396,
+        "rank": 337
+      },
+      "clay": {
+        "rating": 1520,
+        "rank": 203
+      },
+      "grass": {
+        "rating": 1454,
+        "rank": 258
+      },
+      "peak": {
+        "rating": 1634,
+        "month": "2026-06"
+      }
+    },
     "sweeny|d": {
       "all": {
         "rating": 1508,
-        "rank": 263
+        "rank": 264
       },
       "hard": {
         "rating": 1462,
@@ -6863,7 +6892,7 @@
     "searle|h": {
       "all": {
         "rating": 1507,
-        "rank": 264
+        "rank": 265
       },
       "hard": {
         "rating": 1366,
@@ -6885,7 +6914,7 @@
     "nagal|s": {
       "all": {
         "rating": 1506,
-        "rank": 265
+        "rank": 266
       },
       "hard": {
         "rating": 1445,
@@ -6907,7 +6936,7 @@
     "shelbayh|a": {
       "all": {
         "rating": 1506,
-        "rank": 266
+        "rank": 267
       },
       "hard": {
         "rating": 1494,
@@ -6929,7 +6958,7 @@
     "bouquier|a": {
       "all": {
         "rating": 1505,
-        "rank": 267
+        "rank": 268
       },
       "hard": {
         "rating": 1482,
@@ -6951,7 +6980,7 @@
     "galan|d": {
       "all": {
         "rating": 1505,
-        "rank": 268
+        "rank": 269
       },
       "hard": {
         "rating": 1485,
@@ -6973,7 +7002,7 @@
     "broom|c": {
       "all": {
         "rating": 1505,
-        "rank": 269
+        "rank": 270
       },
       "hard": {
         "rating": 1485,
@@ -6995,7 +7024,7 @@
     "tiffon|p": {
       "all": {
         "rating": 1503,
-        "rank": 270
+        "rank": 271
       },
       "hard": {
         "rating": 1496,
@@ -7017,7 +7046,7 @@
     "blanchet|u": {
       "all": {
         "rating": 1502,
-        "rank": 271
+        "rank": 272
       },
       "hard": {
         "rating": 1502,
@@ -7039,7 +7068,7 @@
     "chung|h": {
       "all": {
         "rating": 1502,
-        "rank": 272
+        "rank": 273
       },
       "hard": {
         "rating": 1472,
@@ -7061,7 +7090,7 @@
     "gombos|n": {
       "all": {
         "rating": 1501,
-        "rank": 273
+        "rank": 274
       },
       "hard": {
         "rating": 1467,
@@ -7083,7 +7112,7 @@
     "fatic|n": {
       "all": {
         "rating": 1499,
-        "rank": 274
+        "rank": 275
       },
       "hard": {
         "rating": 1438,
@@ -7105,7 +7134,7 @@
     "houkes|m": {
       "all": {
         "rating": 1495,
-        "rank": 275
+        "rank": 276
       },
       "hard": {
         "rating": 1322,
@@ -7127,7 +7156,7 @@
     "nedic|a": {
       "all": {
         "rating": 1495,
-        "rank": 276
+        "rank": 277
       },
       "hard": {
         "rating": 1457,
@@ -7149,7 +7178,7 @@
     "johnson|s": {
       "all": {
         "rating": 1492,
-        "rank": 277
+        "rank": 278
       },
       "hard": {
         "rating": 1468,
@@ -7171,7 +7200,7 @@
     "onclin|g": {
       "all": {
         "rating": 1492,
-        "rank": 278
+        "rank": 279
       },
       "hard": {
         "rating": 1472,
@@ -7193,7 +7222,7 @@
     "silva|j": {
       "all": {
         "rating": 1492,
-        "rank": 279
+        "rank": 280
       },
       "hard": {
         "rating": 1362,
@@ -7215,7 +7244,7 @@
     "kasnikowski|m": {
       "all": {
         "rating": 1491,
-        "rank": 280
+        "rank": 281
       },
       "hard": {
         "rating": 1434,
@@ -7237,7 +7266,7 @@
     "papoe|r": {
       "all": {
         "rating": 1491,
-        "rank": 281
+        "rank": 282
       },
       "hard": {
         "rating": 1406,
@@ -7259,7 +7288,7 @@
     "coria|f": {
       "all": {
         "rating": 1489,
-        "rank": 282
+        "rank": 283
       },
       "hard": {
         "rating": 1419,
@@ -7281,7 +7310,7 @@
     "gorzny|s": {
       "all": {
         "rating": 1489,
-        "rank": 283
+        "rank": 284
       },
       "hard": {
         "rating": 1460,
@@ -7303,7 +7332,7 @@
     "poljicak|m": {
       "all": {
         "rating": 1489,
-        "rank": 284
+        "rank": 285
       },
       "hard": {
         "rating": 1305,
@@ -7325,7 +7354,7 @@
     "gomez|f": {
       "all": {
         "rating": 1488,
-        "rank": 285
+        "rank": 286
       },
       "hard": {
         "rating": 1416,
@@ -7347,7 +7376,7 @@
     "echargui|m": {
       "all": {
         "rating": 1488,
-        "rank": 286
+        "rank": 287
       },
       "hard": {
         "rating": 1464,
@@ -7369,7 +7398,7 @@
     "noguchi|r": {
       "all": {
         "rating": 1486,
-        "rank": 287
+        "rank": 288
       },
       "hard": {
         "rating": 1474,
@@ -7391,7 +7420,7 @@
     "barton|h": {
       "all": {
         "rating": 1486,
-        "rank": 288
+        "rank": 289
       },
       "hard": {
         "rating": 1467,
@@ -7413,7 +7442,7 @@
     "dostanic|s": {
       "all": {
         "rating": 1485,
-        "rank": 289
+        "rank": 290
       },
       "hard": {
         "rating": 1492,
@@ -7435,7 +7464,7 @@
     "almeida|m": {
       "all": {
         "rating": 1484,
-        "rank": 290
+        "rank": 291
       },
       "hard": {
         "rating": 1305,
@@ -7457,7 +7486,7 @@
     "cadenasso|g": {
       "all": {
         "rating": 1483,
-        "rank": 291
+        "rank": 292
       },
       "hard": {
         "rating": 1351,
@@ -7479,7 +7508,7 @@
     "holmgren|a": {
       "all": {
         "rating": 1481,
-        "rank": 292
+        "rank": 293
       },
       "hard": {
         "rating": 1438,
@@ -7501,7 +7530,7 @@
     "maestrelli|f": {
       "all": {
         "rating": 1481,
-        "rank": 293
+        "rank": 294
       },
       "hard": {
         "rating": 1490,
@@ -7523,7 +7552,7 @@
     "kouame|m": {
       "all": {
         "rating": 1480,
-        "rank": 294
+        "rank": 295
       },
       "hard": {
         "rating": 1457,
@@ -7545,7 +7574,7 @@
     "milavsky|d": {
       "all": {
         "rating": 1474,
-        "rank": 295
+        "rank": 296
       },
       "hard": {
         "rating": 1429,
@@ -7567,7 +7596,7 @@
     "poullain|l": {
       "all": {
         "rating": 1474,
-        "rank": 296
+        "rank": 297
       },
       "hard": {
         "rating": 1450,
@@ -7589,7 +7618,7 @@
     "broska|f": {
       "all": {
         "rating": 1474,
-        "rank": 297
+        "rank": 298
       },
       "hard": {
         "rating": 1385,
@@ -7611,7 +7640,7 @@
     "squire|h": {
       "all": {
         "rating": 1473,
-        "rank": 298
+        "rank": 299
       },
       "hard": {
         "rating": 1421,
@@ -7633,7 +7662,7 @@
     "rehberg|m": {
       "all": {
         "rating": 1472,
-        "rank": 299
+        "rank": 300
       },
       "hard": {
         "rating": 1471,
@@ -7655,7 +7684,7 @@
     "hassan|b": {
       "all": {
         "rating": 1472,
-        "rank": 300
+        "rank": 301
       },
       "hard": {
         "rating": 1413,
@@ -7677,7 +7706,7 @@
     "legout|t": {
       "all": {
         "rating": 1471,
-        "rank": 301
+        "rank": 302
       },
       "hard": {
         "rating": 1455,
@@ -7699,7 +7728,7 @@
     "vasami|j": {
       "all": {
         "rating": 1471,
-        "rank": 302
+        "rank": 303
       },
       "hard": {
         "rating": 1309,
@@ -7721,7 +7750,7 @@
     "brancaccio|r": {
       "all": {
         "rating": 1471,
-        "rank": 303
+        "rank": 304
       },
       "hard": {
         "rating": 1405,
@@ -7743,7 +7772,7 @@
     "cassone|m": {
       "all": {
         "rating": 1470,
-        "rank": 304
+        "rank": 305
       },
       "hard": {
         "rating": 1446,
@@ -7765,7 +7794,7 @@
     "brouwer|g": {
       "all": {
         "rating": 1470,
-        "rank": 305
+        "rank": 306
       },
       "hard": {
         "rating": 1445,
@@ -7787,7 +7816,7 @@
     "mena|f": {
       "all": {
         "rating": 1470,
-        "rank": 306
+        "rank": 307
       },
       "hard": {
         "rating": 1349,
@@ -7809,7 +7838,7 @@
     "tu|l": {
       "all": {
         "rating": 1469,
-        "rank": 307
+        "rank": 308
       },
       "hard": {
         "rating": 1452,
@@ -7831,7 +7860,7 @@
     "clarke|j": {
       "all": {
         "rating": 1469,
-        "rank": 308
+        "rank": 309
       },
       "hard": {
         "rating": 1418,
@@ -7853,7 +7882,7 @@
     "dougaz|a": {
       "all": {
         "rating": 1468,
-        "rank": 309
+        "rank": 310
       },
       "hard": {
         "rating": 1454,
@@ -7875,7 +7904,7 @@
     "vandecasteele|q": {
       "all": {
         "rating": 1468,
-        "rank": 310
+        "rank": 311
       },
       "hard": {
         "rating": 1451,
@@ -7897,7 +7926,7 @@
     "marcondes|i": {
       "all": {
         "rating": 1467,
-        "rank": 311
+        "rank": 312
       },
       "hard": {
         "rating": 1381,
@@ -7919,7 +7948,7 @@
     "giustino|l": {
       "all": {
         "rating": 1467,
-        "rank": 312
+        "rank": 313
       },
       "hard": {
         "rating": 1447,
@@ -7941,7 +7970,7 @@
     "napolitano|s": {
       "all": {
         "rating": 1466,
-        "rank": 313
+        "rank": 314
       },
       "hard": {
         "rating": 1421,
@@ -7963,7 +7992,7 @@
     "bondioli|f": {
       "all": {
         "rating": 1465,
-        "rank": 314
+        "rank": 315
       },
       "hard": {
         "rating": 1286,
@@ -7985,7 +8014,7 @@
     "kolar|z": {
       "all": {
         "rating": 1465,
-        "rank": 315
+        "rank": 316
       },
       "hard": {
         "rating": 1408,
@@ -8007,7 +8036,7 @@
     "krueger|m": {
       "all": {
         "rating": 1464,
-        "rank": 316
+        "rank": 317
       },
       "hard": {
         "rating": 1436,
@@ -8029,7 +8058,7 @@
     "olivieri|g": {
       "all": {
         "rating": 1464,
-        "rank": 317
+        "rank": 318
       },
       "hard": {
         "rating": 1348,
@@ -8051,7 +8080,7 @@
     "uchiyama|y": {
       "all": {
         "rating": 1463,
-        "rank": 318
+        "rank": 319
       },
       "hard": {
         "rating": 1431,
@@ -8073,7 +8102,7 @@
     "crawford|o": {
       "all": {
         "rating": 1462,
-        "rank": 319
+        "rank": 320
       },
       "hard": {
         "rating": 1446,
@@ -8095,7 +8124,7 @@
     "serna|j": {
       "all": {
         "rating": 1462,
-        "rank": 320
+        "rank": 321
       },
       "hard": {
         "rating": 1371,
@@ -8117,7 +8146,7 @@
     "ajdukovic|d": {
       "all": {
         "rating": 1461,
-        "rank": 321
+        "rank": 322
       },
       "hard": {
         "rating": 1453,
@@ -8139,7 +8168,7 @@
     "schoenhaus|m": {
       "all": {
         "rating": 1460,
-        "rank": 322
+        "rank": 323
       },
       "hard": {
         "rating": 1376,
@@ -8161,7 +8190,7 @@
     "negritu|c": {
       "all": {
         "rating": 1459,
-        "rank": 323
+        "rank": 324
       },
       "hard": {
         "rating": 1423,
@@ -8183,7 +8212,7 @@
     "barrena|a": {
       "all": {
         "rating": 1459,
-        "rank": 324
+        "rank": 325
       },
       "hard": {
         "rating": 1297,
@@ -8205,7 +8234,7 @@
     "cosano|j": {
       "all": {
         "rating": 1458,
-        "rank": 325
+        "rank": 326
       },
       "hard": {
         "rating": 1399,
@@ -8227,7 +8256,7 @@
     "gill|f": {
       "all": {
         "rating": 1458,
-        "rank": 326
+        "rank": 327
       },
       "hard": {
         "rating": 1451,
@@ -8249,7 +8278,7 @@
     "kuzmanov|d": {
       "all": {
         "rating": 1457,
-        "rank": 327
+        "rank": 328
       },
       "hard": {
         "rating": 1437,
@@ -8271,7 +8300,7 @@
     "masur|d": {
       "all": {
         "rating": 1457,
-        "rank": 328
+        "rank": 329
       },
       "hard": {
         "rating": 1425,
@@ -8293,7 +8322,7 @@
     "rosenkranz|m": {
       "all": {
         "rating": 1454,
-        "rank": 329
+        "rank": 330
       },
       "hard": {
         "rating": 1424,
@@ -8315,7 +8344,7 @@
     "rice|k": {
       "all": {
         "rating": 1452,
-        "rank": 330
+        "rank": 331
       },
       "hard": {
         "rating": 1431,
@@ -8337,7 +8366,7 @@
     "martin|a": {
       "all": {
         "rating": 1411,
-        "rank": 389
+        "rank": 391
       },
       "hard": {
         "rating": 1400,
@@ -8359,7 +8388,7 @@
     "justo|g": {
       "all": {
         "rating": 1452,
-        "rank": 332
+        "rank": 333
       },
       "hard": {
         "rating": 1307,
@@ -8381,7 +8410,7 @@
     "nesterov|p": {
       "all": {
         "rating": 1450,
-        "rank": 333
+        "rank": 334
       },
       "hard": {
         "rating": 1428,
@@ -8403,7 +8432,7 @@
     "roncadelli|f": {
       "all": {
         "rating": 1450,
-        "rank": 334
+        "rank": 335
       },
       "hard": {
         "rating": 1344,
@@ -8425,7 +8454,7 @@
     "krumich|m": {
       "all": {
         "rating": 1449,
-        "rank": 335
+        "rank": 336
       },
       "hard": {
         "rating": 1355,
@@ -8447,7 +8476,7 @@
     "silva|f": {
       "all": {
         "rating": 1448,
-        "rank": 336
+        "rank": 337
       },
       "hard": {
         "rating": 1464,
@@ -8469,7 +8498,7 @@
     "stewart|h": {
       "all": {
         "rating": 1448,
-        "rank": 337
+        "rank": 338
       },
       "hard": {
         "rating": 1412,
@@ -8491,7 +8520,7 @@
     "mccabe|j": {
       "all": {
         "rating": 1447,
-        "rank": 338
+        "rank": 339
       },
       "hard": {
         "rating": 1404,
@@ -8513,7 +8542,7 @@
     "topo|m": {
       "all": {
         "rating": 1447,
-        "rank": 339
+        "rank": 340
       },
       "hard": {
         "rating": 1465,
@@ -8535,7 +8564,7 @@
     "soto|m": {
       "all": {
         "rating": 1442,
-        "rank": 340
+        "rank": 341
       },
       "hard": {
         "rating": 1333,
@@ -8557,7 +8586,7 @@
     "monday|j": {
       "all": {
         "rating": 1442,
-        "rank": 341
+        "rank": 342
       },
       "hard": {
         "rating": 1412,
@@ -8579,7 +8608,7 @@
     "lokoli|l": {
       "all": {
         "rating": 1441,
-        "rank": 342
+        "rank": 343
       },
       "hard": {
         "rating": 1394,
@@ -8601,7 +8630,7 @@
     "zhukayev|b": {
       "all": {
         "rating": 1441,
-        "rank": 343
+        "rank": 344
       },
       "hard": {
         "rating": 1390,
@@ -8623,7 +8652,7 @@
     "zhou|y": {
       "all": {
         "rating": 1439,
-        "rank": 344
+        "rank": 345
       },
       "hard": {
         "rating": 1414,
@@ -8645,7 +8674,7 @@
     "inchauspe|p": {
       "all": {
         "rating": 1439,
-        "rank": 345
+        "rank": 346
       },
       "hard": {
         "rating": 1422,
@@ -8667,7 +8696,7 @@
     "marmousez|l": {
       "all": {
         "rating": 1438,
-        "rank": 346
+        "rank": 347
       },
       "hard": {
         "rating": 1390,
@@ -8689,7 +8718,7 @@
     "albot|r": {
       "all": {
         "rating": 1438,
-        "rank": 347
+        "rank": 348
       },
       "hard": {
         "rating": 1415,
@@ -8711,7 +8740,7 @@
     "smith|k": {
       "all": {
         "rating": 1438,
-        "rank": 348
+        "rank": 349
       },
       "hard": {
         "rating": 1398,
@@ -8733,7 +8762,7 @@
     "gadamauri|b": {
       "all": {
         "rating": 1438,
-        "rank": 349
+        "rank": 350
       },
       "hard": {
         "rating": 1404,
@@ -8755,7 +8784,7 @@
     "matsuoka|h": {
       "all": {
         "rating": 1438,
-        "rank": 350
+        "rank": 351
       },
       "hard": {
         "rating": 1414,
@@ -8777,7 +8806,7 @@
     "matusevich|a": {
       "all": {
         "rating": 1437,
-        "rank": 351
+        "rank": 352
       },
       "hard": {
         "rating": 1407,
@@ -8799,7 +8828,7 @@
     "batalla|o": {
       "all": {
         "rating": 1437,
-        "rank": 352
+        "rank": 353
       },
       "hard": {
         "rating": 1374,
@@ -8821,7 +8850,7 @@
     "hsu|y": {
       "all": {
         "rating": 1436,
-        "rank": 353
+        "rank": 354
       },
       "hard": {
         "rating": 1416,
@@ -8843,7 +8872,7 @@
     "valle|e": {
       "all": {
         "rating": 1436,
-        "rank": 354
+        "rank": 355
       },
       "hard": {
         "rating": 1372,
@@ -8865,7 +8894,7 @@
     "hardt|n": {
       "all": {
         "rating": 1435,
-        "rank": 355
+        "rank": 356
       },
       "hard": {
         "rating": 1395,
@@ -8887,7 +8916,7 @@
     "polmans|m": {
       "all": {
         "rating": 1435,
-        "rank": 356
+        "rank": 357
       },
       "hard": {
         "rating": 1400,
@@ -8909,7 +8938,7 @@
     "hemery|c": {
       "all": {
         "rating": 1435,
-        "rank": 357
+        "rank": 358
       },
       "hard": {
         "rating": 1385,
@@ -8931,7 +8960,7 @@
     "alves|f": {
       "all": {
         "rating": 1435,
-        "rank": 358
+        "rank": 359
       },
       "hard": {
         "rating": 1372,
@@ -8953,7 +8982,7 @@
     "kicker|n": {
       "all": {
         "rating": 1433,
-        "rank": 359
+        "rank": 360
       },
       "hard": {
         "rating": 1369,
@@ -8975,7 +9004,7 @@
     "damas|m": {
       "all": {
         "rating": 1433,
-        "rank": 360
+        "rank": 361
       },
       "hard": {
         "rating": 1346,
@@ -8997,7 +9026,7 @@
     "mayo|a": {
       "all": {
         "rating": 1432,
-        "rank": 361
+        "rank": 362
       },
       "hard": {
         "rating": 1410,
@@ -9019,7 +9048,7 @@
     "jung|j": {
       "all": {
         "rating": 1432,
-        "rank": 362
+        "rank": 363
       },
       "hard": {
         "rating": 1395,
@@ -9041,7 +9070,7 @@
     "erel|y": {
       "all": {
         "rating": 1431,
-        "rank": 363
+        "rank": 364
       },
       "hard": {
         "rating": 1415,
@@ -9063,7 +9092,7 @@
     "sun|f": {
       "all": {
         "rating": 1431,
-        "rank": 364
+        "rank": 365
       },
       "hard": {
         "rating": 1409,
@@ -9085,7 +9114,7 @@
     "coulibaly|e": {
       "all": {
         "rating": 1430,
-        "rank": 365
+        "rank": 366
       },
       "hard": {
         "rating": 1427,
@@ -9104,10 +9133,32 @@
         "month": "2025-05"
       }
     },
+    "mackenzie|j": {
+      "all": {
+        "rating": 1429,
+        "rank": 367
+      },
+      "hard": {
+        "rating": 1331,
+        "rank": 418
+      },
+      "clay": {
+        "rating": 1429,
+        "rank": 295
+      },
+      "grass": {
+        "rating": 1375,
+        "rank": 423
+      },
+      "peak": {
+        "rating": 1500,
+        "month": "2026-07"
+      }
+    },
     "bernet|h": {
       "all": {
         "rating": 1426,
-        "rank": 367
+        "rank": 369
       },
       "hard": {
         "rating": 1343,
@@ -9129,7 +9180,7 @@
     "collarini|a": {
       "all": {
         "rating": 1426,
-        "rank": 368
+        "rank": 370
       },
       "hard": {
         "rating": 1322,
@@ -9151,7 +9202,7 @@
     "sanchis|d": {
       "all": {
         "rating": 1426,
-        "rank": 369
+        "rank": 371
       },
       "hard": {
         "rating": 1278,
@@ -9173,7 +9224,7 @@
     "erhard|m": {
       "all": {
         "rating": 1423,
-        "rank": 370
+        "rank": 372
       },
       "hard": {
         "rating": 1399,
@@ -9195,7 +9246,7 @@
     "torres|j": {
       "all": {
         "rating": 1420,
-        "rank": 371
+        "rank": 373
       },
       "hard": {
         "rating": 1312,
@@ -9217,7 +9268,7 @@
     "henning|p": {
       "all": {
         "rating": 1420,
-        "rank": 372
+        "rank": 374
       },
       "hard": {
         "rating": 1426,
@@ -9239,7 +9290,7 @@
     "chan|d": {
       "all": {
         "rating": 1419,
-        "rank": 373
+        "rank": 375
       },
       "hard": {
         "rating": 1378,
@@ -9261,7 +9312,7 @@
     "shimizu|y": {
       "all": {
         "rating": 1418,
-        "rank": 374
+        "rank": 376
       },
       "hard": {
         "rating": 1390,
@@ -9283,7 +9334,7 @@
     "ellis|b": {
       "all": {
         "rating": 1418,
-        "rank": 375
+        "rank": 377
       },
       "hard": {
         "rating": 1394,
@@ -9305,7 +9356,7 @@
     "gakhov|i": {
       "all": {
         "rating": 1418,
-        "rank": 376
+        "rank": 378
       },
       "hard": {
         "rating": 1380,
@@ -9327,7 +9378,7 @@
     "jubb|p": {
       "all": {
         "rating": 1417,
-        "rank": 377
+        "rank": 379
       },
       "hard": {
         "rating": 1385,
@@ -9349,7 +9400,7 @@
     "caniato|c": {
       "all": {
         "rating": 1416,
-        "rank": 378
+        "rank": 380
       },
       "hard": {
         "rating": 1296,
@@ -9371,7 +9422,7 @@
     "aboian|v": {
       "all": {
         "rating": 1416,
-        "rank": 379
+        "rank": 381
       },
       "hard": {
         "rating": 1268,
@@ -9393,7 +9444,7 @@
     "sekulic|p": {
       "all": {
         "rating": 1415,
-        "rank": 380
+        "rank": 382
       },
       "hard": {
         "rating": 1390,
@@ -9415,7 +9466,7 @@
     "kopp|s": {
       "all": {
         "rating": 1415,
-        "rank": 381
+        "rank": 383
       },
       "hard": {
         "rating": 1318,
@@ -9437,7 +9488,7 @@
     "kravchenko|g": {
       "all": {
         "rating": 1414,
-        "rank": 382
+        "rank": 384
       },
       "hard": {
         "rating": 1395,
@@ -9459,7 +9510,7 @@
     "casanova|h": {
       "all": {
         "rating": 1414,
-        "rank": 383
+        "rank": 385
       },
       "hard": {
         "rating": 1273,
@@ -9481,7 +9532,7 @@
     "habib|h": {
       "all": {
         "rating": 1412,
-        "rank": 384
+        "rank": 386
       },
       "hard": {
         "rating": 1364,
@@ -9503,7 +9554,7 @@
     "potenza|l": {
       "all": {
         "rating": 1412,
-        "rank": 385
+        "rank": 387
       },
       "hard": {
         "rating": 1383,
@@ -9525,7 +9576,7 @@
     "engel|j": {
       "all": {
         "rating": 1411,
-        "rank": 386
+        "rank": 388
       },
       "hard": {
         "rating": 1411,
@@ -9547,7 +9598,7 @@
     "compagnucci|t": {
       "all": {
         "rating": 1411,
-        "rank": 387
+        "rank": 389
       },
       "hard": {
         "rating": 1262,
@@ -9569,7 +9620,7 @@
     "magadan|a": {
       "all": {
         "rating": 1411,
-        "rank": 388
+        "rank": 390
       },
       "hard": {
         "rating": 1393,
@@ -9591,7 +9642,7 @@
     "samrej|k": {
       "all": {
         "rating": 1411,
-        "rank": 390
+        "rank": 392
       },
       "hard": {
         "rating": 1384,
@@ -9613,7 +9664,7 @@
     "colson|t": {
       "all": {
         "rating": 1409,
-        "rank": 391
+        "rank": 393
       },
       "hard": {
         "rating": 1352,
@@ -9635,7 +9686,7 @@
     "peniston|r": {
       "all": {
         "rating": 1408,
-        "rank": 392
+        "rank": 394
       },
       "hard": {
         "rating": 1369,
@@ -9657,7 +9708,7 @@
     "kozlov|s": {
       "all": {
         "rating": 1408,
-        "rank": 393
+        "rank": 395
       },
       "hard": {
         "rating": 1378,
@@ -9679,7 +9730,7 @@
     "winter|e": {
       "all": {
         "rating": 1407,
-        "rank": 394
+        "rank": 396
       },
       "hard": {
         "rating": 1374,
@@ -9701,7 +9752,7 @@
     "dias|p": {
       "all": {
         "rating": 1403,
-        "rank": 395
+        "rank": 397
       },
       "hard": {
         "rating": 1234,
@@ -9723,7 +9774,7 @@
     "donski|a": {
       "all": {
         "rating": 1402,
-        "rank": 396
+        "rank": 398
       },
       "hard": {
         "rating": 1435,
@@ -9745,7 +9796,7 @@
     "miyoshi|k": {
       "all": {
         "rating": 1400,
-        "rank": 397
+        "rank": 399
       },
       "hard": {
         "rating": 1380,
@@ -9767,7 +9818,7 @@
     "ribecai|m": {
       "all": {
         "rating": 1400,
-        "rank": 398
+        "rank": 400
       },
       "hard": {
         "rating": 1377,
@@ -9789,7 +9840,7 @@
     "villanueva|g": {
       "all": {
         "rating": 1400,
-        "rank": 399
+        "rank": 401
       },
       "hard": {
         "rating": 1286,
@@ -9811,7 +9862,7 @@
     "jover|c": {
       "all": {
         "rating": 1398,
-        "rank": 400
+        "rank": 402
       },
       "hard": {
         "rating": 1269,
@@ -9833,7 +9884,7 @@
     "ghibaudo|a": {
       "all": {
         "rating": 1397,
-        "rank": 401
+        "rank": 403
       },
       "hard": {
         "rating": 1356,
@@ -9855,7 +9906,7 @@
     "michalski|d": {
       "all": {
         "rating": 1393,
-        "rank": 402
+        "rank": 404
       },
       "hard": {
         "rating": 1405,
@@ -9877,7 +9928,7 @@
     "karol|m": {
       "all": {
         "rating": 1393,
-        "rank": 403
+        "rank": 405
       },
       "hard": {
         "rating": 1333,
@@ -9899,7 +9950,7 @@
     "wu|t": {
       "all": {
         "rating": 1393,
-        "rank": 404
+        "rank": 406
       },
       "hard": {
         "rating": 1362,
@@ -9921,7 +9972,7 @@
     "martinez|a": {
       "all": {
         "rating": 1392,
-        "rank": 405
+        "rank": 407
       },
       "hard": {
         "rating": 1336,
@@ -9943,7 +9994,7 @@
     "trotter|j": {
       "all": {
         "rating": 1391,
-        "rank": 406
+        "rank": 408
       },
       "hard": {
         "rating": 1363,
@@ -9965,7 +10016,7 @@
     "jianu|f": {
       "all": {
         "rating": 1389,
-        "rank": 407
+        "rank": 409
       },
       "hard": {
         "rating": 1306,
@@ -9987,7 +10038,7 @@
     "brunclik|p": {
       "all": {
         "rating": 1387,
-        "rank": 408
+        "rank": 410
       },
       "hard": {
         "rating": 1390,
@@ -10009,7 +10060,7 @@
     "molleker|r": {
       "all": {
         "rating": 1386,
-        "rank": 409
+        "rank": 411
       },
       "hard": {
         "rating": 1340,
@@ -10031,7 +10082,7 @@
     "forti|f": {
       "all": {
         "rating": 1383,
-        "rank": 410
+        "rank": 412
       },
       "hard": {
         "rating": 1316,
@@ -10053,7 +10104,7 @@
     "vasa|e": {
       "all": {
         "rating": 1382,
-        "rank": 411
+        "rank": 413
       },
       "hard": {
         "rating": 1332,
@@ -10075,7 +10126,7 @@
     "paris|t": {
       "all": {
         "rating": 1377,
-        "rank": 412
+        "rank": 414
       },
       "hard": {
         "rating": 1356,
@@ -10097,7 +10148,7 @@
     "roig|a": {
       "all": {
         "rating": 1377,
-        "rank": 413
+        "rank": 415
       },
       "hard": {
         "rating": 1299,
@@ -10119,7 +10170,7 @@
     "quilez|a": {
       "all": {
         "rating": 1377,
-        "rank": 414
+        "rank": 416
       },
       "hard": {
         "rating": 1371,
@@ -10141,7 +10192,7 @@
     "torres|t": {
       "all": {
         "rating": 1376,
-        "rank": 415
+        "rank": 417
       },
       "hard": {
         "rating": 1327,
@@ -10163,7 +10214,7 @@
     "bennani|k": {
       "all": {
         "rating": 1375,
-        "rank": 416
+        "rank": 418
       },
       "hard": {
         "rating": 1373,
@@ -10185,7 +10236,7 @@
     "santillan|a": {
       "all": {
         "rating": 1373,
-        "rank": 417
+        "rank": 419
       },
       "hard": {
         "rating": 1353,
@@ -10207,7 +10258,7 @@
     "wallin|o": {
       "all": {
         "rating": 1372,
-        "rank": 418
+        "rank": 420
       },
       "hard": {
         "rating": 1312,
@@ -10229,7 +10280,7 @@
     "martineau|m": {
       "all": {
         "rating": 1372,
-        "rank": 419
+        "rank": 421
       },
       "hard": {
         "rating": 1367,
@@ -10251,7 +10302,7 @@
     "perez|a": {
       "all": {
         "rating": 1372,
-        "rank": 420
+        "rank": 422
       },
       "hard": {
         "rating": 1333,
@@ -10273,7 +10324,7 @@
     "faurel|t": {
       "all": {
         "rating": 1369,
-        "rank": 421
+        "rank": 423
       },
       "hard": {
         "rating": 1309,
@@ -10295,7 +10346,7 @@
     "alkaya|m": {
       "all": {
         "rating": 1369,
-        "rank": 422
+        "rank": 424
       },
       "hard": {
         "rating": 1342,
@@ -10317,7 +10368,7 @@
     "palosi|s": {
       "all": {
         "rating": 1368,
-        "rank": 423
+        "rank": 425
       },
       "hard": {
         "rating": 1294,
@@ -10339,7 +10390,7 @@
     "miguel|l": {
       "all": {
         "rating": 1368,
-        "rank": 424
+        "rank": 426
       },
       "hard": {
         "rating": 1336,
@@ -10361,7 +10412,7 @@
     "popko|d": {
       "all": {
         "rating": 1368,
-        "rank": 425
+        "rank": 427
       },
       "hard": {
         "rating": 1391,
@@ -10383,7 +10434,7 @@
     "piraino|g": {
       "all": {
         "rating": 1368,
-        "rank": 426
+        "rank": 428
       },
       "hard": {
         "rating": 1259,
@@ -10405,7 +10456,7 @@
     "agamenone|f": {
       "all": {
         "rating": 1365,
-        "rank": 427
+        "rank": 429
       },
       "hard": {
         "rating": 1302,
@@ -10427,7 +10478,7 @@
     "ratti|l": {
       "all": {
         "rating": 1363,
-        "rank": 428
+        "rank": 430
       },
       "hard": {
         "rating": 1289,
@@ -10449,7 +10500,7 @@
     "bax|f": {
       "all": {
         "rating": 1362,
-        "rank": 429
+        "rank": 431
       },
       "hard": {
         "rating": 1346,
@@ -10471,7 +10522,7 @@
     "geerts|m": {
       "all": {
         "rating": 1362,
-        "rank": 430
+        "rank": 432
       },
       "hard": {
         "rating": 1353,
@@ -10493,7 +10544,7 @@
     "milic|o": {
       "all": {
         "rating": 1361,
-        "rank": 431
+        "rank": 433
       },
       "hard": {
         "rating": 1401,
@@ -10515,7 +10566,7 @@
     "manzano|j": {
       "all": {
         "rating": 1361,
-        "rank": 432
+        "rank": 434
       },
       "hard": {
         "rating": 1291,
@@ -10537,7 +10588,7 @@
     "forejtek|j": {
       "all": {
         "rating": 1360,
-        "rank": 433
+        "rank": 435
       },
       "hard": {
         "rating": 1320,
@@ -10559,7 +10610,7 @@
     "blancaneaux|g": {
       "all": {
         "rating": 1360,
-        "rank": 434
+        "rank": 436
       },
       "hard": {
         "rating": 1357,
@@ -10581,7 +10632,7 @@
     "nikles|j": {
       "all": {
         "rating": 1360,
-        "rank": 435
+        "rank": 437
       },
       "hard": {
         "rating": 1294,
@@ -10603,7 +10654,7 @@
     "cui|j": {
       "all": {
         "rating": 1360,
-        "rank": 436
+        "rank": 438
       },
       "hard": {
         "rating": 1340,
@@ -10625,7 +10676,7 @@
     "biryukov|p": {
       "all": {
         "rating": 1359,
-        "rank": 437
+        "rank": 439
       },
       "hard": {
         "rating": 1359,
@@ -10647,7 +10698,7 @@
     "boulais|j": {
       "all": {
         "rating": 1359,
-        "rank": 438
+        "rank": 440
       },
       "hard": {
         "rating": 1331,
@@ -10669,7 +10720,7 @@
     "ambrogi|l": {
       "all": {
         "rating": 1358,
-        "rank": 439
+        "rank": 441
       },
       "hard": {
         "rating": 1227,
@@ -10691,7 +10742,7 @@
     "gengel|m": {
       "all": {
         "rating": 1357,
-        "rank": 440
+        "rank": 442
       },
       "hard": {
         "rating": 1332,
@@ -10713,7 +10764,7 @@
     "bailly|g": {
       "all": {
         "rating": 1357,
-        "rank": 441
+        "rank": 443
       },
       "hard": {
         "rating": 1379,
@@ -10735,7 +10786,7 @@
     "curbelo|i": {
       "all": {
         "rating": 1356,
-        "rank": 442
+        "rank": 444
       },
       "hard": {
         "rating": 1306,
@@ -10757,7 +10808,7 @@
     "added|d": {
       "all": {
         "rating": 1354,
-        "rank": 443
+        "rank": 445
       },
       "hard": {
         "rating": 1335,
@@ -10779,7 +10830,7 @@
     "rybakov|a": {
       "all": {
         "rating": 1352,
-        "rank": 444
+        "rank": 446
       },
       "hard": {
         "rating": 1316,
@@ -10801,7 +10852,7 @@
     "xilas|i": {
       "all": {
         "rating": 1352,
-        "rank": 445
+        "rank": 447
       },
       "hard": {
         "rating": 1344,
@@ -10823,7 +10874,7 @@
     "sultanov|k": {
       "all": {
         "rating": 1347,
-        "rank": 446
+        "rank": 448
       },
       "hard": {
         "rating": 1334,
@@ -10845,7 +10896,7 @@
     "visker|n": {
       "all": {
         "rating": 1345,
-        "rank": 447
+        "rank": 449
       },
       "hard": {
         "rating": 1352,
@@ -10867,7 +10918,7 @@
     "vasilev|a": {
       "all": {
         "rating": 1345,
-        "rank": 448
+        "rank": 450
       },
       "hard": {
         "rating": 1282,
@@ -10889,7 +10940,7 @@
     "taverna|s": {
       "all": {
         "rating": 1344,
-        "rank": 449
+        "rank": 451
       },
       "hard": {
         "rating": 1293,
@@ -10911,7 +10962,7 @@
     "boitan|g": {
       "all": {
         "rating": 1343,
-        "rank": 450
+        "rank": 452
       },
       "hard": {
         "rating": 1314,
@@ -10933,7 +10984,7 @@
     "kingsley|c": {
       "all": {
         "rating": 1342,
-        "rank": 451
+        "rank": 453
       },
       "hard": {
         "rating": 1345,
@@ -10955,7 +11006,7 @@
     "lee|g": {
       "all": {
         "rating": 1342,
-        "rank": 452
+        "rank": 454
       },
       "hard": {
         "rating": 1319,
@@ -10977,7 +11028,7 @@
     "romano|f": {
       "all": {
         "rating": 1341,
-        "rank": 453
+        "rank": 455
       },
       "hard": {
         "rating": 1425,
@@ -10999,7 +11050,7 @@
     "weber|a": {
       "all": {
         "rating": 1340,
-        "rank": 454
+        "rank": 456
       },
       "hard": {
         "rating": 1311,
@@ -11021,7 +11072,7 @@
     "aguiard|e": {
       "all": {
         "rating": 1339,
-        "rank": 455
+        "rank": 457
       },
       "hard": {
         "rating": 1327,
@@ -11043,7 +11094,7 @@
     "bertrand|r": {
       "all": {
         "rating": 1339,
-        "rank": 456
+        "rank": 458
       },
       "hard": {
         "rating": 1338,
@@ -11065,7 +11116,7 @@
     "cardozo|j": {
       "all": {
         "rating": 1335,
-        "rank": 457
+        "rank": 459
       },
       "hard": {
         "rating": 1330,
@@ -11087,7 +11138,7 @@
     "mcdonald|n": {
       "all": {
         "rating": 1334,
-        "rank": 458
+        "rank": 460
       },
       "hard": {
         "rating": 1238,
@@ -11109,7 +11160,7 @@
     "arnaboldi|f": {
       "all": {
         "rating": 1334,
-        "rank": 459
+        "rank": 461
       },
       "hard": {
         "rating": 1303,
@@ -11131,7 +11182,7 @@
     "moriya|h": {
       "all": {
         "rating": 1334,
-        "rank": 460
+        "rank": 462
       },
       "hard": {
         "rating": 1302,
@@ -11153,7 +11204,7 @@
     "maxted|l": {
       "all": {
         "rating": 1333,
-        "rank": 461
+        "rank": 463
       },
       "hard": {
         "rating": 1311,
@@ -11175,7 +11226,7 @@
     "denolly|c": {
       "all": {
         "rating": 1331,
-        "rank": 462
+        "rank": 464
       },
       "hard": {
         "rating": 1271,
@@ -11197,7 +11248,7 @@
     "zink|t": {
       "all": {
         "rating": 1331,
-        "rank": 463
+        "rank": 465
       },
       "hard": {
         "rating": 1306,
@@ -11219,7 +11270,7 @@
     "krutykh|o": {
       "all": {
         "rating": 1330,
-        "rank": 464
+        "rank": 466
       },
       "hard": {
         "rating": 1337,
@@ -11241,7 +11292,7 @@
     "pino|c": {
       "all": {
         "rating": 1329,
-        "rank": 465
+        "rank": 467
       },
       "hard": {
         "rating": 1307,
@@ -11263,7 +11314,7 @@
     "ficovich|j": {
       "all": {
         "rating": 1327,
-        "rank": 466
+        "rank": 468
       },
       "hard": {
         "rating": 1313,
@@ -11285,7 +11336,7 @@
     "meza|a": {
       "all": {
         "rating": 1327,
-        "rank": 467
+        "rank": 469
       },
       "hard": {
         "rating": 1176,
@@ -11307,7 +11358,7 @@
     "prihodko|o": {
       "all": {
         "rating": 1326,
-        "rank": 468
+        "rank": 470
       },
       "hard": {
         "rating": 1368,
@@ -11329,7 +11380,7 @@
     "yevseyev|d": {
       "all": {
         "rating": 1325,
-        "rank": 469
+        "rank": 471
       },
       "hard": {
         "rating": 1331,
@@ -11351,7 +11402,7 @@
     "fomin|s": {
       "all": {
         "rating": 1324,
-        "rank": 470
+        "rank": 472
       },
       "hard": {
         "rating": 1290,
@@ -11373,7 +11424,7 @@
     "johns|g": {
       "all": {
         "rating": 1323,
-        "rank": 471
+        "rank": 473
       },
       "hard": {
         "rating": 1304,
@@ -11395,7 +11446,7 @@
     "binda|a": {
       "all": {
         "rating": 1322,
-        "rank": 472
+        "rank": 474
       },
       "hard": {
         "rating": 1283,
@@ -11417,7 +11468,7 @@
     "velasco|m": {
       "all": {
         "rating": 1320,
-        "rank": 473
+        "rank": 475
       },
       "hard": {
         "rating": 1328,
@@ -11439,7 +11490,7 @@
     "durasovic|v": {
       "all": {
         "rating": 1317,
-        "rank": 474
+        "rank": 476
       },
       "hard": {
         "rating": 1318,
@@ -11461,7 +11512,7 @@
     "dhamne|m": {
       "all": {
         "rating": 1316,
-        "rank": 475
+        "rank": 477
       },
       "hard": {
         "rating": 1300,
@@ -11483,7 +11534,7 @@
     "gray|a": {
       "all": {
         "rating": 1316,
-        "rank": 476
+        "rank": 478
       },
       "hard": {
         "rating": 1278,
@@ -11505,7 +11556,7 @@
     "pieri|s": {
       "all": {
         "rating": 1315,
-        "rank": 477
+        "rank": 479
       },
       "hard": {
         "rating": 1267,
@@ -11527,7 +11578,7 @@
     "basile|p": {
       "all": {
         "rating": 1314,
-        "rank": 478
+        "rank": 480
       },
       "hard": {
         "rating": 1209,
@@ -11549,7 +11600,7 @@
     "sels|j": {
       "all": {
         "rating": 1313,
-        "rank": 479
+        "rank": 481
       },
       "hard": {
         "rating": 1333,
@@ -11571,7 +11622,7 @@
     "tobon|m": {
       "all": {
         "rating": 1310,
-        "rank": 480
+        "rank": 482
       },
       "hard": {
         "rating": 1286,
@@ -11593,7 +11644,7 @@
     "oberleitner|n": {
       "all": {
         "rating": 1308,
-        "rank": 481
+        "rank": 483
       },
       "hard": {
         "rating": 1273,
@@ -11615,7 +11666,7 @@
     "silva|d": {
       "all": {
         "rating": 1307,
-        "rank": 482
+        "rank": 484
       },
       "hard": {
         "rating": 1232,
@@ -11637,7 +11688,7 @@
     "mukund|s": {
       "all": {
         "rating": 1306,
-        "rank": 483
+        "rank": 485
       },
       "hard": {
         "rating": 1281,
@@ -11659,7 +11710,7 @@
     "ayeni|o": {
       "all": {
         "rating": 1305,
-        "rank": 484
+        "rank": 486
       },
       "hard": {
         "rating": 1305,
@@ -11681,7 +11732,7 @@
     "hernando|s": {
       "all": {
         "rating": 1304,
-        "rank": 485
+        "rank": 487
       },
       "hard": {
         "rating": 1270,
@@ -11703,7 +11754,7 @@
     "martin|d": {
       "all": {
         "rating": 1302,
-        "rank": 486
+        "rank": 488
       },
       "hard": {
         "rating": 1260,
@@ -11725,7 +11776,7 @@
     "leong|m": {
       "all": {
         "rating": 1302,
-        "rank": 487
+        "rank": 489
       },
       "hard": {
         "rating": 1294,
@@ -11747,7 +11798,7 @@
     "jasika|o": {
       "all": {
         "rating": 1298,
-        "rank": 488
+        "rank": 490
       },
       "hard": {
         "rating": 1276,
@@ -11769,7 +11820,7 @@
     "jones|m": {
       "all": {
         "rating": 1298,
-        "rank": 489
+        "rank": 491
       },
       "hard": {
         "rating": 1269,
@@ -11791,7 +11842,7 @@
     "imamura|m": {
       "all": {
         "rating": 1296,
-        "rank": 490
+        "rank": 492
       },
       "hard": {
         "rating": 1268,
@@ -11813,7 +11864,7 @@
     "castelnuovo|l": {
       "all": {
         "rating": 1293,
-        "rank": 491
+        "rank": 493
       },
       "hard": {
         "rating": 1273,
@@ -11835,7 +11886,7 @@
     "artnak|b": {
       "all": {
         "rating": 1293,
-        "rank": 492
+        "rank": 494
       },
       "hard": {
         "rating": 1261,
@@ -11857,7 +11908,7 @@
     "pereira|t": {
       "all": {
         "rating": 1284,
-        "rank": 493
+        "rank": 495
       },
       "hard": {
         "rating": 1262,
@@ -11879,7 +11930,7 @@
     "uchida|k": {
       "all": {
         "rating": 1284,
-        "rank": 494
+        "rank": 496
       },
       "hard": {
         "rating": 1263,
@@ -11901,7 +11952,7 @@
     "pankin|s": {
       "all": {
         "rating": 1283,
-        "rank": 495
+        "rank": 497
       },
       "hard": {
         "rating": 1268,
@@ -11923,7 +11974,7 @@
     "gulin|s": {
       "all": {
         "rating": 1281,
-        "rank": 496
+        "rank": 498
       },
       "hard": {
         "rating": 1245,
@@ -11945,7 +11996,7 @@
     "bicknell|b": {
       "all": {
         "rating": 1276,
-        "rank": 497
+        "rank": 499
       },
       "hard": {
         "rating": 1247,
@@ -11967,7 +12018,7 @@
     "chazal|m": {
       "all": {
         "rating": 1274,
-        "rank": 498
+        "rank": 500
       },
       "hard": {
         "rating": 1229,
@@ -11989,7 +12040,7 @@
     "honda|n": {
       "all": {
         "rating": 1273,
-        "rank": 499
+        "rank": 501
       },
       "hard": {
         "rating": 1269,
@@ -12011,7 +12062,7 @@
     "janvier|m": {
       "all": {
         "rating": 1272,
-        "rank": 500
+        "rank": 502
       },
       "hard": {
         "rating": 1256,
@@ -12033,7 +12084,7 @@
     "poling|k": {
       "all": {
         "rating": 1271,
-        "rank": 501
+        "rank": 503
       },
       "hard": {
         "rating": 1273,
@@ -12055,7 +12106,7 @@
     "serrano|j": {
       "all": {
         "rating": 1269,
-        "rank": 502
+        "rank": 504
       },
       "hard": {
         "rating": 1263,
@@ -12077,7 +12128,7 @@
     "fellin|p": {
       "all": {
         "rating": 1268,
-        "rank": 503
+        "rank": 505
       },
       "hard": {
         "rating": 1252,
@@ -12099,7 +12150,7 @@
     "takahashi|y": {
       "all": {
         "rating": 1268,
-        "rank": 504
+        "rank": 506
       },
       "hard": {
         "rating": 1243,
@@ -12121,7 +12172,7 @@
     "ribeiro|e": {
       "all": {
         "rating": 1268,
-        "rank": 505
+        "rank": 507
       },
       "hard": {
         "rating": 1212,
@@ -12143,7 +12194,7 @@
     "perot|r": {
       "all": {
         "rating": 1266,
-        "rank": 506
+        "rank": 508
       },
       "hard": {
         "rating": 1249,
@@ -12165,7 +12216,7 @@
     "strombachs|r": {
       "all": {
         "rating": 1265,
-        "rank": 507
+        "rank": 509
       },
       "hard": {
         "rating": 1272,
@@ -12187,7 +12238,7 @@
     "wiskandt|m": {
       "all": {
         "rating": 1263,
-        "rank": 508
+        "rank": 510
       },
       "hard": {
         "rating": 1226,
@@ -12209,7 +12260,7 @@
     "matsuda|k": {
       "all": {
         "rating": 1260,
-        "rank": 509
+        "rank": 511
       },
       "hard": {
         "rating": 1240,
@@ -12231,7 +12282,7 @@
     "purtseladze|s": {
       "all": {
         "rating": 1258,
-        "rank": 510
+        "rank": 512
       },
       "hard": {
         "rating": 1258,
@@ -12253,7 +12304,7 @@
     "azkara|a": {
       "all": {
         "rating": 1257,
-        "rank": 511
+        "rank": 513
       },
       "hard": {
         "rating": 1238,
@@ -12275,7 +12326,7 @@
     "overbeck|c": {
       "all": {
         "rating": 1256,
-        "rank": 512
+        "rank": 514
       },
       "hard": {
         "rating": 1236,
@@ -12297,7 +12348,7 @@
     "langmo|c": {
       "all": {
         "rating": 1254,
-        "rank": 513
+        "rank": 515
       },
       "hard": {
         "rating": 1234,
@@ -12319,7 +12370,7 @@
     "ivanov|i": {
       "all": {
         "rating": 1254,
-        "rank": 514
+        "rank": 516
       },
       "hard": {
         "rating": 1257,
@@ -12341,7 +12392,7 @@
     "cuenin|s": {
       "all": {
         "rating": 1254,
-        "rank": 515
+        "rank": 517
       },
       "hard": {
         "rating": 1250,
@@ -12363,7 +12414,7 @@
     "estevez|j": {
       "all": {
         "rating": 1253,
-        "rank": 516
+        "rank": 518
       },
       "hard": {
         "rating": 1237,
@@ -12385,7 +12436,7 @@
     "zahraj|p": {
       "all": {
         "rating": 1251,
-        "rank": 517
+        "rank": 519
       },
       "hard": {
         "rating": 1267,
@@ -12407,7 +12458,7 @@
     "giunta|m": {
       "all": {
         "rating": 1249,
-        "rank": 518
+        "rank": 520
       },
       "hard": {
         "rating": 1206,
@@ -12429,7 +12480,7 @@
     "peliwo|f": {
       "all": {
         "rating": 1245,
-        "rank": 519
+        "rank": 521
       },
       "hard": {
         "rating": 1223,
@@ -12451,7 +12502,7 @@
     "sakamoto|p": {
       "all": {
         "rating": 1245,
-        "rank": 520
+        "rank": 522
       },
       "hard": {
         "rating": 1236,
@@ -12473,7 +12524,7 @@
     "alves|m": {
       "all": {
         "rating": 1245,
-        "rank": 521
+        "rank": 523
       },
       "hard": {
         "rating": 1146,
@@ -12495,7 +12546,7 @@
     "ursu|v": {
       "all": {
         "rating": 1243,
-        "rank": 522
+        "rank": 524
       },
       "hard": {
         "rating": 1222,
@@ -12517,7 +12568,7 @@
     "sin|s": {
       "all": {
         "rating": 1242,
-        "rank": 523
+        "rank": 525
       },
       "hard": {
         "rating": 1220,
@@ -12539,7 +12590,7 @@
     "sach|t": {
       "all": {
         "rating": 1241,
-        "rank": 524
+        "rank": 526
       },
       "hard": {
         "rating": 1216,
@@ -12561,7 +12612,7 @@
     "kouzmine|c": {
       "all": {
         "rating": 1239,
-        "rank": 525
+        "rank": 527
       },
       "hard": {
         "rating": 1222,
@@ -12583,7 +12634,7 @@
     "fenty|a": {
       "all": {
         "rating": 1237,
-        "rank": 526
+        "rank": 528
       },
       "hard": {
         "rating": 1210,
@@ -12605,7 +12656,7 @@
     "shah|a": {
       "all": {
         "rating": 1232,
-        "rank": 527
+        "rank": 529
       },
       "hard": {
         "rating": 1224,
@@ -12627,7 +12678,7 @@
     "tokuda|r": {
       "all": {
         "rating": 1224,
-        "rank": 528
+        "rank": 530
       },
       "hard": {
         "rating": 1197,
@@ -12649,7 +12700,7 @@
     "berkieta|t": {
       "all": {
         "rating": 1212,
-        "rank": 529
+        "rank": 531
       },
       "hard": {
         "rating": 1225,
@@ -12671,7 +12722,7 @@
     "schiessl|j": {
       "all": {
         "rating": 1202,
-        "rank": 530
+        "rank": 532
       },
       "hard": {
         "rating": 1174,
@@ -12690,10 +12741,32 @@
         "month": "2025-10"
       }
     },
+    "zarate|c": {
+      "all": {
+        "rating": 1200,
+        "rank": 533
+      },
+      "hard": {
+        "rating": 1212,
+        "rank": 526
+      },
+      "clay": {
+        "rating": 1187,
+        "rank": 531
+      },
+      "grass": {
+        "rating": 1300,
+        "rank": 529
+      },
+      "peak": {
+        "rating": 1302,
+        "month": "2025-10"
+      }
+    },
     "rodriguez|l": {
       "all": {
         "rating": 1193,
-        "rank": 531
+        "rank": 534
       },
       "hard": {
         "rating": 1173,
@@ -12715,7 +12788,7 @@
     "bouzige|m": {
       "all": {
         "rating": 1185,
-        "rank": 532
+        "rank": 535
       },
       "hard": {
         "rating": 1155,
@@ -12737,7 +12810,7 @@
     "isomura|k": {
       "all": {
         "rating": 1182,
-        "rank": 533
+        "rank": 536
       },
       "hard": {
         "rating": 1153,
@@ -12759,7 +12832,7 @@
     "dickerson|r": {
       "all": {
         "rating": 1181,
-        "rank": 534
+        "rank": 537
       },
       "hard": {
         "rating": 1174,
@@ -12781,7 +12854,7 @@
     "gomez|j": {
       "all": {
         "rating": 1181,
-        "rank": 535
+        "rank": 538
       },
       "hard": {
         "rating": 1181,
@@ -12803,7 +12876,7 @@
     "petkovic|m": {
       "all": {
         "rating": 1180,
-        "rank": 536
+        "rank": 539
       },
       "hard": {
         "rating": 1158,
@@ -12825,7 +12898,7 @@
     "dellavedova|m": {
       "all": {
         "rating": 1178,
-        "rank": 537
+        "rank": 540
       },
       "hard": {
         "rating": 1167,
@@ -12847,7 +12920,7 @@
     "palan|d": {
       "all": {
         "rating": 1177,
-        "rank": 538
+        "rank": 541
       },
       "hard": {
         "rating": 1158,
@@ -12869,7 +12942,7 @@
     "rawat|s": {
       "all": {
         "rating": 1169,
-        "rank": 539
+        "rank": 542
       },
       "hard": {
         "rating": 1139,
@@ -12891,7 +12964,7 @@
     "santos|p": {
       "all": {
         "rating": 1167,
-        "rank": 540
+        "rank": 543
       },
       "hard": {
         "rating": 1175,
@@ -12913,7 +12986,7 @@
     "delaney|j": {
       "all": {
         "rating": 1166,
-        "rank": 541
+        "rank": 544
       },
       "hard": {
         "rating": 1151,
@@ -12935,7 +13008,7 @@
     "carboni|l": {
       "all": {
         "rating": 1138,
-        "rank": 542
+        "rank": 545
       },
       "hard": {
         "rating": 1112,
@@ -12957,7 +13030,7 @@
     "heredia|s": {
       "all": {
         "rating": 1138,
-        "rank": 543
+        "rank": 546
       },
       "hard": {
         "rating": 1157,
@@ -12979,7 +13052,7 @@
     "villalon|n": {
       "all": {
         "rating": 1135,
-        "rank": 544
+        "rank": 547
       },
       "hard": {
         "rating": 1178,
@@ -13001,7 +13074,7 @@
     "kumasaka|t": {
       "all": {
         "rating": 1130,
-        "rank": 545
+        "rank": 548
       },
       "hard": {
         "rating": 1115,
@@ -13023,7 +13096,7 @@
     "fernandez|b": {
       "all": {
         "rating": 1130,
-        "rank": 546
+        "rank": 549
       },
       "hard": {
         "rating": 1175,
@@ -13045,7 +13118,7 @@
     "mccormick|t": {
       "all": {
         "rating": 1126,
-        "rank": 547
+        "rank": 550
       },
       "hard": {
         "rating": 1119,
@@ -13067,7 +13140,7 @@
     "singh|k": {
       "all": {
         "rating": 1115,
-        "rank": 548
+        "rank": 551
       },
       "hard": {
         "rating": 1073,
@@ -13089,7 +13162,7 @@
     "zeitune|m": {
       "all": {
         "rating": 1104,
-        "rank": 549
+        "rank": 552
       },
       "hard": {
         "rating": 1162,
@@ -13111,7 +13184,7 @@
     "singh|d": {
       "all": {
         "rating": 1064,
-        "rank": 550
+        "rank": 553
       },
       "hard": {
         "rating": 1042,
@@ -13133,7 +13206,7 @@
     "ouakaa|a": {
       "all": {
         "rating": 1050,
-        "rank": 551
+        "rank": 554
       },
       "hard": {
         "rating": 1066,
@@ -13152,6 +13225,564 @@
         "month": "2021-11"
       }
     }
+  },
+  "ambiguous": [
+    "blanch|d",
+    "martin|a"
+  ],
+  "names": {
+    "sinner|j": "Jannik Sinner",
+    "alcaraz|c": "Carlos Alcaraz",
+    "zverev|a": "Alexander Zverev",
+    "djokovic|n": "Novak Djokovic",
+    "fils|a": "Arthur Fils",
+    "shelton|b": "Ben Shelton",
+    "jodar|r": "Rafael Jodar",
+    "aliassime|f": "Felix Auger Aliassime",
+    "tiafoe|f": "Frances Tiafoe",
+    "fritz|t": "Taylor Fritz",
+    "paul|t": "Tommy Paul",
+    "lehecka|j": "Jiri Lehecka",
+    "fonseca|j": "Joao Fonseca",
+    "minaur|a": "Alex De Minaur",
+    "ruud|c": "Casper Ruud",
+    "tien|l": "Learner Tien",
+    "medvedev|d": "Daniil Medvedev",
+    "nakashima|b": "Brandon Nakashima",
+    "cobolli|f": "Flavio Cobolli",
+    "mensik|j": "Jakub Mensik",
+    "fokina|a": "Alejandro Davidovich Fokina",
+    "blockx|a": "Alexander Blockx",
+    "bublik|a": "Alexander Bublik",
+    "cerundolo|f": "Francisco Cerundolo",
+    "aguilar|d": "Daniel Merida Aguilar",
+    "tsitsipas|s": "Stefanos Tsitsipas",
+    "michelsen|a": "Alex Michelsen",
+    "rublev|a": "Andrey Rublev",
+    "musetti|l": "Lorenzo Musetti",
+    "vacherot|v": "Valentin Vacherot",
+    "hurkacz|h": "Hubert Hurkacz",
+    "khachanov|k": "Karen Khachanov",
+    "norrie|c": "Cameron Norrie",
+    "darderi|l": "Luciano Darderi",
+    "humbert|u": "Ugo Humbert",
+    "berrettini|m": "Matteo Berrettini",
+    "navone|m": "Mariano Navone",
+    "machac|t": "Tomas Machac",
+    "borges|n": "Nuno Borges",
+    "zandschulp|b": "Botic Van De Zandschulp",
+    "fery|a": "Arthur Fery",
+    "tabilo|a": "Alejandro Tabilo",
+    "tirante|t": "Thiago Agustin Tirante",
+    "buse|i": "Ignacio Buse",
+    "faria|j": "Jaime Faria",
+    "samuel|t": "Toby Samuel",
+    "prizmic|d": "Dino Prizmic",
+    "cerundolo|j": "Juan Manuel Cerundolo",
+    "monfils|g": "Gael Monfils",
+    "collignon|r": "Raphael Collignon",
+    "spizzirri|e": "Eliot Spizzirri",
+    "quinn|e": "Ethan Quinn",
+    "kokkinakis|t": "Thanasi Kokkinakis",
+    "griekspoor|t": "Tallon Griekspoor",
+    "hanfmann|y": "Yannick Hanfmann",
+    "cazaux|a": "Arthur Cazaux",
+    "cilic|m": "Marin Cilic",
+    "zheng|m": "Michael Zheng",
+    "shapovalov|d": "Denis Shapovalov",
+    "etcheverry|t": "Tomas Martin Etcheverry",
+    "safiullin|r": "Roman Safiullin",
+    "korda|s": "Sebastian Korda",
+    "bergs|z": "Zizou Bergs",
+    "halys|q": "Quentin Halys",
+    "droguet|t": "Titouan Droguet",
+    "gea|a": "Arthur Gea",
+    "rune|h": "Holger Rune",
+    "assche|l": "Luca Van Assche",
+    "majchrzak|k": "Kamil Majchrzak",
+    "draper|j": "Jack Draper",
+    "thompson|j": "Jordan Thompson",
+    "rinderknech|a": "Arthur Rinderknech",
+    "busta|p": "Pablo Carreno Busta",
+    "baez|s": "Sebastian Baez",
+    "munar|j": "Jaume Munar",
+    "marozsan|f": "Fabian Marozsan",
+    "bonzi|b": "Benjamin Bonzi",
+    "medjedovic|h": "Hamad Medjedovic",
+    "arnaldi|m": "Matteo Arnaldi",
+    "kecmanovic|m": "Miomir Kecmanovic",
+    "opelka|r": "Reilly Opelka",
+    "atmane|t": "Terence Atmane",
+    "fucsovics|m": "Marton Fucsovics",
+    "dimitrov|g": "Grigor Dimitrov",
+    "hijikata|r": "Rinky Hijikata",
+    "struff|j": "Jan Lennard Struff",
+    "kwon|s": "Soon Woo Kwon",
+    "kumstat|j": "Jan Kumstat",
+    "molcan|a": "Alex Molcan",
+    "acosta|f": "Facundo Diaz Acosta",
+    "popyrin|a": "Alexei Popyrin",
+    "bellucci|m": "Mattia Bellucci",
+    "fearnley|j": "Jacob Fearnley",
+    "shang|j": "Juncheng Shang",
+    "harris|l": "Lloyd Harris",
+    "sonego|l": "Lorenzo Sonego",
+    "moutet|c": "Corentin Moutet",
+    "altmaier|d": "Daniel Altmaier",
+    "brooksby|j": "Jenson Brooksby",
+    "vallejo|a": "Adolfo Daniel Vallejo",
+    "piros|z": "Zsombor Piros",
+    "wu|y": "Yibing Wu",
+    "nishikori|k": "Kei Nishikori",
+    "damm|m": "Martin Damm",
+    "svajda|z": "Zachary Svajda",
+    "oconnell|c": "Christopher Oconnell",
+    "walton|a": "Adam Walton",
+    "diallo|g": "Gabriel Diallo",
+    "basavareddy|n": "Nishesh Basavareddy",
+    "carabelli|c": "Camilo Ugo Carabelli",
+    "agut|r": "Roberto Bautista Agut",
+    "nava|e": "Emilio Nava",
+    "giron|m": "Marcos Giron",
+    "riedi|l": "Leandro Riedi",
+    "kopriva|v": "Vit Kopriva",
+    "nishioka|y": "Yoshihito Nishioka",
+    "vavassori|a": "Andrea Vavassori",
+    "choinski|j": "Jan Choinski",
+    "yunchaokete|b": "Bu Yunchaokete",
+    "burruchaga|r": "Roman Andres Burruchaga",
+    "kubler|j": "Jason Kubler",
+    "djere|l": "Laslo Djere",
+    "jong|j": "Jesper De Jong",
+    "wong|c": "Coleman Wong",
+    "gaston|h": "Hugo Gaston",
+    "duckworth|j": "James Duckworth",
+    "royer|v": "Valentin Royer",
+    "virtanen|o": "Otto Virtanen",
+    "garin|c": "Cristian Garin",
+    "landaluce|m": "Martin Landaluce",
+    "tarvet|o": "Oliver Tarvet",
+    "simakin|i": "Ilia Simakin",
+    "jacquet|k": "Kyrian Jacquet",
+    "mannarino|a": "Adrian Mannarino",
+    "perricard|g": "Giovanni Mpetshi Perricard",
+    "kovacevic|a": "Aleksandar Kovacevic",
+    "rodesch|c": "Chris Rodesch",
+    "svrcina|d": "Dalibor Svrcina",
+    "goffin|d": "David Goffin",
+    "vukic|a": "Aleksandar Vukic",
+    "wawrinka|s": "Stan Wawrinka",
+    "kypson|p": "Patrick Kypson",
+    "jarry|n": "Nicolas Jarry",
+    "ruiz|p": "Pablo Llamas Ruiz",
+    "trungelliti|m": "Marco Trungelliti",
+    "sakamoto|r": "Rei Sakamoto",
+    "rodionov|j": "Jurij Rodionov",
+    "ofner|s": "Sebastian Ofner",
+    "lajal|m": "Mark Lajal",
+    "comesana|f": "Francisco Comesana",
+    "dzumhur|d": "Damir Dzumhur",
+    "lajovic|d": "Dusan Lajovic",
+    "guerrieri|a": "Andrea Guerrieri",
+    "shevchenko|a": "Alexander Shevchenko",
+    "sharipov|m": "Marat Sharipov",
+    "gojo|b": "Borna Gojo",
+    "rocha|h": "Henrique Rocha",
+    "shimabukuro|s": "Sho Shimabukuro",
+    "wolf|j": "J J Wolf",
+    "zeppieri|g": "Giulio Zeppieri",
+    "balshaw|f": "Felix Balshaw",
+    "muller|a": "Alexandre Muller",
+    "zhang|z": "Zhizhen Zhang",
+    "dodig|m": "Matej Dodig",
+    "dellien|h": "Hugo Dellien",
+    "sakellaridis|s": "Stefanos Sakellaridis",
+    "rottgering|m": "Mees Rottgering",
+    "kotov|p": "Pavel Kotov",
+    "pellegrino|a": "Andrea Pellegrino",
+    "kjaer|n": "Nicolai Budkov Kjaer",
+    "ruusuvuori|e": "Emil Ruusuvuori",
+    "draxl|l": "Liam Draxl",
+    "wild|t": "Thiago Seyboth Wild",
+    "kym|j": "Jerome Kym",
+    "mikrut|l": "Luka Mikrut",
+    "schoolkate|t": "Tristan Schoolkate",
+    "klein|l": "Lukas Klein",
+    "mcdonald|m": "Mackenzie Mcdonald",
+    "heide|g": "Gustavo Heide",
+    "wendelken|h": "Harry Wendelken",
+    "gentzsch|t": "Tom Gentzsch",
+    "daniel|t": "Taro Daniel",
+    "suresh|d": "Dhakshineswar Suresh",
+    "mayot|h": "Harold Mayot",
+    "palomero|d": "Diego Dedura Palomero",
+    "cecchinato|m": "Marco Cecchinato",
+    "mmoh|m": "Michael Mmoh",
+    "stricker|d": "Dominic Stricker",
+    "cina|f": "Federico Cina",
+    "basilashvili|n": "Nikoloz Basilashvili",
+    "martinez|p": "Pedro Martinez",
+    "galarneau|a": "Alexis Galarneau",
+    "gaubas|v": "Vilius Gaubas",
+    "monteiro|t": "Thiago Monteiro",
+    "boyer|t": "Tristan Boyer",
+    "mejia|n": "Nicolas Mejia",
+    "baena|r": "Roberto Carballes Baena",
+    "butvilas|e": "Edas Butvilas",
+    "vera|t": "Tomas Barrios Vera",
+    "passaro|f": "Francesco Passaro",
+    "misolic|f": "Filip Misolic",
+    "blanch|d": "Dali Blanch",
+    "ivashka|i": "Ilya Ivashka",
+    "friend|j": "Jay Dylan Hara Friend",
+    "taberner|c": "Carlos Taberner",
+    "angelo|j": "Juan Carlos Prado Angelo",
+    "rincon|d": "Daniel Rincon",
+    "ilagan|a": "Andre Ilagan",
+    "basing|m": "Max Basing",
+    "feldbausch|k": "Kilian Feldbausch",
+    "chidekh|c": "Clement Chidekh",
+    "herbert|p": "Pierre Hugues Herbert",
+    "nardi|l": "Luca Nardi",
+    "alboran|n": "Nicolas Moreno De Alboran",
+    "jones|j": "Jack Pinnington Jones",
+    "stebe|c": "Cedrik Marcel Stebe",
+    "mendez|r": "Rodrigo Pacheco Mendez",
+    "mochizuki|s": "Shintaro Mochizuki",
+    "dietrich|d": "Dylan Dietrich",
+    "bolt|a": "Alex Bolt",
+    "kukushkin|m": "Mikhail Kukushkin",
+    "smith|c": "Colton Smith",
+    "loffhagen|g": "George Loffhagen",
+    "tseng|c": "Chun Hsin Tseng",
+    "izquierdo|n": "Nikolas Sanchez Izquierdo",
+    "ouden|g": "Guy Den Ouden",
+    "sachko|v": "Vitaliy Sachko",
+    "tabur|c": "Clement Tabur",
+    "brunold|m": "Mika Brunold",
+    "midon|l": "Lautaro Midon",
+    "neumayer|l": "Lukas Neumayer",
+    "hussey|g": "Giles Hussey",
+    "andrade|a": "Andres Andrade",
+    "moeller|m": "Marvin Moeller",
+    "torre|i": "Inaki Montes De La Torre",
+    "huesler|m": "Marc Andrea Huesler",
+    "bertola|r": "Remy Bertola",
+    "wayenburg|s": "Sascha Gueymard Wayenburg",
+    "varillas|j": "Juan Pablo Varillas",
+    "holt|b": "Brandon Holt",
+    "canas|a": "Alejandro Moro Canas",
+    "ritschard|a": "Alexander Ritschard",
+    "tomic|b": "Bernard Tomic",
+    "skatov|t": "Timofey Skatov",
+    "glinka|d": "Daniil Glinka",
+    "svajda|t": "Trevor Svajda",
+    "coppejans|k": "Kimmer Coppejans",
+    "shick|b": "Braden Shick",
+    "mrva|m": "Maxim Mrva",
+    "gurri|m": "Max Alcala Gurri",
+    "watanuki|y": "Yosuke Watanuki",
+    "broady|l": "Liam Broady",
+    "schwaerzler|j": "Joel Schwaerzler",
+    "cretu|c": "Cezar Cretu",
+    "harris|b": "Billy Harris",
+    "pavlovic|l": "Luka Pavlovic",
+    "bueno|g": "Gonzalo Bueno",
+    "grenier|h": "Hugo Grenier",
+    "travaglia|s": "Stefano Travaglia",
+    "hewitt|c": "Cruz Hewitt",
+    "ymer|e": "Elias Ymer",
+    "moller|e": "Elmer Moller",
+    "kennedy|j": "Jack Kennedy",
+    "sweeny|d": "Dane Sweeny",
+    "searle|h": "Henry Searle",
+    "nagal|s": "Sumit Nagal",
+    "shelbayh|a": "Abedallah Shelbayh",
+    "bouquier|a": "Arthur Bouquier",
+    "galan|d": "Daniel Elahi Galan",
+    "broom|c": "Charles Broom",
+    "tiffon|p": "Pol Martin Tiffon",
+    "blanchet|u": "Ugo Blanchet",
+    "chung|h": "Hyeon Chung",
+    "gombos|n": "Norbert Gombos",
+    "fatic|n": "Nerman Fatic",
+    "houkes|m": "Max Houkes",
+    "nedic|a": "Andrej Nedic",
+    "johnson|s": "Spencer Johnson",
+    "onclin|g": "Gauthier Onclin",
+    "silva|j": "Joao Lucas Reis Da Silva",
+    "kasnikowski|m": "Maks Kasnikowski",
+    "papoe|r": "Radu Mihai Papoe",
+    "coria|f": "Federico Coria",
+    "gorzny|s": "Sebastian Gorzny",
+    "poljicak|m": "Mili Poljicak",
+    "gomez|f": "Federico Agustin Gomez",
+    "echargui|m": "Moez Echargui",
+    "noguchi|r": "Rio Noguchi",
+    "barton|h": "Hynek Barton",
+    "dostanic|s": "Stefan Dostanic",
+    "almeida|m": "Matheus Pucinelli De Almeida",
+    "cadenasso|g": "Gianluca Cadenasso",
+    "holmgren|a": "August Holmgren",
+    "maestrelli|f": "Francesco Maestrelli",
+    "kouame|m": "Moise Kouame",
+    "milavsky|d": "Daniel Milavsky",
+    "poullain|l": "Lucas Poullain",
+    "broska|f": "Florian Broska",
+    "squire|h": "Henri Squire",
+    "rehberg|m": "Max Hans Rehberg",
+    "hassan|b": "Benjamin Hassan",
+    "legout|t": "Timo Legout",
+    "vasami|j": "Jacopo Vasami",
+    "brancaccio|r": "Raul Brancaccio",
+    "cassone|m": "Murphy Cassone",
+    "brouwer|g": "Gijs Brouwer",
+    "mena|f": "Facundo Mena",
+    "tu|l": "Li Tu",
+    "clarke|j": "Jay Clarke",
+    "dougaz|a": "Aziz Dougaz",
+    "vandecasteele|q": "Quinn Vandecasteele",
+    "marcondes|i": "Igor Ribeiro Marcondes",
+    "giustino|l": "Lorenzo Giustino",
+    "napolitano|s": "Stefano Napolitano",
+    "bondioli|f": "Federico Bondioli",
+    "kolar|z": "Zdenek Kolar",
+    "krueger|m": "Mitchell Krueger",
+    "olivieri|g": "Genaro Alberto Olivieri",
+    "uchiyama|y": "Yasutaka Uchiyama",
+    "crawford|o": "Oliver Crawford",
+    "serna|j": "Juan Manuel La Serna",
+    "ajdukovic|d": "Duje Ajdukovic",
+    "schoenhaus|m": "Max Schoenhaus",
+    "negritu|c": "Christoph Negritu",
+    "barrena|a": "Alex Barrena",
+    "cosano|j": "Javier Barranco Cosano",
+    "gill|f": "Felix Gill",
+    "kuzmanov|d": "Dimitar Kuzmanov",
+    "masur|d": "Daniel Masur",
+    "rosenkranz|m": "Mats Rosenkranz",
+    "rice|k": "Keegan Rice",
+    "martin|a": "Andres Martin",
+    "justo|g": "Guido Ivan Justo",
+    "nesterov|p": "Petr Nesterov",
+    "roncadelli|f": "Franco Roncadelli",
+    "krumich|m": "Martin Krumich",
+    "silva|f": "Frederico Ferreira Silva",
+    "stewart|h": "Hamish Stewart",
+    "mccabe|j": "James Mccabe",
+    "topo|m": "Marko Topo",
+    "soto|m": "Matias Soto",
+    "monday|j": "Johannus Monday",
+    "lokoli|l": "Laurent Lokoli",
+    "zhukayev|b": "Beibit Zhukayev",
+    "zhou|y": "Yi Zhou",
+    "inchauspe|p": "Paul Inchauspe",
+    "marmousez|l": "Lilian Marmousez",
+    "albot|r": "Radu Albot",
+    "smith|k": "Keegan Smith",
+    "gadamauri|b": "Buvaysar Gadamauri",
+    "matsuoka|h": "Hayato Matsuoka",
+    "matusevich|a": "Anton Matusevich",
+    "batalla|o": "Oriol Roca Batalla",
+    "hsu|y": "Yu Hsiou Hsu",
+    "valle|e": "Enrico Dalla Valle",
+    "hardt|n": "Nick Hardt",
+    "polmans|m": "Marc Polmans",
+    "hemery|c": "Calvin Hemery",
+    "alves|f": "Felipe Meligeni Alves",
+    "kicker|n": "Nicolas Kicker",
+    "damas|m": "Miguel Damas",
+    "mayo|a": "Aidan Mayo",
+    "jung|j": "Jason Jung",
+    "erel|y": "Yanki Erel",
+    "sun|f": "Fajing Sun",
+    "coulibaly|e": "Eliakim Coulibaly",
+    "mackenzie|j": "Jamie Mackenzie",
+    "bernet|h": "Henry Bernet",
+    "collarini|a": "Andrea Collarini",
+    "sanchis|d": "David Jorda Sanchis",
+    "erhard|m": "Mathys Erhard",
+    "torres|j": "Juan Bautista Torres",
+    "henning|p": "Philip Henning",
+    "chan|d": "Duncan Chan",
+    "shimizu|y": "Yuta Shimizu",
+    "ellis|b": "Blake Ellis",
+    "gakhov|i": "Ivan Gakhov",
+    "jubb|p": "Paul Jubb",
+    "caniato|c": "Carlo Alberto Caniato",
+    "aboian|v": "Valerio Aboian",
+    "sekulic|p": "Philip Sekulic",
+    "kopp|s": "Sandro Kopp",
+    "kravchenko|g": "Georgii Kravchenko",
+    "casanova|h": "Hernan Casanova",
+    "habib|h": "Hady Habib",
+    "potenza|l": "Luca Potenza",
+    "engel|j": "Justin Engel",
+    "compagnucci|t": "Tommaso Compagnucci",
+    "magadan|a": "Alan Magadan",
+    "samrej|k": "Kasidit Samrej",
+    "colson|t": "Tibo Colson",
+    "peniston|r": "Ryan Peniston",
+    "kozlov|s": "Stefan Kozlov",
+    "winter|e": "Edward Winter",
+    "dias|p": "Pedro Boscardin Dias",
+    "donski|a": "Alexander Donski",
+    "miyoshi|k": "Kenta Miyoshi",
+    "ribecai|m": "Michele Ribecai",
+    "villanueva|g": "Gonzalo Villanueva",
+    "jover|c": "Carlos Sanchez Jover",
+    "ghibaudo|a": "Antoine Ghibaudo",
+    "michalski|d": "Daniel Michalski",
+    "karol|m": "Milos Karol",
+    "wu|t": "Tung Lin Wu",
+    "martinez|a": "Alex Martinez",
+    "trotter|j": "James Trotter",
+    "jianu|f": "Filip Cristian Jianu",
+    "brunclik|p": "Petr Brunclik",
+    "molleker|r": "Rudolf Molleker",
+    "forti|f": "Francesco Forti",
+    "vasa|e": "Eero Vasa",
+    "paris|t": "Tom Paris",
+    "roig|a": "Andres Santamarta Roig",
+    "quilez|a": "Alejo Sanchez Quilez",
+    "torres|t": "Tiago Torres",
+    "bennani|k": "Karim Bennani",
+    "santillan|a": "Akira Santillan",
+    "wallin|o": "Olle Wallin",
+    "martineau|m": "Matteo Martineau",
+    "perez|a": "Alfredo Perez",
+    "faurel|t": "Thomas Faurel",
+    "alkaya|m": "Mert Alkaya",
+    "palosi|s": "Stefan Palosi",
+    "miguel|l": "Luis Guto Miguel",
+    "popko|d": "Dmitry Popko",
+    "piraino|g": "Gabriele Piraino",
+    "agamenone|f": "Franco Agamenone",
+    "ratti|l": "Lucio Ratti",
+    "bax|f": "Florent Bax",
+    "geerts|m": "Michael Geerts",
+    "milic|o": "Ognjen Milic",
+    "manzano|j": "Juan Cruz Martin Manzano",
+    "forejtek|j": "Jonas Forejtek",
+    "blancaneaux|g": "Geoffrey Blancaneaux",
+    "nikles|j": "Johan Nikles",
+    "cui|j": "Jie Cui",
+    "biryukov|p": "Petr Bar Biryukov",
+    "boulais|j": "Justin Boulais",
+    "ambrogi|l": "Luciano Emanuel Ambrogi",
+    "gengel|m": "Marek Gengel",
+    "bailly|g": "Gilles Arnaud Bailly",
+    "curbelo|i": "Ivan Marrero Curbelo",
+    "added|d": "Dan Added",
+    "rybakov|a": "Alex Rybakov",
+    "xilas|i": "Ioannis Xilas",
+    "sultanov|k": "Khumoun Sultanov",
+    "visker|n": "Niels Visker",
+    "vasilev|a": "Alexander Vasilev",
+    "taverna|s": "Santiago Fa Rodriguez Taverna",
+    "boitan|g": "Gabi Adrian Boitan",
+    "kingsley|c": "Cannon Kingsley",
+    "lee|g": "Gerard Campana Lee",
+    "romano|f": "Filippo Romano",
+    "weber|a": "Arthur Weber",
+    "aguiard|e": "Enzo Aguiard",
+    "bertrand|r": "Robin Bertrand",
+    "cardozo|j": "Joaquin  Aguilar Cardozo",
+    "mcdonald|n": "Niels Mcdonald",
+    "arnaboldi|f": "Federico Arnaboldi",
+    "moriya|h": "Hiroki Moriya",
+    "maxted|l": "Lui Maxted",
+    "denolly|c": "Corentin Denolly",
+    "zink|t": "Tyler Zink",
+    "krutykh|o": "Oleksii Krutykh",
+    "pino|c": "Conner Huertas Del Pino",
+    "ficovich|j": "Juan Pablo Ficovich",
+    "meza|a": "Alvaro Guillen Meza",
+    "prihodko|o": "Oleg Prihodko",
+    "yevseyev|d": "Denis Yevseyev",
+    "fomin|s": "Sergey Fomin",
+    "johns|g": "Garrett Johns",
+    "binda|a": "Alexandr Binda",
+    "velasco|m": "Murkel Alejandro Dellien Velasco",
+    "durasovic|v": "Viktor Durasovic",
+    "dhamne|m": "Manas Dhamne",
+    "gray|a": "Alastair Gray",
+    "pieri|s": "Samuele Pieri",
+    "basile|p": "Pierluigi Basile",
+    "sels|j": "Jelle Sels",
+    "tobon|m": "Miguel Tobon",
+    "oberleitner|n": "Neil Oberleitner",
+    "silva|d": "Daniel Dutra Da Silva",
+    "mukund|s": "Sasi Kumar Mukund",
+    "ayeni|o": "Olukayode Alafia Damina Ayeni",
+    "hernando|s": "Sergio Callejon Hernando",
+    "martin|d": "Dan Martin",
+    "leong|m": "Mitsuki Wei Kang Leong",
+    "jasika|o": "Omar Jasika",
+    "jones|m": "Maximus Jones",
+    "imamura|m": "Masamichi Imamura",
+    "castelnuovo|l": "Luca Castelnuovo",
+    "artnak|b": "Bor Artnak",
+    "pereira|t": "Tiago Pereira",
+    "uchida|k": "Kaichi Uchida",
+    "pankin|s": "Semen Pankin",
+    "gulin|s": "Svyatoslav Gulin",
+    "bicknell|b": "Blaise Bicknell",
+    "chazal|m": "Maxime Chazal",
+    "honda|n": "Naoya Honda",
+    "janvier|m": "Maxime Janvier",
+    "poling|k": "Karl Poling",
+    "serrano|j": "Juan Alejandro Hernandez Serrano",
+    "fellin|p": "Pietro Fellin",
+    "takahashi|y": "Yusuke Takahashi",
+    "ribeiro|e": "Eduardo Ribeiro",
+    "perot|r": "Raphael Perot",
+    "strombachs|r": "Robert Strombachs",
+    "wiskandt|m": "Max Wiskandt",
+    "matsuda|k": "Koki Matsuda",
+    "purtseladze|s": "Saba Purtseladze",
+    "azkara|a": "Arda Azkara",
+    "overbeck|c": "Carl Emil Overbeck",
+    "langmo|c": "Christian Langmo",
+    "ivanov|i": "Ivan Ivanov",
+    "cuenin|s": "Sean Cuenin",
+    "estevez|j": "Juan Estevez",
+    "zahraj|p": "Patrick Zahraj",
+    "giunta|m": "Massimo Giunta",
+    "peliwo|f": "Filip Peliwo",
+    "sakamoto|p": "Pedro Sakamoto",
+    "alves|m": "Mateus Alves",
+    "ursu|v": "Vadym Ursu",
+    "sin|s": "San Hui Sin",
+    "sach|t": "Tai Sach",
+    "kouzmine|c": "Constantin Bittoun Kouzmine",
+    "fenty|a": "Andrew Fenty",
+    "shah|a": "Aryan Shah",
+    "tokuda|r": "Renta Tokuda",
+    "berkieta|t": "Tomasz Berkieta",
+    "schiessl|j": "Joao Eduardo Schiessl",
+    "zarate|c": "Carlos Maria Zarate",
+    "rodriguez|l": "Lorenzo Joaquin Rodriguez",
+    "bouzige|m": "Moerani Bouzige",
+    "isomura|k": "Kokoro Isomura",
+    "dickerson|r": "Ryan Dickerson",
+    "gomez|j": "Juan Sebastian Gomez",
+    "petkovic|m": "Mika Petkovic",
+    "dellavedova|m": "Matthew Dellavedova",
+    "palan|d": "Dominik Palan",
+    "rawat|s": "Sidharth Rawat",
+    "santos|p": "Paulo Andre Saraiva Dos Santos",
+    "delaney|j": "Jake Delaney",
+    "carboni|l": "Lorenzo Carboni",
+    "heredia|s": "Samuel Heredia",
+    "villalon|n": "Nicolas Villalon",
+    "kumasaka|t": "Takuya Kumasaka",
+    "fernandez|b": "Bruno Fernandez",
+    "mccormick|t": "Tristan Mccormick",
+    "singh|k": "Karan Singh",
+    "zeitune|m": "Maximo Zeitune",
+    "singh|d": "Digvijaypratap Singh",
+    "ouakaa|a": "Aziz Ouakaa"
   },
   "bySurnameElo": {
     "sinner": {
@@ -18632,10 +19263,32 @@
         "month": "2025-04"
       }
     },
+    "kennedy": {
+      "all": {
+        "rating": 1509,
+        "rank": 263
+      },
+      "hard": {
+        "rating": 1396,
+        "rank": 337
+      },
+      "clay": {
+        "rating": 1520,
+        "rank": 203
+      },
+      "grass": {
+        "rating": 1454,
+        "rank": 258
+      },
+      "peak": {
+        "rating": 1634,
+        "month": "2026-06"
+      }
+    },
     "sweeny": {
       "all": {
         "rating": 1508,
-        "rank": 263
+        "rank": 264
       },
       "hard": {
         "rating": 1462,
@@ -18657,7 +19310,7 @@
     "searle": {
       "all": {
         "rating": 1507,
-        "rank": 264
+        "rank": 265
       },
       "hard": {
         "rating": 1366,
@@ -18679,7 +19332,7 @@
     "nagal": {
       "all": {
         "rating": 1506,
-        "rank": 265
+        "rank": 266
       },
       "hard": {
         "rating": 1445,
@@ -18701,7 +19354,7 @@
     "shelbayh": {
       "all": {
         "rating": 1506,
-        "rank": 266
+        "rank": 267
       },
       "hard": {
         "rating": 1494,
@@ -18723,7 +19376,7 @@
     "bouquier": {
       "all": {
         "rating": 1505,
-        "rank": 267
+        "rank": 268
       },
       "hard": {
         "rating": 1482,
@@ -18745,7 +19398,7 @@
     "galan": {
       "all": {
         "rating": 1505,
-        "rank": 268
+        "rank": 269
       },
       "hard": {
         "rating": 1485,
@@ -18767,7 +19420,7 @@
     "broom": {
       "all": {
         "rating": 1505,
-        "rank": 269
+        "rank": 270
       },
       "hard": {
         "rating": 1485,
@@ -18789,7 +19442,7 @@
     "tiffon": {
       "all": {
         "rating": 1503,
-        "rank": 270
+        "rank": 271
       },
       "hard": {
         "rating": 1496,
@@ -18811,7 +19464,7 @@
     "blanchet": {
       "all": {
         "rating": 1502,
-        "rank": 271
+        "rank": 272
       },
       "hard": {
         "rating": 1502,
@@ -18833,7 +19486,7 @@
     "chung": {
       "all": {
         "rating": 1502,
-        "rank": 272
+        "rank": 273
       },
       "hard": {
         "rating": 1472,
@@ -18855,7 +19508,7 @@
     "gombos": {
       "all": {
         "rating": 1501,
-        "rank": 273
+        "rank": 274
       },
       "hard": {
         "rating": 1467,
@@ -18877,7 +19530,7 @@
     "fatic": {
       "all": {
         "rating": 1499,
-        "rank": 274
+        "rank": 275
       },
       "hard": {
         "rating": 1438,
@@ -18899,7 +19552,7 @@
     "houkes": {
       "all": {
         "rating": 1495,
-        "rank": 275
+        "rank": 276
       },
       "hard": {
         "rating": 1322,
@@ -18921,7 +19574,7 @@
     "nedic": {
       "all": {
         "rating": 1495,
-        "rank": 276
+        "rank": 277
       },
       "hard": {
         "rating": 1457,
@@ -18943,7 +19596,7 @@
     "johnson": {
       "all": {
         "rating": 1492,
-        "rank": 277
+        "rank": 278
       },
       "hard": {
         "rating": 1468,
@@ -18965,7 +19618,7 @@
     "onclin": {
       "all": {
         "rating": 1492,
-        "rank": 278
+        "rank": 279
       },
       "hard": {
         "rating": 1472,
@@ -18987,7 +19640,7 @@
     "kasnikowski": {
       "all": {
         "rating": 1491,
-        "rank": 280
+        "rank": 281
       },
       "hard": {
         "rating": 1434,
@@ -19009,7 +19662,7 @@
     "papoe": {
       "all": {
         "rating": 1491,
-        "rank": 281
+        "rank": 282
       },
       "hard": {
         "rating": 1406,
@@ -19031,7 +19684,7 @@
     "coria": {
       "all": {
         "rating": 1489,
-        "rank": 282
+        "rank": 283
       },
       "hard": {
         "rating": 1419,
@@ -19053,7 +19706,7 @@
     "gorzny": {
       "all": {
         "rating": 1489,
-        "rank": 283
+        "rank": 284
       },
       "hard": {
         "rating": 1460,
@@ -19075,7 +19728,7 @@
     "poljicak": {
       "all": {
         "rating": 1489,
-        "rank": 284
+        "rank": 285
       },
       "hard": {
         "rating": 1305,
@@ -19097,7 +19750,7 @@
     "echargui": {
       "all": {
         "rating": 1488,
-        "rank": 286
+        "rank": 287
       },
       "hard": {
         "rating": 1464,
@@ -19119,7 +19772,7 @@
     "noguchi": {
       "all": {
         "rating": 1486,
-        "rank": 287
+        "rank": 288
       },
       "hard": {
         "rating": 1474,
@@ -19141,7 +19794,7 @@
     "barton": {
       "all": {
         "rating": 1486,
-        "rank": 288
+        "rank": 289
       },
       "hard": {
         "rating": 1467,
@@ -19163,7 +19816,7 @@
     "dostanic": {
       "all": {
         "rating": 1485,
-        "rank": 289
+        "rank": 290
       },
       "hard": {
         "rating": 1492,
@@ -19185,7 +19838,7 @@
     "almeida": {
       "all": {
         "rating": 1484,
-        "rank": 290
+        "rank": 291
       },
       "hard": {
         "rating": 1305,
@@ -19207,7 +19860,7 @@
     "cadenasso": {
       "all": {
         "rating": 1483,
-        "rank": 291
+        "rank": 292
       },
       "hard": {
         "rating": 1351,
@@ -19229,7 +19882,7 @@
     "holmgren": {
       "all": {
         "rating": 1481,
-        "rank": 292
+        "rank": 293
       },
       "hard": {
         "rating": 1438,
@@ -19251,7 +19904,7 @@
     "maestrelli": {
       "all": {
         "rating": 1481,
-        "rank": 293
+        "rank": 294
       },
       "hard": {
         "rating": 1490,
@@ -19273,7 +19926,7 @@
     "kouame": {
       "all": {
         "rating": 1480,
-        "rank": 294
+        "rank": 295
       },
       "hard": {
         "rating": 1457,
@@ -19295,7 +19948,7 @@
     "milavsky": {
       "all": {
         "rating": 1474,
-        "rank": 295
+        "rank": 296
       },
       "hard": {
         "rating": 1429,
@@ -19317,7 +19970,7 @@
     "poullain": {
       "all": {
         "rating": 1474,
-        "rank": 296
+        "rank": 297
       },
       "hard": {
         "rating": 1450,
@@ -19339,7 +19992,7 @@
     "broska": {
       "all": {
         "rating": 1474,
-        "rank": 297
+        "rank": 298
       },
       "hard": {
         "rating": 1385,
@@ -19361,7 +20014,7 @@
     "squire": {
       "all": {
         "rating": 1473,
-        "rank": 298
+        "rank": 299
       },
       "hard": {
         "rating": 1421,
@@ -19383,7 +20036,7 @@
     "rehberg": {
       "all": {
         "rating": 1472,
-        "rank": 299
+        "rank": 300
       },
       "hard": {
         "rating": 1471,
@@ -19405,7 +20058,7 @@
     "hassan": {
       "all": {
         "rating": 1472,
-        "rank": 300
+        "rank": 301
       },
       "hard": {
         "rating": 1413,
@@ -19427,7 +20080,7 @@
     "legout": {
       "all": {
         "rating": 1471,
-        "rank": 301
+        "rank": 302
       },
       "hard": {
         "rating": 1455,
@@ -19449,7 +20102,7 @@
     "vasami": {
       "all": {
         "rating": 1471,
-        "rank": 302
+        "rank": 303
       },
       "hard": {
         "rating": 1309,
@@ -19471,7 +20124,7 @@
     "brancaccio": {
       "all": {
         "rating": 1471,
-        "rank": 303
+        "rank": 304
       },
       "hard": {
         "rating": 1405,
@@ -19493,7 +20146,7 @@
     "cassone": {
       "all": {
         "rating": 1470,
-        "rank": 304
+        "rank": 305
       },
       "hard": {
         "rating": 1446,
@@ -19515,7 +20168,7 @@
     "brouwer": {
       "all": {
         "rating": 1470,
-        "rank": 305
+        "rank": 306
       },
       "hard": {
         "rating": 1445,
@@ -19537,7 +20190,7 @@
     "mena": {
       "all": {
         "rating": 1470,
-        "rank": 306
+        "rank": 307
       },
       "hard": {
         "rating": 1349,
@@ -19559,7 +20212,7 @@
     "tu": {
       "all": {
         "rating": 1469,
-        "rank": 307
+        "rank": 308
       },
       "hard": {
         "rating": 1452,
@@ -19581,7 +20234,7 @@
     "clarke": {
       "all": {
         "rating": 1469,
-        "rank": 308
+        "rank": 309
       },
       "hard": {
         "rating": 1418,
@@ -19603,7 +20256,7 @@
     "dougaz": {
       "all": {
         "rating": 1468,
-        "rank": 309
+        "rank": 310
       },
       "hard": {
         "rating": 1454,
@@ -19625,7 +20278,7 @@
     "vandecasteele": {
       "all": {
         "rating": 1468,
-        "rank": 310
+        "rank": 311
       },
       "hard": {
         "rating": 1451,
@@ -19647,7 +20300,7 @@
     "marcondes": {
       "all": {
         "rating": 1467,
-        "rank": 311
+        "rank": 312
       },
       "hard": {
         "rating": 1381,
@@ -19669,7 +20322,7 @@
     "giustino": {
       "all": {
         "rating": 1467,
-        "rank": 312
+        "rank": 313
       },
       "hard": {
         "rating": 1447,
@@ -19691,7 +20344,7 @@
     "napolitano": {
       "all": {
         "rating": 1466,
-        "rank": 313
+        "rank": 314
       },
       "hard": {
         "rating": 1421,
@@ -19713,7 +20366,7 @@
     "bondioli": {
       "all": {
         "rating": 1465,
-        "rank": 314
+        "rank": 315
       },
       "hard": {
         "rating": 1286,
@@ -19735,7 +20388,7 @@
     "kolar": {
       "all": {
         "rating": 1465,
-        "rank": 315
+        "rank": 316
       },
       "hard": {
         "rating": 1408,
@@ -19757,7 +20410,7 @@
     "krueger": {
       "all": {
         "rating": 1464,
-        "rank": 316
+        "rank": 317
       },
       "hard": {
         "rating": 1436,
@@ -19779,7 +20432,7 @@
     "olivieri": {
       "all": {
         "rating": 1464,
-        "rank": 317
+        "rank": 318
       },
       "hard": {
         "rating": 1348,
@@ -19801,7 +20454,7 @@
     "uchiyama": {
       "all": {
         "rating": 1463,
-        "rank": 318
+        "rank": 319
       },
       "hard": {
         "rating": 1431,
@@ -19823,7 +20476,7 @@
     "crawford": {
       "all": {
         "rating": 1462,
-        "rank": 319
+        "rank": 320
       },
       "hard": {
         "rating": 1446,
@@ -19845,7 +20498,7 @@
     "serna": {
       "all": {
         "rating": 1462,
-        "rank": 320
+        "rank": 321
       },
       "hard": {
         "rating": 1371,
@@ -19867,7 +20520,7 @@
     "ajdukovic": {
       "all": {
         "rating": 1461,
-        "rank": 321
+        "rank": 322
       },
       "hard": {
         "rating": 1453,
@@ -19889,7 +20542,7 @@
     "schoenhaus": {
       "all": {
         "rating": 1460,
-        "rank": 322
+        "rank": 323
       },
       "hard": {
         "rating": 1376,
@@ -19911,7 +20564,7 @@
     "negritu": {
       "all": {
         "rating": 1459,
-        "rank": 323
+        "rank": 324
       },
       "hard": {
         "rating": 1423,
@@ -19933,7 +20586,7 @@
     "barrena": {
       "all": {
         "rating": 1459,
-        "rank": 324
+        "rank": 325
       },
       "hard": {
         "rating": 1297,
@@ -19955,7 +20608,7 @@
     "cosano": {
       "all": {
         "rating": 1458,
-        "rank": 325
+        "rank": 326
       },
       "hard": {
         "rating": 1399,
@@ -19977,7 +20630,7 @@
     "gill": {
       "all": {
         "rating": 1458,
-        "rank": 326
+        "rank": 327
       },
       "hard": {
         "rating": 1451,
@@ -19999,7 +20652,7 @@
     "kuzmanov": {
       "all": {
         "rating": 1457,
-        "rank": 327
+        "rank": 328
       },
       "hard": {
         "rating": 1437,
@@ -20021,7 +20674,7 @@
     "masur": {
       "all": {
         "rating": 1457,
-        "rank": 328
+        "rank": 329
       },
       "hard": {
         "rating": 1425,
@@ -20043,7 +20696,7 @@
     "rosenkranz": {
       "all": {
         "rating": 1454,
-        "rank": 329
+        "rank": 330
       },
       "hard": {
         "rating": 1424,
@@ -20065,7 +20718,7 @@
     "rice": {
       "all": {
         "rating": 1452,
-        "rank": 330
+        "rank": 331
       },
       "hard": {
         "rating": 1431,
@@ -20087,7 +20740,7 @@
     "justo": {
       "all": {
         "rating": 1452,
-        "rank": 332
+        "rank": 333
       },
       "hard": {
         "rating": 1307,
@@ -20109,7 +20762,7 @@
     "nesterov": {
       "all": {
         "rating": 1450,
-        "rank": 333
+        "rank": 334
       },
       "hard": {
         "rating": 1428,
@@ -20131,7 +20784,7 @@
     "roncadelli": {
       "all": {
         "rating": 1450,
-        "rank": 334
+        "rank": 335
       },
       "hard": {
         "rating": 1344,
@@ -20153,7 +20806,7 @@
     "krumich": {
       "all": {
         "rating": 1449,
-        "rank": 335
+        "rank": 336
       },
       "hard": {
         "rating": 1355,
@@ -20175,7 +20828,7 @@
     "stewart": {
       "all": {
         "rating": 1448,
-        "rank": 337
+        "rank": 338
       },
       "hard": {
         "rating": 1412,
@@ -20197,7 +20850,7 @@
     "mccabe": {
       "all": {
         "rating": 1447,
-        "rank": 338
+        "rank": 339
       },
       "hard": {
         "rating": 1404,
@@ -20219,7 +20872,7 @@
     "topo": {
       "all": {
         "rating": 1447,
-        "rank": 339
+        "rank": 340
       },
       "hard": {
         "rating": 1465,
@@ -20241,7 +20894,7 @@
     "soto": {
       "all": {
         "rating": 1442,
-        "rank": 340
+        "rank": 341
       },
       "hard": {
         "rating": 1333,
@@ -20263,7 +20916,7 @@
     "monday": {
       "all": {
         "rating": 1442,
-        "rank": 341
+        "rank": 342
       },
       "hard": {
         "rating": 1412,
@@ -20285,7 +20938,7 @@
     "lokoli": {
       "all": {
         "rating": 1441,
-        "rank": 342
+        "rank": 343
       },
       "hard": {
         "rating": 1394,
@@ -20307,7 +20960,7 @@
     "zhukayev": {
       "all": {
         "rating": 1441,
-        "rank": 343
+        "rank": 344
       },
       "hard": {
         "rating": 1390,
@@ -20329,7 +20982,7 @@
     "zhou": {
       "all": {
         "rating": 1439,
-        "rank": 344
+        "rank": 345
       },
       "hard": {
         "rating": 1414,
@@ -20351,7 +21004,7 @@
     "inchauspe": {
       "all": {
         "rating": 1439,
-        "rank": 345
+        "rank": 346
       },
       "hard": {
         "rating": 1422,
@@ -20373,7 +21026,7 @@
     "marmousez": {
       "all": {
         "rating": 1438,
-        "rank": 346
+        "rank": 347
       },
       "hard": {
         "rating": 1390,
@@ -20395,7 +21048,7 @@
     "albot": {
       "all": {
         "rating": 1438,
-        "rank": 347
+        "rank": 348
       },
       "hard": {
         "rating": 1415,
@@ -20417,7 +21070,7 @@
     "gadamauri": {
       "all": {
         "rating": 1438,
-        "rank": 349
+        "rank": 350
       },
       "hard": {
         "rating": 1404,
@@ -20439,7 +21092,7 @@
     "matsuoka": {
       "all": {
         "rating": 1438,
-        "rank": 350
+        "rank": 351
       },
       "hard": {
         "rating": 1414,
@@ -20461,7 +21114,7 @@
     "matusevich": {
       "all": {
         "rating": 1437,
-        "rank": 351
+        "rank": 352
       },
       "hard": {
         "rating": 1407,
@@ -20483,7 +21136,7 @@
     "batalla": {
       "all": {
         "rating": 1437,
-        "rank": 352
+        "rank": 353
       },
       "hard": {
         "rating": 1374,
@@ -20505,7 +21158,7 @@
     "hsu": {
       "all": {
         "rating": 1436,
-        "rank": 353
+        "rank": 354
       },
       "hard": {
         "rating": 1416,
@@ -20527,7 +21180,7 @@
     "valle": {
       "all": {
         "rating": 1436,
-        "rank": 354
+        "rank": 355
       },
       "hard": {
         "rating": 1372,
@@ -20549,7 +21202,7 @@
     "hardt": {
       "all": {
         "rating": 1435,
-        "rank": 355
+        "rank": 356
       },
       "hard": {
         "rating": 1395,
@@ -20571,7 +21224,7 @@
     "polmans": {
       "all": {
         "rating": 1435,
-        "rank": 356
+        "rank": 357
       },
       "hard": {
         "rating": 1400,
@@ -20593,7 +21246,7 @@
     "hemery": {
       "all": {
         "rating": 1435,
-        "rank": 357
+        "rank": 358
       },
       "hard": {
         "rating": 1385,
@@ -20615,7 +21268,7 @@
     "kicker": {
       "all": {
         "rating": 1433,
-        "rank": 359
+        "rank": 360
       },
       "hard": {
         "rating": 1369,
@@ -20637,7 +21290,7 @@
     "damas": {
       "all": {
         "rating": 1433,
-        "rank": 360
+        "rank": 361
       },
       "hard": {
         "rating": 1346,
@@ -20659,7 +21312,7 @@
     "mayo": {
       "all": {
         "rating": 1432,
-        "rank": 361
+        "rank": 362
       },
       "hard": {
         "rating": 1410,
@@ -20681,7 +21334,7 @@
     "jung": {
       "all": {
         "rating": 1432,
-        "rank": 362
+        "rank": 363
       },
       "hard": {
         "rating": 1395,
@@ -20703,7 +21356,7 @@
     "erel": {
       "all": {
         "rating": 1431,
-        "rank": 363
+        "rank": 364
       },
       "hard": {
         "rating": 1415,
@@ -20725,7 +21378,7 @@
     "sun": {
       "all": {
         "rating": 1431,
-        "rank": 364
+        "rank": 365
       },
       "hard": {
         "rating": 1409,
@@ -20747,7 +21400,7 @@
     "coulibaly": {
       "all": {
         "rating": 1430,
-        "rank": 365
+        "rank": 366
       },
       "hard": {
         "rating": 1427,
@@ -20766,10 +21419,32 @@
         "month": "2025-05"
       }
     },
+    "mackenzie": {
+      "all": {
+        "rating": 1429,
+        "rank": 367
+      },
+      "hard": {
+        "rating": 1331,
+        "rank": 418
+      },
+      "clay": {
+        "rating": 1429,
+        "rank": 295
+      },
+      "grass": {
+        "rating": 1375,
+        "rank": 423
+      },
+      "peak": {
+        "rating": 1500,
+        "month": "2026-07"
+      }
+    },
     "bernet": {
       "all": {
         "rating": 1426,
-        "rank": 367
+        "rank": 369
       },
       "hard": {
         "rating": 1343,
@@ -20791,7 +21466,7 @@
     "collarini": {
       "all": {
         "rating": 1426,
-        "rank": 368
+        "rank": 370
       },
       "hard": {
         "rating": 1322,
@@ -20813,7 +21488,7 @@
     "sanchis": {
       "all": {
         "rating": 1426,
-        "rank": 369
+        "rank": 371
       },
       "hard": {
         "rating": 1278,
@@ -20835,7 +21510,7 @@
     "erhard": {
       "all": {
         "rating": 1423,
-        "rank": 370
+        "rank": 372
       },
       "hard": {
         "rating": 1399,
@@ -20857,7 +21532,7 @@
     "henning": {
       "all": {
         "rating": 1420,
-        "rank": 372
+        "rank": 374
       },
       "hard": {
         "rating": 1426,
@@ -20879,7 +21554,7 @@
     "chan": {
       "all": {
         "rating": 1419,
-        "rank": 373
+        "rank": 375
       },
       "hard": {
         "rating": 1378,
@@ -20901,7 +21576,7 @@
     "shimizu": {
       "all": {
         "rating": 1418,
-        "rank": 374
+        "rank": 376
       },
       "hard": {
         "rating": 1390,
@@ -20923,7 +21598,7 @@
     "ellis": {
       "all": {
         "rating": 1418,
-        "rank": 375
+        "rank": 377
       },
       "hard": {
         "rating": 1394,
@@ -20945,7 +21620,7 @@
     "gakhov": {
       "all": {
         "rating": 1418,
-        "rank": 376
+        "rank": 378
       },
       "hard": {
         "rating": 1380,
@@ -20967,7 +21642,7 @@
     "jubb": {
       "all": {
         "rating": 1417,
-        "rank": 377
+        "rank": 379
       },
       "hard": {
         "rating": 1385,
@@ -20989,7 +21664,7 @@
     "caniato": {
       "all": {
         "rating": 1416,
-        "rank": 378
+        "rank": 380
       },
       "hard": {
         "rating": 1296,
@@ -21011,7 +21686,7 @@
     "aboian": {
       "all": {
         "rating": 1416,
-        "rank": 379
+        "rank": 381
       },
       "hard": {
         "rating": 1268,
@@ -21033,7 +21708,7 @@
     "sekulic": {
       "all": {
         "rating": 1415,
-        "rank": 380
+        "rank": 382
       },
       "hard": {
         "rating": 1390,
@@ -21055,7 +21730,7 @@
     "kopp": {
       "all": {
         "rating": 1415,
-        "rank": 381
+        "rank": 383
       },
       "hard": {
         "rating": 1318,
@@ -21077,7 +21752,7 @@
     "kravchenko": {
       "all": {
         "rating": 1414,
-        "rank": 382
+        "rank": 384
       },
       "hard": {
         "rating": 1395,
@@ -21099,7 +21774,7 @@
     "casanova": {
       "all": {
         "rating": 1414,
-        "rank": 383
+        "rank": 385
       },
       "hard": {
         "rating": 1273,
@@ -21121,7 +21796,7 @@
     "habib": {
       "all": {
         "rating": 1412,
-        "rank": 384
+        "rank": 386
       },
       "hard": {
         "rating": 1364,
@@ -21143,7 +21818,7 @@
     "potenza": {
       "all": {
         "rating": 1412,
-        "rank": 385
+        "rank": 387
       },
       "hard": {
         "rating": 1383,
@@ -21165,7 +21840,7 @@
     "engel": {
       "all": {
         "rating": 1411,
-        "rank": 386
+        "rank": 388
       },
       "hard": {
         "rating": 1411,
@@ -21187,7 +21862,7 @@
     "compagnucci": {
       "all": {
         "rating": 1411,
-        "rank": 387
+        "rank": 389
       },
       "hard": {
         "rating": 1262,
@@ -21209,7 +21884,7 @@
     "magadan": {
       "all": {
         "rating": 1411,
-        "rank": 388
+        "rank": 390
       },
       "hard": {
         "rating": 1393,
@@ -21231,7 +21906,7 @@
     "samrej": {
       "all": {
         "rating": 1411,
-        "rank": 390
+        "rank": 392
       },
       "hard": {
         "rating": 1384,
@@ -21253,7 +21928,7 @@
     "colson": {
       "all": {
         "rating": 1409,
-        "rank": 391
+        "rank": 393
       },
       "hard": {
         "rating": 1352,
@@ -21275,7 +21950,7 @@
     "peniston": {
       "all": {
         "rating": 1408,
-        "rank": 392
+        "rank": 394
       },
       "hard": {
         "rating": 1369,
@@ -21297,7 +21972,7 @@
     "kozlov": {
       "all": {
         "rating": 1408,
-        "rank": 393
+        "rank": 395
       },
       "hard": {
         "rating": 1378,
@@ -21319,7 +21994,7 @@
     "winter": {
       "all": {
         "rating": 1407,
-        "rank": 394
+        "rank": 396
       },
       "hard": {
         "rating": 1374,
@@ -21341,7 +22016,7 @@
     "dias": {
       "all": {
         "rating": 1403,
-        "rank": 395
+        "rank": 397
       },
       "hard": {
         "rating": 1234,
@@ -21363,7 +22038,7 @@
     "donski": {
       "all": {
         "rating": 1402,
-        "rank": 396
+        "rank": 398
       },
       "hard": {
         "rating": 1435,
@@ -21385,7 +22060,7 @@
     "miyoshi": {
       "all": {
         "rating": 1400,
-        "rank": 397
+        "rank": 399
       },
       "hard": {
         "rating": 1380,
@@ -21407,7 +22082,7 @@
     "ribecai": {
       "all": {
         "rating": 1400,
-        "rank": 398
+        "rank": 400
       },
       "hard": {
         "rating": 1377,
@@ -21429,7 +22104,7 @@
     "villanueva": {
       "all": {
         "rating": 1400,
-        "rank": 399
+        "rank": 401
       },
       "hard": {
         "rating": 1286,
@@ -21451,7 +22126,7 @@
     "jover": {
       "all": {
         "rating": 1398,
-        "rank": 400
+        "rank": 402
       },
       "hard": {
         "rating": 1269,
@@ -21473,7 +22148,7 @@
     "ghibaudo": {
       "all": {
         "rating": 1397,
-        "rank": 401
+        "rank": 403
       },
       "hard": {
         "rating": 1356,
@@ -21495,7 +22170,7 @@
     "michalski": {
       "all": {
         "rating": 1393,
-        "rank": 402
+        "rank": 404
       },
       "hard": {
         "rating": 1405,
@@ -21517,7 +22192,7 @@
     "karol": {
       "all": {
         "rating": 1393,
-        "rank": 403
+        "rank": 405
       },
       "hard": {
         "rating": 1333,
@@ -21539,7 +22214,7 @@
     "trotter": {
       "all": {
         "rating": 1391,
-        "rank": 406
+        "rank": 408
       },
       "hard": {
         "rating": 1363,
@@ -21561,7 +22236,7 @@
     "jianu": {
       "all": {
         "rating": 1389,
-        "rank": 407
+        "rank": 409
       },
       "hard": {
         "rating": 1306,
@@ -21583,7 +22258,7 @@
     "brunclik": {
       "all": {
         "rating": 1387,
-        "rank": 408
+        "rank": 410
       },
       "hard": {
         "rating": 1390,
@@ -21605,7 +22280,7 @@
     "molleker": {
       "all": {
         "rating": 1386,
-        "rank": 409
+        "rank": 411
       },
       "hard": {
         "rating": 1340,
@@ -21627,7 +22302,7 @@
     "forti": {
       "all": {
         "rating": 1383,
-        "rank": 410
+        "rank": 412
       },
       "hard": {
         "rating": 1316,
@@ -21649,7 +22324,7 @@
     "vasa": {
       "all": {
         "rating": 1382,
-        "rank": 411
+        "rank": 413
       },
       "hard": {
         "rating": 1332,
@@ -21671,7 +22346,7 @@
     "paris": {
       "all": {
         "rating": 1377,
-        "rank": 412
+        "rank": 414
       },
       "hard": {
         "rating": 1356,
@@ -21693,7 +22368,7 @@
     "roig": {
       "all": {
         "rating": 1377,
-        "rank": 413
+        "rank": 415
       },
       "hard": {
         "rating": 1299,
@@ -21715,7 +22390,7 @@
     "quilez": {
       "all": {
         "rating": 1377,
-        "rank": 414
+        "rank": 416
       },
       "hard": {
         "rating": 1371,
@@ -21737,7 +22412,7 @@
     "bennani": {
       "all": {
         "rating": 1375,
-        "rank": 416
+        "rank": 418
       },
       "hard": {
         "rating": 1373,
@@ -21759,7 +22434,7 @@
     "santillan": {
       "all": {
         "rating": 1373,
-        "rank": 417
+        "rank": 419
       },
       "hard": {
         "rating": 1353,
@@ -21781,7 +22456,7 @@
     "wallin": {
       "all": {
         "rating": 1372,
-        "rank": 418
+        "rank": 420
       },
       "hard": {
         "rating": 1312,
@@ -21803,7 +22478,7 @@
     "martineau": {
       "all": {
         "rating": 1372,
-        "rank": 419
+        "rank": 421
       },
       "hard": {
         "rating": 1367,
@@ -21825,7 +22500,7 @@
     "perez": {
       "all": {
         "rating": 1372,
-        "rank": 420
+        "rank": 422
       },
       "hard": {
         "rating": 1333,
@@ -21847,7 +22522,7 @@
     "faurel": {
       "all": {
         "rating": 1369,
-        "rank": 421
+        "rank": 423
       },
       "hard": {
         "rating": 1309,
@@ -21869,7 +22544,7 @@
     "alkaya": {
       "all": {
         "rating": 1369,
-        "rank": 422
+        "rank": 424
       },
       "hard": {
         "rating": 1342,
@@ -21891,7 +22566,7 @@
     "palosi": {
       "all": {
         "rating": 1368,
-        "rank": 423
+        "rank": 425
       },
       "hard": {
         "rating": 1294,
@@ -21913,7 +22588,7 @@
     "miguel": {
       "all": {
         "rating": 1368,
-        "rank": 424
+        "rank": 426
       },
       "hard": {
         "rating": 1336,
@@ -21935,7 +22610,7 @@
     "popko": {
       "all": {
         "rating": 1368,
-        "rank": 425
+        "rank": 427
       },
       "hard": {
         "rating": 1391,
@@ -21957,7 +22632,7 @@
     "piraino": {
       "all": {
         "rating": 1368,
-        "rank": 426
+        "rank": 428
       },
       "hard": {
         "rating": 1259,
@@ -21979,7 +22654,7 @@
     "agamenone": {
       "all": {
         "rating": 1365,
-        "rank": 427
+        "rank": 429
       },
       "hard": {
         "rating": 1302,
@@ -22001,7 +22676,7 @@
     "ratti": {
       "all": {
         "rating": 1363,
-        "rank": 428
+        "rank": 430
       },
       "hard": {
         "rating": 1289,
@@ -22023,7 +22698,7 @@
     "bax": {
       "all": {
         "rating": 1362,
-        "rank": 429
+        "rank": 431
       },
       "hard": {
         "rating": 1346,
@@ -22045,7 +22720,7 @@
     "geerts": {
       "all": {
         "rating": 1362,
-        "rank": 430
+        "rank": 432
       },
       "hard": {
         "rating": 1353,
@@ -22067,7 +22742,7 @@
     "milic": {
       "all": {
         "rating": 1361,
-        "rank": 431
+        "rank": 433
       },
       "hard": {
         "rating": 1401,
@@ -22089,7 +22764,7 @@
     "manzano": {
       "all": {
         "rating": 1361,
-        "rank": 432
+        "rank": 434
       },
       "hard": {
         "rating": 1291,
@@ -22111,7 +22786,7 @@
     "forejtek": {
       "all": {
         "rating": 1360,
-        "rank": 433
+        "rank": 435
       },
       "hard": {
         "rating": 1320,
@@ -22133,7 +22808,7 @@
     "blancaneaux": {
       "all": {
         "rating": 1360,
-        "rank": 434
+        "rank": 436
       },
       "hard": {
         "rating": 1357,
@@ -22155,7 +22830,7 @@
     "nikles": {
       "all": {
         "rating": 1360,
-        "rank": 435
+        "rank": 437
       },
       "hard": {
         "rating": 1294,
@@ -22177,7 +22852,7 @@
     "cui": {
       "all": {
         "rating": 1360,
-        "rank": 436
+        "rank": 438
       },
       "hard": {
         "rating": 1340,
@@ -22199,7 +22874,7 @@
     "biryukov": {
       "all": {
         "rating": 1359,
-        "rank": 437
+        "rank": 439
       },
       "hard": {
         "rating": 1359,
@@ -22221,7 +22896,7 @@
     "boulais": {
       "all": {
         "rating": 1359,
-        "rank": 438
+        "rank": 440
       },
       "hard": {
         "rating": 1331,
@@ -22243,7 +22918,7 @@
     "ambrogi": {
       "all": {
         "rating": 1358,
-        "rank": 439
+        "rank": 441
       },
       "hard": {
         "rating": 1227,
@@ -22265,7 +22940,7 @@
     "gengel": {
       "all": {
         "rating": 1357,
-        "rank": 440
+        "rank": 442
       },
       "hard": {
         "rating": 1332,
@@ -22287,7 +22962,7 @@
     "bailly": {
       "all": {
         "rating": 1357,
-        "rank": 441
+        "rank": 443
       },
       "hard": {
         "rating": 1379,
@@ -22309,7 +22984,7 @@
     "curbelo": {
       "all": {
         "rating": 1356,
-        "rank": 442
+        "rank": 444
       },
       "hard": {
         "rating": 1306,
@@ -22331,7 +23006,7 @@
     "added": {
       "all": {
         "rating": 1354,
-        "rank": 443
+        "rank": 445
       },
       "hard": {
         "rating": 1335,
@@ -22353,7 +23028,7 @@
     "rybakov": {
       "all": {
         "rating": 1352,
-        "rank": 444
+        "rank": 446
       },
       "hard": {
         "rating": 1316,
@@ -22375,7 +23050,7 @@
     "xilas": {
       "all": {
         "rating": 1352,
-        "rank": 445
+        "rank": 447
       },
       "hard": {
         "rating": 1344,
@@ -22397,7 +23072,7 @@
     "sultanov": {
       "all": {
         "rating": 1347,
-        "rank": 446
+        "rank": 448
       },
       "hard": {
         "rating": 1334,
@@ -22419,7 +23094,7 @@
     "visker": {
       "all": {
         "rating": 1345,
-        "rank": 447
+        "rank": 449
       },
       "hard": {
         "rating": 1352,
@@ -22441,7 +23116,7 @@
     "vasilev": {
       "all": {
         "rating": 1345,
-        "rank": 448
+        "rank": 450
       },
       "hard": {
         "rating": 1282,
@@ -22463,7 +23138,7 @@
     "taverna": {
       "all": {
         "rating": 1344,
-        "rank": 449
+        "rank": 451
       },
       "hard": {
         "rating": 1293,
@@ -22485,7 +23160,7 @@
     "boitan": {
       "all": {
         "rating": 1343,
-        "rank": 450
+        "rank": 452
       },
       "hard": {
         "rating": 1314,
@@ -22507,7 +23182,7 @@
     "kingsley": {
       "all": {
         "rating": 1342,
-        "rank": 451
+        "rank": 453
       },
       "hard": {
         "rating": 1345,
@@ -22529,7 +23204,7 @@
     "lee": {
       "all": {
         "rating": 1342,
-        "rank": 452
+        "rank": 454
       },
       "hard": {
         "rating": 1319,
@@ -22551,7 +23226,7 @@
     "romano": {
       "all": {
         "rating": 1341,
-        "rank": 453
+        "rank": 455
       },
       "hard": {
         "rating": 1425,
@@ -22573,7 +23248,7 @@
     "weber": {
       "all": {
         "rating": 1340,
-        "rank": 454
+        "rank": 456
       },
       "hard": {
         "rating": 1311,
@@ -22595,7 +23270,7 @@
     "aguiard": {
       "all": {
         "rating": 1339,
-        "rank": 455
+        "rank": 457
       },
       "hard": {
         "rating": 1327,
@@ -22617,7 +23292,7 @@
     "bertrand": {
       "all": {
         "rating": 1339,
-        "rank": 456
+        "rank": 458
       },
       "hard": {
         "rating": 1338,
@@ -22639,7 +23314,7 @@
     "cardozo": {
       "all": {
         "rating": 1335,
-        "rank": 457
+        "rank": 459
       },
       "hard": {
         "rating": 1330,
@@ -22661,7 +23336,7 @@
     "arnaboldi": {
       "all": {
         "rating": 1334,
-        "rank": 459
+        "rank": 461
       },
       "hard": {
         "rating": 1303,
@@ -22683,7 +23358,7 @@
     "moriya": {
       "all": {
         "rating": 1334,
-        "rank": 460
+        "rank": 462
       },
       "hard": {
         "rating": 1302,
@@ -22705,7 +23380,7 @@
     "maxted": {
       "all": {
         "rating": 1333,
-        "rank": 461
+        "rank": 463
       },
       "hard": {
         "rating": 1311,
@@ -22727,7 +23402,7 @@
     "denolly": {
       "all": {
         "rating": 1331,
-        "rank": 462
+        "rank": 464
       },
       "hard": {
         "rating": 1271,
@@ -22749,7 +23424,7 @@
     "zink": {
       "all": {
         "rating": 1331,
-        "rank": 463
+        "rank": 465
       },
       "hard": {
         "rating": 1306,
@@ -22771,7 +23446,7 @@
     "krutykh": {
       "all": {
         "rating": 1330,
-        "rank": 464
+        "rank": 466
       },
       "hard": {
         "rating": 1337,
@@ -22793,7 +23468,7 @@
     "pino": {
       "all": {
         "rating": 1329,
-        "rank": 465
+        "rank": 467
       },
       "hard": {
         "rating": 1307,
@@ -22815,7 +23490,7 @@
     "ficovich": {
       "all": {
         "rating": 1327,
-        "rank": 466
+        "rank": 468
       },
       "hard": {
         "rating": 1313,
@@ -22837,7 +23512,7 @@
     "meza": {
       "all": {
         "rating": 1327,
-        "rank": 467
+        "rank": 469
       },
       "hard": {
         "rating": 1176,
@@ -22859,7 +23534,7 @@
     "prihodko": {
       "all": {
         "rating": 1326,
-        "rank": 468
+        "rank": 470
       },
       "hard": {
         "rating": 1368,
@@ -22881,7 +23556,7 @@
     "yevseyev": {
       "all": {
         "rating": 1325,
-        "rank": 469
+        "rank": 471
       },
       "hard": {
         "rating": 1331,
@@ -22903,7 +23578,7 @@
     "fomin": {
       "all": {
         "rating": 1324,
-        "rank": 470
+        "rank": 472
       },
       "hard": {
         "rating": 1290,
@@ -22925,7 +23600,7 @@
     "johns": {
       "all": {
         "rating": 1323,
-        "rank": 471
+        "rank": 473
       },
       "hard": {
         "rating": 1304,
@@ -22947,7 +23622,7 @@
     "binda": {
       "all": {
         "rating": 1322,
-        "rank": 472
+        "rank": 474
       },
       "hard": {
         "rating": 1283,
@@ -22969,7 +23644,7 @@
     "velasco": {
       "all": {
         "rating": 1320,
-        "rank": 473
+        "rank": 475
       },
       "hard": {
         "rating": 1328,
@@ -22991,7 +23666,7 @@
     "durasovic": {
       "all": {
         "rating": 1317,
-        "rank": 474
+        "rank": 476
       },
       "hard": {
         "rating": 1318,
@@ -23013,7 +23688,7 @@
     "dhamne": {
       "all": {
         "rating": 1316,
-        "rank": 475
+        "rank": 477
       },
       "hard": {
         "rating": 1300,
@@ -23035,7 +23710,7 @@
     "gray": {
       "all": {
         "rating": 1316,
-        "rank": 476
+        "rank": 478
       },
       "hard": {
         "rating": 1278,
@@ -23057,7 +23732,7 @@
     "pieri": {
       "all": {
         "rating": 1315,
-        "rank": 477
+        "rank": 479
       },
       "hard": {
         "rating": 1267,
@@ -23079,7 +23754,7 @@
     "basile": {
       "all": {
         "rating": 1314,
-        "rank": 478
+        "rank": 480
       },
       "hard": {
         "rating": 1209,
@@ -23101,7 +23776,7 @@
     "sels": {
       "all": {
         "rating": 1313,
-        "rank": 479
+        "rank": 481
       },
       "hard": {
         "rating": 1333,
@@ -23123,7 +23798,7 @@
     "tobon": {
       "all": {
         "rating": 1310,
-        "rank": 480
+        "rank": 482
       },
       "hard": {
         "rating": 1286,
@@ -23145,7 +23820,7 @@
     "oberleitner": {
       "all": {
         "rating": 1308,
-        "rank": 481
+        "rank": 483
       },
       "hard": {
         "rating": 1273,
@@ -23167,7 +23842,7 @@
     "mukund": {
       "all": {
         "rating": 1306,
-        "rank": 483
+        "rank": 485
       },
       "hard": {
         "rating": 1281,
@@ -23189,7 +23864,7 @@
     "ayeni": {
       "all": {
         "rating": 1305,
-        "rank": 484
+        "rank": 486
       },
       "hard": {
         "rating": 1305,
@@ -23211,7 +23886,7 @@
     "hernando": {
       "all": {
         "rating": 1304,
-        "rank": 485
+        "rank": 487
       },
       "hard": {
         "rating": 1270,
@@ -23233,7 +23908,7 @@
     "leong": {
       "all": {
         "rating": 1302,
-        "rank": 487
+        "rank": 489
       },
       "hard": {
         "rating": 1294,
@@ -23255,7 +23930,7 @@
     "jasika": {
       "all": {
         "rating": 1298,
-        "rank": 488
+        "rank": 490
       },
       "hard": {
         "rating": 1276,
@@ -23277,7 +23952,7 @@
     "imamura": {
       "all": {
         "rating": 1296,
-        "rank": 490
+        "rank": 492
       },
       "hard": {
         "rating": 1268,
@@ -23299,7 +23974,7 @@
     "castelnuovo": {
       "all": {
         "rating": 1293,
-        "rank": 491
+        "rank": 493
       },
       "hard": {
         "rating": 1273,
@@ -23321,7 +23996,7 @@
     "artnak": {
       "all": {
         "rating": 1293,
-        "rank": 492
+        "rank": 494
       },
       "hard": {
         "rating": 1261,
@@ -23343,7 +24018,7 @@
     "pereira": {
       "all": {
         "rating": 1284,
-        "rank": 493
+        "rank": 495
       },
       "hard": {
         "rating": 1262,
@@ -23365,7 +24040,7 @@
     "uchida": {
       "all": {
         "rating": 1284,
-        "rank": 494
+        "rank": 496
       },
       "hard": {
         "rating": 1263,
@@ -23387,7 +24062,7 @@
     "pankin": {
       "all": {
         "rating": 1283,
-        "rank": 495
+        "rank": 497
       },
       "hard": {
         "rating": 1268,
@@ -23409,7 +24084,7 @@
     "gulin": {
       "all": {
         "rating": 1281,
-        "rank": 496
+        "rank": 498
       },
       "hard": {
         "rating": 1245,
@@ -23431,7 +24106,7 @@
     "bicknell": {
       "all": {
         "rating": 1276,
-        "rank": 497
+        "rank": 499
       },
       "hard": {
         "rating": 1247,
@@ -23453,7 +24128,7 @@
     "chazal": {
       "all": {
         "rating": 1274,
-        "rank": 498
+        "rank": 500
       },
       "hard": {
         "rating": 1229,
@@ -23475,7 +24150,7 @@
     "honda": {
       "all": {
         "rating": 1273,
-        "rank": 499
+        "rank": 501
       },
       "hard": {
         "rating": 1269,
@@ -23497,7 +24172,7 @@
     "janvier": {
       "all": {
         "rating": 1272,
-        "rank": 500
+        "rank": 502
       },
       "hard": {
         "rating": 1256,
@@ -23519,7 +24194,7 @@
     "poling": {
       "all": {
         "rating": 1271,
-        "rank": 501
+        "rank": 503
       },
       "hard": {
         "rating": 1273,
@@ -23541,7 +24216,7 @@
     "serrano": {
       "all": {
         "rating": 1269,
-        "rank": 502
+        "rank": 504
       },
       "hard": {
         "rating": 1263,
@@ -23563,7 +24238,7 @@
     "fellin": {
       "all": {
         "rating": 1268,
-        "rank": 503
+        "rank": 505
       },
       "hard": {
         "rating": 1252,
@@ -23585,7 +24260,7 @@
     "takahashi": {
       "all": {
         "rating": 1268,
-        "rank": 504
+        "rank": 506
       },
       "hard": {
         "rating": 1243,
@@ -23607,7 +24282,7 @@
     "ribeiro": {
       "all": {
         "rating": 1268,
-        "rank": 505
+        "rank": 507
       },
       "hard": {
         "rating": 1212,
@@ -23629,7 +24304,7 @@
     "perot": {
       "all": {
         "rating": 1266,
-        "rank": 506
+        "rank": 508
       },
       "hard": {
         "rating": 1249,
@@ -23651,7 +24326,7 @@
     "strombachs": {
       "all": {
         "rating": 1265,
-        "rank": 507
+        "rank": 509
       },
       "hard": {
         "rating": 1272,
@@ -23673,7 +24348,7 @@
     "wiskandt": {
       "all": {
         "rating": 1263,
-        "rank": 508
+        "rank": 510
       },
       "hard": {
         "rating": 1226,
@@ -23695,7 +24370,7 @@
     "matsuda": {
       "all": {
         "rating": 1260,
-        "rank": 509
+        "rank": 511
       },
       "hard": {
         "rating": 1240,
@@ -23717,7 +24392,7 @@
     "purtseladze": {
       "all": {
         "rating": 1258,
-        "rank": 510
+        "rank": 512
       },
       "hard": {
         "rating": 1258,
@@ -23739,7 +24414,7 @@
     "azkara": {
       "all": {
         "rating": 1257,
-        "rank": 511
+        "rank": 513
       },
       "hard": {
         "rating": 1238,
@@ -23761,7 +24436,7 @@
     "overbeck": {
       "all": {
         "rating": 1256,
-        "rank": 512
+        "rank": 514
       },
       "hard": {
         "rating": 1236,
@@ -23783,7 +24458,7 @@
     "langmo": {
       "all": {
         "rating": 1254,
-        "rank": 513
+        "rank": 515
       },
       "hard": {
         "rating": 1234,
@@ -23805,7 +24480,7 @@
     "ivanov": {
       "all": {
         "rating": 1254,
-        "rank": 514
+        "rank": 516
       },
       "hard": {
         "rating": 1257,
@@ -23827,7 +24502,7 @@
     "cuenin": {
       "all": {
         "rating": 1254,
-        "rank": 515
+        "rank": 517
       },
       "hard": {
         "rating": 1250,
@@ -23849,7 +24524,7 @@
     "estevez": {
       "all": {
         "rating": 1253,
-        "rank": 516
+        "rank": 518
       },
       "hard": {
         "rating": 1237,
@@ -23871,7 +24546,7 @@
     "zahraj": {
       "all": {
         "rating": 1251,
-        "rank": 517
+        "rank": 519
       },
       "hard": {
         "rating": 1267,
@@ -23893,7 +24568,7 @@
     "giunta": {
       "all": {
         "rating": 1249,
-        "rank": 518
+        "rank": 520
       },
       "hard": {
         "rating": 1206,
@@ -23915,7 +24590,7 @@
     "peliwo": {
       "all": {
         "rating": 1245,
-        "rank": 519
+        "rank": 521
       },
       "hard": {
         "rating": 1223,
@@ -23937,7 +24612,7 @@
     "ursu": {
       "all": {
         "rating": 1243,
-        "rank": 522
+        "rank": 524
       },
       "hard": {
         "rating": 1222,
@@ -23959,7 +24634,7 @@
     "sin": {
       "all": {
         "rating": 1242,
-        "rank": 523
+        "rank": 525
       },
       "hard": {
         "rating": 1220,
@@ -23981,7 +24656,7 @@
     "sach": {
       "all": {
         "rating": 1241,
-        "rank": 524
+        "rank": 526
       },
       "hard": {
         "rating": 1216,
@@ -24003,7 +24678,7 @@
     "kouzmine": {
       "all": {
         "rating": 1239,
-        "rank": 525
+        "rank": 527
       },
       "hard": {
         "rating": 1222,
@@ -24025,7 +24700,7 @@
     "fenty": {
       "all": {
         "rating": 1237,
-        "rank": 526
+        "rank": 528
       },
       "hard": {
         "rating": 1210,
@@ -24047,7 +24722,7 @@
     "shah": {
       "all": {
         "rating": 1232,
-        "rank": 527
+        "rank": 529
       },
       "hard": {
         "rating": 1224,
@@ -24069,7 +24744,7 @@
     "tokuda": {
       "all": {
         "rating": 1224,
-        "rank": 528
+        "rank": 530
       },
       "hard": {
         "rating": 1197,
@@ -24091,7 +24766,7 @@
     "berkieta": {
       "all": {
         "rating": 1212,
-        "rank": 529
+        "rank": 531
       },
       "hard": {
         "rating": 1225,
@@ -24113,7 +24788,7 @@
     "schiessl": {
       "all": {
         "rating": 1202,
-        "rank": 530
+        "rank": 532
       },
       "hard": {
         "rating": 1174,
@@ -24132,10 +24807,32 @@
         "month": "2025-10"
       }
     },
+    "zarate": {
+      "all": {
+        "rating": 1200,
+        "rank": 533
+      },
+      "hard": {
+        "rating": 1212,
+        "rank": 526
+      },
+      "clay": {
+        "rating": 1187,
+        "rank": 531
+      },
+      "grass": {
+        "rating": 1300,
+        "rank": 529
+      },
+      "peak": {
+        "rating": 1302,
+        "month": "2025-10"
+      }
+    },
     "rodriguez": {
       "all": {
         "rating": 1193,
-        "rank": 531
+        "rank": 534
       },
       "hard": {
         "rating": 1173,
@@ -24157,7 +24854,7 @@
     "bouzige": {
       "all": {
         "rating": 1185,
-        "rank": 532
+        "rank": 535
       },
       "hard": {
         "rating": 1155,
@@ -24179,7 +24876,7 @@
     "isomura": {
       "all": {
         "rating": 1182,
-        "rank": 533
+        "rank": 536
       },
       "hard": {
         "rating": 1153,
@@ -24201,7 +24898,7 @@
     "dickerson": {
       "all": {
         "rating": 1181,
-        "rank": 534
+        "rank": 537
       },
       "hard": {
         "rating": 1174,
@@ -24223,7 +24920,7 @@
     "petkovic": {
       "all": {
         "rating": 1180,
-        "rank": 536
+        "rank": 539
       },
       "hard": {
         "rating": 1158,
@@ -24245,7 +24942,7 @@
     "dellavedova": {
       "all": {
         "rating": 1178,
-        "rank": 537
+        "rank": 540
       },
       "hard": {
         "rating": 1167,
@@ -24267,7 +24964,7 @@
     "palan": {
       "all": {
         "rating": 1177,
-        "rank": 538
+        "rank": 541
       },
       "hard": {
         "rating": 1158,
@@ -24289,7 +24986,7 @@
     "rawat": {
       "all": {
         "rating": 1169,
-        "rank": 539
+        "rank": 542
       },
       "hard": {
         "rating": 1139,
@@ -24311,7 +25008,7 @@
     "santos": {
       "all": {
         "rating": 1167,
-        "rank": 540
+        "rank": 543
       },
       "hard": {
         "rating": 1175,
@@ -24333,7 +25030,7 @@
     "delaney": {
       "all": {
         "rating": 1166,
-        "rank": 541
+        "rank": 544
       },
       "hard": {
         "rating": 1151,
@@ -24355,7 +25052,7 @@
     "carboni": {
       "all": {
         "rating": 1138,
-        "rank": 542
+        "rank": 545
       },
       "hard": {
         "rating": 1112,
@@ -24377,7 +25074,7 @@
     "heredia": {
       "all": {
         "rating": 1138,
-        "rank": 543
+        "rank": 546
       },
       "hard": {
         "rating": 1157,
@@ -24399,7 +25096,7 @@
     "villalon": {
       "all": {
         "rating": 1135,
-        "rank": 544
+        "rank": 547
       },
       "hard": {
         "rating": 1178,
@@ -24421,7 +25118,7 @@
     "kumasaka": {
       "all": {
         "rating": 1130,
-        "rank": 545
+        "rank": 548
       },
       "hard": {
         "rating": 1115,
@@ -24443,7 +25140,7 @@
     "fernandez": {
       "all": {
         "rating": 1130,
-        "rank": 546
+        "rank": 549
       },
       "hard": {
         "rating": 1175,
@@ -24465,7 +25162,7 @@
     "mccormick": {
       "all": {
         "rating": 1126,
-        "rank": 547
+        "rank": 550
       },
       "hard": {
         "rating": 1119,
@@ -24487,7 +25184,7 @@
     "zeitune": {
       "all": {
         "rating": 1104,
-        "rank": 549
+        "rank": 552
       },
       "hard": {
         "rating": 1162,
@@ -24509,7 +25206,7 @@
     "ouakaa": {
       "all": {
         "rating": 1050,
-        "rank": 551
+        "rank": 554
       },
       "hard": {
         "rating": 1066,
