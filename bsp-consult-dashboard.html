@@ -1426,154 +1426,14 @@
   .modal-analysis .arow .atrack{ height:6px; background:var(--bar-track); border-radius:3px; overflow:hidden; }
   .modal-analysis .arow .atrack div{ height:100%; background:var(--ma-fill, var(--periwinkle)); border-radius:3px; }
   .modal-analysis .acomingsoon{ text-align:center; color:var(--text-faint); font-size:13px; padding:30px 0; }
-  /* ---- Key Factors bento (rebuilt to export: 3×2 grid of equal cards) ---- */
-  /* Export authority = matches-upcoming.html __bundler/template, analysis.isKeyFactors.
-     Three equal columns (repeat(3,minmax(0,1fr))), 18px gap, align-items:stretch so
-     the cards in each row share one height. No tall/spanning feature — Playing style
-     is a normal card and Dimension edge fills the old empty lower-left cell. Weather
-     and the Stennisfy Model card are full-width strips below the grid. Every card is a
-     .seg-tier clickable link into its tab (hover = the interactive-card border). */
-  .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:stretch; }
-  .modal-analysis .akb{ display:flex; flex-direction:column; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:20px 22px; min-width:0; }
-  .modal-analysis .akb-wide{ width:100%; margin-top:18px; }
-  .modal-analysis .akb[role="button"]{ cursor:pointer; transition:border-color .12s ease, background .12s ease; }
-  .modal-analysis .akb[role="button"]:hover{ border-color:var(--line-open); background:var(--nav-hover); }
-  .modal-analysis .akb[role="button"]:focus-visible{ outline:2px solid var(--periwinkle); outline-offset:2px; }
-  .modal-analysis .akb-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:16px; }
-  .modal-analysis .akb-label{ font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label); font-family:'Hanken Grotesk',sans-serif; }
-  .modal-analysis .akb-chev{ color:var(--label); font-size:14px; line-height:1; }
-  .modal-analysis .akb-empty{ font-size:12.5px; color:var(--label); line-height:1.55; }
-  /* Playing style card */
-  .modal-analysis .aks-names{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px; }
-  .modal-analysis .aks-nm{ font-size:14px; font-weight:700; }
-  .modal-analysis .aks-arch{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px; font-size:9.5px; font-family:'IBM Plex Mono',monospace; color:var(--label); }
-  .modal-analysis .aks-split{ display:flex; align-items:baseline; justify-content:space-between; }
-  .modal-analysis .aks-pct{ font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:800; }
-  .modal-analysis .aks-vs{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.12em; color:var(--label); }
-  .modal-analysis .aks-bar{ height:8px; border-radius:5px; background:var(--ma-fill, var(--periwinkle)); margin:10px 0 16px; }
-  .modal-analysis .aks-summary{ font-size:13px; color:var(--text); line-height:1.55; }
-  /* Recent form card */
-  .modal-analysis .akf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; align-content:space-between; }
-  .modal-analysis .akf-nm{ font-size:13.5px; font-weight:700; margin-bottom:10px; }
-  .modal-analysis .akf-dots{ display:flex; gap:4px; margin-bottom:12px; }
-  .modal-analysis .akf-dot{ width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:700; }
-  .modal-analysis .akf-dot.w{ color:var(--positive); background:color-mix(in srgb, var(--positive) 16%, transparent); }
-  .modal-analysis .akf-dot.l{ color:var(--negative); background:color-mix(in srgb, var(--negative) 16%, transparent); }
-  .modal-analysis .akf-stat{ display:flex; justify-content:space-between; font-size:12px; color:var(--label); }
-  .modal-analysis .akf-stat.top{ padding-top:12px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .modal-analysis .akf-stat.sub{ margin-top:5px; }
-  .modal-analysis .akf-stat b{ font-family:'IBM Plex Mono',monospace; color:var(--text); font-weight:400; }
-  .modal-analysis .akf-na{ font-size:11.5px; color:var(--label); }
-  /* Head to head card */
-  .modal-analysis .akh-score{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:32px; font-weight:800; color:var(--text); margin-bottom:14px; }
-  .modal-analysis .akh-last{ text-align:center; }
-  .modal-analysis .akh-last-lbl{ font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--label); margin-bottom:5px; }
-  .modal-analysis .akh-last-line{ font-size:12px; color:var(--label); }
-  .modal-analysis .akh-meet{ text-align:center; font-size:11.5px; color:var(--label); margin-top:auto; padding-top:12px; }
-  /* Dimension edge card */
-  .modal-analysis .akd-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; flex-wrap:wrap; }
-  .modal-analysis .akd-legend{ display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .modal-analysis .akd-key{ display:inline-flex; align-items:center; gap:6px; font-size:11px; }
-  .modal-analysis .akd-line{ width:14px; height:0; border-top:2px solid currentColor; }
-  .modal-analysis .akd-dash{ font-size:11px; color:var(--label); }
-  .modal-analysis .akd-gaps{ margin-top:12px; padding-top:12px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); display:flex; flex-direction:column; gap:8px; }
-  .modal-analysis .akd-gap{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px; }
-  .modal-analysis .akd-av{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:var(--ma-t1); }
-  .modal-analysis .akd-k{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); text-align:center; }
-  .modal-analysis .akd-bv{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:var(--text); text-align:right; }
-  /* Tournament card */
-  .modal-analysis .akt-title{ font-size:13px; font-weight:600; color:var(--text); margin-bottom:4px; }
-  .modal-analysis .akt-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:2px; }
-  .modal-analysis .akt-nm{ font-size:13.5px; font-weight:700; }
-  .modal-analysis .akt-rec{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:var(--text); }
-  .modal-analysis .akt-note{ font-size:12px; color:var(--label); }
-  .modal-analysis .akt-div{ height:1px; background:var(--line-soft); margin:14px 0 16px; }
-  .modal-analysis .akt-conds{ display:flex; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
-  .modal-analysis .akt-cond b{ display:block; font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:800; color:var(--text); }
-  .modal-analysis .akt-cond > span:not(.elotip){ display:block; font-size:10px; color:var(--label); margin-top:3px; }
-  .modal-analysis .akt-cond em{ display:block; font-size:10px; color:var(--label); font-style:normal; }
-  .modal-analysis .akt-desc{ font-size:12.5px; color:var(--label); line-height:1.55; }
-  /* Odds card */
-  .modal-analysis .ako-prices{ display:flex; align-items:baseline; justify-content:space-between; }
-  .modal-analysis .ako-p{ font-family:'IBM Plex Mono',monospace; font-size:26px; font-weight:800; line-height:1; }
-  .modal-analysis .ako-names{ display:flex; align-items:baseline; justify-content:space-between; font-size:11px; color:var(--label); margin-bottom:12px; }
-  .modal-analysis .ako-split{ display:flex; height:8px; border-radius:5px; overflow:hidden; margin-bottom:6px; }
-  .modal-analysis .ako-vig{ display:flex; justify-content:space-between; font-size:11px; font-family:'IBM Plex Mono',monospace; color:var(--label); }
-  .modal-analysis .ako-sub{ font-size:12px; color:var(--label); margin-top:12px; }
-  .modal-analysis .ako-div{ height:1px; background:var(--line-soft); margin:16px 0 14px; }
-  .modal-analysis .ako-move{ margin-top:0; }
-  .modal-analysis .ako-movehd{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--label); }
-  .modal-analysis .ako-movehd span{ font-size:9.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0; text-transform:none; }
-  /* Weather strip */
-  .modal-analysis .akw-strip{ display:flex; align-items:center; gap:22px; width:100%; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:18px 22px; margin-top:18px; flex-wrap:wrap; }
-  .modal-analysis .akw-strip[role="button"]{ cursor:pointer; transition:border-color .12s ease, background .12s ease; }
-  .modal-analysis .akw-strip[role="button"]:hover{ border-color:var(--line-open); background:var(--nav-hover); }
-  .modal-analysis .akw-lbl{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); }
-  .modal-analysis .akw-v{ font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:800; color:var(--text); }
-  .modal-analysis .akw-unit{ font-size:11px; font-weight:500; color:var(--label); }
-  .modal-analysis .akw-sub{ font-size:11px; color:var(--label); }
-  .modal-analysis .akw-note{ margin-left:auto; font-size:12px; color:var(--label); }
-  /* TEN-8 layout fix — paired-panel player labels (Playing style, Recent form,
-     Dimension edge, Odds, Tournament) show surname only and NEVER wrap to a second
-     line: they truncate with an ellipsis and reveal the full name on hover, so both
-     columns stay the same height and the W/L pips line up. */
-  .modal-analysis .aks-names{ gap:8px; }
-  .modal-analysis .aks-nm{ min-width:0; max-width:48%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .modal-analysis .akf-grid > div{ min-width:0; }
-  .modal-analysis .akf-nm{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .modal-analysis .akt-row{ gap:10px; }
-  .modal-analysis .akt-nm{ min-width:0; flex:0 1 auto; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .modal-analysis .akt-rec, .modal-analysis .akt-note{ flex:0 0 auto; }
-  .modal-analysis .ako-names{ gap:8px; }
-  .modal-analysis .ako-names span{ min-width:0; max-width:48%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .modal-analysis .akd-key{ min-width:0; max-width:46%; }
-  .modal-analysis .akd-nmlbl{ display:inline-block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:bottom; }
-  /* TEN-8 layout fix — weather commentary sits to the RIGHT of the label, vertically
-     centred against it (align-items:center on .akw-strip), and wraps internally into a
-     bounded block instead of dropping full-width below the stat row. */
-  .modal-analysis .akw-note{ flex:0 1 360px; white-space:normal; line-height:1.45; }
-  /* Stennisfy Model card */
-  .modal-analysis .akm{ width:100%; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; overflow:hidden; margin-top:18px; }
-  .modal-analysis .akm-head{ padding:15px 22px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
-  .modal-analysis .akm-icon{ width:32px; height:32px; border-radius:9px; background:var(--seg-active); border:var(--ma-hw,0.33px) solid var(--seg-active-line); display:flex; align-items:center; justify-content:center; flex:none; }
-  .modal-analysis .akm-title{ font-size:16px; font-weight:800; }
-  .modal-analysis .akm-sub{ font-size:11.5px; color:var(--label); margin-top:1px; }
-  /* The card deep-links to the top-level Stennisfy Model page, so it carries a
-     button affordance (hover tint + chevron), matching the tab cards' chevron. */
-  .modal-analysis .akm[role="button"]{ cursor:pointer; transition:border-color .12s ease, background .12s ease; }
-  .modal-analysis .akm[role="button"]:hover{ border-color:var(--line-open); background:var(--surface); }
-  .modal-analysis .akm[role="button"]:focus-visible{ outline:2px solid var(--line-open); outline-offset:2px; }
-  .modal-analysis .akm-chev{ margin-left:auto; color:var(--label); font-size:20px; line-height:1; align-self:center; }
-  .modal-analysis .akm-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
-  .modal-analysis .akm-col{ padding:20px 22px; display:flex; flex-direction:column; gap:14px; }
-  .modal-analysis .akm-col.divider{ border-right:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .modal-analysis .akm-top{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
-  .modal-analysis .akm-nm{ font-size:13px; font-weight:700; }
-  .modal-analysis .akm-cap{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--label); margin-top:4px; }
-  .modal-analysis .akm-fair{ font-family:'IBM Plex Mono',monospace; font-size:48px; font-weight:700; line-height:0.82; color:var(--text); }
-  .modal-analysis .akm-flag{ align-self:flex-start; font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; letter-spacing:0.05em; border:1px solid; border-radius:6px; padding:6px 11px; white-space:nowrap; }
-  .modal-analysis .akm-flag.sharp{ color:var(--positive); background:color-mix(in srgb, var(--positive) 12%, transparent); border-color:color-mix(in srgb, var(--positive) 34%, transparent); }
-  .modal-analysis .akm-flag.none{ color:var(--negative); background:color-mix(in srgb, var(--negative) 10%, transparent); border-color:color-mix(in srgb, var(--negative) 28%, transparent); }
-  .modal-analysis .akm-mkts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .modal-analysis .akm-mkt{ display:flex; flex-direction:column; gap:6px; border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:13px 14px; }
-  .modal-analysis .akm-mkt-cap{ font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--label); }
-  .modal-analysis .akm-mkt-px{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--text); text-align:center; }
-  .modal-analysis .akm-mkt-mv{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); text-align:center; }
-  .modal-analysis .akm-mkt-gap{ font-family:'IBM Plex Mono',monospace; font-size:11px; text-align:center; }
-  .modal-analysis .akm-empty{ padding:20px 22px; font-size:12.5px; color:var(--label); line-height:1.55; }
-  @media (max-width:1000px){
-    .modal-analysis .akbento{ grid-template-columns:repeat(2,1fr); }
-  }
-  @media (max-width:680px){
-    .modal-analysis .akbento{ grid-template-columns:1fr; }
-    .modal-analysis .akw-note{ margin-left:0; white-space:normal; }
-  }
+  /* ---- Key factors tab (TEN-341): the file's .seg cards and their style-hover (DF L346–437: border + wash), a focus ring. ---- */
+  #aSectionKey .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  #aSectionKey .kf-card:hover{ border-color:var(--ma-s-5b9bff-350, var(--line-open)) !important; background:var(--ma-s-ffffff-020, var(--nav-hover)) !important; }
+  #aSectionKey .kf-card:focus-visible{ outline:2px solid var(--ma-link, var(--periwinkle)); outline-offset:2px; }
   /* ---- Playing style tab (TEN-340): the file's .seg hover rule and its style-hover values (DF L548 personal box, DF L604 row). ---- */
   #aSectionStyle .seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
   #aSectionStyle .ps2-box-open:hover{ border-color:var(--ma-s-5b9bff-300, var(--line-open)) !important; }
   #aSectionStyle .ps2-prof-toggle:hover, #aSectionStyle .ps2-more:hover{ color:var(--ma-link-hover, var(--periwinkle)) !important; }
-  /* Key factors' Dimension edge radar (styleRadarSvg) */
-  .modal-analysis .psr-svg{ width:100%; display:block; }
   .modal-analysis .anote{ font-size:11px; color:var(--text-faint); text-align:center; margin-top:8px; }
 
   /* ---- Match Stats tab — single split bar per stat (Flashscore-style) ---- */
@@ -1692,55 +1552,6 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.lost{ color:var(--negative); background:color-mix(in srgb, var(--fh-neg) 15%, transparent); border:1px solid color-mix(in srgb, var(--fh-neg) 30%, transparent); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.mp{ color:var(--positive); background:color-mix(in srgb, var(--fh-pos) 16%, transparent); border:1px solid color-mix(in srgb, var(--fh-pos) 40%, transparent); }
-
-  /* ---- Key factors — 5-card summary row ---- */
-  .akeycards{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:24px; }
-  .akeycard{ background:var(--panel-2); border:0.33px solid var(--border); border-radius:14px; padding:15px 15px 16px; min-width:0; display:flex; flex-direction:column; }
-  .akeycard.unavailable{ background:var(--surface-inner); border:var(--ma-hw,0.33px) dashed var(--border); }
-  .akeycard .akc-icon{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-bottom:13px; flex-shrink:0; }
-  .akeycard .akc-icon svg{ width:15px; height:15px; }
-  .akeycard .akc-title{ font-size:14.5px; font-weight:700; color:var(--text); margin-bottom:5px; line-height:1.25; letter-spacing:-0.01em; min-height:auto; }
-  .akeycard .akc-sub{ font-size:11.5px; color:var(--text-faint); line-height:1.35; margin-bottom:0; min-height:31px; }
-  .akeycard .akc-vals{ display:flex; align-items:flex-end; justify-content:space-between; gap:6px; margin-top:15px; margin-bottom:14px; }
-  .akeycard .akc-valcol{ display:flex; flex-direction:column; align-items:center; min-width:0; flex:1; }
-  .akeycard .akc-valcol .akc-num{ font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; color:var(--text-faint); line-height:1; }
-  .akeycard .akc-valcol .akc-num.winner{ color:var(--text); }
-  .akeycard .akc-valcol .akc-pname{ font-size:10px; color:var(--text-faint); font-weight:600; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
-  .akeycard .akc-vs{ font-size:10px; color:var(--text-faint); font-weight:600; padding-bottom:16px; flex-shrink:0; font-family:'IBM Plex Mono', monospace; }
-  .akeycard .akc-edge{ font-size:11.5px; font-weight:600; color:var(--value-pos); background:color-mix(in srgb, var(--value-pos) 14%, transparent); border:1px solid color-mix(in srgb, var(--value-pos) 40%, transparent); border-radius:8px; padding:5px 10px; display:inline-flex; align-items:center; gap:6px; text-align:center; }
-  .akeycard .akc-edge.none{ color:var(--text-faint); background:var(--panel); border:var(--ma-hw,0.33px) solid var(--border); font-weight:600; }
-  .akeycard.unavailable .akc-unavail{ margin-top:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:16px 8px; border-radius:10px; background:var(--surface-inner); text-align:center; }
-  .akeycard.unavailable .akc-unavail .akc-clock{ color:var(--text-faint); }
-  .akeycard.unavailable .akc-unavail .akc-unavail-title{ font-size:12px; font-weight:600; color:var(--text-dim); }
-  .akeycard.unavailable .akc-unavail .akc-unavail-sub{ font-size:10.5px; color:var(--text-faint); line-height:1.4; }
-
-  /* ---- Bottom: 2-panel Win Probability + H2H ---- */
-  .akeypanels{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:26px; }
-  .akeypanel{ background:var(--panel-2); border:0.33px solid var(--border); border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; min-height:118px; }
-  .akeypanel .akp-title{ display:flex; align-items:center; gap:9px; font-size:11px; color:var(--text-faint); font-weight:600; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:14px; }
-  .akeypanel .akp-title .akp-ico{ display:flex; color:var(--text-faint); }
-  .akeypanel .akp-vals{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:700; margin-bottom:8px; }
-  .akeypanel .akp-track{ height:7px; background:var(--panel); border-radius:4px; overflow:hidden; margin-top:auto; }
-  .akeypanel .akp-track div{ height:100%; background:var(--ma-fill, var(--accent)); }
-  .akeypanel .akp-sub{ font-size:10.5px; color:var(--text-faint); margin-top:8px; }
-
-  /* ---- Recent Results — bottom of Key factors ---- */
-  .arecentresults{ margin-top:6px; }
-  .arecentresults-head{ font-family:'Space Grotesk', sans-serif; font-weight:700; font-size:16px; letter-spacing:-0.01em; color:var(--text); margin-bottom:14px; }
-  .arr-col{ min-width:0; }
-  .arr-name{ display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; }
-  .arr-name .arr-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .arr-list{ border:0.33px solid var(--border); border-radius:12px; overflow:hidden; }
-  .arr-row{ display:flex; align-items:center; gap:10px; padding:9px 12px; border-bottom:0.33px solid var(--border); }
-  .arr-row:last-child{ border-bottom:none; }
-  .arr-row:hover{ background:var(--panel-2); }
-  .arr-badge{ width:22px; height:22px; border-radius:7px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
-  .arr-badge.w{ background:color-mix(in srgb, var(--value-pos) 14%, transparent); color:var(--value-pos); border:1px solid color-mix(in srgb, var(--value-pos) 35%, transparent); }
-  .arr-badge.l{ background:color-mix(in srgb, var(--value-neg) 14%, transparent); color:var(--value-neg); border:1px solid color-mix(in srgb, var(--value-neg) 35%, transparent); }
-  .arr-info{ min-width:0; flex:1; }
-  .arr-opp{ font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .arr-meta{ font-size:10.5px; color:var(--text-faint); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .arr-score{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-dim); flex-shrink:0; }
 
   /* Two-column player grid (Tournament tab, Recent results). */
   .yr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
@@ -6068,11 +5879,6 @@ function psShortName(name){ return String(name || '').replace(/^[A-Z]\.\s*/, '')
 // -> "Griekspoor" — keeping compound surnames whole. When a surname is still wide
 // enough to wrap, the CSS truncates it with an ellipsis (full name on hover), never
 // a second line. Display-only: never used for lookups/matching.
-function akSurname(name){
-  const s = psShortName(name);                       // strip any "X. " initial prefix first
-  const parts = s.split(/\s+/).filter(Boolean);
-  return parts.length > 1 ? parts.slice(1).join(' ') : s;
-}
 // Elo lookup — mirrors fetch-elo.js's key logic (last surname token + first initial,
 // with a unique-last-token fallback). Keep the two in sync.
 function psEloNorm(name){
@@ -12536,6 +12342,7 @@ function wxModel(m, entry, file, nowMs, forced, arch){
   else verdict = CP.verdictNone;
   const matchDay = matchDate ? wxDow(matchDate) + ' ' + wxMonDay(matchDate) : '—';
   return {
+    at: mt,   // the match-time row (temp, wind, gusts, feels, hum, rain chance, mm) — Key factors' Weather strip reads it
     indoor: false, unavail, archived, fresh, source, zone, venueZone: zoneOk, fetchedMs, nowMs, today,
     mayStartLater: !unavail && !!mp && !wxFirstSlot(m, startMs, zone),
     range: wxMonDay(dates[0]) + ' – ' + wxMonDay(dates[N - 1]),
@@ -15831,6 +15638,14 @@ function trSameEvent(t, names){
   const a = String(t || '').toLowerCase(); if (!a) return true;
   return names.some(n => { const b = String(n || '').toLowerCase(); return !!b && (a.includes(b) || b.includes(a)); });
 }
+// The editions a player's record at this event counts (N6: only editions entered — a pre-TEN-320 store's synthesised gap
+// year, `withdrew`, never counts). Shared by the Tournament tab and Key factors' Tournament card.
+function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }
+// This match's round in the feed's words (DF "Quarter-finals"); "1/16-finals" → "Round of 32". Tournament tab + Key factors.
+function trRoundWords(m){
+  const rdRaw = m.tournamentRound ? (m.tournamentRound.includes(' - ') ? m.tournamentRound.split(' - ').pop().trim() : m.tournamentRound) : '';
+  return /^1\/\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;
+}
 function trClean(m){ return String((m && m.tour) || 'Tournament').replace(/^(ATP|WTA|Challenger)\s+/i, '').trim() || 'Tournament'; }
 // TEN-321 (founder 2026-09-29): Roland Garros's court-conditions key misses the feed's "French Open" — its speed cells are
 // dashed with a note until the key lands; every other event dashes only where the sheet holds no row.
@@ -15912,7 +15727,7 @@ function trModelFor(m, i){
   const clean = trClean(m), mYear = String(m.date || '').slice(0, 4);
   const mk = trMarketFor(trKeyOf(m)), names = [clean].concat((mk && mk.archiveNames) || []);
   // N6: only editions entered — a pre-TEN-320 store's synthesised gap year (`withdrew`) never shows
-  const years = ((hist && hist.years) || []).filter(y => !y.withdrew);
+  const years = trEditionsOf(hist);
   let idx = 0;
   const eds = years.map(y => {
     const rows = (y.matches || []).map(x => trRowOf(x, y.year, d, key, name, idx++, clean, names));   // newest first (the pipeline's order)
@@ -16032,8 +15847,7 @@ function trPlayerCardHtml(m, P, i){
 function trHeaderHtml(m){
   const clean = trClean(m), cs = m.courtSpeed, surf = fhSurfName(m.surface) || 'Hard';
   const location = m.venue ? [m.venue.city, m.venue.country].filter(Boolean).join(', ') : '';
-  const rdRaw = m.tournamentRound ? (m.tournamentRound.includes(' - ') ? m.tournamentRound.split(' - ').pop().trim() : m.tournamentRound) : '';
-  const round = /^1\/\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;   // the feed's words (DF "Quarter-finals"); "1/16-finals" → "Round of 32"
+  const round = trRoundWords(m);
   const t3 = fhS('5b6880', '--label');
   const speedCell = cs && cs.abstractSpeed != null
     ? Number(cs.abstractSpeed).toFixed(2) + (cs.category ? ' · ' + cs.category : '')
@@ -16473,55 +16287,6 @@ const BSP_ICONS = {
   back: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 6l-6 6 6 6"></path></svg>`,
 };
 
-// 5-card Key Factors summary row. Serve/Return Strength have no underlying
-// data — API-Tennis's get_players endpoint only returns season surface
-// win/loss counts, no first-serve % or break-point conversion anywhere in
-// what we pull — so those two cards are rendered as honest "not available"
-// cards rather than fabricated numbers. The other 3 cards read the exact
-// same already-computed fields the H2H/Form/Overview tabs already use;
-// "Edge" is pure client-side comparison, no new data.
-const AKC_EDGE_ARROW = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>`;
-const AKC_CLOCK_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>`;
-
-function keyCardHtml(iconSvg, colorClass, title, subtitle, p1Val, p2Val, p1Name, p2Name, higherIsBetter){
-  let edgeHtml = `<span class="akc-edge none">No edge — even</span>`;
-  let p1Winner = false, p2Winner = false;
-  if (p1Val != null && p2Val != null && p1Val !== p2Val) {
-    const p1Better = higherIsBetter ? p1Val > p2Val : p1Val < p2Val;
-    p1Winner = p1Better; p2Winner = !p1Better;
-    const edgeColor = p1Better ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
-    edgeHtml = `<span class="akc-edge" style="color:${edgeColor}; background:${fhHexA(edgeColor, 0.14)}; border-color:${fhHexA(edgeColor, 0.4)};">${AKC_EDGE_ARROW} Edge · ${p1Better ? p1Name : p2Name}</span>`;
-  } else if (p1Val == null && p2Val == null) {
-    edgeHtml = `<span class="akc-edge none">Not available</span>`;
-  }
-  return `
-    <div class="akeycard">
-      <div class="akc-icon ticon-circle ${colorClass}">${iconSvg}</div>
-      <div class="akc-title">${title}</div>
-      <div class="akc-sub">${subtitle}</div>
-      <div class="akc-vals">
-        <div class="akc-valcol"><span class="akc-num${p1Winner ? ' winner' : ''}">${p1Val != null ? p1Val + '%' : '—'}</span><span class="akc-pname" title="${p1Name}">${p1Name}</span></div>
-        <span class="akc-vs">vs</span>
-        <div class="akc-valcol"><span class="akc-num${p2Winner ? ' winner' : ''}">${p2Val != null ? p2Val + '%' : '—'}</span><span class="akc-pname" title="${p2Name}">${p2Name}</span></div>
-      </div>
-      ${edgeHtml}
-    </div>
-  `;
-}
-function unavailableKeyCardHtml(iconSvg, title, subtitle){
-  return `
-    <div class="akeycard unavailable">
-      <div class="akc-icon ticon-circle gray">${iconSvg}</div>
-      <div class="akc-title">${title}</div>
-      <div class="akc-sub">${subtitle}</div>
-      <div class="akc-unavail">
-        <span class="akc-clock">${AKC_CLOCK_ICON}</span>
-        <div class="akc-unavail-title">Not available yet</div>
-        <div class="akc-unavail-sub">Planned — from a<br>future data source</div>
-      </div>
-    </div>
-  `;
-}
 // ---- Odds tab (Design #16) ----------------------------------------------
 // HONEST REDUCED build. The design's sparklines + dual-scale movement chart,
 // market dropdown, and Opening/Now toggle all require a per-book, timestamped
@@ -17449,126 +17214,43 @@ function buildOddsReduced(m){
   return `<div class="aodds-tab">${summary}${fairPanel}${ocPanel}${bookSec}</div>`;
 }
 
-function buildKeyFactorsCards(m){
-  const surfaceLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
-  const h2hTotal = m.h2h ? m.h2h.p1Wins + m.h2h.p2Wins : 0;
-  const h2hP1Pct = m.h2h && h2hTotal > 0 ? Math.round((m.h2h.p1Wins / h2hTotal) * 100) : null;
-  const h2hP2Pct = m.h2h && h2hTotal > 0 ? Math.round((m.h2h.p2Wins / h2hTotal) * 100) : null;
-  const cards = [
-    unavailableKeyCardHtml(AKC_ICONS.serve, 'Serve Strength', 'Avg. 1st serve in %'),
-    unavailableKeyCardHtml(AKC_ICONS.return, 'Return Strength', 'Break point conversion %'),
-    keyCardHtml(AKC_ICONS.form, 'blue', 'Recent Form', 'Win rate, recent completed matches', m.p1RecentForm, m.p2RecentForm, m.p1, m.p2, true),
-    keyCardHtml(AKC_ICONS.h2h, 'purple', 'H2H Record', 'Share of all-time meetings won', h2hP1Pct, h2hP2Pct, m.p1, m.p2, true),
-    keyCardHtml(AKC_ICONS.surface, 'orange', 'Surface Performance', `Career win rate on ${surfaceLabel}`, m.p1SurfaceWinRate, m.p2SurfaceWinRate, m.p1, m.p2, true),
-  ];
-  return `<div class="akeycards">${cards.join('')}</div>`;
-}
-
-// Bottom section — 2 clean panels: Market-implied Win Probability + Head-to-head.
-// Recent form / Surface win rate bars removed here since that data now lives
-// in the 5-card row above; tournament win-rate stays on the Tournament tab.
-const AKP_MARKET_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>`;
-const AKP_PEOPLE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>`;
-
-function buildKeyPanels(m){
-  const panels = [];
-
-  const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
-  if (hasOdds) {
-    const p1Implied = 1 / m.odds.p1;
-    const p2Implied = 1 / m.odds.p2;
-    const total = p1Implied + p2Implied;
-    const p1Fair = (p1Implied / total * 100).toFixed(1);
-    const p2Fair = (p2Implied / total * 100).toFixed(1);
-    const favorite = m.odds.p1 < m.odds.p2 ? m.p1 : m.p2;
-    panels.push(`
-      <div class="akeypanel">
-        <div class="akp-title"><span class="akp-ico">${AKP_MARKET_ICON}</span>Market-implied Win Probability</div>
-        <div class="akp-vals"><span>${p1Fair}%</span><span>${p2Fair}%</span></div>
-        <div class="akp-sub">Via ${m.odds.bookmaker} · <b style="color:var(--text);">${favorite}</b> favored (vig removed)</div>
-        <div class="akp-track"><div style="width:${p1Fair}%"></div></div>
-      </div>
-    `);
-  } else {
-    panels.push(`
-      <div class="akeypanel">
-        <div class="akp-title"><span class="akp-ico">${AKP_MARKET_ICON}</span>Market-implied Win Probability</div>
-        <div class="acomingsoon" style="padding:14px 0;">${m.finalScore ? 'No market odds — fixture completed.' : 'Odds not pulled yet for this match.'}</div>
-      </div>
-    `);
-  }
-
-  if (m.h2h) {
-    const total = m.h2h.p1Wins + m.h2h.p2Wins;
-    const bar = total > 0 ? Math.round((m.h2h.p1Wins / total) * 100) : 50;
-    panels.push(`
-      <div class="akeypanel">
-        <div class="akp-title"><span class="akp-ico">${AKP_PEOPLE_ICON}</span>Head-to-Head</div>
-        <div class="akp-vals"><span>${m.h2h.p1Wins}</span><span>${m.h2h.p2Wins}</span></div>
-        <div class="akp-sub">${total} meeting${total === 1 ? '' : 's'} on record${h2hLevelMix(m.h2h)}</div>
-        <div class="akp-track"><div style="width:${bar}%"></div></div>
-      </div>
-    `);
-  } else {
-    panels.push(`
-      <div class="akeypanel">
-        <div class="akp-title"><span class="akp-ico">${AKP_PEOPLE_ICON}</span>Head-to-Head</div>
-        <div class="acomingsoon" style="padding:14px 0;">No record on file for this pairing.</div>
-      </div>
-    `);
-  }
-
-  return `<div class="akeypanels">${panels.join('')}</div>`;
-}
-
-// Recent Results — last 5 matches per player, same p1RecentFormMatches/
-// p2RecentFormMatches data already used for the Form tab's win-rate %,
-// just rendered as a real match list instead of collapsed to a number.
-// Distinct filled-square W/L badge row style (not the Form tab's expandable
-// .fsm block), no click-to-expand — flatter list to match the reference.
-function recentResultRowHtml(match){
-  const badge = `<span class="arr-badge ${match.won ? 'w' : 'l'}">${match.won ? 'W' : 'L'}</span>`;
-  const meta = [match.tournament, match.round].filter(Boolean).join(' · ');
-  return `
-    <div class="arr-row">
-      ${badge}
-      <div class="arr-info">
-        <div class="arr-opp">${match.opponent}</div>
-        <div class="arr-meta">${meta || (match.date || '')}</div>
-      </div>
-      <div class="arr-score">${match.result || '—'}</div>
-    </div>
-  `;
-}
-function buildRecentResultsSection(m){
-  const p1Matches = (m.p1RecentFormMatches || []).slice(0, 5);
-  const p2Matches = (m.p2RecentFormMatches || []).slice(0, 5);
-  const col = (name, list, dotColor) => {
-    const nameHtml = `<div class="arr-name"><span class="arr-dot" style="background:${dotColor};"></span>${name}</div>`;
-    if (!list.length) {
-      return `<div class="arr-col">${nameHtml}<div class="acomingsoon" style="padding:16px 0;">No recent match history on record.</div></div>`;
-    }
-    return `<div class="arr-col">${nameHtml}<div class="arr-list">${list.map(recentResultRowHtml).join('')}</div></div>`;
-  };
-  return `
-    <div class="arecentresults">
-      <div class="arecentresults-head">Recent Results</div>
-      <div class="yr-grid">
-        ${col(m.p1, p1Matches, ANALYSIS_P1_COLOR)}
-        ${col(m.p2, p2Matches, ANALYSIS_P2_COLOR)}
-      </div>
-    </div>
-  `;
-}
-
-/* ---------- KEY FACTORS TAB (bento command centre) ---------- */
-// Key factors is the tab the modal opens on, so it is the only one guaranteed
-// to be read. It surfaces the headline of every other tab as a clickable block
-// that jumps there, rather than repeating the old 5-card + 2-panel layout.
-//
-// Every block degrades independently and says which feed is missing, because on
-// a live board roughly a third of matches have no archetype, no tournament
-// history, or no odds. A block that silently vanishes reads as a broken tab.
+/* ---------- KEY FACTORS TAB ---------- */
+// TEN-341 · the Key factors tab rebuilt on the TEN-312 design file: `keyFactorsFor` (DF L3184–3308), template
+// `analysis.kf.v.o` (DF L344–458). The file renders only variant `o` (KV is fixed, DF L3349): the 3×2 card grid, the
+// Weather strip and the Stennisfy Model card. Its header row (tally chips + SAMPLE DATA chip, DF L334–343) is display:none
+// and the variant switcher / "Leans = …" note (kf2For) belong to the hidden variants, so none of them is built.
+// DATA — every card reads the tab it links to, never the file's internal samples (which contradict its own tabs):
+//   · Playing style   playing-styles.json archetypes + the matchup-matrix cell in p1's direction (ps2Edge — the Playing
+//                     style tab's own reading; the archetype-matrix % is not gated, its 20-meeting floor applies)
+//   · Recent form     the Form tab's rows and filters (fhFormPlayer: form shards, else career history; walkovers and the
+//                     match itself out) over all surfaces, last 10 through the gate; the surface season record is the
+//                     Overview tab's season row (careerByYear, every level, walkovers out)
+//   · Head to head    the H2H tab's meetings (fhMeetings: api-tennis H2H ∪ both career histories; a walkover is no
+//                     meeting, a retirement counts), all surfaces (N1), the level mix as the tab prints it
+//   · Dimension edge  the Playing style tab's five-axis DNA (ps2DnaModel: dna-apitennis-ratings.json true percentiles,
+//                     last 52 weeks, the match's surface, 10-match floor) — N10: never the MCP style-radar.json
+//   · Tournament      the pipeline editions the Tournament tab counts (trEditionsOf: main draw, N7; entered only, N6;
+//                     walkovers out, N2), m.courtSpeed (N4 label), the round in the Tournament tab's words
+//   · Odds            one book from the Odds tab's rows (aOddsRowsOf), Pinnacle then Bet365 then the tab's order: its
+//                     price, its vig-removed split and its own pre-match series (one book per fixture)
+//   · Weather         the Weather tab's model at match time (wxModel: our Open-Meteo files, the archived forecast for a
+//                     started match) and its verdict line
+//   · Stennisfy Model m.valueSnapshot (fair price + edge vs Pinnacle), pinnacleOpen, the Pinnacle series and bestOdds;
+//                     no snapshot → the card's empty state (rules: .claude/rules/modal-key-factors.md)
+// The tab draws no match rows and no tooltip of its own (DoD item 8): every card deep-links (aGoTab / the Model page); the
+// DNA axis notes and the count notes ride on the modal's one tooltip (data-aotip), the hold-rate dash on maTipHtml.
+// Colours are the file's own shades (fhS → --ma-s-<source>) and the neutral D4 player pair (FH_AC / FH_BC).
+// Rules: .claude/rules/modal-key-factors.md + modal-analysis.md.
+const KF_C = {
+  card: fhS('0a0d14', '--surface'), line: fhS('ffffff-090', '--line'), soft: fhS('ffffff-070', '--line-soft'), rule: fhS('ffffff-080', '--line-soft'),
+  t3: fhS('5b6880', '--label'), t4: fhS('4b5672', '--label'), text: fhS('e7e9ee', '--text'), white: fhS('ffffff', '--text'),
+  ring: fhS('ffffff-080', '--line'), aFill: fhS('e7e9ee-120', '--seg-active'), bDash: fhS('e7e9ee-850', '--text'), bDim: fhS('e7e9ee-300', '--bar-track'),
+  up: fhS('3dd68c', '--positive'), dn: fhS('e0616f', '--negative'), upBg: fhS('3dd68c-160', '--surface-inner'), dnBg: fhS('e0616f-160', '--surface-inner'),
+  upFlagBg: fhS('3dd68c-150', '--surface-inner'), upFlagBd: fhS('3dd68c-300', '--line'), dnFlagBg: fhS('e0616f-150', '--surface-inner'), dnFlagBd: fhS('e0616f-300', '--line'),
+  iconBg: fhS('5b9bff-140', '--seg-active'), iconBd: fhS('5b9bff-340', '--seg-active-line'), icon: fhS('5b9bff', '--periwinkle'),
+};
+const KF_CAP = 'font-size:11px; letter-spacing:0.14em; text-transform:uppercase;';
+const KF_SEASON_NOTE = 'every level (ATP, Challenger, ITF), walkovers excluded: the Overview tab’s season row';
 
 // Jump to another tab in this modal. The rail has no named switcher — the whole
 // linkage is data-atab -> data-asection — so clicking the nav item IS the API.
@@ -17576,143 +17258,325 @@ function aGoTab(tab){
   const btn = document.querySelector(`#aTabs .asidenav-item[data-atab="${tab}"]`);
   if (btn) { btn.click(); const body = document.querySelector('.modal-analysis .abody'); if (body) body.scrollTop = 0; }
 }
-// A Key Factors card. In the export every card is `<div class="seg" sc-camel-on-click>`
-// — the WHOLE card is the hit target and the chevron is only the affordance. `tab`
-// names the modal tab it jumps to; omit it for a static (non-routing) card.
-function akCard(tab, inner, opts){
-  const o = opts || {};
-  const cls = 'akb' + (o.wide ? ' akb-wide' : '');
-  const attrs = tab ? ` role="button" tabindex="0" onclick="aGoTab('${tab}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aGoTab('${tab}')}"` : '';
-  return `<div class="${cls}"${attrs}>${inner}</div>`;
+// One Key factors card (DF `<div class="seg" onClick={go…}>`): the whole card is the hit target, the chevron only the
+// affordance; the file's style-hover (border + wash) is the #aSectionKey .kf-card:hover rule.
+function kfLink(go){ return ` role="button" tabindex="0" onclick="${go}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${go}}"`; }
+function kfCard(tab, inner, style){
+  return `<div class="seg kf-card" data-kf="${tab}"${kfLink(`aGoTab('${tab}')`)} style="background:${KF_C.card}; border:var(--ma-hw,0.33px) solid ${KF_C.line}; border-radius:12px; padding:20px 22px;${style ? ' ' + style : ''}">${inner}</div>`;
 }
-// Standard card header: uppercase label on the left, chevron on the right.
-function akHead(label){ return `<div class="akb-head"><span class="akb-label">${psEsc(label)}</span><span class="akb-chev">›</span></div>`; }
-function akEmpty(text){ return `<div class="akb-empty">${psEsc(text)}</div>`; }
-// Altitude bands. A two-way high/sea-level split called Kitzbuhel (762 m, alpine)
-// "sea level", which is the opposite of the read a bettor needs — thinner air
-// starts mattering well below 1,000 m.
-function altitudeLabel(alt){
-  if (alt >= 1500) return 'very high — ball flies';
-  if (alt >= 800)  return 'high — ball flies';
-  if (alt >= 400)  return 'elevated — thinner air';
-  if (alt >= 150)  return 'low';
-  return 'near sea level';
+function kfHead(label, mb){
+  return `<div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:${mb}px;"><span style="${KF_CAP} color:${KF_C.t3};">${fhEsc(label)}</span><span style="color:${KF_C.t3};">›</span></div>`;
 }
+// A line inside a card when its data is loading or absent — the tabs' one-line pattern (DESIGN GAP G29: the file draws
+// every card filled; no loading or empty state).
+function kfNote(t){ return `<div class="kf-note" style="font-size:12.5px; color:${KF_C.t3}; line-height:1.55;">${fhEsc(t)}</div>`; }
 
-// --- block: playing style ---
-function akStyleBlock(m){
-  const head = akHead('Playing style');
-  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
-  const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
-  // Empty state renders INSIDE the export's card, not instead of it — the card
-  // keeps its size and header (item 3). Dimension bars are NOT here any more;
-  // they moved to their own Dimension edge card (item 2).
-  if (!a1 || !a2){
-    const msg = !a1 && !a2
-      ? 'Neither player has a tour-level style classification yet.'
-      : `${psShortName(!a1 ? m.p1 : m.p2)} has no style classification yet — it needs a fuller tour-level record.`;
-    return akCard('style', `${head}<div class="akb-empty">${psEsc(msg)}</div>`);
+// ---- 1 · Playing style (DF L346–353) ----
+// The archetype pair, the style edge in p1's direction and one sentence, all from the Playing style tab's reading
+// (ps2Edge). The file's bar is a gradient in player A's blue: flat colour only and both players neutral (D4), so it is the
+// Playing style tab's own split — A's share in A's colour, the rest the B track.
+function kfStyleSentence(m, E){
+  const P = ps2Plural;
+  if (E.kind === 'loading') return 'Loading the style matrix…';
+  if (E.kind === 'unclassified'){
+    const who = [!E.l1 ? fhSurname(m.p1) : null, !E.l2 ? fhSurname(m.p2) : null].filter(Boolean);
+    return `${who.join(' and ')} ${who.length > 1 ? 'are' : 'is'} not yet classified — no style edge.`;
   }
-  const names = `<div class="aks-names"><span class="aks-nm" title="${psEsc(m.p1)}" style="color:${ANALYSIS_P1_COLOR};">${psEsc(akSurname(m.p1))}</span><span class="aks-nm" title="${psEsc(m.p2)}" style="color:${ANALYSIS_P2_COLOR};">${psEsc(akSurname(m.p2))}</span></div>
-    <div class="aks-arch"><span>${psEsc(a1.code)} · ${psEsc(a1.name)}</span><span>${psEsc(a2.code)} · ${psEsc(a2.name)}</span></div>`;
-  let leftPct = '—', rightPct = '—', summary;
-  if (a1.id === a2.id){
-    leftPct = '50%'; rightPct = '50%';
-    summary = `Mirror matchup — both play as ${psEsc(a1.name)}s, so style gives neither an edge.`;
-  } else {
-    const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
-    if (!cell || cell.pct == null){
-      summary = 'Too few tour meetings between these archetypes to quote a style edge.';
-    } else {
-      const p1p = cell.pct, p2p = 100 - cell.pct;
-      leftPct = `${p1p}%`; rightPct = `${p2p}%`;
-      const leadName = p1p >= p2p ? psShortName(m.p1) : psShortName(m.p2);
-      const leadArch = p1p >= p2p ? a1 : a2, offArch = p1p >= p2p ? a2 : a1;
-      summary = Math.abs(p1p - 50) < 2
-        ? `Historically a coin-flip: ${psEsc(leadArch.name)}s and ${psEsc(offArch.name)}s split ${cell.n.toLocaleString()} tour meetings almost evenly.`
-        : `${psEsc(leadArch.name)}s beat ${psEsc(offArch.name)}s ${Math.max(p1p,p2p)}% of the time across ${cell.n.toLocaleString()} tour meetings — ${psEsc(leadName)} has the style edge.`;
-    }
-  }
-  const edge = `<div class="aks-split"><span class="aks-pct" style="color:${ANALYSIS_P1_COLOR};">${leftPct}</span><span class="aks-vs">Style edge</span><span class="aks-pct" style="color:${ANALYSIS_P2_COLOR};">${rightPct}</span></div>
-    <div class="aks-bar"></div>
-    <div class="aks-summary">${summary}</div>`;
-  return akCard('style', `${head}${names}${edge}`);
+  const n = (E.n || 0).toLocaleString('en-US');
+  if (E.kind === 'thin') return `${P(E.l1)} v ${P(E.l2)}: ${n} tour meetings, below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor — no win rate quoted.`;
+  if (E.kind === 'mirror') return `Both are ${P(E.l1)} — no archetype edge either way.`;
+  const lead = E.a >= E.b ? E.l1 : E.l2, other = E.a >= E.b ? E.l2 : E.l1, who = E.a >= E.b ? m.p1 : m.p2;
+  if (Math.abs(E.a - 50) < 2) return `${P(E.l1)} v ${P(E.l2)} is a coin-flip on style alone across ${n} tour meetings.`;
+  return `${P(lead)} beat ${P(other)} ${Math.max(E.a, E.b)}% of the time across ${n} tour meetings — ${fhSurname(who)} has the style edge.`;
+}
+function kfStyleCard(m){
+  const C = KF_C, M = FH_MONO;
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2), E = ps2Edge(s1, s2);
+  const arch = lab => { const a = lab && psArchFor(lab); return a ? `${a.code} · ${a.name}` : 'Not yet classified'; };
+  const rated = E.kind === 'cell' || E.kind === 'mirror';
+  const bar = rated
+    ? `<span style="width:${E.a}%; background:${FH_AC};"></span><span style="flex:1; background:${C.bDim};"></span>`
+    : `<span style="flex:1; background:${C.bDim};"></span>`;
+  return kfCard('style', `${kfHead('Playing style', 16)}
+    <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;"><span style="font-size:14px; font-weight:700; color:${FH_AC};">${fhEsc(fhSurname(m.p1))}</span><span style="font-size:14px; font-weight:700; color:${FH_BC};">${fhEsc(fhSurname(m.p2))}</span></div>
+    <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:16px; font-size:9.5px; ${M} color:${C.t4};"><span>${fhEsc(arch(E.l1))}</span><span style="text-align:right;">${fhEsc(arch(E.l2))}</span></div>
+    <div style="display:flex; align-items:baseline; justify-content:space-between;"><span class="kf-edge-a" style="${M} font-size:26px; font-weight:800; color:${rated ? FH_AC : C.t3};">${rated ? E.a + '%' : FH_DASHC}</span><span style="font-size:10px; ${M} letter-spacing:0.12em; color:${C.t3};">Style edge</span><span class="kf-edge-b" style="${M} font-size:26px; font-weight:800; color:${rated ? FH_BC : C.t3};">${rated ? E.b + '%' : FH_DASHC}</span></div>
+    <div class="kf-edge-bar" style="display:flex; height:8px; border-radius:5px; overflow:hidden; margin:10px 0 16px;">${bar}</div>
+    <div class="kf-style-sum" style="font-size:13px; color:${C.text}; line-height:1.55; margin-bottom:18px;">${fhEsc(kfStyleSentence(m, E))}</div>`);
 }
 
-// --- block: dimension edge ---
-// The old empty lower-left cell in the export is a Dimension edge card: the mini
-// radar plus the three widest per-dimension gaps. Same data + same gate as the
-// Playing style radar (10+ charted matches for BOTH players), so Key factors can
-// never publish axis numbers the Playing style tab refuses to draw. Routes to the
-// Playing style tab (item 6). No fabrication — below the gate it shows an honest
-// empty state rather than provisional percentiles.
-function akDimEdgeBlock(m){
-  const legend = `<div class="akd-head">
-    <span class="akd-legend"><span class="akb-label">Dimension edge</span>
-      <span class="akd-key" style="color:${ANALYSIS_P1_COLOR};" title="${psEsc(m.p1)}"><span class="akd-line"></span><span class="akd-nmlbl">${psEsc(akSurname(m.p1))}</span></span>
-      <span class="akd-dash">—</span>
-      <span class="akd-key" style="color:${ANALYSIS_P2_COLOR};" title="${psEsc(m.p2)}"><span class="akd-line"></span><span class="akd-nmlbl">${psEsc(akSurname(m.p2))}</span></span>
-    </span>
-    <span class="akb-chev">›</span>
-  </div>`;
-  const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
-  if (!styleRadarDrawable(r1, r2)){
-    const minN = (styleRadarData && styleRadarData.minCharted) || 10;
-    return akCard('style', `${legend}<div class="akb-empty">A six-dimension comparison needs ${minN}+ charted matches for both players — not enough on record here.</div>`);
-  }
-  const dims = STYLE_AXES.map(ax => ({ label:ax.label, a:r1.radar[ax.k] ?? 50, b:r2.radar[ax.k] ?? 50 }));
-  const gaps = dims.slice().sort((x,y) => Math.abs(y.a - y.b) - Math.abs(x.a - x.b)).slice(0, 3);
-  const gapRows = gaps.map(g => `<div class="akd-gap"><span class="akd-av">${g.a}</span><span class="akd-k">${psEsc(g.label)}</span><span class="akd-bv">${g.b}</span></div>`).join('');
-  return akCard('style', `${legend}<div>${styleRadarSvg(dims)}</div><div class="akd-gaps">${gapRows}</div>`);
+// ---- 2 · Recent form (DF L354–370) ----
+// The Form tab's own player model (fhFormPlayer) over all surfaces, window last 10: its rows are the tab's rows (walkovers
+// and the analysed match out). Pills = the five latest; "Last N" = the window's rate through the gate (1–4 the W–L);
+// "{Surface} {season}" = the Overview tab's season row on this surface.
+function kfSeasonRec(m, idx){
+  const key = idx ? m.p2Key : m.p1Key, season = /^\d{4}/.test(String(m.date || '')) ? String(m.date).slice(0, 4) : ovSeasonYear();
+  const surf = fhSurfName(m.surface), sk = surf ? surf.toLowerCase() : null;
+  const label = `${surf || 'Surface'} ${season}`;
+  const cby = ovCareerByYear(key);
+  if (!sk || !['hard', 'clay', 'grass'].includes(sk)) return { label, txt: FH_DASHC, tip: 'No surface on record for this match.' };
+  if (!cby) return { label, txt: FH_DASHC, tip: key != null && _ovProfileSettled.has(String(key)) ? 'No career record on file for this player.' : 'Loading the season record…' };
+  const row = cby.find(r => String(r.year) === season), c = row ? cellForTier(row, sk, 'all') : null, n = c ? c.won + c.lost : 0;
+  // the Overview's own cell text: a season with no match on this surface is "—" there too (ovRec)
+  return { label, txt: n ? `${c.won}–${c.lost}` : FH_DASHC, tip: `${label}: ${n ? n + (n === 1 ? ' match' : ' matches') : 'no match'} at ${KF_SEASON_NOTE}.` };
 }
-
-// Season a match belongs to, as a 4-digit string. Anchored on the match's own date so
-// that opening a finished 2025 match does not label its surface record with this year.
-function akSeasonOf(m){
-  const d = String((m && m.date) || '');
-  return /^\d{4}/.test(d) ? d.slice(0, 4) : String(new Date().getUTCFullYear());
-}
-
-// --- block: recent form ---
-function akFormBlock(m){
-  const col = (name, rows, pct, accent) => {
-    if (!Array.isArray(rows) || !rows.length){
-      return `<div><div class="akf-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</div><div class="akf-na">No recent rows on record.</div></div>`;
-    }
-    const last5 = rows.slice(0, 5);
-    const dots = last5.map(r => `<span class="akf-dot ${r.won ? 'w' : 'l'}">${r.won ? 'W' : 'L'}</span>`).join('');
-    const last10 = rows.slice(0, 10);
-    const w10 = last10.filter(r => r.won).length;
-    const surf = (m.surface || '').toLowerCase();
-    const surfAll = rows.filter(r => (r.surface || '').toLowerCase() === surf);
-    // The surface record reads as a season figure, so it has to BE one. These rows are
-    // the player's last ~40 matches, which for most of the tour straddles two calendar
-    // years — labelling that "Clay 2026" while counting 2025 results would be a lie in
-    // the direction the client is trying to remove. Anchor the season on the match's own
-    // date (not today) so a finished match from a past season still labels correctly.
-    const season = akSeasonOf(m);
-    const surfSeason = surfAll.filter(r => String(r.date || '').slice(0, 4) === season);
-    // Fall back to the unfiltered rows only when the season is genuinely empty — early in
-    // a swing a player can have no matches yet on the surface he is about to play. Showing
-    // a dash there would be a downgrade, so we show the wider figure under a label that
-    // says so rather than one that claims a season it does not cover.
-    const seasonal = surfSeason.length > 0;
-    const surfRows = seasonal ? surfSeason : surfAll;
-    const sw = surfRows.filter(r => r.won).length;
-    const surfName = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : 'Surface';
-    const surfLabel = surfAll.length === 0 ? surfName
-      : seasonal ? `${surfName} ${season}`
-      : `${surfName} · last ${surfAll.length}`;
-    return `<div>
-      <div class="akf-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</div>
-      <div class="akf-dots">${dots}</div>
-      <div class="akf-stat top"><span>Last ${last10.length}</span><b>${maRateHtml(w10, last10.length, { nopct: `${w10}–${last10.length - w10}` })}</b></div>
-      <div class="akf-stat sub"><span>${psEsc(surfLabel)}</span><b>${surfRows.length ? `${sw}–${surfRows.length - sw}` : '—'}</b></div>
+function kfFormSide(m, idx, st){
+  const C = KF_C, M = FH_MONO, P = fhFormPlayer(m, idx, st), name = idx ? m.p2 : m.p1;
+  const pills = P.shown.slice(0, 5).map(r => `<span class="kf-pill" style="width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; ${M} font-size:11px; font-weight:700; color:${r.won ? C.up : C.dn}; background:${r.won ? C.upBg : C.dnBg};">${r.won ? 'W' : 'L'}</span>`).join('');
+  const n = P.n, rate = n ? maRateHtml(P.wins, n, { nopct: `${P.wins}–${n - P.wins}`, color: C.text }) : `<span class="ma-rate" data-ma-gate="none" style="color:${MA_GREY};">${FH_DASHC}</span>`;
+  const lastTip = n ? `Last ${n}: ${P.wins}–${n - P.wins} over the ${n} latest ${n === 1 ? 'match' : 'matches'} at every level, walkovers excluded (the Form tab’s rows).` : 'No recent matches on record.';
+  const S = kfSeasonRec(m, idx);
+  return `<div class="kf-form-side" data-kf-side="${idx ? 'b' : 'a'}" style="min-width:0;">
+      <div style="font-size:13.5px; font-weight:700; color:${idx ? FH_BC : FH_AC}; margin-bottom:10px;">${fhEsc(fhSurname(name))}</div>
+      <div style="display:flex; gap:4px; margin-bottom:12px; min-height:22px;">${pills}</div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; color:${C.t3}; padding-top:12px; border-top:var(--ma-hw,0.33px) solid ${C.soft};"><span>Last ${n || 10}</span><span class="kf-last" tabindex="0" data-aotip="${escapeHtml(fhEsc(lastTip))}" style="${M} color:${C.text};">${rate}</span></div>
+      <div style="display:flex; justify-content:space-between; font-size:12px; color:${C.t3}; margin-top:5px;"><span>${fhEsc(S.label)}</span><span class="kf-season" tabindex="0" data-aotip="${escapeHtml(fhEsc(S.tip))}" style="${M} color:${S.txt === FH_DASHC ? C.t3 : C.text};">${S.txt}</span></div>
     </div>`;
+}
+function kfFormCard(m){
+  if (!m._fhFormData) return kfCard('form', kfHead('Recent form', 16) + kfNote('Loading recent matches…'), 'display:flex; flex-direction:column;');
+  const st = Object.assign({}, fhStateFor(m).form, { surf: 'all', role: 'all', wmode: 'n', n: 10 });
+  return kfCard('form', `${kfHead('Recent form', 16)}<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; align-content:space-between;">${kfFormSide(m, 0, st)}${kfFormSide(m, 1, st)}</div>`, 'display:flex; flex-direction:column;');
+}
+
+// ---- 3 · Head to head (DF L371–381) ----
+// The H2H tab's record over all surfaces (N1): the meetings it counts (fhH2hRecCard's rule), the latest one played and the
+// count with its level mix. The last score is sets from A's side, in the winner's identity colour ("whose result").
+const KF_MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function kfMonLbl(iso){ const x = /^(\d{4})-(\d{2})/.exec(String(iso || '')); return x ? `${KF_MONS[+x[2] - 1]} ’${x[1].slice(2)}` : ''; }
+function kfH2HCard(m){
+  const C = KF_C, M = FH_MONO, head = kfHead('Head to head', 14), box = 'display:flex; flex-direction:column;';
+  if (!m._fhH2hData) return kfCard('h2h', `${head}<div style="text-align:center; ${M} font-size:32px; font-weight:800; color:${C.t3}; margin-bottom:14px;">${FH_DASHC}</div><div style="text-align:center; font-size:11.5px; color:${C.t3}; margin-top:auto; padding-top:12px;">Loading head-to-head…</div>`, box);
+  const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));
+  const a = counted.filter(r => r.won).length, n = counted.length;
+  const lm = counted[n - 1] || null;   // fhMeetings is oldest → newest
+  let last = '';
+  if (lm){
+    const sc = lm.pS != null ? `${lm.pS}–${lm.oS}${lm.ret ? ' ret.' : ''}` : FH_DASHC;
+    last = `<div class="kf-h2h-last" style="text-align:center;">
+        <div style="font-family:'Hanken Grotesk',sans-serif; font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:${C.t4}; margin-bottom:5px;">Last meeting</div>
+        <div style="font-size:12px; color:${C.t3};"><span style="${M}">${fhEsc(kfMonLbl(lm.date))}</span> · <span style="font-family:'Hanken Grotesk',sans-serif;">${fhEsc(lm.tourn || FH_DASHC)}</span> · <span style="${M} color:${lm.won ? FH_AC : FH_BC};">${fhEsc(sc)}</span></div>
+      </div>`;
+  }
+  const meet = n ? `${n} career meeting${n === 1 ? '' : 's'}${fhRecLevelMix(counted)}` : 'No meeting on record';
+  return kfCard('h2h', `${head}<div class="kf-h2h-score" style="text-align:center; ${M} font-size:32px; font-weight:800; color:${C.text}; margin-bottom:14px;">${a} – ${n - a}</div>${last}<div class="kf-h2h-n" style="text-align:center; font-size:11.5px; color:${C.t3}; margin-top:auto; padding-top:12px;">${fhEsc(meet)}</div>`, box);
+}
+
+// ---- 4 · Dimension edge (DF L382–402) ----
+// N10: the Playing style tab's five-axis DNA (ps2DnaModel, last 52 weeks, the match's surface), drawn in the file's mini
+// radar geometry (DF L3230–3248: 300×192, centre 150/96, radius 66, rings at a third, two thirds and full) — five spokes,
+// not the retired six. The three widest gaps are the axes both players carry, ranked by the percentile gap, printed as the
+// raw ratings (the Playing style tab's axis labels); each label carries that tab's axis note (population, n, percentiles).
+function kfDimCard(m){
+  const C = KF_C, M = FH_MONO, D = ps2DnaModel(m, { win: 'w52' });
+  const legend = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; flex-wrap:wrap;">
+      <span style="display:inline-flex; align-items:center; gap:10px;">
+        <span style="${KF_CAP} color:${C.t3};">Dimension edge</span>
+        <span style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:${FH_AC};"><span style="width:14px; height:0; border-top:2px solid ${FH_AC};"></span>${fhEsc(fhSurname(m.p1))}</span>
+        <span style="font-size:11px; color:${C.t4};">—</span>
+        <span style="display:inline-flex; align-items:center; gap:6px; font-size:11px; color:${FH_BC};"><span style="width:14px; height:0; border-top:2px solid ${C.bDash};"></span>${fhEsc(fhSurname(m.p2))}</span>
+      </span>
+      <span style="color:${C.t3};">›</span>
+    </div>`;
+  const N = PS2_AXES.length, cx = 150, cy = 96, RR = 66, ang = i => (-90 + i * (360 / N)) * Math.PI / 180;
+  const pt = (i, v) => [cx + v * RR * Math.cos(ang(i)), cy + v * RR * Math.sin(ang(i))].map(x => x.toFixed(1)).join(',');
+  const kids = [0.33, 0.66, 1].map(r => `<polygon points="${PS2_AXES.map((_, i) => pt(i, r)).join(' ')}" style="fill:none; stroke:${C.ring};" stroke-width="1"></polygon>`);
+  PS2_AXES.forEach((ax, i) => {
+    kids.push(`<line x1="${cx}" y1="${cy}" x2="${(cx + RR * Math.cos(ang(i))).toFixed(1)}" y2="${(cy + RR * Math.sin(ang(i))).toFixed(1)}" style="stroke:${C.ring};" stroke-width="1"></line>`);
+    kids.push(`<text x="${(cx + (RR + 17) * Math.cos(ang(i))).toFixed(1)}" y="${(cy + (RR + 17) * Math.sin(ang(i)) + 3).toFixed(1)}" style="fill:${C.t4};" font-size="10" font-family="Hanken Grotesk, sans-serif" text-anchor="middle">${fhEsc(ax.short || ax.label)}</text>`);
+  });
+  // a missing axis is not a zero: its vertex is left out (the Playing style tab's rule)
+  const shape = s => (s.d.ok ? s.vals.map((v, i) => (v.pct == null ? null : pt(i, Math.max(0, Math.min(100, v.pct)) / 100))).filter(Boolean).join(' ') : '');
+  const aP = shape(D.a), bP = shape(D.b);
+  if (bP) kids.push(`<polygon class="kf-poly-b" points="${bP}" style="fill:none; stroke:${C.bDash};" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"></polygon>`);
+  if (aP) kids.push(`<polygon class="kf-poly-a" points="${aP}" style="fill:${C.aFill}; stroke:${FH_AC};" stroke-width="1.5" stroke-linejoin="round"></polygon>`);
+  // DESIGN GAP G19 (the Playing style tab's): no shape at the floor, or loading — one centred line in the radar
+  const centre = D.loading ? 'Loading DNA…' : !aP && !bP ? 'No shape at the 10-match floor' : '';
+  if (centre) kids.push(`<text x="${cx}" y="${cy + 4}" text-anchor="middle" style="fill:${C.t3};" font-size="11" font-family="IBM Plex Mono, monospace">${centre}</text>`);
+  const svg = `<svg viewBox="0 0 300 192" width="100%" style="display:block; height:160px; margin:0 auto;">${kids.join('')}</svg>`;
+  const gaps = PS2_AXES.map((ax, i) => ({ i, ax, a: D.a.vals[i], b: D.b.vals[i] }))
+    .filter(g => g.a.pct != null && g.b.pct != null && g.a.raw != null && g.b.raw != null)
+    .sort((x, y) => Math.abs(y.a.pct - y.b.pct) - Math.abs(x.a.pct - x.b.pct)).slice(0, 3);
+  const rows = gaps.length ? gaps.map(g => `<div class="kf-gap" data-kf-axis="${g.ax.key}" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px;">
+        <span style="${M} font-size:12.5px; font-weight:700; color:${FH_AC};">${_mdnaFmt(g.a.raw, g.ax.dp)}</span>
+        <span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, g.i))}" style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:${C.t4}; text-align:center; cursor:default;">${fhEsc(g.ax.short || g.ax.label)}</span>
+        <span style="${M} font-size:12.5px; font-weight:700; color:${FH_BC}; text-align:right;">${_mdnaFmt(g.b.raw, g.ax.dp)}</span>
+      </div>`).join('')
+    // DESIGN GAP G29: no axis both players carry — the Playing style tab's reasons, one line
+    : kfNote(D.loading ? 'Loading DNA…' : [D.a, D.b].map(s => (!s.d.inPool ? `${fhSurname(s.name)}: no api-tennis rating on record.` : !s.d.ok ? `${fhSurname(s.name)}: ${s.d.matches || 0} ${D.surface} ${s.d.matches === 1 ? 'match' : 'matches'} in the last 52 weeks, below the ${MDNA_FLOOR}-match floor.` : '')).filter(Boolean).join(' ') || 'No axis both players carry.');
+  return kfCard('style', `${legend}<div style="margin-top:4px;">${svg}</div><div class="kf-gaps" style="margin-top:12px; padding-top:12px; border-top:var(--ma-hw,0.33px) solid ${C.soft}; display:flex; flex-direction:column; gap:8px;">${rows}</div>`);
+}
+
+// ---- 5 · Tournament (DF L403–415) ----
+// Title "City · TIER" (modal-key-factors.md: venue category, else the catalogue, else the name alone); "Tournament · round"
+// in the Tournament tab's words; each player's main-draw W–L at this event from the editions the Tournament tab counts, or
+// a note when none is on file; court speed (N4 label), altitude and the hold rate — the court-conditions sheet publishes no
+// count, so a dash with the reason (founder 2026-09-28; Q9 parks our own box-score rate); the conditions prose from the
+// same record (tourxConditionsProse — the Tournaments page's generator).
+function kfTourCard(m){
+  const C = KF_C, M = FH_MONO, clean = trClean(m);
+  const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === clean.toLowerCase());
+  const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';
+  const rd = trRoundWords(m);
+  const rec = (name, hist, col) => {
+    const eds = trEditionsOf(hist), W = eds.reduce((s, e) => s + (e.won || 0), 0), L = eds.reduce((s, e) => s + (e.lost || 0), 0);
+    const right = W + L
+      ? `<span class="kf-tour-rec" tabindex="0" data-aotip="${escapeHtml(fhEsc(`${W}–${L} in ${W + L} main-draw ${W + L === 1 ? 'match' : 'matches'} over ${eds.length} ${eds.length === 1 ? 'edition' : 'editions'} at ${clean}, walkovers excluded.`))}" style="${M} font-size:14px; font-weight:700; color:${C.text};">${W}–${L}</span>`
+      : `<span class="kf-tour-note" style="font-size:12px; color:${C.t4};">${hist ? 'no main-draw match' : 'no record on file'}</span>`;
+    return `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:13.5px; font-weight:700; color:${col};">${fhEsc(fhSurname(name))}</span>${right}</div>`;
   };
-  const loaded = m._formLoaded;
-  if (!loaded) return akCard('form', `${akHead('Recent form')}<div class="akb-empty">Loading recent matches…</div>`);
-  return akCard('form', `${akHead('Recent form')}<div class="akf-grid">${col(m.p1, m.p1RecentFormMatches, m.p1RecentForm, ANALYSIS_P1_COLOR)}${col(m.p2, m.p2RecentFormMatches, m.p2RecentForm, ANALYSIS_P2_COLOR)}</div>`);
+  const cs = m.courtSpeed || null, dash = t => maTipHtml(`<span tabindex="0" style="color:${C.t3};">${FH_DASHC}</span>`, fhEsc(t), { wrap: 220, start: true });
+  const cond = (val, cap, note, cls) => `<div class="${cls}"><div style="${M} font-size:17px; font-weight:800;">${val}</div><div style="font-size:10px; color:${C.t3}; margin-top:3px;">${cap}</div><div style="font-size:10px; color:${C.t4};">${note}</div></div>`;
+  const speed = cs && cs.abstractSpeed != null ? Number(cs.abstractSpeed).toFixed(2) : dash(trSpeedNote(m));
+  const alt = cs && cs.altitude != null ? `${Number(cs.altitude).toLocaleString('en-US')} m` : dash(trSpeedNote(m));
+  const hold = cs && cs.serviceHold != null ? maTipHtml('<b tabindex="0">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true }) : dash(trSpeedNote(m));
+  const conds = `<div style="display:flex; gap:16px; margin-bottom:18px;">${cond(speed, 'court speed', fhEsc(cs && cs.category || FH_DASHC), 'kf-cond-speed')}${cond(alt, 'altitude', 'above sea level', 'kf-cond-alt')}${cond(hold, 'hold rate', cs && cs.serviceHold != null ? 'n not published' : FH_DASHC, 'kf-cond-hold')}</div>`;
+  let desc = '';
+  if (cs && cs.abstractSpeed != null){
+    const surf = String(m.surface || '').toLowerCase();
+    desc = `<div class="kf-tour-desc" style="font-size:12.5px; color:${C.t3}; line-height:1.55;">${fhEsc(tourxConditionsProse(surf, cs.category, Number(cs.abstractSpeed), tourxBounce(surf, cs.altitude, cs.category)))}</div>`;
+  }
+  return kfCard('tournament', `<div class="kf-tour-title" style="font-size:13px; font-weight:600; color:${C.text}; margin-bottom:4px;">${fhEsc(tier ? `${clean} · ${tier}` : clean)}</div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;"><span style="${KF_CAP} color:${C.t3};">Tournament${rd ? ` · ${fhEsc(rd)}` : ''}</span><span style="color:${C.t3};">›</span></div>
+    <div style="display:flex; flex-direction:column; gap:2px;">${rec(m.p1, m.p1TournamentHistory, FH_AC)}${rec(m.p2, m.p2TournamentHistory, FH_BC)}</div>
+    <div style="height:1px; background:${C.soft}; margin:14px 0 16px;"></div>
+    ${conds}${desc}`);
+}
+
+// ---- 6 · Odds (DF L416–427) ----
+// ONE book for the whole card (one book per fixture): the Odds tab's rows (aOddsRowsOf: every series cut at the real
+// start), Pinnacle, then Bet365, then the tab's own order — the first book quoting both players now. Its prices, its
+// vig-removed split (market-implied, not a sample rate: no gate) and its own movement: the file's mini chart (DF L3196–3216,
+// 300×96, A's band above B's, open and last price at the ends), time-proportional along x. A book with a gap in its feed
+// is not drawn as a line (it would join the missing hours, TEN-295 Wave 2) — the card says so.
+const KF_BOOK_PREF = [/^pinnacle/i, /^bet365/i];
+function kfOddsBook(m){
+  const D = aOddsRowsOf(m, {});
+  const live = D.rows.filter(r => !r.noData && !r.stale && r.aNow != null && r.bNow != null && r.aNow >= 1.01 && r.bNow >= 1.01);
+  const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;
+  return { D, row: pick };
+}
+function kfOddsMini(row, started){
+  const C = KF_C, s1 = (row.series && row.series.a) || [], s2 = (row.series && row.series.b) || [];
+  if (s1.length < 2 && s2.length < 2) return { svg: '', note: `One ${row.name} price on record — no movement yet.` };
+  if (row.gaps && row.gaps.length) return { svg: '', note: `${row.name} left the feed for a while: its movement is not drawn across the gap.` };
+  const W = 300, x0 = 38, x1 = W - 38;
+  const ts = s1.concat(s2).map(p => p[0]), t0 = Math.min.apply(null, ts), t1 = Math.max.apply(null, ts), span = (t1 - t0) || 1;
+  const X = t => x0 + (t - t0) / span * (x1 - x0);
+  const band = (s, top, h, col, fill) => {
+    if (!s.length) return '';
+    const v = s.map(p => p[1]), mn = Math.min.apply(null, v), mx = Math.max.apply(null, v), r = (mx - mn) || 1;
+    const Y = x => top + (mx - x) / r * h;
+    const f = s[0], l = s[s.length - 1];
+    return `<text x="4" y="${(Y(f[1]) + 4).toFixed(1)}" style="fill:${col};" font-size="10" font-family="IBM Plex Mono, monospace">${aOddsFmt(f[1])}</text>`
+      + `<text x="${W - 4}" y="${(Y(l[1]) + 4).toFixed(1)}" style="fill:${col};" font-size="10" font-weight="700" font-family="IBM Plex Mono, monospace" text-anchor="end">${aOddsFmt(l[1])}</text>`
+      + (s.length > 1 ? `<polyline points="${s.map(p => X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1)).join(' ')}" style="fill:none; stroke:${fill};" stroke-width="2" stroke-linejoin="round"></polyline>` : '')
+      + `<circle cx="${X(l[0]).toFixed(1)}" cy="${Y(l[1]).toFixed(1)}" r="3" style="fill:${fill};"></circle>`;
+  };
+  const svg = `<svg class="kf-odds-mini" viewBox="0 0 ${W} 96" width="100%" style="display:block; height:96px;">${band(s1, 12, 34, FH_AC, FH_AC)}${band(s2, 58, 30, FH_BC, ANALYSIS_P2_FILL)}</svg>`;
+  return { svg: svg + `<div style="display:flex; justify-content:space-between; font-size:10px; ${FH_MONO} color:${C.t3}; margin-top:2px;"><span>Opening odd</span><span>${started ? 'Closing odd' : 'Current odd'}</span></div>`, note: '' };
+}
+// The card's book and its movement, in one place (the card and the tests read the same call).
+function kfOddsMove(m){ const { D, row } = kfOddsBook(m); return { D, row, mini: row ? kfOddsMini(row, !D.upcoming) : null }; }
+function kfOddsCard(m){
+  const C = KF_C, M = FH_MONO, head = kfHead('Odds', 14);
+  if (!m.oddsMovement && !m._oddsLoaded) return kfCard('odds', head + kfNote('Loading bookmaker odds…'));
+  const { row, mini } = kfOddsMove(m);
+  // DESIGN GAP G29: no book quotes both players — the Odds tab's own empty wording
+  if (!row) return kfCard('odds', head + kfNote('No prices in the feed for this match yet.'));
+  const a = row.aNow, b = row.bNow, i1 = 1 / a, i2 = 1 / b, p1 = i1 / (i1 + i2) * 100, p2 = 100 - p1;
+  const pc = v => `${Math.round(v * 10) / 10}%`;   // the file's own rounding (DF L3192)
+  return kfCard('odds', `${head}
+    <div style="display:flex; align-items:baseline; justify-content:space-between;"><span class="kf-odds-a" style="${M} font-size:26px; font-weight:800; color:${FH_AC};">${aOddsFmt(a)}</span><span class="kf-odds-b" style="${M} font-size:26px; font-weight:800; color:${FH_BC};">${aOddsFmt(b)}</span></div>
+    <div style="display:flex; align-items:baseline; justify-content:space-between; font-size:11px; color:${C.t3}; margin-bottom:12px;"><span>${fhEsc(fhSurname(m.p1))}</span><span>${fhEsc(fhSurname(m.p2))}</span></div>
+    <div style="display:flex; height:8px; border-radius:5px; overflow:hidden; margin-bottom:6px;"><div style="width:${p1.toFixed(1)}%; background:${FH_AC};"></div><div style="width:${p2.toFixed(1)}%; background:${ANALYSIS_P2_FILL};"></div></div>
+    <div style="display:flex; justify-content:space-between; font-size:11px; ${M} color:${C.t3};"><span class="kf-vig-a">${pc(p1)}</span><span>vig removed</span><span class="kf-vig-b">${pc(p2)}</span></div>
+    <div class="kf-odds-book" style="font-size:12px; color:${C.t3}; margin-top:12px;">Implied win probability · ${fhEsc(row.name)}</div>
+    <div style="height:1px; background:${C.soft}; margin:16px 0 14px;"></div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;"><span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:${C.t3};">Odds movement</span><span style="font-size:9.5px; ${M} color:${C.t3};">${fhEsc(row.name)}</span></div>
+    ${mini.svg || kfNote(mini.note)}`);
+}
+
+// ---- 7 · Weather strip (DF L429–436) ----
+// The Weather tab's model (wxModel) at match time: temperature, average wind, humidity, rain chance; the note is the tab's
+// own verdict line. The mood word under the temperature is the file's own banding (DF weatherFor: below 15 Cool, below 22
+// Mild, below 27 Warm, else Hot). Indoor, unavailable and loading keep the strip with dashes and the tab's own words
+// (DESIGN GAP G30: the file draws only a forecast).
+function kfWxMood(t){ return t == null ? '' : t < 15 ? 'Cool' : t < 22 ? 'Mild' : t < 27 ? 'Warm' : 'Hot'; }
+function kfEnsureWeather(m){
+  return ensureWeather(m).then(r => { m._kfWx = r; return r; }).catch(() => { m._kfWx = { entry: null, file: null, arch: null }; return m._kfWx; });
+}
+function kfWeatherStrip(m){
+  const C = KF_C, M = FH_MONO;
+  let at = null, note;
+  if (!m._kfWx) note = WX_COPY.loading;
+  else {
+    const W = wxModel(m, m._kfWx.entry, m._kfWx.file, Date.now(), null, m._kfWx.arch);
+    if (W.indoor) note = WX_COPY.indoorTitle;
+    else { note = W.verdict; if (!W.unavail) at = W.at; }
+  }
+  const v = (x, unit) => (at && at[x] != null ? `${at[x]}${unit || ''}` : FH_DASHC);
+  const cell = (val, sub, cls) => `<div class="${cls}"><span style="${M} font-size:18px; font-weight:800;">${val}</span><div style="font-size:11px; color:${C.t4};">${sub || '&nbsp;'}</div></div>`;
+  return `<div class="seg kf-card kf-wx" data-kf="weather"${kfLink(`aGoTab('weather')`)} style="display:flex; align-items:center; gap:22px; width:100%; background:${C.card}; border:var(--ma-hw,0.33px) solid ${C.line}; border-radius:12px; padding:18px 22px; margin-top:18px; flex-wrap:wrap;">
+      <span style="font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:${C.t3};">Weather · match day ›</span>
+      ${cell(v('temp', '°C'), fhEsc(kfWxMood(at && at.temp)), 'kf-wx-temp')}
+      <div class="kf-wx-wind"><span style="${M} font-size:18px; font-weight:800;">${v('wind')} <span style="font-size:11px; font-weight:500; color:${C.t3};">km/h</span></span><div style="font-size:11px; color:${C.t4};">wind</div></div>
+      ${cell(v('hum', '%'), 'humidity', 'kf-wx-hum')}${cell(v('rain', '%'), 'rain', 'kf-wx-rain')}
+      <span class="kf-wx-note" style="margin-left:auto; font-size:12px; color:${C.t3}; white-space:nowrap;">${fhEsc(note)}</span>
+    </div>`;
+}
+
+// ---- 8 · Stennisfy Model (DF L437–457) ----
+// The card deep-links to the top-level Stennisfy Model page for THIS match (modal-key-factors.md): role=button, the
+// ruled right-aligned chevron. Per player: the adjusted fair odd from the value snapshot, the SHARP VALUE / NO VALUE flag
+// from the SAME edge the Pinnacle box prints (edgeVsPinnacle), the Pinnacle box (open → now, ±pp vs fair) and the best
+// soft book (price + book; its "vs fair" is a dash by ruling — best prices cannot be de-vigged). No snapshot → the
+// card's empty state (DESIGN GAP G31: the file draws only a priced match).
+function kfModelCard(m){
+  const C = KF_C, M = FH_MONO;
+  const idAttr = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
+  const head = `<div style="padding:15px 22px; border-bottom:var(--ma-hw,0.33px) solid ${C.rule}; display:flex; align-items:center; gap:11px; flex-wrap:wrap;">
+      <span style="width:32px; height:32px; border-radius:9px; background:${C.iconBg}; border:var(--ma-hw,0.33px) solid ${C.iconBd}; display:flex; align-items:center; justify-content:center; flex:none;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 13 L8 9 L11 12 L16 6" style="stroke:${C.icon};" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path><path d="M12 6 H16 V10" style="stroke:${C.icon};" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+      <div><div style="font-size:16px; font-weight:800;">Stennisfy Model</div><div style="font-size:11.5px; color:${C.t3}; margin-top:1px;">Stennisfy adjusted price vs the market</div></div>
+      <span aria-hidden="true" style="margin-left:auto; color:${C.t3};">›</span>
+    </div>`;
+  const open = inner => `<div class="seg kf-card kf-model" data-kf="model"${kfLink(`openEdgeModelFromMatch('${idAttr}')`)} aria-label="Open the Stennisfy Model for this match" style="width:100%; background:${C.card}; border:var(--ma-hw,0.33px) solid ${C.line}; border-radius:12px; overflow:hidden; margin-top:18px;">${head}${inner}</div>`;
+  const vs = m.valueSnapshot;
+  if (!vs || vs.fairP1 == null || vs.fairP2 == null) return open(`<div class="kf-model-empty" style="padding:20px 22px;">${kfNote('The model has not published an adjusted fair price for this match yet.')}</div>`);
+  // "Now" = the Odds tab's Pinnacle row (chart + legacy shapes, cut at the real start; a stale book has no now) — the same
+  // row the Odds card reads, so the two never disagree; "Opened" = the pipeline's Pinnacle opener.
+  const pin = m.pinnacleOpen || null;
+  const pinRow = (m.oddsMovement || m._oddsLoaded) ? aOddsRowsOf(m, {}).rows.find(r => /^pinnacle/i.test(r.name) && !r.noData && !r.stale) || null : null;
+  const pinNow = side => { const v = pinRow ? pinRow[side === 1 ? 'aNow' : 'bNow'] : null; return v != null && v >= 1.01 ? Number(v) : null; };
+  const box = (cap, px, mid, gap, cls) => `<div class="${cls}" style="display:flex; flex-direction:column; gap:6px; border:var(--ma-hw,0.33px) solid ${C.line}; border-radius:12px; padding:13px 14px;"><span style="font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:${C.t3};">${cap}</span><span style="${M} font-size:22px; font-weight:700; color:${C.text}; text-align:center;">${px}</span><span style="${M} font-size:10px; color:${C.t4}; text-align:center;">${mid}</span><span style="${M} font-size:11px; color:${C.t3}; text-align:center;">● ${gap}</span></div>`;
+  const col = (side, name, accent, fairP, edge, divider) => {
+    const fair = fairP > 0 ? (1 / fairP).toFixed(2) : FH_DASHC, sharp = edge != null && edge > 0.005;
+    const flag = `<span class="kf-flag" style="align-self:flex-start; ${M} font-size:11px; font-weight:500; letter-spacing:0.05em; color:${sharp ? C.up : C.dn}; background:${sharp ? C.upFlagBg : C.dnFlagBg}; border:var(--ma-hw,0.33px) solid ${sharp ? C.upFlagBd : C.dnFlagBd}; border-radius:6px; padding:6px 11px; white-space:nowrap;">${sharp ? 'SHARP VALUE' : 'NO VALUE'}</span>`;
+    const po = pin ? (side === 1 ? pin.p1 : pin.p2) : null, pn = pinNow(side);
+    // compared as printed (2 dp): 1.8137 against an opener of 1.81 reads "1.81 → 1.81", so no arrow claims a move
+    const d2 = v => Math.round(Number(v) * 100), arrow = po != null && pn != null ? (d2(pn) > d2(po) ? '↑' : d2(pn) < d2(po) ? '↓' : '→') : '';
+    const px = pn != null ? pn.toFixed(2) : po != null ? Number(po).toFixed(2) : FH_DASHC;
+    const mv = po != null ? `Opened ${Number(po).toFixed(2)}${pn != null ? ` → Now <span style="color:${C.t3};">${pn.toFixed(2)} ${arrow}</span>` : ''}` : FH_DASHC;
+    const gap = edge != null ? `${edge > 0 ? '+' : '−'}${Math.abs(edge * 100).toFixed(1)}pp vs fair` : FH_DASHC;
+    const bo = m.bestOdds ? (side === 1 ? m.bestOdds.p1 : m.bestOdds.p2) : null;
+    const soft = bo && bo.price != null ? Number(bo.price).toFixed(2) : FH_DASHC;
+    return `<div class="kf-model-col" style="padding:20px 22px; border-right:${divider ? `var(--ma-hw,0.33px) solid ${C.soft}` : 'none'}; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px;">
+          <div><span style="display:inline-block; font-size:13px; font-weight:700; color:${accent};">${fhEsc(fhSurname(name))}</span><div style="font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:${C.t3}; margin-top:4px;">Adjusted fair odd</div></div>
+          <span class="kf-fair" style="${M} font-size:48px; font-weight:700; line-height:0.82; color:${C.white};">${fair}</span>
+        </div>
+        ${flag}
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">${box('Pinnacle', px, mv, gap, 'kf-pin')}${box('Best soft book', soft, fhEsc(bo && bo.bookmaker ? bo.bookmaker : FH_DASHC), FH_DASHC, 'kf-soft')}</div>
+      </div>`;
+  };
+  return open(`<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:0;">${col(1, m.p1, FH_AC, vs.fairP1, vs.edgeVsPinnacleP1, true)}${col(2, m.p2, FH_BC, vs.fairP2, vs.edgeVsPinnacleP2, false)}</div>`);
+}
+
+function buildKeyFactorsSection(m){
+  initAOddsTips();
+  return `<div class="kf-wrap" style="display:flex; flex-direction:column; gap:14px; max-width:1100px; margin:0 auto; line-height:normal; font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:16px; color:${KF_C.text};">
+    <div class="kf-grid" style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:stretch;">${kfStyleCard(m)}${kfFormCard(m)}${kfH2HCard(m)}${kfDimCard(m)}${kfTourCard(m)}${kfOddsCard(m)}</div>
+    ${kfWeatherStrip(m)}${kfModelCard(m)}</div>`;
 }
 
 // TEN-263 (founder ruling 2026-09-24): an H2H record that includes Challenger or
@@ -17725,454 +17589,10 @@ function h2hLevelMix(h){
   const parts = [ch ? ch + ' CH' : '', itf ? itf + ' ITF' : ''].filter(Boolean);
   return parts.length ? ' · incl. ' + parts.join(', ') : '';
 }
-// --- block: head to head ---
-function akH2HBlock(m){
-  const head = akHead('Head to head');
-  const h = m.h2h;
-  const total = h ? (h.p1Wins + h.p2Wins) : 0;
-  if (!total) return akCard('h2h', `${head}<div class="akb-empty">${psEsc(psShortName(m.p1))} and ${psEsc(psShortName(m.p2))} have never met on tour.</div>`);
-  // The score is one neutral (primary text) X–Y string, not two identity-coloured
-  // numbers: blue answers "whose number is this" and a combined score has no
-  // single owner, so colouring it would read as "who's winning" (item 12). The
-  // export carries NO win-share bar here — the last-meeting line replaces it
-  // (item 14).
-  const score = `<div class="akh-score">${h.p1Wins}–${h.p2Wins}</div>`;
-  let last = '';
-  const meets = Array.isArray(h.matches)
-    ? h.matches.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
-    : [];
-  if (meets.length){
-    const lm = meets[0];
-    const tourn = String(lm.tournament || '').split(/\s+-\s+/)[0] || lm.tournament || '';
-    // Last score coloured by the WINNER's identity — "whose result was this", not
-    // a good/bad judgement.
-    const scoreColor = lm.p1Won ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
-    const sc = String(lm.result || '').replace(/\s*-\s*/, '–');
-    last = `<div class="akh-last"><div class="akh-last-lbl">Last meeting</div>
-      <div class="akh-last-line"><span style="font-family:'IBM Plex Mono',monospace;">${psEsc(lm.date || '')}</span> · <span>${psEsc(tourn)}</span>${sc ? ` · <span style="font-family:'IBM Plex Mono',monospace; color:${scoreColor};">${psEsc(sc)}</span>` : ''}</div></div>`;
-  }
-  return akCard('h2h', `${head}${score}${last}<div class="akh-meet">${total} career meeting${total === 1 ? '' : 's'}${psEsc(h2hLevelMix(h))}</div>`);
-}
-
-// --- block: tournament + conditions ---
-function akTournamentBlock(m){
-  // Export header is TWO lines: the tournament in UI type above, then a
-  // `TOURNAMENT · {round}` small-caps label beneath (item 18). Round is parsed
-  // from `tournamentRound` ("ATP Montreal - 1/64-finals" → "1/64-finals").
-  // The "City · TIER" tier suffix the export shows isn't in the feed's tourBadge
-  // (only "ATP"), but it IS available locally (ruling: fix it with what you have):
-  // the per-draw venue.category the pipeline attaches, falling back to the static
-  // TOURNAMENT_CATALOG lookup by event name. Both are curated public calendar
-  // facts, not invented data; when neither knows the event, the title is the name
-  // alone rather than a fabricated tier.
-  const cleanTour = (m.tour || 'Tournament').replace(/^(ATP|WTA)\s+/i, '');
-  const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === cleanTour.toLowerCase());
-  const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';
-  const titleText = tier ? `${cleanTour} · ${tier}` : cleanTour;
-  const roundSeg = String(m.tournamentRound || '').split(/\s+-\s+/).slice(1).join(' - ').trim();
-  const title = `<div class="akt-title">${psEsc(titleText)}</div>`;
-  const labelRow = `<div class="akb-head"><span class="akb-label">Tournament${roundSeg ? ` · ${psEsc(roundSeg)}` : ''}</span><span class="akb-chev">›</span></div>`;
-  // Right column holds a record when the player has history at this event, or a
-  // status word ("first appearance") when he does not (item 19).
-  const row = (name, th, accent) => {
-    if (!th) return `<div class="akt-row"><span class="akt-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</span><span class="akt-note">first appearance</span></div>`;
-    return `<div class="akt-row"><span class="akt-nm" title="${psEsc(name)}" style="color:${accent};">${psEsc(akSurname(name))}</span><span class="akt-rec">${th.totalWon}–${th.totalLost}</span></div>`;
-  };
-  const cs = m.courtSpeed;
-  let cond = '';
-  if (cs){
-    const bits = [];
-    if (cs.abstractSpeed != null) bits.push(`<div class="akt-cond"><b>${Number(cs.abstractSpeed).toFixed(2)}</b><span>court speed</span><em>${psEsc(cs.category || '')}</em></div>`);
-    if (cs.altitude != null) bits.push(`<div class="akt-cond"><b>${Number(cs.altitude).toLocaleString()} m</b><span>altitude</span><em>${psEsc(altitudeLabel(cs.altitude))}</em></div>`);
-    // Founder 2026-09-28: the hold rate stays ungated but shows its n (service games) — no figure without a count.
-    // COURT_CONDITIONS carries the sheet's % with NO count, so the figure is a dash and the tooltip says why.
-    if (cs.serviceHold != null) bits.push(`<div class="akt-cond">${maTipHtml('<b tabindex="0">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true })}<span>hold rate</span><em>n not published</em></div>`);
-    if (bits.length) cond = `<div class="akt-div"></div><div class="akt-conds">${bits.join('')}</div>`;
-    // Prose read, generated from the same court-speed record — reuses the
-    // Tournament page's generator so the two surfaces can never disagree.
-    if (cs.abstractSpeed != null){
-      const surf = String(m.surface || '').toLowerCase();
-      const bounce = tourxBounce(surf, cs.altitude, cs.category);
-      cond += `<div class="akt-desc">${psEsc(tourxConditionsProse(surf, cs.category, Number(cs.abstractSpeed), bounce))}</div>`;
-    }
-  }
-  if (!m.p1TournamentHistory && !m.p2TournamentHistory && !cond){
-    return akCard('tournament', `${title}${labelRow}<div class="akb-empty">No tournament history or court data on record for this event.</div>`);
-  }
-  return akCard('tournament', `${title}${labelRow}${row(m.p1, m.p1TournamentHistory, ANALYSIS_P1_COLOR)}${row(m.p2, m.p2TournamentHistory, ANALYSIS_P2_COLOR)}${cond}`);
-}
-
-// --- block: odds ---
-// Compact open->now movement chart for the Key Factors bento cell. The Odds tab's
-// aOddsChartSvg is 884x400 with dual auto-scaled panels and hover tooltips — far too
-// large here — so this is a deliberately reduced read: one book, both players on a
-// SHARED y-axis (both series are decimal odds, so a shared axis is the honest way to
-// show them converging or diverging), open/now values called out at the ends.
-function akOddsMoveSvg(m){
-  // TEN-295: the same book set the Odds tab shows — chart-only series ∪ legacy books.
-  const om = { books: {} };
-  // A book with a gap is left out: this reduced read joins its points, so it would draw
-  // straight across the hours the book was not quoting (TEN-295 Wave 2).
-  { const src = aOddsBooksOf(m); Object.keys(src.books).forEach(k => { if (aOddsHasSeries(src.books[k]) && !(src.meta[k].gaps||[]).length) om.books[k] = src.books[k]; }); }
-  // Empty at first paint on every match: the per-match odds shard is loaded lazily
-  // and repaints this block when it lands. Measuring here without waiting for that
-  // load reads as "no odds history" on a board where all 31 matches in fact carry
-  // six books of it.
-  if (!Object.keys(om.books).length) return '';
-  // Same closing-odds rule as buildOddsSection: the capture keeps running in-play, so
-  // cap the series at match start or an in-progress match shows post-lock prices.
-  const startMs = aOddsStartMs(m);   // TEN-295: the actual start, else the account-zone schedule
-  const preMatch = pts => (Number.isFinite(startMs) ? (pts||[]).filter(p=>Date.parse(p[0])<=startMs) : (pts||[]));
-  // Pinnacle is the sharpest line and the Odds tab's default, so prefer it — but
-  // only if it actually quoted a movement here. Otherwise take the book with the
-  // most captured points rather than whichever happens to be first: on thin
-  // matches the first book often holds a single price, which is not a movement
-  // and would drop the chart entirely while a richer book sat unused.
-  // Book choice drives whether this chart shows a MOVEMENT or just an endpoint.
-  // Depth alone is the wrong score: the deepest book is often a late starter
-  // (Pinnacle opened 19h after bet365 on 12147452), so the left edge landed on an
-  // arbitrary mid-market price and the real opening odd was never drawn. Score on
-  // time span AND depth — a book that spans open→close with fewer points tells the
-  // movement story better than a dense book covering the last two hours.
-  const books = Object.keys(om.books);
-  const ptsOf = b => preMatch(om.books[b].p1).concat(preMatch(om.books[b].p2));
-  const depth = b => ptsOf(b).length;
-  const spanOf = b => {
-    const ts = ptsOf(b).map(p => Date.parse(p[0])).filter(Number.isFinite);
-    return ts.length < 2 ? 0 : Math.max.apply(null, ts) - Math.min.apply(null, ts);
-  };
-  const maxDepth = Math.max.apply(null, books.map(depth)) || 1;
-  const maxSpan = Math.max.apply(null, books.map(spanOf)) || 1;
-  const bk = books.slice().sort((a, b) =>
-    ((spanOf(b) / maxSpan) * 0.6 + (depth(b) / maxDepth) * 0.4) -
-    ((spanOf(a) / maxSpan) * 0.6 + (depth(a) / maxDepth) * 0.4))[0];
-  // The chart's first point IS the opening odd — the earliest capture of the chosen
-  // book. Deliberately NOT splicing in m.openingOdds: it comes from whichever book
-  // quoted first (usually a different one), and grafting its price onto this line
-  // would draw a step that is really a vig difference between books, not a market
-  // move. Measured against all live shards, this book's open sits a mean 1.2h after
-  // the true cross-book open on a 20-30h window, and exactly on it for 16 of 31.
-  const s1 = preMatch(om.books[bk].p1), s2 = preMatch(om.books[bk].p2);
-  if (s1.length < 2 && s2.length < 2) return '';
-  const grid = Array.from(new Set(s1.concat(s2).map(p=>p[0]))).sort();
-  const N = grid.length;
-  if (N < 2) return '';
-  const v1 = aOddsStep(s1, grid), v2 = aOddsStep(s2, grid);
-  const all = v1.concat(v2).filter(v=>v!=null);
-  if (all.length < 2) return '';
-  let mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
-  const rg = (mx-mn) || 0.1; mn -= rg*0.22; mx += rg*0.22;
-  // Left pad carries the opening price text, right pad the closing one.
-  const W=300, H=104, padL=34, padR=42, padT=8, padB=18;
-  // Time-proportional x, not index-proportional: captures are irregularly spaced
-  // (a burst near lock-in, hours of nothing overnight), and evenly spacing them
-  // flattens a late plunge into a gentle slope that misreads the market.
-  const tms = grid.map(t => Date.parse(t));
-  const t0 = tms[0], tSpan = (tms[N-1] - t0) || 0;
-  const plotW = W - padL - padR;
-  const X = i => (tSpan > 0 && Number.isFinite(tms[i]))
-    ? padL + ((tms[i] - t0) / tSpan) * plotW
-    : padL + i * plotW / (N - 1);
-  const Y = v => padT + (1-(v-mn)/(mx-mn))*(H-padT-padB);
-  const line = (vals, col) => {
-    let p=''; for (let i=0;i<N;i++){ if (vals[i]==null) continue; p += (p?' ':'') + X(i).toFixed(1)+','+Y(vals[i]).toFixed(1); }
-    if (!p) return '';
-    const lastI = (()=>{ for(let i=N-1;i>=0;i--) if(vals[i]!=null) return i; return -1; })();
-    const firstI = (()=>{ for(let i=0;i<N;i++) if(vals[i]!=null) return i; return -1; })();
-    let s = '<polyline points="'+p+'" fill="none" style="stroke:'+col+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>';
-    // Every captured snapshot gets a tick so the progression is readable as steps
-    // rather than one smooth stroke — suppressed once they would visually merge.
-    if (N <= 28){
-      for (let i=0;i<N;i++){
-        if (vals[i]==null || i===firstI || i===lastI) continue;
-        s += '<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(vals[i]).toFixed(1)+'" r="1.7" style="fill:'+col+'" fill-opacity="0.55"/>';
-      }
-    }
-    if (firstI>=0){
-      s += '<circle cx="'+X(firstI).toFixed(1)+'" cy="'+Y(vals[firstI]).toFixed(1)+'" r="3" style="fill:var(--surface); stroke:'+col+'" stroke-width="1.8"/>';
-      s += '<text x="'+(X(firstI)-7).toFixed(1)+'" y="'+(Y(vals[firstI])+3.5).toFixed(1)+'" text-anchor="end" font-size="10.5" font-family="\'IBM Plex Mono\',monospace" font-weight="700" style="fill:'+col+'">'+vals[firstI].toFixed(2)+'</text>';
-    }
-    if (lastI>=0){
-      s += '<circle cx="'+X(lastI).toFixed(1)+'" cy="'+Y(vals[lastI]).toFixed(1)+'" r="3" style="fill:'+col+'"/>';
-      s += '<text x="'+(X(lastI)+7).toFixed(1)+'" y="'+(Y(vals[lastI])+3.5).toFixed(1)+'" font-size="10.5" font-family="\'IBM Plex Mono\',monospace" font-weight="700" style="fill:'+col+'">'+vals[lastI].toFixed(2)+'</text>';
-    }
-    return s;
-  };
-  // Before the match starts the right-hand point is the live market, not a close —
-  // calling it "Closing odd" then would be a factual claim the data does not support.
-  const started = !!(m.finalScore || m.partialScore || m.live)
-    || (Number.isFinite(startMs) && Date.now() >= startMs);
-  let g='';
-  for (let t=0;t<=2;t++){ const y = padT + (t/2)*(H-padT-padB); g += '<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" style="stroke:var(--ma-hair)" stroke-width="1"/>'; }
-  g += '<line x1="'+padL+'" y1="'+padT+'" x2="'+padL+'" y2="'+(H-padB).toFixed(1)+'" style="stroke:var(--line-open)" stroke-width="1"/>';
-  g += '<line x1="'+(W-padR)+'" y1="'+padT+'" x2="'+(W-padR)+'" y2="'+(H-padB).toFixed(1)+'" style="stroke:var(--line-open)" stroke-width="1"/>';
-  g += line(v1, 'var(--ma-t1)') + line(v2, 'var(--ma-pb-fill)');   // D4: A primary, B the 70% fill
-  g += '<text x="'+padL+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" font-family="\'IBM Plex Mono\',monospace" style="fill:var(--label)">Opening odd</text>';
-  g += '<text x="'+(W-padR).toFixed(1)+'" y="'+(H-4)+'" text-anchor="middle" font-size="9" font-family="\'IBM Plex Mono\',monospace" style="fill:var(--label)">'+(started ? 'Closing odd' : 'Current odd')+'</text>';
-  return `<div class="ako-move"><div class="ako-movehd">Odds movement<span>${psEsc(bk)}</span></div>`
-    + '<svg width="100%" viewBox="0 0 '+W+' '+H+'" style="display:block;overflow:visible;">'+g+'</svg></div>';
-}
-function akOddsBlock(m){
-  const head = akHead('Odds');
-  // Honest empty state — no prices means no prices (item 20). The card still
-  // occupies its grid cell at the shared row height.
-  if (!m.odds || !m.odds.p1 || !m.odds.p2) return akCard('odds', `${head}<div class="akb-empty">No prices in the feed for this match yet.</div>`);
-  const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, tot = i1 + i2;
-  const f1 = (i1 / tot * 100), f2 = (i2 / tot * 100);
-  const move = akOddsMoveSvg(m);
-  return akCard('odds', `${head}
-    <div class="ako-prices"><span class="ako-p" style="color:${ANALYSIS_P1_COLOR};">${Number(m.odds.p1).toFixed(2)}</span><span class="ako-p" style="color:${ANALYSIS_P2_COLOR};">${Number(m.odds.p2).toFixed(2)}</span></div>
-    <div class="ako-names"><span title="${psEsc(m.p1)}">${psEsc(akSurname(m.p1))}</span><span title="${psEsc(m.p2)}">${psEsc(akSurname(m.p2))}</span></div>
-    <div class="ako-split"><div style="width:${f1.toFixed(1)}%; background:${ANALYSIS_P1_COLOR};"></div><div style="width:${f2.toFixed(1)}%; background:${ANALYSIS_P2_FILL};"></div></div>
-    <div class="ako-vig"><span>${f1.toFixed(1)}%</span><span>vig removed</span><span>${f2.toFixed(1)}%</span></div>
-    <div class="ako-sub">Implied win probability${m.odds.bookmaker ? ` · ${psEsc(m.odds.bookmaker)}` : ''}</div>
-    ${move ? `<div class="ako-div"></div>${move}` : ''}`);
-}
-
-// --- block: weather (slim strip) ---
-function akWeatherBlock(m){
-  const w = m.weather;
-  if (!w || w.temperature == null) return '';
-  const day = (w.week || []).find(d => d.isMatch) || null;
-  const cond = day && typeof wmoWeather === 'function' ? wmoWeather(day.code) : null;
-  const condLabel = cond && cond.label ? cond.label : (cond && cond.text ? cond.text : '');
-  const phrase = typeof weatherImpactPhrase === 'function' ? weatherImpactPhrase(w, m.surface) : '';
-  // One horizontal row (item 5): label · four inline values · read right-aligned
-  // on a single line. Export pins the read to `white-space:nowrap` — it must FIT,
-  // not wrap or shrink; a genuinely too-long string is a reporting item, not a
-  // reason to wrap.
-  const items = [
-    `<div><span class="akw-v">${Math.round(w.temperature)}°C</span><div class="akw-sub">${condLabel ? psEsc(condLabel) : '&nbsp;'}</div></div>`,
-    w.windSpeed != null ? `<div><span class="akw-v">${Math.round(w.windSpeed)} <span class="akw-unit">km/h</span></span><div class="akw-sub">wind</div></div>` : '',
-    w.humidity != null ? `<div><span class="akw-v">${Math.round(w.humidity)}%</span><div class="akw-sub">humidity</div></div>` : '',
-    day && day.rain != null ? `<div><span class="akw-v">${day.rain}%</span><div class="akw-sub">rain</div></div>` : '',
-  ].filter(Boolean).join('');
-  const note = phrase ? `<span class="akw-note">${psEsc(phrase)}</span>` : '';
-  const attrs = ` role="button" tabindex="0" onclick="aGoTab('weather')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aGoTab('weather')}"`;
-  return `<div class="akw-strip"${attrs}><span class="akw-lbl">Weather · match day ›</span>${items}${note}</div>`;
-}
-
-// --- block: Stennisfy Model (full-width, replaces the old Progression strip) ---
-// The export's foot-of-tab card is the model's adjusted fair price vs the market
-// (item 4) — NOT market signals. Fair odd + value flag + two market boxes only.
-// Built from valueSnapshot (fair prob + edge vs Pinnacle), pinnacleOpen and
-// bestOdds; when the model has not priced a match the whole card is an honest
-// empty state. The SHARP VALUE / NO VALUE flag derives from the SAME edge shown
-// on the Pinnacle box's "vs fair" line, per the standing value-badge ruling.
-function akModelBlock(m){
-  const icon = `<span class="akm-icon"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 13 L8 9 L11 12 L16 6" style="stroke:var(--ma-fill, var(--periwinkle))" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6 H16 V10" style="stroke:var(--periwinkle)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
-  const head = `<div class="akm-head">${icon}<div><div class="akm-title">Stennisfy Model</div><div class="akm-sub">Stennisfy adjusted price vs the market</div></div><span class="akm-chev" aria-hidden="true">›</span></div>`;
-  // The card deep-links to the top-level Stennisfy Model page for THIS match
-  // (ruling: "exactly to the stennisfy model"). The empty state links too — the
-  // model page carries its own honest empty state for unpriced matches.
-  const idAttr = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
-  const nav = ` role="button" tabindex="0" aria-label="Open the Stennisfy Model for this match" onclick="openEdgeModelFromMatch('${idAttr}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEdgeModelFromMatch('${idAttr}')}"`;
-  const vs = m.valueSnapshot;
-  if (!vs || vs.fairP1 == null || vs.fairP2 == null){
-    return `<div class="akm"${nav}>${head}<div class="akm-empty">The model has not published an adjusted fair price for this match yet.</div></div>`;
-  }
-  const pin = m.pinnacleOpen || null;
-  const pinBookKey = (() => {
-    const bks = (m.oddsMovement && m.oddsMovement.books) ? Object.keys(m.oddsMovement.books) : [];
-    return bks.find(k => /pinnacle/i.test(k)) || null;
-  })();
-  const pinNowOf = (side) => {
-    if (!pinBookKey) return null;
-    const series = side === 1 ? m.oddsMovement.books[pinBookKey].p1 : m.oddsMovement.books[pinBookKey].p2;
-    if (!Array.isArray(series) || !series.length) return null;
-    const last = series[series.length - 1];
-    return Array.isArray(last) && last[1] != null ? Number(last[1]) : null;
-  };
-  const best = m.bestOdds || null;
-  const col = (side, name, accent, fairP, edge, divider) => {
-    const fairOdd = fairP > 0 ? (1 / fairP).toFixed(2) : '—';
-    const isSharp = edge != null && edge > 0.005;
-    const flag = isSharp ? `<span class="akm-flag sharp">SHARP VALUE</span>` : `<span class="akm-flag none">NO VALUE</span>`;
-    // Pinnacle box: open → now, plus edge vs fair from the model's own snapshot.
-    const pinOpen = pin ? (side === 1 ? pin.p1 : pin.p2) : null;
-    const pinNow = pinNowOf(side);
-    const arrow = (pinOpen != null && pinNow != null) ? (pinNow > pinOpen ? '↑' : pinNow < pinOpen ? '↓' : '→') : '';
-    const arrowColor = (pinOpen != null && pinNow != null) ? (pinNow < pinOpen ? 'var(--positive)' : pinNow > pinOpen ? 'var(--negative)' : 'var(--label)') : 'var(--label)';
-    const pinGap = edge != null ? `● ${edge > 0 ? '+' : '−'}${Math.abs(edge * 100).toFixed(1)}pp vs fair` : '● —';
-    const pinGapColor = edge == null ? 'var(--label)' : (edge > 0 ? 'var(--positive)' : 'var(--negative)');
-    const pinPx = pinNow != null ? pinNow.toFixed(2) : (pinOpen != null ? Number(pinOpen).toFixed(2) : '—');
-    const pinMove = pinOpen != null
-      ? `Opened ${Number(pinOpen).toFixed(2)}${pinNow != null ? ` → Now <span style="color:${arrowColor};">${pinNow.toFixed(2)} ${arrow}</span>` : ''}`
-      : '—';
-    const pinBox = `<div class="akm-mkt"><span class="akm-mkt-cap">Pinnacle</span><span class="akm-mkt-px">${pinPx}</span><span class="akm-mkt-mv">${pinMove}</span><span class="akm-mkt-gap" style="color:${pinGapColor};">${pinGap}</span></div>`;
-    // Best soft book box: real price + bookmaker. A "vs fair" pp gap is deliberately
-    // NOT shown here (ruling: take the most logical option). Best odds can't be
-    // de-vigged — the best price per side can come from different books, and even a
-    // single book's price still carries its overround — so fairP − 1/softPx would
-    // fold the book's margin into the "edge", a systematically biased, apples-to-
-    // oranges number next to Pinnacle's real edgeVsPinnacle. The price + book name
-    // are the actionable facts; the gap is em-dashed rather than shown misleadingly.
-    const bo = best ? (side === 1 ? best.p1 : best.p2) : null;
-    const softPx = bo && bo.price != null ? Number(bo.price) : null;
-    const softName = bo && bo.bookmaker ? bo.bookmaker : '';
-    const softBox = `<div class="akm-mkt"><span class="akm-mkt-cap">Best soft book</span><span class="akm-mkt-px">${softPx != null ? softPx.toFixed(2) : '—'}</span><span class="akm-mkt-mv">${softName ? psEsc(softName) : '—'}</span><span class="akm-mkt-gap" style="color:var(--label);" title="Best-book prices can't be de-vigged, so a like-for-like gap vs the fair price isn't available.">● —</span></div>`;
-    return `<div class="akm-col${divider ? ' divider' : ''}">
-      <div class="akm-top"><div><span class="akm-nm" style="color:${accent};">${psEsc(psShortName(name))}</span><div class="akm-cap">Adjusted fair odd</div></div><span class="akm-fair">${fairOdd}</span></div>
-      ${flag}
-      <div class="akm-mkts">${pinBox}${softBox}</div>
-    </div>`;
-  };
-  const c1 = col(1, m.p1, ANALYSIS_P1_COLOR, vs.fairP1, vs.edgeVsPinnacleP1, true);
-  const c2 = col(2, m.p2, ANALYSIS_P2_COLOR, vs.fairP2, vs.edgeVsPinnacleP2, false);
-  return `<div class="akm"${nav}>${head}<div class="akm-cols">${c1}${c2}</div></div>`;
-}
-
-// --- block: progression ---
-// The design carries a full-width Progression strip the bento never had. It is a
-// reduced read of the Progression tab: each player's latest pre-match round, six
-// metrics, T vs C side by side.
-//
-// Every number here comes from progressionRoundState() — the same function the
-// Progression tab and its nav item use — so the block cannot disagree with the
-// tab it links to. In particular it inherits progressionPreMatchScope's rule that
-// the card's own match is excluded, and progressionShownRound's rule that the
-// round shown is the player's deepest WIN rather than their last match.
-//
-// Six of the seven metrics, dropping winnersUnforcedRatio: it is the only one
-// that is not a percentage, so it would be the one cell in a six-across row on a
-// different scale, and it is derivable from the winners and errors already shown.
-// Built on first use, not at parse time: PROGRESSION_METRIC_ORDER is declared some
-// 3,800 lines below this block, so a top-level const here reads it inside its temporal
-// dead zone and throws — which takes down the whole script, not just this block.
-let _akProgMetrics = null;
-function akProgMetrics(){
-  if (_akProgMetrics) return _akProgMetrics;
-  _akProgMetrics = PROGRESSION_METRIC_ORDER
-  .filter(([key]) => key !== 'winnersUnforcedRatio')
-  .map(([key, label]) => [key, label
-    .replace('1st Serve Points Won %', '1st serve won')
-    .replace('2nd Serve Points Won %', '2nd serve won')
-    .replace('1st Serve %', '1st serve in')
-    .replace('Winners (% of Points)', 'winners')
-    .replace('Errors (% of Points)', 'errors')
-    .replace('Total Points Won %', 'points won')]);
-  return _akProgMetrics;
-}
-
-function akProgressionBlock(m){
-  const st = typeof progressionRoundState === 'function' ? progressionRoundState(m) : null;
-  if (!st || st.state === 'none' || st.state === 'hidden' || !st.data) return '';
-  const latest = pData => {
-    if (!pData) return null;
-    const depth = progressionPlayerDepth(pData, st.data.rounds);
-    return progressionShownRound(pData, depth);
-  };
-  const l1 = latest(st.p1Data), l2 = latest(st.p2Data);
-  if (!l1 && !l2) return '';
-  const fmt = (row, key) => {
-    const v = row && row.metrics ? row.metrics[key] : null;
-    return v == null ? '–' : `${Math.round(v)}%`;
-  };
-  const cells = akProgMetrics().map(([key, label]) =>
-    `<div class="akp-stat"><div class="akp-vals"><span class="akp-t">${fmt(l1, key)}</span> <span class="akp-slash">/</span> <span class="akp-c">${fmt(l2, key)}</span></div><div class="akp-lbl">${psEsc(label)}</div></div>`
-  ).join('');
-  // Name the round rather than saying "latest": the two players can legitimately
-  // be shown at different rounds, and a card that just says "latest round" hides
-  // that from the reader.
-  const rounds = [l1 && l1.round, l2 && l2.round].filter(Boolean);
-  const sub = rounds.length && rounds[0] === rounds[rounds.length - 1]
-    ? `${psShortName(m.p1)} vs ${psShortName(m.p2)} · ${rounds[0]}`
-    : `${psShortName(m.p1)} vs ${psShortName(m.p2)} · latest round each`;
-  return akBlock('progression', 'Progression', `<div class="akp-stats">${cells}</div>`,
-    { wide:true, side:true, sublabel:sub });
-}
-
-// --- block: the read (synthesis) ---
-// Generated, not editable. An editable box with no backend would silently lose
-// whatever the client typed the moment the modal closed.
-function akReadBlock(m){
-  const pts = [];
-  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
-  const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
-  if (a1 && a2 && a1.id !== a2.id){
-    const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
-    if (cell && cell.pct != null && Math.abs(cell.pct - 50) >= 4){
-      const lead = cell.pct > 50 ? psShortName(m.p1) : psShortName(m.p2);
-      pts.push(`Style favours <b>${psEsc(lead)}</b> — ${psEsc(cell.pct > 50 ? a1.name : a2.name)}s win ${Math.max(cell.pct, 100 - cell.pct)}% of ${cell.n.toLocaleString()} meetings with ${psEsc(cell.pct > 50 ? a2.name : a1.name)}s.`);
-    }
-  }
-  const h = m.h2h, tot = h ? h.p1Wins + h.p2Wins : 0;
-  if (tot >= 2 && h.p1Wins !== h.p2Wins){
-    pts.push(`Head to head leans <b>${psEsc(h.p1Wins > h.p2Wins ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(h.p1Wins, h.p2Wins)}–${Math.min(h.p1Wins, h.p2Wins)}${psEsc(h2hLevelMix(h))}.`);
-  }
-  if (m._formLoaded){
-    // D2: a form rate needs the gate's full tier (n >= 10) to be quoted as a "gap" at all.
-    const w = (rows) => { const r = (rows || []).slice(0, 10); return maGate(r.length).mode === 'full' ? Math.round(r.filter(x => x.won).length / r.length * 100) : null; };
-    const f1 = w(m.p1RecentFormMatches), f2 = w(m.p2RecentFormMatches);
-    if (f1 != null && f2 != null && Math.abs(f1 - f2) >= 20){
-      pts.push(`Form gap is wide: <b>${psEsc(f1 > f2 ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(f1, f2)}% over the last 10 against ${Math.min(f1, f2)}%.`);
-    }
-  }
-  if (m.odds && m.odds.p1 && m.odds.p2){
-    const i1 = 1 / m.odds.p1, i2 = 1 / m.odds.p2, f = i1 / (i1 + i2) * 100;
-    if (Math.abs(f - 50) < 6) pts.push(`The market has this near a coin-flip (${f.toFixed(1)}% / ${(100 - f).toFixed(1)}% with vig removed).`);
-  }
-  if (!pts.length) return '';
-  return akBlock(null, 'The read',
-    `<ul class="akr-list">${pts.map(p => `<li>${p}</li>`).join('')}</ul>
-     <div class="akr-foot">Generated from the blocks above — signals only, not a recommendation.</div>`,
-    { wide:true, analysis:true });
-}
-
-function buildKeyFactorsSection(m){
-  // Export layout (analysis.isKeyFactors): a 3×2 grid of six equal cards —
-  // row 1  Playing style · Recent form · Head to head
-  // row 2  Dimension edge · Tournament · Odds
-  // then the full-width Weather strip and the Stennisfy Model card beneath it.
-  // Emission order IS the placement (auto-flow, no explicit coordinates). The old
-  // tall Playing-style span + Progression strip + "The read" synthesis are gone.
-  const grid = [
-    akStyleBlock(m),
-    akFormBlock(m),
-    akH2HBlock(m),
-    akDimEdgeBlock(m),
-    akTournamentBlock(m),
-    akOddsBlock(m),
-  ].join('');
-  return `<div class="akbento">${grid}</div>${akWeatherBlock(m)}${akModelBlock(m)}`;
-}
 
 /* ---------- PLAYING STYLE TAB ---------- */
-// Head-to-head style comparison. Three independent data sources, each of which
-// can be absent for a given match, so every block degrades on its own rather
-// than taking the tab down with it:
-//   archetype + badges  playing-styles.json  (199 players — 22/35 of a live board)
-//   style-vs-style edge matchup-matrix.json  (8x8, real TML results)
-//   radar + dimensions  style-radar.json     (996 players, 29/35 present but only
-//                                             13/35 clear the 10-charted-match bar)
-// Deliberately NOT rendered: a surface-split style edge. The matrix is pooled
-// across surfaces, so a "60% on clay" line would be invented. See the follow-up.
-
-const STYLE_AXES = [
-  { k:'serve',    label:'Serve'    },
-  { k:'return',   label:'Return'   },
-  { k:'baseline', label:'Baseline' },
-  { k:'netPlay',  label:'Net play' },
-  // The calibration derives this from long-rally (7+ shot) win rate, not tracking
-  // data — its own note says to label it Movement / Defence, so we do.
-  { k:'movement', label:'Defence'  },
-  { k:'clutch',   label:'Clutch'   },
-];
-
-let styleRadarData = null, _styleRadarPromise = null;
-function loadStyleRadar(){
-  if (styleRadarData) return Promise.resolve(styleRadarData);
-  if (_styleRadarPromise) return _styleRadarPromise;
-  _styleRadarPromise = fetch('./style-radar.json', { cache:'no-cache' })
-    .then(r => r.ok ? r.json() : null)
-    .then(d => { styleRadarData = d || { players:{} }; return styleRadarData; })
-    .catch(err => { console.warn('style-radar.json load failed:', err.message); styleRadarData = { players:{} }; return styleRadarData; });
-  return _styleRadarPromise;
-}
-function styleRadarFor(name){
-  const k = styleKey(name);
-  return (k && styleRadarData && styleRadarData.players) ? styleRadarData.players[k] : null;
-}
+// Shared by the Playing style tab (ps2*, below) and Key factors: the matchup matrix loader and the archetype lookups.
+// The MCP / Sackmann radar (style-radar.json) is gone from the modal (N10): the five-axis DNA replaces it everywhere.
 // psMatrixData is otherwise only populated when the Playing Styles page renders.
 // The modal can open before that page is ever visited, so it needs its own gate.
 let _psMatrixPromise = null;
@@ -18196,56 +17616,6 @@ function psArchIndex(id){ return PS_ARCHETYPES.findIndex(a => a.id === id || (a.
 // get null and matrix cells came back empty (TEN-88 #1). A
 // machine id never equals a display-label string, so the extra clause is additive.
 function psArchFor(id){ return PS_ARCHETYPES.find(a => a.id === id || (a.ids || [a.id]).includes(id)) || null; }
-
-function hexToRgba(hex, a){
-  const h = String(hex).replace('#','');
-  const n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
-  return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
-}
-
-// Six-spoke radar, drawn as an inline SVG string (the rest of the modal builds
-// HTML strings, so no React/DOM node here). `a` is p1, `b` is p2.
-function styleRadarSvg(dims){
-  const cx = 180, cy = 150, R = 115;
-  const pt = (i, f) => {
-    const ang = (-90 + i * 60) * Math.PI / 180;
-    return [cx + R * f * Math.cos(ang), cy + R * f * Math.sin(ang)];
-  };
-  const ptStr = (i, f) => pt(i, f).map(n => n.toFixed(1)).join(',');
-  const ring = f => `<polygon points="${dims.map((_, i) => ptStr(i, f)).join(' ')}" fill="none" style="stroke:var(--ma-hair)" stroke-width="1"/>`;
-  const poly = key => dims.map((d, i) => ptStr(i, Math.max(0, Math.min(100, d[key])) / 100)).join(' ');
-  const rings = [0.25, 0.5, 0.75, 1].map(ring).join('');
-  // Scale-ring value labels (25/50/75/100), stacked just right of the centre axis.
-  const ringLabels = [0.25, 0.5, 0.75, 1].map(rr =>
-    `<text x="${(cx + 4).toFixed(1)}" y="${(cy - rr * R + 9).toFixed(1)}" style="fill:var(--label)" font-size="9" font-family="'IBM Plex Mono',monospace">${Math.round(rr * 100)}</text>`).join('');
-  const spokes = dims.map((_, i) => {
-    const [x, y] = pt(i, 1);
-    return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" style="stroke:var(--ma-hair)" stroke-width="1"/>`;
-  }).join('');
-  const labels = dims.map((d, i) => {
-    const [x, y] = pt(i, 1.19);
-    const anchor = Math.abs(x - cx) < 6 ? 'middle' : (x < cx ? 'end' : 'start');
-    return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="${anchor}" style="fill:var(--text-sub)" font-size="11" font-weight="600" font-family="'Hanken Grotesk',sans-serif">${psEsc(d.label)}</text>`;
-  }).join('');
-  const shapeB = `<polygon points="${poly('b')}" fill="none" style="stroke:${ANALYSIS_P2_FILL}" stroke-width="2" stroke-dasharray="4 3"/>`;
-  const shapeA = `<polygon points="${poly('a')}" style="fill:${ANALYSIS_P1_RGBA(0.22)}; stroke:${ANALYSIS_P1_COLOR}" stroke-width="2"/>`;
-  const dots = key => dims.map((d, i) => {
-    const [x, y] = pt(i, Math.max(0, Math.min(100, d[key])) / 100);
-    return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${key === 'a' ? 3 : 2.6}" style="fill:${key === 'a' ? ANALYSIS_P1_COLOR : ANALYSIS_P2_FILL}"/>`;
-  }).join('');
-  return `<svg viewBox="0 0 360 300" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${ringLabels}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
-}
-
-
-
-// The radar draws only when BOTH players clear the charted-match bar. This is a
-// hard gate, not a caveat: below 10 charted matches the percentiles are noise —
-// 54% of axis values sit in the tails (<=5 or >=95) versus the ~10% a genuine
-// percentile field produces, and the rate only converges to baseline at n>=10.
-// A drawn hexagon reads as measurement, so a provisional one is worse than none:
-// it would tell a bettor a top-50 player is 2nd-percentile on serve off 3 matches.
-function styleRadarDrawable(r1, r2){ return !!(r1 && r2 && r1.ok && r2.ok); }
-
 
 // TEN-88 restyle helpers — the career-meetings list is grouped by tournament and
 // each row carries date · marker · opponent · round · sets · game-scores · odds×2.
@@ -18876,10 +18246,17 @@ function aPaint(id, html){ const el = document.getElementById(id); if (el) el.in
 const A_TAB_BUILD = {
   key(m){
     aPaint('aSectionKey', buildKeyFactorsSection(m));
-    // Key factors reads the form shards (Recent form), the odds shard (Odds), the matchup matrix (Playing style)
-    // and the MCP radar (Dimension edge) — nothing else.
-    return Promise.all([ensureFormRows(m), ensureOddsMovement(m), loadStyleRadar(), ensurePsMatrix()])
-      .then(() => { if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
+    // TEN-341: each card reads the tab it links to — the archetypes + matrix (Playing style), the Form rows (Form), the
+    // meetings (H2H), the DNA file (Dimension edge, N10: never the MCP radar), the season rows (Overview), the odds shard
+    // (Odds + Model), the weather files (Weather). All shared with those tabs; the card repaints as each lands.
+    // Repaints are coalesced (one per tick while loads land); the final one is synchronous once every load has settled, so
+    // Download report — which awaits the returned promise — prints the finished tab, never a loading line.
+    let done = false, queued = false;
+    const paint = () => { if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); };
+    const soon = () => { if (queued) return; queued = true; setTimeout(() => { queued = false; if (!done) paint(); }, 0); };
+    const styles = Object.keys((playerStyles && playerStyles.byKey) || {}).length ? null : (_pgStylesP = _pgStylesP || loadPlayerStyles());
+    return Promise.all([styles, ensurePsMatrix(), fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(), ensureOverviewProfiles(m),
+      ensureOddsMovement(m), kfEnsureWeather(m)].map(p => Promise.resolve(p).catch(() => null).then(soon))).then(() => { done = true; paint(); });
   },
   style(m){
     // Playing style (TEN-340) paints from whatever is in memory, then repaints once the archetypes, the matchup matrix,

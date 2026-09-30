@@ -37,10 +37,10 @@ const S = new Function(`
   ${['FH_MONO', 'FH_DASHC', 'FH_AC', 'ME_C', 'ME_BCOLS', 'ME_COLH', 'ME_NOPRICE_MSG', 'mePct0', 'mePct1', 'meUC', 'meNoHist', 'meLoadingRow', 'meStatBox',
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
-  ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName', 'akSurname', 'akHead', 'akCard', 'akSeasonOf', 'akFormBlock',
+  ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName',
      'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol'].map(slice).join('\n')}
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
-  return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, akFormBlock, fhH2hRecCard, meBandsCol,
+  return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, fhH2hRecCard, meBandsCol,
     meRateBox, set psMatrix(v){ psMatrixData = v; } };
 `)();
 const OV = overviewVM(html);
@@ -80,18 +80,7 @@ test('small-sample chip: n = 1, 3, 9 show it; 0 and 10 do not — the helper and
     'DF L1234 geometry, neutral colours (never the amber warn token)');
 });
 
-// Mutation: akFormBlock's "Last N" back to the bare `Math.round(w10 / last10.length * 100)%`.
-test('Key factors · Recent form "Last N": 3 → W–L, 7 → greyed + note, 12 → full', () => {
-  const rows = n => Array.from({ length: n }, (_, i) => ({ won: i < WINS[n], surface: 'hard', date: '2026-08-' + String(28 - i).padStart(2, '0') }));
-  const last = n => { const h = S.akFormBlock({ _formLoaded: true, p1: 'J. Sinner', p2: 'C. Alcaraz', surface: 'hard', date: '2026-09-01',
-    p1RecentFormMatches: rows(n), p2RecentFormMatches: rows(12) }); const i = h.lastIndexOf('<', h.indexOf('akf-stat top')); return h.slice(i, h.indexOf('</div>', i)); };
-  assert.match(last(3), /Last 3<\/span><b><span class="ma-rate" data-ma-gate="nopct"[^>]*>2–1<\/span><\/b>/, 'n = 3: the W–L, no %');
-  assert.ok(!/%/.test(text(last(3))));
-  assert.match(last(7), /Last 7<\/span><b><span class="ma-rate" data-ma-gate="small"[^>]*>57%<\/span><span class="ma-small-note"/);
-  assert.match(last(12), /Last 10<\/span><b><span class="ma-rate" data-ma-gate="full"[^>]*>90%<\/span><\/b>/, 'n = 12 → the last 10, full');
-  const none = S.akFormBlock({ _formLoaded: true, p1: 'A', p2: 'B', surface: 'hard', p1RecentFormMatches: [], p2RecentFormMatches: [] });
-  assert.ok(!NEVER.test(text(none)), 'n = 0: no zero rate');
-});
+// Key factors' "Last N" gate check lives in test-ten341-key-factors.mjs (TEN-341 rebuilt the card on the Form tab's rows).
 
 // Mutation: the Won cell back to the bare mePct0(b.won), or the win bar drawn at any n ≥ 1 (`b.w / n * 100`).
 test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neutral track, 7 greyed (hover note), 12 full', () => {

@@ -177,7 +177,8 @@ function modalVM(opts = {}) {
     buildYearlyTables: () => { log.push('build:overview'); return ''; }, buildTournamentSection: () => { log.push('build:tournament'); return ''; },
     renderWeatherSection: () => log.push('build:weather'), openWeatherTab: rec('load:weather'), openMarketEdgeTab: () => log.push('load:marketedge'),
     buildOddsSection: () => { log.push('build:odds'); return ''; }, renderOddsSection: () => {}, renderNewsSection: () => log.push('build:news'),
-    ensureFormRows: rec('load:form-shards'), fhEnsureH2hData: rec('load:h2h-data'), fhEnsureFormData: rec('load:form-data'), ensureOddsMovement: rec('load:odds-shard'), loadStyleRadar: rec('load:style-radar'), ensurePsMatrix: rec('load:matrix'),
+    ensureFormRows: rec('load:form-shards'), fhEnsureH2hData: rec('load:h2h-data'), fhEnsureFormData: rec('load:form-data'), ensureOddsMovement: rec('load:odds-shard'), ensurePsMatrix: rec('load:matrix'),
+    ensureOverviewProfiles: rec('load:profiles'), kfEnsureWeather: rec('load:weather-kf'),
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
     h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
@@ -205,7 +206,9 @@ test('lazy: opening the modal builds and loads Key factors only; every other tab
   const built = () => [...new Set(log.filter(x => x.startsWith('build:')))];   // a repaint after a shard lands is not a build
   api.openAnalysisModal('a'); await flush();
   assert.deepEqual(built(), ['build:key']);
-  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:form-shards', 'load:matrix', 'load:odds-shard', 'load:style-radar']);
+  // TEN-341: Key factors reads what each card's own tab reads (matrix, Form rows, H2H meetings, DNA, season rows, odds shard,
+  // weather) — never the MCP radar (N10) and nothing another tab alone needs (the news feed, the meeting shards)
+  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:form-data', 'load:h2h-data', 'load:matrix', 'load:odds-shard', 'load:profiles', 'load:weather-kf']);
   log.length = 0;
   api.aShowTab('style'); await flush();
   // TEN-340: the Playing style tab reads the 5-axis DNA only — never the MCP radar (N10: the modal never fetches style-radar.json)
