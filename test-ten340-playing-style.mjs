@@ -6,7 +6,8 @@
 //   · personal record = the meetings shard vs the opponent's archetype, walkovers out (N2), every rate through the D2 gate
 //   · career meetings = the shared rows (maMatchRowsHtml), 8 shown + the G18 control, every row opens the shared sheet
 //   · DNA: true percentiles with the population and n on the shared tooltip; "Since Mar 2024", never "Career"; Surface Elo
-//     current on both views; no Δ on the since view; a player below the floor draws no shape
+//     current on both views; no Δ on the since view; a player below the floor draws no shape; on the since view Under
+//     pressure is "—" for both players with the founder's tooltip (Q14, TEN-312 5262e790)
 //   · both players white (D4 / the file's palette `cur`); no tab-local row or tooltip renderer (DoD 8); no sample data
 //   · tools/build-matchup-matrix.js drops TML walkovers at source (N2)
 import { test } from 'node:test';
@@ -211,8 +212,34 @@ test('DNA: true percentiles with the population and n on the shared tooltip; "Si
   S.ps2StateFor(m).win = 'since';
   h = S.buildStyleSection(m);
   assert.match(tip('serve'), /since Mar 2024 .*Rank among 210 /);
-  assert.match(tip('underPressure'), /surface-ratings career \(2010–\)/, 'the since view states Under pressure\'s real window');
+  assert.equal(tip('underPressure'), 'No since-Mar-2024 figure yet; see the career view.', 'founder Q14: the since view dashes Under pressure');
   assert.match(text(h), /percentile vs the api-tennis field · since Mar 2024/);
+});
+
+// Founder Q14 (TEN-312 5262e790). Mutation: falling back to the career scope prints a number.
+test('DNA (Q14): on the since view Under pressure is "—" for both players — no number, shape point, percentile or Δ', () => {
+  setup();
+  const D = dna(); D.byKey[2].surfaces.Hard.last52.sample.matches = 40; S.dna = D;   // both players above the floor
+  const m = match('J. Sinner', 'C. Alcaraz'); S.ps2StateFor(m).prof = true;
+  const TIP = 'No since-Mar-2024 figure yet; see the career view.';
+  const axis = h => /data-ps2-axis="underPressure" tabindex="0" data-aotip="([^"]*)"[\s\S]*?<\/span><\/span><\/span>/.exec(h);
+  const row = h => /<div class="ps2-prow" data-ps2-axis="underPressure"[\s\S]*?<\/div><\/div>/.exec(h)[0];
+  const pts = (h, c) => (new RegExp(`class="${c}" points="([^"]*)"`).exec(h) || [, ''])[1].trim().split(/\s+/).filter(Boolean).length;
+  // 52-week view unchanged: both numbers, five shape points
+  let h = S.buildStyleSection(m);
+  assert.match(text(axis(h)[0]), /Under pressure 319\.0 · 245\.5/);
+  assert.equal(pts(h, 'ps2-poly-a'), 5); assert.equal(pts(h, 'ps2-poly-b'), 5);
+  S.ps2StateFor(m).win = 'since';
+  h = S.buildStyleSection(m);
+  const A = axis(h);
+  assert.equal(A[1], TIP, 'the exact founder tooltip');
+  assert.match(text(A[0]), /> Under pressure — · —$/, 'both players dashed on the radar label');
+  const r = row(h);
+  assert.doesNotMatch(text(r), /\d/, 'no number, percentile or Δ in the profile row');
+  assert.match(text(r), /^— UNDER PRESSURE —$|^— Under pressure —$/);
+  assert.match(r, /class="ps2-bar-a" style="width:0%/); assert.match(r, /class="ps2-bar-b" style="width:0%/);
+  assert.equal(pts(h, 'ps2-poly-a'), 4, 'no Under pressure shape point for A'); assert.equal(pts(h, 'ps2-poly-b'), 4, 'nor for B');
+  assert.match(r, new RegExp('data-aotip="' + TIP.replace(/[.;]/g, '\\$&') + '"'), 'the profile row carries the same tooltip');
 });
 
 // Mutation: the Elo axis read from the window's node (a windowed Elo — D6 says none exists).

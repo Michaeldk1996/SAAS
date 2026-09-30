@@ -17901,6 +17901,10 @@ const PS2_AXES = [
   { key: 'elo', label: 'Surface Elo · current', short: 'Surface Elo', dp: 0 },
 ];
 const PS2_WIN = { w52: { scope: 'last52', label: 'Last 52 weeks', lc: 'last 52 weeks' }, since: { scope: 'sinceBase', label: 'Since Mar 2024', lc: 'since Mar 2024' } };
+// Founder Q14 (TEN-312 5262e790): surface-ratings has no since-Mar-2024 scope, so on that view Under pressure is "—" for
+// both players (no shape point, percentile or Δ) — a career number never sits under a since-2024 label.
+const PS2_UP_SINCE_TIP = 'No since-Mar-2024 figure yet; see the career view.';
+const ps2UpDashed = (W, ax) => W.scope === 'sinceBase' && ax.key === 'underPressure';
 
 let _ps2 = null;
 function ps2StateFor(m){
@@ -17973,11 +17977,6 @@ function ps2Pop(scope, surface, key){
   if (!p) return null;
   const n = p.n != null ? p.n : Array.isArray(p.values) ? p.values.length : null;
   return { n, words: p.population || '' };
-}
-function ps2UpScope(key, surface, scope){
-  const rec = _mdna && _mdna.byKey ? _mdna.byKey[String(key)] : null;
-  const node = rec && rec.surfaces && rec.surfaces[surface] && rec.surfaces[surface][scope] && rec.surfaces[surface][scope].underPressure;
-  return node ? node.srScope || null : null;
 }
 
 // ---- blocks ----
@@ -18129,7 +18128,7 @@ function ps2DnaModel(m, S){
     const d = mdnaRadarFor(key, surface, W.scope, name);
     const vals = PS2_AXES.map((ax, i) => {
       const elo = ax.key === 'elo';
-      const has = elo ? !!d.ratings && d.ratings[i] != null : d.ok && !!d.ratings && d.ratings[i] != null;
+      const has = ps2UpDashed(W, ax) ? false : elo ? !!d.ratings && d.ratings[i] != null : d.ok && !!d.ratings && d.ratings[i] != null;
       return { raw: has ? d.ratings[i] : null, pct: has && d.pcts ? d.pcts[i] : null,
         delta: has && W.scope === 'last52' && d.deltas ? d.deltas[i] : null };   // no Δ on the since-Mar-2024 view (DF L3582)
     });
@@ -18139,13 +18138,14 @@ function ps2DnaModel(m, S){
 }
 function ps2AxisTip(D, i){
   if (D.loading) return 'Loading DNA…';
-  const ax = PS2_AXES[i], pop = ps2Pop(D.W.scope, D.surface, ax.key);
+  const ax = PS2_AXES[i];
+  if (ps2UpDashed(D.W, ax)) return fhEsc(PS2_UP_SINCE_TIP);
+  const pop = ps2Pop(D.W.scope, D.surface, ax.key);
   const fmtP = p => (p == null ? 'no percentile' : 'percentile ' + (+p).toFixed(1));
   const line = s => {
     const v = s.vals[i], nm = fhSurname(s.name);
     if (v.raw == null) return `${nm}: ${FH_DASHC}${s.d.inPool && !s.d.ok && ax.key !== 'elo' ? ` (${s.d.matches || 0} ${D.surface} matches, ${D.W.lc}: below the ${MDNA_FLOOR}-match floor)` : !s.d.inPool ? ' (no api-tennis rating on record)' : ''}`;
-    const up = ax.key === 'underPressure' ? ps2UpScope(s.key, D.surface, D.W.scope) : null;
-    return `${nm}: ${_mdnaFmt(v.raw, ax.dp)} · ${fmtP(v.pct)}${up === 'career' ? ' · surface-ratings career (2010–)' : ''}${ax.key === 'underPressure' && s.d.est ? ' · estimated from 3 of 4 parts' : ''}`;
+    return `${nm}: ${_mdnaFmt(v.raw, ax.dp)} · ${fmtP(v.pct)}${ax.key === 'underPressure' && s.d.est ? ' · estimated from 3 of 4 parts' : ''}`;
   };
   const head = ax.key === 'elo' ? `Surface Elo (${D.surface}) · current Tennis Abstract rating, the same on both views` : `${ax.label} · ${D.surface} · ${D.W.lc}`;
   const popTxt = pop ? `Rank among ${pop.n} ${pop.words}.` : 'Population not on file.';
@@ -23521,9 +23521,11 @@ const PG_METRICS = [
   { key: 'secondServeWon', name: '2nd serve points won', kind: 'pct' },
   { key: 'wue', name: 'Winners / unforced errors', kind: 'ratio' },
   { key: 'winners', name: 'Winners', kind: 'pct' },
-  { key: 'pressure', name: 'Pressure points', kind: 'pct' },
+  { key: 'pressure', name: 'Pressure points', kind: 'pct', noDraw: true },
 ];
 const PG_NO_DRAW = 'Draw average: only for events on this week’s board (tournament-progression.json holds the active ATP events).';
+// Founder Q7 (TEN-312 6c9a9e55): the draw mean of Pressure points is 50% by construction, so it is never computed.
+const PG_DRAW_PRESSURE_TIP = "Always 50% by construction: the two players' shares of a match's break points add up to 100%.";
 let _pg = null, _pgStylesP = null;
 
 function pgTourName(m){ return fhTournClean(String(m.tour || '').replace(/^(ATP|WTA|Challenger)\s+/i, '').trim()); }
@@ -23616,7 +23618,7 @@ function pgDrawFor(t, labels){
       PG_METRICS.forEach(mt => { if (v[mt.key] != null && Number.isFinite(v[mt.key])) (acc[mt.key] = acc[mt.key] || []).push(v[mt.key]); });
     }));
     const out = {};
-    PG_METRICS.forEach(mt => { const a = acc[mt.key] || []; out[mt.key] = { v: a.length ? a.reduce((s, y) => s + y, 0) / a.length : null, n: a.length }; });
+    PG_METRICS.forEach(mt => { const a = acc[mt.key] || []; out[mt.key] = mt.noDraw ? null : { v: a.length ? a.reduce((s, y) => s + y, 0) / a.length : null, n: a.length }; });
     return out;
   });
 }
@@ -23890,12 +23892,12 @@ function buildMatchProgressionSection(m){
     };
     const fCell = (x, i) => {
       const F = pgDrawFig(x, mt);
-      const tip = !P.draw ? PG_NO_DRAW : x && x.n ? 'Mean of the ' + x.n + ' player' + (x.n === 1 ? '' : 's') + ' who played ' + P.labels[i] + ' at ' + P.tourn + (F.small ? ' · ' + MA_SMALL_NOTE : '') : 'No box scores for ' + P.labels[i] + ' at ' + P.tourn;
+      const tip = mt.noDraw ? PG_DRAW_PRESSURE_TIP : !P.draw ? PG_NO_DRAW : x && x.n ? 'Mean of the ' + x.n + ' player' + (x.n === 1 ? '' : 's') + ' who played ' + P.labels[i] + ' at ' + P.tourn + (F.small ? ' · ' + MA_SMALL_NOTE : '') : 'No box scores for ' + P.labels[i] + ' at ' + P.tourn;
       if (F.small) anySmall = true;
       return `<span data-aotip="${fhEsc(tip)}" style="text-align:center; ${M} font-size:${DZ.field}px; color:${F.small ? MA_GREY : S('5b6880', '--label')}; white-space:nowrap;">${fhEsc(F.t)}</span>`;
     };
     const FA = pgDrawFig(X.fAvg, mt);
-    const fTip = !P.draw ? PG_NO_DRAW : X.fAvg ? 'Mean of the round averages · ' + X.fAvg.n + ' player-rounds' : 'No box scores in the rounds shown';
+    const fTip = mt.noDraw ? PG_DRAW_PRESSURE_TIP : !P.draw ? PG_NO_DRAW : X.fAvg ? 'Mean of the round averages · ' + X.fAvg.n + ' player-rounds' : 'No box scores in the rounds shown';
     return `<div class="pg-card" data-pg-metric="${mt.key}" style="background:${S('0e1019', '--surface')}; border:1.25px solid ${S('ffffff-060', '--line')}; border-radius:12px; padding:${DZ.pad}px; min-width:0;">
         <div style="display:flex; align-items:baseline; justify-content:space-between; gap:4px 10px; flex-wrap:wrap; font-size:${DZ.title}px; letter-spacing:0.06em; text-transform:uppercase; color:${S('5b6880', '--label')}; font-weight:600; ${M} padding-bottom:11px; margin-bottom:10px; border-bottom:1px solid ${S('ffffff-060', '--line')};"><span style="color:${S('5b6880', '--label')};">${fhEsc(mt.name)}</span></div>
         <div style="overflow-x:auto;"><div style="min-width:${hmMin}px;">

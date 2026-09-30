@@ -17,6 +17,7 @@ const MUTANTS = [
     "  const scoreOf = r => (r.wo ? 'w/o' : r.sets ? r.sets.map(x => x[1] + '-' + x[0]).join(' ')"],
   ['DRAW avg: an event off the board still gets a draw row', "  if (!t) return null;\n  const players = t.players || [];", "  const players = (t && t.players) || [];"],
   ['DRAW avg: winners only, not both players of every match', "      if (x.round !== L) return;", "      if (x.round !== L || P.eliminated) return;"],
+  ['Q7: the DRAW avg of Pressure points computed again (50.0%)', "out[mt.key] = mt.noDraw ? null : {", "out[mt.key] = {"],
   ['gate: a rate on n 1–4 printed as a %', "  if (g === 'nopct') return { t: x.won + '/' + x.total, count: ' (' + x.won + '/' + x.total + ')' };\n", ''],
   ['AVG: the mean of the round rates, not the summed counts', "return { v: won / total * 100, won, total, n: got.length }; }",
     "return { v: sum(x => x.v) / got.length, won, total, n: got.length }; }"],

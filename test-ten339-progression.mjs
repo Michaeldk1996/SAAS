@@ -5,7 +5,8 @@
 //   · house formulas: the 6-part Serve rating (aces − double faults), Return 4-term, every rate from its count
 //   · the road = career-history rows at this event before this match: main draw only, this match and other events out;
 //     set scores from career-history `sets`, player-oriented
-//   · DRAW avg = tournament-progression.json (active events only): both players of every match at that round; "—" otherwise
+//   · DRAW avg = tournament-progression.json (active events only): both players of every match at that round; "—" otherwise;
+//     its Pressure points are "—" on every round, 50% by construction (founder Q7, TEN-312 6c9a9e55)
 //   · the D2 gate on every rate: n 1–4 → the count, 5–9 grey + note + footnote; AVG pooled over the summed counts
 //   · the R1 empty state (the tab is listed, not hidden) · a bye only at the draw's first round · a walkover counted nowhere
 //   · DoD 8: no tab-local row or tooltip renderer; every match cell opens the shared sheet · no seeded numbers
@@ -150,6 +151,36 @@ test('DRAW avg: active events only (both players of every match at that round); 
   const on = S.buildMatchProgressionSection(match('R2', hA, hB));
   assert.ok(!/only for events on this week/.test(on), 'an active event draws its row');
   S.setTp({});
+});
+
+// Founder Q7 (TEN-312 6c9a9e55). Mutation 'Q7: the DRAW avg of Pressure points computed again (50.0%)'
+test('DRAW avg of Pressure points is "—" on every round and the AVG, with the founder\'s tooltip', () => {
+  const TIP = "Always 50% by construction: the two players' shares of a match's break points add up to 100%.";
+  const hA = [row('2026-09-24', 'R1', 'A. Shevchenko', W), row('2026-09-26', 'R2', 'M. Damm', W)];
+  const hB = [row('2026-09-24', 'R1', 'M. Kouame', W), row('2026-09-26', 'R2', 'X. Two', W)];
+  // four matches in R1 and three in R2 (8 and 6 player-rounds, above the n = 5 dash), uneven break-point counts: the shares still sum to 1
+  const pr = (w, t) => ({ firstServePct: 60, firstServeWonPct: 70, secondServeWonPct: 50, svHold: { won: 8, total: 10 }, aces: 3, dfs: 1,
+    ret1: { won: 10, total: 40 }, ret2: { won: 10, total: 20 }, retGames: { won: 1, total: 10 }, bpConv: { won: w, total: t } });
+  const P = (name, key, rounds) => ({ name, playerKey: key, rounds: rounds.map(([round, opponent, mm]) => ({ round, opponent, resultDisplay: '2 - 0', metrics: mm })) });
+  const t = { rounds: ['R1', 'R2'], players: [
+    P('A. Aa', '11', [['R1', 'B. Bb', pr(3, 7)], ['R2', 'C. Cc', pr(1, 2)]]), P('B. Bb', '12', [['R1', 'A. Aa', pr(0, 4)]]),
+    P('C. Cc', '13', [['R1', 'D. Dd', pr(2, 3)], ['R2', 'A. Aa', pr(4, 9)]]), P('D. Dd', '14', [['R1', 'C. Cc', pr(5, 11)]]),
+    P('E. Ee', '15', [['R1', 'F. Ff', pr(1, 6)], ['R2', 'G. Gg', pr(2, 2)]]), P('F. Ff', '16', [['R1', 'E. Ee', pr(3, 3)]]),
+    P('G. Gg', '17', [['R1', 'H. Hh', pr(4, 5)], ['R2', 'E. Ee', pr(0, 1)]]), P('H. Hh', '18', [['R1', 'G. Gg', pr(2, 8)]]),
+    P('I. Ii', '19', [['R2', 'J. Jj', pr(3, 4)]]), P('J. Jj', '20', [['R2', 'I. Ii', pr(1, 5)]])] };
+  S.setTp({ Chengdu: t });
+  const h = S.buildMatchProgressionSection(match('QF', hA, hB));
+  S.setTp({});
+  const card = h.slice(h.indexOf('data-pg-metric="pressure"'));            // the last card
+  const drawRow = card.slice(card.indexOf('font-style:italic'), card.indexOf('</div></div>'));
+  const cells = [...drawRow.matchAll(/<span data-aotip="([^"]*)"[^>]*>([^<]*)<\/span>/g)]
+    .map(x => [x[1].replace(/&#0?39;|&apos;/g, "'").replace(/&amp;/g, '&'), x[2]]);
+  assert.equal(cells.length, 3, 'R1, R2 and the AVG');
+  for (const [tip, v] of cells) { assert.equal(v, '—'); assert.equal(tip, TIP); }
+  assert.ok(!/50\.0%/.test(drawRow), 'no 50.0% in the draw row');
+  // every other metric still draws its mean on an active event
+  const serve = h.slice(h.indexOf('data-pg-metric="serveRating"'), h.indexOf('data-pg-metric="returnRating"'));
+  assert.ok(/Mean of the 8 players who played R1 at .*Mean of the 6 players who played R2 at /s.test(serve), 'the Serve rating draw row is untouched');
 });
 
 // Mutation 'gate: a rate on n 1–4 printed as a %'

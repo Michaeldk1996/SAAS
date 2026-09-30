@@ -21,7 +21,7 @@ const MUTANTS = [
   ['DNA: a Δ (±0) on the since-Mar-2024 view', "delta: has && W.scope === 'last52' && d.deltas", "delta: has && d.deltas"],
   ['DNA: the tooltip without its population and n', "const popTxt = pop ? `Rank among ${pop.n} ${pop.words}.`", "const popTxt = false ? `Rank among ${pop.n} ${pop.words}.`"],
   ['DNA: the since view stops reading the live (current) Elo', "const d = mdnaRadarFor(key, surface, W.scope, name);", "const d = mdnaRadarFor(key, surface, W.scope, W.scope === 'last52' ? name : null);"],
-  ['DNA: Under pressure\'s career window unstated on the since view', "up === 'career' ? ' · surface-ratings career (2010–)'", "up === 'x' ? ' · surface-ratings career (2010–)'"],
+  ['Q14: the since view falls back to the career scope (Under pressure prints a number)', "const ps2UpDashed = (W, ax) => W.scope === 'sinceBase' && ax.key === 'underPressure';", "const ps2UpDashed = (W, ax) => false;"],
   ['DNA: a player under the floor still draws a shape', "const poly = s => (s.d.ok ?", "const poly = s => (true ?"],
   ['DNA: the window labelled "Career" again', "since: { scope: 'sinceBase', label: 'Since Mar 2024', lc: 'since Mar 2024' }", "since: { scope: 'sinceBase', label: 'Career', lc: 'career' }"],
   ['profile: the leader\'s bar toned brighter (highlighting the better stat)', "<span class=\"ps2-bar-a\" style=\"width:${w(a)}%; background:${C.A};", "<span class=\"ps2-bar-a\" style=\"width:${w(a)}%; background:${w(a) >= w(b) ? C.A : C.bDim};"],
