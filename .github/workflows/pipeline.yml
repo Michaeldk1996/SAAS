@@ -140,13 +140,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # TEN-174 fail-closed pre-deploy gate. The progression source-guard
-      # (tools/test-progression-seed.js, wired as `npm test`) fails the job if the
-      # Player-progression win-detection reintroduces scoreline/resultDisplay parsing,
-      # which credited eliminated losers a phantom win. Runs before the pipeline and
-      # deploy so a regressed HTML never reaches Pages; fails fast (no API calls wasted).
-      - name: Progression source-guard (fail-closed pre-deploy gate)
-        run: npm test
+      # TEN-174 fail-closed pre-deploy gate: every `npm test` command (the progression
+      # source-guard it started as, and every suite since). TEN-351 (founder ruling
+      # 2026-09-30, TEN-312 6c9a9e55): it runs on EVERY rebuild and before anything
+      # publishes, and may be parallelised but never skipped. It took 577 s median BEFORE
+      # the build (2026-09-29); it now starts here, runs BESIDE the build in parallel shards,
+      # each in its own clean worktree of HEAD (tools/gate-run.mjs), and "Pre-deploy gate
+      # result" below waits for it before the upload, the deploy and every commit-back.
+      # The subshell (set +e: the step shell is bash -e) writes the exit code even if the
+      # runner crashes; no code = red.
+      - name: Start the pre-deploy gate (runs beside the build)
+        run: |
+          mkdir -p "$RUNNER_TEMP/gate"
+          ( set +e; node tools/gate-run.mjs --shards 3 > "$RUNNER_TEMP/gate/log" 2>&1; echo $? > "$RUNNER_TEMP/gate/rc" ) &
+          echo "pre-deploy gate started: every npm test command, 3 shards"
+
+      # TEN-351: the in-place gate used to leave the DEPLOYED tournament-history/ shards in this
+      # checkout, and "Assemble site" republishes every one the build does not rewrite. The gate
+      # now runs in its own worktrees, so this keeps that explicitly: the published
+      # tournament-history/ is unchanged by the move. Fail-closed, as the gate's hydrate was.
+      - name: Seed tournament-history/ from the deployed store
+        run: node tools/seed-tournament-history.js
 
       # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16: "key per day".
       # The key below said per-day in the comment and was `github.run_id` in fact, so
@@ -1135,6 +1149,30 @@ jobs:
       # cannot walk aborts rather than SKIPs (the pre-build run skips 19 of them).
       - name: Reconcile suite on the freshly built store (fail-closed pre-publish gate)
         run: PP2_BUILT_STORE=_site node tools/test-pp2-reconcile.js
+
+      # TEN-351: the pre-deploy gate started before the build must have PASSED before
+      # anything below runs — the upload, the deploy and every commit-back. No exit code
+      # after GATE_WAIT_SECONDS (the runner hung or never started; 900 s keeps this inside the job's
+      # 30 min timeout, so the reason is printed) is a failure, and so is
+      # any code but 0. Locked by tools/test-ten351-gate-run.js.
+      - name: Pre-deploy gate result (fail-closed; nothing publishes until it passes)
+        env:
+          GATE_WAIT_SECONDS: 900
+        run: |
+          G="$RUNNER_TEMP/gate"
+          waited=0
+          while [ ! -s "$G/rc" ] && [ "$waited" -lt "$GATE_WAIT_SECONDS" ]; do sleep 2; waited=$((waited + 2)); done
+          echo "waited ${waited} s for the pre-deploy gate"
+          if [ -f "$G/log" ]; then cat "$G/log"; fi
+          if [ ! -s "$G/rc" ]; then
+            echo "::error title=pre-deploy gate::no result after ${GATE_WAIT_SECONDS} s. Nothing publishes."
+            exit 1
+          fi
+          rc=$(cat "$G/rc")
+          if [ "$rc" != "0" ]; then
+            echo "::error title=pre-deploy gate::failed (exit ${rc}). Nothing publishes."
+            exit 1
+          fi
 
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
