@@ -859,17 +859,7 @@ test('card / Key factors: a record with Challenger or ITF meetings says so; an a
   assert.equal(H(null), '');
   assert.match(html, /· H2H \$\{m\.h2h\.record\}\$\{h2hLevelMix\(m\.h2h\)\}/, 'the match card shows the mix');
 });
-test('Key factors H2H block (the live one) shows the level mix: executed, not grepped', () => {
-  const K = new Function(`
-    const ANALYSIS_P1_COLOR = '#6a9af8', ANALYSIS_P2_COLOR = '#e7e9ee';
-    const akHead = t => '<h>' + t + '</h>', akCard = (k, h) => h;
-    const psEsc = x => String(x), psShortName = x => String(x);
-    ${slice('h2hLevelMix')}\n${slice('akH2HBlock')}\nreturn akH2HBlock;`)();
-  const mk = (level, won) => ({ date: '2024-01-0' + (won ? 1 : 2), tournament: 'X', result: '2 - 0', p1Won: won, level });
-  const m = (rows) => ({ p1: 'A', p2: 'B', h2h: { p1Wins: rows.filter(r => r.p1Won).length, p2Wins: rows.filter(r => !r.p1Won).length, matches: rows } });
-  assert.match(K(m([mk('ATP', true), mk('ITF', true), mk('CH', false)])), /3 career meetings · incl\. 1 CH, 1 ITF/);
-  assert.doesNotMatch(K(m([mk('ATP', true), mk('ATP', false)])), /incl\./, 'control: an ATP-only record adds nothing');
-});
+// The Key factors H2H card's level mix is checked in test-ten341-key-factors.mjs (TEN-341: the H2H tab's meetings).
 test('H2H page: the record lines carry the level mix; each meeting row keeps its level', () => {
   assert.match(html, /meetingsLine: tot \+ ' meetings on record' \+ lvMix,/);
   assert.match(html, /Math\.min\(aw, bw\)\) \+ lvMix,/);

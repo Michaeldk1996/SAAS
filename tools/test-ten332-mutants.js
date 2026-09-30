@@ -6,7 +6,7 @@ const ROOT = path.join(__dirname, '..');
 const FILES = { html: 'bsp-consult-dashboard.html', pp2: 'player-profile-v2.js' };
 const ENV = { html: 'TEN332_HTML', pp2: 'TEN332_PP2' };
 const MUTANTS = [
-  ['N6: a synthesised Withdrawal edition renders', "  const years = ((hist && hist.years) || []).filter(y => !y.withdrew);", "  const years = ((hist && hist.years) || []);"],
+  ['N6: a synthesised Withdrawal edition renders', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
   ['result: a won final not "Won"', "    else if (last.won && lastRd === 'F') result = 'Won';", "    else if (false) result = 'Won';"],
   ['result: an in-progress edition labelled by its last round', "    else if (String(y.year) === mYear) result = 'In progress';", "    else if (String(y.year) === mYear && !m.finalScore) result = 'In progress';"],
   ['N2: a set-less history row read as a walkover', "  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true;", "  if (false){ r.wo = false; r.ret = true; r.retSettle = true;"],

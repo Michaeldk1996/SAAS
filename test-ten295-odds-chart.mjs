@@ -15,7 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const html = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+const html = readFileSync(process.env.TEN295_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');   // a mutant runner points this at a mutated copy
 
 function slice(name, src = html) {
   const start = src.indexOf(`\nfunction ${name}(`);
@@ -34,12 +34,13 @@ function constSrc(name, src = html) {
 }
 
 // TEN-303 rebuilt the Odds tab (test-ten303-odds-tab.mjs owns its markup); this file keeps the TEN-295
-// data rules that outlive it: the Key Factors mini-chart and the page's start cut.
+// data rules that outlive it: the Key Factors mini-chart (TEN-341: kfOddsMove) and the page's start cut.
 export function build(src = html) {
   const s = n => slice(n, src), c = n => constSrc(n, src);
   return new Function(`
     ${['AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG', 'AODDS_BOOKS',
-       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'].map(c).join(' ')}
+       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED',
+       'ANALYSIS_P2_FILL', 'FH_AC', 'FH_MONO', 'KF_BOOK_PREF', 'KF_C'].map(c).join(' ')}
     let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
     const newsTz = () => 'Europe/Brussels';
     const buildOddsReduced = () => 'REDUCED';
@@ -48,8 +49,10 @@ export function build(src = html) {
     ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
        'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
        'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml', 'aOddsStatusOf',
-       'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'akOddsMoveSvg'].map(s).join(' ')}
-    return { buildOddsSection, akOddsMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,
+       'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'fhS', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
+    // the Key factors Odds card's movement chart (TEN-341: the card's own book, its pre-match series), '' when not drawn
+    const kfMoveSvg = m => { const x = kfOddsMove(m); return (x.mini && x.mini.svg) || ''; };
+    return { buildOddsSection, kfMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,
              reset: () => { _aOdds = { m:null, novig:false, market:'Match Winner', mv:null }; },
              state: () => _aOdds };
   `)();
@@ -108,7 +111,7 @@ test('Key Factors mini-chart draws from the chart-only shape', () => {
   const A = build();
   const m = fixture();
   delete m.oddsMovement.books;                     // chart only
-  const svg = A.akOddsMoveSvg(m);
+  const svg = A.kfMoveSvg(m);
   assert.ok(svg.includes('<polyline'), 'draws a line');
 });
 
@@ -119,9 +122,9 @@ test('wave 2: the Key Factors mini-chart never picks a book with a gap', () => {
   delete m.oddsMovement.books;
   for (const k of Object.keys(m.oddsMovement.chart.books)) if (k !== 'Betano') delete m.oddsMovement.chart.books[k];
   m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 9 * H), 2.5], [iso(now - 2 * H), 2.1]], p2: [[iso(now - 9 * H), 1.55], [iso(now - 2 * H), 1.8]] };
-  assert.ok(A.akOddsMoveSvg(m).includes('<polyline'), 'drawn without a gap');
+  assert.ok(A.kfMoveSvg(m).includes('<polyline'), 'drawn without a gap');
   m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 6 * H), iso(now - 4 * H)]];
-  assert.ok(!A.akOddsMoveSvg(m).includes('<polyline'), 'left out with one');
+  assert.ok(!A.kfMoveSvg(m).includes('<polyline'), 'left out with one');
 });
 
 // ── founder 2026-09-26 (comment 5dafce2b): real start time + source in every shared label ──
@@ -136,7 +139,7 @@ test('start time: the card time is the account zone (Europe/Berlin), not UTC —
   const h = A.buildOddsSection(m);
   assert.ok(!/>9\.50</.test(h) && !/>1\.05</.test(h), 'the 13:00Z in-play tick is not shown');
   assert.equal(A.cardStartMs(m), Date.parse('2026-09-24T12:00:00Z'));
-  const mini = A.akOddsMoveSvg(JSON.parse(JSON.stringify(m)));
+  const mini = A.kfMoveSvg(JSON.parse(JSON.stringify(m)));
   assert.ok(mini.includes('<polyline') || mini === '', 'mini-chart renders');
   assert.ok(!/9\.50|1\.05/.test(mini), 'the Key Factors mini-chart also ends at the real start');
   assert.equal(A.cardStartMs({ date: '2026-10-26', time: '14:00' }), Date.parse('2026-10-26T13:00:00Z'), 'CET after 25 Oct');
@@ -149,7 +152,7 @@ test('start time: the card time is the account zone (Europe/Berlin), not UTC —
   A.reset();
   assert.equal(A.aOddsStartMs(early), Date.parse('2026-09-24T10:00:00Z'));
   assert.ok(!/>7\.70</.test(A.buildOddsSection(early)), 'a tick after the actual (card-state) start is not drawn');
-  assert.ok(!/7\.70/.test(A.akOddsMoveSvg(early)), 'nor in the mini-chart');
+  assert.ok(!/7\.70/.test(A.kfMoveSvg(early)), 'nor in the mini-chart');
   const withFixture = JSON.parse(JSON.stringify(m)); withFixture.oddsMovement.startTime = '2026-09-24T10:30:00.000Z';
   assert.equal(A.aOddsStartMs(withFixture), Date.parse('2026-09-24T10:30:00Z'), 'no card-state start -> the Oddspapi fixture start');
   withFixture.__testOcs = { startTs: '2026-09-24T10:00:00Z' };

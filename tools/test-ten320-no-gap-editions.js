@@ -69,7 +69,9 @@ const tk = (o) => Object.assign({ p1: 'S. Tsitsipas', p1Key: '1011', p2: 'X', p2
 {
   const html = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
   check('renderer: the Tournament tab filters a stale store\'s synthesised gap rows (`withdrew`)', () => {
-    assert.ok(html.includes("const years = ((hist && hist.years) || []).filter(y => !y.withdrew);"));
+    // TEN-341 moved the filter into trEditionsOf, shared by the Tournament tab (trModelFor) and Key factors' Tournament card
+    assert.ok(html.includes("function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }"));
+    assert.ok(html.includes("  const years = trEditionsOf(hist);"), 'the Tournament tab reads its editions through it');
   });
 }
 
