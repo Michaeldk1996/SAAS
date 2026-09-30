@@ -13041,16 +13041,36 @@ function maSeg(style, items, o){
 // o: { title (text), chip (markup beside the title), sub (text), body, foot (markup), maxWidth (px),
 //      onClose (JS run by ✕ / outside click / Esc), cls (the caller's class hooks: cls, cls-overlay, cls-title,
 //      cls-sub), xCls (extra class on ✕), bg / line (override the box surface / border; default = the design's own
-//      shades, DF L1517–1522: card box, 1.25px border at white 0.08, ✕ 1px at white 0.12, the 0.72 pop-up scrim), z }.
+//      shades, DF L1517–1522: card box, 1.25px border at white 0.08, ✕ 1px at white 0.12, the 0.72 pop-up scrim), z,
+//      variant ('std' | 'mv', below), enter (false = no entrance: a re-render of an open frame), label (aria-label),
+//      stop (the box stops click propagation), titleAttrs / xAttrs (raw attributes on the title / ✕) }.
 // The overlay fades in (120ms, .ma-fade); the box enters with sigIn (200ms, .ma-sigin). Outside click =
 // a click whose target is the overlay itself; Esc = maPopEscKey (one listener, the topmost frame).
+// The file draws two frame geometries; each is one variant key (TEN-366, DoD item 8: variant geometry is a parameter,
+// never a second renderer). std = README §4.4 / DF L1485–1560 (Overview, Market edge). mv = the Odds movement pop-up,
+// DF L1906–1915: centred, 1080 wide, radius 18, raised surface + shadow, the box scrolls (not the scrim), an 18px title
+// with its chip on the baseline, a 12px UI-font sub, a 32px ✕ on a 1px border; the Odds tab's role tokens (AODDS_C).
+const MA_POP = {
+  std: { ov: "align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--ma-s-e7e9ee, var(--text)); line-height:normal; font-size:16px;",
+    scrim: 'var(--ma-s-030509-720, var(--backdrop))', z: 85, w: 900, bg: 'var(--ma-s-0e1019, var(--surface))', line: 'var(--ma-s-ffffff-080, var(--line))',
+    boxPre: 'position:relative; ', box: 'border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;',
+    col: 'display:flex; flex-direction:column; gap:5px; min-width:0;', trow: 'display:flex; align-items:center; gap:10px; flex-wrap:wrap;',
+    title: 'font-size:17px; font-weight:800; letter-spacing:-0.01em;', sub: "font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--ma-s-5b6880, var(--label));",
+    xCls: 'seg ma-pop-x', x: 'width:30px; height:30px; flex:none; border-radius:8px; border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--ma-s-8b96b5, var(--text-soft)); cursor:pointer;' },
+  mv: { ov: 'align-items:center; justify-content:center; padding:24px;',
+    scrim: 'var(--ma-scrim)', z: 60, w: 1080, bg: 'var(--ma-raised)', line: 'var(--ma-hair)',
+    boxPre: '', box: 'border-radius:18px; box-shadow:var(--ma-shadow-pop); padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;',
+    col: 'display:flex; flex-direction:column; gap:5px;', trow: 'display:flex; align-items:baseline; gap:10px;',
+    title: 'font-size:18px; font-weight:800;', sub: 'font-size:12px; color:var(--ma-t3);',
+    xCls: 'ma-pop-x', x: 'width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid var(--ma-hair-strong); color:var(--ma-t2); cursor:pointer; font-size:14px; flex-shrink:0;' },
+};
 function maPopFrame(o){
   const c = o.cls || '', esc = s => escapeHtml(s == null ? '' : String(s));
-  const mono = "font-family:'IBM Plex Mono',monospace;";
-  return `<div class="ma-pop-overlay ma-fade${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0; z-index:${o.z || 85}; background:var(--ma-s-030509-720, var(--backdrop)); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--ma-s-e7e9ee, var(--text)); line-height:normal; font-size:16px;">`
-    + `<div class="ma-pop ma-sigin${c ? ' ' + c : ''}" role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:${o.maxWidth || 900}px; background:${o.bg || 'var(--ma-s-0e1019, var(--surface))'}; border:1.25px solid ${o.line || 'var(--ma-s-ffffff-080, var(--line))'}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
-    + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}" style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${mono} font-size:10.5px; color:var(--ma-s-5b6880, var(--label));">${esc(o.sub)}</span></div>`
-    + `<span class="seg ma-pop-x${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close" onclick="${o.onClose}" style="width:30px; height:30px; flex:none; border-radius:8px; border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--ma-s-8b96b5, var(--text-soft)); cursor:pointer;">✕</span></div>`
+  const G = MA_POP[o.variant] || MA_POP.std, enter = o.enter !== false;
+  return `<div class="ma-pop-overlay${enter ? ' ma-fade' : ''}${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0; z-index:${o.z || G.z}; background:${o.scrim || G.scrim}; display:flex; ${G.ov}">`
+    + `<div class="ma-pop${enter ? ' ma-sigin' : ''}${c ? ' ' + c : ''}" role="dialog" aria-modal="true"${o.label ? ` aria-label="${esc(o.label)}"` : ''}${o.stop ? ' onclick="event.stopPropagation()"' : ''} style="${G.boxPre}width:100%; max-width:${o.maxWidth || G.w}px; background:${o.bg || G.bg}; border:1.25px solid ${o.line || G.line}; ${G.box}">`
+    + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="${G.col}"><span style="${G.trow}"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}"${o.titleAttrs || ''} style="${G.title}">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${G.sub}">${esc(o.sub)}</span></div>`
+    + `<span class="${G.xCls}${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close"${o.xAttrs || ''} onclick="${o.onClose}" style="${G.x}">✕</span></div>`
     + (o.body || '') + (o.foot ? `<span class="ma-pop-foot" style="font-size:11px; color:var(--ma-s-4b5672, var(--label));">${o.foot}</span>` : '') + '</div></div>';
 }
 // Esc closes the topmost frame through its own ✕. Bubble phase: while the stats sheet is open on top, its
@@ -16978,16 +16998,13 @@ function aOddsMvHtml(m, D, marginLbl){
   const tabs = D.rows.filter(x => !x.noData).map(x => { const on = x.name === r.name;
     return '<span class="aox-seg aox-tab" role="button" tabindex="0" data-book="' + escapeHtml(x.name) + '" data-aotip="' + escapeHtml(aOddsBookTip(x, D)) + '" onclick="aOddsOpenMv(this.dataset.book)" onkeydown="aOddsKey(event,()=>aOddsOpenMv(this.dataset.book))"'
       + ' style="padding:5px 10px; border-radius:4px; font-size:11.5px; cursor:pointer; white-space:nowrap; font-weight:' + (on ? 700 : 500) + '; color:' + (on ? C.text : C.sub) + '; background:' + (on ? C.tabOnBg : 'transparent') + '; border:' + C.hw1 + ' solid ' + (on ? C.tabOnBd : C.tabBd) + ';">' + escapeHtml(x.name) + '</span>'; }).join('');
-  return '<div class="aox-mv ma-pop-overlay' + (_aOdds.mvIn ? ' ma-fade' : '') + '" onclick="aOddsCloseMv()" style="position:fixed; inset:0; z-index:60; background:' + C.backdrop + '; display:flex; align-items:center; justify-content:center; padding:24px;">'
-    + '<div class="aox-mvbox' + (_aOdds.mvIn ? ' ma-sigin' : '') + '" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation()" style="width:100%; max-width:1080px; border-radius:18px; background:' + C.pop + '; border:' + C.hw125 + ' solid ' + C.popBd + '; box-shadow:' + C.popShadow + '; padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;">'
-    + '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px;">'
-    + '<span style="display:flex; align-items:baseline; gap:10px;"><span class="aox-mvbook" tabindex="0" style="font-size:18px; font-weight:800;"' + tipAttr + '>' + escapeHtml(r.name) + '</span>'
-    + '<span style="' + mono + ' font-size:9.5px; letter-spacing:0.14em; color:' + C.label + '; text-transform:uppercase;">' + r.group + ' · ' + escapeHtml(marginLbl(r)) + '</span></span>'
-    + '<span class="aox-mvsub" style="font-size:12px; color:' + C.label + ';">Odds movement · Decimal odds · ' + (D.novig ? 'no-vig' : 'as quoted') + ' · since ' + aOddsStamp(r.first) + '</span></div>'
-    + '<span class="aox-seg aox-x ma-pop-x" role="button" tabindex="0" aria-label="Close" onclick="aOddsCloseMv()" onkeydown="aOddsKey(event,aOddsCloseMv)" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:' + C.hw1 + ' solid ' + C.closeBd + '; color:' + C.sub + '; cursor:pointer; font-size:14px; flex-shrink:0;">✕</span></div>'
-    + '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:12px;">' + panel('a', m.p1, C.a) + panel('b', m.p2, C.b, C.bFill) + '</div>'
-    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="display:flex; gap:6px; flex-wrap:wrap;">' + tabs + '</span></div>'
-    + '</div></div>';
+  // The shared frame's `mv` variant (TEN-366): the file's own Odds pop-up geometry, DF L1906–1915.
+  const chip = '<span style="' + mono + ' font-size:9.5px; letter-spacing:0.14em; color:' + C.label + '; text-transform:uppercase;">' + r.group + ' · ' + escapeHtml(marginLbl(r)) + '</span>';
+  const body = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:12px;">' + panel('a', m.p1, C.a) + panel('b', m.p2, C.b, C.bFill) + '</div>'
+    + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="display:flex; gap:6px; flex-wrap:wrap;">' + tabs + '</span></div>';
+  return maPopFrame({ variant: 'mv', cls: 'aox-mv', enter: !!_aOdds.mvIn, label: 'Odds movement', stop: true, onClose: 'aOddsCloseMv()',
+    title: r.name, titleAttrs: ' tabindex="0"' + tipAttr, chip, sub: 'Odds movement · Decimal odds · ' + (D.novig ? 'no-vig' : 'as quoted') + ' · since ' + aOddsStamp(r.first),
+    xCls: 'aox-seg aox-x', xAttrs: ' tabindex="0" onkeydown="aOddsKey(event,aOddsCloseMv)"', body });
 }
 
 function buildOddsReduced(m){

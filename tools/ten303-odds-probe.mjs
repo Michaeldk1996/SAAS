@@ -71,11 +71,11 @@ try {
   probe.tipHiddenAfterLeave = await ev(`document.getElementById('aoddsTip').style.display === 'none'`);
   // pop-up: click the first row with a line
   await ev(`document.querySelector('#aSectionOdds .aox-row:not(.aox-nodata)').click()`);
-  await waitFor('!!document.querySelector("#aSectionOdds .aox-mv")'); await sleep(400);
-  probe.popup = await ev(`(() => { const mv = document.querySelector('#aSectionOdds .aox-mv'); const box = mv.firstElementChild.getBoundingClientRect();
-    return { book: mv.querySelector('.aox-mvbook').textContent, sub: mv.querySelector('.aox-mvsub').textContent, tabs: [...mv.querySelectorAll('.aox-tab')].map(t => t.dataset.book),
+  await waitFor('!!document.querySelector("#aSectionOdds .aox-mv-overlay")'); await sleep(400);
+  probe.popup = await ev(`(() => { const mv = document.querySelector('#aSectionOdds .aox-mv-overlay'); const box = mv.firstElementChild.getBoundingClientRect();
+    return { book: mv.querySelector('.aox-mv-title').textContent, sub: mv.querySelector('.aox-mv-sub').textContent, tabs: [...mv.querySelectorAll('.aox-tab')].map(t => t.dataset.book),
       stats: [...mv.querySelectorAll('.aox-stat')].map(e => e.textContent + ' ' + e.nextElementSibling.textContent), xlabels: [...mv.querySelectorAll('.aox-xt')].map(e => e.textContent),
-      box: [box.left, box.top, box.width, box.height], onTop: document.elementFromPoint(box.left + 30, box.top + 30).closest('.aox-mv') === mv }; })()`);
+      box: [box.left, box.top, box.width, box.height], onTop: document.elementFromPoint(box.left + 30, box.top + 30).closest('.aox-mv-overlay') === mv }; })()`);
   await shot('popup.png');
   await ev(`aOddsCloseMv()`); await sleep(200);
   await ev(`aOddsSetMode(true)`); await sleep(400);

@@ -36,6 +36,9 @@ this file wins.
    and tooltip renderers are **deleted**, not hidden (Form first: `.fh-elotip-pop` and Form's own rows go). Variant
    geometry (e.g. Form's 14 px inset) is a parameter of the shared helper, never a second renderer. **Test:** a grep
    finds no tab-local row or tooltip renderer; a tab that draws no rows or tooltips says so in its report.
+   **The one pop-up frame** is `maPopFrame` (TEN-366). The file draws two frame geometries, each a `MA_POP` variant key:
+   `std` (README §4.4, DF L1485–1560: Overview, Market edge) and `mv` (the Odds movement pop-up, DF L1906–1915).
+   A new pop-up geometry is a new variant key, never a tab-local overlay.
    **The one tooltip component** is the design's `.elotip-pop` (DF L950). It has two triggers and no other look:
    `maTipHtml` (hover / focus on a wrapper) and the positioned mode `data-aotip` (`initAOddsTips`: one delegated
    listener, 250 ms, anchored at the trigger and flipped at the viewport / modal edge; Odds, Weather, Market edge, the

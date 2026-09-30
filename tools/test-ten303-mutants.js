@@ -35,8 +35,9 @@ const MUTANTS = [
   ['follow-up 1a: the raw (unrounded) price is plotted', 'const v = +aOddsFmt(p[1]); if (!Number.isFinite(v)) return;', 'const v = p[1]; if (!Number.isFinite(v)) return;'],
   ['follow-up 1b: the missing-price mark is an en dash', "const AODDS_DASH = '\\u2014';", "const AODDS_DASH = '\\u2013';"],
   // TEN-335: the pop-up is a shared frame (Esc through maPopEscKey) with the entrance motion only when it opens
-  ['TEN-335: the overlay is not a shared frame (Esc cannot find it)', "<div class=\"aox-mv ma-pop-overlay'", "<div class=\"aox-mv'"],
-  ['TEN-335: the close button is not the frame\'s ma-pop-x', 'class="aox-seg aox-x ma-pop-x"', 'class="aox-seg aox-x"'],
+  ['TEN-366: the pop-up builds its own frame, not maPopFrame', "return maPopFrame({ variant: 'mv', cls: 'aox-mv',", "return ((o) => '<div class=\"aox-mv-overlay\">' + o.body + '</div>')({ variant: 'mv', cls: 'aox-mv',"],
+  ['TEN-335: the close button is not the frame\'s ma-pop-x', "    xCls: 'ma-pop-x', x: 'width:32px;", "    xCls: '', x: 'width:32px;"],
+  ['TEN-366: the mv variant falls back to the std frame geometry', "const G = MA_POP[o.variant] || MA_POP.std,", "const G = MA_POP.std,"],
   ['TEN-335: the entrance never plays', '_aOdds.mvIn = !_aOdds.mv;', '_aOdds.mvIn = false;'],
   ['TEN-335: the entrance replays on a book-tab switch', '_aOdds.mvIn = !_aOdds.mv;', '_aOdds.mvIn = true;'],
   ['TEN-335: the open flag never cleared (a re-render replays)', 'try { renderOddsSection(); } finally { _aOdds.mvIn = false; } }', 'renderOddsSection(); }'],

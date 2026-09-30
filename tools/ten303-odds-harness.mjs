@@ -24,12 +24,12 @@ export function constSrc(name, src = HTML) {
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
 export const CONSTS = ['ANALYSIS_P1_COLOR', 'ANALYSIS_P2_FILL', 'FH_AC', 'FH_MONO', 'KF_BOOK_PREF', 'KF_C', 'AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG',
-  'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'];
+  'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED', 'MA_POP'];
 export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries',
   'aOddsPulledAt', 'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap',
   'aOddsPairTicks', 'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml',
   'aOddsStatusOf', 'aOddsBookTip', 'aOddsTipHide', 'initAOddsTips', 'renderOddsSection', 'aOddsSetMode', 'aOddsSetMarket',
-  'aOddsOpenMv', 'aOddsCloseMv', 'buildOddsSection', 'aOddsMvHtml', 'fhS', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'];
+  'aOddsOpenMv', 'aOddsCloseMv', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'fhS', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'];
 
 // The page's renderer in a sandbox. `over` replaces a const's source (e.g. a config under test).
 export function build(src = HTML, over = {}) {

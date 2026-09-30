@@ -202,7 +202,7 @@ async function main() {
       for (const [sref, js, pop] of ODDS_STATES) {
         await ev(`(() => { _aOdds.novig = false; _aOdds.market = 'Match Winner'; _aOdds.mv = null; ${js} return true; })()`);
         await sleep(400); await ev(settle);
-        manifest.push(pop ? await shootPop(tab, sref, '.aox-mv') : await shootModal(tab, sref));
+        manifest.push(pop ? await shootPop(tab, sref, '.aox-mv-overlay') : await shootModal(tab, sref));
       }
       await ev(`(() => { _aOdds.novig = false; _aOdds.mv = null; const m = __oddsSaved.m; m.startTs = __oddsSaved.startTs; m.oddsMovement = __oddsSaved.om; m._oddsLoaded = __oddsSaved.loaded;
         AODDS_BOOKS.splice(0, AODDS_BOOKS.length, ...__oddsSaved.books); renderOddsSection(); return true; })()`);

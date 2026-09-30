@@ -309,7 +309,7 @@ test('pop-up: real window, stat boxes from the real series (earliest on ties), b
   A.open(m); A.state().mv = 'Pinnacle';
   const D = A.aOddsRowsOf(m, { nowMs: now });
   const h = A.buildOddsSection(m);
-  const mv = h.slice(h.indexOf('class="aox-mv '));
+  const mv = h.slice(h.indexOf('aox-mv-overlay"'));
   assert.ok(mv.includes('Odds movement \u00b7 Decimal odds \u00b7 as quoted \u00b7 since 26 Sep, 14:00'), 'since = first tick (Europe/Brussels)');
   assert.ok(/>sharp \u00b7 margin 2\.9%</.test(mv));
   const stats = [...mv.matchAll(/class="aox-stat"[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)</g)].map(x => [x[1], x[2]]);
@@ -483,7 +483,7 @@ test('1a: a stored series with a 3-hour no-change gap (and a feed gap) draws ONE
   const d = /<svg class="aox-spark"[\s\S]*?<path d="[^"]*"[^>]*\/><path d="([^"]+)"/.exec(row)[1];
   assert.equal((d.match(/M/g) || []).length, 1, 'sparkline: one line across the feed gap: ' + d);
   A.state().mv = 'Pinnacle';
-  const mv = A.buildOddsSection(m); const pd = /class="aox-line" d="([^"]+)"/.exec(mv.slice(mv.indexOf('class="aox-mv ')))[1];
+  const mv = A.buildOddsSection(m); const pd = /class="aox-line" d="([^"]+)"/.exec(mv.slice(mv.indexOf('aox-mv-overlay"')))[1];
   assert.equal((pd.match(/M/g) || []).length, 1, 'pop-up: one line across the feed gap: ' + pd);
   });
 });
@@ -556,7 +556,7 @@ test('pop-up stat boxes: HIGHEST / LOWEST compare displayed prices; a displayed 
   m.oddsMovement.chart.books['Pinnacle +30s'].p1 = [[iso(now - 20 * H), 1.30], [iso(now - 10 * H), 1.401], [iso(now - 6 * H), 1.404], [iso(now - 2 * H), 1.35]];
   A.open(m); A.state().mv = 'Pinnacle';
   const h = A.buildOddsSection(m);
-  const mv = h.slice(h.indexOf('class="aox-mv '));
+  const mv = h.slice(h.indexOf('aox-mv-overlay"'));
   const stats = [...mv.matchAll(/class="aox-stat"[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)</g)].map(x => [x[1], x[2]]);
   assert.deepEqual(stats[1], ['1.40', '27 Sep, 00:00'], 'HIGHEST = the first 1.40 (10 h before now, Europe/Brussels)');
   });
@@ -577,15 +577,16 @@ test('a book with an open feed gap holds its last price flat to the last check, 
     assert.equal(r.end, now - 2 * 60e3, 'the line runs to the last check');
     // and the pop-up axis ends there: its last x label is the last check's clock (Europe/Brussels = UTC+2)
     A.open(m); A.state().mv = 'Betano';
-    const mv = A.buildOddsSection(m); const xs = [...mv.slice(mv.indexOf('class="aox-mv ')).matchAll(/class="aox-xt"[^>]*>([^<]+)</g)].map(x => x[1]);
+    const mv = A.buildOddsSection(m); const xs = [...mv.slice(mv.indexOf('aox-mv-overlay"')).matchAll(/class="aox-xt"[^>]*>([^<]+)</g)].map(x => x[1]);
     assert.equal(xs[4], '09:58', 'the pop-up x axis ends at the last check: ' + xs);
   });
 });
 
-// TEN-335 — the odds pop-up is a shared frame (TEN-314): the overlay is a .ma-pop-overlay whose ✕ (.ma-pop-x) closes it,
+// TEN-335 / TEN-366 — the odds pop-up IS the shared frame (maPopFrame, variant 'mv'; TEN-314): the overlay is a .ma-pop-overlay whose ✕ (.ma-pop-x) closes it,
 // so the one Esc listener (maPopEscKey) closes it; the design's geometry (1080px, radius 18, centred) is kept. It enters
 // with .ma-fade / .ma-sigin when it OPENS, never on a book-tab switch or a re-render.
-// Mutations (tools/test-ten303-mutants.js): the overlay loses ma-pop-overlay; the ✕ loses ma-pop-x; the entrance never
+// Mutations (tools/test-ten303-mutants.js): the pop-up builds its own frame (not maPopFrame); the ✕ loses ma-pop-x; the mv variant
+// falls back to the std geometry; the entrance never
 // plays; the entrance replays on a book-tab switch; the open flag is never cleared (a re-render replays it).
 test('TEN-335 pop-up: a shared frame (Esc through maPopEscKey), entrance motion only when it opens', () => {
   const now = Date.parse('2026-09-27T08:00:00Z');
@@ -593,16 +594,16 @@ test('TEN-335 pop-up: a shared frame (Esc through maPopEscKey), entrance motion 
     const A = build(); const m = fixture({ now, withAt: true }); A.open(m);
     A.aOddsOpenMv('Pinnacle');
     let h = A.section();
-    assert.match(h, /class="aox-mv ma-pop-overlay ma-fade" onclick="aOddsCloseMv\(\)"/, 'the overlay is a shared frame, fading in');
-    assert.match(h, /class="aox-mvbox ma-sigin" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation\(\)" style="width:100%; max-width:1080px;/, 'the box enters with sigIn; the design geometry stays');
-    const x = /class="aox-seg aox-x ma-pop-x"[^>]*onclick="([^"]*)"/.exec(h);
+    assert.match(h, /class="ma-pop-overlay ma-fade aox-mv-overlay" onclick="if\(event.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0; z-index:60; background:var\(--ma-scrim\); display:flex; align-items:center;/, 'the overlay is the shared frame (maPopFrame), fading in, centred on the Odds scrim');
+    assert.match(h, /class="ma-pop ma-sigin aox-mv" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation\(\)" style="width:100%; max-width:1080px; background:var\(--ma-raised\); border:1.25px solid var\(--ma-hair\); border-radius:18px; box-shadow:var\(--ma-shadow-pop\);/, 'the box enters with sigIn; the design geometry (DF L1907) is the frame\'s mv variant');
+    const x = /class="ma-pop-x aox-seg aox-x"[^>]*onclick="([^"]*)" style="width:32px; height:32px;/.exec(h);
     assert.ok(x, 'the ✕ is the frame\'s ma-pop-x (what maPopEscKey clicks)'); assert.equal(x[1], 'aOddsCloseMv()');
     A.renderOddsSection();
     assert.ok(!/ma-fade|ma-sigin/.test(A.section()), 'a re-render with the pop-up open does not replay the entrance');
     A.aOddsOpenMv('Bet105');
     h = A.section();
-    assert.ok(h.includes('class="aox-mv ma-pop-overlay" onclick') && h.includes('class="aox-mvbox" role="dialog"'), 'a book-tab switch does not replay it');
-    assert.ok(/class="aox-mvbook"[^>]*>Bet105</.test(h), 'the switch happened');
+    assert.ok(h.includes('class="ma-pop-overlay aox-mv-overlay" onclick') && h.includes('class="ma-pop aox-mv" role="dialog"'), 'a book-tab switch does not replay it');
+    assert.ok(/class="ma-pop-title aox-mv-title" tabindex="0" data-aotip="[^"]*" style="font-size:18px; font-weight:800;">Bet105</.test(h), 'the switch happened');
     A.aOddsCloseMv(); assert.ok(!A.section().includes('ma-pop-overlay'), 'closed');
     A.aOddsOpenMv('Pinnacle'); assert.ok(A.section().includes('ma-pop-overlay ma-fade'), 'reopening plays the entrance again');
   });
