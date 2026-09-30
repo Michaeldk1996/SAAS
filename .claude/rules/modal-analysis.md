@@ -311,6 +311,9 @@ this file wins.
 - **Rebuilt data is tested before it is published:** the reconcile checks (`tools/test-pp2-reconcile.js` and friends)
   run against the **freshly built** store inside the pipeline, before the commit-back / publish step, and fail closed
   (TEN-329). **Test:** reverting a data fix that the reconciler catches stops the pipeline before the push, not after.
+  **It runs on every rebuild** (founder 2026-09-30, TEN-312 6c9a9e55, TEN-351): speed-ups may parallelise, cache or
+  de-duplicate its work, but never skip it, run it less often than every rebuild, or move it after publishing.
+  **Test:** every `pipeline.yml` run that publishes has the gate step before the publish step, with a pass result.
 - **A walkover is never counted in W–L**: an assertion in the reconciler fails if one is (TEN-320).
 - **Edge model re-fits are staged, never flipped without the founder**: a layer change ships with a report of fair
   odds, picks changed (n of N) and accuracy before/after on the last 30 days of completed matches (TEN-327), and goes

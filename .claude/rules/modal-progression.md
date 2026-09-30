@@ -36,6 +36,9 @@ Applies to the Progression tab of the Match analysis modal (`buildMatchProgressi
 - **AVG** = the rate over the summed counts (Dominance and W/UE over their summed counts; a rating = the mean of its
   rounds); "(n)" = rounds with a value when fewer than the rounds shown (DF L4101).
 - **DRAW avg rates** are gated on the player-rounds they average (n < 5 → "—", 5–9 grey); a draw mean has no count to show.
+- **DRAW avg of Pressure points is always "—"** (founder Q7, 2026-09-30, TEN-312 6c9a9e55), with the tooltip "Always 50%
+  by construction: the two players' shares of a match's break points add up to 100%." **Test:** the DRAW row's Pressure
+  cell reads "—" with that tooltip on every round; mutation: computing it again shows 50.0%.
 
 ## Road
 - A round with no row is a **bye only at the draw's first round**, only from a history that loaded, never where the active
