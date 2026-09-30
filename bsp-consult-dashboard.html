@@ -1432,6 +1432,10 @@
   #aSectionKey .kf-card:focus-visible{ outline:2px solid var(--ma-link, var(--periwinkle)); outline-offset:2px; }
   /* ---- Playing style tab (TEN-340): the file's .seg hover rule and its style-hover values (DF L548 personal box, DF L604 row). ---- */
   #aSectionStyle .seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  /* TEN-366: the row whose match sheet is open (DF L3642 rowBg: blue 0.1) — set by maOpenRowSheet, cleared by fhMarkRow. */
+  #aSectionStyle .ma-row.ma-row-open{ background:var(--ma-s-5b9bff-100) !important; }
+  /* TEN-366: the road card whose match sheet is open (DF L4058/L4066 sel: border white 0.16, #131623). */
+  #aSectionProgression .pg-cell.ma-row-open{ background:var(--ma-s-131623) !important; border-color:var(--ma-s-ffffff-160) !important; }
   #aSectionStyle .ps2-box-open:hover{ border-color:var(--ma-s-5b9bff-300, var(--line-open)) !important; }
   #aSectionStyle .ps2-prof-toggle:hover, #aSectionStyle .ps2-more:hover{ color:var(--ma-link-hover, var(--periwinkle)) !important; }
   .modal-analysis .anote{ font-size:11px; color:var(--text-faint); text-align:center; margin-top:8px; }
@@ -11741,7 +11745,7 @@ function ovColumnHtml(i, name, pk, rows, real, tier){
       + `<span style="width:44px; font-size:13px; color:${OV_C.text};">${lbl}</span>`
       + `<span style="width:56px; ${OV_MONO} font-size:14px; font-weight:700;">${ovRec(c)}</span>`
       + `<span style="width:44px; ${OV_MONO} font-size:12px; font-weight:700; color:${OV_C.text};">${n ? rate : '—'}</span>`
-      + `<span style="margin-left:auto; color:${OV_C.m2}; font-size:14px;">${can ? '›' : ''}</span></div></div>`;
+      + `<span style="margin-left:auto; color:${OV_C.m2}; font-size:14px;">${can ? (_ov.cell === cid ? '▾' : '›') : ''}</span></div></div>`;   // DF L3106: ▾ while its pop-up is open
   }).join('');
   // year table
   const head = `<div style="${OV_GRID} padding:11px 14px; background:${OV_C.head}; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:${OV_C.m2};"><span>Year</span><span>Total</span><span>Clay</span><span>Hard</span><span>Grass</span></div>`;
@@ -14559,7 +14563,7 @@ function fhH2hToList(){
 // exactly as Market edge does (meRowFromCareer), then opens the sheet. A row the history cannot place still opens,
 // its header from what the row carries and its stat sections dashed.
 const _maRowReg = {}; let _maRowSeq = 0;
-function maRowOnclick(d){ const id = 'mr' + (++_maRowSeq); _maRowReg[id] = d; return ` onclick="event.stopPropagation(); maOpenRowSheet('${id}')"`; }
+function maRowOnclick(d){ const id = 'mr' + (++_maRowSeq); _maRowReg[id] = d; return ` onclick="event.stopPropagation(); maOpenRowSheet('${id}', this)"`; }
 // Same player? The meetings shard writes full names ("Karen Khachanov"), career history short ones ("K. Khachanov"):
 // one name key equal to, or ending with, the other (≥ 4 letters) — compound surnames included ("Davidovich Fokina").
 function maSameOpp(a, b){
@@ -14570,7 +14574,9 @@ function maSameOpp(a, b){
   return lo.length >= 4 && hi.endsWith(lo);
 }
 let _maRowReq = 0;
-function maOpenRowSheet(id){
+// el = the clicked row: it carries .ma-row-open while its sheet is open (the file's selected row, DF L3642 Playing style
+// rowBg, L4058/L4066 Progression road card `sel`); fhMarkRow clears it when the sheet closes or another row opens one.
+function maOpenRowSheet(id, el){
   const d = _maRowReg[id], m = _aM, req = ++_maRowReq;
   if (!d || !m) return;
   const key = d.key != null ? String(d.key) : null;
@@ -14593,6 +14599,7 @@ function maOpenRowSheet(id){
     if (d.round) r.round = d.round;   // the caller's round label (Progression: the draw's "R2", DF L4056), not the feed's fraction
     fhStateFor(m).sheetMap[r.mid] = { r, aName: d.name, aKey: key, bName: r.opp, bKey: r.oppKey };
     fhOpenSheet(r.mid);
+    if (el && el.isConnected && document.getElementById('fhSheet') && document.getElementById('fhSheet').innerHTML) el.classList.add('ma-row-open');
   });
 }
 // The sheet's header (DF form.sheet L1659–1686, header 2a): meta line, avatars 56px with the closing-price badge,
@@ -14664,7 +14671,7 @@ function fhOpenSheet(mid){
 }
 // DF L4715 rowBg: the Form row whose sheet is open carries the selected wash (blue .1 → --seg-active) until it closes.
 // The open meeting's row takes the shared row's selected shade (DF rowBg, L4480 / maMatchRowsHtml).
-function fhMarkRow(mid){ document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row, #aSectionTournament .tr-row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? fhS('5b9bff-100', '--seg-active') : 'transparent'; }); }
+function fhMarkRow(mid){ document.querySelectorAll('#analysisModal .ma-row-open').forEach(el => el.classList.remove('ma-row-open')); document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row, #aSectionTournament .tr-row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? fhS('5b9bff-100', '--seg-active') : 'transparent'; }); }
 function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } fhMarkRow(null); }
 // =====================================================================
 // MATCH STATS SHEET BODY (TEN-263, founder rulings 2026-09-24): one segmented control
@@ -33391,6 +33398,10 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* TEN-314 · motion and tooltip of the Match analysis shared components (handoff README §6; DF <helmet> L17–35).
      Tokens only (match-analysis-tokens.css) with the 12a name as the fallback outside the modal. */
   @keyframes sigIn{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
+  /* TEN-366: the file's scrollbars (DF L24): 10px, thumb white 0.08 on its shade token, radius 6 — the menu, the tab pane,
+     the pop-ups and the sheet (all inside #analysisModal). */
+  #analysisModal ::-webkit-scrollbar{ width:10px; height:10px; }
+  #analysisModal ::-webkit-scrollbar-thumb{ background:var(--ma-s-ffffff-080, var(--line)); border-radius:6px; }
   @keyframes maFade{ from{ opacity:0; } to{ opacity:1; } }
   .ma-sigin{ animation:sigIn .2s cubic-bezier(.2,.7,.3,1); }
   .ma-fade{ animation:maFade .12s ease; }

@@ -181,6 +181,14 @@ const CHECKS = {
     assert.match(h, /class="ma-seg" data-ma-seg="ov"/);
     for (const l of ['Under the title', 'Navy glow', 'Soft ink', 'Initials + profile link', 'sample data']) assert.ok(!src.includes(`'${l}'`) || !fnSrc('ovColumnHtml', src).includes(l), l);
   },
+  // TEN-366 (DoD item 1 inventory, Overview #18). Mutation: the season row's chevron stays › while its pop-up is open.
+  'DF L3106: a season row shows ▾ while its pop-up is open, › otherwise'(src) {
+    const V = vm(src); V.ovStateFor(M);
+    const chev = () => /data-ov-cell="0\|season\|clay"[\s\S]*?margin-left:auto;[^>]*>([^<]*)<\/span>/.exec(V.ovColumnHtml(0, 'Z. Zulu', '1', CBY, CBY, 'all'))[1];
+    assert.equal(chev(), '›', 'closed');
+    V._ov.cell = '0|season|clay'; assert.equal(chev(), '▾', 'open');
+    V._ov.cell = '0|' + YEAR + '|clay'; assert.equal(chev(), '›', 'another cell open');
+  },
 };
 for (const [name, fn] of Object.entries(CHECKS)) test(name, () => fn(HTML));
 
@@ -214,6 +222,7 @@ const MUTANTS = [
   ['career rec 0-0', "function ovRec(c){ return c && (c.won + c.lost) ? `${c.won}-${c.lost}` : '—'; }", "function ovRec(c){ return c ? `${c.won}-${c.lost}` : '0-0'; }"],
   ['bars by surface', "  const accent = i ? OV_C.pb : OV_C.pa;", "  const accent = OV_C.chev;"],
   ['own tier control', "  const seg = maSeg('ov', OV_TIERS", "  const seg = maSeg('readme', OV_TIERS"],
+  ['open season row keeps ›', "${can ? (_ov.cell === cid ? '▾' : '›') : ''}", "${can ? '›' : ''}"],
 ];
 test(`mutants: ${MUTANTS.length} applied, every one caught`, () => {
   const survived = [];
