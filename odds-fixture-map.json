@@ -2237,20 +2237,20 @@
     },
     "12166239": {
       "fixtureId": "id1201944875070322",
-      "mappedAt": "2026-09-28T13:01:41Z",
+      "mappedAt": "2026-09-30T01:33:44Z",
       "orient": "same",
       "p1": "C. Alcaraz",
       "p2": "A. De Minaur",
-      "startTime": "2026-09-27T15:10:00.000Z",
+      "startTime": "2026-09-27T15:20:00.000Z",
       "tournamentId": 19448
     },
     "12166240": {
       "fixtureId": "id1201944875070324",
-      "mappedAt": "2026-09-28T13:01:41Z",
+      "mappedAt": "2026-09-30T01:33:44Z",
       "orient": "same",
       "p1": "R. Jodar",
       "p2": "T. Fritz",
-      "startTime": "2026-09-27T16:20:00.000Z",
+      "startTime": "2026-09-27T16:30:00.000Z",
       "tournamentId": 19448
     },
     "12166292": {
@@ -2951,12 +2951,12 @@
       "missResolutionHoursP50": 10.24,
       "missResolutionsMeasured": 136,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.77,
+      "observedSpanDays": 18.84,
       "projectedTtlUnitsPerDay": 5.3,
-      "runs": 339,
-      "spentRuns": 183,
+      "runs": 340,
+      "spentRuns": 184,
       "ttlBitRuns": 99,
-      "ttlBitShare": 0.292,
+      "ttlBitShare": 0.291,
       "ttlHours": 1.0
     },
     "runs": [
@@ -6688,9 +6688,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 34
+      },
+      {
+        "at": "2026-09-30T01:33:44Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 2,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 34
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-29T14:54:11Z"
+  "updatedAt": "2026-09-30T01:33:44Z"
 }
