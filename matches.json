@@ -15,7 +15,7 @@
       "p1": 1.13,
       "p2": 4.33,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -26,7 +26,7 @@
         "price": 4.33,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 2382,
@@ -2942,19 +2942,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:00:00.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -3161,8 +3161,8 @@
       "Sbo": {
         "p1": 1.13,
         "p2": 4.33,
-        "seenAt": "2026-09-30T13:13:36.026Z",
-        "since": "2026-09-30T12:53:56.242Z"
+        "seenAt": "2026-09-30T13:35:08.669Z",
+        "since": "2026-09-30T12:33:34.893Z"
       }
     },
     "pinnacleOpen": {
@@ -3192,21 +3192,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.53,
-      "p2": 1.38,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "p1": 2.85,
+      "p2": 1.46,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.53,
-        "bookmaker": "Sbo"
+        "price": 2.85,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.38,
-        "bookmaker": "Sbo"
+        "price": 1.46,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 8781,
@@ -6949,19 +6949,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:30:01.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -7142,15 +7142,15 @@
       "Marathon": {
         "p1": 2.84,
         "p2": 1.42,
-        "seenAt": "2026-09-30T11:54:16.242Z"
+        "seenAt": "2026-09-30T12:02:33.559Z"
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 2.53,
-        "p2": 1.38,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.242Z"
+      "1xBet": {
+        "p1": 2.85,
+        "p2": 1.46,
+        "seenAt": "2026-09-30T13:35:08.669Z",
+        "since": "2026-09-30T13:35:08.669Z"
       }
     },
     "pinnacleOpen": {
@@ -7183,7 +7183,7 @@
       "p1": 1.61,
       "p2": 2.07,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -7194,7 +7194,7 @@
         "price": 2.07,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 2842,
@@ -9541,6 +9541,14 @@
               [
                 "2026-09-30T13:05:12.373Z",
                 1.74
+              ],
+              [
+                "2026-09-30T13:44:38.101Z",
+                1.72
+              ],
+              [
+                "2026-09-30T13:46:28.139Z",
+                1.73
               ]
             ],
             "p2": [
@@ -9891,6 +9899,14 @@
               [
                 "2026-09-30T11:52:23.676Z",
                 2.32
+              ],
+              [
+                "2026-09-30T13:44:38.101Z",
+                2.36
+              ],
+              [
+                "2026-09-30T13:46:28.139Z",
+                2.34
               ]
             ]
           },
@@ -10138,19 +10154,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:30:01.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -10363,8 +10379,8 @@
       "Sbo": {
         "p1": 1.61,
         "p2": 2.07,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.242Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.893Z"
       }
     },
     "pinnacleOpen": {
@@ -10394,21 +10410,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.3,
-      "p2": 2.81,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "p1": 1.4,
+      "p2": 3.18,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.3,
-        "bookmaker": "Sbo"
+        "price": 1.4,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.81,
-        "bookmaker": "Sbo"
+        "price": 3.18,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 2838,
@@ -12945,6 +12961,14 @@
               [
                 "2026-09-30T13:20:57.724Z",
                 1.44
+              ],
+              [
+                "2026-09-30T13:44:28.134Z",
+                1.45
+              ],
+              [
+                "2026-09-30T13:46:13.197Z",
+                1.44
               ]
             ],
             "p2": [
@@ -13411,6 +13435,18 @@
               [
                 "2026-09-30T13:29:57.797Z",
                 3.2
+              ],
+              [
+                "2026-09-30T13:44:28.134Z",
+                3.15
+              ],
+              [
+                "2026-09-30T13:46:13.197Z",
+                3.2
+              ],
+              [
+                "2026-09-30T13:47:58.160Z",
+                3.25
               ]
             ]
           },
@@ -14268,13 +14304,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -14488,19 +14524,14 @@
         "p1": 1.39,
         "p2": 3.19,
         "seenAt": "2026-09-30T00:00:36.669Z"
-      },
-      "WilliamHill": {
-        "p1": 1.33,
-        "p2": 3.3,
-        "seenAt": "2026-09-30T12:24:04.327Z"
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.3,
-        "p2": 2.81,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+      "Pncl": {
+        "p1": 1.4,
+        "p2": 3.18,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     },
     "pinnacleOpen": {
@@ -14533,7 +14564,7 @@
       "p1": 3.77,
       "p2": 1.17,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -14544,7 +14575,7 @@
         "price": 1.17,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 2985,
@@ -17643,6 +17674,14 @@
               [
                 "2026-09-30T12:26:34.834Z",
                 1.25
+              ],
+              [
+                "2026-09-30T13:44:38.101Z",
+                1.24
+              ],
+              [
+                "2026-09-30T13:46:28.139Z",
+                1.25
               ]
             ]
           },
@@ -18598,19 +18637,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:30:01.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -18804,8 +18843,8 @@
       "Sbo": {
         "p1": 3.77,
         "p2": 1.17,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.893Z"
       }
     },
     "pinnacleOpen": {
@@ -18835,21 +18874,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.48,
-      "p2": 2.29,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "p1": 1.52,
+      "p2": 2.55,
+      "bookmaker": "Betano",
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.48,
-        "bookmaker": "Sbo"
+        "price": 1.52,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 2.29,
-        "bookmaker": "Sbo"
+        "price": 2.55,
+        "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 437,
@@ -22253,19 +22292,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:30:01.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -22465,11 +22504,11 @@
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.48,
-        "p2": 2.29,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+      "Betano": {
+        "p1": 1.52,
+        "p2": 2.55,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     },
     "pinnacleOpen": {
@@ -22499,21 +22538,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.25,
-      "p2": 3.12,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "p1": 1.31,
+      "p2": 3.66,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.25,
-        "bookmaker": "Sbo"
+        "price": 1.31,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 3.12,
-        "bookmaker": "Sbo"
+        "price": 3.66,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 431,
@@ -26527,19 +26566,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:30:01.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -26743,11 +26782,11 @@
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.25,
-        "p2": 3.12,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+      "1xBet": {
+        "p1": 1.31,
+        "p2": 3.66,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     },
     "pinnacleOpen": {
@@ -26777,21 +26816,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.41,
-      "p2": 1.61,
+      "p1": 2.43,
+      "p2": 1.6,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.41,
+        "price": 2.43,
         "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.61,
+        "price": 1.6,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 1895,
@@ -29929,6 +29968,14 @@
               [
                 "2026-09-30T11:51:58.689Z",
                 1.64
+              ],
+              [
+                "2026-09-30T13:44:28.134Z",
+                1.61
+              ],
+              [
+                "2026-09-30T13:46:18.146Z",
+                1.64
               ]
             ]
           },
@@ -30766,13 +30813,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -30955,10 +31002,10 @@
     },
     "bookNow": {
       "1xBet": {
-        "p1": 2.41,
-        "p2": 1.61,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T11:03:26.180Z"
+        "p1": 2.43,
+        "p2": 1.6,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     },
     "pinnacleOpen": {
@@ -30991,7 +31038,7 @@
       "p1": 1.99,
       "p2": 1.68,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -31002,7 +31049,7 @@
         "price": 1.68,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 9514,
@@ -34191,6 +34238,14 @@
               [
                 "2026-09-30T13:15:32.699Z",
                 1.8
+              ],
+              [
+                "2026-09-30T13:38:43.060Z",
+                1.79
+              ],
+              [
+                "2026-09-30T13:41:43.079Z",
+                1.8
               ]
             ]
           },
@@ -35086,13 +35141,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -35304,8 +35359,8 @@
       "Sbo": {
         "p1": 1.99,
         "p2": 1.68,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.893Z"
       }
     },
     "pinnacleOpen": {
@@ -35338,7 +35393,7 @@
       "p1": 1.18,
       "p2": 3.7,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -35349,7 +35404,7 @@
         "price": 3.7,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 1106,
@@ -38981,13 +39036,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -39186,8 +39241,8 @@
       "Sbo": {
         "p1": 1.18,
         "p2": 3.7,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.893Z"
       }
     },
     "pinnacleOpen": {
@@ -39217,21 +39272,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.26,
-      "p2": 1.5,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "p1": 2.53,
+      "p2": 1.58,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.26,
-        "bookmaker": "Sbo"
+        "price": 2.53,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 1.5,
-        "bookmaker": "Sbo"
+        "price": 1.58,
+        "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 427,
@@ -41566,6 +41621,10 @@
               [
                 "2026-09-30T10:29:29.800Z",
                 2.35
+              ],
+              [
+                "2026-09-30T13:52:00.923Z",
+                2.25
               ]
             ],
             "p2": [
@@ -41624,6 +41683,10 @@
               [
                 "2026-09-30T10:29:29.800Z",
                 1.51
+              ],
+              [
+                "2026-09-30T13:52:00.923Z",
+                1.56
               ]
             ]
           },
@@ -42302,6 +42365,10 @@
               [
                 "2026-09-30T10:28:20.376Z",
                 2.62
+              ],
+              [
+                "2026-09-30T13:51:28.430Z",
+                2.52
               ]
             ],
             "p2": [
@@ -42528,6 +42595,14 @@
               [
                 "2026-09-30T10:22:50.369Z",
                 1.61
+              ],
+              [
+                "2026-09-30T13:44:28.134Z",
+                1.6
+              ],
+              [
+                "2026-09-30T13:51:28.430Z",
+                1.65
               ]
             ]
           },
@@ -42636,6 +42711,10 @@
               [
                 "2026-09-30T13:17:49.153Z",
                 2.53
+              ],
+              [
+                "2026-09-30T13:50:32.167Z",
+                2.43
               ]
             ],
             "p2": [
@@ -42738,6 +42817,14 @@
               [
                 "2026-09-30T13:17:49.174Z",
                 1.571
+              ],
+              [
+                "2026-09-30T13:50:32.177Z",
+                1.568
+              ],
+              [
+                "2026-09-30T13:50:34.128Z",
+                1.606
               ]
             ]
           },
@@ -42854,6 +42941,10 @@
               [
                 "2026-09-30T13:18:16.132Z",
                 2.53
+              ],
+              [
+                "2026-09-30T13:50:57.509Z",
+                2.43
               ]
             ],
             "p2": [
@@ -42964,6 +43055,10 @@
               [
                 "2026-09-30T13:18:16.132Z",
                 1.581
+              ],
+              [
+                "2026-09-30T13:50:57.509Z",
+                1.617
               ]
             ]
           },
@@ -43001,19 +43096,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-30T13:30:01.000Z"
+            "checkedAt": "2026-09-30T13:45:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -43230,11 +43325,11 @@
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 2.26,
-        "p2": 1.5,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+      "Pncl": {
+        "p1": 2.53,
+        "p2": 1.58,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     },
     "pinnacleOpen": {
@@ -43264,21 +43359,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.93,
-      "p2": 1.73,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "p1": 1.95,
+      "p2": 1.87,
+      "bookmaker": "Betano",
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.93,
-        "bookmaker": "Sbo"
+        "price": 1.95,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.73,
-        "bookmaker": "Sbo"
+        "price": 1.87,
+        "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 1057,
@@ -46064,6 +46159,22 @@
               [
                 "2026-09-30T13:31:52.855Z",
                 2.06
+              ],
+              [
+                "2026-09-30T13:40:38.051Z",
+                2.08
+              ],
+              [
+                "2026-09-30T13:42:08.079Z",
+                2.12
+              ],
+              [
+                "2026-09-30T13:44:53.149Z",
+                2.16
+              ],
+              [
+                "2026-09-30T13:51:48.340Z",
+                2.08
               ]
             ],
             "p2": [
@@ -46282,6 +46393,14 @@
               [
                 "2026-09-30T13:34:42.910Z",
                 1.84
+              ],
+              [
+                "2026-09-30T13:37:42.977Z",
+                1.85
+              ],
+              [
+                "2026-09-30T13:50:38.269Z",
+                1.86
               ]
             ]
           },
@@ -46803,13 +46922,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -46997,11 +47116,11 @@
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.93,
-        "p2": 1.73,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+      "Betano": {
+        "p1": 1.95,
+        "p2": 1.87,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     },
     "pinnacleOpen": {
@@ -47034,7 +47153,7 @@
       "p1": 1.56,
       "p2": 2.14,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -47045,7 +47164,7 @@
         "price": 2.14,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 2413,
@@ -50625,13 +50744,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -50823,8 +50942,8 @@
       "Sbo": {
         "p1": 1.56,
         "p2": 2.14,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.894Z"
       }
     },
     "pinnacleOpen": {
@@ -50857,7 +50976,7 @@
       "p1": 1.48,
       "p2": 2.29,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -50868,7 +50987,7 @@
         "price": 2.29,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 10520,
@@ -55090,13 +55209,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -55307,8 +55426,8 @@
       "Sbo": {
         "p1": 1.48,
         "p2": 2.29,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.894Z"
       }
     }
   },
@@ -55328,7 +55447,7 @@
       "p1": 1.07,
       "p2": 5.54,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:00:48.944Z"
     },
     "bestOdds": {
       "p1": {
@@ -55339,7 +55458,7 @@
         "price": 5.54,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:00:48.944Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 1980,
@@ -58994,6 +59113,10 @@
               [
                 "2026-09-30T00:43:13.184Z",
                 8.6
+              ],
+              [
+                "2026-09-30T13:51:33.405Z",
+                8.8
               ]
             ]
           },
@@ -60941,13 +61064,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -61147,14 +61270,6 @@
         "seenAt": "2026-09-30T00:00:36.669Z"
       }
     },
-    "bookNow": {
-      "Sbo": {
-        "p1": 1.07,
-        "p2": 5.54,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
-      }
-    },
     "pinnacleOpen": {
       "p1": 1.12,
       "p2": 7.13,
@@ -61185,7 +61300,7 @@
       "p1": 3.04,
       "p2": 1.26,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -61196,7 +61311,7 @@
         "price": 1.26,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 1777,
@@ -64036,6 +64151,18 @@
               [
                 "2026-09-30T12:39:00.001Z",
                 3.7
+              ],
+              [
+                "2026-09-30T13:41:33.041Z",
+                3.75
+              ],
+              [
+                "2026-09-30T13:44:23.117Z",
+                3.7
+              ],
+              [
+                "2026-09-30T13:46:08.166Z",
+                3.75
               ]
             ],
             "p2": [
@@ -64241,6 +64368,14 @@
               ],
               [
                 "2026-09-30T12:39:00.001Z",
+                1.36
+              ],
+              [
+                "2026-09-30T13:41:33.041Z",
+                1.35
+              ],
+              [
+                "2026-09-30T13:42:58.105Z",
                 1.36
               ]
             ]
@@ -64955,13 +65090,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -65089,19 +65224,14 @@
         "p1": 3.51,
         "p2": 1.34,
         "seenAt": "2026-09-30T08:46:05.749Z"
-      },
-      "Marathon": {
-        "p1": 3.34,
-        "p2": 1.32,
-        "seenAt": "2026-09-30T12:24:04.327Z"
       }
     },
     "bookNow": {
       "Sbo": {
         "p1": 3.04,
         "p2": 1.26,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.894Z"
       }
     },
     "pinnacleOpen": {
@@ -65131,21 +65261,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.28,
-      "p2": 3.75,
+      "p1": 1.3,
+      "p2": 3.55,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.28,
+        "price": 1.3,
         "bookmaker": "Betano"
       },
       "p2": {
-        "price": 3.75,
+        "price": 3.55,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 2832,
@@ -68253,13 +68383,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -68380,10 +68510,10 @@
     },
     "bookNow": {
       "Betano": {
-        "p1": 1.28,
-        "p2": 3.75,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "p1": 1.3,
+        "p2": 3.55,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     }
   },
@@ -68400,21 +68530,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 4.66,
+      "p1": 4.68,
       "p2": 1.22,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 4.66,
+        "price": 4.68,
         "bookmaker": "1xBet"
       },
       "p2": {
         "price": 1.22,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 9217,
@@ -70276,6 +70406,10 @@
               [
                 "2026-09-30T10:29:29.800Z",
                 4.15
+              ],
+              [
+                "2026-09-30T13:45:15.183Z",
+                4.0
               ]
             ],
             "p2": [
@@ -70314,6 +70448,10 @@
               [
                 "2026-09-30T10:29:29.800Z",
                 1.17
+              ],
+              [
+                "2026-09-30T13:45:15.183Z",
+                1.19
               ]
             ]
           },
@@ -70373,6 +70511,14 @@
               ],
               [
                 "2026-09-30T11:50:38.774Z",
+                5.1
+              ],
+              [
+                "2026-09-30T13:41:38.066Z",
+                5.2
+              ],
+              [
+                "2026-09-30T13:44:23.117Z",
                 5.1
               ]
             ],
@@ -70452,6 +70598,14 @@
               [
                 "2026-09-30T08:42:14.698Z",
                 1.21
+              ],
+              [
+                "2026-09-30T13:44:23.117Z",
+                1.22
+              ],
+              [
+                "2026-09-30T13:46:08.166Z",
+                1.23
               ]
             ]
           },
@@ -70509,13 +70663,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -70621,10 +70775,10 @@
     },
     "bookNow": {
       "1xBet": {
-        "p1": 4.66,
+        "p1": 4.68,
         "p2": 1.22,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:24:04.327Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
       }
     }
   },
@@ -70644,7 +70798,7 @@
       "p1": 2.16,
       "p2": 1.55,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -70655,7 +70809,7 @@
         "price": 1.55,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 436,
@@ -73141,6 +73295,14 @@
               [
                 "2026-09-30T13:21:02.718Z",
                 1.66
+              ],
+              [
+                "2026-09-30T13:44:23.117Z",
+                1.63
+              ],
+              [
+                "2026-09-30T13:47:48.178Z",
+                1.66
               ]
             ]
           },
@@ -73330,13 +73492,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -73460,8 +73622,8 @@
       "Sbo": {
         "p1": 2.16,
         "p2": 1.55,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.894Z"
       }
     }
   },
@@ -73481,7 +73643,7 @@
       "p1": 2.12,
       "p2": 1.58,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "bestOdds": {
       "p1": {
@@ -73492,7 +73654,7 @@
         "price": 1.58,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-30T13:10:53.194Z"
+      "seenAt": "2026-09-30T13:32:02.189Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 2972,
@@ -75825,6 +75987,10 @@
               [
                 "2026-09-30T13:30:07.814Z",
                 2.36
+              ],
+              [
+                "2026-09-30T13:50:13.225Z",
+                2.38
               ]
             ],
             "p2": [
@@ -76332,13 +76498,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -76467,8 +76633,8 @@
       "Sbo": {
         "p1": 2.12,
         "p2": 1.58,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T12:33:34.894Z"
       }
     },
     "pinnacleOpen": {
@@ -78676,6 +78842,14 @@
               [
                 "2026-09-30T13:20:07.726Z",
                 1.97
+              ],
+              [
+                "2026-09-30T13:45:03.179Z",
+                1.93
+              ],
+              [
+                "2026-09-30T13:46:58.221Z",
+                1.97
               ]
             ]
           },
@@ -78929,13 +79103,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -79029,21 +79203,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.19,
-      "p2": 3.63,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-30T13:11:56.779Z"
+      "p1": 1.22,
+      "p2": 4.33,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-30T13:33:12.442Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.19,
-        "bookmaker": "Sbo"
+        "price": 1.22,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 3.63,
-        "bookmaker": "Sbo"
+        "price": 4.33,
+        "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-30T13:11:56.779Z"
+      "seenAt": "2026-09-30T13:33:12.442Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 1093,
@@ -81804,6 +81978,10 @@
               [
                 "2026-09-30T11:37:48.552Z",
                 1.25
+              ],
+              [
+                "2026-09-30T13:42:48.091Z",
+                1.26
               ]
             ],
             "p2": [
@@ -81938,6 +82116,10 @@
               [
                 "2026-09-30T13:20:02.760Z",
                 4.6
+              ],
+              [
+                "2026-09-30T13:35:37.981Z",
+                4.5
               ]
             ]
           },
@@ -82099,13 +82281,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -82226,14 +82408,2382 @@
         "p1": 1.26,
         "p2": 3.95,
         "seenAt": "2026-09-29T16:10:53.275Z"
+      },
+      "bet365": {
+        "p1": 1.22,
+        "p2": 4.33,
+        "seenAt": "2026-09-30T13:35:08.670Z"
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.19,
-        "p2": 3.63,
-        "seenAt": "2026-09-30T13:13:36.027Z",
-        "since": "2026-09-30T12:53:56.243Z"
+      "bet365": {
+        "p1": 1.22,
+        "p2": 4.33,
+        "seenAt": "2026-09-30T13:35:08.670Z",
+        "since": "2026-09-30T13:35:08.670Z"
+      }
+    },
+    "openingOdds": {
+      "p1": 1.22,
+      "p2": 4.33,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-30T13:33:12.610Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    }
+  },
+  {
+    "id": "upcoming-12167394",
+    "day": "day2",
+    "date": "2026-10-02",
+    "time": "04:00",
+    "p1": "Y. Bu",
+    "p2": "N. Djokovic",
+    "tour": "ATP Beijing",
+    "tourBadge": "ATP",
+    "surface": "hard",
+    "style": "TBD",
+    "value": null,
+    "odds": {
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
+    },
+    "bestOdds": {
+      "p1": null,
+      "p2": null
+    },
+    "tournamentRound": null,
+    "p1Key": 796,
+    "p2Key": 1905,
+    "h2h": {
+      "p1Wins": 0,
+      "p2Wins": 0,
+      "record": "0-0",
+      "matches": []
+    },
+    "p1SurfaceWinRate": 64.2,
+    "p2SurfaceWinRate": 83.7,
+    "p1Rank": 104,
+    "p2Rank": 11,
+    "p1RecentForm": 60,
+    "p2RecentForm": 60,
+    "p1RecentFormMatches": null,
+    "p2RecentFormMatches": null,
+    "p1SeasonSurface": {
+      "atp": {
+        "clay": {
+          "won": 0,
+          "lost": 1,
+          "matches": [
+            {
+              "opponent": "E. Nava",
+              "result": "0 - 2",
+              "tournament": "French Open",
+              "date": "2026-05-19",
+              "won": false
+            }
+          ]
+        },
+        "hard": {
+          "won": 8,
+          "lost": 7,
+          "matches": [
+            {
+              "opponent": "J. M. Cerundolo",
+              "result": "2 - 1",
+              "tournament": "Beijing",
+              "date": "2026-09-30",
+              "won": true
+            },
+            {
+              "opponent": "R. Safiullin",
+              "result": "0 - 2",
+              "tournament": "Hangzhou",
+              "date": "2026-09-27",
+              "won": false
+            },
+            {
+              "opponent": "K. Majchrzak",
+              "result": "2 - 1",
+              "tournament": "Hangzhou",
+              "date": "2026-09-26",
+              "won": true
+            },
+            {
+              "opponent": "M. Zheng",
+              "result": "2 - 0",
+              "tournament": "Hangzhou",
+              "date": "2026-09-24",
+              "won": true
+            },
+            {
+              "opponent": "M. Zheng",
+              "result": "1 - 3",
+              "tournament": "US Open",
+              "date": "2026-09-04",
+              "won": false
+            },
+            {
+              "opponent": "R. Jodar",
+              "result": "3 - 0",
+              "tournament": "US Open",
+              "date": "2026-09-02",
+              "won": true
+            },
+            {
+              "opponent": "F. Cina",
+              "result": "1 - 2",
+              "tournament": "US Open",
+              "date": "2026-08-28",
+              "won": false
+            },
+            {
+              "opponent": "B. Gojo",
+              "result": "2 - 0",
+              "tournament": "US Open",
+              "date": "2026-08-26",
+              "won": true
+            },
+            {
+              "opponent": "R. Noguchi",
+              "result": "2 - 1",
+              "tournament": "US Open",
+              "date": "2026-08-25",
+              "won": true
+            },
+            {
+              "opponent": "Q. Halys",
+              "result": "0 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-13",
+              "won": false
+            },
+            {
+              "opponent": "F. Maestrelli",
+              "result": "2 - 0",
+              "tournament": "Cincinnati",
+              "date": "2026-08-12",
+              "won": true
+            },
+            {
+              "opponent": "A. Fery",
+              "result": "1 - 2",
+              "tournament": "Miami",
+              "date": "2026-03-17",
+              "won": false
+            },
+            {
+              "opponent": "T. Schoolkate",
+              "result": "2 - 0",
+              "tournament": "Miami",
+              "date": "2026-03-16",
+              "won": true
+            },
+            {
+              "opponent": "D. Shapovalov",
+              "result": "0 - 3",
+              "tournament": "Australian Open",
+              "date": "2026-01-19",
+              "won": false
+            },
+            {
+              "opponent": "N. Basavareddy",
+              "result": "0 - 2",
+              "tournament": "Hong Kong",
+              "date": "2026-01-04",
+              "won": false
+            }
+          ]
+        },
+        "grass": {
+          "won": 1,
+          "lost": 1,
+          "matches": [
+            {
+              "opponent": "C. Tabur",
+              "result": "1 - 2",
+              "tournament": "Wimbledon",
+              "date": "2026-06-24",
+              "won": false
+            },
+            {
+              "opponent": "H. Dellien",
+              "result": "2 - 0",
+              "tournament": "Wimbledon",
+              "date": "2026-06-22",
+              "won": true
+            }
+          ]
+        }
+      },
+      "chitf": {
+        "clay": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "hard": {
+          "won": 14,
+          "lost": 7,
+          "matches": [
+            {
+              "opponent": "N. Budkov Kjaer",
+              "result": "0 - 2",
+              "tournament": "Quebec City (Canada) - Qualification",
+              "date": "2026-08-18",
+              "won": false
+            },
+            {
+              "opponent": "M. Lajal",
+              "result": "1 - 2",
+              "tournament": "Lincoln",
+              "date": "2026-07-19",
+              "won": false
+            },
+            {
+              "opponent": "C. Smith",
+              "result": "2 - 1",
+              "tournament": "Lincoln",
+              "date": "2026-07-18",
+              "won": true
+            },
+            {
+              "opponent": "Y. Wu",
+              "result": "2 - 0",
+              "tournament": "Lincoln",
+              "date": "2026-07-17",
+              "won": true
+            },
+            {
+              "opponent": "E. Zhu",
+              "result": "2 - 1",
+              "tournament": "Lincoln",
+              "date": "2026-07-14",
+              "won": true
+            },
+            {
+              "opponent": "S. Kwon",
+              "result": "0 - 2",
+              "tournament": "Wuxi",
+              "date": "2026-05-10",
+              "won": false
+            },
+            {
+              "opponent": "J. Cui",
+              "result": "2 - 0",
+              "tournament": "Wuxi",
+              "date": "2026-05-09",
+              "won": true
+            },
+            {
+              "opponent": "A. Walton",
+              "result": "2 - 0",
+              "tournament": "Wuxi",
+              "date": "2026-05-08",
+              "won": true
+            },
+            {
+              "opponent": "O. Milic",
+              "result": "2 - 0",
+              "tournament": "Wuxi",
+              "date": "2026-05-07",
+              "won": true
+            },
+            {
+              "opponent": "K. Smith",
+              "result": "2 - 0",
+              "tournament": "Wuxi",
+              "date": "2026-05-05",
+              "won": true
+            },
+            {
+              "opponent": "C. Wong",
+              "result": "0 - 2",
+              "tournament": "Jiujiang (China) - Qualification",
+              "date": "2026-05-01",
+              "won": false
+            },
+            {
+              "opponent": "A. Ilagan",
+              "result": "2 - 0",
+              "tournament": "Jiujiang (China) - Qualification",
+              "date": "2026-04-30",
+              "won": true
+            },
+            {
+              "opponent": "D. Masur",
+              "result": "2 - 0",
+              "tournament": "Jiujiang (China) - Qualification",
+              "date": "2026-04-29",
+              "won": true
+            },
+            {
+              "opponent": "A. Holmgren",
+              "result": "0 - 2",
+              "tournament": "Gwangju",
+              "date": "2026-04-21",
+              "won": false
+            },
+            {
+              "opponent": "L. Riedi",
+              "result": "1 - 2",
+              "tournament": "Busan",
+              "date": "2026-04-19",
+              "won": false
+            },
+            {
+              "opponent": "A. Bolt",
+              "result": "2 - 0",
+              "tournament": "Busan",
+              "date": "2026-04-18",
+              "won": true
+            },
+            {
+              "opponent": "A. Walton",
+              "result": "2 - 0",
+              "tournament": "Busan",
+              "date": "2026-04-17",
+              "won": true
+            },
+            {
+              "opponent": "M. Sharipov",
+              "result": "2 - 0",
+              "tournament": "Busan",
+              "date": "2026-04-15",
+              "won": true
+            },
+            {
+              "opponent": "Y. Chung",
+              "result": "2 - 0",
+              "tournament": "Busan",
+              "date": "2026-04-13",
+              "won": true
+            },
+            {
+              "opponent": "A. Galarneau",
+              "result": "0 - 2",
+              "tournament": "Morelia",
+              "date": "2026-03-25",
+              "won": false
+            },
+            {
+              "opponent": "M. Wiskandt",
+              "result": "2 - 0",
+              "tournament": "Morelia",
+              "date": "2026-03-24",
+              "won": true
+            }
+          ]
+        },
+        "grass": {
+          "won": 10,
+          "lost": 1,
+          "matches": [
+            {
+              "opponent": "D. Milavsky",
+              "result": "0 - 2",
+              "tournament": "Newport",
+              "date": "2026-07-09",
+              "won": false
+            },
+            {
+              "opponent": "D. Glinka",
+              "result": "2 - 0",
+              "tournament": "Newport",
+              "date": "2026-07-08",
+              "won": true
+            },
+            {
+              "opponent": "J. Fearnley",
+              "result": "2 - 0",
+              "tournament": "Ilkley",
+              "date": "2026-06-14",
+              "won": true
+            },
+            {
+              "opponent": "M. Lajal",
+              "result": "2 - 0",
+              "tournament": "Ilkley",
+              "date": "2026-06-13",
+              "won": true
+            },
+            {
+              "opponent": "D. Sweeny",
+              "result": "2 - 0",
+              "tournament": "Ilkley",
+              "date": "2026-06-13",
+              "won": true
+            },
+            {
+              "opponent": "C. Rodesch",
+              "result": "2 - 0",
+              "tournament": "Ilkley",
+              "date": "2026-06-10",
+              "won": true
+            },
+            {
+              "opponent": "A. Fery",
+              "result": "2 - 1",
+              "tournament": "Birmingham",
+              "date": "2026-06-07",
+              "won": true
+            },
+            {
+              "opponent": "O. Virtanen",
+              "result": "2 - 1",
+              "tournament": "Birmingham",
+              "date": "2026-06-07",
+              "won": true
+            },
+            {
+              "opponent": "M. Lajal",
+              "result": "2 - 0",
+              "tournament": "Birmingham",
+              "date": "2026-06-05",
+              "won": true
+            },
+            {
+              "opponent": "B. Harris",
+              "result": "2 - 0",
+              "tournament": "Birmingham",
+              "date": "2026-06-04",
+              "won": true
+            },
+            {
+              "opponent": "L. Harris",
+              "result": "2 - 1",
+              "tournament": "Birmingham",
+              "date": "2026-06-02",
+              "won": true
+            }
+          ]
+        }
+      }
+    },
+    "p2SeasonSurface": {
+      "atp": {
+        "clay": {
+          "won": 2,
+          "lost": 2,
+          "matches": [
+            {
+              "opponent": "J. Fonseca",
+              "result": "2 - 3",
+              "tournament": "French Open",
+              "date": "2026-05-29",
+              "won": false
+            },
+            {
+              "opponent": "V. Royer",
+              "result": "3 - 1",
+              "tournament": "French Open",
+              "date": "2026-05-27",
+              "won": true
+            },
+            {
+              "opponent": "G. Mpetshi Perricard",
+              "result": "3 - 1",
+              "tournament": "French Open",
+              "date": "2026-05-24",
+              "won": true
+            },
+            {
+              "opponent": "D. Prizmic",
+              "result": "1 - 2",
+              "tournament": "Rome",
+              "date": "2026-05-08",
+              "won": false
+            }
+          ]
+        },
+        "hard": {
+          "won": 8,
+          "lost": 4,
+          "matches": [
+            {
+              "opponent": "N. Borges",
+              "result": "2 - 0",
+              "tournament": "Beijing",
+              "date": "2026-09-30",
+              "won": true
+            },
+            {
+              "opponent": "M. Navone",
+              "result": "2 - 3",
+              "tournament": "US Open",
+              "date": "2026-08-31",
+              "won": false
+            },
+            {
+              "opponent": "T. A. Tirante",
+              "result": "1 - 2",
+              "tournament": "Cincinnati",
+              "date": "2026-08-15",
+              "won": false
+            },
+            {
+              "opponent": "J. Draper",
+              "result": "1 - 2",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-12",
+              "won": false
+            },
+            {
+              "opponent": "A. Kovacevic",
+              "result": "2 - 1",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-09",
+              "won": true
+            },
+            {
+              "opponent": "K. Majchrzak",
+              "result": "2 - 1",
+              "tournament": "ATP Indian Wells",
+              "date": "2026-03-07",
+              "won": true
+            },
+            {
+              "opponent": "C. Alcaraz",
+              "result": "1 - 3",
+              "tournament": "Australian Open",
+              "date": "2026-02-01",
+              "won": false
+            },
+            {
+              "opponent": "J. Sinner",
+              "result": "3 - 2",
+              "tournament": "Australian Open",
+              "date": "2026-01-30",
+              "won": true
+            },
+            {
+              "opponent": "L. Musetti",
+              "result": "0 - 2",
+              "tournament": "Australian Open",
+              "date": "2026-01-28",
+              "won": true
+            },
+            {
+              "opponent": "B. Van De Zandschulp",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-24",
+              "won": true
+            },
+            {
+              "opponent": "F. Maestrelli",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-22",
+              "won": true
+            },
+            {
+              "opponent": "P. Martinez",
+              "result": "3 - 0",
+              "tournament": "Australian Open",
+              "date": "2026-01-19",
+              "won": true
+            }
+          ]
+        },
+        "grass": {
+          "won": 5,
+          "lost": 1,
+          "matches": [
+            {
+              "opponent": "J. Sinner",
+              "result": "0 - 3",
+              "tournament": "Wimbledon",
+              "date": "2026-07-10",
+              "won": false
+            },
+            {
+              "opponent": "F. Auger-Aliassime",
+              "result": "3 - 2",
+              "tournament": "Wimbledon",
+              "date": "2026-07-07",
+              "won": true
+            },
+            {
+              "opponent": "R. Safiullin",
+              "result": "3 - 1",
+              "tournament": "Wimbledon",
+              "date": "2026-07-05",
+              "won": true
+            },
+            {
+              "opponent": "A. Rinderknech",
+              "result": "3 - 1",
+              "tournament": "Wimbledon",
+              "date": "2026-07-03",
+              "won": true
+            },
+            {
+              "opponent": "S. Tsitsipas",
+              "result": "3 - 0",
+              "tournament": "Wimbledon",
+              "date": "2026-07-01",
+              "won": true
+            },
+            {
+              "opponent": "Y. Wu",
+              "result": "3 - 1",
+              "tournament": "Wimbledon",
+              "date": "2026-06-29",
+              "won": true
+            }
+          ]
+        }
+      },
+      "chitf": {
+        "clay": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "hard": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0,
+          "matches": []
+        }
+      }
+    },
+    "p1Yearly": [
+      {
+        "year": "2026",
+        "allTier": true,
+        "total": {
+          "won": 33,
+          "lost": 18
+        },
+        "clay": {
+          "won": 0,
+          "lost": 1
+        },
+        "hard": {
+          "won": 22,
+          "lost": 14
+        },
+        "grass": {
+          "won": 11,
+          "lost": 2
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 9,
+            "lost": 10
+          },
+          "clay": {
+            "won": 0,
+            "lost": 1
+          },
+          "hard": {
+            "won": 8,
+            "lost": 7
+          },
+          "grass": {
+            "won": 1,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 24,
+            "lost": 8
+          },
+          "clay": null,
+          "hard": {
+            "won": 14,
+            "lost": 7
+          },
+          "grass": {
+            "won": 10,
+            "lost": 1
+          },
+          "indoor": null
+        }
+      },
+      {
+        "year": "2025",
+        "allTier": true,
+        "total": {
+          "won": 21,
+          "lost": 29
+        },
+        "clay": {
+          "won": 2,
+          "lost": 7
+        },
+        "hard": {
+          "won": 18,
+          "lost": 19
+        },
+        "grass": {
+          "won": 0,
+          "lost": 3
+        },
+        "indoor": {
+          "total": {
+            "won": 6,
+            "lost": 3
+          },
+          "clay": null,
+          "hard": {
+            "won": 6,
+            "lost": 3
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 15,
+            "lost": 27
+          },
+          "clay": {
+            "won": 2,
+            "lost": 7
+          },
+          "hard": {
+            "won": 12,
+            "lost": 17
+          },
+          "grass": {
+            "won": 0,
+            "lost": 3
+          },
+          "indoor": {
+            "total": {
+              "won": 2,
+              "lost": 2
+            },
+            "clay": null,
+            "hard": {
+              "won": 2,
+              "lost": 2
+            },
+            "grass": null
+          }
+        },
+        "chitf": {
+          "total": {
+            "won": 6,
+            "lost": 2
+          },
+          "clay": null,
+          "hard": {
+            "won": 6,
+            "lost": 2
+          },
+          "grass": null,
+          "indoor": {
+            "total": {
+              "won": 4,
+              "lost": 1
+            },
+            "clay": null,
+            "hard": {
+              "won": 4,
+              "lost": 1
+            },
+            "grass": null
+          }
+        }
+      },
+      {
+        "year": "2024",
+        "allTier": true,
+        "total": {
+          "won": 51,
+          "lost": 28
+        },
+        "clay": {
+          "won": 3,
+          "lost": 3
+        },
+        "hard": {
+          "won": 46,
+          "lost": 21
+        },
+        "grass": {
+          "won": 1,
+          "lost": 3
+        },
+        "indoor": {
+          "total": {
+            "won": 6,
+            "lost": 6
+          },
+          "clay": null,
+          "hard": {
+            "won": 6,
+            "lost": 6
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 16,
+            "lost": 13
+          },
+          "clay": {
+            "won": 1,
+            "lost": 1
+          },
+          "hard": {
+            "won": 13,
+            "lost": 10
+          },
+          "grass": {
+            "won": 1,
+            "lost": 1
+          },
+          "indoor": {
+            "total": {
+              "won": 4,
+              "lost": 4
+            },
+            "clay": null,
+            "hard": {
+              "won": 4,
+              "lost": 4
+            },
+            "grass": null
+          }
+        },
+        "chitf": {
+          "total": {
+            "won": 35,
+            "lost": 15
+          },
+          "clay": {
+            "won": 2,
+            "lost": 2
+          },
+          "hard": {
+            "won": 33,
+            "lost": 11
+          },
+          "grass": {
+            "won": 0,
+            "lost": 2
+          },
+          "indoor": {
+            "total": {
+              "won": 2,
+              "lost": 2
+            },
+            "clay": null,
+            "hard": {
+              "won": 2,
+              "lost": 2
+            },
+            "grass": null
+          }
+        }
+      },
+      {
+        "year": "2023",
+        "allTier": true,
+        "total": {
+          "won": 37,
+          "lost": 23
+        },
+        "clay": {
+          "won": 0,
+          "lost": 1
+        },
+        "hard": {
+          "won": 33,
+          "lost": 18
+        },
+        "grass": {
+          "won": 4,
+          "lost": 4
+        },
+        "indoor": {
+          "total": {
+            "won": 6,
+            "lost": 3
+          },
+          "clay": null,
+          "hard": {
+            "won": 6,
+            "lost": 3
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 1,
+            "lost": 2
+          },
+          "clay": null,
+          "hard": {
+            "won": 1,
+            "lost": 1
+          },
+          "grass": {
+            "won": 0,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 36,
+            "lost": 21
+          },
+          "clay": {
+            "won": 0,
+            "lost": 1
+          },
+          "hard": {
+            "won": 32,
+            "lost": 17
+          },
+          "grass": {
+            "won": 4,
+            "lost": 3
+          },
+          "indoor": {
+            "total": {
+              "won": 6,
+              "lost": 3
+            },
+            "clay": null,
+            "hard": {
+              "won": 6,
+              "lost": 3
+            },
+            "grass": null
+          }
+        }
+      },
+      {
+        "year": "2022",
+        "allTier": true,
+        "total": {
+          "won": 65,
+          "lost": 27
+        },
+        "clay": {
+          "won": 2,
+          "lost": 2
+        },
+        "hard": {
+          "won": 63,
+          "lost": 24
+        },
+        "grass": null,
+        "indoor": {
+          "total": {
+            "won": 3,
+            "lost": 2
+          },
+          "clay": null,
+          "hard": {
+            "won": 3,
+            "lost": 2
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 0,
+            "lost": 1
+          },
+          "clay": null,
+          "hard": null,
+          "grass": null,
+          "indoor": null
+        },
+        "chitf": {
+          "total": {
+            "won": 65,
+            "lost": 26
+          },
+          "clay": {
+            "won": 2,
+            "lost": 2
+          },
+          "hard": {
+            "won": 63,
+            "lost": 24
+          },
+          "grass": null,
+          "indoor": {
+            "total": {
+              "won": 3,
+              "lost": 2
+            },
+            "clay": null,
+            "hard": {
+              "won": 3,
+              "lost": 2
+            },
+            "grass": null
+          }
+        }
+      },
+      {
+        "year": "2021",
+        "allTier": true,
+        "total": {
+          "won": 1,
+          "lost": 2
+        },
+        "clay": null,
+        "hard": {
+          "won": 1,
+          "lost": 2
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": {
+          "total": {
+            "won": 1,
+            "lost": 2
+          },
+          "clay": null,
+          "hard": {
+            "won": 1,
+            "lost": 2
+          },
+          "grass": null,
+          "indoor": null
+        }
+      },
+      {
+        "year": "2020",
+        "allTier": false,
+        "total": {
+          "won": 0,
+          "lost": 1
+        },
+        "clay": null,
+        "hard": {
+          "won": 0,
+          "lost": 1
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": null
+      },
+      {
+        "year": "2019",
+        "allTier": false,
+        "total": {
+          "won": 3,
+          "lost": 2
+        },
+        "clay": {
+          "won": 1,
+          "lost": 1
+        },
+        "hard": {
+          "won": 2,
+          "lost": 1
+        },
+        "grass": {
+          "won": 0,
+          "lost": 0
+        },
+        "indoor": null,
+        "atp": null,
+        "chitf": null
+      }
+    ],
+    "p2Yearly": [
+      {
+        "year": "2026",
+        "allTier": true,
+        "total": {
+          "won": 15,
+          "lost": 7
+        },
+        "clay": {
+          "won": 2,
+          "lost": 2
+        },
+        "hard": {
+          "won": 8,
+          "lost": 4
+        },
+        "grass": {
+          "won": 5,
+          "lost": 1
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 15,
+            "lost": 7
+          },
+          "clay": {
+            "won": 2,
+            "lost": 2
+          },
+          "hard": {
+            "won": 8,
+            "lost": 4
+          },
+          "grass": {
+            "won": 5,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2025",
+        "allTier": true,
+        "total": {
+          "won": 38,
+          "lost": 11
+        },
+        "clay": {
+          "won": 9,
+          "lost": 3
+        },
+        "hard": {
+          "won": 24,
+          "lost": 7
+        },
+        "grass": {
+          "won": 5,
+          "lost": 1
+        },
+        "indoor": {
+          "total": {
+            "won": 4,
+            "lost": 0
+          },
+          "clay": null,
+          "hard": {
+            "won": 4,
+            "lost": 0
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 38,
+            "lost": 11
+          },
+          "clay": {
+            "won": 9,
+            "lost": 3
+          },
+          "hard": {
+            "won": 24,
+            "lost": 7
+          },
+          "grass": {
+            "won": 5,
+            "lost": 1
+          },
+          "indoor": {
+            "total": {
+              "won": 4,
+              "lost": 0
+            },
+            "clay": null,
+            "hard": {
+              "won": 4,
+              "lost": 0
+            },
+            "grass": null
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2024",
+        "allTier": true,
+        "total": {
+          "won": 37,
+          "lost": 9
+        },
+        "clay": {
+          "won": 10,
+          "lost": 3
+        },
+        "hard": {
+          "won": 15,
+          "lost": 5
+        },
+        "grass": {
+          "won": 11,
+          "lost": 1
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 37,
+            "lost": 9
+          },
+          "clay": {
+            "won": 10,
+            "lost": 3
+          },
+          "hard": {
+            "won": 15,
+            "lost": 5
+          },
+          "grass": {
+            "won": 11,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2023",
+        "allTier": true,
+        "total": {
+          "won": 57,
+          "lost": 7
+        },
+        "clay": {
+          "won": 12,
+          "lost": 3
+        },
+        "hard": {
+          "won": 37,
+          "lost": 2
+        },
+        "grass": {
+          "won": 6,
+          "lost": 1
+        },
+        "indoor": {
+          "total": {
+            "won": 9,
+            "lost": 1
+          },
+          "clay": null,
+          "hard": {
+            "won": 9,
+            "lost": 1
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 57,
+            "lost": 7
+          },
+          "clay": {
+            "won": 12,
+            "lost": 3
+          },
+          "hard": {
+            "won": 37,
+            "lost": 2
+          },
+          "grass": {
+            "won": 6,
+            "lost": 1
+          },
+          "indoor": {
+            "total": {
+              "won": 9,
+              "lost": 1
+            },
+            "clay": null,
+            "hard": {
+              "won": 9,
+              "lost": 1
+            },
+            "grass": null
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2022",
+        "allTier": true,
+        "total": {
+          "won": 42,
+          "lost": 7
+        },
+        "clay": {
+          "won": 14,
+          "lost": 4
+        },
+        "hard": {
+          "won": 21,
+          "lost": 3
+        },
+        "grass": {
+          "won": 7,
+          "lost": 0
+        },
+        "indoor": {
+          "total": {
+            "won": 15,
+            "lost": 2
+          },
+          "clay": null,
+          "hard": {
+            "won": 15,
+            "lost": 2
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 42,
+            "lost": 7
+          },
+          "clay": {
+            "won": 14,
+            "lost": 4
+          },
+          "hard": {
+            "won": 21,
+            "lost": 3
+          },
+          "grass": {
+            "won": 7,
+            "lost": 0
+          },
+          "indoor": {
+            "total": {
+              "won": 15,
+              "lost": 2
+            },
+            "clay": null,
+            "hard": {
+              "won": 15,
+              "lost": 2
+            },
+            "grass": null
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2021",
+        "allTier": true,
+        "total": {
+          "won": 55,
+          "lost": 7
+        },
+        "clay": {
+          "won": 18,
+          "lost": 3
+        },
+        "hard": {
+          "won": 26,
+          "lost": 2
+        },
+        "grass": {
+          "won": 11,
+          "lost": 2
+        },
+        "indoor": {
+          "total": {
+            "won": 11,
+            "lost": 1
+          },
+          "clay": null,
+          "hard": {
+            "won": 11,
+            "lost": 1
+          },
+          "grass": null
+        },
+        "atp": {
+          "total": {
+            "won": 55,
+            "lost": 7
+          },
+          "clay": {
+            "won": 18,
+            "lost": 3
+          },
+          "hard": {
+            "won": 26,
+            "lost": 2
+          },
+          "grass": {
+            "won": 11,
+            "lost": 2
+          },
+          "indoor": {
+            "total": {
+              "won": 11,
+              "lost": 1
+            },
+            "clay": null,
+            "hard": {
+              "won": 11,
+              "lost": 1
+            },
+            "grass": null
+          }
+        },
+        "chitf": null
+      },
+      {
+        "year": "2020",
+        "allTier": false,
+        "total": {
+          "won": 45,
+          "lost": 7
+        },
+        "clay": {
+          "won": 11,
+          "lost": 1
+        },
+        "hard": {
+          "won": 34,
+          "lost": 6
+        },
+        "grass": null,
+        "indoor": null,
+        "atp": null,
+        "chitf": null
+      },
+      {
+        "year": "2019",
+        "allTier": false,
+        "total": {
+          "won": 57,
+          "lost": 11
+        },
+        "clay": {
+          "won": 15,
+          "lost": 3
+        },
+        "hard": {
+          "won": 35,
+          "lost": 8
+        },
+        "grass": {
+          "won": 7,
+          "lost": 0
+        },
+        "indoor": null,
+        "atp": null,
+        "chitf": null
+      },
+      {
+        "year": "2018",
+        "allTier": false,
+        "total": {
+          "won": 56,
+          "lost": 14
+        },
+        "clay": {
+          "won": 11,
+          "lost": 5
+        },
+        "hard": {
+          "won": 34,
+          "lost": 8
+        },
+        "grass": {
+          "won": 11,
+          "lost": 1
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 56,
+            "lost": 14
+          },
+          "clay": {
+            "won": 11,
+            "lost": 5
+          },
+          "hard": {
+            "won": 34,
+            "lost": 8
+          },
+          "grass": {
+            "won": 11,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2017",
+        "allTier": false,
+        "total": {
+          "won": 32,
+          "lost": 8
+        },
+        "clay": {
+          "won": 12,
+          "lost": 4
+        },
+        "hard": {
+          "won": 12,
+          "lost": 3
+        },
+        "grass": {
+          "won": 8,
+          "lost": 1
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 32,
+            "lost": 8
+          },
+          "clay": {
+            "won": 12,
+            "lost": 4
+          },
+          "hard": {
+            "won": 12,
+            "lost": 3
+          },
+          "grass": {
+            "won": 8,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2016",
+        "allTier": false,
+        "total": {
+          "won": 65,
+          "lost": 9
+        },
+        "clay": {
+          "won": 16,
+          "lost": 2
+        },
+        "hard": {
+          "won": 47,
+          "lost": 6
+        },
+        "grass": {
+          "won": 2,
+          "lost": 1
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 65,
+            "lost": 9
+          },
+          "clay": {
+            "won": 16,
+            "lost": 2
+          },
+          "hard": {
+            "won": 47,
+            "lost": 6
+          },
+          "grass": {
+            "won": 2,
+            "lost": 1
+          },
+          "indoor": null
+        },
+        "chitf": null
+      },
+      {
+        "year": "2015",
+        "allTier": false,
+        "total": {
+          "won": 82,
+          "lost": 6
+        },
+        "clay": {
+          "won": 16,
+          "lost": 1
+        },
+        "hard": {
+          "won": 59,
+          "lost": 5
+        },
+        "grass": {
+          "won": 7,
+          "lost": 0
+        },
+        "indoor": null,
+        "atp": {
+          "total": {
+            "won": 82,
+            "lost": 6
+          },
+          "clay": {
+            "won": 16,
+            "lost": 1
+          },
+          "hard": {
+            "won": 59,
+            "lost": 5
+          },
+          "grass": {
+            "won": 7,
+            "lost": 0
+          },
+          "indoor": null
+        },
+        "chitf": null
+      }
+    ],
+    "p1TournamentHistory": {
+      "editionsPlayed": 3,
+      "totalWon": 4,
+      "totalLost": 2,
+      "longMatches": 0,
+      "longMatchesPlayed": 6,
+      "longMatchPct": 0,
+      "years": [
+        {
+          "year": "2026",
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-09-30",
+              "opponent": "J. M. Cerundolo",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 12166529
+            }
+          ]
+        },
+        {
+          "year": "2025",
+          "matchCount": 1,
+          "won": 0,
+          "lost": 1,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2025-09-26",
+              "opponent": "A. De Minaur",
+              "round": "1/16-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 12073604
+            }
+          ]
+        },
+        {
+          "year": "2024",
+          "matchCount": 4,
+          "won": 3,
+          "lost": 1,
+          "roundReached": "Semi-finals",
+          "matches": [
+            {
+              "date": "2024-10-01",
+              "opponent": "J. Sinner",
+              "round": "Semi-finals",
+              "won": false,
+              "result": "0 - 2",
+              "eventKey": 11987263
+            },
+            {
+              "date": "2024-09-30",
+              "opponent": "A. Rublev",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 11987166
+            },
+            {
+              "date": "2024-09-29",
+              "opponent": "L. Musetti",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 11986746
+            },
+            {
+              "date": "2024-09-27",
+              "opponent": "J. Shang",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 1",
+              "eventKey": 11985958
+            }
+          ]
+        }
+      ]
+    },
+    "p2TournamentHistory": {
+      "editionsPlayed": 7,
+      "totalWon": 30,
+      "totalLost": 0,
+      "longMatches": 0,
+      "longMatchesPlayed": 30,
+      "longMatchPct": 0,
+      "years": [
+        {
+          "year": "2026",
+          "matchCount": 1,
+          "won": 1,
+          "lost": 0,
+          "roundReached": "1/16-finals",
+          "matches": [
+            {
+              "date": "2026-09-30",
+              "opponent": "N. Borges",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0",
+              "eventKey": 12166526
+            }
+          ]
+        },
+        {
+          "year": "2015",
+          "matchCount": 5,
+          "won": 5,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "R. Nadal",
+              "round": "Final",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "D. Ferrer",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "J. Isner",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "Z. Zhang",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "S. Bolelli",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2014",
+          "matchCount": 5,
+          "won": 5,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "T. Berdych",
+              "round": "Final",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "A. Murray",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "G. Dimitrov",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "V. Pospisil",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "G. Garcia-Lopez",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2013",
+          "matchCount": 5,
+          "won": 5,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "R. Nadal",
+              "round": "Final",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "R. Gasquet",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "S. Querrey",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "F. Verdasco",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 1"
+            },
+            {
+              "date": "",
+              "opponent": "L. Rosol",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2012",
+          "matchCount": 5,
+          "won": 5,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "J. Tsonga",
+              "round": "Final",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "F. Mayer",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "J. Melzer",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "C. Berlocq",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "M. Berrer",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 1"
+            }
+          ]
+        },
+        {
+          "year": "2010",
+          "matchCount": 4,
+          "won": 4,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "D. Ferrer",
+              "round": "Final",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "J. Isner",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "G. Simon",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "M. Gong",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        },
+        {
+          "year": "2009",
+          "matchCount": 5,
+          "won": 5,
+          "lost": 0,
+          "roundReached": "Final",
+          "matches": [
+            {
+              "date": "",
+              "opponent": "M. Cilic",
+              "round": "Final",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "R. Soderling",
+              "round": "Semi-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "F. Verdasco",
+              "round": "Quarter-finals",
+              "won": true,
+              "result": "2 - 1"
+            },
+            {
+              "date": "",
+              "opponent": "V. Troicki",
+              "round": "1/8-finals",
+              "won": true,
+              "result": "2 - 0"
+            },
+            {
+              "date": "",
+              "opponent": "V. Hanescu",
+              "round": "1/16-finals",
+              "won": true,
+              "result": "2 - 0"
+            }
+          ]
+        }
+      ]
+    },
+    "extraStats": {
+      "last52Weeks": {
+        "p1": {
+          "matchCount": 21,
+          "stats": {
+            "Service:Aces": 7.5,
+            "Service:Double Faults": 2.7,
+            "Service:1st Serve Points Won": 75.8,
+            "Service:2nd Serve Points Won": 49.4,
+            "Service:Break Points Saved": 60.2,
+            "Return:Break Points Converted": 48,
+            "Points:Winners": 22.1,
+            "Points:Unforced Errors": 20.1,
+            "Points:Service Points Won": 65.4,
+            "Points:Return Points Won": 34.1,
+            "Points:Total Points Won": 49.7
+          },
+          "samples": {
+            "Service:Aces": 21,
+            "Service:Double Faults": 21,
+            "Service:1st Serve Points Won": 962,
+            "Service:2nd Serve Points Won": 626,
+            "Service:Break Points Saved": 103,
+            "Return:Break Points Converted": 98,
+            "Points:Winners": 16,
+            "Points:Unforced Errors": 16,
+            "Points:Service Points Won": 1590,
+            "Points:Return Points Won": 1594,
+            "Points:Total Points Won": 3184
+          }
+        },
+        "p2": {
+          "matchCount": 31,
+          "stats": {
+            "Service:Aces": 8.4,
+            "Service:Double Faults": 2.9,
+            "Service:1st Serve Points Won": 75.3,
+            "Service:2nd Serve Points Won": 54.3,
+            "Service:Break Points Saved": 72.1,
+            "Return:Break Points Converted": 38.8,
+            "Points:Winners": 31.8,
+            "Points:Unforced Errors": 27.4,
+            "Points:Service Points Won": 68.4,
+            "Points:Return Points Won": 35.7,
+            "Points:Total Points Won": 52.1
+          },
+          "samples": {
+            "Service:Aces": 31,
+            "Service:Double Faults": 31,
+            "Service:1st Serve Points Won": 2022,
+            "Service:2nd Serve Points Won": 994,
+            "Service:Break Points Saved": 208,
+            "Return:Break Points Converted": 227,
+            "Points:Winners": 25,
+            "Points:Unforced Errors": 25,
+            "Points:Service Points Won": 3016,
+            "Points:Return Points Won": 3011,
+            "Points:Total Points Won": 6027
+          }
+        }
+      },
+      "surface": {
+        "p1": {
+          "matchCount": 44,
+          "stats": {
+            "Service:Aces": 6.8,
+            "Service:Double Faults": 2.2,
+            "Service:1st Serve Points Won": 74.9,
+            "Service:2nd Serve Points Won": 49.7,
+            "Service:Break Points Saved": 63.3,
+            "Return:Break Points Converted": 38.4,
+            "Points:Winners": 19.8,
+            "Points:Unforced Errors": 23.4,
+            "Points:Service Points Won": 64.3,
+            "Points:Return Points Won": 34.6,
+            "Points:Total Points Won": 49.5
+          },
+          "samples": {
+            "Service:Aces": 44,
+            "Service:Double Faults": 44,
+            "Service:1st Serve Points Won": 1911,
+            "Service:2nd Serve Points Won": 1393,
+            "Service:Break Points Saved": 245,
+            "Return:Break Points Converted": 245,
+            "Points:Winners": 31,
+            "Points:Unforced Errors": 31,
+            "Points:Service Points Won": 3309,
+            "Points:Return Points Won": 3287,
+            "Points:Total Points Won": 6596
+          }
+        },
+        "p2": {
+          "matchCount": 43,
+          "stats": {
+            "Service:Aces": 8,
+            "Service:Double Faults": 2.7,
+            "Service:1st Serve Points Won": 76,
+            "Service:2nd Serve Points Won": 54.7,
+            "Service:Break Points Saved": 69.6,
+            "Return:Break Points Converted": 41.8,
+            "Points:Winners": 26.5,
+            "Points:Unforced Errors": 25.5,
+            "Points:Service Points Won": 68.6,
+            "Points:Return Points Won": 37.8,
+            "Points:Total Points Won": 53.1
+          },
+          "samples": {
+            "Service:Aces": 43,
+            "Service:Double Faults": 43,
+            "Service:1st Serve Points Won": 2370,
+            "Service:2nd Serve Points Won": 1234,
+            "Service:Break Points Saved": 224,
+            "Return:Break Points Converted": 311,
+            "Points:Winners": 34,
+            "Points:Unforced Errors": 34,
+            "Points:Service Points Won": 3609,
+            "Points:Return Points Won": 3654,
+            "Points:Total Points Won": 7263
+          }
+        }
+      },
+      "surfaceLabel": "hard",
+      "courtSpeedRecord": {
+        "p1": {
+          "wins": 5,
+          "losses": 6,
+          "sampleSize": 11,
+          "pct": 45.5
+        },
+        "p2": {
+          "wins": 10,
+          "losses": 3,
+          "sampleSize": 13,
+          "pct": 76.9
+        }
+      }
+    },
+    "matchStats": null,
+    "setStats": null,
+    "venue": {
+      "city": "Beijing",
+      "country": "CN",
+      "category": "ATP 500",
+      "indoor": false
+    },
+    "courtSpeed": {
+      "speed": 64,
+      "altitude": 50,
+      "abstractSpeed": 1.06,
+      "abstractSpeedYear": 2025,
+      "as2023": 0.93,
+      "as2024": 1.05,
+      "as2025": 1.06,
+      "firstServeWon": 70,
+      "serviceHold": 76,
+      "cpi": null,
+      "cpiYear": null,
+      "category": "Medium"
+    },
+    "weather": {
+      "temperature": 18.4,
+      "windSpeed": 6.2,
+      "humidity": 21,
+      "source": "Open-Meteo",
+      "historical": false,
+      "weekRange": "Sep 28 – 4, 2026",
+      "week": [
+        {
+          "date": "2026-09-28",
+          "dow": "Mon",
+          "label": "Sep 28",
+          "code": 53,
+          "hi": 24,
+          "lo": 16,
+          "rain": 75,
+          "wind": 9,
+          "humidity": 77,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-29",
+          "dow": "Tue",
+          "label": "Sep 29",
+          "code": 51,
+          "hi": 27,
+          "lo": 15,
+          "rain": 41,
+          "wind": 18,
+          "humidity": 52,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-09-30",
+          "dow": "Wed",
+          "label": "Sep 30",
+          "code": 3,
+          "hi": 20,
+          "lo": 11,
+          "rain": 0,
+          "wind": 20,
+          "humidity": 15,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-10-01",
+          "dow": "Thu",
+          "label": "Oct 1",
+          "code": 0,
+          "hi": 23,
+          "lo": 12,
+          "rain": 0,
+          "wind": 10,
+          "humidity": 22,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-10-02",
+          "dow": "Fri",
+          "label": "Oct 2",
+          "code": 1,
+          "hi": 23,
+          "lo": 12,
+          "rain": 27,
+          "wind": 11,
+          "humidity": 38,
+          "isMatch": true,
+          "available": true
+        },
+        {
+          "date": "2026-10-03",
+          "dow": "Sat",
+          "label": "Oct 3",
+          "code": 3,
+          "hi": 23,
+          "lo": 14,
+          "rain": 40,
+          "wind": 24,
+          "humidity": 41,
+          "isMatch": false,
+          "available": true
+        },
+        {
+          "date": "2026-10-04",
+          "dow": "Sun",
+          "label": "Oct 4",
+          "code": 3,
+          "hi": 19,
+          "lo": 11,
+          "rain": 4,
+          "wind": 20,
+          "humidity": 43,
+          "isMatch": false,
+          "available": true
+        }
+      ]
+    },
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
+    "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/796_b-yunchaokete.jpg",
+    "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1905_n-djokovic.jpg",
+    "oddsMovement": {
+      "chart": {
+        "books": {
+          "Superbet": {
+            "p1": [
+              [
+                "2026-09-30T13:37:05.769Z",
+                3.25
+              ]
+            ],
+            "p2": [
+              [
+                "2026-09-30T13:37:05.769Z",
+                1.27
+              ]
+            ]
+          }
+        },
+        "meta": {
+          "Superbet": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "vendor updatedAt",
+            "checkedAt": "2026-09-30T13:52:45.651Z"
+          },
+          "Betfair Exchange (recorded by us)": {
+            "source": "odds-api.io",
+            "group": "soft",
+            "clock": "recorded by us",
+            "checkedAt": "2026-09-30T13:52:45.651Z"
+          },
+          "Bet105": {
+            "source": "Kibl",
+            "group": "sharp",
+            "clock": "Kibl insert",
+            "note": "no Bet105 fixture matched",
+            "checkedAt": "2026-09-30T01:37:54.000Z"
+          },
+          "Pinnacle (api-tennis)": {
+            "source": "api-tennis",
+            "group": "sharp",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "Betano": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "1xBet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "BetVictor": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "Betfair Sportsbook (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "Marathon": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "bet365 (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "Sbobet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          },
+          "William Hill": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-29T21:17:47.433Z"
+          }
+        }
       }
     }
   },
@@ -82255,7 +84805,7 @@
       "p1": 3.1,
       "p2": 1.42,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -82266,7 +84816,7 @@
         "price": 1.42,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 438,
@@ -86585,7 +89135,7 @@
       "p1": 1.73,
       "p2": 2.1,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -86596,7 +89146,7 @@
         "price": 2.2,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 2169,
@@ -91244,7 +93794,7 @@
       "p1": 1.73,
       "p2": 2.1,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -91255,7 +93805,7 @@
         "price": 2.1,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 10148,
@@ -94898,7 +97448,7 @@
       "p1": 4.6,
       "p2": 1.19,
       "bookmaker": "Marathon",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -94909,7 +97459,7 @@
         "price": 1.19,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1102,
@@ -99200,7 +101750,7 @@
       "p1": 3.45,
       "p2": 1.32,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -99211,7 +101761,7 @@
         "price": 1.32,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 374,
@@ -107037,7 +109587,7 @@
       "p1": 1.85,
       "p2": 1.98,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -107048,7 +109598,7 @@
         "price": 1.98,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1057,
@@ -111427,7 +113977,7 @@
       "p1": 1.23,
       "p2": 4.25,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -111438,7 +113988,7 @@
         "price": 4.25,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1093,
@@ -115203,7 +117753,7 @@
       "p1": 1.35,
       "p2": 3.25,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "bestOdds": {
       "p1": {
@@ -115214,7 +117764,7 @@
         "price": 3.25,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:00.044Z"
+      "seenAt": "2026-09-30T13:33:19.220Z"
     },
     "tournamentRound": "",
     "p1Key": 1980,
@@ -118606,7 +121156,7 @@
       "p1": 2.87,
       "p2": 1.42,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:12:23.773Z"
+      "seenAt": "2026-09-30T13:33:47.096Z"
     },
     "bestOdds": {
       "p1": {
@@ -118617,7 +121167,7 @@
         "price": 1.42,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:23.773Z"
+      "seenAt": "2026-09-30T13:33:47.096Z"
     },
     "tournamentRound": "ATP Chengdu - Semi-finals",
     "p1Key": 424,
@@ -126909,7 +129459,7 @@
       "p1": 1.6,
       "p2": 2.37,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:12:23.773Z"
+      "seenAt": "2026-09-30T13:33:47.096Z"
     },
     "bestOdds": {
       "p1": {
@@ -126920,7 +129470,7 @@
         "price": 2.37,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:12:23.773Z"
+      "seenAt": "2026-09-30T13:33:47.096Z"
     },
     "tournamentRound": "ATP Chengdu - Semi-finals",
     "p1Key": 2841,
@@ -131709,7 +134259,7 @@
       "p1": 1.46,
       "p2": 2.78,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-30T13:12:23.773Z"
+      "seenAt": "2026-09-30T13:33:47.096Z"
     },
     "bestOdds": {
       "p1": {
@@ -131720,7 +134270,7 @@
         "price": 2.78,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:12:23.773Z"
+      "seenAt": "2026-09-30T13:33:47.096Z"
     },
     "tournamentRound": "ATP Hangzhou - Semi-finals",
     "p1Key": 1093,
@@ -135823,7 +138373,7 @@
       "p1": 1.68,
       "p2": 2.22,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-30T13:13:06.368Z"
+      "seenAt": "2026-09-30T13:34:32.329Z"
     },
     "bestOdds": {
       "p1": {
@@ -135834,7 +138384,7 @@
         "price": 2.22,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:13:06.368Z"
+      "seenAt": "2026-09-30T13:34:32.329Z"
     },
     "tournamentRound": "ATP Chengdu - Final",
     "p1Key": 2841,
@@ -139458,7 +142008,7 @@
       "p1": 1.45,
       "p2": 2.75,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:06.368Z"
+      "seenAt": "2026-09-30T13:34:32.329Z"
     },
     "bestOdds": {
       "p1": {
@@ -139469,7 +142019,7 @@
         "price": 2.75,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:06.368Z"
+      "seenAt": "2026-09-30T13:34:32.329Z"
     },
     "tournamentRound": "ATP Hangzhou - Final",
     "p1Key": 1093,
@@ -144291,7 +146841,7 @@
       "p1": 2.15,
       "p2": 1.7,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -144302,7 +146852,7 @@
         "price": 1.7,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 1192,
@@ -147996,7 +150546,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-30T11:54:16.040Z",
+    "finishedAt": "2026-09-30T11:33:39.692Z",
     "bookOpens": {
       "Betano": {
         "p1": 2.02,
@@ -148061,7 +150611,7 @@
       "p1": 3.25,
       "p2": 1.34,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -148072,7 +150622,7 @@
         "price": 1.34,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 2982,
@@ -152916,7 +155466,7 @@
       "p1": 2.12,
       "p2": 1.74,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -152927,7 +155477,7 @@
         "price": 1.74,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 1852,
@@ -157015,7 +159565,7 @@
       "p1": 3.48,
       "p2": 1.35,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -157026,7 +159576,7 @@
         "price": 1.35,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 358,
@@ -157050,7 +159600,7 @@
       ]
     },
     "p1SurfaceWinRate": 62,
-    "p2SurfaceWinRate": 84,
+    "p2SurfaceWinRate": 83.7,
     "p1Rank": 49,
     "p2Rank": 11,
     "p1RecentForm": 60,
@@ -161326,7 +163876,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-30T13:13:35.795Z",
+    "finishedAt": "2026-09-30T13:03:04.998Z",
     "bookOpens": {
       "Betano": {
         "p1": 2.75,
@@ -161401,7 +163951,7 @@
       "p1": 2.4,
       "p2": 1.57,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -161412,7 +163962,7 @@
         "price": 1.57,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 388,
@@ -165962,7 +168512,7 @@
       "p1": 2.27,
       "p2": 1.65,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -165973,7 +168523,7 @@
         "price": 1.65,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 435,
@@ -170965,7 +173515,7 @@
       "p1": 2.5,
       "p2": 1.55,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -170976,7 +173526,7 @@
         "price": 1.55,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 2831,
@@ -175414,7 +177964,7 @@
       "p1": 4.5,
       "p2": 1.21,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -175425,7 +177975,7 @@
         "price": 1.21,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Beijing - 1/16-finals",
     "p1Key": 590,
@@ -179379,7 +181929,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-30T11:54:16.040Z",
+    "finishedAt": "2026-09-30T11:33:39.692Z",
     "bookOpens": {
       "Betano": {
         "p1": 3.4,
@@ -179444,7 +181994,7 @@
       "p1": 1.15,
       "p2": 5.55,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "bestOdds": {
       "p1": {
@@ -179455,7 +182005,7 @@
         "price": 5.55,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-30T13:13:11.069Z"
+      "seenAt": "2026-09-30T13:34:38.362Z"
     },
     "tournamentRound": "ATP Tokyo - 1/16-finals",
     "p1Key": 1759,
@@ -186575,13 +189125,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-30T13:36:14.159Z"
+            "checkedAt": "2026-09-30T13:52:45.651Z"
           },
           "Bet105": {
             "source": "Kibl",
