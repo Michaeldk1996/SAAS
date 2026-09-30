@@ -242,8 +242,8 @@ test('DoD 8: every match cell opens the shared sheet; no tab-local row or toolti
   const cells = h.split('class="seg pg-cell"').slice(1);
   const played = cells.filter(c => /beat /.test(c.slice(0, 400)));
   assert.equal(played.length, 4, 'four played cells');
-  assert.ok(played.every(c => /^[^>]*onclick="event\.stopPropagation\(\); maOpenRowSheet\('mr\d+'\)"/.test(c)), 'each opens the shared sheet');
-  const id = /maOpenRowSheet\('(mr\d+)'\)/.exec(played[0])[1];
+  assert.ok(played.every(c => /^[^>]*onclick="event\.stopPropagation\(\); maOpenRowSheet\('mr\d+', this\)"/.test(c)), 'each opens the shared sheet');
+  const id = /maOpenRowSheet\('(mr\d+)', this\)/.exec(played[0])[1];
   assert.equal(S._maRowReg[id].round, 'R1', 'the sheet gets the draw\'s round label');
   assert.ok(/class="seg pg-hcell" onclick="event\.stopPropagation\(\); maOpenRowSheet/.test(h), 'a heat cell opens it too');
   const code = PG;

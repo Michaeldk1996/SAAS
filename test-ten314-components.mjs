@@ -28,7 +28,7 @@ function constSrc(name) {
   return html.slice(start, html.indexOf(';\n', start) + 1);
 }
 const S = new Function('document', `
-  ${['MA_SEG', 'MA_ROW_COLS', 'MA_ROW_CELLS', 'ME_C'].map(constSrc).join('\n')}
+  ${['MA_SEG', 'MA_POP', 'MA_ROW_COLS', 'MA_ROW_CELLS', 'ME_C'].map(constSrc).join('\n')}
   ${['escapeHtml', 'fhEsc', 'fhS', 'maSeg', 'maPopFrame', 'maPopEscKey', 'maPopNoReplay', 'maMatchRowsHtml', 'maTipHtml', 'fhSheetSeg', 'meSegHtml', 'mePopShell'].map(slice).join('\n')}
   return { maSeg, maPopFrame, maPopEscKey, maPopNoReplay, maMatchRowsHtml, maTipHtml, fhSheetSeg, meSegHtml, mePopShell };
 `);

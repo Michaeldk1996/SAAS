@@ -154,7 +154,7 @@ test('career meetings (DoD 8): the shared rows, 8 shown + "Show N more matches" 
   const card = /class="ps2-meet" data-ps2-side="a"[\s\S]*$/.exec(h)[0];
   assert.match(card, /class="ma-rows ma-rows-table"/, 'the shared table variant');
   assert.match(text(card), /Showing 8 of 12/); assert.match(text(card), /Show 4 more matches/);
-  const ids = [...card.matchAll(/maOpenRowSheet\('(mr\d+)'\)/g)].map(x => x[1]);
+  const ids = [...card.matchAll(/maOpenRowSheet\('(mr\d+)', this\)/g)].map(x => x[1]);
   assert.equal(ids.length, 8, 'every shown row opens the sheet');
   const d = S._maRowReg[ids[0]];
   assert.equal(d.key, '1'); assert.equal(d.name, 'A. Aa'); assert.ok(d.date && d.opp, 'joined by date + opponent');

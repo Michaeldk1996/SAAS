@@ -146,7 +146,7 @@ function rowOpener(history, opts = {}) {
     (x) => ({ mid: 'career:' + x.eventKey, opp: x.opponent, oppKey: null }), r => { r.finished = true; },
     n => String(n || '').replace(/^[A-Z][-A-Za-z]*\.\s*/, '').toLowerCase().replace(/[^a-z]/g, ''), x => x,
     () => ({ sheetMap: map }), mid => opened.push(mid), { id: 'm' });
-  const click = d => { const id = /maOpenRowSheet\('(mr\d+)'\)/.exec(api.maRowOnclick(d))[1]; api.maOpenRowSheet(id); };
+  const click = d => { const id = /maOpenRowSheet\('(mr\d+)', this\)/.exec(api.maRowOnclick(d))[1]; api.maOpenRowSheet(id); };
   return { click, opened, map, api, close: () => { modalOpen = false; } };
 }
 const tick = () => new Promise(r => setTimeout(r, 10));
