@@ -19,7 +19,7 @@ Applies to the Playing style tab of the Match analysis modal (`buildStyleSection
 
 ## Data
 - **Archetypes** = `playing-styles.json` `archetype_label` (+ `variety` → "+ Variety Player"). Until the file is in memory
-  the tab shows its one-line loading state, never "Not yet classified" (G17).
+  the tab shows its one-line loading state, never "Not yet classified" (G29).
 - **Style matchup** = `matchup-matrix.json`, the cell in **p1's direction** (`psCellFor`), `n` = tour meetings. Lean: the
   leader's points over 50; under 2 points reads "Effectively a coin-flip on style alone". Surface tiles =
   `matrixBySurface` for Clay / Hard / Grass, `n` = that surface's meetings; a cell below the matrix floor (20) shows "—"
@@ -36,27 +36,30 @@ Applies to the Playing style tab of the Match analysis modal (`buildStyleSection
   styles bot, daily; measured 2026-09-29: 413 TML W/O rows in the window, 190 shard rows, 14 of 64 cells move ≤ 1 pt,
   162 of 1,777 records change). **Test:** personal-record check + the builder check.
 - **Meeting rows:** the file's 8 rows under "Showing 8 of N", grouped by tournament edition, newest first; the rest behind
-  "Show N more matches" (DESIGN GAP G18: the file draws no way to the rest; the control is its Form list foot, DF L1146,
-  worded as DF L3871). H / A = the row's closing prices (the shard's book: Pinnacle, Bet365 where missing; one book per
+  "Show N more matches" (DESIGN GAP G30, **accepted by the founder** Q15, 2026-09-30: the file draws no way to the rest;
+  the control is its Form list foot, DF L1146, worded as DF L3871). H / A = the row's closing prices (the shard's book: Pinnacle, Bet365 where missing; one book per
   row), "—" where none. No price figure is summed here, so no retirement note applies.
 - **DNA** = `dna-apitennis-ratings.json` (TEN-319, rebuilt twice daily). Axes Serve, Return, Under pressure (copied from
   surface-ratings, TEN-328), Dominance ratio, Surface Elo. Windows **"Last 52 weeks" | "Since Mar 2024"** — never
   "Career" (D6). **Surface Elo is the current rating on both views**, labelled "current" (the radar label "Surface Elo ·
   current"; the profile row prints "current" in its Δ slot). Percentiles are the file's **true percentiles**; every axis's
   tooltip states each player's raw value and percentile, and the population **and its n** (`_meta.percentiles` /
-  `eloPercentiles`). On the since view, Under pressure is surface-ratings **career (2010–)** — its only other scope — and
-  the tooltip says so. **Test:** DNA checks.
+  `eloPercentiles`). **On the since view, Under pressure is "—"** (founder Q14, 2026-09-30, TEN-312 5262e790) with the
+  tooltip "No since-Mar-2024 figure yet; see the career view." — surface-ratings has no since-Mar-2024 scope, and a career
+  number never sits under a since-2024 label; no shape point, no percentile, no Δ for that axis there. **Test:** DNA
+  checks + since-view Under pressure reads "—" with that tooltip for both players; mutation: falling back to the career
+  scope prints a number.
 - **Δ vs 2024–now** only on the 52-week view; none on Elo, none on Under pressure (its baseline is the career scope). A
   player with fewer than 10 matches in the window on the match's surface draws **no shape** and the card says why under
-  the file's foot (DESIGN GAP G19); no rating on file → the same line.
+  the file's foot (DESIGN GAP G31); no rating on file → the same line.
 
 ## Colour
 - **Both players white** (the file's `cur` palette): A's radar solid + 0.12 fill, B's dashed at 0.85; the matchup bar's B
   side at 0.30 white. Tokens `--ma-s-e7e9ee-120 / -300 / -850` (Night; the Day palette keeps the alpha whites).
 - **The profile's bars and values are neutral**: the file tones the leading value white and dims the other's bar to 30%;
-  the non-negotiable "never highlight the better stat" wins — both bars full white, both values white. Parked for the
-  end-of-queue card (open question). **Test:** both-players-white check.
+  the non-negotiable "never highlight the better stat" wins — both bars full white, both values white (founder Q13,
+  2026-09-30, TEN-312 5262e790; design exception X7). **Test:** both-players-white check.
 
 ## Design gaps (TEN-312 `design-gaps`)
-- G5 mirror matchup · G17 an unclassified player, a matrix cell below its floor, the loading lines · G18 "Show N more
-  matches" · G19 a DNA shape withheld (under the floor / no rating) and the DNA loading line.
+- G5 mirror matchup · G29 an unclassified player, a matrix cell below its floor, the loading lines · G30 "Show N more
+  matches" (accepted, Q15) · G31 a DNA shape withheld (under the floor / no rating) and the DNA loading line.
