@@ -32,7 +32,8 @@ found at restore time are marked inline.
   (DoD item 8). **Test:** `test-ten334-overview.mjs`.
 - **What a count opens.** A count lists its matches only where career-history holds the matches the count is made of:
   every 2021+ row, and a pre-2021 row that keeps an exact ATP split (tour-level only). A pre-2021 all-tier aggregate shows
-  its count, opens nothing, and says why on hover (its Challenger/ITF matches are in no archive we hold).
+  its count, opens nothing, and says why on hover (its Challenger/ITF matches are in no archive we hold) — kept by founder
+  ruling Q12 (2026-09-30): shown, not clickable, reason on hover.
   **Test:** a 2018 aggregate cell has no opener and the "Match list not on file" note; a 2019 ATP-only cell opens.
 - **Pop-up figures.** Record and Win rate over the listed matches (walkovers out, N2; Win rate through the D2 gate);
   Avg price and "At 1u flat" over the priced rows only, prices in the R8 order (`meRowFromCareer` → `fhPickBook`),

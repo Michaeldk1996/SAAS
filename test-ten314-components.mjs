@@ -197,7 +197,7 @@ test('Esc closes the topmost layer only: the stats sheet (capture phase, stops t
   assert.ok(close.includes('fhCloseSheet()') && close.includes("const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = '';"));
 });
 
-// The Key factors hold-rate check (no count in the source → a dash + MA_HOLD_NO_N) lives in test-ten341-key-factors.mjs.
+// The Key factors hold-rate check (founder Q9: the Tournament tab's box-score cell, n in the tooltip) lives in test-ten341-key-factors.mjs.
 
 // Component diff 2026-09-29 (tools/ten312-component-diff.mjs): with no line-height of its own the rows inherited a
 // host section's 21px and drifted down (Tournament instance 157 vs the design's 147 px tall).

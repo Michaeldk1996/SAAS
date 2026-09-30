@@ -4225,15 +4225,15 @@
     });
     mrows.forEach(function (r, i) { if (!owner[i] && alias[r.event]) owner[i] = alias[r.event]; });
 
-    // 3 · per-tournament aggregates from the assigned market rows: BACKING
-    //     (N5, founder 2026-09-28: the R8 basis — every `inBasis` row, Pinnacle
-    //     then Bet365, one book per match — the same order as the Match analysis
-    //     Tournament tab), plus the tier and surface the design's name column and
-    //     SURFACE column need.
+    // 3 · per-tournament aggregates from the assigned market rows: the tier and
+    //     surface the design's name column and SURFACE column need. BACKING is
+    //     NOT summed here any more (founder Q8, 2026-09-30): it is the Match
+    //     analysis Tournament tab's row-level join, read per event in tournViews
+    //     through the page's trProfileBacking.
     var agg = {};
     function bucket(name) {
       return agg[name] || (agg[name] = {
-        pinPl: 0, pinN: 0, anyN: 0, surf: {}, level: {}, lastLevelYear: null, lastLevel: null
+        anyN: 0, surf: {}, level: {}, lastLevelYear: null, lastLevel: null
       });
     }
     mrows.forEach(function (r, i) {
@@ -4241,7 +4241,6 @@
       if (!name) return;
       var b = bucket(name);
       b.anyN++;
-      if (r.inBasis && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }
       if (r.surface) b.surf[r.surface] = (b.surf[r.surface] || 0) + 1;
       var y = String(r.date || '').slice(0, 4);
       if (r.level) {
@@ -4446,6 +4445,13 @@
         Object.keys(votes).forEach(function (s) { if (votes[s] > best) { best = votes[s]; surf = s; } });
       }
       var bestYears = (t.bestYears || []).slice().sort(function (a, c) { return c - a; });
+      // BACKING (founder Q8, 2026-09-30): the Tournament tab's row-level join —
+      // each edition's matches joined to career-history and the closes shard, R8
+      // book order (Pinnacle, then Bet365), retirements settled at the close —
+      // computed by the page (trProfileBacking → trModelOf), so the profile and
+      // the tab print the same units and "vs market" for the same event. null =
+      // the stores have not answered yet (the column dashes, the tile says so).
+      var bk = typeof window.trProfileBacking === 'function' ? window.trProfileBacking(p.key, p.name, t) : null;
       return {
         name: t.name,
         display: tournDisplayName(t.name, level),
@@ -4466,9 +4472,11 @@
         //  exceeds the played n, show the played record and dash the priced clause
         //  for that row rather than printing the impossible pair."
         //
-        // `pinN` > `n` means the market shard attributed more priced matches to
+        // `pinN` > `n` meant the market shard attributed more priced matches to
         // this event than the player has match rows in it — a join defect (539
-        // rows across the roster, raised as its own issue), not a display choice.
+        // rows across the roster), not a display choice. The Q8 row join prices
+        // only the event's own main-draw rows, so it cannot exceed n; the guard
+        // stays so no future source can print the impossible pair.
         // Zeroing pinN/pinPl here rather than at the four print sites means the
         // Backing column, the "Backing him here" tile, the box-3 headline and
         // bestEvent()'s candidacy all dash together: a units figure struck over a
@@ -4477,10 +4485,16 @@
         //
         // `pricedImpossible` survives so the detail tile can SAY why it dashed.
         // The played record is untouched — it is not the thing in doubt.
-        pinPl: b && b.pinN && b.pinN <= n ? b.pinPl : null,
-        pinN: b && b.pinN <= n ? b.pinN : 0,
-        pricedImpossible: !!(b && b.pinN > n),
-        pricedClaimed: b ? b.pinN : 0,
+        pinPl: bk && bk.n && bk.n <= n ? bk.units : null,
+        pinN: bk && bk.n <= n ? bk.n : 0,
+        pinTxt: bk && bk.n && bk.n <= n ? bk.unitsTxt : null,
+        vmTxt: bk && bk.n <= n ? bk.vmTxt : null,
+        vmSmall: !!(bk && bk.small),
+        pinBet365: bk ? bk.nb : 0,
+        backingPending: !bk,
+        backingFailed: !!(bk && bk.failed),
+        pricedImpossible: !!(bk && bk.n > n),
+        pricedClaimed: bk ? bk.n : 0,
         isSlam: isSlamTourn(t.name, level)
       };
     }).sort(tournOrder);
@@ -4602,7 +4616,7 @@
             'white-space:nowrap;color:' + (pin == null ? DASH_COLOUR : pin >= 0 ? '#3ed68c' : '#da6259') + ';"' +
             (t.pricedImpossible ? ' title="Priced count (' + t.pricedClaimed + ') exceeds ' + t.n +
               ' matches played — withdrawn pending the odds-join fix"' : '') + '>' +
-            (pin == null ? DASH : signed(pin, 1, 'u')) +
+            (pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) +
             (t.pricedImpossible
               ? '<span style="font-size:9px;color:var(--negative);margin-left:4px;">!</span>' : '') + '</span>' +
         '</div>' +
@@ -4610,7 +4624,6 @@
         '</div>';
     }).join('');
 
-    var j = tournJoin(p);
     return '' +
       '<div style="font-size:13.5px;color:var(--label);margin-bottom:16px;line-height:1.5;">Search a ' +
         'tournament to see ' + esc(possessive(shortName(p))) + ' full career win' + ENDASH +
@@ -4633,7 +4646,8 @@
       '<div style="font-size:11px;color:var(--label);margin-top:14px;line-height:1.6;">' +
         'Each W' + ENDASH + 'L is the sum of the editions listed beneath it. Backing is a flat 1u ' +
         'stake at the closing price (Pinnacle, else Bet365), so an event neither priced shows a dash rather ' +
-        'than a zero' + (j.hasMarket ? '' : ' (the price shard has not loaded)') + '. ' +
+        'than a zero, and it is the Match analysis Tournament tab\'s figure for the event' +
+        (views.some(function (v) { return v.backingPending || v.backingFailed; }) ? ' (the price shard has not loaded)' : '') + '. ' +
         'This block is the tournament record we hold per event and does not sum to the career ' +
         'total above ' + MIDDOT + ' it carries only events with stored edition detail.</div>';
   }
@@ -4661,27 +4675,31 @@
     // the file's is W-L record / Best result / Sets won / Last played / Backing
     // him here. README §Fidelity makes the file the authority, so the file wins
     // and the difference is in the report.
-    var pinTxt = t.pinN ? signed(t.pinPl, 1, 'u') : DASH;
+    var pinTxt = t.pinN ? t.pinTxt || signed(t.pinPl, 1, 'u') : DASH;
     var pinColour = !t.pinN ? DASH_COLOUR : t.pinPl >= 0 ? '#3ed68c' : '#da6259';
-    // The file's fifth-tile sub is "+3.4pt vs market" — a prototype constant
-    // with no formula anywhere in the export. §3 forbids inventing one, so the
-    // sub states the priced count instead (item 12: "partly priced -> keep the
-    // figure and add the priced count in the detail").
-    // Deliberately NOT "N of M priced": the priced count comes from the market
-    // shard and M from the edition list, and the two stores do not agree on how
-    // many matches an event held (Zverev's Australian Open: 46 shard rows, 42
-    // edition rows). Printing them as a fraction would invent a shortfall.
+    // The file's fifth-tile sub is "+3.4pt vs market". TEN-312 D6 gave it a
+    // formula (win rate minus the de-vigged implied rate, n >= 5 priced) and
+    // founder Q8 put the tile on the Tournament tab's rows, so the sub is that
+    // tab's own text (trProfileBacking); below 5 priced it states the count.
     //
     // RULING Q3 · when the priced count exceeded the played count, tournViews()
     // zeroed it, and the sub has to say so rather than fall through to "Pinnacle
     // priced none of these" — which would be a claim about the archive when the
     // real fact is a claim about our join.
+    // Founder Q8 (2026-09-30): the sub is the Tournament tab tile's own — "+Y.Ypt
+    // vs market" (D6, from 5 priced; 5-9 a small sample), else the priced count.
     var pinSub = t.pricedImpossible
       ? 'priced count (' + t.pricedClaimed + ') exceeds ' + t.n + ' matches played ' + MIDDOT +
         ' odds join under investigation'
-      : t.pinN
-        ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle, else Bet365 closing'
-        : 'none of these priced';
+      : t.backingPending
+        ? 'loading prices'
+        : t.backingFailed
+          ? 'prices unavailable'
+          : t.vmTxt
+            ? t.vmTxt + (t.vmSmall ? ' ' + MIDDOT + ' small sample' : '')
+            : t.pinN
+              ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle' + (t.pinBet365 ? ', Bet365 where missing' : '') + ' closing'
+              : 'none of these priced';
     var backTile = tile('Backing him here', pinTxt, pinSub, pinColour);
     var wlTile = tile('W' + ENDASH + 'L record', recordText(t.won, t.lost),
       rateText0(t.won, t.lost) + ' ' + MIDDOT + ' main draw');

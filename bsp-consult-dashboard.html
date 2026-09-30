@@ -12022,7 +12022,9 @@ const WX_COPY = {
   atMatchTbc: '{date} · time TBC',
   pastValues: 'forecast, not observed',
   mayStartLater: 'Scheduled time — later matches often start later.',
-  flag: { wind: 'Gusts {v} km/h', heat: 'Feels like {v}°', rain: 'Rain {v}%' },
+  // Heat = the file's words per severity (founder Q21, 2026-09-30: DF L2411 "Heat — high") at WX_CONFIG's feels-like cut-offs.
+  // The file draws no concern-level heat flag, so both severities carry its one word and the colour tells them apart.
+  flag: { wind: 'Gusts {v} km/h', heat: { a: 'Heat — high', r: 'Heat — high' }, rain: 'Rain {v}%' },
   verdictLead: 'Main factor at match time: {name} — {what}',
   verdictWhat: { wind: 'gusts {v} km/h', heat: 'feels like {v}°', rain: 'rain {v}%' },
   verdictNone: 'No weather concern at match time.',
@@ -12291,7 +12293,7 @@ function wxModel(m, entry, file, nowMs, forced, arch){
     const F = [['wind', 'gusts', agg.gusts], ['heat', 'feels', agg.feels], ['rain', 'rain', agg.rain]]
       .map(([id, kind, v]) => ({ id, v, sev: wxSev(kind, v) }));
     const flags = F.filter(x => x.sev === 'r' || x.sev === 'a').sort((x, y) => wxRank(y.sev) - wxRank(x.sev))
-      .map(x => ({ id: x.id, sev: x.sev, text: wxFmt(CP.flag[x.id], { v: x.v }) }));
+      .map(x => ({ id: x.id, sev: x.sev, text: wxFmt(typeof CP.flag[x.id] === 'object' ? CP.flag[x.id][x.sev] : CP.flag[x.id], { v: x.v }) }));
     const reason = flags.length ? 'flag' : F.some(x => x.sev === 'u') ? 'u' : 'n';
     const dFetched = (D && Array.isArray(D.fetchedAt) && j >= 0) ? Date.parse(D.fetchedAt[j]) : NaN;   // an archived day's own fetch
     return Object.assign(base, { unavail: false, icon: wxIconKind(dval('code', j)), hi: rnd(dval('hi', j)), lo: rnd(dval('lo', j)), flags, reason, agg,
@@ -13208,7 +13210,6 @@ const MA_ROW_CELLS = {
 // o.wrap = a sentence: wrap it at that width (px) instead of the one-line nowrap default, so a long body stays inside the
 // content column; o.start = anchor the tip at the trigger's left edge, not centred on it (a trigger that can wrap to the
 // start of a row).
-const MA_HOLD_NO_N = 'Service hold at this event: the source gives a rate without its number of service games, so it is not shown.';
 function maTipHtml(trigger, body, o){
   o = o || {};
   const tag = o.tag || 'span';
@@ -15631,8 +15632,9 @@ function meEnsureStyles(){
 //                     filtered at the fetch), only editions entered (N6), walkovers in no count (N2)
 //   · set scores      career-history/{key}.json joined by event key (meRowFromCareer)
 //   · prices          match-closes/{key}.json through the Form/H2H picker (fhCloseFor → FH_BOOK_ORDER, the R8 order, N5)
-// Colours are the file's own shades (fhS → --ma-s-<source>), surfaces neutral (U9 / U22). The reading paragraph waits on
-// the founder's copy: nothing is drawn (never the placeholder). Rows, tooltips and the sheet are the shared helpers only.
+// Colours are the file's own shades (fhS → --ma-s-<source>), surfaces neutral (U9 / U22). The reading paragraph is dropped
+// (founder Q11, 2026-09-30): no node, no heading, no reserved space until he sends copy. Rows, tooltips and the sheet are the
+// shared helpers only.
 const TR_LIM = 3;                               // editions shown before "Show N earlier editions" (DF LIM)
 const TR_VS_MKT_MIN = 5;                        // D6: "+Y.Ypt vs market" needs n >= 5 priced rows
 const TR_SPEED_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026];   // DF trend axis; the sheet holds 2023–25 only
@@ -15679,6 +15681,45 @@ function trClean(m){ return String((m && m.tour) || 'Tournament').replace(/^(ATP
 function trIsRG(m){ return /french open|roland garros/i.test(String((m && m.tour) || '')); }
 function trSpeedNote(m){ return trIsRG(m) ? TR_RG_NOTE : TR_NO_SPEED; }
 
+// Event hold rate (founder Q9, 2026-09-30, TEN-368): service games held ÷ service games played at this event, from OUR
+// box scores over every edition on file (event-hold.json, built by build-event-hold.js from boxscore-archive/), n = service
+// games. Not gated (modal-analysis.md D2 exceptions) — the tooltip always states n. The Tournament tab's header and Key
+// factors' Tournament card print the SAME cell (trHoldHtml). A failed fetch is not cached: the next open retries it.
+let _trHoldData;                                // undefined not loaded · null unavailable · object = event-hold.json
+let _trHoldP = null;
+function trHoldLoad(){
+  if (_trHoldData) return Promise.resolve(_trHoldData);
+  if (_trHoldP) return _trHoldP;
+  _trHoldP = fetch('./event-hold.json', { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null).then(d => {
+    _trHoldP = null; _trHoldData = d && d.events && d.byName ? d : null; return _trHoldData;
+  });
+  return _trHoldP;
+}
+function trHoldOf(m){
+  if (_trHoldData === undefined || (_trHoldData === null && _trHoldP)) return { state: 'loading' };   // a retry in flight
+  if (!_trHoldData) return { state: 'failed' };
+  const k = _trHoldData.byName[trClean(m).toLowerCase()], e = k != null ? _trHoldData.events[k] : null;
+  if (!e || !(e.games > 0)) return { state: 'none' };
+  return { state: 'ok', pct: 100 * e.held / e.games, held: e.held, n: e.games, matches: e.matches, years: e.years || [] };
+}
+function trHoldTip(m, H){
+  const ev = trClean(m);
+  if (H.state === 'loading') return 'Loading the event hold rate…';
+  if (H.state === 'failed') return 'The event hold rate did not load, so it is not shown.';
+  if (H.state === 'none') return `No box score on file for ${ev}, so no hold rate is shown.`;
+  const y = H.years, span = y.length > 1 ? `${y[0]}–${y[y.length - 1]}` : (y[0] || '');
+  const fmt = v => Number(v).toLocaleString('en-US');
+  return `Service hold at ${ev}: ${fmt(H.held)} of ${fmt(H.n)} service games held (n = ${fmt(H.n)}), both players, in ${fmt(H.matches)} `
+    + `${H.matches === 1 ? 'match' : 'matches'} with a box score`
+    + (y.length ? ` over ${y.length} ${y.length === 1 ? 'edition' : 'editions'} on file (${span})` : ' on file') + ', qualifying included. Our own box scores.';
+}
+function trHoldHtml(m, cls){
+  const H = trHoldOf(m);
+  const val = H.state === 'ok' ? Math.round(H.pct) + '%' : FH_DASHC;
+  return maTipHtml(`<span tabindex="0" class="${cls}" data-hold="${H.state}"${H.state === 'ok' ? '' : ` style="color:${fhS('5b6880', '--label')};"`}>${val}</span>`,
+    fhEsc(trHoldTip(m, H)), { wrap: 260, start: true });
+}
+
 // Lazy, per player, when the tab opens: career-history (set scores) + match-closes (prices). A failed load is not cached
 // and reads as unknown — never "0 priced".
 function trLoad(m){
@@ -15694,7 +15735,7 @@ function trLoad(m){
       E.state[i] = ok ? 'ready' : 'failed'; E.data[i] = ok ? { ch, cl } : null;
     }).catch(() => { if (_tr === E){ E.state[i] = 'failed'; E.data[i] = null; } }));
   });
-  loads.push(tourxFetchMarket());
+  loads.push(tourxFetchMarket(), trHoldLoad());
   return Promise.all(loads).then(() => { if (_tr === E) trRender(); });
 }
 function trRender(){
@@ -15750,9 +15791,14 @@ function trRowOf(x, season, d, key, name, idx, tourn, names){
 function trModelFor(m, i){
   const E = _tr, key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1;
   const hist = i ? m.p2TournamentHistory : m.p1TournamentHistory;
-  const d = E && E.data[i];
-  const clean = trClean(m), mYear = String(m.date || '').slice(0, 4);
-  const mk = trMarketFor(trKeyOf(m)), names = [clean].concat((mk && mk.archiveNames) || []);
+  const clean = trClean(m), mk = trMarketFor(trKeyOf(m));
+  return trModelOf(hist, E && E.data[i], key, name, clean, [clean].concat((mk && mk.archiveNames) || []), String(m.date || '').slice(0, 4),
+    E ? E.state[i] : 'idle');
+}
+// The model over any history in the pipeline's shape ({ years: [{ year, won, lost, roundReached, matches }] }), joined to one
+// player's career-history rows and closes (d = { ch, cl }). The Tournament tab and the player-profile per-event Backing
+// (trProfileBacking, founder Q8) both read it: one row source, one Backing.
+function trModelOf(hist, d, key, name, clean, names, mYear, state){
   // N6: only editions entered — a pre-TEN-320 store's synthesised gap year (`withdrew`) never shows
   const years = trEditionsOf(hist);
   let idx = 0;
@@ -15787,9 +15833,70 @@ function trModelFor(m, i){
   const exp = priced.reduce((s, r) => s + (1 / r.price) / ((1 / r.price) + (1 / r.oppPrice)), 0);
   const pw = priced.filter(r => r.won).length;
   const vm = priced.length ? (pw / priced.length - exp / priced.length) * 100 : null;
-  return { name, key, eds, W, L, n, best, sW, sT, played, all, priced, units: cents / 100, vm, state: E ? E.state[i] : 'idle',
+  return { name, key, eds, W, L, n, best, sW, sT, played, all, priced, units: cents / 100, vm, state,
     hasHist: !!hist, summary: all.length + ' match' + (all.length === 1 ? '' : 'es') + ' · ' + eds.length + ' edition' + (eds.length === 1 ? '' : 's') };
 }
+
+// The player-profile per-event Backing (founder Q8, 2026-09-30): the Tournament tab's row-level join — each edition's
+// matches joined to the career-history row and the closes shard, R8 book order, retirements settled at the close
+// (trModelOf) — instead of the market-edge shard's own attribution. `t` = one profile tournamentHistory entry (the
+// tournament-history/{key}.json shape: no event key, no date); main draw only (N7) and walkovers out (N2), as the tab's
+// history is. Each profile row is first resolved to ITS career-history row — season + opponent + result + this event
+// (its names, the archive names, and the career-history names this player's unambiguous rows vote for it), a round
+// breaking a tie — and handed on with that row's event key and date, so trModelOf joins and prices it exactly as the tab
+// does. A row with no single career-history row stays unpriced, never guessed. Returns null until the player's
+// career-history and closes have answered ("loading prices"), { failed: true } after a failed load ("prices unavailable").
+const _trProfileFail = new Set(), _trProfileMemo = new Map();
+function trProfileAliases(k, ch){
+  const hit = _trProfileMemo.get('alias|' + k);
+  if (hit && hit.ch === ch) return hit.v;
+  const th = (typeof playerProfiles === 'object' && playerProfiles && playerProfiles[k] && playerProfiles[k].tournamentHistory) || [];
+  const votes = {};
+  th.forEach(t => (t.editions || []).forEach(e => (e.matches || []).forEach(x => {
+    if (x.walkover || /qualif|^Q\d?$/i.test(String(x.round || ''))) return;
+    const hits = ch.filter(c => c && String(c.year || String(c.date || '').slice(0, 4)) === String(e.year) && !!c.won === (x.res === 'W') && maSameOpp(c.opponent, x.opp));
+    if (hits.length !== 1 || !hits[0].tournament) return;
+    const v = votes[t.name] = votes[t.name] || {};
+    v[hits[0].tournament] = (v[hits[0].tournament] || 0) + 1;
+  })));
+  const v = {};
+  Object.keys(votes).forEach(n => { v[n] = Object.keys(votes[n]); });
+  _trProfileMemo.set('alias|' + k, { ch, v });
+  return v;
+}
+function trProfileBacking(key, name, t){
+  const k = String(key == null ? '' : key);
+  if (!k || !t) return null;
+  if (_trProfileFail.has(k)) return { failed: true, n: 0, units: 0, rows: 0, vm: null, nb: 0, unitsTxt: null, vmTxt: null, small: false };
+  if (!(k in _careerHistoryShards) || !(k in _fhCl)) return null;
+  const ch = _careerHistoryShards[k] || [], cl = _fhCl[k];
+  const memo = _trProfileMemo.get(k + '|' + t.name);
+  if (memo && memo.ch === ch && memo.cl === cl && memo.t === t) return memo.v;
+  const clean = String(t.name || '');
+  const mk = trMarketFor(trKeyOf({ tour: clean }));
+  const names = [clean].concat((mk && mk.archiveNames) || [], trProfileAliases(k, ch)[clean] || []);
+  const used = new Set();
+  const hist = { years: (t.editions || []).map(e => ({ year: String(e.year), roundReached: e.finish || null,
+    matches: (e.matches || []).filter(x => !x.walkover && !/qualif|^Q\d?$/i.test(String(x.round || ''))).map(x => {
+      const won = x.res === 'W';
+      let c = ch.filter(r => r && String(r.year || String(r.date || '').slice(0, 4)) === String(e.year) && !!r.won === won && maSameOpp(r.opponent, x.opp)
+        && trSameEvent(r.tournament, names) && !r.qualifying && !/^qualif/i.test(String(r.round || '')) && !ME_NONSTD_EVENT.test(String(r.tournament || '')));
+      if (c.length > 1) c = c.filter(r => fhRoundCode(r.round, false) === x.round);   // two meetings in one edition: the round decides
+      c = c.filter(r => !used.has(r));
+      const row = c.length === 1 ? c[0] : null;
+      if (row) used.add(row);
+      return { date: row ? row.date || null : null, opponent: x.opp, round: x.round, won, result: x.score || null, eventKey: row && row.eventKey != null ? row.eventKey : null };
+    }).reverse() })) };
+  const P = trModelOf(hist, { ch, cl }, k, name, clean, names, '', 'ready');
+  const n = P.priced.length;
+  // the tab tile's own words (trTilesHtml): units at any priced n, "vs market" from TR_VS_MKT_MIN priced rows (D6)
+  const v = { units: P.units, n, rows: P.all.length, vm: P.vm, nb: P.priced.filter(r => r.book === 'B').length,
+    unitsTxt: n ? meSg(P.units, 1, 'u') : null, vmTxt: P.vm != null && n >= TR_VS_MKT_MIN ? meSg(P.vm, 1, 'pt') + ' vs market' : null,
+    small: maGate(n).mode === 'small' };
+  _trProfileMemo.set(k + '|' + t.name, { ch, cl, t, v });
+  return v;
+}
+window.trProfileBacking = trProfileBacking;
 
 // ---- rendering ----
 const TR_MONO = "font-family:'IBM Plex Mono',monospace;";
@@ -15869,8 +15976,8 @@ function trPlayerCardHtml(m, P, i){
       ${more}
     </div>`;
 }
-// The header card (DF L217–232): tile + name + location + surface, the four meta cells. The reading paragraph (DF L231)
-// waits on the founder's copy: nothing is drawn.
+// The header card (DF L217–232): tile + name + location + surface, the meta cells. The reading paragraph (DF L231) is
+// dropped (founder Q11): no node and no space for it.
 function trHeaderHtml(m){
   const clean = trClean(m), cs = m.courtSpeed, surf = fhSurfName(m.surface) || 'Hard';
   const location = m.venue ? [m.venue.city, m.venue.country].filter(Boolean).join(', ') : '';
@@ -15881,8 +15988,10 @@ function trHeaderHtml(m){
     : maTipHtml(`<span tabindex="0" data-tr="speed-dash" style="color:${t3};">—</span>`, fhEsc(trSpeedNote(m)), { wrap: 260, start: true });
   const altCell = cs && cs.altitude != null ? Number(cs.altitude).toLocaleString('en-US') + ' m'
     : maTipHtml(`<span tabindex="0" style="color:${t3};">—</span>`, fhEsc(trSpeedNote(m)), { wrap: 260, start: true });
+  // DESIGN GAP G43 (the file draws no hold rate on this tab; founder Q9 puts it here): a fifth meta cell, the file's own
+  // cell pattern, beside court speed and altitude.
   const meta = [['Category', m.venue && m.venue.category ? fhEsc(m.venue.category) : `<span style="color:${t3};">—</span>`],
-    ['Court speed', speedCell], ['Altitude', altCell], ['Round', round ? fhEsc(round) : `<span style="color:${t3};">—</span>`]];
+    ['Court speed', speedCell], ['Altitude', altCell], ['Hold rate', trHoldHtml(m, 'tr-hold')], ['Round', round ? fhEsc(round) : `<span style="color:${t3};">—</span>`]];
   const card = fhS('0b0f18', '--surface');
   return `<div class="tr-head" style="border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:16px; background:${card}; padding:22px 24px;">
       <div style="display:flex; align-items:center; gap:16px;">
@@ -15893,7 +16002,7 @@ function trHeaderHtml(m){
         </div>
         <span style="white-space:nowrap; font-size:15px; font-weight:700; letter-spacing:0.01em; color:var(--ma-t1, var(--text));">${fhEsc(surf)} court</span>
       </div>
-      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:${fhS('ffffff-060', '--line')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:12px; overflow:hidden; margin-top:20px;">
+      <div style="display:grid; grid-template-columns:repeat(${meta.length},1fr); gap:1px; background:${fhS('ffffff-060', '--line')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:12px; overflow:hidden; margin-top:20px;">
         ${meta.map(([k, v]) => `<div class="tr-meta" style="background:${card}; padding:15px 18px;"><div style="font-size:11px; letter-spacing:0.13em; text-transform:uppercase; color:${t3}; margin-bottom:7px;">${k}</div><div style="font-size:16px; font-weight:700;">${v}</div></div>`).join('')}
       </div>
     </div>`;
@@ -17330,8 +17439,8 @@ function kfStyleCard(m){
 }
 
 // ---- 2 · Recent form (DF L354–370) ----
-// The Form tab's own player model (fhFormPlayer) over all surfaces, window last 10: its rows are the tab's rows (walkovers
-// and the analysed match out). Pills = the five latest; "Last N" = the window's rate through the gate (1–4 the W–L);
+// The Form tab's own player model (fhFormPlayer) on the Form tab's default view — today's surface (N1; founder Q16,
+// 2026-09-30), window last 10: its rows are the tab's default rows (walkovers and the analysed match out). Pills = the five latest; "Last N" = the window's rate through the gate (1–4 the W–L);
 // "{Surface} {season}" = the Overview tab's season row on this surface.
 function kfSeasonRec(m, idx){
   const key = idx ? m.p2Key : m.p1Key, season = /^\d{4}/.test(String(m.date || '')) ? String(m.date).slice(0, 4) : ovSeasonYear();
@@ -17348,7 +17457,8 @@ function kfFormSide(m, idx, st){
   const C = KF_C, M = FH_MONO, P = fhFormPlayer(m, idx, st), name = idx ? m.p2 : m.p1;
   const pills = P.shown.slice(0, 5).map(r => `<span class="kf-pill" style="width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; ${M} font-size:11px; font-weight:700; color:${r.won ? C.up : C.dn}; background:${r.won ? C.upBg : C.dnBg};">${r.won ? 'W' : 'L'}</span>`).join('');
   const n = P.n, rate = n ? maRateHtml(P.wins, n, { nopct: `${P.wins}–${n - P.wins}`, color: C.text }) : `<span class="ma-rate" data-ma-gate="none" style="color:${MA_GREY};">${FH_DASHC}</span>`;
-  const lastTip = n ? `Last ${n}: ${P.wins}–${n - P.wins} over the ${n} latest ${n === 1 ? 'match' : 'matches'} at every level, walkovers excluded (the Form tab’s rows).` : 'No recent matches on record.';
+  const on = st.surf === 'all' ? 'on all surfaces' : `on ${st.surf}`;
+  const lastTip = n ? `Last ${n}: ${P.wins}–${n - P.wins} over the ${n} latest ${n === 1 ? 'match' : 'matches'} ${on} at every level, walkovers excluded (the Form tab’s rows).` : `No recent matches ${on} on record.`;
   const S = kfSeasonRec(m, idx);
   return `<div class="kf-form-side" data-kf-side="${idx ? 'b' : 'a'}" style="min-width:0;">
       <div style="font-size:13.5px; font-weight:700; color:${idx ? FH_BC : FH_AC}; margin-bottom:10px;">${fhEsc(fhSurname(name))}</div>
@@ -17359,7 +17469,7 @@ function kfFormSide(m, idx, st){
 }
 function kfFormCard(m){
   if (!m._fhFormData) return kfCard('form', kfHead('Recent form', 16) + kfNote('Loading recent matches…'), 'display:flex; flex-direction:column;');
-  const st = Object.assign({}, fhStateFor(m).form, { surf: 'all', role: 'all', wmode: 'n', n: 10 });
+  const st = Object.assign({}, fhStateFor(m).form, { surf: fhSurfName(m.surface) || 'all', role: 'all', wmode: 'n', n: 10 });   // the Form tab's default view (fhStateFor, N1)
   return kfCard('form', `${kfHead('Recent form', 16)}<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; flex:1; align-content:space-between;">${kfFormSide(m, 0, st)}${kfFormSide(m, 1, st)}</div>`, 'display:flex; flex-direction:column;');
 }
 
@@ -17434,8 +17544,8 @@ function kfDimCard(m){
 // ---- 5 · Tournament (DF L403–415) ----
 // Title "City · TIER" (modal-key-factors.md: venue category, else the catalogue, else the name alone); "Tournament · round"
 // in the Tournament tab's words; each player's main-draw W–L at this event from the editions the Tournament tab counts, or
-// a note when none is on file; court speed (N4 label), altitude and the hold rate — the court-conditions sheet publishes no
-// count, so a dash with the reason (founder 2026-09-28; Q9 parks our own box-score rate); the conditions prose from the
+// "first appearance" when none is on file (founder Q25); court speed (N4 label), altitude and the event hold rate — the
+// Tournament tab's own cell (trHoldHtml: our box scores, every edition, n in the tooltip; founder Q9); the conditions prose from the
 // same record (tourxConditionsProse — the Tournaments page's generator).
 function kfTourCard(m){
   const C = KF_C, M = FH_MONO, clean = trClean(m);
@@ -17446,15 +17556,16 @@ function kfTourCard(m){
     const eds = trEditionsOf(hist), W = eds.reduce((s, e) => s + (e.won || 0), 0), L = eds.reduce((s, e) => s + (e.lost || 0), 0);
     const right = W + L
       ? `<span class="kf-tour-rec" tabindex="0" data-aotip="${escapeHtml(fhEsc(`${W}–${L} in ${W + L} main-draw ${W + L === 1 ? 'match' : 'matches'} over ${eds.length} ${eds.length === 1 ? 'edition' : 'editions'} at ${clean}, walkovers excluded.`))}" style="${M} font-size:14px; font-weight:700; color:${C.text};">${W}–${L}</span>`
-      : `<span class="kf-tour-note" style="font-size:12px; color:${C.t4};">${hist ? 'no main-draw match' : 'no record on file'}</span>`;
+      : `<span class="kf-tour-note" style="font-size:12px; color:${C.t4};">${hist ? 'no main-draw match' : 'first appearance'}</span>`;
     return `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:13.5px; font-weight:700; color:${col};">${fhEsc(fhSurname(name))}</span>${right}</div>`;
   };
   const cs = m.courtSpeed || null, dash = t => maTipHtml(`<span tabindex="0" style="color:${C.t3};">${FH_DASHC}</span>`, fhEsc(t), { wrap: 220, start: true });
   const cond = (val, cap, note, cls) => `<div class="${cls}"><div style="${M} font-size:17px; font-weight:800;">${val}</div><div style="font-size:10px; color:${C.t3}; margin-top:3px;">${cap}</div><div style="font-size:10px; color:${C.t4};">${note}</div></div>`;
   const speed = cs && cs.abstractSpeed != null ? Number(cs.abstractSpeed).toFixed(2) : dash(trSpeedNote(m));
   const alt = cs && cs.altitude != null ? `${Number(cs.altitude).toLocaleString('en-US')} m` : dash(trSpeedNote(m));
-  const hold = cs && cs.serviceHold != null ? maTipHtml('<b tabindex="0">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true }) : dash(trSpeedNote(m));
-  const conds = `<div style="display:flex; gap:16px; margin-bottom:18px;">${cond(speed, 'court speed', fhEsc(cs && cs.category || FH_DASHC), 'kf-cond-speed')}${cond(alt, 'altitude', 'above sea level', 'kf-cond-alt')}${cond(hold, 'hold rate', cs && cs.serviceHold != null ? 'n not published' : FH_DASHC, 'kf-cond-hold')}</div>`;
+  // the Tournament tab's own hold cell (founder Q9: our box scores, every edition, n in the tooltip) — the file's note
+  const hold = trHoldHtml(m, 'kf-hold');
+  const conds = `<div style="display:flex; gap:16px; margin-bottom:18px;">${cond(speed, 'court speed', fhEsc(cs && cs.category || FH_DASHC), 'kf-cond-speed')}${cond(alt, 'altitude', 'above sea level', 'kf-cond-alt')}${cond(hold, 'hold rate', 'at this event', 'kf-cond-hold')}</div>`;
   let desc = '';
   if (cs && cs.abstractSpeed != null){
     const surf = String(m.surface || '').toLowerCase();
@@ -17480,7 +17591,7 @@ function kfOddsBook(m){
   const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;
   return { D, row: pick };
 }
-function kfOddsMini(row, started){
+function kfOddsMini(row){
   const C = KF_C, s1 = (row.series && row.series.a) || [], s2 = (row.series && row.series.b) || [];
   if (s1.length < 2 && s2.length < 2) return { svg: '', note: `One ${row.name} price on record — no movement yet.` };
   if (row.gaps && row.gaps.length) return { svg: '', note: `${row.name} left the feed for a while: its movement is not drawn across the gap.` };
@@ -17498,10 +17609,10 @@ function kfOddsMini(row, started){
       + `<circle cx="${X(l[0]).toFixed(1)}" cy="${Y(l[1]).toFixed(1)}" r="3" style="fill:${fill};"></circle>`;
   };
   const svg = `<svg class="kf-odds-mini" viewBox="0 0 ${W} 96" width="100%" style="display:block; height:96px;">${band(s1, 12, 34, FH_AC, FH_AC)}${band(s2, 58, 30, FH_BC, ANALYSIS_P2_FILL)}</svg>`;
-  return { svg: svg + `<div style="display:flex; justify-content:space-between; font-size:10px; ${FH_MONO} color:${C.t3}; margin-top:2px;"><span>Opening odd</span><span>${started ? 'Closing odd' : 'Current odd'}</span></div>`, note: '' };
+  return { svg: svg + `<div style="display:flex; justify-content:space-between; font-size:10px; ${FH_MONO} color:${C.t3}; margin-top:2px;"><span>Opening odd</span><span>Current odd</span></div>`, note: '' };
 }
 // The card's book and its movement, in one place (the card and the tests read the same call).
-function kfOddsMove(m){ const { D, row } = kfOddsBook(m); return { D, row, mini: row ? kfOddsMini(row, !D.upcoming) : null }; }
+function kfOddsMove(m){ const { D, row } = kfOddsBook(m); return { D, row, mini: row ? kfOddsMini(row) : null }; }
 function kfOddsCard(m){
   const C = KF_C, M = FH_MONO, head = kfHead('Odds', 14);
   if (!m.oddsMovement && !m._oddsLoaded) return kfCard('odds', head + kfNote('Loading bookmaker odds…'));
@@ -18267,7 +18378,6 @@ function aHeaderOdds(m){
 // for THIS match (_aM guards a fast reopen of a different match).
 let _aM = null;
 const _aBuilt = new Set();
-let _aLastTab = 'key';                 // design §6: the modal reopens on the last-used tab this session
 function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }
 function aPaint(id, html){ const el = document.getElementById(id); if (el) el.innerHTML = html; }
 const A_TAB_BUILD = {
@@ -18283,7 +18393,7 @@ const A_TAB_BUILD = {
     const soon = () => { if (queued) return; queued = true; setTimeout(() => { queued = false; if (!done) paint(); }, 0); };
     const styles = Object.keys((playerStyles && playerStyles.byKey) || {}).length ? null : (_pgStylesP = _pgStylesP || loadPlayerStyles());
     return Promise.all([styles, ensurePsMatrix(), fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(), ensureOverviewProfiles(m),
-      ensureOddsMovement(m), kfEnsureWeather(m)].map(p => Promise.resolve(p).catch(() => null).then(soon))).then(() => { done = true; paint(); });
+      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad()].map(p => Promise.resolve(p).catch(() => null).then(soon))).then(() => { done = true; paint(); });
   },
   style(m){
     // Playing style (TEN-340) paints from whatever is in memory, then repaints once the archetypes, the matchup matrix,
@@ -18362,7 +18472,6 @@ function aShowTab(tab){
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
   sec.classList.add('active');
   const body = document.querySelector('.modal-analysis .abody'); if (body) body.scrollTop = 0;
-  _aLastTab = tab;
   syncAnalysisLiveBar(tab);
   if (!_aM) return;
   if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }
@@ -18384,7 +18493,8 @@ const MA_THEME_KEY = 'stennisfy-theme';
 function maThemeMode(){ try { const v = localStorage.getItem(MA_THEME_KEY); return v === 'day' || v === 'auto' ? v : 'night'; } catch (e) { return 'night'; } }
 function maApplyTheme(){ const mode = maThemeMode(); document.querySelectorAll('.ma-theme').forEach(el => el.setAttribute('data-ma-theme', mode)); return mode; }
 function maSetTheme(mode){ try { localStorage.setItem(MA_THEME_KEY, mode === 'day' || mode === 'auto' ? mode : 'night'); } catch (e) {} return maApplyTheme(); }
-// `tab` (optional) opens on that tab instead of the last-used one — nothing else is built first.
+// `tab` (optional, an explicit link) opens on that tab; otherwise every open starts on Key factors — no last-used-tab
+// memory (founder Q26, 2026-09-30). Nothing else is built first.
 function openAnalysisModal(matchId, tab){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
@@ -18452,7 +18562,7 @@ function openAnalysisModal(matchId, tab){
   const ovPopEl = document.getElementById('ovPop'); if (ovPopEl) ovPopEl.innerHTML = ''; _ov = { m: null, tier: 'all', cell: null, sel: null, rows: {} };
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
 
-  const first = (tab && A_TAB_BUILD[tab]) ? tab : _aLastTab;
+  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'key';
   maApplyTheme();
   document.getElementById('analysisModal').classList.add('open');
   aShowTab(first);
@@ -21169,6 +21279,18 @@ function loadPp2SpeedMap(key){
     .catch(() => { window.courtSpeedMap = null; pp2RepaintIfOpen(key); });
   return _pp2SpeedMapPromise;
 }
+// Founder Q8 (2026-09-30): the per-event Backing is the Tournament tab's row join (trProfileBacking), so the profile needs
+// the same two stores the tab reads — the closes shard (fhLoadCloses, the Form/H2H loader) and the event archive names
+// (tourxFetchMarket) — besides career-history (loadPp2CareerHistory). Repaints when they land; until then the column dashes.
+function loadPp2Closes(key){
+  const k = String(key);
+  return Promise.all([loadCareerHistory(k), fhLoadCloses(k), tourxFetchMarket()].map(p => Promise.resolve(p).catch(() => null)))
+    .then(() => {
+      // both answered → the join runs; either failed → "prices unavailable" (retried on the next profile open)
+      if (k in _careerHistoryShards && k in _fhCl) _trProfileFail.delete(k); else _trProfileFail.add(k);
+      pp2RepaintIfOpen(k);
+    });
+}
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return false;
@@ -21183,6 +21305,7 @@ function showPlayerProfileV2(key){
   loadPp2Bet365(key);
   loadPp2CareerHistory(key);
   loadPp2TourHist(key);
+  loadPp2Closes(key);
   loadPp2SpeedMap(key);
   loadPp2Dna();
   window.scrollTo(0, 0);

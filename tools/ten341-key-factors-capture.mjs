@@ -57,7 +57,7 @@ const SOURCE_TOKENS = { '--ma-page': '#0a0d14', '--ma-card': '#0a0d14', '--ma-in
 // Baseliner cell at 43%, n 3,100) — here a mirror pairing, so the sentence has the file's length (its 43/57 needs a cell,
 // whose sentence runs a line longer and moves every row below). The conditions prose is the file's own paragraph (our
 // generator writes a different one), fed through tourxConditionsProse for the fixture only.
-// the file's demo match is COMPLETED (6-4 4-6 7-6: no header strip); its odds card still says "Current odd" (ours: Closing odd)
+// the file's demo match is COMPLETED (6-4 4-6 7-6: no header strip); its odds card says "Current odd", as ours does (founder Q25)
 const FX_DATE = '2026-09-26', FX_START = '2026-09-26T18:00:00Z';
 function buildInputs() {
   const row = (i, won, surf) => ({ date: '2026-09-' + String(20 - i).padStart(2, '0'), opponent: 'Opponent ' + (i + 1), tournament: 'Event ' + (i + 1), round: 'R32', surface: surf || 'Hard',

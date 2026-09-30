@@ -55,7 +55,8 @@ const S = new Function('window', `
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel',
      'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
-  return { buildTournamentSection, trModelFor, trStateFor, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml,
+  return { buildTournamentSection, trModelFor, trStateFor, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
+    chShards: _careerHistoryShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
     get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED };
 `)(globalThis);
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
@@ -206,11 +207,30 @@ test('N4 + TEN-321: the header prints the pipeline\'s 3-band label; Roland Garro
   assert.ok(!h.includes(S.TR_NO_SPEED));
 });
 
-// Mutation 'the reading paragraph back (placeholder copy)'
-test('the reading paragraph waits on the founder\'s copy: nothing is drawn', () => {
-  const h = S.buildTournamentSection(fixture([nMatches(2, () => true)]));
+// Founder Q11 (2026-09-30): the reading paragraph is dropped — no node, no heading, no reserved space.
+// Mutations 'the reading paragraph back (placeholder copy)', 'Q11: an empty block reserving its space'
+test('Q11: the reading paragraph is dropped — no node, no heading, no reserved space; the header card ends at its meta grid', () => {
+  const m = fixture([nMatches(2, () => true)]);
+  const h = S.buildTournamentSection(m), head = S.trHeaderHtml(m);
   assert.ok(!/Read the records below|plays fast and low|true, medium-paced/.test(h));
   assert.ok(!/SURFACE_CONDITIONS/.test(html));
+  assert.ok(!/<p[\s>]|tr-reading|About this event/i.test(h), 'no paragraph node or heading');
+  assert.ok(h.includes(head + '<div style="display:flex; justify-content:center; margin-top:14px;"><span class="seg tr-more-toggle"'),
+    'nothing between the header card and the toggle');
+  assert.match(head, /class="tr-meta"[^]*<\/div>\s*<\/div>\s*<\/div>$/, 'the header card closes right after its meta grid');
+});
+
+// Founder Q9 (2026-09-30): the event hold rate — our box scores, every edition on file, n = service games — in a fifth
+// header meta cell (DESIGN GAP G43), no gate, n always in the tooltip. Mutation 'Q9 (tab): the hold cell dropped'.
+test('Q9: the header carries the event hold rate with its n; a dash with the reason when no box score is on file', () => {
+  S.hold = { events: { 1532: { name: 'Washington', names: ['Washington'], held: 3252, games: 4034, matches: 178, years: ['2024', '2025', '2026'] } }, byName: { washington: '1532' } };
+  const head = S.trHeaderHtml(fixture([nMatches(2, () => true)]));
+  assert.match(head, /grid-template-columns:repeat\(5,1fr\)/);
+  assert.match(text(head), /Court speed 1\.02 · Medium Altitude 20 m Hold rate 81% Service hold at Washington: 3,252 of 4,034 service games held \(n = 4,034\)/);
+  assert.match(text(head), /178 matches with a box score over 3 editions on file \(2024–2026\)/);
+  const none = S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Nowhere' } }));
+  assert.match(text(none), /Hold rate — No box score on file for Nowhere, so no hold rate is shown\./);
+  S.hold = undefined;
 });
 
 // Mutations 'trend: a missing season interpolated', 'trend: header span claims 7 years'
@@ -256,8 +276,71 @@ test('DoD 8: maMatchRowsHtml rows, every row registered in the one sheet map and
   assert.ok(!/\.atourn-/.test(html), 'the tab\'s own CSS is deleted');
 });
 
-// Mutation 'N5 (profile): the per-event Backing back to Pinnacle rows only'
-test('N5: the player-profile per-event Backing counts the R8 basis rows (inBasis), not Pinnacle alone', () => {
-  assert.ok(pp2.includes("if (r.inBasis && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }"));
-  assert.ok(!pp2.includes("if (r.book === 'pinnacle' && r.pl != null"));
+// Founder Q8 (2026-09-30): the player-profile per-event Backing (column + "Backing him here" tile) is THIS tab's row-level
+// join — the editions' main-draw matches joined to career-history and the closes shard, R8, retirements at the close —
+// through the page's trProfileBacking, never the market-edge shard's own attribution. The profile module runs for real
+// (player-profile-v2.js, TEN332_PP2) against the page's real join. Mutation 'Q8: the profile reads the market-edge shard'.
+const PPW = { FEATURE_PP2: true, playerProfiles: { players: {} }, marketEdge: {}, careerHistory: {}, MarketEdgeCore: globalThis.MarketEdgeCore,
+  get trProfileBacking(){ return globalThis.trProfileBacking; } };
+new Function('window', pp2)(PPW);
+test('Q8: the profile prints the tab\'s Backing — the same units and "vs market" from the same rows, never the market-edge shard', () => {
+  const games = [['2024-07-21', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }], ['2024-07-20', 'C. D', 'Semi-finals', false, L2, { p: [2.0, 1.85] }],
+    ['2024-07-19', 'E. F', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }], ['2024-07-18', 'G. H', '1/8-finals', true, W2, { b: [1.4, 2.9] }],
+    ['2024-07-17', 'I. J', '1/16-finals', true, W2, { p: [1.3, 3.5] }], ['2024-07-16', 'K. L', '1/32-finals', true, W2, { p: [2.5, 1.55] }]];
+  const m = fixture([ed(2024, games)]);
+  const d = S.tr.data[0];
+  S.chShards['1'] = d.ch; S.fhCl['1'] = d.cl;
+  const tb = tile(S.buildTournamentSection(m), 'Backing');
+  const tabU = /class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], tabVm = />([+−]\d+\.\dpt vs market)</.exec(tb)[1];
+  assert.equal(tabU, '+2.5u');
+  // the profile's own store: draw order, a qualifying round and a walkover the tab's history never carries (N7, N2)
+  const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32', '1/32-finals': 'R64' };
+  const matches = games.slice().reverse().map(g => ({ res: g[3] ? 'W' : 'L', round: R[g[2]], opp: g[1], oppKey: null, score: g[3] ? '2 - 0' : '0 - 2' }));
+  const prof = { key: '1', name: 'J. Sinner', tournamentHistory: [{ name: 'Washington', won: 5, lost: 1, titles: 1, bestResult: 'Winner', bestYears: [2024],
+    editions: [{ year: 2024, finish: 'Winner', matches: [{ res: 'W', round: 'Q1', opp: 'Q. Qual', oppKey: null, score: '2 - 0' },
+      { res: 'W', round: 'R128', opp: 'W. Over', oppKey: null, score: '0 - 0', walkover: true }].concat(matches) }] }] };
+  PPW.playerProfiles.players['1'] = prof;
+  // the market-edge shard attributes other P&L to the same matches (+5u each) — the retired source must not reach the tile
+  PPW.marketEdge['1'] = { matches: games.map(g => ({ date: g[0], opp: g[1], event: 'Washington', inBasis: true, pl: 5, book: 'pinnacle', surface: 'hard' })) };
+  const I = PPW.PlayerProfileV2._internals;
+  const v = I.tournViews(prof).find(x => x.name === 'Washington');
+  assert.equal(v.pinN, 6, 'the six priced main-draw rows — the qualifier and the walkover are not rows');
+  assert.equal(v.pinTxt, tabU); assert.equal(v.vmTxt, tabVm);
+  const det = text(I.renderTournDetail(prof, v));
+  assert.ok(det.includes('Backing him here ' + tabU + ' ' + tabVm), det.slice(det.indexOf('Backing him here'), det.indexOf('Backing him here') + 60));
+  assert.ok(text(I.renderTournModal(prof)).includes(tabU), 'the Record per tournament column prints the same units');
+  // before the closes answer: a dash and "loading prices" — never the market shard's +30.0u
+  delete S.fhCl['1'];
+  const w = I.tournViews(prof).find(x => x.name === 'Washington');
+  assert.equal(w.pinPl, null); assert.ok(w.backingPending);
+  assert.ok(text(I.renderTournDetail(prof, w)).includes('Backing him here — loading prices'));
+  // a failed load: the tab's words, "prices unavailable" — never "loading" forever
+  S.profileFail.add('1');
+  assert.ok(text(I.renderTournDetail(prof, I.tournViews(prof).find(x => x.name === 'Washington'))).includes('Backing him here — prices unavailable'));
+  S.profileFail.delete('1');
+  delete S.chShards['1'];
+});
+
+// Q8, the edges a join without event keys meets (review of TEN-368): the profile's edition rows carry no event key and no
+// date, so each is resolved to its career-history row first. Mutations 'Q8: two meetings in one edition left unresolved',
+// 'Q8: the voted event-name aliases dropped'.
+test('Q8: two meetings with one opponent in an edition resolve by round; a profile event name the store spells differently joins by vote', () => {
+  const games = [['2024-11-17', 'A. B', 'Final', true, W2, { p: [2.5, 1.55] }], ['2024-11-15', 'C. D', 'Semi-finals', true, W2, { p: [1.5, 2.6] }],
+    ['2024-11-12', 'A. B', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }], ['2024-11-10', 'E. F', '1/8-finals', false, L2, { p: [1.3, 3.5] }],
+    ['2024-11-09', 'G. H', '1/16-finals', true, W2, { b: [1.4, 2.9] }]];
+  const m = fixture([ed(2024, games)]);
+  const d = S.tr.data[0];
+  S.chShards['1'] = d.ch; S.fhCl['1'] = d.cl;
+  const tb = tile(S.buildTournamentSection(m), 'Backing');
+  const tabU = /class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], tabVm = />([+−]\d+\.\dpt vs market)</.exec(tb)[1];
+  assert.equal(tabU, '+2.2u', 'A. B twice (QF and F): both priced by the tab, by event key (1.5 + 0.5 + 0.8 − 1 + 0.4)');
+  const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32' };
+  const row = g => ({ res: g[3] ? 'W' : 'L', round: R[g[2]], opp: g[1], oppKey: null, score: g[3] ? '2 - 0' : '0 - 2' });
+  // the profile's store names the event "Citi DC Open"; career-history says "Washington" — the unambiguous rows vote the alias
+  const prof = { key: '1', name: 'J. Sinner', tournamentHistory: [{ name: 'Citi DC Open', won: 4, lost: 1, editions: [{ year: 2024, matches: games.slice().reverse().map(row) }] }] };
+  PPW.playerProfiles.players['1'] = prof; S.profiles['1'] = prof; PPW.marketEdge['1'] = { matches: [] };
+  const v = PPW.PlayerProfileV2._internals.tournViews(prof)[0];
+  assert.equal(v.pinN, 5, 'every row resolved: the two A. B meetings by round, the renamed event by the voted alias');
+  assert.equal(v.pinTxt, tabU); assert.equal(v.vmTxt, tabVm);
+  delete S.chShards['1']; delete S.fhCl['1']; delete S.profiles['1'];
 });

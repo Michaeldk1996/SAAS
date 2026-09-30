@@ -151,3 +151,5 @@ lines-field.json
 
 # TEN-319: dna-apitennis-ratings.js box-score window cache (CI starts empty)
 .dna-boxscores/
+# TEN-368: built by build-event-hold.js in pipeline.yml from boxscore-archive/, published, never committed
+event-hold.json

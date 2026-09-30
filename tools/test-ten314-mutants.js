@@ -25,7 +25,7 @@ const MUTANTS = [
   ['report: Market edge built into the report', "    if (t === 'marketedge' || _aBuilt.has(t)) return;", "    if (_aBuilt.has(t)) return;"],
   ['D5: the board chain (api-tennis / Wikimedia) in the modal', "src = atpPhotoFor(key);\n  return src", "src = photoCandidatesFor(key, null)[0];\n  return src"],
   ['lazy: every tab built at modal open', "  aShowTab(first);\n", "  aShowTab(first); Object.keys(A_TAB_BUILD).forEach(t => { _aBuilt.add(t); A_TAB_BUILD[t](m); });\n"],
-  ['lazy: Key factors pre-loads the News feed', '      ensureOddsMovement(m), kfEnsureWeather(m)].map(p =>', '      ensureOddsMovement(m), kfEnsureWeather(m), ensureNewsData()].map(p =>'],
+  ['lazy: Key factors pre-loads the News feed', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad()].map(p =>', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad(), ensureNewsData()].map(p =>'],
   ['lazy: a revisit rebuilds', '  if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }', '  if (true) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }'],
   ['lazy: the built set survives a new match', '  _aM = m; _aBuilt.clear();', '  _aM = m;'],
   ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--ma-s-0a0d14);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--ma-s-0a0d14);'],

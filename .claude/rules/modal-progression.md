@@ -49,7 +49,9 @@ Applies to the Progression tab of the Match analysis modal (`buildMatchProgressi
   claimed from it, and the next open retries it.
 - The draw's first round = the earliest round either player's history shows, never later than an ATP main draw's R32
   (1/16-finals) — R128 at a Slam — and as early as the active draw's own "Rn" rounds say; rounds before the QF are numbered
-  R1…R4 from it. Known limit: a non-active 48/56/96 draw where both players had a first-round bye numbers one round low.
+  R1…R4 from it (founder Q28, 2026-09-30: numbered from the draw's real first round). Known limit: a non-active 48/56/96
+  draw where both players had a first-round bye numbers one round low. The round wording ("Round of 16" versus the
+  file's "Second round", Q10) has no ruling: the live wording stays.
 - **A walkover** is listed "w/o" and counted nowhere (N2): not in the W–L, not in the sets, no figures.
 - The unplayed rounds' blurred placeholders carry **no numbers** (dashes where the file prints sample values).
 

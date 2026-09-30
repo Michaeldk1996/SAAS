@@ -5,6 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
+  ['Q4: the design\'s "have not played"', "have no meeting on record. Closest guide:", "have not played. Closest guide:"],
   ["N1: H2H opens on today's surface", "      h2h: { surf: 'all', allLines: false, stat: null },", "      h2h: { surf: fhSurfName(m.surface) || 'all', allLines: false, stat: null },"],
   ['tug: the split bar back (a share, not a pull from the centre)', "  const tug = s => (side === s && n ? (Math.abs(a - b) / n * 50) + '%' : '0%');", "  const tug = s => (n ? ((s === 'a' ? a : b) / n * 100) + '%' : '0%');"],
   ['tug: not drawn under the gate (n < 5)', "  const tug = s => (side === s && n ? (Math.abs(a - b) / n * 50) + '%' : '0%');", "  const tug = s => (side === s && n >= 5 ? (Math.abs(a - b) / n * 50) + '%' : '0%');"],

@@ -218,7 +218,16 @@ test('rows: one per bookmaker, plain names, SHARP then SOFT, live first then sta
   for (const r of rows) { const rh = rowHtml(h, r.book); assert.ok(!/Oddspapi|api-tennis|\+30s|seen by us|not in feed|Kibl/.test(rh.replace(/data-aotip="[^"]*"/g, '').replace(/data-src="[^"]*"/g, '')), r.book); }
   assert.ok(!/\stitle="/.test(h), 'no native title tooltips');
   assert.ok(!h.includes('\u2197') && !h.includes('Chart lines') && !h.includes('Sources (Match Winner)') && !h.includes('aodds-mkt') && !h.includes('SAMPLE DATA'));
-  assert.ok(h.includes('>Match Winner only. Lines step until a book re-posts. Hover a book for its source.<'));
+  assert.ok(h.includes('>Match Winner only. Lines step until a book re-posts. Hover a book for its source.<'));   // founder Q24 (2026-09-30): kept
+  // founder Q23 (2026-09-30): the Market / No-vig hints are the shared tooltip (data-aotip), never a native title.
+  // Mutation 'Q23: a native title on the price-mode hints'.
+  const hints = h.split('<span class="aox-seg"').slice(1).map(x => x.slice(0, x.indexOf('</span>')))   // (onkeydown carries "=>")
+    .map(x => [x.slice(0, x.lastIndexOf('>')), x.slice(x.lastIndexOf('>') + 1)]);
+  assert.deepEqual(hints.map(x => x[1]), ['Market', 'No-vig']);
+  for (const [tag, label] of hints) {
+    assert.ok(/ data-aotip="[^"]*(Prices as quoted|Margin stripped)/.test(tag), label + ': the hint on the shared tooltip');
+    assert.ok(!/\stitle="/.test(tag), label + ': no native title');
+  }
 });
 
 test('a group is config: moving Bet105 to SOFT is one edit to AODDS_BOOKS', () => {

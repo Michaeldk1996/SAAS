@@ -5,6 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
+  ['Q19: the filter dropped when unavailable', "    return wrap(`<div class=\"anews-unavailable\"", "    return (inner => `<div class=\"anews\">${inner}</div>`)(`<div class=\"anews-unavailable\""],
   ['groups: oldest first', '    .sort((x, y) => y.ts - x.ts);', '    .sort((x, y) => x.ts - y.ts);'],
   ['groups: the p2 group dropped', "  const showB = _aNewsFilter !== 'p1' && bArts.length > 0;", "  const showB = false;"],
   ['attribution: the headline resolver overrides player_key', "      if (a.player_key != null && a.player_key !== '') return key != null && String(a.player_key) === String(key);\n", ''],

@@ -112,6 +112,23 @@ test('the MATCH badge is the header\'s instant in venue time, for viewers in oth
   assert.equal(build({ viewerTz: 'UTC' }).aContextLine(late, 'R1'), 'ATP Chengdu · R1 · 09:00');
 });
 
+// Founder Q21 (2026-09-30): the heat flag is the file's words ("Heat — high", DF L2411) at the EXISTING feels-like
+// severities — watch (amber) and concern (red) both, the colour telling them apart; wind keeps its value flag.
+// Mutation: WX_COPY.flag.heat back to "Feels like {v}°" (tools/test-ten304-mutants.js).
+test('Q21: the heat flag reads "Heat — high" at watch and at concern, at the WX_CONFIG cut-offs', () => {
+  const T = build().WX_COPY.flag.heat, cut = build().WX_CONFIG.thresholds.feels;
+  assert.deepEqual([cut.watch, cut.concern], [30, 35], 'no threshold change (D8 still open)');
+  assert.deepEqual(T, { a: 'Heat — high', r: 'Heat — high' });
+  const at = feels => { const f = file((d, h) => d === '2026-09-28' && h === 14 ? { feels } : {});
+    return elements(render(f), 'wx-day').find(x => /data-date="2026-09-28"/.test(x)); };
+  const watch = at(31), concern = at(36), calm = at(29);
+  assert.equal(text(elements(watch, 'wx-reason')[0]), 'Heat — high');
+  assert.equal(text(elements(concern, 'wx-reason')[0]), 'Heat — high');
+  assert.equal(text(elements(calm, 'wx-reason')[0]), 'No concern', 'below the watch cut-off no flag');
+  assert.match(elements(watch, 'wx-dot')[0], /var\(--ma-amber\)/); assert.match(elements(concern, 'wx-dot')[0], /var\(--ma-neg\)/);
+  assert.ok(!/Feels like \d/.test(watch + concern), 'never the old "Feels like {v}°" flag');
+});
+
 // Mutation: widen WX_CONFIG.window to 0–23 (or drop the window filter in wxModel).
 test('an hourly value outside 10:00–23:00 does not flag the day card', () => {
   const night = file((d, h) => d === '2026-09-28' && h === 3 ? { gusts: 60, rainChance: 95, feels: 40 } : {});
@@ -185,7 +202,7 @@ test('Weather tooltips use the ONE shared tooltip: data-aotip + tabindex, 250 ms
   }
   assert.ok(!/data-sftip|\bsfTip|SF_TIP/.test(HTML), 'no second tooltip component on the page');
   assert.match(targets.chip[0]['data-aotip'], /Gusts: watch ≥ 25 · concern ≥ 35 km\/h/);
-  assert.match(targets.more[0]['data-aotip'], /Feels like 36°/);
+  assert.match(targets.more[0]['data-aotip'], /Heat — high/);   // founder Q21: the file's words
   assert.match(targets.day[0]['data-aotip'], /Max gusts.*40 km\/h.*Open-Meteo/s);
   for (const type of ['focusin', 'mouseover']) {
     for (const a of [targets.chip[0], targets.more[0], targets.day[0]]) {
@@ -226,7 +243,7 @@ test('DST: a Sydney match after the 4 Oct 2026 change reads the RIGHT hour (real
   assert.match(lead[0], /data-factor="wind"/); assert.match(text(lead[0]), /41/);
   const d5 = elements(html, 'wx-day').find(x => /data-date="2026-10-05"/.test(x));
   assert.equal(text(elements(d5, 'wx-reason')[0]).replace(/\+1$/, ''), 'Gusts 41 km/h');
-  assert.match(d5, /Feels like 33°/, '10:00 AEDT is inside the playing window');
+  assert.match(d5, /Heat — high/, '10:00 AEDT is inside the playing window');
 });
 
 // Mutation: wxFileDue never says due for a cached file; the matches reload no longer marks the index stale.

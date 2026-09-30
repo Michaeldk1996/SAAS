@@ -21,17 +21,24 @@ const MUTANTS = [
   ['H2H: a retirement dropped from the record', 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));', 'const counted = fhMeetings(m).filter(r => !r.wo && !r.ret);'],
   ['H2H: the "last meeting" = the oldest', 'const lm = counted[n - 1] || null;', 'const lm = counted[0] || null;'],
   // Dimension edge (N10)
-  ['N10: the MCP radar fetched again', '      ensureOddsMovement(m), kfEnsureWeather(m)].map(p =>', "      ensureOddsMovement(m), kfEnsureWeather(m), fetch('./style-radar.json')].map(p =>"],
+  ['N10: the MCP radar fetched again', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad()].map(p =>', "      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad(), fetch('./style-radar.json')].map(p =>"],
   ['DNA: the gaps ranked by the raw rating, not the percentile', '.sort((x, y) => Math.abs(y.a.pct - y.b.pct) - Math.abs(x.a.pct - x.b.pct)).slice(0, 3);', '.sort((x, y) => Math.abs(y.a.raw - y.b.raw) - Math.abs(x.a.raw - x.b.raw)).slice(0, 3);'],
   ['DNA: a shape drawn under the 10-match floor', 'const shape = s => (s.d.ok ?', 'const shape = s => (true ?'],
   ['DNA: the axis note (population + n) dropped from the gap rows', '<span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, g.i))}"', '<span tabindex="0" data-x="${escapeHtml(ps2AxisTip(D, g.i))}"'],
   // Tournament
-  ['hold: the count-less % shown again', "? maTipHtml('<b tabindex=\"0\">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true }) : dash(trSpeedNote(m));", "? `<b>${cs.serviceHold}%</b>` : dash(trSpeedNote(m));"],
-  ['hold: the dash loses its tooltip', "? maTipHtml('<b tabindex=\"0\">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true }) : dash(trSpeedNote(m));", "? '<b tabindex=\"0\">—</b>' : dash(trSpeedNote(m));"],
-  ['hold: the tooltip back to one clipped line', "MA_HOLD_NO_N, { wrap: 220, start: true }) : dash(", "MA_HOLD_NO_N) : dash("],
-  ['hold: the tooltip centred again (overhangs the column)', "MA_HOLD_NO_N, { wrap: 220, start: true }) : dash(", "MA_HOLD_NO_N, { wrap: 220 }) : dash("],
-  ['hold: the dash not focusable', "maTipHtml('<b tabindex=\"0\">—</b>', MA_HOLD_NO_N", "maTipHtml('<b>—</b>', MA_HOLD_NO_N"],
-  ['hold: no visible reason without hover', "cs && cs.serviceHold != null ? 'n not published' : FH_DASHC", "cs && cs.serviceHold != null ? 'at this event' : FH_DASHC"],
+  // founder Q9 (2026-09-30): the event hold rate is the Tournament tab's cell (our box scores, n in the tooltip)
+  ['Q9: Key factors back on the court-conditions sheet\'s count-less dash (MA_HOLD_NO_N)', "  const hold = trHoldHtml(m, 'kf-hold');", "  const hold = cs && cs.serviceHold != null ? maTipHtml('<b tabindex=\"0\">—</b>', 'Service hold at this event: the source gives a rate without its number of service games, so it is not shown.', { wrap: 220, start: true }) : dash(trSpeedNote(m));"],
+  ['Q9: Key factors prints the sheet\'s count-less %', "  const hold = trHoldHtml(m, 'kf-hold');", "  const hold = cs && cs.serviceHold != null ? `<b>${cs.serviceHold}%</b>` : trHoldHtml(m, 'kf-hold');"],
+  ['Q9: the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
+  ['Q9: the hold rate gated like a sample rate', "const val = H.state === 'ok' ? Math.round(H.pct) + '%' : FH_DASHC;", "const val = H.state === 'ok' && H.matches >= 10 ? Math.round(H.pct) + '%' : FH_DASHC;"],
+  ['Q9: the file\'s note "at this event" replaced', "${cond(hold, 'hold rate', 'at this event', 'kf-cond-hold')}", "${cond(hold, 'hold rate', 'n not published', 'kf-cond-hold')}"],
+  // founder Q25 (2026-09-30): the file's wording
+  ['Q25: "no record on file" back', "${hist ? 'no main-draw match' : 'first appearance'}", "${hist ? 'no main-draw match' : 'no record on file'}"],
+  ['Q25: "Closing odd" after the start', "mini: row ? kfOddsMini(row) : null", "mini: row ? (x => (!D.upcoming && x.svg ? Object.assign(x, { svg: x.svg.replace('<span>Current odd</span>', '<span>Closing odd</span>') }) : x))(kfOddsMini(row)) : null"],
+  // founder Q16 (2026-09-30): the Form tab's default view
+  ['Q16: the card counts all surfaces', "{ surf: fhSurfName(m.surface) || 'all', role: 'all', wmode: 'n', n: 10 });   // the Form tab's default view (fhStateFor, N1)", "{ surf: 'all', role: 'all', wmode: 'n', n: 10 });"],
+  // founder Q18 (2026-09-30): Last meeting goes to the H2H tab, not the sheet
+  ['Q18: the last meeting opens the sheet', '<div class="kf-h2h-last" style="text-align:center;">', '<div class="kf-h2h-last" onclick="event.stopPropagation();fhOpenSheet(\'x\')" style="text-align:center;">'],
   ['N6: a synthesised Withdrawal edition counted', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
   ['tier: a fabricated tier for an unknown event', "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';", "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || 'ATP 250';"],
   ['round: "1/16-finals" left in the feed\'s code', "return /^1\\/\\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;", "return rdRaw;"],
@@ -47,6 +54,8 @@ const MUTANTS = [
   ['model: the move arrow read off unrounded prices', "arrow = po != null && pn != null ? (d2(pn) > d2(po) ?", "arrow = po != null && pn != null ? (pn > po ?"],
   ['model: the flag off the Pinnacle edge', 'sharp = edge != null && edge > 0.005;', 'sharp = edge != null && edge > 0.05;'],
   ['model: the empty state stops linking to the Model page', "if (!vs || vs.fairP1 == null || vs.fairP2 == null) return open(", "if (!vs || vs.fairP1 == null || vs.fairP2 == null) return (x => head + x)("],
+  // founder Q26 (2026-09-30): the modal always opens on Key factors (test-ten314-modal-frame.mjs "Q26")
+  ['Q26: the last-used tab restored', "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'key';", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : (Object.keys(A_TAB_BUILD).find(t => { const b = document.querySelector(`#aTabs .asidenav-item[data-atab=\"${t}\"]`); return b && b.classList.contains('active'); }) || 'key');"],
   // the tab
   ['tab: a card routed nowhere', "return `<div class=\"seg kf-card\" data-kf=\"${tab}\"${kfLink(`aGoTab('${tab}')`)}", "return `<div class=\"seg kf-card\" data-kf=\"${tab}\"${kfLink('')}"],
   ['DoD 4: the design\'s SAMPLE DATA chip back', '<div class="kf-grid" style="display:grid;', '<span>SAMPLE DATA</span><div class="kf-grid" style="display:grid;'],

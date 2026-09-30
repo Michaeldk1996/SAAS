@@ -303,6 +303,16 @@ const I = M._internals;
 // still passes or fails, and measures nothing. That is how §14A first reported
 // 33 undated matches on a fixture built to carry 8.
 const W = global.window;
+// Founder Q8 (TEN-368): the per-event Backing is the page's row join, window.trProfileBacking. The module's Q3 guard
+// (pinN <= n) still runs on whatever that join answers, so the guard checks feed it a controlled answer — `claim(t)`
+// priced rows at +1.25u — and restore the sandbox after.
+function withJoin(claim, fn, unitsOf) {
+  const had = Object.prototype.hasOwnProperty.call(W, 'trProfileBacking'), prev = W.trProfileBacking;
+  W.trProfileBacking = (k, n, t) => { const u = unitsOf ? unitsOf(t) : 1.25;
+    return { n: claim(t), units: u, unitsTxt: (u < 0 ? '−' : '+') + Math.abs(u).toFixed(1) + 'u', vmTxt: null, nb: 0, small: false }; };
+  try { return fn(); } finally { if (had) W.trProfileBacking = prev; else delete W.trProfileBacking; }
+}
+const playedOf = t => (t.editions || []).reduce((s, e) => s + (e.matches || []).filter(m => !m.walkover).length, 0);
 
 let pass = 0, fail = 0, skipped = 0;
 const failures = [];
@@ -3422,7 +3432,8 @@ check('the all-stores table covers every data store the module reads', () => {
   // host defined them, so each is asserted to be typeof-guarded at its call
   // site. Simply widening NOT_STORES would have let any future window.* through
   // the gate by being named plausibly.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2SheetOpen', 'onPp2MatchPageOpen']);
+  // trProfileBacking (founder Q8, TEN-368): the page's Tournament-tab row join for the per-event Backing — logic, not data.
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2SheetOpen', 'onPp2MatchPageOpen', 'trProfileBacking']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -5387,31 +5398,35 @@ mustFail('[neg] the display-name check would catch the shipped feed name', () =>
   assert.strictEqual('French Open', 'Roland Garros');
 });
 
-check('§5.3 items 11-12 · the open row is highlighted and BACKING is the R8 basis (N5)', () => {
+check('§5.3 items 11-12 · the open row is highlighted and BACKING is the Tournament tab\'s row join (founder Q8)', () => {
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   assert(open.indexOf('background:#0b1c4e;') > 0,
     'the selected row carries no highlight');
   I.state.tournOpen = null;
-  // BACKING (N5, founder 2026-09-28): the R8 basis — every `inBasis` row (Pinnacle, else Bet365, one book per match), the
-  // same order as the Match analysis Tournament tab. Pinnacle-only (the old §5 / item 12 rule) is retired.
-  const mk = MARKET[ZVEREV.key];
-  const basis = mk.matches.filter(m => m.inBasis);
-  const pinOnly = mk.matches.filter(m => m.book === 'pinnacle');
-  assert(basis.length > pinOnly.length,
-    'the fixture cannot prove the R8 basis — every basis row is Pinnacle');
+  // BACKING (founder Q8, 2026-09-30; supersedes the N5 market-shard sum): the Match analysis Tournament tab's row join,
+  // answered by the page (window.trProfileBacking). Without it every event dashes "loading prices" — the market-edge
+  // shard, which holds priced basis rows for this player, never reaches the column. The join itself is tested on the
+  // page's real code in test-ten332-tournament.mjs "Q8".
+  const basis = MARKET[ZVEREV.key].matches.filter(m => m.inBasis && m.pl != null);
+  assert(basis.length > 0, 'the fixture has no priced market rows — the check could not see a market-shard sum');
   const views = I.tournViews(ZVEREV);
-  let sumPl = 0, sumN = 0;
-  views.forEach((t) => { if (t.pinN) { sumPl += t.pinPl; sumN += t.pinN; } });
-  assert(sumN > 0, 'no tournament came back with a priced count');
-  assert(sumN <= basis.length,
-    `attributed ${sumN} basis rows but the shard only holds ${basis.length}`);
-  console.log(`        BACKING attributes ${sumN} of ${basis.length} basis rows (${pinOnly.length} Pinnacle)`);
+  assert(views.length && views.every(t => t.pinN === 0 && t.pinPl === null && t.backingPending),
+    'an event printed a Backing without the page join (the market-edge shard reached the column)');
+  // with the join, the column and the tile print ITS words
+  withJoin(t => (t.name === 'Australian Open' ? 3 : 0), () => {
+    const ao = I.tournViews(ZVEREV).find(t => t.name === 'Australian Open');
+    assert.strictEqual(ao.pinN, 3); assert.strictEqual(ao.pinTxt, '+1.3u');
+    I.state.tournOpen = 'Australian Open';
+    const open = I.renderTournModal(ZVEREV);
+    I.state.tournOpen = null;
+    assert(/Backing him here[\s\S]{0,400}\+1\.3u/.test(open), 'the tile does not print the join\'s units');
+  });
+  console.log(`        no join: ${views.length} events dash; ${basis.length} market basis rows never reach the column`);
 });
-mustFail('[neg] the BACKING check would catch a Pinnacle-only sum', () => {
-  const mk = MARKET[ZVEREV.key];
-  const pin = mk.matches.filter(m => m.book === 'pinnacle').length;
-  assert(mk.matches.filter(m => m.inBasis).length <= pin, 'the basis carries Bet365 rows too');
+mustFail('[neg] the BACKING check would catch a market-shard sum reaching the column', () => {
+  const t = { pinN: 4, pinPl: 1.5, backingPending: false };
+  assert(t.pinN === 0 && t.pinPl === null && t.backingPending, 'a Backing printed without the page join');
 });
 
 check('§5.3 items 13-14 · the detail is the file\'s container and carries the header line', () => {
@@ -6241,7 +6256,7 @@ check('Q1 · every "best split" is positive against the population win rate', ()
 // ── RULING Q3 (founder, 2026-09-18) ────────────────────────────────────────
 // "Where priced n exceeds the played n, show the played record and dash the
 //  priced clause for that row rather than printing the impossible pair."
-check('Q3 · no view ever exposes priced n > played n', () => {
+check('Q3 · no view ever exposes priced n > played n', () => withJoin(t => playedOf(t) + (t.name.length % 2), () => {
   let views = 0, suppressed = 0, playersHit = 0;
   for (const p of Object.values(PLAYERS)) {
     let vs;
@@ -6263,15 +6278,16 @@ check('Q3 · no view ever exposes priced n > played n', () => {
     if (hit) playersHit++;
   }
   assert(views > 500, `only ${views} views walked — the roster did not load`);
+  assert(suppressed > 0, 'no over-claiming view was fed — the suppressed branch is unexercised');
   console.log(`        ${views} views · ${suppressed} suppressed across ${playersHit} players`);
-});
+}));
 
 // The guard's BOUNDARY, pinned. The check above is one-sided — it only asserts
 // nothing exceeds, and only inspects the suppressed branch — so flipping
 // `pinN <= n` to `pinN < n` left the whole suite green while blanking 3,975 of
 // 9,419 legitimately fully-priced views (42%), including 241 bestEvent
 // candidates. A guard test that cannot see over-suppression is not a guard test.
-check('Q3 boundary · a FULLY priced view (pinN === n) survives untouched', () => {
+check('Q3 boundary · a FULLY priced view (pinN === n) survives untouched', () => withJoin(playedOf, () => {
   let exact = 0, kept = 0, candidates = 0;
   for (const p of Object.values(PLAYERS)) {
     let vs;
@@ -6290,13 +6306,13 @@ check('Q3 boundary · a FULLY priced view (pinN === n) survives untouched', () =
   assert(exact > 500, `only ${exact} fully-priced views — the boundary is unexercised`);
   assert(candidates > 50, `only ${candidates} of them are bestEvent candidates — too few to bite`);
   console.log(`        ${exact} views priced exactly to the played count · ${kept} kept · ${candidates} bestEvent-eligible`);
-});
+}));
 
 // Finding 5 · reverting the detail sub to its two-branch pre-ruling form also left
 // the suite green, and every suppressed row then read "Pinnacle priced none of
 // these" — the exact false claim the ruling exists to prevent. Nothing asserted
 // the RENDERED string, so this does.
-check('Q3 disclosure · a suppressed row says WHY, never "Pinnacle priced none of these"', () => {
+check('Q3 disclosure · a suppressed row says WHY, never "Pinnacle priced none of these"', () => withJoin(t => playedOf(t) + 1, () => {
   let checked = 0;
   for (const p of Object.values(PLAYERS)) {
     let vs;
@@ -6315,7 +6331,7 @@ check('Q3 disclosure · a suppressed row says WHY, never "Pinnacle priced none o
   }
   assert(checked > 20, `only ${checked} suppressed details rendered — the check is vacuous`);
   console.log(`        ${checked} suppressed details rendered, every one states the count`);
-});
+}));
 
 mustFail('[neg] the disclosure check would catch the pre-ruling two-branch sub', () => {
   const pre = 'Pinnacle priced none of these';
@@ -6327,7 +6343,8 @@ mustFail('[neg] Q3 would catch an impossible pair reaching the tile', () => {
   assert(t.pinN <= t.n, 'an impossible pair passed the guard');
 });
 
-check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units', () => {
+// Q8: fed the join's answer (every played match priced, units varying by event) so a pick is really made and ranked.
+check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units', () => withJoin(playedOf, () => {
   let picked = 0, dashed = 0;
   for (const p of SAMPLE) {
     const be = I.bestEvent(p);
@@ -6355,8 +6372,9 @@ check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units
     assert.strictEqual(be.display, best.display,
       `${p.name}: picked ${be.display} (${be.pinPl}u) over ${best.display} (${best.pinPl}u)`);
   }
+  assert(picked > 0, 'no player had a priced best event — the ranking is unexercised');
   console.log(`        ${picked} of ${SAMPLE.length} have a priced best event; ${dashed} dash`);
-});
+}, t => (t.name.length % 7) - 3));
 
 mustFail('[neg] Q2 would catch the win-rate selector it replaced', () => {
   // Zverev's shape exactly: Olympic Games 9–1 at 90%, priced on nothing.

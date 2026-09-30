@@ -47,7 +47,7 @@ const S = new Function(`
   ${CONSTS.map(constSrc).join('\n')}
   ${FNS.map(slice).join('\n')}
   return { fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowData, maMatchRowsHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
-    get fh(){ return _fh; } };
+    fhNameLink, profiles: playerProfiles, get fh(){ return _fh; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -196,4 +196,13 @@ test('Form renders rows with maMatchRowsHtml and bar tooltips with maTipHtml; no
   assert.equal((col.match(/class="elotip fh-bar"/g) || []).length, P.win.length, 'every bar is the shared tooltip');
   assert.ok(!/fh-elotip/.test(col), 'no Form-local tooltip class');
   assert.ok(col.includes('style="bottom:20px;"'), 'the file\'s tooltip offset is a parameter');
+});
+
+// Founder Q27 (2026-09-30): a player with no profile is plain text — no link, no handler; with a profile the name links.
+// Mutation 'Q27: a name links with no profile behind it' (tools/test-ten330-mutants.js).
+test('Q27: a Form name with no profile is plain text; with a profile it links to it', () => {
+  S.profiles['7'] = { name: 'A. Tester' };
+  assert.match(S.fhNameLink('A. Tester', '7', 'x'), /^<span class="plink" onclick="fhOpenProfile\('7'\)" style="x">A\. Tester<\/span>$/);
+  for (const k of ['8', null, undefined]) assert.equal(S.fhNameLink('B. Nobody', k, 'x'), '<span style="x">B. Nobody</span>', 'key ' + k);
+  delete S.profiles['7'];
 });

@@ -43,7 +43,8 @@ this file wins.
    `maTipHtml` (hover / focus on a wrapper) and the positioned mode `data-aotip` (`initAOddsTips`: one delegated
    listener, 250 ms, anchored at the trigger and flipped at the viewport / modal edge; Odds, Weather, Market edge, the
    News group count). The positioned element carries only the class `elotip-pop ma-tip-float`, no styling of its own.
-   A design-file native `title` (e.g. News article times, Odds price modes) stays as the file draws it.
+   A design-file native `title` (e.g. News article times) stays as the file draws it. The Odds Market / No-vig hints use
+   the shared tooltip (`data-aotip`), as `odds.md` rules (founder Q23, 2026-09-30).
    **Test:** `test-ten314-components.mjs` (one component; News count on it).
 
 - **Undrawn states** (TEN-312 `design-gaps`) never block a tab: use the nearest existing pattern in the design file, mark
@@ -94,10 +95,15 @@ this file wins.
   writes `var(--ma-hw,0.33px)`, so a builder the player profile shares keeps the site's 0.33px outside `.ma-theme`.
   Weather and Odds keep their spec widths (`WX_C.hw` 1.25px, `hw1` 1px). **Test:** `test-ten314-tokens.mjs`
   asserts no bare `0.33px` in any modal declaration or modal CSS rule; a computed border width in the modal at DPR 2+ is 1px.
-- **No figure without a count** (founder, same comment). The Tournament hold rate stays ungated but shows its
-  n (service games) in the tooltip. `COURT_CONDITIONS.serviceHold` is the founder's court-conditions sheet %
-  with **no** count, so Key factors shows a dash with a tooltip saying why (`MA_HOLD_NO_N`). The Tournament
-  tab (TEN-332) brings our own box-score hold rate with its n. **Test:** `test-ten314-components.mjs`.
+- **No figure without a count** (founder, same comment). **The event hold rate** (founder Q9, 2026-09-30) = service
+  games held ÷ service games played at this event, from **our own box scores over every edition on file**
+  (`event-hold.json`, built by `build-event-hold.js` from `boxscore-archive/` in every pipeline run), n = service games,
+  both players, qualifying included (the archive carries no round). The Tournament tab (header meta cell) and Key
+  factors' Tournament card print the same cell (`trHoldHtml`); its tooltip always states n. It replaces the
+  court-conditions sheet's count-less `COURT_CONDITIONS.serviceHold`, which no modal surface prints. No box score for
+  the event → "—" with the reason. **Test:** `test-ten341-key-factors.mjs` "Q9" (Key factors = the Tournament tab,
+  n in the tooltip; mutations: Key factors back on the count-less dash, the window cut to recent seasons) and
+  `tools/test-ten368-event-hold.js` (the builder).
 
 ## Players and avatars (D4, D5)
 - **Both players are neutral on every tab, Odds included:** player A white/primary, player B grey — as on
@@ -107,6 +113,11 @@ this file wins.
   sheet, **inside the design's ring and size geometry** (header 40px, sheet 56px, ring as designed).
   **Test:** a player with an alias renders an `<img>` from the alias chain at the design's size and ring; one
   without renders the monogram in the same ring.
+
+## Opening tab (founder Q26, 2026-09-30; replaces README §6 "reopens on the last-used tab")
+- **The modal always opens on Key factors.** There is no last-used-tab memory. An explicit link to a tab
+  (`openAnalysisModal(id, tab)`) still opens that tab. **Test:** `test-ten314-modal-frame.mjs` "Q26" (open, switch to
+  Odds, reopen: Key factors; an explicit tab still opens; mutation: the last-used tab restored).
 
 ## Header and footer (founder 2026-09-28, TEN-314 card answered in TEN-312 comment c1883bb0)
 - **Not-completed, not-live match:** the design's centred matchup strip (avatars, names, price pills).
@@ -155,11 +166,10 @@ this file wins.
   - **H2H record tug bar** is drawn at any n ≥ 1, as the design draws it (a 2–1 record fills 67/33). The numbers
     beside it still follow the gate. **Test:** a 2–1 H2H renders the bar at 67/33 and no %.
   - **Market edge "Needs"** is not gated: it is derived from prices, not a sample rate.
-  - **Archetype-matrix %** is not gated here (its own upstream floor applies). The **tournament hold rate** is not
+  - **Archetype-matrix %** is not gated here (its own upstream floor applies). The **event hold rate** is not
     gated, but its tooltip always shows its n (service games) — no figure without a count (founder 2026-09-28,
-    TEN-314 70fb039e). Where the source carries no count (`COURT_CONDITIONS.serviceHold` today) the figure itself is
-    a dash with the reason in the tooltip (see Palette, "No figure without a count"). **Test:** a hold rate with a count
-    shows it in the tooltip; one without shows "—", never the %.
+    TEN-314 70fb039e; the rate itself: Palette, "No figure without a count", founder Q9). **Test:** the hold rate's
+    tooltip states n; an event with no box score shows "—", never a %.
   - In narrow table cells the 5–9 "small sample" note is a hover note plus a footnote, not inline text.
 
 ## Match stats sheet — every tab
@@ -198,8 +208,9 @@ this file wins.
 
 ## Defaults and scope (N1, N5, N7, N8, N9, N10)
 - **N1:** H2H opens on **All** surfaces; Form opens on **today's surface**.
-- **N5:** Tournament **Backing** uses the R8 order (Pinnacle, then Bet365; `FH_BOOK_ORDER`), and the player-profile
-  per-event tile moves to the same basis. **Test:** the two show the same units for the same player and event.
+- **N5:** Tournament **Backing** uses the R8 order (Pinnacle, then Bet365; `FH_BOOK_ORDER`). The player-profile
+  per-event Backing reads the same rows (founder Q8, see Tournament tab). **Test:** the two show the same units and
+  "vs market" for the same player and event.
 - **N6:** Tournament / profile edition lists show **only editions the player actually entered**. No edition header is
   synthesised from a gap year (the old `withdrew` fill in `bsp-pipeline.js` minted "Withdrawal" for editions never
   held). **Test:** a player with editions 2019 and 2022 shows no 2020/2021 header.
@@ -226,13 +237,25 @@ this file wins.
   n ≥ 5 priced, 5–9 greyed. Units show at any priced n.
 - **Result label** per edition: "Won" (won the final) · the round lost in the feed's words ("Quarter-final", "Round of 16")
   · "In progress" (this event, this year, last match a win; DESIGN GAP G17) · "<round> · w/o" (reached unplayed).
-- **Not drawn:** the reading paragraph (waits on the founder's copy); synthesised "Withdrawal" headers (N6).
+- **Not drawn:** the reading paragraph (DF L231) is dropped (founder Q11, 2026-09-30): no node, no heading and no
+  reserved space until the founder sends copy; synthesised "Withdrawal" headers (N6). **Test:** `test-ten332-tournament.mjs`
+  "Q11" (no paragraph node; the header card ends at its meta grid).
+- **Hold rate:** a fifth header meta cell (DESIGN GAP G43: the file draws no hold rate on this tab), the event hold
+  rate of Palette "No figure without a count" (founder Q9).
 - **Seven-season trend:** the axis is 2020–2026 as drawn; only seasons the sheet holds (2023–25) get a dot and a value, the
   rest a dash; a hole breaks the line; the delta states the real span. Roland Garros speed and altitude dash with the
   TEN-321 note until its key lands.
-- **Open:** the tab's Backing and the player-profile per-event Backing (now on the R8 basis too) read two row sources
-  (closes shard vs market-edge shard) and agree on 42 of 71 board player-events (2026-09-29; most misses are events the profile join attributes no priced row to) — the question is on the
-  end-of-queue card. **Test:** `test-ten332-tournament.mjs` + `tools/test-ten332-mutants.js`.
+- **One row source for Backing (founder Q8, 2026-09-30):** the player-profile per-event Backing (the Record per
+  tournament column and the "Backing him here" tile, units and "vs market") is the tab's row-level join — each
+  edition's main-draw matches (walkovers out) joined to career-history and the closes shard, R8, retirements settled at
+  the close — computed by the page's `trProfileBacking` → `trModelOf`, never the market-edge shard's attribution.
+  The profile's edition rows carry no event key or date, so each is first resolved to its one career-history row (season +
+  opponent + result + this event's names, the archive names and the names this player's unambiguous rows vote for it; the
+  round breaks a tie) and then joined by that row's key, as the tab joins. A row with no single match stays unpriced, never
+  guessed (known limit: the tab can still price a row career-history lacks, by its date; the profile store has none). A
+  failed load reads "prices unavailable", as on the tab.
+  **Test:** `test-ten332-tournament.mjs` "Q8" (the profile prints the tab's units and "vs market"; mutation: the
+  profile reads the market-edge shard's attribution) + `tools/test-ten332-mutants.js`.
 
 ## Retirements in price figures (founder 2026-09-28, TEN-312 option A)
 - **An in-match retirement settles at the listed closing price, everywhere**: Form (flat 1u, v market, medians), H2H

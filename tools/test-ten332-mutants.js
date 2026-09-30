@@ -30,7 +30,13 @@ const MUTANTS = [
   ['DoD 8: a row stops opening the sheet', "    cls: 'tr-row', attrs: ` data-fh-mid=\"${fhEsc(r.mid)}\"`, click: ` onclick=\"fhOpenSheet('${fhEsc(r.mid)}')\"`,", "    cls: 'tr-row', attrs: ` data-fh-mid=\"${fhEsc(r.mid)}\"`, click: '',"],
   ['DoD 8: a tab-local row renderer again', "function trRowData(r){", "function atournMatchRowHtml(x){ return ''; }\nfunction trRowData(r){"],
   ['more: "1 earlier editions"', "(P.eds.length - TR_LIM === 1 ? '' : 's')", "'s'"],
-  ['N5 (profile): per-event Backing back to Pinnacle only', "      if (r.inBasis && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }", "      if (r.book === 'pinnacle' && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }", 'pp2'],
+  ['Q8: the profile reads the market-edge shard\'s attribution', "      var bk = typeof window.trProfileBacking === 'function' ? window.trProfileBacking(p.key, p.name, t) : null;", "      var bk = (function () { var mk = marketFor(p.key), jj = tournJoin(p), u = 0, k = 0;\n        ((mk && mk.matches) || []).forEach(function (r) { if (r.inBasis && r.pl != null && isFinite(r.pl) && (jj.alias[r.event] || r.event) === t.name) { u += r.pl; k++; } });\n        return { n: k, units: u, unitsTxt: k ? signed(u, 1, 'u') : null, vmTxt: null, nb: 0, small: false }; })();", 'pp2'],
+  ['Q8: two meetings in one edition left unresolved', "      if (c.length > 1) c = c.filter(r => fhRoundCode(r.round, false) === x.round);   // two meetings in one edition: the round decides\n", ''],
+  ['Q8: the voted event-name aliases dropped', ", trProfileAliases(k, ch)[clean] || []);", ");"],
+  ['Q8: a failed load reads "loading prices" forever', "        : t.backingFailed\n          ? 'prices unavailable'\n          : t.vmTxt", "        : t.vmTxt", 'pp2'],
+  ['Q9 (tab): the hold cell dropped from the header', "['Altitude', altCell], ['Hold rate', trHoldHtml(m, 'tr-hold')], ['Round',", "['Altitude', altCell], ['Round',"],
+  ['Q9 (tab): the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
+  ['Q11: an empty block reserving the paragraph\'s space', "      ${trHeaderHtml(m)}${toggle}", "      ${trHeaderHtml(m)}<div class=\"tr-reading\" style=\"min-height:48px;\"></div>${toggle}"],
 ];
 const SUITES = ['test-ten332-tournament.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env || {}), encoding: 'utf8' });

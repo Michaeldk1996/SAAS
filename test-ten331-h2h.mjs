@@ -208,3 +208,14 @@ test('no sample, no review switcher, no seeded data in the H2H block', () => {
   assert.ok(!/sample data/i.test(text(h)), 'no SAMPLE DATA chip or "Sample data." footnote');
   assert.ok(!/h2State|h2RecBar|h2Pal|Paris Masters/.test(block()), 'no design review state or demo meeting in the page');
 });
+
+// Founder Q4 (2026-09-30): no meeting → "{A} and {B} have no meeting on record." plus what was searched; the design's
+// "have not played" is a named exception (our store can only say what it holds). Mutation 'Q4: the design's "have not played"'.
+test('Q4: no meeting reads "have no meeting on record" with the searched scope — never "have not played"', () => {
+  const h = build(fixture([]));
+  const t = text(h);
+  assert.ok(t.includes('No previous meetings on record J. Sinner and C. Alcaraz have no meeting on record.'), t.slice(0, 200));
+  assert.match(t, /have no meeting on record\. Closest guide: [^]*ATP since 2019/, 'the line names what was searched');
+  assert.ok(!/have not played/.test(t));
+});
+

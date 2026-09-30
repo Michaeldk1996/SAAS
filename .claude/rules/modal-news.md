@@ -23,10 +23,13 @@ over this file where they conflict.
   **"No recent news for {A} or {B}."** + **"View all news →"** (design gap G7: the common case).
   **Test:** `test-ten314-modal-frame` (deployed allowlist has no `SAMPLE_NEWS`) and `test-ten333-news-tab` "no sample".
 - **Design-file bug not ported:** under a one-player filter the file still prints "…for {A} or {B}." even when the other
-  player has articles. The build names the filtered player only ("No recent news for {A}.").
+  player has articles. The build names the filtered player only: **"No recent news for {A}."** (founder Q20, 2026-09-30,
+  extends N9). **Test:** `test-ten333-news-tab.mjs` "N9 empty state".
 
 ## Display (the file wins over the README)
-- Filter = the file's segmented control (DF L2204 = the Market edge `maSeg('me')` geometry): All / A / B.
+- Filter = the file's segmented control (DF L2204 = the Market edge `maSeg('me')` geometry): All / A / B. It stays in the
+  **unavailable** state too (founder Q19, 2026-09-30). **Test:** `test-ten333-news-tab.mjs` "Q19" (mutation: the filter
+  dropped when the feed is unavailable).
 - Group header = name (13.5 / 700, primary text) + count (mono 10.5, label) + hairline. **Both names are primary text**
   (D4); the old p1 periwinkle label is gone. The count's tooltip states its denominator and population
   ("n of N articles in the ATP news feed, last 5 days").

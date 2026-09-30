@@ -358,6 +358,13 @@ jobs:
       - name: Build tournament market (best-effort)
         run: node build-tournament-market.js || true
 
+      # Event hold rate (founder Q9, TEN-368): per ATP event, service games held over
+      # service games played from the committed box-score archive (boxscore-archive/),
+      # all editions on file, n = service games. No network calls. Best-effort: a
+      # failure leaves the Tournament tab's and Key factors' hold cells dashed.
+      - name: Build event hold rate (best-effort)
+        run: node build-event-hold.js || true
+
       # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
       # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
       # captured-closes-pinnacle.json; bet365-history/ cut at the oddspapi ACTUAL start,
@@ -787,6 +794,9 @@ jobs:
           # Per-tournament market performance (Tournaments Overview §4/§5). Fetched
           # by the dashboard; a missing file just em-dashes those two blocks.
           cp tournament-market.json _site/ 2>/dev/null || true
+          # Event hold rate (TEN-368, built above). Fetched by the Match analysis Tournament
+          # tab and Key factors; a missing file dashes the hold cells with the reason.
+          cp event-hold.json _site/ 2>/dev/null || true
           # TEN-263 match-close shards (built above). Lazily fetched per player by the
           # Match analysis Form/H2H tabs; a missing shard dashes the price cells.
           cp match-closes-index.json _site/ 2>/dev/null || true

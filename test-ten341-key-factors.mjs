@@ -54,13 +54,15 @@ const S = new Function(`
   let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null }; let _aoTipTimer = null, _aoTipFor = null;
   const _ocsOf = m => null; const buildOddsReduced = () => ''; const psEsc = x => String(x);
   const _ovProfileSettled = new Set(); const ovSeasonYear = () => '2026';
+  let _trHoldData, _trHoldP = null;
   ${PS_TOUR_META_SRC}
   ${PS_ARCH_SRC}
   ${ODDS_CONSTS.map(n => constSrc(n, html)).join('\n')}
   ${['escapeHtml', 'psShortName', 'psCellFor', 'psMirrorN', 'psSurfaceCellFor', 'psArchIndex', 'psArchFor', 'psFmtMeetDate', 'psRoundAbbr', 'psNormTour', 'psTourMeta',
      'psGroupMeetings', 'styleMeetRowsFor', 'ppCleanTournamentName', 'surnameFirstName', 'formIni', 'eventKeyOfMatch', 'cellForTier', 'ovCareerByYear',
-     'apiStartMs', 'h2hRoundLabel', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote'].map(slice).join('\n')}
-  ${['TR_RG_NOTE', 'TR_NO_SPEED', 'TR_RESULT'].map(n => constSrc(n, html)).join('\n')}
+     'apiStartMs', 'h2hRoundLabel', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
+     'trHeaderHtml'].map(slice).join('\n')}
+  ${['TR_RG_NOTE', 'TR_NO_SPEED', 'TR_RESULT', 'TR_MONO'].map(n => constSrc(n, html)).join('\n')}
   ${ODDS.map(slice).join('\n')}
   ${WX}
   ${TEN263}
@@ -68,14 +70,15 @@ const S = new Function(`
   ${PS2}
   ${KF}
   return { buildKeyFactorsSection, kfStyleCard, kfFormCard, kfH2HCard, kfDimCard, kfTourCard, kfOddsCard, kfOddsMove, kfWeatherStrip, kfModelCard, trRoundWords,
-    STY, ELO, playerProfiles, _ovProfileSettled, set matrix(v){ psMatrixData = v; }, set dna(v){ _mdna = v; } };
+    trHeaderHtml, fhFormPlayer, fhStateFor,
+    STY, ELO, playerProfiles, _ovProfileSettled, set matrix(v){ psMatrixData = v; }, set dna(v){ _mdna = v; }, set hold(v){ _trHoldData = v; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
 const vis = h => text(h.replace(/<span class="elotip-pop"[\s\S]*?<\/span><\/span>/g, ''));   // what shows without hovering
 const CP = 'Counterpuncher', AB = 'Attacking Baseliner';
 function matrix(){ return { minSampleN: 20, matrix: { [CP]: { [AB]: { pct: 43, n: 3100 } }, [AB]: { [CP]: { pct: 57, n: 3100 } }, [CP + 'x']: {} } }; }
 function match(over){ return Object.assign({ id: 'past-777', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-20', tour: 'ATP Basel' }, over || {}); }
-function setup(){ S.matrix = matrix(); S.dna = { byKey: {}, meta: {} }; for (const o of [S.STY, S.ELO, S.playerProfiles]) for (const k of Object.keys(o)) delete o[k]; S._ovProfileSettled.clear(); }
+function setup(){ S.matrix = matrix(); S.dna = { byKey: {}, meta: {} }; S.hold = undefined; for (const o of [S.STY, S.ELO, S.playerProfiles]) for (const k of Object.keys(o)) delete o[k]; S._ovProfileSettled.clear(); }
 // Form-shard rows (newest first): results "2 - 0" / "0 - 2", every level, from 2026-09-19 back one day each.
 function formRows(wins, n, extra){
   const out = [];
@@ -128,7 +131,23 @@ test('Recent form "Last N": 3 → the W–L, 7 → greyed + small sample, 12 →
   assert.match(last(7), /data-ma-gate="small"[^>]*>57%<\/span><span class="ma-small-note"/);
   assert.match(last(12), /Last 10<\/span>.*data-ma-gate="full"[^>]*>90%</);
   assert.match(last(0), /data-ma-gate="none"[^>]*>—</); assert.doesNotMatch(text(last(0)), /(^|[^\d.])0%/);
-  assert.match(last(7), /data-aotip="[^"]*Last 7: 4–3 over the 7 latest matches at every level, walkovers excluded/, 'the count carries its population');
+  assert.match(last(7), /data-aotip="[^"]*Last 7: 4–3 over the 7 latest matches on Hard at every level, walkovers excluded/, 'the count carries its population');
+});
+// Founder Q16 (2026-09-30): the card reads the Form tab's DEFAULT view — today's surface (N1) — so its W–L is the rows the
+// Form tab opens on. Mutation: the card counts all surfaces again ({ surf: 'all' }).
+test('Q16: Recent form = the Form tab\'s default rows (today\'s surface), not every surface', () => {
+  setup();
+  const mix = [];
+  for (let i = 0; i < 12; i++) mix.push({ date: '2026-09-' + String(19 - i).padStart(2, '0'), opponent: 'Opp ' + i, tournament: 'Ev ' + i, round: 'R32',
+    surface: i % 2 ? 'Clay' : 'Hard', result: i % 2 ? '2 - 0' : (i < 6 ? '2 - 0' : '0 - 2'), won: i % 2 ? true : i < 6, sets: null, retired: false, walkover: false, eventKey: 600 + i });
+  const m = formMatch(mix, []);
+  const h = side(S.kfFormCard(m), 'a');
+  const P = S.fhFormPlayer(m, 0, Object.assign({}, S.fhStateFor(m).form, { role: 'all', wmode: 'n', n: 10 }));
+  assert.equal(S.fhStateFor(m).form.surf, 'Hard', 'the Form tab opens on today\'s surface (N1)');
+  assert.equal(P.n, 6); assert.equal(P.wins, 3);
+  assert.match(text(h), /Last 6 3–3|Last 6 50%/, 'the 6 hard rows (3–3), not the 10 latest of every surface');
+  assert.match(h, /Last 6: 3–3 over the 6 latest matches on Hard/);
+  assert.match(text(h), /^Sinner W W W L L Last 6/, 'the pills are the hard rows too (all surfaces would read W W W W W)');
 });
 // Mutation: the season record read from the form rows (capped at 40) instead of the Overview's season row.
 test('Recent form "{Surface} {season}": the Overview tab\'s season row (careerByYear), "—" when that surface has no match', () => {
@@ -155,6 +174,9 @@ test('Head to head: the H2H tab\'s record — walkovers out (N2), a retirement c
   assert.match(t, /Head to head › 2 – 1 /, '3 played: the walkover ("0 - 0") is no meeting');
   assert.match(t, /Last meeting Nov ’24 · Paris · 1–0 ret\. 3 career meetings · incl\. 1 CH/);
   assert.doesNotMatch(t, /Ghost/);
+  // founder Q18 (2026-09-30): the card, "Last meeting" included, goes to the H2H tab — the last meeting opens no sheet of its own
+  assert.match(h, /^<div class="seg kf-card" data-kf="h2h" role="button" tabindex="0" onclick="aGoTab\('h2h'\)"/);
+  assert.equal((h.match(/onclick=/g) || []).length, 1, 'one target: the H2H tab');
 });
 test('Head to head: never met → "0 – 0" and "No meeting on record"; loading → a dash and the loading line', () => {
   setup();
@@ -193,29 +215,50 @@ test('Dimension edge: below the 10-match floor no shape — only Surface Elo (cu
 });
 
 // ---------- Tournament ----------
-// Mutation: the count-less hold % shown again, or a synthesised (withdrew) edition counted (N6).
-test('Tournament: "City · TIER", the round in the Tournament tab\'s words, main-draw W–L from the editions, the hold rate never a count-less %', () => {
+// Mutation: a synthesised (withdrew) edition counted (N6), or the Q25 wording reverted ("no record on file").
+test('Tournament: "City · TIER", the round in the Tournament tab\'s words, main-draw W–L from the editions, "first appearance" (Q25), the hold rate never a count-less %', () => {
   setup();
   const hist = { years: [{ year: 2025, won: 4, lost: 1 }, { year: 2024, won: 0, lost: 0, withdrew: true }, { year: 2023, won: 1, lost: 1 }] };
   const h = S.kfTourCard(match({ tournamentRound: 'ATP Basel - 1/16-finals', p1TournamentHistory: hist, p2TournamentHistory: null,
     courtSpeed: { abstractSpeed: 1.4, altitude: 260, serviceHold: 82, category: 'Fast' } }));
   const t = text(h);
-  assert.match(t, /^Basel · ATP 500 Tournament · Round of 32 › Sinner 5–2 Alcaraz no record on file/);
+  assert.match(t, /^Basel · ATP 500 Tournament · Round of 32 › Sinner 5–2 Alcaraz first appearance/, 'founder Q25: the file\'s "first appearance"');
+  assert.doesNotMatch(t, /no record on file/);
   assert.match(h, /data-aotip="[^"]*5–2 in 7 main-draw matches over 2 editions at Basel, walkovers excluded/);
-  assert.match(t, /1\.40 court speed Fast 260 m altitude above sea level — Service hold at this event: .*? not shown\. hold rate n not published PROSE Fast 1\.4/);
+  // no event-hold file yet: the hold cell is loading, a dash — never the court-conditions sheet's count-less 82
+  assert.match(vis(h), /1\.40 court speed Fast 260 m altitude above sea level — hold rate at this event PROSE Fast 1\.4/);
   assert.doesNotMatch(h, /82/, 'the count-less % is not shown');
-  assert.ok(h.includes('Service hold at this event: the source gives a rate without its number of service games'), 'the dash carries the reason');
-  // moved from test-ten314-components (founder 2026-09-28): the sentence wraps inside the column, the dash takes focus, the reason
-  // shows without hover. Mutation: drop { wrap: 220, start: true }, the tabindex, or the "n not published" note.
-  const hold = h.slice(h.indexOf('<div class="kf-cond-hold"'));
-  assert.match(hold, /class="elotip-pop" role="tooltip" style="[^"]*white-space:normal; width:220px; left:0; transform:none;/);
-  assert.match(hold, /<b tabindex="0">—<\/b>/);
-  assert.match(vis(hold), /^— hold rate n not published/);
   assert.equal(S.trRoundWords({ tournamentRound: 'ATP Basel - Quarter-finals' }), 'Quarter-finals');
   // an unknown event: the name alone, never a fabricated tier; no court row: every condition a dash with the Tournament tab's note
   const u = vis(S.kfTourCard(match({ tour: 'ATP Nowhere', courtSpeed: null })));
   assert.match(u, /^Nowhere Tournament ›/);
-  assert.match(u, /— court speed — — altitude above sea level — hold rate —/);
+  assert.match(u, /— court speed — — altitude above sea level — hold rate at this event/);
+});
+
+// Founder Q9 (2026-09-30): the event hold rate — our box scores over every edition on file, n = service games — replaces
+// the court-conditions sheet's count-less figure; Key factors prints the Tournament tab's own cell. Mutations
+// (tools/test-ten341-mutants.js): Key factors back on the count-less dash (MA_HOLD_NO_N); the tooltip loses n.
+const HOLD = { events: { 1706: { name: 'Basel', names: ['Basel', 'ATP Basel'], held: 1600, games: 2012, matches: 86, years: ['2024', '2025'] } }, byName: { basel: '1706' } };
+const holdCell = (h, cls) => { const i = h.indexOf(`class="${cls}"`); assert.ok(i > 0, cls); const a = h.lastIndexOf('<span class="elotip"', i);
+  return h.slice(a, h.indexOf('</span></span>', h.indexOf('class="elotip-pop"', i)) + 14).replace(cls, 'CELL'); };
+test('Q9: Key factors\' hold rate is the Tournament tab\'s cell — our box scores, every edition, n in the tooltip, no gate', () => {
+  setup(); S.hold = HOLD;
+  const m = match({ courtSpeed: { abstractSpeed: 1.4, altitude: 260, serviceHold: 82, category: 'Fast' } });
+  const kf = S.kfTourCard(m), tab = S.trHeaderHtml(m);
+  assert.match(vis(kf), /260 m altitude above sea level 80% hold rate at this event/, '1,600 / 2,012 = 79.5% → 80% (the file prints whole %)');
+  assert.equal(holdCell(kf, 'kf-hold'), holdCell(tab, 'tr-hold'), 'the same cell on both tabs');
+  assert.match(text(tab), /Hold rate 80%/);
+  const tip = text(holdCell(kf, 'kf-hold'));
+  assert.match(tip, /Service hold at Basel: 1,600 of 2,012 service games held \(n = 2,012\), both players, in 86 matches with a box score over 2 editions on file \(2024–2025\), qualifying included\./);
+  assert.doesNotMatch(kf, /n not published|82%/, 'the court-conditions figure and its dash are gone');
+  // an event with no box score: a dash with the reason, never a %; the file not loaded yet: a dash, loading
+  const none = S.kfTourCard(match({ tour: 'ATP Nowhere' }));
+  assert.match(vis(none), /— hold rate at this event/); assert.match(none, /No box score on file for Nowhere, so no hold rate is shown\./);
+  S.hold = null; assert.match(S.kfTourCard(m), /The event hold rate did not load/);
+  S.hold = undefined; assert.match(S.kfTourCard(m), /Loading the event hold rate/);
+  // no gate: a two-match event still prints its % with its n (founder 2026-09-28: ungated, n in the tooltip)
+  S.hold = { events: { 9: { name: 'Basel', names: ['Basel'], held: 18, games: 20, matches: 2, years: ['2025'] } }, byName: { basel: '9' } };
+  assert.match(text(holdCell(S.kfTourCard(m), 'kf-hold')), /^90% .*n = 20/);
 });
 
 // ---------- Odds ----------
@@ -237,7 +280,7 @@ test('Odds: ONE book for the whole card — Pinnacle, else Bet365, else the Odds
   assert.match(text(S.kfOddsCard(oddsMatch(lone, { 'bet365 (api-tennis)': cm('soft') }))), /^Odds › 1\.50 2\.40 Sinner Alcaraz 61\.5% vig removed 38\.5%/);
   const gap = [[new Date(T0 + 5.5 * H).toISOString(), new Date(T0 + 7.5 * H).toISOString()]];
   assert.match(text(S.kfOddsCard(oddsMatch(lone, { 'bet365 (api-tennis)': cm('soft', { gaps: gap }) }))), /^Odds › 1\.50 2\.40 Sinner Alcaraz 60% vig removed 40%/);
-  assert.match(t, /Odds movement bet365 1\.80 1\.60 2\.10 2\.40 Opening odd Closing odd/, 'the same book\'s series, cut at the start');
+  assert.match(t, /Odds movement bet365 1\.80 1\.60 2\.10 2\.40 Opening odd Current odd/, 'the same book\'s series, cut at the start; the file\'s "Current odd" after the start too (founder Q25)');
   const withPin = Object.assign({ 'Pinnacle (api-tennis)': { p1: ser(1.75, 1.55), p2: ser(2.2, 2.5) } }, both);
   assert.match(text(S.kfOddsCard(oddsMatch(withPin, { 'Pinnacle (api-tennis)': cm('sharp'), 'Betfair Exchange (recorded by us)': cm('sharp'), 'bet365 (api-tennis)': cm('soft') }))),
     /1\.55 2\.50 .* Implied win probability · Pinnacle/, 'Pinnacle first');

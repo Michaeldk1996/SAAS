@@ -2106,3 +2106,21 @@ Every mechanism is paired with a mutant of the real source.
   - the page builds its offset formatter once.
 
   Reported, not changed: `refresh-odds-history.py` subtracts one median offset measured per run. A board spanning 25 Oct is 1 h off on one side, inside its 6 h join tolerance.
+
+## TEN-368 · The founder's TEN-312 card rulings, Q3–Q28 (2026-09-30)
+Rules live in `.claude/rules/` (modal-analysis, modal-key-factors, modal-form-h2h, modal-news, modal-weather, modal-overview,
+modal-progression, odds, player-profile). Reasoning, where it is not in the ruling itself:
+- **Q8, one row source for Backing.** The tab joined the closes shard to each edition's matches; the profile summed the
+  market-edge shard's own event attribution. They agreed on 42 of 71 board player-events (29 Sep). The profile now calls
+  the page's `trProfileBacking`, which runs the tab's own `trModelOf` over the profile's edition rows (main draw, walkovers
+  out), so the two cannot drift. The profile's edition rows carry no event key or date, so each is resolved to its one
+  career-history row first (season + opponent + result + event name, with event-name aliases voted from this player's
+  unambiguous rows — tournJoin's idea — and the round breaking a tie, e.g. an ATP Finals round-robin and final against the
+  same man), then joined by that row's event key like the tab. Found by the clean-context review: without the vote and the
+  round, renamed events ("Canada Masters" / "ATP Montreal") and repeat opponents went unpriced on the profile only.
+- **Q9, event hold rate.** `COURT_CONDITIONS.serviceHold` is a sheet % with no count. `build-event-hold.js` sums both
+  players' raw "Games: Service games won" counts from the committed box-score archive (TEN-323, ATP tier, 2024-03 onward),
+  whole matches only. The archive holds no round, so qualifying is inside the population; the tooltip says so.
+  Placement on the Tournament tab (a fifth header meta cell) is DESIGN GAP G43: the design draws the rate only on Key factors.
+- **Q21.** The design draws one heat flag, at watch ("Heat — high"). Concern keeps the same words; the colour differs.
+

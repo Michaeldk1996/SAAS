@@ -140,7 +140,12 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   Bet365 where missing (…)". **Never a single book name over mixed data.** **Test:** Pinnacle meetings
   + a Bet365 today price → the mixed wording.
 - **Hot-line dots on H2H use fixed columns** (1/max(n, 9) of the grid, right-aligned), so 4 meetings sit
-  where 9 would. Form keeps stretched columns.
+  where 9 would (founder Q3, 2026-09-30: over the design's stretched columns). Form keeps stretched columns.
+- **H2H with no meeting** (founder Q4, 2026-09-30): "{A} and {B} **have no meeting on record**." plus the line saying what
+  was searched (`fhH2hScopeNote`: levels and the years each covers). The design's "have not played" is a named exception:
+  our store can only say what it holds. **Test:** `test-ten331-h2h.mjs` "Q4" (mutation: "have not played").
+- **A player with no profile is plain text** on Form and H2H (founder Q27, 2026-09-30): `fhNameLink` links only when the
+  key has a profile. **Test:** `test-ten330-form.mjs` "Q27" (no link without a profile key; mutation: always a link).
 - **Long names:** never cut (founder bbe5c072, supersedes the 2026-09-24 ellipsis): they wrap between words; full name
   on hover (Form and H2H rows). **Test:** `test-ten350-elo-slot.mjs` renders the real rows in headless Chrome at the
   1296 px geometry (Davidovich Fokina, Van De Zandschulp…) + `tools/test-ten350-mutants.js` (8 mutants).

@@ -10,6 +10,7 @@ const SRC = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8
 const BW = fs.readFileSync(path.join(ROOT, 'build-weather.js'), 'utf8');
 const MUTANTS = [
   ['null value reads as calm (no UNAVAILABLE)', "if (v == null) return 'u';", "if (v == null) return 'n';"],
+  ['Q21: heat flag back to the value wording', "heat: { a: 'Heat — high', r: 'Heat — high' }, rain:", "heat: 'Feels like {v}°', rain:"],
   ['indoor early return removed', 'if (vm.indoor) {', 'if (false) {'],
   ['stale cut-off ignored', '!(ageH <= CF.staleHours.unavailable)', 'false'],
   ['badge in the viewer zone', 'const mp = wxLocalParts(startMs, zone);', "const mp = wxLocalParts(startMs, (typeof newsTz === 'function' && newsTz()) || 'UTC');"],

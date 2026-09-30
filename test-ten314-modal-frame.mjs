@@ -178,7 +178,7 @@ function modalVM(opts = {}) {
     renderWeatherSection: () => log.push('build:weather'), openWeatherTab: rec('load:weather'), openMarketEdgeTab: () => log.push('load:marketedge'),
     buildOddsSection: () => { log.push('build:odds'); return ''; }, renderOddsSection: () => {}, renderNewsSection: () => log.push('build:news'),
     ensureFormRows: rec('load:form-shards'), fhEnsureH2hData: rec('load:h2h-data'), fhEnsureFormData: rec('load:form-data'), ensureOddsMovement: rec('load:odds-shard'), ensurePsMatrix: rec('load:matrix'),
-    ensureOverviewProfiles: rec('load:profiles'), kfEnsureWeather: rec('load:weather-kf'),
+    ensureOverviewProfiles: rec('load:profiles'), kfEnsureWeather: rec('load:weather-kf'), trHoldLoad: rec('load:event-hold'),
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
     h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
@@ -208,7 +208,7 @@ test('lazy: opening the modal builds and loads Key factors only; every other tab
   assert.deepEqual(built(), ['build:key']);
   // TEN-341: Key factors reads what each card's own tab reads (matrix, Form rows, H2H meetings, DNA, season rows, odds shard,
   // weather) — never the MCP radar (N10) and nothing another tab alone needs (the news feed, the meeting shards)
-  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:form-data', 'load:h2h-data', 'load:matrix', 'load:odds-shard', 'load:profiles', 'load:weather-kf']);
+  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:event-hold', 'load:form-data', 'load:h2h-data', 'load:matrix', 'load:odds-shard', 'load:profiles', 'load:weather-kf']);
   log.length = 0;
   api.aShowTab('style'); await flush();
   // TEN-340: the Playing style tab reads the 5-axis DNA only — never the MCP radar (N10: the modal never fetches style-radar.json)
@@ -222,14 +222,24 @@ test('lazy: opening the modal builds and loads Key factors only; every other tab
 });
 
 // Mutation: drop `_aBuilt.clear()` from openAnalysisModal (a second match would show the first match's tabs).
-test('lazy: a new match starts with nothing built; it reopens on the last-used tab (design §6)', async () => {
+// Founder Q26 (2026-09-30; replaces README §6 "reopens on the last-used tab"): every open starts on Key factors; an explicit
+// tab (a link: openAnalysisModal(id, tab)) still opens that tab. Mutation: the last-used tab restored (tools/test-ten341-mutants.js).
+test('Q26: a new match starts with nothing built and always opens on Key factors — no last-used tab; an explicit tab still wins', async () => {
   const { api, log, nav } = modalVM();
-  api.openAnalysisModal('a'); api.aShowTab('form'); await flush();
+  api.openAnalysisModal('a'); api.aShowTab('odds'); await flush();
   log.length = 0;
   api.openAnalysisModal('b'); await flush();
-  assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:form'], 'the last-used tab, rebuilt for the new match');
-  assert.deepEqual(api.built(), ['form']);
-  assert.ok(nav.form.classList.contains('active') && !nav.key.classList.contains('active'));
+  assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:key'], 'Key factors, rebuilt for the new match');
+  assert.deepEqual(api.built(), ['key']);
+  assert.ok(nav.key.classList.contains('active') && !nav.odds.classList.contains('active'));
+  // switch to Odds on match 'b', then reopen 'b': Key factors again
+  api.aShowTab('odds'); api.openAnalysisModal('b'); await flush();
+  assert.ok(nav.key.classList.contains('active') && !nav.odds.classList.contains('active'), 'reopen: Key factors, not Odds');
+  // an explicit link still opens its tab
+  api.openAnalysisModal('a', 'h2h'); await flush();
+  assert.ok(nav.h2h.classList.contains('active') && !nav.key.classList.contains('active'), 'openAnalysisModal(id, "h2h") opens H2H');
+  api.openAnalysisModal('a'); await flush();
+  assert.ok(nav.key.classList.contains('active'), 'and the next plain open is Key factors again');
 });
 
 // Mutation: drop the `_aM === m` half of aBuilt (a late shard of the previous match repaints the new one).

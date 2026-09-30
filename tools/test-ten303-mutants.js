@@ -5,6 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
+  ['Q23: a native title on the price-mode hints', "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\"' + tip(t) +", "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\" title=\"' + t + '\"' +"],
   ['§6.1 a stale book keeps its last price as NOW', "row[x + 'Now'] = row.stale ? null : novig", "row[x + 'Now'] = novig"],
   ['§6.1 the 60-min staleness rule dropped', 'return !Number.isFinite(ck) || nowMs - ck > AODDS_STALE_MS;\n  };\n  const mapped', 'return false;\n  };\n  const mapped'],
   ['§6.2 a row splices every source of its book', "const s1 = preMatch(src.books[key].p1), s2 = preMatch(src.books[key].p2);",

@@ -117,6 +117,9 @@ test('unavailable: a failed or malformed feed shows the file\'s "News feed unava
     const h = N.buildNewsSection(M);
     assert.ok(text(h).includes('News feed unavailable.') && /Last checked \d\d:\d\d:\d\d ?\./.test(text(h)));
     assert.ok(!/sample/i.test(h));
+    // founder Q19 (2026-09-30): the All / A / B filter stays in the unavailable state. Mutation 'Q19: the filter dropped when unavailable'.
+    assert.ok(h.indexOf('class="anews-filters"') >= 0 && h.indexOf('class="anews-filters"') < h.indexOf('anews-unavailable'), 'Q19: the filter above the unavailable block');
+    assert.match(text(h.slice(h.indexOf('anews-filters'), h.indexOf('anews-unavailable'))), /All J\. Sinner C\. Alcaraz/);
   }
   const G = load({ fetch: () => Promise.resolve({ ok: true, text: () => Promise.resolve(JSON.stringify(FEED)) }) });
   await G.ensureNewsData();
