@@ -382,7 +382,9 @@ function mustFail(name, fn) {
 // profiles/<key>.json (built or deployed, the same store this run reads). Absent
 // there too, the suite aborts with "fixture player <key> not found" — never a
 // stand-in.
-const FIXTURE_KEYS = { alcaraz: '2382', zverev: '1980', djokovic: '1905', schwartzman: '67' };
+// The pipeline builds exactly these players first and outside its build budget
+// (PINNED_PROFILE_KEYS in bsp-pipeline.js), so every build carries them.
+const FIXTURE_KEYS = require('../pp2-fixture-players.js');
 const FIXTURE_SHARDS = {};
 function fixturePlayer(key) {
   key = String(key);

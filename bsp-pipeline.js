@@ -41,6 +41,9 @@ const { attachWue, lookupWue } = require('./atp-entry-fallback');
 // never as a real 0. One rule, shared with build-point-by-point.js and
 // tools/match-stats-store.js — see match-stat-placeholders.js.
 const { sanitizeFixture, sanitizeFixtures, parseCount, sanitizeMatchStatsStore } = require('./match-stat-placeholders');
+// TEN-371: the pre-publish gate reads these players by key with no stand-in, so
+// their profiles are always built: first, and outside the per-run build budget.
+const PINNED_PROFILE_KEYS = new Set(Object.values(require('./pp2-fixture-players')));
 
 // Atomic JSON write: write to a temp file in the same directory, then rename
 // over the target. rename(2) is atomic on the same filesystem, so a reader
@@ -5699,7 +5702,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       if (cached.profile) { profiles[key] = cached.profile; reused++; } else skippedNull++;
       continue;
     }
-    if (built >= MAX_OPPONENT_BUILDS_PER_RUN) {
+    if (built >= MAX_OPPONENT_BUILDS_PER_RUN && !PINNED_PROFILE_KEYS.has(String(key))) {
       // Stale-but-current-schema falls back so the player stays searchable while
       // he waits his turn. A WRONG-SCHEMA profile must NOT: it predates fields
       // the page now reads, so it renders as a half-empty "ghost" that looks
@@ -5742,9 +5745,16 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     if (eagerKeys.has(row.key) || shardPool.has(row.key)) continue;
     shardPool.set(row.key, row.name);
   }
+  // TEN-371: a gate fixture player is always in the shard pool (even unranked,
+  // even with no cache entry); buildOneProfile names him from get_players.
+  for (const key of PINNED_PROFILE_KEYS) {
+    if (!eagerKeys.has(key) && !shardPool.has(key)) shardPool.set(key, '');
+  }
   // Best-ranked first: a member searches the top of the tour, so that is the
-  // half of the pool that must converge first.
+  // half of the pool that must converge first. Gate fixture players go first of all.
   const shardOrder = [...shardPool.entries()].sort((a, b) => {
+    const pa = PINNED_PROFILE_KEYS.has(a[0]) ? 0 : 1; const pb = PINNED_PROFILE_KEYS.has(b[0]) ? 0 : 1;
+    if (pa !== pb) return pa - pb;
     const ra = atpRankByKey.get(a[0]); const rb = atpRankByKey.get(b[0]);
     return (ra == null ? Infinity : ra) - (rb == null ? Infinity : rb);
   });
@@ -5759,9 +5769,9 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       if (cached.profile) { profiles[key] = cached.profile; shardReused++; }
       continue;
     }
-    const outOfBudget = shardBuilt >= MAX_SHARD_BUILDS_PER_RUN
+    const outOfBudget = !PINNED_PROFILE_KEYS.has(key) && (shardBuilt >= MAX_SHARD_BUILDS_PER_RUN
       || built >= MAX_OPPONENT_BUILDS_PER_RUN
-      || (Date.now() - shardStart) > SHARD_BUILD_BUDGET_MS;
+      || (Date.now() - shardStart) > SHARD_BUILD_BUDGET_MS);
     if (outOfBudget) {
       if (cached && cached.profile && cached.v === PROFILE_SCHEMA_VERSION) { profiles[key] = cached.profile; shardReused++; }
       else { shardPending++; shardDeferred++; }   // findable now, profile next run

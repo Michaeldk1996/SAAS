@@ -133,6 +133,22 @@ const namesByKey = (m) => ({ [m.p1Key]: m.p1, [m.p2Key]: m.p2 });
   ok(!/\|\| SAMPLE\[0\]|\|\| pickByRank\(1\)|\|\| pickByRank\(340\)/.test(gate), 'no fixture falls back to a different player');
   ok(/fixture player \$\{key\} not found/.test(gate), 'a missing fixture player aborts with its key');
 
+  // ...so the pipeline must always build them: one shared key list, built first and
+  // outside the per-run budget, or a schema bump would starve an unranked fixture
+  // player (Schwartzman sorts last) and freeze every publish.
+  const FIX = require('../pp2-fixture-players.js');
+  ok(/const FIXTURE_KEYS = require\('\.\.\/pp2-fixture-players\.js'\);/.test(gate), 'the gate reads the shared fixture-key list');
+  ok(/const PINNED_PROFILE_KEYS = new Set\(Object\.values\(require\('\.\/pp2-fixture-players'\)\)\);/.test(src),
+     'the pipeline pins the same list');
+  ok(JSON.stringify(Object.values(FIX).sort()) === JSON.stringify(['1905', '1980', '2382', '67']),
+     'the list is Alcaraz 2382, Zverev 1980, Djokovic 1905, Schwartzman 67');
+  ok(/if \(built >= MAX_OPPONENT_BUILDS_PER_RUN && !PINNED_PROFILE_KEYS\.has\(String\(key\)\)\)/.test(src),
+     'an opponent fixture player is built even past the opponent budget');
+  ok(/const outOfBudget = !PINNED_PROFILE_KEYS\.has\(key\) && \(/.test(src), 'a shard fixture player is never out of budget');
+  ok(/for \(const key of PINNED_PROFILE_KEYS\) \{\s*if \(!eagerKeys\.has\(key\) && !shardPool\.has\(key\)\) shardPool\.set\(key, ''\);/.test(src),
+     'a fixture player is always in the shard pool, ranked or not');
+  ok(/const pa = PINNED_PROFILE_KEYS\.has\(a\[0\]\) \? 0 : 1;/.test(src), 'fixture players are built first');
+
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch((e) => { console.error('test-ten371-name-spine crashed:', e); process.exit(1); });
