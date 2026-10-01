@@ -708,7 +708,9 @@ test('pipeline H2H: two same-surname players (Zhizhen Zhang 590, Ze Zhang 36963)
 });
 // Fix 2 (TEN-263 follow-up): the odds-feed card decides p1 by more than surname. The Odds
 // API event has names only (no participant ids), so two same-surname players are told
-// apart by given name, and an undecidable pair gets no keys at all (dashes, never a guess).
+// apart by given name. An undecidable pair is not carded from the odds feed at all
+// (TEN-371, founder 2026-10-01: Odds API names are never display names); its
+// api-tennis fixture is carded by the fixture path instead. Never a guess.
 const ORIENT = () => new Function(`const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
   ${slicePipe('normSurname')}\n${slicePipe('givenNameOf')}\n${slicePipe('fixtureFirstIsHome')}\nreturn fixtureFirstIsHome;`)();
 test('odds-feed card: p1 is chosen by given name when both players share a surname (Zhizhen v Ze Zhang)', () => {
@@ -726,7 +728,7 @@ test('odds-feed card: p1 is chosen by given name when both players share a surna
   assert.equal(O(fx('C. Alcaraz', 'J. Sinner'), { home_team: 'Carlos Alcaraz', away_team: 'Jannik Sinner' }), true);
   assert.equal(O(fx('J. Sinner', 'C. Alcaraz'), { home_team: 'Carlos Alcaraz', away_team: 'Jannik Sinner' }), false);
 });
-test('odds-feed card: an undecidable same-surname pair is built WITHOUT player keys (executed buildMatchObject)', async () => {
+test('odds-feed card: an undecidable same-surname pair is NOT carded from the odds feed (executed buildMatchObject)', async () => {
   const B = new Function(`const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
     const TOURNAMENT_VENUE_HINTS = {}, COURT_CONDITIONS = {}, COURT_CONDITIONS_ALIASES = {};
     ${slicePipe('venueAndCourtSpeedFor')}
@@ -740,8 +742,8 @@ test('odds-feed card: an undecidable same-surname pair is built WITHOUT player k
   const warn = console.warn; console.warn = () => {};
   try {
     const m = await B.buildMatchObject(ev, [fixture], {}, {});
-    assert.equal(m.p1Key, null); assert.equal(m.p2Key, null);
-    assert.equal(m.p1PhotoUrl, null); assert.equal(m.tournamentRound, 'ATP X - 1/16-finals', 'the fixture still names the round');
+    assert.equal(m.skipped, 'undecidable', 'no card is built from an odds event we could not orient');
+    assert.equal(m.p1, undefined, 'and no Odds API name reaches a display name');
     assert.equal(B.fetched(), 0, 'no H2H fetched for a pair we could not orient');
   } finally { console.warn = warn; }
 });
