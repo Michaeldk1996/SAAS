@@ -4828,26 +4828,20 @@ function aggregatePlayerWue(fixtures, playerKey, playerName) {
 // player_name is a second, worse form of the same player — measured 1 Oct, it
 // disagreed with the fixture form for 78 of 1,769 players ("B. Yunchaokete" for
 // Y. Bu, "T. Barrios" for T. Barrios Vera, "C. O&apos;Connell", ". A. Nedic",
-// "T. BERARD"), while the fixture form was one string for 1,767 of 1,769. So the
-// profile takes the fixture form: his most frequent name across his own
-// fixtures, ties to the most recent. Null when he has no fixtures.
+// "T. BERARD"). So the profile takes his name from his most recent fixture —
+// the spelling his card carries, even right after api-tennis renames him.
+// Null when he has no fixtures.
 function profileNameFromFixtures(fixtures, key) {
   const k = String(key);
-  const seen = new Map(); // name -> { n, last }
+  let best = null, bestDate = '';
   for (const f of fixtures || []) {
     const nm = String(f.first_player_key) === k ? f.event_first_player
       : String(f.second_player_key) === k ? f.event_second_player : null;
     const t = String(nm || '').trim();
-    if (!t) continue;
-    const e = seen.get(t) || { n: 0, last: '' };
-    e.n++; if (String(f.event_date || '') > e.last) e.last = String(f.event_date || '');
-    seen.set(t, e);
+    const d = String(f.event_date || '') + ' ' + String(f.event_time || '');
+    if (t && (best === null || d > bestDate)) { best = t; bestDate = d; }
   }
-  let best = null;
-  for (const [nm, e] of seen) {
-    if (!best || e.n > best.e.n || (e.n === best.e.n && e.last > best.e.last)) best = { nm, e };
-  }
-  return best ? best.nm : null;
+  return best;
 }
 
 // get_players escapes apostrophes ("C. O&apos;Connell"); the fallback name must not.

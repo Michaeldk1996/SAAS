@@ -107,9 +107,9 @@ const namesByKey = (m) => ({ [m.p1Key]: m.p1, [m.p2Key]: m.p2 });
   const oc = await P.buildOneProfile('421', 'C. O\'Connell', surfaceMap);
   ok(oc.profile && oc.profile.name === "C. O'Connell", `a get_players fallback name is entity-decoded (got ${oc.profile && oc.profile.name})`);
   const F = (a, b, ak, bk, d) => ({ event_first_player: a, event_second_player: b, first_player_key: ak, second_player_key: bk, event_date: d });
-  ok(P.profileNameFromFixtures([F('L. LIU', 'X', 73579, 1, '2026-09-01'), F('Y', 'L. Liu', 2, 73579, '2026-08-01'), F('L. Liu', 'Z', '73579', 3, '2026-07-01')], 73579) === 'L. Liu',
-     'the most frequent fixture form wins, string or numeric key');
-  ok(P.profileNameFromFixtures([F('A. Old', 'X', 9, 1, '2026-01-01'), F('A. New', 'X', 9, 1, '2026-02-01')], 9) === 'A. New', 'a tie goes to the most recent fixture');
+  // 796 really was "B. Yunchaokete" in his 2021-23 fixtures and "Y. Bu" since: the latest wins, however many old ones.
+  ok(P.profileNameFromFixtures([F('B. Yunchaokete', 'X', 796, 1, '2022-01-01'), F('Y', 'B. Yunchaokete', 2, '796', '2022-02-01'), F('Y. Bu', 'Z', '796', 3, '2026-10-02')], 796) === 'Y. Bu',
+     'the most recent fixture spelling wins over older, more frequent ones (string or numeric key)');
   ok(P.profileNameFromFixtures([F('X', 'Y', 1, 2, '2026-01-01')], 9) === null, 'no fixture of his own gives null (get_players fallback)');
 
   // Odds API refusal: logged with its status and remaining credits, never fatal.
