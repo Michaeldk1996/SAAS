@@ -92,7 +92,18 @@ const path = require('path'); const R = process.argv[1];
 const { runModel } = require(path.join(R, 'h2h-model/model.js'));
 const matches = require(path.join(R, 'matches.json'));
 const out = [];
-for (const m of matches.filter(x => x.oddsMovement && x.oddsMovement.books && Object.keys(x.oddsMovement.books).length).slice(0, 3)) {
+// TEN-372: never only the board's own cards. The legacy `books` exist only while The Odds
+// API's history refresher has data; on 1 Oct 09:45Z the last such cards (27 Sep) aged off,
+// this ran on 0 cards and froze every publish. So one card is always manufactured, plus up
+// to 3 real ones: today's first card with a moving bet365 series and NO Pinnacle line — so the
+// chart's same-named "Pinnacle" below would change the model's output if it ever leaked in.
+const real = matches.filter(x => x.oddsMovement && x.oddsMovement.books && Object.keys(x.oddsMovement.books).length).slice(0, 3);
+const made = JSON.parse(JSON.stringify(matches.find(x => x.tourBadge === 'ATP') || matches[0]));
+made.id = 'manufactured:' + made.id;
+made.oddsMovement = { market: 'Match Winner', books: { bet365: {
+  p1: [['2026-09-26T08:00:00.000Z', 2.05], ['2026-09-27T10:00:00.000Z', 1.80]],
+  p2: [['2026-09-26T08:00:00.000Z', 1.75], ['2026-09-27T10:00:00.000Z', 2.00]] } } };
+for (const m of [made, ...real]) {
   const run = mm => { const r = runModel(mm, {}); if (r && r.meta) delete r.meta.generatedAt; return JSON.stringify(r); };
   const a = run(JSON.parse(JSON.stringify(m)));
   const m2 = JSON.parse(JSON.stringify(m));
