@@ -4823,6 +4823,38 @@ function aggregatePlayerWue(fixtures, playerKey, playerName) {
   };
 }
 
+// TEN-372 (founder, 2026-10-01: "one spelling on his card and his profile").
+// A card's name is the fixture's event_first/second_player; get_players'
+// player_name is a second, worse form of the same player — measured 1 Oct, it
+// disagreed with the fixture form for 78 of 1,769 players ("B. Yunchaokete" for
+// Y. Bu, "T. Barrios" for T. Barrios Vera, "C. O&apos;Connell", ". A. Nedic",
+// "T. BERARD"), while the fixture form was one string for 1,767 of 1,769. So the
+// profile takes the fixture form: his most frequent name across his own
+// fixtures, ties to the most recent. Null when he has no fixtures.
+function profileNameFromFixtures(fixtures, key) {
+  const k = String(key);
+  const seen = new Map(); // name -> { n, last }
+  for (const f of fixtures || []) {
+    const nm = String(f.first_player_key) === k ? f.event_first_player
+      : String(f.second_player_key) === k ? f.event_second_player : null;
+    const t = String(nm || '').trim();
+    if (!t) continue;
+    const e = seen.get(t) || { n: 0, last: '' };
+    e.n++; if (String(f.event_date || '') > e.last) e.last = String(f.event_date || '');
+    seen.set(t, e);
+  }
+  let best = null;
+  for (const [nm, e] of seen) {
+    if (!best || e.n > best.e.n || (e.n === best.e.n && e.last > best.e.last)) best = { nm, e };
+  }
+  return best ? best.nm : null;
+}
+
+// get_players escapes apostrophes ("C. O&apos;Connell"); the fallback name must not.
+function decodeHtmlEntities(s) {
+  return s.replace(/&apos;|&#0?39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
+}
+
 async function buildOneProfile(key, name, surfaceMap) {
   const currentYear = new Date().getFullYear();
   const playerStats = await fetchPlayerStats(key);
@@ -4914,9 +4946,10 @@ async function buildOneProfile(key, name, surfaceMap) {
 
   const profile = {
     key,
-    // TEN-371 (founder ruling 2026-10-01): the profile name is api-tennis
-    // get_players' player_name, never the card name it was seeded with.
-    name: String(playerStats.player_name || '').trim() || name,
+    // TEN-372: the profile name is the player's own name in his api-tennis
+    // fixtures — the exact string his card shows — never the seeded name.
+    name: profileNameFromFixtures([...allFixtures, ...allTierFixtures], key)
+      || decodeHtmlEntities(String(playerStats.player_name || '').trim()) || name,
     country: playerStats.player_country || null,
     age: computeAgeFromBday(playerStats.player_bday),
     rank: atpRankByKey.get(String(key)) ?? null, // TEN-133: live get_standings place, joined by player_key
@@ -7637,7 +7670,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

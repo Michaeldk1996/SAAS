@@ -14,7 +14,12 @@
 const fs = require('fs');
 const path = require('path');
 
-const PLAYER_NAMES = { 1980: 'A. Zverev', 1103: 'C. Norrie' };
+const PLAYER_NAMES = { 1980: 'A. Zverev', 1103: 'C. Norrie', 796: 'B. Yunchaokete', 421: 'C. O&apos;Connell' };
+// TEN-372: 796's api-tennis fixtures (real record, event 12167394, 2 Oct) call him
+// "Y. Bu"; get_players calls him "B. Yunchaokete".
+const BU_FIXTURE = { event_key: 12167394, event_date: '2026-10-02', event_time: '10:00',
+  event_first_player: 'Y. Bu', event_second_player: 'N. Djokovic', first_player_key: 796, second_player_key: 1905,
+  event_status: '', event_type_type: 'Atp Singles', tournament_name: 'ATP Beijing', tournament_key: 2201, scores: [] };
 const ODDS_API_REFUSAL = { status: 401, remaining: '0' };
 let oddsApiCalls = 0;
 
@@ -31,6 +36,7 @@ global.fetch = async (url) => {
       { 'x-requests-remaining': ODDS_API_REFUSAL.remaining });
   }
   const pk = /[?&]player_key=(\d+)/.exec(u);
+  if (u.includes('method=get_fixtures') && pk && pk[1] === '796') return reply(200, { success: 1, result: [BU_FIXTURE] });
   if (u.includes('method=get_players') && pk) {
     return reply(200, { success: 1, result: [{ player_key: Number(pk[1]), player_name: PLAYER_NAMES[pk[1]], player_country: 'X', stats: [], tournaments: [] }] });
   }
@@ -92,6 +98,19 @@ const namesByKey = (m) => ({ [m.p1Key]: m.p1, [m.p2Key]: m.p2 });
   ok(fromFull.profile && fromFull.profile.name === 'A. Zverev',
      `a profile seeded with "Alexander Zverev" is named "A. Zverev" (got ${fromFull.profile && fromFull.profile.name})`);
   ok(fromShort.profile && fromShort.profile.name === fromFull.profile.name, 'profile names are identical whatever form seeded them');
+
+  // TEN-372: one spelling on card and profile — the fixture form wins over get_players.
+  const bu = await P.buildOneProfile('796', 'Bu Yunchaokete', surfaceMap);
+  const buCard = await P.buildUpcomingMatchObject(BU_FIXTURE, surfaceMap, venueMap);
+  ok(bu.profile && bu.profile.name === 'Y. Bu', `796's profile takes his fixture name "Y. Bu", not get_players' "B. Yunchaokete" (got ${bu.profile && bu.profile.name})`);
+  ok(bu.profile && bu.profile.name === namesByKey(buCard)[796], `796's card and profile carry one spelling (card ${namesByKey(buCard)[796]})`);
+  const oc = await P.buildOneProfile('421', 'C. O\'Connell', surfaceMap);
+  ok(oc.profile && oc.profile.name === "C. O'Connell", `a get_players fallback name is entity-decoded (got ${oc.profile && oc.profile.name})`);
+  const F = (a, b, ak, bk, d) => ({ event_first_player: a, event_second_player: b, first_player_key: ak, second_player_key: bk, event_date: d });
+  ok(P.profileNameFromFixtures([F('L. LIU', 'X', 73579, 1, '2026-09-01'), F('Y', 'L. Liu', 2, 73579, '2026-08-01'), F('L. Liu', 'Z', '73579', 3, '2026-07-01')], 73579) === 'L. Liu',
+     'the most frequent fixture form wins, string or numeric key');
+  ok(P.profileNameFromFixtures([F('A. Old', 'X', 9, 1, '2026-01-01'), F('A. New', 'X', 9, 1, '2026-02-01')], 9) === 'A. New', 'a tie goes to the most recent fixture');
+  ok(P.profileNameFromFixtures([F('X', 'Y', 1, 2, '2026-01-01')], 9) === null, 'no fixture of his own gives null (get_players fallback)');
 
   // Odds API refusal: logged with its status and remaining credits, never fatal.
   const logged = [];
