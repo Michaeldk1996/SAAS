@@ -148,6 +148,10 @@ const namesByKey = (m) => ({ [m.p1Key]: m.p1, [m.p2Key]: m.p2 });
   ok(/for \(const key of PINNED_PROFILE_KEYS\) \{\s*if \(!eagerKeys\.has\(key\) && !shardPool\.has\(key\)\) shardPool\.set\(key, ''\);/.test(src),
      'a fixture player is always in the shard pool, ranked or not');
   ok(/const pa = PINNED_PROFILE_KEYS\.has\(a\[0\]\) \? 0 : 1;/.test(src), 'fixture players are built first');
+  ok(/if \(fresh && !\(PINNED_PROFILE_KEYS\.has\(String\(key\)\) && !cached\.profile\)\)/.test(src),
+     'an opponent fixture player with a cached null is rebuilt, not held for the 14-day TTL');
+  ok(/if \(fresh && !\(PINNED_PROFILE_KEYS\.has\(key\) && !cached\.profile\)\)/.test(src),
+     'a shard fixture player with a cached null is rebuilt, not held for the 14-day TTL');
 
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

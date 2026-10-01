@@ -5698,7 +5698,9 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
-    if (fresh) {
+    // TEN-371: a gate fixture player's cached null (one failed build) is never
+    // "fresh" — retried every run rather than withheld for the 14-day TTL.
+    if (fresh && !(PINNED_PROFILE_KEYS.has(String(key)) && !cached.profile)) {
       if (cached.profile) { profiles[key] = cached.profile; reused++; } else skippedNull++;
       continue;
     }
@@ -5765,7 +5767,7 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
-    if (fresh) {
+    if (fresh && !(PINNED_PROFILE_KEYS.has(key) && !cached.profile)) {
       if (cached.profile) { profiles[key] = cached.profile; shardReused++; }
       continue;
     }
