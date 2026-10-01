@@ -1918,17 +1918,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "15 - 15",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2382_c-alcaraz.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10884_a-michelsen.jpg",
     "oddsMovement": {
@@ -2090,6 +2084,38 @@
               ],
               [
                 "2026-10-01T07:09:10.429Z",
+                1.17
+              ],
+              [
+                "2026-10-01T07:19:20.902Z",
+                1.16
+              ],
+              [
+                "2026-10-01T07:24:27.893Z",
+                1.17
+              ],
+              [
+                "2026-10-01T07:25:51.797Z",
+                1.16
+              ],
+              [
+                "2026-10-01T07:29:17.600Z",
+                1.17
+              ],
+              [
+                "2026-10-01T07:29:56.053Z",
+                1.16
+              ],
+              [
+                "2026-10-01T07:30:58.094Z",
+                1.17
+              ],
+              [
+                "2026-10-01T07:35:07.288Z",
+                1.16
+              ],
+              [
+                "2026-10-01T07:37:25.892Z",
                 1.17
               ]
             ],
@@ -2569,6 +2595,34 @@
               [
                 "2026-10-01T07:09:10.429Z",
                 6.4
+              ],
+              [
+                "2026-10-01T07:17:42.097Z",
+                6.6
+              ],
+              [
+                "2026-10-01T07:19:20.902Z",
+                6.8
+              ],
+              [
+                "2026-10-01T07:24:27.893Z",
+                6.6
+              ],
+              [
+                "2026-10-01T07:29:56.053Z",
+                6.8
+              ],
+              [
+                "2026-10-01T07:34:16.980Z",
+                6.6
+              ],
+              [
+                "2026-10-01T07:35:23.959Z",
+                6.8
+              ],
+              [
+                "2026-10-01T07:37:25.892Z",
+                6.6
               ]
             ]
           },
@@ -2641,6 +2695,22 @@
               [
                 "2026-10-01T06:58:10.870Z",
                 1.14
+              ],
+              [
+                "2026-10-01T07:15:43.887Z",
+                1.12
+              ],
+              [
+                "2026-10-01T07:18:52.500Z",
+                1.1
+              ],
+              [
+                "2026-10-01T07:23:02.601Z",
+                1.12
+              ],
+              [
+                "2026-10-01T07:39:00.448Z",
+                1.11
               ]
             ],
             "p2": [
@@ -2719,6 +2789,26 @@
               [
                 "2026-10-01T07:00:12.394Z",
                 4.6
+              ],
+              [
+                "2026-10-01T07:15:43.887Z",
+                4.85
+              ],
+              [
+                "2026-10-01T07:18:52.500Z",
+                5.25
+              ],
+              [
+                "2026-10-01T07:23:02.601Z",
+                5.0
+              ],
+              [
+                "2026-10-01T07:29:42.556Z",
+                4.85
+              ],
+              [
+                "2026-10-01T07:39:00.448Z",
+                5.15
               ]
             ]
           },
@@ -3596,19 +3686,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:10:00.000Z"
+            "checkedAt": "2026-10-01T07:40:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:10:00.000Z"
+            "checkedAt": "2026-10-01T07:40:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -3830,10 +3920,7 @@
       "edgeVsPinnacleP1": 0.0081,
       "edgeVsPinnacleP2": -0.0081,
       "ts": "2026-09-29T19:29:59.968Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12166491",
@@ -7899,7 +7986,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -8113,27 +8200,7 @@
       "edgeVsPinnacleP1": -0.036,
       "edgeVsPinnacleP2": 0.036,
       "ts": "2026-09-29T13:50:13.345Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "7-6(3), 6-3",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 6,
-          "p2": 3
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166492",
@@ -10231,6 +10298,10 @@
               [
                 "2026-10-01T05:57:17.148Z",
                 1.59
+              ],
+              [
+                "2026-10-01T07:10:35.920Z",
+                1.6
               ]
             ],
             "p2": [
@@ -10584,6 +10655,22 @@
               ],
               [
                 "2026-10-01T06:23:09.592Z",
+                1.7
+              ],
+              [
+                "2026-10-01T07:10:00.626Z",
+                1.69
+              ],
+              [
+                "2026-10-01T07:19:44.480Z",
+                1.7
+              ],
+              [
+                "2026-10-01T08:12:28.566Z",
+                1.69
+              ],
+              [
+                "2026-10-01T08:12:52.207Z",
                 1.7
               ]
             ],
@@ -11003,6 +11090,10 @@
               [
                 "2026-10-01T07:09:00.236Z",
                 2.4
+              ],
+              [
+                "2026-10-01T08:12:16.529Z",
+                2.42
               ]
             ]
           },
@@ -11306,19 +11397,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:10:00.000Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:10:00.000Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -16637,7 +16728,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -16886,27 +16977,7 @@
       "edgeVsPinnacleP1": -0.0187,
       "edgeVsPinnacleP2": 0.0187,
       "ts": "2026-09-30T00:00:36.510Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "3-6, 2-6",
-      "sets": [
-        {
-          "p1": 3,
-          "p2": 6
-        },
-        {
-          "p1": 2,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166496",
@@ -21785,7 +21856,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -22016,27 +22087,7 @@
       "edgeVsPinnacleP1": -0.0389,
       "edgeVsPinnacleP2": 0.0389,
       "ts": "2026-09-30T00:00:36.510Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "4-6, 4-6",
-      "sets": [
-        {
-          "p1": 4,
-          "p2": 6
-        },
-        {
-          "p1": 4,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166497",
@@ -25783,7 +25834,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -26000,27 +26051,7 @@
       "edgeVsPinnacleP1": 0.0703,
       "edgeVsPinnacleP2": -0.0703,
       "ts": "2026-09-29T11:35:52.313Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "3-6, 1-6",
-      "sets": [
-        {
-          "p1": 3,
-          "p2": 6
-        },
-        {
-          "p1": 1,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166498",
@@ -28371,16 +28402,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "0 - 0",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/431_d-shapovalov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9608_s-shimabukuro.jpg",
@@ -28467,6 +28492,18 @@
               ],
               [
                 "2026-10-01T06:40:30.981Z",
+                1.3
+              ],
+              [
+                "2026-10-01T07:46:03.580Z",
+                1.33
+              ],
+              [
+                "2026-10-01T07:47:49.041Z",
+                1.25
+              ],
+              [
+                "2026-10-01T07:49:12.992Z",
                 1.3
               ]
             ],
@@ -28558,6 +28595,18 @@
               [
                 "2026-10-01T06:40:30.981Z",
                 3.1
+              ],
+              [
+                "2026-10-01T07:46:03.580Z",
+                3.0
+              ],
+              [
+                "2026-10-01T07:47:49.041Z",
+                3.4
+              ],
+              [
+                "2026-10-01T07:49:12.992Z",
+                3.15
               ]
             ]
           },
@@ -29368,6 +29417,10 @@
               [
                 "2026-10-01T07:25:47.305Z",
                 1.36
+              ],
+              [
+                "2026-10-01T07:43:36.420Z",
+                1.35
               ]
             ],
             "p2": [
@@ -29862,6 +29915,10 @@
               [
                 "2026-10-01T07:25:47.305Z",
                 3.75
+              ],
+              [
+                "2026-10-01T07:43:36.420Z",
+                3.8
               ]
             ]
           },
@@ -30369,19 +30426,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T07:50:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T07:50:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -30616,10 +30673,7 @@
       "edgeVsPinnacleP1": 0.0301,
       "edgeVsPinnacleP2": -0.0301,
       "ts": "2026-09-30T00:00:36.510Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12166527",
@@ -33404,6 +33458,10 @@
               [
                 "2026-10-01T06:13:54.609Z",
                 2.66
+              ],
+              [
+                "2026-10-01T08:05:40.959Z",
+                2.62
               ]
             ],
             "p2": [
@@ -33902,6 +33960,10 @@
               [
                 "2026-10-01T06:07:09.532Z",
                 1.59
+              ],
+              [
+                "2026-10-01T08:05:40.959Z",
+                1.61
               ]
             ]
           },
@@ -34939,19 +35001,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -39627,7 +39689,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -39883,27 +39945,7 @@
       "edgeVsPinnacleP1": 0.0575,
       "edgeVsPinnacleP2": -0.0575,
       "ts": "2026-09-29T11:35:52.313Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "1-6, 6-7(3)",
-      "sets": [
-        {
-          "p1": 1,
-          "p2": 6
-        },
-        {
-          "p1": 6,
-          "p2": 7
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166530",
@@ -43870,7 +43912,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -44097,27 +44139,7 @@
       "edgeVsPinnacleP1": 0.0226,
       "edgeVsPinnacleP2": -0.0226,
       "ts": "2026-09-29T13:50:13.345Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "7-6(4), 6-2",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 6,
-          "p2": 2
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166531",
@@ -47389,6 +47411,14 @@
               [
                 "2026-10-01T07:04:49.780Z",
                 2.64
+              ],
+              [
+                "2026-10-01T07:34:00.692Z",
+                2.68
+              ],
+              [
+                "2026-10-01T08:08:50.903Z",
+                2.7
               ]
             ],
             "p2": [
@@ -47687,6 +47717,14 @@
               [
                 "2026-10-01T07:04:49.780Z",
                 1.6
+              ],
+              [
+                "2026-10-01T07:34:00.692Z",
+                1.59
+              ],
+              [
+                "2026-10-01T07:41:45.736Z",
+                1.58
               ]
             ]
           },
@@ -48298,19 +48336,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -52930,7 +52968,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -53147,27 +53185,7 @@
       "edgeVsPinnacleP1": -0.0628,
       "edgeVsPinnacleP2": 0.0628,
       "ts": "2026-09-29T11:35:52.313Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-3, 6-2",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 3
-        },
-        {
-          "p1": 6,
-          "p2": 2
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166534",
@@ -54976,16 +54994,10 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 0,
-        "p2": 0
-      }
-    ],
-    "liveGameScore": "0 - 0",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2413_j-shang.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1101_s-baez.jpg",
@@ -55417,6 +55429,10 @@
               [
                 "2026-10-01T07:00:33.397Z",
                 1.71
+              ],
+              [
+                "2026-10-01T07:32:08.569Z",
+                1.7
               ]
             ],
             "p2": [
@@ -56179,6 +56195,10 @@
               [
                 "2026-10-01T06:02:59.073Z",
                 2.38
+              ],
+              [
+                "2026-10-01T07:38:51.144Z",
+                2.4
               ]
             ]
           },
@@ -57264,19 +57284,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:20:00.000Z"
+            "checkedAt": "2026-10-01T07:40:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:20:00.000Z"
+            "checkedAt": "2026-10-01T07:40:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -57504,10 +57524,7 @@
       "edgeVsPinnacleP1": -0.0781,
       "edgeVsPinnacleP2": 0.0781,
       "ts": "2026-09-30T00:00:36.510Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12166536",
@@ -59731,6 +59748,14 @@
               [
                 "2026-10-01T07:06:47.713Z",
                 1.57
+              ],
+              [
+                "2026-10-01T07:43:23.135Z",
+                1.51
+              ],
+              [
+                "2026-10-01T07:45:34.833Z",
+                1.53
               ]
             ],
             "p2": [
@@ -60065,6 +60090,14 @@
               [
                 "2026-10-01T07:06:47.713Z",
                 2.25
+              ],
+              [
+                "2026-10-01T07:43:23.135Z",
+                2.35
+              ],
+              [
+                "2026-10-01T07:45:34.833Z",
+                2.32
               ]
             ]
           },
@@ -60603,6 +60636,26 @@
               [
                 "2026-10-01T07:23:10.639Z",
                 1.65
+              ],
+              [
+                "2026-10-01T07:42:20.723Z",
+                1.63
+              ],
+              [
+                "2026-10-01T07:43:15.718Z",
+                1.62
+              ],
+              [
+                "2026-10-01T07:46:35.739Z",
+                1.63
+              ],
+              [
+                "2026-10-01T07:58:50.767Z",
+                1.62
+              ],
+              [
+                "2026-10-01T08:08:15.900Z",
+                1.63
               ]
             ],
             "p2": [
@@ -61061,6 +61114,30 @@
               [
                 "2026-10-01T07:19:50.564Z",
                 2.52
+              ],
+              [
+                "2026-10-01T07:42:20.723Z",
+                2.54
+              ],
+              [
+                "2026-10-01T07:43:15.718Z",
+                2.58
+              ],
+              [
+                "2026-10-01T07:46:35.739Z",
+                2.56
+              ],
+              [
+                "2026-10-01T07:58:50.767Z",
+                2.58
+              ],
+              [
+                "2026-10-01T08:07:05.917Z",
+                2.56
+              ],
+              [
+                "2026-10-01T08:09:05.891Z",
+                2.58
               ]
             ]
           },
@@ -62352,19 +62429,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -65454,6 +65531,10 @@
               [
                 "2026-10-01T07:14:20.286Z",
                 1.13
+              ],
+              [
+                "2026-10-01T07:54:10.780Z",
+                1.14
               ]
             ],
             "p2": [
@@ -66356,6 +66437,14 @@
               [
                 "2026-10-01T07:14:20.286Z",
                 8.2
+              ],
+              [
+                "2026-10-01T07:30:40.205Z",
+                8.0
+              ],
+              [
+                "2026-10-01T07:54:10.780Z",
+                7.8
               ]
             ]
           },
@@ -66463,6 +66552,14 @@
               ],
               [
                 "2026-10-01T02:25:47.743Z",
+                1.07
+              ],
+              [
+                "2026-10-01T07:57:33.926Z",
+                1.08
+              ],
+              [
+                "2026-10-01T07:59:38.633Z",
                 1.07
               ]
             ],
@@ -66722,6 +66819,18 @@
               [
                 "2026-10-01T03:14:47.059Z",
                 6.2
+              ],
+              [
+                "2026-10-01T07:57:33.926Z",
+                5.75
+              ],
+              [
+                "2026-10-01T07:59:38.633Z",
+                6.25
+              ],
+              [
+                "2026-10-01T08:04:39.353Z",
+                6.0
               ]
             ]
           },
@@ -67346,6 +67455,10 @@
               [
                 "2026-10-01T07:57:00.886Z",
                 1.122
+              ],
+              [
+                "2026-10-01T08:09:53.992Z",
+                1.13
               ]
             ],
             "p2": [
@@ -67812,6 +67925,10 @@
               [
                 "2026-10-01T07:57:00.897Z",
                 6.65
+              ],
+              [
+                "2026-10-01T08:09:54.000Z",
+                6.56
               ]
             ]
           },
@@ -68663,19 +68780,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:20:00.000Z"
+            "checkedAt": "2026-10-01T08:05:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:20:00.000Z"
+            "checkedAt": "2026-10-01T08:05:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -73227,7 +73344,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -73388,31 +73505,7 @@
       "edgeVsPinnacleP1": 0.0168,
       "edgeVsPinnacleP2": -0.0168,
       "ts": "2026-09-30T08:46:05.637Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-4, 3-6, 4-6",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 4
-        },
-        {
-          "p1": 3,
-          "p2": 6
-        },
-        {
-          "p1": 4,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166951",
@@ -77319,7 +77412,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -77478,31 +77571,7 @@
       "edgeVsPinnacleP1": 0.0248,
       "edgeVsPinnacleP2": -0.0248,
       "ts": "2026-09-30T18:35:22.788Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "7-6(7), 4-6, 3-6",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 4,
-          "p2": 6
-        },
-        {
-          "p1": 3,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166952",
@@ -79655,6 +79724,10 @@
               [
                 "2026-10-01T07:25:10.667Z",
                 4.5
+              ],
+              [
+                "2026-10-01T08:11:41.352Z",
+                4.6
               ]
             ],
             "p2": [
@@ -80218,19 +80291,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -83526,7 +83599,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -83692,23 +83765,7 @@
       "edgeVsPinnacleP1": -0.0575,
       "edgeVsPinnacleP2": 0.0575,
       "ts": "2026-09-30T18:03:05.877Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "0-0",
-      "sets": [
-        {
-          "p1": 0,
-          "p2": 0
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 0,
-      "winner": null
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166955",
@@ -87095,7 +87152,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -87249,31 +87306,7 @@
       "edgeVsPinnacleP1": -0.0009,
       "edgeVsPinnacleP2": 0.0009,
       "ts": "2026-09-30T08:46:05.637Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "7-5, 4-6, 3-6",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 5
-        },
-        {
-          "p1": 4,
-          "p2": 6
-        },
-        {
-          "p1": 3,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12167327",
@@ -90191,7 +90224,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -90306,31 +90339,7 @@
       "edgeVsPinnacleP1": -0.0238,
       "edgeVsPinnacleP2": 0.0238,
       "ts": "2026-09-30T22:04:20.170Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-4, 3-6, 6-4",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 4
-        },
-        {
-          "p1": 3,
-          "p2": 6
-        },
-        {
-          "p1": 6,
-          "p2": 4
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 1,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12166953",
@@ -93240,6 +93249,14 @@
               [
                 "2026-10-01T04:14:44.078Z",
                 1.25
+              ],
+              [
+                "2026-10-01T07:54:05.788Z",
+                1.24
+              ],
+              [
+                "2026-10-01T07:54:30.852Z",
+                1.25
               ]
             ],
             "p2": [
@@ -93595,25 +93612,25 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-01T08:00:01.000Z"
+            "checkedAt": "2026-10-01T08:15:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -96232,6 +96249,22 @@
               [
                 "2026-10-01T06:26:59.617Z",
                 4.0
+              ],
+              [
+                "2026-10-01T07:47:05.728Z",
+                3.95
+              ],
+              [
+                "2026-10-01T07:49:40.763Z",
+                4.0
+              ],
+              [
+                "2026-10-01T07:54:00.819Z",
+                3.95
+              ],
+              [
+                "2026-10-01T08:05:45.923Z",
+                4.0
               ]
             ],
             "p2": [
@@ -96961,19 +96994,19 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-01T07:29:53.468Z"
+            "checkedAt": "2026-10-01T08:14:56.874Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -97066,7 +97099,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-01T08:00:01.000Z"
+            "checkedAt": "2026-10-01T08:15:00.000Z"
           }
         }
       }
@@ -169804,7 +169837,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(2), 7-6(4)",
       "sets": [
         {
           "p1": 7,
@@ -201521,7 +201554,7 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-10-01T01:35:01.000Z"
+            "checkedAt": "2026-10-01T07:43:44.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
