@@ -67,7 +67,7 @@ For current build state, open build state — do not rely on a snapshot in this 
 | Source | Provides | Status |
 |---|---|---|
 | api-tennis.com | Fixtures, results, H2H, surface stats, box scores | Live |
-| The Odds API | Pre-match odds — Slams / 1000s / 500s | Live |
+| The Odds API | Price backup only (TEN-371): `h2h` prices on cards matched to an api-tennis fixture | Live |
 | OddsAPI / Oddsapi | ATP 250 and broader coverage | Live |
 | kibl | — | — |
 | bet105 | — | — |
@@ -77,7 +77,13 @@ For current build state, open build state — do not rely on a snapshot in this 
 
 **Model R&D mode (founder ruling TEN-8).** The h2h-model — every Stage-2 adjustment layer and the Layer #8 MCP archetype baseline — runs in internal R&D mode. The Sackmann CC BY-NC-SA non-commercial restriction gates **commercial serving to paying members**, not internal R&D. Do **not** flag the licence as a blocker on R&D builds. It re-engages at commercial deployment, when a commercially-licensed alternative or a clean-room Stage-1-only fair price is required.
 
-**Name matching.** The Odds API and API-Tennis use different name formats; matching is by last name. Watch for silent match-merge failures on busy days.
+**api-tennis is the spine; The Odds API is a price backup only** (founder ruling TEN-371, 2026-10-01). Fixtures, player names, player keys, scores, results and status come from api-tennis. The Odds API contributes price fields and nothing else, and it never blocks a publish.
+- **Test:** every board card's `p1`/`p2` is its api-tennis fixture's `event_first_player`/`event_second_player` (oriented by `fixtureFirstIsHome`), and every profile `name` is `get_players` `player_name`, whatever form The Odds API used ("Alexander Zverev" → "A. Zverev"). `tools/test-ten371-name-spine.js` drives `buildMatchObject`, `buildUpcomingMatchObject` and `buildOneProfile` with Odds API data present, absent and in full-name form; display names come out identical in all three.
+- **Test:** an Odds API event with no api-tennis fixture, or with an orientation `fixtureFirstIsHome` can't decide, is not carded and is logged by name ("not carded (no-fixture|undecidable)"). No name or ID is invented for it.
+- **Test:** an Odds API refusal (non-2xx, network error, non-list body) logs "Odds API unavailable: <status>" with `x-requests-remaining` and the run continues with no Odds API prices. It never throws and never reads as "Found 0 odds events".
+- **Test:** an api-tennis fixture with status `Finished`, no `event_winner` and no game won by anyone (every set 0–0) is a dead pairing, like a Cancelled one, and is never a card (`isUnplayedFinishedFixture`; measured: A. Molcan v A. Rinderknech, 12166954, 1 Oct). A named winner (a retirement after 0–0), any game won, or status `Retired`/`Walk Over` keeps it a result.
+- **Test:** the pre-publish gate (`tools/test-pp2-reconcile.js`) reads its fixture players by api-tennis key from `pp2-fixture-players.js` (Alcaraz 2382, Zverev 1980, Djokovic 1905, Schwartzman 67), never by name, with no stand-in player: a missing one aborts "fixture player <key> not found". The pipeline builds those keys first and outside the per-run build budget (`PINNED_PROFILE_KEYS`), as per-player shards only; they never enter the eager `player-profiles.json`.
+- **Exception:** price matching still joins The Odds API to a fixture by surname (`findApiTennisFixture`), so a surname-first vendor name ("Bu Yunchaokete" v api-tennis "Y. Bu") misses. That event is left off and its api-tennis card keeps api-tennis's own prices.
 
 **api-tennis times are the Europe/Berlin wall clock** (founder ruling TEN-304 → TEN-308, 2026-09-27). An api-tennis `event_date` + `event_time`, and a card's `date` + `time` when it has no `startTs`, is Berlin local time: CEST until 25 Oct 2026, CET after. It becomes an instant only through the tz database: `berlin-time.js` (`berlinWallMs`) in Node, `zoneinfo('Europe/Berlin')` in Python, `at time zone 'Europe/Berlin'` in SQL. The page's `cardStartMs` and `stennisfy-drops/status.mjs` carry inline copies of the same method because they cannot require a file. In the repeated hour (25 Oct 02:00–02:59) the Node, page and Python readers take the earlier (CEST) instant.
 - **Test:** 14:00 Berlin on 24 Oct is 12:00Z; 14:00 on 26 Oct is 13:00Z; 01:30 on 25 Oct is 23:30Z on the 24th; 02:30 on 25 Oct is 00:30Z. Every site passes all four in `tools/test-ten308-berlin-time.js` / `test-ten308-berlin-time.py`. A UTC read, a fixed +2, or an offset looked up at the wall time read as UTC fails them.
