@@ -108,6 +108,24 @@ const namesByKey = (m) => ({ [m.p1Key]: m.p1, [m.p2Key]: m.p2 });
   ok(logged.some(l => /^Odds API unavailable: 401 \(sports list/.test(l)), 'a refused sports list is logged the same way');
   ok(oddsApiCalls === 2, 'both Odds API calls were really made (the stub was reached)');
 
+  // A dead pairing labelled 'Finished' (no winner, no game won) is never a card,
+  // so it can never render a 0-0 final score. Real records from 2026-10-01.
+  const molcanRinderknech = { event_key: 12166954, event_status: 'Finished', event_winner: null,
+    scores: [{ score_first: '0', score_second: '0', score_set: '1' }] };
+  const molcanMachac = { event_key: 12167607, event_status: 'Finished', event_winner: 'First Player',
+    scores: [{ score_first: '6', score_second: '3', score_set: '1' }, { score_first: '6', score_second: '2', score_set: '2' }] };
+  ok(P.isUnplayedFinishedFixture(molcanRinderknech) === true, 'Molcan v Rinderknech (Finished, no winner, 0-0) is unplayed');
+  ok(P.isUnplayedFinishedFixture(molcanMachac) === false, 'Molcan v Machac (6-3 6-2) is a real result');
+  ok(P.isUnplayedFinishedFixture({ ...molcanRinderknech, event_winner: 'Second Player' }) === false,
+     'a named winner after 0-0 (retirement) stays a real result');
+  ok(P.isUnplayedFinishedFixture({ ...molcanRinderknech, scores: [{ score_first: '1', score_second: '0', score_set: '1' }] }) === false,
+     'one game won is a real (partial) result');
+  ok(P.isUnplayedFinishedFixture({ ...molcanRinderknech, event_status: 'Walk Over' }) === false, 'a Walk Over is untouched');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+  const past = src.slice(src.indexOf('const finishedPastFixtures = pastFixtures.filter('));
+  ok(/&& !isUnplayedFinishedFixture\(f\)/.test(past.slice(0, past.indexOf(');'))),
+     'the completed-card filter drops unplayed Finished fixtures');
+
   // The gate's fixtures are keyed, with no stand-in player.
   const gate = fs.readFileSync(path.join(__dirname, 'test-pp2-reconcile.js'), 'utf8');
   ok(!/byName\(/.test(gate), 'the reconcile gate looks up no fixture player by name');

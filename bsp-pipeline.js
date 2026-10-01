@@ -2427,6 +2427,16 @@ const isInterruptedFixture = f => INTERRUPTED_STATUSES.includes(f.event_status);
 // F. Cina vs C. Ugo Carabelli was the match actually played). A Cancelled
 // fixture is never a match that will be played, so it is never a card.
 const isCancelledFixture = f => f.event_status === 'Cancelled';
+// TEN-371: the same dead pairing, labelled 'Finished' instead of 'Cancelled'.
+// Measured 2026-10-01: A. Molcan v A. Rinderknech (event 12166954) is 'Finished'
+// with no winner, one set scored 0-0 and no statistics, while A. Molcan v
+// T. Machac (12167607, 6-3 6-2) is the match actually played in that slot. Its
+// finalScore would render "0-0". No winner and not one game won by anyone = no
+// ball was struck, so like a Cancelled fixture it is never a card. Any game won,
+// or a named winner (a retirement after 0-0), keeps it a real result.
+const isUnplayedFinishedFixture = f => f.event_status === 'Finished'
+  && f.event_winner !== 'First Player' && f.event_winner !== 'Second Player'
+  && (!Array.isArray(f.scores) || f.scores.every(s => Number(s.score_first) === 0 && Number(s.score_second) === 0));
 
 function buildFinalScore(fixture) {
   if (!Array.isArray(fixture.scores) || fixture.scores.length === 0) return null;
@@ -6131,9 +6141,14 @@ async function runPipeline() {
   const threeDaysAgo = dateStr(new Date(Date.now() - 3 * dayMs));
   console.log(`Fetching finished fixtures (${threeDaysAgo} to ${today}, incl. today) for completed-match scores/stats...`);
   const pastFixtures = await fetchApiTennisFixtures(threeDaysAgo, today);
+  const unplayed = pastFixtures.filter(f => isUnplayedFinishedFixture(f) && f.event_qualification !== 'True');
+  for (const f of unplayed) {
+    console.log(`  not carded (Finished, no winner, no game won): ${f.event_first_player} v ${f.event_second_player} · event ${f.event_key} · ${f.event_date}`);
+  }
   const finishedPastFixtures = pastFixtures.filter(f =>
     (['Finished', 'Retired', 'Walk Over'].includes(f.event_status) || isInterruptedFixture(f))
     && f.event_qualification !== 'True'
+    && !isUnplayedFinishedFixture(f)
   );
   const interruptedCount = finishedPastFixtures.filter(isInterruptedFixture).length;
   console.log(`Found ${finishedPastFixtures.length} played matches in the 4-day trailing window (incl. today)`
@@ -7610,7 +7625,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildMatchObject, buildUpcomingMatchObject, buildOneProfile, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
