@@ -374,9 +374,34 @@ function mustFail(name, fn) {
   else { fail++; failures.push('[neg] ' + name + ' :: corruption NOT caught — check is vacuous'); console.log('  FAIL  [neg] ' + name + ' :: corruption NOT caught — check is vacuous'); }
 }
 
-function byName(n) {
-  const k = Object.keys(PLAYERS).find(k => PLAYERS[k].name === n);
-  return k ? PLAYERS[k] : null;
+// TEN-371 (founder ruling 2026-10-01): fixture players are looked up by api-tennis
+// player KEY, never by a name string. A name lookup missed the moment the board's
+// name form flipped ("A. Zverev" -> "Alexander Zverev" when the Odds API quota
+// reset), fell back to a different player, and froze every publish from 00:00Z on
+// 1 Oct. A fixture player outside the eager store is read from its own
+// profiles/<key>.json (built or deployed, the same store this run reads). Absent
+// there too, the suite aborts with "fixture player <key> not found" — never a
+// stand-in.
+const FIXTURE_KEYS = { alcaraz: '2382', zverev: '1980', djokovic: '1905', schwartzman: '67' };
+const FIXTURE_SHARDS = {};
+function fixturePlayer(key) {
+  key = String(key);
+  if (PLAYERS[key]) return PLAYERS[key];
+  if (!(key in FIXTURE_SHARDS)) {
+    let shard = null;
+    try {
+      shard = BUILT
+        ? JSON.parse(fs.readFileSync(path.join(BUILT, 'profiles', `${key}.json`), 'utf8'))
+        : DEPLOYED.fetchJson(`profiles/${key}.json`);
+    } catch (e) { shard = null; }
+    FIXTURE_SHARDS[key] = shard && shard.profile && String(shard.profile.key) === key ? shard.profile : null;
+  }
+  if (!FIXTURE_SHARDS[key]) {
+    console.error(`\n  ✗ fixture player ${key} not found in the ${STORE_WORD} store `
+      + `(player-profiles.json nor profiles/${key}.json) — ABORTING. No stand-in player is used.\n`);
+    process.exit(1);
+  }
+  return FIXTURE_SHARDS[key];
 }
 
 // The §4 sample: one top-10, one ~#50, one ~#136, one thin-charting, one with
@@ -393,10 +418,10 @@ function pickByRank(target) {
 }
 
 const SAMPLE = [
-  byName('C. Alcaraz') || pickByRank(1),
+  fixturePlayer(FIXTURE_KEYS.alcaraz),
   pickByRank(50),
   pickByRank(136),
-  byName('D. Schwartzman') || pickByRank(340),
+  fixturePlayer(FIXTURE_KEYS.schwartzman),
   Object.values(PLAYERS).find(p => !(p.tournamentHistory || []).length)
 ].filter(Boolean);
 
@@ -826,7 +851,7 @@ check('the residual row is load-bearing (named surfaces alone do NOT reconcile)'
 });
 
 mustFail('spine check would catch a doctored season row', () => {
-  const p = JSON.parse(JSON.stringify(byName('C. Alcaraz')));
+  const p = JSON.parse(JSON.stringify(fixturePlayer(FIXTURE_KEYS.alcaraz)));
   p.careerByYear[0].total.won += 3;          // total moves, surfaces do not
   const t = I.spineTotal(p);
   const s = I.spineBySurface(p, null);
@@ -3298,8 +3323,7 @@ for (const s of STORES) {
       global.window.careerHistory = {};
       global.window.marketEdge = MARKET;
       let dated = 0, rows = 0;
-      const zv = byName('A. Zverev');
-      assert(zv, 'A. Zverev is not in the committed profiles — pick another subject');
+      const zv = fixturePlayer(FIXTURE_KEYS.zverev);
       for (const t of I.tournViews(zv)) {
         for (const e of t.editions) for (const m of e.matches) { rows++; if (m.date) dated++; }
       }
@@ -3791,7 +3815,7 @@ mustFail('the hook-coverage check would catch an unwired affordance', () => {
 // click resolves to a sheet that actually renders. Either half alone is the bug
 // (a dead cursor, or a sheet nothing can open).
 check('every ledger row that advertises a click opens a sheet that renders', () => {
-  const p = byName('N. Djokovic');
+  const p = fixturePlayer(FIXTURE_KEYS.djokovic);
   const anyRows = I.ledgerRows(p);
   assert(anyRows.length > 0, 'no ledger rows to inspect');
   I.state.ledgerOpen = true;
@@ -3922,7 +3946,7 @@ mustFail('the strip-agreement check would catch a rate taken over the wrong set'
 // H / A orientation. Founder ruling 1: H is the SUBJECT product-wide. The shard
 // is subject-relative, so H must be `price` and A `oppPrice` — never reversed.
 check('the ledger H column is the subject price and A the opponent price', () => {
-  const p = byName('N. Djokovic');
+  const p = fixturePlayer(FIXTURE_KEYS.djokovic);
   const rows = I.ledgerRows(p).filter(x => x.price != null && x.oppPrice != null);
   assert(rows.length > 0, 'no priced ledger rows for the orientation check');
   const shard = MARKET[String(p.key)];
@@ -3983,7 +4007,7 @@ mustFail('the ambiguity check would catch a first-row-wins index', () => {
 console.log('\n22 · Correction pass (items 1-15)');
 
 const PP2_SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-const ZVEREV = byName('A. Zverev') || SAMPLE[0];
+const ZVEREV = fixturePlayer(FIXTURE_KEYS.zverev);
 
 function ledgerHtmlFor(p) {
   I.state.surfaces = []; I.state.priceFilters = []; I.state.ledgerOpen = true;

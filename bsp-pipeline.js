@@ -66,10 +66,34 @@ const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
 // =================================================================
 // ODDS API — fixtures + live odds (unchanged, already tested)
 // =================================================================
+// TEN-371 (founder ruling 2026-10-01): The Odds API is a PRICE backup only. A
+// failure here is never fatal and never silent: it is logged as "Odds API
+// unavailable: <status>" with the remaining-credits header, and the run carries
+// on with no Odds API prices. It used to `return []` on a non-2xx, so a quota
+// refusal read as "Found 0 odds events" for the whole of September.
+function oddsApiRemaining(res) {
+  return (res && res.headers && typeof res.headers.get === 'function'
+    && res.headers.get('x-requests-remaining')) || 'n/a';
+}
+
 async function fetchActiveTennisSportKeys() {
   const url = `${ODDS_API_BASE}/sports?apiKey=${ODDS_API_KEY}`;
-  const res = await fetch(url);
-  const sports = await res.json();
+  let res, sports;
+  try {
+    res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`Odds API unavailable: ${res.status} (sports list, x-requests-remaining=${oddsApiRemaining(res)}) — continuing with no Odds API prices.`);
+      return [];
+    }
+    sports = await res.json();
+  } catch (e) {
+    console.warn(`Odds API unavailable: ${e.message} (sports list) — continuing with no Odds API prices.`);
+    return [];
+  }
+  if (!Array.isArray(sports)) {
+    console.warn(`Odds API unavailable: ${res.status} with a non-list body (sports list) — continuing with no Odds API prices.`);
+    return [];
+  }
   // ATP only — BSP Consult is focused on ATP, not WTA.
   return sports.filter(s => s.key.startsWith('tennis_') && s.key.includes('atp') && s.active)
     .map(s => ({ key: s.key, title: s.title }));
@@ -77,9 +101,24 @@ async function fetchActiveTennisSportKeys() {
 
 async function fetchOddsForSport(sportKey) {
   const url = `${ODDS_API_BASE}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&oddsFormat=decimal`;
-  const res = await fetch(url);
-  if (!res.ok) return [];
-  return res.json();
+  let res, body;
+  try {
+    res = await fetch(url);
+    if (!res.ok) {
+      console.warn(`Odds API unavailable: ${res.status} (${sportKey}, x-requests-remaining=${oddsApiRemaining(res)}) — continuing with no Odds API prices.`);
+      return [];
+    }
+    body = await res.json();
+  } catch (e) {
+    console.warn(`Odds API unavailable: ${e.message} (${sportKey}) — continuing with no Odds API prices.`);
+    return [];
+  }
+  if (!Array.isArray(body)) {
+    console.warn(`Odds API unavailable: ${res.status} with a non-list body (${sportKey}) — continuing with no Odds API prices.`);
+    return [];
+  }
+  console.log(`Odds API ${sportKey}: HTTP ${res.status}, ${body.length} event(s), x-requests-remaining=${oddsApiRemaining(res)}.`);
+  return body;
 }
 
 async function fetchAllTennisEvents() {
@@ -2131,8 +2170,10 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     // Full ISO start instant for the dashboard's State-2 display gate — one
     // unambiguous UTC instant instead of reconstructing date + "T" + time.
     startTs: new Date(oddsEvent.commence_time).toISOString(),
-    p1: oddsEvent.home_team,
-    p2: oddsEvent.away_team,
+    // TEN-371: display names are api-tennis's, set below once the fixture and its
+    // orientation are known. home_team/away_team only find the price match.
+    p1: null,
+    p2: null,
     tour: oddsEvent.sport_title,
     tourBadge: tour,
     surface,
@@ -2174,6 +2215,21 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     p2PhotoUrl: null,
   };
 
+  // TEN-371 (founder ruling 2026-10-01): api-tennis is the spine — every card's
+  // players, names and keys come from an api-tennis fixture. An Odds API event
+  // with no fixture, or one whose orientation can't be decided, is NOT carded:
+  // the caller logs it by name and leaves it out. Its Odds API names are never
+  // stored as display names.
+  const fixture = findApiTennisFixture(oddsEvent, apiTennisFixtures);
+  if (!fixture) return { skipped: 'no-fixture', oddsEvent };
+  const p1IsFixtureFirst = fixtureFirstIsHome(fixture, oddsEvent);
+  if (p1IsFixtureFirst === null) {
+    console.warn(`p1/p2 undecidable for ${oddsEvent.home_team} v ${oddsEvent.away_team} (fixture ${fixture.event_key}: ${fixture.event_first_player} v ${fixture.event_second_player}) — not carded`);
+    return { skipped: 'undecidable', oddsEvent };
+  }
+  match.p1 = p1IsFixtureFirst ? fixture.event_first_player : fixture.event_second_player;
+  match.p2 = p1IsFixtureFirst ? fixture.event_second_player : fixture.event_first_player;
+
   // Resolve the venue-lookup name for weather / venue facts / court conditions.
   // The odds feed's `sport_title` is the EVENT name (e.g. "ATP Canadian Open"),
   // which for city-agnostic event names contains no venue key and resolves to
@@ -2182,9 +2238,8 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // CITY ("ATP Montreal - 1/64-finals") — the same real feed signal the
   // fixture-only build paths already key `tour` off — and tracks the year-by-
   // year Montreal/Toronto (National Bank Open) alternation with no hardcoded
-  // alias. Prefer it; fall back to sport_title when no fixture matched.
-  const fixture = findApiTennisFixture(oddsEvent, apiTennisFixtures);
-  const venueName = (fixture && fixture.tournament_round
+  // alias. Prefer it; fall back to sport_title when the round string is empty.
+  const venueName = (fixture.tournament_round
     ? fixture.tournament_round.split(' - ')[0].trim()
     : null) || oddsEvent.sport_title;
 
@@ -2199,8 +2254,6 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   match.venue = venue;
   match.courtSpeed = courtSpeed;
 
-  if (!fixture) return match; // no API-Tennis match found — stays "coming soon" in the UI
-
   match.tournamentRound = fixture.tournament_round;
 
   // CORRECTNESS FIX: findApiTennisFixture() matches by last name in EITHER
@@ -2210,14 +2263,9 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // unconditionally, which would silently swap p1/p2 data (H2H, form, rank,
   // surface win rate, live score/server) for any real match where API-Tennis
   // happened to list the players in the opposite order from the odds feed.
-  // Established once here (fixtureFirstIsHome: surname, then given name when both
+  // Established once above (fixtureFirstIsHome: surname, then given name when both
   // players share a surname), and used consistently below instead of assuming order.
-  // Undecidable (Z. Zhang v Z. Zhang) -> no keys, photos or live state: dashes, never a guess.
-  const p1IsFixtureFirst = fixtureFirstIsHome(fixture, oddsEvent);
-  if (p1IsFixtureFirst === null) {
-    console.warn(`p1/p2 undecidable for ${oddsEvent.home_team} v ${oddsEvent.away_team} (fixture ${fixture.event_key}: ${fixture.event_first_player} v ${fixture.event_second_player}) — card left without player keys`);
-    return match;
-  }
+  // Undecidable (Z. Zhang v Z. Zhang) -> not carded (above): never a guess.
   const p1Key = p1IsFixtureFirst ? fixture.first_player_key : fixture.second_player_key;
   const p2Key = p1IsFixtureFirst ? fixture.second_player_key : fixture.first_player_key;
   match.p1Key = p1Key;
@@ -4853,7 +4901,9 @@ async function buildOneProfile(key, name, surfaceMap) {
 
   const profile = {
     key,
-    name,
+    // TEN-371 (founder ruling 2026-10-01): the profile name is api-tennis
+    // get_players' player_name, never the card name it was seeded with.
+    name: String(playerStats.player_name || '').trim() || name,
     country: playerStats.player_country || null,
     age: computeAgeFromBday(playerStats.player_bday),
     rank: atpRankByKey.get(String(key)) ?? null, // TEN-133: live get_standings place, joined by player_key
@@ -6012,8 +6062,20 @@ async function runPipeline() {
   console.log(`Tournament profiles ready: ${profileCount}/${Object.keys(tournamentProfiles.profiles).length} tournaments have historical data on record.`);
 
   const matches = [];
+  const oddsOnly = [];
   for (const event of oddsEvents) {
-    matches.push(await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap));
+    const built = await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap);
+    if (built && built.skipped) { oddsOnly.push(built); continue; }
+    matches.push(built);
+  }
+  // TEN-371: an Odds API event with no api-tennis fixture is left off the board
+  // (founder ruling 2026-10-01 — no names or IDs are invented for it). Named
+  // here so each one is visible in the build log.
+  console.log(`Odds API: ${oddsEvents.length} event(s) → ${matches.length} carded on an api-tennis fixture, `
+    + `${oddsOnly.length} left off (${oddsOnly.filter(s => s.skipped === 'no-fixture').length} no fixture, `
+    + `${oddsOnly.filter(s => s.skipped === 'undecidable').length} undecidable orientation).`);
+  for (const s of oddsOnly) {
+    console.log(`  not carded (${s.skipped}): ${s.oddsEvent.home_team} v ${s.oddsEvent.away_team} · ${s.oddsEvent.sport_title} · ${s.oddsEvent.commence_time}`);
   }
 
   // Fixture-driven upcoming matches: scheduled fixtures in the today→+2-day
@@ -7548,7 +7610,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { buildMatchObject, buildUpcomingMatchObject, buildOneProfile, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
