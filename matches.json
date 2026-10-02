@@ -2431,22 +2431,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 2,
-        "p1": 5,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/434_p-carreno-busta.jpg",
     "oddsMovement": {
@@ -4092,7 +4081,27 @@
       "edgeVsPinnacleP1": 0.0449,
       "edgeVsPinnacleP2": -0.0449,
       "ts": "2026-09-30T15:33:40.245Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-2",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "74e207143d73fada6963397830c5c2d9",
@@ -20811,16 +20820,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 5,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 3,
         "p2": 3
       }
     ],
-    "liveGameScore": "30 - 15",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8781_l-darderi.jpg",
     "oddsMovement": {
@@ -21769,7 +21783,10 @@
           }
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "908dd14275f11b8588bccce4d87aae14",
