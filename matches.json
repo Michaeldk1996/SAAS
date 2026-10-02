@@ -22945,12 +22945,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 2,
-        "p2": 0
+        "p1": 4,
+        "p2": 1
       }
     ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p1",
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2083_j-munar.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/824_j-faria.jpg",
     "oddsMovement": {
@@ -24235,7 +24235,10 @@
           }
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "a512d0211986889f728215eacc8a963b",
