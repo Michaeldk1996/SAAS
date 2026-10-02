@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-02T15:26:07.642Z",
+ "generatedAt": "2026-10-02T17:00:33.139Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "d67f7ae0d0312ca4be93bc1301b0e9a708c35f2e",
-  "at": "2026-10-02T15:15:28Z"
+  "commit": "7a485d8f9ea2282419a9836373237bf779330372",
+  "at": "2026-10-02T16:45:35Z"
  },
- "commitsScanned": 4007,
+ "commitsScanned": 4013,
  "lastRun": {
-  "from": "2026-10-02T03:30:25Z",
-  "snapshots": 49,
-  "added": 6,
+  "from": "2026-10-02T15:15:28Z",
+  "snapshots": 7,
+  "added": 1,
   "replaced": 0,
-  "series": 49,
-  "kept": 46,
+  "series": 55,
+  "kept": 47,
   "bySource": {
-   "api-tennis-live": 46
+   "api-tennis-live": 47
   },
   "byBook": {
-   "Pinnacle +30s": 46
+   "Pinnacle +30s": 47
   },
   "dropped": {
-   "noStart": 3
+   "noStart": 8
   }
  },
  "stats": {
@@ -7168,6 +7168,20 @@
    "p2": 3.03,
    "at": "2026-10-02T09:05:23.928Z",
    "trueStart": "2026-10-02T09:38:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167690,
+   "date": "2026-10-02",
+   "p1Key": 2841,
+   "p2Key": 9210,
+   "p1Name": "H. Hurkacz",
+   "p2Name": "A. Gea",
+   "p1": 1.704,
+   "p2": 2.29,
+   "at": "2026-10-02T08:41:49.508Z",
+   "trueStart": "2026-10-02T11:24:03.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
