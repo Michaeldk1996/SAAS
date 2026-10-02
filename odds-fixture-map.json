@@ -2964,16 +2964,35 @@
       "startTime": "2026-10-02T12:30:00.000Z",
       "tournamentId": 3025
     },
+    "12167628": {
+      "fixtureId": "id1200303175051228",
+      "mappedAt": "2026-10-02T16:45:30Z",
+      "orient": "same",
+      "p1": "U. Humbert",
+      "p2": "J. Lehecka",
+      "startTime": "2026-10-03T08:30:00.000Z",
+      "tournamentId": 3031
+    },
     "12167643": {
-      "fixtureId": null,
-      "mappedAt": "2026-10-01T11:00:26Z",
+      "fixtureId": "id1200303175051236",
+      "mappedAt": "2026-10-02T16:45:30Z",
+      "missHeldH": 29.75,
       "missRuns": 1,
       "missSince": "2026-10-01T11:00:26Z",
-      "orient": null,
+      "orient": "same",
       "p1": "C. Alcaraz",
       "p2": "M. Arnaldi",
-      "startTime": null,
-      "tournamentId": null
+      "startTime": "2026-10-03T03:30:00.000Z",
+      "tournamentId": 3031
+    },
+    "12167644": {
+      "fixtureId": "id1200303175051238",
+      "mappedAt": "2026-10-02T16:45:30Z",
+      "orient": "same",
+      "p1": "D. Shapovalov",
+      "p2": "A. Tabilo",
+      "startTime": "2026-10-03T02:00:00.000Z",
+      "tournamentId": 3031
     },
     "12167678": {
       "fixtureId": null,
@@ -2987,15 +3006,16 @@
       "tournamentId": null
     },
     "12167679": {
-      "fixtureId": null,
-      "mappedAt": "2026-10-01T13:01:45Z",
+      "fixtureId": "id1200303175051230",
+      "mappedAt": "2026-10-02T16:45:30Z",
+      "missHeldH": 27.73,
       "missRuns": 1,
       "missSince": "2026-10-01T13:01:45Z",
-      "orient": null,
+      "orient": "same",
       "p1": "M. Berrettini",
       "p2": "D. Vallejo",
-      "startTime": null,
-      "tournamentId": null
+      "startTime": "2026-10-03T07:00:00.000Z",
+      "tournamentId": 3031
     },
     "12167817": {
       "fixtureId": null,
@@ -3016,6 +3036,15 @@
       "p2": "K. Jacquet",
       "startTime": "2026-10-04T02:00:00.000Z",
       "tournamentId": 3031
+    },
+    "12167861": {
+      "fixtureId": "id1200303175051256",
+      "mappedAt": "2026-10-02T16:45:30Z",
+      "orient": "same",
+      "p1": "V. Vacherot",
+      "p2": "A. Fils",
+      "startTime": "2026-10-04T02:00:00.000Z",
+      "tournamentId": 3031
     }
   },
   "missAudit": {
@@ -3023,12 +3052,12 @@
       "measuredRunsPerDay": 18.4,
       "missResolutionHoursMax": 148.0,
       "missResolutionHoursP50": 37.52,
-      "missResolutionsMeasured": 137,
+      "missResolutionsMeasured": 139,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 21.43,
+      "observedSpanDays": 21.47,
       "projectedTtlUnitsPerDay": 4.7,
-      "runs": 395,
-      "spentRuns": 217,
+      "runs": 396,
+      "spentRuns": 218,
       "ttlBitRuns": 100,
       "ttlBitShare": 0.253,
       "ttlHours": 1.0
@@ -7378,9 +7407,20 @@
         "ttlBit": false,
         "unmapped": 11,
         "upcoming": 13
+      },
+      {
+        "at": "2026-10-02T16:45:30Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 11,
+        "ttlBit": false,
+        "unmapped": 9,
+        "upcoming": 13
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-02T15:45:20Z"
+  "updatedAt": "2026-10-02T16:45:30Z"
 }
