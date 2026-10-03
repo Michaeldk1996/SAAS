@@ -5,8 +5,9 @@
  *   row 1    "Odds movement" (caps) · the card's book
  *   row 2    open → now (Completed: open → the book's close) · change % (signed, true minus) · "N moves"
  *            Completed: "Pinnacle close 1.84" (TEN-295) on one mono line under it
- *            one grey note line (founder Q3): "Updated 14:05 · bet365 · refreshed every 15 min ·
- *            recorded from 28 Sep" — no status dot
+ *            one short grey note line (founder rev2): "Updated 13:22 · Bet105 · from 02 Oct", or on a
+ *            Completed card with a close older than 60 min "Close seen 2 h 22 min before start · Bet105";
+ *            no status dot. A Completed ledger ends at the card's Close (closeTs).
  *   ledger   newest first, scrolls (max 236px): DD.MM. HH:MM · price · move vs the previous
  *            price, signed 3 dp (+0.014 / −0.002, ±0.000), --pos / --neg; the latest row is
  *            washed; gap rows ("no data from – to") where a recorder was down
@@ -142,7 +143,7 @@
       const delta = prev == null ? null : Math.round((r.price - prev) * 1000) / 1000;
       return { at: r.at, price: r.price, delta };
     });
-    // "recorded from": the first recorded tick, whenever history exists (founder Q3 note line).
+    // "from DD Mon" on the note line: the first recorded tick, whenever history exists.
     const first = ch.length ? ch[0].at : null;
     const recordedFrom = first;
     const rowsDesc = [...items, ...gaps].sort((a, b) => (b.at ?? b.to) - (a.at ?? a.to));

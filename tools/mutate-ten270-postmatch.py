@@ -190,9 +190,6 @@ JS_MUT = {
     'fixtures != 1 not treated as not recorded': (
         " || Number(p.fixtures) !== 1) {", ") {"),
     'no-start shows rows anyway': ("if (!p.start_ts) return", "if (false) return"),
-    'completed bet365 loses the ruled source line': (
-        "note: (source === 'shard' || source === 'archive') ? BET365_NOTE : null };",
-        "note: source === 'shard' ? BET365_NOTE : null };"),
     'failed read = empty history': ("if (p == null) return { card, rows: [], failed: true };",
                                     "if (p == null) return { card, rows: [] };"),
 }
