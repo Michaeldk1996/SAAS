@@ -39,7 +39,7 @@ over this file where they conflict.
   headline only.
 - The pane is 16px / line-height normal / "Hanken Grotesk", sans-serif, like the file's content column.
 - **Loading** (undrawn, `// DESIGN GAP G8`): the empty block's secondary line "Loading news…".
-- Colours are `match-analysis-tokens.css` tokens only; blue only on "View all news →" and the selected tile's outline.
+- Colours are foundation tokens only (TEN-376); blue text only on the "View all news →" link (`--link`); the selected tile is lifted (`--edge-24` outline), never blue.
 
 ## Verification recipe
 - Structure diff: `tools/ten312-design-capture.mjs <d> --only 04-news,04b-news-article-expanded,04c-news-filter-player-a,04d-news-filter-player-b,04e-news-empty,04f-news-unavailable`

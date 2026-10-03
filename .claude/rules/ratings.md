@@ -104,7 +104,7 @@ Wawrinka, Lestienne, Balleret, Bautista-Agut, Carreno-Busta and Basilashvili, ea
 
 **The test.** Paint any board with the file loaded: no retired name appears, and the
 Overview count is exactly (unfiltered count − retired players who were in it). If the
-file fails to load, the board says in amber that retired players were NOT removed —
+file fails to load, the board says (in `--text-soft`; amber is Model + Trading Report only, TEN-376) that retired players were NOT removed —
 never a silent fallback to the full roster. Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
 TEN-262 names present, Kyrgios absent) by `test-ten262.mjs`.
 

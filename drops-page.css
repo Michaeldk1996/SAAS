@@ -37,8 +37,8 @@
 [data-page="drops"] .do-head-sub { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; margin-top: 8px; }
 [data-page="drops"] .do-subtitle { font-size: 13.5px; color: var(--text-label); max-width: 520px; line-height: 1.55; text-wrap: pretty; }
 [data-page="drops"] .do-status { display: inline-flex; align-items: center; gap: 8px; }
-[data-page="drops"] .do-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pos); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pos) 18%, transparent); }
-[data-page="drops"] .do-dot.amber { background: var(--text-soft); box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-soft) 18%, transparent); }
+[data-page="drops"] .do-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text); box-shadow: none; }   /* TEN-376: freshness is greyscale, never green */
+[data-page="drops"] .do-dot.amber { background: var(--text-soft); box-shadow: none; }
 [data-page="drops"] .do-dot.off { background: var(--text-label); box-shadow: none; }
 [data-page="drops"] .do-status-t { font-size: 12px; color: var(--text-label); }
 [data-page="drops"] .do-stats { display: flex; gap: 34px; flex: none; }

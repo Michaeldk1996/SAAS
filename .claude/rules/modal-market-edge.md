@@ -38,7 +38,7 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   The pill's book split and each row's price source are `maTipHtml` tooltips. `meRowsHtml` / `meTableHead` /
   `meCommonCells` / `mePillTip` are deleted. **Test:** `test-ten336-market-edge.mjs` "DoD 8" (+ the helper's default rows
   are byte-identical to before the variant existed).
-- **Colours = the file's own shades** (`ME_C` → `fhS('<source hex>')`, token file `--ma-s-*`); cards 1.25px at white 0.06,
+- **Colours = foundation tokens** (`ME_C`, TEN-376; the white-bar exception of README §6 for band / line win-rate bars and the Profit-at-1u lines); cards 1px `--edge-6`,
   column heads on the 0.09 rule, no pane padding (M12); the open band takes the today wash (DF L3443).
 - **Undrawn states:** loading (G12), no history (G13), Derived lines without a price or outside best-of-3 (G14) — TEN-312
   `design-gaps`; each carries `// DESIGN GAP Gn`.

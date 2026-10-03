@@ -72,29 +72,12 @@ this file wins.
 - **Core-data changes wait on the pre-publish reconcile gate (TEN-329, landed `9394f7db`).**
 
 ## Palette (D1)
-- **The modal is coloured only through one token file**, mapped from the design's source hex by the
-  handoff README §3 table: **Night 24b** and **Day 26f**. The modal re-themes live when the
-  Night / Day / Auto setting changes (Auto follows the OS `prefers-color-scheme`).
-  **Test:** a grep of the modal's builders finds no literal hex/rgba outside the token file; switching the
-  setting changes the computed colours of every open modal surface without a reload.
-- **Scope of the Night / Day / Auto switch = the whole site**, as a **separate task** after the modal's token
-  layer (TEN-315). Until that task lands, the rest of the site stays 12a (CLAUDE.md "Palette = 12a") and the
-  modal is the only surface on the 24b / 26f token file. **Test:** after TEN-315, the computed-style audit
-  reports zero 12a values on any surface, in Night and in Day.
-- Amber `#E8A84E` is allowed only on Weather severity. Surfaces (Hard / Clay / Grass) are neutral text — this
-  includes the H2H/Form hot-line column-header dots, the Tournament tile and the Overview season rows.
-- **The token file is `match-analysis-tokens.css`** (TEN-314, 2026-09-28): Night 24b default, Day 26f on
-  `data-ma-theme="day"`, Auto on `"auto"`; one storage key `stennisfy-theme` (`maSetTheme`), shared with TEN-315.
-  The unmapped source values follow TEN-314 document `phase1-token-mappings` U1–U24 (founder: approved
-  provisionally — a change is a one-line token edit). The TEN-303 verbatim exception is deleted: `AODDS_C`,
-  `WX_C`, `ME_C` and the chrome CSS are tokens. **Test:** `test-ten314-tokens.mjs`, `test-ten303-colours.mjs`,
-  `test-ten304-weather-tab.mjs`.
-- **Hairlines are the design's 1px, set in the token file** (founder, TEN-314 comment 70fb039e, 2026-09-28: 0.33px only
-  matches at 1× DPR and renders thinner on Retina and phones; this replaces, for the modal only, the 12a 0.33px rule in
-  `theme-12a.md`). `--ma-hw:1px` lives in `match-analysis-tokens.css`. Modal code
-  writes `var(--ma-hw,0.33px)`, so a builder the player profile shares keeps the site's 0.33px outside `.ma-theme`.
-  Weather and Odds keep their spec widths (`WX_C.hw` 1.25px, `hw1` 1px). **Test:** `test-ten314-tokens.mjs`
-  asserts no bare `0.33px` in any modal declaration or modal CSS rule; a computed border width in the modal at DPR 2+ is 1px.
+- **The modal is coloured like every other surface: from `tokens.css`** (founder TEN-376, 2026-10-03 — the modal's own
+  Night 24b / Day 26f file `match-analysis-tokens.css`, its `--ma-*` tokens and the U1–U24 mappings are retired). It
+  follows the one site theme (`data-theme` on `<html>`, `theme.js`); `maSetTheme` / `maApplyTheme` delegate to it.
+  All rules — surfaces, three greys, blue = fills, green/red = signed only, neutral surfaces, 1px edges — are
+  `.claude/rules/foundation.md`. **Test:** `tools/lint-raw-colours.mjs` finds no raw colour in the modal's builders,
+  and switching the theme re-colours every open modal surface without a reload.
 - **No figure without a count** (founder, same comment). **The event hold rate** (founder Q9, 2026-09-30) = service
   games held ÷ service games played at this event, from **our own box scores over every edition on file**
   (`event-hold.json`, built by `build-event-hold.js` from `boxscore-archive/` in every pipeline run), n = service games,
@@ -128,23 +111,6 @@ this file wins.
 - **No footer line.** "All stats are updated live…" is removed (it isn't true and isn't in the design). If a real data
   timestamp exists for the open match, show "Updated X min ago"; otherwise show nothing. **Test:** the modal contains no
   "All stats are updated live" text.
-
-## Colour tokens (U1–U24, provisional)
-- **Every design shade is its own token** (founder 2026-09-29, TEN-314 comment 1641c7ce): every source value in the
-  design file (e.g. `#06070A` inner track, `#0C0E16`, `#11151F` tooltip surface, `#4B5672` dim icon, `#B4BCCF`, `#FFF`),
-  including every hairline alpha and the selected washes/borders at their exact values, has its own token with source, Night and Day
-  values; none is folded into a neighbour. The token is `--ma-s-<source hex>[-<alpha × 1000>]` (role variants `-fill`,
-  `-ink`, `-line`): its name IS the source value, so the fixture's source palette is read from the names. Night / Day
-  follow README §3 **by the role the shade plays** (the same alpha drawn as a border or as a fill gets a `-line` /
-  `-fill` variant: a selected border never resolves to its own fill), then the U-rows, then the nearest §3 anchor + the shade's per-channel offset; a saturated data colour
-  with no §3/U row keeps its source value. The values are listed in `phase1-token-mappings` (U25+), provisional.
-  **Test:** a scan of the design file's colours finds no source value without a token, and the role Night values are
-  pinned (`test-ten314-tokens.mjs`);
-  `ten312-component-diff.mjs` in the source palette shows ≈0 colour residual on every Phase 1 component.
-- The engineer's Night and Day proposals for the 91 source values README §3 doesn't cover (TEN-314 document
-  `phase1-token-mappings`, U1–U24) are **approved provisionally**. Each finished tab ships with side-by-side Night and
-  Day screenshots taken on the deployed site so the founder can flag a colour by eye; a mapping change is a one-line
-  token edit.
 
 ## Download report (D7)
 - Keeps the existing behaviour: `printAnalysisReport()` → `window.print()` of the modal. Rendered as designed.

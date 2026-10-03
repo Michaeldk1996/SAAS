@@ -19,7 +19,7 @@ found at restore time are marked inline.
   neutral). A completed match's result is a data-fact verdict, not a two-player comparison, so it is a
   permitted green/red exception alongside LOST SERVE/BP markers (reverses the earlier "W/L neutral in modal"
   call). *Colour values (TEN-312 D1):* the old hex `#3dd68c` / `#e0616f` is retired; the modal takes these
-  colours from its one token file (Night 24b / Day 26f). *Walkovers (TEN-312 N2):* a `w/o` row is excluded
+  colours from the foundation tokens (TEN-376). *Walkovers (TEN-312 N2):* a `w/o` row is excluded
   from every count on the page (`modal-analysis.md` "Walkovers and retirements").
   **Test:** surface bars/accents/left-name never change hue with the *value* (identity only); the W/L letter
   never stays neutral on a completed match.

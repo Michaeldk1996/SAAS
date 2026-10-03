@@ -55,7 +55,7 @@ Applies to the Playing style tab of the Match analysis modal (`buildStyleSection
 
 ## Colour
 - **Both players white** (the file's `cur` palette): A's radar solid + 0.12 fill, B's dashed at 0.85; the matchup bar's B
-  side at 0.30 white. Tokens `--ma-s-e7e9ee-120 / -300 / -850` (Night; the Day palette keeps the alpha whites).
+  side at 0.30 white: `--text` at 12% / 30% / 85% via `color-mix` (TEN-376; identical in night and day).
 - **The profile's bars and values are neutral**: the file tones the leading value white and dims the other's bar to 30%;
   the non-negotiable "never highlight the better stat" wins — both bars full white, both values white (founder Q13,
   2026-09-30, TEN-312 5262e790; design exception X7). **Test:** both-players-white check.

@@ -115,7 +115,7 @@ For current build state, open build state — do not rely on a snapshot in this 
 2. **Scope.** A section, control or binding with no counterpart in the data layer — report before building.
 3. **Product decisions that post-date the export.** Before deleting something *because the export lacks it*, ask.
 
-**Frozen — do not change without the audit saying so:** anything signed off; the half-pixel authored sizes (13.5, 12.5, 11.5, 10.5, 9.5); the handoff removals (Summary view, H2H trend chart, Extra Stats tab, uncomputed match time).
+**Frozen — do not change without the audit saying so:** anything signed off; the half-pixel authored sizes (13.5, 12.5, 11.5, 10.5, 9.5) — except caps labels, which are Hanken 10.5 everywhere (TEN-376); the handoff removals (Summary view, H2H trend chart, Extra Stats tab, uncomputed match time).
 
 ---
 
@@ -123,21 +123,15 @@ For current build state, open build state — do not rely on a snapshot in this 
 
 Each is phrased as a test you can apply. Surface-specific rulings live in `.claude/rules/` — see **Where the rest lives**.
 
-- **Palette = theme 12a "Ink solid" (founder brief TEN-285, 2026-09-25).** *(Being retired: founder TEN-312, 2026-09-28 — the whole site moves to Night 24b / Day 26f with a Night/Day/Auto switch in a separate task after the modal token layer; see `.claude/rules/modal-analysis.md`. Until that lands, this rule stands for every surface except the modal.)* Every rendered colour is a 12a token (`.claude/rules/theme-12a.md`), `transparent`, or on that file's founder-reviewed unmapped list. **Test:** the computed-style audit over every tab and open state reports zero values outside those three sets. The old palettes (`#5b9bff` / `#3e7bfa` blues, `#e7e9ee` / `#fff` text tiers, `#3dd68c` / `#e0616f`) are retired. **Exception — the Match analysis modal (founder TEN-312 D1, 2026-09-28; supersedes the TEN-303 verbatim exception):** the modal is coloured only through one token file mapped from the design's source hex by the handoff README §3 table (Night 24b / Day 26f, live Night/Day/Auto switch) — see `.claude/rules/modal-analysis.md`. The file is `match-analysis-tokens.css` (TEN-314): `--ma-*` tokens on the `.ma-theme` scope (the modal overlay), which also re-points the 12a names the modal's shared code reads. The TEN-303 verbatim exception (Odds `AODDS_C`, Weather `WX_C`, the chrome block) is gone: those constants are tokens too, and the 12a engine has no design zone left. **Test:** `test-ten314-tokens.mjs` (README §3 + U1–U24 values, zero literal colours in any declaration the modal reaches or any CSS rule that targets it, every colour variable resolved by the token file, the live switch); `test-ten303-colours.mjs` and `WX_C` in `test-ten304-weather-tab.mjs` check each role's token.
+- **Palette = the foundation (founder TEN-376, OFFICIAL VERSION 1, 2026-10-03).** Every colour on every surface — the Match analysis modal included — is a token from `tokens.css`, night by default, day via `data-theme="day"`, Auto following the OS live. Theme 12a and the modal's Night 24b / Day 26f are retired. **Test:** `tools/lint-raw-colours.mjs` (first in `npm test`) finds zero raw colours in any published page, stylesheet or script; the full rule set — surfaces, three greys, blue = fills / `--link` = links, green/red = signed only, amber on two pages, lime on one dot, badges, charts, shadows — is `.claude/rules/foundation.md`.
 
 - **Layout = the 12a design file (founder brief TEN-286, 2026-09-26).** The reference is `design/reference/portal-12a.html` (never published). It renders only with JavaScript: open it in headless Chrome, measure **computed styles** relative to the portal frame (the `<aside>`'s parent), and compare at the same DPR. **The design file's computed values beat any label text and any HANDOFF.md number** where they disagree (its label strip says "#10131F surfaces, 6% hairlines"; it computes `#0E1019` and 0.045 — computed wins). **Test:** the component comparator (review A) reports delta 0 or a listed data-driven exemption for every component; `test-ten286-layout.mjs` locks the values on the shipped source.
 
-- **Blue.** `periwinkle #6A9AF8` answers *whose* number this is — links, favourite names, selection, controls — never *whether* the number is good. `blue-ring #007AFF` is only probability bars, form bars, the date underline and the Today dot. **Test:** if blue signals quality or performance, it's wrong; `#007AFF` on anything outside those four roles is wrong.
-
-- **Green / red.** `positive #3ED68C` / `negative #DA6259` answer **"is this value trustworthy"** or **"which direction did this move"** — never **"which player is better."** Direction is permitted only where the measured thing is itself directional. A count or rate beside another player's is a *comparison* and takes identity colour or neutral. **Test:** is the colour answering trustworthy-or-direction, or ranking two players? If it ranks, neutralise. *Exceptions, canonical tokens only:* Playing Styles matchup edge and dominance; Odds-tab movement deltas; LOST SERVE and BP markers; the Match analysis Overview W/L result letter (founder TEN-312, 2026-09-28). The Clay tag never renders green — it is `clay #F2B45F`. The retired hues `#3dd68c` / `#e0616f` / `#3ECF8E` / `#E8607A` appearing in any UI file is a bug.
-
-- **Text tiers.** `text #EBF1F2` (headings, odds, favourite-side values, selected labels) → `text-soft #D9DBDF` (underdog names, secondary strong text) → `text-sub #A3ABBA` (subtitles) → `label #6E7A93` (captions, meta, idle tabs, implied %). Sidebar only: `nav-idle #9BB0DA`, `nav-icon-idle #7F93BD`. **Test:** every text colour is one of those six.
-
-- **Colour semantics.** Text hierarchy is built from grey tone-levels (`text` → `text-soft` → `text-sub` → `label`), never from hue. Hue is reserved for meaning. Tone carries hierarchy; hue carries meaning.
+- **Colour semantics.** Tone carries hierarchy (`--text` → `--text-soft` → `--text-label`); hue carries meaning. **Test:** if blue text is not a link, if green/red is not a signed value, if amber is outside the Stennisfy Model or Trading Report, or if lime is not the live serve dot, it is wrong (`.claude/rules/foundation.md`).
 
 - **Font weight.** Valid iff one of **{400, 500, 600, 700, 800}**. **Test:** any other weight is wrong. Heavy 600/700/800 use is the design — do not tone it down.
 
-- **Gradients, shadows, washes, blur.** None in the UI chrome — flat colour only; the only chrome gradient is the one baked into the logo PNG. Lime `#EAF928` renders on exactly two elements: the header live dot and the active-nav dot. Opened-on-top surfaces (modals, drawers, sheets, sticky headers) are solid `popup #131623` over `backdrop rgba(11,12,19,0.76)` — except the Match analysis modal (surface `#0A0D14`) and the Odds tab's pop-up (Odds Tab - Spec.md §6: shadow `0 30px 80px rgba(0,0,0,0.55)`, backdrop `rgba(4,5,9,0.62)`) and tooltip (founder TEN-303 brief §4: shadow `0 12px 32px rgba(0,0,0,0.5)`), per the TEN-303 exception above. **Test:** a grep of the built CSS/JS for gradient / shadow / blur finds only the data-visualisation sites listed in `.claude/rules/theme-12a.md`; the lime count is 2.
+- **Gradients, shadows, blur.** The only gradient is `--glow`. Shadows are `--shadow-menu` / `--shadow-pop` / `--shadow-modal`, overlays `--backdrop` + `blur(3px)` (founder TEN-376 U5). **Test:** the colour lint passes and every `box-shadow` on a floating layer is one of the three tokens.
 
 - **Em dash vs zero.** Absent value renders **"—"**, never `0`. Genuinely-zero value renders **`0`**, never an em dash. **Test:** absent, or really zero? Never interchangeable.
 
@@ -276,14 +270,15 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Match analysis News tab — feed, 5-day window, player_key join, N9 empty/unavailable, no sample | `.claude/rules/modal-news.md` |
 | Player Profile export parity | `.claude/rules/player-profile.md` |
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
-| Match analysis modal rebuild (TEN-312): palette tokens, players/avatars, walkovers on every tab, sample gate, build order | `.claude/rules/modal-analysis.md` |
+| Match analysis modal rebuild (TEN-312): players/avatars, walkovers on every tab, sample gate, build order | `.claude/rules/modal-analysis.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Deploy lane — ready gate, first-come-first-served queue, deploy-batch as the one land path, confirm-live release, 40-min pipeline-aware hold, cutover, waiter reports | `.claude/rules/deploy-lane.md` |
 | App shell — 252px sidebar + floating panel, no user-row chevron, nav glyphs | `.claude/rules/app-shell.md` |
-| Theme 12a — tokens, hairlines, logo, layout reference, unmapped/data-viz lists | `.claude/rules/theme-12a.md` |
+| Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
+| Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |
 | Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
 | Pre-match drops page — B′ Fly endpoint, what a row is, Dropped to vs Latest, 24 h window, freshness, watchdog | `.claude/rules/drops.md` |
 
