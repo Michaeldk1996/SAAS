@@ -29,7 +29,7 @@
  */
 
 /* ── page frame (export §"Page frame") ── */
-/* Export page background is var(--page), two hex off the app's --bg (#08090C). Scoped to
+/* Export page background is var(--page), two hex off the app's --bg. Scoped to
    the tab so it reverts the moment another page is shown — the body is never touched. */
 [data-page="series"] { background: var(--inner); min-height: 100vh; }
 [data-page="series"] .sr-wrap {
@@ -62,7 +62,7 @@
   font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-stat-v { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 17px; font-weight: 700; color: var(--text); }
-[data-page="series"] .sr-stat-v.sr-accent { color: var(--periwinkle); }
+[data-page="series"] .sr-stat-v.sr-accent { color: var(--text); }
 [data-page="series"] .sr-stat-v.sr-soft { color: var(--text-label); }
 
 /* ── 2 · filters ── */
@@ -85,7 +85,7 @@
 }
 [data-page="series"] .sr-segbtn:hover { color: var(--text-label); }
 [data-page="series"] .sr-segbtn.active { background: var(--inner); color: var(--text); font-weight: 700; }
-[data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid var(--periwinkle); outline-offset: 1px; }
+[data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid var(--edge-16); outline-offset: 1px; }
 
 /* PIXEL PASS §3.5 · the design's "Show already-played" checkbox is RESTORED, and `Played`
    comes back off the DAY control. This reverses TEN-194 item 8 (founder 2026-09-12), which
@@ -114,7 +114,7 @@
   background: var(--inner); border-color: var(--edge-10);
 }
 [data-page="series"] .sr-toggle input:checked + .sr-box::after { opacity: 1; }
-[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid var(--periwinkle); outline-offset: 2px; }
+[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid var(--edge-16); outline-offset: 2px; }
 
 /* ── already-played continued/broken aggregate (kept: ruling q7) ── */
 [data-page="series"] .sr-outsum {
@@ -140,8 +140,8 @@
 }
 [data-page="series"] .sr-card.sr-has-detail { cursor: pointer; }
 [data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--edge-10); }
-[data-page="series"] .sr-card.sr-has-detail:hover .sr-hist { color: var(--periwinkle); }
-[data-page="series"] .sr-card:focus-visible { outline: 2px solid var(--periwinkle); outline-offset: 2px; }
+[data-page="series"] .sr-card.sr-has-detail:hover .sr-hist { color: var(--text); }
+[data-page="series"] .sr-card:focus-visible { outline: 2px solid var(--edge-16); outline-offset: 2px; }
 
 /* 3.1 title row — claim + run length left, direction word right (item 7).
    NAMED .sr-cardtop, deliberately NOT .sr-titlerow: that class is already owned by the
@@ -155,7 +155,7 @@
 [data-page="series"] .sr-cardtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 [data-page="series"] .sr-claim { font-size: 18px; font-weight: 800; line-height: 1.3; text-wrap: pretty; color: var(--text); min-width: 0; }
 [data-page="series"] .sr-cardtop .sr-tag-dir { flex: none; margin-top: 2px; }
-[data-page="series"] .sr-run { color: var(--periwinkle); }
+[data-page="series"] .sr-run { color: var(--text); }
 
 /* 3.1b reference sub-line (item 5, founder 2026-09-12): "Mono, var(--text-label), same size as
    the STARTED / LAST values" — i.e. .sr-cell-v's 14px. margin-top:-6px pulls it out of
@@ -277,7 +277,7 @@
   font-size: 11.5px; color: var(--text-label);
 }
 [data-page="series"] .sr-next { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-[data-page="series"] .sr-hist { flex: none; font-weight: 600; color: var(--periwinkle); transition: color .14s ease; }
+[data-page="series"] .sr-hist { flex: none; font-weight: 600; color: var(--text); transition: color .14s ease; }
 
 [data-page="series"] .sr-dash { color: var(--text-label); }
 

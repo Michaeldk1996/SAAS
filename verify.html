@@ -14,12 +14,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <style>
   *{ box-sizing:border-box; }
-  body{ margin:0; background:#0b0c10; color:var(--text); font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
-  a{ color:var(--periwinkle); text-decoration:none; } a:hover{ color:var(--periwinkle); }
+  body{ margin:0; background:var(--page); color:var(--text); font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+  a{ color:var(--link); text-decoration:none; } a:hover{ color:var(--link); }
   ::selection{ background:color-mix(in srgb, var(--bar) 35%, transparent); }
 
   .page{ display:flex; justify-content:center; align-items:center; padding:48px 16px; min-height:100vh; }
-  .card{ width:520px; max-width:100%; border:1px solid color-mix(in srgb, var(--text) 8%, transparent); border-radius:20px; overflow:hidden; background:linear-gradient(180deg,#101a33,#0a0c11); box-shadow:0 40px 90px -55px rgba(0,0,0,0.9); position:relative; }
+  .card{ width:520px; max-width:100%; border:none; border-radius:20px; overflow:hidden; background:var(--card); box-shadow:var(--shadow-pop); position:relative; }
   .card .glow{ position:absolute; inset:0; background:radial-gradient(600px 320px at 20% -10%, color-mix(in srgb, var(--bar) 16%, transparent), transparent 60%); pointer-events:none; }
   .inner{ position:relative; padding:40px 40px 36px; }
 
@@ -30,23 +30,23 @@
   .icon-badge{ width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--bar) 12%, transparent); border:1px solid color-mix(in srgb, var(--edge-16) 32%, transparent); margin-bottom:20px; }
 
   .title{ margin:0; font-size:24px; font-weight:800; letter-spacing:-0.02em; }
-  .body{ margin:12px 0 0; font-size:14.5px; line-height:1.6; color:#9aa3b2; }
-  .body .em{ color:#e7ebf1; font-weight:600; word-break:break-all; }
+  .body{ margin:12px 0 0; font-size:14.5px; line-height:1.6; color:var(--text-soft); }
+  .body .em{ color:var(--text); font-weight:600; word-break:break-all; }
 
-  .steps{ margin:22px 0 0; padding:16px 18px; border:1px solid color-mix(in srgb, var(--text) 8%, transparent); border-radius:13px; background:rgba(13,15,20,0.6); }
+  .steps{ margin:22px 0 0; padding:16px 18px; border:1px solid color-mix(in srgb, var(--text) 8%, transparent); border-radius:13px; background:var(--inner); }
   .steps ol{ margin:0; padding-left:18px; }
   .steps li{ font-size:13px; line-height:1.7; color:var(--text-label); }
 
   .actions{ margin:26px 0 0; display:flex; flex-direction:column; gap:10px; }
   .btn{ display:block; width:100%; text-align:center; font-size:14.5px; font-weight:700; border-radius:11px; padding:13px; cursor:pointer; font-family:inherit; border:1px solid transparent; }
-  .btn-primary{ color:#0b0d12; background:var(--bar); } .btn-primary:hover{ background:var(--bar); }
+  .btn-primary{ color:var(--pro-text); background:var(--pro); } .btn-primary:hover{ background:var(--pro); }
   .btn-ghost{ color:var(--text); background:transparent; border-color:color-mix(in srgb, var(--text) 14%, transparent); } .btn-ghost:hover{ background:var(--line); }
   .btn[disabled]{ opacity:0.55; cursor:default; }
 
   .status{ margin:16px 0 0; font-size:12.5px; text-align:center; min-height:16px; }
   .status.ok{ color:var(--pos); } .status.err{ color:var(--neg); } .status.muted{ color:var(--text-label); }
 
-  .footline{ margin:22px 0 0; text-align:center; font-size:12.5px; color:#6f7684; }
+  .footline{ margin:22px 0 0; text-align:center; font-size:12.5px; color:var(--text-label); }
   .footline a{ cursor:pointer; font-weight:600; }
   .spin{ display:inline-block; width:13px; height:13px; border:2px solid color-mix(in srgb, var(--edge-16) 35%, transparent); border-top-color:var(--edge-16); border-radius:50%; vertical-align:-2px; margin-right:6px; animation:spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }

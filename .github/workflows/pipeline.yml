@@ -535,6 +535,8 @@ jobs:
           cp auth.html account.html funnel.html verify.html auth.js analytics.js _site/
           # TEN-285: the 12a logo (sidebar) and ring mark (icon-only slots). Required.
           mkdir -p _site/assets && cp assets/logo-dark-transparent.png assets/ring-transparent.png _site/assets/
+          # TEN-376 U4: official provider marks, unmodified (auth page). Assets, not UI code: no colour lint here.
+          mkdir -p _site/assets/brand && cp assets/brand/google-g.svg assets/brand/apple-white.png assets/brand/app-store-badge.svg assets/brand/google-play-badge.png _site/assets/brand/
           # TEN-107 Live tab: the standalone Live page reads the Supabase live_snapshot
           # row via PostgREST. Committed but not copied = silent 404 → the Live tab stays
           # dark even with the flag on. Public Supabase creds are injected below.
@@ -829,9 +831,6 @@ jobs:
           # absent/failed build never blocks the deploy (the page dashes to its honest
           # empty state instead of a broken tab).
           cp series.js series.css _site/ 2>/dev/null || true
-          # TEN-314: the Match analysis modal's one colour file (Night 24b / Day 26f). Hard copy + asserted below:
-          # without it every modal colour falls back to the 12a values the file re-points.
-          cp match-analysis-tokens.css _site/
           # TEN-376: the foundation token file, the only file that holds a colour value. Every published
           # page links it first; asserted below.
           cp tokens.css theme.js _site/
@@ -906,9 +905,10 @@ jobs:
                    tournament-history-index.json \
                    court-speed-map.json \
                    match-stat-event-coverage.json \
-                   series.js series.css match-analysis-tokens.css tokens.css theme.js \
+                   series.js series.css tokens.css theme.js \
                    drops-page.js drops-page.css \
-                   assets/logo-dark-transparent.png assets/ring-transparent.png; do
+                   assets/logo-dark-transparent.png assets/ring-transparent.png \
+                   assets/brand/google-g.svg assets/brand/apple-white.png assets/brand/app-store-badge.svg assets/brand/google-play-badge.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           # style-meetings-index.json gates the "vs this style" detail list exactly

@@ -56,7 +56,7 @@
 [data-page="drops"] .do-banner-k { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; color: var(--neg); }
 [data-page="drops"] .do-banner-t { color: var(--text-soft); }
 [data-page="drops"] .do-banner-t .do-mono { color: var(--text); }
-[data-page="drops"] .do-link { font-size: 12px; font-weight: 700; color: var(--periwinkle); cursor: pointer; background: none; border: 0; padding: 0; font-family: inherit; }
+[data-page="drops"] .do-link { font-size: 12px; font-weight: 700; color: var(--link); cursor: pointer; background: none; border: 0; padding: 0; font-family: inherit; }
 
 /* ── 3 · search row ── */
 [data-page="drops"] .do-search-row { position: relative; z-index: 30; display: flex; align-items: center; gap: 8px; }
@@ -75,10 +75,10 @@
   cursor: pointer; font-family: 'Hanken Grotesk', sans-serif;
 }
 [data-page="drops"] .do-btn:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 9.9%, transparent); }
-[data-page="drops"] .do-btn-alerts { border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); background: color-mix(in srgb, var(--bar) 10%, transparent); font-weight: 700; color: var(--periwinkle); }
+[data-page="drops"] .do-btn-alerts { border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); background: color-mix(in srgb, var(--bar) 10%, transparent); font-weight: 700; color: var(--text); }
 /* Alerts has no backend yet (founder card 79e9db02 Q5): shown, disabled, "Coming soon". */
 [data-page="drops"] .do-btn-alerts[aria-disabled="true"] { cursor: default; opacity: 0.55; }
-[data-page="drops"] .do-btn-alerts[aria-disabled="true"]:hover { color: var(--periwinkle); border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); }
+[data-page="drops"] .do-btn-alerts[aria-disabled="true"]:hover { color: var(--text); border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); }
 [data-page="drops"] .do-soon { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); }
 
 /* ── 4 · filter rails ── */
@@ -145,7 +145,7 @@
 [data-page="drops"] .do-opt.on .do-box { background: var(--bar); border-color: var(--edge-16); }
 [data-page="drops"] .do-opt-l { flex: 1; }
 [data-page="drops"] .do-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 5px; border-radius: 5px; }
-[data-page="drops"] .do-tag.sharp { color: var(--periwinkle); background: color-mix(in srgb, var(--bar) 16%, transparent); border: 1.25px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
+[data-page="drops"] .do-tag.sharp { color: var(--text); background: color-mix(in srgb, var(--bar) 16%, transparent); border: 1.25px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
 [data-page="drops"] .do-tag.soft { color: var(--text-soft); background: transparent; border: 1.25px solid color-mix(in srgb, var(--text) 8.8%, transparent); }
 [data-page="drops"] .do-pop-note { font-size: 10.5px; color: var(--text-label); padding: 8px 10px 4px; border-top: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); margin-top: 4px; }
 [data-page="drops"] .do-clickaway { position: fixed; inset: 0; z-index: 20; }
@@ -183,7 +183,7 @@
 [data-page="drops"] .do-fig-c { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.16em; color: var(--neg); }
 [data-page="drops"] .do-who { min-width: 0; display: flex; align-items: center; gap: 14px; }
 [data-page="drops"] .do-av {
-  width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #1B2A55; border: 1.5px solid color-mix(in srgb, var(--neg) 45%, transparent);
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--inner); border: 1.5px solid color-mix(in srgb, var(--neg) 45%, transparent);
   flex: none; box-sizing: border-box; display: block;
 }
 [data-page="drops"] .do-who-t { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -221,16 +221,14 @@
 [data-page="drops"] .do-empty .do-link { margin-top: 6px; }
 
 /* ── 10 · the price-move box (LOCKED `handoff/Price Move Box/`, founder comment 8585095a, 2026-09-27) ──
-   Source values, with the site's 12a mapping on the neutrals (surface var(--card) → var(--card); text var(--text)/var(--text) →
-   var(--text); var(--text-label) → var(--text-soft); var(--text-label) → var(--text-label); blues var(--bar)/var(--bar) → var(--bar), rgba(91,155,255,a) →
-   rgba(0,122,255,a); white hairlines → 1.25px rgba(235,241,242,0.55a)). The colours the founder named are
-   exact: drop #FF7B88 (≥ 10%) / #C26A75, line var(--neg), flat fill color-mix(in srgb, var(--neg) 10%, transparent), muted var(--text-label). */
+   Colours: foundation tokens only (TEN-376). Drops are signed: a drop of 10% or more is --neg, a smaller
+   drop --neg at 75%; the line is --neg, its flat fill --neg at 10%; muted text --text-label. */
 .do-ov { position: fixed; top: 0; bottom: 0; right: 0; left: var(--do-shell-left, 252px); z-index: 1000; font-family: 'Hanken Grotesk', sans-serif; color: var(--text); font-size: 16px; line-height: normal; }
-.do-ov-scrim { position: absolute; inset: 0; z-index: 40; background: rgba(3,4,7,0.62); }
+.do-ov-scrim { position: absolute; inset: 0; z-index: 40; background: var(--backdrop); backdrop-filter: blur(3px); }
 .do-ov-box {
   box-sizing: content-box; position: absolute; z-index: 41; left: 50%; top: 50%; transform: translate(-50%,-50%);
   width: 1040px; max-width: calc(100% - 48px); max-height: calc(100% - 64px); border-radius: 16px; background: var(--card);
-  border: 1.25px solid color-mix(in srgb, var(--text) 6.6%, transparent); box-shadow: 0 30px 80px rgba(0,0,0,0.55); display: flex; flex-direction: column; overflow: hidden;
+  border: 1.25px solid color-mix(in srgb, var(--text) 6.6%, transparent); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; overflow: hidden;
 }
 .do-ov-box * { box-sizing: content-box; }
 .do-ov-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
@@ -238,14 +236,14 @@
 .do-ov-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px 26px 18px; border-bottom: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
 .do-ov-dropb { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-right: 20px; border-right: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
 .do-ov-dropf { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 700; line-height: 1; }
-.do-ov-dropf.big { color: #FF7B88; }
-.do-ov-dropf.small { color: #C26A75; }
+.do-ov-dropf.big { color: var(--neg); }
+.do-ov-dropf.small { color: color-mix(in srgb, var(--neg) 75%, transparent); }
 .do-ov-dropc { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); white-space: nowrap; }
 .do-ov-mid { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
 .do-ov-eye { display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); text-transform: uppercase; }
 .do-ov-eye > span { display: block; }
 .do-ov-btag { font-size: 8.5px; font-weight: 700; padding: 2px 5px; border-radius: 4px; }
-.do-ov-btag.sharp { color: var(--periwinkle); border: 1.25px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
+.do-ov-btag.sharp { color: var(--text); border: 1.25px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
 .do-ov-btag.soft { color: var(--text-soft); border: 1.25px solid color-mix(in srgb, var(--text) 8.8%, transparent); }
 .do-ov-sel { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
 .do-ov-pl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-label); }
@@ -269,7 +267,7 @@
 /* 2 · chart (the Database chart type) */
 .do-ov-chart { display: flex; flex-direction: column; gap: 6px; padding: 18px 26px 16px; }
 .do-ov-backrow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.do-ov-back { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--periwinkle); cursor: pointer; }
+.do-ov-back { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--link); cursor: pointer; }
 .do-ov-cw { margin-top: 10px; display: flex; gap: 12px; }
 .do-ov-yax { position: relative; width: 52px; height: 260px; flex: none; }
 .do-ov-yax > span { position: absolute; right: 0; transform: translateY(-50%); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 500; color: var(--text-soft); }
@@ -286,7 +284,7 @@
 .do-ov-enddot { position: absolute; left: 100%; margin-left: -4.5px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--neg); box-shadow: 0 0 0 3px var(--card); }
 .do-ov-endc { position: relative; width: 84px; height: 260px; flex: none; }
 .do-ov-endbox { position: absolute; left: 0; right: 0; transform: translateY(-50%); padding: 7px 9px; border-radius: 9px; background: color-mix(in srgb, var(--neg) 11%, transparent); border: 1px solid color-mix(in srgb, var(--neg) 30%, transparent); }
-.do-ov-endw { font-size: 11px; font-weight: 700; color: #FF7B88; }
+.do-ov-endw { font-size: 11px; font-weight: 700; color: var(--neg); }
 .do-ov-endv { margin-top: 3px; font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 700; line-height: 1; color: var(--text); }
 .do-ov-xax { margin: 10px 96px 0 64px; position: relative; height: 18px; }
 .do-ov-xax > span { position: absolute; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-soft); white-space: nowrap; }
@@ -301,7 +299,7 @@
 .do-ov-tr:hover { background: color-mix(in srgb, var(--text) 1.7%, transparent); }
 .do-ov-tr.sel, .do-ov-tr.sel:hover { background: color-mix(in srgb, var(--neg) 10%, transparent); }
 .do-ov-tt { font-family: 'IBM Plex Mono', monospace; font-size: 8px; font-weight: 600; letter-spacing: 0.12em; }
-.do-ov-tt.sharp { color: var(--periwinkle); }
+.do-ov-tt.sharp { color: var(--text); }
 .do-ov-tt.soft { color: var(--text-label); }
 .do-ov-tb { display: flex !important; align-items: baseline; gap: 8px; min-width: 0; }
 .do-ov-tb .n { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 700; color: var(--text); }
@@ -309,8 +307,8 @@
 .do-ov-tn { font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); white-space: nowrap; }
 .do-ov-to { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: var(--text-label); white-space: nowrap; }
 .do-ov-td { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; white-space: nowrap; }
-.do-ov-td.big { color: #FF7B88; }
-.do-ov-td.small { color: #C26A75; }
+.do-ov-td.big { color: var(--neg); }
+.do-ov-td.small { color: color-mix(in srgb, var(--neg) 75%, transparent); }
 /* data rule 27: lengthened (muted ▲), flat 0.0% and unknown are muted, never red */
 .do-ov-td.muted { color: var(--text-label); }
 /* 4 · footer */
@@ -318,8 +316,8 @@
 .do-ov-foot-l { display: flex; flex-direction: column; gap: 3px; }
 .do-ov-sum { display: block; font-size: 12.5px; color: var(--text-soft); }
 .do-ov-fn { display: block; font-size: 10.5px; color: var(--text-label); }
-.do-ov-link { display: block; font-size: 12.5px; font-weight: 700; color: var(--periwinkle); text-decoration: none; cursor: pointer; }
-.do-ov-link:hover { color: #8FB3FA; }
+.do-ov-link { display: block; font-size: 12.5px; font-weight: 700; color: var(--link); text-decoration: none; cursor: pointer; }
+.do-ov-link:hover { color: var(--link); }
 /* mobile (viewport < 1180px): a bottom sheet, top 64px, full width */
 @media (max-width: 1179.98px) {
   .do-ov { left: 0; }

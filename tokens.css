@@ -75,9 +75,12 @@
   --viz-grass:       #45D6B0;
   --viz-indoor:      #D9DBDF;
 
-  /* Shadows (floating layers only) */
+  /* Shadows (floating layers only; identical in day). menu = drop-downs, type-ahead, info popovers, slider marker;
+     pop = floating pop-ups anchored to an element (odds hover, verify card); modal = centred modals / sheets. */
   --shadow-pop:  inset 0 0 0 1px rgba(255,255,255,0.10), 0 18px 48px rgba(0,0,0,0.55);
   --shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
+  --shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.60);   /* centred modals / sheets only (founder TEN-376 U5) */
+  --backdrop:    rgba(3, 5, 9, 0.72);                  /* overlay dim, night + day; pair with backdrop-filter: blur(3px) */
 
   /* Type */
   --font-words:  'Hanken Grotesk', sans-serif;

@@ -349,7 +349,7 @@
   //
   // Ruling `reference-label` (a): NAME the window rather than call it "career". It is
   // five calendar years AND tier-scoped, so "career" would be a false claim (Lajovic,
-  // ATP #167, has 78 in-tier matches in it because only his Challenger matches count).
+  // ATP no. 167, has 78 in-tier matches in it because only his Challenger matches count).
   // The year is read from rules.referenceWindow.sinceYear — the artifact's own record
   // of the window it searched — never from the browser clock, so the label reads the
   // same in Sydney and in Los Angeles and can never name a window we didn't query.

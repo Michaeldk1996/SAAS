@@ -314,7 +314,7 @@
     // so the hover token is the one the same file uses for its other clickable
     // data row (.dc.html:489) rather than a colour invented here.
     '.pp2-crec{transition:background .12s ease,color .12s ease;}' +
-    '.pp2-crec:hover{background:var(--tile-hover);color:var(--periwinkle);}' +
+    '.pp2-crec:hover{background:var(--tile-hover);color:var(--text);}' +
     // §5.4 item 14 — the heat cell's hover, verbatim from the design file's own
     // stylesheet (`Player Stat Boxes.dc.html`:24-26). A win cell goes to green
     // 0.42 with an inset ring, a loss cell to red, a level cell to white 0.14.
@@ -760,7 +760,7 @@
           '<span style="font-size:44px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">' +
             esc(p.name) + '</span>' +
           (rank ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:600;' +
-            'color:var(--text-label);background:rgba(159,178,212,0.1);border:0.33px solid var(--edge-6);' +
+            'color:var(--text-label);background:var(--inner);border:0.33px solid var(--edge-6);' +
             'border-radius:8px;padding:6px 12px;white-space:nowrap;">ATP No. ' + esc(rank) + '</span>' : '') +
         '</div>' +
         '<div style="font-size:18px;font-weight:700;color:' +
@@ -782,7 +782,7 @@
       // The design capture contradicts its own README. Measured off the founder's
       // PNG (3024x1964 = 1512 CSS at DPR2, confirmed by the box grid's 24-device
       // gap = the export's 12 CSS): all four rules run device y 287..395, i.e.
-      // 109 device = **54.5 CSS**, colour rgb(28,29,32) over the page's var(--card)
+      // 109 device = **54.5 CSS**, colour (a dark grey) over the page's var(--card)
       // = color-mix(in srgb, var(--text) 8.8%, transparent). They hug the text block (50.0 CSS of ink) with
       // ~3 CSS of air above and ~1.5 below — nothing like a stretched border.
       //
@@ -832,9 +832,9 @@
       '<div style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;' +
         'justify-content:center;background:var(--inner);' +
         'border:0.33px solid var(--edge-10);font-family:\'IBM Plex Mono\',monospace;font-size:34px;' +
-        'font-weight:700;color:var(--periwinkle);">' + esc(initials(p.name)) + '</div>' +
+        'font-weight:700;color:var(--text);">' + esc(initials(p.name)) + '</div>' +
       (rank ? '<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);' +
-        'background:var(--periwinkle);color:var(--text);font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
+        'background:var(--bar);color:var(--text);font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
         'font-weight:700;border-radius:999px;padding:3px 11px;border:2px solid var(--card);">' +
         esc(rank) + '</div>' : '') +
       '</div>';
@@ -888,7 +888,7 @@
       'gap:22px;align-items:center;">' +
         '<div style="white-space:nowrap;">' + eyebrow('Recent form') +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:700;line-height:1;">' +
-            '<span style="line-height:1;color:var(--periwinkle);">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
+            '<span style="line-height:1;color:var(--text);">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
             '<span style="line-height:1;font-size:13px;font-weight:600;color:var(--text-label);">' +
               (r.n ? recordText(r.won, r.lost) : 'no matches on record') + '</span>' +
           '</div></div>' +
@@ -896,9 +896,9 @@
           eyebrow('last ' + last18.length + ' ' + MIDDOT + ' oldest → most recent') + '</div>' +
         '<div style="width:1px;height:44px;background:var(--line);"></div>' +
         '<div style="display:flex;gap:8px;overflow:hidden;' +
-          '-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);' +
-          'mask-image:linear-gradient(90deg,#000 82%,transparent);">' + chipHtml + '</div>' +
-        '<a href="#" data-pp2="ledger" style="font-size:12.5px;font-weight:700;color:var(--periwinkle);' +
+          '-webkit-mask-image:linear-gradient(90deg,var(--page) 82%,transparent);' +
+          'mask-image:linear-gradient(90deg,var(--page) 82%,transparent);">' + chipHtml + '</div>' +
+        '<a href="#" data-pp2="ledger" style="font-size:12.5px;font-weight:700;color:var(--link);' +
           'white-space:nowrap;text-decoration:none;">' +
           (ctx.ledgerOpen ? 'Hide ledger' : 'Full ledger →') + '</a>' +
       '</div>';
@@ -1117,7 +1117,7 @@
       'background:' + (on ? 'var(--inner)' : 'transparent') + ';' +
       'border:0.33px solid ' + (on ? 'var(--edge-10)' : 'color-mix(in srgb, var(--text) 4.5%, transparent)') + ';">' +
       '<span style="width:11px;height:11px;border-radius:3px;flex:none;' +
-        (on ? 'background:var(--periwinkle);' : 'border:0.33px solid var(--edge-10);') + '"></span>' +
+        (on ? 'background:var(--bar);' : 'border:0.33px solid var(--edge-10);') + '"></span>' +
       esc(label) + '</span>';
   }
 
@@ -1173,7 +1173,7 @@
         'flex-wrap:wrap;margin-bottom:14px;">' +
         '<div style="font-size:20px;font-weight:800;letter-spacing:-0.015em;">Recent form</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);">' +
-          '<span style="color:var(--periwinkle);font-weight:700;">' + rateText0(r.won, r.lost) + ' win</span> ' +
+          '<span style="color:var(--text);font-weight:700;">' + rateText0(r.won, r.lost) + ' win</span> ' +
           MIDDOT + ' ' + r.n + ' match' + (r.n === 1 ? '' : 'es') + '</div>' +
       '</div>';
 
@@ -1221,7 +1221,7 @@
       body = '<div style="' + (capped ? 'max-height:560px;overflow-y:auto;' : '') + '">' + out + '</div>';
       if (ordered.length > LEDGER_CAP) {
         body += '<div style="display:flex;justify-content:center;margin-top:14px;">' +
-          '<span data-pp2="ledger-more" style="font-size:13px;font-weight:700;color:var(--periwinkle);' +
+          '<span data-pp2="ledger-more" style="font-size:13px;font-weight:700;color:var(--link);' +
             'padding:10px 18px;border:0.33px solid var(--edge-10);border-radius:11px;cursor:pointer;">' +
             (state.ledgerExpanded ? 'Show less' : 'See all ' + ordered.length + ' results') + '</span>' +
         '</div>';
@@ -1468,7 +1468,7 @@
         'min-height:140px;cursor:pointer;transition:border-color .14s;">' +
         '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
           'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" ' +
-          'style="position:absolute;top:14px;right:14px;color:color-mix(in srgb, var(--periwinkle) 30%, transparent);">' +
+          'style="position:absolute;top:14px;right:14px;color:color-mix(in srgb, var(--text) 30%, transparent);">' +
           '<path d="' + b.icon + '"/></svg>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' +
           (v.headline == null ? DASH_COLOUR : 'var(--text)') + ';line-height:1;padding-right:28px;' +
@@ -1626,15 +1626,15 @@
       var title = pair ? pair[up ? 0 : 1] : ins.label + ' ' + MIDDOT + ' ' + rateText(ins.won, ins.lost);
       var phrase = INSIGHT_PHRASES[ins.id] || ins.label;
       // ★ Founder ruling, 2026-09-18 (Q3): "follow the file — positive var(--bar) on
-      //   color-mix(in srgb, var(--bar) 15%, transparent), negative #E24B4A, no icon border. It matches the
+      //   color-mix(in srgb, var(--bar) 15%, transparent), negative red, no icon border. It matches the
       //   one-accent rule in the design instructions; the README loses here as it
       //   does elsewhere."
       // `Player Profile.dc.html` :1830-1832. The v7 README §6 asks for green
-      // var(--pos) / amber #e8a84e on 0.12 plus a 0.32 icon border; we previously
+      // var(--pos) / amber on 0.12 plus a 0.32 icon border; we previously
       // shipped green/red on 0.14, matching neither. Note the positive icon's
       // background is NOT a tint of its own var(--bar) — the file writes 62,123,250.
       var col = up ? 'var(--bar)' : 'var(--neg)';
-      var bg = up ? 'var(--inner)' : 'rgba(226,75,74,0.14)';
+      var bg = up ? 'var(--inner)' : 'color-mix(in srgb, var(--neg) 14%, transparent)';
       // Up-and-right for a positive gap, down-and-right for a negative one, so the
       // glyph states the same fact the number does rather than contradicting it.
       var path = up ? 'M4 13l4-4 3 3 5-6M13 6h3v3' : 'M4 7l4 4 3-3 5 6M13 14h3v-3';
@@ -2596,7 +2596,7 @@
   function modalShell(key, p, ctx, body) {
     var title = (BOXES.filter(function (b) { return b.key === key; })[0] || {}).title || '';
     return '' +
-      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:var(--backdrop);' +
+      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:var(--backdrop); backdrop-filter:blur(3px);' +
       'z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
       'padding:28px 20px;overflow-y:auto;">' +
         '<div class="pp2-card" data-pp2="card" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
@@ -2604,7 +2604,7 @@
           '<div style="display:flex;gap:13px;padding:20px 22px;align-items:flex-start;' +
             'border-bottom:0.33px solid var(--line);">' +
             '<div style="width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;' +
-              'justify-content:center;background:var(--inner);color:var(--periwinkle);">' +
+              'justify-content:center;background:var(--inner);color:var(--text);">' +
               '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
               'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="' +
               ((BOXES.filter(function (b) { return b.key === key; })[0] || {}).icon || '') + '"/></svg></div>' +
@@ -2635,7 +2635,7 @@
   // the founder caught all three:
   //
   //   FILL  the file computes ONE blue ramp for every row —
-  //         rgba(91,155,255, clamp(0.25 .. 1 over a 40->74% win rate)) — so the
+  //         blue at alpha clamp(0.25 .. 1 over a 40->74% win rate) — so the
   //         bar encodes the RATE. We were painting the SURFACE colour at a flat
   //         0.75, which encodes the category instead and leaves the strongest and
   //         weakest surface looking identical. Surface colours stay where the file
@@ -2669,7 +2669,7 @@
   // ─── MINIMAL BAR — the founder's override of the export (2026-09-17) ────────
   //
   // The export's `row()` computes ONE blue ramp whose ALPHA encodes the rate
-  // (rgba(91,155,255, 0.25..1 over a 40->74% win rate)) on a 16px track. That
+  // (blue at alpha 0.25..1 over a 40->74% win rate) on a 16px track. That
   // shipped and was then overridden: "Win rate is shown by length only; remove
   // the blue-ramp shading." So the rate is carried by the FILL WIDTH alone and
   // the colour carries the SAMPLE GATE instead — which is the one thing length
@@ -3634,7 +3634,7 @@
       var xy = dnaPt(i, Math.max(0.3, a.pct / 100) + 0.12);
       return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
         xy[1].toFixed(1) + 'px;transform:translate(-50%,-50%);font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:10.5px;font-weight:700;color:var(--periwinkle);background:color-mix(in srgb, var(--page) 85%, transparent);padding:1px 4px;' +
+        'font-size:10.5px;font-weight:700;color:var(--text);background:color-mix(in srgb, var(--page) 85%, transparent);padding:1px 4px;' +
         'border-radius:4px;white-space:nowrap;z-index:2;">' + esc(dnaFmt(a.rating, a.dp)) + '</span>';
     }).join('');
     var axisLabels = axes.map(function (a, i) {
@@ -3741,7 +3741,7 @@
           '<span style="' + HEADCELL + '">Player DNA</span>' +
           '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
             '<span style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="width:14px;height:2px;background:var(--periwinkle);"></span>' +
+              '<span style="width:14px;height:2px;background:var(--bar);"></span>' +
               '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
                 'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' + esc(sn) + '</span>' +
             '</span>' +
@@ -3936,7 +3936,7 @@
           (h.id === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
           'padding:11px 0;border-top:0.33px solid var(--line);' +
           (r ? '' : 'color:' + DIM_COLOUR + ';') + (can ? 'cursor:pointer;' : '') +
-          (on ? 'color:var(--periwinkle);' : '') + '">' + txt + '</div>';
+          (on ? 'color:var(--text);' : '') + '">' + txt + '</div>';
       }).join('');
       var drill = '';
       if (openCell !== null) {
@@ -3949,7 +3949,7 @@
         ' style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
         'letter-spacing:0.02em;padding:11px 0;border-top:0.33px solid var(--line);' +
         (yearCan ? 'cursor:pointer;' : 'color:' + DIM_COLOUR + ';') +
-        (openCell === '' ? 'color:var(--periwinkle);' : '') + '">' +
+        (openCell === '' ? 'color:var(--text);' : '') + '">' +
         esc(yearStr) + '</div>' + cellsHtml + drill;
     }).join('');
 
@@ -3979,7 +3979,7 @@
           ' style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
           'font-weight:700;font-variant-numeric:tabular-nums;text-align:right;padding:15px 0 13px;' +
           (r ? '' : 'color:' + DIM_COLOUR + ';') + (can ? 'cursor:pointer;' : '') +
-          (on ? 'color:var(--periwinkle);' : '') +
+          (on ? 'color:var(--text);' : '') +
           'border-top:0.33px solid var(--line);">' +
           (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
       }).join('') +
@@ -5301,8 +5301,8 @@
       rateColor: (g !== 'full' && g !== 'soft') ? 'var(--text-label)'
         : (hot ? 'var(--pos)' : (g === 'soft' ? 'var(--text-label)' : 'var(--text)')),
       rateWeight: hot ? 700 : 400,
-      rateBg: hot ? 'rgba(78,200,130,0.15)' : 'transparent',
-      rateBd: hot ? 'rgba(78,200,130,0.34)' : 'transparent',
+      rateBg: hot ? 'color-mix(in srgb, var(--pos) 15%, transparent)' : 'transparent',
+      rateBd: hot ? 'color-mix(in srgb, var(--pos) 34%, transparent)' : 'transparent',
       margin: mg == null ? DASH
         : ((r1(mg) > 0 ? '+' : r1(mg) < 0 ? '−' : '') + Math.abs(r1(mg)).toFixed(1)),
       marginColor: mg == null ? 'var(--text-label)'
@@ -7054,7 +7054,7 @@
     return out;
   }
   var SURF_ORDER = ['hard', 'clay', 'grass'];
-  var SWING_COLOUR = { hard: '#6a9af8', clay: '#f2b45f', grass: '#45d6b0' };
+  var SWING_COLOUR = { hard: 'var(--viz-hard)', clay: 'var(--viz-clay)', grass: 'var(--viz-grass)' };   // Calendar Swing band only (TEN-376 Q2.4)
   // The SWING row's spans, derived. A month takes the surface holding most of
   // its career rows; a month with no rows takes none and breaks the span.
   function calSurfaceSpans(rows) {
@@ -7077,7 +7077,7 @@
       out.push({
         surface: dom[i], len: 1,
         label: dom[i] ? SPINE_LABEL[dom[i]] : '',
-        colour: dom[i] ? (SWING_COLOUR[dom[i]] || '#d9dbdf') : 'transparent'
+        colour: dom[i] ? (SWING_COLOUR[dom[i]] || 'var(--viz-indoor)') : 'transparent'
       });
     }
     return out;
@@ -8244,8 +8244,8 @@
     // eyebrow's "bubble size is match count" losing its resolution at the top.
     function bubbleSize(n) { return Math.round(Math.min(38, 16 + n / 47 * 22)); }
     function blue(pct) {
-      return 'rgba(91,155,255,' +
-        Math.max(0.25, Math.min(1, 0.25 + (pct - 40) / 34 * 0.75)).toFixed(2) + ')';
+      return 'color-mix(in srgb, var(--bar) ' +
+        (Math.max(0.25, Math.min(1, 0.25 + (pct - 40) / 34 * 0.75)) * 100).toFixed(0) + '%, transparent)';
     }
     function point(r, left) {
       var n = r.won + r.lost;
@@ -8865,7 +8865,7 @@
           (mpHasPanel(m)
             ? '<button type="button" data-pp2="match-page" data-v="' + esc(state.sheet) + '" ' +
               'style="background:var(--inner);border:0.33px solid var(--edge-10);' +
-              'border-radius:8px;padding:6px 11px;color:var(--periwinkle);font-size:11.5px;font-weight:600;' +
+              'border-radius:8px;padding:6px 11px;color:var(--text);font-size:11.5px;font-weight:600;' +
               'cursor:pointer;white-space:nowrap;font-family:inherit;">Full match ' + RANGLE + '</button>'
             : '') +
           '<span data-pp2="sheet-close" style="background:var(--inner);' +
@@ -8925,7 +8925,7 @@
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
               '<span style="display:flex;justify-content:flex-end;height:7px;' +
                 'background:var(--inner);border-radius:4px;">' +
-                '<span style="height:7px;width:' + bars[0] + ';background:var(--periwinkle);border-radius:4px;">' +
+                '<span style="height:7px;width:' + bars[0] + ';background:var(--bar);border-radius:4px;">' +
                 '</span></span>' +
               '<span style="display:flex;height:7px;background:var(--inner);' +
                 'border-radius:4px;"><span style="height:7px;width:' + bars[1] +
@@ -8964,7 +8964,7 @@
 
     return '' +
       '<div class="pp2-sheet" data-pp2="sheet-scrim" style="position:fixed;inset:0;z-index:80;' +
-        'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;' +
+        'background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;">' +
         '<div style="position:relative;width:100%;max-width:760px;background:var(--card);' +
           'border:0.33px solid var(--edge-10);border-radius:14px;padding:22px 24px 26px;' +
@@ -9324,7 +9324,7 @@
 
     var names = '<div style="display:flex;justify-content:space-between;font-size:13px;' +
       'font-weight:700;margin:18px 0 12px;">' +
-      '<span style="color:var(--periwinkle);">' + esc(shortName(p)) + '</span>' +
+      '<span style="color:var(--text);">' + esc(shortName(p)) + '</span>' +
       '<span style="color:var(--text);">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span></div>';
 
     var bands = SHEET_SECTIONS.map(function (sec) {
@@ -9346,7 +9346,7 @@
           '</div>' +
           '<div style="display:flex;gap:4px;height:6px;">' +
             '<span style="flex:1;display:flex;justify-content:flex-end;">' +
-              '<span style="display:block;width:' + bars[0] + ';height:100%;background:var(--periwinkle);' +
+              '<span style="display:block;width:' + bars[0] + ';height:100%;background:var(--bar);' +
                 'border-radius:3px;"></span></span>' +
             '<span style="flex:1;"><span style="display:block;width:' + bars[1] + ';height:100%;' +
               'background:var(--text);border-radius:3px;"></span></span>' +
@@ -9412,10 +9412,10 @@
           : (String(sp[1] || '').trim() + ' - ' + String(sp[0] || '').trim());
         return '<span style="display:inline-flex;align-items:center;gap:5px;' +
           'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);">' + esc(txt) +
-          (pt.bp ? '<span style="font-size:8.5px;font-weight:700;color:#e8a84e;' +
-            'background:rgba(224,162,74,0.14);border:1px solid rgba(224,162,74,0.4);' +
+          (pt.bp ? '<span style="font-size:8.5px;font-weight:700;color:var(--text-label);' +
+            'background:var(--inner);border:none;' +
             'border-radius:4px;padding:1px 5px;">BP</span>' : '') +
-          (pt.sp ? '<span style="font-size:8.5px;font-weight:700;color:var(--periwinkle);' +
+          (pt.sp ? '<span style="font-size:8.5px;font-weight:700;color:var(--text);' +
             'background:var(--inner);border:0.33px solid var(--edge-10);' +
             'border-radius:4px;padding:1px 5px;">SP</span>' : '') +
           (pt.mp ? '<span style="font-size:8.5px;font-weight:700;color:var(--pos);' +
@@ -9668,10 +9668,12 @@
   // colour, because the engine greys the TEXT of a 5-9 cell and keeps its band
   // background — so the background is the only field that still carries the band
   // for a muted cell, which is exactly the cell the export wants muted-but-tinted.
+  // TEN-376 U3: the engine's band is read from its `tag`; strong / weak are --viz-up / --viz-down tints, mid is
+  // neutral (white 6%, --text-soft figure). Amber is not used here.
   var HB_BAND_MAP = {
-    'rgba(45,226,145,0.20)': { rgb: '61,214,140', ink: '#3ed68c' },   // strong
-    'rgba(255,164,43,0.18)': { rgb: '232,168,78', ink: '#e8a84e' },   // mid
-    'rgba(255,90,106,0.18)': { rgb: '224,97,111', ink: '#da6259' }    // weak
+    strong: { tok: 'viz-up', ink: 'var(--viz-up)' },
+    mid:    { tok: null,     ink: 'var(--text-soft)' },
+    weak:   { tok: 'viz-down', ink: 'var(--viz-down)' }
   };
   var HB_FAINT = 'var(--text-label)';        // :1233 — the export's FAINT, not §3's var(--text-label)
 
@@ -9693,9 +9695,9 @@
       bg = 'color-mix(in srgb, var(--text) 3%, transparent)'; ink = 'var(--text-label)'; fracInk = 'var(--text-label)'; sub = 'raw';
     } else {
       var n = parseInt(String(c.frac).split('/')[1], 10);
-      var band = HB_BAND_MAP[c.bg];
+      var band = HB_BAND_MAP[c.tag];
       var muted = isFinite(n) && n < 10;             // 5-9 — muted wash, grey ink
-      bg = band ? 'rgba(' + band.rgb + ',' + (muted ? '0.07' : '0.16') + ')'
+      bg = band ? (band.tok ? 'color-mix(in srgb, var(--' + band.tok + ') ' + (muted ? 7 : 16) + '%, transparent)' : (muted ? 'var(--wash-4)' : 'var(--edge-6)'))
                 : 'color-mix(in srgb, var(--text) 3%, transparent)';
       ink = muted || !band ? 'var(--text-label)' : band.ink;
       fracInk = 'color-mix(in srgb, var(--text) 35%, transparent)';
@@ -9716,12 +9718,12 @@
       '</span>';
   }
 
-  /** The GLOBAL cell — flat #0f131c, a neutral hairline, never band-tinted. */
+  /** The GLOBAL cell — flat inner tone, a neutral hairline, never band-tinted. */
   function hbGlobalCellHtml(r) {
     var dead = r.gPct === DASH;
     return '' +
       '<span style="display:flex;flex-direction:column;align-items:center;gap:1px;' +
-      'background:#0f131c;border:1px solid color-mix(in srgb, var(--text) 8%, transparent);border-radius:9px;padding:10px 0;">' +
+      'background:var(--inner);border:1px solid color-mix(in srgb, var(--text) 8%, transparent);border-radius:9px;padding:10px 0;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;' +
           'color:' + (dead ? HB_FAINT : 'var(--text)') + ';">' + esc(r.gPct) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:var(--text-label);">' +
@@ -9768,7 +9770,7 @@
         '<span style="display:flex;flex-direction:column;gap:2px;">' +
           '<span style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;">' +
             esc(r.bucket) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--periwinkle);">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--text);">' +
             esc(r.sub) + '</span>' +
         '</span>' +
         hbGlobalCellHtml(r) + divider + r.cells.map(hbCellHtml).join('');
@@ -9874,7 +9876,7 @@
 
     return '' +
       '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0;z-index:80;' +
-        'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;' +
+        'background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;">' +
         '<div style="position:relative;width:100%;max-width:760px;background:var(--card);' +
           'border:0.33px solid var(--edge-10);border-radius:14px;padding:22px 24px 24px;' +
@@ -9902,7 +9904,7 @@
           '</div>' +
 
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
-            '<span style="font-size:15px;font-weight:700;color:var(--periwinkle);">' + esc(sn) + '</span>' +
+            '<span style="font-size:15px;font-weight:700;color:var(--text);">' + esc(sn) + '</span>' +
             (pill
               ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
                 'letter-spacing:0.1em;text-transform:uppercase;color:var(--text);background:var(--inner);' +
@@ -9987,7 +9989,7 @@
         '<span style="display:flex;align-items:center;gap:11px;min-width:0;">' +
           '<span style="width:30px;height:30px;border-radius:9px;' +
             'background:var(--inner);border:0.33px solid var(--edge-10);' +
-            'display:flex;align-items:center;justify-content:center;flex:none;color:var(--periwinkle);">' +
+            'display:flex;align-items:center;justify-content:center;flex:none;color:var(--text);">' +
             '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
               '<rect x="0.8" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
               '<rect x="7.2" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +

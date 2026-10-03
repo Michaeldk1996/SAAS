@@ -37,24 +37,15 @@
 -->
 <style>
   :root{
-    --page:#06070a; --card:#0a0d14; --card-alt:#0d1119;
-    --border-data:rgba(255,255,255,0.09); --border-subtle:rgba(255,255,255,0.07);
-    --border-interact:rgba(91,155,255,0.22); --border-selected:rgba(91,155,255,0.35);
-    --text:#e7e9ee; --text-2:#c8cfda; --text-3:#5b6880;
-    --muted:#5b6880; --muted-2:#4b5672; --muted-3:#5b6880;
-    --brand:#5b9bff; --brand-deep:#2f6bd8; --brand-deep-off:#1d2f5a; --player-a:#6aaeff; --player-b:#e7e9ee;
-    --brand-wash:rgba(91,155,255,0.08); --brand-tint:rgba(91,155,255,0.15);
-    --pos:#3dd68c; --warn:#e8a84e; --neg:#e0616f;
-    --grass:#2ab8a0; --hard:#4db8ff; --clay:#e8a84e;
-    --field-fill:rgba(255,255,255,0.04);
-    --r-card:12px; --r-control:8px; --r-pill:6px;
+    /* TEN-376: colours come from tokens.css; only non-colour locals stay here. */
+    --r-pill:6px;
     --font-ui:'Hanken Grotesk',sans-serif; --font-data:'IBM Plex Mono',monospace;
   }
   *{ box-sizing:border-box; }
   html,body{ height:100%; }
   body{ margin:0; background:var(--page); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
-  a{ color:var(--brand); text-decoration:none; }
-  ::selection{ background:rgba(91,155,255,0.30); }
+  a{ color:var(--link); text-decoration:none; }
+  ::selection{ background:color-mix(in srgb, var(--bar) 30%, transparent); }
 
   /* export section: grid 1fr/1fr, gap 24, page-edge padding 24, full viewport (no max-width cap) */
   .wrap{ min-height:100vh; padding:24px;
@@ -68,14 +59,14 @@
   .brand img{ display:block; height:26px; width:auto; }
 
   .h1{ margin:0; font-size:34px; font-weight:800; letter-spacing:-0.01em; line-height:1.12; color:var(--text); }
-  .sub{ margin:12px 0 0; font-size:15px; color:var(--muted); line-height:1.45; }
+  .sub{ margin:12px 0 0; font-size:15px; color:var(--text-label); line-height:1.45; }
 
-  .flabel{ display:block; font-size:13px; color:var(--muted); margin:30px 0 9px; }
+  .flabel{ display:block; font-size:13px; color:var(--text-label); margin:30px 0 9px; }
 
-  .inp{ width:100%; height:52px; background:var(--field-fill); border:1px solid var(--border-interact);
+  .inp{ width:100%; height:52px; background:var(--inner); border:1px solid var(--edge-16);
     border-radius:var(--r-control); padding:0 16px; color:var(--text); font-family:var(--font-ui); font-size:15px; outline:none; }
-  .inp::placeholder{ color:var(--muted); }
-  .inp:focus{ border-color:var(--border-selected); }   /* focus = border only; no glow/shadow/lift */
+  .inp::placeholder{ color:var(--text-label); }
+  .inp:focus{ border-color:var(--edge-24); }   /* focus = border only; no glow/shadow/lift */
   .inp.err{ border-color:var(--neg); }
   /* B1: kill browser autofill's near-white fill / dark text — field looks identical typed or autofilled */
   .inp:-webkit-autofill,
@@ -83,151 +74,152 @@
   .inp:-webkit-autofill:focus,
   .inp:-webkit-autofill:active{
     -webkit-text-fill-color:var(--text);
-    -webkit-box-shadow:0 0 0 1000px var(--field-fill) inset;
-    box-shadow:0 0 0 1000px var(--field-fill) inset;
+    -webkit-box-shadow:0 0 0 1000px var(--inner) inset;
+    box-shadow:0 0 0 1000px var(--inner) inset;
     caret-color:var(--text);
     font-family:var(--font-ui);
     transition:background-color 99999s ease-in-out 0s;
   }
-  .inp:-webkit-autofill{ border:1px solid var(--border-interact); }
-  .inp:-webkit-autofill:focus{ border:1px solid var(--border-selected); }
+  .inp:-webkit-autofill{ border:1px solid var(--edge-16); }
+  .inp:-webkit-autofill:focus{ border:1px solid var(--edge-24); }
   .field-err{ display:block; min-height:0; margin-top:8px; font-size:13px; color:var(--neg); }
 
-  /* a sanctioned solid button (email-step Continue + code-step Verify). One fill (--brand-deep #2f6bd8)
+  /* a sanctioned solid button (email-step Continue + code-step Verify). One fill (--pro)
      in every state; the export encodes disabled/loading with OPACITY only, not a second navy. */
   .btn-solid{ width:100%; height:50px; margin-top:18px; border:none; border-radius:var(--r-control);
-    background:var(--brand-deep); color:var(--text); font-family:var(--font-ui); font-size:15px; font-weight:600;
+    background:var(--pro); color:var(--pro-text); font-family:var(--font-ui); font-size:15px; font-weight:600;
     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:9px; }
   .btn-solid:disabled{ opacity:0.40; cursor:not-allowed; }   /* disabled/resting = same fill @ 40% */
   .btn-solid.loading{ opacity:0.60; cursor:default; }        /* loading = 60%, no spinner */
   .btn-solid svg{ display:block; }
 
   .divider{ display:flex; align-items:center; gap:16px; margin:24px 0; }
-  .divider .ln{ flex:1; height:1px; background:var(--border-subtle); }
-  .divider .tx{ font-size:14px; color:var(--muted); }
+  .divider .ln{ flex:1; height:1px; background:var(--line); }
+  .divider .tx{ font-size:14px; color:var(--text-label); }
 
-  /* secondary treatment: white 0.04 fill, white 0.15 border, never brand-blue border */
-  .btn-2{ width:100%; height:52px; border:1px solid rgba(255,255,255,0.15); border-radius:var(--r-control);
-    background:rgba(255,255,255,0.04); color:var(--text); font-family:var(--font-ui); font-size:14.5px; font-weight:600;
+  /* secondary treatment (TEN-376 U4): --inner fill, no edge; 16% white edge on hover */
+  .btn-2{ width:100%; height:52px; border:1px solid transparent; border-radius:var(--r-control);
+    background:var(--inner); color:var(--text); font-family:var(--font-ui); font-size:14.5px; font-weight:600;
     cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; }
-  .btn-2:hover{ background:rgba(255,255,255,0.06); }
+  .btn-2:hover{ border-color:var(--edge-16); }
+  .btn-2 img{ display:block; width:20px; height:20px; }
   .btn-2 svg{ display:block; }
 
   .oauth{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
 
-  .legal{ margin:26px 0 0; font-size:12.5px; line-height:1.55; color:var(--muted); max-width:360px; }
-  .legal a{ color:var(--text-3); }
+  .legal{ margin:26px 0 0; font-size:12.5px; line-height:1.55; color:var(--text-label); max-width:360px; }
+  .legal a{ color:var(--text-label); }
 
   .stores{ display:flex; gap:12px; margin-top:24px; }
   .store{ display:flex; align-items:center; gap:9px; height:52px; padding:0 16px; border-radius:var(--r-control);
-    border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.04); cursor:pointer; }
-  .store svg{ display:block; flex:none; }
+    border:none; background:transparent; cursor:pointer; padding:0; }
+  .store img{ display:block; height:40px; width:auto; }
   .store .st{ display:flex; flex-direction:column; line-height:1.05; }
-  .store .st .k{ font-size:8.5px; letter-spacing:0.04em; color:var(--text-3); text-transform:uppercase; }
+  .store .st .k{ font-size:8.5px; letter-spacing:0.04em; color:var(--text-label); text-transform:uppercase; }
   .store .st .n{ font-size:14px; font-weight:700; color:var(--text); }
 
   .pwline{ text-align:center; margin-top:22px; }
-  .pwline a{ font-size:13.5px; color:var(--text-3); font-weight:600; cursor:pointer; }
-  .pwline a:hover{ color:var(--text-2); }
+  .pwline a{ font-size:13.5px; color:var(--text-label); font-weight:600; cursor:pointer; }
+  .pwline a:hover{ color:var(--text-soft); }
 
   /* ---- OTP / code step (values from export login.html) ---- */
   .otp{ text-align:center; }
   .mailglyph{ width:56px; height:56px; border-radius:15px; margin:0 auto 20px;
-    border:1px solid rgba(91,155,255,0.4); background:rgba(91,155,255,0.12);
+    border:1px solid var(--edge-10); background:var(--inner);
     display:flex; align-items:center; justify-content:center; }
   .otp .h1{ text-align:center; font-size:28px; letter-spacing:-0.01em; }
-  .otp .sub{ text-align:center; margin-top:8px; color:var(--muted); line-height:1.55; max-width:400px; margin-left:auto; margin-right:auto; }
+  .otp .sub{ text-align:center; margin-top:8px; color:var(--text-label); line-height:1.55; max-width:400px; margin-left:auto; margin-right:auto; }
   .codes{ display:flex; gap:10px; justify-content:center; margin:30px 0 22px; }
-  .code{ width:52px; height:52px; text-align:center; background:var(--field-fill);
-    border:1px solid var(--border-interact); border-radius:var(--r-control); color:var(--text);
+  .code{ width:52px; height:52px; text-align:center; background:var(--inner);
+    border:1px solid var(--edge-16); border-radius:var(--r-control); color:var(--text);
     font-family:var(--font-data); font-size:22px; font-weight:700; outline:none; }
   /* resting: all six identical, --border-data, no distinguished box. focus = subtle ring,
      keyboard-only (:focus-visible), so the programmatic autofocus on load shows no border box. */
-  .code:focus-visible{ border-color:var(--border-selected); box-shadow:0 0 0 3px rgba(91,155,255,0.15); }
+  .code:focus-visible{ border-color:var(--edge-24); box-shadow:none; }
   .code.err{ border-color:var(--neg); }
   /* autofill hook: a one-time SMS/email code fires animationstart so gating re-evaluates */
   @keyframes otpAutofill { from{} to{} }
   .code:-webkit-autofill{ animation-name:otpAutofill; }
-  .otpnote{ min-height:0; margin:2px 0 0; font-size:13px; color:var(--text-3); line-height:1.5; }
-  .resend{ margin-top:20px; font-size:13.5px; color:var(--text-3); }
-  .resend a{ color:var(--brand); font-weight:600; cursor:pointer; }
-  .backlink{ display:block; margin-top:10px; font-size:13.5px; color:var(--text-3); cursor:pointer; }
-  .backlink:hover{ color:var(--text-2); }
+  .otpnote{ min-height:0; margin:2px 0 0; font-size:13px; color:var(--text-label); line-height:1.5; }
+  .resend{ margin-top:20px; font-size:13.5px; color:var(--text-label); }
+  .resend a{ color:var(--link); font-weight:600; cursor:pointer; }
+  .backlink{ display:block; margin-top:10px; font-size:13.5px; color:var(--text-label); cursor:pointer; }
+  .backlink:hover{ color:var(--text-soft); }
 
   /* ---- password fallback step ---- */
   .fwd-forgot{ display:flex; justify-content:space-between; align-items:baseline; margin:30px 0 9px; }
   .fwd-forgot .flabel{ margin:0; }
-  .fwd-forgot a{ font-size:13px; color:var(--brand); cursor:pointer; }
+  .fwd-forgot a{ font-size:13px; color:var(--link); cursor:pointer; }
   .form-err{ min-height:0; margin:14px 0 0; font-size:13px; color:var(--neg); text-align:center; }
   .terms{ display:flex; align-items:flex-start; gap:10px; margin-top:18px; cursor:pointer; }
   .terms .box{ width:18px; height:18px; flex:none; margin-top:1px; border-radius:5px;
-    border:1px solid rgba(255,255,255,0.2); background:var(--field-fill); display:flex; align-items:center; justify-content:center; }
-  .terms .box.on{ background:var(--brand-deep); border-color:var(--brand-deep); }
+    border:1px solid var(--edge-24); background:var(--inner); display:flex; align-items:center; justify-content:center; }
+  .terms .box.on{ background:var(--pro); border-color:var(--pro); }
   .terms .box svg{ display:none; } .terms .box.on svg{ display:block; }
-  .terms .tx{ font-size:12.5px; line-height:1.5; color:var(--muted); }
+  .terms .tx{ font-size:12.5px; line-height:1.5; color:var(--text-label); }
 
   .hidden{ display:none !important; }
 
   /* ============ RIGHT PREVIEW PANEL ============ */
-  .panel{ align-self:stretch; background:#0a0d13; border:1px solid var(--border-data);
+  .panel{ align-self:stretch; background:var(--card); border:1px solid var(--edge-10);
     border-radius:24px; padding:44px; display:flex; flex-direction:column;
     min-height:600px; }
   .panel-top{ margin-top:14%; }
   /* export card: own fill one shade off the panel, border-data, tighter pad; 16px stack gap */
-  .block{ background:var(--card); border:1px solid var(--border-data); border-radius:var(--r-card); padding:18px 20px; }
+  .block{ background:var(--card); border:1px solid var(--edge-10); border-radius:var(--r-card); padding:18px 20px; }
   .block + .block{ margin-top:16px; }
 
   /* match card */
   .mc-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-  .mc-surface{ font-size:11px; font-weight:500; color:var(--grass); }
-  .mc-tourn{ font-family:var(--font-data); font-size:11px; color:var(--muted-2); }
+  .mc-surface{ font-size:11px; font-weight:500; color:var(--text-soft); }
+  .mc-tourn{ font-family:var(--font-data); font-size:11px; color:var(--text-label); }
   .mc-row{ display:flex; align-items:center; justify-content:space-between; padding:7px 0; }
-  .mc-row + .mc-row{ border-top:1px solid rgba(255,255,255,0.06); }
+  .mc-row + .mc-row{ border-top:1px solid var(--line); }
   .mc-name{ display:flex; align-items:center; gap:10px; font-size:15px; font-weight:700; }
   .mc-dash{ width:22px; height:3px; border-radius:2px; flex:none; }
-  .mc-a{ color:var(--player-a); } .mc-a .mc-dash{ background:var(--player-a); }
-  .mc-b{ color:var(--player-b); } .mc-b .mc-dash{ background:var(--player-b); }
+  .mc-a{ color:var(--text); } .mc-a .mc-dash{ background:var(--bar); }
+  .mc-b{ color:var(--text-soft); } .mc-b .mc-dash{ background:var(--bar-2); }
   .mc-odds{ font-family:var(--font-data); font-size:17px; font-weight:800; color:var(--text); }
 
   /* market signal — cap 9px/0.14em; bar single-fill 74% brand + 0.16 remainder (see FLAG in BUILD-NOTES) */
-  .cap{ font-family:var(--font-data); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--muted-2); }
-  .ms-track{ position:relative; height:9px; border-radius:5px; background:rgba(255,255,255,0.16); margin:13px 0 9px; overflow:hidden; }
-  .ms-fill{ position:absolute; inset:0 auto 0 0; width:74%; background:var(--brand); }
+  .cap{ font-family:var(--font-data); font-size:9px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-label); }
+  .ms-track{ position:relative; height:9px; border-radius:5px; background:var(--track); margin:13px 0 9px; overflow:hidden; }
+  .ms-fill{ position:absolute; inset:0 auto 0 0; width:74%; background:var(--bar); }
   .ms-legend{ display:flex; justify-content:space-between; align-items:baseline; }
-  .ms-fav{ font-family:var(--font-data); font-size:11px; color:var(--player-a); }
+  .ms-fav{ font-family:var(--font-data); font-size:11px; color:var(--text); }
   .ms-fav b{ font-weight:600; }
-  .ms-fav .w{ font-family:var(--font-data); color:var(--player-a); margin-left:6px; }
-  .ms-under{ font-family:var(--font-data); font-size:11px; color:var(--muted); }
+  .ms-fav .w{ font-family:var(--font-data); color:var(--text); margin-left:6px; }
+  .ms-under{ font-family:var(--font-data); font-size:11px; color:var(--text-label); }
 
   /* line movement */
   .lm-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:13px; }
   .lm-cols{ display:flex; gap:24px; }
-  .lm-cols span{ font-family:var(--font-data); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted-2); }
+  .lm-cols span{ font-family:var(--font-data); font-size:9px; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-label); }
   .lm-row{ display:grid; grid-template-columns:62px 34px 1fr 54px; align-items:center; gap:10px; }
   .lm-row + .lm-row{ margin-top:11px; }
-  .lm-book{ font-size:11px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .lm-open{ font-family:var(--font-data); font-size:11px; color:var(--muted); }
+  .lm-book{ font-size:11px; color:var(--text-label); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lm-open{ font-family:var(--font-data); font-size:11px; color:var(--text-label); }
   /* movement track paints a filled segment (muted→brand gradient), not a bare line + dot */
-  .lm-mtrack{ position:relative; height:2px; background:linear-gradient(90deg,var(--muted),var(--brand)); border-radius:2px; }
+  .lm-mtrack{ position:relative; height:2px; background:linear-gradient(90deg,var(--text-label),var(--bar)); border-radius:2px; }
   .lm-dot{ position:absolute; top:50%; right:0; transform:translate(50%,-50%); width:8px; height:8px;
-    border-radius:50%; background:var(--brand); }
+    border-radius:50%; background:var(--bar); }
   .lm-close{ text-align:right; }
   .lm-close .p{ display:block; font-family:var(--font-data); font-size:13px; font-weight:700; color:var(--text); }
   /* Login preview is NOT the Match Analysis Odds tab, so its odds deltas are non-semantic:
      --muted-2, Plex Mono, both directions. The ▼/▲ glyph is the only thing that encodes
      direction; the colour encodes nothing. Green/red on odds deltas exists only on the
      Match Analysis Odds tab (README, authoritative) — see BUILD-NOTES. */
-  .lm-close .d{ display:block; font-family:var(--font-data); font-size:9px; margin-top:1px; color:var(--muted-2); }
-  .lm-close .d.pos, .lm-close .d.neg{ color:var(--muted-2); }
+  .lm-close .d{ display:block; font-family:var(--font-data); font-size:9px; margin-top:1px; color:var(--text-label); }
+  .lm-close .d.pos, .lm-close .d.neg{ color:var(--text-label); }
 
   /* visualize footer */
   .panel-foot{ margin-top:auto; padding-top:40px; }
-  .viz-h{ font-size:26px; font-weight:800; letter-spacing:-0.01em; color:var(--brand); margin:0 0 12px; }
-  .viz-b{ margin:0; font-size:19px; font-weight:600; line-height:1.5; color:#dfe3ea; max-width:520px; }
+  .viz-h{ font-size:26px; font-weight:800; letter-spacing:-0.01em; color:var(--link); margin:0 0 12px; }
+  .viz-b{ margin:0; font-size:19px; font-weight:600; line-height:1.5; color:var(--text-soft); max-width:520px; }
   /* carousel dots: export is uniform width, active differs by COLOUR only (not width) */
   .dots{ display:flex; gap:8px; margin-top:24px; }
-  .dots i{ width:26px; height:4px; border-radius:3px; background:rgba(255,255,255,0.16); display:block; }
-  .dots i.on{ background:var(--brand); }
+  .dots i{ width:26px; height:4px; border-radius:3px; background:var(--edge-16); display:block; }
+  .dots i.on{ background:var(--bar); }
 
   @media (max-width:1000px){
     .wrap{ grid-template-columns:1fr; row-gap:32px; padding:32px 24px; }
@@ -257,22 +249,22 @@
 
         <button type="button" class="btn-solid" id="continueBtn" onclick="continueEmail()" disabled>
           <span id="continueLbl">Continue with email</span>
-          <svg id="continueArrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e7e9ee" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <svg id="continueArrow" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
         </button>
 
         <div class="divider"><span class="ln"></span><span class="tx">or</span><span class="ln"></span></div>
 
         <button type="button" class="btn-2" onclick="socialStub('Phone sign-in')">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#e7e9ee" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 2.5H4.2A1.7 1.7 0 0 0 2.5 4.4c0 8.9 7.2 16.1 16.1 16.1a1.7 1.7 0 0 0 1.9-1.7v-2.4a1.7 1.7 0 0 0-1.5-1.7l-2.7-.4a1.7 1.7 0 0 0-1.6.7l-1 1.4a13 13 0 0 1-5.4-5.4l1.4-1a1.7 1.7 0 0 0 .7-1.6l-.4-2.7a1.7 1.7 0 0 0-1.7-1.5Z"/></svg>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.6 2.5H4.2A1.7 1.7 0 0 0 2.5 4.4c0 8.9 7.2 16.1 16.1 16.1a1.7 1.7 0 0 0 1.9-1.7v-2.4a1.7 1.7 0 0 0-1.5-1.7l-2.7-.4a1.7 1.7 0 0 0-1.6.7l-1 1.4a13 13 0 0 1-5.4-5.4l1.4-1a1.7 1.7 0 0 0 .7-1.6l-.4-2.7a1.7 1.7 0 0 0-1.7-1.5Z"/></svg>
           Use phone instead
         </button>
 
         <div class="oauth">
           <button type="button" class="btn-2" onclick="socialStub('Google sign-in')" aria-label="Continue with Google">
-            <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#5b9bff" d="M21.35 11.1H12v3.83h5.35c-.23 1.4-1.63 4.1-5.35 4.1-3.22 0-5.85-2.67-5.85-5.95S8.78 7.13 12 7.13c1.83 0 3.06.78 3.76 1.45l2.56-2.47C16.7 4.6 14.6 3.7 12 3.7 6.98 3.7 2.9 7.78 2.9 12.8s4.08 9.1 9.1 9.1c5.25 0 8.72-3.69 8.72-8.88 0-.6-.06-1.05-.15-1.5Z"/></svg>
+            <img src="assets/brand/google-g.svg" alt="">
           </button>
           <button type="button" class="btn-2" onclick="socialStub('Apple sign-in')" aria-label="Continue with Apple">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#e7e9ee"><path d="M16.4 12.9c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.15-2.8.85-3.5.85-.7 0-1.9-.83-3.1-.8-1.6.02-3.05.93-3.87 2.36-1.65 2.87-.42 7.1 1.18 9.43.78 1.14 1.71 2.42 2.93 2.37 1.18-.05 1.62-.76 3.05-.76 1.42 0 1.82.76 3.06.74 1.27-.02 2.07-1.16 2.85-2.3.9-1.32 1.27-2.6 1.29-2.66-.03-.01-2.47-.95-2.47-3.42ZM14.1 6.2c.65-.79 1.09-1.88.97-2.97-.94.04-2.08.63-2.75 1.41-.6.7-1.13 1.81-.99 2.88 1.05.08 2.12-.53 2.77-1.32Z"/></svg>
+            <img src="assets/brand/apple-white.png" alt="">
           </button>
         </div>
 
@@ -281,21 +273,15 @@
         <p class="legal">By continuing you agree to our <a href="#" onclick="return legal(event)">Terms</a> and <a href="#" onclick="return legal(event)">Privacy Policy</a>. Model insights are for informational purposes only.</p>
 
         <div class="stores">
-          <div class="store" onclick="socialStub('App Store')">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="#e7e9ee"><path d="M16.4 12.7c0-2 1.6-3 1.7-3-.9-1.4-2.4-1.5-2.9-1.6-1.2-.1-2.4.7-3 .7-.6 0-1.6-.7-2.6-.7-1.3 0-2.6.8-3.3 2-1.4 2.4-.4 6 1 8 .7 1 1.4 2 2.5 2 1 0 1.3-.6 2.5-.6s1.5.6 2.5.6c1 0 1.7-1 2.4-2 .5-.7.7-1.4.7-1.4s-1.5-.6-1.5-2.4z"/><path d="M14.5 6.3c.5-.7.9-1.6.8-2.5-.8 0-1.7.5-2.3 1.2-.5.6-.9 1.5-.8 2.4.9 0 1.8-.5 2.3-1.1z"/></svg>
-            <span class="st"><span class="k">Download on the</span><span class="n">App Store</span></span>
-          </div>
-          <div class="store" onclick="socialStub('Google Play')">
-            <svg width="19" height="19" viewBox="0 0 24 24"><path fill="#00D3F2" d="M3.3 2.4 13 12 3.3 21.6c-.3-.2-.5-.6-.5-1.1V3.5c0-.5.2-.9.5-1.1z"/><path fill="#00E676" d="M16.7 8.7 5.4 2.3 3.3 2.4 13 12z"/><path fill="#FFCE00" d="M20.4 10.8c.7.4.7 1.9 0 2.4l-3.7 2.1L13 12l3.7-3.3z"/><path fill="#FF3D46" d="M3.3 21.6 13 12l3.7 3.3-11.3 6.4z"/></svg>
-            <span class="st"><span class="k">Get it on</span><span class="n">Google Play</span></span>
-          </div>
+          <div class="store" onclick="socialStub('App Store')"><img src="assets/brand/app-store-badge.svg" alt="Download on the App Store"></div>
+          <div class="store" onclick="socialStub('Google Play')"><img src="assets/brand/google-play-badge.png" alt="Get it on Google Play"></div>
         </div>
       </section>
 
       <!-- ---- STEP: code / OTP ---- -->
       <section id="stepCode" class="otp hidden">
         <div class="mailglyph">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#5b9bff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m4 7 8 6 8-6"/></svg>
         </div>
         <h1 class="h1">Check your inbox</h1>
         <p class="sub">Enter the 6-digit code we emailed to <span id="codeEmail" style="color:var(--text)">your email</span></p>
@@ -337,14 +323,14 @@
         <span class="field-err" id="pwPassErr"></span>
 
         <div class="terms hidden" id="pwTerms" onclick="toggleTerms()">
-          <span class="box" id="pwTermsBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span class="box" id="pwTermsBox"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--text)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
           <span class="tx">I agree to the Terms and understand model insights are informational only, not betting advice.</span>
         </div>
 
         <button type="button" class="btn-solid" id="pwSubmit" onclick="submitPassword()"><span id="pwSubmitLbl">Sign in</span></button>
         <p class="form-err" id="pwFormErr"></p>
 
-        <div class="pwline"><span style="color:var(--muted);font-size:13.5px" id="pwSwitchText">New here?</span> <a id="pwSwitchLink" onclick="togglePwMode()">Create an account</a></div>
+        <div class="pwline"><span style="color:var(--text-label);font-size:13.5px" id="pwSwitchText">New here?</span> <a id="pwSwitchLink" onclick="togglePwMode()">Create an account</a></div>
         <a class="backlink" onclick="goStep('email')">&lsaquo; Back to email code</a>
       </section>
     </div>

@@ -42,9 +42,9 @@
   function band(rate, metric){
     const T = metric==='HOLD'?[85,70]:[30,18];
     const pct = Math.round(rate*100);
-    if(pct>=T[0]) return { bg:'rgba(45,226,145,0.20)', bd:'rgba(45,226,145,0.48)', color:'#4ff0a4', tag:'strong' };
-    if(pct>=T[1]) return { bg:'rgba(255,164,43,0.18)',  bd:'rgba(255,164,43,0.46)',  color:'#ffb454', tag:'mid'    };
-    return              { bg:'rgba(255,90,106,0.18)',   bd:'rgba(255,90,106,0.46)',   color:'#ff7d89', tag:'weak'   };
+    if(pct>=T[0]) return { bg:'color-mix(in srgb, var(--viz-up) 20%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 48%, transparent)', color:'var(--viz-up)', tag:'strong' };
+    if(pct>=T[1]) return { bg:'var(--edge-6)',  bd:'var(--edge-10)',  color:'var(--text-soft)', tag:'mid'    };
+    return              { bg:'color-mix(in srgb, var(--viz-down) 18%, transparent)',   bd:'color-mix(in srgb, var(--viz-down) 46%, transparent)',   color:'var(--viz-down)', tag:'weak'   };
   }
 
   function hbSum(cells){
@@ -96,7 +96,7 @@
         const dPts = gPctInt===null ? null : (pctInt - gPctInt);
         return {
           pct:pctInt+'%', frac:num+'/'+den,
-          bg:bd2.bg, bd:bd2.bd,
+          bg:bd2.bg, bd:bd2.bd, tag:bd2.tag,
           color:small?'var(--text-label)':bd2.color,
           size:small?'12px':'15px', opacity:small?0.72:1,
           tipHead:head,

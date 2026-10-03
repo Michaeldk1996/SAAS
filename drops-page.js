@@ -454,7 +454,7 @@
 
   // Avatar key: an exact, unordered two-player match against today's board (matches.json names
   // are "D. Medvedev"). Both players must match one board card, and only one card may match,
-  // or the row keeps the export's #1B2A55 fallback — never a guessed face.
+  // or the row keeps the export's inner-tone fallback — never a guessed face.
   function nameSig(n) {
     var t = fold(n).replace(/\./g, ' ').split(/\s+/).filter(Boolean);
     return t.length ? t[0][0] + '|' + t[t.length - 1] : null;

@@ -120,7 +120,7 @@
   var SHARD_CONCURRENCY  = 6;
 
   // Export design tokens (README §"Design tokens"). Named once, used everywhere.
-  var GREEN = 'var(--pos)', AMBER = '#e8a84e', RED = 'var(--neg)', DIM = 'var(--text-label)', DASH = 'var(--text-label)';
+  var GREEN = 'var(--pos)', AMBER = 'var(--amber)', RED = 'var(--neg)', DIM = 'var(--text-label)', DASH = 'var(--text-label)';
   var TIER_COLOR = { above: GREEN, within: AMBER, below: RED };
   var SURF_COLOR = { hard: 'var(--bar)', clay: 'var(--text-soft)', grass: 'var(--text-soft)' };
   var SURF_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass' };
