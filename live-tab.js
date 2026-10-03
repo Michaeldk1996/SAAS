@@ -682,7 +682,7 @@
     // BOTH metrics (higher break% is good for the returner, higher hold% for the
     // server). GLOBAL cell has deviation 0 → neutral, so it never colours itself.
     function hbCellStyle(pct, rowGlobalPct) {
-      if (pct == null || rowGlobalPct == null) return 'background:var(--surface);';
+      if (pct == null || rowGlobalPct == null) return 'background:var(--card);';
       const d = pct - rowGlobalPct;
       if (Math.abs(d) <= HB_NEUTRAL_BAND) return 'background:rgba(120,132,156,0.10);';
       const t = Math.min(1, (Math.abs(d) - HB_NEUTRAL_BAND) / (HB_FULL_DEV - HB_NEUTRAL_BAND));
@@ -699,17 +699,17 @@
       // and self-heal once the rebuilt shard propagates, rather than “undefined/n”.
       const has = !!(cell && cell.n > 0 && cell.pct != null && cell.won != null);
       if (!has) {
-        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:var(--surface);">
-          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--label);">—</div>
+        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:var(--card);">
+          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--text-label);">—</div>
         </div>`;
       }
       const thin = cell.n < HB_DESAT_N;
       const bg = thin ? 'background:rgba(120,132,156,0.07);' : hbCellStyle(cell.pct, rowGlobalPct);
       // Thin cells dim the % slightly (still fully legible) as a second, quieter cue.
-      const pctColor = thin ? 'rgba(231,233,238,0.80)' : '#ebf1f2';
+      const pctColor = thin ? 'color-mix(in srgb, var(--text) 80%, transparent)' : 'var(--text)';
       return `<div style="border-radius:7px;padding:8px 3px;text-align:center;min-width:0;${bg}">
         <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:${pctColor};">${Math.round(cell.pct)}%</div>
-        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:rgba(231,233,238,0.62);white-space:nowrap;">${cell.won}/${cell.n}</div>
+        <div style="font-size:9.5px;font-family:'IBM Plex Mono',monospace;margin-top:3px;color:color-mix(in srgb, var(--text) 62%, transparent);white-space:nowrap;">${cell.won}/${cell.n}</div>
       </div>`;
     }
     // The GLOBAL anchor cell for a bucket row — the DOMINANT column: wider, heavier
@@ -717,13 +717,13 @@
     // the number that survives at every rank tier; the visual weight says so.
     function hbGlobalCell(g) {
       if (!g.n) {
-        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--surface);border:0.33px solid var(--line);">
-          <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--label);">—</div>
+        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--card);border:0.33px solid var(--edge-6);">
+          <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--text-label);">—</div>
         </div>`;
       }
-      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:rgba(143,160,192,0.22);border:0.33px solid var(--line);box-shadow:inset 0 0 0 1px rgba(143,160,192,0.10);">
+      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:rgba(143,160,192,0.22);border:0.33px solid var(--edge-6);box-shadow:inset 0 0 0 1px rgba(143,160,192,0.10);">
         <div style="font-size:19px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--text);">${Math.round(g.pct)}%</div>
-        <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;color:rgba(231,233,238,0.82);white-space:nowrap;">${g.won}/${g.n}</div>
+        <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;color:color-mix(in srgb, var(--text) 82%, transparent);white-space:nowrap;">${g.won}/${g.n}</div>
       </div>`;
     }
     // A full-height vertical rule separating the GLOBAL anchor from the per-set columns.
@@ -738,7 +738,7 @@
         <span></span>
         <span style="font-size:10px;letter-spacing:0.10em;color:var(--text-soft);font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
         <span></span>
-        ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:var(--label);font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
+        ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:var(--text-label);font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
       </div>`;
       const rows = HB_BUCKETS.map(b => {
         const rowCells = HB_SETCOLS.map(s => (node[s] || {})[b[0]]);
@@ -746,7 +746,7 @@
         return `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:stretch;">
           <div style="display:flex;flex-direction:column;justify-content:center;">
             <span style="font-size:11.5px;font-weight:700;color:var(--text-soft);white-space:nowrap;">${b[1]}</span>
-            <span style="font-size:8px;color:var(--label);line-height:1.15;">${b[2]}</span>
+            <span style="font-size:8px;color:var(--text-label);line-height:1.15;">${b[2]}</span>
           </div>
           ${hbGlobalCell(g)}
           ${HB_DIVIDER}
@@ -759,8 +759,8 @@
     function hbPlayerBlock(pd, name, logo, metric) {
       const node = pd && (metric === 'hold' ? (pd.serve && pd.serve.all) : (pd.return && pd.return.all));
       const av = logo
-        ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--surface);flex-shrink:0;">`
-        : `<span style="width:30px;height:30px;border-radius:50%;background:var(--surface);flex-shrink:0;display:inline-block;"></span>`;
+        ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--card);flex-shrink:0;">`
+        : `<span style="width:30px;height:30px;border-radius:50%;background:var(--card);flex-shrink:0;display:inline-block;"></span>`;
       const pillLbl = metric === 'hold' ? 'HOLD' : 'BREAK';
       let pill = '—';
       if (node) {
@@ -772,10 +772,10 @@
       const nm = `<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;min-width:0;">
         ${av}
         <span style="font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${esc(name || '—')}</span>
-        <span style="font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--text);background:var(--surface);border:1px solid #262B35;border-radius:999px;padding:4px 10px;white-space:nowrap;">${pillLbl} ${pill}</span>
+        <span style="font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--text);background:var(--card);border:1px solid #262B35;border-radius:999px;padding:4px 10px;white-space:nowrap;">${pillLbl} ${pill}</span>
       </div>`;
       if (!node) {
-        return `<div style="flex:1;min-width:330px;">${nm}<div style="font-size:12px;color:var(--label);">No ${metric} history yet.</div></div>`;
+        return `<div style="flex:1;min-width:330px;">${nm}<div style="font-size:12px;color:var(--text-label);">No ${metric} history yet.</div></div>`;
       }
       return `<div style="flex:1;min-width:330px;">${nm}${hbGrid(node)}</div>`;
     }
@@ -794,9 +794,9 @@
         <div style="min-width:0;">
           <div style="display:flex;align-items:center;gap:7px;">
             <span style="font-size:14px;font-weight:800;color:var(--text);">Hold/Break HeatMap</span>
-            <span title="${esc(tip)}" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #40506b;color:var(--text-sub);font-size:10px;font-weight:700;cursor:help;flex-shrink:0;">i</span>
+            <span title="${esc(tip)}" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #40506b;color:var(--text-label);font-size:10px;font-weight:700;cursor:help;flex-shrink:0;">i</span>
           </div>
-          <div style="margin-top:8px;"><span style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;color:var(--text-sub);background:var(--surface);border:1px solid #262B35;border-radius:999px;padding:3px 10px;">${chip}</span></div>
+          <div style="margin-top:8px;"><span style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;color:var(--text-label);background:var(--card);border:1px solid #262B35;border-radius:999px;padding:3px 10px;">${chip}</span></div>
         </div>
         <div class="ltm-toggle" style="margin:0;">${tog('hold', 'HOLD')}${tog('break', 'BREAK')}</div>
       </div>`;

@@ -68,7 +68,7 @@
     const pd = (HB && HB.players) ? HB.players[String(pkey)] : null;
     const side = pd ? (metric==='HOLD' ? pd.serve : pd.return) : null;
     const node = side ? side[surf] : null;
-    const DEAD = { pct:'—', frac:'', bg:'rgba(255,255,255,0.02)', bd:'rgba(255,255,255,0.05)', color:'#4b5672', size:'13px', opacity:1, tipHead:'', tipRate:'—', tipNote:'no matches on record' };
+    const DEAD = { pct:'—', frac:'', bg:'color-mix(in srgb, var(--text) 2%, transparent)', bd:'var(--line)', color:'var(--text-label)', size:'13px', opacity:1, tipHead:'', tipRate:'—', tipNote:'no matches on record' };
     const maxSet = bo===3?3:5;
 
     const rows = BUCKETS.map((b,bi)=>{
@@ -88,7 +88,7 @@
         if(!den || num===null) return Object.assign({},DEAD,{tipHead:head});
         // n<5 → the raw count only, neutral background, NO percentage: too few
         // service games for a rate to mean anything (§7 sample gates).
-        if(den<5) return { pct:num+'/'+den, frac:'raw', bg:'rgba(255,255,255,0.03)', bd:'rgba(255,255,255,0.07)', color:'#8b96b5', size:'11px', opacity:1, tipHead:head, tipRate:num+'/'+den, tipNote:'too few matches for a rate' };
+        if(den<5) return { pct:num+'/'+den, frac:'raw', bg:'color-mix(in srgb, var(--text) 3%, transparent)', bd:'var(--edge-7)', color:'var(--text-label)', size:'11px', opacity:1, tipHead:head, tipRate:num+'/'+den, tipNote:'too few matches for a rate' };
         const rate = num/den;
         const pctInt = Math.round(rate*100);
         const bd2 = band(rate, metric);
@@ -97,7 +97,7 @@
         return {
           pct:pctInt+'%', frac:num+'/'+den,
           bg:bd2.bg, bd:bd2.bd,
-          color:small?'#8b96b5':bd2.color,
+          color:small?'var(--text-label)':bd2.color,
           size:small?'12px':'15px', opacity:small?0.72:1,
           tipHead:head,
           tipRate:pctInt+'%  ·  '+num+'/'+den,
@@ -108,7 +108,7 @@
         bucket:b[0], sub:b[1],
         gPct: gPctInt===null ? '—' : gPctInt+'%',
         gFrac: g.pct===null ? '' : g.won+'/'+g.n,
-        gColor: gBand ? gBand.color : '#4b5672',
+        gColor: gBand ? gBand.color : 'var(--text-label)',
         cells,
       };
     });

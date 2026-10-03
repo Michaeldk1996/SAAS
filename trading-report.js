@@ -32,7 +32,7 @@
 //      Surface AND Tournament; BEFORE the search box and BEFORE any column tier
 //      filter. So typing a name never moves the bar, but picking a tournament does.
 //   6. AVATARS      → the shipped resolver chain stays (ATP alias → Wikimedia →
-//      api-tennis logo → monogram initials), not the export's bare #0e1019 circle.
+//      api-tennis logo → monogram initials), not the export's bare var(--card) circle.
 //
 // SURFACE, and why it changed. The export's rule 3 is non-negotiable: "splits use
 // the surface of each player's own match, including under All surfaces. Never blend
@@ -120,9 +120,9 @@
   var SHARD_CONCURRENCY  = 6;
 
   // Export design tokens (README §"Design tokens"). Named once, used everywhere.
-  var GREEN = '#3ed68c', AMBER = '#e8a84e', RED = '#da6259', DIM = '#6e7a93', DASH = '#6e7a93';
+  var GREEN = 'var(--pos)', AMBER = '#e8a84e', RED = 'var(--neg)', DIM = 'var(--text-label)', DASH = 'var(--text-label)';
   var TIER_COLOR = { above: GREEN, within: AMBER, below: RED };
-  var SURF_COLOR = { hard: '#6a9af8', clay: '#f2b45f', grass: '#45d6b0' };
+  var SURF_COLOR = { hard: 'var(--bar)', clay: 'var(--text-soft)', grass: 'var(--text-soft)' };
   var SURF_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass' };
   var MIN_TIER_DEN = 10;   // a cell is untiered below this denominator (README §"Cell display rules")
   var TIER_PTS     = 3;    // ±3 percentage points around the field average
@@ -630,9 +630,9 @@
   }
 
   // ─── cell rendering (README §"Cell display rules" — non-negotiable) ──────────
-  // null / total === 0 → em dash, 15px, #4b5672, no sub-line
-  // total < 5          → won/total at 12px in #5b6880, no sub-line
-  // total < 10         → percent at 12px in #5b6880, sub-line "won/total · small n"
+  // null / total === 0 → em dash, 15px, var(--text-label), no sub-line
+  // total < 5          → won/total at 12px in var(--text-label), no sub-line
+  // total < 10         → percent at 12px in var(--text-label), sub-line "won/total · small n"
   // total >= 10        → percent at 15px/700 in the tier colour, sub-line won/total
   // A real zero is a real value and renders as a figure; only ABSENT data dashes.
   function cellHtml(row, mk, V, band) {
@@ -775,9 +775,9 @@
              '</div>' +
              '<div class="tr-hdr-stats">' +
                pair(S.day === 'tomorrow' ? 'Tomorrow' : 'Today', String(slateCount), null) +
-               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : '#6a9af8') +
+               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : 'var(--bar)') +
                pair('Window', S.win === '52w' ? '52w' : '24m', null) +
-               pair('Updated', updated, '#a3abba') +
+               pair('Updated', updated, 'var(--text-label)') +
              '</div>' +
            '</div>';
   }
@@ -829,7 +829,7 @@
       dropdownHtml('tour', V.tourSel || 'All tournaments', null, S.tourOpen, tourOpts) +
       segHtml('win', [['24m', '24 months'], ['52w', '52 weeks']], S.win, null) +
       '<label class="tr-searchwrap">' +
-        '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="6" stroke="#6e7a93" stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="#6e7a93" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
+        '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="6" stroke="var(--text-label)" stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
         '<input id="trSearch" type="text" placeholder="Search player" value="' + esc(S.q) + '">' +
       '</label>' +
     '</div>';
@@ -864,7 +864,7 @@
       var hidden = (V.tabFilters[mk] || []);
       var open = (S.menu === mk);
       var sorted = (S.sort === mk);
-      var funnelColor = (hidden.length || band) ? '#6a9af8' : '#6e7a93';
+      var funnelColor = (hidden.length || band) ? 'var(--bar)' : 'var(--text-label)';
       var fa = V.fieldAvg[mk];
       var field = (fa == null) ? '—' : (Math.round(fa * 100) + '%');
 

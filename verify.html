@@ -2,50 +2,53 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<!-- TEN-376 foundation: theme first (sets data-theme before paint), then the one colour file. -->
+<script src="./theme.js"></script>
+<link rel="stylesheet" href="./tokens.css">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BSP Consult · Verify your email</title>
 <link rel="icon" type="image/png" href="assets/ring-transparent.png">
 <script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <style>
   *{ box-sizing:border-box; }
-  body{ margin:0; background:#0b0c10; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
-  a{ color:#7ba4ff; text-decoration:none; } a:hover{ color:#a9c4ff; }
-  ::selection{ background:rgba(62,123,250,0.35); }
+  body{ margin:0; background:#0b0c10; color:var(--text); font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+  a{ color:var(--periwinkle); text-decoration:none; } a:hover{ color:var(--periwinkle); }
+  ::selection{ background:color-mix(in srgb, var(--bar) 35%, transparent); }
 
   .page{ display:flex; justify-content:center; align-items:center; padding:48px 16px; min-height:100vh; }
-  .card{ width:520px; max-width:100%; border:1px solid rgba(255,255,255,0.08); border-radius:20px; overflow:hidden; background:linear-gradient(180deg,#101a33,#0a0c11); box-shadow:0 40px 90px -55px rgba(0,0,0,0.9); position:relative; }
-  .card .glow{ position:absolute; inset:0; background:radial-gradient(600px 320px at 20% -10%, rgba(62,123,250,0.16), transparent 60%); pointer-events:none; }
+  .card{ width:520px; max-width:100%; border:1px solid color-mix(in srgb, var(--text) 8%, transparent); border-radius:20px; overflow:hidden; background:linear-gradient(180deg,#101a33,#0a0c11); box-shadow:0 40px 90px -55px rgba(0,0,0,0.9); position:relative; }
+  .card .glow{ position:absolute; inset:0; background:radial-gradient(600px 320px at 20% -10%, color-mix(in srgb, var(--bar) 16%, transparent), transparent 60%); pointer-events:none; }
   .inner{ position:relative; padding:40px 40px 36px; }
 
   .brand-id{ display:flex; align-items:center; gap:11px; margin-bottom:30px; }
   /* TEN-285 founder ruling 2026-09-26: the full 12a logo, 26px tall, no box (as the dashboard sidebar). */
   .brand-id img{ display:block; height:26px; width:auto; }
 
-  .icon-badge{ width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:rgba(62,123,250,0.12); border:1px solid rgba(62,123,250,0.32); margin-bottom:20px; }
+  .icon-badge{ width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:color-mix(in srgb, var(--bar) 12%, transparent); border:1px solid color-mix(in srgb, var(--edge-16) 32%, transparent); margin-bottom:20px; }
 
   .title{ margin:0; font-size:24px; font-weight:800; letter-spacing:-0.02em; }
   .body{ margin:12px 0 0; font-size:14.5px; line-height:1.6; color:#9aa3b2; }
   .body .em{ color:#e7ebf1; font-weight:600; word-break:break-all; }
 
-  .steps{ margin:22px 0 0; padding:16px 18px; border:1px solid rgba(255,255,255,0.08); border-radius:13px; background:rgba(13,15,20,0.6); }
+  .steps{ margin:22px 0 0; padding:16px 18px; border:1px solid color-mix(in srgb, var(--text) 8%, transparent); border-radius:13px; background:rgba(13,15,20,0.6); }
   .steps ol{ margin:0; padding-left:18px; }
-  .steps li{ font-size:13px; line-height:1.7; color:#5b6880; }
+  .steps li{ font-size:13px; line-height:1.7; color:var(--text-label); }
 
   .actions{ margin:26px 0 0; display:flex; flex-direction:column; gap:10px; }
   .btn{ display:block; width:100%; text-align:center; font-size:14.5px; font-weight:700; border-radius:11px; padding:13px; cursor:pointer; font-family:inherit; border:1px solid transparent; }
-  .btn-primary{ color:#0b0d12; background:#3E7BFA; } .btn-primary:hover{ background:#5a90ff; }
-  .btn-ghost{ color:#e7e9ee; background:transparent; border-color:rgba(255,255,255,0.14); } .btn-ghost:hover{ background:rgba(255,255,255,0.05); }
+  .btn-primary{ color:#0b0d12; background:var(--bar); } .btn-primary:hover{ background:var(--bar); }
+  .btn-ghost{ color:var(--text); background:transparent; border-color:color-mix(in srgb, var(--text) 14%, transparent); } .btn-ghost:hover{ background:var(--line); }
   .btn[disabled]{ opacity:0.55; cursor:default; }
 
   .status{ margin:16px 0 0; font-size:12.5px; text-align:center; min-height:16px; }
-  .status.ok{ color:#3dd68c; } .status.err{ color:#e0616f; } .status.muted{ color:#5b6880; }
+  .status.ok{ color:var(--pos); } .status.err{ color:var(--neg); } .status.muted{ color:var(--text-label); }
 
   .footline{ margin:22px 0 0; text-align:center; font-size:12.5px; color:#6f7684; }
   .footline a{ cursor:pointer; font-weight:600; }
-  .spin{ display:inline-block; width:13px; height:13px; border:2px solid rgba(123,164,255,0.35); border-top-color:#7ba4ff; border-radius:50%; vertical-align:-2px; margin-right:6px; animation:spin 0.8s linear infinite; }
+  .spin{ display:inline-block; width:13px; height:13px; border:2px solid color-mix(in srgb, var(--edge-16) 35%, transparent); border-top-color:var(--edge-16); border-radius:50%; vertical-align:-2px; margin-right:6px; animation:spin 0.8s linear infinite; }
   @keyframes spin{ to{ transform:rotate(360deg); } }
 </style>
 </head>
@@ -59,7 +62,7 @@
         </div>
 
         <div class="icon-badge">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#7ba4ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--bar)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>
           </svg>
         </div>

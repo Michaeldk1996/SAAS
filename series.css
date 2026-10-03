@@ -29,9 +29,9 @@
  */
 
 /* ── page frame (export §"Page frame") ── */
-/* Export page background is #06070a, two hex off the app's --bg (#08090C). Scoped to
+/* Export page background is var(--page), two hex off the app's --bg (#08090C). Scoped to
    the tab so it reverts the moment another page is shown — the body is never touched. */
-[data-page="series"] { background: var(--surface-inner); min-height: 100vh; }
+[data-page="series"] { background: var(--inner); min-height: 100vh; }
 [data-page="series"] .sr-wrap {
   max-width: 1360px;
   margin: 0 auto;
@@ -49,21 +49,21 @@
 
 /* ── 1 · header card ── */
 [data-page="series"] .sr-head {
-  background: var(--surface); border: 0.33px solid var(--line); border-radius: 12px;
+  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 12px;
   padding: 22px 26px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap;
 }
 [data-page="series"] .sr-h1 { font-size: 29px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; margin: 0; color: var(--text); }
-[data-page="series"] .sr-subtitle { font-size: 13.5px; color: var(--label); margin: 8px 0 0; max-width: 640px; line-height: 1.55; }
+[data-page="series"] .sr-subtitle { font-size: 13.5px; color: var(--text-label); margin: 8px 0 0; max-width: 640px; line-height: 1.55; }
 [data-page="series"] .sr-stats { display: flex; gap: 34px; flex-wrap: wrap; }
 [data-page="series"] .sr-stat { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
 [data-page="series"] .sr-stat-k {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--label);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-stat-v { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 17px; font-weight: 700; color: var(--text); }
 [data-page="series"] .sr-stat-v.sr-accent { color: var(--periwinkle); }
-[data-page="series"] .sr-stat-v.sr-soft { color: var(--text-sub); }
+[data-page="series"] .sr-stat-v.sr-soft { color: var(--text-label); }
 
 /* ── 2 · filters ── */
 [data-page="series"] .sr-filters { display: flex; flex-direction: column; gap: 12px; }
@@ -71,20 +71,20 @@
 [data-page="series"] .sr-fgroup { display: inline-flex; align-items: center; gap: 10px; }
 [data-page="series"] .sr-flabel {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--label);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-seg {
   display: inline-flex; gap: 3px;
-  background: var(--surface); border: 0.33px solid var(--line); border-radius: 9px; padding: 2px;
+  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 9px; padding: 2px;
 }
 [data-page="series"] .sr-segbtn {
   padding: 7px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
-  color: var(--label); background: transparent; border: 0; cursor: pointer;
+  color: var(--text-label); background: transparent; border: 0; cursor: pointer;
   font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
   transition: background .14s ease, color .14s ease, border-color .14s ease;
 }
-[data-page="series"] .sr-segbtn:hover { color: var(--text-sub); }
-[data-page="series"] .sr-segbtn.active { background: var(--seg-active); color: var(--text); font-weight: 700; }
+[data-page="series"] .sr-segbtn:hover { color: var(--text-label); }
+[data-page="series"] .sr-segbtn.active { background: var(--inner); color: var(--text); font-weight: 700; }
 [data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid var(--periwinkle); outline-offset: 1px; }
 
 /* PIXEL PASS §3.5 · the design's "Show already-played" checkbox is RESTORED, and `Played`
@@ -95,13 +95,13 @@
    list, so the played view is reached by a different widget and by no different logic. */
 [data-page="series"] .sr-toggle {
   display: inline-flex; align-items: center; gap: 9px;
-  font-size: 12.5px; color: var(--text-sub); cursor: pointer; user-select: none;
+  font-size: 12.5px; color: var(--text-label); cursor: pointer; user-select: none;
   font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
 }
 [data-page="series"] .sr-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 [data-page="series"] .sr-box {
   width: 15px; height: 15px; flex: none; border-radius: 4px;
-  background: var(--surface); border: 0.33px solid var(--line);
+  background: var(--card); border: 0.33px solid var(--edge-6);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .14s ease, border-color .14s ease;
 }
@@ -111,20 +111,20 @@
   transform: rotate(-45deg); opacity: 0;
 }
 [data-page="series"] .sr-toggle input:checked + .sr-box {
-  background: var(--seg-active); border-color: var(--seg-active-line);
+  background: var(--inner); border-color: var(--edge-10);
 }
 [data-page="series"] .sr-toggle input:checked + .sr-box::after { opacity: 1; }
 [data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid var(--periwinkle); outline-offset: 2px; }
 
 /* ── already-played continued/broken aggregate (kept: ruling q7) ── */
 [data-page="series"] .sr-outsum {
-  font-size: 12.5px; color: var(--text-sub);
-  background: var(--surface); border: 0.33px solid var(--line); border-radius: 9px;
+  font-size: 12.5px; color: var(--text-label);
+  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 9px;
   padding: 10px 14px;
 }
 [data-page="series"] .sr-outsum-k {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--label); margin-right: 8px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label); margin-right: 8px;
 }
 [data-page="series"] .sr-outsum b { color: var(--text); font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-weight: 700; }
 
@@ -134,12 +134,12 @@
   align-items: start; gap: 14px;
 }
 [data-page="series"] .sr-card {
-  background: var(--surface); border: 0.33px solid var(--line); border-radius: 14px;
+  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 14px;
   padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;
   transition: border-color 120ms ease, background 120ms ease;
 }
 [data-page="series"] .sr-card.sr-has-detail { cursor: pointer; }
-[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--line-open); }
+[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--edge-10); }
 [data-page="series"] .sr-card.sr-has-detail:hover .sr-hist { color: var(--periwinkle); }
 [data-page="series"] .sr-card:focus-visible { outline: 2px solid var(--periwinkle); outline-offset: 2px; }
 
@@ -157,11 +157,11 @@
 [data-page="series"] .sr-cardtop .sr-tag-dir { flex: none; margin-top: 2px; }
 [data-page="series"] .sr-run { color: var(--periwinkle); }
 
-/* 3.1b reference sub-line (item 5, founder 2026-09-12): "Mono, #5b6880, same size as
+/* 3.1b reference sub-line (item 5, founder 2026-09-12): "Mono, var(--text-label), same size as
    the STARTED / LAST values" — i.e. .sr-cell-v's 14px. margin-top:-6px pulls it out of
    the card's 12px flex gap to a 6px sit under the title, so it reads as a sub-line of
    the claim rather than as a fourth block. It is the ONLY element between the title and
-   the player row, so nothing else shifts. The unavailable state is #4b5672, the item's
+   the player row, so nothing else shifts. The unavailable state is var(--text-label), the item's
    own stated dash colour, and it is a full-width block either way so a dash can never
    be mistaken for a truncated value.
 
@@ -183,10 +183,10 @@
    — is what 11.5px buys. Colour and the wrapping decision above are unchanged. */
 [data-page="series"] .sr-ref {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 11.5px; color: var(--label); margin-top: -6px;
+  font-size: 11.5px; color: var(--text-label); margin-top: -6px;
   white-space: normal; overflow-wrap: break-word;
 }
-[data-page="series"] .sr-ref--none { color: var(--label); }
+[data-page="series"] .sr-ref--none { color: var(--text-label); }
 
 /* 3.2 player row — 20px avatar, inline with the name on the same baseline (item 4).
    The wrap carries overflow:hidden for the circular crop, which makes it a scroll
@@ -197,7 +197,7 @@
    The probe measures the PAINTED geometry rather than trusting the mechanism, so an
    engine that synthesizes differently fails assertion D5 instead of shipping crooked. */
 /* PIXEL PASS §2.2 (founder OVERRIDE of the design's 24px) — the avatar is 34px. Everything
-   else about the circle is the design's: object-fit cover, #0f1420 fallback, 1px border.
+   else about the circle is the design's: object-fit cover, var(--card) fallback, 1px border.
 
    Two knock-ons the override forces, both stated by §2.2 itself:
    · align-items goes baseline -> CENTRE. The 20px circle sat flush with the name's line box
@@ -210,16 +210,16 @@
 [data-page="series"] .sr-prow { display: flex; align-items: center; gap: 12px; min-width: 0; }
 [data-page="series"] .sr-av-wrap {
   position: relative; width: 34px; height: 34px; flex: none; border-radius: 50%; overflow: hidden;
-  background: var(--surface); border: 0.33px solid var(--line);
+  background: var(--card); border: 0.33px solid var(--edge-6);
   display: inline-flex; align-items: center; justify-content: center;
 }
 [data-page="series"] .sr-av { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-[data-page="series"] .sr-mono { font-size: 12px; font-weight: 700; color: var(--label); letter-spacing: 0.02em; }
-[data-page="series"] .sr-pid { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 12.5px; color: var(--text-sub); }
+[data-page="series"] .sr-mono { font-size: 12px; font-weight: 700; color: var(--text-label); letter-spacing: 0.02em; }
+[data-page="series"] .sr-pid { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 12.5px; color: var(--text-label); }
 [data-page="series"] .sr-pname { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* .sr-flag is card-dead after item 3 but still styles the History modal's flag. */
 [data-page="series"] .sr-flag { margin-right: 5px; }
-[data-page="series"] .sr-prank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--label); flex: none; }
+[data-page="series"] .sr-prank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--text-label); flex: none; }
 
 /* 3.3 tag row — carries the DIRECTION WORD (ruling q2) and, in the already-played
    view, the Continued / Broken / Not-evaluable chip (ruling q7). No sign colour:
@@ -227,13 +227,13 @@
 [data-page="series"] .sr-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 [data-page="series"] .sr-tag {
   font-size: 11px; font-weight: 600; letter-spacing: 0.01em; padding: 3px 9px; border-radius: 99px;
-  border: 0.33px solid var(--line); background: transparent; color: var(--text-sub);
+  border: 0.33px solid var(--edge-6); background: transparent; color: var(--text-label);
   font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
 }
-[data-page="series"] .sr-tag-dir { color: var(--text-sub); background: var(--surface-inner); border-color: var(--line); }
-[data-page="series"] .sr-tag-oc { color: var(--text-sub); background: var(--surface-inner); border-color: var(--line); }
-[data-page="series"] .sr-tag-oc-na { color: var(--label); background: transparent; border-color: var(--line); }
-[data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: var(--label); }
+[data-page="series"] .sr-tag-dir { color: var(--text-label); background: var(--inner); border-color: var(--edge-6); }
+[data-page="series"] .sr-tag-oc { color: var(--text-label); background: var(--inner); border-color: var(--edge-6); }
+[data-page="series"] .sr-tag-oc-na { color: var(--text-label); background: transparent; border-color: var(--edge-6); }
+[data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: var(--text-label); }
 
 /* 3.4 FOUR-column strip (PIXEL PASS §2.3): STARTED · LAST · AVG PRICE | [empty] · TYPE.
    Pool stays modal-only (ruling q1).
@@ -252,7 +252,7 @@
        override; reverting it back a second time would be deciding for him. */
 [data-page="series"] .sr-strip {
   display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 10px;
-  padding-top: 12px; border-top: 0.33px solid var(--line-soft);
+  padding-top: 12px; border-top: 0.33px solid var(--line);
 }
 /* §2.3 · "AVG PRICE (700, only bold value)". The modifier is emitted ONLY on the AVG PRICE
    cell — line/set families render an empty track there and so can never carry it. */
@@ -260,7 +260,7 @@
 [data-page="series"] .sr-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 [data-page="series"] .sr-cell-k {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--label);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-cell-v {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
@@ -273,37 +273,37 @@
 /* 3.5 footer row: next match · History → */
 [data-page="series"] .sr-foot {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding-top: 12px; border-top: 0.33px solid var(--line-soft);
-  font-size: 11.5px; color: var(--label);
+  padding-top: 12px; border-top: 0.33px solid var(--line);
+  font-size: 11.5px; color: var(--text-label);
 }
 [data-page="series"] .sr-next { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 [data-page="series"] .sr-hist { flex: none; font-weight: 600; color: var(--periwinkle); transition: color .14s ease; }
 
-[data-page="series"] .sr-dash { color: var(--label); }
+[data-page="series"] .sr-dash { color: var(--text-label); }
 
 /* ── empty states ── */
 [data-page="series"] .sr-empty {
-  color: var(--text-sub); font-size: 13.5px; line-height: 1.6; max-width: 640px; padding: 30px 0; margin: 0;
+  color: var(--text-label); font-size: 13.5px; line-height: 1.6; max-width: 640px; padding: 30px 0; margin: 0;
   font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
 }
 
 /* ── 4 · footnote block ── */
 [data-page="series"] .sr-footnote {
   display: flex; flex-direction: column; gap: 10px;
-  padding-top: 18px; border-top: 0.33px solid var(--line-soft);
+  padding-top: 18px; border-top: 0.33px solid var(--line);
 }
-[data-page="series"] .sr-fn-dir { font-size: 12.5px; color: var(--label); line-height: 1.6; max-width: 1130px; margin: 0; }
-[data-page="series"] .sr-fn-dir b { color: var(--text-sub); font-weight: inherit; }
+[data-page="series"] .sr-fn-dir { font-size: 12.5px; color: var(--text-label); line-height: 1.6; max-width: 1130px; margin: 0; }
+[data-page="series"] .sr-fn-dir b { color: var(--text-label); font-weight: inherit; }
 [data-page="series"] .sr-stamp {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 11.5px; color: var(--label); line-height: 1.7; margin: 0;
+  font-size: 11.5px; color: var(--text-label); line-height: 1.7; margin: 0;
 }
 
 /* footer honesty note (founder-approved 2026-09-07, retained) */
 [data-page="series"] .sr-footer { max-width: 1130px; }
 [data-page="series"] .sr-footer h3 { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); margin: 0 0 10px; }
-[data-page="series"] .sr-footer p { font-size: 12.5px; line-height: 1.6; color: var(--label); margin: 0 0 11px; }
-[data-page="series"] .sr-footer b { color: var(--text-sub); font-weight: 700; }
+[data-page="series"] .sr-footer p { font-size: 12.5px; line-height: 1.6; color: var(--text-label); margin: 0 0 11px; }
+[data-page="series"] .sr-footer b { color: var(--text-label); font-weight: 700; }
 
 /* ── 5 · history modal (export §5) ── */
 .sr-ov-back {
@@ -316,7 +316,7 @@
 body.sr-ov-open { overflow: hidden; }
 .sr-ov {
   width: 100%; max-width: 880px; max-height: 86vh;
-  background: var(--surface); border: 0.33px solid var(--line); border-radius: 20px;
+  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 20px;
   
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -324,15 +324,15 @@ body.sr-ov-open { overflow: hidden; }
 .sr-ov-head { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px 16px; flex: none; }
 .sr-ov-headl { min-width: 0; flex: 1; }
 .sr-ov-title { display: flex; align-items: baseline; gap: 9px; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
-.sr-ov-rank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 13px; font-weight: 400; color: var(--label); }
-.sr-ov-sub { display: block; font-size: 13px; color: var(--text-sub); margin-top: 7px; line-height: 1.5; }
-.sr-ov-sep { color: var(--label); }
-.sr-ov-pool { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--label); }
+.sr-ov-rank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 13px; font-weight: 400; color: var(--text-label); }
+.sr-ov-sub { display: block; font-size: 13px; color: var(--text-label); margin-top: 7px; line-height: 1.5; }
+.sr-ov-sep { color: var(--text-label); }
+.sr-ov-pool { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--text-label); }
 .sr-ov-close {
   flex: none; width: 30px; height: 30px; border-radius: 50%;
-  background: var(--surface-inner); border: 0.33px solid var(--line);
+  background: var(--inner); border: 0.33px solid var(--edge-6);
   display: flex; align-items: center; justify-content: center;
-  font-size: 14px; color: var(--text-sub); cursor: pointer; line-height: 1;
+  font-size: 14px; color: var(--text-label); cursor: pointer; line-height: 1;
 }
 .sr-ov-close:hover { color: var(--text); }
 /* scrollbar-gutter keeps the column header aligned with the rows it labels: the header
@@ -364,7 +364,7 @@ body.sr-ov-open { overflow: hidden; }
 .sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
 .sr-ov .sr-mhead span {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--label);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
 }
 /* §1.2 · HOME / AWAY / P&L are right-aligned. SCORE is NOT — §1.5 makes it left-aligned,
    which is also what keeps a 3-set score reading as one block under its header. */
@@ -374,41 +374,41 @@ body.sr-ov-open { overflow: hidden; }
 /* §1.5 · align-items:center, not baseline. With eight cells at four different font sizes a
    baseline row hangs the 11px result letter off the 12.5px opponent's baseline; centre is
    what the spec asks for and what makes the W/L letter sit level with the name beside it. */
-.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 0.33px solid var(--line-soft); }
-.sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--label); white-space: nowrap; }
+.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 0.33px solid var(--line); }
+.sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
 /* SINGLE LINE, ellipsis, never wraps (§1.5). nowrap + overflow:hidden are BOTH required for
    text-overflow to do anything — `text-wrap: pretty` previously let it wrap to two lines,
    which is what made rows in the Phan Thiet streak twice the height of their neighbours. */
 .sr-ov .sr-mtour {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 11.5px; color: var(--text-sub); line-height: 1.45;
+  font-size: 11.5px; color: var(--text-label); line-height: 1.45;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .sr-ov .sr-mopp {
   font-size: 12.5px; color: var(--text); line-height: 1.45;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sr-ov .sr-mscore { text-align: left; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-sub); white-space: nowrap; }
+.sr-ov .sr-mscore { text-align: left; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
 /* Result letter. Sign colour is used in exactly ONE place on this page — here and, when
    Phase 3 lands, the P&L column. The export is explicit that the cards carry direction as a
    WORD, never a colour; do not let these two greens leak upward. */
 .sr-ov .sr-mrow .sr-mres { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; font-weight: 700; }
-.sr-ov .sr-mres.sr-w { color: var(--positive); }
-.sr-ov .sr-mres.sr-l { color: var(--negative); }
+.sr-ov .sr-mres.sr-w { color: var(--pos); }
+.sr-ov .sr-mres.sr-l { color: var(--neg); }
 /* §1.3 · HOME bold / AWAY dim is what marks which side is his — the header names the column,
    the weight split does the reading. HOME is always the player the panel is about.
    (This restores the export's own HOME/AWAY wording. TEN-204 2.7 had renamed them
    PLAYER/OPP under the original brief's "never HOME/AWAY"; §1.2 of the pixel pass reverses
    that explicitly and the handoff wins, so the rename is undone rather than kept.) */
 .sr-ov .sr-mp1 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; font-weight: 700; color: var(--text); }
-.sr-ov .sr-mp2 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--label); }
-.sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-sub); }
+.sr-ov .sr-mp2 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); }
+.sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); }
 /* Total line — shares the rows' left and right edges, below the scroll pane. */
 .sr-ov-foot { flex: none; padding: 0 24px 20px; }
-.sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 0.33px solid var(--line-soft); }
+.sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 0.33px solid var(--line); }
 .sr-ov-total-k {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--label);
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
 }
 /* §1.7 · the total line's right-hand group: "{n} PRICED" eyebrow, then the unit total at
    mono 15px/700 and the yield at mono 15px/400, both sign-coloured. The whole group is
@@ -425,17 +425,17 @@ body.sr-ov-open { overflow: hidden; }
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
   font-size: 15px; font-weight: 400;
 }
-.sr-ov-total-v.sr-w, .sr-ov-total-y.sr-w { color: var(--positive); }
-.sr-ov-total-v.sr-l, .sr-ov-total-y.sr-l { color: var(--negative); }
-.sr-ov-total-v.sr-dash { color: var(--label); font-weight: 700; }
+.sr-ov-total-v.sr-w, .sr-ov-total-y.sr-w { color: var(--pos); }
+.sr-ov-total-v.sr-l, .sr-ov-total-y.sr-l { color: var(--neg); }
+.sr-ov-total-v.sr-dash { color: var(--text-label); font-weight: 700; }
 .sr-ov-caveat {
-  flex-basis: 100%; margin-top: 9px; font-size: 11.5px; line-height: 1.5; color: var(--label); max-width: 62ch;
+  flex-basis: 100%; margin-top: 9px; font-size: 11.5px; line-height: 1.5; color: var(--text-label); max-width: 62ch;
 }
 /* §1.2 removed the stacked "MATCH ODDS · PRE-MATCH" band outright — the .sr-mgroup /
    .sr-mgrouplab rules that positioned it over the two price tracks are deleted with it,
    rather than left to rot. §1.8 makes the total line the ONLY place "pre-match" appears.
    §1.4 likewise deletes .sr-mproof. git has both if they are ever wanted back. */
-.sr-ov .sr-dash { color: var(--label); }
+.sr-ov .sr-dash { color: var(--text-label); }
 
 @media (max-width: 640px) {
   [data-page="series"] .sr-wrap { padding: 20px 16px 50px; }

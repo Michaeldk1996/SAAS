@@ -564,11 +564,11 @@
 
   // ─── rendering ──────────────────────────────────────────────────────────────
   var ICON = {
-    search: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="#6E7A93" stroke-width="1.7"></circle><path d="M13.2 13.2 17 17" stroke="#6E7A93" stroke-width="1.7" stroke-linecap="round"></path></svg>',
+    search: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="9" r="5.5" stroke="var(--text-label)" stroke-width="1.7"></circle><path d="M13.2 13.2 17 17" stroke="var(--text-label)" stroke-width="1.7" stroke-linecap="round"></path></svg>',
     refresh: '<svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M16 10a6 6 0 11-1.8-4.3M16 3.5V7h-3.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
     bell: '<svg width="13" height="13" viewBox="0 0 20 20" fill="none"><path d="M5 13.5V9a5 5 0 0110 0v4.5l1.5 1.5h-13zM8.3 17a1.9 1.9 0 003.4 0" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
-    chev: '<svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" stroke="#6E7A93" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>',
-    chart: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;"><path d="M3 5l5 5 3-3 6 7M17 14v-4M17 14h-4" stroke="#6E7A93" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
+    chev: '<svg width="9" height="9" viewBox="0 0 10 10"><path d="M2 3.5 5 6.5 8 3.5" stroke="var(--text-label)" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg>',
+    chart: '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none;"><path d="M3 5l5 5 3-3 6 7M17 14v-4M17 14h-4" stroke="var(--text-label)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>',
   };
   function lab(arr, v) { for (var i = 0; i < arr.length; i++) if (arr[i][0] === v) return arr[i][1]; return ''; }
 
@@ -734,7 +734,7 @@
       var w = [['62%', '44%'], ['54%', '38%'], ['70%', '48%'], ['58%', '40%'], ['66%', '46%'], ['50%', '36%'], ['60%', '42%']];
       return '<div class="do-list">' + w.map(function (x) {
         return '<div class="do-skel"><span style="display:flex;align-items:center;gap:12px"><b style="width:4px;height:44px;border-radius:2px"></b><b style="width:56px;height:22px"></b></span>' +
-          '<span style="display:flex;align-items:center;gap:14px"><b style="width:40px;height:40px;border-radius:50%;flex:none"></b><span style="display:flex;flex-direction:column;gap:8px;flex:1"><b style="height:12px;width:' + x[0] + ';background:rgba(235,241,242,0.07)"></b><b style="height:9px;width:' + x[1] + ';background:rgba(235,241,242,0.045)"></b></span></span>' +
+          '<span style="display:flex;align-items:center;gap:14px"><b style="width:40px;height:40px;border-radius:50%;flex:none"></b><span style="display:flex;flex-direction:column;gap:8px;flex:1"><b style="height:12px;width:' + x[0] + ';background:color-mix(in srgb, var(--text) 7%, transparent)"></b><b style="height:9px;width:' + x[1] + ';background:color-mix(in srgb, var(--text) 4.5%, transparent)"></b></span></span>' +
           '<b style="height:16px;width:96px"></b></div>';
       }).join('') + '</div>';
     }

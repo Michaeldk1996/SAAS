@@ -1,0 +1,93 @@
+/* Stennisfy foundation tokens — OFFICIAL VERSION 1 (locked 2026-10-03)
+   Source of truth for every colour on the site. Night = default, Day = [data-theme="day"].
+   Auto = follow prefers-color-scheme (light → day, dark → night). */
+
+:root,
+[data-theme="night"] {
+  /* Surfaces (layer order: page < card < inner < selected) */
+  --page:        #090B12;
+  --card:        #10131D;
+  --inner:       #171B28;
+  --selected:    #1B2031;
+  --tile-hover:  #141824;   /* clickable tile hover = card → inner 60% */
+  --glow:        rgba(52, 70, 170, 0.22);
+}
+
+[data-theme="day"] {
+  --page:        #10121A;
+  --card:        #171A24;
+  --inner:       #1E222F;
+  --selected:    #272C3D;
+  --tile-hover:  #1B1F2B;
+  --glow:        rgba(52, 70, 170, 0.20);
+}
+
+:root {
+  /* Text — same in night and day */
+  --text:        #FFFFFF;   /* titles, names, odds, key figures */
+  --text-soft:   #DDE0EA;   /* descriptions, second-level names */
+  --text-label:  #A3AABE;   /* caps labels, column heads, meta, idle tabs, placeholders */
+
+  /* Meaning colours — same in night and day */
+  --bar:         #007AFF;                  /* every data bar (lead / selected) */
+  --bar-2:       rgba(0, 122, 255, 0.45);  /* second-tier bar (trailing player, other rows) */
+  --link:        #6A9AF8;                  /* link text only */
+  --pro:         #2F52D6;                  /* Upgrade to Pro button only */
+  --pro-text:    #F2F3F7;
+  --pos:         #5CCB84;                  /* signed good values, winner pill, W square */
+  --neg:         #E06266;                  /* signed bad values, L square, break outlines */
+  --amber:       #E8A84E;                  /* ONLY Stennisfy Model value layers + Trading Report field tiers */
+  --serve-ball:  #EAF928;                  /* ONLY the live serving dot */
+  --hot-dot:     #007AFF;                  /* Hot lines dots (label text = --link) */
+  --white-bar:   #E7E9EE;                  /* white bars where a page is exempt from blue (see README §6) */
+  --white-bar-2: rgba(231, 233, 238, 0.45);
+
+  /* Edges & lines (white alpha on any surface) */
+  --edge-6:      rgba(255, 255, 255, 0.06);  /* panel, nested card, tab track */
+  --edge-7:      rgba(255, 255, 255, 0.07);  /* clickable tile */
+  --edge-10:     rgba(255, 255, 255, 0.10);  /* pop-up / menu / selected segment / strong rule */
+  --edge-16:     rgba(255, 255, 255, 0.16);  /* clickable tile hover, focus, STEAM badge */
+  --edge-24:     rgba(255, 255, 255, 0.24);  /* clickable tile selected, chip hover */
+  --line:        rgba(255, 255, 255, 0.05);  /* row hairline */
+  --line-strong: rgba(255, 255, 255, 0.10);  /* under column heads, between sections */
+  --track:       rgba(255, 255, 255, 0.06);  /* bar track */
+  --open-card:   rgba(143, 170, 255, 0.28);  /* the one periwinkle outline: open / expanded card */
+  --top-light:   inset 0 1px 0 rgba(143, 170, 255, 0.05);  /* every top-level card */
+  --wash-4:      rgba(255, 255, 255, 0.04);  /* Derived lines highlighted rows */
+  --wash-5:      rgba(255, 255, 255, 0.05);  /* highlighted table column, latest tick row */
+
+  /* Data-viz (founder TEN-376 Q4, 2026-10-03). Ramps, washes and tints are one of these
+     plus an opacity: color-mix(in srgb, var(--viz-up) 22%, transparent). Canvas / JS charts
+     read them with getComputedStyle(document.documentElement) and re-read on theme change. */
+  --viz-lead:        #007AFF;
+  --viz-second:      rgba(0, 122, 255, 0.45);
+  --viz-up:          #5CCB84;
+  --viz-down:        #E06266;
+  --viz-amber:       #E8A84E;                 /* Model + Trading Report only */
+  --viz-white-lead:  #E7E9EE;                 /* Head to Head + white-bar exceptions (README §6) */
+  --viz-track:       rgba(255, 255, 255, 0.06);
+  --viz-guide:       rgba(255, 255, 255, 0.12);
+  --viz-rule:        rgba(255, 255, 255, 0.32);
+  --viz-tick:        #8B96B5;
+  /* Calendar record modal Swing band only (founder TEN-376 Q2 item 4) */
+  --viz-hard:        #6A9AF8;
+  --viz-clay:        #F2B45F;
+  --viz-grass:       #45D6B0;
+  --viz-indoor:      #D9DBDF;
+
+  /* Shadows (floating layers only) */
+  --shadow-pop:  inset 0 0 0 1px rgba(255,255,255,0.10), 0 18px 48px rgba(0,0,0,0.55);
+  --shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
+
+  /* Type */
+  --font-words:  'Hanken Grotesk', sans-serif;
+  --font-nums:   'IBM Plex Mono', monospace;
+
+  /* Radii */
+  --r-card:      12px;   /* header card, Key factors boxes, stat tiles, odds pop-up */
+  --r-card-lg:   14px;   /* match cards, big panels, Playing Styles cards */
+  --r-control:   10px;   /* search, chips, segment track, dropdown menu, inner tiles */
+  --r-seg:       8px;    /* segment buttons, arrow buttons, sidebar items */
+  --r-badge:     5px;    /* FAV badge, round chip */
+  --r-sidebar:   22px;   /* floating sidebar panel */
+}
