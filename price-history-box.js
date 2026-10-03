@@ -21,7 +21,6 @@
 
   // ── pure logic (exported for tests) ────────────────────────────────────────
   const GAP_MIN_S = 120;             // stream: rows exist only for gaps over the queue TTL
-  const HIST_TOLERANCE_MS = 5 * 60e3; // one sweep interval: "recorded from" only past this
 
   function ms(v) { if (typeof v === 'number') return isFinite(v) ? v : null; const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; }
 
@@ -119,12 +118,15 @@
       gaps = (gaps || []).filter(g => g.from < startAt).map(g => g.to > startAt ? Object.assign({}, g, { to: startAt }) : g);
     }
     const ch = changesOnly(rows);
+    // TEN-377 review: a row whose DISPLAYED price repeats the row before is not listed
+    // (1.676 then 1.68 both read "1.68"); each listed move is measured from the listed row before.
+    const shown = ch.filter((r, i) => i === 0 || fmtPrice(r.price) !== fmtPrice(ch[i - 1].price));
     const openAt = card.open && ms(card.open.at);
-    const items = ch.map((r, i) => {
-      let prev = i > 0 ? ch[i - 1].price : null;
+    const items = shown.map((r, i) => {
+      let prev = i > 0 ? shown[i - 1].price : null;
       // The first recorded change is measured from the Open when the Open came first.
       if (prev == null && card.open && card.open.price != null && openAt != null && openAt <= r.at
-          && card.open.price !== r.price) prev = card.open.price;
+          && fmtPrice(card.open.price) !== fmtPrice(r.price)) prev = card.open.price;
       const delta = prev == null ? null : Math.round((r.price - prev) * 1000) / 1000;
       return { at: r.at, price: r.price, delta };
     });
@@ -132,9 +134,10 @@
     // not a move and is not repeated, whenever it was sighted (a later first
     // sighting at the same price still isn't a change; "history recorded from"
     // below keeps its time).
-    if (items.length && card.open && card.open.price != null && items[0].price === card.open.price) items.shift();
+    if (items.length && card.open && card.open.price != null && fmtPrice(items[0].price) === fmtPrice(card.open.price)) items.shift();
+    // "recorded from": the first recorded tick, whenever history exists (founder Q3 note line).
     const first = ch.length ? ch[0].at : null;
-    const recordedFrom = (first != null && openAt != null && first - openAt > HIST_TOLERANCE_MS) ? first : null;
+    const recordedFrom = first;
     const rowsDesc = [...items, ...gaps].sort((a, b) => (b.at ?? b.to) - (a.at ?? a.to));
     return {
       // "Updated" = the newest clock we hold: the card state's, or a later recorded tick.
@@ -333,9 +336,11 @@
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
              // Founder 2026-09-25: completed bet365 cards carry the SAME source line as upcoming.
-             note: (source === 'shard' || source === 'archive') ? BET365_NOTE : null };
+             note: (source === 'shard' || source === 'archive') ? BET365_NOTE : (source === 'rpc' ? BET105_NOTE : null) };
   }
   const BET365_NOTE = 'bet365 · refreshed every 15 min';   // founder TEN-377 Q3 note-line wording
+  // Bet105's real cadence: the Kibl stream (live) plus the 5-min archive sweep (ten232-kibl-archive.yml */5).
+  const BET105_NOTE = 'bet105 · live stream + 5-min sweep';
   const ARCHIVE_NO_START = 'Start time unknown — history not shown';
 
   // A completed bet365 card from its bet365_history payload. `rpc()` resolves

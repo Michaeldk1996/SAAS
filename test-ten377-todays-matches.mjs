@@ -181,3 +181,31 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
   assert.deepEqual(vals(run('completed', done, null)), ['Settled=1', 'Tournaments=1', 'Upsets=1', 'Updated=—'], 'no clock -> dash, a count of 0 stays 0');
   assert.match(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'), 'Not/AZone'))[3], /^Updated=\d\d:\d\d$/, 'a bad stored zone falls back, never throws');
 });
+
+// ── founder review ba49d5fc (2026-10-03) items 4–9 ──
+test('review 4/8: Completed and Upcoming always draw three tiles; an empty tile says so in one grey line; no provenance line', () => {
+  const body = slice('renderMatches');
+  for (const t of ['No market moves', 'No upsets', 'Not enough pick history yet', 'No prices yet'])
+    assert.ok(body.includes(t), `empty line "${t}"`);
+  assert.doesNotMatch(body, /mc-story__faint|mcMoveBookLabel|The rolling record shows/);
+  assert.doesNotMatch(body, /sp\.book \? ' · ' \+ sp\.book/, 'no "· book" suffix');
+  assert.match(body, /const stripHtml = `<div class="mc-story-strip">\$\{panels\.join\(''\)\}<\/div>`;/, 'Completed strip is unconditional');
+});
+test('review 5: the Market Signal drawer draws only rows with data, only groups with rows, no explainer', () => {
+  const S = new Function(`${slice('mcSigPanel')}; return mcSigPanel;`)();
+  const up = S({ p1: 'A. Rublev', p2: 'R. Safiullin', odds: { p1: 1.69, p2: 2.27, bookmaker: 'Betano' } });
+  assert.match(up, /Sharp estimates/);
+  assert.doesNotMatch(up, /Market money|Stennisfy|Polymarket|Kalshi|—|never invented|mc-sig-note/);
+  assert.equal((up.match(/class="mc-sig-row"/g) || []).length, 1);
+  const none = S({ p1: 'A', p2: 'B', odds: null });
+  assert.match(none, /No market signal for this match yet/);
+  assert.doesNotMatch(none, /Sharp estimates|mc-sig-row/);
+  const done = S({ p1: 'A', p2: 'B', odds: { p1: 1.5, p2: 2.6, bookmaker: '1xBet' }, finalScore: {} });
+  assert.doesNotMatch(done, /grouplabel|Liquidity/, 'Completed: one flat list');
+});
+test('review 6/7/9: grid start; white caret in the reference font stack; one chip row with All first on both views', () => {
+  assert.match(lastRule(`${M} .match-card .mc-msig .chev`), /font-family:'Hanken Grotesk', sans-serif;[^}]*color:var\(--text\)/);
+  const chips = slice('buildTournamentFilters');
+  assert.match(chips, /const allChip = `<button class="mx-chip/);
+  assert.doesNotMatch(chips, /const allChip = completed/, 'not Completed-only any more');
+});

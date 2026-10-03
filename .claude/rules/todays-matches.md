@@ -18,4 +18,15 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   38/14/42/44 grid; no journey bar; no Move for an older close (TEN-253), a vendor-pinned open or a missing leg; missing leg
   = "—"; a 0% move reads `0%`. Footer and drawer rules 6% (Q1); drawer = one flat list, book names `--text-soft`, no
   liquidity; "See full analysis" 600. The "Showing … settled" context bar is removed.
-- **Card grid:** `align-items:stretch` stays (TEN-270 equal-height ruling) — README §1 says `start`; raised to the founder.
+- **Card grid (founder 2026-10-03, replaces TEN-270 stretch):** `#matchlist` `align-items:start`. Closed cards in a row
+  line up because they share one structure; a card that could grow is fixed inside the card, never by stretching the row.
+  An open Market Signal grows only its own card. Same on Completed.
+- **Summary tiles (review 2026-10-03):** always three tiles, same size, both views — Upcoming Biggest market move · Shortest
+  price · Tightest match (`Tour · R16 · 13:45`); Completed Biggest market move · Upsets · Value picks. A tile with no data keeps
+  its slot and shows one short grey line (`No market moves`, `No upsets`, `Not enough pick history yet`, `No prices yet`,
+  `No opening prices on file`). No provenance / coverage line and no `· book` suffix (supersedes the TEN-179 / TEN-225 labels).
+- **Market Signal drawer (review):** no explainer paragraph; a source without data is not drawn (no "—" rows, no empty bars);
+  a group with no rows is not drawn; nothing at all → one grey line `No market signal for this match yet`. Caret ▾ closed /
+  ▴ open (180° turn), white, font stack `'Hanken Grotesk', sans-serif` (system-ui drew a dot).
+- **Tournament chips (review):** one row on both views — `All tournaments` first (clears the selection), then one chip per
+  event of the selected day.

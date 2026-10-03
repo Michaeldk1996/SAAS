@@ -330,7 +330,7 @@
      query: a hand-written breakpoint would fight the track sizing and drift from the
      token. Full-bleed children (day dividers, the promo row, the empty state) opt out
      with grid-column:1/-1 so they still span the whole list rather than becoming cells. */
-  [data-page="matches"] #matchlist{ display:grid; grid-template-columns:repeat(auto-fill, minmax(430px, 1fr)); gap:12px; align-items:stretch; }
+  [data-page="matches"] #matchlist{ display:grid; grid-template-columns:repeat(auto-fill, minmax(430px, 1fr)); gap:12px; align-items:start; }   /* founder TEN-377 (replaces TEN-270 stretch): an open drawer never stretches its neighbour */
   /* TEN-179 item 1, HELD HALF — the Completed card does NOT fit a 430px track and is
      deliberately left single-column until the founder rules.
      The completed row is a rigid grid (200px name | max-content sets | 18px | 1px hairline
@@ -547,7 +547,7 @@
   [data-page="matches"] .mc-story{ flex:1 1 0; min-width:0; background:var(--mc-card); display:flex; flex-direction:column; }
   [data-page="matches"] .mc-story__move{ display:flex; align-items:baseline; gap:10px; }
   [data-page="matches"] .mc-story__od{ color:var(--mc-text); }
-  [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); font-size:12px; color:var(--mc-muted); line-height:1.45; }
+  [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); }
   /* TEN-179 item 1/3 — Upcoming summary boxes. BIGGEST MARKET MOVE is clickable and sets
      the sort to Drift; it takes the card's own hover border so it reads as actionable. */
   [data-page="matches"] .mc-story--click{ cursor:pointer; transition:border-color 120ms ease, background 120ms ease; }
@@ -571,8 +571,6 @@
   [data-page="matches"] .mc-story__upprice{ font-family:var(--mx-font-mono); font-weight:700; font-size:13px; color:var(--mc-text); flex:none; }
   [data-page="matches"] .mc-story__vp{ font-family:var(--mx-font-mono); font-weight:700; font-size:20px; color:var(--mc-text); }
   /* §8 — Value-picks insufficient-history headline: UI text, not a fabricated ROI number. */
-  [data-page="matches"] .mc-story__vpempty{ font-family:var(--mx-font-ui); font-weight:600; font-size:14px; color:var(--mc-muted); }
-  [data-page="matches"] .mc-story__faint{ font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted-2); opacity:0.85; }
   [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
   [data-page="matches"] .mc-av.a{ color:var(--text); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
@@ -826,7 +824,6 @@
   [data-page="matches"] .mc-sig-dog{ font-family:var(--mx-font-mono); font-size:11px; font-weight:500; color:var(--mc-muted); width:32px; flex:none; }
   [data-page="matches"] .mc-sig-liq{ width:72px; flex:none; text-align:right; font-family:var(--mx-font-mono); font-size:11px; font-weight:500; color:var(--mc-muted); }
   [data-page="matches"] .mc-sig-row.unbound .mc-sig-fav, [data-page="matches"] .mc-sig-row.unbound .mc-sig-dog, [data-page="matches"] .mc-sig-row.unbound .mc-sig-liq{ color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-sig-note{ margin-top:11px; font-family:var(--mx-font-ui); font-size:10.5px; line-height:1.5; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--link); font-family:var(--mx-font-ui); font-weight:600; font-size:13px; text-decoration:none; }
   [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
   [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
@@ -6254,13 +6251,10 @@ function buildTournamentFilters(){
   // Drop selections whose tournament isn't in the current day's set, else a stale name
   // would filter every card away with no chip left to clear it.
   for (const sel of state.tournaments) if (!tournaments.includes(sel)) state.tournaments.delete(sel);
-  // §6 — Results leads the row with an "All tournaments" chip (single-select per the
-  // export: active when nothing specific is picked; clicking it clears back to All).
-  // The chip carries an empty data-tournament as its sentinel. Matches keeps its shipped
-  // multi-select row with no All chip.
-  const allChip = completed
-    ? `<button class="mx-chip${state.tournaments.size === 0 ? ' active' : ''}" data-tournament="" aria-pressed="${state.tournaments.size === 0}">All tournaments</button>`
-    : '';
+  // TEN-377 review item 9: ONE chip row on both views — "All tournaments" first (active when
+  // nothing specific is picked; clicking it clears back to All), then one chip per event.
+  // The chip carries an empty data-tournament as its sentinel.
+  const allChip = `<button class="mx-chip${state.tournaments.size === 0 ? ' active' : ''}" data-tournament="" aria-pressed="${state.tournaments.size === 0}">All tournaments</button>`;
   group.innerHTML = allChip + tournaments.map(t => {
     const active = state.tournaments.has(t);
     // The × on a selected chip removes just that tournament; clicking anywhere
@@ -6932,26 +6926,6 @@ function mcTitleAttr(txt){
   // native tooltip on card prices. The text is kept as data-pt (probes/tests
   // read it); a `title` here would pop a second box over the new one.
   return txt ? ` data-pt="${String(txt).replace(/"/g, '&quot;')}"` : '';
-}
-// The provenance line under a Biggest Market Move figure. It used to be the
-// literal string "Bet365 open → now", and until this issue that was true by
-// construction: one book priced every leg. It stopped being true the moment
-// odds_card_state started selecting sports411 as the primary — MEASURED on the
-// deployed board 2026-09-18, the only two fixtures with both legs are
-// Kwon/Suresh and Chung/Nagal, and BOTH are sports411. A box labelled Bet365
-// over a sports411 move is exactly the "label every drift figure for what it
-// is" rule (founder, 2026-09-10) failing in the one place it was written for.
-//
-// So the label names the book that actually produced the figure. With no
-// figure on file it falls back to the default book, because the sentence still
-// has to say which book we looked in and found nothing.
-function mcMoveBookLabel(m, leg){
-  const book = (m && ocsBookOf(m)) || 'Bet365';
-  // G1 runs before the bet365 title-case, so a vendor abbreviation is expanded
-  // first and only then considered for the bet365 special case.
-  const named = mxBookLabel(book);
-  const pretty = named.toLowerCase() === 'bet365' ? 'Bet365' : named;
-  return `${pretty} open → ${leg}`;
 }
 async function loadOddsCardState(){
   try {
@@ -7778,31 +7752,6 @@ function moveNowScore(m){
 // an open and one of them is vendor-pinned, this footnote reads "N-1 of N" while N
 // opens are visible on screen. His call, not a bug to route around.
 //
-// TEN-225 ruling 3 — `covered` is now passed IN by the caller instead of being one
-// hardcoded test used by two surfaces with two different legs. The contract above
-// ("matching the condition the box actually requires") could not survive one
-// predicate serving both: the Upcoming box needs open→NOW and the Completed box
-// needs open→CLOSE, and an opening price on either side alone satisfies NEITHER.
-// MEASURED on the deployed board 2026-09-18, that gap is why the footnote and the
-// board disagreed in kind: the footnote read "6 of 32 matches with an opening
-// price" (fixtures with a non-vendor open on either side) while 2 fixtures could
-// actually produce a move figure. On today's board the repaired Upcoming
-// numerator is ALSO 6 — every fixture with a usable open happens to have a
-// same-book now — so this changes no number today; it stops the two from drifting
-// apart on a board where they differ.
-function mcOpenCoverage(list, covered){
-  const total = list.length;
-  const has = covered || (m => !_openPinIsVendor(m) && m.openingOdds
-    && (m.openingOdds.p1 != null || m.openingOdds.p2 != null));
-  const withOpen = list.filter(has).length;
-  return {
-    total, withOpen,
-    // Never "0 of 0" — an empty slate has no coverage story, only an absent one.
-    text: total === 0 ? 'no matches on this day'
-        : withOpen === total ? `all ${total} match${total === 1 ? '' : 'es'} priced`
-        : `${withOpen} of ${total} match${total === 1 ? '' : 'es'} with an opening price`
-  };
-}
 function closingScore(m){ // strongest closing favourite first (lowest favourite close)
   const c1 = _mcPinCloseDerivedOf(m, 'p1'), c2 = _mcPinCloseDerivedOf(m, 'p2');   // TEN-295
   if (c1 == null && c2 == null) return Infinity;
@@ -8622,35 +8571,27 @@ function mcSigPanel(m){
   const clamp = v => Math.max(3, Math.min(97, Math.round(v)));
   const pinA = hasBook ? clamp(100 * (1/o1) / ((1/o1) + (1/o2))) : null;
   const book = (m.odds && m.odds.bookmaker) || 'Sharp';
+  // TEN-377 review item 5: a source without data is not drawn at all (no "—" rows, no empty bars).
   const row = (label, aPct, hasLiq) => {
     const liqCell = hasLiq ? `<span class="mc-sig-liq">—</span>` : '';
-    if (aPct == null) {
-      return `<div class="mc-sig-row unbound"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">—</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:0"></span></span><span class="mc-sig-dog">—</span>${liqCell}</div>`;
-    }
+    if (aPct == null) return '';
     const bPct = 100 - aPct;
     return `<div class="mc-sig-row"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">${aPct}%</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:${aPct}%"></span><span class="mc-sig-bar__dog" style="width:${bPct}%"></span></span><span class="mc-sig-dog">${bPct}%</span>${liqCell}</div>`;
   };
   const head = `<div class="mc-sig-head"><span class="mc-sig-pa">${pa}</span><span class="mc-sig-vs">vs</span><span class="mc-sig-pb">${pb}</span></div>`;
-  const note = `<div class="mc-sig-note">${pinA != null ? book + ' split is live from this card’s bound odds.' : 'No bound odds for this match.'} Stennisfy model %, Polymarket &amp; Kalshi flow and liquidity aren’t wired to this card’s data source yet — shown as “—”, never invented.</div>`;
+  // Bound today: the sharp book's de-vigged split only. The Stennisfy model %, Polymarket and
+  // Kalshi are not on this card's data source, so their rows (and the Market money group) are
+  // simply absent until they are wired — never drawn as "—" (TEN-377 item 5).
+  const sharp = [row(book, pinA, false), row('Stennisfy', null, false)].join('');
+  const money = [row('Polymarket', null, true), row('Kalshi', null, true)].join('');
+  const noRows = `<div class="mc-sig-empty">No market signal for this match yet</div>`;
   // TEN-377 README §7: the Completed "final" drawer is ONE flat list (same rows), no groups and
   // no liquidity column.
-  if (m.finalScore) {
-    return `<div class="mc-sigpanel">${head}<div class="mc-sig-group">${row(book, pinA, false)}${row('Stennisfy', null, false)}${row('Polymarket', null, false)}${row('Kalshi', null, false)}</div>${note}</div>`;
-  }
-  return `<div class="mc-sigpanel">
-      ${head}
-      <div class="mc-sig-group">
-        <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Sharp estimates</span></div>
-        ${row(book, pinA, false)}
-        ${row('Stennisfy', null, false)}
-      </div>
-      <div class="mc-sig-group">
-        <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Market money</span><span class="mc-sig-liqlabel">Liquidity</span></div>
-        ${row('Polymarket', null, true)}
-        ${row('Kalshi', null, true)}
-      </div>
-      ${note}
-    </div>`;
+  if (m.finalScore) return `<div class="mc-sigpanel">${head}${sharp + money ? `<div class="mc-sig-group">${sharp}${money}</div>` : noRows}</div>`;
+  const group = (label, rows, liq) => rows
+    ? `<div class="mc-sig-group"><div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">${label}</span>${liq ? '<span class="mc-sig-liqlabel">Liquidity</span>' : ''}</div>${rows}</div>` : '';
+  const body = group('Sharp estimates', sharp, false) + group('Market money', money, true);
+  return `<div class="mc-sigpanel">${head}${body || noRows}</div>`;
 }
 
 // §1/§2/§4 — Completed vs Upcoming page chrome: title, subtitle, status line, and
@@ -9571,34 +9512,27 @@ function renderMatches(){
       if (fs.winner === pick) vpWon++;
     });
 
+    // TEN-377 review items 4 + 8: always the 3-up row (Biggest market move · Upsets · Value
+    // picks), same size as Upcoming. A tile with no data keeps its slot and says so in one short
+    // grey line; no provenance / coverage line under the figure.
+    const empty = t => `<div class="mc-story__empty">${t}</div>`;
     const panels = [];
-    if (bmv) {
-      // Same TEN-179 labelling/coverage rule as the Upcoming box below — here the second
-      // leg is the pinned pre-start close, so the figure reads "open → close".
-      const cov = mcOpenCoverage(filtered.filter(m => m.finalScore));
-      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
-        + `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
-        + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
-        + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'close')} · ${cov.text}</div></div>`);
-    }
-    if (upsetRows.length) {
-      const rows = upsetRows.slice(0, 3).map(u =>
-        `<div class="mc-story__ups"><span class="mc-story__upname"><strong>${u.winner}</strong> d. ${u.loser}</span><span class="mc-story__upprice">${mxOddsTxt(u.price)}</span></div>`).join('');
-      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>${rows}</div>`);
-    }
-    if (vpPicks > 0) {
-      // §8 (founder review 2026-08-08) — the headline is a ROLLING ROI figure, not the
-      // day record. That needs a persistent graded-pick log across a long window, which
-      // matches.json (a ~3-day rolling file) does NOT hold. Per README §5.3 (data-
-      // defensive) we therefore render the export's insufficient-history state rather
-      // than dressing the day count as a headline. The real day contribution stays as an
-      // honest secondary line — never fabricate a rolling ROI from partial data.
-      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Value picks</div>`
-        + `<div class="mc-story__vpempty">Not enough pick history yet</div>`
-        + `<div class="mc-story__faint">The rolling record shows after 20 graded picks</div>`
-        + `<div class="mc-story__ctx">This day: ${vpWon} of ${vpPicks}</div></div>`);
-    }
-    const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
+    panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
+      + (bmv
+          ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
+            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+          : empty('No market moves')) + `</div>`);
+    panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>`
+      + (upsetRows.length
+          ? upsetRows.slice(0, 3).map(u =>
+              `<div class="mc-story__ups"><span class="mc-story__upname"><strong>${u.winner}</strong> d. ${u.loser}</span><span class="mc-story__upprice">${mxOddsTxt(u.price)}</span></div>`).join('')
+          : empty('No upsets')) + `</div>`);
+    // The headline is a ROLLING record, which needs a graded-pick log matches.json (a ~3-day
+    // file) does not hold, so the tile shows the export's empty state — never a rolling figure
+    // fabricated from partial data (README §4 / §5.3).
+    void vpPicks; void vpWon;
+    panels.push(`<div class="mc-story"><div class="mc-story__lbl">Value picks</div>${empty('Not enough pick history yet')}</div>`);
+    const stripHtml = `<div class="mc-story-strip">${panels.join('')}</div>`;
     if (summarySlot) summarySlot.innerHTML = stripHtml;
     else if (stripHtml) cards.unshift(stripHtml); // fallback if the slot markup is ever absent
   } else {
@@ -9646,16 +9580,8 @@ function renderMatches(){
         }
       });
     });
-    // TEN-179 item 3 standing rules (founder 2026-09-10): "every drift figure labelled for
-    // what it is: Bet365 open → close (or open → now), not 'market move'", and "thin
-    // coverage flagged with the count, not filled". The BOX HEADING is left as the export
-    // signed it off — renaming a reviewed design label is the founder's call, not a build
-    // decision, and it is flagged for his ruling. The FIGURE is what the rule binds, so it
-    // now carries its provenance and its denominator on every render, populated or empty.
-    // TEN-225 ruling 3 — the denominator states what the ORDER can rank: a fixture with
-    // a same-book open AND now. It used to count "a non-vendor open on either side",
-    // which is a weaker condition than either the box or the sort requires.
-    const driftCov = mcOpenCoverage(daySlate, m => !!_mcOpenNowPair(m));
+    // TEN-377 review item 8 (founder 2026-10-03) supersedes the TEN-179 / TEN-225 provenance and
+    // coverage line under the figure: the tiles carry label · figure · context only.
     // Founder task 2026-09-11 (item 3): show the tile as SELECTED while its view is active,
     // so it reads as a toggle rather than a link that did something invisible. The state is
     // read straight off state.sort — there is no second flag to fall out of step with it.
@@ -9665,9 +9591,7 @@ function renderMatches(){
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
             + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
-            + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'now')} · ${driftOn && MX_DRIFT_FILTER ? `${MX_DRIFT_FILTER.shown} of ${MX_DRIFT_FILTER.total} matches moved · the rest are filtered out` : driftCov.text}</div>`
-          : `<div class="mc-story__vpempty">No opening prices on file</div>`
-            + `<div class="mc-story__faint">${mcMoveBookLabel(null, 'now')} · ${driftCov.text}</div>`)
+          : `<div class="mc-story__empty">No opening prices on file</div>`)   /* TEN-377 item 8: no provenance line */
       + `</div>`);
 
     // TEN-225 ruling B (founder 2026-09-18) — the two boxes below describe the
@@ -9707,7 +9631,9 @@ function renderMatches(){
     if (sp) {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div>`
         + `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(sp.price)}</span><span class="mc-story__name">${sp.name}</span></div>`
-        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}${sp.book ? ' · ' + sp.book : ''}</div></div>`);
+        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}</div></div>`);
+    } else {
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div><div class="mc-story__empty">No prices yet</div></div>`);
     }
 
     // 3. TIGHTEST MATCH — smallest gap in implied win probability across the day.
@@ -9727,11 +9653,12 @@ function renderMatches(){
     if (tm) {
       const m = tm.m, a1 = tm.pr.p1, b1 = tm.pr.p2;
       const favIsP1 = a1 <= b1;
-      const bookTxt = tm.pr.book ? ' · ' + tm.pr.book : '';
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div>`
         + `<div class="mc-story__pair"><div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${mxOddsTxt(a1)}</span></div>`
         + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${mxOddsTxt(b1)}</span></div></div>`
-        + `<div class="mc-story__ctx">${m.tour || ''}${roundBadgeText(m.tournamentRound) ? ' ' + roundBadgeText(m.tournamentRound) : ''}${bookTxt}</div></div>`);
+        + `<div class="mc-story__ctx">${[m.tour || '', roundBadgeText(m.tournamentRound) || '', cardFmtStart(m, false) || ''].filter(Boolean).join(' · ')}</div></div>`);   /* README §4: "Estoril · R32 · 13:15"; no book (TEN-377 item 8) */
+    } else {
+      panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div><div class="mc-story__empty">No prices yet</div></div>`);
     }
 
     const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
@@ -18652,8 +18579,10 @@ document.getElementById('tournamentGroup').addEventListener('click', e => {
   } else {
     // Each chip toggles independently — several can be selected at once. Clicking a
     // selected chip (or its ×, which lives inside that same button) removes only it.
-    // Removing the last one empties the set, which reads as "all tournaments".
-    if (state.tournaments.has(value)) state.tournaments.delete(value);
+    // Removing the last one empties the set, which reads as "all tournaments"; the
+    // "All tournaments" chip (empty sentinel) clears the set (TEN-377 item 9).
+    if (value === '') state.tournaments.clear();
+    else if (state.tournaments.has(value)) state.tournaments.delete(value);
     else state.tournaments.add(value);
   }
   buildTournamentFilters();
@@ -33263,7 +33192,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-story__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .mc-story__od{ font-family:var(--sf-font-mono); font-size:20px; font-weight:700; letter-spacing:normal; }
   [data-page="matches"] .mc-story .mc-drift{ font-family:var(--sf-font-mono); font-size:12px; font-weight:700; }
-  [data-page="matches"] .mc-story__ctx, [data-page="matches"] .mc-story__faint{ font-size:12.5px; color:var(--text-label); opacity:1; line-height:normal; }
+  [data-page="matches"] .mc-story__ctx{ font-size:12.5px; color:var(--text-label); opacity:1; line-height:normal; }
   [data-page="matches"] .mc-story__ctx strong{ color:var(--text-soft); font-weight:600; }
 
   /* filter row */
@@ -33320,7 +33249,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card .mc-form__val{ font-family:var(--sf-font-mono); font-size:11.5px; font-weight:600; color:var(--text-label); min-width:30px; }
   [data-page="matches"] .match-card .mc-foot{ padding:10px 16px; gap:12px; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); }
   [data-page="matches"] .match-card .mc-msig{ font-size:12.5px; font-weight:700; letter-spacing:0.02em; color:var(--text); }
-  [data-page="matches"] .match-card .mc-msig .chev{ display:inline-block; font-size:11px; font-weight:400; color:var(--text-label); transition:transform .16s ease; }
+  /* TEN-377 review item 7: ▾ closed / ▴ open (180° turn), white; the reference's font stack — system-ui drew a 5.5px dot */
+  [data-page="matches"] .match-card .mc-msig .chev{ display:inline-block; font-family:'Hanken Grotesk', sans-serif; font-size:11px; font-weight:400; color:var(--text); transition:transform .16s ease; }
   [data-page="matches"] .match-card.sig-open .mc-msig .chev{ transform:rotate(180deg); }
   [data-page="matches"] .match-card .mc-analysis{ font-size:12.5px; font-weight:700; }
   /* README §6 drawer: card tone on a white-6% rule */
@@ -33334,6 +33264,9 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card .mc-sig-bar__fill{ background:var(--viz-lead); }
   [data-page="matches"] .match-card .mc-sig-bar__dog{ background:var(--viz-second); }
   [data-page="matches"] .match-card .mc-sig-dog, [data-page="matches"] .match-card .mc-sig-liq{ color:var(--text-label); }
+
+  [data-page="matches"] .mc-story__empty{ font-family:var(--font-words); font-size:12.5px; font-weight:400; color:var(--text-label); }
+  [data-page="matches"] .match-card .mc-sig-empty{ font-family:var(--font-words); font-size:11px; color:var(--text-label); text-align:center; }
 
   /* ── TEN-377 README §2: header stats (label above value, right) ── */
   [data-page="matches"] .mx-titlerow > div:first-child{ flex:1; min-width:0; }

@@ -141,10 +141,9 @@ test('no native tooltip on card prices: mcTitleAttr writes data-pt, never title'
   assert.doesNotMatch(body, / title=/);
 });
 
-test('equal-height cards: the grid stretches, the card is a flex column, the footer is pinned down', () => {
-  assert.match(HTML, /\[data-page="matches"\] #matchlist\{[^}]*align-items:stretch/);
-  assert.match(HTML, /\[data-page="matches"\] \.match-card\{[^}]*display:flex; flex-direction:column/);
-  assert.match(HTML, /\[data-page="matches"\] \.mc-foot\{ margin-top:auto/);
+test('TEN-377 grid (replaces TEN-270 stretch): cards align to the top, so an open drawer never stretches its neighbour; closed cards line up by structure', () => {
+  assert.match(HTML, /\[data-page="matches"\] #matchlist\{[^}]*align-items:start/);
+  assert.doesNotMatch(HTML, /#matchlist\{[^}]*align-items:stretch/);
   assert.match(HTML, /<script src="price-history-box\.js" defer><\/script>/);
 });
 
@@ -342,4 +341,13 @@ test('TEN-377 review: the change % obeys the Move rules — no % from a vendor-p
     globalThis._ocsOf = () => ({ book: 'bet105', p1: {}, p2: {} });
     assert.equal(B.cardData({}, 'p1').pctOk, false, 'Now from another book than the card book');
   } finally { delete globalThis._mcCloseW60; delete globalThis._openPinIsVendor; delete globalThis._mcNowPair; delete globalThis._ocsOf; }
+});
+
+test('TEN-377 review 11 + ledger: Bet105 note names its real cadence; a repeated displayed price is not listed', () => {
+  assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').note, 'bet105 · live stream + 5-min sweep');
+  const rows = [1.73, 1.734, 1.746, 1.73].map((p, i) => ({ at: Date.parse('2026-09-24T03:00:00Z') + i * 60e3, price: p }));
+  const m = B.model({ book: 'Bet105', open: { price: 1.60, at: '2026-09-24T01:00:00Z' }, historyAvailable: true }, rows, []);
+  assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.73:-0.016', '1.746:0.016', '1.73:0.13'],
+                   '1.734 reads "1.73" like the row before it, so it is not listed; moves are from the listed row before');
+  assert.match(B.html(m), /recorded from <span class="phb-mono">24 Sep/);
 });

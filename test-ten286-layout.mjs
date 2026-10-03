@@ -89,7 +89,7 @@ const SPEC = [
   [`${M} .mc-story__lbl`, 'letter-spacing', '0.10em'], [`${M} .mc-story__lbl`, 'font-family', 'var(--font-words)'], [`${M} .mc-story__lbl`, 'font-weight', '700'], [`${M} .mc-story__od`, 'font-size', '20px'], [`${M} .mc-story__od`, 'letter-spacing', 'normal'],
   [`${M} .mx-chip`, 'padding', '9px 16px'], [`${M} .mx-chip`, 'font-weight', '600'],
   [`${M} .mx-searchwrap`, 'padding', '10px 14px'], [`${M} .mx-searchwrap`, 'gap', '9px'], [`${M} .mx-sortbtn`, 'padding', '10px 15px'],
-  [`${M} #matchlist`, 'align-items', 'stretch'],   // founder ruling TEN-270 (odds.md): equal-height cards — NOT the design's start
+  [`${M} #matchlist`, 'align-items', 'start'],   // founder TEN-377 (replaces TEN-270 stretch): README §1 / reference
   [`${M} .match-card .mc-head`, 'padding', '11px 16px'], [`${M} .match-card .mc-round`, 'padding', '2px 6px'],
   [`${M} .match-card .mc-round`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline`, 'grid-template-columns', '1px 104px 96px'],
   [`${M} .match-card .mc-colhead-inline .lbl`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline .lbl`, 'letter-spacing', '0.10em'],   // caps label
