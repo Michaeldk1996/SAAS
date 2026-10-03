@@ -736,7 +736,7 @@
       const cols = `58px 92px 13px repeat(${HB_SETCOLS.length},1fr)`;   // label | GLOBAL | rule | S1..S5
       const head = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:6px;align-items:end;">
         <span></span>
-        <span style="font-size:10px;letter-spacing:0.10em;color:var(--text-soft);font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
+        <span style="font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase;color:var(--text-soft);font-weight:700;font-family:var(--font-words); text-align:center;">GLOBAL</span>
         <span></span>
         ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:var(--text-label);font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
       </div>`;
@@ -796,7 +796,7 @@
             <span style="font-size:14px;font-weight:800;color:var(--text);">Hold/Break HeatMap</span>
             <span title="${esc(tip)}" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid var(--edge-16);color:var(--text-label);font-size:10px;font-weight:700;cursor:help;flex-shrink:0;">i</span>
           </div>
-          <div style="margin-top:8px;"><span style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;color:var(--text-label);background:var(--card);border:1px solid var(--edge-10);border-radius:999px;padding:3px 10px;">${chip}</span></div>
+          <div style="margin-top:8px;"><span style="display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;font-family:var(--font-words); color:var(--text-label);background:var(--card);border:1px solid var(--edge-10);border-radius:999px;padding:3px 10px;">${chip}</span></div>
         </div>
         <div class="ltm-toggle" style="margin:0;">${tog('hold', 'HOLD')}${tog('break', 'BREAK')}</div>
       </div>`;

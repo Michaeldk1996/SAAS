@@ -346,7 +346,7 @@
     '.pp2-stk{position:absolute;top:8px;transform:translateX(-50%);cursor:pointer;z-index:1;' +
     'padding:2px 5px;border-radius:5px;background:transparent;color:var(--text-label);font-weight:400;' +
     'border-bottom:1px dotted var(--line);' +
-    'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.08em;white-space:nowrap;}' +
+    'font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;white-space:nowrap;}' +
     '.pp2-stk .pp2-stk-n{display:none;}' +
     '.pp2-stk:hover,.pp2-stk.on{background:var(--inner);color:var(--text);font-weight:700;z-index:3;' +
     'border-bottom:1px solid var(--edge-10);}' +
@@ -4020,7 +4020,7 @@
       // found missing (item 11), then the file's helper copy (item 12).
       '<div style="display:flex;align-items:baseline;justify-content:space-between;margin:24px 0 6px;">' +
         '<div style="font-size:20px;font-weight:800;">Record by season</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.12em;' +
+        '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
           'text-transform:uppercase;color:var(--text-label);">Wins / losses</div>' +
       '</div>' +
       '<div style="font-size:13px;color:var(--text-label);line-height:1.5;margin-bottom:14px;">' +
@@ -4579,7 +4579,7 @@
                 ['W' + ENDASH + 'L', 'right'], ['Win%', 'right'], ['Backing', 'right']];
     var head = '<div style="' + GRID + 'padding:14px 10px 0;">' +
       HEAD.map(function (h) {
-        return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
+        return '<span style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
           'text-transform:uppercase;color:var(--text-label);text-align:' + h[1] + ';padding-bottom:9px;"' +
           // TEN-325: Backing counts retirements, settled on the ATP result.
           (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing" title="' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '"' : '') +
@@ -5526,7 +5526,7 @@
     if (mktTab === 'lines') return marketTabsHtml() + renderLinesTab(p);
 
     return marketTabsHtml() +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
+      '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
         'color:var(--text-label);margin-bottom:14px;">' +
         esc(mk.priceBasis || 'Pinnacle closing, else Bet365 closing') + ' ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
         recordText(mk.headline.wins, mk.headline.losses) + ' ' + MIDDOT + ' median odds ' +
@@ -5539,7 +5539,7 @@
         'margin-top:16px;">' +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">' +
           '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">Price sensitivity</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:0.06em;' +
+          '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
             'color:var(--text-label);">Select a card above to filter ' + MIDDOT + ' click a band for its matches</div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:' + BGRID + ';gap:10px;align-items:end;' +
@@ -5573,7 +5573,7 @@
       return '<div style="display:flex;flex-direction:column;gap:4px;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:' +
         (colourVal == null ? DASH_COLOUR : colourVal >= 0 ? 'var(--pos)' : 'var(--neg)') + ';">' + val + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
+        '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
         'text-transform:uppercase;color:var(--text-label);">' + cap + '</div></div>';
     }
     function bcell(txt, colour, size) {
@@ -5828,7 +5828,7 @@
               }).join('') +
             '</div>' +
           '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
+          '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
             'text-transform:uppercase;color:var(--text-label);">' +
             'Horizontal: season ' + MIDDOT + ' vertical: cumulative units ' + MIDDOT +
             ' the bright rule is break even</div>';
@@ -5848,7 +5848,7 @@
             '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;line-height:1;' +
               'color:' + (last == null ? DASH_COLOUR : last >= 0 ? 'var(--pos)' : 'var(--neg)') + ';">' +
               (last == null ? DASH : signed(last, 1, 'u')) + '</div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
+            '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
               'text-transform:uppercase;color:var(--text-label);">Profit at 1u flat</div>' +
           '</div>' +
         '</div>' +
@@ -6488,7 +6488,7 @@
 
   function calTile(cap, value, sub, colour) {
     return '<div style="background:var(--card);border-radius:12px;padding:15px 16px;text-align:center;">' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;letter-spacing:0.14em;' +
+      '<div style="font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;' +
         'text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</div>' +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;margin-top:4px;' +
         'color:' + (value === DASH ? DASH_COLOUR : (colour || 'var(--text)')) + ';">' + esc(value) + '</div>' +
@@ -8298,7 +8298,7 @@
           // right-aligned in the same 52px column. That is the file's own layout
           // and it is what keeps "WIN RATE" clear of "60%" (item 9).
           '<span style="position:absolute;left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);' +
-            'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.14em;' +
+            'font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
             'text-transform:uppercase;color:var(--text-label);white-space:nowrap;">Win rate</span>' +
           tickLabels +
         '</div>' +
@@ -8311,7 +8311,7 @@
           (elite.length ? '<span style="position:absolute;left:86%;top:0;bottom:0;width:1px;' +
             'border-left:1px dashed var(--line);"></span>' : '') +
           '<span style="position:absolute;right:6px;top:' + top(50) + ';transform:translateY(-135%);' +
-            'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
+            'font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
             'text-transform:uppercase;color:var(--text-label);">even</span>' +
           pts +
         '</div>' +
@@ -8396,7 +8396,7 @@
       : DASH + ' ' + MIDDOT + ' 0 priced';
     var plColour = r.priced ? (r.cents >= 0 ? 'var(--pos)' : 'var(--neg)') : 'var(--text-label)';
 
-    var headCell = 'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
+    var headCell = 'font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
       'text-transform:uppercase;color:var(--text-label);padding-bottom:7px;';
     // The file's first head cell is EMPTY — the W/L column carries no label.
     var heads = '<span></span>' +
@@ -8841,7 +8841,7 @@
           '<span style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' +
             esc(surnameOf(p.name)) + ' v ' +
             esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
+          '<span style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
             // The two populations label rounds differently: recentForm carries the
             // api-tennis feed string (roundLabel), the shard carries the archive's
             // own prose (shortRound). Using one map on both prints raw prose.
@@ -9447,7 +9447,7 @@
     var tbPts = mpTbPoints(split.tb);
     // The export's tiebreak sub-block: a 10px/0.16em label, then the point rows.
     var tbBlock = split.tb.length ? (
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0.16em;' +
+      '<div style="font-family:var(--font-words); font-size:10.5px;letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
         'text-transform:uppercase;color:var(--text-label);padding:14px 4px 8px;">Tiebreak' +
         (tbPts != null ? ' ' + MIDDOT + ' ' + esc(String(tbPts)) + ' to the loser' : '') + '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;' +
@@ -9463,7 +9463,7 @@
       '</div>') : '';
     return mpSeg(segs, 'mp-point-set', sel) +
       '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:9px;' +
-        'text-align:center;font-size:11px;font-family:\'IBM Plex Mono\',monospace;letter-spacing:0.16em;' +
+        'text-align:center;font-size:10.5px;font-family:var(--font-words); letter-spacing:0.10em; text-transform:uppercase; font-weight:700;' +
         'color:var(--text);padding:11px;margin:10px 0 4px;">SET ' + esc(String(sel)) + ' ' + MIDDOT + ' ' +
         nGames + ' GAMES</div>' +
       '<div style="display:flex;flex-direction:column;">' + games + '</div>' + tbBlock +
