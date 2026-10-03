@@ -99,10 +99,11 @@
   // holds a later tick (the card face can lag the recorder), in which case that tick.
   function nowOf(card, ch) {
     const last = ch.length ? ch[ch.length - 1] : null;
-    // Completed: the book's close — the card state's, unless a later pre-start tick is recorded
-    // (rows are already cut at the start), so row 2 always equals the closing tick on top.
-    const face = card.completed ? card.bookClose : card.now;
-    const faceAt = ms(card.completed ? card.updatedAt : card.nowAt);
+    // Completed: EXACTLY the card's Close (founder TEN-377 review item 3 — the pop-up's open → close
+    // equals the card's Open → Close for the book in its header); no close on the card = dash.
+    if (card.completed) return card.bookClose != null ? card.bookClose : null;
+    const face = card.now;
+    const faceAt = ms(card.nowAt);
     if (last && (face == null || faceAt == null || last.at > faceAt)) return last.price;
     return face != null ? face : null;
   }
@@ -146,7 +147,7 @@
       close: card.completed ? (card.close || null) : null,
       rows: rowsDesc, recordedFrom, open: card.open || null, historyAvailable: !!card.historyAvailable,
       note: card.note || null, emptyNote: card.emptyNote || null,
-      now: nowOf(card, ch), completed: !!card.completed, pctOk: card.pctOk !== false,
+      now: nowOf(card, ch), completed: !!card.completed, closeAgeMin: card.closeAgeMin ?? null, pctOk: card.pctOk !== false,
     };
   }
 
@@ -171,6 +172,7 @@
     const p = fmtParts(t, { hour: '2-digit', minute: '2-digit', hour12: false });
     return `${p.hour === '24' ? '00' : p.hour}:${p.minute}`;
   }
+  function fmtAge(min) { const h = Math.floor(min / 60), mm = min % 60; return h ? `${h} h ${mm} min` : `${mm} min`; }
   function fmtDay(t) {
     if (t == null) return '—';
     const p = fmtParts(t, { day: 'numeric', month: 'numeric' });   // "28 Sep" (en-GB would print "Sept")
@@ -214,7 +216,10 @@
     // TEN-295 / founder Q2: Completed carries Pinnacle's close as one mono line (dash when none).
     if (mdl.completed) h += `<div class="phb-pin">Pinnacle close <b>${esc(fmtPrice(mdl.close ? mdl.close.price : null))}</b></div>`;
     const notes = [];
-    if (mdl.updatedAt != null && ms(mdl.updatedAt) != null) notes.push(`Updated ${mono(fmtHM(ms(mdl.updatedAt)))}`);
+    // Founder TEN-377 (card 0b990217): a close last seen more than 60 min before the start says so
+    // first, as text — "Close last seen 2 h 10 min before start" — in place of "Updated".
+    if (mdl.completed && mdl.closeAgeMin != null) notes.push(`Close last seen ${mono(fmtAge(mdl.closeAgeMin))} before start`);
+    else if (mdl.updatedAt != null && ms(mdl.updatedAt) != null) notes.push(`Updated ${mono(fmtHM(ms(mdl.updatedAt)))}`);
     if (mdl.note) notes.push(esc(mdl.note));
     if (mdl.recordedFrom != null) notes.push(`recorded from ${mono(fmtDay(mdl.recordedFrom))}`);
     if (notes.length) h += `<div class="phb-src">${notes.join(' · ')}</div>`;
@@ -326,13 +331,18 @@
       : (bk === 'bet365' ? (upcoming ? 'shard' : (completed ? 'archive' : null)) : null);
     // The card face's current price (same resolver); row 2 uses it unless the history holds a later tick.
     const now = pair && pair[who] != null && Number(pair[who]) >= 1.01 ? Number(pair[who]) : null;
-    const bookClose = completed && side && side.close != null && Number(side.close) >= 1.01 ? Number(side.close) : null;
+    // The card's Close, from the card's own resolver, so the pop-up can never disagree with it.
+    const cardClose = completed && typeof _mcCardCloseOf === 'function' ? _mcCardCloseOf(m, who)
+      : (completed && side && side.close != null ? side.close : null);
+    const bookClose = cardClose != null && Number(cardClose) >= 1.01 ? Number(cardClose) : null;
+    // An older close (> 60 min before the start): its age, for the note line only.
+    const ageMin = completed && side && side.closeW60 === false && typeof mxCloseAgeMin === 'function' ? mxCloseAgeMin(m, who) : null;
     // Whether open → now/close may be measured as a %: same rules as the card's own Move.
     const vendorOpen = typeof _openPinIsVendor === 'function' && _openPinIsVendor(m);
-    const olderClose = completed && typeof _mcCloseW60 === 'function' && !_mcCloseW60(m);
     const crossBook = !completed && pair && pair.book && bk && String(pair.book).toLowerCase() !== bk;
-    const pctOk = !(vendorOpen || olderClose || crossBook);
-    return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose, pctOk,
+    // An older close no longer withholds the % — the card shows its Move (founder TEN-377).
+    const pctOk = !(vendorOpen || crossBook);
+    return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose, pctOk, closeAgeMin: ageMin,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
              // Founder 2026-09-25: completed bet365 cards carry the SAME source line as upcoming.

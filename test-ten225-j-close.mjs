@@ -170,11 +170,13 @@ test('it is carried forward, or it would vanish on the next pipeline run', () =>
 });
 
 // ── the label ─────────────────────────────────────────────────────────────
-test('TEN-295 (founder 2026-09-27): the J close no longer fills or labels the COMPLETED Close — it is Pinnacle only', () => {
-  // "The close is Pinnacle's closing price ... Never another book." The completed Close slot and
-  // its hover read m.pinClose; the J close survives only in _mcCloseOf (the underway fallback).
-  assert.ok(html.includes("const p1Close = finalScore ? _mcPinCloseOf(m, 'p1') : null;"));
-  assert.ok(html.includes("closeTitle: mxPinCloseTitle(m, 'p1')") && html.includes("closeTitle: mxPinCloseTitle(m, 'p2')"));
+test('TEN-377 (founder 2026-10-03): the J close never fills or labels the COMPLETED Close — it is the card book only', () => {
+  // "Never fill the gap from another book." The completed Close slot reads _mcCardCloseOf (the card
+  // book's close, else a same-book closingOdds); the J close survives only in _mcCloseOf (underway).
+  assert.ok(html.includes("const p1Close = finalScore ? _mcCardCloseOf(m, 'p1') : null;"));
+  assert.ok(html.includes("closeTitle: _closeTitle('p1')") && html.includes("closeTitle: _closeTitle('p2')"));
+  const fn = html.slice(html.indexOf('function _mcCardCloseOf('), html.indexOf('function _mcCardCloseDerivedOf('));
+  assert.doesNotMatch(fn, /mxJClose/, 'the card Close has no J fallback');
   assert.doesNotMatch(html, /last pre-match price · api-tennis · no timestamp, no lag check/,
                       'no hover left that dresses the J close as the card Close');
   assert.match(html, /return o\[who\]\.close \?\? mxJClose\(m, who\);/, 'the underway fallback keeps J');

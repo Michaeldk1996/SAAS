@@ -93,7 +93,8 @@ test('TEN-377 Q2: Completed = open → the book\'s close, Pinnacle close on one 
   assert.match(h, /phb-row phb-latest"><span class="phb-when">24\.09\. 12:00<\/span><b class="phb-px">1\.25/);
   const none = B.html(B.model(Object.assign({}, card, { close: { price: null } }), rows, []));
   assert.match(none, /Pinnacle close <b>—<\/b>/, 'no Pinnacle close -> dash, never the book close');
-  assert.equal(B.model(Object.assign({}, card, { bookClose: null }), rows, []).now, 1.25, 'no card-state close -> the last tick before the start');
+  assert.equal(B.model(Object.assign({}, card, { bookClose: null }), rows, []).now, null, 'TEN-377: no Close on the card -> dash in the pop-up too, never a tick');
+  assert.equal(B.model(Object.assign({}, card, { bookClose: 1.27 }), rows, []).now, 1.27, 'row 2 = EXACTLY the card Close, even if a later tick reads differently');
   assert.doesNotMatch(B.html(B.model({ book: 'Bet105', open: null, historyAvailable: true }, [], [])), /Pinnacle close/, 'Upcoming has no Pinnacle line');
 });
 
@@ -323,7 +324,7 @@ test('a card with no card-state entry: the Open time is the card\'s own openingO
   assert.deepEqual(m2.rows.map(r => `${r.price}:${r.delta}`), ['1.54:-0.03'], 'a real move is measured from the Open');
 });
 
-test('TEN-377 review: the change % obeys the Move rules — no % from a vendor-pinned open, an older close or two books', () => {
+test('TEN-377 review: the change % obeys the Move rules — no % from a vendor-pinned open or two books', () => {
   const base = { book: 'Bet105', open: { price: 2.0, at: '2026-09-24T01:00:00Z' }, historyAvailable: true, now: 1.6 };
   assert.match(B.html(B.model(base, [], [])), /phb-pct neg">−20\.0%/, 'CONTROL: a measurable move shows its %');
   const h = B.html(B.model(Object.assign({ pctOk: false }, base), [], []));
@@ -331,7 +332,7 @@ test('TEN-377 review: the change % obeys the Move rules — no % from a vendor-p
   assert.match(h, /phb-open">2\.00<\/span><span class="phb-arr">→<\/span><b class="phb-now">1\.60/, 'the prices still show');
   try {
     globalThis._mcCloseW60 = () => false;
-    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1').pctOk, false, 'older close');
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1').pctOk, true, 'TEN-377: an older close keeps its % (the card shows its Move)');
     globalThis._mcCloseW60 = () => true;
     assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1').pctOk, true, 'within-60 close');
     globalThis._openPinIsVendor = () => true;
@@ -350,4 +351,11 @@ test('TEN-377 review 11 + ledger: Bet105 note names its real cadence; a repeated
   assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.73:-0.016', '1.746:0.016', '1.73:0.13'],
                    '1.734 reads "1.73" like the row before it, so it is not listed; moves are from the listed row before');
   assert.match(B.html(m), /recorded from <span class="phb-mono">24 Sep/);
+});
+
+test('TEN-377 (card 0b990217): an older close puts its age first on the note line', () => {
+  const card = { book: 'Bet105', open: { price: 1.3, at: '2026-09-24T01:00:00Z' }, completed: true, historyAvailable: true,
+                 bookClose: 1.25, closeAgeMin: 130, updatedAt: '2026-09-24T06:05:00Z', note: 'bet105 · live stream + 5-min sweep' };
+  assert.match(B.html(B.model(card, [], [])), /phb-src">Close last seen <span class="phb-mono">2 h 10 min<\/span> before start · bet105 · live stream \+ 5-min sweep/);
+  assert.match(B.html(B.model(Object.assign({}, card, { closeAgeMin: null }), [], [])), /phb-src">Updated <span class="phb-mono">14:05/, 'within 60: the Q3 line');
 });

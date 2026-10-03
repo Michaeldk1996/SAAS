@@ -15,8 +15,10 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
   Surface `--text-soft`; round chip `--inner` + 10% inset edge, white (Q1). Score = sets-won tile (winner white 9% + 10% inset
   edge, white; loser white 4.5%, grey, no edge — Q1, README 7a) · 1px divider · one 24px cell per played set (won white 8% /
   lost 2.5%, one style always), each side's own tie-break points in the corner. Prices = `Open → Close · Move` on a
-  38/14/42/44 grid; no journey bar; no Move for an older close (TEN-253), a vendor-pinned open or a missing leg; missing leg
-  = "—"; a 0% move reads `0%`. Footer and drawer rules 6% (Q1); drawer = one flat list, book names `--text-soft`, no
+  38/14/42/44 grid, Open and Close from the card's ONE book (TEN-377 card 0b990217; `odds.md`); no journey bar; Close
+  always white mono 15/700; Move signed on every row with both legs, older closes included (ruling 2 = stats only); no Move
+  for a vendor-pinned open or a missing leg; missing leg = grey "—"; a 0% move reads `0%`. The odds pop-up's open → close
+  equals the card's exactly, for the book named in its header; Pinnacle's close is its own grey line. Footer and drawer rules 6% (Q1); drawer = one flat list, book names `--text-soft`, no
   liquidity; "See full analysis" 600. The "Showing … settled" context bar is removed.
 - **Card grid (founder 2026-10-03, replaces TEN-270 stretch):** `#matchlist` `align-items:start`. Closed cards in a row
   line up because they share one structure; a card that could grow is fixed inside the card, never by stretching the row.

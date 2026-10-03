@@ -28,7 +28,7 @@ const A = new Function(`
   const MX_BOOK_LABELS = { pncl: 'Pinnacle', sbo: 'SBOBET' };
   const _mcNowPair = m => m.__pair || null;
   const _ocsOf = m => m.__ocs || null;
-  const _mcPinCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
+  const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
   ${slice('mxOddsTxt')} ${slice('mcTitleAttr')} ${slice('oddsPctDelta')} ${slice('mxBookLabel')}
   ${slice('mcTiebreaks')} ${slice('mcSetIsWon')} ${slice('mcSetCluster')} ${slice('mcTermCell')} ${slice('mcJourney')}
   ${slice('mcUpsetRows')} ${slice('mcBoardBooks')}
@@ -63,13 +63,13 @@ test('prices: Open → Close · Move on one grid; signed %, true minus; no journ
   assert.match(A.mcJourney(2.0, 2.0, false, {}), /mc-px__move">0%</, 'a genuine 0% move reads 0, never blank');
 });
 
-test('prices: no open -> "—" and no Move; vendor-pinned open or older close -> no Move', () => {
+test('prices: no open -> "—" and no Move; vendor-pinned open -> no Move; older close -> white with Move', () => {
   const noOpen = A.mcJourney(null, 1.40, false, {});
   assert.match(noOpen, /mc-px__open mc-px__nodata">—/);
   assert.match(noOpen, /mc-px__move"><\/span>/);
   assert.match(A.mcJourney(null, null, false, {}), /mc-px__close mc-px__nodata">—/, 'missing close is a dash, never blank');
   assert.match(A.mcJourney(1.5, 1.6, true, {}), /mc-px__move"><\/span>/, 'TEN-198 anchorOnly');
-  assert.match(A.mcJourney(1.5, 1.6, false, { closeOlder: true }), /mc-px__close mx-close-older">1\.60[\s\S]*mc-px__move"><\/span>/, 'TEN-253 ruling 2');
+  assert.match(A.mcJourney(1.5, 1.6, false, { closeOlder: true }), /mc-px__close">1\.60<\/span><span class="mc-px__move pos">\+7%/, 'TEN-377: an older close shows white with its Move');
 });
 
 // ── README §2: header stats ──
@@ -82,7 +82,7 @@ test('header stats: Books counts distinct bookmakers once per label (Pncl = Pinn
   assert.equal(A.mcBoardBooks([]), 0, 'an empty board is a real 0');
 });
 
-test('header stats: Upsets = the same rule as the Upsets tile (winner closed longer, Pinnacle within-60 closes)', () => {
+test('header stats: Upsets = the same rule as the Upsets tile (winner closed longer, card-book within-60 closes)', () => {
   const m = (w, p1, p2) => ({ p1: 'A', p2: 'B', finalScore: { winner: w }, __pin: { p1, p2 } });
   const rows = A.mcUpsetRows([m('p1', 3.95, 1.26), m('p1', 1.38, 3.30), m('p2', 1.5, null), { p1: 'X' }]);
   assert.equal(rows.length, 1);
@@ -170,7 +170,7 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
     const newsTz = () => tz;
     const mxOddsUpdatedAt = () => up;
     const _mcNowPair = m => m.__pair || null; const _ocsOf = () => null;
-    const _mcPinCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
+    const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
     const MX_BOOK_LABELS = { pncl: 'Pinnacle' };
     ${slice('mxBookLabel')} ${slice('mcUpsetRows')} ${slice('mcBoardBooks')} ${slice('mcRenderHeaderStats')}
     mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
