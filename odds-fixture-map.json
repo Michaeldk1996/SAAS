@@ -3092,6 +3092,15 @@
       "p2": "D. Shapovalov",
       "startTime": "2026-10-04T04:00:00.000Z",
       "tournamentId": 3031
+    },
+    "12167947": {
+      "fixtureId": "id1200302575051384",
+      "mappedAt": "2026-10-03T09:15:49Z",
+      "orient": "same",
+      "p1": "A. De Minaur",
+      "p2": "A. Rublev",
+      "startTime": "2026-10-04T06:10:00.000Z",
+      "tournamentId": 3025
     }
   },
   "missAudit": {
@@ -3104,23 +3113,12 @@
       "observedSpanDays": 21.66,
       "projectedTtlUnitsPerDay": 4.6,
       "runs": 400,
-      "spentRuns": 221,
+      "spentRuns": 222,
       "ttlBitRuns": 100,
       "ttlBitShare": 0.25,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-11T16:30:14Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 2
-      },
       {
         "at": "2026-09-11T17:30:13Z",
         "fixturesUnitsSpent": 0,
@@ -7509,9 +7507,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 10
+      },
+      {
+        "at": "2026-10-03T09:15:49Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 10
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-03T08:16:09Z"
+  "updatedAt": "2026-10-03T09:15:49Z"
 }
