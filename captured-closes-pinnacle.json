@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-02T17:00:33.139Z",
+ "generatedAt": "2026-10-03T02:23:01.310Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "7a485d8f9ea2282419a9836373237bf779330372",
-  "at": "2026-10-02T16:45:35Z"
+  "commit": "a60b01875c4efba31aabb4ce3d67048510091877",
+  "at": "2026-10-03T02:16:22Z"
  },
- "commitsScanned": 4013,
+ "commitsScanned": 4054,
  "lastRun": {
-  "from": "2026-10-02T15:15:28Z",
-  "snapshots": 7,
+  "from": "2026-10-02T16:45:35Z",
+  "snapshots": 42,
   "added": 1,
   "replaced": 0,
-  "series": 55,
-  "kept": 47,
+  "series": 62,
+  "kept": 48,
   "bySource": {
-   "api-tennis-live": 47
+   "api-tennis-live": 48
   },
   "byBook": {
-   "Pinnacle +30s": 47
+   "Pinnacle +30s": 48
   },
   "dropped": {
-   "noStart": 8
+   "noStart": 14
   }
  },
  "stats": {
@@ -7182,6 +7182,20 @@
    "p2": 2.29,
    "at": "2026-10-02T08:41:49.508Z",
    "trueStart": "2026-10-02T11:24:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167644,
+   "date": "2026-10-03",
+   "p1Key": 431,
+   "p2Key": 2982,
+   "p1Name": "D. Shapovalov",
+   "p2Name": "A. Tabilo",
+   "p1": 1.729,
+   "p2": 2.24,
+   "at": "2026-10-02T23:49:22.783Z",
+   "trueStart": "2026-10-03T01:54:02.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
