@@ -145,14 +145,15 @@ test('hover age: minutes under an hour, "Xh Ym" over it', () => {
   assert.equal(A.mxCloseAgeMin(noStart, 'p1'), null, 'no start -> no age, never a guess');
 });
 
-test('the card renders an older close MUTED, with no move bar and no % delta', () => {
+test('the card renders an older close MUTED, with no Move (TEN-377: Open → Close · Move, no journey bar)', () => {
   const html1 = A.mcJourney(1.256, 1.30, false, { closeOlder: true });
-  assert.match(html1, /mc-journey__close mx-close-older/);
-  assert.doesNotMatch(html1, /mc-journey__bar/);
-  assert.doesNotMatch(html1, /mc-journey__delta (pos|neg)/);
+  assert.match(html1, /mc-px__close mx-close-older/);
+  assert.doesNotMatch(html1, /mc-px__move (pos|neg)/);
+  assert.doesNotMatch(html1, /mc-px__move">[^<]/, 'no Move text at all');
   const html2 = A.mcJourney(1.256, 1.30, false, {});
-  assert.match(html2, /mc-journey__bar/, 'CONTROL: a within-60 close draws its move');
+  assert.match(html2, /mc-px__move pos">\+4%/, 'CONTROL: a within-60 close states its move');
   assert.doesNotMatch(html2, /mx-close-older/);
+  assert.doesNotMatch(html1 + html2, /journey__bar|linear-gradient/, 'the price-journey bar is gone');
 });
 
 test('MUTATION: moveScore on the Pinnacle close WITHOUT the same-book test -> a cross-book move is measured', () => {

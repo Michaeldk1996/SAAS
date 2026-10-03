@@ -230,13 +230,13 @@
   [data-page="matches"] .mx-daytabs-scroll{ display:flex; gap:4px; overflow-x:auto; scrollbar-width:none; border-bottom:none; flex:0 0 auto; }
   [data-page="matches"] .mx-daytabs-scroll::-webkit-scrollbar{ display:none; }
   [data-page="matches"] .mx-daytabs{ display:flex; }
-  [data-page="matches"] .mx-daytabs button{ display:flex; color:var(--mx-text-secondary); cursor:pointer; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:var(--mx-font-ui); white-space:nowrap; }
+  [data-page="matches"] .mx-daytabs button{ display:flex; cursor:pointer; background:none; border:none; border-bottom:2px solid transparent; margin-bottom:-1px; font-family:var(--mx-font-ui); white-space:nowrap; }
   [data-page="matches"] .mx-daytabs button .dbottom{ font-size:10px; color:var(--mx-text-faint); font-weight:400; }
   /* §9 (PASS 4) — active date = brighter label (var(--text)/700) + a 2px --brand underline,
      no box. Export underline is var(--bar) (--brand), not the page's --mx-brand-blue
      (var(--bar)). Focus ring is keyboard-only: suppress the mouse-focus outline, show a
      subtle ring on :focus-visible only. */
-  [data-page="matches"] .mx-daytabs button.active{ font-weight:700; border-color:var(--edge-16); }
+  [data-page="matches"] .mx-daytabs button.active{ border-color:var(--edge-16); }
   [data-page="matches"] .mx-daytabs button.mx-daypill{ align-self:center; flex-direction:row; margin-bottom:0; padding:6px 14px; border:1px solid var(--mx-hairline); border-radius:999px; background:var(--mx-bg-input); color:var(--mx-text-secondary); font-family:var(--mx-font-ui); font-weight:500; font-size:12px; }
   [data-page="matches"] .mx-daytabs button.mx-daypill[data-day="all"]{ margin-left:10px; }
   [data-page="matches"] .mx-daytabs button.mx-daypill:hover{ color:var(--mx-text-primary); border-color:var(--mx-text-tertiary); }
@@ -419,7 +419,6 @@
      player retired — founder's call); on a scoreless walkover it sits in the
      .mc-scoreline slot, which is truthful where "Underway" would not have been. */
   [data-page="matches"] .mc-termchip{ font-family:var(--mx-font-ui); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--mc-muted-2); background:var(--inner); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; white-space:nowrap; }
-  [data-page="matches"] .mc-players.cmpl .mc-sets--term{ display:flex; align-items:center; }
   /* TEN-179 q3 — on a Completed card the RETIRED / WALKOVER chip rides the header, so a
      retirement's partial sets get the full cluster slot and the two rows stay aligned.
      MEASURED: with the chip at its original 63.2px the header needed 510.4px inside a
@@ -454,7 +453,7 @@
      old 10px players margin-top + 3px inter-row gap + 14px foot margin-top made
      the card ~27px taller than the export. Header's 13px bottom padding (.cmpl
      .mc-head below) restores the export's ~26px header-text→first-row spacing. */
-  [data-page="matches"] .mc-players.cmpl{ gap:0; margin-top:0; }
+  [data-page="matches"] .mc-players.cmpl{ margin-top:0; }
   /* §2 (founder review 2026-08-08) — Results cards use the EXPORT box model: the card is a
      bare bordered box with NO padding of its own; the header, each player row and the footer
      each carry their own 13px 20px / 12px 20px padding and sit border-to-border (0 gap). This
@@ -520,42 +519,8 @@
      design export's guaranteed 15.5px minimum name->score gutter.
      NOTE this DEVIATES from TOKENS.md, which specifies minmax(4px,1fr) (see the q1 note
      above); the founder's instruction overrides the token here. */
-  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,260px) max-content minmax(16px,1fr) 1px 169px; gap:0; align-items:stretch; padding:11px 16px; border-radius:0; opacity:1; }
-  /* §2 (PASS 3) — winner accent bar sits flush ON the card's outer left border,
-     spanning the full height of the winner's row (not inset, not floating). The row
-     is inset from the card edge by the card's 18px padding + 1px border, so the bar
-     reaches out with a -19px offset to land on the border for that stretch (~3px). */
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ content:''; display:block; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:0 2px 2px 0; background:var(--mc-pos); }
-  /* §1 (PASS 4) — avatar→name gap is 13px and the avatar ring is --border-data,
-     both read from the export completed row (col-1 flex span). Scoped to .cmpl so the
-     upcoming card is untouched. The 20px avatar inset comes from the row's 20px padding. */
-  /* TEN-179 q1 — 13px -> 9px, TOKENS "Card header gap". Two gaps in this cell
-     (avatar|name and name|FAV), so it reclaims 8px for the name itself. */
-  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:9px; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ opacity:1; }
   [data-page="matches"] .mc-players.cmpl .mc-av{ border-color:var(--mc-border-data); }
-  /* TEN-179 item 4 — the name|score gutter. In the export the gutter is not a gap at all:
-     col 1 is a FIXED 200px, so every name shorter than the track leaves whitespace before
-     the score group. Measured across all 18 completed rows of the rendered design file the
-     resulting gutter runs 15.5px (tightest, "C. Alcaraz FAV") to 108.3px, so the design
-     GUARANTEES 15.5px and no more. We cannot copy the 200px track itself — it ellipsised
-     "B. Van De Zandschulp" (230.6px of content) on the shipped single-column build, which
-     is why col 1 became max-content in the first place (see the row grid above); and
-     minmax(max-content,200px) would floor the track at max-content and overflow the row
-     instead of wrapping. So the design's guaranteed minimum is reproduced directly, as a
-     16px inset on the cluster, which keeps col 1 shrinkable and leaves the long-name
-     wrap behaviour exactly as gate 439b9cbe ruled it. Cost comes out of the row's 1fr
-     spacer, not out of the name. */
-  /* TEN-179 score-column alignment — 16px -> 12px. This is the name|score gutter and it is
-     now the ONLY separation between a truncated name and the first score, so it is spent
-     deliberately: every px here comes straight out of the name track (col 1 is what absorbs
-     the cluster's width at a 536px card). 12px still reads as a gutter and buys 4px of name. */
-  [data-page="matches"] .mc-players.cmpl .mc-sets{ grid-column:2; margin-left:12px; }
-  /* §6 (PASS 4) — the 1px vertical divider bleeds to the card edges via a negative
-     margin that cancels the row's vertical padding; it now tracks the 13px padding.
-     Its horizontal x is grid-driven (col 4, immediately left of the 218px odds column)
-     and already matches the export. */
-  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:4; background:var(--inner); margin:-11px 0; }
-  [data-page="matches"] .mc-players.cmpl .mc-journey{ grid-column:5; padding-left:10px; }
   /* §4 (PASS 3) — OPEN / CLOSE caps live on the card's single header row, right-
      aligned over the odds column (width matches grid-column 5 = 218px, same 18px
      lead padding as the journey, so OPEN sits over the open figure and CLOSE over
@@ -565,15 +530,11 @@
      centre over their figures"). Same 169px block, same 10px lead, same 32/28/40/44
      tracks and 5px gaps. Previously the block was a flex row with a growing spacer, so
      CLOSE right-anchored over the DELTA cell, not over the closing price. */
-  [data-page="matches"] .mc-head .mc-cmpl-head__odds{ width:169px; margin-left:auto; display:grid; grid-template-columns:32px 28px 40px 44px; gap:0 5px; align-items:center; padding-left:10px; }
   /* §4 (PASS 5) — the mid spacer GROWS (was a fixed 46px), so CLOSE is right-anchored
      hard against the odds block's right edge (= card content inset) and OPEN stays at the
      block's 18px lead. Matches the journey row below, whose flexible track does the same. */
-  [data-page="matches"] .mc-cmpl-head__odds .sp{ /* TEN-179 q1 — now grid track 2 (the lane), not a flex spacer. */ }
-  [data-page="matches"] .mc-cmpl-head__odds span:not(.sp){ font-family:var(--mx-font-ui); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--mc-muted-2); white-space:nowrap; }
   /* TEN-179 q1 — each cap takes the text-align of the figure it sits over: the opening
      price is right-aligned in its 32px cell, the closing price left-aligned in its 40px. */
-  [data-page="matches"] .mc-cmpl-head__odds span:not(.sp):first-child{ text-align:right; }   /* TEN-179: now inside .mx-controls, which owns the horizontal padding */
   /* §4 (PASS 4) — stat box read from the export source. Value is Mono 500 at 20px
      (a screenshot-derived ~30px/700 was wrong on both count); label letter-spacing
      0.11em; cell gap 4px; the box is a data block so its radius is 12px, not the 14px
@@ -612,14 +573,6 @@
   /* §8 — Value-picks insufficient-history headline: UI text, not a fabricated ROI number. */
   [data-page="matches"] .mc-story__vpempty{ font-family:var(--mx-font-ui); font-weight:600; font-size:14px; color:var(--mc-muted); }
   [data-page="matches"] .mc-story__faint{ font-family:var(--mx-font-ui); font-size:11px; color:var(--mc-muted-2); opacity:0.85; }
-  /* §4 (Batch B) — one-tournament context bar under the filters. Only rendered in
-     Results when exactly one tournament chip is active; hidden otherwise. */
-  [data-page="matches"] .mc-contextbar[hidden]{ display:none; }
-  [data-page="matches"] .mc-contextbar{ padding:9px 14px; display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:10px; font-family:var(--mx-font-ui); font-size:12.5px; color:var(--mc-muted); }
-  [data-page="matches"] .mc-contextbar strong{ color:var(--mc-text); font-weight:700; }
-  [data-page="matches"] .mc-contextbar .mc-ctx-sep{ color:var(--mc-muted-2); opacity:0.7; }
-  [data-page="matches"] .mc-ctx-link{ background:none; border:none; padding:0; margin-left:auto; font:inherit; color:var(--text); cursor:pointer; white-space:nowrap; }
-  [data-page="matches"] .mc-ctx-link:hover{ text-decoration:underline; }
   [data-page="matches"] .mc-id{ display:flex; align-items:center; gap:11px; min-width:0; }
   [data-page="matches"] .mc-av{ width:32px; height:32px; border-radius:50%; flex:0 0 auto; display:grid; place-items:center; font-family:var(--mx-font-mono); font-size:12px; font-weight:700; letter-spacing:0.01em; border:1px solid var(--mc-border-subtle); object-fit:cover; overflow:hidden; }
   [data-page="matches"] .mc-av.a{ color:var(--text); background:var(--mc-brand-tint); border-color:var(--mc-border-hover); }
@@ -648,7 +601,7 @@
      and still could not move the score column, so the ellipsis is the correct fallback.
      min-width:0 is load-bearing: .mc-id is a flex row and without it the name refuses to
      shrink below its content width and pushes the FAV chip out of the track instead. */
-  [data-page="matches"] .mc-players.cmpl .mc-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; line-height:1.15; }
+  [data-page="matches"] .mc-players.cmpl .mc-name{ min-width:0; }
   [data-page="matches"] .mc-row.a .mc-name{ color:var(--text); }
   [data-page="matches"] .mc-row.b .mc-name{ color:var(--mc-player-b); }
   [data-page="matches"] .mc-name[onclick]:hover, [data-page="matches"] .mc-av[onclick]:hover{ text-decoration:underline; cursor:pointer; }
@@ -741,25 +694,15 @@
      tile-gutter 14px vs set-gap 8px = 1.75x, which reads as a group break the way Flashscore's
      does. Per-set cell stays 16px: a two-digit game ("13") measures 15.61px in Mono 13px, so
      16px is the floor at which single- and double-digit values both centre without drifting. */
-  [data-page="matches"] .mc-sets{ --mc-tile:24px; --mc-set-cell:16px; --mc-set-gap:8px; --mc-set-gutter:14px;
-    display:grid; grid-auto-flow:column; grid-auto-columns:var(--mc-set-cell);
-    grid-template-columns:calc(var(--mc-tile) + var(--mc-set-gutter) - var(--mc-set-gap));
-    gap:0 var(--mc-set-gap); align-items:center; margin-left:0; }
-  [data-page="matches"] .mc-sets__total{ width:var(--mc-tile); justify-self:start; }
   /* margin-right REMOVED (TEN-179 item 4): it was shrinking the chip inside its own 24px
      track to 20px. TOKENS "set-count tile 24px wide" and the design render agree at 24px,
      and with the 8px column-gap above the separation it was faking is now real. */
-  [data-page="matches"] .mc-sets__total{ font-family:var(--mx-font-mono); font-weight:700; font-size:15px; color:var(--mc-text); text-align:center; padding:2px 0; border-radius:5px; }
   /* §6 — sets-won tile: winner white-on-light-fill, loser muted-on-fainter-fill (README
      §6). No green/blue tint on the tile — red/green are reserved for the odds delta only. */
-  [data-page="matches"] .mc-sets__total.w{ background:var(--inner); }
-  [data-page="matches"] .mc-sets__total.l{ background:var(--inner); }
   /* TEN-123 — per-set emphasis is independent of the match winner: each set's higher
      game count wins its own cell. Base cell = the losing side of the set (muted, 500);
      .w = that set's winner (bright --mc-text, 700). Compared on games only, so a
      tiebreak superscript never flips the emphasis and inherits its cell's colour. */
-  [data-page="matches"] .mc-sets__g{ font-family:var(--mx-font-mono); font-weight:500; font-size:13px; color:var(--mc-muted); text-align:center; position:relative; }
-  [data-page="matches"] .mc-sets__g.w{ font-weight:700; color:var(--mc-text); }
   /* TEN-179 score-column alignment item 6 — "tiebreak superscripts sit inside the same cell
      and must not widen it or push the following set out of alignment." The cell is a fixed
      16px grid track so it cannot widen; the risk is the OTHER half — an in-flow superscript
@@ -769,7 +712,6 @@
      over the cell's right slack (4.08px) plus the 8px set gap. margin-left is dropped for the
      same reason — on a zero-width box it would still have shifted the digit by 1px.
      (The old top:-0.6em was dead: the sup is statically positioned. Raise is vertical-align.) */
-  [data-page="matches"] .mc-sets__g sup{ display:inline-block; width:0; overflow:visible; white-space:nowrap; font-size:9px; font-weight:600; margin:0; }
 
   /* odds journey (completed) — non-semantic open→close, as ONE right-anchored object.
      §2/§6 (founder review 2026-08-08): fixed columns open(40) · lane(64) · close(44) ·
@@ -785,8 +727,6 @@
      a card column-align with each other and with the OPEN/CLOSE caps above them. A
      five-character price (10.50 — none on the board today, max seen 8.00) overflows its
      cell VISIBLY rather than being clipped: that is the founder's explicit instruction. */
-  [data-page="matches"] .mc-journey{ display:flex; align-items:center; gap:5px; justify-content:flex-end; }
-  [data-page="matches"] .mc-journey__open{ font-family:var(--mx-font-mono); font-weight:400; color:var(--mc-muted); font-size:13px; width:32px; text-align:right; flex:none; }
   /* Direction bar: 64px lane; the inner bar width is set inline (∝ |delta%| × 2.2,
      clamped 10–56px). Gradient tints into the direction colour; a ▸ arrowhead marks
      the close end. An empty lane (missing open) shows a thin neutral rule, no arrow. */
@@ -794,21 +734,11 @@
      line (align-items:center on .mc-journey), and the bar sits centred in its 64px lane
      (justify-content:center), so the whole object reads through the MIDDLE of the numbers,
      not near their baseline. Export tokens: bar height 3px, radius 2px. */
-  [data-page="matches"] .mc-journey__lane{ width:28px; flex:none; height:16px; position:relative; display:flex; align-items:center; justify-content:center; }
-  [data-page="matches"] .mc-journey__bar{ height:3px; border-radius:2px; background:linear-gradient(90deg, var(--mc-muted), var(--bar)); position:relative; }
-  [data-page="matches"] .mc-journey__bar::after{ content:'\25B8'; position:absolute; right:-6px; top:50%; transform:translateY(-50%); font-size:9px; line-height:1; color:var(--text); }
   /* §3 (founder review 2026-08-08) — a missing open means no movement to depict: NO bar
      and NO rule. The lane stays an invisible 64px spacer so CLOSE holds its column under
      the header; nothing renders between the em-dash and the close. */
-  [data-page="matches"] .mc-journey--noopen .mc-journey__lane{ border-top:0; }
-  [data-page="matches"] .mc-journey__nodata{ color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:16px; width:40px; flex:none; }
   /* TEN-253 ruling 2: a close last seen more than 60 min before the start. Shown, muted. */
-  [data-page="matches"] .mc-journey__close.mx-close-older,
   [data-page="matches"] .mc-drifted__now.mx-close-older{ opacity:.45; font-weight:500; }
-  [data-page="matches"] .mc-journey__delta{ font-family:var(--mx-font-mono); font-weight:600; font-size:11px; color:var(--mc-muted-2); width:44px; text-align:right; flex:none; }
-  [data-page="matches"] .mc-journey__delta.pos{ color:var(--pos); }
-  [data-page="matches"] .mc-journey__delta.neg{ color:var(--neg); }
   /* .mc-drift retained for the day-summary story panels (Biggest market move). */
   [data-page="matches"] .mc-drift{ font-family:var(--mx-font-mono); font-weight:600; color:var(--mc-muted-2); font-size:11px; }
   /* §7 SETTLED — the open→close delta reads as a PERCENTAGE, coloured by DIRECTION per the
@@ -819,55 +749,52 @@
      into direction color"). Missing-open rows carry no direction class → neutral, no delta. */
   [data-page="matches"] .mc-drift.pos{ color:var(--pos); }
   [data-page="matches"] .mc-drift.neg{ color:var(--neg); }
-  [data-page="matches"] .mc-journey.pos .mc-journey__bar{ background:linear-gradient(90deg, var(--mc-muted), var(--pos)); }
-  [data-page="matches"] .mc-journey.pos .mc-journey__bar::after{ color:var(--pos); }
-  [data-page="matches"] .mc-journey.neg .mc-journey__bar{ background:linear-gradient(90deg, var(--mc-muted), var(--neg)); }
-  [data-page="matches"] .mc-journey.neg .mc-journey__bar::after{ color:var(--neg); }
   /* §5/§11 — Completed card identity: no Player-A/B blue. The winner's name is bright
      (--mc-text, 15px 700), the loser's is muted; brightness + the winner accent bar
      carry the winner/loser signal. STATE-SCOPED — never re-applied to Upcoming.
      (§6 score-dimming removed: colour separates total from games, not winner from
      loser — see the set-cluster block above.) */
   [data-page="matches"] .mc-players.cmpl .mc-name{ font-weight:700; }
-  /* §1 (PASS 3) — with the WON pill gone and identity colour suppressed, brightness +
-     the edge bar are the only two winner signals, so they must point the same way:
-     the winner's NAME is bright (--mc-text = var(--text)), the loser's is dimmed
-     (--mc-muted). The set-count TOTAL stays match-winner-emphasised here too; the
-     per-set game digits (.mc-sets__g) are NOT row-scoped anymore — TEN-123 moved them
-     to per-set emphasis (see the .mc-sets__g.w rule above). */
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name,
-  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-sets__total{ color:var(--mc-text); }
-  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name,
-  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-sets__total{ color:var(--mc-muted); }
-
-  /* §GAP (card-proportions) — completed-card box model, scoped via .match-card.cmpl:
-     the header carries its own 13px bottom padding (matches the export header's
-     13px 20px padding) so header-text→first-row reads ~26px like the export, while
-     the block border-to-border gap stays 0. The footer divider sits flush at the
-     second row's bottom (margin-top:0, was 14px), with its 12px padding-top pushing
-     the "Market Signal" label 13px below the divider — the export's exact footer. */
-  [data-page="matches"] .match-card.cmpl .mc-head{ padding:11px 16px; border-bottom:1px solid var(--line); }
-  [data-page="matches"] .match-card.cmpl .mc-foot{ margin:0; padding:11px 16px; border-top-color:var(--line); }
+  [data-page="matches"] .match-card.cmpl .mc-foot{ margin:0; border-top-color:var(--line); }
   /* §2 — with the completed card carrying no padding, the Market Signal expander spans the
      full card width on its own (no negative-margin bleed); upcoming keeps its -18px bleed. */
   [data-page="matches"] .match-card.cmpl .mc-sigpanel{ margin:0; }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-nowsrc{ padding:0 16px 9px; font-family:var(--mx-font-mono); font-size:10.5px; color:var(--mc-muted); }
-  /* TEN-270 item 6 — the price-history box (Oddsportal-style rows, our dark surface). */
-  [data-page="matches"] .phb{ position:fixed; z-index:9000; min-width:230px; max-height:320px; overflow-y:auto; white-space:nowrap;
-    background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:8px; 
-    padding:8px 10px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-text, var(--text)); }
-  [data-page="matches"] .phb-head{ display:flex; justify-content:space-between; gap:14px; padding-bottom:6px; margin-bottom:4px; border-bottom:1px solid var(--line); }
-  [data-page="matches"] .phb-book{ font-weight:700; }
-  [data-page="matches"] .phb-live{ color:var(--pos); }
-  [data-page="matches"] .phb-upd, [data-page="matches"] .phb-note, [data-page="matches"] .phb-book2{ color:var(--mc-muted); }
-  [data-page="matches"] .phb-sec{ font-weight:700; margin-top:6px; }
-  [data-page="matches"] .phb-row{ display:grid; grid-template-columns:auto auto 1fr; gap:12px; align-items:baseline; padding:2px 0; }
-  [data-page="matches"] .phb-px{ font-weight:700; }
-  [data-page="matches"] .phb-d{ text-align:right; }
-  [data-page="matches"] .phb-gap{ color:var(--mc-muted); font-style:italic; padding:2px 0; }
-  [data-page="matches"] .phb-note{ padding:2px 0; }
+  /* TEN-377 README §6.1 — "Odds movement" pop-up (design 1a). 312px, --card, radius 12, --shadow-pop (10% edge
+     included), padding 14px 0 10px; fixed layer above the cards. Positioned by price-history-box.js. */
+  [data-page="matches"] .phb{ position:fixed; z-index:9000; width:312px; box-sizing:border-box; padding:14px 0 10px; display:flex; flex-direction:column;
+    background:var(--card); border-radius:12px; box-shadow:var(--shadow-pop); color:var(--text); font-family:var(--font-words); text-align:left; white-space:nowrap; }
+  [data-page="matches"] .phb[hidden]{ display:none; }
+  [data-page="matches"] .phb-cap{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  [data-page="matches"] .phb-r1{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:0 16px 10px; }
+  [data-page="matches"] .phb-book{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); }
+  [data-page="matches"] .phb-hd{ padding:0 16px 12px; border-bottom:1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+  [data-page="matches"] .phb-r2{ display:flex; align-items:baseline; gap:10px; }
+  [data-page="matches"] .phb-open{ font-family:var(--font-nums); font-size:15px; color:var(--text-label); }
+  [data-page="matches"] .phb-arr{ font-size:16px; color:var(--text-label); }
+  [data-page="matches"] .phb-now{ font-family:var(--font-nums); font-size:22px; font-weight:700; color:var(--text); }
+  [data-page="matches"] .phb-pct{ font-family:var(--font-nums); font-size:12px; font-weight:700; color:var(--text-label); }
+  [data-page="matches"] .phb-pct.pos, [data-page="matches"] .phb-d.pos{ color:var(--pos); }
+  [data-page="matches"] .phb-pct.neg, [data-page="matches"] .phb-d.neg{ color:var(--neg); }
+  [data-page="matches"] .phb-n{ margin-left:auto; font-family:var(--font-nums); font-size:11px; color:var(--text-label); }
+  [data-page="matches"] .phb-pin{ margin-top:6px; font-family:var(--font-nums); font-size:11px; color:var(--text-label); }
+  [data-page="matches"] .phb-pin b{ font-weight:700; color:var(--text); }
+  [data-page="matches"] .phb-src{ margin-top:6px; font-family:var(--font-words); font-size:11px; color:var(--text-label); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  [data-page="matches"] .phb-src .phb-mono{ font-family:var(--font-nums); }
+  [data-page="matches"] .phb-list{ max-height:236px; overflow-y:auto; padding:6px 8px; }
+  [data-page="matches"] .phb-row, [data-page="matches"] .phb-opening{ display:grid; grid-template-columns:1fr 52px 62px; gap:10px; align-items:baseline; }
+  [data-page="matches"] .phb-row{ padding:5px 8px; border-radius:6px; }
+  [data-page="matches"] .phb-row.phb-latest{ background:var(--wash-5); }
+  [data-page="matches"] .phb-when{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
+  [data-page="matches"] .phb-px{ font-family:var(--font-nums); font-size:13px; font-weight:700; color:var(--text); text-align:right; }
+  [data-page="matches"] .phb-d{ font-family:var(--font-nums); font-size:11.5px; font-weight:600; color:var(--text-label); text-align:right; }
+  [data-page="matches"] .phb-gap{ padding:5px 8px; font-size:11.5px; color:var(--text-label); }
+  [data-page="matches"] .phb-gap .phb-mono{ font-family:var(--font-nums); }
+  [data-page="matches"] .phb-note{ padding:18px 8px; font-size:12px; color:var(--text-label); text-align:center; white-space:normal; }
+  [data-page="matches"] .phb-opening{ margin:4px 8px 0; padding:8px 8px 2px; border-top:1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+  [data-page="matches"] .phb-opening .phb-when{ display:flex; flex-direction:column; gap:2px; }
   [data-page="matches"] .mc-nowlive{ color:var(--mc-pos); margin-right:6px; }
   [data-page="matches"] .mc-foot{ margin-top:auto; padding:10px 16px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px; }
   [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
@@ -1850,7 +1777,6 @@
   [data-page="matches"]{ max-width:1360px; margin:0; padding-top:30px; }
   [data-page="matches"] .mx-controls{ padding:20px 40px 0; }
   [data-page="matches"] .mx-tablewrap{ padding:16px 40px 40px; }   /* TEN-179: see above — horizontal padding comes from .mx-controls */
-  [data-page="matches"] .mc-contextbar{ margin:12px 40px 0; }
 
   /* item 5 — header: title block + Upcoming/Completed segmented control (12a layout: see layout-12a) */
   /* Header: title var(--text); the whole status line ("Live · updated 11:41", "Settled · …") var(--text-label)
@@ -1883,10 +1809,9 @@
   /* date-rail arrows — the one definition (12a design: 30×30, r8, 1px line, Hanken 16px glyph
      in label). Disabled (paged to the edge of the window) keeps the box and draws the glyph in `line`,
      as the design's disabled ›: rendered, never hidden, no hover reaction, no pointer. */
-  [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; box-sizing:border-box; padding:0; flex-shrink:0; display:flex;
-    align-items:center; justify-content:center; background:transparent; border:1px solid var(--edge-6); border-radius:8px;
-    color:var(--text-label); cursor:pointer; font-family:var(--sf-font-ui); font-size:16px; font-weight:400; line-height:normal; }
-  [data-page="matches"] .mx-daytabschevron:hover{ border-color:var(--edge-16); color:var(--text); }
+  [data-page="matches"] .mx-daytabschevron{ box-sizing:border-box; padding:0; flex-shrink:0; display:flex;
+    align-items:center; justify-content:center; cursor:pointer; font-family:var(--sf-font-ui); font-weight:400; line-height:normal; }
+  [data-page="matches"] .mx-daytabschevron:hover{ border-color:var(--edge-16); }
   [data-page="matches"] .mx-daytabschevron.is-disabled{ color:var(--edge-6); border-color:var(--edge-6); cursor:default; pointer-events:none; }
 
   /* item 8 — header date-time (left cluster, mono/muted) */
@@ -2275,6 +2200,8 @@
       <p class="mx-datastatus" id="dataStatus">Loading…</p>
       <p class="mx-tzline" id="tzLine"></p>
     </div>
+    <!-- TEN-377 README §2: four stats, right-aligned (label above value). Filled by mcRenderHeaderStats. -->
+    <div class="mx-hstats" id="mxHeaderStats" aria-label="Board summary"></div>
     <!-- Upcoming/Completed segmented control removed (TEN-8, founder ruling
          2026-08-08): Completed is now the sidebar "Results" tab. Upcoming vs
          completed is driven by which sidebar tab is active (state.view), set in
@@ -2332,8 +2259,6 @@
       </div>
     </div>
   </div>
-
-  <div class="mc-contextbar" id="mcContextBar" hidden></div>
 
   <div class="mx-tablewrap">
     <div class="mx-table">
@@ -8467,6 +8392,7 @@ function mcFormBar(val){
 // points, index-aligned to finalScore.sets. Each entry is {p1,p2} tiebreak points for
 // a tiebreak set, or null for a normal set. The parenthetical is the LOSER's tiebreak
 // points; the winner's are 7, or loser+2 when the breaker ran long (7-6(8) = 10-8).
+// Each side's cell shows its own points (TEN-377 reference: 7⁷ / 6⁵).
 // Source is display only — sets[] carries games not breaker points, and there is no
 // setstats sidecar for these matches; where display has no "(n)" we render plain.
 function mcTiebreaks(finalScore){
@@ -8498,13 +8424,11 @@ function mcSetIsWon(a, b){
 // `recount` is passed ONLY for a retirement. A completed match keeps the feed's own
 // p1Sets/p2Sets: they are correct there, they are what ships today, and re-deriving them
 // for every card would put a display bug one edge case away from a wrong scoreline.
-// `cols` (TEN-179 score-column alignment, founder item 5) is the number of set cells to
-// ALLOCATE, taken from the highest set count on the board being rendered — so a best-of-3
-// match on a Slam day carries the same five cells as the best-of-5 next to it and its
-// cluster is the same width. Unplayed sets render as BLANK cells, never a dash: a dash on
-// this board means missing data, and sets 4-5 of a straight-sets win were simply not played.
-// Omitted/short `cols` falls back to the match's own set count, so the function is safe to
-// call without it.
+// TEN-377 README §7 "7a" (supersedes the TEN-179 board-wide padded columns): sets-won tile ·
+// 1px divider · ONE 24px cell per played set (won = white 8% / --text, lost = white 2.5% /
+// --text-label). The score column is `auto` inside each tile, so the two rows of a card line up
+// on their own and no blank cells are drawn. `cols` is accepted and ignored. Tie-break points sit
+// in the cell's top-right corner, each side showing ITS OWN points (reference: 7⁷ over 6⁵).
 function mcSetCluster(finalScore, who, recount, cols){
   const sets = Array.isArray(finalScore.sets) ? finalScore.sets : [];
   const opp = who === 'p1' ? 'p2' : 'p1';
@@ -8514,21 +8438,13 @@ function mcSetCluster(finalScore, who, recount, cols){
     : feedTotal;
   const isW = finalScore.winner === who;
   const tbs = mcTiebreaks(finalScore);
-  // Games are DIRECT grid children of .mc-sets (no wrapper) so each per-set cell
-  // lands in its own fixed column and lines up across the two player rows (§6).
-  // Tiebreak sets carry a superscript of the LOSER's breaker points on the WINNER's
-  // game number only (ATP/Flashscore convention). The loser's cell shows no superscript.
-  const games = sets.map((s, i) => {
-    const opp = who === 'p1' ? 'p2' : 'p1';
-    const isSetWinner = s[who] > s[opp];
-    const tb = (isSetWinner && tbs[i]) ? `<sup>${tbs[i][opp]}</sup>` : '';
-    // TEN-123 — per-set emphasis: the side with more games in THIS set gets .w,
-    // independent of who won the match. Games-only comparison (superscript ignored).
-    return `<span class="mc-sets__g${isSetWinner ? ' w' : ''}">${s[who]}${tb}</span>`;
+  const cells = sets.map((st, i) => {
+    const won = st[who] > st[opp];
+    const tb = tbs[i] ? `<sup>${tbs[i][who]}</sup>` : '';
+    return `<span class="mc-score__c${won ? ' w' : ''}">${st[who]}${tb}</span>`;
   }).join('');
-  const padN = Math.max(0, (Number(cols) || 0) - sets.length);
-  const pad = '<span class="mc-sets__g mc-sets__g--pad"></span>'.repeat(padN);
-  return `<span class="mc-sets"><span class="mc-sets__total ${isW ? 'w' : 'l'}">${total}</span>${games}${pad}</span>`;
+  return `<span class="mc-score"><span class="mc-score__won ${isW ? 'w' : 'l'}">${total ?? '—'}</span>`
+    + `<span class="mc-score__div"></span><span class="mc-score__cells">${cells}</span></span>`;
 }
 // Terminal-state cell for the set-cluster slot.
 //
@@ -8553,7 +8469,7 @@ function mcTermCell(m, who, cols){
   // on BOTH rows. The RETIRED / WALKOVER chip is carried by the card header in every case
   // (see termChip in the card builder), so it must NOT also be emitted here — doing both
   // is what would print the chip twice on a walkover.
-  return `<span class="mc-sets mc-sets--term"></span>`;
+  return `<span class="mc-score mc-score--term"></span>`;
 }
 // Signed percentage move of a price from open→close, as the odds journey and the
 // day-summary "Biggest move" panel both display it: pct = round((close/open − 1)×100),
@@ -8674,69 +8590,22 @@ function mcDriftCell(open, now, anchorOnly, opts){
 // So: per-leg titles, each carrying its own price and its own clock, and a
 // dashed leg carries none. Identical treatment to mcDriftCell.
 function mcJourney(open, close, anchorOnly, opts){
+  // TEN-377 README §7: the price-journey bar is REMOVED. One 4-track grid (38 · 14 · 42 · 44):
+  // Open (mono 13, --text-label) · "→" · Close (mono 15/700, --text) · Move (signed %). Kept from
+  // the journey: a dash, never a blank, for a missing leg; per-leg titles (a dash carries none);
+  // NO Move for an older close (TEN-253 ruling 2 — shown muted, never measured), a vendor-pinned
+  // open (TEN-198 anchorOnly) or a missing leg. A genuine 0% move reads "0%", uncoloured.
   const o = opts || {};
   const ot = open  != null ? mcTitleAttr(typeof o.openTitle  === 'function' ? o.openTitle()  : o.openTitle)  : '';
   const ct = close != null ? mcTitleAttr(typeof o.closeTitle === 'function' ? o.closeTitle() : o.closeTitle) : '';
-  if (open == null && close == null){
-    // No title anywhere: naming a book on a card showing neither price is the
-    // purest form of the label ruling 2 removes.
-    return `<span class="mc-journey mc-journey--noopen">`
-      + `<span class="mc-journey__open mc-journey__nodata">—</span>`
-      + `<span class="mc-journey__lane"></span>`
-      + `<span class="mc-journey__close mc-journey__nodata">—</span>`
-      + `<span class="mc-journey__delta"></span></span>`;
+  const leg = (cls, v, t) => v != null ? `<span class="${cls}"${t}>${mxOddsTxt(v)}</span>` : `<span class="${cls} mc-px__nodata">—</span>`;
+  const older = close != null && o.closeOlder ? ' mx-close-older' : '';
+  let move = `<span class="mc-px__move"></span>`;
+  if (open != null && close != null && !o.closeOlder && !anchorOnly) {
+    const d = oddsPctDelta(open, close);
+    move = `<span class="mc-px__move${d.dir ? ' ' + d.dir : ''}">${d.text || '0%'}</span>`;
   }
-  // TEN-253 ruling 2 — an OLDER close (last seen > 60 min before the start) is
-  // shown, muted, and NEVER measured against the open: a move is a calculation,
-  // and "displayed older prices never feed a number".
-  if (open != null && close != null && o.closeOlder) {
-    return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
-      + `<span class="mc-journey__lane"></span>`
-      + `<span class="mc-journey__close mx-close-older"${ct}>${mxOddsTxt(close)}</span>`
-      + `<span class="mc-journey__delta"></span></span>`;
-  }
-  if (open != null && close != null && anchorOnly) {
-    return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
-      + `<span class="mc-journey__lane"></span>`
-      + `<span class="mc-journey__close"${ct}>${mxOddsTxt(close)}</span>`
-      + `<span class="mc-journey__delta"></span></span>`;
-  }
-  // §5 (PASS 4) — opening price missing (oddspapi tier blocked). An empty OPEN cell
-  // reads as broken, so render an em dash under OPEN ("no data", the design-system
-  // rule), keep the recorded close under CLOSE, and suppress the sparkline + delta.
-  // A fixed-width spacer replaces the track so CLOSE stays aligned with its header.
-  // When openingOdds land the em dash resolves on its own and the track/delta return.
-  // Missing OPEN: em dash in the OPEN cell, a thin neutral (empty) lane, close kept,
-  // no delta. Layout holds its fixed columns so CLOSE stays under its header.
-  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close${o.closeOlder ? ' mx-close-older' : ''}"${ct}>${mxOddsTxt(close)}</span><span class="mc-journey__delta"></span></span>`;
-  // TEN-225 — a recorded Open with no Close now keeps its CLOSE cell and dashes
-  // in it. The old shape emitted the open alone, which collapsed the row and
-  // left nothing under the CLOSE header: a blank, not a dash.
-  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span><span class="mc-journey__lane"></span><span class="mc-journey__close mc-journey__nodata">—</span><span class="mc-journey__delta"></span></span>`;
-  // §2/§6 SETTLED (founder review 2026-08-08) — the odds journey is ONE object:
-  //   open (40px) · direction bar (64px lane) · close (44px) · delta (44px, inline).
-  // The BAR LENGTH encodes the move size — width ∝ |delta%|, per the export exactly
-  // |delta%| × 2.2, clamped to a 10–56px bar inside the 64px lane (a small move is a
-  // short bar, a big move a long one). A 0% move still shows the 10px minimum so the
-  // lane never reads empty. The delta is a signed PERCENTAGE (close/open − 1), inline
-  // to the right of the close — NOT stacked on a second line. Direction drives colour
-  // on both the bar and the delta (.pos=drifted green / .neg=shortened red).
-  const d = oddsPctDelta(open, close);   // both legs present from here down
-  // TEN-179 q1 — the lane narrowed from 64px to 28px to make the Completed card fit
-  // two-up, so the bar's scale is rescaled by the SAME factor (28/64 = 0.4375) rather
-  // than re-invented: the export's "|delta%| x 2.2, clamped 10-56px in a 64px lane"
-  // becomes "|delta%| x 0.96, clamped 4-24px in a 28px lane". The encoding (bar length
-  // proportional to move size, a floor so a 0% move still reads) is unchanged.
-  const barW = Math.max(4, Math.min(24, Math.round(Math.abs(d.pct) * 0.96)));
-  const delta = d.pct !== 0
-    ? `<span class="mc-journey__delta ${d.dir}">${d.text}</span>`
-    : `<span class="mc-journey__delta"></span>`;
-  return `<span class="mc-journey ${d.dir}">`
-    + `<span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
-    + `<span class="mc-journey__lane"><span class="mc-journey__bar" style="width:${barW}px"></span></span>`
-    + `<span class="mc-journey__close"${ct}>${mxOddsTxt(close)}</span>`
-    + delta
-    + `</span>`;
+  return `<span class="mc-px">${leg('mc-px__open', open, ot)}<span class="mc-px__arr">→</span>${leg('mc-px__close' + older, close, ct)}${move}</span>`;
 }
 // Market Signal panel — expands IN PLACE beneath the card (review item 1), never
 // navigates to the Edge page. SHARP ESTIMATES (the sharp book's de-vigged split +
@@ -8761,8 +8630,15 @@ function mcSigPanel(m){
     const bPct = 100 - aPct;
     return `<div class="mc-sig-row"><span class="mc-sig-src"><span class="mc-sig-dotm"></span>${label}</span><span class="mc-sig-fav">${aPct}%</span><span class="mc-sig-bar"><span class="mc-sig-bar__fill" style="width:${aPct}%"></span><span class="mc-sig-bar__dog" style="width:${bPct}%"></span></span><span class="mc-sig-dog">${bPct}%</span>${liqCell}</div>`;
   };
+  const head = `<div class="mc-sig-head"><span class="mc-sig-pa">${pa}</span><span class="mc-sig-vs">vs</span><span class="mc-sig-pb">${pb}</span></div>`;
+  const note = `<div class="mc-sig-note">${pinA != null ? book + ' split is live from this card’s bound odds.' : 'No bound odds for this match.'} Stennisfy model %, Polymarket &amp; Kalshi flow and liquidity aren’t wired to this card’s data source yet — shown as “—”, never invented.</div>`;
+  // TEN-377 README §7: the Completed "final" drawer is ONE flat list (same rows), no groups and
+  // no liquidity column.
+  if (m.finalScore) {
+    return `<div class="mc-sigpanel">${head}<div class="mc-sig-group">${row(book, pinA, false)}${row('Stennisfy', null, false)}${row('Polymarket', null, false)}${row('Kalshi', null, false)}</div>${note}</div>`;
+  }
   return `<div class="mc-sigpanel">
-      <div class="mc-sig-head"><span class="mc-sig-pa">${pa}</span><span class="mc-sig-vs">vs</span><span class="mc-sig-pb">${pb}</span></div>
+      ${head}
       <div class="mc-sig-group">
         <div class="mc-sig-grouprow"><span class="mc-sig-grouplabel">Sharp estimates</span></div>
         ${row(book, pinA, false)}
@@ -8773,7 +8649,7 @@ function mcSigPanel(m){
         ${row('Polymarket', null, true)}
         ${row('Kalshi', null, true)}
       </div>
-      <div class="mc-sig-note">${pinA != null ? book + ' split is live from this card’s bound odds.' : 'No bound odds for this match.'} Stennisfy model %, Polymarket &amp; Kalshi flow and liquidity aren’t wired to this card’s data source yet — shown as “—”, never invented.</div>
+      ${note}
     </div>`;
 }
 
@@ -9062,22 +8938,47 @@ function mxToggleDriftSort(keepFocus){
   }
 }
 
-// §4 (Batch B) — the one-tournament context bar. Shows only in Results when exactly
-// one tournament chip is active: "Showing X · N of M settled · full breakdown →".
-// N/M are counted within the active day bucket so they track the visible day tab.
-function renderContextBar(){
-  const bar = document.getElementById('mcContextBar');
-  if (!bar) return;
-  const single = (state.view === 'completed' && state.tournaments.size === 1)
-    ? [...state.tournaments][0] : null;
-  if (!single){ bar.hidden = true; bar.innerHTML = ''; return; }
-  const dayMatches = matches.filter(m => m.tour === single && matchDayBucket(m) === state.day);
-  const M = dayMatches.length;
-  const N = dayMatches.filter(isFinishedMatch).length;
-  const safe = single.replace(/</g, '&lt;');
-  bar.hidden = false;
-  bar.innerHTML = `Showing <strong>${safe}</strong> <span class="mc-ctx-sep">·</span> ${N} of ${M} settled`
-    + `<button class="mc-ctx-link" id="mcCtxLink" type="button">See the full tournament breakdown →</button>`;
+// TEN-377 README §2 — the header card's four stats, over the SAME list the board renders.
+// Upcoming: Matches · Tournaments · Books · Updated. Completed (reference): Settled · Tournaments ·
+// Upsets · Updated. Books = distinct bookmakers priced on those cards (card book, Now and Open
+// books), one key per mxBookLabel so "Pncl" and "Pinnacle" are one book. Updated = the newest odds
+// observation on the board (mxOddsUpdatedAt), HH:MM; none → "—". A count of 0 is a real 0.
+function mcUpsetRows(list){
+  const rows = [];
+  list.forEach(m => {
+    const fs = m.finalScore; if (!fs) return;
+    const w = fs.winner, l = w === 'p1' ? 'p2' : 'p1';
+    const wc = _mcPinCloseDerivedOf(m, w), lc = _mcPinCloseDerivedOf(m, l);
+    if (wc == null || lc == null || wc <= lc) return;
+    rows.push({ winner: w === 'p1' ? m.p1 : m.p2, loser: l === 'p1' ? m.p1 : m.p2, price: wc });
+  });
+  return rows.sort((a, b) => b.price - a.price);
+}
+function mcBoardBooks(list){
+  const keys = new Set();
+  const add = b => { if (!b) return; const k = String(mxBookLabel(b)).toLowerCase().replace(/[^a-z0-9]/g, ''); if (k) keys.add(k); };
+  list.forEach(m => {
+    Object.keys(m.bookNow || {}).forEach(add);
+    Object.keys(m.bookOpens || {}).forEach(add);
+    add(m.odds && m.odds.bookmaker);
+    try { add((_mcNowPair(m) || {}).book); } catch (e) {}
+    try { add((_ocsOf(m) || {}).book); } catch (e) {}
+  });
+  return keys.size;
+}
+function mcRenderHeaderStats(list){
+  const el = document.getElementById('mxHeaderStats');
+  if (!el) return;
+  const completed = state.view === 'completed';
+  const shown = completed ? list.filter(m => m.finalScore) : list;
+  const tours = new Set(shown.map(m => m.tour).filter(Boolean)).size;
+  const up = mxOddsUpdatedAt();
+  const hhmm = up != null ? new Intl.DateTimeFormat('en-GB', { timeZone: (typeof newsTz === 'function' && newsTz()) || undefined,
+    hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(up)).replace(/^24/, '00') : '—';
+  const stats = completed
+    ? [['Settled', shown.length], ['Tournaments', tours], ['Upsets', mcUpsetRows(shown).length], ['Updated', hhmm]]
+    : [['Matches', shown.length], ['Tournaments', tours], ['Books', mcBoardBooks(shown)], ['Updated', hhmm]];
+  el.innerHTML = stats.map(([l, v]) => `<div class="mx-hstat"><span class="mx-hstat__l">${l}</span><span class="mx-hstat__v">${v}</span></div>`).join('');
 }
 function renderMatches(){
   updateMatchesHeaderChrome();
@@ -9085,13 +8986,13 @@ function renderMatches(){
   // effective (post-snap) state.day — this also covers day-tab clicks, whose handler
   // only calls renderMatches. buildTournamentFilters preserves the current selection.
   buildTournamentFilters();
-  renderContextBar();
   const list = document.getElementById('matchlist');
   // §3 (PASS 3): the summary strip lives in its own slot above the date strip, not
   // inside the card list. Clear it every render; the completed branch below refills.
   const summarySlot = document.getElementById('mcSummaryStrip');
   if (summarySlot) summarySlot.innerHTML = '';
   const filtered = getFiltered();
+  mcRenderHeaderStats(filtered);
   if (filtered.length === 0){
     if (crossDateSearch()){
       // TEN-95: cross-date search only reaches the loaded payload window, so a bare "no
@@ -9540,7 +9441,7 @@ function renderMatches(){
     // rendered under a header reading "Now" would be exactly the false label this
     // issue is about. `mcStarted` is computed once, above, beside mcDriftRight.
     const colHead = isCompleted
-      ? `<span class="mc-cmpl-head__odds"><span>Open</span><span class="sp"></span><span>Close</span></span>`
+      ? `<span class="mc-cmpl-head"><span>Open</span><span></span><span>Close</span><span>Move</span></span>`
       : mxDriftView()
         // TEN-225, founder 2026-09-19: a NON-FINISHED card's right-hand column is
         // "Now" in every case — upcoming and underway alike. The 4c relabel to
@@ -9651,16 +9552,9 @@ function renderMatches(){
       });
     });
 
-    // 2. Upsets — winner closed longer than the loser (was the underdog).
-    const upsetRows = [];
-    filtered.forEach(m => {
-      const fs = m.finalScore; if (!fs) return;
-      const w = fs.winner, l = w === 'p1' ? 'p2' : 'p1';
-      const wc = pinCloseOf(m, w), lc = pinCloseOf(m, l);
-      if (wc == null || lc == null || wc <= lc) return;
-      upsetRows.push({ winner: w === 'p1' ? m.p1 : m.p2, loser: l === 'p1' ? m.p1 : m.p2, price: wc });
-    });
-    upsetRows.sort((a, b) => b.price - a.price);
+    // 2. Upsets — winner closed longer than the loser (was the underdog). One rule, shared with
+    // the header's Upsets count (mcUpsetRows; TEN-377).
+    const upsetRows = mcUpsetRows(filtered);
 
     // 3. Value picks — the positive-edge side, graded for this day.
     let vpPicks = 0, vpWon = 0;
@@ -18757,13 +18651,6 @@ document.getElementById('tournamentGroup').addEventListener('click', e => {
   renderMatches();
 });
 document.getElementById('searchInput').addEventListener('input', e => { state.search = e.target.value; renderMatches(); });
-// §4 (Batch B) — context-bar link jumps to the full Tournaments page. The bar is
-// re-rendered each renderMatches, so the button is bound by delegation on its slot.
-document.getElementById('mcContextBar').addEventListener('click', e => {
-  if (!e.target.closest('#mcCtxLink')) return;
-  const t = document.querySelector('#mainNav button[data-tab="tournaments"]');
-  if (t) t.click();
-});
 // §9 (PASS 3) — custom sort dropdown: toggle on trigger, pick on option click
 // (disabled options are inert), close on outside click. Mirrors the surface dropdown.
 document.getElementById('sortBtn').addEventListener('click', e => {
@@ -33299,7 +33186,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* per element). Colours and hairlines only; layout is untouched.    */
   /* ================================================================= */
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */
-  [data-page="matches"] .mx-daytabs button.active{ color:var(--text); border-bottom-color:var(--text); }
+  [data-page="matches"] .mx-daytabs button.active{ border-bottom-color:var(--text); }
   [data-page="matches"] .mx-daytabs button.active .dbottom{ color:var(--text-label); }
   /* match card */
   [data-page="matches"] .match-card{ background:var(--card); border-color:transparent; box-shadow:var(--top-light); }
@@ -33310,7 +33197,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-msig, [data-page="matches"] .mc-msig.has-signal{ color:var(--text); }
   [data-page="matches"] .mc-msig .chev, [data-page="matches"] .mc-msig.has-signal .chev,
   [data-page="matches"] .match-card.sig-open .mc-msig .chev{ color:var(--text-label); }
-  [data-page="matches"] .mc-sigpanel{ background:var(--inner); border-top-color:var(--line); }
+  [data-page="matches"] .mc-sigpanel{ background:var(--card); border-top-color:var(--edge-6); }
   /* opened-on-top surfaces are fully solid popup over the backdrop */
   .modal-overlay{ background:var(--backdrop); backdrop-filter:blur(3px); }
   #ppSplitDrawer .ppsd-panel{ background:var(--card); }
@@ -33332,7 +33219,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mx-titlerow{ display:flex; align-items:flex-end; gap:28px; padding:22px 26px; background:var(--card);
     border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; }
   [data-page="matches"] .mx-h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; }
-  [data-page="matches"] .mx-subtitle{ margin:8px 0 0; font-size:13.5px; font-weight:400; line-height:1.55; max-width:640px; color:var(--text-soft); }
+  [data-page="matches"] .mx-subtitle{ margin:8px 0 0; font-size:13.5px; font-weight:400; line-height:1.55; max-width:520px; color:var(--text-soft); }
   [data-page="matches"] .mx-datastatus{ margin:9px 0 0; gap:0; font-size:12px; line-height:normal; width:fit-content; }
   [data-page="matches"] .mx-datastatus .mx-live-txt::after{ content:' '; white-space:pre; }
   [data-page="matches"] .mx-datastatus .mx-live-txt, [data-page="matches"] .mx-datastatus .mx-clock,
@@ -33341,13 +33228,19 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
 
   /* tab + date row */
   [data-page="matches"] .mx-daytabsrow{ gap:12px; }
-  [data-page="matches"] .mx-viewseg{ background:var(--card); border:1px solid var(--edge-6); border-radius:10px; padding:3px; gap:2px; }
+  [data-page="matches"] .mx-viewseg{ background:var(--card); border:1px solid var(--edge-6); border-radius:10px; padding:3px; gap:3px; }
   [data-page="matches"] .mx-viewseg button{ padding:7px 14px; border-radius:8px; border:1px solid transparent; font-size:12.5px; font-weight:600; color:var(--text-label); background:transparent; }
   [data-page="matches"] .mx-viewseg button:hover{ color:var(--text); }
   [data-page="matches"] .mx-viewseg button.active{ background:var(--inner); border:1px solid var(--edge-10); color:var(--text); font-weight:700; }
   [data-page="matches"] .mx-daytabs{ gap:4px; align-items:flex-end; }
-  [data-page="matches"] .mx-daytabs button{ flex-direction:row; align-items:center; gap:6px; padding:8px 14px 10px; margin:0; font-size:13.5px; font-weight:700;
-    line-height:normal; border-bottom-width:2px; }
+  [data-page="matches"] .mx-daytabs button{ flex-direction:row; align-items:center; gap:6px; padding:8px 12px 9px; margin:0; font-size:13.5px; font-weight:600;
+    line-height:normal; border-bottom-width:2px; color:var(--text-label); }
+  [data-page="matches"] .mx-daytabs button .dtop{ font-weight:inherit; color:inherit; }
+  [data-page="matches"] .mx-daytabs button:hover{ color:var(--text); }
+  [data-page="matches"] .mx-daytabs button.active{ font-weight:700; color:var(--text); }
+  /* README §3: ‹ › 30×30, radius 8, --inner, no edge, glyph 14px --text-label, hover --text */
+  [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; border-radius:8px; background:var(--inner); border:none; font-size:14px; color:var(--text-label); }
+  [data-page="matches"] .mx-daytabschevron:hover{ color:var(--text); }
   [data-page="matches"] .mx-daytabs button .dbottom:empty{ display:none; }
   /* every date tab reserves the 5px dot slot before its label (gap 6); Today's dot is blue-ring */
   [data-page="matches"] .mx-daytabs button:not(.mx-daypill)::before{ content:''; flex:none; width:5px; height:5px; border-radius:50%; background:transparent; }
@@ -33383,17 +33276,17 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
 
   /* match card */
   [data-page="matches"] .match-card{ border-radius:14px; border-width:1px; }
-  [data-page="matches"] .match-card .mc-head{ padding:11px 16px; gap:9px; border-bottom:1px solid var(--line); }
+  [data-page="matches"] .match-card .mc-head{ padding:11px 16px; gap:9px; border-bottom:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); }
   [data-page="matches"] .match-card .mc-surface{ font-size:11.5px; font-weight:700; color:var(--text-soft); }
   [data-page="matches"] .match-card .mc-tourn{ font-size:11px; font-weight:400; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-round{ font-family:var(--sf-font-mono); font-size:10.5px; font-weight:600; color:var(--text-label); background:var(--inner);
-    border:none; border-radius:5px; padding:2px 6px; }
+    border:1px solid transparent; border-radius:5px; padding:2px 6px; }
   [data-page="matches"] .match-card .mc-datetime{ font-family:var(--sf-font-mono); font-size:11.5px; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-colhead-inline{ margin-right:0; margin-left:auto; grid-template-columns:1px 104px 96px; gap:0 12px; }
   [data-page="matches"] .match-card .mc-colhead-inline::before{ content:''; }
   [data-page="matches"] .match-card .mc-colhead-inline .lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .mc-players.up .mc-row{ grid-template-columns:minmax(0,1fr) 1px 104px 96px; gap:0 12px; padding:11px 16px; }
-  [data-page="matches"] .mc-players.up .mc-row::before{ content:''; grid-column:2; grid-row:1; align-self:stretch; width:0; margin:-11px 0; border-left:1px solid var(--line); }
+  [data-page="matches"] .mc-players.up .mc-row::before{ content:''; grid-column:2; grid-row:1; align-self:stretch; width:0; margin:-11px 0; border-left:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); }
   [data-page="matches"] .mc-players.up .mc-row > .mc-id{ grid-column:1; grid-row:1; }
   [data-page="matches"] .mc-players.up .mc-row > .mc-oddswrap{ grid-column:3; grid-row:1; }
   [data-page="matches"] .mc-players.up .mc-row > .mc-form{ grid-column:4; grid-row:1; }
@@ -33403,25 +33296,98 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card .mc-av:not(.mc-avwrap .mc-av){ display:flex; align-items:center; justify-content:center; }
   [data-page="matches"] .match-card .mc-name{ font-size:14px; font-weight:700; }
   [data-page="matches"] .match-card .mc-nameline{ display:flex; align-items:center; gap:8px; min-width:0; }
-  /* name colour follows the FAV side (HANDOFF §3), not the row order */
-  [data-page="matches"] .mc-players.up .mc-row:has(.mc-fav-tag) .mc-name{ color:var(--text); }
-  [data-page="matches"] .mc-players.up .mc-row:not(:has(.mc-fav-tag)) .mc-name{ color:var(--text-soft); }
+  /* TEN-377 README §6: both names --text (the favourite is told by the FAV badge, not by colour) */
+  [data-page="matches"] .mc-players.up .mc-row .mc-name{ color:var(--text); }
   [data-page="matches"] .match-card .mc-fav-tag{ font-family:var(--font-words); font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; border-radius:5px; padding:2px 6px; border:none; }
-  [data-page="matches"] .match-card .mc-oddswrap{ gap:7px; justify-content:flex-end; }
+  /* README §6.1: the odds cell is the pop-up trigger — on hover it takes --inner (padding 4px 6px cancelled by margin) */
+  [data-page="matches"] .match-card .mc-oddswrap{ gap:7px; justify-content:flex-end; padding:4px 6px; margin:-4px -6px; border-radius:7px; transition:background .12s; }
+  [data-page="matches"] .match-card .mc-oddswrap:hover, [data-page="matches"] .match-card .mc-oddswrap.phb-on{ background:var(--inner); }
   [data-page="matches"] .match-card .mc-odds{ font-family:var(--sf-font-mono); font-size:19px; font-weight:800; }
   [data-page="matches"] .match-card .mc-implied{ font-family:var(--sf-font-mono); font-size:11px; font-weight:500; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-form{ justify-content:flex-end; gap:9px; }
   [data-page="matches"] .match-card .mc-form__track{ width:52px; height:6px; border-radius:4px; }
   [data-page="matches"] .match-card .mc-form__fill{ border-radius:4px; background:var(--bar); }
-  [data-page="matches"] .mc-players.up .mc-row:not(:has(.mc-fav-tag)) .mc-form__fill{ background:var(--bar-2); }
   [data-page="matches"] .match-card .mc-form__track{ background:var(--track); }
   [data-page="matches"] .match-card .mc-form__val{ font-family:var(--sf-font-mono); font-size:11.5px; font-weight:600; color:var(--text-label); min-width:30px; }
-  [data-page="matches"] .match-card .mc-foot{ padding:10px 16px; gap:12px; border-top:1px solid var(--line); }
-  [data-page="matches"] .match-card .mc-msig{ font-size:12.5px; font-weight:700; letter-spacing:0.06em; }
-  [data-page="matches"] .match-card .mc-msig .chev{ display:inline-block; font-size:11px; font-weight:400; color:var(--text-label); transition:transform .15s ease; }
+  [data-page="matches"] .match-card .mc-foot{ padding:10px 16px; gap:12px; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); }
+  [data-page="matches"] .match-card .mc-msig{ font-size:12.5px; font-weight:700; letter-spacing:0.02em; color:var(--text); }
+  [data-page="matches"] .match-card .mc-msig .chev{ display:inline-block; font-size:11px; font-weight:400; color:var(--text-label); transition:transform .16s ease; }
   [data-page="matches"] .match-card.sig-open .mc-msig .chev{ transform:rotate(180deg); }
   [data-page="matches"] .match-card .mc-analysis{ font-size:12.5px; font-weight:700; }
-  [data-page="matches"] .match-card .mc-sigpanel{ padding:12px 16px 14px; }
+  /* README §6 drawer: card tone on a white-6% rule */
+  [data-page="matches"] .match-card .mc-sigpanel{ padding:12px 16px 14px; background:var(--card); border-top:1px solid var(--edge-6); }
+  [data-page="matches"] .match-card .mc-sig-head{ margin-bottom:11px; }
+  [data-page="matches"] .match-card .mc-sig-pa, [data-page="matches"] .match-card .mc-sig-pb{ font-family:var(--font-words); font-size:12px; font-weight:700; color:var(--text); }
+  [data-page="matches"] .match-card .mc-sig-vs{ font-family:var(--font-nums); font-size:11px; font-weight:400; color:var(--text-label); }
+  [data-page="matches"] .match-card .mc-sig-group + .mc-sig-group{ border-top:1px solid var(--edge-6); margin-top:11px; padding-top:9px; }
+  [data-page="matches"] .match-card .mc-sig-dotm{ background:var(--text-label); }
+  [data-page="matches"] .match-card .mc-sig-bar{ background:var(--viz-track); }
+  [data-page="matches"] .match-card .mc-sig-bar__fill{ background:var(--viz-lead); }
+  [data-page="matches"] .match-card .mc-sig-bar__dog{ background:var(--viz-second); }
+  [data-page="matches"] .match-card .mc-sig-dog, [data-page="matches"] .match-card .mc-sig-liq{ color:var(--text-label); }
+
+  /* ── TEN-377 README §2: header stats (label above value, right) ── */
+  [data-page="matches"] .mx-titlerow > div:first-child{ flex:1; min-width:0; }
+  [data-page="matches"] .mx-hstats{ display:flex; gap:34px; flex:none; }
+  [data-page="matches"] .mx-hstats:empty{ display:none; }
+  [data-page="matches"] .mx-hstat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  [data-page="matches"] .mx-hstat__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; }   /* (override): Hanken caps, not the reference's mono 9.5 */
+  [data-page="matches"] .mx-hstat__v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); line-height:normal; font-variant-numeric:tabular-nums; }
+
+  /* ── TEN-377 README §7: Completed card ("2b Inset tile" rows, "7a" score, Open → Close · Move) ── */
+  [data-page="matches"] .match-card.cmpl:hover{ border-color:var(--edge-16); }
+  [data-page="matches"] .match-card.cmpl.sig-open{ border-color:var(--open-card); }
+  [data-page="matches"] .match-card.cmpl .mc-head{ padding:12px 18px 10px; border-bottom:none; }
+  [data-page="matches"] .match-card.cmpl .mc-surface{ font-weight:600; color:var(--text-soft); }   /* founder Q1: README, surfaces neutral */
+  [data-page="matches"] .match-card.cmpl .mc-tourn{ font-size:11.5px; }
+  [data-page="matches"] .match-card.cmpl .mc-round{ border:none; box-shadow:inset 0 0 0 1px var(--edge-10); color:var(--text); }
+  [data-page="matches"] .match-card.cmpl .mc-altdate-inl{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
+  [data-page="matches"] .mc-head .mc-cmpl-head{ margin-left:auto; margin-right:10px; flex:none; display:grid; grid-template-columns:38px 14px 42px 44px; gap:0 4px; }
+  [data-page="matches"] .mc-head .mc-cmpl-head span{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap; }
+  [data-page="matches"] .mc-head .mc-cmpl-head span:first-child, [data-page="matches"] .mc-head .mc-cmpl-head span:last-child{ text-align:right; }
+  [data-page="matches"] .mc-players.cmpl{ display:flex; flex-direction:column; gap:2px; padding:0 8px 8px; }
+  [data-page="matches"] .mc-players.cmpl .mc-row{ display:grid; grid-template-columns:minmax(0,1fr) auto 1px 150px; gap:0 12px; align-items:center; padding:10px; border-radius:10px; position:relative; }
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner{ background:color-mix(in srgb, var(--text) 3.5%, transparent); }
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner::before{ content:''; display:block; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background:color-mix(in srgb, var(--pos) 90%, transparent); }
+  [data-page="matches"] .mc-players.cmpl .mc-id{ grid-column:1; gap:11px; min-width:0; }
+  [data-page="matches"] .mc-players.cmpl .mc-avwrap, [data-page="matches"] .mc-players.cmpl .mc-av:not(.mc-avwrap .mc-av){ width:30px; height:30px; }
+  [data-page="matches"] .mc-players.cmpl .mc-avwrap{ grid-template-columns:28px; }
+  [data-page="matches"] .mc-players.cmpl .mc-avwrap .mc-av{ width:28px; height:28px; }
+  [data-page="matches"] .mc-players.cmpl .mc-name{ font-size:14px; line-height:normal; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-players.cmpl .mc-row.winner .mc-name{ font-weight:700; color:var(--text); }
+  [data-page="matches"] .mc-players.cmpl .mc-row:not(.winner) .mc-name{ font-weight:600; color:var(--text-label); }   /* loser grey, never red */
+  [data-page="matches"] .mc-score{ grid-column:2; display:flex; align-items:center; }
+  /* founder Q1: README 7a — winner white 9% + 10% inset edge, white number; loser white 4.5%, grey number, no edge */
+  [data-page="matches"] .mc-score__won{ width:26px; height:26px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:6px; font-family:var(--font-nums); font-size:14px; font-weight:700;
+    background:color-mix(in srgb, var(--text) 4.5%, transparent); color:var(--text-label); }
+  [data-page="matches"] .mc-score__won.w{ background:color-mix(in srgb, var(--text) 9%, transparent); box-shadow:inset 0 0 0 1px var(--edge-10); color:var(--text); }
+  [data-page="matches"] .mc-score__div{ width:1px; height:20px; margin:0 8px; flex:none; background:color-mix(in srgb, var(--text) 8%, transparent); }
+  [data-page="matches"] .mc-score__cells{ display:flex; gap:3px; }
+  [data-page="matches"] .mc-score__c{ position:relative; width:24px; height:24px; flex:none; display:flex; align-items:center; justify-content:center; border-radius:5px;
+    font-family:var(--font-nums); font-size:13.5px; font-weight:500; background:color-mix(in srgb, var(--text) 2.5%, transparent); color:var(--text-label); }
+  [data-page="matches"] .mc-score__c.w{ background:color-mix(in srgb, var(--text) 8%, transparent); color:var(--text); }
+  [data-page="matches"] .mc-score__c sup{ position:absolute; top:1px; right:1px; font-size:8px; line-height:8px; font-weight:500; vertical-align:baseline; }
+  [data-page="matches"] .mc-players.cmpl .mc-vdiv{ grid-column:3; align-self:stretch; width:1px; margin:0; background:none; border-left:1px solid var(--line); }
+  [data-page="matches"] .mc-px{ grid-column:4; display:grid; grid-template-columns:38px 14px 42px 44px; gap:0 4px; align-items:center; }
+  [data-page="matches"] .mc-px__open{ font-family:var(--font-nums); font-size:13px; font-weight:400; color:var(--text-label); text-align:right; }
+  /* founder Q2: hovering Open or Close opens the odds pop-up; the hovered price lights up in inner tone */
+  [data-page="matches"] .mc-px__open, [data-page="matches"] .mc-px__close{ padding:4px 6px; margin:-4px -6px; border-radius:7px; transition:background .12s; }
+  [data-page="matches"] .mc-px__open:hover, [data-page="matches"] .mc-px__close:hover,
+  [data-page="matches"] .mc-px__open.phb-on, [data-page="matches"] .mc-px__close.phb-on{ background:var(--inner); }
+  [data-page="matches"] .mc-px__arr{ font-family:var(--font-words); font-size:11px; color:var(--text-label); text-align:center; }
+  [data-page="matches"] .mc-px__close{ font-family:var(--font-nums); font-size:15px; font-weight:700; color:var(--text); }
+  [data-page="matches"] .mc-px__close.mx-close-older{ opacity:.45; font-weight:500; }   /* TEN-253 ruling 2: older close shown muted, no Move */
+  [data-page="matches"] .mc-px__nodata{ color:var(--text-label); font-weight:400; }
+  [data-page="matches"] .mc-px__move{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; color:var(--text-label); text-align:right; }
+  [data-page="matches"] .mc-px__move.pos{ color:var(--pos); }
+  [data-page="matches"] .mc-px__move.neg{ color:var(--neg); }
+  [data-page="matches"] .match-card.cmpl .mc-foot{ padding:11px 18px; border-top:1px solid var(--edge-6); }   /* founder Q1: README 6% */
+  [data-page="matches"] .match-card.cmpl .mc-msig .chev{ color:var(--text); }
+  [data-page="matches"] .match-card.cmpl .mc-analysis{ font-weight:600; }
+  [data-page="matches"] .match-card.cmpl .mc-sigpanel{ padding:13px 20px 15px; border-top:1px solid var(--edge-6); }
+  [data-page="matches"] .match-card.cmpl .mc-sig-src{ width:100px; color:var(--text-soft); }   /* founder Q1: book names soft on both cards */
+  [data-page="matches"] .match-card.cmpl .mc-sig-dog{ font-weight:400; }
+  [data-page="matches"] .match-card.cmpl .mc-sig-row::after{ display:none; }
 
   /* "3 Bets Today" promo */
   .mc-promo{ border-radius:12px; padding:13px 20px; border:1px solid transparent; box-shadow:var(--top-light); margin:0; gap:16px; min-height:0; }

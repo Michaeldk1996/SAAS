@@ -88,7 +88,7 @@ ours has none.
   decoration (T2). *Allowed:* functional masks (an overflow fade to transparent, e.g. profile chips) and greyscale
   patterns that mark small-sample / missing data (white ≤ 12% on the surface, no hue, e.g. the Playing Styles hatch).
   *Pending their page packages:* the court-speed scales (Tournament tab + Tournaments page → flat; Key factors' bar is
-  already flat white) and the price-journey bar on match cards (Today's Matches → flat bars per the bar rule). The glow: on `<html>` only — behind sidebar + content, scrolling with
+  already flat white). The price-journey bar on match cards is removed (TEN-377). The glow: on `<html>` only — behind sidebar + content, scrolling with
   the page, same geometry at every width — never on a card, modal or the sidebar panel (`body` is transparent). Geometry
   is the reference's (1500×640 at 720px −120px; pixel-identical night + day).
   **The backdrop covers the content area only (R6.5):** every scrim starts at `--sf-side` (the sidebar's 252px) and is

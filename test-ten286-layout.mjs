@@ -79,10 +79,10 @@ const SPEC = [
   [`${M}.tabpage.active`, 'padding', '30px 40px 70px'], [`${M}.tabpage.active`, 'gap', '22px'], [`${M}.tabpage.active`, 'line-height', 'normal'],
   [`${M} .mx-titlerow`, 'padding', '22px 26px'], [`${M} .mx-titlerow`, 'border-radius', '12px'], [`${M} .mx-titlerow`, 'gap', '28px'],
   [`${M} .mx-h1`, 'font-size', '29px'], [`${M} .mx-h1`, 'font-weight', '800'], [`${M} .mx-h1`, 'letter-spacing', '-0.015em'],
-  [`${M} .mx-subtitle`, 'font-size', '13.5px'], [`${M} .mx-subtitle`, 'line-height', '1.55'], [`${M} .mx-subtitle`, 'max-width', '640px'],   // foundation: header-card subtitles max 640
+  [`${M} .mx-subtitle`, 'font-size', '13.5px'], [`${M} .mx-subtitle`, 'line-height', '1.55'], [`${M} .mx-subtitle`, 'max-width', '520px'],   // TEN-377 README §2 + OFFICIAL VERSION 1: subtitle max 520
   [`${M} .mx-daytabsrow`, 'gap', '12px'], [`${M} .mx-viewseg button`, 'padding', '7px 14px'],
-  [`${M} .mx-daytabschevron`, 'width', '30px'], [`${M} .mx-daytabschevron`, 'font-size', '16px'],
-  [`${M} .mx-daytabs`, 'gap', '4px'], [`${M} .mx-daytabs button`, 'padding', '8px 14px 10px'], [`${M} .mx-daytabs button`, 'gap', '6px'],
+  [`${M} .mx-daytabschevron`, 'width', '30px'], [`${M} .mx-daytabschevron`, 'font-size', '14px'], [`${M} .mx-daytabschevron`, 'background', 'var(--inner)'],   // TEN-377 README §3
+  [`${M} .mx-daytabs`, 'gap', '4px'], [`${M} .mx-daytabs button`, 'padding', '8px 12px 9px'], [`${M} .mx-daytabs button`, 'font-weight', '600'],   // TEN-377 README §3: idle 600, selected 700 [`${M} .mx-daytabs button`, 'gap', '6px'],
   [`${M} .mx-daytabs button`, 'margin', '0'], [`${M} .mx-daytabs button:not(.mx-daypill)::before`, 'width', '5px'],
   [`${M} .mx-daytabs button::before`, 'display', 'none'],   // README §5.2: plain date rail, no Today dot (was the blue-ring dot)
   [`${M} .mc-story`, 'padding', '15px 19px'], [`${M} .mc-story`, 'gap', '8px'], [`${M} .mc-story__lbl`, 'font-size', '10.5px'],
@@ -97,7 +97,7 @@ const SPEC = [
   [`${M} .match-card .mc-name`, 'font-size', '14px'], [`${M} .match-card .mc-odds`, 'font-size', '19px'], [`${M} .match-card .mc-odds`, 'font-weight', '800'],
   [`${M} .match-card .mc-form__track`, 'width', '52px'], [`${M} .match-card .mc-form__track`, 'height', '6px'], [`${M} .match-card .mc-form`, 'gap', '9px'],
   [`${M} .match-card .mc-foot`, 'padding', '10px 16px'], [`${M} .match-card .mc-foot`, 'gap', '12px'],
-  [`${M} .match-card .mc-msig`, 'letter-spacing', '0.06em'], [`${M} .match-card .mc-msig .chev`, 'font-size', '11px'],
+  [`${M} .match-card .mc-msig`, 'letter-spacing', '0.02em'],   // TEN-377: reference 0.25px at 12.5px [`${M} .match-card .mc-msig .chev`, 'font-size', '11px'],
   [`${M} .match-card.sig-open .mc-msig .chev`, 'transform', 'rotate(180deg)'],
   [`${M} .mc-sig-src`, 'width', '76px'], [`${M} .mc-sig-liq`, 'width', '72px'], [`${M} .mc-sig-bar__dog`, 'background', 'var(--bar-2)'],
   [`${M} .mc-sig-group + .mc-sig-group`, 'border-top', '1px solid var(--line)'],

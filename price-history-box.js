@@ -1,15 +1,16 @@
-/* TEN-270 item 6 — the price-history box (founder 2026-09-24, rulings answered).
- *
- * One box, opened from a player's price on a match card (hover; tap on touch
- * devices). Replaces the old one-line native tooltip. Layout, top to bottom:
- *   header   the card's book, "● live" only while the stream is connected and
- *            writing for this card, otherwise "last updated [time]"
- *   Closing odds (completed cards only) — the Pinnacle close (m.pinClose) named by its source (TEN-295)
- *   changes  newest first: DD.MM. HH:MM · price · change vs the previous price,
- *            coloured with the "Biggest market move" classes (.mc-drift.pos up,
- *            .neg down); gap rows ("no data from–to") where a recorder was down
- *   "History recorded from …" when the recorded history starts after the Open
- *   Opening odds — the card's existing Open (first sighting wins), with book
+/* TEN-270 item 6 — the price-history box; TEN-377 README §6.1 — its "Odds movement" layout
+ * (design 1a, OFFICIAL VERSION 1). Opened by hovering a player's price (tap on touch devices):
+ * the price on an Upcoming card, the Open or Close on a Completed card (founder TEN-377 Q2).
+ * Layout, top to bottom:
+ *   row 1    "Odds movement" (caps) · the card's book
+ *   row 2    open → now (Completed: open → the book's close) · change % (signed, true minus) · "N moves"
+ *            Completed: "Pinnacle close 1.84" (TEN-295) on one mono line under it
+ *            one grey note line (founder Q3): "Updated 14:05 · bet365 · refreshed every 15 min ·
+ *            recorded from 28 Sep" — no status dot
+ *   ledger   newest first, scrolls (max 236px): DD.MM. HH:MM · price · move vs the previous
+ *            price, signed 3 dp (+0.014 / −0.002, ±0.000), --pos / --neg; the latest row is
+ *            washed; gap rows ("no data from – to") where a recorder was down
+ *   Opening  pinned under the ledger: the card's existing Open (first sighting wins) + its time
  *
  * Never interpolates: a row is shown only for a recorded price; a missing value
  * is a dash. History loads on open, for that one card only (price_history RPC),
@@ -22,7 +23,7 @@
   const GAP_MIN_S = 120;             // stream: rows exist only for gaps over the queue TTL
   const HIST_TOLERANCE_MS = 5 * 60e3; // one sweep interval: "recorded from" only past this
 
-  function ms(v) { const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; }
+  function ms(v) { if (typeof v === 'number') return isFinite(v) ? v : null; const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; }
 
   // RPC payload -> this player's rows [{at, price}], one timeline, deduped on
   // (Kibl time, price); poller sides are named via the fixture's player names.
@@ -95,6 +96,17 @@
     return out;
   }
 
+  // Row 2's "now": the newest real price — the card face's price, unless the recorded history
+  // holds a later tick (the card face can lag the recorder), in which case that tick.
+  function nowOf(card, ch) {
+    const last = ch.length ? ch[ch.length - 1] : null;
+    // Completed: the book's close — the card state's, unless a later pre-start tick is recorded
+    // (rows are already cut at the start), so row 2 always equals the closing tick on top.
+    const face = card.completed ? card.bookClose : card.now;
+    const faceAt = ms(card.completed ? card.updatedAt : card.nowAt);
+    if (last && (face == null || faceAt == null || last.at > faceAt)) return last.price;
+    return face != null ? face : null;
+  }
   // The box model. `card` = { book, open:{price, at}, close:{price, at}|null,
   // completed, live, updatedAt }; `rows` = this side's recorded rows (asc).
   function model(card, rows, gaps) {
@@ -125,10 +137,13 @@
     const recordedFrom = (first != null && openAt != null && first - openAt > HIST_TOLERANCE_MS) ? first : null;
     const rowsDesc = [...items, ...gaps].sort((a, b) => (b.at ?? b.to) - (a.at ?? a.to));
     return {
-      book: card.book, live: !!card.live, updatedAt: card.updatedAt ?? null,
+      // "Updated" = the newest clock we hold: the card state's, or a later recorded tick.
+      book: card.book, live: !!card.live,
+      updatedAt: (ch.length && (ms(card.updatedAt) == null || ch[ch.length - 1].at > ms(card.updatedAt))) ? ch[ch.length - 1].at : (card.updatedAt ?? null),
       close: card.completed ? (card.close || null) : null,
       rows: rowsDesc, recordedFrom, open: card.open || null, historyAvailable: !!card.historyAvailable,
       note: card.note || null, emptyNote: card.emptyNote || null,
+      now: nowOf(card, ch), completed: !!card.completed,
     };
   }
 
@@ -143,52 +158,90 @@
                          .formatToParts(d)) parts[p.type] = p.value;
     return `${parts.day}.${parts.month}. ${parts.hour === '24' ? '00' : parts.hour}:${parts.minute}`;
   }
+  function fmtParts(t, o) {
+    const parts = {};
+    for (const p of new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: tzOf() }, o)).formatToParts(new Date(t))) parts[p.type] = p.value;
+    return parts;
+  }
+  function fmtHM(t) {
+    if (t == null) return '—';
+    const p = fmtParts(t, { hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${p.hour === '24' ? '00' : p.hour}:${p.minute}`;
+  }
+  function fmtDay(t) {
+    if (t == null) return '—';
+    const p = fmtParts(t, { day: 'numeric', month: 'numeric' });   // "28 Sep" (en-GB would print "Sept")
+    return `${p.day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(p.month) - 1]}`;
+  }
   function fmtPrice(p) {
     if (p == null || !isFinite(p)) return '—';
     return (typeof mxOddsTxt === 'function') ? mxOddsTxt(p) : Number(p).toFixed(2);
   }
+  // README §6.1: a move is signed to 3 dp with a TRUE minus; no change is ±0.000.
   function fmtDelta(d) {
-    if (d == null || d === 0) return '';
-    const s = Math.abs(d).toFixed(Math.abs(d) < 0.1 && Math.round(Math.abs(d) * 1000) % 10 ? 3 : 2);
-    return (d > 0 ? '+' : '−') + s;
+    if (d == null) return '';
+    if (d === 0) return '±0.000';
+    return (d > 0 ? '+' : '−') + Math.abs(d).toFixed(3);
+  }
+  // Open → now as a signed percentage, one decimal (README §6.1 "change %").
+  function fmtPct(open, now) {
+    if (open == null || now == null || !(open > 0)) return null;
+    const v = Math.round((now / open - 1) * 1000) / 10;
+    return { text: (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%', dir: v > 0 ? 'pos' : v < 0 ? 'neg' : '' };
   }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  function html(mdl) {
+  // `state` (optional): 'loading' | 'failed' | 'notyet' — the ledger says so and no move count
+  // is shown (a count is only stated for history that was actually read).
+  function html(mdl, state) {
     const book = esc(mdl.book || '—');
-    const head = mdl.live ? `<span class="phb-live">● live</span>`
-               : `<span class="phb-upd">last updated ${esc(fmtWhen(mdl.updatedAt))}</span>`;
-    let h = `<div class="phb-head"><span class="phb-book">${book}</span>${head}</div>`;
-    if (mdl.note) h += `<div class="phb-note phb-src">${esc(mdl.note)}</div>`;
-    if (mdl.close) {
-      h += `<div class="phb-sec">Closing odds${mdl.close.source ? ' · ' + esc(mdl.close.source) : ''}</div>`
-         + `<div class="phb-row"><span class="phb-when">${esc(fmtWhen(ms(mdl.close.at)))}</span>`
-         + `<b class="phb-px">${esc(fmtPrice(mdl.close.price))}</b><span class="phb-d"></span></div>`;
+    const op = mdl.open && mdl.open.price != null ? mdl.open.price : null;
+    const now = mdl.now != null ? mdl.now : null;
+    const pct = fmtPct(op, now);
+    const moves = mdl.rows.filter(r => !r.gap).length;
+    const counted = mdl.historyAvailable && !state;
+    const mono = t => `<span class="phb-mono">${esc(t)}</span>`;
+    let h = `<div class="phb-r1"><span class="phb-cap">Odds movement</span><span class="phb-book">${book}</span></div>`;
+    h += `<div class="phb-hd"><div class="phb-r2"><span class="phb-open">${esc(fmtPrice(op))}</span><span class="phb-arr">→</span>`
+       + `<b class="phb-now">${esc(fmtPrice(now))}</b>`
+       + (pct ? `<span class="phb-pct${pct.dir ? ' ' + pct.dir : ''}">${pct.text}</span>` : '')
+       + (counted ? `<span class="phb-n">${moves} move${moves === 1 ? '' : 's'}</span>` : '') + `</div>`;
+    // TEN-295 / founder Q2: Completed carries Pinnacle's close as one mono line (dash when none).
+    if (mdl.completed) h += `<div class="phb-pin">Pinnacle close <b>${esc(fmtPrice(mdl.close ? mdl.close.price : null))}</b></div>`;
+    const notes = [];
+    if (mdl.updatedAt != null && ms(mdl.updatedAt) != null) notes.push(`Updated ${mono(fmtHM(ms(mdl.updatedAt)))}`);
+    if (mdl.note) notes.push(esc(mdl.note));
+    if (mdl.recordedFrom != null) notes.push(`recorded from ${mono(fmtDay(mdl.recordedFrom))}`);
+    if (notes.length) h += `<div class="phb-src">${notes.join(' · ')}</div>`;
+    h += `</div><div class="phb-list">`;
+    const say = t => `<div class="phb-note">${esc(t)}</div>`;
+    if (!mdl.historyAvailable) h += say('No price history for this book');
+    else if (state === 'loading') h += say('Loading price history…');
+    else if (state === 'failed') h += say('Price history unavailable');
+    else if (state === 'notyet') h += say('No price history yet');
+    else {
+      if (!mdl.rows.length) h += say(mdl.emptyNote || 'No price change recorded');
+      let first = true;
+      for (const r of mdl.rows) {
+        if (r.gap) { h += `<div class="phb-gap">No data ${mono(fmtWhen(r.from) + ' – ' + fmtWhen(r.to))}</div>`; continue; }
+        const cls = r.delta == null || r.delta === 0 ? '' : (r.delta > 0 ? ' pos' : ' neg');
+        h += `<div class="phb-row${first ? ' phb-latest' : ''}"><span class="phb-when">${esc(fmtWhen(r.at))}</span>`
+           + `<b class="phb-px">${esc(fmtPrice(r.price))}</b>`
+           + `<span class="phb-d${cls}">${esc(fmtDelta(r.delta))}</span></div>`;
+        first = false;
+      }
     }
-    h += `<div class="phb-list">`;
-    if (!mdl.historyAvailable) h += `<div class="phb-note">history not recorded for this book</div>`;
-    else if (!mdl.rows.length) h += `<div class="phb-note">${esc(mdl.emptyNote || 'no price change recorded')}</div>`;
-    for (const r of mdl.rows) {
-      if (r.gap) { h += `<div class="phb-gap">no data ${esc(fmtWhen(r.from))} – ${esc(fmtWhen(r.to))}</div>`; continue; }
-      const cls = r.delta == null || r.delta === 0 ? '' : (r.delta > 0 ? ' pos' : ' neg');
-      h += `<div class="phb-row"><span class="phb-when">${esc(fmtWhen(r.at))}</span>`
-         + `<b class="phb-px">${esc(fmtPrice(r.price))}</b>`
-         + `<span class="phb-d mc-drift${cls}">${esc(fmtDelta(r.delta))}</span></div>`;
-    }
-    if (mdl.recordedFrom != null) h += `<div class="phb-note">history recorded from ${esc(fmtWhen(mdl.recordedFrom))}</div>`;
     h += `</div>`;
-    if (mdl.open) {
-      h += `<div class="phb-sec">Opening odds</div>`
-         + `<div class="phb-row"><span class="phb-when">${esc(fmtWhen(ms(mdl.open.at)))}</span>`
-         + `<b class="phb-px">${esc(fmtPrice(mdl.open.price))}</b><span class="phb-d phb-book2">${book}</span></div>`;
-    }
+    if (mdl.open) h += `<div class="phb-opening"><span class="phb-when"><span class="phb-cap">Opening</span><span>${esc(fmtWhen(ms(mdl.open.at)))}</span></span>`
+                     + `<b class="phb-px">${esc(fmtPrice(op))}</b><span></span></div>`;
     return h;
   }
 
   // ── page wiring ───────────────────────────────────────────────────────────
   // A price cell on a match card -> (card, side). The row class says the side:
   // .mc-row.a is p1, .mc-row.b is p2.
-  const PRICE_SEL = '.mc-drifted__open, .mc-drifted__now, .mc-oddswrap, .mc-journey__open, .mc-journey__close';
+  // Upcoming: the price; Completed: the Open or the Close (founder TEN-377 Q2).
+  const PRICE_SEL = '.mc-drifted__open, .mc-drifted__now, .mc-oddswrap, .mc-px__open, .mc-px__close';
   const cache = new Map();           // card_key -> {at, p}: Promise<payload|null>
   const CACHE_TTL_MS = 60e3;         // a live price can move: re-read after a minute (review finding 3)
   const stats = { fetches: 0, bytes: [], opens: 0 };
@@ -266,14 +319,18 @@
     const upcoming = !completed && !m.live && (!isFinite(startMs) || Date.now() < startMs);
     const source = bk === 'bet105' ? 'rpc'
       : (bk === 'bet365' ? (upcoming ? 'shard' : (completed ? 'archive' : null)) : null);
-    return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt,
+    // The current price = the price the card face shows (same resolver), so row 2's "now"
+    // always equals the number that was hovered.
+    const now = pair && pair[who] != null && Number(pair[who]) >= 1.01 ? Number(pair[who]) : null;
+    const bookClose = completed && side && side.close != null && Number(side.close) >= 1.01 ? Number(side.close) : null;
+    return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
              // Founder 2026-09-25: completed bet365 cards carry the SAME source line as upcoming.
              note: (source === 'shard' || source === 'archive') ? BET365_NOTE : null };
   }
-  const BET365_NOTE = 'change times from bet365 · refreshed every 15 min';
-  const ARCHIVE_NO_START = 'start time unknown — history not shown';
+  const BET365_NOTE = 'bet365 · refreshed every 15 min';   // founder TEN-377 Q3 note-line wording
+  const ARCHIVE_NO_START = 'Start time unknown — history not shown';
 
   // A completed bet365 card from its bet365_history payload. `rpc()` resolves
   // the payload or null on failure. Returns { card, rows, failed }.
@@ -290,7 +347,7 @@
     return { card, rows: archiveRows(p, who) };
   }
 
-  let box = null, hideTimer = null, current = null;
+  let box = null, hideTimer = null, current = null, onCell = null;
   function ensureBox() {
     if (box) return box;
     box = document.createElement('div');
@@ -303,17 +360,28 @@
     box.addEventListener('mouseleave', () => scheduleHide());
     return box;
   }
+  // README §6.1: 312px wide, right edge 6px past the price's right edge; 8px BELOW the price,
+  // or 8px ABOVE it when less than 420px of viewport remains under it.
+  const BELOW_MIN_PX = 420, GAP_PX = 8, OVERHANG_PX = 6;
+  function placeAt(r, w, h, vw, vh) {
+    const left = Math.max(8, Math.min(r.right + OVERHANG_PX - w, vw - w - 8));
+    const below = vh - r.bottom >= BELOW_MIN_PX;
+    const top = below ? r.bottom + GAP_PX : Math.max(8, r.top - GAP_PX - h);
+    return { left, top, below };
+  }
   function place(target) {
     const r = target.getBoundingClientRect(), b = ensureBox();
     b.style.visibility = 'hidden'; b.hidden = false;
-    const w = b.offsetWidth, h = b.offsetHeight;
-    let left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8);
-    let top = r.bottom + 6;
-    if (top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
-    b.style.left = left + 'px'; b.style.top = top + 'px'; b.style.visibility = '';
+    const p = placeAt(r, b.offsetWidth, b.offsetHeight, innerWidth, innerHeight);
+    b.style.left = p.left + 'px'; b.style.top = p.top + 'px'; b.style.visibility = '';
+    b.dataset.at = p.below ? 'below' : 'above';
+    if (onCell && onCell !== target) onCell.classList.remove('phb-on');
+    onCell = target; target.classList.add('phb-on');
   }
-  function scheduleHide() { clearTimeout(hideTimer); hideTimer = setTimeout(hide, 250); }
-  function hide() { if (box) box.hidden = true; current = null; }
+  // Stays open while the pointer is over the price or the pop-up; closes 140 ms after leaving both.
+  const HIDE_MS = 140;
+  function scheduleHide() { clearTimeout(hideTimer); hideTimer = setTimeout(hide, HIDE_MS); }
+  function hide() { if (box) box.hidden = true; current = null; if (onCell) { onCell.classList.remove('phb-on'); onCell = null; } }
 
   async function open(target) {
     const el = target.closest('.match-card[data-id]'), row = target.closest('.mc-row');
@@ -326,7 +394,7 @@
     const card = cardData(m, who);
     const b = ensureBox();
     b.dataset.card = el.dataset.id; b.dataset.side = who;
-    b.innerHTML = html(model(card, [], [])).replace('no price change recorded', 'loading history…');
+    b.innerHTML = html(model(card, [], []), 'loading');
     place(target);
     if (!card.historyAvailable) { b.innerHTML = html(model(card, [], [])); place(target); return; }
     let payload = null, shard = null;
@@ -347,9 +415,7 @@
       if (!target) { hide(); return; }
     }
     if (arch) {
-      b.innerHTML = arch.failed
-        ? html(model(arch.card, [], [])).replace('no price change recorded', 'history unavailable — try again')
-        : html(model(arch.card, arch.rows, []));
+      b.innerHTML = arch.failed ? html(model(arch.card, [], []), 'failed') : html(model(arch.card, arch.rows, []));
       place(target);
       return;
     }
@@ -360,10 +426,7 @@
       const rows = shard && shard.om ? shardRows(shard.om, who) : [];
       const hasSeries = !!(shard && shard.om && shard.om.books && shard.om.books.bet365
                            && Array.isArray(shard.om.books.bet365[who]));
-      let h = html(model(card, rows, []));
-      if (!shard) h = h.replace('no price change recorded', 'history unavailable — try again');
-      else if (!hasSeries) h = h.replace('no price change recorded', 'history not recorded yet');
-      b.innerHTML = h;
+      b.innerHTML = html(model(card, rows, []), !shard ? 'failed' : (!hasSeries ? 'notyet' : undefined));
       place(target);
       return;
     }
@@ -374,8 +437,7 @@
     const gaps = gapRows(payload, rows.length ? rows[0].at : null,
                          endAt != null ? endAt : (rows.length ? rows[rows.length - 1].at : null));
     b.innerHTML = payload ? html(model(card, rows, gaps))
-                          : html(model(Object.assign({}, card, { historyAvailable: true }), [], []))
-                              .replace('no price change recorded', 'history unavailable — try again');
+                          : html(model(Object.assign({}, card, { historyAvailable: true }), [], []), 'failed');
     place(target);
   }
 
@@ -387,7 +449,8 @@
       const t = e.target && e.target.closest && e.target.closest(PRICE_SEL);
       if (!t) return;
       clearTimeout(hideTimer); clearTimeout(hoverTimer);
-      hoverTimer = setTimeout(() => open(t), 150);
+      if (onCell === t && box && !box.hidden) return;   // still on the open price
+      hoverTimer = setTimeout(() => open(t), 0);
     });
     document.addEventListener('mouseout', e => {
       const t = e.target && e.target.closest && e.target.closest(PRICE_SEL);
@@ -408,7 +471,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
   }
 
-  const api = { archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
+  const api = { archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, fmtPct, placeAt, cardData, stats, PRICE_SEL, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();
