@@ -6,6 +6,11 @@
 // The live measurement (review A–F) is the proof the page renders them; this suite is the
 // regression lock: every check re-runs against a named mutant, and a surviving mutant fails.
 //
+// TEN-376 Foundation (founder, 2026-10-03): 12a keeps LAYOUT only (.claude/rules/theme-12a.md). Every colour the
+// suite pinned is now the foundation token for the same role (.claude/rules/foundation.md, tokens.css); the type
+// and size values the foundation re-ruled are updated too (caps labels Hanken 10.5/700/0.10em, sidebar items r8,
+// header-card subtitles max-width 640, no Today dot, all borders 1px, top-level cards no outline + --top-light).
+//
 // Run: node --test test-ten286-layout.mjs
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -63,45 +68,45 @@ const M = '[data-page="matches"]';
 const SPEC = [
   // app shell (both pages carry it; the dashboard uses buttons, account.html anchors)
   ['.sf-sidebar', 'width', '252px'], ['.sf-sidebar', 'padding', '18px 0 18px 18px'], ['.sf-sidebar', 'line-height', 'normal'],
-  ['.sf-panel', 'padding', '20px 12px 14px'], ['.sf-panel', 'border-radius', '22px'], ['.sf-panel', 'background', 'var(--nav-panel)'],
-  ['.sf-panel', 'border', '0.33px solid var(--line-panel)'], ['.sf-brand', 'margin', '0 8px 26px'], ['.sf-logo', 'height', '26px'],
+  ['.sf-panel', 'padding', '20px 12px 14px'], ['.sf-panel', 'border-radius', '22px'], ['.sf-panel', 'background', 'var(--card)'],
+  ['.sf-panel', 'border', '1px solid transparent'], ['.sf-panel', 'box-shadow', 'var(--top-light)'],   // top-level card: no outline + top light ['.sf-brand', 'margin', '0 8px 26px'], ['.sf-logo', 'height', '26px'],
   ['.sf-nav', 'gap', '3px'], ['.sf-foot', 'padding-top', '24px'], ['.sf-foot', 'gap', '10px'],
   ['.sf-userchip', 'padding', '6px 8px'], ['.sf-userchip', 'gap', '10px'], ['.sf-userav', 'width', '30px'], ['.sf-userav', 'font-size', '11px'],
   ['.sf-username', 'font-size', '12px'], ['.sf-userplan', 'font-size', '10.5px'],
-  ['.sf-upgrade', 'background', 'var(--periwinkle)'], ['.sf-upgrade', 'color', 'var(--page)'], ['.sf-upgrade', 'border-radius', '10px'],
+  ['.sf-upgrade', 'background', 'var(--pro)'], ['.sf-upgrade', 'color', 'var(--pro-text)'], ['.sf-upgrade', 'border-radius', '10px'],
   // board
   [`${M}.tabpage.active`, 'padding', '30px 40px 70px'], [`${M}.tabpage.active`, 'gap', '22px'], [`${M}.tabpage.active`, 'line-height', 'normal'],
   [`${M} .mx-titlerow`, 'padding', '22px 26px'], [`${M} .mx-titlerow`, 'border-radius', '12px'], [`${M} .mx-titlerow`, 'gap', '28px'],
   [`${M} .mx-h1`, 'font-size', '29px'], [`${M} .mx-h1`, 'font-weight', '800'], [`${M} .mx-h1`, 'letter-spacing', '-0.015em'],
-  [`${M} .mx-subtitle`, 'font-size', '13.5px'], [`${M} .mx-subtitle`, 'line-height', '1.55'], [`${M} .mx-subtitle`, 'max-width', '520px'],
+  [`${M} .mx-subtitle`, 'font-size', '13.5px'], [`${M} .mx-subtitle`, 'line-height', '1.55'], [`${M} .mx-subtitle`, 'max-width', '640px'],   // foundation: header-card subtitles max 640
   [`${M} .mx-daytabsrow`, 'gap', '12px'], [`${M} .mx-viewseg button`, 'padding', '7px 14px'],
   [`${M} .mx-daytabschevron`, 'width', '30px'], [`${M} .mx-daytabschevron`, 'font-size', '16px'],
   [`${M} .mx-daytabs`, 'gap', '4px'], [`${M} .mx-daytabs button`, 'padding', '8px 14px 10px'], [`${M} .mx-daytabs button`, 'gap', '6px'],
   [`${M} .mx-daytabs button`, 'margin', '0'], [`${M} .mx-daytabs button:not(.mx-daypill)::before`, 'width', '5px'],
-  [`${M} .mx-daytabs button.is-today::before`, 'background', 'var(--blue-ring)'],
+  [`${M} .mx-daytabs button::before`, 'display', 'none'],   // README §5.2: plain date rail, no Today dot (was the blue-ring dot)
   [`${M} .mc-story`, 'padding', '15px 19px'], [`${M} .mc-story`, 'gap', '8px'], [`${M} .mc-story__lbl`, 'font-size', '10.5px'],
-  [`${M} .mc-story__lbl`, 'letter-spacing', '0.12em'], [`${M} .mc-story__od`, 'font-size', '20px'], [`${M} .mc-story__od`, 'letter-spacing', 'normal'],
+  [`${M} .mc-story__lbl`, 'letter-spacing', '0.10em'], [`${M} .mc-story__lbl`, 'font-family', 'var(--font-words)'], [`${M} .mc-story__lbl`, 'font-weight', '700'], [`${M} .mc-story__od`, 'font-size', '20px'], [`${M} .mc-story__od`, 'letter-spacing', 'normal'],
   [`${M} .mx-chip`, 'padding', '9px 16px'], [`${M} .mx-chip`, 'font-weight', '600'],
   [`${M} .mx-searchwrap`, 'padding', '10px 14px'], [`${M} .mx-searchwrap`, 'gap', '9px'], [`${M} .mx-sortbtn`, 'padding', '10px 15px'],
   [`${M} #matchlist`, 'align-items', 'stretch'],   // founder ruling TEN-270 (odds.md): equal-height cards — NOT the design's start
   [`${M} .match-card .mc-head`, 'padding', '11px 16px'], [`${M} .match-card .mc-round`, 'padding', '2px 6px'],
   [`${M} .match-card .mc-round`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline`, 'grid-template-columns', '1px 104px 96px'],
-  [`${M} .match-card .mc-colhead-inline .lbl`, 'font-size', '9.5px'], [`${M} .match-card .mc-colhead-inline .lbl`, 'letter-spacing', '0.14em'],
+  [`${M} .match-card .mc-colhead-inline .lbl`, 'font-size', '10.5px'], [`${M} .match-card .mc-colhead-inline .lbl`, 'letter-spacing', '0.10em'],   // caps label
   [`${M} .mc-players.up .mc-row`, 'grid-template-columns', 'minmax(0,1fr) 1px 104px 96px'], [`${M} .mc-players.up .mc-row`, 'padding', '11px 16px'],
   [`${M} .match-card .mc-name`, 'font-size', '14px'], [`${M} .match-card .mc-odds`, 'font-size', '19px'], [`${M} .match-card .mc-odds`, 'font-weight', '800'],
   [`${M} .match-card .mc-form__track`, 'width', '52px'], [`${M} .match-card .mc-form__track`, 'height', '6px'], [`${M} .match-card .mc-form`, 'gap', '9px'],
   [`${M} .match-card .mc-foot`, 'padding', '10px 16px'], [`${M} .match-card .mc-foot`, 'gap', '12px'],
   [`${M} .match-card .mc-msig`, 'letter-spacing', '0.06em'], [`${M} .match-card .mc-msig .chev`, 'font-size', '11px'],
   [`${M} .match-card.sig-open .mc-msig .chev`, 'transform', 'rotate(180deg)'],
-  [`${M} .mc-sig-src`, 'width', '76px'], [`${M} .mc-sig-liq`, 'width', '72px'], [`${M} .mc-sig-bar__dog`, 'background', 'var(--bar-dog)'],
+  [`${M} .mc-sig-src`, 'width', '76px'], [`${M} .mc-sig-liq`, 'width', '72px'], [`${M} .mc-sig-bar__dog`, 'background', 'var(--bar-2)'],
   [`${M} .mc-sig-group + .mc-sig-group`, 'border-top', '1px solid var(--line)'],
   ['.mc-promo', 'padding', '13px 20px'], ['.mc-promo', 'gap', '16px'], ['.mc-promo__lead', 'gap', '12px'],
-  ['.mc-promo__icon', 'background', 'var(--promo-tile)'], ['.mc-promo__icon', 'color', 'var(--promo-glyph)'], ['.mc-promo__badge', 'background', 'transparent'],
+  ['.mc-promo__icon', 'background', 'var(--inner)'], ['.mc-promo__icon', 'color', 'var(--text)'], ['.mc-promo__badge', 'background', 'var(--inner)'],   // badge = FAV treatment
 ];
 const ACCT_SPEC = SPEC.filter(([s]) => s.startsWith('.sf-') && !s.startsWith('.sf-nav button'))
-  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '12px'], ['.sf-nav a', 'font-size', '13.5px']]);
-const DASH_NAV = [['.sf-nav button', 'padding', '10px 12px'], ['.sf-nav button', 'border-radius', '12px'], ['.sf-nav button', 'font-size', '13.5px'],
-  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--nav-idle)']];
+  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '8px'], ['.sf-nav a', 'font-size', '13.5px'], ['.sf-nav a', 'color', 'var(--text-label)']]);
+const DASH_NAV = [['.sf-nav button', 'padding', '10px 12px'], ['.sf-nav button', 'border-radius', '8px'], ['.sf-nav button', 'font-size', '13.5px'],
+  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--text-label)']];   // foundation: sidebar items r8, idle = --text-label
 
 function specProblems(html, spec) {
   const p = [];
@@ -109,10 +114,10 @@ function specProblems(html, spec) {
   return p;
 }
 
-test('the dashboard carries the 12a design values (shell + board)', () => {
+test('the dashboard carries the 12a layout values + foundation colours (shell + board)', () => {
   assert.deepEqual(specProblems(DASH, SPEC.concat(DASH_NAV)), []);
 });
-test('account.html carries the same 12a shell', () => {
+test('account.html carries the same shell (12a layout, foundation colours)', () => {
   assert.deepEqual(specProblems(ACCT, ACCT_SPEC), []);
 });
 test('spec lock kills its mutants', () => {
@@ -183,32 +188,65 @@ test('C · all 12 nav glyphs are the design paths, element for element', () => {
   for (const [name, html] of Object.entries(mut)) assert.notDeepEqual(glyphProblems(html), [], `mutant survived: ${name}`);
 });
 
-// ── tokens: one 12a block, identical on both pages, and it carries every design colour ──
-const firstRoot = html => (/:root\{([\s\S]*?)\n  \}/.exec(html) || [])[1] || '';
-const DESIGN_TOKENS = { page: '#0B0C13', 'nav-panel': '#0D0F18', surface: '#0E1019', 'surface-inner': '#0C0E16', popup: '#131623',
-  line: 'rgba(255,255,255,0.045)', 'line-soft': 'rgba(255,255,255,0.03)', 'line-panel': 'rgba(255,255,255,0.035)', 'line-open': 'rgba(255,255,255,0.10)',
-  'line-avatar': 'rgba(255,255,255,0.06)', text: '#EBF1F2', 'text-soft': '#D9DBDF', 'text-sub': '#A3ABBA', label: '#6E7A93', 'nav-idle': '#9BB0DA',
-  'nav-icon-idle': '#7F93BD', 'blue-ring': '#007AFF', periwinkle: '#6A9AF8', navy: '#07183D', royal: '#0B2878', lime: '#EAF928',
-  'bar-track': '#16234A', 'bar-dog': '#2A3556', 'seg-active': '#0B1C4E', 'seg-active-line': '#2E4FA8', clay: '#F2B45F', positive: '#3ED68C',
-  'nav-hover': 'rgba(106,154,248,0.08)', 'nav-active': 'rgba(0,122,255,0.16)', 'nav-active-line': 'rgba(106,154,248,0.18)', avatar: '#0B0C14',
-  'promo-tile': '#172137', 'promo-glyph': '#5B9CFF' };
-function tokenProblems(dash, acct) {
-  const p = []; const a = firstRoot(dash), b = firstRoot(acct);
-  if (!a || a !== b) p.push('the first :root token block differs between the two pages');
-  for (const [k, v] of Object.entries(DESIGN_TOKENS)) {
-    const m = new RegExp(`--${k}:\\s*([^;]+);`).exec(a);
-    if (!m || m[1].trim().toLowerCase() !== v.toLowerCase()) p.push(`--${k} = ${m && m[1]} want ${v}`);
+// ── tokens: ONE colour file (TEN-376 Foundation; replaces the 12a :root block both pages carried) ──
+// Both pages load ./theme.js then ./tokens.css first in <head>; neither page re-declares a foundation token globally
+// (a scoped §6 variant such as the H2H white bars is allowed); no retired 12a token is defined or read; and tokens.css
+// (Night) carries the foundation values.
+const TOKENS_CSS = read('tokens.css');
+const FOUNDATION = { page: '#090B12', card: '#10131D', inner: '#171B28', selected: '#1B2031', 'tile-hover': '#141824',
+  text: '#FFFFFF', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
+  pro: '#2F52D6', 'pro-text': '#F2F3F7', pos: '#5CCB84', neg: '#E06266', 'serve-ball': '#EAF928',
+  'edge-6': 'rgba(255,255,255,0.06)', 'edge-7': 'rgba(255,255,255,0.07)', 'edge-10': 'rgba(255,255,255,0.10)', 'edge-16': 'rgba(255,255,255,0.16)',
+  'edge-24': 'rgba(255,255,255,0.24)', line: 'rgba(255,255,255,0.05)', track: 'rgba(255,255,255,0.06)', 'open-card': 'rgba(143,170,255,0.28)',
+  'top-light': 'inset 0 1px 0 rgba(143,170,255,0.05)', 'font-words': "'Hanken Grotesk',sans-serif", 'font-nums': "'IBM Plex Mono',monospace" };
+// the 12a token names the foundation retired (the old block's names that tokens.css does not define)
+const RETIRED = ['nav-panel', 'surface', 'surface-inner', 'popup', 'line-soft', 'line-panel', 'line-open', 'line-avatar', 'text-sub', 'label',
+  'nav-idle', 'nav-icon-idle', 'blue-ring', 'periwinkle', 'navy', 'royal', 'lime', 'bar-track', 'bar-dog', 'seg-active', 'seg-active-line',
+  'clay', 'positive', 'nav-hover', 'nav-active', 'nav-active-line', 'avatar', 'promo-tile', 'promo-glyph'];
+const nightTokens = css => {
+  const T = {};
+  for (const b of css.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/day/.test(b[1])) continue;
+    for (const m of b[2].matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)) T[m[1]] = m[2].trim();
   }
+  return T;
+};
+function headOrder(html) {
+  const head = html.slice(0, html.indexOf('</head>'));
+  const th = head.indexOf('<script src="./theme.js"></script>'), tk = head.indexOf('<link rel="stylesheet" href="./tokens.css">');
+  const firstOther = Math.min(...[/<link rel="stylesheet"(?! href="\.\/tokens\.css")/, /<style/, /<script(?! src="\.\/theme\.js")/]
+    .map(re => { const m = re.exec(head); return m ? m.index : Infinity; }));
+  return th >= 0 && tk > th && firstOther > tk;
+}
+function tokenProblems(dash, acct, tokensCss = TOKENS_CSS) {
+  const p = [];
+  const T = nightTokens(tokensCss), names = new Set(Object.keys(T));
+  for (const [name, html] of [['dashboard', dash], ['account.html', acct]]) {
+    if (!headOrder(html)) p.push(`${name}: <head> does not load ./theme.js then ./tokens.css before anything else`);
+    for (const r of html.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}<>]*)\{([^{}]*)\}/g)) {
+      if (!/^(?:[\s,]*(?::root|html|\[data-theme[^\]]*\]))+[\s,]*$/.test(r[1])) continue;   // global scope only; §6 scoped variants allowed
+      for (const d of r[2].matchAll(/--([\w-]+)\s*:/g)) if (names.has(d[1])) p.push(`${name}: re-declares --${d[1]} globally`);
+    }
+    for (const k of RETIRED) if (new RegExp(`var\\(\\s*--${k}\\s*[,)]|--${k}\\s*:`).test(html.replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, ''))) p.push(`${name}: retired 12a token --${k}`);
+  }
+  const n = v => String(v).replace(/\s+/g, '').toLowerCase();
+  for (const [k, v] of Object.entries(FOUNDATION)) if (!T[k] || n(T[k]) !== n(v)) p.push(`tokens.css --${k} = ${T[k]} want ${v}`);
   return p;
 }
-test('tokens: one 12a block, identical on both pages, holding every colour the design renders', () => {
+test('tokens: one colour file (tokens.css) loaded first on both pages, no page re-declares it, no 12a token left', () => {
   assert.deepEqual(tokenProblems(DASH, ACCT), []);
   const mut = {
-    drift: [DASH, ACCT.replace('--label:#6E7A93;', '--label:#6E7A94;')],
-    staleLabel: [DASH.replace('--surface:#0E1019;', '--surface:#10131F;'), ACCT.replace('--surface:#0E1019;', '--surface:#10131F;')],
-    promoLost: [DASH.replace('    --promo-tile:#172137;\n', ''), ACCT.replace('    --promo-tile:#172137;\n', '')],
+    drift: [DASH, ACCT.replace('</style>', '  :root{ --text-label:#A3AABF; }\n</style>')],
+    staleCard: [DASH, ACCT, TOKENS_CSS.replace('--card:        #10131D;', '--card:        #0E1019;')],
+    proLost: [DASH, ACCT, TOKENS_CSS.replace(/\n\s*--pro:[^\n]*/, '')],
+    notLoaded: [DASH, ACCT.replace('<link rel="stylesheet" href="./tokens.css">', '')],
+    loadedLate: [DASH.replace('<link rel="stylesheet" href="./tokens.css">', '').replace('</head>', '<link rel="stylesheet" href="./tokens.css">\n</head>'), ACCT],
+    periwinkleBack: [DASH.replace('</style>', '  .ten286-probe{ color:var(--periwinkle); }\n</style>'), ACCT],
   };
-  for (const [name, [d, a]] of Object.entries(mut)) assert.notDeepEqual(tokenProblems(d, a), [], `mutant survived: ${name}`);
+  for (const [name, [d, a, t]] of Object.entries(mut)) {
+    assert.ok(d !== DASH || a !== ACCT || (t && t !== TOKENS_CSS), `mutant ${name} must change something`);
+    assert.notDeepEqual(tokenProblems(d, a, t), [], `mutant survived: ${name}`);
+  }
 });
 
 // ── the reference file is versioned and never published ─────────────────────────────
@@ -237,7 +275,7 @@ function deadCount(pageHtml, name) {
   try {
     writeFileSync(join(d, name), pageHtml);
     if (name !== 'account.html') copyFileSync(join(HERE, 'account.html'), join(d, 'account.html'));
-    for (const f of ['player-profile-v2.js', 'live-tab.js', 'trading-report.js', 'series.js', 'holdbreak-heatmap.js', 'price-history-box.js', 'kibl-now-stream.js', 'auth.js', 'series.css', 'drops-page.js', 'drops-page.css'])
+    for (const f of ['player-profile-v2.js', 'live-tab.js', 'trading-report.js', 'series.js', 'holdbreak-heatmap.js', 'price-history-box.js', 'kibl-now-stream.js', 'auth.js', 'series.css', 'drops-page.js', 'drops-page.css', 'theme.js', 'tokens.css'])
       try { copyFileSync(join(HERE, f), join(d, f)); } catch {}
     const r = spawnSync('python3', [join(HERE, 'tools/css-dead-declarations.py'), join(d, name)], { encoding: 'utf8' });
     const m = /: (\d+) dead declarations, (\d+) emptied rules/.exec(r.stdout || '');
@@ -255,38 +293,20 @@ test('no dead CSS on either page (tools/css-dead-declarations.py finds nothing)'
   assert.ok(deadCount(orphan, 'account.html') > 0, 'mutant survived: orphan var');
 });
 
-// ── the recolour engine is idempotent, and no hard-coded 12a value hides in CSS text ────────
-const ENGINE_FILES = ['bsp-consult-dashboard.html', 'player-profile-v2.js', 'live-tab.js', 'trading-report.js', 'holdbreak-heatmap.js',
-  'series.js', 'series.css', 'price-history-box.js', 'kibl-now-stream.js', 'account.html'];
-function engineRun(dir) {
-  const r = spawnSync('node', [join(HERE, 'tools/theme-12a/recolour.mjs'), dir, '--write'], { encoding: 'utf8' });
-  const m = /edits (\d+)/.exec(r.stdout || ''); if (!m) throw new Error('engine output: ' + r.stdout + r.stderr);
-  return +m[1];
-}
-function copyTree(mutate) {
-  const d = mkdtempSync(join(tmpdir(), 'eng286-'));
-  for (const f of ENGINE_FILES) { let s = read(f); if (mutate && f === 'bsp-consult-dashboard.html') s = mutate(s); writeFileSync(join(d, f), s); }
-  return d;
-}
-test('the TEN-285 recolour engine is idempotent: two runs over the shipped files edit nothing', () => {
-  const d = copyTree();
-  try {
-    assert.equal(engineRun(d), 0, 'run 1 edited the shipped files — the tree is not the engine\'s fixed point');
-    assert.equal(engineRun(d), 0, 'run 2 edited');
-    for (const f of ENGINE_FILES) assert.equal(readFileSync(join(d, f), 'utf8'), read(f), `${f} changed`);
-  } finally { rmSync(d, { recursive: true, force: true }); }
-  // mutant: a retired palette literal is still mapped on run 1, and run 2 is then a no-op
-  const m = copyTree(s => s.replace('</style>', '  .ten286-probe{ color:#e7e9ee; }\n</style>'));
-  try { assert.ok(engineRun(m) > 0, 'mutant survived: the engine no longer maps a retired literal'); assert.equal(engineRun(m), 0, 'not idempotent after a mapping run'); }
-  finally { rmSync(m, { recursive: true, force: true }); }
+// ── no hard-coded colour hides in the shipped files (TEN-376) ────────────────────────────────────────────
+// The TEN-285 12a recolour engine and tokeniser mapped literals onto the 12a palette (and re-wrote 1px hairlines to
+// 0.33px); the foundation retired that palette, so their fixed point is no longer the ruling. The foundation
+// equivalent is the one colour lint (tools/lint-raw-colours.mjs, first step of npm test): every file below carries
+// zero raw colours — hex, rgb(a), hsl(a) — and a literal planted in CSS text or a style attribute is caught.
+import { scan as rawColours } from './tools/lint-raw-colours.mjs';
+const SHIPPED = ['bsp-consult-dashboard.html', 'player-profile-v2.js', 'live-tab.js', 'trading-report.js', 'holdbreak-heatmap.js',
+  'series.js', 'series.css', 'price-history-box.js', 'kibl-now-stream.js', 'account.html', 'drops-page.js', 'drops-page.css'];
+const rawIn = (mutate) => SHIPPED.flatMap(f => { let s = read(f); if (mutate && f === 'bsp-consult-dashboard.html') s = mutate(s); return rawColours(s).map(h => `${f}:${h.line} ${h.value}`); });
+test('no raw colour in the shipped files: tokens.css is the only colour file (was: the 12a recolour engine\'s fixed point)', () => {
+  assert.deepEqual(rawIn(), []);
+  assert.equal(rawIn(s => s.replace('</style>', '  .ten286-probe{ color:#e7e9ee; }\n</style>')).length, 1, 'mutant survived: a retired palette literal in CSS');
 });
-function tokeniseCount(dir) {
-  const r = spawnSync('python3', [join(HERE, 'tools/theme-12a-tokenise.py'), ...ENGINE_FILES.map(f => join(dir, f))], { encoding: 'utf8' });
-  return [...(r.stdout || '').matchAll(/: (\d+) literal\(s\) -> var/g)].reduce((n, m) => n + +m[1], 0);
-}
-test('no 12a colour value is hard-coded in CSS text (the tokeniser finds nothing to rewrite)', () => {
-  const d = copyTree();
-  try { assert.equal(tokeniseCount(d), 0); } finally { rmSync(d, { recursive: true, force: true }); }
-  const m = copyTree(s => s.replace('</body>', '<div style="color:#6e7a93">x</div></body>'));
-  try { assert.equal(tokeniseCount(m), 1, 'mutant survived: a hard-coded label colour in a style attribute'); } finally { rmSync(m, { recursive: true, force: true }); }
+test('no colour value is hard-coded in a style attribute (was: the 12a tokeniser finds nothing to rewrite)', () => {
+  assert.equal(rawIn(s => s.replace('</body>', '<div style="color:#6e7a93">x</div></body>')).length, 1, 'mutant survived: a hard-coded label colour in a style attribute');
+  assert.equal(rawIn(s => s.replace('</body>', '<div style="border:1px solid rgba(255,255,255,0.06)">x</div></body>')).length, 1, 'mutant survived: an rgba hairline');
 });

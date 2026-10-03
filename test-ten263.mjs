@@ -90,7 +90,8 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
   assert.equal(S.consts.FH_HOT_MIN_ELIGIBLE, 3);          // (a)
   assert.equal(S.consts.FH_PRICE_AVG_MARGIN_REMOVED, true); // (b)
   assert.equal(S.consts.FH_H2H_SET1_MIRROR, true);        // (c)
-  assert.equal(S.consts.FH_SURF.Grass, 'var(--court-grass)');   // (d) the live site's grass token (neutral inside the modal, TEN-314)
+  // (d) TEN-376 foundation Q2.4: surfaces are neutral everywhere — every surface reads --text-soft (was the 12a --court-grass).
+  assert.deepEqual(S.consts.FH_SURF, { Hard: 'var(--text-soft)', Clay: 'var(--text-soft)', Grass: 'var(--text-soft)' });
   assert.equal(S.consts.FH_H2H_RET_COUNTS, true);         // (e)
   assert.deepEqual(S.consts.FH_H2H_LEVELS, ['ATP', 'CH', 'ITF']);  // §3b: every level, one constant
 });
@@ -1197,7 +1198,7 @@ test('untracked counts are missing, not 0, downstream: the Live modal bar and th
   const f = new Function('tourxFmt', slice('tourxLineChartSvg') + '; return tourxLineChartSvg;')(v => String(v));
   const svg = f([20, 22], [null, 18], '#6a9af8', 'count', ['R1', 'R2']);
   assert.ok(!/NaN/.test(svg));
-  const pts = /stroke-dasharray="4 4"/.test(svg) && /<polyline points="([^"]+)" fill="none" stroke="rgba\(255,255,255,0\.32\)"/.exec(svg)[1];
+  const pts = /stroke-dasharray="4 4"/.test(svg) && /<polyline points="([^"]+)" fill="none" stroke="var\(--viz-rule\)"/.exec(svg)[1];   // TEN-376: rgba(255,255,255,.32) is the --viz-rule token
   assert.equal(pts.split(' ').length, 1, 'the missing field point is skipped, not drawn at 0');
   const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
   const ts = /const twoSided=\(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key\)=>\{[\s\S]*?\n  \};/.exec(H)[0];

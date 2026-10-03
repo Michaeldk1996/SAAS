@@ -1463,12 +1463,13 @@ check('the footnote discloses the spine gap rather than hiding it', () => withCa
 check('items 13 + 12 · empty months are a middot, and the tint is the file\'s flat 0.10', () => withCal(() => {
   I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
   const html = I.renderSeasonModal(CAL_P);
-  assert(html.includes('rgba(61,214,140,0.10)'), 'the win tint is not the file\'s flat 0.10');
-  assert(html.includes('rgba(224,97,111,0.10)'), 'the loss tint is not the file\'s flat 0.10');
-  // The ramped alpha cal-0 drew (0.10 + 0.32 * ...) produced three-decimal
-  // alphas. If one reappears the tint went back to a gradient.
-  assert(!/rgba\(61,214,140,0\.\d{3}\)/.test(html), 'a ramped green alpha is back in the grid');
-  assert(!/rgba\(224,97,111,0\.\d{3}\)/.test(html), 'a ramped red alpha is back in the grid');
+  // TEN-376 Foundation: the flat 0.10 tints are the --pos / --neg tokens at 10%.
+  assert(html.includes('color-mix(in srgb, var(--pos) 10%, transparent)'), 'the win tint is not the file\'s flat 0.10');
+  assert(html.includes('color-mix(in srgb, var(--neg) 10%, transparent)'), 'the loss tint is not the file\'s flat 0.10');
+  // The ramped alpha cal-0 drew (0.10 + 0.32 * ...) produced fractional
+  // percentages. If one reappears the tint went back to a gradient.
+  assert(!/color-mix\(in srgb, var\(--pos\) \d+\.\d+%/.test(html), 'a ramped green alpha is back in the grid');
+  assert(!/color-mix\(in srgb, var\(--neg\) \d+\.\d+%/.test(html), 'a ramped red alpha is back in the grid');
   assert(html.includes('>·</span>'), 'an empty month does not render the file\'s middot');
   console.log('        flat 0.10 tints, no ramp, empty months render ·');
 }));
@@ -1477,7 +1478,8 @@ check('the drill opens, groups by event, and its P&L is the priced rows only', (
   I.state.calTab = 'calendar'; I.state.calSurface = 'all';
   I.state.calCell = '2026|0';                       // January 2026 — 12 rows, 0 priced
   let html = I.renderSeasonModal(CAL_P);
-  assert(html.includes('var(--seg-active-line)'), 'the drill did not open');
+  // TEN-376: the drill container is --inner + 1px --edge-10 (was --surface-inner + 0.33px --seg-active-line).
+  assert(html.includes('margin:12px 0 4px;background:var(--inner);border:1px solid var(--edge-10);'), 'the drill did not open');
   assert(html.includes('January 2026'), 'the drill header names the wrong month');
   assert(html.includes('3–09') || html.includes('3–9'), 'the drill record is not 3-9');
   assert(html.includes('no priced match in this month'),
@@ -1503,7 +1505,8 @@ check('item 30 · CONSISTENT is one segment per season, not prose', () => withCa
   assert(html.includes('>1/2<'), `CONSISTENT should read 1/2 over ${CAL_EXPECT.seasons} seasons`);
   assert(!/\d+ of \d+<\/div>/.test(html.split('Consistent')[1] || ''),
     'CONSISTENT reverted to the "8 of 14" prose form');
-  assert(html.includes('rgba(91,155,255,0.62)'), 'no filled CONSISTENT segment rendered');
+  // TEN-376: the filled segment is --bar at 62% (was rgba(91,155,255,0.62)).
+  assert(html.includes('color-mix(in srgb, var(--bar) 62%, transparent)'), 'no filled CONSISTENT segment rendered');
   console.log('        CONSISTENT renders 1/2 as filled segments, one per season');
 }));
 
@@ -2598,8 +2601,9 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and
     // The file's DIM — item 23 names it. 12a (TEN-285) set DIM_COLOUR to #6e7a93, the --label
     // value, emitted as the literal; d2fd80fb rewrote this needle to var(--label), a string the
     // renderer never emits. Unseen because this check SKIPs wherever career-history/ is absent,
-    // which was every CI run until the TEN-329 built-store gate.
-    assert(html.indexOf('font-size:14px;font-weight:700;color:#6e7a93;') > -1,
+    // which was every CI run until the TEN-329 built-store gate. TEN-376 Foundation: DIM_COLOUR
+    // is now the --text-label token, emitted as var(--text-label).
+    assert(html.indexOf('font-size:14px;font-weight:700;color:var(--text-label);') > -1,
       `${p.name}: the under-minimum name is not the file's DIM colour`);
     if (++found >= 3) break;
   }
@@ -2821,22 +2825,22 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     ['item 7 · chart card clear space', 'display:flex;flex-direction:column;gap:14px;'],
     // item 8 · layout and plot box
     ['item 8 · 52px 1fr layout', 'grid-template-columns:52px minmax(0,1fr);gap:12px;'],
-    // Items 8, 11, 19, 24 and 29 below carry the TEN-285 12a values (0.33px --line-soft hairlines,
-    // periwinkle #6a9af8, selection #2e4fa8, P&L #3ed68c/#da6259). The needles still quoted the
-    // pre-12a file until TEN-329 — the first run of this check with career-history/ present.
-    ['item 8 · 240px plot with 12a hairline borders',
-      'height:240px;border-left:0.33px solid var(--line-soft);border-bottom:0.33px solid var(--line-soft);'],
+    // Items 8, 11, 19, 24 and 29 below carried the TEN-285 12a values (0.33px --line-soft hairlines,
+    // periwinkle #6a9af8, selection #2e4fa8, P&L #3ed68c/#da6259). TEN-376 Foundation re-expresses
+    // them as tokens: 1px --line hairlines, --bar fills, --edge-10 selection edge, --pos/--neg P&L.
+    ['item 8 · 240px plot with foundation hairline borders',
+      'height:240px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);'],
     // item 9 · tick labels right-aligned in the gutter, rotated label at its left
     ['item 9 · rotated label left of the ticks', 'left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);'],
-    ['item 9 · tick label', 'font-size:10px;color:var(--label);'],
+    ['item 9 · tick label', 'font-size:10px;color:var(--text-label);'],
     // item 11 · the EVEN rule and its right-aligned, uppercased label
     ['item 11 · EVEN label right-aligned', 'right:6px;top:'],
-    ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:var(--label);">even<'],
+    ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:var(--text-label);">even<'],
     // item 12 · the value label above the bubble
     ['item 12 · value label above the bubble', 'font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;'],
     // item 13 · disc
     ['item 13 · disc border', 'border-radius:50%;'],
-    ['item 13 · disc fill', 'background:rgba(91,155,255,'],
+    ['item 13 · disc fill', 'background:color-mix(in srgb, var(--bar) '],
     // item 15 · abbreviations and the foot labels
     ['item 15 · x tick label class', 'class="pp2-stk'],
     ['item 15 · foot label SERVE', '>Serve<'],
@@ -2845,19 +2849,19 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     // items 17-19 · the row is a card with the minimal bar
     ['item 17 · row card grid', 'grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;border-radius:10px;padding:13px 16px;'],
     ['item 18 · row name', 'font-size:14px;font-weight:700;'],
-    ['item 18 · row meta', 'font-size:11.5px;color:var(--label);'],
-    ['item 19 · minimal bar track (12a bar-track token)', 'height:4px;border-radius:2px;background:var(--bar-track);'],
-    ['item 19 · minimal bar fill', 'background:#6a9af8;border-radius:2px;'],
+    ['item 18 · row meta', 'font-size:11.5px;color:var(--text-label);'],
+    ['item 19 · minimal bar track (foundation --track token)', 'height:4px;border-radius:2px;background:var(--track);'],
+    ['item 19 · minimal bar fill', 'background:var(--bar);border-radius:2px;'],
     // item 20 · units above the rate
     ['item 20 · right column stacks', 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;'],
-    ['item 20 · units', 'font-size:12px;font-weight:700;color:#'],
-    // item 24 · the selected row
-    ['item 24 · selected row background', 'background:rgba(106,154,248,0.08);'],
-    ['item 24 · selected row border', 'border:0.33px solid #2e4fa8;'],
+    ['item 20 · units', 'font-size:12px;font-weight:700;color:var(--'],
+    // item 24 · the selected row — TEN-376 correction: selection is a lift (--selected), never a blue wash
+    ['item 24 · selected row background', 'background:var(--selected);'],
+    ['item 24 · selected row border', 'border:1px solid var(--edge-10);background:var(--selected);'],
     // item 25 · the CAREER footer
     ['item 25 · Career eyebrow', '>Career<'],
     // items 26-28 · the drill
-    ['item 26 · drill container', 'border:0.33px solid var(--seg-active-line);border-radius:10px;padding:13px 15px;'],
+    ['item 26 · drill container', 'background:var(--inner);border:1px solid var(--edge-10);border-radius:10px;padding:13px 15px;'],
     ['item 28 · drill grid',
       'grid-template-columns:16px 64px minmax(0,1.1fr) minmax(0,1fr) 38px 104px 48px 48px 58px;gap:0 12px;'],
     ['item 28 · drill head Score', '>Score<'],
@@ -2872,7 +2876,7 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
   // indexOf stayed green with the rule deleted.
   const evenTop = (/right:6px;top:([0-9.]+px);transform:translateY\(-135%\)/.exec(html) || [])[1];
   assert(evenTop && new RegExp('left:0;right:0;top:' + evenTop.replace('.', '\\.') +
-    ';height:1px;background:var\\(--line-soft\\);"></span>(<span[^>]*dashed[^>]*></span>)?' +
+    ';height:1px;background:var\\(--line\\);"></span>(<span[^>]*dashed[^>]*></span>)?' +
     '<span style="position:absolute;right:6px;top:' + evenTop.replace('.', '\\.') + ';').test(html),
     `${subject.name}: item 11 · even rule missing at the EVEN label's ${evenTop}`);
 
@@ -2883,8 +2887,8 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
   assert(new RegExp('u \\u00b7 [+\\u2212]\\d+\\.\\d% \\u00b7 ' + open.priced + ' priced').test(html),
     `${subject.name}: the drill header does not carry "Xu · Y% · ${open.priced} priced"`);
   // item 29 · the drill's P&L column carries no "u" — the unit is in the header
-  assert(html.indexOf('text-align:right;color:#3ed68c;">+') > -1 ||
-         html.indexOf('text-align:right;color:#da6259;">−') > -1,
+  assert(html.indexOf('text-align:right;color:var(--pos);">+') > -1 ||
+         html.indexOf('text-align:right;color:var(--neg);">−') > -1,
     `${subject.name}: no signed P&L cell rendered`);
   // item 29 · "Oct 2026" dates
   assert(/>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}</.test(html),
@@ -2930,7 +2934,7 @@ checkCareer('item 30 · unpriced drill rows dash and stay out of the priced coun
     assert(unpriced > 0 && open.priced === open.rows.length - unpriced,
       `${p.name}/${open.axis.label}: priced count includes an unpriced row`);
     // Three dashed money cells per unpriced row.
-    const dashes = (html.match(/text-align:right;color:var\(--label\);">—</g) || []).length;
+    const dashes = (html.match(/text-align:right;color:var\(--text-label\);">—</g) || []).length;   // TEN-376: --label → --text-label
     assert(dashes >= unpriced,
       `${p.name}/${open.axis.label}: ${dashes} dashed money cells for ${unpriced} unpriced rows`);
     n++;
@@ -4148,7 +4152,8 @@ mustFail('the name-form check would catch a whitespace token swap', () => {
 check('item 7 · ledger dates are dd.mm and the header prose is not', () => {
   assert.strictEqual(I.fmtDotDate('2026-09-13'), '13.09');
   const html = ledgerHtmlFor(ZVEREV);
-  const dates = (html.match(/font-size:11px;color:var\(--label\);">([^<]+)</g) || [])
+  // TEN-376: --label renamed --text-label.
+  const dates = (html.match(/font-size:11px;color:var\(--text-label\);">([^<]+)</g) || [])
     .map(s => s.replace(/.*">|</g, ''));
   assert(dates.length > 0, 'no ledger date cells found');
   dates.forEach(d => assert(/^\d{2}\.\d{2}$/.test(d), `ledger date "${d}" is not dd.mm`));
@@ -4192,7 +4197,7 @@ check('item 9 · every ledger round cell is a short code on one line', () => {
   assert(cells > 5000, `only ${cells} rows inspected`);
   assert.strictEqual(long, 0, `${long} of ${cells} round cells are still prose`);
   const html = ledgerHtmlFor(ZVEREV);
-  assert(/font-size:10.5px;color:var\(--label\);white-space:nowrap/.test(html),
+  assert(/font-size:10.5px;color:var\(--text-label\);white-space:nowrap/.test(html),   // TEN-376: --label → --text-label
     'the round cell does not set white-space:nowrap');
   console.log(`        ${cells} round cells, all <=4 chars and nowrap`);
 });
@@ -4275,30 +4280,39 @@ mustFail('the score-format check would catch a space-joined ledger score', () =>
 check('item 6 · only the selected surface chip carries a border', () => {
   const on = I.ledgerChip('ledger-surf', 'all', 'All', true);
   const off = I.ledgerChip('ledger-surf', 'hard', 'Hard', false);
-  assert(/border:0\.33px solid #2e4fa8/.test(on), 'the selected chip lost its border');
-  assert(/border:0\.33px solid transparent/.test(off), 'an unselected chip still draws a visible border');
+  // TEN-376 Foundation: selected segment = --inner + 1px --edge-10 (was 0.33px #2e4fa8); all edges 1px.
+  assert(/border:1px solid var\(--edge-10\)/.test(on), 'the selected chip lost its border');
+  assert(/border:1px solid transparent/.test(off), 'an unselected chip still draws a visible border');
   assert(!/rgba\(255,255,255,0\.12\)/.test(off), 'the unselected chip keeps the old box border');
 });
 mustFail('the segmented-control check would catch a bordered unselected chip', () => {
   const off = 'border:1px solid rgba(255,255,255,0.12);';
-  assert(/border:0\.33px solid transparent/.test(off), 'an unselected chip still draws a visible border');
+  assert(/border:1px solid transparent/.test(off), 'an unselected chip still draws a visible border');
 });
 
 // ── items 12 + 15 · the shared eyebrow helper ──────────────────────────────
-// Values quoted from the export's `.cap` class, Player Profile.dc.html:25:
-//   font-size 9.5px · letter-spacing 0.16em · colour #6e7a93
-check('items 12/15 · every eyebrow matches the export .cap', () => {
+// Values were quoted from the export's `.cap` class, Player Profile.dc.html:25
+// (mono 9.5px · 0.16em · #6e7a93). TEN-376 correction: every caps label is the
+// foundation label — Hanken (--font-words) 10.5px / 700 / 0.10em uppercase in
+// --text-label (.claude/rules/foundation.md); the export's mono .cap is retired.
+// One helper shape for all three eyebrows (section, ledger group header, style).
+const CAPS_LABEL = /font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);/;
+check('items 12/15 · every eyebrow is the foundation caps label', () => {
   const e = I.eyebrow('Recent form');
-  assert(/font-size:9\.5px/.test(e), `eyebrow size drifted: ${e}`);
-  assert(/letter-spacing:0\.16em/.test(e), `eyebrow tracking drifted: ${e}`);
-  assert(/color:var\(--label\)/.test(e), `eyebrow colour drifted: ${e}`);
+  assert(CAPS_LABEL.test(e), `eyebrow drifted from the foundation caps label: ${e}`);
+  assert(!/IBM Plex Mono|font-size:9\.5px|letter-spacing:0\.16em/.test(e), `eyebrow still carries the export .cap: ${e}`);
   const le = I.ledgerEyebrow('Rd', 'left');
-  assert(/font-size:8\.5px/.test(le) && /letter-spacing:0\.16em/.test(le) && /color:var\(--text-sub\)/.test(le),
-    `group-header label drifted: ${le}`);
+  assert(CAPS_LABEL.test(le) && /text-align:left;/.test(le), `group-header label drifted: ${le}`);
+  assert(!/IBM Plex Mono|font-size:8\.5px|letter-spacing:0\.1[46]em/.test(le), `group-header label still mono: ${le}`);
+  // styleEyebrow is not on _internals: read its body from the source with the ' + ' joins folded.
+  const at = PP2_SRC.indexOf('function styleEyebrow()');
+  assert(at > 0, 'styleEyebrow() is gone');
+  const se = PP2_SRC.slice(at, PP2_SRC.indexOf('\n  }', at)).replace(/'\s*\+\s*'/g, '');
+  assert(CAPS_LABEL.test(se), `style eyebrow drifted: ${se}`);
 });
 mustFail('the eyebrow check would catch the pre-correction values', () => {
-  const e = 'font-size:10.5px;letter-spacing:0.14em;color:var(--label);';
-  assert(/font-size:9\.5px/.test(e), 'eyebrow size drifted');
+  const e = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-label);margin-top:6px;">Recent form</div>';
+  assert(CAPS_LABEL.test(e), 'eyebrow drifted from the foundation caps label');
 });
 
 // ── item 11 · the second price source ──────────────────────────────────────
@@ -4371,7 +4385,8 @@ check('item 14 · the match sheet renders real stats and dashes what we do not h
     const at = html.indexOf(label);
     assert(at > 0, `${label} row is missing from the sheet`);
     const before = html.slice(Math.max(0, at - 420), at);
-    assert(/color:#6e7a93;">—</.test(before), `${label} rendered a value — we do not hold it`);
+    // TEN-376: the dash colour #6e7a93 is now var(--text-label) (DASH_COLOUR).
+    assert(/color:var\(--text-label\);">—</.test(before), `${label} rendered a value — we do not hold it`);
   });
   // Net points is NOT one of them. Founder ruling 2026-09-18 (Q2): it IS an
   // api-tennis field — measured on the committed floor at 1,674 of 3,494
@@ -4384,7 +4399,7 @@ check('item 14 · the match sheet renders real stats and dashes what we do not h
     const at = html.indexOf('Net points won');
     assert(at > 0, 'Net points won row is missing from the sheet');
     const before = html.slice(Math.max(0, at - 420), at);
-    const dashed = /color:#6e7a93;">—</.test(before);
+    const dashed = /color:var\(--text-label\);">—</.test(before);
     const recNp = I.statsFor(target.m.eventKey);
     const sideNp = String(recNp.p1Key) === String(ZVEREV.key)
       ? recNp.matchStats.p1 : recNp.matchStats.p2;
@@ -4416,7 +4431,7 @@ mustFail('the match-sheet check would catch a net-points value invented on a sid
   const html = 'color:var(--periwinkle);">12</span>...Net points won';
   const at = html.indexOf('Net points won');
   const held = false; // this side carries no Points:Net points won
-  const dashed = /color:var\(--label\);">—</.test(html.slice(0, at));
+  const dashed = /color:var\(--text-label\);">—</.test(html.slice(0, at));   // mirrors the live check's TEN-376 needle
   assert(held || dashed, 'Net points won rendered a value on a side that carries none');
 });
 
@@ -4680,19 +4695,21 @@ mustFail('[neg] the row=column check would catch the live build\'s uncarved Hard
 // an override silently half-lands.
 check('item 3 · the bar is minimal: 4px track and fill, radius 2, ONE solid colour', () => {
   const html = renderCareer(CM_PLAYER);
-  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--bar-track\);/g) || []);
+  // TEN-376: --bar-track renamed --track; the fill is --bar (full) / --text-label (small sample).
+  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--track\);/g) || []);
   assert(tracks.length >= 4, `only ${tracks.length} minimal tracks rendered (expected one per surface row)`);
   const fills = (html.match(/height:4px;width:[\d.]+%;background:([^;]+);border-radius:2px;/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
   fills.forEach((f) => {
-    assert(/background:(#6a9af8|#6e7a93);/.test(f), `a fill is not one of the two solid colours: ${f}`);
+    assert(/background:(var\(--bar\)|var\(--text-label\));/.test(f), `a fill is not one of the two solid colours: ${f}`);
   });
   // the ramp is GONE — no alpha-varying blue anywhere on a fill
-  assert(!/width:[\d.]+%;background:rgba\(91,155,255,/.test(html),
+  assert(!/width:[\d.]+%;background:(rgba\(91,155,255,|color-mix\(in srgb, var\(--bar\))/.test(html),
     'the blue alpha ramp is still painting a fill');
   // and no 16px track survives
   assert(!/height:16px;border-radius:4px/.test(html), 'the 16px track is still being drawn');
-  ['#f2b45f', '#45d6b0'].forEach((c) => {  // Hard == periwinkle in 12a (TEN-285)
+  // TEN-376: the surface hues are the --viz-* tokens (Swing band only) — never a bar fill here.
+  ['var\\(--viz-clay\\)', 'var\\(--viz-grass\\)', 'var\\(--viz-hard\\)', 'var\\(--viz-indoor\\)'].forEach((c) => {
     assert(!new RegExp('width:[\\d.]+%;background:' + c).test(html),
       `a bar is painted the surface colour ${c}`);
   });
@@ -4701,9 +4718,9 @@ check('item 3 · the bar is minimal: 4px track and fill, radius 2, ONE solid col
   // opposite sides must differ. That is the whole content of the override.
   assert.strictEqual(I.barFillColour(40), I.barFillColour(99),
     'the fill colour still varies with the rate — the ramp survived under a new name');
-  assert.strictEqual(I.barFillColour(10), '#6a9af8', 'the n>=10 fill is not #6a9af8');
-  assert.strictEqual(I.barFillColour(9), '#6e7a93', 'the 5-9 fill is not #6e7a93');
-  assert.strictEqual(I.barFillColour(5), '#6e7a93', 'the gate floor moved off 5');
+  assert.strictEqual(I.barFillColour(10), 'var(--bar)', 'the n>=10 fill is not var(--bar)');
+  assert.strictEqual(I.barFillColour(9), 'var(--text-label)', 'the 5-9 fill is not var(--text-label)');
+  assert.strictEqual(I.barFillColour(5), 'var(--text-label)', 'the gate floor moved off 5');
   assert.strictEqual(I.barFillColour(4), null, 'a sub-5 sample still paints a fill');
   assert.strictEqual(I.barFillColour(0), null, 'a 0-match row still paints a fill');
 });
@@ -4727,7 +4744,7 @@ check('item 3 · under the gate the track is drawn and the fill is not', () => {
       clay: null, hard: { won: 3, lost: 1 }, grass: null, indoor: null }],
   };
   const html = renderCareer(thin);
-  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--bar-track\);/g) || []);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--track\);/g) || []);
   assert(tracks.length >= 4, 'the track disappeared along with the fill');
   assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
@@ -4739,8 +4756,8 @@ mustFail('[neg] the sub-gate check would catch a fill painted at n=4', () => {
 check('item 8 · the win rate is a WHOLE number at 19px', () => {
   const html = renderCareer(CM_PLAYER);
   // hard is 9-5 = 64.28...% -> "64%"
-  assert(/font-size:19px;font-weight:700;color:#ebf1f2;">64%/.test(html),
-    'the Hard rate is not a whole number at 19px in #ebf1f2');
+  assert(/font-size:19px;font-weight:700;color:var\(--text\);">64%/.test(html),
+    'the Hard rate is not a whole number at 19px in var(--text)');   // TEN-376: #ebf1f2 → --text
   assert(!/>6[0-9]\.[0-9]%/.test(html), 'a one-decimal rate is still being printed in this modal');
 });
 mustFail('[neg] the whole-number check would catch the shipped 69.1%', () => {
@@ -4751,7 +4768,7 @@ mustFail('[neg] the whole-number check would catch the shipped 69.1%', () => {
 check('item 9 · the §9 sample gate is applied to the ROW rate', () => {
   const html = renderCareer(CM_PLAYER);
   // clay n=8 -> SMALL: greyed, smaller, marked
-  assert(new RegExp('font-size:' + 15 + 'px;font-weight:700;color:#6e7a93;">75%').test(html),
+  assert(new RegExp('font-size:' + 15 + 'px;font-weight:700;color:var\\(--text-label\\);">75%').test(html),
     'the 8-match Clay row is not greyed and shrunk');
   assert(/small sample/.test(html), 'the small-sample mark is missing');
   // grass n=4 -> THIN: no rate at all
@@ -4765,7 +4782,7 @@ check('item 9 · the §9 sample gate is applied to the ROW rate', () => {
 });
 mustFail('[neg] the gate check would catch the shipped full-size white 83.3%', () => {
   const html = 'font-size:19px;font-weight:700;color:var(--text);">83.3%<div>small sample</div>';
-  assert(new RegExp('font-size:15px;font-weight:700;color:var(--label);">83%').test(html),
+  assert(new RegExp('font-size:15px;font-weight:700;color:var\\(--text-label\\);">83%').test(html),
     'a small-sample rate rendered full size and white');
 });
 
@@ -4773,32 +4790,37 @@ check('item 10 · the row card carries the file\'s background, grid and meta spa
   const html = renderCareer(CM_PLAYER);
   assert(/grid-template-columns:minmax\(0,1fr\) 300px 58px;gap:16px/.test(html), 'grid tracks drifted');
   assert(/border-radius:10px;padding:13px 16px/.test(html), 'radius/padding drifted');
-  assert(/background:#0c0e16;/.test(html), 'the row has no background — it was transparent live');
-  assert(/font-size:11\.5px;color:var\(--label\);margin-top:4px/.test(html),
+  // TEN-376: the row card's #0c0e16 is the --inner surface; meta --label → --text-label.
+  assert(/background:var\(--inner\);/.test(html), 'the row has no background — it was transparent live');
+  assert(/font-size:11\.5px;color:var\(--text-label\);margin-top:4px/.test(html),
     'the meta line lost its 4px offset from the name');
 });
 mustFail('[neg] the card check would catch the shipped transparent row', () => {
   const html = 'border-radius:10px;padding:13px 16px;border:1px solid rgba(255,255,255,0.07);';
-  assert(/background:var\(--surface-inner\);/.test(html), 'the row has no background');
+  assert(/background:var\(--inner\);/.test(html), 'the row has no background');
 });
 
 check('items 11-13,15 · the season table head, helper and footer are the file\'s', () => {
   const html = renderCareer(CM_PLAYER);
   // 11 — the eyebrow the founder found missing
-  assert(/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--label\);">Wins \/ losses</.test(html),
+  // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label, never mono caps.
+  assert(/font-family:var\(--font-words\); font-size:10\.5px;letter-spacing:0\.10em;[^>]*font-weight:700;[^>]*color:var\(--text-label\);">Wins \/ losses</.test(html),
     'the WINS / LOSSES eyebrow is missing from the title line');
   // 12 — the file's helper copy, not the invented one
   assert(/Click any record to browse those matches/.test(html), 'the helper copy is not the file\'s');
   assert(!/every season on record from/.test(html.slice(0, html.indexOf('Record by season'))),
     'the invented helper copy is still in place');
   // 13 — head colours AND the 11px bottom padding that was missing live
-  [['Year', '#6e7a93'], ['Total', '#a3abba'], ['Clay', '#f2b45f'],
-   ['Hard', '#6a9af8'], ['Indoors', '#d9dbdf'], ['Grass', '#3ed68c']].forEach(([label, col]) => {
+  // TEN-376: the 12a hexes as the product's token mapping (#6e7a93/#a3abba → --text-label; every surface head
+  // → --text-soft — correction: surfaces are not colour-coded, blue/green are data-viz/signed values only).
+  [['Year', 'var\\(--text-label\\)'], ['Total', 'var\\(--text-label\\)'], ['Clay', 'var\\(--text-soft\\)'],
+   ['Hard', 'var\\(--text-soft\\)'], ['Indoors', 'var\\(--text-soft\\)'], ['Grass', 'var\\(--text-soft\\)']].forEach(([label, col]) => {
     assert(new RegExp('color:' + col + ';padding-bottom:11px;[^>]*>' + label + '<').test(html),
       `the ${label} head is not ${col} with 11px padding-bottom`);
   });
-  // 15 — CAREER in eyebrow style, not as a 13px body word
-  assert(/font-size:10px;font-weight:700;letter-spacing:0\.18em;text-transform:uppercase;color:#a3abba;padding:15px 0 13px/.test(html),
+  // 15 — CAREER in eyebrow style, not as a 13px body word (TEN-376: the eyebrow style is the foundation caps
+  // label, Hanken 10.5/700/0.10em, was mono 10px/0.18em)
+  assert(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);padding:15px 0 13px/.test(html),
     'the CAREER footer label is not in the eyebrow style');
 });
 mustFail('[neg] the head check would catch the shipped zero bottom-padding', () => {
@@ -5159,7 +5181,8 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
     html = I.renderCareerModal(withForm, { archetype: null });
   } finally { Object.assign(I.state, saved); }
   // the drill card itself
-  assert(/border:0.33px solid var\(--seg-active-line\)/.test(html), 'the drill card border is not the file\'s');
+  // TEN-376 Foundation: 0.33px --seg-active-line is now the 1px --edge-10 open/selected edge.
+  assert(/border:1px solid var\(--edge-10\);border-radius:1[01]px;/.test(html), 'the drill card border is not the file\'s');
   assert(/grid-template-columns:46px 12px minmax\(0,1\.15fr\) 38px 40px minmax\(0,1\.35fr\) 48px 48px/.test(html),
     'the drill grid tracks are not the file\'s');
   assert(/max-height:340px;overflow-y:auto/.test(html), 'the drill list has no 340px scroll cap');
@@ -5295,7 +5318,7 @@ check('the bold name in a ledger row is the SUBJECT, in both orders', () => {
   // the subject span's weight must not depend on the result
   assert(/var sub = 'font-size:13px;font-weight:700;color:var\(--text\);'/.test(body),
     'the subject name is still conditionally bold');
-  assert(/var opp = 'font-size:13px;font-weight:400;color:var\(--text-sub\);'/.test(body),
+  assert(/var opp = 'font-size:13px;font-weight:400;color:var\(--text-label\);'/.test(body),   // TEN-376: --text-sub → --text-label
     'the opponent name can still take the bold');
   assert(!/subjWin \? '700' : '400'/.test(body), 'emphasis still keys on who won');
 });
@@ -5337,7 +5360,8 @@ mustFail('[neg] the subtitle check would catch the rejected coverage wording', (
 check('§5.3 item 5 · the search field is the file\'s label + 17px magnifier, not a bare input', () => {
   assert(/<svg width="17" height="17"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
     'the 17px magnifier is missing');
-  assert(/<label style="display:flex;align-items:center;gap:12px;background:var\(--surface-inner\);/.test(T_HTML),
+  // TEN-376: --surface-inner renamed --inner (control surface).
+  assert(/<label style="display:flex;align-items:center;gap:12px;background:var\(--inner\);/.test(T_HTML),
     'the field is not the file\'s label wrapper');
   assert(/border-radius:12px;padding:14px 18px;/.test(T_HTML), 'the field radius/padding drifted');
   assert(/placeholder="Search a tournament\.\.\."/.test(T_HTML), 'the placeholder drifted');
@@ -5355,11 +5379,14 @@ check('§5.3 items 6-7 · six columns on the file\'s grid, with SURFACE and BACK
     assert(T_HTML.indexOf('>' + h + '</span>') > 0, `the ${h} column head is missing`);
   });
   assert(T_HTML.indexOf('>Seasons<') < 0, 'the SEASONS column was not removed');
-  assert(/font-size:9px;letter-spacing:0\.1em;text-transform:uppercase;color:var\(--label\)/.test(T_HTML),
-    'the head eyebrow is not 9px / 0.1em / #6e7a93');
-  assert(/padding:11px 10px;cursor:pointer;border-top:0\.33px solid var\(--line-soft\)/.test(T_HTML),
+  // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label
+  // (was mono 9px/0.1em/#6e7a93); row hairlines are 1px --line (was 0.33px --line-soft);
+  // the hover fill is --tile-hover (was --nav-hover).
+  assert(/font-family:var\(--font-words\); font-size:10\.5px;letter-spacing:0\.10em; text-transform:uppercase; font-weight:700;[^"]*color:var\(--text-label\)/.test(T_HTML),
+    'the head eyebrow is not the foundation caps label (Hanken 10.5 / 0.10em / 700 / --text-label)');
+  assert(/padding:11px 10px;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML),
     'the row padding or border-top drifted');
-  assert(/\.pp2-trow:hover\{background:var\(--nav-hover\);\}/.test(PP2_SRC),
+  assert(/\.pp2-trow:hover\{background:var\(--tile-hover\);\}/.test(PP2_SRC),
     'the row has no hover fill');
 });
 mustFail('[neg] the column check would catch the shipped five-column table', () => {
@@ -5392,15 +5419,18 @@ mustFail('[neg] the best-result check would catch the shipped bare finish', () =
 
 check('§5.3 item 9 · Win% is whole, gated, and coloured by the §9 rule', () => {
   assert.strictEqual(I.rateText0(14, 4), '78%');
-  assert.strictEqual(I.winRateColour(14, 4), '#6a9af8');     // 78% >= 55
-  assert.strictEqual(I.winRateColour(5, 7), '#d9dbdf');      // 42% < 55, n=12 full
-  assert.strictEqual(I.winRateColour(4, 3), '#6e7a93');      // n=7, small sample
-  assert.strictEqual(I.winRateColour(2, 1), '#6e7a93');      // n=3, no rate
+  // TEN-376: the product's token mapping — #6a9af8 → --text (correction: blue is data-viz/links only, an
+  // emphasised number is white), #d9dbdf → --text-soft, #6e7a93 → --text-label.
+  assert.strictEqual(I.winRateColour(14, 4), 'var(--text)');       // 78% >= 55
+  assert.strictEqual(I.winRateColour(5, 7), 'var(--text-soft)');   // 42% < 55, n=12 full
+  assert.strictEqual(I.winRateColour(4, 3), 'var(--text-label)');  // n=7, small sample
+  assert.strictEqual(I.winRateColour(2, 1), 'var(--text-label)');  // n=3, no rate
+  assert.notStrictEqual(I.winRateColour(14, 4), I.winRateColour(5, 7), 'the >=55 accent collapsed into the neutral');
   assert.strictEqual(I.rateText0(2, 1), '—');
   // No one-decimal rate may appear in a tournament ROW.
   const rowChunk = T_HTML.slice(T_HTML.indexOf('data-pp2="tourn-row"'));
-  assert(/font-size:12px;text-align:right;white-space:nowrap;color:(#6a9af8|#d9dbdf|#6e7a93|#6e7a93);">\d+%/
-    .test(rowChunk) || /color:(#6a9af8|#d9dbdf);">\d+%/.test(rowChunk),
+  assert(/font-size:12px;text-align:right;white-space:nowrap;color:(var\(--text\)|var\(--text-soft\)|var\(--text-label\));">\d+%/
+    .test(rowChunk) || /color:(var\(--text\)|var\(--text-soft\));">\d+%/.test(rowChunk),
     'the row win% is not a whole number in a §9 colour');
 });
 mustFail('[neg] the win% check would catch the shipped 81.8%', () => {
@@ -5427,8 +5457,11 @@ mustFail('[neg] the display-name check would catch the shipped feed name', () =>
 check('§5.3 items 11-12 · the open row is highlighted and BACKING is the Tournament tab\'s row join (founder Q8)', () => {
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
-  assert(open.indexOf('background:#0b1c4e;') > 0,
+  // TEN-376 Foundation: selection is lift — the open row takes --inner (was #0b1c4e); closed rows stay transparent.
+  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--inner\);/.test(open),
     'the selected row carries no highlight');
+  assert(!/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--inner\);/.test(T_HTML),
+    'a closed row carries the selected highlight');
   I.state.tournOpen = null;
   // BACKING (founder Q8, 2026-09-30; supersedes the N5 market-shard sum): the Match analysis Tournament tab's row join,
   // answered by the page (window.trProfileBacking). Without it every event dashes "loading prices" — the market-edge
@@ -5459,14 +5492,15 @@ check('§5.3 items 13-14 · the detail is the file\'s container and carries the 
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  assert(open.indexOf('background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:10px;' +
+  // TEN-376: --surface-inner → --inner, 0.33px --seg-active-line → 1px --edge-10.
+  assert(open.indexOf('background:var(--inner);border:1px solid var(--edge-10);border-radius:10px;' +
     'margin:7px 0 9px;padding:13px 15px;') > 0, 'the detail container drifted from the file');
   assert(/showing \d+ matches/.test(open), 'the header meta line is missing');
   assert(/font-size:13px;font-weight:700;white-space:nowrap;">Australian Open</.test(open),
     'the detail header name is missing');
 });
 mustFail('[neg] the detail check would catch the shipped header-less container', () => {
-  const shipped = '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);' +
+  const shipped = '<div style="background:var(--inner);border:1px solid var(--edge-10);' +
     'border-radius:10px;margin:7px 0 9px;padding:13px 15px;"><div>2026 · WON</div></div>';
   assert(/showing \d+ matches/.test(shipped), 'the header meta line is missing');
 });
@@ -5478,7 +5512,8 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   assert(slam && other, 'the fixture has no Slam/non-Slam pair to compare');
   const sHtml = I.renderTournDetail(ZVEREV, slam);
   const oHtml = I.renderTournDetail(ZVEREV, other);
-  const tiles = h => (h.match(/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--label\);">([^<]+)</g) || [])
+  // TEN-376: the tile caption is the foundation caps label (Hanken 10.5/700/0.10em, was mono 0.12em caps)
+  const tiles = h => (h.match(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*">([^<]+)</g) || [])
     .map(x => x.replace(/.*">/, '').replace(/</, ''));
   assert.deepStrictEqual(tiles(sHtml),
     ['W–L record', 'Grand Slam career', 'Over 3.5 sets · this event',
@@ -5487,7 +5522,8 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
   assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(sHtml),
     'the tile grid is not 5 x gap 10');
-  assert(/background:var\(--surface\);border:0\.33px solid var\(--line\);border-radius:11px;padding:14px 15px/
+  // TEN-376 Foundation: stat box = --card + 1px --edge-6 (was --surface + 0.33px 12a --line).
+  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:11px;padding:14px 15px/
     .test(sHtml), 'the tile box drifted from the file');
   assert(/font-size:23px;font-weight:700/.test(sHtml), 'the tile figure is not mono 23/700');
 });
@@ -5538,8 +5574,9 @@ check('§5.3 items 16-18 · the match grid is the file\'s, with DATE, SET SCORES
   ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].forEach((h) => {
     assert(open.indexOf('>' + h + '</span>') > 0, `the ${h} match column head is missing`);
   });
-  assert(/position:sticky;top:0;background:var\(--popup\)/.test(open), 'the match head is not sticky');
-  assert(/width:8px;height:8px;border-radius:2px;background:(#3ed68c|#da6259)/.test(open),
+  // TEN-376: the sticky head paints the modal --card surface (was --popup); W/L squares are --pos / --neg.
+  assert(/position:sticky;top:0;background:var\(--card\)/.test(open), 'the match head is not sticky');
+  assert(/width:8px;height:8px;border-radius:2px;background:(var\(--pos\)|var\(--neg\))/.test(open),
     'the W/L marker is not the file\'s 8px radius-2 square');
 });
 mustFail('[neg] the match-grid check would catch the shipped four-column list', () => {
@@ -5581,7 +5618,7 @@ check('§5.3 item 17 · edition group rows read "<Event> <year>" with finish and
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
   assert(/>Australian Open 20\d\d</.test(open), 'the group row is not "<Event> <year>"');
-  assert(!/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--label\);margin-bottom:4px;">20\d\d/
+  assert(!/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--(text-)?label\);margin-bottom:4px;">20\d\d/
     .test(open), 'the rejected "2026 · WON" eyebrow is still there');
 });
 mustFail('[neg] the group-row check would catch the shipped year eyebrow', () => {

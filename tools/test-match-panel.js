@@ -208,7 +208,9 @@ check('the point score reads from the SUBJECT’s side, both orientations', () =
   // anywhere is satisfied by an UNFLIPPED render and proves nothing. (A mutant
   // that dropped the flip entirely passed the first version of this check.)
   const firstPoint = (html) => {
-    const m = html.match(/font-size:12px;color:var\(--label\);">([^<]*)</);
+    // TEN-376: --label renamed --text-label. Anchored on the point chip's own
+    // inline-flex/gap so another 12px label line cannot be read as a point.
+    const m = html.match(/display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var\(--text-label\);">([^<]*)</);
     return m ? m[1].trim() : null;
   };
   const asP1 = load(FULL());
@@ -362,9 +364,11 @@ check('the full-screen page carries the export’s own chrome', () => {
   I.state.matchPage = SHEET_ID;
   const html = I.renderMatchPage(SUBJECT, I.build(SUBJECT));
   for (const needle of [
-    'position:fixed;inset:0;z-index:80', 'background:var\(--surface-inner\)', 'max-width:1000px',
+    // TEN-376 Foundation: --surface-inner → --inner; the Back control's raw
+    // #6e7a93 is the --text-label grey (it labels, it is not a link target colour).
+    'position:fixed;inset:0;z-index:80;background:var(--inner);', 'max-width:1000px',
     'padding:26px 34px 70px', 'Back to profile', 'font-size:26px;font-weight:800',
-    'color:#6e7a93', 'data-pp2="match-page-close"',
+    'font-size:13.5px;font-weight:600;color:var(--text-label);', 'data-pp2="match-page-close"',
   ]) {
     assert.ok(html.includes(needle), `off the export: missing ${needle}`);
   }

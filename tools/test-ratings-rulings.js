@@ -95,8 +95,12 @@ check('RULING 1: the rendered panel prints no % beside either count', () => {
     assert.ok(html.includes(label), `panel never prints "${label}"`);
     // the tile body runs value · delta · label · tour line; take a window around
     // the label and require no % in it.
-    const i = html.indexOf(label);
-    const tile = html.slice(Math.max(0, i - 700), i + 400);
+    // TEN-376: colours are now color-mix(in srgb, var(--token) N%, transparent) — a CSS
+    // opacity, not a printed value. Drop those (and only those) before the window is cut,
+    // so the check still reads what the tile PRINTS.
+    const printed = html.replace(/color-mix\(in srgb, var\(--[\w-]+\) [\d.]+%, transparent\)/g, 'color-mix()');
+    const i = printed.indexOf(label);
+    const tile = printed.slice(Math.max(0, i - 700), i + 400);
     assert.ok(!/\d%/.test(tile),
       `a % appears inside the "${label}" tile — the store holds a per-match count, not a rate`);
   }

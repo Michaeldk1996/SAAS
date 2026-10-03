@@ -259,7 +259,7 @@ test('ROI + reliability: tournament-market.json figures, dashed when absent, gre
   S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74 } } };
   h = S.trMarketHtml(m);
   assert.ok(text(h).includes('small sample') && !/data-tr="roi-fav" onclick/.test(h));
-  assert.match(h, /color:var\(--ma-t3, var\(--label\)\);">\+2\.5%</, 'a 5–9 yield is greyed');
+  assert.match(h, /color:var\(--text-label\);">\+2\.5%</, 'a 5–9 yield is greyed');
   S.market = null;
 });
 

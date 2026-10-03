@@ -100,8 +100,11 @@ function constOf(name) {
 
 const HARD_GATE = constOf('HARD_GATE');
 const SOFT_GATE = constOf('SOFT_GATE');
-const POS = /POS\s*=\s*'(#[0-9a-f]{6})'/i.exec(MOD)[1];
-const NEG = /NEG\s*=\s*'(#[0-9a-f]{6})'/i.exec(MOD)[1];
+// TEN-376 Foundation: the sign inks are the tokens.css meaning colours, not hex literals.
+const POS = (/POS\s*=\s*'(var\(--[a-z0-9-]+\))'/i.exec(MOD) || [])[1];
+const NEG = (/NEG\s*=\s*'(var\(--[a-z0-9-]+\))'/i.exec(MOD) || [])[1];
+assert.equal(POS, 'var(--pos)', 'DatabaseTab POS must be the foundation --pos token');
+assert.equal(NEG, 'var(--neg)', 'DatabaseTab NEG must be the foundation --neg token');
 
 // Build a sandbox holding the real functions plus the constants they close over.
 const SANDBOX = [

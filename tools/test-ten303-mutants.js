@@ -3,7 +3,10 @@
 // a mutant that leaves the suite green is a vacuous test and fails this runner.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+// TEN303_MUT_BASE: run the mutants on another copy of the page (e.g. a candidate fix) instead of the working tree's.
+const BASE = process.env.TEN303_MUT_BASE || path.join(ROOT, 'bsp-consult-dashboard.html');
+const html = fs.readFileSync(BASE, 'utf8');
+const SUITES = ['test-ten303-odds-tab.mjs', 'test-ten303-colours.mjs'].map(f => path.join(ROOT, f));
 const MUTANTS = [
   ['Q23: a native title on the price-mode hints', "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\"' + tip(t) +", "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\" title=\"' + t + '\"' +"],
   ['§6.1 a stale book keeps its last price as NOW', "row[x + 'Now'] = row.stale ? null : novig", "row[x + 'Now'] = novig"],
@@ -43,32 +46,41 @@ const MUTANTS = [
   ['TEN-335: the entrance replays on a book-tab switch', '_aOdds.mvIn = !_aOdds.mv;', '_aOdds.mvIn = true;'],
   ['TEN-335: the open flag never cleared (a re-render replays)', 'try { renderOddsSection(); } finally { _aOdds.mvIn = false; } }', 'renderOddsSection(); }'],
   ['follow-up 1c: ALSO keeps the source key', 'const feed = (r.altMeta && r.altMeta.source) || aOddsSrcTitle(r.alt);', 'const feed = aOddsSrcTitle(r.alt);'],
-  // TEN-314 (TEN-312 D1): the tab reads the token file — a 12a name or a literal in place of the role token is caught
-  ['D1: the Odds-tab text on the 12a name, not its role token', "  text: 'var(--ma-t1)',      // Text", "  text: 'var(--text)',      // Text"],
-  ['D1: the Odds-tab text back to the spec literal', "  text: 'var(--ma-t1)',      // Text", "  text: '#E7E9EE',      // Text"],
-  ['D1: the nav-selected bg back to the 12a navy literal', '.modal-analysis .asidenav-item.active{ background:var(--ma-s-5b9bff-120);', '.modal-analysis .asidenav-item.active{ background:#0B1C4E;'],
-  ['D1: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--ma-s-0a0d14);', '.modal-analysis{ background:var(--popup);'],
-  ['D1: a literal back in a shared builder (the Form bar)', "const c = r.won ? 'var(--positive)' : 'var(--negative)';", "const c = r.won ? '#3ed68c' : 'var(--negative)';"],
-  ['D1: the modal scrim back to a literal', '  #analysisModal{ background:var(--ma-s-040508-720); }', '  #analysisModal{ background:rgba(4,5,8,0.72); }'],
-  ['D4: Odds player A back to the link blue', "  a: 'var(--ma-t1)',", "  a: 'var(--ma-link)',"],
-  ['U3: the book-strip hover on the selected token', "  rowHover: 'var(--ma-hover)',", "  rowHover: 'var(--ma-sel)',"],
+  // TEN-314 (TEN-312 D1) → TEN-376: the tab reads tokens.css — a wrong-role token or a literal in place of the role token is caught
+  ['D1: the Odds-tab text on the wrong role token (the reading grey)', "  text: 'var(--text)',      // Text", "  text: 'var(--text-soft)',      // Text"],
+  ['D1: the Odds-tab text back to the spec literal', "  text: 'var(--text)',      // Text", "  text: '#E7E9EE',      // Text"],
+  ['D1: the nav-selected bg back to the 12a navy literal', '.modal-analysis .asidenav-item.active{ background:var(--selected);', '.modal-analysis .asidenav-item.active{ background:#0B1C4E;'],
+  ['D1: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--page);', '.modal-analysis{ background:var(--popup);'],
+  ['D1: a literal back in a shared builder (the Form bar)', "const c = r.won ? 'var(--pos)' : 'var(--neg)';", "const c = r.won ? '#3ed68c' : 'var(--neg)';"],
+  ['D1: the modal scrim back to a literal', '  #analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }', '  #analysisModal{ background:rgba(4,5,8,0.72); backdrop-filter:blur(3px); }'],
+  ['D4: Odds player A back to the link blue', "  a: 'var(--text)',         // Player A", "  a: 'var(--link)',         // Player A"],
+  ['U3: the book-strip hover on the selected token', "  rowHover: 'var(--tile-hover)',", "  rowHover: 'var(--selected)',"],
+  ['TEN-376: an Odds border back to the old 1.25px', "  hw1: '1px',                // spec 1px borders", "  hw1: '1.25px',                // spec 1px borders"],
   ['review: stat boxes read raw prices', '    aOddsDispSeries(s).forEach(p => { if (!hi || p[1] > hi[1]) hi = p;', '    s.forEach(p => { if (!hi || p[1] > hi[1]) hi = p;'],
-  ['review: the Odds tab inherits the 12a text', '  #aSectionOdds{ color:var(--ma-t1); }', '  #aSectionOdds{ color:var(--text); }'],
+  ['review: the Odds tab inherits the modal text (its own rule dropped)', '  #aSectionOdds{ color:var(--text); }\n', ''],
   ['deployed measure: the tab inherits the modal line-height', '  #aSectionOdds{ font-size:16px; line-height:normal; }', '  #aSectionOdds{ font-size:16px; }'],
   ['deployed measure: the tab inherits the modal font-size', '  #aSectionOdds{ font-size:16px; line-height:normal; }', '  #aSectionOdds{ line-height:normal; }'],
-  // founder card 9e0ac649 chose between two blue HEXES; both are one token now, so the lock is the role split instead
-  ['role: the BOOKS tag text on the fill blue, not the link token', "  blue: 'var(--ma-link)',", "  blue: 'var(--ma-fill)',"],
-  ['role: the STEAM chip fill on the link token', "  blueFill: 'var(--ma-fill)',", "  blueFill: 'var(--ma-link)',"],
+  // founder card 9e0ac649 chose between two blue HEXES; TEN-376: blue is a fill, never text — the BOOKS tag is white text,
+  // the STEAM chip the badge lift (--selected), so the lock is the role split
+  ['role: the BOOKS tag text on the fill blue (blue is never text)', "  blue: 'var(--text)',", "  blue: 'var(--bar)',"],
+  ['role: the STEAM chip fill on the link token', "  blueFill: 'var(--selected)',", "  blueFill: 'var(--link)',"],
   ['founder card 9e0ac649: a pulled book stops at "not in feed since"', 'end: endOf(key, last.t),', 'end: aOddsPulledAt(mt) != null ? Math.max(last.t, aOddsPulledAt(mt)) : endOf(key, last.t),'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
 ];
+// A mutant is only meaningful against a GREEN baseline: on a red suite every mutant would read as "caught".
+const base = spawnSync(process.execPath, ['--test', ...SUITES], { env: Object.assign({}, process.env, { TEN303_HTML: BASE }), encoding: 'utf8' });
+if (base.status !== 0) {
+  console.error('✖ baseline red: the suites fail on the unmutated page, so no mutant can be judged. Fix the suite first.');
+  console.error((base.stdout || '').split('\n').filter(l => /^\s*(not ok|✖)/.test(l)).join('\n'));
+  process.exit(1);
+}
 let survived = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten303-mut-'));
 for (const [name, from, to] of MUTANTS) {
   if (html.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, 'm.html');
   fs.writeFileSync(file, html.replace(from, to));
-  const r = spawnSync(process.execPath, ['--test', path.join(ROOT, 'test-ten303-odds-tab.mjs'), path.join(ROOT, 'test-ten303-colours.mjs')], { env: Object.assign({}, process.env, { TEN303_HTML: file }), encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['--test', ...SUITES], { env: Object.assign({}, process.env, { TEN303_HTML: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });

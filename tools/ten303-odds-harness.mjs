@@ -29,7 +29,7 @@ export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtm
   'aOddsPulledAt', 'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap',
   'aOddsPairTicks', 'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml',
   'aOddsStatusOf', 'aOddsBookTip', 'aOddsTipHide', 'initAOddsTips', 'renderOddsSection', 'aOddsSetMode', 'aOddsSetMarket',
-  'aOddsOpenMv', 'aOddsCloseMv', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'fhS', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'];
+  'aOddsOpenMv', 'aOddsCloseMv', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'];
 
 // The page's renderer in a sandbox. `over` replaces a const's source (e.g. a config under test).
 export function build(src = HTML, over = {}) {

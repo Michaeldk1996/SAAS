@@ -331,21 +331,21 @@ test('EXECUTED: a never-fetched row dashes all three counts even on a shard that
   const renderTournament = eval(`(function(){ ${sandbox} })()`);
 
   // three right-aligned count cells, in grid order MD / Q / Alt
-  const cells = (html) => [...html.matchAll(/<span style="text-align:right;font-family:[^"]*font-weight:700;font-variant-numeric:tabular-nums;color:(#[0-9a-f]{6});">([^<]*)<\/span>/g)]
+  const cells = (html) => [...html.matchAll(/<span style="text-align:right;font-family:[^"]*font-weight:700;font-variant-numeric:tabular-nums;color:(var\(--[a-z0-9-]+\));">([^<]*)<\/span>/g)]   // TEN-376: colours are tokens
     .map((m) => ({ colour: m[1], text: m[2] }));
 
   const never = cells(renderTournament(DEPLOYED_PENDING, 0));
   assert.equal(never.length, 3, 'expected three count cells');
   assert.deepEqual(never.map((c) => c.text), ['—', '—', '—'],
     'a never-fetched row must dash ALL THREE counts — the deployed shard\'s ALT: 0 must not reach the screen');
-  assert.deepEqual([...new Set(never.map((c) => c.colour))], ['#6e7a93'],
-    'all three dashes must use the no-data colour');
+  assert.deepEqual([...new Set(never.map((c) => c.colour))], ['var(--text-label)'],
+    'all three dashes must use the no-data colour (TEN-376: #6e7a93 → --text-label)');
 
   // ...and the other direction: a REAL zero on a loaded row must survive.
   const real = cells(renderTournament(LOADED_NO_ALTS, 1));
   assert.deepEqual(real.map((c) => c.text), ['28', '16', '0'],
     'a loaded event with no alternates must print 0 — "no alternates" is not "never fetched"');
-  assert.equal(real[2].colour, '#ebf1f2', 'a real zero is real data and takes the data colour');
+  assert.equal(real[2].colour, 'var(--text)', 'a real zero is real data and takes the data colour (TEN-376: #ebf1f2 → --text)');
 });
 
 test('EXECUTED: the speed-series trend states the year SPAN, not the number of points', () => {
@@ -366,13 +366,14 @@ test('EXECUTED: the speed-series trend states the year SPAN, not the number of p
   const montreal = tourxSpeedSeriesHtml({ as2023: 1.07, as2024: null, as2025: 1.02 });
   assert.ok(!/>2024</.test(montreal), 'a missing season must not be plotted or labelled');
   assert.match(montreal, /Abstract court speed · 2023–2025/, 'the eyebrow states the real range');
-  assert.equal((montreal.match(/border:2px solid #ffffff/g) || []).length, 2, 'exactly one dot per real season');
+  // TEN-376: the dot ring #ffffff is now var(--text).
+  assert.equal((montreal.match(/border:2px solid var\(--text\)/g) || []).length, 2, 'exactly one dot per real season');
 
   // a single season: one dot, single-year eyebrow, and NO trend (nothing to trend)
   const one = tourxSpeedSeriesHtml({ as2023: null, as2024: 1.01, as2025: null });
   assert.match(one, /Abstract court speed · 2024/);
   assert.ok(!/Holding steady|Trending/.test(one), 'one point is not a trend');
-  assert.equal((one.match(/border:2px solid #ffffff/g) || []).length, 1);
+  assert.equal((one.match(/border:2px solid var\(--text\)/g) || []).length, 1);
 
   // no seasons at all: render nothing rather than an empty chart
   assert.equal(tourxSpeedSeriesHtml({ as2023: null, as2024: null, as2025: null }), '');
@@ -663,9 +664,12 @@ test('RULING: speed-panel columns stay NEUTRAL; only the selected row is tinted,
   assert.match(fn, /background:\$\{on \? hexA\(tint,0\.13\) : 'transparent'\}/);
   assert.match(fn, /box-shadow:inset 2px 0 0 \$\{tint\}/);
   assert.deepEqual(
-    Object.entries({ clay: '#f2b45f', hard: '#6a9af8', grass: '#45d6b0' })
+    // TEN-376 Foundation supersedes the 12a surface hues (TEN-285): surfaces are neutral
+    // (Q2.4, --text-soft); the hard/default row keeps the --bar fill. The ruling's intent —
+    // the tint comes from a fixed per-surface token map — is what stays pinned.
+    Object.entries({ clay: 'var(--text-soft)', hard: 'var(--bar)', grass: 'var(--text-soft)' })
       .filter(([k, v]) => !fn.includes(`${k}:'${v}'`)), [],
-    'the tokens must be the 12a surface tokens (TEN-285)');
+    'the tokens must be the foundation surface tokens (TEN-376)');
 
   // The COLUMN chrome must carry no hue — that is the "keep it neutral" half.
   const head = /height:41px[\s\S]*?\$\{rows\.length\} · med/.exec(fn);

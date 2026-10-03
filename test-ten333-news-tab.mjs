@@ -200,9 +200,9 @@ test('colour: tokens only; both group names primary text; blue only on View all 
   assert.deepEqual(code.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(/g) || [], []);
   const h = ok().buildNewsSection(M);
   for (const s of [...h.matchAll(/class="anews-gname" style="([^"]*)"/g)].map(m => decl(m[1]))) assert.equal(s.color, 'var(--text)');
-  assert.equal(styleOf(h, 'seg anews-viewall').color, 'var(--periwinkle)');
+  assert.equal(styleOf(h, 'seg anews-viewall').color, 'var(--link)');   // TEN-376: blue text = --link on real links only
   const css = html.slice(html.indexOf('/* News tab (TEN-333)'), html.indexOf('.modal-analysis .asection.active'));
-  assert.ok(css.includes('#aSectionNews .anews-row:hover{ border-color:var(--ma-outline); background:var(--ma-hover); }'), 'the file\'s .wirerow hover, tokens');
+  assert.ok(css.includes('#aSectionNews .anews-row:hover{ border-color:var(--open-card); background:var(--tile-hover); }'), 'the file\'s .wirerow hover, foundation tokens (TEN-376)');
   assert.deepEqual(css.match(/#[0-9a-fA-F]{3,8}\b(?![\w-])(?<!#aSectionNews)/g)?.filter(x => x !== '#aSectionNews') || [], []);
 });
 
@@ -250,6 +250,6 @@ test('feed check: a stored feed without an articles array is not "ok" — the ta
 // Mutation: a hover rule without !important — the inline colour wins and the design's style-hover never shows (finding 3).
 test('hover: View all and the caret hover rules beat their inline colours', () => {
   const css = html.slice(html.indexOf('/* News tab (TEN-333)'), html.indexOf('.modal-analysis .asection.active'));
-  assert.ok(/#aSectionNews \.anews-viewall:hover\{ color:var\(--ma-link-hover\) !important; \}/.test(css));
+  assert.ok(/#aSectionNews \.anews-viewall:hover\{ color:var\(--link\) !important; \}/.test(css));
   assert.ok(/#aSectionNews \.anews-row:hover \.anews-caret\{ color:var\(--text\) !important; \}/.test(css));
 });

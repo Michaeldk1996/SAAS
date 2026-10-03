@@ -22,7 +22,7 @@ export function lineSrc(decl, src) {
 }
 const FNS = ['cellForTier', 'sumCellsTier', 'alignYearlyPair', 'ovCareerByYear', 'ensureOverviewProfiles', 'ovPaint', 'buildYearlyTables',
   'setOverviewTier', 'ovStateFor', 'ovListable', 'ovRec', 'ovCellHtml', 'ovColumnHtml',
-  'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maSmallNote', 'maRateHtml', 'maGateBar', 'maSeg', 'fhS', 'fhEsc'];
+  'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maSmallNote', 'maRateHtml', 'maGateBar', 'maSeg', 'fhEsc'];
 const LINES = ['const _ovProfileSettled', 'const MA_GREY', 'const MA_SMALL_NOTE', 'const OV_TIERS', 'const OV_SURFS', 'const OV_GRID', 'const OV_MONO',
   'const OV_NO_LIST', 'const ovSeasonYear', 'let _ov'];
 const OBJS = ['const OV_C', 'const MA_SEG', 'const A_TAB_BUILD'];

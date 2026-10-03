@@ -264,7 +264,7 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   assert.ok(bandRow(R.html, 'a1').today && bandRow(R.html, 'a1').w + bandRow(R.html, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.40');
   const b0 = bandRow(R.html, 'b0');
   assert.deepEqual([b0.w, b0.l, b0.won, b0.uTxt, b0.clickable], [0, 0, '—', '—', false]);
-  assert.ok(b0.raw.includes(`color:var(--ma-s-8b96b5, var(--text-soft));">—<`), 'n = 0 1u dash in the muted colour (ME_C.m1, the file\'s #8B96B5 shade, TEN-336)');
+  assert.ok(b0.raw.includes(`color:var(--text-soft);">—<`), 'n = 0 1u dash in the muted colour (ME_C.m1: the file\'s #8B96B5 shade, TEN-336 → foundation --text-soft, TEN-376)');
   const lg = legend(R.html);
   assert.equal(lg[1].n, 0); assert.equal(lg[1].end, null); assert.equal(series(R.html, 'b'), null, 'no line for 0 priced');
   const RL = ui.render(m, { meView: 'lines' }, [rows, empty]);

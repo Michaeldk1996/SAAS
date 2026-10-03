@@ -63,10 +63,10 @@ test('frame: overlay, modal, header, body grid and menu carry the design FILE va
   assert.equal(h['grid-template-columns'], hd['grid-template-columns']); assert.equal(h.gap, hd.gap); assert.equal(h.padding, hd.padding);
   assert.equal(b['grid-template-columns'], bd['grid-template-columns']);
   assert.equal(n.padding, nv.padding); assert.equal(n.gap, nv.gap);
-  // colours of the frame: the token of the design's own scrim shade (DF L85 rgba(4,5,8,0.72); founder 2026-09-29) and the modal shadow
+  // colours of the frame (TEN-376 U5): the one scrim --backdrop (DF L85 rgba(4,5,8,0.72) re-mapped) + blur, and the modal shadow
   const chrome = HTML.slice(HTML.indexOf('<style id="match-analysis-chrome">'));
-  assert.ok(chrome.includes('#analysisModal{ background:var(--ma-s-040508-720); }'));
-  assert.ok(chrome.includes('box-shadow:var(--ma-shadow-modal)'));
+  assert.ok(chrome.includes('#analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }'));
+  assert.ok(chrome.includes('box-shadow:var(--shadow-modal)'));
 });
 
 // Mutation: reorder two menu items, or put back the old stroke-2 feather icons.

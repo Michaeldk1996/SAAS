@@ -1,18 +1,23 @@
 // TEN-314 — every check in test-ten314-modal-frame.mjs, test-ten314-sheet.mjs, test-ten314-gate.mjs, test-ten314-components.mjs and test-ten314-tokens.mjs must FAIL when the behaviour it locks is reverted. Each
 // mutant is applied to a copy of bsp-consult-dashboard.html and the suite is run against it (TEN314_HTML); a
 // mutant that leaves the suite green is a vacuous test and fails this runner.
+// TEN-376: the modal's own token file (match-analysis-tokens.css) is gone; 'css' mutants now apply to tokens.css.
+// TEN314_MUT_BASE: run the mutants on another copy of the page (e.g. a candidate fix) instead of the working tree's.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
-const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
-const css = fs.readFileSync(path.join(ROOT, 'match-analysis-tokens.css'), 'utf8');
+const BASE = process.env.TEN314_MUT_BASE || path.join(ROOT, 'bsp-consult-dashboard.html');
+const html = fs.readFileSync(BASE, 'utf8');
+const css = fs.readFileSync(path.join(ROOT, 'tokens.css'), 'utf8');
 const MUTANTS = [
   ['frame: README max-width 1200', 'font-family:var(--mx-font-ui); max-width:1500px;', 'font-family:var(--mx-font-ui); max-width:1200px;'],
   ['frame: height a max, not fixed', 'max-width:1500px; width:100%; height:88vh;', 'max-width:1500px; width:100%; max-height:88vh;'],
   ['frame: radius 12', 'border-width:1px; border-style:solid; border-radius:20px;', 'border-width:1px; border-style:solid; border-radius:12px;'],
-  ['frame: overlay z 100, no blur', '#analysisModal{ z-index:80; padding:32px; backdrop-filter:blur(3px);', '#analysisModal{ z-index:100; padding:32px; backdrop-filter:none;'],
+  // TEN-376: the dead-CSS pass removed the overridden blur from this rule; the live blur is the scrim rule's (own mutant below)
+  ['frame: overlay z 100', '#analysisModal{ z-index:80; padding:32px; -webkit-backdrop-filter:blur(3px); }', '#analysisModal{ z-index:100; padding:32px; -webkit-backdrop-filter:blur(3px); }'],
+  ['frame: overlay no blur', '#analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }', '#analysisModal{ background:var(--backdrop); backdrop-filter:none; }'],
   ['frame: nav 196', 'display:grid; grid-template-columns:238px 1fr;', 'display:grid; grid-template-columns:196px 1fr;'],
   ['frame: header flex, not the 1fr auto 1fr grid', '.modal-analysis .ahead2{ display:grid; grid-template-columns:1fr auto 1fr;', '.modal-analysis .ahead2{ display:grid; grid-template-columns:1fr 1fr;'],
-  ['frame: the scrim dropped', '  #analysisModal{ background:var(--ma-s-040508-720); }\n', ''],
+  ['frame: the scrim dropped', '  #analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }\n', ''],
   ['menu: two tabs swapped', '(News|Playing style)', '(News|Playing style)'],
   ['menu: the old stroke-2 icon on Form', '<path d="M3 16l5-5 3 3 6-7" stroke="currentColor" stroke-width="1.7"', '<path d="M3 16l5-5 3 3 6-7" stroke="currentColor" stroke-width="2"'],
   ['report: the item loses its print handler', '<span class="asidenav-download" onclick="printAnalysisReport()">', '<span class="asidenav-download">'],
@@ -28,7 +33,7 @@ const MUTANTS = [
   ['lazy: Key factors pre-loads the News feed', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad()].map(p =>', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad(), ensureNewsData()].map(p =>'],
   ['lazy: a revisit rebuilds', '  if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }', '  if (true) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }'],
   ['lazy: the built set survives a new match', '  _aM = m; _aBuilt.clear();', '  _aM = m;'],
-  ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--ma-s-0a0d14);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--ma-s-0a0d14);'],
+  ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--page);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--page);'],
   ['lazy: a late shard of the previous match repaints the new one', 'function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }', 'function aBuilt(m, tab){ return _aBuilt.has(tab); }'],
   ['revisit: Weather / Market edge hooks only on the first open', "  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();\n", ''],
   ['direct tab: the completed-card path builds Key factors first', "  openAnalysisModal(id, 'matchstats');\n}", "  openAnalysisModal(id);\n  aGoTab('matchstats');\n}"],
@@ -77,11 +82,11 @@ const MUTANTS = [
   ['seg: sheet item radius 8', "item: 'padding:5px 12px; border-radius:7px; font-size:11px;', tb:", "item: 'padding:5px 12px; border-radius:8px; font-size:11px;', tb:"],
   ['seg: Market edge track padding 3', "  me: { track: 'gap:3px; padding:2px; border-radius:8px;',", "  me: { track: 'gap:3px; padding:3px; border-radius:8px;',"],
   ['seg: pbp tabs drawn in the scope geometry', "` })), 'pbp') + order\n", "` }))) + order\n"],
-  ['seg: the selected tile dropped', "background:${on ? `var(--ma-s-${G.sb}, var(--seg-active))` : 'transparent'};", "background:transparent;"],
+  ['seg: the selected tile dropped', "background:${on ? `${G.sb}` : 'transparent'};", "background:transparent;"],
   ['seg: the 140ms transition dropped', "  .ma-seg-item{ transition:background .14s ease, color .14s ease, border-color .14s ease; }\n", ''],
   ['seg: Market edge keeps its own markup', "function meSegHtml(items){ return maSeg('me', items); }", "function meSegHtml(items){ return items.map(t => t.label).join(''); }"],
   ['pop: radius 12', "box: 'border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;',", "box: 'border-radius:12px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;',"],
-  ['pop: z-index 50', "scrim: 'var(--ma-s-030509-720, var(--backdrop))', z: 85,", "scrim: 'var(--ma-s-030509-720, var(--backdrop))', z: 50,"],
+  ['pop: z-index 50', "scrim: 'var(--backdrop)', z: 85,", "scrim: 'var(--backdrop)', z: 50,"],
   ['pop: every inner click closes', "onclick=\"if(event.target===this){${o.onClose}}\"", "onclick=\"${o.onClose}\""],
   ['pop: Market edge keeps its own frame', "  return maPopFrame({ cls: 'me-pop', xCls: 'me-x',", "  return '<div class=\"me-pop-overlay\">' + inner + '</div>' || maPopFrame({ cls: 'me-pop', xCls: 'me-x',"],
   ['esc: closes the first frame, not the topmost', "const top = all && all.length ? all[all.length - 1] : null;", "const top = all && all.length ? all[0] : null;"],
@@ -92,31 +97,41 @@ const MUTANTS = [
   ['rows: README grid instead of the file\'s', "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';", "const MA_ROW_COLS = '52px 14px minmax(0,1fr) 44px 56px minmax(0,1.2fr) 56px 56px';"],
   ['rows: header not sticky', "<div class=\"ma-rows-head\" style=\"position:sticky; top:0;", "<div class=\"ma-rows-head\" style=\"position:relative; top:0;"],
   ['rows: a row loses its sheet opener', "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''}${r.click || ''} style=\"display:grid; grid-template-columns:${COLS};", "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''} style=\"display:grid; grid-template-columns:${COLS};"],
-  ['tip: 200ms opacity', "transition:opacity .12s ease; pointer-events:none;\n    background:var(--ma-s-11151f, var(--popup));", "transition:opacity .2s ease; pointer-events:none;\n    background:var(--ma-s-11151f, var(--popup));"],
+  ['tip: 200ms opacity', "transition:opacity .12s ease; pointer-events:none;\n    background:var(--card);", "transition:opacity .2s ease; pointer-events:none;\n    background:var(--card);"],
   ['tip: the helper drops the class pair', "<span class=\"elotip-pop\" role=\"tooltip\"", "<span class=\"tip-pop\" role=\"tooltip\""],
   ['rows: no line-height of its own (inherits the host 21px)', '<div class="ma-rows" style="display:flex; flex-direction:column; line-height:normal;">', '<div class="ma-rows" style="display:flex; flex-direction:column;">'],
-  ['shades: a design shade loses its own token (token file)', '  --ma-s-06070a:#191B24;', '', 'css'],
-  ['shades: a runtime shade key typo in MA_SEG', "tb: '06070a', tl: 'ffffff-090'", "tb: '06070b', tl: 'ffffff-090'"],
+  // (TEN-376: the per-shade --ma-s-* tokens are gone by design; the token-file locks are foundation ones now)
+  ['tokens: Day re-tones a text token (only surfaces change)', '  --tile-hover:  #1B1F2B;', '  --tile-hover:  #1B1F2B;\n  --text:        #EEEEEE;', 'css'],
+  ['tokens: --text-soft drifts from foundation.md', '  --text-soft:   #DDE0EA;', '  --text-soft:   #DDE0EB;', 'css'],
+  ['seg: a token typo in MA_SEG (sheet track)', "tb: 'var(--card)', tl: 'var(--edge-6)', sb: 'var(--inner)', sl: 'var(--edge-10)' },   // DF L1689", "tb: 'var(--crad)', tl: 'var(--edge-6)', sb: 'var(--inner)', sl: 'var(--edge-10)' },   // DF L1689"],
   ['sheet: the year back on a Form sheet', "e.noYear ? fhDDMM(r.date) :", "e.noYear ? fhDDMM(r.date) + '.26' :"],
   ['sheet: the year dropped for every other list', ": fhDDMM(r.date) + (yy ? '.' + yy : '');", ": fhDDMM(r.date);"],
   ['sheet: the Match Stats tab copy back to DD.MM.YY', "!r.date ? null : o.inline ? longDate(r.date) :", "!r.date ? null :"],
-  ['seg: the me selected border folded into its fill (Night)', "sb: '5b9bff-160', sl: '5b9bff-220-line' },      // DF L1804", "sb: '5b9bff-160', sl: '5b9bff-220' },      // DF L1804"],
-  ['tip: the tooltip surface off its §3 role (token file)', '  --ma-s-11151f:#1B1C27;', '  --ma-s-11151f:#20232E;', 'css'],
-  ['pop: the box border back to 1px', "border:1.25px solid ${o.line", "border:1px solid ${o.line"],
+  ['seg: the me selected border folded into its fill', "sb: 'var(--inner)', sl: 'var(--edge-10)' },      // DF L1804", "sb: 'var(--inner)', sl: 'var(--inner)' },      // DF L1804"],
+  ['tip: the tooltip surface off its foundation role (a floating layer = --card)', "    background:var(--card); border:1px solid var(--edge-10); border-radius:8px; padding:8px 11px;", "    background:var(--inner); border:1px solid var(--edge-10); border-radius:8px; padding:8px 11px;"],
+  ['pop: the box border back to 1.25px', "border:1px solid ${o.line", "border:1.25px solid ${o.line"],
   ['rows: the Form geometry options ignored', "padding:${o.headPad || '6px 6px 7px'}", "padding:6px 6px 7px"],
-  ['sheet: the caption strip loses its border', "border:var(--ma-hw, 0px) solid var(--ma-s-ffffff-070, transparent); border-radius:8px; padding:8px 0;", "border-radius:8px; padding:8px 0;"],
-  ['tip: the pop back to a mono font (the design pop takes the UI font)', "    font-family:'Hanken Grotesk',sans-serif; font-size:11px; color:var(--ma-t2", "    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ma-t2"],
+  ['sheet: the caption strip loses its border', "background:var(--page); border:1px solid var(--line); border-radius:8px; padding:8px 0;", "background:var(--page); border-radius:8px; padding:8px 0;"],
+  ['tip: the pop back to a mono font (the design pop takes the UI font)', "    font-family:'Hanken Grotesk',sans-serif; font-size:11px; color:var(--text-soft", "    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-soft"],
   ['tip: a plain-text body loses its README mono span', "${/^\\s*</.test(body) ? body :", "${true ? body :"],
-  ['form: the list card off the header shade', 'overflow:clip; background:var(--ma-s-0a0d14, var(--surface)); display:flex;', 'overflow:clip; background:var(--surface); display:flex;'],
+  ['form: the list card off the header shade', 'overflow:clip; background:var(--page); display:flex;', 'overflow:clip; background:var(--card); display:flex;'],
   ['tooltip: the positioned mode styles its own box again', "t.id = 'aoddsTip'; t.className = 'elotip-pop ma-tip-float';", "t.id = 'aoddsTip'; t.style.cssText = 'background:#000; border:1px solid #fff;'; t.className = 'elotip-pop ma-tip-float';"],
   ['tooltip: the positioned mode invisible', "transform:none; opacity:1; visibility:visible; white-space:normal;", "transform:none; white-space:normal;"],
   ['tooltip: plain text loses the mono wrap', "t.innerHTML = /^\\s*</.test(body) ? body :", "t.innerHTML = true ? body :"],
   ['tooltip: News never arms the listener', "    if (typeof initAOddsTips === 'function') initAOddsTips();   // the modal's one tooltip component (the group count's population note)\n", ""],
   ['tooltip: the News count back to a native title', '<span class="anews-gcount" tabindex="0" data-aotip="${esc(esc(pop))}"', '<span class="anews-gcount" title="${esc(pop)}"'],
-  ['hairline: --ma-hw back to the site 0.33px (token file)', '  --ma-hw:1px;', '  --ma-hw:0.33px;', 'css'],
-  ['hairline: a bare 0.33px back in a modal builder', 'border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-080, var(--line)); border-radius:10px; padding:16px 20px;', 'border:0.33px solid var(--ma-s-ffffff-080, var(--line)); border-radius:10px; padding:16px 20px;'],
-  ['hairline: a bare 0.33px back in a modal CSS rule', ':is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line);', ':is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line);'],
-  ['hairline: a bare 0.33px back in .aform-tabs (review gap)', '.aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:var(--ma-hw,0.33px) solid var(--line);', '.aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:0.33px solid var(--line);'],
+  ['hairline: a bare 0.33px back in a modal builder', 'border:1px solid var(--line); border-radius:10px; padding:16px 20px;', 'border:0.33px solid var(--line); border-radius:10px; padding:16px 20px;'],
+  ['hairline: a 1.25px border back in a modal builder', 'border:1px solid var(--line); border-radius:10px; padding:16px 20px;', 'border:1.25px solid var(--line); border-radius:10px; padding:16px 20px;'],
+  ['hairline: a bare 0.33px back in a modal CSS rule', ':is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--inner); border:1px solid var(--edge-6); }', ':is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--inner); border:0.33px solid var(--edge-6); }'],
+  ['hairline: a bare 0.33px back in .aform-tabs (review gap)', '.aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:1px solid var(--edge-6);', '.aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:0.33px solid var(--edge-6);'],
+  // ---- test-ten314-tokens.mjs (TEN-376: tokens.css is the modal's one colour file; theme.js the one theme) ----
+  ['tokens: a literal back in a modal builder', "const MA_GREY = 'var(--text-label)';", "const MA_GREY = '#A3AABE';"],
+  ['tokens: a literal in a modal CSS rule', '  .modal-analysis .apname.b{ color:var(--text-soft); }', '  .modal-analysis .apname.b{ color:#DDE0EA; }'],
+  ['tokens: a var() tokens.css does not set (the retired periwinkle)', '  .modal-analysis .apname{ color:var(--text); }', '  .modal-analysis .apname{ color:var(--periwinkle); }'],
+  ['theme: maSetTheme stops delegating to theme.js', "function maSetTheme(mode){ return window.sfTheme ? window.sfTheme.set(mode) : 'night'; }", "function maSetTheme(mode){ return 'night'; }"],
+  ['theme: the modal back on its own attribute', '<div class="modal-overlay ma-theme" id="analysisModal">', '<div class="modal-overlay ma-theme" id="analysisModal" data-ma-theme="night">'],
+  ['theme: openAnalysisModal no longer applies the theme', '  maApplyTheme();', '  void 0;'],
+  ['ships: tokens.css not linked', '<link rel="stylesheet" href="./tokens.css">\n', ''],
 ];
 // "two tabs swapped" is a structural mutant: swap the News and Playing style menu rows.
 function apply(src, name, from, to) {
@@ -130,15 +145,22 @@ function apply(src, name, from, to) {
   return src.replace(from, to);
 }
 const SUITES = ['test-ten314-modal-frame.mjs', 'test-ten314-sheet.mjs', 'test-ten314-gate.mjs', 'test-ten314-components.mjs', 'test-ten314-tokens.mjs'];
+// A mutant is only meaningful against a GREEN baseline: on a red suite every mutant would read as "caught".
+const base = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN314_HTML: BASE }), encoding: 'utf8' });
+if (base.status !== 0) {
+  console.error('✖ baseline red: the suites fail on the unmutated page, so no mutant can be judged. Fix the suite first.');
+  console.error((base.stdout || '').split('\n').filter(l => /^\s*(not ok|✖)/.test(l)).join('\n'));
+  process.exit(1);
+}
 let survived = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten314-mut-'));
 for (const [name, from, to, target] of MUTANTS) {
-  // target 'css' = the mutant applies to match-analysis-tokens.css (TEN314_CSS), else to the page (TEN314_HTML).
+  // target 'css' = the mutant applies to tokens.css (TEN314_CSS), else to the page (TEN314_HTML).
   const m = apply(target === 'css' ? css : html, name, from, to);
   if (m == null) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, target === 'css' ? 'm.css' : 'm.html');
   fs.writeFileSync(file, m);
-  const env = Object.assign({}, process.env, target === 'css' ? { TEN314_CSS: file } : { TEN314_HTML: file });
+  const env = Object.assign({}, process.env, target === 'css' ? { TEN314_CSS: file, TEN314_HTML: BASE } : { TEN314_HTML: file });
   const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env, encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }

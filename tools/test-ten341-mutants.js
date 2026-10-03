@@ -65,7 +65,7 @@ const MUTANTS = [
   ['odds: an all-stale market reads "no prices in the feed"', "kfNote(D.hasSeries ? 'No recent prices:", "kfNote(false ? 'No recent prices:"],
   ['odds: the vig split from two unmatched latest quotes', "const p1 = nvA ? 100 / nvA : null,", "const p1 = (1 / a) / (1 / a + 1 / b) * 100,"],
   ['escaping: the tournament title unescaped', "${fhEsc(tier ? `${clean} · ${tier}` : clean)}", "${tier ? `${clean} · ${tier}` : clean}"],
-  ['D1: a literal colour in the card surface', "card: fhS('0a0d14', '--surface'), line: fhS('ffffff-090', '--line'),", "card: '#0a0d14', line: fhS('ffffff-090', '--line'),"],
+  ['D1: a literal colour in the card surface', "card: 'var(--page)', line: 'var(--line)',", "card: '#0a0d14', line: 'var(--line)',"],
   ['lazy: Key factors stops loading the H2H meetings', 'fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(),', 'fhEnsureFormData(m), ensureMatchDna(),'],
   ['lazy: no final paint (Download report prints the loading lines)', '.then(() => { done = true; paint(); });', '.then(() => { done = true; });'],
 ];

@@ -247,15 +247,16 @@ assert(refCss.indexOf('[data-page="series"] .sr-ref {') === 0, '.sr-ref has no s
 const refRule = refCss.slice(0, refCss.indexOf('}') + 1);
 assert(/IBM Plex Mono/.test(refRule), 'the sub-line must be mono');
 assert(/font-size: 11\.5px/.test(refRule), 'TEN-204 2.4: the sub-line must be 11.5px');
-assert(/color: var\(--label\)/.test(refRule), 'the sub-line colour must be the 12a label token');
+// TEN-376 Foundation renamed the 12a --label token to --text-label (tokens.css).
+assert(/color: var\(--text-label\)/.test(refRule), 'the sub-line colour must be the foundation label token (--text-label)');
 const cellV = css.slice(css.indexOf('[data-page="series"] .sr-cell-v {'));
 const cellVRule = cellV.slice(0, cellV.indexOf('}'));
 const sizeOf = (rule) => Number((/font-size: ([\d.]+)px/.exec(rule) || [])[1]);
 assert(sizeOf(refRule) < sizeOf(cellVRule),
   'TEN-204 2.4: the sub-line must read SECONDARY to the strip values — it is ' +
   sizeOf(refRule) + 'px against the strip\'s ' + sizeOf(cellVRule) + 'px');
-assert(/\[data-page="series"\] \.sr-ref--none \{[^}]*color: var\(--label\)/.test(css),
-  'item 5: the unavailable state must be the 12a label token (TEN-285 collapsed #4b5672 into label)');
+assert(/\[data-page="series"\] \.sr-ref--none \{[^}]*color: var\(--text-label\)/.test(css),
+  'item 5: the unavailable state must be the foundation label token --text-label (TEN-285 collapsed #4b5672 into label; TEN-376 renamed it)');
 // The sub-line must WRAP, never elide. Measured at 320-360px: a nowrap sub-line makes
 // the card's min-content 370px inside a 288px grid track, so the card breaks out of its
 // column; the alternative escape (min-width:0) trades that for an ellipsis, i.e. a

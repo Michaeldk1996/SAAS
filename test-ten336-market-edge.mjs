@@ -13,7 +13,8 @@ import { buildUI, HTML, slice, constSrc } from './tools/ten310-harness.mjs';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FX = join(HERE, 'tools/fixtures/ten310');
 const rd = (f) => JSON.parse(readFileSync(join(FX, f), 'utf8'));
-const TOKENS = readFileSync(join(HERE, 'match-analysis-tokens.css'), 'utf8');
+// TEN-376 Foundation: match-analysis-tokens.css is deleted; every colour is a token of the ONE file tokens.css.
+const TOKENS = readFileSync(join(HERE, 'tokens.css'), 'utf8');
 const ui = buildUI();
 const M = { id: 'upcoming-x', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 2072, p2Key: 2382, date: '2026-09-27',
   tour: 'ATP Beijing', tournamentRound: 'ATP Beijing - Final', tourBadge: 'ATP', bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } } };
@@ -49,31 +50,42 @@ test('D3: a fresh modal opens Market edge on Match winner (the Price sensitivity
   assert.ok(R.html.indexOf('Price sensitivity') > 0 && !R.html.includes('Derived lines at today'), 'Match winner cards only');
 });
 
-// Mutation: any ME_C value back on a role token (var(--ma-t1) …), or a shade name the token file doesn't carry.
-test('palette: every Market edge colour is a design shade token that the token file defines', () => {
+// Mutation: any ME_C value back on a modal token (var(--ma-t1) …), a raw colour, or a token tokens.css doesn't define.
+// TEN-376 Foundation supersedes the TEN-336 "design shade token" palette (fhS('<hex>') → --ma-s-<hex>): every ME_C colour is
+// now a tokens.css token, or a color-mix of one with transparent.
+test('palette: every Market edge colour is a foundation token that tokens.css defines', () => {
   const src = constSrc('ME_C');
-  const keys = [...src.matchAll(/fhS\('([0-9a-f-]+)'/g)].map((m) => m[1]);
-  assert.ok(keys.length >= 28, 'shade tokens');
-  assert.ok(!/var\(--ma-(t1|t2|t3|card|inner|sel|hair|outline|link|pos|neg|chart|track)/.test(src), 'no role token left in ME_C');
-  for (const k of keys) assert.ok(TOKENS.includes(`--ma-s-${k}:`), `token --ma-s-${k} defined`);
-  // DF palette 'a': player A #E7E9EE, player B #6B7590; up/down #3DD68C / #E0616F; TODAY #5B9BFF
-  assert.match(src, /text: fhS\('e7e9ee'/); assert.match(src, /b: fhS\('6b7590'/);
-  assert.match(src, /up: fhS\('3dd68c'.*dn: fhS\('e0616f'/); assert.match(src, /'blue': fhS\('5b9bff'/);
+  const C = new Function(`${src}\nreturn ME_C;`)();
+  const colours = Object.entries(C).filter(([k]) => k !== 'hw');
+  assert.ok(colours.length >= 28, 'every ME_C colour role is still there');
+  assert.ok(!/fhS\(|--ma-|#[0-9a-f]{3,8}\b|rgba?\(/i.test(src), 'no deleted helper, modal token or raw colour left in ME_C');
+  for (const [k, v] of colours) {
+    assert.match(v, /^(var\(--[a-z0-9-]+\)|color-mix\(in srgb, var\(--[a-z0-9-]+\) [\d.]+%, transparent\))$/, `ME_C.${k} = a token or token + opacity: ${v}`);
+    const t = /var\((--[a-z0-9-]+)\)/.exec(v)[1];
+    assert.ok(new RegExp(`^\\s*${t}:`, 'm').test(TOKENS), `ME_C.${k}: ${t} defined in tokens.css`);
+  }
+  // players neutral: A primary white, B the label grey; up/down green / red on signed values; "blue" accent TEXT is white
+  // (blue is a fill, never text — foundation.md)
+  assert.equal(C.text, 'var(--text)'); assert.equal(C.b, 'var(--text-label)');
+  assert.deepEqual([C.up, C.dn], ['var(--pos)', 'var(--neg)']); assert.equal(C.blue, 'var(--text)');
+  assert.equal(C.hw, '1px', 'all borders 1px (no 0.33px hairline)');
 });
 
-// Mutation: the card back on a 1px hairline, the pane padding back, the column-head rule back to the soft 0.05.
-test('geometry: cards 1.25px at white 0.06, no pane padding, column heads on the 0.09 rule (DF L1810, L1817, L1802)', () => {
+// Mutation: the card back on 1.25px, a 0.33px hairline back, the pane padding back, the column-head rule back to the row rule.
+// TEN-376 Foundation: "All edges 1px solid (no 0.33px, no 1.25px)" supersedes the file's 1.25px card / 0.33px rules.
+test('geometry: card 1px on the --line edge, no pane padding, column heads on the --line rule (DF L1810, L1817, L1802)', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.match(R.html, /class="me-card me-price" style="background:var\(--ma-s-0e1019, var\(--surface\)\); border:1\.25px solid var\(--ma-s-ffffff-060, var\(--line\)\);/);
+  assert.match(R.html, /class="me-card me-price" style="background:var\(--card\); border:1px solid var\(--line\);/);
   assert.match(R.html, /<div class="me-pane" style="font-family:/);
-  assert.match(R.html, /padding:0 8px 7px; border-bottom:var\(--ma-hw,0\.33px\) solid var\(--ma-s-ffffff-090, var\(--line-open\)\);/);
+  assert.match(R.html, /padding:0 8px 7px; border-bottom:1px solid var\(--line\);/);
+  assert.ok(!/0\.33px|1\.25px/.test(R.html + R.band('a2') + R.line('a|0', 'all')), 'no 0.33px / 1.25px edge anywhere in the tab');
 });
 
 // Mutation: the wash only on today's band (drop `|| on`).
 test('band rows: the open band takes the today wash too, the ring stays on today only (DF L3443)', () => {
   const R = ui.render(M, { meView: 'winner', meBand: 'a0' }, rows);
   const row = (k) => { const i = R.html.indexOf(`data-me-band="${k}"`); return R.html.slice(R.html.lastIndexOf('<div', i), R.html.indexOf('>', i)); };
-  assert.match(row('a0'), /background:var\(--ma-s-5b9bff-060, var\(--seg-active\)\); box-shadow:inset 0 0 0 1px transparent;/);
+  assert.match(row('a0'), /background:var\(--selected\); box-shadow:inset 0 0 0 1px transparent;/);   // TEN-376: the wash = --selected (selection is lift, never blue)
   assert.match(row('a1'), /background:transparent;/);
 });
 
@@ -88,8 +100,10 @@ test('pill: CLOSING ODDS, its book split through the shared tooltip', () => {
 });
 
 // Mutation: the helper's table variant keeps a group header for a titleless group, loses the right alignment of the
-// price columns, or drops the row hairline; or the default path changes (the byte hashes below are origin/main's).
-test('maMatchRowsHtml: the pop-up table variant is a parameter; the default rows are byte-identical to before', () => {
+// price columns, or drops the row hairline; or the default path changes. TEN-376 re-pinned the byte hashes: the only
+// change from origin/main's (390b2855…/ec347dae…/a4bd83e4…/dc50321a…) is inside style="" — colours → tokens.css, edges
+// 1px, caps labels Hanken 10.5/700 — proven by the style-stripped hashes, which are origin/main's output unchanged.
+test('maMatchRowsHtml: the pop-up table variant is a parameter; the default rows are unchanged but for TEN-376 styling', () => {
   const make = new Function(`${constSrc('MA_ROW_COLS')}\n${constSrc('MA_ROW_CELLS')}\n${['escapeHtml', 'maTipHtml', 'maMatchRowsHtml'].map((n) => slice(n)).join('\n')}\nreturn maMatchRowsHtml;`);
   const rowsFn = make();
   const groups = [{ title: 'Washington', meta: 'Hard · ATP 500', metaTitle: 'tip', cls: 'g1', rows: [
@@ -99,16 +113,18 @@ test('maMatchRowsHtml: the pop-up table variant is a parameter; the default rows
   const opts = [{}, { headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8, divider: '<hr>' },
     { labels: ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'Home', 'Away'], headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8, rowPad: '0 8px 2px' }, { empty: 'Nothing' }];
   const h = (o) => createHash('sha256').update(rowsFn(groups, o) + '\u0000' + rowsFn([], o)).digest('hex').slice(0, 16);
-  assert.deepEqual(opts.map(h), ['390b2855e1c7e84c', 'ec347dae30a1dca2', 'a4bd83e41b9fdbde', 'dc50321a3bba1c30'], 'Form / H2H / Tournament rows unchanged');
+  const hs = (o) => createHash('sha256').update((rowsFn(groups, o) + '\u0000' + rowsFn([], o)).replace(/ style="[^"]*"/g, '')).digest('hex').slice(0, 16);
+  assert.deepEqual(opts.map(hs), ['dc7da0cbed9fc1e7', '15f8d3cc27dc6054', 'c02943b2aa8da0f7', 'd8623a4a6ddd9e34'], 'Form / H2H / Tournament rows: markup and text = origin/main');
+  assert.deepEqual(opts.map(h), ['871918641aaa28b9', 'f30d922a1fb9b22a', '080f9262f93128fa', '59179e6b29ee2f1c'], 'Form / H2H / Tournament rows unchanged (TEN-376 styling)');
   const t = rowsFn([{ title: null, rows: [{ date: '05.09.25', won: false, opp: 'J. Draper', event: 'US Open', rd: 'QF', score: '4-6 3-6', price: '1.55', priceTip: 'Pinnacle close · Tennis-Data', oppPrice: '2.60', pnl: '−1.00u' }] }],
     { cols: ['date', 'sq', 'opp', 'event', 'rd', 'score', 'price', 'oppPrice', 'pnl'], grid: '64px 10px 1fr', labels: ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&L'], inset: 22 });
   assert.ok(!t.includes('ma-rows-group'), 'a titleless group draws no group header');
   assert.ok(!rowsFn([{ title: null, rows: groups[0].rows }], {}).includes('ma-rows-group'), 'nor on the default rows');
-  assert.match(t, /padding:7px 28px 6px; border-top:var\(--ma-hw,0\.33px\) solid var\(--ma-s-ffffff-060, var\(--line\)\); border-bottom:var\(--ma-hw,0\.33px\) solid var\(--ma-s-ffffff-090, var\(--line-open\)\);/);
-  assert.equal((t.match(/text-transform:uppercase; color:var\(--ma-s-4b5672, var\(--label\)\); text-align:right;/g) || []).length, 3, 'Price / Opp / P&L heads right-aligned');
+  assert.match(t, /padding:7px 28px 6px; border-top:1px solid var\(--line\); border-bottom:1px solid var\(--line\);/);
+  assert.equal((t.match(/text-transform:uppercase; font-weight:700; color:var\(--text-label\); text-align:right;/g) || []).length, 3, 'Price / Opp / P&L heads right-aligned');
   assert.match(t, /<div class="" style="padding:0 22px;"><div class="seg ma-row"/);
-  assert.match(t, /cursor:pointer; border-bottom:var\(--ma-hw,0\.33px\) solid var\(--ma-s-ffffff-030, var\(--line\)\);/);
-  assert.match(t, /P&amp;L/); assert.match(t, /color:var\(--ma-s-e0616f, var\(--negative\)\);">−1\.00u</);
+  assert.match(t, /cursor:pointer; border-bottom:1px solid color-mix\(in srgb, var\(--text\) 3%, transparent\);/);
+  assert.match(t, /P&amp;L/); assert.match(t, /color:var\(--neg\);">−1\.00u</);
   assert.ok(!t.includes('position:sticky'), 'the pop-up table head does not stick');
 });
 
@@ -129,8 +145,9 @@ test('data: a best-of-3 recorded at a Slam-named event is a complete match, in t
   assert.equal(ret.ret, true, 'the feed flag still stands');
 });
 
-// Mutation: the shared pop-up frame's foot back on var(--label).
-test('pop-up foot in the design shade (#4B5672, DF L1512 / L1543)', () => {
+// Mutation: the shared pop-up frame's foot back on the deleted 12a var(--label).
+// TEN-376: the file's #4B5672 foot shade (--ma-s-4b5672) is now the foundation label grey --text-label.
+test('pop-up foot on the label grey --text-label (DF L1512 / L1543 #4B5672 → foundation)', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.match(R.band('a2'), /<span class="ma-pop-foot" style="font-size:11px; color:var\(--ma-s-4b5672, var\(--label\)\);">Every match/);
+  assert.match(R.band('a2'), /<span class="ma-pop-foot" style="font-size:11px; color:var\(--text-label\);">Every match/);
 });

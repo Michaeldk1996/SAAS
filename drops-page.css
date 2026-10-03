@@ -229,7 +229,7 @@
 .do-ov-box {
   box-sizing: content-box; position: absolute; z-index: 41; left: 50%; top: 50%; transform: translate(-50%,-50%);
   width: 1040px; max-width: calc(100% - 48px); max-height: calc(100% - 64px); border-radius: 16px; background: var(--card);
-  border: 1px solid color-mix(in srgb, var(--text) 6.6%, transparent); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--edge-10); box-shadow: var(--shadow-modal); display: flex; flex-direction: column; overflow: hidden;
 }
 .do-ov-box * { box-sizing: content-box; }
 .do-ov-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }

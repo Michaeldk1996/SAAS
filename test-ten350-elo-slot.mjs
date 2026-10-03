@@ -151,8 +151,9 @@ async function inChrome(pageHtml, expr) {
 // long name is broken mid-word) · names that never wrap (the name span gains `white-space:nowrap` → it runs into the Rd column).
 test('layout at 1296 px: long real names are never truncated or overlapped on Form or H2H (Davidovich Fokina, Van De Zandschulp…)', async () => {
   const styles = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
-  const tokens = readFileSync(join(HERE, 'match-analysis-tokens.css'), 'utf8');
-  const page = `<!doctype html><html><head><meta charset="utf-8"><style>${styles}</style><style>${tokens}</style></head><body>
+  // TEN-376 Foundation: match-analysis-tokens.css is deleted; the ONE token file is tokens.css, linked ahead of the page styles.
+  const tokens = readFileSync(join(HERE, 'tokens.css'), 'utf8');
+  const page = `<!doctype html><html data-theme="night"><head><meta charset="utf-8"><style>${tokens}</style><style>${styles}</style></head><body>
     <div id="analysisModal" class="ma-theme" data-ma-theme="night"><div id="aSectionForm" style="width:936px;"></div><div id="aSectionH2H" style="width:936px;"></div></div>
     <script>window.__T = (function(){ ${code('')} })();</script></body></html>`;
   const res = await inChrome(page, `(() => {

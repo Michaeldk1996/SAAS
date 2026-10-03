@@ -8,7 +8,30 @@ import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import { build, buildTips, buildCache, buildReport, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { resolve as resolveToken } from './tools/ten303-tokens.mjs';
+// TEN-376: the modal's token file (match-analysis-tokens.css) is gone — every colour resolves through tokens.css (Night).
+const FOUNDATION_CSS = readFileSync(new URL('./tokens.css', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const NIGHT_TOKENS = (() => {
+  const T = {};
+  for (const b of FOUNDATION_CSS.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (/day/.test(b[1])) continue;                               // Night = :root / [data-theme="night"]
+    for (const m of b[2].matchAll(/--([\w-]+)\s*:\s*([^;]+);/g)) T[m[1]] = m[2].trim();
+  }
+  return T;
+})();
+function resolveToken(value, depth = 0) {                         // var() chains + color-mix(…, transparent) → #RRGGBB / RGBA(r,g,b,a)
+  if (depth > 20) throw new Error('var() cycle at ' + value);
+  const rgba = v => { const s = String(v).replace(/\s+/g, '').toUpperCase(); let m = /^#([0-9A-F]{6})$/.exec(s);
+    if (m) return [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16)).concat(1);
+    m = /^RGBA?\(([\d.]+),([\d.]+),([\d.]+)(?:,([\d.]+))?\)$/.exec(s); return m ? [+m[1], +m[2], +m[3], m[4] == null ? 1 : +m[4]] : null; };
+  const fmt = c => c[3] === 1 ? '#' + c.slice(0, 3).map(n => n.toString(16).padStart(2, '0')).join('').toUpperCase() : `RGBA(${c[0]},${c[1]},${c[2]},${+c[3].toFixed(4)})`;
+  let v = String(value).trim().replace(/var\(--([\w-]+)\)/g, (_, n) => {
+    if (!(n in NIGHT_TOKENS)) throw new Error(`--${n} is not set by tokens.css`);
+    return resolveToken(NIGHT_TOKENS[n], depth + 1);
+  });
+  v = v.replace(/color-mix\(in srgb,\s*([^%]+?)\s+([\d.]+)%\s*,\s*transparent\)/g, (all, c, p) => {
+    const x = rgba(c); if (!x) throw new Error('color-mix of a non-colour: ' + all); return fmt([x[0], x[1], x[2], x[3] * p / 100]); });
+  const c = rgba(v); return c ? fmt(c) : v;
+}
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 // build-weather.js itself (the mutant runner points TEN304_BW at a mutated copy)
@@ -113,7 +136,8 @@ test('the MATCH badge is the header\'s instant in venue time, for viewers in oth
 });
 
 // Founder Q21 (2026-09-30): the heat flag is the file's words ("Heat — high", DF L2411) at the EXISTING feels-like
-// severities — watch (amber) and concern (red) both, the colour telling them apart; wind keeps its value flag.
+// severities — watch and concern both, the colour telling them apart (TEN-376: watch neutral --text-soft, concern
+// --neg; amber is Model + Trading Report only); wind keeps its value flag.
 // Mutation: WX_COPY.flag.heat back to "Feels like {v}°" (tools/test-ten304-mutants.js).
 test('Q21: the heat flag reads "Heat — high" at watch and at concern, at the WX_CONFIG cut-offs', () => {
   const T = build().WX_COPY.flag.heat, cut = build().WX_CONFIG.thresholds.feels;
@@ -125,7 +149,7 @@ test('Q21: the heat flag reads "Heat — high" at watch and at concern, at the W
   assert.equal(text(elements(watch, 'wx-reason')[0]), 'Heat — high');
   assert.equal(text(elements(concern, 'wx-reason')[0]), 'Heat — high');
   assert.equal(text(elements(calm, 'wx-reason')[0]), 'No concern', 'below the watch cut-off no flag');
-  assert.match(elements(watch, 'wx-dot')[0], /var\(--ma-amber\)/); assert.match(elements(concern, 'wx-dot')[0], /var\(--ma-neg\)/);
+  assert.match(elements(watch, 'wx-dot')[0], /background:var\(--text-soft\)/); assert.match(elements(concern, 'wx-dot')[0], /background:var\(--neg\)/);
   assert.ok(!/Feels like \d/.test(watch + concern), 'never the old "Feels like {v}°" flag');
 });
 
@@ -418,36 +442,37 @@ test('Escape with a tooltip up is consumed by the tooltip (capture phase, stoppe
   assert.equal(T.key('Escape').stopped, false, 'a tooltip in a closed (hidden) modal does not take the Esc');
 });
 
-// ── colours: the modal's ONE token file (TEN-314 / TEN-312 D1, founder 2026-09-28; the TEN-303 verbatim exception ended) ──
-// Each WX_C colour is the var() (or a colour-mix of one) of the token its ROLE maps to (README §3 + U7 / U10 / U16 / U23 /
-// U2), and the token file resolves it (Night) to the mapped value. Widths stay the Weather spec's.
-// Mutation: a WX_C value back to the spec hex (text #E7E9EE), CONCERN back to the Weather red, the badge fill on the link
-// token, a hairline 0.33px.
-const WX_ROLE = { text: 'var(--ma-t1)', sub: 'var(--ma-t2)', muted: 'var(--ma-t2)', dim: 'var(--ma-t3)', faint: 'var(--ma-t3)', card: 'var(--ma-card)',
-  lead: 'var(--ma-raised)', bd: 'var(--ma-hair)', box: 'var(--ma-hair-soft)', rule: 'var(--ma-hair-soft)', ruleFx: 'var(--ma-hair)',
-  dashBd: 'var(--ma-hair-strong)', tagBd: 'var(--ma-hair-hover)', bar: 'var(--ma-track)', amber: 'var(--ma-amber)', red: 'var(--ma-neg)',
-  amberBd: 'color-mix(in srgb, var(--ma-amber) 35%, transparent)', redBd: 'color-mix(in srgb, var(--ma-neg) 35%, transparent)',
-  chipBd: 'color-mix(in srgb, var(--ma-amber) 45%, transparent)', unavail: 'color-mix(in srgb, var(--ma-t1) 15%, transparent)',
-  match: 'var(--ma-link)', matchFill: 'var(--ma-fill)', matchBd: 'color-mix(in srgb, var(--ma-link) 75%, transparent)', badgeInk: 'var(--ma-on-fill)' };
-// README §3 Night / U-mapping values the roles above must resolve to
-const WX_NIGHT = { text: '#FFFFFF', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#14151D', lead: '#1B1C27',
-  bd: 'RGBA(255,255,255,0.05)', box: 'RGBA(255,255,255,0.035)', rule: 'RGBA(255,255,255,0.035)', ruleFx: 'RGBA(255,255,255,0.05)',
-  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.2)', bar: 'RGBA(255,255,255,0.08)', amber: '#E8A84E', red: '#E06266',
-  amberBd: 'RGBA(232,168,78,0.35)', redBd: 'RGBA(224,98,102,0.35)', chipBd: 'RGBA(232,168,78,0.45)', unavail: 'RGBA(255,255,255,0.15)',
-  match: '#9DB3F2', matchFill: '#5B82E8', matchBd: 'RGBA(157,179,242,0.75)', badgeInk: '#06070A' };
-test('Weather colours are the token file\'s role tokens (no literal), resolving to the README §3 / U values; widths the spec\'s', () => {
+// ── colours: the ONE token file, tokens.css (TEN-376 Foundation; supersedes the TEN-314 modal token file) ──
+// Each WX_C colour is the var() (or a colour-mix of one) of the foundation token its ROLE maps to (.claude/rules/foundation.md,
+// modal-weather.md), and tokens.css resolves it (Night) to the foundation value. All borders 1px (README §4).
+// Severity: CONCERN --neg; WATCH neutral (--text-soft, --edge-16 border) — amber is Model + Trading Report only (U3).
+// Mutation: a WX_C value back to a literal (text #E7E9EE), CONCERN back to the Weather red, amber leaking into WX_C,
+// the badge fill on the text token, a hairline 0.33px.
+const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--text-soft)', dim: 'var(--text-label)', faint: 'var(--text-label)', card: 'var(--card)',
+  lead: 'var(--card)', bd: 'var(--line)', box: 'var(--line)', rule: 'var(--line)', ruleFx: 'var(--line)',
+  dashBd: 'var(--edge-10)', tagBd: 'var(--edge-16)', bar: 'var(--track)', amber: 'var(--text-soft)', red: 'var(--neg)',
+  amberBd: 'var(--edge-16)', redBd: 'color-mix(in srgb, var(--neg) 35%, transparent)',
+  chipBd: 'var(--edge-16)', unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',
+  match: 'var(--text)', matchFill: 'var(--bar)', matchBd: 'var(--edge-24)', badgeInk: 'var(--page)' };
+// tokens.css Night values the roles above must resolve to
+const WX_NIGHT = { text: '#FFFFFF', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
+  bd: 'RGBA(255,255,255,0.05)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)',
+  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.16)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#E06266',
+  amberBd: 'RGBA(255,255,255,0.16)', redBd: 'RGBA(224,98,102,0.35)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
+  match: '#FFFFFF', matchFill: '#007AFF', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#090B12' };
+test('Weather colours are foundation role tokens (no literal), resolving to the tokens.css Night values; borders 1px', () => {
   const C = build({}).WX_C, n = v => String(v).replace(/\s/g, '');
   assert.deepEqual(Object.keys(C).sort(), Object.keys(WX_ROLE).concat(['hw', 'hw1']).sort(), 'every colour is locked');
   for (const [k, v] of Object.entries(WX_ROLE)) {
     assert.equal(n(C[k]), n(v), k);
     assert.equal(resolveToken(C[k]), WX_NIGHT[k], `${k} resolves (Night)`);
   }
-  assert.equal(C.hw, '1.25px'); assert.equal(C.hw1, '1px');
-  // amber is Weather severity only: WATCH + its two borders, nothing else in WX_C
-  assert.deepEqual(Object.keys(C).filter(k => /--ma-amber/.test(C[k])).sort(), ['amber', 'amberBd', 'chipBd']);
-  // the MATCH badge is a FILL (not the link text token) with on-fill ink
+  assert.equal(C.hw, '1px'); assert.equal(C.hw1, '1px');
+  // amber is Model + Trading Report only (TEN-376 U3): no WX_C colour reads the amber tokens
+  assert.deepEqual(Object.keys(C).filter(k => /--(viz-)?amber\b/.test(C[k])), []);
+  // the MATCH badge is a FILL (--bar, never blue text) with page-tone ink
   const badge = attrsOf(render(file(() => ({}))), 'wx-badge')[0] || {};
-  assert.match(badge.style || '', /color:var\(--ma-on-fill\); background:var\(--ma-fill\);/, 'MATCH badge = on-fill ink on the fill token');
+  assert.match(badge.style || '', /color:var\(--page\); background:var\(--bar\);/, 'MATCH badge = page ink on the bar fill');
 });
 
 // Mutation: a literal put back into WX_C (the engine would re-tone it; a DESIGN_ZONES entry would be needed again).
@@ -458,7 +483,7 @@ test('the 12a engine has nothing to map in WX_C (no design-verbatim zone left); 
   const out = r => typeof r === 'string' ? r : (r.out != null ? r.out : r.src);
   const wx = s => s.slice(s.indexOf('\nconst WX_C = {'), s.indexOf('\n};', s.indexOf('\nconst WX_C = {')));
   assert.equal(wx(out(R.recolourFile('bsp-consult-dashboard.html', HTML))), wx(HTML));
-  const mut = HTML.replace("  text: 'var(--ma-t1)',", "  text: '#E7E9EE',");
+  const mut = HTML.replace("  text: 'var(--text)',              // primary", "  text: '#E7E9EE',              // primary");
   assert.notEqual(mut, HTML, 'mutant anchor');
   assert.notEqual(wx(out(R.recolourFile('bsp-consult-dashboard.html', mut))), wx(mut), 'control: a literal in WX_C is re-toned');
 });

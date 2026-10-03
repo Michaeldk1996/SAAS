@@ -275,11 +275,11 @@ test('both players white (D4, palette `cur`); the profile bars never tone the le
   setup(); S.dna = D; S.STY['J. Sinner'] = { archetype_label: CP }; S.STY['C. Alcaraz'] = { archetype_label: AB };
   const m = match('J. Sinner', 'C. Alcaraz'); S.ps2StateFor(m).prof = true;
   const h = S.buildStyleSection(m);
-  assert.match(h, /class="ps2-poly-a" points="[^"]+" fill="var\(--ma-s-e7e9ee-120[^"]*" stroke="var\(--ma-s-e7e9ee,/);
+  assert.match(h, /class="ps2-poly-a" points="[^"]+" fill="var\(--viz-guide\)" stroke="var\(--text\)"/);
   const bars = [...h.matchAll(/class="ps2-bar-([ab])" style="width:[^;]+; background:([^;]+);/g)];
   assert.equal(bars.length, 10);
-  for (const [, side, bg] of bars) assert.equal(bg, 'var(--ma-s-e7e9ee, var(--text))', 'bar ' + side);
-  assert.doesNotMatch(/class="ps2-card ps2-dna"[\s\S]*$/.exec(h)[0].replace(/class="seg ps2-prof-toggle"[^>]*>/, ''), /var\(--ma-s-5b9bff[,)][^;]*;\s*(stroke|fill)/);
+  for (const [, side, bg] of bars) assert.equal(bg, 'var(--text)', 'bar ' + side);
+  assert.doesNotMatch(/class="ps2-card ps2-dna"[\s\S]*$/.exec(h)[0].replace(/class="seg ps2-prof-toggle"[^>]*>/, ''), /var\(--link\)[^;]*;\s*(stroke|fill)|(stroke|fill)(="|:\s*)var\(--link\)/);
 });
 
 // Mutation: the design's review switchers / SAMPLE chip / seeded rows back in the tab.

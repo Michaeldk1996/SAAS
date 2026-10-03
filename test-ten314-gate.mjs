@@ -38,7 +38,7 @@ const S = new Function(`
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName',
-     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol'].map(slice).join('\n')}
+     'fhRecLevelMix', 'fhH2hRecCard', 'meBandsCol'].map(slice).join('\n')}
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
   return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, fhH2hRecCard, meBandsCol,
     meRateBox, set psMatrix(v){ psMatrixData = v; } };
@@ -57,11 +57,11 @@ test('the gate: 0 → none, 3 → nopct, 7 → small, 12 → full (tourxSampleGa
 });
 
 // Mutation: the small tier keeps the caller's colour (not greyed), the note is dropped, or n = 0 renders "0%".
-test('maRateHtml: "—" · nothing · greyed var(--ma-t3) + "small sample" · full', () => {
+test('maRateHtml: "—" · nothing · greyed var(--text-label) + "small sample" · full', () => {
   const H = NS.map(n => S.maRateHtml(WINS[n], n, { color: 'var(--text)' }));
   assert.match(H[0], /data-ma-gate="none"[^>]*>—</); assert.ok(!NEVER.test(text(H[0])), 'n = 0 is never a zero rate');
   assert.equal(H[1], '', 'n = 3: no rate at all');
-  assert.match(H[2], /data-ma-gate="small" style="color:var\(--ma-t3, var\(--label\)\);">57%<\/span>/);
+  assert.match(H[2], /data-ma-gate="small" style="color:var\(--text-label\);">57%<\/span>/);   // TEN-376: grey = the label tone
   assert.ok(text(H[2]).endsWith('small sample'), 'n = 7 carries the note');
   assert.match(H[3], /data-ma-gate="full" style="color:var\(--text\);">75%<\/span>$/);
   assert.equal(S.maRateHtml(0, 0, { dp: 1 }).includes('0.0%'), false);
@@ -76,8 +76,9 @@ test('small-sample chip: n = 1, 3, 9 show it; 0 and 10 do not — the helper and
   const card = n => S.fhH2hRecCard('Overall', Array.from({ length: n }, (_, i) => ({ won: i % 3 !== 0, level: 'ATP' })), null, 'A. One', 'B. Two', 'One', 'Two');
   for (const n of [1, 3, 9]) assert.ok(card(n).includes(`Small sample · n=${n}`), `H2H card n=${n}`);
   for (const n of [0, 10]) assert.ok(!card(n).includes('Small sample'), `H2H card n=${n}`);
-  assert.match(S.maSmallChip(3), /font-size:10px; color:var\(--ma-t2, var\(--text-soft\)\); border:1px solid var\(--ma-hair-strong, var\(--line-open\)\); border-radius:999px; padding:2px 9px;/,
+  assert.match(S.maSmallChip(3), /font-size:10px; color:var\(--text-soft\); border:1px solid var\(--edge-10\); border-radius:999px; padding:2px 9px;/,
     'DF L1234 geometry, neutral colours (never the amber warn token)');
+  assert.ok(!/amber/.test(S.maSmallChip(3)), 'TEN-376: amber is Model + Trading Report only');
 });
 
 // Key factors' "Last N" gate check lives in test-ten341-key-factors.mjs (TEN-341 rebuilt the card on the Form tab's rows).
@@ -91,15 +92,17 @@ test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neut
   assert.match(won(row(0)), /data-ma-gate="none"[^>]*>—</); assert.deepEqual(barW(row(0)), ['0.0', 'transparent']);
   assert.match(won(row(3)), /data-ma-gate="nopct"[^>]*>—</, 'ME_THIN_FLOOR keeps its dash');
   assert.deepEqual(barW(row(3)), ['0.0', 'transparent'], 'no win share drawn under 5');
-  assert.ok(row(3).includes('background:var(--ma-track); border-radius:0 3px 3px 0;'), 'a neutral track, not a full "loss" bar');
-  assert.match(won(row(7)), /data-ma-gate="small" title="small sample · n=7" style="color:var\(--ma-t3, var\(--label\)\);">57%</);
-  assert.deepEqual(barW(row(7)), ['57.1', 'var(--ma-t3, var(--label))']);
+  assert.ok(row(3).includes('background:var(--track); border-radius:0 3px 3px 0;'), 'a neutral track, not a full "loss" bar');
+  assert.ok(!row(12).includes('background:var(--track); border-radius:0 3px 3px 0;'), 'a full sample draws the loss share, not the neutral track');
+  assert.match(won(row(7)), /data-ma-gate="small" title="small sample · n=7" style="color:var\(--text-label\);">57%</);
+  assert.deepEqual(barW(row(7)), ['57.1', 'var(--text-label)']);
   assert.match(won(row(12)), /data-ma-gate="full"[^>]*>75%</);
-  assert.deepEqual(barW(row(12)), ['75.0', 'var(--ma-s-e7e9ee, var(--text))']);   // TEN-336: the file's own shade (ME_C.text)
+  assert.deepEqual(barW(row(12)), ['75.0', 'var(--text)']);   // TEN-336: ME_C.text (TEN-376 token)
   // the band pop-up's Won / Yield boxes: greyed + a visible note at 5–9
-  const box = S.meRateBox('Won', 4, 7, '57.1%', 'var(--ma-t1)', true);
-  assert.ok(/color:var\(--ma-t3, var\(--label\)\); white-space:nowrap;">57\.1%<\/span><span class="ma-small-note"/.test(box));
-  assert.ok(!S.meRateBox('Won', 9, 12, '75.0%', 'var(--ma-t1)', true).includes('small sample'));
+  const box = S.meRateBox('Won', 4, 7, '57.1%', 'var(--text)', true);
+  assert.ok(/color:var\(--text-label\); white-space:nowrap;">57\.1%<\/span><span class="ma-small-note"/.test(box));
+  assert.ok(!S.meRateBox('Won', 9, 12, '75.0%', 'var(--text)', true).includes('small sample'));
+  assert.ok(/color:var\(--text\); white-space:nowrap;">75\.0%</.test(S.meRateBox('Won', 9, 12, '75.0%', 'var(--text)', true)), 'full: the caller\'s colour');
 });
 
 // The Tournament tab's rates (W–L %, sets won, vs market) go through the same gate: test-ten332-tournament.mjs (TEN-332).

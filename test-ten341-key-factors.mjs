@@ -389,5 +389,5 @@ test('DoD 8: no tab-local row or tooltip renderer, no native title; the old rend
 test('colours: the Key factors block writes tokens only — no literal hex or rgba (D1)', () => {
   const code = KF.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:'"`])\/\/.*$/gm, '$1');   // comments may name a DF line, never a colour
   assert.doesNotMatch(code, /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/, 'no literal colour');
-  assert.match(KF, /fhS\('0a0d14', '--surface'\)/, 'the card surface is the design shade token');
+  assert.match(KF, /\n  card: 'var\(--page\)', line: 'var\(--line\)',/, 'the card surface is a token (foundation: the design shade 0a0d14 = --page)');
 });

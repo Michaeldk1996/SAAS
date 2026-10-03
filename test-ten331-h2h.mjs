@@ -130,7 +130,7 @@ test('price header: today\'s Bet365 price is named only where it is drawn (the r
   m._fhCloses[0].rows.push({ date: d(1), opp: 'Alcaraz C.', won: true, P: [1.9, 1.95], B: null, oppKey: '2' });
   assert.ok(build(m).includes('Pinnacle, Bet365 where missing (today)'), 'control: n = 2 draws Today, so its book is named');
 });
-// Mutations 'today: the dash loses its reason', 'text: the section inherits the 12a ink'
+// Mutations 'today: the dash loses its reason', 'text: the section loses its foundation ink (inherits the page)'
 test('Today with no Pinnacle / Bet365 price: a dash with its reason; the section\'s own ink is the design token', () => {
   const m = nMeet(3, () => true);
   m._fhCloses = [{ rows: [0, 1].map(i => ({ date: d(i), opp: 'Alcaraz C.', won: true, P: [1.8 + i / 10, 2.0], B: null, oppKey: '2' })), cap: [] }, null];
@@ -138,7 +138,8 @@ test('Today with no Pinnacle / Bet365 price: a dash with its reason; the section
   const h = build(m);
   assert.match(h, /Today <span class="fh-today-dash" title="No Pinnacle or Bet365 price for today on record[^"]*"[^>]*>—</, 'Betano / bestOdds never stand in');
   assert.ok(!h.includes('Today 1.12'));
-  assert.match(block(), /#aSectionH2H\{ color:var\(--ma-s-e7e9ee, var\(--text\)\); \}/, 'uncoloured text takes the design ink token (re-themes Night / Day)');
+  // TEN-376 Foundation: the modal's own --ma-s-e7e9ee ink is gone; the section's ink is the one foundation token (tokens.css).
+  assert.match(block(), /#aSectionH2H\{ color:var\(--text\); \}/, 'uncoloured text takes the foundation ink token (re-themes Night / Day)');
 });
 // Mutations 'hot lines: appear under 3', 'hot lines: bar ignores the gate', 'hot lines: column dots coloured by surface'
 test('hot lines: ≥ 3 meetings to appear; a 3-of-3 bar draws no fill; neutral column-head dots', () => {
@@ -152,9 +153,12 @@ test('hot lines: ≥ 3 meetings to appear; a 3-of-3 bar draws no fill; neutral c
   assert.match(h, /data-ma-gate="nopct" style="height:5px;[^"]*"><span style="width:0%; background:transparent;/, 'n = 3: no %, no fill');
   assert.ok(/data-ma-gate="full"/.test(build(nMeet(10, () => true))), 'control: n = 10 fills');
   const head = h.slice(h.indexOf('>LINE<'), h.indexOf('>HANDICAP<') > 0 ? h.indexOf('>HANDICAP<') : h.indexOf('fh-h2wrap') + 99999);
-  assert.ok(/border-radius:50%; background:var\(--court-hard\);/.test(head), 'column dot = the surface token');
-  const tok = readFileSync(join(HERE, 'match-analysis-tokens.css'), 'utf8');
-  assert.match(tok, /--court-hard:var\(--ma-t1\); --court-clay:var\(--ma-t1\); --court-grass:var\(--ma-t1\);/, 'which is neutral inside the modal (never clay amber)');
+  // TEN-376 Foundation: match-analysis-tokens.css (which re-pointed --court-* to --ma-t1 inside the modal) is deleted;
+  // the builder's surface map itself is now the neutral --text-soft for every surface ("surfaces neutral").
+  assert.ok(/border-radius:50%; background:var\(--text-soft\);/.test(head), 'column dot = the neutral surface token');
+  const FH_SURF = /\nconst FH_SURF = (\{[^\n]*\});/.exec(html);
+  assert.ok(FH_SURF, 'FH_SURF found');
+  assert.equal(FH_SURF[1], "{ Hard: 'var(--text-soft)', Clay: 'var(--text-soft)', Grass: 'var(--text-soft)' }", 'every surface neutral (never clay amber)');
 });
 // Mutations 'price: n=2 loses its count', 'price: the pop-up back on a tab-local tooltip', 'price: header names one book over mixed data'
 test('price range: book actually used, n = 1 / 2 carry their count, the pop-up is the shared tooltip', () => {

@@ -113,8 +113,8 @@ const CHECKS = {
   'a retirement counts in the record and is marked "ret." (loss red only on his own retirement)'(src) {
     const { Mo, html } = pop(src, `0|season|clay`);
     assert.ok(Mo.rows.find(r => r.opp === 'D. Delta').won);
-    assert.match(html, /6-2, 2-1<span class="ma-ret" style="font-weight:400; color:var\(--ma-s-8b96b5, var\(--text-soft\)\); margin-left:5px;">ret\./, 'the opponent retired: neutral');
-    assert.match(html, /4-6, 0-2<span class="ma-ret" style="font-weight:400; color:var\(--ma-s-e0616f, var\(--negative\)\); margin-left:5px;">ret\./, 'he retired: loss red');
+    assert.match(html, /6-2, 2-1<span class="ma-ret" style="font-weight:400; color:var\(--text-soft\); margin-left:5px;">ret\./, 'the opponent retired: neutral');
+    assert.match(html, /4-6, 0-2<span class="ma-ret" style="font-weight:400; color:var\(--neg\); margin-left:5px;">ret\./, 'he retired: loss red');
   },
   // Mutation: a dash with no tier split, or a count with no player key, says nothing about why.
   'a count or dash that opens nothing says why on hover'(src) {
@@ -170,7 +170,7 @@ const CHECKS = {
     // hard: n 16 (full); clay n 8 is greyed by the gate, whoever's bar it is
     assert.match(a, /data-ov-bar="hard" style="width:\d+%; height:100%; background:var\(--fh-pa\);/);
     assert.match(b, /data-ov-bar="hard" style="width:\d+%; height:100%; background:var\(--fh-pb-fill\);/);
-    assert.match(a, /data-ov-bar="clay" style="width:\d+%; height:100%; background:var\(--ma-t3, var\(--label\)\);/);
+    assert.match(a, /data-ov-bar="clay" style="width:\d+%; height:100%; background:var\(--text-label\);/);
     assert.equal((a.match(/border-left:3px solid var\(--fh-pa\)/g) || []).length, 3);
     assert.equal((b.match(/border-left:3px solid var\(--fh-pb-fill\)/g) || []).length, 3);
   },
@@ -209,7 +209,7 @@ const MUTANTS = [
   ['win rate ungated', "    + meRateBox('Win rate', w, n, null, OV_C.text, true)", "    + meStatBox('Win rate', n ? Math.round(w / n * 100) + '%' : '0%', OV_C.text, true)"],
   ['retirement note dropped', " ${core ? core.RET_SETTLE_NOTE : ''}`;", '`;'],
   ['ret. marker dropped', " ret: !!r.ret,", ''],
-  ['ret. always red', "color:${r.won ? x.S('8b96b5', '--text-soft') : x.S('e0616f', '--negative')}; margin-left:5px;", "color:${x.S('e0616f', '--negative')}; margin-left:5px;"],
+  ['ret. always red', "color:${r.won ? 'var(--text-soft)' : 'var(--neg)'}; margin-left:5px;", "color:var(--neg); margin-left:5px;"],
   ['no split reason', "    : !n && tier !== 'all' && r.allTier === false && !r[tier] ? ` title=\"${fhEsc(OV_NO_SPLIT)}\"` : '';", "    : '';"],
   ['no key reason', "  const why = n > 0 && pk == null ? ` title=\"${fhEsc(OV_NO_KEY)}\"` : n > 0", "  const why = n > 0"],
   ['reopen keeps the tab state', "ovPopEl.innerHTML = ''; _ov = { m: null, tier: 'all', cell: null, sel: null, rows: {} };", "ovPopEl.innerHTML = '';"],

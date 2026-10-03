@@ -21,13 +21,13 @@ renders as a signed figure in the same tabular mono as its neighbouring componen
 cells, at the same 13px / weight 400, **with no colour applied at any value**.
 
 **The test someone can apply.** Render the Elo board and read the computed style of
-any `Vs pk` cell. It must carry no sign colour — not `#e0616f`, not `#3dd68c` — and
+any `Vs pk` cell. It must carry no sign colour — not `--neg`, not `--pos` — and
 no colour distinct from the other component cells in the same row. `ratFmt` must
 contain no colour branch for its `sgn` path. Locked by
 `test-ten254-rulings-3-4.mjs`.
 
 **This SUPERSEDES the bundle.** README TAB 4 "Leaderboards" specifies
-`Vs pk` as *"13px / 700, signed, `#8b96b5` at −60 or better and `#e0616f` below"*.
+`Vs pk` as *"13px / 700, signed, `--text-label` at −60 or better and `--neg` below"*.
 **That text is overturned — do not implement it, and do not "fix" the code back
 toward it.**
 
@@ -60,8 +60,8 @@ paint no row for that name. Locked by `test-ten254-rulings-3-4.mjs`.
 non-negotiable" specifies a **per-cell** treatment with a middle band:
 
 > | n | Show |
-> | ≥ 10 | percentage at full size, `#e7e9ee` |
-> | 5–9 | percentage greyed `#5b6880`, smaller, with a "small sample" note |
+> | ≥ 10 | percentage at full size, `--text` |
+> | 5–9 | percentage greyed `--text-label`, smaller, with a "small sample" note |
 > | < 5 | no percentage — W–L only, plus "too few matches for a rate" |
 > | 0 | an em dash `—` and "no matches on record" |
 

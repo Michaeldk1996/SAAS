@@ -225,7 +225,10 @@ check('rows and head use the export\'s grid tracks', () => {
 check('the head row renders ONCE, not once per group', () => {
   const I = load(ROSTER, PBP_STORE);
   const html = I.renderSituational(SUBJECT);
-  const heads = html.split('border-bottom:0.33px solid var(--line-soft)').length - 1;
+  // TEN-376 Foundation: the head's 0.33px --line-soft rule is now 1px --line
+  // (all edges 1px; 12a --line-soft → --line). Anchored on the head row's own
+  // padding + rule so a row hairline elsewhere cannot be counted as a head.
+  const heads = html.split('padding:0 4px 8px;border-bottom:1px solid var(--line);').length - 1;
   assert.strictEqual(heads, 1, `the column head renders ${heads} times; the export renders it once`);
   const recs = html.split('>Record<').length - 1;
   assert.strictEqual(recs, 1, `"Record" appears ${recs} times in the head`);

@@ -174,16 +174,16 @@ const CHECKS = {
     if (!/low/.test(mk(9, 9))) return 'n=9 is not in the small-sample ink';
     return null;
   },
-  // README TAB 5: Vs field and Avg margin in the three-way sign colour.
+  // README TAB 5: Vs field and Avg margin in the three-way sign colour (TEN-376: --pos / --neg tokens).
   colour(src) {
     const { rows: R } = paint(src, [{ nm: 'A', rows: FIELD.A }]);
     const row = R.find(r => r.label === '+1.5 sets');
     const vs = row.cells[4], avg = row.cells[6];
-    if (vs.color !== '#3ed68c') return `positive vs field painted ${vs.color || 'uncoloured'}`;
-    if (avg.color !== '#3ed68c') return `positive avg margin painted ${avg.color || 'uncoloured'}`;
+    if (vs.color !== 'var(--pos)') return `positive vs field painted ${vs.color || 'uncoloured'}`;
+    if (avg.color !== 'var(--pos)') return `positive avg margin painted ${avg.color || 'uncoloured'}`;
     const { rows: R2 } = paint(src, [{ nm: 'F', rows: FIELD.F }]);
     const r2 = R2.find(r => r.label === '+1.5 sets');
-    if (r2.cells[4].color !== '#da6259') return `negative vs field painted ${r2.cells[4].color || 'uncoloured'}`;
+    if (r2.cells[4].color !== 'var(--neg)') return `negative vs field painted ${r2.cells[4].color || 'uncoloured'}`;
     return null;
   },
 };

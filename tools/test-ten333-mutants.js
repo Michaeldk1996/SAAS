@@ -25,8 +25,8 @@ const MUTANTS = [
   ['expand: the caret does not turn', "justify-self:end;${open ? ' transform:rotate(180deg);' : ''}", "justify-self:end;"],
   ['when: a 2-digit day', "toLocaleDateString('en-US', { month:'short', day:'numeric', timeZone:newsTz() })", "toLocaleDateString('en-US', { month:'short', day:'2-digit', timeZone:newsTz() })"],
   ['colour: the old p1 periwinkle on a group name', '<span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text);', '<span class="anews-gname" style="font-size:13.5px; font-weight:700; color:#6a9af8;'],
-  ['colour: group name in the link blue', '<span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text);', '<span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--periwinkle);'],
-  ['colour: the hover rule back to a literal', '#aSectionNews .anews-row:hover{ border-color:var(--ma-outline); background:var(--ma-hover); }', '#aSectionNews .anews-row:hover{ border-color:rgba(91,155,255,0.22); background:rgba(255,255,255,0.02); }'],
+  ['colour: group name in the link blue', '<span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text);', '<span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--link);'],
+  ['colour: the hover rule back to a literal', '#aSectionNews .anews-row:hover{ border-color:var(--open-card); background:var(--tile-hover); }', '#aSectionNews .anews-row:hover{ border-color:rgba(91,155,255,0.22); background:rgba(255,255,255,0.02); }'],
   ['type: the pane inherits the modal body type', " font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal;\">${filters}", "\">${filters}"],
   ['count: the population tooltip dropped', '<span class="anews-gcount" tabindex="0" data-aotip="${esc(esc(pop))}" style=', '<span class="anews-gcount" style='],
   ['lazy: the builder no longer returns its load', '    return ensureNewsData().then(() => { if (_aNewsMatch === m', '    ensureNewsData().then(() => { if (_aNewsMatch === m'],
@@ -34,7 +34,7 @@ const MUTANTS = [
   ['escaping: attributes via newsEscape', "  const esc = escapeHtml;   // quotes too: the key and tooltips sit in attributes", "  const esc = newsEscape;"],
   ['feed check: the tab builder trusts any stored feed', "    _aNewsState = (_newsData && Array.isArray(_newsData.articles)) ? 'ok' : 'load';", "    _aNewsState = _newsData ? 'ok' : 'load';"],
   ['feed check: any stored feed is ok', "function aNewsFeedOk(){ return !!(_newsData && Array.isArray(_newsData.articles)); }", "function aNewsFeedOk(){ return !!_newsData; }"],
-  ['hover: View all loses !important', "#aSectionNews .anews-viewall:hover{ color:var(--ma-link-hover) !important; }", "#aSectionNews .anews-viewall:hover{ color:var(--ma-link-hover); }"],
+  ['hover: View all loses !important', "#aSectionNews .anews-viewall:hover{ color:var(--link) !important; }", "#aSectionNews .anews-viewall:hover{ color:var(--link); }"],
   ['hover: caret loses !important', "#aSectionNews .anews-row:hover .anews-caret{ color:var(--text) !important; }", "#aSectionNews .anews-row:hover .anews-caret{ color:var(--text); }"],
 ];
 const SUITES = ['test-ten333-news-tab.mjs'];

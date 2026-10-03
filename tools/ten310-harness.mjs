@@ -61,7 +61,7 @@ const UI_CONSTS = ['FH_DASHC', 'FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'AODDS
 const UI_FNS = ['escapeHtml', 'fhDayNum', 'psShortName', 'fhSurname', 'fhEsc', 'fhRefDay', 'fhLongDate', 'fhOdd', 'fhSrcTitle', 'aOddsTipHtml', 'aHeaderOdds', 'meStateFor',
   'meSg', 'meDMY', 'meModels', 'meSegHtml', 'meScopeSeg', 'meBandsCol', 'mePriceCard', 'meChartCard', 'meLinesCol', 'meLinesCard', 'mePill',
   'buildMarketEdgeSection', 'meScoreTxt', 'mePopShell', 'meBookNote', 'meRowOf', 'mePopTable', 'meBandPopHtml', 'meLinePopHtml',
-  'meSmallFoot', 'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote', 'maSeg', 'maPopFrame', 'fhS', 'maMatchRowsHtml', 'maTipHtml'];
+  'meSmallFoot', 'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote', 'maSeg', 'maPopFrame', 'maMatchRowsHtml', 'maTipHtml'];
 
 /** The page's data layer + renderer. ui.render(m, S, rowsA, rowsB) → { html, band(k), line(k) }. */
 export function buildUI({ src = HTML } = {}) {

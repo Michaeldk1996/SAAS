@@ -8,7 +8,7 @@ relative to the portal frame (the `<aside>`'s parent), never its label text.
 ## Sidebar is 252px with a floating panel (founder ruling TEN-286, 2026-09-26)
 
 **The rule.** `.sf-sidebar` is `width:252px`, `box-sizing:border-box`, padding `18px 0 18px 18px`;
-inside it `.sf-panel` is the floating `nav-panel` box (0.33px `line-panel`, radius 22px, padding
+inside it `.sf-panel` is the floating `nav-panel` box (a top-level card: no outline, `--top-light`, radius 22px, padding
 `20px 12px 14px`). The page's `body` `padding-left` equals the sidebar width. Both pages that carry
 the shell use the same numbers.
 

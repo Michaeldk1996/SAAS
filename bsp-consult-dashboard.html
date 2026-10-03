@@ -286,7 +286,6 @@
   [data-page="matches"] .mx-surfaceopt.active{ background:var(--selected); color:var(--text); }
   [data-page="matches"] .mx-chips{ display:flex; }
   [data-page="matches"] .mx-chip{ font-size:12.5px; cursor:pointer; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-chip.active{ background:var(--inner); border-color:var(--edge-16); color:var(--text); }
   [data-page="matches"] .mx-search{ flex:1; min-width:160px; background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mx-radius-input); padding:10px 13px; color:var(--text-soft); font-size:13.5px; font-family:var(--mx-font-ui); outline:none; transition:border-color .15s ease, background .15s ease; }
   [data-page="matches"] .mx-search::placeholder{ color:var(--mx-text-faint); }
   [data-page="matches"] .mx-search:focus{ border-color:var(--edge-10); background:var(--card); }
@@ -586,7 +585,6 @@
   [data-page="matches"] .mc-statbox__lbl{ font-family:var(--mx-font-ui); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-statbox__val{ font-family:var(--mx-font-mono); font-weight:500; font-size:20px; color:var(--mc-text); }
   [data-page="matches"] .mc-story{ flex:1 1 0; min-width:0; background:var(--mc-card); display:flex; flex-direction:column; }
-  [data-page="matches"] .mc-story__lbl{ font-family:var(--mx-font-ui); color:var(--mc-muted-2); }
   [data-page="matches"] .mc-story__move{ display:flex; align-items:baseline; gap:10px; }
   [data-page="matches"] .mc-story__od{ color:var(--mc-text); }
   [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); font-size:12px; color:var(--mc-muted); line-height:1.45; }
@@ -1012,7 +1010,6 @@
 
   /* Players — global search bar (zone 1) */
   .pgsearchbar{ display:flex; align-items:center; gap:14px; padding:17px 20px; background:var(--inner); border:1px solid transparent; border-radius:14px; transition:border-color .15s ease; }
-  .pgsearchbar:focus-within{ border-color:var(--edge-16); }
   .pgsearchbar:focus-within{ border-color:var(--edge-10); }
   .pgsearch-icon{ display:flex; align-items:center; justify-content:center; width:19px; height:19px; color:var(--text); flex:none; }
   .pgsearch-icon svg{ width:19px; height:19px; }
@@ -1037,7 +1034,7 @@
   .tourfilterbar select.sortsel{ min-width:160px; }
   .tourgrid{ display:block; }
   .tourgroup{ margin-bottom:22px; }
-  .tourgroup-header{ display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600; color:var(--text-label); text-transform:uppercase; letter-spacing:0.05em; padding:0 4px 8px; border-bottom:1px solid var(--line); margin-bottom:6px; }
+  .tourgroup-header{ display:flex; align-items:center; gap:8px; font-size:10.5px; font-weight:700; color:var(--text-label); text-transform:uppercase; letter-spacing:0.10em; padding:0 4px 8px; border-bottom:1px solid var(--line); margin-bottom:6px; }
   .tourgroup-header .tier-dot{ width:8px; height:8px; border-radius:2px; flex-shrink:0; }
   .tourgroup-header .count{ color:var(--text-label); font-weight:600; text-transform:none; letter-spacing:normal; background:var(--inner); border-radius:20px; padding:1px 8px; margin-left:auto; }
   .tourrow{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer; font-family:var(--mx-font-ui); font-size:13px; color:var(--text); border-left:2px solid transparent; }
@@ -1206,7 +1203,7 @@
      (`Match Analysis Progression v1.dc.html` L85–123), not the README §2 numbers: overlay z 80 · scrim ·
      blur 3px · padding 32; modal max 1500 · height 88vh FIXED · radius 20; header grid 1fr auto 1fr; menu 238px.
      Colours are in the design-verbatim-analysis block at the foot of the file. */
-  #analysisModal{ z-index:80; padding:32px; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+  #analysisModal{ z-index:80; padding:32px; -webkit-backdrop-filter:blur(3px); }
   .modal-analysis{ --mx-font-ui:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; --mx-font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-family:var(--mx-font-ui); max-width:1500px; width:100%; height:88vh; text-align:left; padding:0; border-width:1px; border-style:solid; border-radius:20px; display:flex; flex-direction:column; overflow:hidden; -webkit-font-smoothing:antialiased; }
 
   /* ---- Header (DF L87–109) ---- */
@@ -1278,11 +1275,11 @@
   .aodds-tile.fav .aot-name{ color:var(--text); }
   .aodds-tile.dog .aot-name{ color:var(--text); }
   .aodds-tile .aot-right{ display:flex; align-items:baseline; gap:7px; flex:none; }
-  .aodds-tile .aot-price{ font-size:22px; font-weight:800; font-family:'IBM Plex Mono', monospace; color:var(--text); }
-  .aodds-tile .aot-imp{ font-size:12px; font-weight:700; font-family:'IBM Plex Mono', monospace; color:var(--text-label); }
-  .aodds-tile .aot-fav{ font-family:var(--font-words); font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border:none; border-radius:5px; padding:2px 6px; }   /* README §5.9 FAV badge */
+  .aodds-tile .aot-price{ font-size:22px; font-weight:800; font-family:var(--font-words); color:var(--text); }
+  .aodds-tile .aot-imp{ font-size:10.5px; font-weight:700; font-family:var(--font-words); color:var(--text-label); }
+  .aodds-tile .aot-fav{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border:none; border-radius:5px; padding:2px 6px; }   /* README §5.9 FAV badge */
   .aodds-sechead{ display:flex; align-items:center; gap:11px; margin-bottom:2px; }
-  .aodds-badge{ font-family:var(--font-words); font-size:10px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text); background:var(--selected); border:1px solid var(--edge-16); border-radius:6px; padding:3px 9px; }
+  .aodds-badge{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text); background:var(--selected); border:1px solid var(--edge-16); border-radius:6px; padding:3px 9px; }
   .aodds-sechead .aoh-title{ font-size:16px; font-weight:800; color:var(--text); }
   .aodds-sechead .aoh-sub{ font-size:12.5px; color:var(--text-label); }
   .aodds-card{ border:1px solid var(--edge-6); border-radius:16px; background:var(--card); overflow:hidden; }
@@ -1292,7 +1289,7 @@
   .aodds-chead .aoc-p .aoc-nm{ font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .aodds-chead .aoc-p.a .aoc-nm{ color:var(--text); }
   .aodds-chead .aoc-p.b .aoc-nm{ color:var(--text); }
-  .aodds-chead .aoc-p .aoc-rng{ font-size:10.5px; font-family:'IBM Plex Mono', monospace; color:var(--text-label); margin-top:2px; }
+  .aodds-chead .aoc-p .aoc-rng{ font-size:10.5px; font-family:var(--font-words); color:var(--text-label); margin-top:2px; }
   .aodds-chead .aoc-p .aoc-cap{ font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; font-family:var(--font-words);  color:var(--text-label); margin-top:2px; }
   .aodds-brow{ display:grid; grid-template-columns:1fr 180px 180px; align-items:center; padding:0 18px; border-bottom:1px solid var(--line); }
   .aodds-brow:last-child{ border-bottom:none; }
@@ -1390,7 +1387,7 @@
   /* TEN-366: the row whose match sheet is open (DF L3642 rowBg: blue 0.1) — set by maOpenRowSheet, cleared by fhMarkRow. */
   #aSectionStyle .ma-row.ma-row-open{ background:var(--selected) !important; }
   /* TEN-366: the road card whose match sheet is open (DF L4058/L4066 sel: border white 0.16, var(--card)). */
-  #aSectionProgression .pg-cell.ma-row-open{ background:var(--card) !important; border-color:var(--edge-10) !important; }
+  #aSectionProgression .pg-cell.ma-row-open{ background:var(--card) !important; border-color:var(--edge-24) !important; }   /* clickable tile selected (README §1) */
   #aSectionStyle .ps2-box-open:hover{ border-color:var(--open-card) !important; }
   #aSectionStyle .ps2-prof-toggle:hover, #aSectionStyle .ps2-more:hover{ color:var(--text) !important; }
   .modal-analysis .anote{ font-size:11px; color:var(--text-label); text-align:center; margin-top:8px; }
@@ -1787,11 +1784,7 @@
   /* overrides the legacy BSP top-bar layout without editing it inline. */
   /* Tokens sourced from export/README.md.                              */
   /* ================================================================= */
-  :root{
-    --sf-page:var(--page); --sf-card:var(--card);
-    --sf-border-subtle:var(--edge-6); --sf-border-data:var(--edge-6); --sf-brand-tint:var(--inner);
-    --sf-text:var(--text); --sf-text-3:var(--text-label); --sf-muted:var(--text-label);
-    --sf-pos:var(--pos); --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
+  :root{ --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
   body{ background:var(--page); padding-left:252px; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
@@ -1870,10 +1863,10 @@
      unchanged and already matched: 0.22 fill on a 0.45 border. Card background var(--card)
      per "Card / panel background"; border color-mix(in srgb, var(--text) 9%, transparent) per "Card border". */
   [data-page="matches"] .mx-viewseg{ display:inline-flex; flex:none; }
-  [data-page="matches"] .mx-viewseg button{ background:none;
-    font-family:var(--sf-font-ui); color:var(--text-label); cursor:pointer; white-space:nowrap;
+  [data-page="matches"] .mx-viewseg button{
+    font-family:var(--sf-font-ui); cursor:pointer; white-space:nowrap;
     transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  [data-page="matches"] .mx-viewseg button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
+  [data-page="matches"] .mx-viewseg button.active{ border-color:var(--edge-10); }
 
   /* date-rail arrows — the one definition (12a design: 30×30, r8, 0.33px line, Hanken 16px glyph
      in label). Disabled (paged to the edge of the window) keeps the box and draws the glyph in `line`,
@@ -1899,7 +1892,6 @@
   .mc-promo__title{ font-family:var(--sf-font-ui); font-size:15px; font-weight:700; color:var(--text); }
   .mc-promo__sub{ font-family:var(--sf-font-ui); font-size:13px; color:var(--text-label); }
   .mc-promo__right{ display:flex; align-items:center; gap:14px; flex:none; }
-  .mc-promo__badge{ padding:3px 9px; }
   .mc-promo__cta{ font-family:var(--sf-font-ui); white-space:nowrap; text-decoration:none; }
   .mc-promo__cta:hover{ color:var(--link); }
 
@@ -2034,7 +2026,7 @@
   [data-page="trading"] .tr-cc{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); flex:none; }
   [data-page="trading"] .tr-name{ font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   [data-page="trading"] .tr-pl2{ display:flex; align-items:center; gap:8px; margin-top:3px; }
-  [data-page="trading"] .tr-rank{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-label); white-space:nowrap; }
+  [data-page="trading"] .tr-rank{ font-family:var(--font-words); font-size:10.5px; color:var(--text-label); white-space:nowrap; }
   [data-page="trading"] .tr-tag{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; border-radius:4px; padding:2px 5px; color:var(--text-label); border:1px solid var(--edge-6); }
   [data-page="trading"] .tr-tag.t0{ color:var(--text-label); border-color:var(--edge-6); }
   [data-page="trading"] .tr-ev{ font-size:11px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -2563,7 +2555,7 @@
 [data-page="styles"] .ps-grow{ display:grid; grid-template-columns:200px repeat(var(--ps-n,8),minmax(0,1fr)); border-top:1px solid var(--line); }
 [data-page="styles"] .ps-grow-h{ padding:16px 18px; transition:opacity .12s ease; cursor:default; }
 [data-page="styles"] .ps-grow-name{ display:block; font-size:15px; font-weight:700; color:var(--text); white-space:nowrap; }
-[data-page="styles"] .ps-grow-code{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-label); margin-top:4px; }
+[data-page="styles"] .ps-grow-code{ display:block; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin-top:4px; }
 [data-page="styles"] .ps-cell2{ padding:14px 8px; text-align:center; border-left:1px solid var(--line); transition:opacity .12s ease; }
 [data-page="styles"] .ps-edge{ display:block; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:800; line-height:1; }
 [data-page="styles"] .ps-edge-g{ color:var(--pos); }
@@ -4162,7 +4154,7 @@ window.EntryListsTab = (function(){
   .edge-adj.muted{ opacity:0.5; }
   .edge-adj-top{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
   .edge-adj-name{ font-size:13px; font-weight:500; color:var(--text); flex:1 1 auto; min-width:0; }
-  .edge-adj-delta{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-soft); flex:none; }
+  .edge-adj-delta{ font-family:var(--font-words); font-size:10.5px; color:var(--text-soft); flex:none; }
   .edge-adj-delta.none{ color:var(--text-label); }
   .edge-conf{
     font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700;
@@ -11759,7 +11751,7 @@ function ovColumnHtml(i, name, pk, rows, real, tier){
       return `<div class="ov-yr ov-yr-off" style="${OV_GRID} padding:10px 14px; border-top:1px solid ${OV_C.rowLine}; align-items:center;"><span style="${OV_MONO} font-size:12.5px; color:${OV_C.off}; font-style:italic;">${fhEsc(r.year)}</span><span style="grid-column:2 / 6; font-size:12px; color:${OV_C.off}; font-style:italic;">${lbl}</span></div>`;
     }
     // TEN-313 (N3): "ATP" only on a pre-2021 row that holds tour-level matches only (it keeps an exact ATP split)
-    const badge = r.allTier === false && r.atp ? `<span class="ov-atp" style="font-size:8px; font-weight:700; letter-spacing:0.06em; color:${OV_C.chip}; background:${OV_C.chipBg}; border-radius:3px; padding:1px 4px;">ATP</span>` : '';
+    const badge = r.allTier === false && r.atp ? `<span class="ov-atp" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${OV_C.chip}; background:${OV_C.chipBg}; border-radius:3px; padding:1px 4px;">ATP</span>` : '';
     return `<div class="ov-yr" data-ov-year="${fhEsc(r.year)}" style="${OV_GRID} padding:10px 14px; border-top:1px solid ${OV_C.rowLine}; align-items:center;">`
       + `<span style="${OV_MONO} font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;">${fhEsc(r.year)}${badge}</span>`
       + ovCellHtml(i, r, 'total', tier, pk, true) + OV_SURFS.map(([s]) => ovCellHtml(i, r, s, tier, pk, false)).join('') + '</div>';
@@ -12414,7 +12406,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
   // The design's STATE row minus its review switcher (DoD: switchers never ship). min-height = the row's rendered
   // height in the file (the 28px seg buttons set it), so every block below sits where the design draws it (TEN-337).
   const chipRow = '<div class="wx-chiprow" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:28px; margin-bottom:18px;">'
-    + '<span class="wx-tbd" tabindex="0"' + tipAttr(chipTip) + ' style="margin-left:auto; ' + mono + ' font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
+    + '<span class="wx-tbd" tabindex="0"' + tipAttr(chipTip) + ' style="margin-left:auto; ' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
   const wrap = inner => '<div class="wx-tab" style="line-height:normal; color:' + C.text + ';">' + chipRow + inner + '</div>';
 
   if (vm.indoor) {
@@ -12432,7 +12424,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
     + '<span class="wx-tznote" style="font-size:11.5px; color:' + C.faint + ';">' + escapeHtml(vm.venueZone ? CP.venueTimeNote : CP.viewerTimeNote) + '</span></span>'
     + '<span class="wx-fresh" style="' + mono + ' font-size:11.5px; color:' + freshC + ';">' + escapeHtml(vm.fresh.text) + '</span></div>';
   if (vm.unavail) h += '<div class="wx-banner" style="display:flex; align-items:center; gap:10px; padding:11px 14px; margin-bottom:12px; border-radius:10px; background:' + C.card + '; border:' + hw + ' dashed ' + C.dashBd + '; font-size:13px; color:' + C.sub + ';">'
-    + '<span style="' + mono + ' font-size:9.5px; font-weight:700; letter-spacing:0.14em; color:' + C.muted + ';">' + escapeHtml(CP.bannerTag) + '</span>' + escapeHtml(CP.banner) + '</div>';
+    + '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.muted + ';">' + escapeHtml(CP.bannerTag) + '</span>' + escapeHtml(CP.banner) + '</div>';
 
   // §2 the 7 day cards
   const TP = CP.tip;
@@ -12457,7 +12449,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
     }
     return '<div class="wx-day' + (d.isMatch ? ' is-match' : '') + '" data-date="' + d.date + '"' + tip + ' style="position:relative; display:flex; flex-direction:column; align-items:center; gap:7px; padding:16px 8px 12px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + (d.isMatch ? C.matchBd : C.bd) + '; min-width:0;">'
       + '<span class="wx-sevedge" style="position:absolute; top:-1px; left:12px; right:12px; height:3px; border-radius:0 0 3px 3px; background:' + (v === 'r' || v === 'a' ? sevC(v) : 'transparent') + ';"></span>'
-      + (d.isMatch ? '<span class="wx-badge" style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); ' + mono + ' font-size:8.5px; font-weight:700; letter-spacing:0.12em; color:' + C.badgeInk + '; background:' + C.matchFill + '; border-radius:4px; padding:2px 7px; white-space:nowrap;">' + escapeHtml(vm.badge) + '</span>' : '')
+      + (d.isMatch ? '<span class="wx-badge" style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); ' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.badgeInk + '; background:' + C.matchFill + '; border-radius:4px; padding:2px 7px; white-space:nowrap;">' + escapeHtml(vm.badge) + '</span>' : '')
       + '<div style="display:flex; flex-direction:column; align-items:center; gap:7px; opacity:' + (d.lowConf ? 0.55 : 1) + ';">'
       + '<span style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:13.5px; font-weight:700;">' + d.dow + '</span><span style="' + mono + ' font-size:10.5px; color:' + C.dim + ';">' + d.label + '</span></span>'
       + icon
@@ -12466,7 +12458,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
       + '<div style="width:100%; min-height:34px; padding-top:9px; border-top:' + hw1 + ' solid ' + C.rule + '; display:flex; align-items:flex-start; justify-content:center; gap:6px;">'
       + '<span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + dotC(v) + '; margin-top:4px; flex-shrink:0;"></span>'
       + '<span class="wx-reason" style="font-size:11.5px; line-height:1.35; font-weight:' + rw + '; color:' + rc + '; text-align:center;">' + escapeHtml(reason) + '</span>' + more + '</div>'
-      + (d.lowConf ? '<span style="' + mono + ' font-size:8.5px; letter-spacing:0.12em; color:' + C.dim + ';">' + escapeHtml(CP.lowConf) + '</span>' : '')
+      + (d.lowConf ? '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.lowConf) + '</span>' : '')
       + '</div>';
   }).join('');
   h += '<div class="wx-strip" style="display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px; padding-top:10px;">' + cards + '</div>';
@@ -12486,7 +12478,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
 
   const paceAttrs = ' role="button" tabindex="0" onclick="aGoTab(\'tournament\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();aGoTab(\'tournament\')}"';
   const paceCss = ' cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease;';
-  const tag = extra => '<span style="' + (extra || '') + mono + ' font-size:8.5px; letter-spacing:0.12em; color:' + C.muted + '; padding:2px 5px; border-radius:3px; border:' + hw1 + ' dashed ' + C.tagBd + ';">' + escapeHtml(CP.pace.tag) + '</span>';
+  const tag = extra => '<span style="' + (extra || '') + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.muted + '; padding:2px 5px; border-radius:3px; border:' + hw1 + ' dashed ' + C.tagBd + ';">' + escapeHtml(CP.pace.tag) + '</span>';
   const P = vm.pace;
   if (vm.lead) {
     const L = vm.lead, lc = sevC(L.sev);
@@ -12494,22 +12486,22 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
       + '<span style="position:absolute; top:0; left:0; right:0; height:3px; background:' + lc + ';"></span>'
       + '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span style="display:flex; align-items:center; gap:10px;">' + wIcon(L.id === 'wind' ? 'cloud' : L.id === 'heat' ? 'sun' : 'rain', 26, lc)
       + '<span style="font-size:13px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;">' + escapeHtml(L.name) + '</span></span>'
-      + '<span style="' + mono + ' font-size:10px; font-weight:700; letter-spacing:0.14em; color:' + lc + ';">' + escapeHtml(CP.sev[L.sev]) + '</span></div>'
+      + '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + lc + ';">' + escapeHtml(CP.sev[L.sev]) + '</span></div>'
       + '<div style="display:flex; align-items:baseline; gap:10px;"><span class="wx-big" style="' + mono + ' font-size:46px; font-weight:700; letter-spacing:-0.02em; color:' + lc + ';">' + escapeHtml(L.big) + '</span><span style="font-size:14px; color:' + C.sub + ';">' + escapeHtml(L.unit) + '</span></div>'
       + '<div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;">'
-      + L.keys.map((k, i) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.card + '; border:' + hw1 + ' solid ' + C.box + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + k + '</span><span style="' + mono + ' font-size:16px; font-weight:700; color:' + (L.hl[i] ? lc : C.text) + ';">' + escapeHtml(L.metrics[i]) + '</span></div>').join('')
+      + L.keys.map((k, i) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.card + '; border:' + hw1 + ' solid ' + C.box + ';"><span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.dim + ';">' + k + '</span><span style="' + mono + ' font-size:16px; font-weight:700; color:' + (L.hl[i] ? lc : C.text) + ';">' + escapeHtml(L.metrics[i]) + '</span></div>').join('')
       + '</div>'
-      + '<div style="display:flex; flex-direction:column; gap:5px; padding-top:12px; border-top:' + hw1 + ' solid ' + C.ruleFx + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + escapeHtml(CP.effectCaption) + '</span><span style="font-size:13px; line-height:1.5; color:' + C.sub + '; text-wrap:pretty;">' + escapeHtml(L.effect) + '</span></div>'
+      + '<div style="display:flex; flex-direction:column; gap:5px; padding-top:12px; border-top:' + hw1 + ' solid ' + C.ruleFx + ';"><span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.effectCaption) + '</span><span style="font-size:13px; line-height:1.5; color:' + C.sub + '; text-wrap:pretty;">' + escapeHtml(L.effect) + '</span></div>'
       + '</div>';
     const compact = (t, isPace) => {
       const s = isPace ? 'n' : t.sev, hot = s === 'r' || s === 'a';
       return '<div class="wx-tile" data-factor="' + t.id + '"' + (isPace ? paceAttrs : '') + ' style="position:relative; flex:1; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + '; overflow:hidden;' + (isPace ? paceCss : '') + '">'
         + '<span style="position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background:' + (hot ? sevC(s) : C.bar) + ';"></span>'
-        + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;"><span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:' + (isPace || hot ? C.text : C.muted) + ';">' + escapeHtml(t.name) + '</span>' + (isPace ? tag() : '') + '</span>'
+        + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;"><span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + (isPace || hot ? C.text : C.muted) + ';">' + escapeHtml(t.name) + '</span>' + (isPace ? tag() : '') + '</span>'
         + '<span style="font-size:11.5px; color:' + C.dim + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(t.detail) + '</span>'
         + '<span class="wx-effect" style="font-size:11.5px; line-height:1.45; color:' + C.muted + '; text-wrap:pretty;">' + escapeHtml(t.effect) + '</span></span>'
         + '<span style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0;"><span class="wx-val" style="' + mono + ' font-size:18px; font-weight:700; color:' + (s === 'r' ? C.red : s === 'a' ? C.amber : s === 'u' ? C.dim : C.sub) + ';">' + escapeHtml(t.value) + '</span>'
-        + '<span class="wx-sevl" style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + (isPace ? C.muted : hot ? sevC(s) : C.dim) + ';">' + escapeHtml(isPace ? t.sevL : CP.sev[s]) + '</span></span></div>';
+        + '<span class="wx-sevl" style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + (isPace ? C.muted : hot ? sevC(s) : C.dim) + ';">' + escapeHtml(isPace ? t.sevL : CP.sev[s]) + '</span></span></div>';
     };
     h += '<div class="wx-tiles" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px;">' + leadTile
       + '<div style="display:flex; flex-direction:column; gap:8px;">' + vm.factors.slice(1).map(t => compact(t, false)).join('') + compact(P, true) + '</div></div>';
@@ -12517,7 +12509,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
     const tile = (t, isPace) => {
       const s = isPace ? 'n' : t.sev;
       return '<div class="wx-tile" data-factor="' + t.id + '"' + (isPace ? paceAttrs : '') + ' style="display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';' + (isPace ? paceCss : '') + '">'
-        + '<span style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:' + C.muted + ';">' + escapeHtml(t.name) + '</span><span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + (isPace ? C.dim : dotC(s)) + ';"></span></span>'
+        + '<span style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.muted + ';">' + escapeHtml(t.name) + '</span><span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + (isPace ? C.dim : dotC(s)) + ';"></span></span>'
         + '<span class="wx-val" style="' + mono + ' font-size:20px; font-weight:700; color:' + (s === 'u' ? C.dim : C.sub) + ';">' + escapeHtml(t.value) + '</span>'
         + '<span style="font-size:11.5px; color:' + C.dim + ';">' + escapeHtml(t.detail) + '</span>'
         + '<span class="wx-effect" style="font-size:11.5px; line-height:1.45; color:' + C.muted + '; text-wrap:pretty;">' + escapeHtml(t.effect) + '</span>'
@@ -13130,7 +13122,7 @@ function maMatchRowsHtml(groups, opts){
       wl: r => (r.won == null ? 'var(--text-label)' : r.won ? 'var(--pos)' : 'var(--neg)') };
     const cols = o.cols.map(k => MA_ROW_CELLS[k]);
     const grid = `display:grid; grid-template-columns:${o.grid}; gap:0 8px; align-items:center;`;
-    const cap = `${x.mono}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);`;
+    const cap = `font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);`;
     const head = `<div class="ma-rows-head" style="${grid} padding:${o.headPad || '7px 28px 6px'}; border-top:1px solid var(--line); border-bottom:1px solid var(--line);">`
       + (o.labels || []).map((l, i) => (l ? `<span style="${cap}${cols[i] && cols[i].right ? ' text-align:right;' : ''}">${esc(l)}</span>` : '<span></span>')).join('') + '</div>';
     const line = o.rowLine === false ? '' : ` border-bottom:1px solid color-mix(in srgb, var(--text) 3%, transparent);`;
@@ -13141,9 +13133,9 @@ function maMatchRowsHtml(groups, opts){
     const empty = !groups.some(g => g.rows.length) && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--text-label);">${esc(o.empty)}</div>` : '';
     return `<div class="ma-rows ma-rows-table" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
   }
-  const mono = "font-family:'IBM Plex Mono',monospace;";
+  const mono = "font-family:'IBM Plex Mono',monospace;";   // data cells: aligned digits stay Plex Mono (README §7)
   // colours = the design's own shades (founder 2026-09-29), fallbacks = the 12a names outside the modal
-  const cap = `${mono}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);`;
+  const cap = `font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);`;
   const SB = !!o.scoresBelow, COLS = SB ? MA_ROW_COLS_SB : MA_ROW_COLS;
   const labels = o.labels || (SB ? ['Date', '', 'Opponent', 'Rd', 'Sets', 'H', 'A'] : ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A']);
   const head = `<div class="ma-rows-head" style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${COLS}; gap:0 10px; align-items:center; background:${o.bg || 'var(--page)'}; padding:${o.headPad || '6px 6px 7px'}; border-bottom:1px solid ${o.headLine || 'var(--line)'};">`
@@ -13522,7 +13514,7 @@ function fhTodayPair(m){
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
 function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
-function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 // Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
@@ -13597,7 +13589,7 @@ function fhHotLinesTable(rows, sc, opts){
   // meetings sit in the same columns as 9 (ruling 2026-09-24). Form keeps the stretched columns.
   const cols = opts.fixedCols ? `repeat(${Math.max(1, rows.length)},calc(100% / ${Math.max(rows.length, opts.fixedCols)}))` : `repeat(${Math.max(1, rows.length)},minmax(${opts.colMin},1fr))`;
   const jc = opts.fixedCols ? ' justify-content:end;' : '';
-  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-label);`;
+  const cap = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);`;
   // opts.shades: H2H draws the design's own shades (DF L1260–1291: top line blue .06 / .25, track white .06, ineligible dot white .08)
   const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || 'var(--fh-muted)'};"></span><span style="${FH_MONO} font-size:8.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:var(--text-label);${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
   const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid var(--line);">
@@ -13620,9 +13612,9 @@ function fhHotLinesTable(rows, sc, opts){
     }).join('');
     return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? topBg : 'transparent'}; box-shadow:inset 0 0 0 1px ${isTop ? topBd : 'transparent'}; cursor:default;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-          ${famLbl ? `<span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${fhEsc(famLbl)}</span>` : ''}
+          ${famLbl ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${fhEsc(famLbl)}</span>` : ''}
           <span style="font-size:13.5px; font-weight:700;">${fhEsc(x.name)}</span>
-          ${isTop ? `<span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--link);">Most covered</span>` : ''}
+          ${isTop ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--link);">Most covered</span>` : ''}
           ${exp ? `<span style="${FH_MONO} font-size:9.5px; color:var(--text-label); white-space:nowrap;">priced in at ${fhOdd(opts.shortPriced)}</span>` : ''}
         </span>
         <span style="display:flex; flex-direction:column; gap:2px;">
@@ -13637,7 +13629,7 @@ function fhHotLinesTable(rows, sc, opts){
   if (opts.showAll){
     FH_HOT_FAM.forEach(f => {
       const ls = sc.scored.filter(x => fhFamOf(x.L.g) === f[0]); if (!ls.length) return;
-      out.push(`<span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); padding:12px 0 4px;">${f[1]}</span>`);
+      out.push(`<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); padding:12px 0 4px;">${f[1]}</span>`);
       ls.forEach(x => out.push(lineHtml(x, '')));
     });
   } else {
@@ -13948,11 +13940,11 @@ function fhFormColumnHtml(P, thinAny){
   return `<div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; ${side} min-width:0;">
       ${fhNameLink(P.name, P.key, 'font-size:15px; font-weight:700; display:inline-block; ' + one)}
       <span style="${FH_MONO} font-size:40px; font-weight:800; line-height:1; white-space:nowrap;${P.n ? '' : ' color:' + FH_DASH + ';'}">${P.n ? P.wins + '–' + (P.n - P.wins) : FH_DASHC}</span>
-      <span${pillTip} style="display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--edge-10); background:var(--tile-hover); white-space:nowrap;"><span data-ma-gate="${P.mktOk ? (P.mktSmall ? 'small' : 'full') : 'nopct'}" style="${FH_MONO} font-size:12.5px; font-weight:700; color:${mktC('var(--text)')};">${dW}</span><span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);">v market</span>${P.mktSmall ? maSmallNote() : ''}</span>
+      <span${pillTip} style="display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--edge-10); background:var(--tile-hover); white-space:nowrap;"><span data-ma-gate="${P.mktOk ? (P.mktSmall ? 'small' : 'full') : 'nopct'}" style="${FH_MONO} font-size:12.5px; font-weight:700; color:${mktC('var(--text)')};">${dW}</span><span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);">v market</span>${P.mktSmall ? maSmallNote() : ''}</span>
       <span class="fh-meta" title="${fhEsc('market expected ' + (P.mktOk ? P.expW.toFixed(1) : FH_DASHC) + ' wins in ' + (P.mktOk ? P.np : P.n) + (pricedNote ? ' · ' + pricedNote : ''))}" style="font-size:11.5px; color:var(--text-label); ${one}">market expected <span style="white-space:nowrap;"><span style="${FH_MONO} color:${mktC('var(--text-label)')};">${P.mktOk ? P.expW.toFixed(1) : FH_DASHC}</span> wins in ${P.mktOk ? P.np : P.n}</span>${pricedNote ? `<span style="${FH_MONO} font-size:10.5px; color:var(--text-label);"> · ${fhEsc(pricedNote)}</span>` : ''}</span>
       ${note ? `<span style="${FH_MONO} font-size:10.5px; color:var(--text-label); ${one}">${fhEsc(note)}</span>` : thinAny ? `<span aria-hidden="true" style="${FH_MONO} font-size:10.5px; visibility:hidden;">${FH_DASHC}</span>` : ''}
       <div style="display:flex; gap:4px; margin-top:4px; width:100%;">${pills.join('')}</div>
-      <div style="align-self:stretch; ${FH_MONO} font-size:9px; letter-spacing:0.06em; color:var(--text-label); margin-top:-6px; white-space:nowrap; text-align:right;">oldest → newest</div>
+      <div style="align-self:stretch; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin-top:-6px; white-space:nowrap; text-align:right;">oldest → newest</div>
     </div>`;
 }
 // "Show form data" rows (DF L999–1003): value + aside ("· 3 matches" when thin) + sub caption.
@@ -13968,7 +13960,7 @@ function fhFormDataRows(A, B, rows){
 // divider after the window, "Show N more matches".
 function fhFormListHtml(P){
   const blue = 'var(--open-card)';   // DF L1131: the divider's rules are blue 0.35
-  const div = `<div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line);"><span style="flex:1; height:1px; background:${blue};"></span><span style="${FH_MONO} font-size:10px; letter-spacing:0.06em; color:var(--text-label); white-space:nowrap;">↑ used in form stats</span><span style="flex:1; height:1px; background:${blue};"></span></div>`;
+  const div = `<div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line);"><span style="flex:1; height:1px; background:${blue};"></span><span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap;">↑ used in form stats</span><span style="flex:1; height:1px; background:${blue};"></span></div>`;
   // entries (head / row / divider, DF L4709–4720) → the shared helper's groups; a divider opens the next group.
   const groups = []; let divNext = false;
   P.entries.forEach(e => {
@@ -14003,12 +13995,12 @@ function fhFormHotHtml(P){
   const moreLbl = _fh.form.hotAll[P.idx] ? 'Best line per family' : 'Show all lines (' + (H.sc ? H.sc.scored.length : 0) + ')';
   const hasMore = H.ok && (H.sc.scored.length > H.table.shown || _fh.form.hotAll[P.idx]);
   const dot = `<span style="width:3px; height:3px; border-radius:50%; background:var(--text-label);"></span>`;   // DF L1037
-  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-label);`;
+  const cap = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);`;
   return `<div style="display:flex; flex-direction:column; border-top:1px solid var(--line);">
       <div style="display:flex; align-items:center; gap:12px; padding-top:14px;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;">
           <span style="font-size:14.5px; font-weight:700; color:${P.HC};">${fhEsc(P.name)}</span>
-          <span style="display:flex; align-items:center; gap:7px; flex-wrap:wrap; ${FH_MONO}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);">${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}</span>
+          <span style="display:flex; align-items:center; gap:7px; flex-wrap:wrap; font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);">${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}</span>
         </span>
       </div>
       ${H.short ? `<span style="align-self:flex-start; margin-top:6px; ${FH_MONO} font-size:10px; color:var(--text-label); border:1px solid var(--edge-10); border-radius:999px; padding:2px 9px;">Short odds · high cover rates are priced in</span>` : ''}
@@ -14054,7 +14046,7 @@ function fhBuildForm(m){
   const eloHelp = S.wmode === 'n' ? 'now v oldest of last ' + S.n : 'now v oldest in ' + S.days + ' days';
   const lastRows = [['medP', 'Median odd', 'his closing odd'], ['medO', 'Median opp odd', "opponents' closing odd"], ['oppElo', 'Opposition Elo', 'avg opponent Elo rating'], ['flat', 'Flat 1u', 'P/L backing him every match'], ['elo', 'Elo change', eloHelp]];
   const fatRows = [['load', 'Load', 'matches in 28 days'], ['m714', 'Matches 7d / 14d', 'last 7 and 14 days']];
-  const cap = `${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); text-align:center; padding:16px 0 8px;`;
+  const cap = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); text-align:center; padding:16px 0 8px;`;
   const cardData = S.card ? `<div style="border-top:1px solid var(--line); padding-bottom:8px;">
       <div style="${cap}">${fhEsc(lastLabel)}</div>${fhFormDataRows(A, B, lastRows)}
       <div style="${cap}">Fatigue · all matches to ${fhDDMM(m.date)}</div>${fhFormDataRows(A, B, fatRows)}
@@ -14062,8 +14054,8 @@ function fhBuildForm(m){
   const hotLabel = WLBL + ' · ' + surfLo + roleSfx;
   const hot = `<div style="background:var(--card); border:1px solid var(--edge-6); border-radius:12px; margin-top:16px; display:flex; flex-direction:column;">
       <div class="seg" onclick="fhForm({hot:${!S.hot}})" style="position:relative; display:flex; align-items:center; justify-content:center; gap:10px 16px; flex-wrap:wrap; padding:11px 16px; cursor:pointer;">
-        <span style="display:flex; align-items:center; gap:10px;"><span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${S.hot ? 'Hide hot lines' : 'Show hot lines'}</span><span style="font-size:11px; color:var(--text); display:inline-block; transform:rotate(${S.hot ? '180deg' : '0deg'}); transition:transform .16s;">▾</span></span>
-        <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); ${FH_MONO} font-size:10.5px; letter-spacing:0.06em; color:var(--text-label);">${fhEsc(hotLabel)}</span>
+        <span style="display:flex; align-items:center; gap:10px;"><span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${S.hot ? 'Hide hot lines' : 'Show hot lines'}</span><span style="font-size:11px; color:var(--text); display:inline-block; transform:rotate(${S.hot ? '180deg' : '0deg'}); transition:transform .16s;">▾</span></span>
+        <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${fhEsc(hotLabel)}</span>
       </div>
       ${S.hot ? `<div style="display:flex; flex-direction:column; gap:14px; padding:12px 20px 14px; border-top:1px solid var(--line);">
         ${fhFormHotHtml(A)}${fhFormHotHtml(B)}
@@ -14075,7 +14067,7 @@ function fhBuildForm(m){
     <div style="background:var(--card); border:1px solid var(--edge-6); border-radius:16px; padding:22px 24px 6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${fhFormColumnHtml(A, thinAny)}${fhFormColumnHtml(B, thinAny)}</div>${srcLine}
       <div class="seg" onclick="fhForm({card:${!S.card}})" style="display:flex; align-items:center; justify-content:center; gap:9px; margin-top:18px; padding:11px 0 8px; border-top:1px solid var(--line); cursor:pointer;">
-        <span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${S.card ? 'Hide form data' : 'Show form data'}</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${S.card ? 'Hide form data' : 'Show form data'}</span>
         <span style="font-size:11px; color:var(--text); display:inline-block; transform:rotate(${S.card ? '180deg' : '0deg'}); transition:transform .16s;">▾</span>
       </div>
       ${cardData}
@@ -14234,7 +14226,7 @@ function fhH2hRecCard(label, arr, onclick, aName, bName, aS, bS){
   const leadColor = side === 'a' ? FH_AC : side === 'b' ? FH_BC : 'var(--text-soft)';
   const tug = s => (side === s && n ? (Math.abs(a - b) / n * 50) + '%' : '0%');
   const tugTxt = !n ? '' : side === 'level' ? 'Level' : '+' + Math.abs(a - b) + ' ' + (side === 'a' ? aS : bS);
-  const lbl = `${FH_MONO} font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-soft);`;
+  const lbl = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-soft);`;
   return `<div${onclick ? ` class="seg" onclick="${onclick}"` : ''} style="background:var(--page); border:1px solid var(--line); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span style="${lbl}">${fhEsc(label)}</span><span style="margin-left:auto; font-size:11px; font-weight:600; color:var(--text); white-space:nowrap;">Meetings ↓</span>${maSmallChip(n)}</div>
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">
@@ -14374,7 +14366,7 @@ function fhBuildH2H(m){
     const on = S.stat === c.key;
     return `<div class="seg fh-h2stat" data-stat="${c.key}" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? 'var(--selected)' : card}; border:1px solid ${on ? 'color-mix(in srgb, var(--bar) 50%, transparent)' : hair}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
         <span style="display:flex; justify-content:flex-end; width:100%; margin-bottom:-14px; font-size:10.5px; font-weight:600; color:${link};">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span>
-        <span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">${c.label}</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">${c.label}</span>
         <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? t4 : 'var(--text)'}; white-space:nowrap;">${c.val}</span>
         <span style="font-size:11px; color:${t3};">${fhEsc(c.sub)}</span>
       </div>`; }).join('')}</div>`;
@@ -14395,7 +14387,7 @@ function fhBuildH2H(m){
   // (statPanel.empty, drawn nowhere); the same drawer carries the file's empty-line pattern (noF, DF L1242) instead.
   const statPanel = !S.stat ? '' : `<div class="fh-h2drawer" style="background:${card}; border:1px solid var(--open-card); border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:8px;">
-        <span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t2};">${statTitle}</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t2};">${statTitle}</span>
         <span style="font-size:10.5px; color:${t4};">Click a row for match stats</span>
       </div>${statRows.length ? statRows.join('') : `<div style="padding:14px 0 10px; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); text-align:center; font-size:13px; color:${t3};">${S.stat === 'tb' ? 'No tiebreak in these meetings.' : S.stat === 'dec' ? 'No meeting went the distance.' : 'No set scores on record for these meetings.'}</div>`}</div>`;
   // ---- Price range (DF L1271–1300, pr L4431–4476): closing odds across the priced meetings, one book per meeting
@@ -14415,7 +14407,7 @@ function fhBuildH2H(m){
       allRows: PR.slice().reverse().map(r => ({ r, isLo: r.mid === lo.mid, isHi: r.mid === hi.mid, v: get(r) })) });
   });
   const tx = v => v < 16 ? 'translateX(-6px)' : v > 84 ? 'translateX(calc(-100% + 6px))' : 'translateX(-50%)';
-  const figCap = `${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};`;
+  const figCap = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};`;
   const chip = txt => `<span class="fh-nchip" style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">${txt}</span>`;
   const prCard = s => {
     let inner = '';
@@ -14435,10 +14427,10 @@ function fhBuildH2H(m){
       if (nP > 1){
         // "every priced close" (DF L1287–1297) through the shared tooltip, geometry as the file: under the figures,
         // 8px out on both sides, its own surface / radius / padding and a column of rows.
-        const body = `<span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
+        const body = `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
           ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent);">
             <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r)}</span>
-            <span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t2};">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
+            <span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t2};">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
             <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : 'var(--text-soft)'}; text-align:right;">${o.v.toFixed(2)}</span>
           </div>`).join('')}
           <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:1px solid var(--edge-10); ${FH_MONO} font-size:11px; color:${t2};"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:var(--text);">${s.avgV.toFixed(2)}</span></div>`;
@@ -14627,7 +14619,7 @@ function fhSheetHeadHtml(e, r, opts){
   const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--inner); border:1px solid var(--edge-10); border-radius:8px; width:30px; height:30px; color:var(--text-soft); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
   return `<div style="display:flex; flex-direction:column; gap:18px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
-            <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
+            <span style="display:flex; align-items:baseline; gap:8px;"><span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
             ${close}
           </div>
           <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:20px;">
@@ -14644,7 +14636,7 @@ function fhSheetHeadHtml(e, r, opts){
               <div style="position:relative; flex:none;">${av(e.bName, e.bKey)}${badge(r.oppPrice, 'var(--text-soft)')}</div>
             </div>
           </div>
-          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-soft); background:var(--inner); border:1px solid var(--edge-10); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
+          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-soft); background:var(--inner); border:1px solid var(--edge-10); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
         </div>`;
 }
 function fhOpenSheet(mid){
@@ -14835,7 +14827,7 @@ function fhSheetRowHtml(s){
   return `<div class="fh-srow" style="display:flex; flex-direction:column; gap:6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
         <span${s.a.title ? ` title="${fhEsc(s.a.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px;">${val(s.a, FH_AC)}${sub(s.a)}</span>
-        <span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-soft); text-align:center;">${fhEsc(s.label)}</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-soft); text-align:center;">${fhEsc(s.label)}</span>
         <span${s.b.title ? ` title="${fhEsc(s.b.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">${sub(s.b)}${val(s.b, FH_BC)}</span>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
@@ -14854,13 +14846,13 @@ const MA_SHEET_NA = 'Match stats not available for this match';
 const maSheetNaNote = () => `<span class="ma-sheet-na" style="font-size:10.5px; color:var(--text-label); text-align:center;">${MA_SHEET_NA}</span>`;
 // DF L1706: the caption strip carries a 1px white-0.07 border. Its width is --ma-hw (1px in the modal, 0 outside), so the
 // player profile, which shares this head, keeps its layout.
-function fhSheetSectionHead(t){ return `<span style="display:block; text-align:center; ${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--page); border:1px solid var(--line); border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`; }
+function fhSheetSectionHead(t){ return `<span style="display:block; text-align:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--page); border:1px solid var(--line); border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`; }
 function fhSheetStatsHtml(joined, emptyMsg){
   const M = fhSheetModel(joined || null);
   const head = fhSheetSectionHead;
   const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--page); border:1px solid var(--line); border-radius:10px; padding:16px 20px;">
       <span title="${fhEsc(M.dr[0].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[0].txt === FH_DASHC ? FH_DASH : FH_AC};">${M.dr[0].txt}</span>
-      <span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-soft);">Dominance ratio</span>
+      <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-soft);">Dominance ratio</span>
       <span title="${fhEsc(M.dr[1].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[1].txt === FH_DASHC ? FH_DASH : FH_BC}; text-align:right;">${M.dr[1].txt}</span>
     </div>`;
   const secs = M.sections.map(sec => `<div style="display:flex; flex-direction:column; gap:13px;">${head(sec.title)}${sec.rows.map(fhSheetRowHtml).join('')}</div>`).join('');
@@ -15052,7 +15044,7 @@ function fhSheetPbpHtml(M){
   const hi = 'var(--text)', dim = 'var(--text-label)', mut = 'var(--text-label)';
   const ball = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:${mut};"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg>`;
   const red = `color:var(--neg); background:color-mix(in srgb, var(--neg) 15%, transparent); border:1px solid color-mix(in srgb, var(--neg) 30%, transparent);`;
-  const lost = `<span style="${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.08em; ${red} border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span>`;
+  const lost = `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; ${red} border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span>`;
   const bp = `<span style="font-size:8.5px; font-weight:700; ${red} border-radius:4px; padding:1px 5px;">BP</span>`;
   // MP (TEN-349) is drawn in the file's SP chip: the design has no MP of its own
   const chip = t => `<span style="font-size:8.5px; font-weight:700; color:${hi}; background:var(--inner); border:1px solid var(--line); border-radius:4px; padding:2px 6px;">${t}</span>`;
@@ -15367,8 +15359,8 @@ function meModels(E){
 // item radius 6, 12px). Inside the modal the 12a names maSeg draws resolve to the same ME_C tokens.
 function meSegHtml(items){ return maSeg('me', items); }
 const ME_CARD = `background:${ME_C.card}; border:1px solid ${ME_C.cardLine}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
-const ME_TITLE = `${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1};`;
-const ME_COLH = `${FH_MONO}font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${ME_C.m3};`;
+const ME_TITLE = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1};`;
+const ME_COLH = `font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${ME_C.m3};`;
 const ME_FOOT = `font-size:11px; color:${ME_C.m3};`;
 const ME_HINT = `font-size:11.5px; color:${ME_C.m2};`;
 const ME_PGRID = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(min(460px,100%),1fr)); gap:16px; align-items:start;';
@@ -15391,7 +15383,7 @@ function meBandsCol(E, i, M){
   let body;
   if (M.state !== 'ready') body = `<div class="me-bands-body">${M.state === 'loading' ? meLoadingRow('7px 8px', 282) : meNoHist(M, '7px 8px')}</div>`;
   else {
-    body = '<div class="me-bands-body" style="display:flex; flex-direction:column;">' + [['fav', 'As favourite'], ['dog', 'As underdog']].map(g => `<span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1}; padding:10px 8px 4px;">${g[1]}</span>`
+    body = '<div class="me-bands-body" style="display:flex; flex-direction:column;">' + [['fav', 'As favourite'], ['dog', 'As underdog']].map(g => `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1}; padding:10px 8px 4px;">${g[1]}</span>`
       + M.bands.filter(b => b.gk === g[0]).map(b => {
         // DF L3443: the wash marks today's band and the band whose pop-up is open; the ring only today's
         const isToday = b.i === M.tb, n = b.n, click = n > 0, on = E.S.meBand === (i ? 'b' : 'a') + b.i;
@@ -15400,7 +15392,7 @@ function meBandsCol(E, i, M){
         const bar = maGateBar(b.w, n, ME_C.text), winW = bar.w.toFixed(1) + '%';
         const lossBg = bar.mode === 'none' || bar.mode === 'nopct' ? 'var(--track)' : ME_C.track;
         return `<div class="${click ? 'seg me-row' : ''}"${click ? ` onclick="meSet({meBand:'${i ? 'b' : 'a'}${b.i}'})"` : ''} data-me-band="${i ? 'b' : 'a'}${b.i}" style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:center; padding:7px 8px; border-radius:7px; background:${isToday || on ? ME_C.wash : 'transparent'}; box-shadow:inset 0 0 0 1px ${isToday ? ME_C.ring : 'transparent'}; cursor:${click ? 'pointer' : 'default'};">`
-          + `<span style="display:flex; align-items:center; gap:6px; min-width:0;"><span style="${FH_MONO} font-size:11.5px; font-weight:700; white-space:nowrap;">${b.label}</span>${isToday ? `<span style="${FH_MONO} font-size:8.5px; font-weight:700; letter-spacing:0.1em; color:${ME_C.blue};">TODAY</span>` : ''}</span>`
+          + `<span style="display:flex; align-items:center; gap:6px; min-width:0;"><span style="${FH_MONO} font-size:11.5px; font-weight:700; white-space:nowrap;">${b.label}</span>${isToday ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.blue};">TODAY</span>` : ''}</span>`
           + `<span style="display:flex; align-items:center; gap:8px; min-width:0;"><span style="flex:1; display:flex; gap:2px; height:7px;"><span style="width:${winW}; background:${bar.color}; border-radius:3px 0 0 3px;"></span><span style="flex:1; background:${lossBg}; border-radius:0 3px 3px 0;"></span></span><span style="${FH_MONO} font-size:10px; color:${ME_C.m1}; white-space:nowrap; min-width:48px; text-align:right;">${b.w}–${b.l}</span></span>`
           + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}</span>`
           + `<span style="${FH_MONO} font-size:11px; color:${ME_C.m2}; text-align:right;">${mePct0(b.needs)}</span>`
@@ -15453,7 +15445,7 @@ function meChartCard(E, MM){
       return `<span style="position:absolute; left:calc(${(p[0] / 10).toFixed(2)}% - 4.5px); top:${pct(p[1])}; width:9px; height:9px; margin-top:-4.5px; border-radius:50%; background:${col[i][0]}; box-shadow:0 0 0 3px ${ME_C.card};"></span>`; }).join('');
     const xl = C.ticks.map((t, k) => `<span style="position:absolute; left:${(t.f * 100).toFixed(1)}%; transform:${k === 0 ? 'none' : k === C.ticks.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)'}; ${FH_MONO} font-size:11.5px; color:${ME_C.m1}; white-space:nowrap;">${t.label}</span>`).join('');
     plot = `<div style="display:flex; gap:12px;"><div style="position:relative; width:52px; height:300px; flex:none;">${yl}</div>`
-      + `<div style="position:relative; flex:1; min-width:0; height:300px;">${svg}<span style="position:absolute; left:8px; top:${pct(C.zeroY)}; transform:translateY(-50%); padding:2px 7px; border-radius:5px; background:${ME_C.card}; ${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1};">Break even</span>${dots}</div></div>`
+      + `<div style="position:relative; flex:1; min-width:0; height:300px;">${svg}<span style="position:absolute; left:8px; top:${pct(C.zeroY)}; transform:translateY(-50%); padding:2px 7px; border-radius:5px; background:${ME_C.card}; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1};">Break even</span>${dots}</div></div>`
       + `<div class="me-xlabels" style="margin:-6px 0 0 64px; position:relative; height:16px;">${xl}</div>`;
   }
   return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-chart" style="${ME_CARD}">`
@@ -15503,12 +15495,12 @@ function meLinesCard(E, MM){
 // split + latest match in scope, through the shared tooltip (maTipHtml, DoD item 8). Opens under the pill, right-aligned:
 // the pill sits at the pane's right edge.
 function mePill(MM){
-  const pill = `<span class="me-pill" tabindex="0" style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.12em; color:${ME_C.m2}; border:${ME_C.hw} solid ${ME_C.pillLine}; border-radius:999px; padding:2px 8px; cursor:default;">CLOSING ODDS</span>`;
+  const pill = `<span class="me-pill" tabindex="0" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m2}; border:${ME_C.hw} solid ${ME_C.pillLine}; border-radius:999px; padding:2px 8px; cursor:default;">CLOSING ODDS</span>`;
   const ok = MM.filter(M => M.state === 'ready');
   if (ok.length < 2) return pill;
   const P = ok.reduce((s, M) => s + M.book.P, 0), B = ok.reduce((s, M) => s + M.book.B, 0);
   const last = ok.map(M => M.lastDate).filter(Boolean).sort().pop();
-  const line = (l, v) => `<span style="${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m2}; white-space:nowrap;">${l}</span><span style="${FH_MONO} font-size:11px; color:${ME_C.m1}; white-space:nowrap;">${fhEsc(v)}</span>`;
+  const line = (l, v) => `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m2}; white-space:nowrap;">${l}</span><span style="${FH_MONO} font-size:11px; color:${ME_C.m1}; white-space:nowrap;">${fhEsc(v)}</span>`;
   const body = `<span class="me-pill-tip" style="display:flex; flex-direction:column; gap:8px;"><span style="font-size:13px; font-weight:700; color:${ME_C.text};">Closing odds</span>`
     + `<span style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:baseline;">${line('Pinnacle', String(P))}${line('Bet365', String(B) + (B ? ' (no Pinnacle close)' : ''))}${line('Latest match', last ? fhLongDate(last) : '—')}</span></span>`;
   return maTipHtml(pill, body, { popStyle: 'top:calc(100% + 8px); left:auto; right:0; transform:none;' });
@@ -15561,7 +15553,7 @@ function meBandPopHtml(E, MM){
   const k = E.S.meBand[0], i = k === 'b' ? 1 : 0, bi = +E.S.meBand.slice(1), M = MM[i];
   if (!M || M.state !== 'ready' || !M.bands[bi] || !M.bands[bi].n) return '';
   const b = M.bands[bi], core = window.MarketEdgeCore, name = i ? E.m.p2 : E.m.p1, key = String(i ? E.m.p2Key : E.m.p1Key);
-  const chip = bi === M.tb ? `<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.12em; color:${ME_C.blue}; border:${ME_C.hw} solid ${ME_C.chipBd}; border-radius:999px; padding:2px 8px;">TODAY'S BAND</span>` : '';
+  const chip = bi === M.tb ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.blue}; border:${ME_C.hw} solid ${ME_C.chipBd}; border-radius:999px; padding:2px 8px;">TODAY'S BAND</span>` : '';
   const sub = [b.gk === 'fav' ? 'As favourite' : 'As underdog', meScopeLbl(E.S), 'closing odds', meBookNote(b.rows)].filter(Boolean).join(' · ');
   const stats = `<div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;">`
     + meStatBox('Record', 'W' + b.w + '–L' + b.l, ME_C.text, true) + meRateBox('Won', b.w, b.n, b.won == null ? null : mePct1(b.won), ME_C.text, true)
@@ -16601,7 +16593,7 @@ const AODDS_C = {
   sub: 'var(--text-soft)',       // Muted 1
   label: 'var(--text-label)',     // Muted 2
   label3: 'var(--text-label)',    // Muted 3
-  caps: 'var(--text-soft)',      // Header caps
+  caps: 'var(--text-label)',      // column-head caps (README §7)
   blue: 'var(--text)',    // Blue as TEXT: the BOOKS tag
   blueFill: 'var(--selected)',// STEAM chip fill (U2.5: --selected + 16% edge)
   sharp: 'var(--text)',   // Sharp heading
@@ -16638,7 +16630,7 @@ const AODDS_C = {
   grid: 'var(--viz-guide)',      // chart gridline  (white 0.07, U14)
   axis: 'var(--edge-10)',     // chart baseline  (white 0.12, U14)
   hw1: '1px',                // spec 1px borders
-  hw125: '1.25px',           // spec 1.25px borders
+  hw125: '1px',           // README §4: every edge 1px
 };
 
 // Clock + date in the member's time zone (TEN-8 newsTz(), browser local when unset) — the zone
@@ -16890,7 +16882,7 @@ function aOddsTipHtml(title, lines){
   const C = AODDS_C, mono = "font-family:'IBM Plex Mono',monospace;";
   return '<div style="font-size:13px; font-weight:700; color:' + C.text + ';">' + escapeHtml(title) + '</div>'
     + (lines && lines.length ? '<div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; margin-top:8px; align-items:baseline;">'
-      + lines.map(l => '<span style="' + mono + 'font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + '; white-space:nowrap;">' + escapeHtml(l[0]) + '</span>'
+      + lines.map(l => '<span style="' + ' font-family:var(--font-words);font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + '; white-space:nowrap;">' + escapeHtml(l[0]) + '</span>'
         + '<span style="' + mono + ' font-size:11px; color:' + (l[2] || C.sub) + ';">' + escapeHtml(l[1]) + '</span>').join('') + '</div>' : '');
 }
 // How a source reaches us and how often we look — only what its clock states (never a guess).
@@ -17016,7 +17008,7 @@ function buildOddsSection(m){
     return '<div class="aox-tile' + (able && !on ? ' aox-able' : '') + (able ? '' : ' aox-off') + '" data-market="' + escapeHtml(t.name) + '"'
       + (able ? ' role="button" tabindex="0" onclick="aOddsSetMarket(this.dataset.market)"' : ' tabindex="0" aria-disabled="true"' + tip('Not recorded yet — Match Winner only.'))
       + ' style="display:flex; flex-direction:column; gap:4px; padding:11px 13px; border-radius:10px; cursor:' + (able ? 'pointer' : 'default') + '; background:' + (on ? C.tileOnBg : C.row) + '; border:' + C.hw125 + ' solid ' + (on ? C.tileOnBd : C.tileBd) + ';">'
-      + '<span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.label + ';' + (able ? '' : ' opacity:0.5;') + '">' + t.fam.toUpperCase() + '</span>'
+      + '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + ';' + (able ? '' : ' opacity:0.5;') + '">' + t.fam.toUpperCase() + '</span>'
       + '<span style="font-size:13px; font-weight:' + (on ? 700 : 500) + '; color:' + (on ? C.text : able ? C.sub : C.label) + ';">' + escapeHtml(t.name) + '</span></div>';
   }).join('') + '</div>';
   const top = '<div style="display:flex; flex-direction:column; gap:14px; margin-bottom:24px;">' + filterRow + tiles + '</div>';
@@ -17031,7 +17023,7 @@ function buildOddsSection(m){
 
   // §4 book table (T3).
   const GRID = 'grid-template-columns:minmax(84px,0.8fr) minmax(0,1.9fr) 48px minmax(0,1.9fr) 48px;';
-  const caps = mono + ' font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:' + C.caps + ';';
+  const caps = ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.caps + ';';
   const openHdr = '<span tabindex="0" style="justify-self:end; text-align:right;"' + tip('First price we recorded for this book on this match') + '>OPEN</span>';
   const onh = '<span style="display:grid; grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr); gap:8px; ' + caps + '">' + openHdr + '<span></span><span>NOW</span></span>';
   const pname = (n, col) => '<span style="text-align:center; font-size:13px; font-weight:700; color:' + col + '; padding-bottom:8px; border-bottom:' + C.hw1 + ' solid ' + C.nameRule + ';">' + escapeHtml(n) + '</span>';
@@ -17065,7 +17057,7 @@ function buildOddsSection(m){
   const groups = [['sharp', 'SHARP', C.sharp], ['soft', 'SOFT', C.soft]].map(([g, h, c]) => {
     const rs = D.rows.filter(r => r.group === g);
     if (!rs.length) return '';
-    return '<div class="aox-grouphead" data-group="' + g + '" style="display:flex; align-items:center; gap:10px; padding:12px 4px 4px;"><span style="' + mono + ' font-size:9.5px; font-weight:700; letter-spacing:0.18em; color:' + c + ';">' + h + '</span>'
+    return '<div class="aox-grouphead" data-group="' + g + '" style="display:flex; align-items:center; gap:10px; padding:12px 4px 4px;"><span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + c + ';">' + h + '</span>'
       + '<span style="flex:1; height:1px; background:' + C.groupRule + ';"></span></div>' + rs.map(row).join('');
   }).join('');
   // The shard is lazy: until it lands there is nothing to verdict yet (never "not checked yet" rows).
@@ -17098,7 +17090,7 @@ function aOddsMvHtml(m, D, marginLbl){
       ? '<span class="aox-lastseen" style="font-size:12px; font-weight:700; color:' + C.label + ';">last seen ' + aOddsWhen(lastSeen, D.nowMs) + '</span>'
       : chg == null ? '' : '<span class="aox-chg" style="font-size:12px; font-weight:700; color:' + (chg >= 0 ? C.up : C.dn) + ';">' + (chg >= 0 ? '+' : '-') + Math.abs(chg).toFixed(1) + '%</span>';
     const box = (cap, p, col2) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.pop + '; border:' + C.hw1 + ' solid ' + C.panelBd + ';">'
-      + '<span style="' + mono + ' font-size:9px; font-weight:600; letter-spacing:0.14em; color:' + C.label + ';">' + cap + '</span>'
+      + '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + ';">' + cap + '</span>'
       + '<span class="aox-stat" style="' + mono + ' font-size:18px; font-weight:700; color:' + col2 + ';">' + (p ? aOddsFmt(p[1]) : AODDS_DASH) + '</span>'
       + '<span style="' + mono + ' font-size:10.5px; color:' + C.label + '; white-space:nowrap;">' + (p ? aOddsStamp(p[0]) : '') + '</span></div>';
     return '<div class="aox-panel" data-side="' + x + '" style="display:flex; flex-direction:column; gap:12px; padding:16px 16px 14px; border-radius:14px; background:' + C.row + '; border:' + C.hw1 + ' solid ' + C.panelBd + ';">'
@@ -17111,7 +17103,7 @@ function aOddsMvHtml(m, D, marginLbl){
     return '<span class="aox-seg aox-tab" role="button" tabindex="0" data-book="' + escapeHtml(x.name) + '" data-aotip="' + escapeHtml(aOddsBookTip(x, D)) + '" onclick="aOddsOpenMv(this.dataset.book)" onkeydown="aOddsKey(event,()=>aOddsOpenMv(this.dataset.book))"'
       + ' style="padding:5px 10px; border-radius:4px; font-size:11.5px; cursor:pointer; white-space:nowrap; font-weight:' + (on ? 700 : 500) + '; color:' + (on ? C.text : C.sub) + '; background:' + (on ? C.tabOnBg : 'transparent') + '; border:' + C.hw1 + ' solid ' + (on ? C.tabOnBd : C.tabBd) + ';">' + escapeHtml(x.name) + '</span>'; }).join('');
   // The shared frame's `mv` variant (TEN-366): the file's own Odds pop-up geometry, DF L1906–1915.
-  const chip = '<span style="' + mono + ' font-size:9.5px; letter-spacing:0.14em; color:' + C.label + '; text-transform:uppercase;">' + r.group + ' · ' + escapeHtml(marginLbl(r)) + '</span>';
+  const chip = '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + '; text-transform:uppercase;">' + r.group + ' · ' + escapeHtml(marginLbl(r)) + '</span>';
   const body = '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:12px;">' + panel('a', m.p1, C.a) + panel('b', m.p2, C.b, C.bFill) + '</div>'
     + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="display:flex; gap:6px; flex-wrap:wrap;">' + tabs + '</span></div>';
   return maPopFrame({ variant: 'mv', cls: 'aox-mv', enter: !!_aOdds.mvIn, label: 'Odds movement', stop: true, onClose: 'aOddsCloseMv()',
@@ -17685,7 +17677,7 @@ function kfModelCard(m){
   const box = (cap, px, mid, gap, cls) => `<div class="${cls}" style="display:flex; flex-direction:column; gap:6px; border:1px solid ${C.line}; border-radius:12px; padding:13px 14px;"><span style="font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${C.t3};">${cap}</span><span style="${M} font-size:22px; font-weight:700; color:${C.text}; text-align:center;">${px}</span><span style="${M} font-size:10px; color:${C.t4}; text-align:center;">${mid}</span><span style="${M} font-size:11px; color:${C.t3}; text-align:center;">● ${gap}</span></div>`;
   const col = (side, name, accent, fairP, edge, divider) => {
     const fair = fairP > 0 ? (1 / fairP).toFixed(2) : FH_DASHC, sharp = edge != null && edge > 0.005;
-    const flag = `<span class="kf-flag" style="align-self:flex-start; ${M} font-size:11px; font-weight:500; letter-spacing:0.05em; color:${sharp ? C.up : C.dn}; background:${sharp ? C.upFlagBg : C.dnFlagBg}; border:1px solid ${sharp ? C.upFlagBd : C.dnFlagBd}; border-radius:6px; padding:6px 11px; white-space:nowrap;">${sharp ? 'SHARP VALUE' : 'NO VALUE'}</span>`;
+    const flag = `<span class="kf-flag" style="align-self:flex-start; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${sharp ? C.up : C.dn}; background:${sharp ? C.upFlagBg : C.dnFlagBg}; border:1px solid ${sharp ? C.upFlagBd : C.dnFlagBd}; border-radius:6px; padding:6px 11px; white-space:nowrap;">${sharp ? 'SHARP VALUE' : 'NO VALUE'}</span>`;
     const po = pin ? (side === 1 ? pin.p1 : pin.p2) : null, pn = pinNow(side);
     // compared as printed (2 dp): 1.8137 against an opener of 1.81 reads "1.81 → 1.81", so no arrow claims a move
     const d2 = v => Math.round(Number(v) * 100), arrow = po != null && pn != null ? (d2(pn) > d2(po) ? '↑' : d2(pn) < d2(po) ? '↓' : '→') : '';
@@ -18020,7 +18012,7 @@ const PS2_C = {
   bDash: 'color-mix(in srgb, var(--text) 85%, transparent)', bDim: 'color-mix(in srgb, var(--text) 30%, transparent)', tugL: 'color-mix(in srgb, var(--text) 70%, transparent)',
 };
 const PS2_CARD = `background:${PS2_C.card}; border:1px solid ${PS2_C.line}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
-const PS2_CAP = `${FH_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${PS2_C.t2};`;
+const PS2_CAP = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${PS2_C.t2};`;
 // The five DNA axes in the file's order and words (DF L3593); dp = the rating's printed precision.
 const PS2_AXES = [
   { key: 'serve', label: 'Serve', dp: 0 },
@@ -18124,7 +18116,7 @@ function ps2MatchupCard(m, s1, s2){
   };
   const head = `<div style="display:flex; align-items:center; gap:10px;"><span style="${PS2_CAP}">Style matchup</span></div>
     <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:start; gap:18px;">${side(m.p1, s1, false)}<span style="${M} font-size:11px; color:${C.t4}; padding-top:26px;">vs</span>${side(m.p2, s2, true)}</div>
-    <div style="height:1.25px; background:${C.line};"></div>`;
+    <div style="height:1px; background:${C.line};"></div>`;
   const pill = t => `<span class="ps2-lean" style="align-self:center; ${M} font-size:11px; font-weight:700; color:${C.text}; background:${C.pillBg}; border:1px solid ${C.pillLine}; border-radius:999px; padding:4px 12px;">${fhEsc(t)}</span>`;
   const titleRow = (t, n) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span class="ps2-edge-title" style="font-size:14px; font-weight:700; color:${C.text};">${fhEsc(t)}</span><span class="ps2-edge-n" style="${M} font-size:10.5px; color:${C.t3};">${fhEsc(n)}</span></div>`;
   let edge;
@@ -18146,7 +18138,7 @@ function ps2MatchupCard(m, s1, s2){
           <div style="position:relative; height:8px; display:flex; gap:3px;"><span style="width:${E.a}%; background:${C.A}; border-radius:4px 0 0 4px;"></span><span style="flex:1; background:${C.bDim}; border-radius:0 4px 4px 0;"></span><span style="position:absolute; left:50%; top:-5px; bottom:-5px; width:1.5px; margin-left:-0.75px; background:${C.t2};"></span></div>
           <span class="ps2-edge-b" style="${M} font-size:30px; font-weight:800; line-height:1; color:${C.t2};">${E.b}%</span>
         </div>
-        <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; ${M} font-size:10px; letter-spacing:0.06em; color:${C.t3};"><span>${fhEsc(E.l1)}</span><span>50% coin-flip</span><span style="text-align:right;">${fhEsc(E.l2)}</span></div>`
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t3};"><span>${fhEsc(E.l1)}</span><span>50% coin-flip</span><span style="text-align:right;">${fhEsc(E.l2)}</span></div>`
       + pill(lean);
   }
   // Surface tiles (DF L533–540): the style matrix's split on each surface, n = that surface's meetings; below the floor "—".
@@ -18160,7 +18152,7 @@ function ps2MatchupCard(m, s1, s2){
       return `<div class="ps2-tile" data-ps2-surface="${sf}" style="background:${on ? C.tBg : C.inner}; border:1px solid ${on ? C.tBd : C.soft}; border-radius:11px; padding:11px 14px; display:flex; flex-direction:column; gap:6px; min-width:0;">
         <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:12.5px; font-weight:700; color:${C.text};">${sf}</span><span style="${M} font-size:9.5px; color:${C.t3};">n=${(c ? c.n : 0).toLocaleString('en-US')}</span></div>
         <span style="${M} font-size:16px; font-weight:700; color:${C.text}; white-space:nowrap;">${a} <span style="color:${C.t4};">–</span> <span style="color:${C.t2};">${b}</span></span>
-        <span style="${M}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.link};">${on ? "Today's surface" : '&nbsp;'}</span></div>`;
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.link};">${on ? "Today's surface" : '&nbsp;'}</span></div>`;
     }).join('') + '</div>';
   }
   return `<div class="ps2-card ps2-matchup" style="${PS2_CARD}">${head}<div style="display:flex; flex-direction:column; gap:10px;">${edge}</div>${tiles}</div>`;
@@ -18194,7 +18186,7 @@ function ps2PersonalBox(m, side, R, open){
           <span style="position:absolute; left:50%; top:0; bottom:0; width:${tl}%; background:${small ? MA_GREY : C.tugL}; border-radius:0 4px 4px 0;"></span>
           <span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; margin-left:-0.75px; background:${C.t2};"></span>
         </div>
-        <div style="width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; ${M} font-size:9px; letter-spacing:0.08em; color:${C.t4};"><span>WINS</span><span class="ps2-tug" style="font-size:10.5px; font-weight:700; letter-spacing:0; color:${tugC};">${tugTxt}</span><span style="text-align:right;">LOSSES</span></div>
+        <div style="width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t4};"><span>WINS</span><span class="ps2-tug" style="font-size:10.5px; font-weight:700; letter-spacing:0; color:${tugC};">${tugTxt}</span><span style="text-align:right;">LOSSES</span></div>
       </div>
       <div style="display:flex; align-items:baseline; gap:8px; ${M} font-size:10.5px; color:${C.t3};"><span class="ps2-avg">Matrix avg ${ready && R.avg != null ? R.avg + '%' : FH_DASHC}</span><span class="ps2-delta" style="font-weight:700; color:${dC};">${dTxt}</span><span style="margin-left:auto;">All surfaces · career</span></div>
       <span style="align-self:flex-start; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:${click ? C.link : C.t3};">${hint}${click ? `<span style="display:inline-block; transform:${open ? 'rotate(180deg)' : 'none'}; font-size:10px;">▾</span>` : ''}</span>
@@ -18321,7 +18313,7 @@ function ps2DnaCard(m, S){
           <span style="display:flex; align-items:baseline; gap:6px; flex:none; min-width:92px; justify-content:flex-end;"><span style="${M} font-size:10px; color:${x.c};">${x.t}</span><span style="${M} font-size:14px; font-weight:700; color:${a.raw == null ? C.t3 : C.A};">${_mdnaFmt(a.raw, ax.dp)}</span></span>
           <span style="flex:1; height:6px; background:${C.soft}; border-radius:3px; display:flex; justify-content:flex-end;"><span class="ps2-bar-a" style="width:${w(a)}%; background:${C.A}; border-radius:3px;"></span></span>
         </div>
-        <span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="${M}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t2}; text-align:center; cursor:default;">${fhEsc(ax.short || ax.label)}</span>
+        <span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${C.t2}; text-align:center; cursor:default;">${fhEsc(ax.short || ax.label)}</span>
         <div style="display:flex; align-items:center; gap:12px; min-width:0;">
           <span style="flex:1; height:6px; background:${C.soft}; border-radius:3px; display:flex;"><span class="ps2-bar-b" style="width:${w(b)}%; background:${C.B}; border-radius:3px;"></span></span>
           <span style="display:flex; align-items:baseline; gap:6px; flex:none; min-width:92px;"><span style="${M} font-size:14px; font-weight:700; color:${b.raw == null ? C.t3 : C.B};">${_mdnaFmt(b.raw, ax.dp)}</span><span style="${M} font-size:10px; color:${y.c};">${y.t}</span></span>
@@ -18343,7 +18335,7 @@ function ps2DnaCard(m, S){
     </div>
     <div style="display:flex; justify-content:center;"><div style="position:relative; width:100%; max-width:520px;">${labels}${svg}</div></div>
     ${foot}
-    <div style="height:1.25px; background:${C.line}; margin:0 -22px;"></div>
+    <div style="height:1px; background:${C.line}; margin:0 -22px;"></div>
     <span class="seg ps2-prof-toggle" onclick="ps2Set({prof: !_ps2.prof})" style="align-self:center; display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:${C.link}; cursor:pointer; padding:2px 8px;">${S.prof ? 'Hide player profile' : 'Show player profile'}<span style="display:inline-block; transform:${S.prof ? 'rotate(180deg)' : 'none'}; font-size:10px;">▾</span></span>
     ${prof}</div>`;
 }
@@ -20727,7 +20719,7 @@ function ppAsapSignalHtml(p){
 // Layer #4A "Surface record" rail card was removed to match the export — the
 // design has no rolling-52-week surface-record card in the left rail (the export
 // carries only the "Surface performance" KPI block, which is untouched).
-const PP_SURF_COLORS = { Grass: 'var(--text-soft)', Hard: 'var(--bar)', Clay: 'var(--text-soft)' };
+const PP_SURF_COLORS = { Grass: 'var(--text-soft)', Hard: 'var(--text-soft)', Clay: 'var(--text-soft)' };   // surfaces neutral (TEN-376)
 const PP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Match surfaces arrive lowercase ('clay'); map to the capitalised key used by
@@ -22365,7 +22357,7 @@ function buildPlayerProfileHtml(p){
   // ---- Tokens (match the surrounding profile idiom) -------------------------------
   const MKMONO = `'IBM Plex Mono',monospace`;
   const MKG = 'var(--pos)', MKR = 'var(--neg)', MKM = 'var(--text-label)';
-  const SURFACE_HEX = { Grass: 'var(--text-soft)', Clay: 'var(--text-soft)', Hard: 'var(--bar)' };
+  const SURFACE_HEX = { Grass: 'var(--text-soft)', Clay: 'var(--text-soft)', Hard: 'var(--text-soft)' };
   const mkR1 = v => Math.round(v * 10) / 10;
   const mkPt = v => (v > 0 ? '+' : (v < 0 ? '−' : '')) + Math.abs(mkR1(v)) + 'pt';
   const mkSignPct = v => (v >= 0 ? '+' : '−') + Math.abs(mkR1(v)) + '%';
@@ -22674,7 +22666,7 @@ function buildPlayerProfileHtml(p){
           <div style="font-size:26px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Market performance</div>
           <div style="font-size:13.5px;color:var(--text-label);margin-top:5px;max-width:720px;line-height:1.55;">How ${nm} has performed against the closing market’s implied probability. Every figure recomputes from his per-match priced results as you change the filters below.</div>
         </div>
-        <span style="display:inline-flex;align-items:center;gap:7px;font-family:${MKMONO}font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${mkBadgeCol};background:${ppHexA(mkBadgeCol, 0.1)};border:1px solid ${ppHexA(mkBadgeCol, 0.32)};border-radius:9px;padding:8px 13px;white-space:nowrap;flex:none;">${mkBadgeTxt}</span>
+        <span style="display:inline-flex;align-items:center;gap:7px;font-family:font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${mkBadgeCol};background:${ppHexA(mkBadgeCol, 0.1)};border:1px solid ${ppHexA(mkBadgeCol, 0.32)};border-radius:9px;padding:8px 13px;white-space:nowrap;flex:none;">${mkBadgeTxt}</span>
       </div>
 
       <div style="display:flex;align-items:flex-end;gap:16px 26px;flex-wrap:wrap;border:1px solid var(--edge-6);border-radius:11px;padding:13px 16px;background:var(--inner);">
@@ -23972,10 +23964,10 @@ function buildMatchProgressionSection(m){
         <span style="${M} font-size:11px; color:var(--text); margin-top:3px;">— —</span>
         <span style="display:flex; justify-content:space-between; margin-top:5px; padding-top:6px; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent); ${M} font-size:10.5px;"><span>— v —</span><span>DR —</span></span>
       </div>
-      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; ${M} font-size:9.5px; font-weight:700; letter-spacing:0.14em; color:var(--text-label);">${lbl}</span>
+      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${lbl}</span>
     </div>`, { cbg: 'transparent', bd: 'var(--line)', op: 1, tip: lbl + ' · not reached yet' });
   const roadRow = (p, k) => `<div style="display:flex; gap:8px; align-items:stretch;">${p.cells.map((c, i) => cellHtml(p, c, i)).join('')}${nowHtml(k)}${P.future.map(futHtml).join('')}</div>`;
-  const chip = (label, tc, cbg, cbd, click) => `<span style="flex:1; display:flex; justify-content:center; position:relative;"><span class="seg"${click ? ` onclick="${click}"` : ''} style="${M} font-size:10.5px; font-weight:700; letter-spacing:0.1em; color:${tc}; border:1px solid ${cbd}; border-radius:6px; text-align:center; background:${cbg}; padding:4px 12px;${click ? '' : ' cursor:default;'}">${label}</span></span>`;
+  const chip = (label, tc, cbg, cbd, click) => `<span style="flex:1; display:flex; justify-content:center; position:relative;"><span class="seg"${click ? ` onclick="${click}"` : ''} style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${tc}; border:1px solid ${cbd}; border-radius:6px; text-align:center; background:${cbg}; padding:4px 12px;${click ? '' : ' cursor:default;'}">${label}</span></span>`;
   const roadHead = P.labels.map((l, i) => { const on = hi === i; return chip(l, on ? 'var(--text)' : 'var(--text-label)', on ? 'var(--card)' : 'var(--card)', on ? 'var(--edge-10)' : 'transparent', `pgHi(${i})`); }).join('')
     + chip(P.facing, 'var(--text)', 'var(--card)', 'var(--open-card)', null)
     + P.future.map(l => chip(l, 'var(--text-label)', 'var(--card)', 'var(--line)', null)).join('');
@@ -23983,7 +23975,7 @@ function buildMatchProgressionSection(m){
   const slots = n + 1 + P.future.length;
   const road = `<div class="pg-road" style="background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px 18px 18px; margin-bottom:12px;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px;">
-        <span style="${M}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">Road to the ${fhEsc(P.long)}</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">Road to the ${fhEsc(P.long)}</span>
         <span style="font-size:11.5px; color:var(--text-label);">Click a round to highlight it on every chart · click a match for its stats</span>
       </div>
       <div style="overflow-x:auto;"><div style="min-width:${slots * 132 + (slots - 1) * 8}px; display:flex; flex-direction:column; gap:8px;">
@@ -24064,11 +24056,11 @@ function buildMatchProgressionSection(m){
   const foot = anySmall ? `<div class="pg-foot" style="margin-top:10px; font-size:11.5px; color:var(--text-label);">Grey = small sample (5–9): hover a figure for its count.</div>` : '';
   return `<div class="pg-wrap" style="line-height:normal; color:var(--text);">${head}${road}
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:18px 0 10px;">
-        <span style="${M}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">Metrics · round by round</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">Metrics · round by round</span>
         <span style="font-size:11.5px; color:var(--text-label);">Highlighted cell = better of the two that round · click a cell for match stats</span>
       </div>
       <div style="display:flex; align-items:flex-start; gap:10px 14px; flex-wrap:wrap; margin-bottom:14px;">
-        <span style="${M} font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:var(--text-label); padding-top:7px;">METRICS</span>
+        <span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); padding-top:7px;">METRICS</span>
         <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1; min-width:0;">${chips}</div>
       </div>
       <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:${DZ.gap}px;">${cards}</div>${foot}
@@ -24333,7 +24325,7 @@ function tourxGridOrder(metrics){
 const TOURX_ROUND_LABELS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
 const TOURX_TOTAL_WINNERS = [64, 32, 16, 8, 4, 2, 1];
 // Surface dot colours are the README design tokens (labels only, never data quality).
-const TOURX_SURF_COLOR = { grass: 'var(--text-soft)', clay: 'var(--text-soft)', hard: 'var(--bar)' };
+const TOURX_SURF_COLOR = { grass: 'var(--text-soft)', clay: 'var(--text-soft)', hard: 'var(--text-soft)' };
 const TOURX_ACC = 'var(--bar)', TOURX_MUT = 'color-mix(in srgb, var(--bar) 32%, transparent)';
 // Reports identity ramp (export authority: no blue/orange/green/purple performance
 // colours). Player rows/dots step down this neutral grey ramp by rank; blue stays
@@ -24655,7 +24647,7 @@ function tourxSpeedPanelHtml(){
     }).join('');
     return `<div style="background:var(--inner);">
         <div style="height:41px;padding:0 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;">
-          <span style="min-width:34px;height:20px;padding:0 6px;border-radius:5px;background:var(--inner);border:1px solid var(--edge-6);color:var(--text-soft);font-family:${MONO};font-size:9.5px;font-weight:700;letter-spacing:0.06em;display:inline-flex;align-items:center;justify-content:center;flex:none;">${mark}</span>
+          <span style="min-width:34px;height:20px;padding:0 6px;border-radius:5px;background:var(--inner);border:1px solid var(--edge-6);color:var(--text-soft);font-family:font-family:var(--font-words); ;font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;display:inline-flex;align-items:center;justify-content:center;flex:none;">${mark}</span>
           <span style="font-size:13px;font-weight:800;color:var(--text);">${label}</span>
           <span style="margin-left:auto;font-family:${MONO};font-size:10.5px;color:var(--text-label);white-space:nowrap;">${rows.length} · med ${cmed == null ? '—' : cmed.toFixed(2)}</span>
         </div>
@@ -24965,7 +24957,7 @@ function tourxSpeedSeriesHtml(c){
     const xp = X(i) / 360 * 100, yp = Y(p[1]);
     return `<span style="position:absolute;left:${xp}%;top:${yp}px;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:var(--card);border:2px solid var(--text);"></span>
       <span style="position:absolute;left:${xp}%;top:${yp}px;transform:translate(-50%,calc(-100% - 11px));font-family:${MONO};font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;">${p[1].toFixed(2)}</span>
-      <span style="position:absolute;left:${xp}%;bottom:0;transform:translateX(-50%);font-family:${MONO};font-size:11px;letter-spacing:0.06em;color:var(--text-label);">${p[0]}</span>`;
+      <span style="position:absolute;left:${xp}%;bottom:0;transform:translateX(-50%);font-family:font-family:var(--font-words); ;font-size:10.5px; font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:var(--text-label);">${p[0]}</span>`;
   }).join('');
   return `<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:18px 24px 20px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:20px 32px;">
       <div style="flex:1 1 220px;">
@@ -25008,7 +25000,7 @@ function tourxRoiPairHtml(c){
     // an event we do hold data for — worse than no link at all.
     const openable = !!(mkt && mkt.archiveNames && mkt.archiveNames.length);
     return `<div ${openable ? `onclick="tourxOpenRoi('${side}')"` : ''} style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:15px 18px;${openable ? 'cursor:pointer;' : ''}">
-        <div style="font-family:${MONO}font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">${label}</div>
+        <div style="font-family:font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">${label}</div>
         <div style="display:flex;align-items:baseline;gap:9px;margin-top:8px;flex-wrap:wrap;">
           <span style="font-family:${MONO};font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;color:${small ? MUT : col};">${val}</span>
           <span style="font-size:11.5px;color:var(--text-label);">flat-stake yield</span>
@@ -25867,7 +25859,7 @@ function tourxRoundViewHtml(T){
   const selPlayers = selNames.map(n => withData.find(p => p.name === n));
   const dnaCard = (msg) => `<div style="margin-top:26px;border:1px dashed var(--edge-6);border-radius:14px;background:var(--card);padding:22px;color:var(--text-label);font-size:13.5px;line-height:1.6;">${msg}</div>`;
   const header = (label) => `<div style="display:flex;align-items:center;gap:12px;margin-bottom:7px;">
-        <span style="font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);font-weight:700;font-family:'IBM Plex Mono',monospace;">${label}</span>
+        <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);font-weight:700;font-family:var(--font-words); ">${label}</span>
         <span style="flex:1;height:1px;background:var(--line);"></span>
       </div>`;
   const barBlock = (label, note, entries, roundAvgByKey) => filterBar + `<div style="margin-top:26px;">${header(label)}<div style="font-size:12.5px;color:var(--text-label);margin-bottom:18px;">${note}</div>${tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey)}</div>`;
@@ -26089,7 +26081,7 @@ function tourxProgressionTablesHtml(players, T){
     const lowerLine = lower ? `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:10px;color:var(--text-label);margin-top:3px;">lower is better</div>` : '';
     return `<div style="border:1px solid var(--edge-6);border-radius:12px;background:var(--card);padding:14px;">
         <div style="padding-bottom:11px;margin-bottom:10px;border-bottom:1px solid var(--line);">
-          <div style="font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:var(--text-label);font-weight:600;font-family:'IBM Plex Mono',monospace;">${m.label}</div>${lowerLine}
+          <div style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);font-weight:700;font-family:var(--font-words); ">${m.label}</div>${lowerLine}
         </div>
         <div style="width:100%;">${tourxProgressionHeatHtml(rows, rounds, m.kind, lower, fld, showAvg)}</div>
       </div>`;
@@ -33522,8 +33514,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .modal-analysis .asidenav-item:hover{ background:var(--inner); color:var(--text); }
   .modal-analysis .asidenav-item.active{ background:var(--selected); color:var(--text); }
   .modal-analysis .asidenav-item.active .aicon{ color:var(--text); }
-  .aox-row:not(.aox-nodata):hover{ border-color:var(--open-card) !important; background:var(--tile-hover) !important; }
-  .aox-tile.aox-able:hover{ border-color:var(--open-card) !important; }
+  .aox-row:not(.aox-nodata):hover{ border-color:var(--edge-16) !important; background:var(--tile-hover) !important; }
+  .aox-tile.aox-able:hover{ border-color:var(--edge-16) !important; }
   .aox-x:hover{ color:var(--text) !important; border-color:var(--edge-16) !important; }
 </style>
 <style id="match-analysis-shared">

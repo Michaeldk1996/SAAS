@@ -17,7 +17,7 @@ found at restore time are marked inline.
   colour in the legend, values and bar fills is fixed by name order, regardless of who won.
   *Superseded colours (TEN-312 D1 + D4, 2026-09-28):* the old values — point-log winner `#e7e9ee` / other
   `#4b5672`; "both score-header names `#e7e9ee`, winner and loser alike"; "player A stays `#6aaeff` and player
-  B `#e7e9ee`" — no longer apply. Colours come from the modal token file (D1), and both players are neutral on
+  B `#e7e9ee`" — no longer apply. Colours come from `tokens.css` (TEN-376), and both players are neutral on
   every tab: player A white/primary, player B grey; blue is only links, TODAY and selection (D4). The header
   names therefore differ by **identity** (A primary, B grey), still never by outcome.
   **Test:** the two score-header names never change tone with the result; the only permitted tone-marked

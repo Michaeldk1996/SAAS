@@ -169,23 +169,26 @@ check('item 1 · the meta rule is a sibling span, not the cell\'s own border-lef
   assert(typeof I.renderHeader === 'function',
     'renderHeader is not exported — this lock points at nothing');
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line-soft\)[^"]*"><\/span>/g) || [];
+  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line\)[^"]*"><\/span>/g) || [];
   assert.strictEqual(rules.length, 4,
     `expected 4 sibling rule spans in the live-state strip, found ${rules.length}`);
   rules.forEach((r) => {
     assert(/align-self:stretch/.test(r), `rule span does not stretch to its cell: ${r}`);
-    assert(/background:var\(--line-soft\)/.test(r),
+    // TEN-376 Foundation: 12a --line-soft → --line (the row hairline token).
+    assert(/background:var\(--line\);/.test(r),
       `rule span is not the spec colour: ${r}`);
   });
   // The cells themselves must no longer carry the border the span replaced, or
   // the page paints two rules per boundary.
-  assert(!/border-left:0\.33px solid rgba\(255,255,255,0\.03\)/.test(html),
+  // (The old cell border was a raw 0.33px rgba; the foundation makes that literal
+  // unrepresentable, so the equivalent lock is: no border-left in the header.)
+  assert(!/border-left:/.test(html),
     'a live-state cell still carries its own border-left — the strip paints two rules');
 });
 
 check('item 1 · the rule is SHORTER than the cell it divides, by a block margin', () => {
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line-soft\)[^"]*"><\/span>/g) || [];
+  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line\)[^"]*"><\/span>/g) || [];
   assert(rules.length > 0, 'no rule spans — this lock never ran');
   rules.forEach((r) => {
     const mg = r.match(/margin:([0-9.]+)px 0/);
@@ -277,7 +280,8 @@ checkValues(`item 3 · no support line exceeds ${MAX_TOKENS} ${MIDDOT}-separated
 check('item 3 · the fix is not an ellipsis and not a smaller font', () => {
   // The support line's font size is pinned by §5's spec at 10.5px; a "fix" that
   // shrank it would satisfy the wrap complaint and violate the instruction.
-  const sizes = CODE.match(/font-size:10\.5px;color:var\(--label\)/g) || [];
+  // TEN-376: --label renamed --text-label. Anchored on the box support line itself.
+  const sizes = CODE.match(/font-size:10\.5px;color:var\(--text-label\);line-height:1\.4;margin-top:auto;/g) || [];
   assert(sizes.length >= 1, 'the box support line is no longer 10.5px — was the font shrunk?');
   assert(!/text-overflow:ellipsis/.test(CODE.slice(CODE.indexOf('class="pp2-box"'),
     CODE.indexOf('class="pp2-box"') + 1400)),
@@ -358,7 +362,9 @@ checkValues('item 5 · rendered insight titles are sentences and bodies carry ra
     assert(/Key insights/.test(html), 'the section title is gone');
     return;
   }
-  const titles = html.match(/letter-spacing:-0\.01em;line-height:1\.25;color:#ebf1f2;">([^<]+)</g) || [];
+  // Re-anchored: the title ink is var(--text) (the raw #ebf1f2 was already gone
+  // before TEN-376; under the foundation no raw colour can appear).
+  const titles = html.match(/letter-spacing:-0\.01em;line-height:1\.25;color:var\(--text\);">([^<]+)</g) || [];
   assert(titles.length > 0, 'no insight titles rendered — this check never ran');
   titles.forEach((t) => assert(t.indexOf(MIDDOT) < 0,
     `an insight title still prints the label${MIDDOT}number shape: ${t}`));
@@ -387,9 +393,11 @@ check('item 6 · the ribbon emits six chips and fades rather than clipping', () 
   const html = I.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
   const chips = html.match(/class="pp2-chip"/g) || [];
   assert.strictEqual(chips.length, 6, `the ribbon emits ${chips.length} chips, README §3 says six`);
-  assert(/mask-image:linear-gradient\(90deg,#000 82%,transparent\)/.test(html),
+  // TEN-376: the mask's opaque stop is var(--page) instead of #000. A mask reads
+  // ALPHA only and --page is opaque in both themes, so the fade is identical.
+  assert(/mask-image:linear-gradient\(90deg,var\(--page\) 82%,transparent\)/.test(html),
     'the chip track does not carry the spec fade mask — it will CLIP');
-  assert(/-webkit-mask-image:linear-gradient\(90deg,#000 82%,transparent\)/.test(html),
+  assert(/-webkit-mask-image:linear-gradient\(90deg,var\(--page\) 82%,transparent\)/.test(html),
     'the chip track is missing the -webkit- mask, so it clips in WebKit');
   assert(/overflow:hidden/.test(html), 'the chip track does not clip its overflow');
 });
@@ -443,17 +451,18 @@ check('item 7 · the per-box headline sizes are the SPEC\'s, not the capture\'s 
     'all eight sizes are equal — the capture\'s uniform 30px was implemented against the ruling');
 });
 
-checkValues('item 7 · the tourn unit suffix is tinted by SIGN, and green is #3ed68c', () => {
+checkValues('item 7 · the tourn unit suffix is tinted by SIGN, green --pos / red --neg', () => {
   // `Player Stat Boxes.dc.html`:3223 — `hlSuffixColor: '#3ed68c'`. Ours renders
   // rgb(61,214,140) for a positive, which is that colour; the capture's white
   // `u` is the deviation, and it is the capture that is a layout reference.
   const v = I.buildBoxVals(SUBJECT, { archetype: null });
   if (v.tourn && v.tourn.hlSuffix) {
     assert.strictEqual(v.tourn.hlSuffix, 'u', 'the tourn suffix is not the unit letter');
-    assert(/^#(3dd68c|e0616f)$/.test(v.tourn.hlSuffixColor),
+    // TEN-376 Foundation: the spec's #3ed68c / #da6259 are --pos / --neg.
+    assert(/^var\(--(pos|neg)\)$/.test(v.tourn.hlSuffixColor),
       `the tourn suffix colour is ${v.tourn.hlSuffixColor}, not the spec green/red pair`);
   }
-  assert(/hlSuffixColor: be\.pinPl >= 0 \? '#3ed68c' : '#da6259'/.test(CODE),
+  assert(/hlSuffixColor: be\.pinPl >= 0 \? 'var\(--pos\)' : 'var\(--neg\)'/.test(CODE),
     'the suffix tint is no longer by sign');
 });
 
@@ -489,7 +498,7 @@ const mutants = [
    "border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;gap:7px;' +\n        'min-height:' + (b.key === 'speed' ? 160 : 140) + 'px;",
    /different min-heights/],
   ['item 4 · support lines no longer bottom-pinned',
-   "color:var(--label);line-height:1.4;margin-top:auto;", "color:var(--label);line-height:1.4;",
+   "color:var(--text-label);line-height:1.4;margin-top:auto;", "color:var(--text-label);line-height:1.4;",
    /support lines are bottom-pinned/],
   ['item 5 · a title dropped from the table',
    "'opponent:vs. Lefties':  ['Handles left-handers well',        'Struggles against left-handers'],",
@@ -509,15 +518,15 @@ const mutants = [
    "grid-template-columns:auto 1fr auto 1fr auto;",
    /no longer README .3's five tracks/],
   ['item 6 · the fade mask removed, so the row clips',
-   "'mask-image:linear-gradient(90deg,#000 82%,transparent);\">'",
+   "'mask-image:linear-gradient(90deg,var(--page) 82%,transparent);\">'",
    "'\">'", /does not carry the spec fade mask/],
   ['item 7 · the capture\'s uniform 30px implemented',
    "key: 'speed', title: 'Court speed record', size: 22",
    "key: 'speed', title: 'Court speed record', size: 30",
    /headline is 30px; the locked spec says 22px/],
   ['item 7 · the suffix tint hardcoded green',
-   "hlSuffixColor: be.pinPl >= 0 ? '#3ed68c' : '#da6259',",
-   "hlSuffixColor: '#3ed68c',", /tint is no longer by sign/],
+   "hlSuffixColor: be.pinPl >= 0 ? 'var(--pos)' : 'var(--neg)',",
+   "hlSuffixColor: 'var(--pos)',", /tint is no longer by sign/],
 ];
 
 // The assertion block the mutants are scored against, factored out so it can be
@@ -531,7 +540,7 @@ function scoreAgainst(MI, MCODE) {
   const rib = MI.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
 
   // item 1
-  (hdr.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line-soft\)[^"]*"><\/span>/g) || []).forEach((r) => {
+  (hdr.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line\)[^"]*"><\/span>/g) || []).forEach((r) => {
     if (!/margin:([0-9.]+)px 0/.test(r)) throw new Error('rule span has no block margin');
   });
   if (/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(hdr))
@@ -579,7 +588,7 @@ function scoreAgainst(MI, MCODE) {
   // item 6
   const nchips = (rib.match(/class="pp2-chip"/g) || []).length;
   if (nchips !== 6) throw new Error(`the ribbon emits ${nchips} chips`);
-  if (!/[^-]mask-image:linear-gradient\(90deg,#000 82%,transparent\)/.test(rib))
+  if (!/[^-]mask-image:linear-gradient\(90deg,var\(--page\) 82%,transparent\)/.test(rib))
     throw new Error('the chip track does not carry the spec fade mask');
   if (!/grid-template-columns:auto minmax\(180px,1\.2fr\) auto minmax\(0,2fr\) auto/.test(rib))
     throw new Error("the ribbon grid is no longer README §3's five tracks");
@@ -592,7 +601,7 @@ function scoreAgainst(MI, MCODE) {
     if (got !== SPEC_SIZES[b.key])
       throw new Error(`box "${b.key}" headline is ${got}px; the locked spec says ${SPEC_SIZES[b.key]}px`);
   });
-  if (!/hlSuffixColor: be\.pinPl >= 0 \? '#3ed68c' : '#da6259'/.test(MCODE))
+  if (!/hlSuffixColor: be\.pinPl >= 0 \? 'var\(--pos\)' : 'var\(--neg\)'/.test(MCODE))
     throw new Error('the suffix tint is no longer by sign');
 }
 

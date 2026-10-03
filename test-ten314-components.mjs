@@ -29,7 +29,7 @@ function constSrc(name) {
 }
 const S = new Function('document', `
   ${['MA_SEG', 'MA_POP', 'MA_ROW_COLS', 'MA_ROW_CELLS', 'ME_C'].map(constSrc).join('\n')}
-  ${['escapeHtml', 'fhEsc', 'fhS', 'maSeg', 'maPopFrame', 'maPopEscKey', 'maPopNoReplay', 'maMatchRowsHtml', 'maTipHtml', 'fhSheetSeg', 'meSegHtml', 'mePopShell'].map(slice).join('\n')}
+  ${['escapeHtml', 'fhEsc', 'maSeg', 'maPopFrame', 'maPopEscKey', 'maPopNoReplay', 'maMatchRowsHtml', 'maTipHtml', 'fhSheetSeg', 'meSegHtml', 'mePopShell'].map(slice).join('\n')}
   return { maSeg, maPopFrame, maPopEscKey, maPopNoReplay, maMatchRowsHtml, maTipHtml, fhSheetSeg, meSegHtml, mePopShell };
 `);
 const api = doc => S(doc || { querySelectorAll: () => [] });
@@ -67,9 +67,14 @@ test('maSeg: the file\'s seg geometries — sheet (DF L1688), pbp (DF L1724), Ma
 // Mutation: the selected item loses the selected tile, the disabled item stays clickable, or the 140ms transition is dropped.
 test('maSeg: selected = the selected-segment tile + primary text, 700; disabled not clickable; 140ms bg/colour/border transitions', () => {
   const h = U.maSeg('sheet', items), [, on, off, dis] = styles(h);
-  // colours = the design's own shades for the 'sheet' geometry (DF L1689 + segF L3014; founder 2026-09-29)
-  assert.deepEqual([on['font-weight'], on.color, on.background], ['700', 'var(--ma-s-e7e9ee, var(--text))', 'var(--ma-s-5b9bff-220, var(--seg-active))']);
-  assert.deepEqual([off['font-weight'], off.color, off.background], ['600', 'var(--ma-s-5b6880, var(--label))', 'transparent']);
+  // colours = TEN-376 foundation (README §5.1 "Darker track", foundation.md): track --card + 1px --edge-6,
+  // selected --inner + 1px --edge-10 with white 700 text, idle --text-label on no fill
+  assert.deepEqual([on['font-weight'], on.color, on.background, on.border], ['700', 'var(--text)', 'var(--inner)', '1px solid var(--edge-10)']);
+  assert.deepEqual([off['font-weight'], off.color, off.background, off.border], ['600', 'var(--text-label)', 'transparent', '1px solid transparent']);
+  for (const style of ['sheet', 'pbp', 'me', 'readme', 'ov']) {
+    const [track, sel] = styles(U.maSeg(style, items));
+    assert.deepEqual([track.background, track.border, sel.background, sel.border], ['var(--card)', '1px solid var(--edge-6)', 'var(--inner)', '1px solid var(--edge-10)'], `${style}: the darker track`);
+  }
   assert.ok(/aria-disabled="true"/.test(h) && !/onclick="undefined"/.test(h) && dis.cursor === 'not-allowed');
   assert.ok(h.includes('title="No &quot;stats&quot;"'), 'the disabled tooltip is escaped');
   assert.equal((h.match(/class="(seg )?ma-seg-item"/g) || []).length, 3);
@@ -95,7 +100,8 @@ test('maPopFrame: README §4.4 / DF L1509–1512 geometry; Market edge pop-ups a
   const [o, box, , , , title, sub, x] = styles(h);   // overlay, box, header row, title column, title line, title, sub, ✕
   assert.deepEqual(pick(o, ['position', 'inset', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']),
     pick(dOver, ['position', 'inset', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']));
-  assert.equal(o.background, 'var(--ma-s-030509-720, var(--backdrop))', 'the design pop-up scrim shade (DF L1517 rgba(3,5,9,0.72))');
+  // TEN-376 U5: overlays dim with --backdrop (rgba(3,5,9,0.72), the design's pop-up scrim) + blur(3px)
+  assert.deepEqual([o.background, o['backdrop-filter']], ['var(--backdrop)', 'blur(3px)'], 'the one scrim');
   assert.deepEqual(pick(box, ['position', 'width', 'max-width', 'border-radius', 'padding', 'display', 'flex-direction', 'gap']),
     pick(dBox, ['position', 'width', 'max-width', 'border-radius', 'padding', 'display', 'flex-direction', 'gap']));
   assert.deepEqual(pick(title, ['font-size', 'font-weight', 'letter-spacing']), pick(dTitle, ['font-size', 'font-weight', 'letter-spacing']));
@@ -103,8 +109,8 @@ test('maPopFrame: README §4.4 / DF L1509–1512 geometry; Market edge pop-ups a
   assert.deepEqual(pick(x, ['width', 'height', 'flex', 'border-radius', 'font-size']), pick(dX, ['width', 'height', 'flex', 'border-radius', 'font-size']));
   const me = U.mePopShell('T', '', 's', '<i></i>', 'f', "meSet({meBand:null})");
   assert.ok(/class="ma-pop-overlay ma-fade me-pop-overlay"/.test(me) && /class="ma-pop ma-sigin me-pop"/.test(me) && /class="seg ma-pop-x me-x"/.test(me));
-  // DF L1518: the ME pop-up box is #0E1019 with a 1.25px white-0.08 border (the frame's own design shades)
-  assert.ok(me.includes('max-width:860px') && me.includes('background:var(--ma-s-0e1019, var(--surface)); border:1.25px solid var(--ma-s-ffffff-080, var(--line));'), "Market edge's spec values");
+  // DF L1518 box, re-coloured by TEN-376: the pop-up is --card on a 1px edge (all borders 1px — no 1.25px)
+  assert.ok(me.includes('max-width:860px') && /background:var\(--card\); border:1px solid var\(--(?:line|edge-\d+)\);/.test(me), "Market edge's spec values");
 });
 
 // Mutation: the outside-click guard dropped (every inner click closes), or the ✕ loses its close handler.
@@ -166,9 +172,11 @@ test('maMatchRowsHtml: DF Tournament-tab rows — sticky header, grouped by even
     pick(dRow, ['display', 'grid-template-columns', 'gap', 'align-items', 'padding', 'border-radius']));
   assert.deepEqual(pick(st.find(s => s.padding === dGroup.padding), ['display', 'gap', 'padding']), pick(dGroup, ['display', 'gap', 'padding']));
   assert.ok(h.includes(`class="seg ma-row" onclick="fhOpenSheet('m1')"`) && h.includes(`onclick="fhOpenSheet('m2')"`), 'every row opens the sheet');
-  assert.ok(h.includes('background:var(--ma-s-5b9bff-100, var(--seg-active))'), 'the selected row (its sheet open) = DF rowBg rgba(91,155,255,0.1)');
+  // TEN-376: selection is lift (tone), never blue — the selected row (its sheet open) takes --selected
+  assert.ok(h.includes('background:var(--selected)'), 'the selected row (its sheet open) = --selected');
+  assert.equal((h.match(/background:var\(--selected\)/g) || []).length, 1, 'only the selected row is lifted');
   assert.ok(h.includes('>Washington 2025<') && h.includes('>Won · 5–0<'));
-  assert.match(html, /\.ma-row:hover\{ background:var\(--ma-s-ffffff-030, var\(--nav-hover\)\) !important; \}/, 'hover wash = DF style-hover rgba(255,255,255,0.03)');
+  assert.match(html, /\.ma-row:hover\{ background:color-mix\(in srgb, var\(--text\) 3%, transparent\) !important; \}/, 'hover wash = DF style-hover white 0.03 as a token + opacity');
 });
 
 // Mutation: the tooltip's 120ms opacity / raised surface / mono 11px drift, or maTipHtml stops emitting the class pair.
@@ -178,8 +186,10 @@ test('tooltip: .elotip-pop — 120ms opacity, raised surface, strong hairline, m
   const c = decl(css[1].replace(/\s+/g, ' '));
   assert.equal(c.transition, 'opacity .12s ease');
   assert.deepEqual([c.opacity, c.visibility], ['0', 'hidden']);
-  assert.equal(c.background, 'var(--ma-s-11151f, var(--popup))');   // DF L950: #11151f
-  assert.equal(c.border, 'var(--ma-hw,0.33px) solid var(--ma-s-ffffff-140, var(--line-open))');   // DF L950: 1px (--ma-hw) white 0.14
+  // TEN-376: a floating layer is --card on a 1px --edge-10 with the menu shadow (DF L950's raised #11151f / white 0.14 re-mapped)
+  assert.equal(c.background, 'var(--card)');
+  assert.equal(c.border, '1px solid var(--edge-10)');
+  assert.equal(c['box-shadow'], 'var(--shadow-menu)');
   // DF L950: the pop takes the UI font (its markup sets mono spans itself); a plain-text body gets README §6's mono 11px
   assert.deepEqual([c['font-family'], c['font-size']], ["'Hanken Grotesk',sans-serif", '11px']);
   assert.match(U.maTipHtml('x', 'plain words'), /<span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">plain words<\/span>/);
@@ -223,12 +233,13 @@ test('match rows: the Form geometry = options on the same renderer', () => {
   assert.match(html, /maMatchRowsHtml\(groups, \{ headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8,/, 'the Form tab passes the design Form geometry');
 });
 
-// DF L1706: the sheet's caption strip has a 1px white-0.07 border. Width --ma-hw (1px in the modal, 0 outside) so the
-// player profile sharing the head keeps its layout. Mutation: drop the border (rows sit 2px higher than the design).
-test('sheet caption strip: the design\'s 1px white-0.07 border, width from --ma-hw (0 outside the modal)', () => {
+// DF L1706: the sheet's caption strip has a 1px white-0.07 border. TEN-376: every border is 1px on a token (the --ma-hw
+// width and the white-0.07 shade are gone; the hairline is --line). Mutation: drop the border (rows sit 2px higher).
+test('sheet caption strip: the design\'s 1px border on a line token; the caption is a Hanken caps label', () => {
   const f = /\nfunction fhSheetSectionHead\(t\)\{[^\n]*/.exec(html);
   assert.ok(f, 'fhSheetSectionHead');
-  assert.match(f[0], /border:var\(--ma-hw, 0px\) solid var\(--ma-s-ffffff-070, transparent\);/);
+  assert.match(f[0], /border:1px solid var\(--line\);/);
+  assert.match(f[0], /font-family:var\(--font-words\); font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\);/);
 });
 
 // Review 2026-09-29 (merge onto TEN-330): the Form list's sticky header and its card are one shade, as DF L1101–1102
@@ -236,9 +247,9 @@ test('sheet caption strip: the design\'s 1px white-0.07 border, width from --ma-
 test('Form list: the sticky header and its card share the design shade', () => {
   const card = /<div class="fh-fcard" style="([^"]*)"/.exec(html);
   assert.ok(card, 'the Form card');
-  const head = /class="ma-rows-head" style="[^"]*background:\$\{o\.bg \|\| S\('([\w-]+)'/.exec(html);
+  const head = /class="ma-rows-head" style="[^"]*background:\$\{o\.bg \|\| '([^']+)'\}/.exec(html);
   assert.ok(head, 'the rows header default');
-  assert.equal(decl(card[1]).background, `var(--ma-s-${head[1]}, var(--surface))`);
+  assert.equal(decl(card[1]).background, head[1]);
 });
 
 // DoD item 8 (founder 2026-09-29): the modal draws ONE tooltip component, the design's `.elotip-pop` (DF L950). The

@@ -421,7 +421,7 @@
   }
 
   // ─── surface colours (README §4 / §9; grass aligned to var(--pos)) ────────────
-  var SURF_COLOUR = { hard: 'var(--bar)', clay: 'var(--text-soft)', grass: 'var(--text-soft)', indoors: 'var(--text-soft)' };
+  var SURF_COLOUR = { hard: 'var(--text-soft)', clay: 'var(--text-soft)', grass: 'var(--text-soft)', indoors: 'var(--text-soft)' };   // surfaces neutral (TEN-376)
   function surfColour(s) { return SURF_COLOUR[String(s || '').toLowerCase()] || 'var(--text-label)'; }
 
   // ─── data access ───────────────────────────────────────────────────────────
@@ -817,8 +817,8 @@
         '<span style="width:1px;align-self:stretch;margin:2.5px 0;' +
         'background:var(--line);"></span>' +
         '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 20px;">' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' + label + '</div>' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' + label + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
           'color:' + colour + ';white-space:nowrap;">' + value + '</div>' +
         '<div style="font-size:12px;color:var(--text-label);white-space:nowrap;">' + sub + '</div>' +
@@ -909,8 +909,8 @@
   // (Player Profile.dc.html:25) — 10.5px vs 9.5px, 0.14em vs 0.16em, var(--text-label) vs
   // var(--text-label). One edit, page-wide reach.
   function eyebrow(text) {
-    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.16em;text-transform:uppercase;color:var(--text-label);margin-top:6px;">' + text + '</div>';
+    return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;">' + text + '</div>';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1266,8 +1266,8 @@
   // The export's group-header labels are `.cap` with two overrides (8.5px,
   // var(--text-label)) — the tracking stays 0.16em, where this had drifted to 0.1em.
   function ledgerEyebrow(text, align) {
-    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;font-weight:600;' +
-      'letter-spacing:0.16em;text-transform:uppercase;color:var(--text-label);text-align:' + align + ';">' +
+    return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);text-align:' + align + ';">' +
       esc(text) + '</div>';
   }
 
@@ -1484,8 +1484,8 @@
     return '' +
       '<div>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
-            'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">Explore the profile</div>' +
+          '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+            'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Explore the profile</div>' +
           '<div style="font-size:12px;color:var(--text-label);">Click a box for the full breakdown</div>' +
         '</div>' +
         '<div class="pp2-grid" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;">' +
@@ -1633,7 +1633,7 @@
       // var(--pos) / amber on 0.12 plus a 0.32 icon border; we previously
       // shipped green/red on 0.14, matching neither. Note the positive icon's
       // background is NOT a tint of its own var(--bar) — the file writes 62,123,250.
-      var col = up ? 'var(--bar)' : 'var(--neg)';
+      var col = up ? 'var(--pos)' : 'var(--neg)';   // a signed direction (TEN-376: green/red = signed values)
       var bg = up ? 'var(--inner)' : 'color-mix(in srgb, var(--neg) 14%, transparent)';
       // Up-and-right for a positive gap, down-and-right for a negative one, so the
       // glyph states the same fact the number does rather than contradicting it.
@@ -2720,14 +2720,14 @@
     if (g === GATE.FULL) { rate = Math.round(pct) + '%'; rateColour = 'var(--text)'; ratePx = 19; }
     else if (g === GATE.SMALL) {
       rate = Math.round(pct) + '%'; rateColour = 'var(--text-label)'; ratePx = SMALL_RATE_PX;
-      mark = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-        'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">small sample</div>';
+      mark = '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">small sample</div>';
     } else { rate = DASH; rateColour = DASH_COLOUR; ratePx = 19; }
 
     var thin = g === GATE.NONE || g === GATE.THIN;
     var clickable = !!opts.hook && !thin;
     var bg = thin ? 'var(--inner)' : 'var(--inner)';
-    if (opts.open && opts.openBg) bg = 'color-mix(in srgb, var(--bar) 8%, transparent)';
+    if (opts.open && opts.openBg) bg = 'var(--selected)';   // selection is a lift, never blue (TEN-376)
     return '' +
       '<div' + (clickable ? ' data-pp2="' + opts.hook + '" data-v="' + esc(String(opts.v)) + '"' : '') +
       (opts.anchor ? ' data-pp2-anchor="' + esc(String(opts.anchor)) + '"' : '') +
@@ -3138,7 +3138,7 @@
     var GRID = 'display:grid;grid-template-columns:46px 12px minmax(0,1.15fr) 38px 40px ' +
       'minmax(0,1.35fr) 48px 48px;gap:0 10px;align-items:center;';
     var head = HEAD.map(function (h) {
-      return '<div style="position:sticky;top:0;background:var(--card);font-family:\'IBM Plex Mono\',monospace;' +
+      return '<div style="position:sticky;top:0;background:var(--card);font-family:var(--font-words);' +
         'font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);' +
         'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
     }).join('');
@@ -3567,14 +3567,14 @@
       '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">' +
           'tour average ' + esc(t.avg) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-          'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">' + esc(t.mark) + '</span>' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(t.mark) + '</span>' +
       '</div>' +
     '</div>';
   }
   function dnaGroupHtml(label, tiles, first) {
-    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-      'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);margin:' +
+    return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin:' +
       (first ? '0 0 11px' : '22px 0 11px') + ';">' + esc(label) + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(216px,1fr));gap:10px;">' +
       tiles.map(dnaTileHtml).join('') + '</div>';
@@ -3643,13 +3643,13 @@
         : xy[0] > DNA_CX + 4 ? 'translate(8px,-50%)'
         : xy[0] < DNA_CX - 4 ? 'translate(-100%,-50%) translateX(-8px)' : 'translate(-50%,20%)';
       return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
-        xy[1].toFixed(1) + 'px;transform:' + shift + ';font-family:\'IBM Plex Mono\',monospace;' +
+        xy[1].toFixed(1) + 'px;transform:' + shift + ';font-family:var(--font-words);' +
         'font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' +
         'white-space:nowrap;">' + esc(a.label) + '</span>';
     }).join('');
 
-    var HEADCELL = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);';
+    var HEADCELL = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
     var CELL = 'padding:7px 0;border-top:1px solid var(--line);';
     var rows = axes.map(function (a) {
       // The file's own "level" band, scaled by the axis's decimal place (:1315).
@@ -3742,13 +3742,13 @@
           '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
             '<span style="display:flex;align-items:center;gap:6px;">' +
               '<span style="width:14px;height:2px;background:var(--bar);"></span>' +
-              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-                'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' + esc(sn) + '</span>' +
+              '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+                'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(sn) + '</span>' +
             '</span>' +
             '<span style="display:flex;align-items:center;gap:6px;">' +
               '<span style="width:14px;height:0;border-top:2px dashed var(--text-label);"></span>' +
-              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-                'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">Tour average</span>' +
+              '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+                'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Tour average</span>' +
             '</span>' +
           '</span>' +
         '</div>' +
@@ -3762,8 +3762,8 @@
           '<span style="' + HEADCELL + 'text-align:right;">Tour</span>' +
           rows +
         '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' + esc(note) + '</div>' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(note) + '</div>' +
       '</div>' +
       tiles +
       '<div style="font-size:12px;color:var(--text-label);margin-top:16px;line-height:1.6;">' + esc(foot) + '</div>';
@@ -3874,13 +3874,13 @@
       { label: 'Year', colour: 'var(--text-label)', id: null },
       { label: 'Total', colour: 'var(--text-label)', id: 'total' },
       { label: 'Clay', colour: 'var(--text-soft)', id: 'clay' },
-      { label: 'Hard', colour: 'var(--bar)', id: 'hard' },
+      { label: 'Hard', colour: 'var(--text-soft)', id: 'hard' },
       { label: 'Indoors', colour: 'var(--text-soft)', id: 'indoors' },
-      { label: 'Grass', colour: 'var(--pos)', id: 'grass' }
+      { label: 'Grass', colour: 'var(--text-soft)', id: 'grass' }
     ];
     var head = HEADS.map(function (h, i) {
-      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-        'letter-spacing:0.18em;text-transform:uppercase;color:' + h.colour + ';' +
+      return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:' + h.colour + ';' +
         'padding-bottom:11px;' + (i ? 'text-align:right;' : '') + '">' + h.label + '</div>';
     }).join('');
 
@@ -3966,9 +3966,9 @@
       state.careerDrill.year === 'career' ? state.careerDrill.surf : null;
     var careerCan = cellCan(ct);
     var footer = '<div' + cellAttrs(careerCan, 'career|') +
-      ' style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
-      'letter-spacing:0.18em;text-transform:uppercase;color:' +
-      (openCareerCell === '' ? 'var(--bar)' : 'var(--text-label)') + ';padding:15px 0 13px;' +
+      ' style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:' +
+      (openCareerCell === '' ? 'var(--text)' : 'var(--text-label)') + ';padding:15px 0 13px;' +
       (careerCan ? 'cursor:pointer;' : '') +
       'border-top:1px solid var(--line);">Career</div>' +
       HEADS.slice(1).map(function (h) {
@@ -4376,7 +4376,7 @@
     var g = gateFor(n);
     if (g === GATE.NONE || g === GATE.THIN) return DASH_COLOUR;
     if (g === GATE.SMALL) return 'var(--text-label)';
-    return (100 * won / n) >= 55 ? 'var(--bar)' : 'var(--text-soft)';
+    return (100 * won / n) >= 55 ? 'var(--text)' : 'var(--text-soft)';   // blue is a fill, never text (TEN-376)
   }
 
   // One row per edition match, enriched and ordered newest-first. The stored
@@ -4656,8 +4656,8 @@
     return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:11px;' +
       'padding:14px 15px;display:flex;flex-direction:column;align-items:center;text-align:center;' +
       'gap:8px;min-width:0;">' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</span>' +
+      '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:23px;font-weight:700;' +
         'line-height:1.05;color:' + (colour || 'var(--text)') + ';overflow:hidden;text-overflow:ellipsis;">' +
         value + '</span>' +
@@ -4933,8 +4933,8 @@
 
     var head = '<div style="display:grid;grid-template-columns:' + grid + ';gap:0 10px;">' +
       heads.map(function (h, i) {
-        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-          'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);' + (i ? 'text-align:right;' : '') +
+        return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' + (i ? 'text-align:right;' : '') +
           '">' + h + '</div>';
       }).join('') + '</div>';
 
@@ -4978,8 +4978,8 @@
             (n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(m) + '</div>' + cells +
           '</div>';
       }).join('');
-      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);padding:14px 0 6px;' +
+      return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:14px 0 6px;' +
         'border-top:1px solid var(--line);">' + g.label + '</div>' + rows;
     }).join('');
 
@@ -4991,8 +4991,8 @@
           scopeBtn('career', 'Career', scope === 'career') +
           scopeBtn('last52', 'Last 52 weeks', scope === 'last52') +
         '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
-          'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' +
           (scope === 'career'
             ? 'Every tour match on record ' + MIDDOT + ' ' + (n52 && n52.matchesParsed != null ? n52.matchesParsed + ' matches' : DASH)
             : 'Rolling 12-month form ' + MIDDOT + ' ' + (n52 && n52.last52Count != null ? n52.last52Count + ' matches' : DASH)) +
@@ -5331,8 +5331,8 @@
   function renderLinesTab(p) {
     var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
     var d = lineCoverage(p, fmt);
-    var CAP = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;'
-      + 'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);';
+    var CAP = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;'
+      + 'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
     var GRID = 'display:grid;grid-template-columns:minmax(0,1fr) 58px 46px 72px 72px 88px;gap:0 12px;';
     var head = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
       '<span style="' + CAP + '">Coverage by line</span>' +
@@ -5371,8 +5371,8 @@
       return '<div style="display:flex;flex-direction:column;gap:0;">' +
         '<div style="display:flex;align-items:baseline;gap:10px;padding:10px 4px 5px;' +
           'border-top:1px solid var(--line);">' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-            'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' + esc(g.title) + '</span>' +
+          '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+            'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(g.title) + '</span>' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">' +
             esc(g.meta) + '</span></div>' +
         '<div style="' + GRID + 'align-items:center;">' +
@@ -5384,8 +5384,8 @@
                 bt + 'min-width:0;">' +
                 '<span style="font-size:' + r.size + ';color:' + r.color + ';white-space:nowrap;' +
                   'overflow:hidden;text-overflow:ellipsis;">' + esc(r.label) + '</span>' +
-                (r.mark ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;' +
-                  'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);' +
+                (r.mark ? '<span style="font-family:var(--font-words);font-size:10.5px;' +
+                  'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' +
                   'white-space:nowrap;">' + esc(r.mark) + '</span>' : '') +
               '</span>' +
               '<span style="' + num + 'font-size:11px;color:' + r.nColor + ';">' + r.n + '</span>' +
@@ -5509,8 +5509,8 @@
       }).join('');
       var gn = (mk.bands[g] || []).reduce(function (a, b) { return a + (b.n || 0); }, 0);
       return '<div style="display:flex;align-items:baseline;gap:10px;padding:12px 4px 6px;">' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' +
         (g === 'favourite' ? 'Favourite' : 'Underdog') + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">' + gn + '</div>' +
         '</div>' + bands;
@@ -5812,7 +5812,7 @@
                 'height:1px;background:var(--line);"></div>' +
               '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
                 'style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
-                '<path d="' + area + '" fill="color-mix(in srgb, var(--bar) 13%, transparent)"></path>' +
+                // README §5.8: no area fill under a line
                 '<path d="' + line + '" fill="none" stroke="var(--bar)" stroke-width="2" ' +
                   'stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>' +
               '</svg>' +
@@ -6626,8 +6626,8 @@
     return '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;' +
       'padding:15px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;' +
       'gap:8px;min-width:0;">' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</span>' +
+      '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;' +
         'color:' + (value === DASH ? DASH_COLOUR : 'var(--text)') + ';">' + esc(value) + '</span>' +
       '<span style="display:flex;align-items:baseline;justify-content:center;gap:5px;' +
@@ -6644,8 +6644,8 @@
     var surf = state.calSurface || 'all';
     var scope = calScope(p);
     var eyebrowRow = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">Calendar form ' + MIDDOT + ' career</span>' +
+      '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Calendar form ' + MIDDOT + ' career</span>' +
       calSegWrap(CAL_SURFACES.map(function (s) {
         return calSegBtn('cal-surface', s.id, s.label, surf === s.id, true);
       }).join(''), true, null) + '</div>';
@@ -6690,8 +6690,8 @@
     // carry NO border-radius in the file and the row pitch comes from
     // `padding:7px 0` plus a 1px top rule, which is what makes the rows flush.
     var GRID_TRACK = 'display:grid;grid-template-columns:86px repeat(12,minmax(0,1fr));gap:0 6px;min-width:880px;';
-    var HEAD_CELL = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);';
+    var HEAD_CELL = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
     var head =
       '<span style="position:sticky;top:0;left:0;z-index:3;background:var(--card);' + HEAD_CELL +
         'padding:8px 8px 8px 10px;">Year</span>' +
@@ -6813,8 +6813,8 @@
       : DASH + ' ' + MIDDOT + ' no priced match in this month';
     var ROW_TRACK = 'display:grid;grid-template-columns:14px 44px minmax(0,1.1fr) minmax(0,1.3fr) ' +
       'minmax(0,1fr) 62px 62px 72px;gap:20px;';
-    var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);';
+    var HEAD = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
     var colHead = '<div style="' + ROW_TRACK + 'margin:0 0 10px;width:100%;">' +
       '<span></span>' +
       '<span style="' + HEAD + '">Rd</span>' +
@@ -6870,8 +6870,8 @@
           'align-items:center;justify-content:center;">' +
           '<svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" ' +
           'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button></div>' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-        'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);margin-bottom:11px;' +
+      '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-bottom:11px;' +
         'line-height:1.5;">' +
         esc(dy + ' ' + MIDDOT + ' ' + MON3[dm].toUpperCase() + ' ' + MIDDOT + ' ' +
           order.join(' ' + MIDDOT + ' ').toUpperCase() + ' ' + MIDDOT + ' ' +
@@ -6889,8 +6889,8 @@
     var months = info.months;
     var GRID_TRACK = 'display:grid;grid-template-columns:86px repeat(12,minmax(0,1fr));gap:0 6px;' +
       'min-width:880px;align-items:end;';
-    var LAB = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);';
+    var LAB = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
     var CELL = 'font-family:\'IBM Plex Mono\',monospace;text-align:center;' +
       'border-top:1px solid var(--line);padding:13px 0;';
 
@@ -6951,8 +6951,8 @@
       spans.map(function (s) {
         return '<span style="grid-column:span ' + s.len + ';display:flex;flex-direction:column;' +
           'gap:6px;padding:0 3px 8px;">' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-            'letter-spacing:0.12em;text-transform:uppercase;text-align:center;color:' + s.colour + ';">' +
+          '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+            'letter-spacing:0.10em;text-transform:uppercase;text-align:center;color:' + s.colour + ';">' +
             esc(s.label) + '</span>' +
           '<span style="display:block;height:4px;border-radius:2px;background:' + s.colour +
             ';opacity:0.75;"></span></span>';
@@ -6963,8 +6963,8 @@
         months.map(cellFor).join('');
     }
     var monthRow = dataRow('Month', function (x) {
-      return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-        'letter-spacing:0.1em;text-transform:uppercase;text-align:center;color:var(--text-label);padding:13px 0;' +
+      return '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;text-align:center;color:var(--text-label);padding:13px 0;' +
         'border-top:1px solid var(--line);">' + MON3[x.m] + '</span>';
     });
     var nRow = dataRow('n', function (x) {
@@ -7126,8 +7126,8 @@
     return '<div style="background:var(--card);border:1px solid var(--edge-6);' +
       'border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;' +
       'align-items:center;text-align:center;gap:8px;min-width:0;box-sizing:border-box;">' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</span>' +
+      '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;' +
         'line-height:1;color:' + (value === DASH ? DASH_COLOUR : 'var(--text)') + ';">' + esc(value) + '</span>' +
       '<span style="font-size:10.5px;color:var(--text-label);">' + esc(sub) + '</span></div>';
@@ -7189,8 +7189,8 @@
   function renderFollowsCard(rows, n) {
     var f = followStats(rows);
     var baseY = followYield(f.base);
-    var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.2em;text-transform:uppercase;color:var(--text-label);padding-bottom:9px;';
+    var HEAD = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding-bottom:9px;';
     var TRACK = 'display:grid;grid-template-columns:118px 176px minmax(56px,0.6fr) ' +
       'minmax(76px,1fr) minmax(86px,1fr) minmax(72px,0.8fr);gap:0 16px;width:100%;align-items:stretch;';
     var MONO = 'font-family:\'IBM Plex Mono\',monospace;';
@@ -7269,8 +7269,8 @@
       'align-items:stretch;"><div style="background:var(--card);border:1px solid var(--edge-6);' +
       'border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;min-width:0;' +
       'box-sizing:border-box;">' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);margin-bottom:10px;">' +
+      '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-bottom:10px;">' +
         'What follows a run ' + MIDDOT + ' career</div>' +
       '<div style="' + TRACK + '">' + head + body + baseRow + '</div>' +
       '<div style="margin-top:auto;padding-top:12px;font-size:11px;line-height:1.65;color:var(--text-label);">' +
@@ -7362,15 +7362,15 @@
     });
     var ticks = yrOrder.map(function (y) {
       return '<span style="width:' + (yrCount[y] * RW) + 'px;flex:none;box-sizing:border-box;' +
-        'border-left:1px solid var(--line);font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:9.5px;font-weight:600;letter-spacing:0.12em;color:var(--text-label);padding:6px 0 0 5px;">' +
+        'border-left:1px solid var(--line);font-family:var(--font-words);text-transform:uppercase;' +
+        'font-size:10.5px;font-weight:700;letter-spacing:0.10em;color:var(--text-label);padding:6px 0 0 5px;">' +
         esc(y) + '</span>';
     }).join('');
 
     var timeline =
       '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:26px 0 12px;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">Run timeline ' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Run timeline ' +
           MIDDOT + ' career order</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--text-label);">' +
           runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' +
@@ -7382,8 +7382,8 @@
           '<div style="display:flex;">' + ticks + '</div></div></div>';
 
     // ── items 12-18 · the run detail ────────────────────────────────────────
-    var detail = '<div style="margin:12px 0 0;font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
-      'letter-spacing:0.1em;text-transform:uppercase;color:var(--text-label);">Click a run for its matches</div>';
+    var detail = '<div style="margin:12px 0 0;font-family:var(--font-words);font-weight:700;font-size:10.5px;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Click a run for its matches</div>';
     var sel = runs[state.calRun];
     if (sel) {
       // Integer cents, per the money rule the rest of this modal already follows
@@ -7400,8 +7400,8 @@
         : DASH + ' ' + MIDDOT + ' no priced match in this run';
       var TRACK = 'display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) ' +
         '104px 48px 48px 56px;gap:0 14px;align-items:center;';
-      var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);padding-bottom:7px;';
+      var HEAD = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding-bottom:7px;';
       // The OPPONENT cell is the one column the file leaves in the page font
       // (:300) — every other cell is mono — so the shared part stops short of
       // font-family and each cell adds its own.
@@ -7448,8 +7448,8 @@
           '<span style="font-size:12.5px;font-weight:700;">' +
             esc((sel.res === 'W' ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' + sel.len +
               (sel.len === 1 ? ' match' : ' matches')) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-            'letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">' +
+          '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+            'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' +
             esc(runSpan(sel, true)) + '</span>' +
           '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:15px;' +
             'font-weight:700;text-align:right;white-space:nowrap;color:' +
@@ -7763,8 +7763,8 @@
     var footer = '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;' +
       'padding:12px 13px 0;margin-top:6px;border-top:1px solid var(--line);align-items:center;">' +
       '<div style="min-width:0;">' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;">' +
           esc(surfLabel) + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);' +
           'margin-top:4px;white-space:nowrap;">' + (tn ? tn + ' matches' : DASH) + '</div>' +
@@ -8287,8 +8287,8 @@
     });
     elite.forEach(function (r) { pts += point(r, '92%'); labels += xlabel(r, '92%'); });
 
-    var foot = 'position:absolute;bottom:0;font-family:\'IBM Plex Mono\',monospace;font-size:9px;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;';
+    var foot = 'position:absolute;bottom:0;font-family:var(--font-words);font-weight:700;font-size:10.5px;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);white-space:nowrap;';
 
     return '<div style="' + card + '">' +
       styleEyebrow() +
@@ -8325,8 +8325,8 @@
     '</div>';
   }
   function styleEyebrow() {
-    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">' +
+    return '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+      'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">' +
       'Win rate by archetype ' + MIDDOT + ' bubble size is match count</div>';
   }
 
@@ -8364,8 +8364,8 @@
       'align-items:center;gap:16px;padding:13px 16px 0;margin-top:4px;' +
       'border-top:1px solid var(--line);">' +
       '<div style="min-width:0;">' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);">Career</div>' +
+        '<div style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Career</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
           'margin-top:4px;">' + (tn ? recordText(tw, tl) + ' ' + MIDDOT + ' ' + tn + ' matches' : DASH) + '</div>' +
       '</div>' +
@@ -8454,7 +8454,7 @@
       'padding:13px 15px;">' +
       '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:8px;">' +
         '<span style="font-size:12.5px;font-weight:700;">' + esc(r.axis.label) + '</span>' +
-        '<span style="' + mono + 'font-size:10px;font-weight:600;letter-spacing:0.12em;' +
+        '<span style="' + ' font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;' +
           'text-transform:uppercase;color:var(--text-label);">' + recordText(r.won, r.lost) + ' ' + MIDDOT +
           ' ' + n + ' matches</span>' +
         '<span style="margin-left:auto;' + mono + 'font-size:14px;font-weight:700;color:' +
@@ -8883,8 +8883,8 @@
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;' +
           'color:' + (dA == null ? DASH_COLOUR : 'var(--bar)') + ';">' +
           (dA == null ? DASH : dA.toFixed(2)) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
-          'letter-spacing:0.16em;text-transform:uppercase;color:var(--text-label);">Dominance ratio</span>' +
+        '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+          'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Dominance ratio</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;' +
           'text-align:right;color:' + (dB == null ? DASH_COLOUR : 'var(--text)') + ';">' +
           (dB == null ? DASH : dB.toFixed(2)) + '</span>' +
@@ -8911,8 +8911,8 @@
                 (fa ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
                   'color:var(--text-label);">' + esc(fa) + '</span>' : '') +
               '</span>' +
-              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;' +
-                'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);text-align:center;">' +
+              '<span style="font-family:var(--font-words);font-weight:700;font-size:10.5px;' +
+                'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);text-align:center;">' +
                 esc(row.label) + '</span>' +
               '<span style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;min-width:0;">' +
                 '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
@@ -8935,7 +8935,7 @@
       }).join('');
       return '' +
         '<div style="display:flex;flex-direction:column;gap:13px;">' +
-          '<span style="display:block;text-align:center;font-family:\'IBM Plex Mono\',monospace;' +
+          '<span style="display:block;text-align:center;font-family:var(--font-words);' +
             'font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;' +
             'color:var(--text-label);background:var(--inner);border:1px solid var(--edge-6);' +
             'border-radius:8px;padding:8px 0;">' + esc(sec.title) + '</span>' + rows +
@@ -9183,8 +9183,8 @@
       }).join('') + '</div></div>';
   }
 
-  var MP_CAP = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-    'letter-spacing:0.16em;text-transform:uppercase;color:var(--text-label);';
+  var MP_CAP = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+    'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
 
   // ─── Summary ───────────────────────────────────────────────────────────────
   function mpSummary(p, x, shard, first) {
@@ -9400,8 +9400,8 @@
       var serveIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-label)" ' +
         'stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle>' +
         '<path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg>';
-      var badge = '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-        'letter-spacing:0.08em;color:var(--neg);background:color-mix(in srgb, var(--neg) 10%, transparent);' +
+      var badge = '<span style="font-family:var(--font-words);text-transform:uppercase;font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;color:var(--neg);background:color-mix(in srgb, var(--neg) 10%, transparent);' +
         'border:1px solid color-mix(in srgb, var(--neg) 34%, transparent);border-radius:5px;padding:3px 8px;' +
         'white-space:nowrap;">LOST SERVE</span>';
       var pts = (g.points || []).map(function (pt, i, all) {
@@ -9734,8 +9734,8 @@
   /** The segmented control the export uses for Hold|Break — and, restyled to
    *  match it, for the surface filter. */
   function hbSegHtml(hook, items, active) {
-    return '<span style="display:inline-flex;gap:3px;background:var(--inner);' +
-      'border:1px solid var(--edge-6);border-radius:9px;padding:3px;">' +
+    return '<span style="display:inline-flex;gap:2px;background:var(--card);' +
+      'border:1px solid var(--edge-6);border-radius:10px;padding:3px;">' +
       items.map(function (it) {
         var on = it.id === active;
         return '<button type="button" data-pp2="' + hook + '" data-v="' + esc(it.id) + '" ' +
@@ -9753,8 +9753,8 @@
   function hbGridHtml(model) {
     var HEAD = ['Global', 'S1', 'S2', 'S3', 'S4', 'S5'];
     function headCell(t) {
-      return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);text-align:center;">' +
+      return '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+        'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);text-align:center;">' +
         esc(t) + '</span>';
     }
     // The 10px track between GLOBAL and S1 carries a 1x34px rule, so the two
@@ -9770,7 +9770,7 @@
         '<span style="display:flex;flex-direction:column;gap:2px;">' +
           '<span style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;">' +
             esc(r.bucket) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--text);">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--text-label);">' +
             esc(r.sub) + '</span>' +
         '</span>' +
         hbGlobalCellHtml(r) + divider + r.cells.map(hbCellHtml).join('');
@@ -9802,7 +9802,7 @@
     var lead = mode === 'break'
       ? 'How often he broke serve in each return-game pair, overall and by set.'
       : 'How often he held serve in each service-game pair, overall and by set.';
-    var legend = lead + ' Green from ' + T[0] + ', amber from ' + T[1] + ', red below; ' +
+    var legend = lead + ' Green from ' + T[0] + ', neutral down to ' + T[1] + ', red below; ' +
       'cells on five to nine games are muted and cells under five show the raw count ' +
       'instead of a rate.';
     var prov = '';
@@ -9887,8 +9887,8 @@
               '<span style="font-size:20px;font-weight:800;letter-spacing:-0.015em;">' +
                 'Hold / break heatmap</span>' +
               '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-                '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-                  'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);background:var(--inner);' +
+                '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
+                  'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);background:var(--inner);' +
                   'border:1px solid var(--edge-6);border-radius:9px;padding:8px 14px;">' +
                   esc(scope) + '</span>' +
                 hbSegHtml('hb-surf', HB_SURFACES, surf) +
@@ -9906,7 +9906,7 @@
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
             '<span style="font-size:15px;font-weight:700;color:var(--text);">' + esc(sn) + '</span>' +
             (pill
-              ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
+              ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +   // carries a figure: digits stay mono
                 'letter-spacing:0.1em;text-transform:uppercase;color:var(--text);background:var(--inner);' +
                 'border:1px solid var(--edge-6);border-radius:9px;padding:7px 14px;">' +
                 esc(pill) + '</span>'
@@ -10056,8 +10056,8 @@
   // agree: our build had 1fr 62/74/62/72 at gap 10, which made every numeric
   // column 9-13px wider than the design and pushed RECORD 27px to its left.
   var SIT_TRACKS = 'grid-template-columns:minmax(0,1fr) 62px 62px 48px 62px;gap:0 12px;';
-  var SIT_EYEBROW = "font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;"
-    + 'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-label);';
+  var SIT_EYEBROW = "font-family:var(--font-words);font-size:10.5px;font-weight:700;"
+    + 'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
   var SIT_CELLBD = 'border-top:1px solid var(--line);';
   var SIT_MUT = 'var(--text-label)', SIT_DIM = 'var(--text-label)', SIT_BRIGHT = 'var(--text)';
 
@@ -10193,8 +10193,8 @@
           'padding:7px 4px 7px 19px;' + SIT_CELLBD + '">' +
           '<span style="font-size:12.5px;color:' + (hard ? SIT_DIM : 'var(--text-soft)') + ';' +
             'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(label) + '</span>' +
-          (soft ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;' +
-            'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);' +
+          (soft ? '<span style="font-family:var(--font-words);font-size:10.5px;' +
+            'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' +
             'white-space:nowrap;">small sample</span>' : '') +
         '</div>' +
         cell(n ? w + ENDASH + l : DASH, n ? SIT_MUT : SIT_FAINT, '12px') +

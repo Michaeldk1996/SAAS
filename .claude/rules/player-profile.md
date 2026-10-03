@@ -16,8 +16,7 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   (e.g. `All-Court Elite`, or a composed `A / B`) with **no appended "· <surface> Specialist" tag**, coloured
   **primary text** — never brand blue (Blue rule). These are the **fourth** export-has-not / product-had
   divergence resolved toward the export, alongside Extra-stats, the Summary view and the H2H trend.
-  *Colour value (CLAUDE.md "Palette = 12a", 2026-09-25):* the old primary-text hex `#e7e9ee` is a retired
-  palette value; primary text is the 12a `text` tier (`#EBF1F2`).
+  *Colour value (TEN-376 foundation):* primary text is `--text`; every colour is a `tokens.css` token.
   *Scope note (2026-09-28):* this ruling names `buildPlayerProfileHtml`, now the legacy renderer; the TEN-206
   renderer is the default. Whether the three parity points bind the TEN-206 renderer has not been re-ruled.
   **Test:** the profile rail has no "Surface record" card; Recent form shows no tournament group headers;

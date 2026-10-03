@@ -163,7 +163,8 @@ check('the launcher matches the export\'s chrome', () => {
   I.state.hbSurf = 'all';
   const html = I.hbLauncherHtml(SUBJECT);
   const want = [
-    ['background:var\(--surface-inner\)', 'card background'],
+    // TEN-376 Foundation: the 12a --surface-inner token is renamed --inner.
+    ['background:var(--inner)', 'card background'],
     ['border-radius:11px', 'card radius'],
     ['padding:13px 15px', 'card padding'],
     ['width:30px;height:30px', 'icon tile size'],

@@ -37,7 +37,7 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
   'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesTable', 'fhFormRowsFromCareer',
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
-  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhEloSlot', 'fhS', 'fhRetNote', 'fhFormDataRows'];
+  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhEloSlot', 'fhRetNote', 'fhFormDataRows'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
   'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_COLS_SB'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));

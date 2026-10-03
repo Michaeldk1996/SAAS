@@ -49,7 +49,7 @@ export function build(src = html) {
     ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
        'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
        'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml', 'aOddsStatusOf',
-       'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'fhS', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
+       'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
     // the Key factors Odds card's movement chart (TEN-341: the card's own book, its pre-match series), '' when not drawn
     const kfMoveSvg = m => { const x = kfOddsMove(m); return (x.mini && x.mini.svg) || ''; };
     return { buildOddsSection, kfMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,

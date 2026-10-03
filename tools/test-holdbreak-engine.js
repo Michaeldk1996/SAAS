@@ -90,7 +90,37 @@ function sliceOriginal() {
     if (!src || src.length < 20) throw new Error(`recovered ${label} is too short to be real`);
   }
   // heatFor's only ambient dependency is LF(); everything else is in the slice.
-  const src = `${buckets}\n${hbSets}\n${bandFn}\n${sumFn}\n${heatFn}\nreturn heatFor;`;
+  let src = `${buckets}\n${hbSets}\n${bandFn}\n${sumFn}\n${heatFn}\nreturn heatFor;`;
+  // TEN-376 Foundation (founder-approved): the engine's COLOURS moved from raw
+  // 12a literals to tokens.css tokens, the mid tier went NEUTRAL (U3: no amber on
+  // the heatmap), and each set cell now also carries its band tag. Structure,
+  // numbers, tooltips and sizes are untouched, so the ORIGINAL side is brought to
+  // the foundation's colour vocabulary by exact literal substitution — every
+  // literal must occur exactly the stated number of times or the slice throws —
+  // and the deep-equal stays exact. Nothing else in the original is rewritten.
+  const FOUNDATION_MAP = [
+    // [old literal, new literal, expected occurrences in the recovered original]
+    ["bg:'rgba(45,226,145,0.20)', bd:'rgba(45,226,145,0.48)', color:'#4ff0a4'",
+     "bg:'color-mix(in srgb, var(--viz-up) 20%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 48%, transparent)', color:'var(--viz-up)'", 1],
+    ["bg:'rgba(255,164,43,0.18)',  bd:'rgba(255,164,43,0.46)',  color:'#ffb454'",
+     "bg:'var(--edge-6)',  bd:'var(--edge-10)',  color:'var(--text-soft)'", 1],
+    ["bg:'rgba(255,90,106,0.18)',   bd:'rgba(255,90,106,0.46)',   color:'#ff7d89'",
+     "bg:'color-mix(in srgb, var(--viz-down) 18%, transparent)',   bd:'color-mix(in srgb, var(--viz-down) 46%, transparent)',   color:'var(--viz-down)'", 1],
+    ["bg:'rgba(255,255,255,0.02)', bd:'rgba(255,255,255,0.05)'",
+     "bg:'color-mix(in srgb, var(--text) 2%, transparent)', bd:'var(--line)'", 1],
+    ["bg:'rgba(255,255,255,0.03)', bd:'rgba(255,255,255,0.07)'",
+     "bg:'color-mix(in srgb, var(--text) 3%, transparent)', bd:'var(--edge-7)'", 1],
+    ["'#8b96b5'", "'var(--text-label)'", 2],     // raw n<5 label + small-sample colour
+    ["'#4b5672'", "'var(--text-label)'", 2],     // dead cell + no-global colour
+    ["bg:bd2.bg, bd:bd2.bd,", "bg:bd2.bg, bd:bd2.bd, tag:bd2.tag,", 1],
+  ];
+  for (const [from, to, want] of FOUNDATION_MAP) {
+    const got = src.split(from).length - 1;
+    if (got !== want) throw new Error(`foundation colour map: ${JSON.stringify(from)} occurs ${got}× in ${BASE_REF}, expected ${want}`);
+    src = src.split(from).join(to);
+  }
+  if (/rgba\(|#[0-9a-fA-F]{6}\b/.test(src))
+    throw new Error('a raw colour literal survived the foundation map in the recovered original');
   // eslint-disable-next-line no-new-func
   return new Function('LF', src)(() => ({ holdbreak: () => HB }));
 }

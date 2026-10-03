@@ -603,8 +603,8 @@ test('TEN-335 pop-up: a shared frame (Esc through maPopEscKey), entrance motion 
     const A = build(); const m = fixture({ now, withAt: true }); A.open(m);
     A.aOddsOpenMv('Pinnacle');
     let h = A.section();
-    assert.match(h, /class="ma-pop-overlay ma-fade aox-mv-overlay" onclick="if\(event.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0; z-index:60; background:var\(--ma-scrim\); display:flex; align-items:center;/, 'the overlay is the shared frame (maPopFrame), fading in, centred on the Odds scrim');
-    assert.match(h, /class="ma-pop ma-sigin aox-mv" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation\(\)" style="width:100%; max-width:1080px; background:var\(--ma-raised\); border:1.25px solid var\(--ma-hair\); border-radius:18px; box-shadow:var\(--ma-shadow-pop\);/, 'the box enters with sigIn; the design geometry (DF L1907) is the frame\'s mv variant');
+    assert.match(h, /class="ma-pop-overlay ma-fade aox-mv-overlay" onclick="if\(event.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0; z-index:60; background:var\(--backdrop\); backdrop-filter:blur\(3px\); display:flex; align-items:center;/, 'the overlay is the shared frame (maPopFrame), fading in, centred on the one scrim (TEN-376 U5: --backdrop + blur)');
+    assert.match(h, /class="ma-pop ma-sigin aox-mv" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation\(\)" style="width:100%; max-width:1080px; background:var\(--card\); border:1px solid var\(--(?:line|edge-\d+)\); border-radius:18px; box-shadow:var\(--shadow-pop\);/, 'the box enters with sigIn; the design geometry (DF L1907) is the frame\'s mv variant (TEN-376: --card, 1px edge, --shadow-pop)');
     const x = /class="ma-pop-x aox-seg aox-x"[^>]*onclick="([^"]*)" style="width:32px; height:32px;/.exec(h);
     assert.ok(x, 'the ✕ is the frame\'s ma-pop-x (what maPopEscKey clicks)'); assert.equal(x[1], 'aOddsCloseMv()');
     A.renderOddsSection();

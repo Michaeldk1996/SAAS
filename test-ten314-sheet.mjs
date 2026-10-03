@@ -62,10 +62,10 @@ test('Key stats = the design keySection: six rows, each ratio with its counts, v
 });
 
 // Mutation: fhSheetStatsHtml returns the old message-only empty state (no sections), or the note is dropped.
-test('no box score: the sections still draw, every stat a dash, with the 10.5px faint note', () => {
+test('no box score: the sections still draw, every stat a dash, with the 10.5px label-grey note', () => {
   for (const h of [S.fhSheetStatsHtml(null, 'x'), S.fhSheetKeyHtml(null)]) {
     assert.ok(h.includes(S.MA_SHEET_NA), 'the note');
-    assert.match(h, /class="ma-sheet-na" style="font-size:10\.5px; color:var\(--text-faint\);/);
+    assert.match(h, /class="ma-sheet-na" style="font-size:10\.5px; color:var\(--text-label\);/);   // TEN-376: three greys; the faint grey is --text-label
   }
   const full = S.fhSheetStatsHtml(null, 'x');
   assert.ok(/>Service</.test(full) && />Return</.test(full) && />Points won</.test(full), 'every section drawn');
@@ -91,7 +91,7 @@ test('header: D5 avatars in the 56px ring; the inline copy (Match Stats tab) has
   assert.ok(pop.includes('fhCloseSheet()') && />7-6</.test(pop));
   assert.ok(!tab.includes('fhCloseSheet()') && !/>7-6</.test(tab));
   assert.ok(tab.includes('SINNER WON') || /won 6-4 4-6 7-6/i.test(tab), 'the result pill');
-  assert.match(html, /\.fh-av img, \.fh-av \.avatar-fallback\{ width:56px; height:56px; border-radius:50%; border:2px solid var\(--line-open\);/);
+  assert.match(html, /\.fh-av img, \.fh-av \.avatar-fallback\{ width:56px; height:56px; border-radius:50%; border:2px solid var\(--edge-10\);/);   // TEN-376: --line-open → --edge-10
 });
 
 // Founder 2026-09-29: the header date is the design file's format exactly. DF mkSheet L4856 prints its SOURCE's date:
@@ -101,7 +101,7 @@ test('header: D5 avatars in the 56px ring; the inline copy (Match Stats tab) has
 // copy back to DD.MM.YY.
 test('header: the meta date follows the design per source (Form DD.MM · lists DD.MM.YY · Match Stats tab long)', () => {
   const r = { sets: [[6, 4], [6, 4]], pS: 2, oS: 0, won: true, price: 1.05, oppPrice: 10.53, tourn: 'Washington', surface: 'Hard', round: 'R16', date: '2026-07-18' };
-  const meta = h => /letter-spacing:0\.06em;[^"]*">([^<]*)<\/span>/.exec(h)[1];
+  const meta = h => /letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\);">([^<]*)<\/span>/.exec(h)[1];   // TEN-376: the meta caps label (Hanken 10.5/700/0.10em caps)
   assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor', noYear: true }, r)), 'Washington · Hard · R16 · 18.07');
   assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor' }, r)), 'Washington · Hard · R16 · 18.07.26');
   assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor' }, r, { inline: true })), 'Washington · Hard · R16 · Jul 18, 2026');

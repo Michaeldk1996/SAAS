@@ -545,16 +545,18 @@ test('box chart (TEN-301): a stretch the book was recorded NOT quoting (odds.md 
   assert.equal(PAGE.shardHoles(solo.A, solo).length, 1, 'one api-tennis book alone: cannot tell an outage from a removal — a break');
 });
 
-test('box colours (8585095a colour ruling): red with a flat tint, the named values exact; neutrals on the 12a tokens', () => {
+// TEN-376 Foundation: the 8585095a named values are now read through tokens.css — red = --neg (a drop is a signed value),
+// the small drop --neg at 75%, the flat tint --neg at 10%, muted --text-label; the box surface --card.
+test('box colours (8585095a colour ruling, TEN-376 tokens): red with a flat tint, the named roles exact; neutrals on foundation tokens', () => {
   const css = read('drops-page.css'), box = css.slice(css.indexOf('/* ── 10 · the price-move box'));
-  assert.match(box, /\.do-ov-plot \.do-line \{ fill: none; stroke: #E0616F; stroke-width: 2\.6; stroke-linejoin: round; stroke-linecap: round; \}/);
-  assert.match(box, /\.do-ov-plot \.do-area \{ fill: rgba\(224,97,111,0\.10\); stroke: none; \}/, 'flat fill, no gradient');
+  assert.match(box, /\.do-ov-plot \.do-line \{ fill: none; stroke: var\(--neg\); stroke-width: 2\.6; stroke-linejoin: round; stroke-linecap: round; \}/);
+  assert.match(box, /\.do-ov-plot \.do-area \{ fill: color-mix\(in srgb, var\(--neg\) 10%, transparent\); stroke: none; \}/, 'flat fill, no gradient');
   assert.doesNotMatch(box, /gradient/i);
-  assert.match(box, /\.do-ov-dropf\.big \{ color: #FF7B88; \}/); assert.match(box, /\.do-ov-dropf\.small \{ color: #C26A75; \}/);
-  assert.match(box, /\.do-ov-td\.big \{ color: #FF7B88; \}/); assert.match(box, /\.do-ov-td\.small \{ color: #C26A75; \}/);
-  assert.match(box, /\.do-ov-td\.muted \{ color: #4B5672; \}/, 'lengthened / flat / unknown: muted, never red');
-  assert.match(box, /\.do-ov-tr\.sel, \.do-ov-tr\.sel:hover \{ background: rgba\(224,97,111,0\.10\); \}/);
-  assert.match(box, /\.do-ov-box \{[^}]*width: 1040px;[^}]*border-radius: 16px; background: #0E1019;[^}]*box-shadow: 0 30px 80px rgba\(0,0,0,0\.55\)/);
+  assert.match(box, /\.do-ov-dropf\.big \{ color: var\(--neg\); \}/); assert.match(box, /\.do-ov-dropf\.small \{ color: color-mix\(in srgb, var\(--neg\) 75%, transparent\); \}/);
+  assert.match(box, /\.do-ov-td\.big \{ color: var\(--neg\); \}/); assert.match(box, /\.do-ov-td\.small \{ color: color-mix\(in srgb, var\(--neg\) 75%, transparent\); \}/);
+  assert.match(box, /\.do-ov-td\.muted \{ color: var\(--text-label\); \}/, 'lengthened / flat / unknown: muted, never red');
+  assert.match(box, /\.do-ov-tr\.sel, \.do-ov-tr\.sel:hover \{ background: color-mix\(in srgb, var\(--neg\) 10%, transparent\); \}/);
+  assert.match(box, /\.do-ov-box \{[^}]*width: 1040px;[^}]*border-radius: 16px; background: var\(--card\);[^}]*border: 1px solid var\(--edge-10\);[^}]*box-shadow: var\(--shadow-modal\)/, 'the modal frame: --edge-10 hairline, --shadow-modal (foundation)');
   assert.match(box, /\.do-ov-th, \.do-ov-tr \{ display: grid; grid-template-columns: 48px minmax\(0,1fr\) 64px 84px 76px; gap: 12px; \}/);
   assert.match(box, /\.do-ov-cw \{ margin-top: 10px; display: flex; gap: 12px; \}/);
   assert.match(box, /\.do-ov-yax \{ position: relative; width: 52px; height: 260px; flex: none; \}/);
