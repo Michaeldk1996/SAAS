@@ -220785,11 +220785,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2959_j-lehecka.jpg",
     "oddsMovement": {
@@ -222362,7 +222368,10 @@
       "edgeVsPinnacleP1": null,
       "edgeVsPinnacleP2": null,
       "ts": "2026-10-03T03:47:53.323Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12166954",
