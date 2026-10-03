@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-03T08:21:06.970Z",
+ "generatedAt": "2026-10-03T17:36:11.319Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "8cfff34ec379bec1a7c3be3e9a6bfbefe94c7151",
-  "at": "2026-10-03T08:01:02Z"
+  "commit": "096ebde28c51399c7021260131ed4ece347d77fc",
+  "at": "2026-10-03T17:16:02Z"
  },
- "commitsScanned": 4080,
+ "commitsScanned": 4120,
  "lastRun": {
-  "from": "2026-10-03T02:16:22Z",
-  "snapshots": 27,
-  "added": 3,
+  "from": "2026-10-03T08:01:02Z",
+  "snapshots": 41,
+  "added": 4,
   "replaced": 0,
-  "series": 52,
-  "kept": 42,
+  "series": 57,
+  "kept": 46,
   "bySource": {
-   "api-tennis-live": 42
+   "api-tennis-live": 46
   },
   "byBook": {
-   "Pinnacle +30s": 42
+   "Pinnacle +30s": 46
   },
   "dropped": {
-   "noStart": 10
+   "noStart": 11
   }
  },
  "stats": {
@@ -7200,6 +7200,20 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12167628,
+   "date": "2026-10-03",
+   "p1Key": 1105,
+   "p2Key": 2959,
+   "p1Name": "U. Humbert",
+   "p2Name": "J. Lehecka",
+   "p1": 2.37,
+   "p2": 1.657,
+   "at": "2026-10-03T07:05:28.829Z",
+   "trueStart": "2026-10-03T09:03:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12167643,
    "date": "2026-10-03",
    "p1Key": 2382,
@@ -7228,6 +7242,20 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12167647,
+   "date": "2026-10-03",
+   "p1Key": 1980,
+   "p2Key": 2413,
+   "p1Name": "A. Zverev",
+   "p2Name": "J. Shang",
+   "p1": 1.072,
+   "p2": 10.05,
+   "at": "2026-10-03T10:02:44.962Z",
+   "trueStart": "2026-10-03T11:03:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12167678,
    "date": "2026-10-03",
    "p1Key": 2847,
@@ -7238,6 +7266,34 @@
    "p2": 2.23,
    "at": "2026-10-03T04:43:05.430Z",
    "trueStart": "2026-10-03T05:35:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167724,
+   "date": "2026-10-03",
+   "p1Key": 1104,
+   "p2Key": 902,
+   "p1Name": "F. Cerundolo",
+   "p2Name": "J. Mensik",
+   "p1": 2.72,
+   "p2": 1.523,
+   "at": "2026-10-03T08:42:09.704Z",
+   "trueStart": "2026-10-03T12:06:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167817,
+   "date": "2026-10-03",
+   "p1Key": 1093,
+   "p2Key": 2831,
+   "p1Name": "D. Medvedev",
+   "p2Name": "J-L. Struff",
+   "p1": 1.158,
+   "p2": 6.05,
+   "at": "2026-10-03T05:48:23.274Z",
+   "trueStart": "2026-10-03T10:02:57.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
