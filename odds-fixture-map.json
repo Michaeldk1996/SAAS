@@ -2537,8 +2537,8 @@
     },
     "12166494": {
       "fixtureId": "id1200303175094660",
-      "mappedAt": "2026-10-01T16:46:19Z",
-      "missHeldH": 83.26,
+      "mappedAt": "2026-10-03T05:46:05Z",
+      "missHeldH": 120.25,
       "missRuns": 5,
       "missSince": "2026-09-28T05:30:57Z",
       "orient": "same",
@@ -3095,23 +3095,12 @@
       "observedSpanDays": 21.64,
       "projectedTtlUnitsPerDay": 4.6,
       "runs": 400,
-      "spentRuns": 219,
+      "spentRuns": 220,
       "ttlBitRuns": 100,
       "ttlBitShare": 0.25,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-11T13:30:41Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 2
-      },
       {
         "at": "2026-09-11T14:30:13Z",
         "fixturesUnitsSpent": 0,
@@ -7500,9 +7489,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 12
+      },
+      {
+        "at": "2026-10-03T05:46:05Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 12
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-02T17:45:54Z"
+  "updatedAt": "2026-10-03T05:46:05Z"
 }
