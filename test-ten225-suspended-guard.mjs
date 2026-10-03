@@ -425,10 +425,9 @@ console.log('\nTEN-225 item G1 — vendor-confirmed book labels');
         SRC.includes("[mxBookLabel(pair.book), priceTxt]"));
   check('the Open provenance line relabels too',
         SRC.includes('const book = mxBookLabel(ocsBookOf(m)), ts ='));
-  check('the Biggest-market-move tile relabels BEFORE the bet365 title-case, so '
-      + 'the special case sees the expanded name',
-        SRC.includes('const named = mxBookLabel(book);')
-        && SRC.includes("named.toLowerCase() === 'bet365'"));
+  // TEN-377 review item 8: the Biggest-market-move tile no longer names its book (mcMoveBookLabel removed).
+  check('the Biggest-market-move tile carries no book line any more (TEN-377 item 8)',
+        !SRC.includes('function mcMoveBookLabel('));
 
   // ⚠️ The ruling this test exists to protect: DISPLAY only.
   check('_isBet365 does NOT go through the label map — it is an identity test '
