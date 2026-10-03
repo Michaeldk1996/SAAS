@@ -17441,6 +17441,74 @@
               [
                 "2026-10-03T15:21:19.399Z",
                 1.314
+              ],
+              [
+                "2026-10-03T15:31:48.220Z",
+                1.307
+              ],
+              [
+                "2026-10-03T15:33:50.192Z",
+                1.303
+              ],
+              [
+                "2026-10-03T15:34:13.299Z",
+                1.305
+              ],
+              [
+                "2026-10-03T15:40:11.720Z",
+                1.276
+              ],
+              [
+                "2026-10-03T15:40:57.058Z",
+                1.305
+              ],
+              [
+                "2026-10-03T15:41:01.930Z",
+                1.276
+              ],
+              [
+                "2026-10-03T15:41:06.882Z",
+                1.28
+              ],
+              [
+                "2026-10-03T15:41:12.559Z",
+                1.285
+              ],
+              [
+                "2026-10-03T15:41:17.860Z",
+                1.292
+              ],
+              [
+                "2026-10-03T15:41:24.192Z",
+                1.313
+              ],
+              [
+                "2026-10-03T15:41:56.244Z",
+                1.325
+              ],
+              [
+                "2026-10-03T15:42:44.357Z",
+                1.331
+              ],
+              [
+                "2026-10-03T15:43:24.145Z",
+                1.339
+              ],
+              [
+                "2026-10-03T15:43:28.314Z",
+                1.331
+              ],
+              [
+                "2026-10-03T15:43:30.501Z",
+                1.339
+              ],
+              [
+                "2026-10-03T15:44:14.514Z",
+                1.336
+              ],
+              [
+                "2026-10-03T15:44:33.061Z",
+                1.338
               ]
             ],
             "p2": [
@@ -17511,6 +17579,74 @@
               [
                 "2026-10-03T15:21:19.413Z",
                 3.65
+              ],
+              [
+                "2026-10-03T15:31:48.241Z",
+                3.71
+              ],
+              [
+                "2026-10-03T15:33:50.205Z",
+                3.75
+              ],
+              [
+                "2026-10-03T15:34:13.315Z",
+                3.73
+              ],
+              [
+                "2026-10-03T15:40:11.742Z",
+                3.99
+              ],
+              [
+                "2026-10-03T15:40:57.073Z",
+                3.73
+              ],
+              [
+                "2026-10-03T15:41:01.945Z",
+                3.99
+              ],
+              [
+                "2026-10-03T15:41:06.980Z",
+                3.95
+              ],
+              [
+                "2026-10-03T15:41:12.570Z",
+                3.9
+              ],
+              [
+                "2026-10-03T15:41:17.914Z",
+                3.85
+              ],
+              [
+                "2026-10-03T15:41:24.208Z",
+                3.66
+              ],
+              [
+                "2026-10-03T15:41:56.265Z",
+                3.58
+              ],
+              [
+                "2026-10-03T15:42:44.370Z",
+                3.53
+              ],
+              [
+                "2026-10-03T15:43:24.158Z",
+                3.47
+              ],
+              [
+                "2026-10-03T15:43:28.336Z",
+                3.53
+              ],
+              [
+                "2026-10-03T15:43:30.514Z",
+                3.47
+              ],
+              [
+                "2026-10-03T15:44:14.524Z",
+                3.5
+              ],
+              [
+                "2026-10-03T15:44:33.076Z",
+                3.48
               ]
             ]
           }
@@ -22287,6 +22423,28 @@
                 3.04
               ]
             ]
+          },
+          "Bet105": {
+            "p1": [
+              [
+                "2026-10-03T15:31:51.614Z",
+                1.412
+              ],
+              [
+                "2026-10-03T15:34:53.522Z",
+                1.42
+              ]
+            ],
+            "p2": [
+              [
+                "2026-10-03T15:31:51.646Z",
+                3.07
+              ],
+              [
+                "2026-10-03T15:34:53.537Z",
+                3.03
+              ]
+            ]
           }
         },
         "meta": {
@@ -22306,7 +22464,6 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
             "checkedAt": "2026-10-03T13:18:13.000Z"
           },
           "Pinnacle (api-tennis)": {
@@ -166456,6 +166613,76 @@
             "group": "sharp",
             "clock": "book tick",
             "checkedAt": "2026-10-01T03:00:00.000Z"
+          },
+          "Bet105": {
+            "source": "Kibl",
+            "group": "sharp",
+            "clock": "Kibl insert",
+            "note": "no Bet105 fixture matched",
+            "checkedAt": null
+          },
+          "Pinnacle (api-tennis)": {
+            "source": "api-tennis",
+            "group": "sharp",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betano": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "1xBet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "BetVictor": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Betfair Sportsbook (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Marathon": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "bet365 (api-tennis)": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "Sbobet": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
+          },
+          "William Hill": {
+            "source": "api-tennis",
+            "group": "soft",
+            "clock": "seen by us every 5 min",
+            "note": "api-tennis lists no odds for this match",
+            "checkedAt": "2026-09-30T21:22:18.554Z"
           }
         }
       }
