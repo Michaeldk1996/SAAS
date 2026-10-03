@@ -29,7 +29,7 @@
 
 /* ── 1 · header card ── */
 [data-page="drops"] .do-head {
-  background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent); border-radius: 12px; padding: 22px 26px;
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); border-radius: 12px; padding: 22px 26px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap;
 }
 [data-page="drops"] .do-head-l { flex: 1; min-width: 0; }
@@ -43,14 +43,14 @@
 [data-page="drops"] .do-status-t { font-size: 12px; color: var(--text-label); }
 [data-page="drops"] .do-stats { display: flex; gap: 34px; flex: none; }
 [data-page="drops"] .do-stat { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
-[data-page="drops"] .do-stat-k { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
+[data-page="drops"] .do-stat-k { font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
 [data-page="drops"] .do-stat-v { font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 700; color: var(--text); white-space: nowrap; }
 [data-page="drops"] .do-stat-v.none { color: var(--text-label); }
 
 /* ── 2 · feed-disconnected banner ── */
 [data-page="drops"] .do-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-  padding: 11px 16px; border-radius: 11px; background: var(--card); border: 1.25px solid color-mix(in srgb, var(--neg) 35%, transparent);
+  padding: 11px 16px; border-radius: 11px; background: var(--card); border: 1px solid color-mix(in srgb, var(--neg) 35%, transparent);
 }
 [data-page="drops"] .do-banner-l { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 [data-page="drops"] .do-banner-k { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.14em; color: var(--neg); }
@@ -62,7 +62,7 @@
 [data-page="drops"] .do-search-row { position: relative; z-index: 30; display: flex; align-items: center; gap: 8px; }
 [data-page="drops"] .do-search {
   flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 14px; box-sizing: border-box;
-  border-radius: 10px; background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent);
+  border-radius: 10px; background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent);
 }
 [data-page="drops"] .do-search input {
   flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: var(--text);
@@ -71,7 +71,7 @@
 [data-page="drops"] .do-actions { position: relative; z-index: 30; display: flex; gap: 8px; flex: none; }
 [data-page="drops"] .do-btn {
   display: flex; align-items: center; gap: 7px; height: 40px; box-sizing: border-box; padding: 0 14px; border-radius: 10px;
-  border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent); background: var(--card); font-size: 12px; font-weight: 600; color: var(--text-soft);
+  border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); background: var(--card); font-size: 12px; font-weight: 600; color: var(--text-soft);
   cursor: pointer; font-family: 'Hanken Grotesk', sans-serif;
 }
 [data-page="drops"] .do-btn:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 9.9%, transparent); }
@@ -85,12 +85,12 @@
 [data-page="drops"] .do-rails { position: relative; z-index: 25; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 [data-page="drops"] .do-rail {
   display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 9px;
-  background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent);
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent);
 }
 [data-page="drops"] .do-rail-k { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); padding: 0 8px 0 7px; }
 [data-page="drops"] .do-seg {
   padding: 5px 11px; border-radius: 7px; font-size: 11.5px; white-space: nowrap; cursor: pointer;
-  font-weight: 600; color: var(--text-label); background: transparent; border: 1.25px solid transparent;
+  font-weight: 600; color: var(--text-label); background: transparent; border: 1px solid transparent;
   font-family: 'Hanken Grotesk', sans-serif; line-height: normal;
 }
 [data-page="drops"] .do-seg.mono { font-family: 'IBM Plex Mono', monospace; }
@@ -98,7 +98,7 @@
 [data-page="drops"] .do-seg[disabled] { cursor: default; opacity: 0.4; }
 
 /* ── 5 · market tabs ── */
-[data-page="drops"] .do-tabs-row { position: relative; z-index: 24; display: flex; align-items: flex-end; gap: 22px; border-bottom: 1.25px solid color-mix(in srgb, var(--text) 3.9%, transparent); }
+[data-page="drops"] .do-tabs-row { position: relative; z-index: 24; display: flex; align-items: flex-end; gap: 22px; border-bottom: 1px solid color-mix(in srgb, var(--text) 3.9%, transparent); }
 [data-page="drops"] .do-tabs { display: flex; align-items: flex-end; gap: 22px; overflow-x: auto; min-width: 0; flex: 1; scrollbar-width: none; }
 [data-page="drops"] .do-tab {
   display: flex; align-items: baseline; gap: 6px; padding: 9px 0 10px; font-size: 12.5px; font-weight: 700; white-space: nowrap;
@@ -118,7 +118,7 @@
 [data-page="drops"] .do-menu { position: relative; }
 [data-page="drops"] .do-trig {
   display: flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 9px; font-size: 11.5px; white-space: nowrap; cursor: pointer;
-  background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent); font-family: 'Hanken Grotesk', sans-serif; line-height: normal;
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); font-family: 'Hanken Grotesk', sans-serif; line-height: normal;
 }
 [data-page="drops"] .do-trig.open { border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); }
 [data-page="drops"] .do-trig.active { background: color-mix(in srgb, var(--bar) 13%, transparent); border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); }
@@ -131,7 +131,7 @@
 [data-page="drops"] .do-x:hover { color: var(--text); }
 [data-page="drops"] .do-pop {
   position: absolute; top: calc(100% + 6px); right: 0; min-width: 200px; z-index: 30; background: var(--card);
-  border: 1.25px solid color-mix(in srgb, var(--text) 8.3%, transparent); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 1px;
+  border: 1px solid color-mix(in srgb, var(--text) 8.3%, transparent); border-radius: 12px; padding: 6px; display: flex; flex-direction: column; gap: 1px;
 }
 [data-page="drops"] .do-pop-h { font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); padding: 8px 10px 4px; }
 [data-page="drops"] .do-opt { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: 8px; font-size: 12.5px; cursor: pointer; color: var(--text-soft); }
@@ -139,15 +139,15 @@
 [data-page="drops"] .do-opt.on { color: var(--text); }
 [data-page="drops"] .do-box {
   width: 13px; height: 13px; flex: none; display: flex; align-items: center; justify-content: center; box-sizing: border-box;
-  background: transparent; border: 1.25px solid color-mix(in srgb, var(--text) 20%, transparent); color: var(--page); font-size: 9px; font-weight: 800; border-radius: 50%;
+  background: transparent; border: 1px solid color-mix(in srgb, var(--text) 20%, transparent); color: var(--page); font-size: 9px; font-weight: 800; border-radius: 50%;
 }
 [data-page="drops"] .do-box.multi { border-radius: 4px; }
 [data-page="drops"] .do-opt.on .do-box { background: var(--bar); border-color: var(--edge-16); }
 [data-page="drops"] .do-opt-l { flex: 1; }
 [data-page="drops"] .do-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; padding: 2px 5px; border-radius: 5px; }
-[data-page="drops"] .do-tag.sharp { color: var(--text); background: color-mix(in srgb, var(--bar) 16%, transparent); border: 1.25px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
-[data-page="drops"] .do-tag.soft { color: var(--text-soft); background: transparent; border: 1.25px solid color-mix(in srgb, var(--text) 8.8%, transparent); }
-[data-page="drops"] .do-pop-note { font-size: 10.5px; color: var(--text-label); padding: 8px 10px 4px; border-top: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); margin-top: 4px; }
+[data-page="drops"] .do-tag.sharp { color: var(--text); background: color-mix(in srgb, var(--bar) 16%, transparent); border: 1px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
+[data-page="drops"] .do-tag.soft { color: var(--text-soft); background: transparent; border: 1px solid color-mix(in srgb, var(--text) 8.8%, transparent); }
+[data-page="drops"] .do-pop-note { font-size: 10.5px; color: var(--text-label); padding: 8px 10px 4px; border-top: 1px solid color-mix(in srgb, var(--text) 3.3%, transparent); margin-top: 4px; }
 [data-page="drops"] .do-clickaway { position: fixed; inset: 0; z-index: 20; }
 
 /* ── 7 · column header ── */
@@ -156,10 +156,10 @@
   font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label);
 }
 [data-page="drops"] .do-cols-r { position: relative; text-align: right; }
-[data-page="drops"] .do-help { border-bottom: 1.25px dotted var(--text-label); cursor: help; }
+[data-page="drops"] .do-help { border-bottom: 1px dotted var(--text-label); cursor: help; }
 [data-page="drops"] .do-tip {
   position: absolute; right: 0; top: calc(100% + 8px); width: 230px; z-index: 15; text-align: left; background: var(--card);
-  border: 1.25px solid color-mix(in srgb, var(--text) 8.3%, transparent); border-radius: 10px; padding: 10px 12px; font-family: 'Hanken Grotesk', sans-serif;
+  border: 1px solid color-mix(in srgb, var(--text) 8.3%, transparent); border-radius: 10px; padding: 10px 12px; font-family: 'Hanken Grotesk', sans-serif;
   font-size: 12px; font-weight: 500; letter-spacing: 0; color: var(--text); line-height: 1.4; display: none;
 }
 [data-page="drops"] .do-help:hover + .do-tip { display: block; }
@@ -168,7 +168,7 @@
 [data-page="drops"] .do-list { display: flex; flex-direction: column; gap: 6px; }
 [data-page="drops"] .do-row {
   display: grid; grid-template-columns: 108px minmax(0,1fr) auto; gap: 22px; align-items: center; padding: 14px 22px 14px 16px;
-  border-radius: 12px; background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent); cursor: pointer;
+  border-radius: 12px; background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); cursor: pointer;
   transition: border-color .14s ease, background .14s ease;
 }
 [data-page="drops"] .do-row:hover { border-color: color-mix(in srgb, var(--text) 8.8%, transparent); background: var(--card); }
@@ -191,12 +191,12 @@
 /* "Started" uses the export's own tag box (the header tag); founder ruling, drops.md */
 [data-page="drops"] .do-started {
   display: inline-block; vertical-align: 3px; margin-left: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label);
-  padding: 3px 7px; border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent); border-radius: 6px;
+  padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); border-radius: 6px;
 }
 [data-page="drops"] .do-detail { font-size: 12.5px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 [data-page="drops"] .do-px {
   display: flex; align-items: center; gap: 14px; padding: 8px 12px; margin: -8px -12px; border-radius: 10px;
-  border: 1.25px solid transparent; cursor: pointer; transition: background .14s ease, border-color .14s ease;
+  border: 1px solid transparent; cursor: pointer; transition: background .14s ease, border-color .14s ease;
 }
 [data-page="drops"] .do-px:hover { background: color-mix(in srgb, var(--neg) 7%, transparent); border-color: color-mix(in srgb, var(--neg) 28%, transparent); }
 [data-page="drops"] .do-px-c { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
@@ -209,12 +209,12 @@
 /* ── 9 · loading + empty ── */
 [data-page="drops"] .do-skel {
   display: grid; grid-template-columns: 108px minmax(0,1fr) auto; gap: 22px; align-items: center; padding: 14px 22px 14px 16px;
-  border-radius: 12px; background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent);
+  border-radius: 12px; background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 3.3%, transparent);
 }
 [data-page="drops"] .do-skel b { display: block; border-radius: 4px; background: color-mix(in srgb, var(--text) 6%, transparent); }
 [data-page="drops"] .do-empty {
   display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 56px 20px; border-radius: 12px;
-  background: var(--card); border: 1.25px solid color-mix(in srgb, var(--text) 5%, transparent); text-align: center;
+  background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); text-align: center;
 }
 [data-page="drops"] .do-empty-h { font-size: 15px; font-weight: 700; }
 [data-page="drops"] .do-empty-d { font-size: 12.5px; color: var(--text-label); }
@@ -228,23 +228,23 @@
 .do-ov-box {
   box-sizing: content-box; position: absolute; z-index: 41; left: 50%; top: 50%; transform: translate(-50%,-50%);
   width: 1040px; max-width: calc(100% - 48px); max-height: calc(100% - 64px); border-radius: 16px; background: var(--card);
-  border: 1.25px solid color-mix(in srgb, var(--text) 6.6%, transparent); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--text) 6.6%, transparent); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; overflow: hidden;
 }
 .do-ov-box * { box-sizing: content-box; }
 .do-ov-scroll { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; }
 /* 1 · header (price-led) */
-.do-ov-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px 26px 18px; border-bottom: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
-.do-ov-dropb { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-right: 20px; border-right: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
+.do-ov-head { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; padding: 22px 26px 18px; border-bottom: 1px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
+.do-ov-dropb { flex: none; display: flex; flex-direction: column; align-items: center; gap: 5px; padding-right: 20px; border-right: 1px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
 .do-ov-dropf { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 30px; font-weight: 700; line-height: 1; }
 .do-ov-dropf.big { color: var(--neg); }
 .do-ov-dropf.small { color: color-mix(in srgb, var(--neg) 75%, transparent); }
 .do-ov-dropc { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); white-space: nowrap; }
 .do-ov-mid { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
-.do-ov-eye { display: flex; align-items: center; gap: 8px; font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); text-transform: uppercase; }
+.do-ov-eye { display: flex; align-items: center; gap: 8px; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; color: var(--text-label); text-transform: uppercase; }
 .do-ov-eye > span { display: block; }
 .do-ov-btag { font-size: 8.5px; font-weight: 700; padding: 2px 5px; border-radius: 4px; }
-.do-ov-btag.sharp { color: var(--text); border: 1.25px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
-.do-ov-btag.soft { color: var(--text-soft); border: 1.25px solid color-mix(in srgb, var(--text) 8.8%, transparent); }
+.do-ov-btag.sharp { color: var(--text); border: 1px solid color-mix(in srgb, var(--edge-16) 40%, transparent); }
+.do-ov-btag.soft { color: var(--text-soft); border: 1px solid color-mix(in srgb, var(--text) 8.8%, transparent); }
 .do-ov-sel { display: block; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
 .do-ov-pl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-label); }
 .do-ov-pl > span { display: block; }
@@ -261,7 +261,7 @@
 .do-ov-start { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--text-soft); white-space: nowrap; }
 .do-ov-x {
   width: 32px; height: 32px; flex: none; align-self: flex-start; display: flex; align-items: center; justify-content: center; border-radius: 9px;
-  border: 1.25px solid color-mix(in srgb, var(--text) 5.5%, transparent); color: var(--text-soft); font-size: 13px; cursor: pointer; background: none; font-family: inherit; padding: 0; line-height: normal; text-align: start;
+  border: 1px solid color-mix(in srgb, var(--text) 5.5%, transparent); color: var(--text-soft); font-size: 13px; cursor: pointer; background: none; font-family: inherit; padding: 0; line-height: normal; text-align: start;
 }
 .do-ov-x:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 11%, transparent); }
 /* 2 · chart (the Database chart type) */
@@ -279,7 +279,7 @@
 .do-ov-plot .do-line { fill: none; stroke: var(--neg); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
 .do-ov-openchip {
   position: absolute; left: 8px; transform: translateY(-50%); padding: 2px 7px; border-radius: 5px; background: var(--card);
-  font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-soft);
+  font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-soft);
 }
 .do-ov-enddot { position: absolute; left: 100%; margin-left: -4.5px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--neg); box-shadow: 0 0 0 3px var(--card); }
 .do-ov-endc { position: relative; width: 84px; height: 260px; flex: none; }
@@ -290,7 +290,7 @@
 .do-ov-xax > span { position: absolute; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--text-soft); white-space: nowrap; }
 .do-ov-note { display: block; font-size: 10.5px; color: var(--text-label); }
 /* 3 · book table */
-.do-ov-tbl { display: flex; flex-direction: column; padding: 10px 14px 6px; border-top: 1.25px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
+.do-ov-tbl { display: flex; flex-direction: column; padding: 10px 14px 6px; border-top: 1px solid color-mix(in srgb, var(--text) 3.3%, transparent); }
 .do-ov-th, .do-ov-tr { display: grid; grid-template-columns: 48px minmax(0,1fr) 64px 84px 76px; gap: 12px; }
 .do-ov-th { padding: 4px 12px 8px; font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.14em; color: var(--text-label); }
 .do-ov-th > span, .do-ov-tr > span { display: block; }

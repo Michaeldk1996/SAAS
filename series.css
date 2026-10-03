@@ -31,7 +31,7 @@
 /* ── page frame (export §"Page frame") ── */
 /* Export page background is var(--page), two hex off the app's --bg. Scoped to
    the tab so it reverts the moment another page is shown — the body is never touched. */
-[data-page="series"] { background: var(--inner); min-height: 100vh; }
+[data-page="series"] { background: var(--page); min-height: 100vh; }
 [data-page="series"] .sr-wrap {
   max-width: 1360px;
   margin: 0 auto;
@@ -49,17 +49,17 @@
 
 /* ── 1 · header card ── */
 [data-page="series"] .sr-head {
-  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 12px;
+  background: var(--card); border: 1px solid transparent; box-shadow: var(--top-light); border-radius: 12px;
   padding: 22px 26px;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap;
 }
 [data-page="series"] .sr-h1 { font-size: 29px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; margin: 0; color: var(--text); }
-[data-page="series"] .sr-subtitle { font-size: 13.5px; color: var(--text-label); margin: 8px 0 0; max-width: 640px; line-height: 1.55; }
+[data-page="series"] .sr-subtitle { font-size: 13.5px; color: var(--text-soft); margin: 8px 0 0; max-width: 640px; line-height: 1.55; }
 [data-page="series"] .sr-stats { display: flex; gap: 34px; flex-wrap: wrap; }
 [data-page="series"] .sr-stat { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
 [data-page="series"] .sr-stat-k {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
+  font-family:var(--font-words);
+  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-stat-v { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 17px; font-weight: 700; color: var(--text); }
 [data-page="series"] .sr-stat-v.sr-accent { color: var(--text); }
@@ -70,12 +70,12 @@
 [data-page="series"] .sr-frow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 [data-page="series"] .sr-fgroup { display: inline-flex; align-items: center; gap: 10px; }
 [data-page="series"] .sr-flabel {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
+  font-family:var(--font-words);
+  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-seg {
   display: inline-flex; gap: 3px;
-  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 9px; padding: 2px;
+  background: var(--card); border: 1px solid var(--edge-6); border-radius: 9px; padding: 2px;
 }
 [data-page="series"] .sr-segbtn {
   padding: 7px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
@@ -101,7 +101,7 @@
 [data-page="series"] .sr-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 [data-page="series"] .sr-box {
   width: 15px; height: 15px; flex: none; border-radius: 4px;
-  background: var(--card); border: 0.33px solid var(--edge-6);
+  background: var(--inner); border: 1px solid transparent;
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .14s ease, border-color .14s ease;
 }
@@ -119,12 +119,12 @@
 /* ── already-played continued/broken aggregate (kept: ruling q7) ── */
 [data-page="series"] .sr-outsum {
   font-size: 12.5px; color: var(--text-label);
-  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 9px;
+  background: var(--card); border: 1px solid var(--edge-6); border-radius: 9px;
   padding: 10px 14px;
 }
 [data-page="series"] .sr-outsum-k {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label); margin-right: 8px;
+  font-family:var(--font-words);
+  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label); margin-right: 8px;
 }
 [data-page="series"] .sr-outsum b { color: var(--text); font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-weight: 700; }
 
@@ -134,12 +134,12 @@
   align-items: start; gap: 14px;
 }
 [data-page="series"] .sr-card {
-  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 14px;
+  background: var(--card); border: 1px solid transparent; box-shadow: var(--top-light); border-radius: 14px;
   padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;
   transition: border-color 120ms ease, background 120ms ease;
 }
-[data-page="series"] .sr-card.sr-has-detail { cursor: pointer; }
-[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--edge-10); }
+[data-page="series"] .sr-card.sr-has-detail { cursor: pointer; border-color: var(--edge-7); box-shadow: none; }   /* clickable tile (README §5.10) */
+[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--edge-16); background: var(--tile-hover); }
 [data-page="series"] .sr-card.sr-has-detail:hover .sr-hist { color: var(--text); }
 [data-page="series"] .sr-card:focus-visible { outline: 2px solid var(--edge-16); outline-offset: 2px; }
 
@@ -210,7 +210,7 @@
 [data-page="series"] .sr-prow { display: flex; align-items: center; gap: 12px; min-width: 0; }
 [data-page="series"] .sr-av-wrap {
   position: relative; width: 34px; height: 34px; flex: none; border-radius: 50%; overflow: hidden;
-  background: var(--card); border: 0.33px solid var(--edge-6);
+  background: var(--card); border: 1px solid var(--edge-6);
   display: inline-flex; align-items: center; justify-content: center;
 }
 [data-page="series"] .sr-av { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -227,7 +227,7 @@
 [data-page="series"] .sr-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 [data-page="series"] .sr-tag {
   font-size: 11px; font-weight: 600; letter-spacing: 0.01em; padding: 3px 9px; border-radius: 99px;
-  border: 0.33px solid var(--edge-6); background: transparent; color: var(--text-label);
+  border: 1px solid var(--edge-6); background: transparent; color: var(--text-label);
   font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
 }
 [data-page="series"] .sr-tag-dir { color: var(--text-label); background: var(--inner); border-color: var(--edge-6); }
@@ -252,15 +252,15 @@
        override; reverting it back a second time would be deciding for him. */
 [data-page="series"] .sr-strip {
   display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 10px;
-  padding-top: 12px; border-top: 0.33px solid var(--line);
+  padding-top: 12px; border-top: 1px solid var(--line);
 }
 /* §2.3 · "AVG PRICE (700, only bold value)". The modifier is emitted ONLY on the AVG PRICE
    cell — line/set families render an empty track there and so can never carry it. */
 [data-page="series"] .sr-cell-v.sr-cell-pv { font-weight: 700; }
 [data-page="series"] .sr-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 [data-page="series"] .sr-cell-k {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-label);
+  font-family:var(--font-words);
+  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
 }
 [data-page="series"] .sr-cell-v {
   font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
@@ -273,7 +273,7 @@
 /* 3.5 footer row: next match · History → */
 [data-page="series"] .sr-foot {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding-top: 12px; border-top: 0.33px solid var(--line);
+  padding-top: 12px; border-top: 1px solid var(--line);
   font-size: 11.5px; color: var(--text-label);
 }
 [data-page="series"] .sr-next { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -290,7 +290,7 @@
 /* ── 4 · footnote block ── */
 [data-page="series"] .sr-footnote {
   display: flex; flex-direction: column; gap: 10px;
-  padding-top: 18px; border-top: 0.33px solid var(--line);
+  padding-top: 18px; border-top: 1px solid var(--line);
 }
 [data-page="series"] .sr-fn-dir { font-size: 12.5px; color: var(--text-label); line-height: 1.6; max-width: 1130px; margin: 0; }
 [data-page="series"] .sr-fn-dir b { color: var(--text-label); font-weight: inherit; }
@@ -316,7 +316,7 @@
 body.sr-ov-open { overflow: hidden; }
 .sr-ov {
   width: 100%; max-width: 880px; max-height: 86vh;
-  background: var(--card); border: 0.33px solid var(--edge-6); border-radius: 20px;
+  background: var(--card); border: 1px solid var(--edge-6); border-radius: 20px;
   
   display: flex; flex-direction: column; overflow: hidden;
 }
@@ -330,7 +330,7 @@ body.sr-ov-open { overflow: hidden; }
 .sr-ov-pool { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--text-label); }
 .sr-ov-close {
   flex: none; width: 30px; height: 30px; border-radius: 50%;
-  background: var(--inner); border: 0.33px solid var(--edge-6);
+  background: var(--inner); border: 1px solid var(--edge-6);
   display: flex; align-items: center; justify-content: center;
   font-size: 14px; color: var(--text-label); cursor: pointer; line-height: 1;
 }
@@ -363,8 +363,8 @@ body.sr-ov-open { overflow: hidden; }
 }
 .sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
 .sr-ov .sr-mhead span {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
+  font-family:var(--font-words);
+  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
 }
 /* §1.2 · HOME / AWAY / P&L are right-aligned. SCORE is NOT — §1.5 makes it left-aligned,
    which is also what keeps a 3-set score reading as one block under its header. */
@@ -374,7 +374,7 @@ body.sr-ov-open { overflow: hidden; }
 /* §1.5 · align-items:center, not baseline. With eight cells at four different font sizes a
    baseline row hangs the 11px result letter off the 12.5px opponent's baseline; centre is
    what the spec asks for and what makes the W/L letter sit level with the name beside it. */
-.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 0.33px solid var(--line); }
+.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
 .sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
 /* SINGLE LINE, ellipsis, never wraps (§1.5). nowrap + overflow:hidden are BOTH required for
    text-overflow to do anything — `text-wrap: pretty` previously let it wrap to two lines,
@@ -405,10 +405,10 @@ body.sr-ov-open { overflow: hidden; }
 .sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); }
 /* Total line — shares the rows' left and right edges, below the scroll pane. */
 .sr-ov-foot { flex: none; padding: 0 24px 20px; }
-.sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 0.33px solid var(--line); }
+.sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 1px solid var(--line); }
 .sr-ov-total-k {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 9.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-label);
+  font-family:var(--font-words);
+  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
 }
 /* §1.7 · the total line's right-hand group: "{n} PRICED" eyebrow, then the unit total at
    mono 15px/700 and the yield at mono 15px/400, both sign-coloured. The whole group is

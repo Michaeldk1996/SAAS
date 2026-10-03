@@ -775,7 +775,7 @@
              '</div>' +
              '<div class="tr-hdr-stats">' +
                pair(S.day === 'tomorrow' ? 'Tomorrow' : 'Today', String(slateCount), null) +
-               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : 'var(--bar)') +
+               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : 'var(--text)') +
                pair('Window', S.win === '52w' ? '52w' : '24m', null) +
                pair('Updated', updated, 'var(--text-label)') +
              '</div>' +

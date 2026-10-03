@@ -35,4 +35,33 @@
   window.sfTheme = { mode: mode, resolved: function () { return resolved(mode()); }, set: set, apply: apply,
     osIsLight: function () { return !!(mq && mq.matches); } };
   apply();
+
+  // README §5.14 — the sidebar Night · Day · Auto switch (darker track). Markup: <div data-sf-theme-switch></div>.
+  // Under it, only while Auto is on, a 10.5px --text-label note "Auto · following the OS (light|dark)".
+  var LABELS = [['night', 'Night'], ['day', 'Day'], ['auto', 'Auto']];
+  function renderSwitch(host) {
+    var m = mode();
+    host.innerHTML = '<div class="sf-theme-seg" role="radiogroup" aria-label="Theme">' + LABELS.map(function (o) {
+      var on = o[0] === m;
+      return '<button type="button" role="radio" aria-checked="' + on + '" data-mode="' + o[0] + '" class="sf-theme-opt' + (on ? ' on' : '') + '">' + o[1] + '</button>';
+    }).join('') + '</div>' + (m === 'auto' ? '<div class="sf-theme-note">Auto · following the OS (' + (mq && mq.matches ? 'light' : 'dark') + ')</div>' : '');
+  }
+  function mountAll() {
+    var hosts = document.querySelectorAll('[data-sf-theme-switch]');
+    for (var i = 0; i < hosts.length; i++) {
+      var h = hosts[i];
+      renderSwitch(h);
+      if (!h.__sfBound) {
+        h.__sfBound = true;
+        h.addEventListener('click', function (e) {
+          var b = e.target.closest && e.target.closest('[data-mode]');
+          if (b) set(b.getAttribute('data-mode'));
+        });
+      }
+    }
+  }
+  window.addEventListener('sf-thememode', mountAll);
+  window.addEventListener('sf-themechange', mountAll);
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountAll); else mountAll();
+  window.sfTheme.mountSwitch = mountAll;
 })();

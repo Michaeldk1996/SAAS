@@ -717,11 +717,11 @@
     // the number that survives at every rank tier; the visual weight says so.
     function hbGlobalCell(g) {
       if (!g.n) {
-        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--card);border:0.33px solid var(--edge-6);">
+        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--card);border:1px solid var(--edge-6);">
           <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--text-label);">—</div>
         </div>`;
       }
-      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--inner);border:0.33px solid var(--edge-6);box-shadow:inset 0 0 0 1px var(--edge-10);">
+      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--inner);border:1px solid var(--edge-6);box-shadow:inset 0 0 0 1px var(--edge-10);">
         <div style="font-size:19px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--text);">${Math.round(g.pct)}%</div>
         <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;color:color-mix(in srgb, var(--text) 82%, transparent);white-space:nowrap;">${g.won}/${g.n}</div>
       </div>`;
