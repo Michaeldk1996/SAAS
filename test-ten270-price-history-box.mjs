@@ -179,10 +179,10 @@ test('source per card: Bet105 -> RPC, bet365 upcoming -> shard, bet365 completed
   const up = B.cardData({ openingOdds: { bookmaker: 'bet365' } }, 'p1');
   assert.equal(up.source, 'shard');
   assert.equal(up.historyAvailable, true);
-  assert.match(B.html(B.model(up, [], [])), /Updated <span class="phb-mono">|bet365 · refreshed every 15 min/);
+  assert.match(B.html(B.model(up, [], [])), /bet365 · refreshed every 15 min/);
   const done = B.cardData({ openingOdds: { bookmaker: 'bet365' }, finalScore: '6-4 6-4' }, 'p1');
   assert.equal(done.source, 'archive', 'a completed bet365 card reads the archive, never the shard');
-  assert.match(B.html(B.model(done, [], [])), /Updated <span class="phb-mono">|bet365 · refreshed every 15 min/,
+  assert.match(B.html(B.model(done, [], [])), /bet365 · refreshed every 15 min/,
                'founder 2026-09-25: the same source line as upcoming');
   assert.doesNotMatch(B.html(B.model(done, [], [])), /archived after the match/, 'the retired label is gone');
   assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').source, 'rpc');
@@ -200,7 +200,7 @@ test('TEN-295: the Closing odds row is the PINNACLE close, named by its source; 
     assert.equal(done.book, 'bet105', 'the header and the list stay the card book');
     const none = B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1');
     assert.equal(none.close.price, null, 'no Pinnacle close -> dash, never the card book close');
-    // TEN-377 README §6.1: the pop-up is not on Completed cards, so no Closing row is rendered.
+    // TEN-377 Q2: the Completed pop-up shows Pinnacle's close as its own line, never an old 'Closing odds' row.
     assert.doesNotMatch(B.html(B.model(done, [], [])), /Closing odds/);
   } finally { delete globalThis._mcPinClose; delete globalThis._mcCloseOf; }
 });
@@ -230,7 +230,7 @@ test('bet365 completed: the bet365_history archive, per side, suspended and sub-
   const m = B.model(Object.assign({}, got.card, { open: { price: 1.50, at: '2026-09-24T06:00:00Z' },
                                                  close: { price: 1.20, at: '2026-09-24T07:50:00Z' } }), got.rows, []);
   assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.2:-0.25', '1.45:-0.05']);
-  assert.match(B.html(m), /Updated <span class="phb-mono">|bet365 · refreshed every 15 min/);
+  assert.match(B.html(m), /bet365 · refreshed every 15 min/);
   assert.doesNotMatch(B.html(m), /archived after the match/, 'the retired label is gone');
 });
 
@@ -322,4 +322,24 @@ test('a card with no card-state entry: the Open time is the card\'s own openingO
   assert.equal(m1.recordedFrom, Date.parse('2026-09-24T20:42:50.122Z'), 'when recording began still shows');
   const m2 = B.model(B.cardData(m, 'p2'), B.shardRows(shard, 'p2'), []);
   assert.deepEqual(m2.rows.map(r => `${r.price}:${r.delta}`), ['1.54:-0.03'], 'a real move is measured from the Open');
+});
+
+test('TEN-377 review: the change % obeys the Move rules — no % from a vendor-pinned open, an older close or two books', () => {
+  const base = { book: 'Bet105', open: { price: 2.0, at: '2026-09-24T01:00:00Z' }, historyAvailable: true, now: 1.6 };
+  assert.match(B.html(B.model(base, [], [])), /phb-pct neg">−20\.0%/, 'CONTROL: a measurable move shows its %');
+  const h = B.html(B.model(Object.assign({ pctOk: false }, base), [], []));
+  assert.doesNotMatch(h, /phb-pct/);
+  assert.match(h, /phb-open">2\.00<\/span><span class="phb-arr">→<\/span><b class="phb-now">1\.60/, 'the prices still show');
+  try {
+    globalThis._mcCloseW60 = () => false;
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1').pctOk, false, 'older close');
+    globalThis._mcCloseW60 = () => true;
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1').pctOk, true, 'within-60 close');
+    globalThis._openPinIsVendor = () => true;
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').pctOk, false, 'vendor-pinned open');
+    delete globalThis._openPinIsVendor;
+    globalThis._mcNowPair = () => ({ p1: 1.5, p2: 2.5, book: 'bet365' });
+    globalThis._ocsOf = () => ({ book: 'bet105', p1: {}, p2: {} });
+    assert.equal(B.cardData({}, 'p1').pctOk, false, 'Now from another book than the card book');
+  } finally { delete globalThis._mcCloseW60; delete globalThis._openPinIsVendor; delete globalThis._mcNowPair; delete globalThis._ocsOf; }
 });

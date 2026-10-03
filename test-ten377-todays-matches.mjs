@@ -161,3 +161,23 @@ test('README §8: Upcoming / Completed switch keeps the selected date when the o
 test('README §8: empty day / no results = card tone, centred 13px label', () => {
   assert.match(lastRule(`${M} .mx-empty`), /font-size:13px; color:var\(--text-label\); background:var\(--card\)/);
 });
+
+test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM, "—" with no clock', () => {
+  const run = (view, list, up, tz = 'Asia/Makassar') => new Function('list', 'view', 'up', 'tz', `
+    const el = { innerHTML: '' };
+    const document = { getElementById: () => el };
+    const state = { view };
+    const newsTz = () => tz;
+    const mxOddsUpdatedAt = () => up;
+    const _mcNowPair = m => m.__pair || null; const _ocsOf = () => null;
+    const _mcPinCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
+    const MX_BOOK_LABELS = { pncl: 'Pinnacle' };
+    ${slice('mxBookLabel')} ${slice('mcUpsetRows')} ${slice('mcBoardBooks')} ${slice('mcRenderHeaderStats')}
+    mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
+  const vals = h => [...h.matchAll(/mx-hstat__l">([^<]*)<\/span><span class="mx-hstat__v">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
+  const up = [{ tour: 'ATP Tokyo', bookNow: { Pncl: {} } }, { tour: 'ATP Beijing', bookOpens: { Pinnacle: {}, Betano: {} } }];
+  assert.deepEqual(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'))), ['Matches=2', 'Tournaments=2', 'Books=2', 'Updated=10:10']);
+  const done = [{ tour: 'ATP Tokyo', p1: 'A', p2: 'B', finalScore: { winner: 'p1' }, __pin: { p1: 3.9, p2: 1.3 } }, { tour: 'ATP Tokyo' }];
+  assert.deepEqual(vals(run('completed', done, null)), ['Settled=1', 'Tournaments=1', 'Upsets=1', 'Updated=—'], 'no clock -> dash, a count of 0 stays 0');
+  assert.match(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'), 'Not/AZone'))[3], /^Updated=\d\d:\d\d$/, 'a bad stored zone falls back, never throws');
+});

@@ -143,7 +143,7 @@
       close: card.completed ? (card.close || null) : null,
       rows: rowsDesc, recordedFrom, open: card.open || null, historyAvailable: !!card.historyAvailable,
       note: card.note || null, emptyNote: card.emptyNote || null,
-      now: nowOf(card, ch), completed: !!card.completed,
+      now: nowOf(card, ch), completed: !!card.completed, pctOk: card.pctOk !== false,
     };
   }
 
@@ -197,7 +197,9 @@
     const book = esc(mdl.book || '—');
     const op = mdl.open && mdl.open.price != null ? mdl.open.price : null;
     const now = mdl.now != null ? mdl.now : null;
-    const pct = fmtPct(op, now);
+    // The % is a calculation: never from a vendor-pinned open (TEN-198), an older close (TEN-253)
+    // or two books (one book per fixture) — the prices still show, the % does not.
+    const pct = mdl.pctOk ? fmtPct(op, now) : null;
     const moves = mdl.rows.filter(r => !r.gap).length;
     const counted = mdl.historyAvailable && !state;
     const mono = t => `<span class="phb-mono">${esc(t)}</span>`;
@@ -319,11 +321,15 @@
     const upcoming = !completed && !m.live && (!isFinite(startMs) || Date.now() < startMs);
     const source = bk === 'bet105' ? 'rpc'
       : (bk === 'bet365' ? (upcoming ? 'shard' : (completed ? 'archive' : null)) : null);
-    // The current price = the price the card face shows (same resolver), so row 2's "now"
-    // always equals the number that was hovered.
+    // The card face's current price (same resolver); row 2 uses it unless the history holds a later tick.
     const now = pair && pair[who] != null && Number(pair[who]) >= 1.01 ? Number(pair[who]) : null;
     const bookClose = completed && side && side.close != null && Number(side.close) >= 1.01 ? Number(side.close) : null;
-    return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose,
+    // Whether open → now/close may be measured as a %: same rules as the card's own Move.
+    const vendorOpen = typeof _openPinIsVendor === 'function' && _openPinIsVendor(m);
+    const olderClose = completed && typeof _mcCloseW60 === 'function' && !_mcCloseW60(m);
+    const crossBook = !completed && pair && pair.book && bk && String(pair.book).toLowerCase() !== bk;
+    const pctOk = !(vendorOpen || olderClose || crossBook);
+    return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose, pctOk,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
              // Founder 2026-09-25: completed bet365 cards carry the SAME source line as upcoming.
@@ -411,7 +417,9 @@
     // again so the box stays beside it (review finding 2).
     if (!target.isConnected) {
       const again = document.querySelector(`.match-card[data-id="${CSS.escape(el.dataset.id)}"] .mc-row.${who === 'p2' ? 'b' : 'a'}`);
-      target = (again && again.querySelector(PRICE_SEL)) || null;
+      // Re-find the SAME cell (a Completed row has two triggers: Open and Close).
+      const cls = [...target.classList].find(c => PRICE_SEL.includes('.' + c));
+      target = (again && again.querySelector(cls ? '.' + cls : PRICE_SEL)) || null;
       if (!target) { hide(); return; }
     }
     if (arch) {

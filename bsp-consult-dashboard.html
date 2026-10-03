@@ -8973,8 +8973,9 @@ function mcRenderHeaderStats(list){
   const shown = completed ? list.filter(m => m.finalScore) : list;
   const tours = new Set(shown.map(m => m.tour).filter(Boolean)).size;
   const up = mxOddsUpdatedAt();
-  const hhmm = up != null ? new Intl.DateTimeFormat('en-GB', { timeZone: (typeof newsTz === 'function' && newsTz()) || undefined,
-    hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(up)).replace(/^24/, '00') : '—';
+  const fmt = tz => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(up)).replace(/^24/, '00');
+  let hhmm = '—';
+  if (up != null) { try { hhmm = fmt((typeof newsTz === 'function' && newsTz()) || undefined); } catch (e) { hhmm = fmt(undefined); } }   // a bad stored zone never stops the board
   const stats = completed
     ? [['Settled', shown.length], ['Tournaments', tours], ['Upsets', mcUpsetRows(shown).length], ['Updated', hhmm]]
     : [['Matches', shown.length], ['Tournaments', tours], ['Books', mcBoardBooks(shown)], ['Updated', hhmm]];
