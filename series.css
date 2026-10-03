@@ -307,7 +307,7 @@
 
 /* ── 5 · history modal (export §5) ── */
 .sr-ov-back {
-  position: fixed; inset: 0; z-index: 90;
+  position: fixed; inset: 0 0 0 var(--sf-side, 0px); z-index: 90;
   background: var(--backdrop); 
   display: flex; align-items: center; justify-content: center; padding: 32px;
   font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); color: var(--text);

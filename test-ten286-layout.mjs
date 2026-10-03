@@ -68,7 +68,8 @@ const M = '[data-page="matches"]';
 const SPEC = [
   // app shell (both pages carry it; the dashboard uses buttons, account.html anchors)
   ['.sf-sidebar', 'width', '252px'], ['.sf-sidebar', 'padding', '18px 0 18px 18px'], ['.sf-sidebar', 'line-height', 'normal'],
-  ['.sf-panel', 'padding', '20px 12px 14px'], ['.sf-panel', 'border-radius', '22px'], ['.sf-panel', 'background', 'var(--card)'],
+  ['.sf-panel', 'padding', '20px 12px 14px'], ['.sf-panel', 'border-radius', '22px'], ['.sf-panel', 'background', 'var(--sidebar)'],   // founder R2: the sidebar's own surface
+ 
   ['.sf-panel', 'border', '1px solid transparent'], ['.sf-panel', 'box-shadow', 'none'],   // OFFICIAL VERSION 1: sidebar panel, no outline, no top-light ['.sf-brand', 'margin', '0 8px 26px'], ['.sf-logo', 'height', '26px'],
   ['.sf-nav', 'gap', '3px'], ['.sf-foot', 'padding-top', '24px'], ['.sf-foot', 'gap', '10px'],
   ['.sf-userchip', 'padding', '6px 8px'], ['.sf-userchip', 'gap', '10px'], ['.sf-userav', 'width', '30px'], ['.sf-userav', 'font-size', '11px'],
@@ -104,9 +105,9 @@ const SPEC = [
   ['.mc-promo__icon', 'background', 'var(--inner)'], ['.mc-promo__icon', 'color', 'var(--text)'], ['.mc-promo__badge', 'background', 'transparent'],   // OFFICIAL VERSION 1: PRO = outlined link pill
 ];
 const ACCT_SPEC = SPEC.filter(([s]) => s.startsWith('.sf-') && !s.startsWith('.sf-nav button'))
-  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '12px'], ['.sf-nav a', 'font-size', '13.5px'], ['.sf-nav a', 'color', 'var(--text-label)']]);
+  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '12px'], ['.sf-nav a', 'font-size', '13.5px'], ['.sf-nav a', 'color', 'var(--text-soft)']]);
 const DASH_NAV = [['.sf-nav button', 'padding', '10px 12px'], ['.sf-nav button', 'border-radius', '12px'], ['.sf-nav button', 'font-size', '13.5px'],
-  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--text-label)']];   // OFFICIAL VERSION 1: sidebar items r12 (README §8 said 8; reference wins), idle = --text-label (founder Q2.2)
+  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--text-soft)']];   // OFFICIAL VERSION 1: sidebar items r12 (README §8 said 8; reference wins), idle = --text-soft (founder R1, measured)
 
 function specProblems(html, spec) {
   const p = [];

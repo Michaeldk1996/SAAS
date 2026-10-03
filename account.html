@@ -45,13 +45,14 @@
   .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:252px; box-sizing:border-box; display:flex;
     padding:18px 0 18px 18px; z-index:60; font-family:var(--sf-font-ui); line-height:normal; }
   .sf-panel{ flex:1; min-height:0; display:flex; flex-direction:column; box-sizing:border-box; padding:20px 12px 14px;
-    background:var(--card); border:1px solid transparent; box-shadow:none; border-radius:22px; overflow-y:auto; }
+    background:var(--sidebar); border:1px solid transparent; box-shadow:none; border-radius:22px; overflow-y:auto; }
   .sf-brand{ display:block; margin:0 8px 26px; text-decoration:none; }
   .sf-logo{ display:block; height:26px; width:auto; }
   .sf-nav{ display:flex; flex-direction:column; gap:3px; }
   .sf-nav a{ display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box; text-align:left; background:none;
     border:1px solid transparent; border-radius:12px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
-    font-weight:600; color:var(--text-label); cursor:pointer; text-decoration:none; }
+    font-weight:600; color:var(--text-soft); cursor:pointer; text-decoration:none; }
+  /* founder R1 (TEN-376): idle item = --text-soft words, --text-label icon (measured on OFFICIAL VERSION 1); active = white both */
   .sf-nav a svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; color:var(--text-label); }
   .sf-nav a::after{ content:''; flex:none; width:6px; height:6px; border-radius:50%; margin-left:auto; background:transparent; }
   .sf-nav a:hover{ background:var(--tile-hover); }
@@ -61,7 +62,7 @@
   .sf-foot{ margin-top:auto; padding-top:24px; display:flex; flex-direction:column; gap:10px; }
   /* README §5.14 theme switch (option 2a): darker-track segmented Night · Day · Auto above the user row, 11.5/700 */
   .sf-theme-seg{ display:flex; gap:2px; padding:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; }
-  .sf-theme-opt{ flex:1; padding:6px 0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-label);
+  .sf-theme-opt{ flex:1; padding:6px 0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-soft);
     font-family:var(--font-words); font-size:11.5px; font-weight:700; cursor:pointer; }
   .sf-theme-opt:hover{ color:var(--text); }
   .sf-theme-opt.on{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
@@ -691,7 +692,7 @@
   /* per element). Colours and hairlines only; layout is untouched.    */
   /* ================================================================= */
   html, body{ background:var(--page); }
-  /* header live dot = lime, flat (the settled state stays label) */
+  /* header status line: no dot (founder R3, TEN-376) */
   [data-page="matches"] .mx-datastatus:not(.settled) .dot{ display:none !important; }
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */
   [data-page="matches"] .mx-daytabs button.active{ color:var(--text); border-bottom-color:var(--text); }

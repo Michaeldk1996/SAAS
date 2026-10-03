@@ -550,8 +550,10 @@ test('box chart (TEN-301): a stretch the book was recorded NOT quoting (odds.md 
 test('box colours (8585095a colour ruling, TEN-376 tokens): red with a flat tint, the named roles exact; neutrals on foundation tokens', () => {
   const css = read('drops-page.css'), box = css.slice(css.indexOf('/* ── 10 · the price-move box'));
   assert.match(box, /\.do-ov-plot \.do-line \{ fill: none; stroke: var\(--neg\); stroke-width: 2\.6; stroke-linejoin: round; stroke-linecap: round; \}/);
-  assert.match(box, /\.do-ov-plot \.do-area \{ fill: none; stroke: none; \}/, 'no fill under the line (TEN-376 README §5.8: line charts have no fills)');
-  assert.doesNotMatch(box, /\.do-area \{ fill: (?!none)/, 'the area is never filled');
+  // README §5.8 "Dotted guides" (founder R6.3): no area path and no vertical gridlines are drawn; guides dotted 12%
+  const js = read('drops-page.js');
+  assert.ok(!/class="do-area"/.test(js) && !/class="do-vt"/.test(js), 'the box draws no area fill and no vertical gridlines');
+  assert.match(box, /\.do-ov-plot \.do-hg \{ stroke: var\(--viz-guide\); stroke-width: 1; stroke-dasharray: 2 6; \}/);
   assert.doesNotMatch(box, /gradient/i);
   assert.match(box, /\.do-ov-dropf\.big \{ color: var\(--neg\); \}/); assert.match(box, /\.do-ov-dropf\.small \{ color: color-mix\(in srgb, var\(--neg\) 75%, transparent\); \}/);
   assert.match(box, /\.do-ov-td\.big \{ color: var\(--neg\); \}/); assert.match(box, /\.do-ov-td\.small \{ color: color-mix\(in srgb, var\(--neg\) 75%, transparent\); \}/);
@@ -565,7 +567,10 @@ test('box colours (8585095a colour ruling, TEN-376 tokens): red with a flat tint
   assert.match(box, /@media \(max-width: 1179\.98px\) \{[^}]*\}\s*\.do-ov-box \{ left: 0; right: 0; top: 64px; bottom: 0; transform: none; width: 100%;[^}]*border-radius: 16px 16px 0 0; \}/, 'below 1180px: the bottom sheet');
   const svg = PAGE.boxChart([{ t: PT0 - 2 * HR, v: 2.4 }, { t: PT0, v: 2.0 }], 2.4, { label: 'Now', t: PT0, v: 2.0 });
   assert.equal(svg.lines.length, 1);
-  assert.doesNotMatch(css + read('drops-page.js'), /do-gap|stroke-dasharray/, 'TEN-301: no dashed segment is styled or drawn');
+  // the dotted horizontal GUIDE (README §5.8, R6.3) is the one dasharray; the price line itself never has a dashed segment
+  const noGuide = css.replace('.do-ov-plot .do-hg { stroke: var(--viz-guide); stroke-width: 1; stroke-dasharray: 2 6; }', '');
+  assert.equal((css.match(/stroke-dasharray/g) || []).length, 1, 'exactly one dasharray: the guide');
+  assert.doesNotMatch(noGuide + read('drops-page.js'), /do-gap|stroke-dasharray/, 'TEN-301: no dashed segment is styled or drawn');
 });
 
 test('pop-up chart: the endpoint sends the whole recorded life; a truncated series is not drawn as a gap', () => {

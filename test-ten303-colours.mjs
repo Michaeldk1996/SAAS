@@ -156,7 +156,7 @@ const SPEC_ROLE = { 'Player A': [['a'], 'text'], 'Player B': [['b'], 'text-soft'
 // the spec's prose values (§1–§6) by role: the darker track (README §5.1), clickable tiles (--edge-7 / hover --edge-16 /
 // selected --edge-24), the STEAM badge (--selected + --edge-16, white caps), hairlines, the one scrim, the shadows, charts.
 const PROSE_ROLE = { bFill: 'bar-2', blueFill: 'selected', steamInk: 'text', segOnBg: 'inner', segOnBd: 'edge-10', segTrackBd: 'edge-6',
-  tileBd: 'edge-7', tileHoverBd: 'edge-16', tileOnBg: 'card', tileOnBd: 'edge-24', booksBd: 'edge-16', hdrBd: 'line',
+  tileBd: 'edge-7', tileHoverBd: 'edge-16', tileOnBg: 'card', tileOnBd: 'edge-24', hdrBd: 'line',
   nameRule: 'line', groupRule: 'line', rowBd: 'line', rowHoverBd: 'edge-16', popBd: 'line', panelBd: 'line',
   closeBd: 'edge-10', closeHoverBd: 'edge-16', tabBd: 'edge-10', tabOnBg: 'inner', tabOnBd: 'edge-10', tipBd: 'line',
   backdrop: 'backdrop', popShadow: 'shadow-pop', tipShadow: 'shadow-menu', grid: 'viz-guide', axis: 'edge-10' };
@@ -208,7 +208,7 @@ test('2: the rendered chrome reads the tokens (Night and Day): nav selected, mod
     ['.modal-analysis .asidenav-item', 'color', 'text-label'], ['.modal-analysis .asidenav-item:hover', 'background', 'inner'],
     ['#aSectionOdds', 'color', 'text'], ['.modal-analysis .ahead2 .close', 'color', 'text-label'], ['.modal-analysis .asidenav-download', 'border-top-color', 'line'],
     ['.modal-analysis .asidenav-download', 'color', 'link'], ['.modal-analysis .apname', 'color', 'text'], ['.modal-analysis .apname.b', 'color', 'text-soft'],
-    ['.aox-row:not(.aox-nodata):hover', 'background', 'tile-hover'], ['.aox-row:not(.aox-nodata):hover', 'border-color', 'edge-16'],
+    ['.aox-row:not(.aox-nodata):not(.aox-on):hover', 'background', 'tile-hover'], ['.aox-row:not(.aox-nodata):not(.aox-on):hover', 'border-color', 'edge-16'],
   ];
   for (const [sel, prop, t] of want) assert.equal(tokenOf(applied(HTML, sel, prop)), t, `${sel} ${prop}`);
   assert.equal(applied(HTML, '#analysisModal', 'backdrop-filter'), 'blur(3px)', 'the scrim blurs (U5)');

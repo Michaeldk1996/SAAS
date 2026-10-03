@@ -98,8 +98,10 @@ test('maPopFrame: README §4.4 / DF L1509–1512 geometry; Market edge pop-ups a
   const dX = decl(/<span class="seg"[^>]*style="([^"]*)"/.exec(DF[at + 4])[1]);
   const h = U.maPopFrame({ title: 'J. Sinner · Wins set 1', sub: 'All priced matches', body: '<i>b</i>', foot: 'f', maxWidth: 860, onClose: 'close()' });
   const [o, box, , , , title, sub, x] = styles(h);   // overlay, box, header row, title column, title line, title, sub, ✕
-  assert.deepEqual(pick(o, ['position', 'inset', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']),
-    pick(dOver, ['position', 'inset', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']));
+  assert.deepEqual(pick(o, ['position', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']),
+    pick(dOver, ['position', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']));
+  // the file's inset:0, starting at the sidebar's edge so the sidebar is never dimmed (founder R6.5, TEN-376)
+  assert.equal(o.inset, '0 0 0 var(--sf-side, 0px)');
   // TEN-376 U5: overlays dim with --backdrop (rgba(9,11,18,0.65), measured on OFFICIAL VERSION 1) + blur(3px)
   assert.deepEqual([o.background, o['backdrop-filter']], ['var(--backdrop)', 'blur(3px)'], 'the one scrim');
   assert.deepEqual(pick(box, ['position', 'width', 'max-width', 'border-radius', 'padding', 'display', 'flex-direction', 'gap']),

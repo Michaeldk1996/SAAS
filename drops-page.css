@@ -47,10 +47,10 @@
 [data-page="drops"] .do-stat-v { font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 700; color: var(--text); white-space: nowrap; }
 [data-page="drops"] .do-stat-v.none { color: var(--text-label); }
 
-/* ── 2 · feed-disconnected banner ── */
+/* ── 2 · feed-disconnected banner: --neg caps text on a white 4% banner, no red fill (founder R4, TEN-376) ── */
 [data-page="drops"] .do-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-  padding: 11px 16px; border-radius: 11px; background: var(--card); border: 1px solid var(--edge-6);
+  padding: 11px 16px; border-radius: 11px; background: color-mix(in srgb, var(--text) 4%, transparent); border: none;
 }
 [data-page="drops"] .do-banner-l { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 [data-page="drops"] .do-banner-k { font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color: var(--neg); }
@@ -274,9 +274,7 @@
 .do-ov-yax > span { position: absolute; right: 0; transform: translateY(-50%); font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; font-weight: 500; color: var(--text-soft); }
 .do-ov-plot { position: relative; flex: 1; min-width: 0; height: 260px; }
 .do-ov-plot svg { width: 100%; height: 100%; display: block; overflow: visible; }
-.do-ov-plot .do-vt { stroke: color-mix(in srgb, var(--text) 4.5%, transparent); stroke-width: 1; }
-.do-ov-plot .do-hg { stroke: var(--edge-6); stroke-width: 1; }
-.do-ov-plot .do-area { fill: none; stroke: none; }   /* README §5.8: no fill under a line */
+.do-ov-plot .do-hg { stroke: var(--viz-guide); stroke-width: 1; stroke-dasharray: 2 6; }   /* README §5.8 dotted guides (R6.3) */
 .do-ov-plot .do-line { fill: none; stroke: var(--neg); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
 .do-ov-openchip {
   position: absolute; left: 8px; transform: translateY(-50%); padding: 2px 7px; border-radius: 5px; background: var(--card);

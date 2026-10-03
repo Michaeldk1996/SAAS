@@ -2596,7 +2596,7 @@
   function modalShell(key, p, ctx, body) {
     var title = (BOXES.filter(function (b) { return b.key === key; })[0] || {}).title || '';
     return '' +
-      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:var(--backdrop); backdrop-filter:blur(3px);' +
+      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);background:var(--backdrop); backdrop-filter:blur(3px);' +
       'z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
       'padding:28px 20px;overflow-y:auto;">' +
         '<div class="pp2-card" data-pp2="card" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
@@ -5766,14 +5766,13 @@
           return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1);
         }).join(' ');
         var zeroY = Y(0);
-        var area = line + ' L' + W + ' ' + zeroY.toFixed(1) + ' L0 ' + zeroY.toFixed(1) + ' Z';
         var span = hi - lo;
         var step = span > 40 ? 10 : span > 20 ? 5 : span > 10 ? 2 : 1;
         var grid = [];
         for (var v = Math.ceil(lo / step) * step; v <= hi; v += step) {
           var g = Math.round(v * 100) / 100;
           grid.push({
-            topPct: (Y(g) / H * 100).toFixed(2) + '%',
+            topPct: (Y(g) / H * 100).toFixed(2) + '%', y: Y(g),
             label: (g > 0 ? '+' : g < 0 ? MINUS : '') + Math.abs(g) + 'u',
             zero: Math.abs(g) < 1e-9
           });
@@ -5804,15 +5803,16 @@
               }).join('') +
             '</div>' +
             '<div style="position:relative;flex:1;height:300px;min-width:0;">' +
-              grid.map(function (q) {
-                return '<div style="position:absolute;left:0;right:0;top:' + q.topPct + ';' +
-                  'height:1px;background:var(--line);"></div>';
-              }).join('') +
-              '<div style="position:absolute;left:0;right:0;top:' + (zeroY / H * 100).toFixed(2) + '%;' +
-                'height:1px;background:var(--line);"></div>' +
               '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
                 'style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
-                // README §5.8: no area fill under a line
+                // README §5.8 "Dotted guides" (founder R6.3, TEN-376): dotted 12% horizontal guides, the 32%
+                // break-even rule, no area fill under the line
+                grid.filter(function (q) { return !q.zero; }).map(function (q) {
+                  return '<line x1="0" x2="' + W + '" y1="' + q.y.toFixed(1) + '" y2="' + q.y.toFixed(1) + '" stroke="var(--viz-guide)" ' +
+                    'stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"></line>';
+                }).join('') +
+                '<line x1="0" x2="' + W + '" y1="' + zeroY.toFixed(1) + '" y2="' + zeroY.toFixed(1) + '" stroke="var(--viz-rule)" ' +
+                  'stroke-width="1" vector-effect="non-scaling-stroke"></line>' +
                 '<path d="' + line + '" fill="none" stroke="var(--bar)" stroke-width="2" ' +
                   'stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>' +
               '</svg>' +
@@ -8963,7 +8963,7 @@
     }
 
     return '' +
-      '<div class="pp2-sheet" data-pp2="sheet-scrim" style="position:fixed;inset:0;z-index:80;' +
+      '<div class="pp2-sheet" data-pp2="sheet-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:80;' +
         'background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;">' +
         '<div style="position:relative;width:100%;max-width:760px;background:var(--card);' +
@@ -9875,7 +9875,7 @@
     }
 
     return '' +
-      '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0;z-index:80;' +
+      '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0 0 0 var(--sf-side, 0px);z-index:80;' +
         'background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;">' +
         '<div style="position:relative;width:100%;max-width:760px;background:var(--card);' +

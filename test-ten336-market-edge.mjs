@@ -56,8 +56,13 @@ test('D3: a fresh modal opens Market edge on Match winner (the Price sensitivity
 test('palette: every Market edge colour is a foundation token that tokens.css defines', () => {
   const src = constSrc('ME_C');
   const C = new Function(`${src}\nreturn ME_C;`)();
-  const colours = Object.entries(C).filter(([k]) => k !== 'hw');
-  assert.ok(colours.length >= 28, 'every ME_C colour role is still there');
+  // cardLine is 'transparent': the top-level tab card has no outline, top-light only (founder R5, TEN-376)
+  assert.equal(C.cardLine, 'transparent', 'top-level Market edge card: no outline');
+  const colours = Object.entries(C).filter(([k]) => k !== 'hw' && k !== 'cardLine');
+  assert.ok(colours.length >= 24, 'every ME_C colour role is still there');
+  // README §5.8 / R6.3 "Dotted guides": no area fill, no loss wash, no vertical tick lines
+  for (const k of ['aFill', 'bFill', 'loss', 'tick']) assert.ok(!(k in C), `ME_C.${k} is gone (no area fill / wash / vertical gridlines)`);
+  assert.deepEqual([C.grid, C.zero, C.panelLine], ['var(--viz-guide)', 'var(--viz-rule)', 'var(--edge-6)']);
   assert.ok(!/fhS\(|--ma-|#[0-9a-f]{3,8}\b|rgba?\(/i.test(src), 'no deleted helper, modal token or raw colour left in ME_C');
   for (const [k, v] of colours) {
     assert.match(v, /^(var\(--[a-z0-9-]+\)|color-mix\(in srgb, var\(--[a-z0-9-]+\) [\d.]+%, transparent\))$/, `ME_C.${k} = a token or token + opacity: ${v}`);
@@ -73,9 +78,9 @@ test('palette: every Market edge colour is a foundation token that tokens.css de
 
 // Mutation: the card back on 1.25px, a 0.33px hairline back, the pane padding back, the column-head rule back to the row rule.
 // TEN-376 Foundation: "All edges 1px solid (no 0.33px, no 1.25px)" supersedes the file's 1.25px card / 0.33px rules.
-test('geometry: card 1px on the --line edge, no pane padding, column heads on the --line rule (DF L1810, L1817, L1802)', () => {
+test('geometry: card without an outline (top-light only, R5), no pane padding, column heads on the --line rule (DF L1817, L1802)', () => {
   const R = ui.render(M, { meView: 'winner' }, rows);
-  assert.match(R.html, /class="me-card me-price" style="background:var\(--card\); border:1px solid var\(--line\);/);
+  assert.match(R.html, /class="me-card me-price" style="background:var\(--card\); border:1px solid transparent; box-shadow:var\(--top-light\);/);
   assert.match(R.html, /<div class="me-pane" style="font-family:/);
   assert.match(R.html, /padding:0 8px 7px; border-bottom:1px solid var\(--line\);/);
   assert.ok(!/0\.33px|1\.25px/.test(R.html + R.band('a2') + R.line('a|0', 'all')), 'no 0.33px / 1.25px edge anywhere in the tab');

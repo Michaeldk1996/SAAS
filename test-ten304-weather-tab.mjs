@@ -149,7 +149,7 @@ test('Q21: the heat flag reads "Heat — high" at watch and at concern, at the W
   assert.equal(text(elements(watch, 'wx-reason')[0]), 'Heat — high');
   assert.equal(text(elements(concern, 'wx-reason')[0]), 'Heat — high');
   assert.equal(text(elements(calm, 'wx-reason')[0]), 'No concern', 'below the watch cut-off no flag');
-  assert.match(elements(watch, 'wx-dot')[0], /background:var\(--text-soft\)/); assert.match(elements(concern, 'wx-dot')[0], /background:var\(--neg\)/);
+  assert.match(elements(watch, 'wx-dot')[0], /background:var\(--text-soft\)/); assert.match(elements(concern, 'wx-dot')[0], /background:var\(--text\)/);   // no severity colour (founder R4)
   assert.ok(!/Feels like \d/.test(watch + concern), 'never the old "Feels like {v}°" flag');
 });
 
@@ -450,15 +450,15 @@ test('Escape with a tooltip up is consumed by the tooltip (capture phase, stoppe
 // the badge fill on the text token, a hairline 0.33px.
 const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--text-soft)', dim: 'var(--text-label)', faint: 'var(--text-label)', card: 'var(--card)',
   lead: 'var(--card)', bd: 'var(--line)', box: 'var(--line)', rule: 'var(--line)', ruleFx: 'var(--line)',
-  dashBd: 'var(--edge-10)', tagBd: 'var(--edge-16)', bar: 'var(--track)', amber: 'var(--text-soft)', red: 'var(--neg)',
-  amberBd: 'var(--edge-16)', redBd: 'color-mix(in srgb, var(--neg) 35%, transparent)',
+  dashBd: 'var(--edge-10)', tagBd: 'var(--edge-16)', bar: 'var(--track)', amber: 'var(--text-soft)', red: 'var(--text)',   // founder R4: CONCERN has no colour
+  amberBd: 'var(--edge-6)', redBd: 'var(--edge-6)',
   chipBd: 'var(--edge-16)', unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',
   match: 'var(--text)', matchFill: 'var(--bar)', matchBd: 'var(--edge-24)', badgeInk: 'var(--page)' };
 // tokens.css Night values the roles above must resolve to
 const WX_NIGHT = { text: '#FFFFFF', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
   bd: 'RGBA(255,255,255,0.05)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)',
-  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.16)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#E06266',
-  amberBd: 'RGBA(255,255,255,0.16)', redBd: 'RGBA(224,98,102,0.35)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
+  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.16)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#FFFFFF',
+  amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
   match: '#FFFFFF', matchFill: '#007AFF', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#090B12' };
 test('Weather colours are foundation role tokens (no literal), resolving to the tokens.css Night values; borders 1px', () => {
   const C = build({}).WX_C, n = v => String(v).replace(/\s/g, '');

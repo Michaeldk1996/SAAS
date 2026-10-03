@@ -124,7 +124,7 @@ test('every colour variable the modal reads is a tokens.css token (directly or t
   const code = modalCode().map(([, s]) => s).join('\n') + modalCss().map(([, b]) => b).join('\n');
   const used = new Set([...code.matchAll(/var\(\s*(--[\w-]+)/g)].map(m => m[1]));
   assert.ok(used.size > 20, `the modal reads tokens (${used.size})`);
-  const NOT_COLOUR = new Set(['--mx-font-ui', '--mx-font-mono', '--radius', '--sf-font-mono', '--sf-font-ui']);
+  const NOT_COLOUR = new Set(['--mx-font-ui', '--mx-font-mono', '--radius', '--sf-font-mono', '--sf-font-ui', '--sf-side']);   // --sf-side = sidebar width (R6.5)
   const defs = {};
   for (const m of pageCss().matchAll(/(--[\w-]+)\s*:\s*([^;}]+)/g)) (defs[m[1]] ||= new Set()).add(m[2].trim());
   const resolves = (v, depth = 0) => {

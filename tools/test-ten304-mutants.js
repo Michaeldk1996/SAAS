@@ -58,7 +58,7 @@ const MUTANTS = [
   // TEN-376 Foundation: WX_C is on tokens.css role tokens (was the TEN-314 modal token file)
   ['WX_C text on the wrong grey (--text-soft, not --text)', "  text: 'var(--text)',              // primary", "  text: 'var(--text-soft)',              // primary"],
   ['WX_C text back to the spec literal', "  text: 'var(--text)',              // primary", "  text: '#E7E9EE',              // primary"],
-  ['WX_C CONCERN back to the Weather red literal (U10)', "  red: 'var(--neg)',", "  red: '#E0616F',"],
+  ['WX_C CONCERN back to a red severity colour (founder R4: no severity colour)', "  red: 'var(--text)',", "  red: 'var(--neg)',"],
   ['WX_C WATCH back to amber (amber is Model + Trading Report only, TEN-376 U3)', "  amber: 'var(--text-soft)',", "  amber: 'var(--amber)',"],
   ['WX_C amber leaks onto a non-severity colour', "  tagBd: 'var(--edge-16)',", "  tagBd: 'var(--amber)',"],
   ['MATCH badge fill on the text token', "background:' + C.matchFill + '; border-radius:4px;", "background:' + C.match + '; border-radius:4px;"],

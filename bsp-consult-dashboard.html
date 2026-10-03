@@ -1144,7 +1144,7 @@
   /* z-index:100 keeps a blocking modal (backdrop + panel) above the redesign's
      fixed .sf-sidebar (z-index:60); at the old z-index:50 the sidebar rendered
      over the modal's left edge and hid the Analysis rail's tab labels (TEN-8). */
-  .modal-overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:100; }
+  .modal-overlay{ position:fixed; inset:0 0 0 var(--sf-side, 0px); display:none; align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.open{ display:flex; }
   .modal{ background: var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:28px; max-width:340px; text-align:center; }
   .modal .icon{ font-size:28px; margin-bottom:10px; color:var(--text); }
@@ -1175,7 +1175,7 @@
   /* Right-side splits drawer: overlays content, never pushes it. Mounted at body
      level so a profile repaint (which rewrites playerProfileView) can't tear it
      down mid-open. Closed = fully off-canvas to the right + scrim faded out. */
-  #ppSplitDrawer{ position:fixed; inset:0; z-index:1200; visibility:hidden; }
+  #ppSplitDrawer{ position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:1200; visibility:hidden; }
   #ppSplitDrawer .ppsd-scrim{ position:absolute; inset:0; background:var(--backdrop); backdrop-filter:blur(3px); opacity:0; transition:opacity .22s ease; }
   #ppSplitDrawer .ppsd-panel{ position:absolute; top:0; right:0; height:100%; width:min(440px,92vw); border-left:1px solid var(--line); 
     transform:translateX(100%); transition:transform .26s cubic-bezier(.22,.61,.36,1); display:flex; flex-direction:column;
@@ -1279,7 +1279,7 @@
   .aodds-tile .aot-imp{ font-size:10.5px; font-weight:700; font-family:var(--font-words); color:var(--text-label); }
   .aodds-tile .aot-fav{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border:none; border-radius:5px; padding:2px 6px; }   /* README §5.9 FAV badge */
   .aodds-sechead{ display:flex; align-items:center; gap:11px; margin-bottom:2px; }
-  .aodds-badge{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text); background:var(--selected); border:1px solid var(--edge-16); border-radius:6px; padding:3px 9px; }
+  .aodds-badge{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border:none; border-radius:6px; padding:3px 9px; }   /* PRE-MATCH / BOOKS = FAV-badge treatment (founder R6.2) */
   .aodds-sechead .aoh-title{ font-size:16px; font-weight:800; color:var(--text); }
   .aodds-sechead .aoh-sub{ font-size:12.5px; color:var(--text-label); }
   .aodds-card{ border:1px solid var(--edge-6); border-radius:16px; background:var(--card); overflow:hidden; }
@@ -1297,7 +1297,7 @@
   .aodds-brow .aob-name .aob-ext{ display:flex; color:var(--text-label); }
   .aodds-brow .aob-cell{ display:flex; align-items:center; justify-content:flex-end; padding:9px 0; }
   .aodds-price{ font-size:15px; font-weight:700; font-family:'IBM Plex Mono', monospace; color:var(--text); padding:3px 8px; min-width:52px; text-align:right; }
-  .aodds-price.best{ color:var(--pos); background:color-mix(in srgb, var(--pos) 10%, transparent); border:1px solid color-mix(in srgb, var(--pos) 32%, transparent); border-radius:7px; }
+  .aodds-price.best{ color:var(--text); }   /* founder R4/R6.1 (TEN-376): best price = white bold mono, no green, no outline */
   .aodds-price.na{ color:var(--text-label); }
   .aodds-note{ border:1px solid var(--edge-10); border-radius:14px; background:var(--inner); padding:14px 16px; display:flex; gap:12px; }
   .aodds-note .aon-ico{ display:flex; color:var(--text); flex:none; margin-top:1px; }
@@ -1341,7 +1341,7 @@
   .aomv-open{ font-size:11px; font-family:'IBM Plex Mono', monospace; color:var(--text-label); min-width:30px; text-align:right; }
   .aomv-spark{ display:flex; flex:none; }
   .aomv-now{ font-size:15px; font-weight:700; font-family:'IBM Plex Mono', monospace; color:var(--text); padding:2px 7px; min-width:44px; text-align:right; }
-  .aomv-now.best{ color:var(--pos); background:color-mix(in srgb, var(--pos) 10%, transparent); border:1px solid color-mix(in srgb, var(--pos) 32%, transparent); border-radius:7px; }
+  .aomv-now.best{ color:var(--text); }   /* founder R4/R6.1: neutral best price */
   .aomv-now.na{ color:var(--text-label); }
   .aomv-net{ font-size:11px; font-weight:700; font-family:'IBM Plex Mono', monospace; min-width:42px; text-align:right; }
   .aomv-net.up{ color:var(--pos); } .aomv-net.down{ color:var(--neg); } .aomv-net.flat{ color:var(--text-label); }
@@ -1797,16 +1797,27 @@
      .claude/rules/app-shell.md) with an 18px inset floating nav-panel; logo 26px;
      nav 3px gap, items 10px 12px / r12 / 13.5px 600 (active 700) with a 6px dot;
      user row 6px 8px; Upgrade = periwinkle fill. One definition — no later overrides. */
+  /* --sf-side: the sidebar's width. Overlays start there, so the sidebar is never dimmed (founder R6.5, OFFICIAL VERSION 1:
+     the backdrop covers the content area only). */
+  :root{ --sf-side:252px; }
+  /* A blurred scrim is the containing block for any fixed layer opened inside it (a pop-up over the Match analysis
+     sheet): that layer is already clear of the sidebar, so it takes no second offset. */
+  .modal-overlay > *, .ltm-overlay > *, .ma-pop-overlay > *, .sr-ov-back > *, [style*="backdrop-filter"] > *{ --sf-side:0px; }
+  /* …and a sheet's --shadow-modal stays inside its scrim, so it never darkens the sidebar either (measured: OFFICIAL VERSION 1's sidebar
+     keeps its exact --sidebar tone with the modal open). */
+  .modal-overlay, .ltm-overlay, .ma-pop-overlay, .sr-ov-back, #ppSplitDrawer, .do-ov, [style*="var(--backdrop)"]{ clip-path:inset(0); }
+  @media print{ .modal-overlay, .ltm-overlay, .ma-pop-overlay, .sr-ov-back, #ppSplitDrawer, .do-ov, [style*="var(--backdrop)"]{ clip-path:none !important; } }
   .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:252px; box-sizing:border-box; display:flex;
     padding:18px 0 18px 18px; z-index:60; font-family:var(--sf-font-ui); line-height:normal; }
   .sf-panel{ flex:1; min-height:0; display:flex; flex-direction:column; box-sizing:border-box; padding:20px 12px 14px;
-    background:var(--card); border:1px solid transparent; box-shadow:none; border-radius:22px; overflow-y:auto; }
+    background:var(--sidebar); border:1px solid transparent; box-shadow:none; border-radius:22px; overflow-y:auto; }
   .sf-brand{ display:block; margin:0 8px 26px; }
   .sf-logo{ display:block; height:26px; width:auto; }
   .sf-nav{ display:flex; flex-direction:column; gap:3px; }
   .sf-nav button{ display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box; text-align:left; background:none;
     border:1px solid transparent; border-radius:12px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
-    font-weight:600; color:var(--text-label); cursor:pointer; }
+    font-weight:600; color:var(--text-soft); cursor:pointer; }
+  /* founder R1 (TEN-376): idle item = --text-soft words, --text-label icon (measured on OFFICIAL VERSION 1); active = white both */
   .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; color:var(--text-label); }
   .sf-nav button::after{ content:''; flex:none; width:6px; height:6px; border-radius:50%; margin-left:auto; background:transparent; }
   .sf-nav button:hover{ background:var(--tile-hover); }
@@ -1816,7 +1827,7 @@
   .sf-foot{ margin-top:auto; padding-top:24px; display:flex; flex-direction:column; gap:10px; }
   /* README §5.14 theme switch (option 2a): darker-track segmented Night · Day · Auto above the user row, 11.5/700 */
   .sf-theme-seg{ display:flex; gap:2px; padding:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; }
-  .sf-theme-opt{ flex:1; padding:6px 0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-label);
+  .sf-theme-opt{ flex:1; padding:6px 0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-soft);
     font-family:var(--font-words); font-size:11.5px; font-weight:700; cursor:pointer; }
   .sf-theme-opt:hover{ color:var(--text); }
   .sf-theme-opt.on{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
@@ -1842,15 +1853,14 @@
   [data-page="matches"] .mc-contextbar{ margin:12px 40px 0; }
 
   /* item 5 — header: title block + Upcoming/Completed segmented control (12a layout: see layout-12a) */
-  /* Review item 2 — header palette locked to the export: title var(--text), sub-line
-     and the whole status line var(--text-label) muted, the live dot var(--pos). */
+  /* Header: title var(--text); the whole status line ("Live · updated 11:41", "Settled · …") var(--text-label)
+     with NO dot (founder R3, TEN-376 — a known exception where OFFICIAL VERSION 1 draws a dot and is wrong). */
   [data-page="matches"] .mx-h1{ color:var(--text); }
   [data-page="matches"] .mx-datastatus{ color:var(--text-label) !important; }
-  [data-page="matches"] .mx-datastatus .dot{ background:var(--text-label) !important;  }
+  [data-page="matches"] .mx-datastatus .dot{ display:none !important; }
   [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--text-label); font-family:var(--sf-font-ui); }
   [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--text-label); font-family:var(--sf-font-mono); }
   /* §2 — Completed status line: muted 'Settled · <date>', no green, no glow. */
-  [data-page="matches"] .mx-datastatus.settled .dot{ background:var(--text-label) !important; box-shadow:none !important; }
   [data-page="matches"] .mx-datastatus.settled .mx-settled-txt{ color:var(--text-label); font-family:var(--sf-font-ui); }
   /* §4 — date-tab focus ring is keyboard-only and subtle; the active-tab underline stays
      the selected-state marker, never a full rectangular outline box. */
@@ -1899,6 +1909,7 @@
   .mc-promo__cta:hover{ color:var(--link); }
 
   @media (max-width:900px){
+    :root{ --sf-side:0px; }   /* the sidebar is static here: overlays cover the full width */
     body{ padding-left:0; }
     .sf-sidebar{ position:static; width:auto; flex-direction:column; padding:0; }
   }
@@ -2098,7 +2109,7 @@
      Two player colours (P1 blue / P2 coral) matched to the reference layout. */
   .lt-card.clickable{ cursor:pointer; }
   :root{ --lt-p1:var(--bar); --lt-p2:var(--bar-2); }   /* README §6 Live: player A --bar, player B --bar-2 */
-  .ltm-overlay{ position:fixed; inset:0; z-index:9000; display:none; align-items:flex-start; justify-content:center;
+  .ltm-overlay{ position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:9000; display:none; align-items:flex-start; justify-content:center;
     background:var(--backdrop); backdrop-filter:blur(3px);  padding:40px 16px; overflow-y:auto; }
   .ltm-overlay.open{ display:flex; }
   .ltm{ width:100%; max-width:720px; background:var(--card,var(--card)); border:1px solid var(--edge-6,var(--edge-6));
@@ -2756,8 +2767,8 @@
   .db-yrend{ position:relative; display:inline-flex; align-items:center; }
   .db-yrend .sf-dd-trig{ font-family:var(--db-mono); font-size:12px; font-weight:400; padding:6px 10px; }
   .db-yrsep{ display:inline-flex; align-items:center; font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:0 3px; }
-  .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--text); background:none; border:none; cursor:pointer; padding:0; }
-  .db-reset:hover{ color:var(--text); }
+  .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--link); background:none; border:none; cursor:pointer; padding:0; }   /* Reset is a link (founder R6.4) */
+  .db-reset:hover{ color:var(--link); }
 
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
@@ -11952,7 +11963,7 @@ function weatherImpactPhrase(w, surface){
 // plain-English condition, and the design's per-condition tint. Grouped into
 // the four visual buckets the design defines (sun / partly / cloud / rain).
 function wmoWeather(code){
-  const SUN = 'var(--text)', PARTLY = 'var(--text)', CLOUD = 'var(--text-label)', RAIN = 'var(--text)';   // neutral: amber is Weather severity only
+  const SUN = 'var(--text)', PARTLY = 'var(--text)', CLOUD = 'var(--text-label)', RAIN = 'var(--text)';   // neutral: Weather has no colour (amber = Model + Trading Report only; founder R4)
   if (code == null) return { icon: BSP_ICONS.wxCloud, label: '—', tint: CLOUD };
   if (code === 0) return { icon: BSP_ICONS.wxSun, label: 'Clear', tint: SUN };
   if (code === 1) return { icon: BSP_ICONS.wxSun, label: 'Mainly clear', tint: SUN };
@@ -12070,9 +12081,9 @@ const WX_C = {
   tagBd: 'var(--edge-16)',     // FROM TOURNAMENT dashed tag  (white 0.2, U16)
   bar: 'var(--track)',            // neutral severity bar        (white 0.08, U7)
   amber: 'var(--text-soft)',          // WATCH — neutral: amber is Model + Trading Report only (TEN-376 U3)
-  red: 'var(--neg)',              // CONCERN (U10: the negative red)
-  amberBd: 'var(--edge-16)',  // lead tile border, WATCH (neutral)
-  redBd: 'color-mix(in srgb, var(--neg) 35%, transparent)',      // lead tile border, red   (U10: red 0.35)
+  red: 'var(--text)',             // CONCERN — no severity colour (founder R4, TEN-376): the grey ladder label < soft < white
+  amberBd: 'var(--edge-6)',   // lead factor box border = card + 6% edge, any severity (founder R4)
+  redBd: 'var(--edge-6)',     // (CONCERN too — no red outline)
   chipBd: 'var(--edge-16)',   // THRESHOLDS chip, dashed (neutral)
   unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',     // UNAVAILABLE dot         (white 0.15)
   match: 'var(--text)',           // match-day header text (white; blue is fills only)
@@ -13068,7 +13079,7 @@ const MA_POP = {
 function maPopFrame(o){
   const c = o.cls || '', esc = s => escapeHtml(s == null ? '' : String(s));
   const G = MA_POP[o.variant] || MA_POP.std, enter = o.enter !== false;
-  return `<div class="ma-pop-overlay${enter ? ' ma-fade' : ''}${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0; z-index:${o.z || G.z}; background:${o.scrim || G.scrim}; backdrop-filter:blur(3px); display:flex; ${G.ov}">`
+  return `<div class="ma-pop-overlay${enter ? ' ma-fade' : ''}${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:${o.z || G.z}; background:${o.scrim || G.scrim}; backdrop-filter:blur(3px); display:flex; ${G.ov}">`
     + `<div class="ma-pop${enter ? ' ma-sigin' : ''}${c ? ' ' + c : ''}" role="dialog" aria-modal="true"${o.label ? ` aria-label="${esc(o.label)}"` : ''}${o.stop ? ' onclick="event.stopPropagation()"' : ''} style="${G.boxPre}width:100%; max-width:${o.maxWidth || G.w}px; background:${o.bg || G.bg}; border:1px solid ${o.line || G.line}; ${G.box}">`
     + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="${G.col}"><span style="${G.trow}"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}"${o.titleAttrs || ''} style="${G.title}">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${G.sub}">${esc(o.sub)}</span></div>`
     + `<span class="${G.xCls}${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close"${o.xAttrs || ''} onclick="${o.onClose}" style="${G.x}">✕</span></div>`
@@ -14649,7 +14660,7 @@ function fhOpenSheet(mid){
   // picks up its scoped styles (:is(.modal-analysis, …) rules).
   const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
-  host.innerHTML = `<div style="position:fixed; inset:0; z-index:110; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--text);">
+  host.innerHTML = `<div style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:110; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--text);">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
       <div style="position:relative; width:100%; max-width:760px; background:var(--card); border:1px solid var(--edge-10); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;">
         ${fhSheetHeadHtml(e, r)}
@@ -15266,8 +15277,6 @@ function meLoadProfileShard(key){
 const ME_C = {
   text: 'var(--text)',              // player A line + dot, win bar, values
   b: 'var(--text-label)',                // player B line + dot (PALS a cB, U4)
-  aFill: 'color-mix(in srgb, var(--text) 8%, transparent)',         // chart area A
-  bFill: 'color-mix(in srgb, var(--text-label) 5%, transparent)',         // chart area B
   track: 'color-mix(in srgb, var(--text) 25%, transparent)',    // loss part of the split bar (DF L1821)
   up: 'var(--pos)', dn: 'var(--neg)',   // (+/− only)
   m1: 'var(--text-soft)',           // captions, card titles, events, chart labels
@@ -15281,14 +15290,15 @@ const ME_C = {
   hiBg: 'var(--inner)', hiBd: 'var(--edge-10)',   // top-2 (PALS a hi)
   sel: 'var(--selected)',     // selected pop-up row
   chipBd: 'var(--open-card)',   // TODAY'S BAND border
-  cardLine: 'var(--line)',      // card border, 1.25px (DF L1810)
+  cardLine: 'transparent',      // top-level tab card: no outline, top-light only (founder R5, TEN-376)
+  panelLine: 'var(--edge-6)',   // figure panel / stat box inside a card (founder R5)
   headLine: 'var(--line)', // column-head rule (DF L1817, L1875)
   rowLine: 'color-mix(in srgb, var(--text) 3.5%, transparent)',       // derived-line row rule; stat box border (DF L1875, L1558)
   pillLine: 'var(--edge-10)',      // the pill (DF L1805)
   xLine: 'color-mix(in srgb, var(--text) 20%, transparent)',    // ✕ hover border (DF L1521)
   hw: '1px',
   // chart (DF L1858–1866)
-  loss: 'color-mix(in srgb, var(--text) 1.4%, transparent)', grid: 'var(--line)', tick: 'color-mix(in srgb, var(--text) 4.5%, transparent)', zero: 'color-mix(in srgb, var(--text) 40%, transparent)',
+  grid: 'var(--viz-guide)', zero: 'var(--viz-rule)',   // README §5.8 dotted guides + break-even rule (founder R6.3)
 };
 // §4.5 thin-sample floor and §4.2 Needs basis: ruled 2026-09-27 (TEN-310) — n < 5 and n / Σ price.
 // Both live in market-edge-core.js (ME_THIN_FLOOR, ME_NEEDS).
@@ -15359,7 +15369,7 @@ function meModels(E){
 // TEN-314: the shared segmented control, Market edge geometry (DF L1524 / L1804: track radius 8 padding 2,
 // item radius 6, 12px). Inside the modal the 12a names maSeg draws resolve to the same ME_C tokens.
 function meSegHtml(items){ return maSeg('me', items); }
-const ME_CARD = `background:${ME_C.card}; border:1px solid ${ME_C.cardLine}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
+const ME_CARD = `background:${ME_C.card}; border:1px solid ${ME_C.cardLine}; box-shadow:var(--top-light); border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
 const ME_TITLE = `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m1};`;
 const ME_COLH = `font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${ME_C.m3};`;
 const ME_FOOT = `font-size:11px; color:${ME_C.m3};`;
@@ -15416,7 +15426,7 @@ function meChartCard(E, MM){
   const ready = MM.every(M => M.state !== 'loading') && MM.some(M => M.state === 'ready');
   const ser0 = M => (M.state === 'ready' ? M.series : []);
   const C = ready ? core.chartModel(ser0(MM[0]), ser0(MM[1]), S.meScope) : null;
-  const col = [[ME_C.text, ME_C.aFill, '2.6'], [ME_C.b, ME_C.bFill, '2']];
+  const col = [[ME_C.text, '2.6'], [ME_C.b, '2']];
   const legend = [0, 1].map(i => {
     const M = MM[i], has = M.state === 'ready' && M.priced.length > 0;
     const nTxt = M.state === 'ready' ? M.priced.length + ' priced' : M.state === 'loading' ? '' : '—';
@@ -15432,15 +15442,12 @@ function meChartCard(E, MM){
     const yl = C.grid.map(g => `<span style="position:absolute; right:0; top:${pct(g.y)}; transform:translateY(-50%); ${FH_MONO} font-size:11.5px; font-weight:500; color:${ME_C.m1};">${g.v === 0 ? '0' : meSg(g.v, 0, 'u')}</span>`).join('');
     const ser = [C.a, C.b];
     const pts = s => s.pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
-    const area = s => `M${s.pts[0][0].toFixed(1)} ${C.zeroY.toFixed(1)} ` + s.pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ` L${s.pts[s.pts.length - 1][0].toFixed(1)} ${C.zeroY.toFixed(1)} Z`;
     const order = [1, 0].filter(i => ser[i]);            // B drawn first, A on top
     const svg = `<svg class="me-chart-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" style="width:100%; height:100%; display:block; overflow:visible;">`
-      + ''   /* README §5.8: no loss wash below break-even (TEN-376) */
-      + C.grid.map(g => `<line x1="0" y1="${g.y.toFixed(1)}" x2="1000" y2="${g.y.toFixed(1)}" style="stroke:${ME_C.grid}" stroke-width="1" vector-effect="non-scaling-stroke"></line>`).join('')
-      + C.ticks.map(t => `<line x1="${t.x.toFixed(1)}" y1="0" x2="${t.x.toFixed(1)}" y2="200" style="stroke:${ME_C.tick}" stroke-width="1" vector-effect="non-scaling-stroke"></line>`).join('')
-      + order.map(i => `<path d="${area(ser[i])}" style="fill:${col[i][1]}" stroke="none"></path>`).join('')
+      /* README §5.8 "Dotted guides" (founder R6.3, TEN-376): no area fill, no loss wash, no vertical gridlines */
+      + C.grid.map(g => `<line x1="0" y1="${g.y.toFixed(1)}" x2="1000" y2="${g.y.toFixed(1)}" style="stroke:${ME_C.grid}" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"></line>`).join('')
       + `<line x1="0" y1="${C.zeroY.toFixed(1)}" x2="1000" y2="${C.zeroY.toFixed(1)}" style="stroke:${ME_C.zero}" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>`
-      + order.map(i => `<polyline data-me-series="${i ? 'b' : 'a'}" points="${pts(ser[i])}" fill="none" style="stroke:${col[i][0]}" stroke-width="${col[i][2]}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>`).join('')
+      + order.map(i => `<polyline data-me-series="${i ? 'b' : 'a'}" points="${pts(ser[i])}" fill="none" style="stroke:${col[i][0]}" stroke-width="${col[i][1]}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>`).join('')
       + '</svg>';
     const dots = order.map(i => { const p = ser[i].pts[ser[i].pts.length - 1];
       return `<span style="position:absolute; left:calc(${(p[0] / 10).toFixed(2)}% - 4.5px); top:${pct(p[1])}; width:9px; height:9px; margin-top:-4.5px; border-radius:50%; background:${col[i][0]}; box-shadow:0 0 0 3px ${ME_C.card};"></span>`; }).join('');
@@ -15529,7 +15536,7 @@ function meScoreTxt(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(
 function mePopShell(title, chip, sub, inner, foot, closeJs){
   return maPopFrame({ cls: 'me-pop', xCls: 'me-x', title, chip, sub, body: inner, foot, maxWidth: 860, onClose: closeJs });
 }
-const meStatBox = (l, v, c, big, note) => `<div style="background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.rowLine}; border-radius:10px; padding:${big ? '10px 12px' : '8px 12px'}; display:flex; flex-direction:column; gap:${big ? 4 : 3}px; ${big ? 'min-width:0;' : 'min-width:84px;'}"><span style="${ME_COLH}">${l}</span><span class="me-stat" data-me-stat="${l}" style="${FH_MONO} font-size:${big ? 16 : 15}px; font-weight:700; color:${c}; white-space:nowrap;">${v}</span>${note ? `<span class="ma-small-note" style="${FH_MONO} font-size:10px; color:${MA_GREY}; white-space:nowrap;">${MA_SMALL_NOTE}</span>` : ''}</div>`;
+const meStatBox = (l, v, c, big, note) => `<div style="background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.panelLine}; border-radius:10px; padding:${big ? '10px 12px' : '8px 12px'}; display:flex; flex-direction:column; gap:${big ? 4 : 3}px; ${big ? 'min-width:0;' : 'min-width:84px;'}"><span style="${ME_COLH}">${l}</span><span class="me-stat" data-me-stat="${l}" style="${FH_MONO} font-size:${big ? 16 : 15}px; font-weight:700; color:${c}; white-space:nowrap;">${v}</span>${note ? `<span class="ma-small-note" style="${FH_MONO} font-size:10px; color:${MA_GREY}; white-space:nowrap;">${MA_SMALL_NOTE}</span>` : ''}</div>`;
 // A rate stat box through the D2 gate: n < 5 keeps the ME_THIN_FLOOR dash, 5–9 greyed + "small sample", 10+ full.
 const meRateBox = (l, k, n, text, c, big) => { const R = maRate(k, n, { text, nopct: '—' }); return meStatBox(l, R.txt, R.mode === 'full' ? c : MA_GREY, big, R.mode === 'small'); };
 // The foot line's gloss when a figure on the card sits in the 5–9 tier.
@@ -16085,7 +16092,7 @@ function trRenderRoi(){
   if (host.querySelector('[data-db-root="tr-roi"]') && host.dataset.side === E.S.roi) return;   // already mounted
   host.dataset.side = E.S.roi;
   const clean = trClean(E.m);
-  host.innerHTML = `<div class="ma-pop-overlay ma-fade ma-theme" onclick="if(event.target===this){trSet({roi:false})}" style="position:fixed; inset:0; z-index:200; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:34px 22px 60px;">
+  host.innerHTML = `<div class="ma-pop-overlay ma-fade ma-theme" onclick="if(event.target===this){trSet({roi:false})}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:200; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:34px 22px 60px;">
       <div role="dialog" aria-modal="true" aria-label="${fhEsc(clean)} · favourites and underdogs" style="width:100%; max-width:1180px; background:var(--page); border:1px solid var(--edge-10); border-radius:16px; overflow:hidden; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
         <div style="display:flex; align-items:baseline; gap:14px; padding:18px 22px; border-bottom:1px solid var(--line);">
           <span style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">${fhEsc(clean)} · favourites and underdogs</span>
@@ -16611,7 +16618,6 @@ const AODDS_C = {
   tileHoverBd: 'var(--edge-16)',  // clickable tile hover
   tileOnBg: 'var(--card)',         // clickable tile selected: outline only
   tileOnBd: 'var(--edge-24)',     // clickable tile selected
-  booksBd: 'var(--edge-16)',      // BOOKS tag edge
   hdrBd: 'var(--line)',           // white 0.06
   nameRule: 'var(--line)',        // white 0.08 (a rule, not a track)
   groupRule: 'var(--line)',       // white 0.06
@@ -16816,10 +16822,10 @@ function aOddsDispSeries(pts){
 // and the last one holds until t1 (the last check of that source), never past it. No point is
 // interpolated or smoothed; every vertex's y is a stored price at display precision (founder, TEN-303
 // follow-up 1a: a period the feed dropped the book is not drawn as a gap either).
-// Returns the line, its area (closed to baseY) and the end point.
+// Returns the line and the end point (baseY is kept in the signature; no area is drawn — README §5.8).
 function aOddsLinePaths(pts, t0, t1, X, Y, baseY, shape){
   const P = aOddsDispSeries(pts).filter(p => p[0] <= t1);
-  if (!P.length) return { line: '', area: '', end: null };
+  if (!P.length) return { line: '', end: null };
   shape = shape || AODDS_LINE_SHAPE;
   const run = P.map((p, i) => [p[0], i + 1 < P.length ? P[i + 1][0] : Math.max(t1, p[0]), p[1]]);
   const f = n => n.toFixed(1);
@@ -16832,9 +16838,9 @@ function aOddsLinePaths(pts, t0, t1, X, Y, baseY, shape){
     run.forEach((q, k) => { d += ' H' + f(X(q[1])); if (k + 1 < run.length) d += ' V' + f(Y(run[k + 1][2])); });
   }
   const z = run[run.length - 1];
-  return { line: d, area: d + ' L' + f(X(z[1])) + ',' + baseY + ' L' + f(X(run[0][0])) + ',' + baseY + ' Z', end: [X(z[1]), Y(z[2])] };
+  return { line: d, end: [X(z[1]), Y(z[2])] };   // no area path: charts draw no area fill (README §5.8)
 }
-// Spec §4 sparkline L3 (64×22, soft area), drawn with AODDS_LINE_SHAPE over real time.
+// Spec §4 sparkline L3 (64×22, line only — no area, README §5.8), drawn with AODDS_LINE_SHAPE over real time.
 function aOddsSparkSvg(r, x, col){
   const s = r.noData ? [] : r.series[x];
   let kids = '';
@@ -16842,7 +16848,7 @@ function aOddsSparkSvg(r, x, col){
     const vals = aOddsDispSeries(s).map(p => p[1]), mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), rng = (mx - mn) || 1;
     const t0 = r.first, t1 = Math.max(r.end, s[s.length - 1][0]), span = (t1 - t0) || 1;
     const P = aOddsLinePaths(s, t0, t1, t => 4 + (t - t0) / span * 56, v => 18 - (v - mn) / rng * 14, 21);
-    kids = '<path d="' + P.area + '" style="fill:' + col + '" opacity="0.12"/><path d="' + P.line + '" fill="none" style="stroke:' + col + '" stroke-width="1.6" stroke-linecap="round"/>';
+    kids = '<path d="' + P.line + '" fill="none" style="stroke:' + col + '" stroke-width="1.6" stroke-linecap="round"/>';   // no area fill (README §5.8; OFFICIAL VERSION 1 draws none)
   }
   return '<svg class="aox-spark" width="64" height="22" viewBox="0 0 64 22" style="flex-shrink:0; display:block;' + (r.stale ? ' opacity:0.4;' : '') + '">' + kids + '</svg>';
 }
@@ -16871,8 +16877,7 @@ function aOddsMvChart(s, col, t0, t1){
       prevDay = day;
     }
     const P = aOddsLinePaths(s, t0, t1, X, Y, BB);
-    K += '<path class="aox-area" d="' + P.area + '" style="fill:' + col + '" opacity="0.07"/>'
-      + '<path class="aox-line" d="' + P.line + '" fill="none" style="stroke:' + col + '" stroke-width="2" stroke-linecap="round"/>';
+    K += '<path class="aox-line" d="' + P.line + '" fill="none" style="stroke:' + col + '" stroke-width="2" stroke-linecap="round"/>';
     if (P.end) K += '<circle cx="' + P.end[0].toFixed(1) + '" cy="' + P.end[1].toFixed(1) + '" r="3.5" style="fill:' + col + '; stroke:' + C.row + '" stroke-width="2"/>';
   }
   return '<svg class="aox-chart" viewBox="0 0 480 236" width="100%" style="display:block; height:auto;">' + K + '</svg>';
@@ -16945,6 +16950,9 @@ function aOddsTipShow(el){
   // a plain-text body takes README §6's mono 11px, as maTipHtml gives it (one component, one rule)
   t.innerHTML = /^\s*</.test(body) ? body : `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${body}</span>`;
   t.style.display = 'block'; t.style.left = '0px'; t.style.top = '0px';
+  // at left/top 0 the tip sits on its containing block's origin: #analysisModal (backdrop-filter) starts at --sf-side,
+  // not at the viewport's 0, so viewport x/y are taken back by that origin (R6.5)
+  const o = t.getBoundingClientRect();
   const r = el.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
   const box = el.closest('.modal-analysis');
   const b = box ? box.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
@@ -16952,7 +16960,7 @@ function aOddsTipShow(el){
   let x = r.left, y = r.bottom + 6;
   if (y + h > B && r.top - 6 - h >= T) y = r.top - 6 - h;
   if (x + w > R) x = Math.max(L, r.right - w);
-  t.style.left = Math.round(x) + 'px'; t.style.top = Math.round(y) + 'px';
+  t.style.left = Math.round(x - o.left) + 'px'; t.style.top = Math.round(y - o.top) + 'px';
 }
 function initAOddsTips(){
   if (initAOddsTips.done) return;
@@ -17018,7 +17026,7 @@ function buildOddsSection(m){
   const steam = D.steam ? '<span class="aox-steam" style="display:inline-flex; align-items:center; gap:10px; cursor:default;"><span style="font-size:10px; font-weight:800; letter-spacing:0.16em; color:' + C.steamInk + '; background:' + C.blueFill + '; border:1px solid var(--edge-16); border-radius:6px; padding:4px 9px;">STEAM</span>'
     + '<span class="aox-steam-text" style="font-size:12px; color:' + C.text + ';">' + escapeHtml(D.steam.text) + '</span></span>' : '';
   const head = '<div style="display:flex; align-items:center; justify-content:space-between; gap:14px 20px; flex-wrap:wrap; margin-bottom:6px;"><div style="display:flex; align-items:center; gap:10px;">'
-    + '<span style="font-size:10px; font-weight:800; letter-spacing:0.1em; color:' + C.blue + '; background:transparent; border:' + C.hw1 + ' solid ' + C.booksBd + '; border-radius:6px; padding:4px 9px;">BOOKS</span>'
+    + '<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + '; background:var(--inner); border:none; border-radius:6px; padding:4px 9px;">BOOKS</span>'
     + '<span style="font-size:17px; font-weight:800;">Per-book movement</span></div>' + steam + '</div>'
     + '<div class="aox-sub" style="font-size:13px; color:' + C.label + '; margin-bottom:14px;">' + (novig ? 'No-vig prices, margin stripped. ' : 'Prices as quoted. ') + 'Each book from opening to now, with the net change. Click a book for its odds movement.</div>';
 
@@ -17033,7 +17041,7 @@ function buildOddsSection(m){
     + '<span style="' + caps + '">BOOK</span>' + onh + '<span style="text-align:center; ' + caps + '">NET</span>' + onh + '<span style="text-align:center; ' + caps + '">NET</span></div>';
   const cell = (r, x) => {
     const open = r.noData ? null : r[x + 'Open'], now = r.noData ? null : r[x + 'Now'];
-    const nowCol = now == null ? C.label : r[x + 'Best'] ? C.up : C.text;
+    const nowCol = now == null ? C.label : C.text;   // best price is neutral (founder R4/R6.1, TEN-376) — white bold mono like every price
     return '<span style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; white-space:nowrap;">'
       + '<span class="aox-open" data-side="' + x + '" style="' + mono + ' font-size:13px; color:' + (open == null ? C.label : C.sub) + '; text-align:right;">' + aOddsFmt(open) + '</span>'
       + aOddsSparkSvg(r, x, x === 'a' ? C.a : C.bFill)
@@ -17048,8 +17056,9 @@ function buildOddsSection(m){
   const marginLbl = r => r.noData ? r.verdict : r.stale ? 'no recent data' : novig ? 'margin removed' : r.margin == null ? 'margin ' + AODDS_DASH : 'margin ' + (r.margin * 100).toFixed(1) + '%';
   const row = r => {
     const open = r.noData ? '' : ' onclick="aOddsOpenMv(this.dataset.book)"';
-    return '<div class="aox-row' + (r.noData ? ' aox-nodata' : '') + (r.stale ? ' aox-stale' : '') + '" data-book="' + escapeHtml(r.name) + '" data-group="' + r.group + '" data-src="' + escapeHtml(r.key || '') + '"' + open
-      + ' style="display:grid; ' + GRID + ' gap:12px; align-items:center; padding:12px 20px; border-radius:12px; background:' + C.row + '; border:' + C.hw125 + ' solid ' + C.rowBd + '; cursor:' + (r.noData ? 'default' : 'pointer') + ';">'
+    const on = !r.noData && _aOdds.mv === r.name;   // the clicked book row = --inner + 10% edge (founder R4); the only marked row
+    return '<div class="aox-row' + (r.noData ? ' aox-nodata' : '') + (r.stale ? ' aox-stale' : '') + (on ? ' aox-on' : '') + '" data-book="' + escapeHtml(r.name) + '" data-group="' + r.group + '" data-src="' + escapeHtml(r.key || '') + '"' + open
+      + ' style="display:grid; ' + GRID + ' gap:12px; align-items:center; padding:12px 20px; border-radius:12px; background:' + (on ? C.segOnBg : C.row) + '; border:' + C.hw125 + ' solid ' + (on ? C.segOnBd : C.rowBd) + '; cursor:' + (r.noData ? 'default' : 'pointer') + ';">'
       + '<span class="aox-book" tabindex="0"' + (r.noData ? '' : ' onkeydown="aOddsKey(event,()=>aOddsOpenMv(this.closest(\'.aox-row\').dataset.book))"') + ' data-aotip="' + escapeHtml(aOddsBookTip(r, D)) + '" style="display:flex; flex-direction:column; gap:3px; min-width:0;">'
       + '<span style="font-size:13.5px; font-weight:600;">' + escapeHtml(r.name) + '</span>'
       + '<span class="aox-margin" style="' + mono + ' font-size:10px; color:' + (r.noData || r.stale ? C.label : C.label3) + ';">' + escapeHtml(marginLbl(r)) + '</span></span>'
@@ -22521,8 +22530,8 @@ function buildPlayerProfileHtml(p){
   const fracYear = ds => { const t = Date.parse(ds); if (isNaN(t)) return null; const d = new Date(t); const y = d.getUTCFullYear(); const s = Date.UTC(y, 0, 1), e = Date.UTC(y + 1, 0, 1); return y + (t - s) / (e - s); };
   // Full-height equity curve (handoff spec): viewBox 1000×300 stretched to a fixed pixel
   // height; axis labels are HTML overlays (NOT SVG <text>, which preserveAspectRatio="none"
-  // would squash into an unreadable smear); fill split green-above / red-below the zero line
-  // via two clipPaths; neutral line. y auto-scales to the data with an 8% + 0.5u pad so a
+  // would squash into an unreadable smear); no area fill, no loss wash — dotted 12% guides and the
+  // 32% break-even rule (README §5.8, founder R6.3); neutral line. y auto-scales to the data with an 8% + 0.5u pad so a
   // small-range player still shows the *shape* of the curve rather than a flat band.
   const CHART_H = 280;
   const equityChart = (() => {
@@ -22538,13 +22547,11 @@ function buildPlayerProfileHtml(p){
     const Y = v => (1 - (v - lo) / (hi - lo)) * 300;
     const X = x => 12 + Math.max(0, Math.min(1, x)) * 976;
     const linePath = pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
-    const areaPath = linePath + ' L' + X(pts[pts.length - 1].x).toFixed(1) + ' ' + Y(0).toFixed(1) + ' L' + X(0).toFixed(1) + ' ' + Y(0).toFixed(1) + ' Z';
     const span = hi - lo, step = span > 40 ? 20 : span > 20 ? 10 : span > 8 ? 4 : span > 3 ? 2 : span > 1.2 ? 1 : span > 0.6 ? 0.5 : span > 0.3 ? 0.2 : 0.1;
     const grid = [];
     for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) { const vr = Math.round(v / step) * step; if (Math.abs(vr) > 1e-6) grid.push({ y: Y(vr), label: (vr > 0 ? '+' : '') + (Math.round(vr * 10) / 10) + 'u' }); }
     const zeroY = Y(0);
-    const uid = 'mkEq' + Math.abs((String(p.key) + side + sfSel + period + roleSel).split('').reduce((a, c) => a + c.charCodeAt(0), 0));
-    const gridLines = grid.map(g => `<line x1="0" x2="1000" y1="${g.y.toFixed(1)}" y2="${g.y.toFixed(1)}" stroke="var(--line)" vector-effect="non-scaling-stroke"/>`).join('');
+    const gridLines = grid.map(g => `<line x1="0" x2="1000" y1="${g.y.toFixed(1)}" y2="${g.y.toFixed(1)}" stroke="var(--viz-guide)" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>`).join('');
     const yLabels = grid.map(g => `<span style="position:absolute;left:4px;top:${(g.y / 3).toFixed(1)}%;transform:translateY(-110%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:var(--text-label);">${g.label}</span>`).join('')
       + `<span style="position:absolute;left:4px;top:${(zeroY / 3).toFixed(1)}%;transform:translateY(-110%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:var(--text-soft);">0u</span>`;
     const years = [];
@@ -22554,13 +22561,7 @@ function buildPlayerProfileHtml(p){
       <div style="position:relative;margin:4px 0 26px;">
         <svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="display:block;width:100%;height:${CHART_H}px;background:var(--inner);border-radius:10px;">
           ${gridLines}
-          <defs>
-            <clipPath id="${uid}a"><rect x="0" y="0" width="1000" height="${Math.max(0, zeroY).toFixed(1)}"/></clipPath>
-            <clipPath id="${uid}b"><rect x="0" y="${Math.max(0, zeroY).toFixed(1)}" width="1000" height="${Math.max(0, 300 - zeroY).toFixed(1)}"/></clipPath>
-          </defs>
-          <path d="${areaPath}" fill="color-mix(in srgb, var(--pos) 18%, transparent)" clip-path="url(#${uid}a)"/>
-          <path d="${areaPath}" fill="color-mix(in srgb, var(--neg) 18%, transparent)" clip-path="url(#${uid}b)"/>
-          <line x1="0" x2="1000" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="color-mix(in srgb, var(--text) 30%, transparent)" stroke-dasharray="3 4" vector-effect="non-scaling-stroke"/>
+          <line x1="0" x2="1000" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="var(--viz-rule)" vector-effect="non-scaling-stroke"/>
           <path d="${linePath}" fill="none" stroke="var(--text-soft)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>
         </svg>
         ${yLabels}
@@ -24497,7 +24498,7 @@ function tourxSetSection(v){ tourxState.section = v; renderTournamentsTab(); }
 // dismissals below are additions the README asks for explicitly.
 function tourxOverlayShell(opts){
   const MONO = "'IBM Plex Mono',monospace";
-  return `<div class="tourx-scrim" data-tourx-scrim="1" style="position:fixed;inset:0;z-index:${opts.z};background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:${opts.pad};">
+  return `<div class="tourx-scrim" data-tourx-scrim="1" style="position:fixed; inset:0 0 0 var(--sf-side, 0px);z-index:${opts.z};background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:${opts.pad};">
       <div role="dialog" aria-modal="true" aria-label="${opts.title}" style="width:100%;max-width:${opts.max};background:var(--inner);border:1px solid var(--edge-6);border-radius:16px;overflow:hidden;">
         <div style="display:flex;align-items:baseline;gap:14px;padding:18px 22px;border-bottom:1px solid var(--line);">
           <span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">${opts.title}</span>
@@ -24700,11 +24701,14 @@ function tourxOverviewListHtml(){
     const bg = seld ? sc : 'transparent';
     // Tier chip: selected reads BRIGHTER, the name reads LIGHTER (600 vs 700).
     // That inversion is verbatim from the export - the chip carries the selection.
+    // FAV-badge treatment, no edge (founder R5, TEN-376): letter codes (GS, FNL) are caps labels = Hanken 10px caps
+    // 0.10em 700; a pure figure (1000 / 500 / 250) stays IBM Plex Mono.
     const chipBg = seld ? 'var(--selected)' : 'var(--inner)';   // never darker than its (selected) row
-    const chipBd = seld ? 'var(--edge-10)' : 'color-mix(in srgb, var(--text) 4.5%, transparent)';
-    const chipFg = seld ? 'var(--text)' : 'var(--text-soft)';
+    const chipFg = seld ? 'var(--text)' : 'var(--text-label)';
+    const code = tourxTierCode(t.category);
+    const chipFont = /^\d+$/.test(code) ? "font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;" : 'font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;';
     return `<div class="tourx-ovrow" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;background:${bg};cursor:pointer;">
-        <span style="min-width:42px;height:22px;padding:0 7px;border-radius:6px;background:${chipBg};border:1px solid ${chipBd};color:${chipFg};font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.04em;display:inline-flex;align-items:center;justify-content:center;flex:none;">${tourxTierCode(t.category)}</span>
+        <span style="min-width:42px;height:22px;padding:0 7px;border-radius:6px;background:${chipBg};border:none;color:${chipFg};${chipFont}font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none;">${code}</span>
         <span style="flex:1;min-width:0;font-size:13.5px;font-weight:${seld ? 600 : 700};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;color:var(--text);flex:none;">${t.abstractSpeed.toFixed(2)}</span>
       </div>`;
@@ -28365,7 +28369,6 @@ window.DatabaseTab = (function(){
   //
   // Those three reserved tokens remain reserved. A series must never take one.
   var COL_FAV='var(--bar)', COL_DOG='var(--text-soft)', POS='var(--pos)', NEG='var(--neg)';
-  var FILL_FAV='color-mix(in srgb, var(--bar) 11%, transparent)', FILL_DOG='color-mix(in srgb, var(--text-soft) 7%, transparent)';
 
   // ---------- display smoothing (CHARTS.md §3) ----------
   // FOUNDER RULING, TEN-196 round 5, gate e8453243 (2026-09-13): SMOOTH_MODE='guarded'.
@@ -31312,16 +31315,13 @@ window.DatabaseTab = (function(){
 
     var area=el('div','db-plotarea');
     var NV = isTourn ? N_TOURN : N_TOUR;   // the export's own per-chart vertex budget
-    // §5 — layer order, bottom to top, exactly: loss tint, horizontal gridlines,
-    // vertical gridlines, area fills (favourites then underdogs, so the deeper series
-    // reads through), zero line, book seam, lines (underdogs then favourites on top).
+    // Layer order, bottom to top: dotted horizontal guides, break-even rule, book seam,
+    // lines (underdogs then favourites on top).
     var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
-    // README §5.8: no loss wash below break-even (TEN-376)
-    gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--edge-6)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="color-mix(in srgb, var(--text) 4.5%, transparent)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    s+='<path d="'+areaPath(xs,favV,Y,NV,zeroY)+'" fill="'+FILL_FAV+'" stroke="none"/>';
-    s+='<path d="'+areaPath(xs,dogV,Y,NV,zeroY)+'" fill="'+FILL_DOG+'" stroke="none"/>';
-    s+='<line x1="0" y1="'+zeroY.toFixed(1)+'" x2="1000" y2="'+zeroY.toFixed(1)+'" stroke="color-mix(in srgb, var(--text) 40%, transparent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    // README §5.8 "Dotted guides" (founder R6.3, TEN-376): no area fill, no loss wash, no vertical gridlines —
+    // dotted 12% horizontal guides only and the 32% break-even rule.
+    gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; });
+    s+='<line x1="0" y1="'+zeroY.toFixed(1)+'" x2="1000" y2="'+zeroY.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
     if(seam && seamX!=null) s+='<line x1="'+(seamX*1000).toFixed(1)+'" y1="0" x2="'+(seamX*1000).toFixed(1)+'" y2="'+H+'" stroke="var(--text-label)" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
     s+='<polyline points="'+poly(xs,dogV,Y,NV)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
     s+='<polyline points="'+poly(xs,favV,Y,NV)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
@@ -31474,8 +31474,7 @@ window.DatabaseTab = (function(){
   // fabricate a vertex to reach the export's count.
   var N_TOUR=260, N_TOURN=240, N_PMAIN=220, N_PSUB=200;
   // Sampling and smoothing are ONE pipeline and the order matters — see SMOOTH_MODE.
-  // `paintSeries` is where the polyline and the area fill get their vertices; both go
-  // through `poly`, so those two can never disagree.
+  // `paintSeries` is where the polyline gets its vertices (through `poly`; the area fill is gone — R6.3).
   //
   // THE END DOT AND THE PLATE DO NOT GO THROUGH IT — they read the raw `vals[n-1]`
   // directly. They agree with the line for a structural reason, not a shared code path:
@@ -31485,9 +31484,6 @@ window.DatabaseTab = (function(){
   // silence. The probe asserts the dot's PAINTED centre against the independently
   // recomputed end value, which is what would catch that.
   //
-  // Each series is also sampled TWICE per render (once for the area, once for the
-  // polyline) — 4x per Tour chart over 41,667 rows. Fine today; the obvious thing to
-  // memoise if this ever feels slow.
   function paintSeries(xs, vals, N){
     var i, k, sm, mx, mn, forced, out;
     if(SMOOTH_MODE==='raw-first') vals=smoothVals(vals,3);
@@ -31516,15 +31512,6 @@ window.DatabaseTab = (function(){
     var p=paintSeries(xs, vals, N), out=new Array(p.xs.length), i;
     for(i=0;i<p.xs.length;i++) out[i]=(p.xs[i]*1000).toFixed(1)+','+Y(p.vals[i]).toFixed(1);
     return out.join(' ');
-  }
-  // §5, "Area path" — close the line down to the ZERO LINE, not to the bottom of the
-  // plot, and start/end at the series' own x range rather than at 0 and 1000 (a
-  // Players sub-series can begin later than the shared domain).
-  function areaPath(xs, vals, Y, N, zeroY){
-    var pts=poly(xs, vals, Y, N);
-    if(!pts) return '';
-    var a=pts.split(' '), z=zeroY.toFixed(1);
-    return 'M '+a[0].split(',')[0]+','+z+' L '+a.join(' L ')+' L '+a[a.length-1].split(',')[0]+','+z+' Z';
   }
   function sampleKeep(xs, vals, N){
     var n=xs.length, i;
@@ -31953,7 +31940,6 @@ window.DatabaseTab = (function(){
     var PH=200;
     function Y(v){ return ((hi-v)/(hi-lo))*PH; }
     var zeroIn = (0<=hi && 0>=lo), pZeroY = Y(0);
-    var tintY = Math.max(0, Math.min(PH, pZeroY));
     // §8: positives are labelled `+250u`, zero is bare `0`, negatives `-250u`, all with
     // thousands separators. The `+` and the separator were missing here while the Tour
     // axis two hundred lines up had both, so the same magnitude read `20u` on a player
@@ -31975,7 +31961,7 @@ window.DatabaseTab = (function(){
     var tMain=seasonIndexTicks(spine, spineX, [2,1], dOf);
     var tSub=seasonIndexTicks(spine, spineX, [4,2,1], dOf);
     // §4 rendered plot heights: Players main 360px, pair panels 230px.
-    var geo={ zeroIn:zeroIn, zeroY:pZeroY, tintY:tintY };
+    var geo={ zeroIn:zeroIn, zeroY:pZeroY };
     card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 360, true, geo));
     var pair=el('div','db-pcpair');
     pair.appendChild(panelFor(series[1], grid, Y, PH, tSub, 230, false, geo));
@@ -31995,19 +31981,14 @@ window.DatabaseTab = (function(){
     grid.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/PH*100).toFixed(2)+'%'; ax.appendChild(d); });
     plot.appendChild(ax);
     var area=el('div','db-pcarea'); area.style.height=hpx+'px';
-    // §5 layer order, same as the Tour chart minus the book seam (Tour/Tournaments
-    // only): loss tint, horizontal gridlines, vertical gridlines, area fill, zero
-    // line, line. The tint is CLAMPED to the viewBox — see PLAYER_ZERO_IN_DOMAIN.
+    // Layer order, same as the Tour chart minus the book seam (Tour/Tournaments only):
+    // dotted horizontal guides, break-even rule (only when zero is in the domain), line.
     var NV=isMain?N_PMAIN:N_PSUB;
     var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit by match index, ticks mark season starts">';
-    // README §5.8: no loss wash below break-even (TEN-376)
-    grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--edge-6)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    // Vertical season gridlines on the player charts — founder ruling TEN-196
-    // 2026-09-13 ("add them — the export wins"). One line per season tick, the
-    // export's own markup (`Database.dc.html` playerMain.ticks / c.ticks).
-    ticks.forEach(function(t){ svg+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+PH+'" stroke="color-mix(in srgb, var(--text) 4.5%, transparent)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
-    svg+='<path d="'+areaPath(s.xs,s.vals,Y,NV,geo.zeroIn?geo.zeroY:geo.tintY)+'" fill="'+FILL_FAV+'" stroke="none"/>';
-    if(geo.zeroIn) svg+='<line x1="0" y1="'+geo.zeroY.toFixed(1)+'" x2="1000" y2="'+geo.zeroY.toFixed(1)+'" stroke="color-mix(in srgb, var(--text) 40%, transparent)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+    // README §5.8 "Dotted guides" (founder R6.3, TEN-376 — supersedes the TEN-196 vertical season gridlines):
+    // no area fill, no loss wash; dotted 12% horizontal guides only and the 32% break-even rule.
+    grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; });
+    if(geo.zeroIn) svg+='<line x1="0" y1="'+geo.zeroY.toFixed(1)+'" x2="1000" y2="'+geo.zeroY.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
     svg+='<polyline points="'+poly(s.xs,s.vals,Y,NV)+'" fill="none" stroke="'+s.col+'" stroke-width="'+(isMain?'2.6':'2.2')+'" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
     svg+='</svg>';
     area.innerHTML=svg;
@@ -33175,7 +33156,7 @@ ${ratingCardHtml}
     }
 
     modalHtml=`
-<div id="lvOverlay" style="position:fixed;inset:0;z-index:90;background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;">
+<div id="lvOverlay" style="position:fixed; inset:0 0 0 var(--sf-side, 0px);z-index:90;background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;">
   <div style="width:100%;max-width:1180px;max-height:88vh;background:var(--card);border:1px solid var(--edge-6);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;">
     <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card);flex:none;position:relative;">
       <span style="font-size:15px;font-weight:700;">${e(mm.title)}</span>
@@ -33344,7 +33325,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* ================================================================= */
   html, body{ background:var(--page); }
 
-  /* header live dot = lime, flat (the settled state stays label) */
+  /* header status line: no dot (founder R3, TEN-376) */
   [data-page="matches"] .mx-datastatus:not(.settled) .dot{ display:none !important; }
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */
   [data-page="matches"] .mx-daytabs button.active{ color:var(--text); border-bottom-color:var(--text); }
@@ -33520,7 +33501,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .modal-analysis .asidenav-item:hover{ background:var(--inner); color:var(--text); }
   .modal-analysis .asidenav-item.active{ background:var(--selected); color:var(--text); }
   .modal-analysis .asidenav-item.active .aicon{ color:var(--text); }
-  .aox-row:not(.aox-nodata):hover{ border-color:var(--edge-16) !important; background:var(--tile-hover) !important; }
+  .aox-row:not(.aox-nodata):not(.aox-on):hover{ border-color:var(--edge-16) !important; background:var(--tile-hover) !important; }
   .aox-tile.aox-able:hover{ border-color:var(--edge-16) !important; }
   .aox-x:hover{ color:var(--text) !important; border-color:var(--edge-16) !important; }
 </style>

@@ -843,9 +843,9 @@
       (ch ? '<div class="do-ov-cw">' +
         '<div class="do-ov-yax">' + ch.gridY.map(function (g) { return '<span style="top:' + g.top + '"><span>' + g.label + '</span></span>'; }).join('') + '</div>' +
         '<div class="do-ov-plot"><svg viewBox="0 0 1000 300" preserveAspectRatio="none">' +
-          ch.vticks.map(function (x) { return '<line class="do-vt" x1="' + x + '" y1="0" x2="' + x + '" y2="300" vector-effect="non-scaling-stroke"></line>'; }).join('') +
+          // README §5.8 "Dotted guides" (founder R6.3, TEN-376): dotted horizontal guides only — the model's vticks and
+          // area are not drawn (no vertical gridlines, no area fill)
           ch.gridY.map(function (g) { return '<line class="do-hg" x1="0" y1="' + g.y + '" x2="1000" y2="' + g.y + '" vector-effect="non-scaling-stroke"></line>'; }).join('') +
-          (ch.area ? '<path class="do-area" d="' + ch.area + '"></path>' : '') +
           ch.lines.map(function (pl) { return '<polyline class="do-line" points="' + pl + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') +
           '</svg>' +
           (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + ';left:min(calc(' + ch.openLeft + ' + 8px), calc(100% - 132px))">' + openWord + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +

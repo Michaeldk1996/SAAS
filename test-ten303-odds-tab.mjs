@@ -72,9 +72,10 @@ test('§6.1 a stale book: NOW and NET "—", never green, outside STEAM n and N'
   assert.ok(sb.includes('>no recent data<'), 'margin line reads "no recent data"');
   assert.ok(sb.includes('opacity:0.4'), 'sparkline at 40%');
   assert.ok(sb.includes('onclick="aOddsOpenMv'), 'the row still opens the pop-up');
-  // best p1 among LIVE books = 2.50 (Betano); the stale 2.60 never wins
-  const greens = rowsOf(h).filter(r => colorOf(rowHtml(h, r.book), 'aox-now', 'a') === A.AODDS_C.up).map(r => r.book);
-  assert.deepEqual(greens, ['Betano']);
+  // best p1 among LIVE books = 2.50 (Betano); the stale 2.60 never wins. The best price is neutral on screen
+  // (founder R4/R6.1, TEN-376), so the rule is read from the rows, and no NOW is ever green.
+  assert.deepEqual(A.aOddsRowsOf(m, { nowMs: now }).rows.filter(r => r.aBest).map(r => r.name), ['Betano']);
+  assert.deepEqual(rowsOf(h).filter(r => colorOf(rowHtml(h, r.book), 'aox-now', 'a') === A.AODDS_C.up), [], 'no green NOW');
   // STEAM: every live book with an open and a now drifted? Pinnacle 2.50→2.35 (shortened), Bet105 2.40→2.30 (shortened),
   // Betano / Pinnacle-api / BF Exch: one tick each (no move). Make four live books shorten on p1 and the stale one too:
   const D = A.aOddsRowsOf(m, { nowMs: now });
@@ -350,15 +351,32 @@ test('no-vig: a latest tick with no matched pair (inside a gap) reads "—", nev
   assert.equal(cellTxt(rowHtml(h, 'Betano'), 'aox-now', 'a'), '\u2014');
 });
 
-test('best price: every tied live book is green', () => {
+test('best price: every tied live book is best, and none is green (founder R4/R6.1: best price is neutral)', () => {
   const A = build();
   const m = fixture({ withAt: true });
   m.oddsMovement.chart.books['Betano'].p1[0][1] = 2.46;   // ties Betfair Exchange's 2.46 at the top
   m.oddsMovement.chart.books['Superbet'].p1[0][1] = 2.3;
   A.open(m);
   const h = A.buildOddsSection(m);
-  const greens = rowsOf(h).filter(r => colorOf(rowHtml(h, r.book), 'aox-now', 'a') === A.AODDS_C.up).map(r => r.book).sort();
-  assert.deepEqual(greens, ['Betano', 'Betfair Exchange']);
+  assert.deepEqual(A.aOddsRowsOf(m, { nowMs: Date.now() }).rows.filter(r => r.aBest).map(r => r.name).sort(), ['Betano', 'Betfair Exchange']);
+  const best = ['Betano', 'Betfair Exchange'].map(b => colorOf(rowHtml(h, b), 'aox-now', 'a'));
+  assert.deepEqual(best, [A.AODDS_C.text, A.AODDS_C.text], 'white like every price, never green');
+});
+
+// founder R4 (TEN-376): only the clicked Per-book row is marked — --inner + 10% edge — and only while its pop-up is open.
+//    mutant: the mark sticks after close, or lands on every row
+test('the clicked book row = --inner + --edge-10, the only marked row, cleared on close', () => {
+  const now = Date.now();
+  const A = build(); const m = fixture({ now, withAt: true }); A.open(m);
+  const marked = h => rowsOf(h).filter(r => /class="aox-row[^"]*\baox-on\b/.test(h.slice(h.lastIndexOf('<div', h.indexOf('data-book="' + r.book + '"'))))).map(r => r.book);
+  assert.deepEqual(marked(A.buildOddsSection(m)), [], 'nothing marked before a click');
+  A.aOddsOpenMv('Pinnacle');
+  const h = A.section();
+  assert.deepEqual(marked(h), ['Pinnacle']);
+  const row = h.slice(h.lastIndexOf('<div', h.indexOf('data-book="Pinnacle"')));
+  assert.match(row.slice(0, 900), /background:var\(--inner\); border:1px solid var\(--edge-10\)/);
+  A.aOddsCloseMv();
+  assert.deepEqual(marked(A.section()), [], 'cleared on close');
 });
 
 test('STEAM follows the configured threshold; it reads the as-quoted move in both modes', () => {
@@ -489,7 +507,7 @@ test('1a: a stored series with a 3-hour no-change gap (and a feed gap) draws ONE
   m.oddsMovement.chart.meta['Pinnacle +30s'].gaps = [[iso(t0 + 1.5 * H), iso(t0 + 3.5 * H)]];
   A.open(m);
   const row = rowHtml(A.buildOddsSection(m), 'Pinnacle');
-  const d = /<svg class="aox-spark"[\s\S]*?<path d="[^"]*"[^>]*\/><path d="([^"]+)"/.exec(row)[1];
+  const d = /<svg class="aox-spark"[\s\S]*?<path d="([^"]+)"/.exec(row)[1];   // line only: no area path (README §5.8)
   assert.equal((d.match(/M/g) || []).length, 1, 'sparkline: one line across the feed gap: ' + d);
   A.state().mv = 'Pinnacle';
   const mv = A.buildOddsSection(m); const pd = /class="aox-line" d="([^"]+)"/.exec(mv.slice(mv.indexOf('aox-mv-overlay"')))[1];
@@ -512,7 +530,7 @@ test('1a: every plotted y-value is a stored price at display precision (the NOW 
   assert.equal(vertices(P.line).filter(p => p[0] === 'V').length, 3, 'three changes after rounding: 1.47 → 1.52 → 1.068 → the 2.345 tick');
   // the sparkline's y-range is the plotted range: back-map every vertex through its own scale
   const r = { noData: false, stale: false, first: t0, end: t0 + 5 * H, series: { a: s } };
-  const d = /<path d="[^"]*"[^>]*\/><path d="([^"]+)"/.exec(A.aOddsSparkSvg(r, 'a', '#fff'))[1];
+  const d = /<path d="([^"]+)"/.exec(A.aOddsSparkSvg(r, 'a', '#fff'))[1];
   const mn = Math.min(...allowed), mx = Math.max(...allowed);
   for (const p of vertices(d)) { const v = mn + (18 - p[2]) / 14 * (mx - mn);
     assert.ok([...allowed].some(a => Math.abs(a - v) < 0.012), `sparkline y ${p[2]} → ${v.toFixed(3)} not a displayed price`); }
@@ -603,7 +621,7 @@ test('TEN-335 pop-up: a shared frame (Esc through maPopEscKey), entrance motion 
     const A = build(); const m = fixture({ now, withAt: true }); A.open(m);
     A.aOddsOpenMv('Pinnacle');
     let h = A.section();
-    assert.match(h, /class="ma-pop-overlay ma-fade aox-mv-overlay" onclick="if\(event.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0; z-index:60; background:var\(--backdrop\); backdrop-filter:blur\(3px\); display:flex; align-items:center;/, 'the overlay is the shared frame (maPopFrame), fading in, centred on the one scrim (TEN-376 U5: --backdrop + blur)');
+    assert.match(h, /class="ma-pop-overlay ma-fade aox-mv-overlay" onclick="if\(event.target===this\)\{aOddsCloseMv\(\)\}" style="position:fixed; inset:0 0 0 var\(--sf-side, 0px\); z-index:60; background:var\(--backdrop\); backdrop-filter:blur\(3px\); display:flex; align-items:center;/, 'the overlay is the shared frame (maPopFrame), fading in, centred on the one scrim (TEN-376 U5: --backdrop + blur)');
     assert.match(h, /class="ma-pop ma-sigin aox-mv" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation\(\)" style="width:100%; max-width:1080px; background:var\(--card\); border:1px solid var\(--(?:line|edge-\d+)\); border-radius:18px; box-shadow:var\(--shadow-pop\);/, 'the box enters with sigIn; the design geometry (DF L1907) is the frame\'s mv variant (TEN-376: --card, 1px edge, --shadow-pop)');
     const x = /class="ma-pop-x aox-seg aox-x"[^>]*onclick="([^"]*)" style="width:32px; height:32px;/.exec(h);
     assert.ok(x, 'the ✕ is the frame\'s ma-pop-x (what maPopEscKey clicks)'); assert.equal(x[1], 'aOddsCloseMv()');
