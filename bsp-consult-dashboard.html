@@ -1380,7 +1380,9 @@
   .modal-analysis .acomingsoon{ text-align:center; color:var(--text-label); font-size:13px; padding:30px 0; }
   /* ---- Key factors tab (TEN-341): the file's .seg cards and their style-hover (DF L346–437: border + wash), a focus ring. ---- */
   #aSectionKey .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  #aSectionKey .kf-card:hover{ border-color:var(--open-card) !important; background:color-mix(in srgb, var(--text) 2%, transparent) !important; }
+  /* README §5.10: Key factors boxes are clickable tiles — 7% edge, hover --tile-hover + 16% edge */
+  #aSectionKey .kf-card{ border-color:var(--edge-7) !important; }
+  #aSectionKey .kf-card:hover{ border-color:var(--edge-16) !important; background:var(--tile-hover) !important; }
   #aSectionKey .kf-card:focus-visible{ outline:2px solid var(--edge-16); outline-offset:2px; }
   /* ---- Playing style tab (TEN-340): the file's .seg hover rule and its style-hover values (DF L548 personal box, DF L604 row). ---- */
   #aSectionStyle .seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
@@ -33488,6 +33490,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* the modal box = README §3 "Page" (role conflict: only the modal box is Page) */
   /* every chrome colour below is the token of the design's own shade (--ma-s-<source>, founder 2026-09-29), DF L85–123 / L5323 */
   .modal-analysis{ background:var(--card); border-color:var(--edge-10); box-shadow:var(--shadow-modal); }   /* pop-up sheet = --card + 10% edge (README §1; measured on OFFICIAL VERSION 1) */
+  /* inside the modal its base surface is the sheet's --card: anything the modal paints with the page tone sits on the sheet (layer rule, README §5.11) */
+  .modal-analysis{ --page: var(--card); }
   /* the design file's overlay (DF L85) — the one scrim (U11) */
   #analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }
   .modal-analysis .ahead2{ border-bottom-color:var(--line); }
