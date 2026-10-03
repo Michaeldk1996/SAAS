@@ -122,6 +122,9 @@
     // TEN-377 review: a row whose DISPLAYED price repeats the row before is not listed
     // (1.676 then 1.68 both read "1.68"); each listed move is measured from the listed row before.
     const shown = ch.filter((r, i) => i === 0 || fmtPrice(r.price) !== fmtPrice(ch[i - 1].price));
+    // The Open is its own bottom row: a first listed row at the Open's displayed price is not a
+    // move, so it goes BEFORE the deltas are taken (the next row is then measured from the Open).
+    if (shown.length && card.open && card.open.price != null && fmtPrice(shown[0].price) === fmtPrice(card.open.price)) shown.shift();
     const openAt = card.open && ms(card.open.at);
     const items = shown.map((r, i) => {
       let prev = i > 0 ? shown[i - 1].price : null;
@@ -131,11 +134,6 @@
       const delta = prev == null ? null : Math.round((r.price - prev) * 1000) / 1000;
       return { at: r.at, price: r.price, delta };
     });
-    // The Open itself is its own bottom row, so a first row at the Open's price is
-    // not a move and is not repeated, whenever it was sighted (a later first
-    // sighting at the same price still isn't a change; "history recorded from"
-    // below keeps its time).
-    if (items.length && card.open && card.open.price != null && fmtPrice(items[0].price) === fmtPrice(card.open.price)) items.shift();
     // "recorded from": the first recorded tick, whenever history exists (founder Q3 note line).
     const first = ch.length ? ch[0].at : null;
     const recordedFrom = first;
@@ -172,7 +170,7 @@
     const p = fmtParts(t, { hour: '2-digit', minute: '2-digit', hour12: false });
     return `${p.hour === '24' ? '00' : p.hour}:${p.minute}`;
   }
-  function fmtAge(min) { const h = Math.floor(min / 60), mm = min % 60; return h ? `${h} h ${mm} min` : `${mm} min`; }
+  function fmtAge(min) { const h = Math.floor(min / 60), mm = min % 60; return h ? (mm ? `${h} h ${mm} min` : `${h} h`) : `${mm} min`; }
   function fmtDay(t) {
     if (t == null) return '—';
     const p = fmtParts(t, { day: 'numeric', month: 'numeric' });   // "28 Sep" (en-GB would print "Sept")
@@ -301,7 +299,10 @@
     const o = typeof _ocsOf === 'function' ? _ocsOf(m) : null;
     const pair = typeof _mcNowPair === 'function' ? _mcNowPair(m) : null;
     const completed = !!m.finalScore;
-    const bookRaw = (o && o.book) || (pair && pair.book) || (m.openingOdds && m.openingOdds.bookmaker) || null;
+    // Completed with no card-state row: the prices are openingOdds / closingOdds, so the header names
+    // THEIR book (review: never a Now book over another book's prices).
+    const bookRaw = (o && o.book) || (completed && m.openingOdds && m.openingOdds.bookmaker)
+      || (pair && pair.book) || (m.openingOdds && m.openingOdds.bookmaker) || null;
     const bk = String(bookRaw || '').toLowerCase();
     const bookName = (typeof MC_BOOK_NAMES !== 'undefined' && MC_BOOK_NAMES[bk])
       || (typeof mxBookLabel === 'function' && bookRaw ? mxBookLabel(bookRaw) : bookRaw);

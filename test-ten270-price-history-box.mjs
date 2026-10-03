@@ -359,3 +359,19 @@ test('TEN-377 (card 0b990217): an older close puts its age first on the note lin
   assert.match(B.html(B.model(card, [], [])), /phb-src">Close last seen <span class="phb-mono">2 h 10 min<\/span> before start · bet105 · live stream \+ 5-min sweep/);
   assert.match(B.html(B.model(Object.assign({}, card, { closeAgeMin: null }), [], [])), /phb-src">Updated <span class="phb-mono">14:05/, 'within 60: the Q3 line');
 });
+
+test('TEN-377 review: the age note needs an OLDER close; the header names the prices\' book; deltas after a dropped first row run from the Open', () => {
+  try {
+    globalThis.mxCloseAgeMin = () => 130;
+    globalThis._ocsOf = () => ({ book: 'bet105', p1: { close: 1.5, closeW60: true }, p2: {} });
+    assert.equal(B.cardData({ finalScore: {} }, 'p1').closeAgeMin, null, 'within 60 -> no age note');
+    globalThis._ocsOf = () => ({ book: 'bet105', p1: { close: 1.5, closeW60: false }, p2: {} });
+    assert.equal(B.cardData({ finalScore: {} }, 'p1').closeAgeMin, 130, 'older -> age note');
+    delete globalThis._ocsOf;
+    globalThis._mcNowPair = () => ({ p1: 1.5, p2: 2.5, book: 'bet365' });
+    assert.equal(B.cardData({ finalScore: {}, openingOdds: { bookmaker: 'Pncl' } }, 'p1').bookKey, 'pncl', 'Completed, no card state: the Open/Close book, not the Now book');
+  } finally { delete globalThis.mxCloseAgeMin; delete globalThis._ocsOf; delete globalThis._mcNowPair; }
+  const rows = [1.304, 1.36].map((p, i) => ({ at: Date.parse('2026-09-24T03:00:00Z') + i * 60e3, price: p }));
+  const m = B.model({ book: 'Bet105', open: { price: 1.30, at: '2026-09-24T01:00:00Z' }, historyAvailable: true }, rows, []);
+  assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.36:0.06'], '1.304 reads "1.30" = the Open, so it is dropped and 1.36 moves +0.060 from the Open');
+});

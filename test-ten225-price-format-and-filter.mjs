@@ -147,11 +147,8 @@ test('it FILTERS the array — it does not merely reorder it', () => {
   assert.match(gf, /out = out\.filter\(mxMoved\)/);
 });
 
-test('the counts are recorded so the tile can say what was filtered', () => {
-  const gf = /function getFiltered\(\)\{([\s\S]*?)\n\}/.exec(html)?.[1] || '';
-  assert.match(gf, /MX_DRIFT_FILTER = \{ shown: out\.length, total: before \}/);
-  assert.match(gf, /MX_DRIFT_FILTER = null/);   // cleared when the view is off
-  assert.match(html, /MX_DRIFT_FILTER\.shown\} of \$\{MX_DRIFT_FILTER\.total\} matches moved/);
+test('TEN-377 review item 8 (supersedes TEN-225 item 5): the tile carries no "N of M matches moved" line', () => {
+  assert.doesNotMatch(html, /matches moved · the rest are filtered out|MX_DRIFT_FILTER/);
 });
 
 test('the predicate itself, over manufactured fixtures', () => {

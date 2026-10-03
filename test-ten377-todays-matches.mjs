@@ -209,3 +209,13 @@ test('review 6/7/9: grid start; white caret in the reference font stack; one chi
   assert.match(chips, /const allChip = `<button class="mx-chip/);
   assert.doesNotMatch(chips, /const allChip = completed/, 'not Completed-only any more');
 });
+
+// ── founder card 0b990217 (review 1–3): stats read only within-60 card-book closes ──
+test('stats paths read _mcCardCloseDerivedOf (within-60), never the display close', () => {
+  const body = slice('renderMatches');
+  assert.match(body, /const moveCloseOf = \(m, who\) => \(m\.finalScore \? _mcCardCloseDerivedOf\(m, who\) : null\);/, 'Completed Biggest market move tile');
+  assert.match(slice('_mcOddsLanded'), /_mcCardCloseDerivedOf\(m, 'p1'\) != null \|\| _mcCardCloseDerivedOf\(m, 'p2'\) != null/);
+  assert.match(slice('syncSortDropdown'), /const moveLanded = [\s\S]*?_mcCardCloseDerivedOf\(m, 'p1'\) != null \|\| _mcCardCloseDerivedOf\(m, 'p2'\) != null/);
+  for (const fn of ['upsetScore', 'closingScore', 'moveScore', 'marketWrongScore', 'mcUpsetRows', '_mcOddsLanded'])
+    assert.doesNotMatch(slice(fn), /_mcCardCloseOf\(|_mcCloseOf\(|_mcPinClose/, `${fn} never reads a display close`);
+});

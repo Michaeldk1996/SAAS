@@ -7436,11 +7436,6 @@ function upsetScore(m){ // winner's closing odds — bigger underdog win = bigge
 // cannot fall out of sync (the export's stated reason for this design). Upcoming only:
 // a completed card has its own open→close journey block and is unaffected by the sort.
 function mxDriftView(){ return state.view !== 'completed' && state.sort === 'drift'; }
-// TEN-225 item 5 — "Show the count in the view ... so it is clear the rest were
-// filtered, not lost." Written by getFiltered() on every build and read by the
-// tile; null whenever the filter is not applied, so the tile cannot print a
-// stale count from a view the member has already left.
-let MX_DRIFT_FILTER = null;
 // TEN-198 — FOUNDER RULING 2026-09-13 (gate 05ded3ab). When oddspapi has no bet365
 // series for a fixture, the OPEN falls back to the same book read off api-tennis, and
 // the pinned value lands IN m.openingOdds carrying `vendor:'api-tennis'` (he chose that
@@ -7903,16 +7898,9 @@ function getFiltered(){
   //
   // Clicking the tile again sets state.sort back to 'time', which restores the
   // full board by construction: this branch only exists while drift is on.
-  //
-  // The counts are recorded rather than recomputed, because the denominator is
-  // "what this view would have shown", which only this line knows — every other
-  // caller sees the filtered array and could not reconstruct it.
+  // (The tile's "N of M matches moved" line is gone: founder TEN-377 review item 8.)
   if (mxDriftView()){
-    const before = out.length;
     out = out.filter(mxMoved);
-    MX_DRIFT_FILTER = { shown: out.length, total: before };
-  } else {
-    MX_DRIFT_FILTER = null;
   }
   const surfaceOrder = { clay:0, hard:1, grass:2 };
   if (crossDate) out.sort((a,b) => state.view === 'completed'
