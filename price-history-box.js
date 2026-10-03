@@ -118,6 +118,14 @@
       rows = rows.filter(r => r.at <= startAt);
       gaps = (gaps || []).filter(g => g.from < startAt).map(g => g.to > startAt ? Object.assign({}, g, { to: startAt }) : g);
     }
+    // Completed: the ledger ends at the card's Close (its card-state sighting, closeTs), so the top
+    // row IS the close shown on the card and in the header (founder TEN-377 rev2 item 1). Ticks the
+    // stream recorded after it are not shown here until the close builder takes them (separate fix).
+    const closeAt = card.completed ? ms(card.closeAt) : null;
+    if (closeAt != null) {
+      rows = rows.filter(r => r.at <= closeAt);
+      gaps = (gaps || []).filter(g => g.from < closeAt).map(g => g.to > closeAt ? Object.assign({}, g, { to: closeAt }) : g);
+    }
     const ch = changesOnly(rows);
     // TEN-377 review: a row whose DISPLAYED price repeats the row before is not listed
     // (1.676 then 1.68 both read "1.68"); each listed move is measured from the listed row before.
@@ -173,7 +181,7 @@
   function fmtAge(min) { const h = Math.floor(min / 60), mm = min % 60; return h ? (mm ? `${h} h ${mm} min` : `${h} h`) : `${mm} min`; }
   function fmtDay(t) {
     if (t == null) return '—';
-    const p = fmtParts(t, { day: 'numeric', month: 'numeric' });   // "28 Sep" (en-GB would print "Sept")
+    const p = fmtParts(t, { day: '2-digit', month: 'numeric' });   // "02 Oct" (en-GB would print "Sept")
     return `${p.day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(p.month) - 1]}`;
   }
   function fmtPrice(p) {
@@ -214,12 +222,16 @@
     // TEN-295 / founder Q2: Completed carries Pinnacle's close as one mono line (dash when none).
     if (mdl.completed) h += `<div class="phb-pin">Pinnacle close <b>${esc(fmtPrice(mdl.close ? mdl.close.price : null))}</b></div>`;
     const notes = [];
-    // Founder TEN-377 (card 0b990217): a close last seen more than 60 min before the start says so
-    // first, as text — "Close last seen 2 h 10 min before start" — in place of "Updated".
-    if (mdl.completed && mdl.closeAgeMin != null) notes.push(`Close last seen ${mono(fmtAge(mdl.closeAgeMin))} before start`);
-    else if (mdl.updatedAt != null && ms(mdl.updatedAt) != null) notes.push(`Updated ${mono(fmtHM(ms(mdl.updatedAt)))}`);
-    if (mdl.note) notes.push(esc(mdl.note));
-    if (mdl.recordedFrom != null) notes.push(`recorded from ${mono(fmtDay(mdl.recordedFrom))}`);
+    // Founder TEN-377 rev2 item 2 — short, one line, no cadence wording:
+    //   Upcoming / recent close: "Updated 13:22 · Bet105 · from 02 Oct"
+    //   Completed, close older than 60 min: "Close seen 2 h 22 min before start · Bet105"
+    if (mdl.completed && mdl.closeAgeMin != null) {
+      notes.push(`Close seen ${mono(fmtAge(mdl.closeAgeMin))} before start`, esc(mdl.book || '—'));
+    } else {
+      if (mdl.updatedAt != null && ms(mdl.updatedAt) != null) notes.push(`Updated ${mono(fmtHM(ms(mdl.updatedAt)))}`);
+      notes.push(esc(mdl.book || '—'));
+      if (mdl.recordedFrom != null) notes.push(`from ${mono(fmtDay(mdl.recordedFrom))}`);
+    }
     if (notes.length) h += `<div class="phb-src">${notes.join(' · ')}</div>`;
     h += `</div><div class="phb-list">`;
     const say = t => `<div class="phb-note">${esc(t)}</div>`;
@@ -344,14 +356,11 @@
     // An older close no longer withholds the % — the card shows its Move (founder TEN-377).
     const pctOk = !(vendorOpen || crossBook);
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose, pctOk, closeAgeMin: ageMin,
+             closeAt: completed && side ? side.closeTs || null : null,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
-             // Founder 2026-09-25: completed bet365 cards carry the SAME source line as upcoming.
-             note: (source === 'shard' || source === 'archive') ? BET365_NOTE : (source === 'rpc' ? BET105_NOTE : null) };
+             note: null };
   }
-  const BET365_NOTE = 'bet365 · refreshed every 15 min';   // founder TEN-377 Q3 note-line wording
-  // Bet105's real cadence: the Kibl stream (live) plus the 5-min archive sweep (ten232-kibl-archive.yml */5).
-  const BET105_NOTE = 'bet105 · live stream + 5-min sweep';
   const ARCHIVE_NO_START = 'Start time unknown — history not shown';
 
   // A completed bet365 card from its bet365_history payload. `rpc()` resolves

@@ -110,7 +110,7 @@ test('TEN-377 Q3: empty / failed states are centred grey text; no status dot any
 test('history that starts after the Open says so, and nothing is interpolated', () => {
   const rows = [{ at: Date.parse('2026-09-24T06:00:00Z'), price: 1.40 }];
   const m = B.model({ book: 'Bet105', open: { price: 1.30, at: '2026-09-24T01:00:00Z' }, historyAvailable: true }, rows, []);
-  assert.match(B.html(m), /recorded from <span class="phb-mono">24 Sep<\/span>/, 'founder Q3: one note line, dates in mono');
+  assert.match(B.html(m), /· from <span class="phb-mono">24 Sep<\/span>/, 'founder rev2: "from DD Mon", dates in mono');
   assert.equal(m.rows.length, 1, 'one recorded row, no filled-in steps');
 });
 
@@ -179,11 +179,10 @@ test('source per card: Bet105 -> RPC, bet365 upcoming -> shard, bet365 completed
   const up = B.cardData({ openingOdds: { bookmaker: 'bet365' } }, 'p1');
   assert.equal(up.source, 'shard');
   assert.equal(up.historyAvailable, true);
-  assert.match(B.html(B.model(up, [], [])), /bet365 · refreshed every 15 min/);
+  assert.match(B.html(B.model(up, [], [])), /phb-src">bet365<\/div>/, 'founder rev2: book only, no cadence wording');
   const done = B.cardData({ openingOdds: { bookmaker: 'bet365' }, finalScore: '6-4 6-4' }, 'p1');
   assert.equal(done.source, 'archive', 'a completed bet365 card reads the archive, never the shard');
-  assert.match(B.html(B.model(done, [], [])), /bet365 · refreshed every 15 min/,
-               'founder 2026-09-25: the same source line as upcoming');
+  assert.doesNotMatch(B.html(B.model(done, [], [])), /refreshed every|live stream/, 'founder rev2: no cadence wording');
   assert.doesNotMatch(B.html(B.model(done, [], [])), /archived after the match/, 'the retired label is gone');
   assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').source, 'rpc');
   assert.equal(B.cardData({ openingOdds: { bookmaker: '1xbet' } }, 'p1').source, null);
@@ -230,7 +229,7 @@ test('bet365 completed: the bet365_history archive, per side, suspended and sub-
   const m = B.model(Object.assign({}, got.card, { open: { price: 1.50, at: '2026-09-24T06:00:00Z' },
                                                  close: { price: 1.20, at: '2026-09-24T07:50:00Z' } }), got.rows, []);
   assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.2:-0.25', '1.45:-0.05']);
-  assert.match(B.html(m), /bet365 · refreshed every 15 min/);
+  assert.match(B.html(m), /phb-src">Updated <span class="phb-mono">15:50<\/span> · bet365 · from/);
   assert.doesNotMatch(B.html(m), /archived after the match/, 'the retired label is gone');
 });
 
@@ -345,18 +344,18 @@ test('TEN-377 review: the change % obeys the Move rules — no % from a vendor-p
 });
 
 test('TEN-377 review 11 + ledger: Bet105 note names its real cadence; a repeated displayed price is not listed', () => {
-  assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').note, 'bet105 · live stream + 5-min sweep');
+  assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').note, null, 'founder rev2: no cadence note');
   const rows = [1.73, 1.734, 1.746, 1.73].map((p, i) => ({ at: Date.parse('2026-09-24T03:00:00Z') + i * 60e3, price: p }));
   const m = B.model({ book: 'Bet105', open: { price: 1.60, at: '2026-09-24T01:00:00Z' }, historyAvailable: true }, rows, []);
   assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.73:-0.016', '1.746:0.016', '1.73:0.13'],
                    '1.734 reads "1.73" like the row before it, so it is not listed; moves are from the listed row before');
-  assert.match(B.html(m), /recorded from <span class="phb-mono">24 Sep/);
+  assert.match(B.html(m), /Bet105 · from <span class="phb-mono">24 Sep/);
 });
 
 test('TEN-377 (card 0b990217): an older close puts its age first on the note line', () => {
   const card = { book: 'Bet105', open: { price: 1.3, at: '2026-09-24T01:00:00Z' }, completed: true, historyAvailable: true,
-                 bookClose: 1.25, closeAgeMin: 130, updatedAt: '2026-09-24T06:05:00Z', note: 'bet105 · live stream + 5-min sweep' };
-  assert.match(B.html(B.model(card, [], [])), /phb-src">Close last seen <span class="phb-mono">2 h 10 min<\/span> before start · bet105 · live stream \+ 5-min sweep/);
+                 bookClose: 1.25, closeAgeMin: 130, updatedAt: '2026-09-24T06:05:00Z' };
+  assert.match(B.html(B.model(card, [], [])), /phb-src">Close seen <span class="phb-mono">2 h 10 min<\/span> before start · Bet105<\/div>/, 'founder rev2 wording');
   assert.match(B.html(B.model(Object.assign({}, card, { closeAgeMin: null }), [], [])), /phb-src">Updated <span class="phb-mono">14:05/, 'within 60: the Q3 line');
 });
 
@@ -374,4 +373,17 @@ test('TEN-377 review: the age note needs an OLDER close; the header names the pr
   const rows = [1.304, 1.36].map((p, i) => ({ at: Date.parse('2026-09-24T03:00:00Z') + i * 60e3, price: p }));
   const m = B.model({ book: 'Bet105', open: { price: 1.30, at: '2026-09-24T01:00:00Z' }, historyAvailable: true }, rows, []);
   assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.36:0.06'], '1.304 reads "1.30" = the Open, so it is dropped and 1.36 moves +0.060 from the Open');
+});
+
+test('TEN-377 rev2 item 1: a Completed ledger ends at the card Close (closeTs), so its top row IS the close', () => {
+  const t = s => Date.parse('2026-10-01T' + s + 'Z');
+  const rows = [{ at: t('14:30:54'), price: 1.571 }, { at: t('22:35:24'), price: 1.662 }, { at: t('23:37:23'), price: 1.671 }, { at: t('01:35:15') + 86400e3, price: 1.629 }];
+  const card = { book: 'Bet105', open: { price: 1.571, at: '2026-10-01T14:30:54Z' }, completed: true, historyAvailable: true,
+                 bookClose: 1.662, closeAt: '2026-10-01T23:31:36+00:00', startAt: '2026-10-02T01:53:59Z' };
+  const m = B.model(card, rows, []);
+  assert.equal(m.rows[0].price, 1.662, 'Munar 2 Oct: top row = the card Close, not the 01:35 stream tick');
+  assert.equal(m.now, 1.662);
+  assert.equal(B.model(Object.assign({}, card, { closeAt: null }), rows, []).rows[0].price, 1.629, 'CONTROL: without the cut the stream tick would sit on top');
+  const up = B.model(Object.assign({}, card, { completed: false, now: 1.6, nowAt: '2026-10-02T01:40:00Z' }), rows, []);
+  assert.equal(up.rows[0].price, 1.629, 'Upcoming is never cut at a close');
 });
