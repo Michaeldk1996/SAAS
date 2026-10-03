@@ -2067,7 +2067,7 @@
   [data-page="live"] .lt-card:hover{ border-color:color-mix(in srgb, var(--pos) 35%, transparent); }
   [data-page="live"] .lt-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
   [data-page="live"] .lt-tourn{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:11.5px; color:var(--text-label,var(--text-label)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="live"] .lt-badge{ display:inline-flex; align-items:center; gap:5px; flex-shrink:0; background:transparent; color:var(--text); border-radius:5px; padding:2px 8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; font-family:var(--mx-font-mono,monospace); }
+  [data-page="live"] .lt-badge{ display:inline-flex; align-items:center; gap:5px; flex-shrink:0; background:transparent; color:var(--text); border-radius:5px; padding:2px 8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; font-family:var(--font-words); }
   [data-page="live"] .lt-badge .lt-dot{ display:none; }
 
   [data-page="live"] .lt-players{ display:flex; flex-direction:column; gap:2px; }
@@ -2745,7 +2745,10 @@
   .db-box{ width:14px; height:14px; border-radius:4px; border:1px solid var(--edge-10); background:transparent; flex:none; }
   .db-mrow.on .db-box{ background:var(--bar); border-color:var(--edge-16); }
 
-  .db-yr{ display:inline-flex; align-items:stretch; height:36px; border-radius:9px; overflow:hidden; border:1px solid var(--db-bd); }
+  .db-yr{ display:inline-flex; align-items:stretch; height:36px; border-radius:9px; border:1px solid var(--db-bd); }   /* no overflow:hidden — the sfDd menu drops below */
+  .db-yr .sf-dd-trig{ height:100%; border-radius:0; background:transparent; }
+  .db-yr .db-yrend:first-child .sf-dd-trig{ border-radius:9px 0 0 9px; }
+  .db-yr .db-yrend:last-child .sf-dd-trig{ border-radius:0 9px 9px 0; }
   .db-yr.on{ border-color:var(--edge-10); }
   .db-yrend{ position:relative; display:inline-flex; align-items:center; }
   .db-yrend .sf-dd-trig{ font-family:var(--db-mono); font-size:12px; font-weight:400; padding:6px 10px; }
@@ -11718,10 +11721,10 @@ function ovColumnHtml(i, name, pk, rows, real, tier){
       + `<span class="ov-surf-v" style="${OV_MONO} font-size:12px; color:${OV_C.m2}; white-space:nowrap;">${n ? `${c.won}-${c.lost}${rate ? ' · ' + rate : ''}` : '—'}</span></div>`;
   }).join('');
   const card = `<div class="ov-card" style="background:${OV_C.card}; border:1px solid ${OV_C.cardLine}; border-radius:16px; padding:22px 24px;">`
-    + `<div style="display:flex; align-items:center; gap:10px; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid ${OV_C.nameLine};"><span class="ov-name" style="font-size:15px; font-weight:700; white-space:nowrap;">${fhEsc(name)}</span><span style="${OV_MONO} font-size:9.5px; letter-spacing:0.14em; color:${OV_C.m2};">CAREER RECORD</span></div>`
+    + `<div style="display:flex; align-items:center; gap:10px; padding-bottom:14px; margin-bottom:16px; border-bottom:1px solid ${OV_C.nameLine};"><span class="ov-name" style="font-size:15px; font-weight:700; white-space:nowrap;">${fhEsc(name)}</span><span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; color:${OV_C.m2};; font-weight:700; text-transform:uppercase">CAREER RECORD</span></div>`
     + `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><div style="display:flex; align-items:baseline; gap:12px;">`
     + `<span class="ov-career-rec" style="${OV_MONO} font-size:31px; font-weight:800; line-height:1; letter-spacing:-0.02em; white-space:nowrap;">${ovRec(cr)}</span>${pct}`
-    + `<span style="font-size:10px; ${OV_MONO} letter-spacing:0.16em; color:${OV_C.m2};">CAREER</span></div>`
+    + `<span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; color:${OV_C.m2};; font-weight:700; text-transform:uppercase">CAREER</span></div>`
     + `<span style="flex-basis:100%; height:0;"></span>${seg}</div>`
     + `<div style="display:flex; flex-direction:column; gap:11px; margin-top:18px;">${bars}<div style="font-size:10px; color:${OV_C.m3}; margin-top:2px;">Bar length = win rate on that surface</div></div></div>`;
   // this season by surface: a row opens the pop-up for the season's matches on that surface
@@ -16029,7 +16032,7 @@ function trMarketHtml(m){
     const yTxt = p.v != null ? Y(p.v).toFixed(1) + 'px' : '66px';
     return (p.v != null ? `<span style="position:absolute; left:${left}; top:${yTxt}; width:9px; height:9px; border-radius:50%; background:${box}; border:2px solid var(--text); transform:translate(-50%,-50%);"></span>` : '')
       + `<span class="tr-sp-v" style="position:absolute; left:${left}; top:${yTxt}; transform:translate(-50%,calc(-100% - 11px)); ${TR_MONO} font-size:12px; font-weight:700; color:${p.v != null ? t1 : t3}; white-space:nowrap;">${p.v != null ? p.v.toFixed(2) : '—'}</span>`
-      + `<span style="position:absolute; left:${left}; bottom:0; transform:translateX(-50%); ${TR_MONO} font-size:11px; letter-spacing:0.06em; color:${t3};">${p.y}</span>`;
+      + `<span style="position:absolute; left:${left}; bottom:0; transform:translateX(-50%); ${TR_MONO} font-size:11px; letter-spacing:0.06em; color:${t3};">${p.y}</span>`;   // a year: digits stay mono
   }).join('');
   const trend = `<div style="flex:1 1 360px; min-width:0;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
@@ -17416,7 +17419,7 @@ function kfStyleCard(m){
   return kfCard('style', `${kfHead('Playing style', 16)}
     <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:4px;"><span style="font-size:14px; font-weight:700; color:${FH_AC};">${fhEsc(fhSurname(m.p1))}</span><span style="font-size:14px; font-weight:700; color:${FH_BC};">${fhEsc(fhSurname(m.p2))}</span></div>
     <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:16px; font-size:9.5px; ${M} color:${C.t4};"><span>${fhEsc(arch(E.l1))}</span><span style="text-align:right;">${fhEsc(arch(E.l2))}</span></div>
-    <div style="display:flex; align-items:baseline; justify-content:space-between;"><span class="kf-edge-a" style="${M} font-size:26px; font-weight:800; color:${rated ? FH_AC : C.t3};">${rated ? E.a + '%' : FH_DASHC}</span><span style="font-size:10px; ${M} letter-spacing:0.12em; color:${C.t3};">Style edge</span><span class="kf-edge-b" style="${M} font-size:26px; font-weight:800; color:${rated ? FH_BC : C.t3};">${rated ? E.b + '%' : FH_DASHC}</span></div>
+    <div style="display:flex; align-items:baseline; justify-content:space-between;"><span class="kf-edge-a" style="${M} font-size:26px; font-weight:800; color:${rated ? FH_AC : C.t3};">${rated ? E.a + '%' : FH_DASHC}</span><span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; color:${C.t3};; font-weight:700; text-transform:uppercase">Style edge</span><span class="kf-edge-b" style="${M} font-size:26px; font-weight:800; color:${rated ? FH_BC : C.t3};">${rated ? E.b + '%' : FH_DASHC}</span></div>
     <div class="kf-edge-bar" style="display:flex; height:8px; border-radius:5px; overflow:hidden; margin:10px 0 16px;">${bar}</div>
     <div class="kf-style-sum" style="font-size:13px; color:${C.text}; line-height:1.55; margin-bottom:18px;">${fhEsc(kfStyleSentence(m, E))}</div>`);
 }
@@ -20230,14 +20233,14 @@ function ppSplitTabTableHtml(rows, which, tier){
   const grid = `display:grid;grid-template-columns:${tab.grid};`;
   const head = `<div style="${grid}align-items:center;padding:8px 0;border-bottom:1px solid var(--line);">
     <span style="position:sticky;left:0;background:var(--card);"></span>${
-    tab.cols.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="text-align:right;padding-left:12px;cursor:help;white-space:nowrap;${PP_SPLIT_MONO}font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">${c.k}</span>`).join('')
+    tab.cols.map(c => `<span class="pp-split-h" data-tip="${escapeHtml(c.t)}" style="font-family:var(--font-words); text-align:right;padding-left:12px;cursor:help;white-space:nowrap;font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">${c.k}</span>`).join('')
   }</div>`;
   // Rows sit flat on the card surface (export shows no row banding); they are
   // separated by spacing and the section labels only.
   const body = PP_SPLIT_SECTIONS.map(sec => {
     const keys = sec.keys.filter(k => rows[k]);
     if (!keys.length) return '';
-    const label = `<div class="pp-split-sec" style="${PP_SPLIT_MONO}font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:16px 0 8px;">${sec.label}</div>`;
+    const label = `<div class="pp-split-sec" style="font-family:var(--font-words); font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);padding:16px 0 8px;">${sec.label}</div>`;
     return label + keys.map(k => {
       const r = rows[k];
       const bg = 'transparent';
@@ -23947,7 +23950,7 @@ function buildMatchProgressionSection(m){
     const ok = v => Number.isFinite(v) && v >= 1.01;
     // "not played" is the file's word for an unplayed match; a live or finished one says nothing there (DESIGN GAP G14).
     return shell(cardBody('vs ' + opp, sty || FH_DASHC, sty ? '' : 'No playing style on file for ' + opp, 'THIS MATCH', priceSpan(ok(own) ? own : null, ok(oth) ? oth : null, k === 1), done ? '' : 'not played',
-      `font-weight:700; letter-spacing:0.08em; color:var(--text);`),
+      `font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text);`),   // a caps label, not a figure
       { cbg: 'var(--card)', bd: 'var(--edge-10)', op: 1, tip: P.facing + ' · this match' });
   };
   // DF L712–719: an unplayed round, its placeholder blurred. The file's sample numbers are not shipped (no seeded data):
@@ -24027,16 +24030,16 @@ function buildMatchProgressionSection(m){
     const FA = pgDrawFig(X.fAvg, mt);
     const fTip = mt.noDraw ? PG_DRAW_PRESSURE_TIP : !P.draw ? PG_NO_DRAW : X.fAvg ? 'Mean of the round averages · ' + X.fAvg.n + ' player-rounds' : 'No box scores in the rounds shown';
     return `<div class="pg-card" data-pg-metric="${mt.key}" style="background:var(--card); border:1px solid var(--line); border-radius:12px; padding:${DZ.pad}px; min-width:0;">
-        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:4px 10px; flex-wrap:wrap; font-size:${DZ.title}px; letter-spacing:0.06em; text-transform:uppercase; color:var(--text-label); font-weight:600; ${M} padding-bottom:11px; margin-bottom:10px; border-bottom:1px solid var(--line);"><span style="color:var(--text-label);">${fhEsc(mt.name)}</span></div>
+        <div style="font-family:var(--font-words); display:flex; align-items:baseline; justify-content:space-between; gap:4px 10px; flex-wrap:wrap; font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); font-weight:700; padding-bottom:11px; margin-bottom:10px; border-bottom:1px solid var(--line);"><span style="color:var(--text-label);">${fhEsc(mt.name)}</span></div>
         <div style="overflow-x:auto;"><div style="min-width:${hmMin}px;">
           <div style="display:grid; grid-template-columns:${hmCols}; gap:5px; margin-bottom:7px;">
             <span></span>
-            ${P.labels.map(l => `<span style="text-align:center; font-size:9.5px; ${M} letter-spacing:0.08em; color:var(--text-label); font-weight:600;">${l}</span>`).join('')}
-            <span style="text-align:right; padding:0 2px 0 ${DZ.avgPad}px; font-size:9.5px; ${M} letter-spacing:0.08em; color:var(--text-label); font-weight:600;">AVG</span>
+            ${P.labels.map(l => `<span style="font-family:var(--font-words); text-align:center; font-size:10.5px; letter-spacing:0.10em; color:var(--text-label); font-weight:700;; text-transform:uppercase">${l}</span>`).join('')}
+            <span style="font-family:var(--font-words); text-align:right; padding:0 2px 0 ${DZ.avgPad}px; font-size:10.5px; letter-spacing:0.10em; color:var(--text-label); font-weight:700;; text-transform:uppercase">AVG</span>
           </div>
           ${rowHtml(0)}${rowHtml(1)}
           <div style="display:grid; grid-template-columns:${hmCols}; gap:5px; margin-top:9px; padding-top:9px; border-top:1px solid var(--line); align-items:center;">
-            <span style="padding-left:${DZ.nPad}px; font-size:9px; ${M} letter-spacing:0.06em; text-transform:uppercase; color:var(--text-label); font-weight:600; font-style:italic; white-space:nowrap; overflow:hidden;">Draw</span>
+            <span style="font-family:var(--font-words); padding-left:${DZ.nPad}px; font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); font-weight:700; font-style:italic; white-space:nowrap; overflow:hidden;">Draw</span>
             ${X.f.map(fCell).join('')}
             <span data-aotip="${fhEsc(fTip)}" style="display:flex; align-items:center; justify-content:flex-end; padding:0 2px 0 ${DZ.avgPad}px; border-left:1px solid var(--line); ${M} font-size:${DZ.field}px; color:${FA.small ? MA_GREY : 'var(--text-label)'}; white-space:nowrap;">${fhEsc(FA.t)}</span>
           </div>
@@ -24694,7 +24697,7 @@ function tourxOverviewListHtml(){
     const bg = seld ? sc : 'transparent';
     // Tier chip: selected reads BRIGHTER, the name reads LIGHTER (600 vs 700).
     // That inversion is verbatim from the export - the chip carries the selection.
-    const chipBg = seld ? 'var(--inner)' : 'var(--inner)';
+    const chipBg = seld ? 'var(--selected)' : 'var(--inner)';   // never darker than its (selected) row
     const chipBd = seld ? 'var(--edge-10)' : 'color-mix(in srgb, var(--text) 4.5%, transparent)';
     const chipFg = seld ? 'var(--text)' : 'var(--text-soft)';
     return `<div class="tourx-ovrow" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;background:${bg};cursor:pointer;">
@@ -26746,7 +26749,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const empty = msg => `<div style="min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; color:var(--text-label);">${E(msg)}</div>`;
     const statTable = rows => `<div style="max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:5px;">
       ${rows.map(r => `<div style="display:grid; grid-template-columns:64px 1fr 64px; align-items:center; column-gap:12px; padding:5px 4px; border-bottom:1px solid var(--line);">
-        <span style="justify-self:start; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:${r.aWin ? 800 : 600}; color:${r.aWin ? 'var(--bar)' : 'var(--text-soft)'};">${E(r.aTxt)}</span>
+        <span style="justify-self:start; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:${r.aWin ? 800 : 600}; color:${r.aWin ? 'var(--text)' : 'var(--text-soft)'};">${E(r.aTxt)}</span>
         <span style="justify-self:center; font-size:11px; letter-spacing:0.02em; color:var(--text-label); text-align:center;">${E(r.label)}</span>
         <span style="justify-self:end; font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:${r.bWin ? 800 : 600}; color:${r.bWin ? 'var(--text)' : 'var(--text-soft)'};">${E(r.bTxt)}</span>
       </div>`).join('')}</div>`;
@@ -26759,7 +26762,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     return `<div style="max-width:720px; margin:0 auto;">
       <div style="display:flex; width:max-content; margin:0 auto 12px; gap:4px; background:var(--card); border:1px solid var(--edge-6); border-radius:8px; padding:3px;">${d.viewTabs.map(seg).join('')}</div>
       <div style="display:grid; grid-template-columns:${cols}; column-gap:14px; row-gap:6px; align-items:center; padding:8px; max-width:420px; margin:0 auto 12px;">
-        ${scoreRow(d.aName, 'var(--bar)', d.sumA.setsWon, d.sumA.cells)}
+        ${scoreRow(d.aName, 'var(--text)', d.sumA.setsWon, d.sumA.cells)}
         ${scoreRow(d.bName, 'var(--text)', d.sumB.setsWon, d.sumB.cells)}
       </div>
       ${d.isStats ? statsPane : ''}
@@ -27209,7 +27212,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     view.market = {
       empty: !am && !bm,
       emptyText: 'No odds archive entries for either player.',
-      cards: [mkCard(a, am, A_COL, 'color-mix(in srgb, var(--bar) 24%, transparent)'), mkCard(b, bm, 'var(--text)', 'var(--viz-guide)')],
+      cards: [mkCard(a, am, A_COL, 'var(--edge-24)'), mkCard(b, bm, 'var(--text)', 'var(--viz-guide)')],
       curve: {
         a: a.marketCurve || [], b: b.marketCurve || [],
         aName: a.short, bName: b.short, aColor: A_COL, bColor: 'var(--text)',
@@ -27246,7 +27249,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       const dec = p => (p > 0 ? 1 / p : null);
       const favIsA = pA >= pB;
       view.model = { empty: false, present: true,
-        priceCol: S.flash ? 'var(--bar)' : 'var(--text)',
+        priceCol: 'var(--text)',   // no blue text (TEN-376)
         aName: a.full, bName: b.full, aMono: a.mono, bMono: b.mono,
         aOpen: dec(pA) != null ? dec(pA).toFixed(2) : '—', bOpen: dec(pB) != null ? dec(pB).toFixed(2) : '—',
         aPct: (pA * 100).toFixed(0) + '%', bPct: (pB * 100).toFixed(0) + '%',
@@ -27260,7 +27263,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // news
     const feed = [];
     const mkNews = (p2, cc, cb, px) => (p2.news || []).map((n, i) => ({ who: p2.short, chipColor: cc, chipBd: cb, title: n[0], meta: n[1], body: n[2] || '', key: px + i }));
-    const an = mkNews(a, A_COL, 'color-mix(in srgb, var(--bar) 30%, transparent)', 'a');
+    const an = mkNews(a, A_COL, 'var(--edge-24)', 'a');
     const bn = mkNews(b, 'var(--text-soft)', 'var(--edge-16)', 'b');
     for (let i = 0; i < Math.max(an.length, bn.length); i++) { if (an[i]) feed.push(an[i]); if (bn[i]) feed.push(bn[i]); }
     view.news = {
@@ -27275,7 +27278,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
 
   // ================================ TEMPLATE ================================
   function pageHTML(v) {
-    return `<section style="min-height:100vh; background:var(--inner); color:var(--text); font-family:'Hanken Grotesk',sans-serif; display:flex; flex-direction:column;">
+    return `<section style="min-height:100vh; background:var(--page); color:var(--text); font-family:'Hanken Grotesk',sans-serif; display:flex; flex-direction:column;">
       ${selectorBar(v)}
       ${v.showEmpty ? emptyState(v) : ''}
       ${v.showLoading ? loadingState(v) : ''}
@@ -27383,7 +27386,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function loadingState(v) {
     return `<div style="display:flex; flex-direction:column; gap:16px; padding:24px 28px 70px;">
       <div style="display:flex; align-items:center; gap:10px; font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label);">
-        <span style="width:8px; height:8px; border-radius:50%; background:var(--bar); animation:h2hpulse 1.1s ease-in-out infinite;"></span>
+        <span style="width:8px; height:8px; border-radius:50%; background:var(--text-label);"></span>
         Resolving both players · records, splits, odds archive
       </div>
       ${v.skeletons.map(s => `<div style="background:var(--card); border:1px solid var(--edge-6); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:12px;">
@@ -27661,7 +27664,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           <span>${E(s.lastLabel)}</span><span style="display:inline-block; transition:transform 0.2s; transform:${s.lastChev};">▾</span>
         </button>
         ${s.lastOpen ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr); gap:0 20px; padding-top:8px; align-items:start;">
-          ${styleMeetCol(s.aVsLabel, 'var(--bar)', s.aCol, s.hMoreA)}
+          ${styleMeetCol(s.aVsLabel, 'var(--text)', s.aCol, s.hMoreA)}
           <div style="background:var(--inner);"></div>
           ${styleMeetCol(s.bVsLabel, 'var(--text-soft)', s.bCol, s.hMoreB)}
         </div>` : ''}
@@ -27700,7 +27703,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           </span>
           <input class="h2hin" id="h2h-input-tour" value="${E(t.query)}" data-hinput="${t.hSearch}" autocomplete="off" spellcheck="false" placeholder="Search tournaments…" style="width:100%; box-sizing:border-box; background:var(--card); color:var(--text); border:1px solid var(--edge-6); border-radius:8px; padding:7px 11px 7px 30px; font-family:'IBM Plex Mono',monospace; font-size:11px;">
           ${t.listOpen ? `<div style="position:absolute; z-index:20; top:calc(100% + 4px); right:0; left:0; max-height:260px; overflow-y:auto; background:var(--card); border:1px solid var(--edge-6); border-radius:8px; ">
-            ${t.options.map(o => `<div data-hid="${o.hPick}" style="padding:7px 11px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:${o.selected ? 'var(--bar)' : 'var(--text-soft)'}; background:${o.selected ? 'var(--inner)' : 'transparent'}; border-bottom:1px solid var(--line);">${o.selected ? '✓ ' : ''}${E(o.label)}</div>`).join('')}
+            ${t.options.map(o => `<div data-hid="${o.hPick}" style="padding:7px 11px; font-family:'IBM Plex Mono',monospace; font-size:11px; cursor:pointer; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:${o.selected ? 'var(--text)' : 'var(--text-soft)'}; background:${o.selected ? 'var(--selected)' : 'transparent'}; border-bottom:1px solid var(--line);">${o.selected ? '✓ ' : ''}${E(o.label)}</div>`).join('')}
             ${t.noMatch ? `<div style="padding:9px 11px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-label);">No tournament matches that search.</div>` : ''}
           </div>` : ''}
         </div>`}
@@ -27733,7 +27736,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         <span>${E(t.resLabel)}</span><span style="display:inline-block; transition:transform 0.2s; transform:${t.resChev};">▾</span>
       </button>
       ${t.resOpen ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr); gap:0 20px;">
-        ${tourneyResCol(v.a.short, 'var(--bar)', t.aResults)}
+        ${tourneyResCol(v.a.short, 'var(--text)', t.aResults)}
         <div style="background:var(--inner);"></div>
         ${tourneyResCol(v.b.short, 'var(--text-soft)', t.bResults)}
       </div>` : ''}`}
@@ -32079,7 +32082,9 @@ window.DatabaseTab = (function(){
       // included for the same reason tq/pq are (TEN-243): a results panel left
       // open over the board after the reader clicked away is the bug this
       // handler exists to stop.
-      var dismiss=function(){
+      var dismiss=function(e){
+        // a click inside a site dropdown (sfDd, e.g. the year control) is that dropdown's own; re-rendering here would close it
+        if(e && e.target && e.target.closest && e.target.closest('.sf-dd')) return;
         var prev=I;
         for(var i=0;i<INSTANCES.length;i++){
           var i2=INSTANCES[i];
@@ -33203,7 +33208,7 @@ ${ratingCardHtml}
     </div>
     <div style="display:flex;gap:34px;">
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-        <span style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--pos);"><span style="width:5px;height:5px;border-radius:50%;background:var(--pos);"></span>In play</span>
+        <span style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text);">In play</span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:var(--pos);">${d.inPlayCount}</span>
       </div>
       <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
