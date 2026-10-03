@@ -208207,11 +208207,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "40 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1106_a-de-minaur.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
@@ -209567,7 +209573,10 @@
       "edgeVsPinnacleP1": 0.0469,
       "edgeVsPinnacleP2": -0.0469,
       "ts": "2026-10-02T21:03:04.962Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12167644",
@@ -211991,11 +212000,27 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 7,
+        "p2": 5
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/431_d-shapovalov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "oddsMovement": {
@@ -213022,7 +213047,10 @@
       "edgeVsPinnacleP1": -0.0485,
       "edgeVsPinnacleP2": 0.0485,
       "ts": "2026-10-01T13:33:44.340Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12166954",
