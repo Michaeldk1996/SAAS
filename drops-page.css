@@ -50,7 +50,7 @@
 /* ── 2 · feed-disconnected banner ── */
 [data-page="drops"] .do-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
-  padding: 11px 16px; border-radius: 11px; background: var(--card); border: 1px solid color-mix(in srgb, var(--neg) 35%, transparent);
+  padding: 11px 16px; border-radius: 11px; background: var(--card); border: 1px solid var(--edge-6);
 }
 [data-page="drops"] .do-banner-l { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 [data-page="drops"] .do-banner-k { font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color: var(--neg); }
@@ -122,7 +122,7 @@
   background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); font-family: 'Hanken Grotesk', sans-serif; line-height: normal;
 }
 [data-page="drops"] .do-trig.open { border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); }
-[data-page="drops"] .do-trig.active { background: color-mix(in srgb, var(--bar) 13%, transparent); border-color: color-mix(in srgb, var(--edge-16) 35%, transparent); }
+[data-page="drops"] .do-trig.active { background: var(--inner); border-color: var(--edge-16); }   /* lift, never blue */
 [data-page="drops"] .do-trig[aria-disabled="true"] { cursor: default; }
 [data-page="drops"] .do-trig-k { color: var(--text-label); font-weight: 600; }
 [data-page="drops"] .do-trig-v { font-weight: 700; color: var(--text-soft); }
@@ -184,7 +184,7 @@
 [data-page="drops"] .do-fig-c { font-family:var(--font-words);  font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color: var(--neg); }
 [data-page="drops"] .do-who { min-width: 0; display: flex; align-items: center; gap: 14px; }
 [data-page="drops"] .do-av {
-  width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--inner); border: 1.5px solid color-mix(in srgb, var(--neg) 45%, transparent);
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--inner); border: 1px solid var(--edge-6);
   flex: none; box-sizing: border-box; display: block;
 }
 [data-page="drops"] .do-who-t { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
@@ -199,7 +199,7 @@
   display: flex; align-items: center; gap: 14px; padding: 8px 12px; margin: -8px -12px; border-radius: 10px;
   border: 1px solid transparent; cursor: pointer; transition: background .14s ease, border-color .14s ease;
 }
-[data-page="drops"] .do-px:hover { background: color-mix(in srgb, var(--neg) 7%, transparent); border-color: color-mix(in srgb, var(--neg) 28%, transparent); }
+[data-page="drops"] .do-px:hover { background: var(--tile-hover); border-color: var(--edge-16); }
 [data-page="drops"] .do-px-c { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
 [data-page="drops"] .do-px-l { display: flex; align-items: baseline; gap: 8px; font-family: 'IBM Plex Mono', monospace; white-space: nowrap; }
 [data-page="drops"] .do-px-o { font-size: 13px; color: var(--text-label); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--neg) 60%, transparent); }
@@ -223,7 +223,7 @@
 
 /* ── 10 · the price-move box (LOCKED `handoff/Price Move Box/`, founder comment 8585095a, 2026-09-27) ──
    Colours: foundation tokens only (TEN-376). Drops are signed: a drop of 10% or more is --neg, a smaller
-   drop --neg at 75%; the line is --neg, its flat fill --neg at 10%; muted text --text-label. */
+   drop --neg at 75%; the line is --neg with no fill under it (README §5.8); muted text --text-label. */
 .do-ov { position: fixed; top: 0; bottom: 0; right: 0; left: var(--do-shell-left, 252px); z-index: 1000; font-family: 'Hanken Grotesk', sans-serif; color: var(--text); font-size: 16px; line-height: normal; }
 .do-ov-scrim { position: absolute; inset: 0; z-index: 40; background: var(--backdrop); backdrop-filter: blur(3px); }
 .do-ov-box {
@@ -276,7 +276,7 @@
 .do-ov-plot svg { width: 100%; height: 100%; display: block; overflow: visible; }
 .do-ov-plot .do-vt { stroke: color-mix(in srgb, var(--text) 4.5%, transparent); stroke-width: 1; }
 .do-ov-plot .do-hg { stroke: var(--edge-6); stroke-width: 1; }
-.do-ov-plot .do-area { fill: color-mix(in srgb, var(--neg) 10%, transparent); stroke: none; }
+.do-ov-plot .do-area { fill: none; stroke: none; }   /* README §5.8: no fill under a line */
 .do-ov-plot .do-line { fill: none; stroke: var(--neg); stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
 .do-ov-openchip {
   position: absolute; left: 8px; transform: translateY(-50%); padding: 2px 7px; border-radius: 5px; background: var(--card);

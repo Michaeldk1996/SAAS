@@ -35,7 +35,7 @@
     --value-pos: var(--pos);
     --value-neg: var(--neg);
     /* TEN-314: colours of the Form / H2H / match-stats builders the player profile shares with the Match analysis
-       modal. Outside the modal these are the values those builders always drew; match-analysis-tokens.css
+       modal. Outside the modal these are the values those builders always drew; tokens.css (TEN-376; was the modal token file)
        re-points every one inside the modal (.ma-theme), so the modal reads only its token file. */
     --fh-pa: var(--text);
     --fh-pb: var(--text-soft);
@@ -139,7 +139,7 @@
     font-weight:600; padding:6px 16px; border-radius:999px; cursor:pointer;
     font-family:var(--mx-font-ui);
   }
-  .circuit-toggle button.active{ background: var(--bar); color:var(--text); }
+  .circuit-toggle button.active{ background:var(--inner); color:var(--text); box-shadow:inset 0 0 0 1px var(--edge-10); }
   .circuit-toggle button:disabled{ cursor:not-allowed; opacity:0.5; }
 
   .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; padding: 18px 24px; }
@@ -269,7 +269,7 @@
   [data-page="matches"] .mx-filterbar{ display:flex; align-items:center; flex-wrap:wrap; }
   [data-page="matches"] .mx-pilltoggle{ display:flex; background:var(--mx-bg-input); border:1px solid var(--mx-hairline); border-radius:999px; padding:3px; gap:2px; }
   [data-page="matches"] .mx-pilltoggle button{ background:none; border:none; color:var(--mx-text-secondary); font-size:12.5px; font-weight:600; padding:6px 16px; border-radius:999px; cursor:pointer; font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-pilltoggle button.active{ background:var(--bar); color:var(--text); }
+  [data-page="matches"] .mx-pilltoggle button.active{ background:var(--inner); color:var(--text); box-shadow:inset 0 0 0 1px var(--edge-10); }
   /* §1 (PASS 5) — filter controls share ONE fill/border read from the export's filter
      row (computed: background var(--card) = --mc-card, border 1px color-mix(in srgb, var(--text) 9%, transparent) =
      --mc-border-data). Near-transparent fill defined by its border, so the row sits
@@ -1231,7 +1231,7 @@
     transition:background .14s ease, color .14s ease, border-color .14s ease; }
 
   .modal-analysis .alivebar{ margin:16px 24px 0; padding:12px 16px; background:var(--inner); color:var(--text); border-radius:11px; font-family:'IBM Plex Mono', monospace; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:11px; flex-wrap:wrap; flex-shrink:0; }
-  .modal-analysis .alivebar.live{ color:var(--pos); }   /* the live state = the positive green (README §3); suspended stays neutral */
+  .modal-analysis .alivebar.live{ color:var(--text); }   /* TEN-376: LIVE is white text, never green (green = signed values) */
   .modal-analysis .alivebar[style*="display: none"]{ margin:0; }
   .modal-analysis .alivebar .anote{ font-family:'Hanken Grotesk', sans-serif; font-weight:400; font-size:12px; color:var(--text-label); text-align:left; }
 
@@ -1324,7 +1324,7 @@
   .aodds-mktopt .mkt-chk{ color:var(--pos); display:flex; }
   .aodds-seg{ display:flex; background:var(--card); border:1px solid var(--edge-6); border-radius:9px; padding:3px; gap:2px; }
   .aodds-seg button{ border:none; background:transparent; color:var(--text-label); font-size:12px; font-weight:700; font-family:'Hanken Grotesk', sans-serif; padding:5px 13px; border-radius:7px; cursor:pointer; }
-  .aodds-seg button.active{ background:var(--text); color:var(--page); font-weight:800; }
+  .aodds-seg button.active{ background:var(--inner); color:var(--text); font-weight:700; box-shadow:inset 0 0 0 1px var(--edge-10); }   /* darker track (README §5.1) */
   .aodds-books{ display:flex; gap:5px; margin-left:auto; flex-wrap:wrap; align-items:center; }
   .aodds-bookslbl{ font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; font-family:var(--font-words);  color:var(--text-label); font-weight:700; margin-right:1px; }
   .aodds-chip{ display:flex; align-items:center; gap:5px; padding:3px 7px; border-radius:6px; border:1px solid var(--edge-6); background:transparent; cursor:pointer; }
@@ -1775,8 +1775,8 @@
   .phbanner .phb-detail{ font-weight:400; opacity:0.85; }
   .phbanner.phb-warn{ background:var(--inner); color:var(--text-soft); border-bottom-color:var(--edge-10); }
   .phbanner.phb-warn .phb-dot{ background:var(--text-label); }
-  .phbanner.phb-error{ background:color-mix(in srgb, var(--neg) 14%, transparent); color:var(--neg); border-bottom-color:color-mix(in srgb, var(--neg) 32%, transparent); }
-  .phbanner.phb-error .phb-dot{ background:var(--neg); }
+  .phbanner.phb-error{ background:var(--inner); color:var(--text); border-bottom-color:var(--edge-16); }
+  .phbanner.phb-error .phb-dot{ background:var(--text); }
 
   /* ================================================================= */
   /* STENNISFY APP SHELL — sidebar / header / content column (TEN-8).   */
@@ -1843,7 +1843,7 @@
      and the whole status line var(--text-label) muted, the live dot var(--pos). */
   [data-page="matches"] .mx-h1{ color:var(--text); }
   [data-page="matches"] .mx-datastatus{ color:var(--text-label) !important; }
-  [data-page="matches"] .mx-datastatus .dot{ background:var(--pos) !important;  }
+  [data-page="matches"] .mx-datastatus .dot{ background:var(--text-label) !important;  }
   [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--text-label); font-family:var(--sf-font-ui); }
   [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--text-label); font-family:var(--sf-font-mono); }
   /* §2 — Completed status line: muted 'Settled · <date>', no green, no glow. */
@@ -1868,7 +1868,7 @@
     transition:background .14s ease, color .14s ease, border-color .14s ease; }
   [data-page="matches"] .mx-viewseg button.active{ border-color:var(--edge-10); }
 
-  /* date-rail arrows — the one definition (12a design: 30×30, r8, 0.33px line, Hanken 16px glyph
+  /* date-rail arrows — the one definition (12a design: 30×30, r8, 1px line, Hanken 16px glyph
      in label). Disabled (paged to the edge of the window) keeps the box and draws the glyph in `line`,
      as the design's disabled ›: rendered, never hidden, no hover reaction, no pointer. */
   [data-page="matches"] .mx-daytabschevron{ width:30px; height:30px; box-sizing:border-box; padding:0; flex-shrink:0; display:flex;
@@ -1906,10 +1906,10 @@
   .lo-score{ font-weight:600; color:var(--text,var(--text)); letter-spacing:0.04em; }
   .lo-server{ color:var(--mc-muted-2,var(--text-label)); font-size:11px; }
   .lo-badge{ border-radius:4px; padding:1px 7px; font-size:10.5px; font-weight:700; letter-spacing:0.07em; text-transform:uppercase; }
-  .lo-badge.lo-live{ background:color-mix(in srgb, var(--pos) 12%, transparent); color:var(--pos); display:inline-flex; align-items:center; gap:5px; }
-  .lo-dot{ width:6px; height:6px; border-radius:50%; background:var(--pos); animation:lo-pulse 1.6s ease-in-out infinite; }
+  .lo-badge.lo-live{ background:transparent; color:var(--text); display:inline-flex; align-items:center; gap:5px; }   /* U2.1: LIVE = white caps text, no pill, no dot */
+  .lo-dot{ display:none; }
   .lo-badge.lo-stale{ background:var(--inner); color:var(--text-label); }
-  .lo-badge.lo-frozen{ background:color-mix(in srgb, var(--pos) 6%, transparent); color:var(--text-label,var(--text-label)); border:1px solid color-mix(in srgb, var(--pos) 15%, transparent); }
+  .lo-badge.lo-frozen{ background:var(--inner); color:var(--text-label); border:none; }
   @keyframes lo-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
 
   /* TEN-192 — Trading Report, rebuilt to design_handoff_trading_report (flag-gated;
@@ -2060,15 +2060,15 @@
   [data-page="live"] .lt-subtitle{ margin:0; color:var(--text-label,var(--text-label)); font-size:13.5px; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
   [data-page="live"] .lt-status{ margin:8px 0 0; font-size:12.5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); display:flex; align-items:center; gap:8px; color:var(--pos); }
   [data-page="live"] .lt-status.stale{ color:var(--text-label); }
-  [data-page="live"] .lt-status .lt-dot{ width:7px; height:7px; border-radius:50%; background:currentColor;  flex-shrink:0; animation:lt-pulse 1.6s ease-in-out infinite; }
+  [data-page="live"] .lt-status .lt-dot{ display:none; }
 
   [data-page="live"] .lt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
   [data-page="live"] .lt-card{ background:var(--card,var(--card)); border:1px solid var(--edge-6,var(--edge-6)); border-radius:14px; padding:14px 16px 12px; transition:border-color 120ms; }
   [data-page="live"] .lt-card:hover{ border-color:color-mix(in srgb, var(--pos) 35%, transparent); }
   [data-page="live"] .lt-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
   [data-page="live"] .lt-tourn{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:11.5px; color:var(--text-label,var(--text-label)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="live"] .lt-badge{ display:inline-flex; align-items:center; gap:5px; flex-shrink:0; background:color-mix(in srgb, var(--pos) 12%, transparent); color:var(--pos); border-radius:5px; padding:2px 8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; font-family:var(--mx-font-mono,monospace); }
-  [data-page="live"] .lt-badge .lt-dot{ width:6px; height:6px; border-radius:50%; background:var(--pos); animation:lt-pulse 1.6s ease-in-out infinite; }
+  [data-page="live"] .lt-badge{ display:inline-flex; align-items:center; gap:5px; flex-shrink:0; background:transparent; color:var(--text); border-radius:5px; padding:2px 8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; font-family:var(--mx-font-mono,monospace); }
+  [data-page="live"] .lt-badge .lt-dot{ display:none; }
 
   [data-page="live"] .lt-players{ display:flex; flex-direction:column; gap:2px; }
   [data-page="live"] .lt-row{ display:grid; grid-template-columns:26px 1fr 12px auto 30px; align-items:center; gap:9px; padding:5px 0; }
@@ -2076,12 +2076,12 @@
   [data-page="live"] .lt-av{ width:26px; height:26px; border-radius:50%; object-fit:cover; background:var(--inner,var(--card)); flex-shrink:0; }
   [data-page="live"] .lt-av-blank{ display:inline-block; }
   [data-page="live"] .lt-name{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:14.5px; font-weight:600; color:var(--text-label,var(--text-soft)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="live"] .lt-serve{ color:var(--pos); font-size:11px; text-align:center; }
+  [data-page="live"] .lt-serve{ color:var(--serve-ball); font-size:11px; text-align:center; }
   [data-page="live"] .lt-sets{ display:inline-flex; gap:5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); }
   [data-page="live"] .lt-set{ min-width:15px; text-align:center; font-size:14px; font-weight:600; color:var(--text-label,var(--text-label)); }
   [data-page="live"] .lt-set.cur{ color:var(--text,var(--text)); }
   [data-page="live"] .lt-set sup{ font-size:9px; font-weight:600; vertical-align:super; line-height:0; margin-left:1px; }
-  [data-page="live"] .lt-game{ font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); font-size:14px; font-weight:700; color:var(--pos); text-align:right; min-width:28px; }
+  [data-page="live"] .lt-game{ font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); font-size:14px; font-weight:700; color:var(--text); text-align:right; min-width:28px; }
   [data-page="live"] .lt-pt{ letter-spacing:0.02em; }
 
   [data-page="live"] .lt-empty{ grid-column:1/-1; text-align:center; padding:64px 20px; color:var(--text-label,var(--text-label)); }
@@ -2117,7 +2117,7 @@
   .ltm-scoreline{ display:flex; align-items:center; gap:11px; font-size:15px; font-weight:700; color:var(--text-label,var(--text-label)); }
   .ltm-scoreline .cur{ color:var(--text,var(--text)); }
   .ltm-scoreline sup{ font-size:10px; font-weight:600; vertical-align:super; line-height:0; margin-left:1px; }
-  .ltm-serveball{ color:var(--pos); font-size:10px; }
+  .ltm-serveball{ color:var(--serve-ball); font-size:10px; }   /* lime = the live serve dot only */
   .ltm-tabs{ display:flex; gap:4px; padding:0 14px 12px; }
   .ltm-tab{ flex:1; display:flex; align-items:center; justify-content:center; gap:6px; padding:9px 8px; border-radius:9px;
     border:1px solid transparent; background:var(--inner,var(--card)); color:var(--text-label,var(--text-label)); font-size:12.5px;
@@ -2747,10 +2747,8 @@
 
   .db-yr{ display:inline-flex; align-items:stretch; height:36px; border-radius:9px; overflow:hidden; border:1px solid var(--db-bd); }
   .db-yr.on{ border-color:var(--edge-10); }
-  .db-yrend{ position:relative; display:inline-flex; align-items:center; gap:6px; padding:0 10px; }
-  .db-yrend b{ font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db-txt); }
-  .db-yrend u{ text-decoration:none; font-size:9px; color:var(--db-mute); }
-  .db-yrend select{ position:absolute; inset:0; opacity:0; appearance:none; -webkit-appearance:none; border:none; width:100%; height:100%; cursor:pointer; }
+  .db-yrend{ position:relative; display:inline-flex; align-items:center; }
+  .db-yrend .sf-dd-trig{ font-family:var(--db-mono); font-size:12px; font-weight:400; padding:6px 10px; }
   .db-yrsep{ display:inline-flex; align-items:center; font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:0 3px; }
   .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--text); background:none; border:none; cursor:pointer; padding:0; }
   .db-reset:hover{ color:var(--text); }
@@ -3259,7 +3257,7 @@
   [data-page="entry-lists"] .el-publine{ font-size:10.5px; color:var(--text-label); margin-top:3px; }
   /* loud staleness banner: shown when the source could not be refreshed */
   [data-page="entry-lists"] .el-stale{ display:flex; align-items:flex-start; gap:10px; background:var(--inner); border:1px solid var(--edge-10); border-radius:10px; padding:12px 16px; margin-bottom:20px; color:var(--neg); font-size:12.5px; line-height:1.5; }
-  [data-page="entry-lists"] .el-stale strong{ color:var(--neg); }
+  [data-page="entry-lists"] .el-stale strong{ color:var(--text); }
   [data-page="entry-lists"] .el-s-ng{ background:var(--inner); color:var(--text); }
   [data-page="entry-lists"] .el-s-jr{ background:color-mix(in srgb, var(--pos) 10%, transparent); color:var(--pos); }
   [data-page="entry-lists"] .el-s-co{ background:var(--inner); color:var(--text-label); }
@@ -3887,7 +3885,7 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:var(--text); }
   [data-page="news"] .news-head p{ margin:0; color:var(--text-soft); font-size:13.5px; }
   [data-page="news"] .news-live{ margin-top:9px; font-size:12px; color:var(--text-label); font-family:'IBM Plex Mono',ui-monospace,monospace; display:flex; align-items:center; gap:7px; }
-  [data-page="news"] .news-livedot{ width:7px; height:7px; border-radius:50%; background:var(--pos);  flex-shrink:0; }
+  [data-page="news"] .news-livedot{ width:7px; height:7px; border-radius:50%; background:var(--text);  flex-shrink:0; }   /* freshness is greyscale */
   [data-page="news"] .news-clock{ color:var(--text-label); }
   /* Stale feed (TEN-8, 2026-08-02): header goes amber and drops the "Live" claim
      when news-feed.json's own generatedAt is older than NEWS_STALE_HOURS. */
@@ -3961,7 +3959,7 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-composer input{ margin-top:10px; }
   [data-page="news"] .news-composer textarea::placeholder, [data-page="news"] .news-composer input::placeholder{ color:var(--text-label); }
   [data-page="news"] .cmp-match{ font-size:11px; margin-top:6px; min-height:14px; font-family:'IBM Plex Mono',ui-monospace,monospace; color:var(--text-label); }
-  [data-page="news"] .cmp-match.ok{ color:var(--pos); }
+  [data-page="news"] .cmp-match.ok{ color:var(--text); }
   [data-page="news"] .cmp-match.none{ color:var(--text-label); }
   [data-page="news"] .cmp-foot{ display:flex; align-items:center; gap:12px; margin-top:12px; }
   [data-page="news"] .cmp-count{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:var(--text-label); }
@@ -4429,10 +4427,7 @@ window.EntryListsTab = (function(){
   .edge-seg{ display:inline-flex; gap:3px; background:var(--inner); border:1px solid var(--edge-6); border-radius:10px; padding:4px; width:max-content; }
   .edge-seg-btn{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; color:var(--text-label); background:none; border:none; padding:6px 14px; border-radius:7px; cursor:pointer; white-space:nowrap; transition:background .14s ease, color .14s ease; }
   .edge-seg-btn:hover{ color:var(--text-soft); }
-  .edge-seg-btn.active{ color:var(--text); background:var(--inner); }
-  .edge-seg-btn.active[data-surf="Hard"]{ background:var(--bar); }
-  .edge-seg-btn.active[data-surf="Clay"]{ background:var(--text-soft); }
-  .edge-seg-btn.active[data-surf="Grass"]{ background:var(--inner); }
+  .edge-seg-btn.active{ color:var(--text); background:var(--inner); box-shadow:inset 0 0 0 1px var(--edge-10); }
   .edge-rt-tablewrap{ overflow-x:auto; }
   .edge-rt-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
   .edge-rt-table th{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); text-align:right; padding:0 14px 10px; border-bottom:1px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none; }
@@ -5065,7 +5060,7 @@ function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 24; renderNews(); 
 // TEN-376 README §5.5 — sfDd: the site's one dropdown. sfDdRender(hostId, { options:[{value,label}], value, onChange, ariaLabel }).
 // The host keeps the old <select>'s id, so callers and tests find it where they always did; host.value mirrors the choice.
 function sfDdRender(id, cfg){
-  const host = document.getElementById(id); if (!host) return;
+  const host = typeof id === 'string' ? document.getElementById(id) : id; if (!host) return;
   const opts = cfg.options || [], val = String(cfg.value == null ? '' : cfg.value);
   const cur = opts.find(o => String(o.value) === val) || opts[0] || { value: '', label: '' };
   const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -5079,7 +5074,7 @@ function sfDdClose(except){ document.querySelectorAll('.sf-dd.open').forEach(d =
 function sfDdPick(host, v){
   sfDdClose();
   const cfg = host._sfDd; if (!cfg) return;
-  if (String(v) !== String(host.value)){ cfg.value = v; sfDdRender(host.id, cfg); if (cfg.onChange) cfg.onChange(String(v)); }
+  if (String(v) !== String(host.value)){ cfg.value = v; sfDdRender(host, cfg); if (cfg.onChange) cfg.onChange(String(v)); }
 }
 document.addEventListener('click', ev => {
   const row = ev.target.closest && ev.target.closest('.sf-dd-row');
@@ -12050,7 +12045,7 @@ const WX_COPY = {
   tip: { gusts: 'Max gusts', wind: 'Avg wind', feels: 'Feels-like max', rain: 'Rain chance max', mm: 'Rain total', window: 'Hours', windowVal: '{from}:00–{to}:00 venue time', values: 'Values', pastVal: 'archived forecast, not observed', source: 'Source', fetched: 'Fetched' },
   loading: 'Loading forecast…',
 };
-// Colours: the modal's ONE token file (match-analysis-tokens.css, TEN-314 / TEN-312 D1) — every value is a
+// Colours: the modal's ONE token file (tokens.css (TEN-376; was the modal token file), TEN-314 / TEN-312 D1) — every value is a
 // var() of the token its role maps to (README §3 + U-mappings); the design source value is in the comment.
 // Widths stay the Weather spec's. Locked by test-ten304-weather-tab.mjs against the token file.
 const WX_C = {
@@ -13269,7 +13264,7 @@ function fhEloAt(hist, name, iso, owners){
 }
 
 // Player colours. Shared with the player profile: --fh-pa / --fh-pb are the 12a periwinkle / text outside the modal
-// (dashboard :root) and the neutral D4 pair inside it (match-analysis-tokens.css).
+// (dashboard :root) and the neutral D4 pair inside it (tokens.css (TEN-376; was the modal token file)).
 const FH_AC = 'var(--fh-pa)', FH_BC = 'var(--fh-pb)', FH_B2 = 'var(--text-soft)', FH_DASH = 'var(--text-label)';
 // Surface dots: the 12a court colours outside the modal; neutral inside it (U22, surfaces are neutral text).
 const FH_SURF = { Hard: 'var(--text-soft)', Clay: 'var(--text-soft)', Grass: 'var(--text-soft)' };
@@ -13277,7 +13272,7 @@ const FH_MONO = "font-family:'IBM Plex Mono',monospace;";
 const FH_THIN = 5;                         // design THIN: fewer than 5 matches → no ratios
 const FH_DASHC = '—';
 // A design shade (founder 2026-09-29: every design shade is its own token, named by its source value — see
-// match-analysis-tokens.css), with the 12a name as the fallback outside the modal.
+// tokens.css (TEN-376; was the modal token file)), with the 12a name as the fallback outside the modal.
 
 let _fh = null;                            // per-open-analysis UI state (README "State")
 
@@ -15260,7 +15255,7 @@ function meLoadProfileShard(key){
 }
 
 // ---- colours: the TEN-312 design file's own shades (founder 2026-09-29: every design shade is its own token,
-//      match-analysis-tokens.css `--ma-s-<source hex>[-<alpha × 1000>]`, Night / Day there). The file's live palette is
+//      tokens.css (TEN-376; was the modal token file) `--ma-s-<source hex>[-<alpha × 1000>]`, Night / Day there). The file's live palette is
 //      meFor's PALS 'a' ("One colour", DF L3363); the source value is the token's name. Fallback = the 12a name outside the modal. ----
 const ME_C = {
   text: 'var(--text)',              // player A line + dot, win bar, values
@@ -15892,7 +15887,7 @@ const TR_MONO = "font-family:'IBM Plex Mono',monospace;";
 function trTileHtml(cap, value, color, sub, o){
   o = o || {};
   const val = `<span class="tr-tile-v" style="${TR_MONO} font-size:23px; font-weight:700; line-height:1.15; color:${color}; white-space:nowrap; max-width:100%;">${value}</span>`;
-  const body = `<span style="${TR_MONO}font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${cap}</span>`
+  const body = `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);">${cap}</span>`
     + (o.tip ? maTipHtml(`<span tabindex="0" style="display:inline-flex;">${val}</span>`, o.tip, { wrap: 280 }) : val)
     + `<span class="tr-tile-sub" style="font-size:10.5px; color:var(--text-label); white-space:nowrap;">${sub}</span>`;
   return `<div class="tr-tile"${o.attrs || ''} style="background:var(--card); border:1px solid var(--line); border-radius:11px; padding:13px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:7px; min-width:0;">${body}</div>`;
@@ -16028,7 +16023,7 @@ function trMarketHtml(m){
   const segs = []; let cur = [];
   pts.forEach(p => { if (p.v != null) cur.push(p); else { if (cur.length) segs.push(cur); cur = []; } }); if (cur.length) segs.push(cur);
   const poly = segs.filter(s => s.length > 1).map(s => `<polyline points="${s.map(p => X(p.i).toFixed(1) + ',' + Y(p.v).toFixed(1)).join(' ')}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>`).join('');
-  const area = segs.filter(s => s.length > 1).map(s => `<path d="M${s.map(p => X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' L')} L${X(s[s.length - 1].i).toFixed(1)} 90 L${X(s[0].i).toFixed(1)} 90 Z" fill="url(#trSpFill)"></path>`).join('');
+  const area = segs.filter(s => s.length > 1).map(s => `<path d="M${s.map(p => X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' L')} L${X(s[s.length - 1].i).toFixed(1)} 90 L${X(s[0].i).toFixed(1)} 90 Z" fill="none"></path>`).join('');
   const dots = pts.map(p => {
     const left = (X(p.i) / 360 * 100).toFixed(2) + '%';
     const yTxt = p.v != null ? Y(p.v).toFixed(1) + 'px' : '66px';
@@ -16054,7 +16049,7 @@ function trMarketHtml(m){
     const col = !has || g === 'small' ? MA_GREY : Math.abs(dlt) < 1 ? t3 : dlt > 0 ? 'var(--pos)' : 'var(--neg)';
     const cmp = has ? (Math.abs(dlt) < 1 ? 'in line with tour average' : (dlt > 0 ? '+' : '−') + Math.abs(dlt).toFixed(1) + 'pp vs tour avg') + (g === 'small' ? ' · ' + MA_SMALL_NOTE : '')
       : (mkt ? 'Not enough settled matches here for a yield.' : 'No settled prices for this event on record.');
-    return `<div class="${openable ? 'seg ' : ''}tr-roi" data-tr="roi-${side}"${openable ? ` onclick="trSet({roi:'${side}'})"` : ''} style="background:${box}; border:1px solid ${line}; border-radius:12px; padding:15px 18px;${openable ? ' cursor:pointer;' : ''}"><div style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; ${TR_MONO}">${label}</div><div style="display:flex; align-items:baseline; gap:9px; margin-top:8px;"><span style="${TR_MONO} font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; color:${col};">${has ? (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' : '—'}</span><span style="font-size:11.5px; color:${t3};">flat-stake yield</span></div><div style="font-size:11px; color:${t4}; margin-top:5px;">${cmp}</div>${openable ? `<div style="display:flex; align-items:center; gap:7px; margin-top:11px; font-size:11.5px; font-weight:700; color:var(--link);">Open ${side === 'fav' ? 'favourites' : 'underdogs'} graphics <span style="${TR_MONO}">→</span></div>` : ''}</div>`;
+    return `<div class="${openable ? 'seg ' : ''}tr-roi" data-tr="roi-${side}"${openable ? ` onclick="trSet({roi:'${side}'})"` : ''} style="background:${box}; border:1px solid ${line}; border-radius:12px; padding:15px 18px;${openable ? ' cursor:pointer;' : ''}"><div style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; font-family:var(--font-words);">${label}</div><div style="display:flex; align-items:baseline; gap:9px; margin-top:8px;"><span style="${TR_MONO} font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; color:${col};">${has ? (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' : '—'}</span><span style="font-size:11.5px; color:${t3};">flat-stake yield</span></div><div style="font-size:11px; color:${t4}; margin-top:5px;">${cmp}</div>${openable ? `<div style="display:flex; align-items:center; gap:7px; margin-top:11px; font-size:11.5px; font-weight:700; color:var(--link);">Open ${side === 'fav' ? 'favourites' : 'underdogs'} graphics <span style="${TR_MONO}">→</span></div>` : ''}</div>`;
   };
   const relHas = rateOk && mkt.favRel != null;
   const rv = relHas ? mkt.favRel : null, ra = relHas ? mkt.baseline.favRel : null, rd = relHas ? rv - ra : 0;
@@ -16372,7 +16367,7 @@ function buildSetSelectorHtml(setNos, handler, allLabel){
 // wrong everywhere per the founder ruling; the export authority confirms this
 // pair across every modal tab (H2H, Form, Playing Style, Progression, radar…).
 // TEN-314 (TEN-312 D4): both players are NEUTRAL on every tab — A primary text, B secondary text and a 70% white
-// fill for B's bars / lines. Tokens from match-analysis-tokens.css; the tints are colour-mixes of the same token.
+// fill for B's bars / lines. Tokens from tokens.css (TEN-376; was the modal token file); the tints are colour-mixes of the same token.
 const ANALYSIS_P1_COLOR = 'var(--text)';
 const ANALYSIS_P2_COLOR = 'var(--text-soft)';
 const ANALYSIS_P2_FILL = 'var(--bar-2)';
@@ -16580,7 +16575,7 @@ const AODDS_LINE_SHAPE = 'step';
 // The one missing-price mark on this tab (NOW, NET, margin, pop-up header, stat boxes, opening & closing):
 // the locked design's DASH (U+2014 em dash, handoff "Weather Tab" `DASH = '\u2014'`; CLAUDE.md absent value).
 const AODDS_DASH = '\u2014';
-// Colour tokens of the tab: the modal's ONE token file (match-analysis-tokens.css, TEN-314 / TEN-312 D1). Each
+// Colour tokens of the tab: the modal's ONE token file (tokens.css (TEN-376; was the modal token file), TEN-314 / TEN-312 D1). Each
 // value is a var() of the token its ROLE maps to (README §3 + U-mappings); the Odds Tab - Spec.md source value is in
 // the comment. D4: both players neutral (A primary, B secondary / 70% white fill). Widths stay the spec's.
 const AODDS_C = {
@@ -18475,7 +18470,7 @@ function aAvatarHtml(name, key){
     ? `<img class="avatar"${attrs} src="${src}" alt="${escapeHtml(name)}" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`
     : `<div class="avatar-fallback"${attrs}>${initials}</div>`;
 }
-// TEN-314 (TEN-312 D1): the Night / Day / Auto mode match-analysis-tokens.css reads, on every `.ma-theme` element.
+// TEN-314 (TEN-312 D1): the Night / Day / Auto mode — now the one site theme (theme.js, TEN-376).
 // ONE storage key, shared with the site-wide switch (TEN-315); until that switch ships the modal defaults to Night.
 // TEN-376: the modal follows the one site theme (theme.js -> data-theme on <html>); these delegate to it.
 function maThemeMode(){ return window.sfTheme ? window.sfTheme.mode() : 'night'; }
@@ -20691,7 +20686,7 @@ function ppAsapSignalHtml(p){
     const cat = ASAP_CATS[b.category] || { label: 'Note', color: 'var(--text-label)' };
     const quote = String(b.quote || '').replace(/^["']+|["']+$/g, '').trim();
     return `<div style="display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line);">
-      <span style="flex:0 0 auto;align-self:flex-start;margin-top:2px;font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${cat.color};background:${cat.color}1a;border:1px solid ${cat.color}40;border-radius:5px;padding:3px 7px;white-space:nowrap;">${escapeHtml(cat.label)}</span>
+      <span style="flex:0 0 auto;align-self:flex-start;margin-top:2px;font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${cat.color};background:var(--inner);border:1px solid transparent;border-radius:5px;padding:3px 7px;white-space:nowrap;">${escapeHtml(cat.label)}</span>
       <div style="min-width:0;">
         <div style="font-size:13.5px;line-height:1.45;color:var(--text);">${escapeHtml(b.text)}</div>
         ${quote ? `<div style="margin-top:5px;font-size:12.5px;line-height:1.4;color:var(--text-label);font-style:italic;">&ldquo;${escapeHtml(quote)}&rdquo;</div>` : ''}
@@ -20893,10 +20888,10 @@ function ppStyleRadarSvg(scores, partial){
 function ppStyleCard(p){
   const st = ppStyleFor(p && p.name);
   if (!st) return '';
-  const PP_BADGE = { pressure_player:['Pressure Player','62,207,142'], clay_specialist:['Clay Specialist','201,106,52'], grass_specialist:['Grass Specialist','91,141,239'], high_risk_high_reward:['High Risk / High Reward','232,179,65'] };
+  const PP_BADGE = { pressure_player:['Pressure Player'], clay_specialist:['Clay Specialist'], grass_specialist:['Grass Specialist'], high_risk_high_reward:['High Risk / High Reward'] };
   const badges = (st.badges || []).map(b => {
     const d = PP_BADGE[b]; if (!d) return '';
-    return `<span style="font-size:10.5px;font-weight:700;color:rgb(${d[1]});background:rgba(${d[1]},0.12);border:1px solid rgba(${d[1]},0.35);border-radius:7px;padding:4px 9px;">${d[0]}</span>`;
+    return `<span style="font-family:var(--font-words);font-size:10px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;background:var(--inner);border:none;color:var(--text-label);border-radius:5px;padding:2px 6px;">${d[0]}</span>`;   // U2: FAV-badge treatment
   }).join('');
   const partial = st.partial_axes || [];
   const covNote = st.archetype_data_coverage === 'partial'
@@ -20942,7 +20937,7 @@ function ppTrendSvg(series, color){
   const area = `M${xs[0].toFixed(1)},${(H-padB).toFixed(1)} L` + xs.map((x,i)=>x.toFixed(1)+','+ys[i].toFixed(1)).join(' L') + ` L${xs[n-1].toFixed(1)},${(H-padB).toFixed(1)} Z`;
   return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible;">
     <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.30"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>
-    <path d="${area}" fill="url(#${gid})"/>
+    <path d="${area}" fill="none"/>
     <polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
     ${dots}
   </svg>`;
@@ -22252,16 +22247,16 @@ function buildPlayerProfileHtml(p){
             : `${parResolved} event${parResolved === 1 ? '' : 's'} · ${parRow.gapCount} gap`))
     : ((typeof _parData === 'undefined' || !_parData) ? 'Loading…' : 'No main-tour events in window');
   const tileDefs = [
-    { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: 'var(--bar)', icon: BSP_ICONS.trophy },
-    { label: careerLabel, value: careerValue, sub: careerSub, accent: 'var(--bar)', icon: BSP_ICONS.chart },
-    { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: 'var(--bar)', icon: AKC_ICONS.form },
-    { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: 'var(--bar)', icon: AKC_ICONS.form },
-    { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: 'var(--bar)', icon: AKC_ICONS.form },
-    { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: 'var(--bar)', icon: BSP_ICONS.trophy },
+    { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: 'var(--text)', icon: BSP_ICONS.trophy },
+    { label: careerLabel, value: careerValue, sub: careerSub, accent: 'var(--text)', icon: BSP_ICONS.chart },
+    { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: 'var(--text)', icon: AKC_ICONS.form },
+    { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: 'var(--text)', icon: AKC_ICONS.form },
+    { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: 'var(--text)', icon: AKC_ICONS.form },
+    { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: 'var(--text)', icon: BSP_ICONS.trophy },
     // TEN-172 drawer: the Points at Risk tile is clickable when the player has a
     // resolved row (parRow present) — opens the per-event breakdown drawer. When
     // the player is absent (tile dashes) the tile is inert.
-    { label: 'Points at Risk', value: parValue, sub: parSub, accent: 'var(--bar)', icon: BSP_ICONS.chart,
+    { label: 'Points at Risk', value: parValue, sub: parSub, accent: 'var(--text)', icon: BSP_ICONS.chart,
       onclick: parRow ? `openParDrawer('${String(p.key)}')` : null },
   ];
   const tilesHtml = tileDefs.map(k => {
@@ -22451,7 +22446,7 @@ function buildPlayerProfileHtml(p){
   const sliderVal = Math.min(Math.max(periodRows.length, 1), baseN);
   const sliderGroup = baseN < 2 ? '' : `
     <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px;">
-      <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:${MKMONO};">Window · <span id="ppMktWinLabel" style="color:var(--text-label);">${winReadout}</span></span>
+      <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words);">Window · <span id="ppMktWinLabel" style="color:var(--text-label);">${winReadout}</span></span>
       <div style="display:flex;align-items:center;height:29px;background:var(--card);border:1px solid var(--edge-6);border-radius:9px;padding:0 12px;">
         <input id="ppMktWinRange" type="range" min="1" max="${baseN}" value="${sliderVal}" oninput="ppMktSliderInput(this)" onchange="setPpMktWindow(this.value)" style="width:100%;accent-color:var(--bar);cursor:pointer;">
       </div>
@@ -22496,7 +22491,7 @@ function buildPlayerProfileHtml(p){
   const headlineFigure = enough
     ? `<span style="font-family:${MKMONO};font-size:46px;font-weight:800;line-height:1;color:${roiCol};">${mkSignPct(o.roi)}</span><span style="font-size:12px;color:var(--text-label);margin-left:11px;">flat-stake ROI</span>`
     : `<span style="font-family:${MKMONO};font-size:30px;font-weight:800;line-height:1;color:var(--text-soft);">${o.n ? recStr : '—'}</span><span style="font-size:12px;color:var(--text-label);margin-left:11px;">${o.n ? `record · insufficient sample (under ${SUPP}) for ROI` : 'no priced matches under these filters'}</span>`;
-  const statCell = (val, lab) => `<span style="display:inline-flex;flex-direction:column;gap:3px;"><span style="font-family:${MKMONO};font-size:18px;font-weight:700;color:var(--text);">${val}</span><span style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.1em;text-transform:uppercase;color:var(--text-label);">${lab}</span></span>`;
+  const statCell = (val, lab) => `<span style="display:inline-flex;flex-direction:column;gap:3px;"><span style="font-family:${MKMONO};font-size:18px;font-weight:700;color:var(--text);">${val}</span><span style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);;font-weight:700">${lab}</span></span>`;
   const headlineLine = o.n === 0 ? '' : [
     statCell(recStr, 'Record'),
     statCell(enough ? mkR1(o.actualWinRate) + '%' : '—', side === 'fade' ? 'Fade win rate' : 'Win rate'),
@@ -22570,7 +22565,7 @@ function buildPlayerProfileHtml(p){
   const equityCard = `
     <div style="background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-        <span style="font-size:10.5px;font-family:${MKMONO};letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">Equity curve · ${sideWord.toLowerCase()}${roleWord}</span>
+        <span style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);;font-weight:700">Equity curve · ${sideWord.toLowerCase()}${roleWord}</span>
         <span style="font-family:${MKMONO};font-size:13px;font-weight:700;color:${eq.length ? (eqEnd >= 0 ? MKG : MKR) : MKM};">${eq.length ? (eqEnd >= 0 ? '+' : '−') + Math.abs(mkR1(eqEnd)) + 'u' : '—'}</span>
       </div>
       ${equityChart}
@@ -22622,9 +22617,9 @@ function buildPlayerProfileHtml(p){
           <div style="font-size:12px;color:var(--text-label);margin-top:4px;line-height:1.5;">${plain}</div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;">${a.n}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:var(--text-label);margin-top:6px;">Matches</div></div>
-          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:${gapCol};">${enoughR ? act + '%' : '—'}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:var(--text-label);margin-top:6px;">${side === 'fade' ? 'Fade win rate' : 'Actual win rate'}</div></div>
-          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:var(--text-soft);">${enoughR ? imp + '%' : '—'}</div><div style="font-size:9.5px;font-family:${MKMONO};letter-spacing:0.06em;text-transform:uppercase;color:var(--text-label);margin-top:6px;">Market implied</div></div>
+          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;">${a.n}</div><div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;;font-weight:700">Matches</div></div>
+          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:${gapCol};">${enoughR ? act + '%' : '—'}</div><div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;;font-weight:700">${side === 'fade' ? 'Fade win rate' : 'Actual win rate'}</div></div>
+          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:var(--text-soft);">${enoughR ? imp + '%' : '—'}</div><div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;;font-weight:700">Market implied</div></div>
         </div>
         ${enoughR ? `<div>
           <span style="position:relative;height:8px;border-radius:5px;background:var(--inner);display:block;">
@@ -22644,7 +22639,7 @@ function buildPlayerProfileHtml(p){
       </div>`;
   };
   const roleCmpHtml = `
-    <div style="font-size:10.5px;font-family:${MKMONO};letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);margin-top:4px;">Favourite vs underdog reliability</div>
+    <div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:4px;;font-weight:700">Favourite vs underdog reliability</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="pp-odds-lower">
       ${relCard('As Favourite', `Matches where the market expected ${nm} to win.`, favA, 'fav')}
       ${relCard('As Underdog', `Matches where the market expected ${nm} to lose.`, dogA, 'dog')}
@@ -22658,7 +22653,7 @@ function buildPlayerProfileHtml(p){
 
       ${roleCmpHtml}
 
-      <div style="font-size:10px;font-family:${MKMONO};letter-spacing:0.16em;color:var(--text-label);">${crumb}</div>
+      <div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;color:var(--text-label);;font-weight:700;text-transform:uppercase">${crumb}</div>
 
       <div style="display:flex;gap:14px;align-items:flex-start;">
         <span style="width:40px;height:40px;border-radius:11px;background:var(--inner);border:1px solid var(--edge-10);display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;color:var(--text);"><span style="width:19px;height:19px;display:flex;">${BSP_ICONS.target}</span></span>
@@ -23428,7 +23423,7 @@ function trendChartSvg(trendYears, trendVals, min, max){
         <stop offset="0%" style="stop-color:var(--bar)" stop-opacity="0.32"/>
         <stop offset="100%" style="stop-color:var(--bar)" stop-opacity="0"/>
       </linearGradient></defs>
-      ${areaPath ? `<path d="${areaPath}" fill="url(#${gid})"/>` : ''}
+      ${areaPath ? `<path d="${areaPath}" fill="none"/>` : ''}
       ${linePath ? `<path d="${linePath}" fill="none" style="stroke:var(--bar)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
       ${parts}
     </svg>
@@ -24947,7 +24942,7 @@ function tourxSpeedSeriesHtml(c){
   const area = `M ${X(0)} ${Y(vals[0])} ` + pts.map((p, i) => `L ${X(i)} ${Y(p[1])}`).join(' ') + ` L ${X(pts.length - 1)} 90 L ${X(0)} 90 Z`;
   const svg = `<svg viewBox="0 0 360 104" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">
       <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--text)" stop-opacity="0.14"/><stop offset="100%" stop-color="var(--text)" stop-opacity="0"/></linearGradient></defs>
-      <path d="${area}" fill="url(#${gid})"></path>
+      <path d="${area}" fill="none"></path>
       <polyline points="${line}" fill="none" stroke="var(--text)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>
     </svg>`;
   // Dots and labels are HTML spans at x = % of the 360-unit width and y in raw px.
@@ -25086,7 +25081,7 @@ function tourxSparklineSvg(years, vals){
   const gid = 'tsg' + Math.random().toString(36).slice(2, 8);
   const areaD = 'M ' + X(0) + ' ' + Y(pts[0].v) + ' ' + pts.map((p, i) => 'L ' + X(i) + ' ' + Y(p.v)).join(' ') + ' L ' + X(n - 1) + ' ' + (H - padB) + ' L ' + X(0) + ' ' + (H - padB) + ' Z';
   let k = `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.24"/><stop offset="100%" stop-color="${color}" stop-opacity="0"/></linearGradient></defs>`;
-  k += `<path d="${areaD}" fill="url(#${gid})"/>`;
+  k += `<path d="${areaD}" fill="none"/>`;
   k += `<polyline points="${line}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>`;
   pts.forEach((p, i) => {
     const last = i === n - 1;
@@ -26375,7 +26370,7 @@ function tourxLineChartSvg(vals, field, color, kind, roundLabels, hi){
   const gid = 'tourxgrad' + Math.random().toString(36).slice(2, 8);
   let kids = '';
   kids += `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.22"></stop><stop offset="100%" stop-color="${color}" stop-opacity="0"></stop></linearGradient></defs>`;
-  kids += `<path d="${areaD}" fill="url(#${gid})"></path>`;
+  kids += `<path d="${areaD}" fill="none"></path>`;
   if (hi != null) kids += `<line x1="${X(hi)}" y1="${padT - 8}" x2="${X(hi)}" y2="${H - padB + 2}" stroke="${color}" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"></line>`;
   if (fPts) kids += `<polyline points="${fPts}" fill="none" stroke="var(--viz-rule)" stroke-width="1.4" stroke-dasharray="4 4"></polyline>`;
   kids += `<polyline points="${pPts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>`;
@@ -26403,9 +26398,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
    Exposes window.H2HPage.render() / window.H2HPage.ensureInit().
    ========================================================================== */
 (function () {
-  const A_COL = 'var(--bar)', B_COL = 'var(--text)', DIM = 'var(--text-label)';
+  const A_COL = 'var(--text)', B_COL = 'var(--text-soft)', DIM = 'var(--text-label)';   // README §6 Head to Head: white, names white
   const SURF = {
-    Hard: { c: 'var(--bar)', b: 'color-mix(in srgb, var(--text) 4.5%, transparent)' },
+    Hard: { c: 'var(--text-soft)', b: 'color-mix(in srgb, var(--text) 4.5%, transparent)' },
     Clay: { c: 'var(--text-soft)', b: 'color-mix(in srgb, var(--text) 4.5%, transparent)' },
     Grass: { c: 'var(--text-soft)', b: 'color-mix(in srgb, var(--text) 4.5%, transparent)' },
   };
@@ -26958,7 +26953,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // context strip + scope
     view.ctxShow = true;
     view.scopeLabel = (SCOPES.find(s2 => s2[0] === S.scope) || SCOPES[0])[1] + (S.scope === 'surface' ? ' · ' + S.ctxSurface : '');
-    const pill = (label, on, hid, c) => ({ label, hid, weight: on ? 700 : 600, color: on ? 'var(--text)' : DIM, bg: on ? c + '4d' : 'transparent', bd: on ? c + '80' : 'transparent' });
+    const pill = (label, on, hid, c) => ({ label, hid, weight: on ? 700 : 600, color: on ? 'var(--text)' : DIM, bg: on ? 'var(--inner)' : 'transparent', bd: on ? 'var(--edge-10)' : 'transparent' });   // darker-track selection (README §5.1)
     view.ctxGroups = [
       { label: 'Surface', pills: ['Hard', 'Clay', 'Grass'].map(s2 => pill(s2, S.ctxSurface === s2, bindH(() => setCtx({ ctxSurface: s2 })), 'var(--bar)')) },
       { label: 'Format', pills: [[3, 'Best of 3'], [5, 'Best of 5']].map(f2 => pill(f2[1], S.ctxFormat === f2[0], bindH(() => setCtx({ ctxFormat: f2[0] })), 'var(--bar)')) },
@@ -29031,10 +29026,11 @@ window.DatabaseTab = (function(){
     var moved = !(lo===y0 && hi===y1);
     var box=el('div','db-yr'+(moved?' on':''));
     function end(val, onPick){
-      var e=el('div','db-yrend','<b>'+val+'</b><u>▼</u>');
-      var s=el('select'); s.innerHTML=years.map(function(y){ return '<option'+(y===val?' selected':'')+'>'+y+'</option>'; }).join('');
-      s.onchange=function(){ onPick(+s.value); render(); };
-      e.appendChild(s); return e;
+      // TEN-376 README §5.5: the site dropdown (sfDd), never a native <select>
+      var e=el('div','db-yrend');
+      sfDdRender(e, { ariaLabel:'Year', value:val, options:years.map(function(y){ return { value:y, label:String(y) }; }),
+        onChange:function(v){ onPick(+v); render(); } });
+      return e;
     }
     box.appendChild(end(lo, function(v){ state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
     box.appendChild(el('span','db-yrsep','–'));
@@ -32885,7 +32881,7 @@ function renderVals(){
     modal:{
       title:m.title,aName:A,bName:B,aAv:avOf(m.avatars[0]),bAv:avOf(m.avatars[1]),
       aScore:scoreCells(0),bScore:scoreCells(1),
-      aDot:m.serving===0?'var(--pos)':'transparent',bDot:m.serving===1?'var(--pos)':'transparent',
+      aDot:m.serving===0?'var(--serve-ball)':'transparent',bDot:m.serving===1?'var(--serve-ball)':'transparent',
     },
     tabs,tab:effTab,
     scope:effScope,scopeOpts,nSets,
@@ -33481,11 +33477,11 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
 </style>
 <style id="match-analysis-chrome">
   /* TEN-314 (TEN-312 D1): the Match analysis modal's chrome + left nav (every tab) and the Odds tab's hover
-     states, coloured ONLY through match-analysis-tokens.css (Night 24b / Day 26f, README §3 + U-mappings).
-     Same selectors and properties as the design build; the values are tokens. Hairlines keep the 0.33px width. */
+     states, coloured ONLY through tokens.css (TEN-376; was the modal token file) (now tokens.css, TEN-376).
+     Same selectors and properties as the design build; the values are tokens. Edges are 1px (TEN-376). */
   /* the modal box = README §3 "Page" (role conflict: only the modal box is Page) */
   /* every chrome colour below is the token of the design's own shade (--ma-s-<source>, founder 2026-09-29), DF L85–123 / L5323 */
-  .modal-analysis{ background:var(--page); border-color:var(--line); box-shadow:var(--shadow-modal); }
+  .modal-analysis{ background:var(--page); border-color:var(--edge-10); box-shadow:var(--shadow-modal); }   /* modal edge = 10% (README §1); body tone pending founder (TEN-376) */
   /* the design file's overlay (DF L85) — the one scrim (U11) */
   #analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }
   .modal-analysis .ahead2{ border-bottom-color:var(--line); }
@@ -33520,7 +33516,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
 </style>
 <style id="match-analysis-shared">
   /* TEN-314 · motion and tooltip of the Match analysis shared components (handoff README §6; DF <helmet> L17–35).
-     Tokens only (match-analysis-tokens.css) with the 12a name as the fallback outside the modal. */
+     Tokens only (tokens.css (TEN-376; was the modal token file)) with the 12a name as the fallback outside the modal. */
   @keyframes sigIn{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
   /* TEN-366: the file's scrollbars (DF L24): 10px, thumb white 0.08 on its shade token, radius 6 — the menu, the tab pane,
      the pop-ups and the sheet (all inside #analysisModal). */

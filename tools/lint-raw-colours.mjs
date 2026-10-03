@@ -13,12 +13,13 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_OF_STEP1 = new Set(['funnel.html', 'admin.html', 'admin-config.js']);
-const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-zA-Z_-])/g;
-const FUNC = /\b(?:rgba?|hsla?)\(\s*[\d.]/g;
+const HEX = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{4}|[0-9a-fA-F]{3})(?![0-9a-zA-Z_-])/g;
+const FUNC = /\b(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch)\(\s*(?:[\d.]|\$\{)/gi;
+const BUILT = /['"`](?:rgba?|hsla?)\(['"`]\s*\+/gi;   // a colour assembled at runtime: 'rgb(' + r + …
 const URLHEX = /%23(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})(?![0-9a-zA-Z])/g;   // '#' url-encoded inside a data: URI
 // '#' + 3 hex chars that is not a colour: a URL fragment / element id in a selector or a JS string
 // ('#add', location.hash === '#abc'). Only these exact contexts are skipped; anything else is a colour.
-const NOT_COLOUR_BEFORE = /(?:getElementById\(|querySelector(?:All)?\(|location\.hash\s*===?\s*|href=)['"]?$/;
+const NOT_COLOUR_BEFORE = /(?:getElementById\(|querySelector(?:All)?\(|location\.hash\s*===?\s*|href=)['"]?$|&$/;   // &$ = an HTML numeric entity (&#8722; is the true minus)
 
 export function publishedFiles(root = ROOT) {
   const yml = fs.readFileSync(path.join(root, '.github/workflows/pipeline.yml'), 'utf8');
@@ -45,16 +46,17 @@ export function scan(text) {
     }
     for (const m of line.matchAll(FUNC)) hits.push({ line: i + 1, value: line.slice(m.index, line.indexOf(')', m.index) + 1) });
     for (const m of line.matchAll(URLHEX)) hits.push({ line: i + 1, value: m[0] });
+    for (const m of line.matchAll(BUILT)) hits.push({ line: i + 1, value: m[0] + '…' });
   });
   return hits;
 }
 
 function selfTest() {
   // a planted colour in each form must be caught; token expressions and non-colour '#' must not be
-  const caught = ['color:#5B9BFF;', 'background:#fff', 'border:1px solid rgba(255,255,255,0.06)', 'fill="#0e1019cc"', 'hsl(210, 50%, 50%)', "url(\"data:image/svg+xml,%3Cpath stroke='%236E7A93'/%3E\")"]
+  const caught = ['color:#5B9BFF;', 'background:#fff', 'border:1px solid rgba(255,255,255,0.06)', 'fill="#0e1019cc"', 'hsl(210, 50%, 50%)', "url(\"data:image/svg+xml,%3Cpath stroke='%236E7A93'/%3E\")", 'color:RGB(1,2,3)', 'background:#fff8', 'c=`rgb(${d[1]})`', "bg = 'rgba(' + band.rgb + ',0.1)'"]
     .every(s => scan(s).length === 1);
   const clean = ["color:var(--text);", "background:color-mix(in srgb, var(--pos) 12%, transparent);",
-    "document.getElementById('add')", "location.hash === '#abc'", "font-weight:700"].every(s => scan(s).length === 0);
+    "document.getElementById('add')", 'a &#8722;143 b', "location.hash === '#abc'", "font-weight:700"].every(s => scan(s).length === 0);
   return caught && clean;
 }
 

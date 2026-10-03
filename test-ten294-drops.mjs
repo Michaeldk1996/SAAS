@@ -550,7 +550,8 @@ test('box chart (TEN-301): a stretch the book was recorded NOT quoting (odds.md 
 test('box colours (8585095a colour ruling, TEN-376 tokens): red with a flat tint, the named roles exact; neutrals on foundation tokens', () => {
   const css = read('drops-page.css'), box = css.slice(css.indexOf('/* ── 10 · the price-move box'));
   assert.match(box, /\.do-ov-plot \.do-line \{ fill: none; stroke: var\(--neg\); stroke-width: 2\.6; stroke-linejoin: round; stroke-linecap: round; \}/);
-  assert.match(box, /\.do-ov-plot \.do-area \{ fill: color-mix\(in srgb, var\(--neg\) 10%, transparent\); stroke: none; \}/, 'flat fill, no gradient');
+  assert.match(box, /\.do-ov-plot \.do-area \{ fill: none; stroke: none; \}/, 'no fill under the line (TEN-376 README §5.8: line charts have no fills)');
+  assert.doesNotMatch(box, /\.do-area \{ fill: (?!none)/, 'the area is never filled');
   assert.doesNotMatch(box, /gradient/i);
   assert.match(box, /\.do-ov-dropf\.big \{ color: var\(--neg\); \}/); assert.match(box, /\.do-ov-dropf\.small \{ color: color-mix\(in srgb, var\(--neg\) 75%, transparent\); \}/);
   assert.match(box, /\.do-ov-td\.big \{ color: var\(--neg\); \}/); assert.match(box, /\.do-ov-td\.small \{ color: color-mix\(in srgb, var\(--neg\) 75%, transparent\); \}/);
