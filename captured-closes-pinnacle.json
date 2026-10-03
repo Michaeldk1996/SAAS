@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-03T02:23:01.310Z",
+ "generatedAt": "2026-10-03T08:21:06.970Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "a60b01875c4efba31aabb4ce3d67048510091877",
-  "at": "2026-10-03T02:16:22Z"
+  "commit": "8cfff34ec379bec1a7c3be3e9a6bfbefe94c7151",
+  "at": "2026-10-03T08:01:02Z"
  },
- "commitsScanned": 4054,
+ "commitsScanned": 4080,
  "lastRun": {
-  "from": "2026-10-02T16:45:35Z",
-  "snapshots": 42,
-  "added": 1,
+  "from": "2026-10-03T02:16:22Z",
+  "snapshots": 27,
+  "added": 3,
   "replaced": 0,
-  "series": 62,
-  "kept": 48,
+  "series": 52,
+  "kept": 42,
   "bySource": {
-   "api-tennis-live": 48
+   "api-tennis-live": 42
   },
   "byBook": {
-   "Pinnacle +30s": 48
+   "Pinnacle +30s": 42
   },
   "dropped": {
-   "noStart": 14
+   "noStart": 10
   }
  },
  "stats": {
@@ -7186,6 +7186,34 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12167622,
+   "date": "2026-10-03",
+   "p1Key": 1106,
+   "p2Key": 1925,
+   "p1Name": "A. De Minaur",
+   "p2Name": "Q. Halys",
+   "p1": 1.355,
+   "p2": 3.49,
+   "at": "2026-10-03T02:49:49.431Z",
+   "trueStart": "2026-10-03T02:54:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167643,
+   "date": "2026-10-03",
+   "p1Key": 2382,
+   "p2Key": 1192,
+   "p1Name": "C. Alcaraz",
+   "p2Name": "M. Arnaldi",
+   "p1": 1.062,
+   "p2": 11.14,
+   "at": "2026-10-03T03:03:29.766Z",
+   "trueStart": "2026-10-03T04:31:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12167644,
    "date": "2026-10-03",
    "p1Key": 431,
@@ -7196,6 +7224,20 @@
    "p2": 2.24,
    "at": "2026-10-02T23:49:22.783Z",
    "trueStart": "2026-10-03T01:54:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167678,
+   "date": "2026-10-03",
+   "p1Key": 2847,
+   "p2Key": 1057,
+   "p1Name": "A. Rublev",
+   "p2Name": "R. Safiullin",
+   "p1": 1.735,
+   "p2": 2.23,
+   "at": "2026-10-03T04:43:05.430Z",
+   "trueStart": "2026-10-03T05:35:58.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
