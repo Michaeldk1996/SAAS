@@ -1,7 +1,7 @@
 {
  "_meta": {
   "task": "TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles",
-  "generatedAt": "2026-10-03T11:59:12.490Z",
+  "generatedAt": "2026-10-03T21:45:02.105Z",
   "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-10-03 — NO Sackmann/TML",
   "scopes": {
    "last52": "matches within 364d of player's most-recent match (last52From..latestMatch)",
@@ -17,7 +17,7 @@
   },
   "roster": {
    "source": "deployed",
-   "fetchedAt": "2026-10-03T11:47:36.658Z",
+   "fetchedAt": "2026-10-03T21:33:57.188Z",
    "players": 404
   },
   "rosterSize": 404,
@@ -116,7 +116,7 @@
        261.3,
        261.4,
        261.4,
-       261.7,
+       261.6,
        261.7,
        261.8,
        262.2,
@@ -136,6 +136,7 @@
        264.8,
        264.9,
        264.9,
+       265.1,
        265.1,
        265.2,
        265.3,
@@ -158,7 +159,6 @@
        269.1,
        269.2,
        269.4,
-       269.5,
        269.6,
        269.7,
        269.8,
@@ -199,7 +199,7 @@
        279.2,
        279.2,
        279.4,
-       280.4,
+       279.8,
        280.8,
        280.9,
        281.9,
@@ -242,7 +242,7 @@
        297.2,
        297.4,
        299.5,
-       301.1,
+       301.6,
        303.6,
        307.4
       ]
@@ -348,7 +348,6 @@
        133.9,
        134,
        134.2,
-       134.2,
        134.3,
        134.5,
        134.7,
@@ -356,7 +355,9 @@
        135,
        135.1,
        135.4,
+       135.7,
        135.8,
+       136,
        136,
        136.2,
        136.4,
@@ -369,9 +370,8 @@
        137.6,
        137.6,
        137.6,
+       137.6,
        138.1,
-       138.2,
-       138.3,
        138.5,
        138.5,
        138.6,
@@ -380,8 +380,8 @@
        139.6,
        139.6,
        140.3,
-       140.8,
        141,
+       141.3,
        141.3,
        141.4,
        141.9,
@@ -625,6 +625,7 @@
        0.91,
        0.91,
        0.91,
+       0.91,
        0.92,
        0.92,
        0.92,
@@ -638,7 +639,6 @@
        0.93,
        0.93,
        0.93,
-       0.94,
        0.94,
        0.94,
        0.94,
@@ -747,7 +747,7 @@
        1.1,
        1.11,
        1.11,
-       1.12,
+       1.11,
        1.12,
        1.13,
        1.13,
@@ -763,7 +763,7 @@
        1.18,
        1.19,
        1.22,
-       1.22,
+       1.23,
        1.27,
        1.55
       ]
@@ -1369,6 +1369,7 @@
        265,
        265.1,
        265.1,
+       265.1,
        265.2,
        265.2,
        265.2,
@@ -1407,7 +1408,6 @@
        269.2,
        269.2,
        269.3,
-       269.5,
        269.8,
        269.8,
        269.9,
@@ -1466,8 +1466,8 @@
        277.8,
        277.9,
        278,
+       278.3,
        278.6,
-       278.7,
        278.8,
        278.9,
        279.6,
@@ -1507,7 +1507,7 @@
        298.6,
        299,
        300.4,
-       301.7,
+       302,
        303
       ]
      },
@@ -1622,10 +1622,10 @@
        132.5,
        132.6,
        132.7,
+       132.7,
        132.9,
        132.9,
        133,
-       133.1,
        133.2,
        133.2,
        133.3,
@@ -1650,6 +1650,7 @@
        135.9,
        136,
        136,
+       136,
        136.1,
        136.2,
        136.2,
@@ -1667,7 +1668,6 @@
        137.9,
        138,
        138.1,
-       138.2,
        138.3,
        138.6,
        138.7,
@@ -1677,13 +1677,13 @@
        139.9,
        139.9,
        140.2,
-       140.6,
        140.7,
        140.8,
        140.9,
        140.9,
        141.1,
        141.2,
+       141.4,
        141.4,
        141.4,
        141.7,
@@ -1741,8 +1741,8 @@
        152.8,
        152.9,
        153,
-       153,
        153.1,
+       153.3,
        153.6,
        153.8,
        153.9,
@@ -2009,6 +2009,7 @@
        0.91,
        0.91,
        0.91,
+       0.91,
        0.92,
        0.92,
        0.92,
@@ -2028,7 +2029,6 @@
        0.93,
        0.93,
        0.93,
-       0.94,
        0.94,
        0.94,
        0.94,
@@ -2173,7 +2173,7 @@
        1.08,
        1.08,
        1.08,
-       1.09,
+       1.08,
        1.09,
        1.09,
        1.1,
@@ -2281,12 +2281,12 @@
        260.5,
        261,
        261.3,
-       261.3,
        261.4,
        261.4,
        261.5,
        261.5,
        261.6,
+       261.7,
        261.8,
        261.8,
        261.8,
@@ -2344,6 +2344,7 @@
        268.9,
        269.2,
        269.3,
+       269.4,
        269.6,
        269.6,
        269.6,
@@ -2354,7 +2355,6 @@
        270,
        270.1,
        270.1,
-       270.2,
        270.4,
        270.5,
        270.6,
@@ -2400,7 +2400,7 @@
        277.1,
        277.1,
        277.1,
-       277.6,
+       277.4,
        277.6,
        277.6,
        277.7,
@@ -2446,7 +2446,7 @@
        294.9,
        295.8,
        296.9,
-       297.1,
+       297.3,
        300.6,
        304.5
       ]
@@ -2616,17 +2616,17 @@
        138.9,
        139,
        139.3,
-       139.3,
        139.6,
        139.8,
+       139.9,
        139.9,
        139.9,
        140,
        140,
        140.1,
        140.3,
+       140.4,
        141,
-       141.2,
        141.3,
        141.6,
        141.7,
@@ -2651,7 +2651,7 @@
        144.9,
        145.3,
        145.6,
-       145.6,
+       145.7,
        146.4,
        146.6,
        146.6,
@@ -3071,7 +3071,7 @@
        1.03,
        1.03,
        1.03,
-       1.04,
+       1.03,
        1.04,
        1.04,
        1.04,
@@ -3128,7 +3128,7 @@
        1.17,
        1.17,
        1.19,
-       1.21,
+       1.22,
        1.25,
        1.32,
        1.52
@@ -4468,7 +4468,7 @@
        262,
        262.1,
        262.2,
-       262.2,
+       262.3,
        262.3,
        262.3,
        262.4,
@@ -4556,9 +4556,9 @@
        270.4,
        270.6,
        270.6,
+       270.6,
        270.9,
        271.1,
-       271.2,
        271.2,
        271.2,
        271.2,
@@ -4590,8 +4590,8 @@
        274.6,
        274.9,
        275.2,
+       275.2,
        275.3,
-       275.4,
        275.7,
        275.8,
        275.9,
@@ -4641,7 +4641,7 @@
        294.5,
        297.1,
        297.2,
-       297.3,
+       297.5,
        299,
        299.3
       ]
@@ -4819,8 +4819,8 @@
        138.2,
        138.2,
        138.3,
+       138.3,
        138.4,
-       138.5,
        138.6,
        138.6,
        138.7,
@@ -4833,8 +4833,8 @@
        138.9,
        139.3,
        139.3,
+       139.5,
        139.6,
-       139.9,
        139.9,
        140,
        140,
@@ -4858,9 +4858,9 @@
        142.1,
        142.1,
        142.4,
-       142.5,
        142.6,
        142.6,
+       142.7,
        142.7,
        142.7,
        142.9,
@@ -5374,7 +5374,7 @@
        1.02,
        1.02,
        1.02,
-       1.03,
+       1.02,
        1.03,
        1.03,
        1.03,
@@ -5447,7 +5447,7 @@
        1.17,
        1.18,
        1.18,
-       1.25,
+       1.26,
        1.26,
        1.3,
        1.49
@@ -6552,11 +6552,11 @@
     "2025-12-24"
    ],
    "fixturesSeen": 12323,
-   "playerMatchesIngested": 20966,
+   "playerMatchesIngested": 20970,
    "playerMatchesWithoutSurface": 598,
    "distinctPlayersInCorpus": 735
   },
-  "wallClockMs": 51081
+  "wallClockMs": 45599
  },
  "players": [
   {
@@ -6564,31 +6564,31 @@
    "name": "A. Zverev",
    "inRoster": true,
    "matchesAll": {
-    "last52": 86,
-    "sinceBase": 223
+    "last52": 87,
+    "sinceBase": 224
    },
-   "latestMatch": "2026-10-01",
-   "last52From": "2025-10-02",
+   "latestMatch": "2026-10-03",
+   "last52From": "2025-10-04",
    "surfaces": {
     "Hard": {
      "last52": {
       "serve": {
        "firstInPct": 71,
-       "firstWonPct": 77.3,
-       "secondWonPct": 54.7,
-       "holdPct": 90,
+       "firstWonPct": 77.4,
+       "secondWonPct": 54.9,
+       "holdPct": 90.1,
        "acesPerMatch": 10.4,
-       "dfPerMatch": 2.3,
-       "rating": 301.1,
+       "dfPerMatch": 2.2,
+       "rating": 301.6,
        "pct": 98.6
       },
       "return": {
-       "ret1stWonPct": 27.2,
-       "ret2ndWonPct": 50.5,
-       "returnGamesWonPct": 19,
-       "bpConvPct": 37.5,
-       "rating": 134.2,
-       "pct": 54.8
+       "ret1stWonPct": 27.4,
+       "ret2ndWonPct": 50.7,
+       "returnGamesWonPct": 19.4,
+       "bpConvPct": 38.2,
+       "rating": 135.7,
+       "pct": 59
       },
       "underPressure": {
        "bpSavedPct": 63.4,
@@ -6603,16 +6603,16 @@
        "pct": 67.4
       },
       "dominanceRatio": {
-       "servicePtsWonPct": 70.7,
-       "returnPtsWonPct": 35.7,
-       "rating": 1.22,
-       "pct": 98.3
+       "servicePtsWonPct": 70.9,
+       "returnPtsWonPct": 35.8,
+       "rating": 1.23,
+       "pct": 98.6
       },
       "sample": {
-       "matches": 47,
-       "svpt": 3839,
+       "matches": 48,
+       "svpt": 3876,
        "bpFaced": 163,
-       "bpChances": 283,
+       "bpChances": 288,
        "tbPlayed": 32,
        "decPlayed": 15
       }
@@ -6621,20 +6621,20 @@
       "serve": {
        "firstInPct": 70.4,
        "firstWonPct": 76.2,
-       "secondWonPct": 54.5,
+       "secondWonPct": 54.6,
        "holdPct": 89.3,
        "acesPerMatch": 8.9,
-       "dfPerMatch": 2.2,
-       "rating": 297.1,
+       "dfPerMatch": 2.1,
+       "rating": 297.3,
        "pct": 98.9
       },
       "return": {
        "ret1stWonPct": 28.4,
-       "ret2ndWonPct": 51.3,
-       "returnGamesWonPct": 21,
-       "bpConvPct": 38.7,
-       "rating": 139.3,
-       "pct": 68.8
+       "ret2ndWonPct": 51.4,
+       "returnGamesWonPct": 21.2,
+       "bpConvPct": 39,
+       "rating": 139.9,
+       "pct": 70.3
       },
       "underPressure": {
        "bpSavedPct": 63.5,
@@ -6650,15 +6650,15 @@
       },
       "dominanceRatio": {
        "servicePtsWonPct": 69.8,
-       "returnPtsWonPct": 36.6,
-       "rating": 1.21,
+       "returnPtsWonPct": 36.7,
+       "rating": 1.22,
        "pct": 98.5
       },
       "sample": {
-       "matches": 114,
-       "svpt": 8553,
+       "matches": 115,
+       "svpt": 8590,
        "bpFaced": 441,
-       "bpChances": 724,
+       "bpChances": 729,
        "tbPlayed": 67,
        "decPlayed": 33
       }
@@ -6871,21 +6871,21 @@
      "last52": {
       "serve": {
        "firstInPct": 71.7,
-       "firstWonPct": 76.7,
-       "secondWonPct": 56.5,
-       "holdPct": 89.4,
+       "firstWonPct": 76.8,
+       "secondWonPct": 56.6,
+       "holdPct": 89.5,
        "acesPerMatch": 9.6,
        "dfPerMatch": 2.2,
-       "rating": 301.7,
+       "rating": 302,
        "pct": 99.4
       },
       "return": {
-       "ret1stWonPct": 28.7,
-       "ret2ndWonPct": 51.1,
-       "returnGamesWonPct": 21.5,
-       "bpConvPct": 39.2,
-       "rating": 140.6,
-       "pct": 67.4
+       "ret1stWonPct": 28.8,
+       "ret2ndWonPct": 51.2,
+       "returnGamesWonPct": 21.7,
+       "bpConvPct": 39.6,
+       "rating": 141.4,
+       "pct": 70.3
       },
       "underPressure": {
        "bpSavedPct": 62.4,
@@ -6900,16 +6900,16 @@
        "pct": 74.7
       },
       "dominanceRatio": {
-       "servicePtsWonPct": 71,
-       "returnPtsWonPct": 36.8,
+       "servicePtsWonPct": 71.1,
+       "returnPtsWonPct": 36.9,
        "rating": 1.27,
        "pct": 99.4
       },
       "sample": {
-       "matches": 86,
-       "svpt": 6925,
+       "matches": 87,
+       "svpt": 6962,
        "bpFaced": 255,
-       "bpChances": 502,
+       "bpChances": 507,
        "tbPlayed": 57,
        "decPlayed": 25
       }
@@ -6917,21 +6917,21 @@
      "sinceBase": {
       "serve": {
        "firstInPct": 71.1,
-       "firstWonPct": 76,
+       "firstWonPct": 76.1,
        "secondWonPct": 55.1,
        "holdPct": 88.7,
        "acesPerMatch": 8.6,
        "dfPerMatch": 2.1,
-       "rating": 297.3,
+       "rating": 297.5,
        "pct": 99.1
       },
       "return": {
        "ret1stWonPct": 29.7,
        "ret2ndWonPct": 51.5,
        "returnGamesWonPct": 22.6,
-       "bpConvPct": 38.7,
-       "rating": 142.5,
-       "pct": 73.4
+       "bpConvPct": 38.9,
+       "rating": 142.7,
+       "pct": 74.5
       },
       "underPressure": {
        "bpSavedPct": 61.7,
@@ -6948,14 +6948,14 @@
       "dominanceRatio": {
        "servicePtsWonPct": 70,
        "returnPtsWonPct": 37.6,
-       "rating": 1.25,
-       "pct": 98.8
+       "rating": 1.26,
+       "pct": 98.9
       },
       "sample": {
-       "matches": 223,
-       "svpt": 16979,
+       "matches": 224,
+       "svpt": 17016,
        "bpFaced": 813,
-       "bpChances": 1510,
+       "bpChances": 1515,
        "tbPlayed": 133,
        "decPlayed": 61
       }
@@ -7424,7 +7424,7 @@
        "servicePtsWonPct": 65.4,
        "returnPtsWonPct": 38.8,
        "rating": 1.12,
-       "pct": 89.8
+       "pct": 90.1
       },
       "sample": {
        "matches": 45,
@@ -7694,7 +7694,7 @@
        "acesPerMatch": 4.2,
        "dfPerMatch": 2.7,
        "rating": 267.6,
-       "pct": 50.4
+       "pct": 50.8
       },
       "return": {
        "ret1stWonPct": 31.3,
@@ -8240,7 +8240,7 @@
        "servicePtsWonPct": 70,
        "returnPtsWonPct": 33.4,
        "rating": 1.11,
-       "pct": 88.7
+       "pct": 89
       },
       "sample": {
        "matches": 41,
@@ -8537,7 +8537,7 @@
        "servicePtsWonPct": 70.3,
        "returnPtsWonPct": 32.1,
        "rating": 1.08,
-       "pct": 85.9
+       "pct": 86.1
       },
       "sample": {
        "matches": 64,
@@ -8649,7 +8649,7 @@
        "servicePtsWonPct": 66.8,
        "returnPtsWonPct": 40.3,
        "rating": 1.22,
-       "pct": 98.3
+       "pct": 98
       },
       "sample": {
        "matches": 52,
@@ -9829,6 +9829,414 @@
    }
   },
   {
+   "playerKey": "1104",
+   "name": "F. Cerundolo",
+   "inRoster": true,
+   "matchesAll": {
+    "last52": 58,
+    "sinceBase": 164
+   },
+   "latestMatch": "2026-10-03",
+   "last52From": "2025-10-04",
+   "surfaces": {
+    "Hard": {
+     "last52": {
+      "serve": {
+       "firstInPct": 61.1,
+       "firstWonPct": 70.7,
+       "secondWonPct": 51.2,
+       "holdPct": 76.9,
+       "acesPerMatch": 4.8,
+       "dfPerMatch": 3.1,
+       "rating": 261.6,
+       "pct": 27.4
+      },
+      "return": {
+       "ret1stWonPct": 29.5,
+       "ret2ndWonPct": 52.2,
+       "returnGamesWonPct": 24.6,
+       "bpConvPct": 35,
+       "rating": 141.3,
+       "pct": 74
+      },
+      "underPressure": {
+       "bpSavedPct": 64.9,
+       "bpConvPct": 42.2,
+       "tbWinPct": 71.4,
+       "decWinPct": 54.5,
+       "rating": 233.1,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 90.9
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.9,
+       "returnPtsWonPct": 38.1,
+       "rating": 1.03,
+       "pct": 64.4
+      },
+      "sample": {
+       "matches": 27,
+       "svpt": 2218,
+       "bpFaced": 169,
+       "bpChances": 200,
+       "tbPlayed": 7,
+       "decPlayed": 9
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 60.5,
+       "firstWonPct": 70.3,
+       "secondWonPct": 51.6,
+       "holdPct": 78.2,
+       "acesPerMatch": 4.5,
+       "dfPerMatch": 3.3,
+       "rating": 261.7,
+       "pct": 30.6
+      },
+      "return": {
+       "ret1stWonPct": 29.2,
+       "ret2ndWonPct": 51.9,
+       "returnGamesWonPct": 23.7,
+       "bpConvPct": 40.8,
+       "rating": 145.7,
+       "pct": 84
+      },
+      "underPressure": {
+       "bpSavedPct": 61.8,
+       "bpConvPct": 43.3,
+       "tbWinPct": 57.4,
+       "decWinPct": 47.4,
+       "rating": 209.8,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 73.9
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.8,
+       "returnPtsWonPct": 38,
+       "rating": 1.02,
+       "pct": 65.8
+      },
+      "sample": {
+       "matches": 63,
+       "svpt": 5237,
+       "bpFaced": 425,
+       "bpChances": 424,
+       "tbPlayed": 33,
+       "decPlayed": 21
+      }
+     },
+     "elo": {
+      "rating": 1838,
+      "rank": 23,
+      "pct": 91.5
+     }
+    },
+    "Clay": {
+     "last52": {
+      "serve": {
+       "firstInPct": 60.5,
+       "firstWonPct": 69.2,
+       "secondWonPct": 52.9,
+       "holdPct": 78.5,
+       "acesPerMatch": 3.3,
+       "dfPerMatch": 2.4,
+       "rating": 262,
+       "pct": 39.4
+      },
+      "return": {
+       "ret1stWonPct": 36.1,
+       "ret2ndWonPct": 55,
+       "returnGamesWonPct": 37.4,
+       "bpConvPct": 40,
+       "rating": 168.6,
+       "pct": 97.6
+      },
+      "underPressure": {
+       "bpSavedPct": 62.7,
+       "bpConvPct": 43.4,
+       "tbWinPct": 44.4,
+       "decWinPct": 50,
+       "rating": 200.5,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 51.1
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.7,
+       "returnPtsWonPct": 43.6,
+       "rating": 1.17,
+       "pct": 93.8
+      },
+      "sample": {
+       "matches": 22,
+       "svpt": 1573,
+       "bpFaced": 91,
+       "bpChances": 160,
+       "tbPlayed": 5,
+       "decPlayed": 3
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 63.1,
+       "firstWonPct": 68.3,
+       "secondWonPct": 52.4,
+       "holdPct": 77.7,
+       "acesPerMatch": 3.1,
+       "dfPerMatch": 2.7,
+       "rating": 261.9,
+       "pct": 48.2
+      },
+      "return": {
+       "ret1stWonPct": 36,
+       "ret2ndWonPct": 53.1,
+       "returnGamesWonPct": 33,
+       "bpConvPct": 42.4,
+       "rating": 164.5,
+       "pct": 95.2
+      },
+      "underPressure": {
+       "bpSavedPct": 61.8,
+       "bpConvPct": 41.9,
+       "tbWinPct": 39.5,
+       "decWinPct": 55.8,
+       "rating": 199,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 54.4
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.4,
+       "returnPtsWonPct": 42.3,
+       "rating": 1.13,
+       "pct": 93.5
+      },
+      "sample": {
+       "matches": 79,
+       "svpt": 5884,
+       "bpFaced": 479,
+       "bpChances": 644,
+       "tbPlayed": 23,
+       "decPlayed": 23
+      }
+     },
+     "elo": {
+      "rating": 1848,
+      "rank": 20,
+      "pct": 92.6
+     }
+    },
+    "Grass": {
+     "last52": {
+      "serve": {
+       "firstInPct": 57,
+       "firstWonPct": 69.5,
+       "secondWonPct": 49.4,
+       "holdPct": 78.3,
+       "acesPerMatch": 4.3,
+       "dfPerMatch": 4.8,
+       "rating": 253.8,
+       "pct": 0
+      },
+      "return": {
+       "ret1stWonPct": 29,
+       "ret2ndWonPct": 55.7,
+       "returnGamesWonPct": 29.3,
+       "bpConvPct": 37.5,
+       "rating": 151.4,
+       "pct": 90
+      },
+      "underPressure": {
+       "bpSavedPct": 57.1,
+       "bpConvPct": null,
+       "tbWinPct": null,
+       "decWinPct": null,
+       "rating": null,
+       "estimated": false,
+       "components": 1,
+       "inclChallenger": false,
+       "srScope": "last52"
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 60.9,
+       "returnPtsWonPct": 39.3,
+       "rating": 1.01,
+       "pct": 10
+      },
+      "sample": {
+       "matches": 6,
+       "svpt": 570,
+       "bpFaced": 53,
+       "bpChances": 64,
+       "tbPlayed": 4,
+       "decPlayed": 4
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 61.2,
+       "firstWonPct": 70.7,
+       "secondWonPct": 50.5,
+       "holdPct": 79.2,
+       "acesPerMatch": 4.7,
+       "dfPerMatch": 3.9,
+       "rating": 262.4,
+       "pct": 7.1
+      },
+      "return": {
+       "ret1stWonPct": 26.9,
+       "ret2ndWonPct": 48.4,
+       "returnGamesWonPct": 22,
+       "bpConvPct": 37.9,
+       "rating": 135.2,
+       "pct": 71.4
+      },
+      "underPressure": {
+       "bpSavedPct": 61.3,
+       "bpConvPct": 34,
+       "tbWinPct": 50,
+       "decWinPct": 42.9,
+       "rating": 188.1,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 26.2
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.7,
+       "returnPtsWonPct": 34.9,
+       "rating": 0.94,
+       "pct": 17.6
+      },
+      "sample": {
+       "matches": 14,
+       "svpt": 1293,
+       "bpFaced": 113,
+       "bpChances": 116,
+       "tbPlayed": 9,
+       "decPlayed": 7
+      }
+     },
+     "elo": {
+      "rating": 1739,
+      "rank": 22,
+      "pct": 91.9
+     }
+    },
+    "All": {
+     "last52": {
+      "serve": {
+       "firstInPct": 60.6,
+       "firstWonPct": 70.3,
+       "secondWonPct": 51.8,
+       "holdPct": 78.3,
+       "acesPerMatch": 4.2,
+       "dfPerMatch": 2.8,
+       "rating": 262.3,
+       "pct": 34.2
+      },
+      "return": {
+       "ret1stWonPct": 31.9,
+       "ret2ndWonPct": 53.7,
+       "returnGamesWonPct": 30,
+       "bpConvPct": 37.7,
+       "rating": 153.3,
+       "pct": 94.4
+      },
+      "underPressure": {
+       "bpSavedPct": 63.6,
+       "bpConvPct": 42.7,
+       "tbWinPct": 58.3,
+       "decWinPct": 50,
+       "rating": 214.6,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 77.6
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.9,
+       "returnPtsWonPct": 40.3,
+       "rating": 1.09,
+       "pct": 87.6
+      },
+      "sample": {
+       "matches": 58,
+       "svpt": 4501,
+       "bpFaced": 315,
+       "bpChances": 443,
+       "tbPlayed": 17,
+       "decPlayed": 16
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 61.9,
+       "firstWonPct": 69.5,
+       "secondWonPct": 51.9,
+       "holdPct": 78.3,
+       "acesPerMatch": 3.8,
+       "dfPerMatch": 3,
+       "rating": 262.3,
+       "pct": 38.6
+      },
+      "return": {
+       "ret1stWonPct": 32.5,
+       "ret2ndWonPct": 52.3,
+       "returnGamesWonPct": 28.4,
+       "bpConvPct": 41.6,
+       "rating": 154.8,
+       "pct": 96.3
+      },
+      "underPressure": {
+       "bpSavedPct": 61.8,
+       "bpConvPct": 41.8,
+       "tbWinPct": 49.5,
+       "decWinPct": 51.5,
+       "rating": 204.6,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 67.6
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 62.7,
+       "returnPtsWonPct": 39.9,
+       "rating": 1.07,
+       "pct": 88.4
+      },
+      "sample": {
+       "matches": 164,
+       "svpt": 12901,
+       "bpFaced": 1053,
+       "bpChances": 1252,
+       "tbPlayed": 69,
+       "decPlayed": 52
+      }
+     },
+     "elo": {
+      "rating": 1890,
+      "rank": 24,
+      "pct": 90.9
+     }
+    }
+   }
+  },
+  {
    "playerKey": "2382",
    "name": "C. Alcaraz",
    "inRoster": true,
@@ -10256,7 +10664,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 34.4,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 35,
@@ -10527,7 +10935,7 @@
        "acesPerMatch": 6.3,
        "dfPerMatch": 2.8,
        "rating": 265.1,
-       "pct": 41.5
+       "pct": 41.7
       },
       "return": {
        "ret1stWonPct": 27.9,
@@ -10573,7 +10981,7 @@
        "acesPerMatch": 5.9,
        "dfPerMatch": 3.3,
        "rating": 262.2,
-       "pct": 38
+       "pct": 37.9
       },
       "return": {
        "ret1stWonPct": 28.6,
@@ -10619,414 +11027,6 @@
    }
   },
   {
-   "playerKey": "1104",
-   "name": "F. Cerundolo",
-   "inRoster": true,
-   "matchesAll": {
-    "last52": 58,
-    "sinceBase": 163
-   },
-   "latestMatch": "2026-10-01",
-   "last52From": "2025-10-02",
-   "surfaces": {
-    "Hard": {
-     "last52": {
-      "serve": {
-       "firstInPct": 61.5,
-       "firstWonPct": 70.9,
-       "secondWonPct": 50.8,
-       "holdPct": 76.5,
-       "acesPerMatch": 5.1,
-       "dfPerMatch": 3.1,
-       "rating": 261.7,
-       "pct": 27.7
-      },
-      "return": {
-       "ret1stWonPct": 29.5,
-       "ret2ndWonPct": 51.8,
-       "returnGamesWonPct": 24.2,
-       "bpConvPct": 35.4,
-       "rating": 140.8,
-       "pct": 73.2
-      },
-      "underPressure": {
-       "bpSavedPct": 64.9,
-       "bpConvPct": 42.2,
-       "tbWinPct": 71.4,
-       "decWinPct": 54.5,
-       "rating": 233.1,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 90.9
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.9,
-       "returnPtsWonPct": 38,
-       "rating": 1.03,
-       "pct": 64.4
-      },
-      "sample": {
-       "matches": 27,
-       "svpt": 2250,
-       "bpFaced": 175,
-       "bpChances": 195,
-       "tbPlayed": 9,
-       "decPlayed": 9
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 60.5,
-       "firstWonPct": 70.2,
-       "secondWonPct": 51.5,
-       "holdPct": 77.9,
-       "acesPerMatch": 4.5,
-       "dfPerMatch": 3.3,
-       "rating": 261.3,
-       "pct": 28.2
-      },
-      "return": {
-       "ret1stWonPct": 29.2,
-       "ret2ndWonPct": 51.8,
-       "returnGamesWonPct": 23.6,
-       "bpConvPct": 41,
-       "rating": 145.6,
-       "pct": 83.8
-      },
-      "underPressure": {
-       "bpSavedPct": 61.8,
-       "bpConvPct": 43.3,
-       "tbWinPct": 57.4,
-       "decWinPct": 47.4,
-       "rating": 209.8,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 73.9
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.7,
-       "returnPtsWonPct": 38,
-       "rating": 1.02,
-       "pct": 65.8
-      },
-      "sample": {
-       "matches": 62,
-       "svpt": 5187,
-       "bpFaced": 425,
-       "bpChances": 415,
-       "tbPlayed": 33,
-       "decPlayed": 21
-      }
-     },
-     "elo": {
-      "rating": 1838,
-      "rank": 23,
-      "pct": 91.5
-     }
-    },
-    "Clay": {
-     "last52": {
-      "serve": {
-       "firstInPct": 60.5,
-       "firstWonPct": 69.2,
-       "secondWonPct": 52.9,
-       "holdPct": 78.5,
-       "acesPerMatch": 3.3,
-       "dfPerMatch": 2.4,
-       "rating": 262,
-       "pct": 39.4
-      },
-      "return": {
-       "ret1stWonPct": 36.1,
-       "ret2ndWonPct": 55,
-       "returnGamesWonPct": 37.4,
-       "bpConvPct": 40,
-       "rating": 168.6,
-       "pct": 97.6
-      },
-      "underPressure": {
-       "bpSavedPct": 62.7,
-       "bpConvPct": 43.4,
-       "tbWinPct": 44.4,
-       "decWinPct": 50,
-       "rating": 200.5,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 51.1
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.7,
-       "returnPtsWonPct": 43.6,
-       "rating": 1.17,
-       "pct": 93.8
-      },
-      "sample": {
-       "matches": 22,
-       "svpt": 1573,
-       "bpFaced": 91,
-       "bpChances": 160,
-       "tbPlayed": 5,
-       "decPlayed": 3
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 63.1,
-       "firstWonPct": 68.3,
-       "secondWonPct": 52.4,
-       "holdPct": 77.7,
-       "acesPerMatch": 3.1,
-       "dfPerMatch": 2.7,
-       "rating": 261.9,
-       "pct": 48.2
-      },
-      "return": {
-       "ret1stWonPct": 36,
-       "ret2ndWonPct": 53.1,
-       "returnGamesWonPct": 33,
-       "bpConvPct": 42.4,
-       "rating": 164.5,
-       "pct": 95.2
-      },
-      "underPressure": {
-       "bpSavedPct": 61.8,
-       "bpConvPct": 41.9,
-       "tbWinPct": 39.5,
-       "decWinPct": 55.8,
-       "rating": 199,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 54.4
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.4,
-       "returnPtsWonPct": 42.3,
-       "rating": 1.13,
-       "pct": 93.5
-      },
-      "sample": {
-       "matches": 79,
-       "svpt": 5884,
-       "bpFaced": 479,
-       "bpChances": 644,
-       "tbPlayed": 23,
-       "decPlayed": 23
-      }
-     },
-     "elo": {
-      "rating": 1848,
-      "rank": 20,
-      "pct": 92.6
-     }
-    },
-    "Grass": {
-     "last52": {
-      "serve": {
-       "firstInPct": 57,
-       "firstWonPct": 69.5,
-       "secondWonPct": 49.4,
-       "holdPct": 78.3,
-       "acesPerMatch": 4.3,
-       "dfPerMatch": 4.8,
-       "rating": 253.8,
-       "pct": 0
-      },
-      "return": {
-       "ret1stWonPct": 29,
-       "ret2ndWonPct": 55.7,
-       "returnGamesWonPct": 29.3,
-       "bpConvPct": 37.5,
-       "rating": 151.4,
-       "pct": 90
-      },
-      "underPressure": {
-       "bpSavedPct": 57.1,
-       "bpConvPct": null,
-       "tbWinPct": null,
-       "decWinPct": null,
-       "rating": null,
-       "estimated": false,
-       "components": 1,
-       "inclChallenger": false,
-       "srScope": "last52"
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 60.9,
-       "returnPtsWonPct": 39.3,
-       "rating": 1.01,
-       "pct": 10
-      },
-      "sample": {
-       "matches": 6,
-       "svpt": 570,
-       "bpFaced": 53,
-       "bpChances": 64,
-       "tbPlayed": 4,
-       "decPlayed": 4
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 61.2,
-       "firstWonPct": 70.7,
-       "secondWonPct": 50.5,
-       "holdPct": 79.2,
-       "acesPerMatch": 4.7,
-       "dfPerMatch": 3.9,
-       "rating": 262.4,
-       "pct": 7.1
-      },
-      "return": {
-       "ret1stWonPct": 26.9,
-       "ret2ndWonPct": 48.4,
-       "returnGamesWonPct": 22,
-       "bpConvPct": 37.9,
-       "rating": 135.2,
-       "pct": 71.4
-      },
-      "underPressure": {
-       "bpSavedPct": 61.3,
-       "bpConvPct": 34,
-       "tbWinPct": 50,
-       "decWinPct": 42.9,
-       "rating": 188.1,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 26.2
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.7,
-       "returnPtsWonPct": 34.9,
-       "rating": 0.94,
-       "pct": 17.6
-      },
-      "sample": {
-       "matches": 14,
-       "svpt": 1293,
-       "bpFaced": 113,
-       "bpChances": 116,
-       "tbPlayed": 9,
-       "decPlayed": 7
-      }
-     },
-     "elo": {
-      "rating": 1739,
-      "rank": 22,
-      "pct": 91.9
-     }
-    },
-    "All": {
-     "last52": {
-      "serve": {
-       "firstInPct": 60.8,
-       "firstWonPct": 70.4,
-       "secondWonPct": 51.6,
-       "holdPct": 78.1,
-       "acesPerMatch": 4.3,
-       "dfPerMatch": 2.8,
-       "rating": 262.3,
-       "pct": 34.2
-      },
-      "return": {
-       "ret1stWonPct": 31.9,
-       "ret2ndWonPct": 53.5,
-       "returnGamesWonPct": 29.7,
-       "bpConvPct": 37.9,
-       "rating": 153,
-       "pct": 93.8
-      },
-      "underPressure": {
-       "bpSavedPct": 63.6,
-       "bpConvPct": 42.7,
-       "tbWinPct": 58.3,
-       "decWinPct": 50,
-       "rating": 214.6,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 77.6
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.9,
-       "returnPtsWonPct": 40.3,
-       "rating": 1.09,
-       "pct": 87.3
-      },
-      "sample": {
-       "matches": 58,
-       "svpt": 4533,
-       "bpFaced": 321,
-       "bpChances": 438,
-       "tbPlayed": 19,
-       "decPlayed": 16
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 61.9,
-       "firstWonPct": 69.4,
-       "secondWonPct": 51.9,
-       "holdPct": 78.2,
-       "acesPerMatch": 3.8,
-       "dfPerMatch": 3,
-       "rating": 262.2,
-       "pct": 38
-      },
-      "return": {
-       "ret1stWonPct": 32.5,
-       "ret2ndWonPct": 52.3,
-       "returnGamesWonPct": 28.4,
-       "bpConvPct": 41.7,
-       "rating": 154.8,
-       "pct": 96.3
-      },
-      "underPressure": {
-       "bpSavedPct": 61.8,
-       "bpConvPct": 41.8,
-       "tbWinPct": 49.5,
-       "decWinPct": 51.5,
-       "rating": 204.6,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 67.6
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 62.7,
-       "returnPtsWonPct": 39.9,
-       "rating": 1.07,
-       "pct": 88.4
-      },
-      "sample": {
-       "matches": 163,
-       "svpt": 12851,
-       "bpFaced": 1053,
-       "bpChances": 1243,
-       "tbPlayed": 69,
-       "decPlayed": 52
-      }
-     },
-     "elo": {
-      "rating": 1890,
-      "rank": 24,
-      "pct": 90.9
-     }
-    }
-   }
-  },
-  {
    "playerKey": "2847",
    "name": "A. Rublev",
    "inRoster": true,
@@ -11055,7 +11055,7 @@
        "returnGamesWonPct": 20.7,
        "bpConvPct": 35.2,
        "rating": 134.8,
-       "pct": 57.3
+       "pct": 56.8
       },
       "underPressure": {
        "bpSavedPct": 63.4,
@@ -11352,7 +11352,7 @@
        "returnGamesWonPct": 22.4,
        "bpConvPct": 35.4,
        "rating": 137.9,
-       "pct": 61.8
+       "pct": 62.2
       },
       "underPressure": {
        "bpSavedPct": 63.2,
@@ -11761,7 +11761,7 @@
        "returnGamesWonPct": 21.7,
        "bpConvPct": 39.1,
        "rating": 141.2,
-       "pct": 69.9
+       "pct": 69.5
       },
       "underPressure": {
        "bpSavedPct": 58.6,
@@ -11807,7 +11807,7 @@
        "returnGamesWonPct": 21.1,
        "bpConvPct": 39.5,
        "rating": 139.6,
-       "pct": 64.6
+       "pct": 65
       },
       "underPressure": {
        "bpSavedPct": 60.1,
@@ -11825,7 +11825,7 @@
        "servicePtsWonPct": 63.8,
        "returnPtsWonPct": 36.9,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 152,
@@ -11937,7 +11937,7 @@
        "servicePtsWonPct": 65.6,
        "returnPtsWonPct": 35.6,
        "rating": 1.04,
-       "pct": 75
+       "pct": 75.2
       },
       "sample": {
        "matches": 92,
@@ -12753,7 +12753,7 @@
        "servicePtsWonPct": 65.7,
        "returnPtsWonPct": 35.3,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 61,
@@ -13090,7 +13090,7 @@
        "acesPerMatch": 7.1,
        "dfPerMatch": 4.5,
        "rating": 265.1,
-       "pct": 38.7
+       "pct": 39
       },
       "return": {
        "ret1stWonPct": 26.4,
@@ -13387,7 +13387,7 @@
        "acesPerMatch": 7.4,
        "dfPerMatch": 4.6,
        "rating": 265.2,
-       "pct": 42.5
+       "pct": 42.9
       },
       "return": {
        "ret1stWonPct": 28.3,
@@ -13395,7 +13395,7 @@
        "returnGamesWonPct": 20.2,
        "bpConvPct": 37.6,
        "rating": 136,
-       "pct": 55.6
+       "pct": 55.8
       },
       "underPressure": {
        "bpSavedPct": 61.4,
@@ -13459,7 +13459,7 @@
        "servicePtsWonPct": 64,
        "returnPtsWonPct": 37.2,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 148,
@@ -13474,6 +13474,414 @@
       "rating": 1782,
       "rank": 63,
       "pct": 76.1
+     }
+    }
+   }
+  },
+  {
+   "playerKey": "902",
+   "name": "J. Mensik",
+   "inRoster": true,
+   "matchesAll": {
+    "last52": 56,
+    "sinceBase": 148
+   },
+   "latestMatch": "2026-10-03",
+   "last52From": "2025-10-04",
+   "surfaces": {
+    "Hard": {
+     "last52": {
+      "serve": {
+       "firstInPct": 60.5,
+       "firstWonPct": 79,
+       "secondWonPct": 48.2,
+       "holdPct": 84.2,
+       "acesPerMatch": 12.1,
+       "dfPerMatch": 4.2,
+       "rating": 279.8,
+       "pct": 74.3
+      },
+      "return": {
+       "ret1stWonPct": 30,
+       "ret2ndWonPct": 47.6,
+       "returnGamesWonPct": 20.8,
+       "bpConvPct": 39.2,
+       "rating": 137.6,
+       "pct": 66.7
+      },
+      "underPressure": {
+       "bpSavedPct": 61.7,
+       "bpConvPct": 39.8,
+       "tbWinPct": 70,
+       "decWinPct": 63.6,
+       "rating": 235.1,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 92.3
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 66.9,
+       "returnPtsWonPct": 36.7,
+       "rating": 1.11,
+       "pct": 89
+      },
+      "sample": {
+       "matches": 38,
+       "svpt": 3163,
+       "bpFaced": 203,
+       "bpChances": 250,
+       "tbPlayed": 22,
+       "decPlayed": 18
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 59.4,
+       "firstWonPct": 78.2,
+       "secondWonPct": 47.8,
+       "holdPct": 83.8,
+       "acesPerMatch": 12.2,
+       "dfPerMatch": 4,
+       "rating": 277.4,
+       "pct": 79.3
+      },
+      "return": {
+       "ret1stWonPct": 29.9,
+       "ret2ndWonPct": 49.1,
+       "returnGamesWonPct": 21.8,
+       "bpConvPct": 40.2,
+       "rating": 141,
+       "pct": 73.3
+      },
+      "underPressure": {
+       "bpSavedPct": 63.4,
+       "bpConvPct": 37.9,
+       "tbWinPct": 59,
+       "decWinPct": 60,
+       "rating": 220.3,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 90.6
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 65.9,
+       "returnPtsWonPct": 37.1,
+       "rating": 1.09,
+       "pct": 88
+      },
+      "sample": {
+       "matches": 93,
+       "svpt": 7728,
+       "bpFaced": 517,
+       "bpChances": 635,
+       "tbPlayed": 57,
+       "decPlayed": 43
+      }
+     },
+     "elo": {
+      "rating": 1875,
+      "rank": 17,
+      "pct": 93.6
+     }
+    },
+    "Clay": {
+     "last52": {
+      "serve": {
+       "firstInPct": 58.6,
+       "firstWonPct": 77.3,
+       "secondWonPct": 47.4,
+       "holdPct": 81.6,
+       "acesPerMatch": 7.9,
+       "dfPerMatch": 4.3,
+       "rating": 268.5,
+       "pct": 60.1
+      },
+      "return": {
+       "ret1stWonPct": 29.4,
+       "ret2ndWonPct": 49.4,
+       "returnGamesWonPct": 19.3,
+       "bpConvPct": 30.2,
+       "rating": 128.3,
+       "pct": 23.6
+      },
+      "underPressure": {
+       "bpSavedPct": 66,
+       "bpConvPct": 40,
+       "tbWinPct": 37.5,
+       "decWinPct": 0,
+       "rating": 143.5,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 2.7
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 64.9,
+       "returnPtsWonPct": 36.2,
+       "rating": 1.03,
+       "pct": 55.3
+      },
+      "sample": {
+       "matches": 12,
+       "svpt": 1127,
+       "bpFaced": 74,
+       "bpChances": 106,
+       "tbPlayed": 6,
+       "decPlayed": 4
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 58.3,
+       "firstWonPct": 76.3,
+       "secondWonPct": 49.8,
+       "holdPct": 83.7,
+       "acesPerMatch": 8.8,
+       "dfPerMatch": 3.7,
+       "rating": 273.2,
+       "pct": 83.7
+      },
+      "return": {
+       "ret1stWonPct": 30.8,
+       "ret2ndWonPct": 48.7,
+       "returnGamesWonPct": 22,
+       "bpConvPct": 37.8,
+       "rating": 139.3,
+       "pct": 41.5
+      },
+      "underPressure": {
+       "bpSavedPct": 64.9,
+       "bpConvPct": 43.1,
+       "tbWinPct": 40,
+       "decWinPct": 20,
+       "rating": 168,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 7.9
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 65.2,
+       "returnPtsWonPct": 37,
+       "rating": 1.06,
+       "pct": 79.1
+      },
+      "sample": {
+       "matches": 29,
+       "svpt": 2497,
+       "bpFaced": 169,
+       "bpChances": 217,
+       "tbPlayed": 16,
+       "decPlayed": 9
+      }
+     },
+     "elo": {
+      "rating": 1851,
+      "rank": 19,
+      "pct": 93
+     }
+    },
+    "Grass": {
+     "last52": {
+      "serve": {
+       "firstInPct": 65.7,
+       "firstWonPct": 74.2,
+       "secondWonPct": 50,
+       "holdPct": 84.4,
+       "acesPerMatch": 21,
+       "dfPerMatch": 4.3,
+       "rating": 291,
+       "pct": 40
+      },
+      "return": {
+       "ret1stWonPct": 28.5,
+       "ret2ndWonPct": 42.4,
+       "returnGamesWonPct": 16.7,
+       "bpConvPct": 28.2,
+       "rating": 115.8,
+       "pct": 10
+      },
+      "underPressure": {
+       "bpSavedPct": 67.9,
+       "bpConvPct": 39.5,
+       "tbWinPct": null,
+       "decWinPct": null,
+       "rating": null,
+       "estimated": false,
+       "components": 2,
+       "inclChallenger": false,
+       "srScope": "last52"
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 65.9,
+       "returnPtsWonPct": 34.1,
+       "rating": 1,
+       "pct": 10
+      },
+      "sample": {
+       "matches": 3,
+       "svpt": 402,
+       "bpFaced": 23,
+       "bpChances": 39,
+       "tbPlayed": 4,
+       "decPlayed": 2
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 60.8,
+       "firstWonPct": 73.7,
+       "secondWonPct": 46.9,
+       "holdPct": 79.6,
+       "acesPerMatch": 12.7,
+       "dfPerMatch": 4.5,
+       "rating": 269.2,
+       "pct": 22.4
+      },
+      "return": {
+       "ret1stWonPct": 28.1,
+       "ret2ndWonPct": 46.8,
+       "returnGamesWonPct": 16.4,
+       "bpConvPct": 35.2,
+       "rating": 126.5,
+       "pct": 39
+      },
+      "underPressure": {
+       "bpSavedPct": 64.8,
+       "bpConvPct": 40,
+       "tbWinPct": null,
+       "decWinPct": 50,
+       "rating": 206.3,
+       "estimated": true,
+       "components": 3,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 57.6
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 63.6,
+       "returnPtsWonPct": 34.6,
+       "rating": 0.95,
+       "pct": 22.4
+      },
+      "sample": {
+       "matches": 19,
+       "svpt": 1758,
+       "bpFaced": 146,
+       "bpChances": 128,
+       "tbPlayed": 7,
+       "decPlayed": 8
+      }
+     },
+     "elo": {
+      "rating": 1706,
+      "rank": 36,
+      "pct": 86.6
+     }
+    },
+    "All": {
+     "last52": {
+      "serve": {
+       "firstInPct": 60.8,
+       "firstWonPct": 78,
+       "secondWonPct": 48.4,
+       "holdPct": 83.6,
+       "acesPerMatch": 11.6,
+       "dfPerMatch": 4.2,
+       "rating": 278.3,
+       "pct": 82.4
+      },
+      "return": {
+       "ret1stWonPct": 29.6,
+       "ret2ndWonPct": 47.6,
+       "returnGamesWonPct": 19.9,
+       "bpConvPct": 35.6,
+       "rating": 132.7,
+       "pct": 44.4
+      },
+      "underPressure": {
+       "bpSavedPct": 63.5,
+       "bpConvPct": 39.8,
+       "tbWinPct": 63.3,
+       "decWinPct": 47.1,
+       "rating": 213.7,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 76.3
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 66.4,
+       "returnPtsWonPct": 36.3,
+       "rating": 1.08,
+       "pct": 86.1
+      },
+      "sample": {
+       "matches": 56,
+       "svpt": 4891,
+       "bpFaced": 310,
+       "bpChances": 413,
+       "tbPlayed": 32,
+       "decPlayed": 25
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 59.6,
+       "firstWonPct": 76.9,
+       "secondWonPct": 48.2,
+       "holdPct": 83,
+       "acesPerMatch": 11.5,
+       "dfPerMatch": 4,
+       "rating": 275.2,
+       "pct": 81
+      },
+      "return": {
+       "ret1stWonPct": 29.7,
+       "ret2ndWonPct": 48.8,
+       "returnGamesWonPct": 20.9,
+       "bpConvPct": 38.8,
+       "rating": 138.3,
+       "pct": 59.5
+      },
+      "underPressure": {
+       "bpSavedPct": 63.8,
+       "bpConvPct": 39,
+       "tbWinPct": 58.1,
+       "decWinPct": 53.7,
+       "rating": 214.6,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 86.7
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 65.4,
+       "returnPtsWonPct": 36.7,
+       "rating": 1.06,
+       "pct": 84.9
+      },
+      "sample": {
+       "matches": 148,
+       "svpt": 12494,
+       "bpFaced": 875,
+       "bpChances": 1022,
+       "tbPlayed": 81,
+       "decPlayed": 63
+      }
+     },
+     "elo": {
+      "rating": 1911,
+      "rank": 20,
+      "pct": 92.6
      }
     }
    }
@@ -13525,7 +13933,7 @@
        "servicePtsWonPct": 66,
        "returnPtsWonPct": 37.6,
        "rating": 1.11,
-       "pct": 88.7
+       "pct": 89
       },
       "sample": {
        "matches": 42,
@@ -13782,7 +14190,7 @@
        "returnGamesWonPct": 23,
        "bpConvPct": 37.1,
        "rating": 140.9,
-       "pct": 68.9
+       "pct": 68.5
       },
       "underPressure": {
        "bpSavedPct": 60.8,
@@ -13912,7 +14320,7 @@
        "servicePtsWonPct": 63.9,
        "returnPtsWonPct": 33.4,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 37,
@@ -14303,7 +14711,7 @@
        "returnGamesWonPct": 20.5,
        "bpConvPct": 38.5,
        "rating": 137.1,
-       "pct": 64.4
+       "pct": 65
       },
       "underPressure": {
        "bpSavedPct": 56.1,
@@ -14679,414 +15087,6 @@
       "rating": 1830,
       "rank": 34,
       "pct": 87.3
-     }
-    }
-   }
-  },
-  {
-   "playerKey": "902",
-   "name": "J. Mensik",
-   "inRoster": true,
-   "matchesAll": {
-    "last52": 55,
-    "sinceBase": 147
-   },
-   "latestMatch": "2026-10-01",
-   "last52From": "2025-10-02",
-   "surfaces": {
-    "Hard": {
-     "last52": {
-      "serve": {
-       "firstInPct": 60.4,
-       "firstWonPct": 79.2,
-       "secondWonPct": 48.3,
-       "holdPct": 84.5,
-       "acesPerMatch": 12.3,
-       "dfPerMatch": 4.3,
-       "rating": 280.4,
-       "pct": 74.3
-      },
-      "return": {
-       "ret1stWonPct": 30.1,
-       "ret2ndWonPct": 47.8,
-       "returnGamesWonPct": 21.2,
-       "bpConvPct": 39.2,
-       "rating": 138.3,
-       "pct": 68.1
-      },
-      "underPressure": {
-       "bpSavedPct": 61.7,
-       "bpConvPct": 39.8,
-       "tbWinPct": 70,
-       "decWinPct": 63.6,
-       "rating": 235.1,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 92.3
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 67,
-       "returnPtsWonPct": 36.8,
-       "rating": 1.12,
-       "pct": 89.8
-      },
-      "sample": {
-       "matches": 37,
-       "svpt": 3106,
-       "bpFaced": 194,
-       "bpChances": 250,
-       "tbPlayed": 22,
-       "decPlayed": 18
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 59.3,
-       "firstWonPct": 78.3,
-       "secondWonPct": 47.9,
-       "holdPct": 84,
-       "acesPerMatch": 12.3,
-       "dfPerMatch": 4.1,
-       "rating": 277.6,
-       "pct": 79.7
-      },
-      "return": {
-       "ret1stWonPct": 30,
-       "ret2ndWonPct": 49.2,
-       "returnGamesWonPct": 21.9,
-       "bpConvPct": 40.2,
-       "rating": 141.2,
-       "pct": 73.3
-      },
-      "underPressure": {
-       "bpSavedPct": 63.4,
-       "bpConvPct": 37.9,
-       "tbWinPct": 59,
-       "decWinPct": 60,
-       "rating": 220.3,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 90.6
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 65.9,
-       "returnPtsWonPct": 37.2,
-       "rating": 1.09,
-       "pct": 88
-      },
-      "sample": {
-       "matches": 92,
-       "svpt": 7671,
-       "bpFaced": 508,
-       "bpChances": 635,
-       "tbPlayed": 57,
-       "decPlayed": 43
-      }
-     },
-     "elo": {
-      "rating": 1875,
-      "rank": 17,
-      "pct": 93.6
-     }
-    },
-    "Clay": {
-     "last52": {
-      "serve": {
-       "firstInPct": 58.6,
-       "firstWonPct": 77.3,
-       "secondWonPct": 47.4,
-       "holdPct": 81.6,
-       "acesPerMatch": 7.9,
-       "dfPerMatch": 4.3,
-       "rating": 268.5,
-       "pct": 60.1
-      },
-      "return": {
-       "ret1stWonPct": 29.4,
-       "ret2ndWonPct": 49.4,
-       "returnGamesWonPct": 19.3,
-       "bpConvPct": 30.2,
-       "rating": 128.3,
-       "pct": 23.6
-      },
-      "underPressure": {
-       "bpSavedPct": 66,
-       "bpConvPct": 40,
-       "tbWinPct": 37.5,
-       "decWinPct": 0,
-       "rating": 143.5,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 2.7
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 64.9,
-       "returnPtsWonPct": 36.2,
-       "rating": 1.03,
-       "pct": 55.3
-      },
-      "sample": {
-       "matches": 12,
-       "svpt": 1127,
-       "bpFaced": 74,
-       "bpChances": 106,
-       "tbPlayed": 6,
-       "decPlayed": 4
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 58.3,
-       "firstWonPct": 76.3,
-       "secondWonPct": 49.8,
-       "holdPct": 83.7,
-       "acesPerMatch": 8.8,
-       "dfPerMatch": 3.7,
-       "rating": 273.2,
-       "pct": 83.7
-      },
-      "return": {
-       "ret1stWonPct": 30.8,
-       "ret2ndWonPct": 48.7,
-       "returnGamesWonPct": 22,
-       "bpConvPct": 37.8,
-       "rating": 139.3,
-       "pct": 41.5
-      },
-      "underPressure": {
-       "bpSavedPct": 64.9,
-       "bpConvPct": 43.1,
-       "tbWinPct": 40,
-       "decWinPct": 20,
-       "rating": 168,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 7.9
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 65.2,
-       "returnPtsWonPct": 37,
-       "rating": 1.06,
-       "pct": 79.1
-      },
-      "sample": {
-       "matches": 29,
-       "svpt": 2497,
-       "bpFaced": 169,
-       "bpChances": 217,
-       "tbPlayed": 16,
-       "decPlayed": 9
-      }
-     },
-     "elo": {
-      "rating": 1851,
-      "rank": 19,
-      "pct": 93
-     }
-    },
-    "Grass": {
-     "last52": {
-      "serve": {
-       "firstInPct": 65.7,
-       "firstWonPct": 74.2,
-       "secondWonPct": 50,
-       "holdPct": 84.4,
-       "acesPerMatch": 21,
-       "dfPerMatch": 4.3,
-       "rating": 291,
-       "pct": 40
-      },
-      "return": {
-       "ret1stWonPct": 28.5,
-       "ret2ndWonPct": 42.4,
-       "returnGamesWonPct": 16.7,
-       "bpConvPct": 28.2,
-       "rating": 115.8,
-       "pct": 10
-      },
-      "underPressure": {
-       "bpSavedPct": 67.9,
-       "bpConvPct": 39.5,
-       "tbWinPct": null,
-       "decWinPct": null,
-       "rating": null,
-       "estimated": false,
-       "components": 2,
-       "inclChallenger": false,
-       "srScope": "last52"
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 65.9,
-       "returnPtsWonPct": 34.1,
-       "rating": 1,
-       "pct": 10
-      },
-      "sample": {
-       "matches": 3,
-       "svpt": 402,
-       "bpFaced": 23,
-       "bpChances": 39,
-       "tbPlayed": 4,
-       "decPlayed": 2
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 60.8,
-       "firstWonPct": 73.7,
-       "secondWonPct": 46.9,
-       "holdPct": 79.6,
-       "acesPerMatch": 12.7,
-       "dfPerMatch": 4.5,
-       "rating": 269.2,
-       "pct": 22.4
-      },
-      "return": {
-       "ret1stWonPct": 28.1,
-       "ret2ndWonPct": 46.8,
-       "returnGamesWonPct": 16.4,
-       "bpConvPct": 35.2,
-       "rating": 126.5,
-       "pct": 39
-      },
-      "underPressure": {
-       "bpSavedPct": 64.8,
-       "bpConvPct": 40,
-       "tbWinPct": null,
-       "decWinPct": 50,
-       "rating": 206.3,
-       "estimated": true,
-       "components": 3,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 57.6
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 63.6,
-       "returnPtsWonPct": 34.6,
-       "rating": 0.95,
-       "pct": 22.4
-      },
-      "sample": {
-       "matches": 19,
-       "svpt": 1758,
-       "bpFaced": 146,
-       "bpChances": 128,
-       "tbPlayed": 7,
-       "decPlayed": 8
-      }
-     },
-     "elo": {
-      "rating": 1706,
-      "rank": 36,
-      "pct": 86.6
-     }
-    },
-    "All": {
-     "last52": {
-      "serve": {
-       "firstInPct": 60.7,
-       "firstWonPct": 78.2,
-       "secondWonPct": 48.5,
-       "holdPct": 83.8,
-       "acesPerMatch": 11.7,
-       "dfPerMatch": 4.2,
-       "rating": 278.7,
-       "pct": 82.8
-      },
-      "return": {
-       "ret1stWonPct": 29.7,
-       "ret2ndWonPct": 47.7,
-       "returnGamesWonPct": 20.2,
-       "bpConvPct": 35.6,
-       "rating": 133.1,
-       "pct": 45.9
-      },
-      "underPressure": {
-       "bpSavedPct": 63.5,
-       "bpConvPct": 39.8,
-       "tbWinPct": 63.3,
-       "decWinPct": 47.1,
-       "rating": 213.7,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 76.3
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 66.5,
-       "returnPtsWonPct": 36.4,
-       "rating": 1.09,
-       "pct": 87.3
-      },
-      "sample": {
-       "matches": 55,
-       "svpt": 4834,
-       "bpFaced": 301,
-       "bpChances": 413,
-       "tbPlayed": 32,
-       "decPlayed": 25
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 59.5,
-       "firstWonPct": 77,
-       "secondWonPct": 48.2,
-       "holdPct": 83.1,
-       "acesPerMatch": 11.6,
-       "dfPerMatch": 4,
-       "rating": 275.4,
-       "pct": 81.5
-      },
-      "return": {
-       "ret1stWonPct": 29.7,
-       "ret2ndWonPct": 48.9,
-       "returnGamesWonPct": 21,
-       "bpConvPct": 38.8,
-       "rating": 138.5,
-       "pct": 60
-      },
-      "underPressure": {
-       "bpSavedPct": 63.8,
-       "bpConvPct": 39,
-       "tbWinPct": 58.1,
-       "decWinPct": 53.7,
-       "rating": 214.6,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 86.7
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 65.4,
-       "returnPtsWonPct": 36.7,
-       "rating": 1.06,
-       "pct": 84.9
-      },
-      "sample": {
-       "matches": 147,
-       "svpt": 12437,
-       "bpFaced": 866,
-       "bpChances": 1022,
-       "tbPlayed": 81,
-       "decPlayed": 63
-      }
-     },
-     "elo": {
-      "rating": 1911,
-      "rank": 20,
-      "pct": 92.6
      }
     }
    }
@@ -17114,7 +17114,7 @@
        "servicePtsWonPct": 64.4,
        "returnPtsWonPct": 36.4,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 142,
@@ -17162,7 +17162,7 @@
        "returnGamesWonPct": 18.8,
        "bpConvPct": 39.4,
        "rating": 137.6,
-       "pct": 65.8
+       "pct": 66.7
       },
       "underPressure": {
        "bpSavedPct": 54.3,
@@ -17450,7 +17450,7 @@
        "acesPerMatch": 7.9,
        "dfPerMatch": 4.9,
        "rating": 267.1,
-       "pct": 49.6
+       "pct": 50
       },
       "return": {
        "ret1stWonPct": 30.1,
@@ -17458,7 +17458,7 @@
        "returnGamesWonPct": 21,
        "bpConvPct": 39.8,
        "rating": 140.9,
-       "pct": 68.9
+       "pct": 68.5
       },
       "underPressure": {
        "bpSavedPct": 56,
@@ -19221,7 +19221,7 @@
        "servicePtsWonPct": 67.5,
        "returnPtsWonPct": 29.9,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 38,
@@ -19516,7 +19516,7 @@
        "servicePtsWonPct": 66.4,
        "returnPtsWonPct": 31,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 56,
@@ -19610,7 +19610,7 @@
        "returnGamesWonPct": 18.6,
        "bpConvPct": 41.4,
        "rating": 136.9,
-       "pct": 63
+       "pct": 63.6
       },
       "underPressure": {
        "bpSavedPct": 64,
@@ -19925,7 +19925,7 @@
        "servicePtsWonPct": 66.5,
        "returnPtsWonPct": 36,
        "rating": 1.08,
-       "pct": 85.9
+       "pct": 86.1
       },
       "sample": {
        "matches": 52,
@@ -20379,7 +20379,7 @@
        "servicePtsWonPct": 66.9,
        "returnPtsWonPct": 33.8,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 134,
@@ -21150,7 +21150,7 @@
        "servicePtsWonPct": 66.6,
        "returnPtsWonPct": 31.4,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 39,
@@ -21244,7 +21244,7 @@
        "returnGamesWonPct": 20.4,
        "bpConvPct": 37.5,
        "rating": 136.4,
-       "pct": 61.3
+       "pct": 61.9
       },
       "underPressure": {
        "bpSavedPct": 66.7,
@@ -21579,7 +21579,7 @@
        "acesPerMatch": 4.9,
        "dfPerMatch": 2.4,
        "rating": 270.6,
-       "pct": 68.7
+       "pct": 68.8
       },
       "return": {
        "ret1stWonPct": 27.5,
@@ -22053,7 +22053,7 @@
        "acesPerMatch": 5.5,
        "dfPerMatch": 1.9,
        "rating": 268.2,
-       "pct": 47.2
+       "pct": 47.7
       },
       "return": {
        "ret1stWonPct": 26.9,
@@ -22357,7 +22357,7 @@
        "returnGamesWonPct": 17.7,
        "bpConvPct": 39.9,
        "rating": 132.7,
-       "pct": 44.2
+       "pct": 44.4
       },
       "underPressure": {
        "bpSavedPct": 63.2,
@@ -22461,7 +22461,7 @@
        "acesPerMatch": 6,
        "dfPerMatch": 2.7,
        "rating": 266.3,
-       "pct": 42.4
+       "pct": 42.9
       },
       "return": {
        "ret1stWonPct": 25,
@@ -22469,7 +22469,7 @@
        "returnGamesWonPct": 20,
        "bpConvPct": 38.9,
        "rating": 137.6,
-       "pct": 65.8
+       "pct": 66.7
       },
       "underPressure": {
        "bpSavedPct": 59.3,
@@ -22515,7 +22515,7 @@
        "returnGamesWonPct": 20.7,
        "bpConvPct": 40.4,
        "rating": 139.8,
-       "pct": 69.9
+       "pct": 69.4
       },
       "underPressure": {
        "bpSavedPct": 62.5,
@@ -22758,7 +22758,7 @@
        "acesPerMatch": 4.9,
        "dfPerMatch": 2.4,
        "rating": 266.2,
-       "pct": 46.3
+       "pct": 46.7
       },
       "return": {
        "ret1stWonPct": 25.6,
@@ -23687,7 +23687,7 @@
        "acesPerMatch": 8.8,
        "dfPerMatch": 5.1,
        "rating": 268.4,
-       "pct": 48.6
+       "pct": 49.2
       },
       "return": {
        "ret1stWonPct": 31.3,
@@ -24391,7 +24391,7 @@
        "acesPerMatch": 5.5,
        "dfPerMatch": 3.7,
        "rating": 266.7,
-       "pct": 48.3
+       "pct": 48.8
       },
       "return": {
        "ret1stWonPct": 31.1,
@@ -24417,7 +24417,7 @@
        "servicePtsWonPct": 64,
        "returnPtsWonPct": 38.9,
        "rating": 1.08,
-       "pct": 85.9
+       "pct": 86.1
       },
       "sample": {
        "matches": 66,
@@ -24463,7 +24463,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 38.3,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 127,
@@ -24529,7 +24529,7 @@
        "servicePtsWonPct": 62,
        "returnPtsWonPct": 34.7,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 17,
@@ -25687,7 +25687,7 @@
        "servicePtsWonPct": 65.4,
        "returnPtsWonPct": 35.6,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 125,
@@ -25781,7 +25781,7 @@
        "returnGamesWonPct": 21.3,
        "bpConvPct": 40.4,
        "rating": 139.9,
-       "pct": 70.5
+       "pct": 70.3
       },
       "underPressure": {
        "bpSavedPct": 63.5,
@@ -26076,7 +26076,7 @@
        "returnGamesWonPct": 22.3,
        "bpConvPct": 40.2,
        "rating": 142.6,
-       "pct": 73.9
+       "pct": 73.6
       },
       "underPressure": {
        "bpSavedPct": 62.7,
@@ -26134,7 +26134,7 @@
        "acesPerMatch": 5.2,
        "dfPerMatch": 1.8,
        "rating": 265.2,
-       "pct": 39.3
+       "pct": 39.8
       },
       "return": {
        "ret1stWonPct": 23.6,
@@ -27253,7 +27253,7 @@
        "returnGamesWonPct": 20.8,
        "bpConvPct": 41.2,
        "rating": 141.4,
-       "pct": 70.5
+       "pct": 70.3
       },
       "underPressure": {
        "bpSavedPct": 59.5,
@@ -27357,7 +27357,7 @@
        "acesPerMatch": 7.7,
        "dfPerMatch": 2.8,
        "rating": 267.5,
-       "pct": 44.9
+       "pct": 45.5
       },
       "return": {
        "ret1stWonPct": 25.6,
@@ -27383,7 +27383,7 @@
        "servicePtsWonPct": 63.7,
        "returnPtsWonPct": 33.5,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 27,
@@ -27678,7 +27678,7 @@
        "servicePtsWonPct": 62.8,
        "returnPtsWonPct": 34,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 43,
@@ -27810,7 +27810,7 @@
        "acesPerMatch": 5,
        "dfPerMatch": 2.7,
        "rating": 269.8,
-       "pct": 57.5
+       "pct": 57.9
       },
       "return": {
        "ret1stWonPct": 30.3,
@@ -28493,7 +28493,7 @@
        "servicePtsWonPct": 61.3,
        "returnPtsWonPct": 36.1,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 36,
@@ -28579,7 +28579,7 @@
        "acesPerMatch": 4.6,
        "dfPerMatch": 2.7,
        "rating": 267.8,
-       "pct": 45.5
+       "pct": 46
       },
       "return": {
        "ret1stWonPct": 25.5,
@@ -28605,7 +28605,7 @@
        "servicePtsWonPct": 63.5,
        "returnPtsWonPct": 33.1,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 21,
@@ -28893,7 +28893,7 @@
        "servicePtsWonPct": 62,
        "returnPtsWonPct": 34.6,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 35,
@@ -29005,7 +29005,7 @@
        "servicePtsWonPct": 65,
        "returnPtsWonPct": 32.6,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 26,
@@ -29295,7 +29295,7 @@
        "servicePtsWonPct": 64.8,
        "returnPtsWonPct": 33.2,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 39,
@@ -29341,7 +29341,7 @@
        "servicePtsWonPct": 65.5,
        "returnPtsWonPct": 35.3,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 114,
@@ -29704,7 +29704,7 @@
        "servicePtsWonPct": 65.8,
        "returnPtsWonPct": 31.7,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 35,
@@ -29724,7 +29724,7 @@
        "acesPerMatch": 9.2,
        "dfPerMatch": 2.9,
        "rating": 275.2,
-       "pct": 80.8
+       "pct": 81
       },
       "return": {
        "ret1stWonPct": 26.3,
@@ -30521,7 +30521,7 @@
        "servicePtsWonPct": 68.8,
        "returnPtsWonPct": 33.7,
        "rating": 1.08,
-       "pct": 85.9
+       "pct": 86.1
       },
       "sample": {
        "matches": 41,
@@ -31015,7 +31015,7 @@
        "acesPerMatch": 8.2,
        "dfPerMatch": 3.4,
        "rating": 268.2,
-       "pct": 47.2
+       "pct": 47.7
       },
       "return": {
        "ret1stWonPct": 25.5,
@@ -31312,7 +31312,7 @@
        "acesPerMatch": 8,
        "dfPerMatch": 3.4,
        "rating": 267.7,
-       "pct": 50.8
+       "pct": 51.2
       },
       "return": {
        "ret1stWonPct": 25.5,
@@ -31450,7 +31450,7 @@
        "servicePtsWonPct": 63.4,
        "returnPtsWonPct": 34.1,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 26,
@@ -31792,7 +31792,7 @@
        "servicePtsWonPct": 65,
        "returnPtsWonPct": 35.7,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 109,
@@ -32267,7 +32267,7 @@
        "servicePtsWonPct": 63.9,
        "returnPtsWonPct": 33.2,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 32,
@@ -32563,7 +32563,7 @@
        "servicePtsWonPct": 63.3,
        "returnPtsWonPct": 33.9,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 43,
@@ -32649,7 +32649,7 @@
        "acesPerMatch": 6.3,
        "dfPerMatch": 2.4,
        "rating": 266.6,
-       "pct": 43.2
+       "pct": 43.8
       },
       "return": {
        "ret1stWonPct": 26,
@@ -32951,7 +32951,7 @@
        "servicePtsWonPct": 61.9,
        "returnPtsWonPct": 35,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 32,
@@ -32997,7 +32997,7 @@
        "servicePtsWonPct": 63.4,
        "returnPtsWonPct": 37.2,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 108,
@@ -33091,7 +33091,7 @@
        "returnGamesWonPct": 21.1,
        "bpConvPct": 40.4,
        "rating": 139.3,
-       "pct": 68.8
+       "pct": 68.6
       },
       "underPressure": {
        "bpSavedPct": 61.7,
@@ -34115,7 +34115,7 @@
        "returnGamesWonPct": 19.6,
        "bpConvPct": 38.8,
        "rating": 136.5,
-       "pct": 57.9
+       "pct": 58.3
       },
       "underPressure": {
        "bpSavedPct": 64.3,
@@ -34179,7 +34179,7 @@
        "servicePtsWonPct": 68.8,
        "returnPtsWonPct": 39.4,
        "rating": 1.26,
-       "pct": 99.1
+       "pct": 98.9
       },
       "sample": {
        "matches": 106,
@@ -35034,7 +35034,7 @@
        "acesPerMatch": 7.7,
        "dfPerMatch": 2.8,
        "rating": 269.4,
-       "pct": 50.6
+       "pct": 51.1
       },
       "return": {
        "ret1stWonPct": 28.1,
@@ -35875,7 +35875,7 @@
        "servicePtsWonPct": 60.6,
        "returnPtsWonPct": 36,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 22,
@@ -36311,7 +36311,7 @@
        "returnGamesWonPct": 22.8,
        "bpConvPct": 43.5,
        "rating": 145.6,
-       "pct": 83.8
+       "pct": 83.5
       },
       "underPressure": {
        "bpSavedPct": 61.5,
@@ -36988,7 +36988,7 @@
        "servicePtsWonPct": 62,
        "returnPtsWonPct": 34.8,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 33,
@@ -37358,7 +37358,7 @@
        "returnGamesWonPct": 19.9,
        "bpConvPct": 42.2,
        "rating": 140.7,
-       "pct": 67.8
+       "pct": 67.4
       },
       "underPressure": {
        "bpSavedPct": 66.1,
@@ -37870,7 +37870,7 @@
        "acesPerMatch": 5.1,
        "dfPerMatch": 1.9,
        "rating": 268.4,
-       "pct": 48.6
+       "pct": 49.2
       },
       "return": {
        "ret1stWonPct": 28.3,
@@ -38166,7 +38166,7 @@
        "acesPerMatch": 5.3,
        "dfPerMatch": 1.9,
        "rating": 269.2,
-       "pct": 56.6
+       "pct": 57.1
       },
       "return": {
        "ret1stWonPct": 28.5,
@@ -38174,7 +38174,7 @@
        "returnGamesWonPct": 21.8,
        "bpConvPct": 36.6,
        "rating": 137.7,
-       "pct": 61.2
+       "pct": 61.6
       },
       "underPressure": {
        "bpSavedPct": 54.2,
@@ -39008,7 +39008,7 @@
        "servicePtsWonPct": 60.7,
        "returnPtsWonPct": 37.1,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 48,
@@ -39893,7 +39893,7 @@
        "servicePtsWonPct": 62.4,
        "returnPtsWonPct": 35.1,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 20,
@@ -40322,7 +40322,7 @@
        "acesPerMatch": 8,
        "dfPerMatch": 3.8,
        "rating": 269.6,
-       "pct": 55.8
+       "pct": 56.2
       },
       "return": {
        "ret1stWonPct": 26,
@@ -41098,7 +41098,7 @@
        "returnGamesWonPct": 21.2,
        "bpConvPct": 37.6,
        "rating": 137.6,
-       "pct": 65.8
+       "pct": 66.7
       },
       "underPressure": {
        "bpSavedPct": 63.6,
@@ -41136,7 +41136,7 @@
        "acesPerMatch": 5.6,
        "dfPerMatch": 2.9,
        "rating": 269.6,
-       "pct": 55.8
+       "pct": 56.2
       },
       "return": {
        "ret1stWonPct": 28.5,
@@ -41162,7 +41162,7 @@
        "servicePtsWonPct": 64.6,
        "returnPtsWonPct": 36.8,
        "rating": 1.04,
-       "pct": 75
+       "pct": 75.2
       },
       "sample": {
        "matches": 57,
@@ -41394,7 +41394,7 @@
        "returnGamesWonPct": 20.6,
        "bpConvPct": 39.4,
        "rating": 137.5,
-       "pct": 60.6
+       "pct": 61
       },
       "underPressure": {
        "bpSavedPct": 64.3,
@@ -41458,7 +41458,7 @@
        "servicePtsWonPct": 64.3,
        "returnPtsWonPct": 36.3,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 90,
@@ -41506,7 +41506,7 @@
        "returnGamesWonPct": 17.5,
        "bpConvPct": 43.7,
        "rating": 138.1,
-       "pct": 66.9
+       "pct": 68.1
       },
       "underPressure": {
        "bpSavedPct": 58.7,
@@ -41793,7 +41793,7 @@
        "acesPerMatch": 7.2,
        "dfPerMatch": 3.5,
        "rating": 269.2,
-       "pct": 56.6
+       "pct": 57.1
       },
       "return": {
        "ret1stWonPct": 27.9,
@@ -42680,7 +42680,7 @@
        "servicePtsWonPct": 64.5,
        "returnPtsWonPct": 36.7,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 89,
@@ -43135,7 +43135,7 @@
        "returnGamesWonPct": 21.8,
        "bpConvPct": 29.3,
        "rating": 134.4,
-       "pct": 55.9
+       "pct": 55.4
       },
       "underPressure": {
        "bpSavedPct": 60.6,
@@ -43830,7 +43830,7 @@
        "acesPerMatch": 7.8,
        "dfPerMatch": 4.9,
        "rating": 269.3,
-       "pct": 57.5
+       "pct": 57.9
       },
       "return": {
        "ret1stWonPct": 28.4,
@@ -43942,7 +43942,7 @@
        "acesPerMatch": 8.6,
        "dfPerMatch": 2.6,
        "rating": 280.1,
-       "pct": 74
+       "pct": 74.6
       },
       "return": {
        "ret1stWonPct": 28.7,
@@ -44014,7 +44014,7 @@
        "servicePtsWonPct": 63.8,
        "returnPtsWonPct": 37.2,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 47,
@@ -44247,7 +44247,7 @@
        "returnGamesWonPct": 19.1,
        "bpConvPct": 36,
        "rating": 132.9,
-       "pct": 44.8
+       "pct": 45.2
       },
       "underPressure": {
        "bpSavedPct": 56.3,
@@ -44311,7 +44311,7 @@
        "servicePtsWonPct": 65.1,
        "returnPtsWonPct": 36.1,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 86,
@@ -44359,7 +44359,7 @@
        "returnGamesWonPct": 19.9,
        "bpConvPct": 36.2,
        "rating": 136.7,
-       "pct": 61.9
+       "pct": 62.4
       },
       "underPressure": {
        "bpSavedPct": 66.7,
@@ -44656,7 +44656,7 @@
        "returnGamesWonPct": 19.4,
        "bpConvPct": 37.6,
        "rating": 136.2,
-       "pct": 56.8
+       "pct": 57.3
       },
       "underPressure": {
        "bpSavedPct": 62.2,
@@ -45464,7 +45464,7 @@
        "acesPerMatch": 6.7,
        "dfPerMatch": 3.7,
        "rating": 268.6,
-       "pct": 55.2
+       "pct": 55.6
       },
       "return": {
        "ret1stWonPct": 28.7,
@@ -45584,7 +45584,7 @@
        "returnGamesWonPct": 19.5,
        "bpConvPct": 44.6,
        "rating": 137,
-       "pct": 63.6
+       "pct": 64.1
       },
       "underPressure": {
        "bpSavedPct": 67.5,
@@ -45907,7 +45907,7 @@
        "acesPerMatch": 6.9,
        "dfPerMatch": 2,
        "rating": 271.2,
-       "pct": 70.4
+       "pct": 70.6
       },
       "return": {
        "ret1stWonPct": 26,
@@ -46662,7 +46662,7 @@
        "returnGamesWonPct": 21.2,
        "bpConvPct": 32.7,
        "rating": 133,
-       "pct": 45.4
+       "pct": 45.9
       },
       "underPressure": {
        "bpSavedPct": 62.2,
@@ -46791,7 +46791,7 @@
        "servicePtsWonPct": 59,
        "returnPtsWonPct": 38.4,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 16,
@@ -47581,7 +47581,7 @@
        "acesPerMatch": 3.2,
        "dfPerMatch": 2.3,
        "rating": 261.7,
-       "pct": 27.7
+       "pct": 28
       },
       "return": {
        "ret1stWonPct": 25.3,
@@ -47627,7 +47627,7 @@
        "acesPerMatch": 3.4,
        "dfPerMatch": 2.2,
        "rating": 261.6,
-       "pct": 30.6
+       "pct": 30.1
       },
       "return": {
        "ret1stWonPct": 27.2,
@@ -47877,7 +47877,7 @@
        "acesPerMatch": 3.6,
        "dfPerMatch": 1.8,
        "rating": 266.7,
-       "pct": 48.3
+       "pct": 48.8
       },
       "return": {
        "ret1stWonPct": 27,
@@ -48035,7 +48035,7 @@
        "acesPerMatch": 3.3,
        "dfPerMatch": 1.9,
        "rating": 261.4,
-       "pct": 29.1
+       "pct": 28.6
       },
       "return": {
        "ret1stWonPct": 28,
@@ -48284,7 +48284,7 @@
        "acesPerMatch": 3.1,
        "dfPerMatch": 1.3,
        "rating": 265.1,
-       "pct": 41.5
+       "pct": 41.7
       },
       "return": {
        "ret1stWonPct": 27.9,
@@ -48292,7 +48292,7 @@
        "returnGamesWonPct": 19.9,
        "bpConvPct": 38.2,
        "rating": 137.4,
-       "pct": 60
+       "pct": 60.4
       },
       "underPressure": {
        "bpSavedPct": 60.8,
@@ -48831,7 +48831,7 @@
        "servicePtsWonPct": 57.7,
        "returnPtsWonPct": 38.3,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 28,
@@ -49127,7 +49127,7 @@
        "servicePtsWonPct": 58.1,
        "returnPtsWonPct": 38.9,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 40,
@@ -49213,7 +49213,7 @@
        "acesPerMatch": 6.4,
        "dfPerMatch": 2.5,
        "rating": 266.3,
-       "pct": 42.4
+       "pct": 42.9
       },
       "return": {
        "ret1stWonPct": 25.3,
@@ -49554,7 +49554,7 @@
        "acesPerMatch": 6.5,
        "dfPerMatch": 2.4,
        "rating": 271.2,
-       "pct": 70.4
+       "pct": 70.6
       },
       "return": {
        "ret1stWonPct": 26.8,
@@ -49666,7 +49666,7 @@
        "acesPerMatch": 10.5,
        "dfPerMatch": 2.4,
        "rating": 277.6,
-       "pct": 79.7
+       "pct": 79.9
       },
       "return": {
        "ret1stWonPct": 28.5,
@@ -50372,7 +50372,7 @@
        "servicePtsWonPct": 62.9,
        "returnPtsWonPct": 38.4,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 76,
@@ -50484,7 +50484,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 38.2,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 40,
@@ -51278,7 +51278,7 @@
        "servicePtsWonPct": 67.9,
        "returnPtsWonPct": 33.2,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 41,
@@ -51545,7 +51545,7 @@
        "servicePtsWonPct": 66,
        "returnPtsWonPct": 34.9,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 74,
@@ -51560,6 +51560,370 @@
       "rating": 1855,
       "rank": 30,
       "pct": 88.8
+     }
+    }
+   }
+  },
+  {
+   "playerKey": "2413",
+   "name": "J. Shang",
+   "inRoster": true,
+   "matchesAll": {
+    "last52": 18,
+    "sinceBase": 74
+   },
+   "latestMatch": "2026-10-03",
+   "last52From": "2025-10-04",
+   "surfaces": {
+    "Hard": {
+     "last52": {
+      "serve": {
+       "firstInPct": 61.4,
+       "firstWonPct": 69.4,
+       "secondWonPct": 53.2,
+       "holdPct": 79,
+       "acesPerMatch": 4.5,
+       "dfPerMatch": 2.4,
+       "rating": 265.1,
+       "pct": 39
+      },
+      "return": {
+       "ret1stWonPct": 27.1,
+       "ret2ndWonPct": 46.9,
+       "returnGamesWonPct": 17.2,
+       "bpConvPct": 44.8,
+       "rating": 136,
+       "pct": 60.5
+      },
+      "underPressure": {
+       "bpSavedPct": 58,
+       "bpConvPct": 40,
+       "tbWinPct": 22.2,
+       "decWinPct": 40,
+       "rating": 160.2,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 11.7
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 63.1,
+       "returnPtsWonPct": 33.5,
+       "rating": 0.91,
+       "pct": 19.2
+      },
+      "sample": {
+       "matches": 18,
+       "svpt": 1453,
+       "bpFaced": 124,
+       "bpChances": 87,
+       "tbPlayed": 9,
+       "decPlayed": 6
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 61.6,
+       "firstWonPct": 71.2,
+       "secondWonPct": 53.1,
+       "holdPct": 81.1,
+       "acesPerMatch": 4.6,
+       "dfPerMatch": 2.3,
+       "rating": 269.4,
+       "pct": 55.3
+      },
+      "return": {
+       "ret1stWonPct": 28.3,
+       "ret2ndWonPct": 51.7,
+       "returnGamesWonPct": 21.6,
+       "bpConvPct": 38.8,
+       "rating": 140.4,
+       "pct": 72.9
+      },
+      "underPressure": {
+       "bpSavedPct": 62.6,
+       "bpConvPct": 36.4,
+       "tbWinPct": 51.4,
+       "decWinPct": 41.7,
+       "rating": 192.1,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 44.2
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 64.2,
+       "returnPtsWonPct": 36.8,
+       "rating": 1.03,
+       "pct": 71.8
+      },
+      "sample": {
+       "matches": 57,
+       "svpt": 4296,
+       "bpFaced": 352,
+       "bpChances": 379,
+       "tbPlayed": 28,
+       "decPlayed": 20
+      }
+     },
+     "elo": {
+      "rating": 1658,
+      "rank": 107,
+      "pct": 60
+     }
+    },
+    "Clay": {
+     "last52": {
+      "serve": null,
+      "return": null,
+      "underPressure": {
+       "bpSavedPct": null,
+       "bpConvPct": null,
+       "tbWinPct": null,
+       "decWinPct": null,
+       "rating": null,
+       "estimated": false,
+       "components": 0,
+       "inclChallenger": false,
+       "srScope": "last52"
+      },
+      "dominanceRatio": null,
+      "sample": {
+       "matches": 0,
+       "svpt": 0,
+       "bpFaced": 0,
+       "bpChances": 0,
+       "tbPlayed": 0,
+       "decPlayed": 0
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 66,
+       "firstWonPct": 64,
+       "secondWonPct": 53.7,
+       "holdPct": 72.6,
+       "acesPerMatch": 1.6,
+       "dfPerMatch": 1.8,
+       "rating": 256.1,
+       "pct": 32.9
+      },
+      "return": {
+       "ret1stWonPct": 31.1,
+       "ret2ndWonPct": 53.1,
+       "returnGamesWonPct": 25.9,
+       "bpConvPct": 37,
+       "rating": 147.2,
+       "pct": 65.6
+      },
+      "underPressure": {
+       "bpSavedPct": 51.9,
+       "bpConvPct": 37.3,
+       "tbWinPct": null,
+       "decWinPct": 38,
+       "rating": 169.6,
+       "estimated": true,
+       "components": 3,
+       "inclChallenger": true,
+       "srScope": "career",
+       "pct": 9.7
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 60.5,
+       "returnPtsWonPct": 39.5,
+       "rating": 1,
+       "pct": 49.7
+      },
+      "sample": {
+       "matches": 10,
+       "svpt": 724,
+       "bpFaced": 76,
+       "bpChances": 73,
+       "tbPlayed": 6,
+       "decPlayed": 4
+      }
+     },
+     "elo": {
+      "rating": 1626,
+      "rank": 110,
+      "pct": 59.7
+     }
+    },
+    "Grass": {
+     "last52": {
+      "serve": null,
+      "return": null,
+      "underPressure": {
+       "bpSavedPct": null,
+       "bpConvPct": null,
+       "tbWinPct": null,
+       "decWinPct": null,
+       "rating": null,
+       "estimated": false,
+       "components": 0,
+       "inclChallenger": false,
+       "srScope": "last52"
+      },
+      "dominanceRatio": null,
+      "sample": {
+       "matches": 0,
+       "svpt": 0,
+       "bpFaced": 0,
+       "bpChances": 0,
+       "tbPlayed": 0,
+       "decPlayed": 0
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 64.5,
+       "firstWonPct": 74.3,
+       "secondWonPct": 59.2,
+       "holdPct": 89.2,
+       "acesPerMatch": 9.9,
+       "dfPerMatch": 2.9,
+       "rating": 294.2,
+       "pct": 85.7
+      },
+      "return": {
+       "ret1stWonPct": 23.3,
+       "ret2ndWonPct": 46.7,
+       "returnGamesWonPct": 16.2,
+       "bpConvPct": 40,
+       "rating": 126.2,
+       "pct": 38.1
+      },
+      "underPressure": {
+       "bpSavedPct": null,
+       "bpConvPct": 32.2,
+       "tbWinPct": null,
+       "decWinPct": null,
+       "rating": null,
+       "estimated": false,
+       "components": 1,
+       "inclChallenger": true,
+       "srScope": "career"
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 68.9,
+       "returnPtsWonPct": 31.3,
+       "rating": 1.01,
+       "pct": 43.8
+      },
+      "sample": {
+       "matches": 7,
+       "svpt": 695,
+       "bpFaced": 43,
+       "bpChances": 45,
+       "tbPlayed": 6,
+       "decPlayed": 4
+      }
+     },
+     "elo": {
+      "rating": 1637,
+      "rank": 75,
+      "pct": 71.8
+     }
+    },
+    "All": {
+     "last52": {
+      "serve": {
+       "firstInPct": 61.4,
+       "firstWonPct": 69.4,
+       "secondWonPct": 53.2,
+       "holdPct": 79,
+       "acesPerMatch": 4.5,
+       "dfPerMatch": 2.4,
+       "rating": 265.1,
+       "pct": 41.7
+      },
+      "return": {
+       "ret1stWonPct": 27.1,
+       "ret2ndWonPct": 46.9,
+       "returnGamesWonPct": 17.2,
+       "bpConvPct": 44.8,
+       "rating": 136,
+       "pct": 55.8
+      },
+      "underPressure": {
+       "bpSavedPct": 58,
+       "bpConvPct": 40,
+       "tbWinPct": 22.2,
+       "decWinPct": 40,
+       "rating": 160.2,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "last52",
+       "pct": 10.5
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 63.1,
+       "returnPtsWonPct": 33.5,
+       "rating": 0.91,
+       "pct": 17
+      },
+      "sample": {
+       "matches": 18,
+       "svpt": 1453,
+       "bpFaced": 124,
+       "bpChances": 87,
+       "tbPlayed": 9,
+       "decPlayed": 6
+      }
+     },
+     "sinceBase": {
+      "serve": {
+       "firstInPct": 62.5,
+       "firstWonPct": 70.6,
+       "secondWonPct": 53.9,
+       "holdPct": 81.1,
+       "acesPerMatch": 4.7,
+       "dfPerMatch": 2.3,
+       "rating": 270.6,
+       "pct": 68.8
+      },
+      "return": {
+       "ret1stWonPct": 28,
+       "ret2ndWonPct": 51.3,
+       "returnGamesWonPct": 21.5,
+       "bpConvPct": 38.6,
+       "rating": 139.5,
+       "pct": 64.6
+      },
+      "underPressure": {
+       "bpSavedPct": 62.4,
+       "bpConvPct": 35.6,
+       "tbWinPct": 52.4,
+       "decWinPct": 43.3,
+       "rating": 193.7,
+       "estimated": false,
+       "components": 4,
+       "inclChallenger": false,
+       "srScope": "career",
+       "pct": 45.9
+      },
+      "dominanceRatio": {
+       "servicePtsWonPct": 64.3,
+       "returnPtsWonPct": 36.5,
+       "rating": 1.02,
+       "pct": 69.9
+      },
+      "sample": {
+       "matches": 74,
+       "svpt": 5715,
+       "bpFaced": 471,
+       "bpChances": 497,
+       "tbPlayed": 40,
+       "decPlayed": 28
+      }
+     },
+     "elo": {
+      "rating": 1718,
+      "rank": 94,
+      "pct": 65
      }
     }
    }
@@ -51881,7 +52245,7 @@
        "acesPerMatch": 7.1,
        "dfPerMatch": 1.4,
        "rating": 265.2,
-       "pct": 42.5
+       "pct": 42.9
       },
       "return": {
        "ret1stWonPct": 24.9,
@@ -51927,7 +52291,7 @@
        "acesPerMatch": 7.7,
        "dfPerMatch": 1.8,
        "rating": 275.3,
-       "pct": 81.2
+       "pct": 81.5
       },
       "return": {
        "ret1stWonPct": 24.7,
@@ -51968,370 +52332,6 @@
       "rating": 1616,
       "rank": 163,
       "pct": 41.7
-     }
-    }
-   }
-  },
-  {
-   "playerKey": "2413",
-   "name": "J. Shang",
-   "inRoster": true,
-   "matchesAll": {
-    "last52": 18,
-    "sinceBase": 73
-   },
-   "latestMatch": "2026-10-01",
-   "last52From": "2025-10-02",
-   "surfaces": {
-    "Hard": {
-     "last52": {
-      "serve": {
-       "firstInPct": 62,
-       "firstWonPct": 69.8,
-       "secondWonPct": 54.4,
-       "holdPct": 81,
-       "acesPerMatch": 4.8,
-       "dfPerMatch": 2.4,
-       "rating": 269.5,
-       "pct": 51.1
-      },
-      "return": {
-       "ret1stWonPct": 27.3,
-       "ret2ndWonPct": 47.7,
-       "returnGamesWonPct": 17.6,
-       "bpConvPct": 45.6,
-       "rating": 138.2,
-       "pct": 67.5
-      },
-      "underPressure": {
-       "bpSavedPct": 58,
-       "bpConvPct": 40,
-       "tbWinPct": 22.2,
-       "decWinPct": 40,
-       "rating": 160.2,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 11.7
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 63.9,
-       "returnPtsWonPct": 34,
-       "rating": 0.94,
-       "pct": 29.9
-      },
-      "sample": {
-       "matches": 18,
-       "svpt": 1490,
-       "bpFaced": 120,
-       "bpChances": 90,
-       "tbPlayed": 9,
-       "decPlayed": 7
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 61.7,
-       "firstWonPct": 71.3,
-       "secondWonPct": 53.3,
-       "holdPct": 81.5,
-       "acesPerMatch": 4.7,
-       "dfPerMatch": 2.4,
-       "rating": 270.2,
-       "pct": 59.6
-      },
-      "return": {
-       "ret1stWonPct": 28.4,
-       "ret2ndWonPct": 51.8,
-       "returnGamesWonPct": 21.9,
-       "bpConvPct": 38.8,
-       "rating": 141,
-       "pct": 72.9
-      },
-      "underPressure": {
-       "bpSavedPct": 62.6,
-       "bpConvPct": 36.4,
-       "tbWinPct": 51.4,
-       "decWinPct": 41.7,
-       "rating": 192.1,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 44.2
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 64.4,
-       "returnPtsWonPct": 37,
-       "rating": 1.04,
-       "pct": 75
-      },
-      "sample": {
-       "matches": 56,
-       "svpt": 4256,
-       "bpFaced": 347,
-       "bpChances": 379,
-       "tbPlayed": 28,
-       "decPlayed": 20
-      }
-     },
-     "elo": {
-      "rating": 1658,
-      "rank": 107,
-      "pct": 60
-     }
-    },
-    "Clay": {
-     "last52": {
-      "serve": null,
-      "return": null,
-      "underPressure": {
-       "bpSavedPct": null,
-       "bpConvPct": null,
-       "tbWinPct": null,
-       "decWinPct": null,
-       "rating": null,
-       "estimated": false,
-       "components": 0,
-       "inclChallenger": false,
-       "srScope": "last52"
-      },
-      "dominanceRatio": null,
-      "sample": {
-       "matches": 0,
-       "svpt": 0,
-       "bpFaced": 0,
-       "bpChances": 0,
-       "tbPlayed": 0,
-       "decPlayed": 0
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 66,
-       "firstWonPct": 64,
-       "secondWonPct": 53.7,
-       "holdPct": 72.6,
-       "acesPerMatch": 1.6,
-       "dfPerMatch": 1.8,
-       "rating": 256.1,
-       "pct": 32.9
-      },
-      "return": {
-       "ret1stWonPct": 31.1,
-       "ret2ndWonPct": 53.1,
-       "returnGamesWonPct": 25.9,
-       "bpConvPct": 37,
-       "rating": 147.2,
-       "pct": 65.6
-      },
-      "underPressure": {
-       "bpSavedPct": 51.9,
-       "bpConvPct": 37.3,
-       "tbWinPct": null,
-       "decWinPct": 38,
-       "rating": 169.6,
-       "estimated": true,
-       "components": 3,
-       "inclChallenger": true,
-       "srScope": "career",
-       "pct": 9.7
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 60.5,
-       "returnPtsWonPct": 39.5,
-       "rating": 1,
-       "pct": 49.7
-      },
-      "sample": {
-       "matches": 10,
-       "svpt": 724,
-       "bpFaced": 76,
-       "bpChances": 73,
-       "tbPlayed": 6,
-       "decPlayed": 4
-      }
-     },
-     "elo": {
-      "rating": 1626,
-      "rank": 110,
-      "pct": 59.7
-     }
-    },
-    "Grass": {
-     "last52": {
-      "serve": null,
-      "return": null,
-      "underPressure": {
-       "bpSavedPct": null,
-       "bpConvPct": null,
-       "tbWinPct": null,
-       "decWinPct": null,
-       "rating": null,
-       "estimated": false,
-       "components": 0,
-       "inclChallenger": false,
-       "srScope": "last52"
-      },
-      "dominanceRatio": null,
-      "sample": {
-       "matches": 0,
-       "svpt": 0,
-       "bpFaced": 0,
-       "bpChances": 0,
-       "tbPlayed": 0,
-       "decPlayed": 0
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 64.5,
-       "firstWonPct": 74.3,
-       "secondWonPct": 59.2,
-       "holdPct": 89.2,
-       "acesPerMatch": 9.9,
-       "dfPerMatch": 2.9,
-       "rating": 294.2,
-       "pct": 85.7
-      },
-      "return": {
-       "ret1stWonPct": 23.3,
-       "ret2ndWonPct": 46.7,
-       "returnGamesWonPct": 16.2,
-       "bpConvPct": 40,
-       "rating": 126.2,
-       "pct": 38.1
-      },
-      "underPressure": {
-       "bpSavedPct": null,
-       "bpConvPct": 32.2,
-       "tbWinPct": null,
-       "decWinPct": null,
-       "rating": null,
-       "estimated": false,
-       "components": 1,
-       "inclChallenger": true,
-       "srScope": "career"
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 68.9,
-       "returnPtsWonPct": 31.3,
-       "rating": 1.01,
-       "pct": 43.8
-      },
-      "sample": {
-       "matches": 7,
-       "svpt": 695,
-       "bpFaced": 43,
-       "bpChances": 45,
-       "tbPlayed": 6,
-       "decPlayed": 4
-      }
-     },
-     "elo": {
-      "rating": 1637,
-      "rank": 75,
-      "pct": 71.8
-     }
-    },
-    "All": {
-     "last52": {
-      "serve": {
-       "firstInPct": 62,
-       "firstWonPct": 69.8,
-       "secondWonPct": 54.4,
-       "holdPct": 81,
-       "acesPerMatch": 4.8,
-       "dfPerMatch": 2.4,
-       "rating": 269.5,
-       "pct": 57.9
-      },
-      "return": {
-       "ret1stWonPct": 27.3,
-       "ret2ndWonPct": 47.7,
-       "returnGamesWonPct": 17.6,
-       "bpConvPct": 45.6,
-       "rating": 138.2,
-       "pct": 63.3
-      },
-      "underPressure": {
-       "bpSavedPct": 58,
-       "bpConvPct": 40,
-       "tbWinPct": 22.2,
-       "decWinPct": 40,
-       "rating": 160.2,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "last52",
-       "pct": 10.5
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 63.9,
-       "returnPtsWonPct": 34,
-       "rating": 0.94,
-       "pct": 29.3
-      },
-      "sample": {
-       "matches": 18,
-       "svpt": 1490,
-       "bpFaced": 120,
-       "bpChances": 90,
-       "tbPlayed": 9,
-       "decPlayed": 7
-      }
-     },
-     "sinceBase": {
-      "serve": {
-       "firstInPct": 62.6,
-       "firstWonPct": 70.7,
-       "secondWonPct": 54,
-       "holdPct": 81.4,
-       "acesPerMatch": 4.8,
-       "dfPerMatch": 2.3,
-       "rating": 271.2,
-       "pct": 70.4
-      },
-      "return": {
-       "ret1stWonPct": 28.2,
-       "ret2ndWonPct": 51.5,
-       "returnGamesWonPct": 21.7,
-       "bpConvPct": 38.6,
-       "rating": 139.9,
-       "pct": 65.1
-      },
-      "underPressure": {
-       "bpSavedPct": 62.4,
-       "bpConvPct": 35.6,
-       "tbWinPct": 52.4,
-       "decWinPct": 43.3,
-       "rating": 193.7,
-       "estimated": false,
-       "components": 4,
-       "inclChallenger": false,
-       "srScope": "career",
-       "pct": 45.9
-      },
-      "dominanceRatio": {
-       "servicePtsWonPct": 64.5,
-       "returnPtsWonPct": 36.6,
-       "rating": 1.03,
-       "pct": 75.5
-      },
-      "sample": {
-       "matches": 73,
-       "svpt": 5675,
-       "bpFaced": 466,
-       "bpChances": 497,
-       "tbPlayed": 40,
-       "decPlayed": 28
-      }
-     },
-     "elo": {
-      "rating": 1718,
-      "rank": 94,
-      "pct": 65
      }
     }
    }
@@ -53059,7 +53059,7 @@
        "acesPerMatch": 9.7,
        "dfPerMatch": 2.2,
        "rating": 278.6,
-       "pct": 82.4
+       "pct": 82.8
       },
       "return": {
        "ret1stWonPct": 28.9,
@@ -53179,7 +53179,7 @@
        "returnGamesWonPct": 21.1,
        "bpConvPct": 40,
        "rating": 134.6,
-       "pct": 56.5
+       "pct": 55.9
       },
       "underPressure": {
        "bpSavedPct": 60.5,
@@ -53243,7 +53243,7 @@
        "servicePtsWonPct": 66.9,
        "returnPtsWonPct": 34.3,
        "rating": 1.04,
-       "pct": 75
+       "pct": 75.2
       },
       "sample": {
        "matches": 29,
@@ -53471,7 +53471,7 @@
        "servicePtsWonPct": 63.3,
        "returnPtsWonPct": 33.6,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 9,
@@ -53491,7 +53491,7 @@
        "acesPerMatch": 5.6,
        "dfPerMatch": 2.4,
        "rating": 271.2,
-       "pct": 70.4
+       "pct": 70.6
       },
       "return": {
        "ret1stWonPct": 28.4,
@@ -53854,7 +53854,7 @@
        "acesPerMatch": 4.9,
        "dfPerMatch": 2.6,
        "rating": 266.3,
-       "pct": 47.1
+       "pct": 47.5
       },
       "return": {
        "ret1stWonPct": 25,
@@ -53880,7 +53880,7 @@
        "servicePtsWonPct": 62.9,
        "returnPtsWonPct": 34.2,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 16,
@@ -53900,7 +53900,7 @@
        "acesPerMatch": 5.8,
        "dfPerMatch": 2.7,
        "rating": 270.6,
-       "pct": 68.7
+       "pct": 68.8
       },
       "return": {
        "ret1stWonPct": 28,
@@ -53926,7 +53926,7 @@
        "servicePtsWonPct": 64.1,
        "returnPtsWonPct": 36.8,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 69,
@@ -54248,7 +54248,7 @@
        "returnGamesWonPct": 21.8,
        "bpConvPct": 37.4,
        "rating": 137.2,
-       "pct": 59.5
+       "pct": 60
       },
       "underPressure": {
        "bpSavedPct": 53.1,
@@ -54266,7 +54266,7 @@
        "servicePtsWonPct": 61.3,
        "returnPtsWonPct": 36.4,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 14,
@@ -54360,7 +54360,7 @@
        "returnGamesWonPct": 21.8,
        "bpConvPct": 43.1,
        "rating": 141,
-       "pct": 73.7
+       "pct": 73.2
       },
       "underPressure": {
        "bpSavedPct": 58.3,
@@ -54378,7 +54378,7 @@
        "servicePtsWonPct": 62.3,
        "returnPtsWonPct": 35.6,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 24,
@@ -54768,7 +54768,7 @@
        "returnGamesWonPct": 21.8,
        "bpConvPct": 35.8,
        "rating": 137.1,
-       "pct": 64.4
+       "pct": 65
       },
       "underPressure": {
        "bpSavedPct": 63.6,
@@ -55469,7 +55469,7 @@
        "returnGamesWonPct": 26.1,
        "bpConvPct": 45.3,
        "rating": 153.1,
-       "pct": 94.4
+       "pct": 94
       },
       "underPressure": {
        "bpSavedPct": 63.3,
@@ -55533,7 +55533,7 @@
        "servicePtsWonPct": 62.5,
        "returnPtsWonPct": 38.2,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 68,
@@ -55627,7 +55627,7 @@
        "returnGamesWonPct": 20.9,
        "bpConvPct": 41.1,
        "rating": 139.6,
-       "pct": 69.4
+       "pct": 69
       },
       "underPressure": {
        "bpSavedPct": 60.4,
@@ -55847,7 +55847,7 @@
        "acesPerMatch": 5.6,
        "dfPerMatch": 4.4,
        "rating": 266.3,
-       "pct": 47.1
+       "pct": 47.5
       },
       "return": {
        "ret1stWonPct": 26.6,
@@ -55855,7 +55855,7 @@
        "returnGamesWonPct": 18.4,
        "bpConvPct": 41.2,
        "rating": 136.2,
-       "pct": 56.8
+       "pct": 57.3
       },
       "underPressure": {
        "bpSavedPct": 55.1,
@@ -56302,7 +56302,7 @@
        "acesPerMatch": 7.3,
        "dfPerMatch": 1.5,
        "rating": 271.1,
-       "pct": 69.5
+       "pct": 69.9
       },
       "return": {
        "ret1stWonPct": 27.7,
@@ -56394,7 +56394,7 @@
        "servicePtsWonPct": 66.2,
        "returnPtsWonPct": 31.6,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 20,
@@ -56690,7 +56690,7 @@
        "servicePtsWonPct": 65.8,
        "returnPtsWonPct": 32.1,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 30,
@@ -57211,7 +57211,7 @@
        "servicePtsWonPct": 65.3,
        "returnPtsWonPct": 31.8,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 23,
@@ -57507,7 +57507,7 @@
        "servicePtsWonPct": 64.8,
        "returnPtsWonPct": 32.6,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 28,
@@ -57527,7 +57527,7 @@
        "acesPerMatch": 9.6,
        "dfPerMatch": 3.7,
        "rating": 270.9,
-       "pct": 69.2
+       "pct": 69.5
       },
       "return": {
        "ret1stWonPct": 26.4,
@@ -58002,7 +58002,7 @@
        "acesPerMatch": 6.3,
        "dfPerMatch": 5.1,
        "rating": 266.1,
-       "pct": 41.2
+       "pct": 41.8
       },
       "return": {
        "ret1stWonPct": 26.5,
@@ -58010,7 +58010,7 @@
        "returnGamesWonPct": 19.7,
        "bpConvPct": 42.6,
        "rating": 136.2,
-       "pct": 60.7
+       "pct": 61.3
       },
       "underPressure": {
        "bpSavedPct": 57.6,
@@ -58689,7 +58689,7 @@
        "servicePtsWonPct": 60.5,
        "returnPtsWonPct": 37.2,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 9,
@@ -59182,7 +59182,7 @@
        "acesPerMatch": 4.1,
        "dfPerMatch": 2,
        "rating": 265.3,
-       "pct": 39.8
+       "pct": 40.4
       },
       "return": {
        "ret1stWonPct": 31.2,
@@ -59473,7 +59473,7 @@
        "acesPerMatch": 4.2,
        "dfPerMatch": 2.2,
        "rating": 268.2,
-       "pct": 53.1
+       "pct": 53.5
       },
       "return": {
        "ret1stWonPct": 33.7,
@@ -59875,7 +59875,7 @@
        "returnGamesWonPct": 20,
        "bpConvPct": 39.6,
        "rating": 136,
-       "pct": 55.6
+       "pct": 55.8
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -59937,7 +59937,7 @@
        "servicePtsWonPct": 64.2,
        "returnPtsWonPct": 36.8,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 63,
@@ -60342,7 +60342,7 @@
        "servicePtsWonPct": 59.8,
        "returnPtsWonPct": 40.9,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 63,
@@ -60656,7 +60656,7 @@
        "acesPerMatch": 4.2,
        "dfPerMatch": 1.8,
        "rating": 265.8,
-       "pct": 44.2
+       "pct": 44.6
       },
       "return": {
        "ret1stWonPct": 27.5,
@@ -61496,7 +61496,7 @@
        "servicePtsWonPct": 61.8,
        "returnPtsWonPct": 35,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 13,
@@ -61989,7 +61989,7 @@
        "acesPerMatch": 5.7,
        "dfPerMatch": 4.2,
        "rating": 268.2,
-       "pct": 47.2
+       "pct": 47.7
       },
       "return": {
        "ret1stWonPct": 28.6,
@@ -61997,7 +61997,7 @@
        "returnGamesWonPct": 20,
        "bpConvPct": 36.5,
        "rating": 134.2,
-       "pct": 54.8
+       "pct": 54.5
       },
       "underPressure": {
        "bpSavedPct": 51.3,
@@ -62061,7 +62061,7 @@
        "servicePtsWonPct": 64.3,
        "returnPtsWonPct": 36.9,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 20,
@@ -62829,7 +62829,7 @@
        "servicePtsWonPct": 65.9,
        "returnPtsWonPct": 32.1,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 2,
@@ -63082,7 +63082,7 @@
        "servicePtsWonPct": 65.9,
        "returnPtsWonPct": 32.1,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 2,
@@ -63464,7 +63464,7 @@
        "acesPerMatch": 2.6,
        "dfPerMatch": 1.9,
        "rating": 265.6,
-       "pct": 43.4
+       "pct": 43.8
       },
       "return": {
        "ret1stWonPct": 31.5,
@@ -63576,7 +63576,7 @@
        "acesPerMatch": 6.8,
        "dfPerMatch": 1.7,
        "rating": 268.8,
-       "pct": 49.2
+       "pct": 49.7
       },
       "return": {
        "ret1stWonPct": 26.1,
@@ -63584,7 +63584,7 @@
        "returnGamesWonPct": 19.6,
        "bpConvPct": 39.6,
        "rating": 134.2,
-       "pct": 54.8
+       "pct": 54.5
       },
       "underPressure": {
        "bpSavedPct": 52.2,
@@ -63602,7 +63602,7 @@
        "servicePtsWonPct": 62.7,
        "returnPtsWonPct": 34.9,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 9,
@@ -63872,7 +63872,7 @@
        "acesPerMatch": 6.7,
        "dfPerMatch": 2.4,
        "rating": 268.6,
-       "pct": 55.2
+       "pct": 55.6
       },
       "return": {
        "ret1stWonPct": 31,
@@ -63944,7 +63944,7 @@
        "servicePtsWonPct": 63.1,
        "returnPtsWonPct": 38,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 54,
@@ -63992,7 +63992,7 @@
        "returnGamesWonPct": 22.1,
        "bpConvPct": 41.1,
        "rating": 141.3,
-       "pct": 74.3
+       "pct": 74
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -64275,7 +64275,7 @@
        "acesPerMatch": 6.7,
        "dfPerMatch": 3.6,
        "rating": 267,
-       "pct": 49.2
+       "pct": 49.6
       },
       "return": {
        "ret1stWonPct": 30.6,
@@ -64431,7 +64431,7 @@
        "acesPerMatch": 5.5,
        "dfPerMatch": 2.9,
        "rating": 269.6,
-       "pct": 55.8
+       "pct": 56.2
       },
       "return": {
        "ret1stWonPct": 29.4,
@@ -64457,7 +64457,7 @@
        "servicePtsWonPct": 64.5,
        "returnPtsWonPct": 36.4,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 24,
@@ -64680,7 +64680,7 @@
        "acesPerMatch": 4.3,
        "dfPerMatch": 3.1,
        "rating": 267.8,
-       "pct": 51.2
+       "pct": 51.7
       },
       "return": {
        "ret1stWonPct": 28.5,
@@ -64862,7 +64862,7 @@
        "servicePtsWonPct": 67.8,
        "returnPtsWonPct": 33.2,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 34,
@@ -65587,7 +65587,7 @@
        "returnGamesWonPct": 19.9,
        "bpConvPct": 40.2,
        "rating": 134.3,
-       "pct": 55.6
+       "pct": 55.1
       },
       "underPressure": {
        "bpSavedPct": 56.6,
@@ -65874,7 +65874,7 @@
        "acesPerMatch": 6.5,
        "dfPerMatch": 3.2,
        "rating": 268.5,
-       "pct": 54.6
+       "pct": 55
       },
       "return": {
        "ret1stWonPct": 28.5,
@@ -65946,7 +65946,7 @@
        "servicePtsWonPct": 64.7,
        "returnPtsWonPct": 35.9,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 52,
@@ -66743,7 +66743,7 @@
        "acesPerMatch": 5.7,
        "dfPerMatch": 3,
        "rating": 266.8,
-       "pct": 43.8
+       "pct": 44.4
       },
       "return": {
        "ret1stWonPct": 27.4,
@@ -67137,7 +67137,7 @@
        "returnGamesWonPct": 22.4,
        "bpConvPct": 36.1,
        "rating": 134.3,
-       "pct": 55.6
+       "pct": 55.1
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -67423,7 +67423,7 @@
        "acesPerMatch": 4,
        "dfPerMatch": 1.7,
        "rating": 266.3,
-       "pct": 47.1
+       "pct": 47.5
       },
       "return": {
        "ret1stWonPct": 29.9,
@@ -67449,7 +67449,7 @@
        "servicePtsWonPct": 62.1,
        "returnPtsWonPct": 35.8,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 32,
@@ -67581,7 +67581,7 @@
        "acesPerMatch": 4.6,
        "dfPerMatch": 2.2,
        "rating": 270,
-       "pct": 58.1
+       "pct": 58.5
       },
       "return": {
        "ret1stWonPct": 30,
@@ -67883,7 +67883,7 @@
        "returnGamesWonPct": 21.6,
        "bpConvPct": 38.1,
        "rating": 139.9,
-       "pct": 65.1
+       "pct": 65.3
       },
       "underPressure": {
        "bpSavedPct": 61.1,
@@ -67901,7 +67901,7 @@
        "servicePtsWonPct": 63.7,
        "returnPtsWonPct": 37.2,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 49,
@@ -68393,7 +68393,7 @@
        "acesPerMatch": 4.7,
        "dfPerMatch": 3.5,
        "rating": 261.5,
-       "pct": 29.9
+       "pct": 29.5
       },
       "return": {
        "ret1stWonPct": 30.6,
@@ -69927,7 +69927,7 @@
        "acesPerMatch": 6.7,
        "dfPerMatch": 2.7,
        "rating": 268.1,
-       "pct": 46
+       "pct": 46.6
       },
       "return": {
        "ret1stWonPct": 28.6,
@@ -69973,7 +69973,7 @@
        "acesPerMatch": 7.2,
        "dfPerMatch": 2.8,
        "rating": 270.1,
-       "pct": 59
+       "pct": 59.4
       },
       "return": {
        "ret1stWonPct": 27.5,
@@ -70222,7 +70222,7 @@
        "acesPerMatch": 6.6,
        "dfPerMatch": 2.5,
        "rating": 266,
-       "pct": 45.2
+       "pct": 45.6
       },
       "return": {
        "ret1stWonPct": 27.8,
@@ -70248,7 +70248,7 @@
        "servicePtsWonPct": 63.1,
        "returnPtsWonPct": 34.1,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 24,
@@ -70757,7 +70757,7 @@
        "servicePtsWonPct": 66.7,
        "returnPtsWonPct": 37,
        "rating": 1.11,
-       "pct": 88.7
+       "pct": 89
       },
       "sample": {
        "matches": 7,
@@ -71031,7 +71031,7 @@
        "returnGamesWonPct": 20.1,
        "bpConvPct": 37,
        "rating": 137.9,
-       "pct": 61.8
+       "pct": 62.2
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -71141,7 +71141,7 @@
        "returnGamesWonPct": 17.9,
        "bpConvPct": 39.5,
        "rating": 134.5,
-       "pct": 56.2
+       "pct": 55.6
       },
       "underPressure": {
        "bpSavedPct": 55.4,
@@ -71436,7 +71436,7 @@
        "returnGamesWonPct": 22.1,
        "bpConvPct": 36.3,
        "rating": 137.5,
-       "pct": 60.6
+       "pct": 61
       },
       "underPressure": {
        "bpSavedPct": 57.5,
@@ -71835,7 +71835,7 @@
        "acesPerMatch": 4.9,
        "dfPerMatch": 2.7,
        "rating": 265.7,
-       "pct": 43.8
+       "pct": 44.2
       },
       "return": {
        "ret1stWonPct": 27.4,
@@ -71843,7 +71843,7 @@
        "returnGamesWonPct": 22.3,
        "bpConvPct": 39,
        "rating": 141.1,
-       "pct": 69.5
+       "pct": 69.1
       },
       "underPressure": {
        "bpSavedPct": 57.7,
@@ -72243,7 +72243,7 @@
        "acesPerMatch": 6.6,
        "dfPerMatch": 2.2,
        "rating": 268,
-       "pct": 51.9
+       "pct": 52.3
       },
       "return": {
        "ret1stWonPct": 26.4,
@@ -72269,7 +72269,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 34.5,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 28,
@@ -73522,7 +73522,7 @@
        "servicePtsWonPct": 66,
        "returnPtsWonPct": 34.6,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 44,
@@ -73971,7 +73971,7 @@
        "returnGamesWonPct": 22.8,
        "bpConvPct": 31.7,
        "rating": 135.1,
-       "pct": 58.5
+       "pct": 57.9
       },
       "underPressure": {
        "bpSavedPct": 55.1,
@@ -74284,7 +74284,7 @@
        "servicePtsWonPct": 59.5,
        "returnPtsWonPct": 37.4,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 12,
@@ -74807,7 +74807,7 @@
        "acesPerMatch": 5.7,
        "dfPerMatch": 1.9,
        "rating": 270.1,
-       "pct": 59
+       "pct": 59.4
       },
       "return": {
        "ret1stWonPct": 28.7,
@@ -75214,7 +75214,7 @@
        "acesPerMatch": 7.1,
        "dfPerMatch": 3.3,
        "rating": 261.5,
-       "pct": 29.9
+       "pct": 29.5
       },
       "return": {
        "ret1stWonPct": 26.1,
@@ -75565,7 +75565,7 @@
        "servicePtsWonPct": 63.7,
        "returnPtsWonPct": 33.4,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 9,
@@ -75585,7 +75585,7 @@
        "acesPerMatch": 8.5,
        "dfPerMatch": 2.3,
        "rating": 269.7,
-       "pct": 56.8
+       "pct": 57.3
       },
       "return": {
        "ret1stWonPct": 28,
@@ -75853,7 +75853,7 @@
        "servicePtsWonPct": 63.5,
        "returnPtsWonPct": 33.2,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 17,
@@ -76300,7 +76300,7 @@
        "servicePtsWonPct": 66.7,
        "returnPtsWonPct": 34.1,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 42,
@@ -76366,7 +76366,7 @@
        "servicePtsWonPct": 63.6,
        "returnPtsWonPct": 34.1,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 14,
@@ -76611,7 +76611,7 @@
        "returnGamesWonPct": 21.4,
        "bpConvPct": 38.7,
        "rating": 140.8,
-       "pct": 68.3
+       "pct": 67.8
       },
       "underPressure": {
        "bpSavedPct": 56.5,
@@ -77124,7 +77124,7 @@
        "servicePtsWonPct": 59.9,
        "returnPtsWonPct": 37,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 9,
@@ -77378,7 +77378,7 @@
        "servicePtsWonPct": 59.9,
        "returnPtsWonPct": 37,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 9,
@@ -77534,7 +77534,7 @@
        "servicePtsWonPct": 62.7,
        "returnPtsWonPct": 38.5,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 21,
@@ -77755,7 +77755,7 @@
        "acesPerMatch": 3.9,
        "dfPerMatch": 1.7,
        "rating": 268.2,
-       "pct": 53.1
+       "pct": 53.5
       },
       "return": {
        "ret1stWonPct": 32.3,
@@ -78266,7 +78266,7 @@
        "acesPerMatch": 4.1,
        "dfPerMatch": 3,
        "rating": 266.1,
-       "pct": 41.2
+       "pct": 41.8
       },
       "return": {
        "ret1stWonPct": 29.5,
@@ -79066,7 +79066,7 @@
        "returnGamesWonPct": 16.5,
        "bpConvPct": 41.5,
        "rating": 134.7,
-       "pct": 56.8
+       "pct": 56.2
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -80161,7 +80161,7 @@
        "acesPerMatch": 3.2,
        "dfPerMatch": 2.3,
        "rating": 268,
-       "pct": 51.9
+       "pct": 52.3
       },
       "return": {
        "ret1stWonPct": 29.6,
@@ -80207,7 +80207,7 @@
        "acesPerMatch": 3.1,
        "dfPerMatch": 2.3,
        "rating": 262.3,
-       "pct": 38.7
+       "pct": 38.6
       },
       "return": {
        "ret1stWonPct": 29.8,
@@ -80233,7 +80233,7 @@
        "servicePtsWonPct": 62.5,
        "returnPtsWonPct": 38.4,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 38,
@@ -80318,7 +80318,7 @@
        "acesPerMatch": 7.5,
        "dfPerMatch": 2.8,
        "rating": 261.4,
-       "pct": 29.1
+       "pct": 28.6
       },
       "return": {
        "ret1stWonPct": 23.8,
@@ -80602,7 +80602,7 @@
        "acesPerMatch": 5.5,
        "dfPerMatch": 2.3,
        "rating": 262.3,
-       "pct": 38.7
+       "pct": 38.6
       },
       "return": {
        "ret1stWonPct": 26.2,
@@ -80736,7 +80736,7 @@
        "servicePtsWonPct": 61.3,
        "returnPtsWonPct": 39.8,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 16,
@@ -81841,7 +81841,7 @@
        "servicePtsWonPct": 60.5,
        "returnPtsWonPct": 36.4,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 10,
@@ -82132,7 +82132,7 @@
        "servicePtsWonPct": 60.2,
        "returnPtsWonPct": 36.3,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 16,
@@ -82242,7 +82242,7 @@
        "servicePtsWonPct": 60.4,
        "returnPtsWonPct": 36.6,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 9,
@@ -82270,7 +82270,7 @@
        "returnGamesWonPct": 22,
        "bpConvPct": 36.6,
        "rating": 139.9,
-       "pct": 70.5
+       "pct": 70.3
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -83025,7 +83025,7 @@
        "acesPerMatch": 6.6,
        "dfPerMatch": 2.4,
        "rating": 266.4,
-       "pct": 42.9
+       "pct": 43.5
       },
       "return": {
        "ret1stWonPct": 26.3,
@@ -83051,7 +83051,7 @@
        "servicePtsWonPct": 63.1,
        "returnPtsWonPct": 33.5,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 5,
@@ -83833,7 +83833,7 @@
        "acesPerMatch": 5.9,
        "dfPerMatch": 1.7,
        "rating": 265.6,
-       "pct": 40.4
+       "pct": 41
       },
       "return": {
        "ret1stWonPct": 30.1,
@@ -83841,7 +83841,7 @@
        "returnGamesWonPct": 19.8,
        "bpConvPct": 40.2,
        "rating": 135.4,
-       "pct": 59
+       "pct": 58.5
       },
       "underPressure": {
        "bpSavedPct": 59.1,
@@ -83859,7 +83859,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 34.8,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 15,
@@ -84129,7 +84129,7 @@
        "acesPerMatch": 5.4,
        "dfPerMatch": 1.5,
        "rating": 268.1,
-       "pct": 52.5
+       "pct": 52.9
       },
       "return": {
        "ret1stWonPct": 30.4,
@@ -84653,7 +84653,7 @@
        "servicePtsWonPct": 60.7,
        "returnPtsWonPct": 35.8,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 3,
@@ -84909,7 +84909,7 @@
        "returnGamesWonPct": 22.5,
        "bpConvPct": 34.9,
        "rating": 137,
-       "pct": 58.9
+       "pct": 59.3
       },
       "underPressure": {
        "bpSavedPct": 57.1,
@@ -84927,7 +84927,7 @@
        "servicePtsWonPct": 59.6,
        "returnPtsWonPct": 37.5,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 18,
@@ -84955,7 +84955,7 @@
        "returnGamesWonPct": 23.5,
        "bpConvPct": 37.6,
        "rating": 142.7,
-       "pct": 74.6
+       "pct": 74.5
       },
       "underPressure": {
        "bpSavedPct": 53.9,
@@ -85419,7 +85419,7 @@
        "acesPerMatch": 6.3,
        "dfPerMatch": 4.7,
        "rating": 269.1,
-       "pct": 49.4
+       "pct": 50
       },
       "return": {
        "ret1stWonPct": 33.4,
@@ -85464,7 +85464,7 @@
        "acesPerMatch": 6.2,
        "dfPerMatch": 4.3,
        "rating": 269.7,
-       "pct": 56.8
+       "pct": 57.3
       },
       "return": {
        "ret1stWonPct": 32.5,
@@ -85735,7 +85735,7 @@
        "servicePtsWonPct": 63.6,
        "returnPtsWonPct": 39.7,
        "rating": 1.09,
-       "pct": 87.3
+       "pct": 87.6
       },
       "sample": {
        "matches": 30,
@@ -85846,7 +85846,7 @@
        "servicePtsWonPct": 61.9,
        "returnPtsWonPct": 34.5,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 14,
@@ -86555,7 +86555,7 @@
        "returnGamesWonPct": 22.3,
        "bpConvPct": 41.6,
        "rating": 142.7,
-       "pct": 74.6
+       "pct": 74.5
       },
       "underPressure": {
        "bpSavedPct": 52.8,
@@ -86638,7 +86638,7 @@
        "servicePtsWonPct": 68,
        "returnPtsWonPct": 29.2,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 2,
@@ -86933,7 +86933,7 @@
        "servicePtsWonPct": 68.4,
        "returnPtsWonPct": 29.7,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 4,
@@ -86979,7 +86979,7 @@
        "servicePtsWonPct": 67.5,
        "returnPtsWonPct": 33.1,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 34,
@@ -87027,7 +87027,7 @@
        "returnGamesWonPct": 22,
        "bpConvPct": 33,
        "rating": 134.5,
-       "pct": 56.2
+       "pct": 55.6
       },
       "underPressure": {
        "bpSavedPct": 61.2,
@@ -87065,7 +87065,7 @@
        "acesPerMatch": 7.5,
        "dfPerMatch": 3.3,
        "rating": 261.3,
-       "pct": 28.2
+       "pct": 28
       },
       "return": {
        "ret1stWonPct": 29.9,
@@ -87321,7 +87321,7 @@
        "returnGamesWonPct": 21.7,
        "bpConvPct": 35.7,
        "rating": 136.1,
-       "pct": 56.2
+       "pct": 56.6
       },
       "underPressure": {
        "bpSavedPct": 61.2,
@@ -87385,7 +87385,7 @@
        "servicePtsWonPct": 64.2,
        "returnPtsWonPct": 36.7,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 33,
@@ -87786,7 +87786,7 @@
        "servicePtsWonPct": 64.7,
        "returnPtsWonPct": 36.4,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 33,
@@ -88518,7 +88518,7 @@
        "acesPerMatch": 4.5,
        "dfPerMatch": 2.5,
        "rating": 266.7,
-       "pct": 48.3
+       "pct": 48.8
       },
       "return": {
        "ret1stWonPct": 26.1,
@@ -88526,7 +88526,7 @@
        "returnGamesWonPct": 21.5,
        "bpConvPct": 40.1,
        "rating": 138.1,
-       "pct": 62.9
+       "pct": 63.3
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -88919,7 +88919,7 @@
        "acesPerMatch": 6.3,
        "dfPerMatch": 2.6,
        "rating": 265.2,
-       "pct": 42.5
+       "pct": 42.9
       },
       "return": {
        "ret1stWonPct": 30.8,
@@ -89101,7 +89101,7 @@
        "servicePtsWonPct": 63.4,
        "returnPtsWonPct": 38,
        "rating": 1.04,
-       "pct": 75
+       "pct": 75.2
       },
       "sample": {
        "matches": 16,
@@ -89728,7 +89728,7 @@
        "returnGamesWonPct": 19.3,
        "bpConvPct": 35.5,
        "rating": 132.9,
-       "pct": 44.8
+       "pct": 45.2
       },
       "underPressure": {
        "bpSavedPct": 58.7,
@@ -89746,7 +89746,7 @@
        "servicePtsWonPct": 61.6,
        "returnPtsWonPct": 36,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 31,
@@ -90124,7 +90124,7 @@
        "acesPerMatch": 6.7,
        "dfPerMatch": 4.2,
        "rating": 268.3,
-       "pct": 53.9
+       "pct": 54.4
       },
       "return": {
        "ret1stWonPct": 25.5,
@@ -90150,7 +90150,7 @@
        "servicePtsWonPct": 64.7,
        "returnPtsWonPct": 32.6,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 10,
@@ -90557,7 +90557,7 @@
        "servicePtsWonPct": 62,
        "returnPtsWonPct": 35.9,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 20,
@@ -91419,7 +91419,7 @@
        "returnGamesWonPct": 22.4,
        "bpConvPct": 35.5,
        "rating": 136,
-       "pct": 60.2
+       "pct": 60.5
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -91755,7 +91755,7 @@
        "returnGamesWonPct": 20.7,
        "bpConvPct": 39.5,
        "rating": 138.3,
-       "pct": 59.3
+       "pct": 59.5
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -92132,7 +92132,7 @@
        "servicePtsWonPct": 66.1,
        "returnPtsWonPct": 30.7,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 17,
@@ -92226,7 +92226,7 @@
        "returnGamesWonPct": 20.5,
        "bpConvPct": 35.8,
        "rating": 135,
-       "pct": 57.9
+       "pct": 57.3
       },
       "underPressure": {
        "bpSavedPct": 57.1,
@@ -92244,7 +92244,7 @@
        "servicePtsWonPct": 61.3,
        "returnPtsWonPct": 36.6,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 15,
@@ -92512,7 +92512,7 @@
        "acesPerMatch": 5.7,
        "dfPerMatch": 0.8,
        "rating": 265.9,
-       "pct": 44.6
+       "pct": 45
       },
       "return": {
        "ret1stWonPct": 26.8,
@@ -92538,7 +92538,7 @@
        "servicePtsWonPct": 62.2,
        "returnPtsWonPct": 35.4,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 22,
@@ -92669,7 +92669,7 @@
        "acesPerMatch": 5.3,
        "dfPerMatch": 3.6,
        "rating": 261.5,
-       "pct": 29.9
+       "pct": 29.5
       },
       "return": {
        "ret1stWonPct": 25.4,
@@ -92915,7 +92915,7 @@
        "acesPerMatch": 3.4,
        "dfPerMatch": 2.2,
        "rating": 269.2,
-       "pct": 56.6
+       "pct": 57.1
       },
       "return": {
        "ret1stWonPct": 28.4,
@@ -93097,7 +93097,7 @@
        "servicePtsWonPct": 67.2,
        "returnPtsWonPct": 33.9,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 10,
@@ -93392,7 +93392,7 @@
        "servicePtsWonPct": 66.3,
        "returnPtsWonPct": 34.4,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 28,
@@ -93440,7 +93440,7 @@
        "returnGamesWonPct": 20.4,
        "bpConvPct": 38.8,
        "rating": 134.8,
-       "pct": 57.3
+       "pct": 56.8
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -94170,7 +94170,7 @@
        "returnGamesWonPct": 21.3,
        "bpConvPct": 41.2,
        "rating": 138.4,
-       "pct": 59.7
+       "pct": 60
       },
       "underPressure": {
        "bpSavedPct": 55.7,
@@ -94253,7 +94253,7 @@
        "servicePtsWonPct": 65.3,
        "returnPtsWonPct": 32.6,
        "rating": 0.94,
-       "pct": 29.9
+       "pct": 30.2
       },
       "sample": {
        "matches": 12,
@@ -94544,7 +94544,7 @@
        "servicePtsWonPct": 62.4,
        "returnPtsWonPct": 34.5,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 20,
@@ -94629,7 +94629,7 @@
        "acesPerMatch": 8.1,
        "dfPerMatch": 4.4,
        "rating": 269.2,
-       "pct": 50
+       "pct": 50.6
       },
       "return": {
        "ret1stWonPct": 28,
@@ -94945,7 +94945,7 @@
        "servicePtsWonPct": 61.1,
        "returnPtsWonPct": 36.5,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 19,
@@ -95056,7 +95056,7 @@
        "servicePtsWonPct": 66.7,
        "returnPtsWonPct": 30.6,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 6,
@@ -95353,7 +95353,7 @@
        "servicePtsWonPct": 65.7,
        "returnPtsWonPct": 32.3,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 12,
@@ -95464,7 +95464,7 @@
        "servicePtsWonPct": 58.2,
        "returnPtsWonPct": 38.7,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 10,
@@ -95745,7 +95745,7 @@
        "servicePtsWonPct": 57.5,
        "returnPtsWonPct": 38.5,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 16,
@@ -96117,7 +96117,7 @@
        "servicePtsWonPct": 59.2,
        "returnPtsWonPct": 37.1,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 13,
@@ -96145,7 +96145,7 @@
        "returnGamesWonPct": 24.3,
        "bpConvPct": 37,
        "rating": 142.6,
-       "pct": 73.9
+       "pct": 73.6
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -96223,7 +96223,7 @@
        "servicePtsWonPct": 58.8,
        "returnPtsWonPct": 37.8,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 4,
@@ -96448,7 +96448,7 @@
        "returnGamesWonPct": 22.7,
        "bpConvPct": 35.9,
        "rating": 137.2,
-       "pct": 59.5
+       "pct": 60
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -96465,7 +96465,7 @@
        "servicePtsWonPct": 58.9,
        "returnPtsWonPct": 37.5,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 5,
@@ -96830,7 +96830,7 @@
        "servicePtsWonPct": 60.8,
        "returnPtsWonPct": 37,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 3,
@@ -98576,7 +98576,7 @@
        "acesPerMatch": 6.4,
        "dfPerMatch": 2.9,
        "rating": 270,
-       "pct": 58.1
+       "pct": 58.5
       },
       "return": {
        "ret1stWonPct": 21.6,
@@ -99004,7 +99004,7 @@
        "servicePtsWonPct": 63.6,
        "returnPtsWonPct": 37.5,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 17,
@@ -99206,7 +99206,7 @@
        "acesPerMatch": 8.9,
        "dfPerMatch": 5.9,
        "rating": 267.4,
-       "pct": 50
+       "pct": 50.4
       },
       "return": {
        "ret1stWonPct": 26.2,
@@ -99232,7 +99232,7 @@
        "servicePtsWonPct": 63.8,
        "returnPtsWonPct": 33.1,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 8,
@@ -99278,7 +99278,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 38.1,
        "rating": 1.03,
-       "pct": 75.5
+       "pct": 75.7
       },
       "sample": {
        "matches": 23,
@@ -99608,7 +99608,7 @@
        "returnGamesWonPct": 21.9,
        "bpConvPct": 37.2,
        "rating": 138,
-       "pct": 62.4
+       "pct": 62.9
       },
       "underPressure": {
        "bpSavedPct": 58.4,
@@ -99733,7 +99733,7 @@
        "servicePtsWonPct": 62.6,
        "returnPtsWonPct": 34,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 10,
@@ -99987,7 +99987,7 @@
        "acesPerMatch": 6.6,
        "dfPerMatch": 3.4,
        "rating": 266,
-       "pct": 45.2
+       "pct": 45.6
       },
       "return": {
        "ret1stWonPct": 28.1,
@@ -99995,7 +99995,7 @@
        "returnGamesWonPct": 20.2,
        "bpConvPct": 38.7,
        "rating": 136.4,
-       "pct": 57.5
+       "pct": 57.9
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -100520,7 +100520,7 @@
        "servicePtsWonPct": 64.4,
        "returnPtsWonPct": 39.7,
        "rating": 1.11,
-       "pct": 88.7
+       "pct": 89
       },
       "sample": {
        "matches": 4,
@@ -100768,7 +100768,7 @@
        "acesPerMatch": 6.7,
        "dfPerMatch": 4.5,
        "rating": 268.3,
-       "pct": 53.9
+       "pct": 54.4
       },
       "return": {
        "ret1stWonPct": 32.4,
@@ -100840,7 +100840,7 @@
        "servicePtsWonPct": 63,
        "returnPtsWonPct": 37.9,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 21,
@@ -102341,7 +102341,7 @@
        "acesPerMatch": 3.9,
        "dfPerMatch": 3.8,
        "rating": 268.5,
-       "pct": 54.6
+       "pct": 55
       },
       "return": {
        "ret1stWonPct": 24.3,
@@ -102752,7 +102752,7 @@
        "returnGamesWonPct": 23.6,
        "bpConvPct": 32.5,
        "rating": 138,
-       "pct": 62.4
+       "pct": 62.9
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -102769,7 +102769,7 @@
        "servicePtsWonPct": 58.4,
        "returnPtsWonPct": 38.5,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 4,
@@ -102854,7 +102854,7 @@
        "acesPerMatch": 7.4,
        "dfPerMatch": 2.8,
        "rating": 267,
-       "pct": 44.4
+       "pct": 44.9
       },
       "return": {
        "ret1stWonPct": 27.7,
@@ -102879,7 +102879,7 @@
        "servicePtsWonPct": 64,
        "returnPtsWonPct": 32.8,
        "rating": 0.91,
-       "pct": 18.9
+       "pct": 19.2
       },
       "sample": {
        "matches": 13,
@@ -103517,7 +103517,7 @@
        "servicePtsWonPct": 60.6,
        "returnPtsWonPct": 35.7,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 11,
@@ -104253,7 +104253,7 @@
        "acesPerMatch": 11.2,
        "dfPerMatch": 3.9,
        "rating": 268.7,
-       "pct": 55.8
+       "pct": 56.2
       },
       "return": {
        "ret1stWonPct": 24.4,
@@ -104278,7 +104278,7 @@
        "servicePtsWonPct": 63.7,
        "returnPtsWonPct": 33.7,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 13,
@@ -104768,7 +104768,7 @@
        "servicePtsWonPct": 57.8,
        "returnPtsWonPct": 39.5,
        "rating": 0.93,
-       "pct": 26
+       "pct": 26.6
       },
       "sample": {
        "matches": 6,
@@ -105046,7 +105046,7 @@
        "returnGamesWonPct": 27.3,
        "bpConvPct": 40.9,
        "rating": 153,
-       "pct": 93.8
+       "pct": 93.6
       },
       "underPressure": {
        "bpSavedPct": 55.5,
@@ -105971,7 +105971,7 @@
        "returnGamesWonPct": 21.4,
        "bpConvPct": 36.4,
        "rating": 136.4,
-       "pct": 61.3
+       "pct": 61.9
       },
       "underPressure": {
        "bpSavedPct": 54.9,
@@ -106653,7 +106653,7 @@
        "servicePtsWonPct": 61.3,
        "returnPtsWonPct": 36.1,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 18,
@@ -106743,7 +106743,7 @@
        "returnGamesWonPct": 20.3,
        "bpConvPct": 39.4,
        "rating": 135.6,
-       "pct": 59.3
+       "pct": 58.8
       },
       "underPressure": {
        "bpSavedPct": 52.4,
@@ -106761,7 +106761,7 @@
        "servicePtsWonPct": 60,
        "returnPtsWonPct": 36.9,
        "rating": 0.92,
-       "pct": 22.3
+       "pct": 22.9
       },
       "sample": {
        "matches": 6,
@@ -107056,7 +107056,7 @@
        "servicePtsWonPct": 61.2,
        "returnPtsWonPct": 36.4,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 9,
@@ -107395,7 +107395,7 @@
        "servicePtsWonPct": 61.1,
        "returnPtsWonPct": 35.3,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 3,
@@ -107796,7 +107796,7 @@
        "servicePtsWonPct": 63.7,
        "returnPtsWonPct": 33.3,
        "rating": 0.92,
-       "pct": 20.7
+       "pct": 21.2
       },
       "sample": {
        "matches": 16,
@@ -107889,7 +107889,7 @@
        "returnGamesWonPct": 20.6,
        "bpConvPct": 38.9,
        "rating": 136.8,
-       "pct": 62.4
+       "pct": 63
       },
       "underPressure": {
        "bpSavedPct": 43.6,
@@ -108170,7 +108170,7 @@
        "returnGamesWonPct": 20.9,
        "bpConvPct": 38.4,
        "rating": 136.9,
-       "pct": 58.3
+       "pct": 58.7
       },
       "underPressure": {
        "bpSavedPct": 43.6,
@@ -108270,7 +108270,7 @@
        "acesPerMatch": 6,
        "dfPerMatch": 5.2,
        "rating": 265.4,
-       "pct": 40.1
+       "pct": 40.7
       },
       "return": {
        "ret1stWonPct": 28.2,
@@ -108716,7 +108716,7 @@
        "acesPerMatch": 5.5,
        "dfPerMatch": 3.8,
        "rating": 261.5,
-       "pct": 29.9
+       "pct": 29.5
       },
       "return": {
        "ret1stWonPct": 35.7,
@@ -108962,7 +108962,7 @@
        "acesPerMatch": 5,
        "dfPerMatch": 2.5,
        "rating": 266.1,
-       "pct": 45.9
+       "pct": 46.3
       },
       "return": {
        "ret1stWonPct": 28.9,
@@ -110102,7 +110102,7 @@
        "acesPerMatch": 6,
        "dfPerMatch": 4.6,
        "rating": 265.7,
-       "pct": 43.8
+       "pct": 44.2
       },
       "return": {
        "ret1stWonPct": 21.8,
@@ -111649,7 +111649,7 @@
        "servicePtsWonPct": 65.3,
        "returnPtsWonPct": 32.2,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 13,
@@ -112050,7 +112050,7 @@
        "servicePtsWonPct": 58.3,
        "returnPtsWonPct": 38.7,
        "rating": 0.93,
-       "pct": 24.7
+       "pct": 25.1
       },
       "sample": {
        "matches": 6,
@@ -112830,7 +112830,7 @@
        "acesPerMatch": 2.8,
        "dfPerMatch": 1.2,
        "rating": 267.4,
-       "pct": 50
+       "pct": 50.4
       },
       "return": {
        "ret1stWonPct": 29.6,
@@ -112856,7 +112856,7 @@
        "servicePtsWonPct": 62.5,
        "returnPtsWonPct": 35.3,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 12,
@@ -113174,7 +113174,7 @@
        "servicePtsWonPct": 69.4,
        "returnPtsWonPct": 33,
        "rating": 1.08,
-       "pct": 85.9
+       "pct": 86.1
       },
       "sample": {
        "matches": 7,
@@ -113686,7 +113686,7 @@
        "servicePtsWonPct": 65.7,
        "returnPtsWonPct": 38.5,
        "rating": 1.12,
-       "pct": 89.8
+       "pct": 90.1
       },
       "sample": {
        "matches": 8,
@@ -113706,7 +113706,7 @@
        "acesPerMatch": 6.3,
        "dfPerMatch": 2,
        "rating": 277.6,
-       "pct": 79.7
+       "pct": 79.9
       },
       "return": {
        "ret1stWonPct": 27.1,
@@ -113920,7 +113920,7 @@
        "returnGamesWonPct": 23.6,
        "bpConvPct": 30.9,
        "rating": 137,
-       "pct": 58.9
+       "pct": 59.3
       },
       "underPressure": {
        "bpSavedPct": 54.6,
@@ -114024,7 +114024,7 @@
        "acesPerMatch": 5,
        "dfPerMatch": 3.3,
        "rating": 267.3,
-       "pct": 44.6
+       "pct": 45.2
       },
       "return": {
        "ret1stWonPct": 20.9,
@@ -115017,7 +115017,7 @@
        "returnGamesWonPct": 24.4,
        "bpConvPct": 28.8,
        "rating": 137.3,
-       "pct": 59.8
+       "pct": 60.2
       },
       "underPressure": {
        "bpSavedPct": 53,
@@ -115035,7 +115035,7 @@
        "servicePtsWonPct": 57.5,
        "returnPtsWonPct": 39.9,
        "rating": 0.94,
-       "pct": 29.3
+       "pct": 29.5
       },
       "sample": {
        "matches": 8,
@@ -115166,7 +115166,7 @@
        "acesPerMatch": 4.3,
        "dfPerMatch": 2,
        "rating": 269.4,
-       "pct": 55.1
+       "pct": 55.3
       },
       "return": {
        "ret1stWonPct": 27,
@@ -115174,7 +115174,7 @@
        "returnGamesWonPct": 18.6,
        "bpConvPct": 44.7,
        "rating": 141,
-       "pct": 72.9
+       "pct": 73.3
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -116310,7 +116310,7 @@
        "servicePtsWonPct": 60.3,
        "returnPtsWonPct": 40.9,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 9,
@@ -116559,7 +116559,7 @@
        "servicePtsWonPct": 60.1,
        "returnPtsWonPct": 40.5,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 12,
@@ -116877,7 +116877,7 @@
        "returnGamesWonPct": 20.4,
        "bpConvPct": 36.7,
        "rating": 136.7,
-       "pct": 58.1
+       "pct": 58.5
       },
       "underPressure": {
        "bpSavedPct": null,
@@ -117295,7 +117295,7 @@
        "servicePtsWonPct": 66.5,
        "returnPtsWonPct": 36.6,
        "rating": 1.09,
-       "pct": 87.3
+       "pct": 87.6
       },
       "sample": {
        "matches": 9,
@@ -117340,7 +117340,7 @@
        "servicePtsWonPct": 64.7,
        "returnPtsWonPct": 36.1,
        "rating": 1.02,
-       "pct": 69.7
+       "pct": 69.9
       },
       "sample": {
        "matches": 12,
@@ -118055,7 +118055,7 @@
        "servicePtsWonPct": 61.6,
        "returnPtsWonPct": 34.9,
        "rating": 0.91,
-       "pct": 16.8
+       "pct": 17
       },
       "sample": {
        "matches": 8,
@@ -118351,7 +118351,7 @@
        "acesPerMatch": 3.3,
        "dfPerMatch": 1.5,
        "rating": 269.3,
-       "pct": 57.5
+       "pct": 57.9
       },
       "return": {
        "ret1stWonPct": 22.1,
@@ -118850,7 +118850,7 @@
        "servicePtsWonPct": 60.8,
        "returnPtsWonPct": 40.4,
        "rating": 1.03,
-       "pct": 71.6
+       "pct": 71.8
       },
       "sample": {
        "matches": 4,
@@ -119079,7 +119079,7 @@
        "returnGamesWonPct": 22.4,
        "bpConvPct": 36.5,
        "rating": 141.4,
-       "pct": 70.5
+       "pct": 70.3
       },
       "underPressure": {
        "bpSavedPct": null,
