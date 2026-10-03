@@ -51,7 +51,7 @@
   --line:        rgba(255, 255, 255, 0.05);  /* row hairline */
   --line-strong: rgba(255, 255, 255, 0.10);  /* under column heads, between sections */
   --track:       rgba(255, 255, 255, 0.06);  /* bar track */
-  --open-card:   rgba(143, 170, 255, 0.28);  /* the one periwinkle outline: open / expanded card */
+  --open-card:   rgba(106, 154, 248, 0.30);  /* the one periwinkle outline: open / expanded card — value measured on OFFICIAL VERSION 1 (README listed 143,170,255 @ 0.28; reference wins, TEN-376) */
   --top-light:   inset 0 1px 0 rgba(143, 170, 255, 0.05);  /* every top-level card */
   --wash-4:      rgba(255, 255, 255, 0.04);  /* Derived lines highlighted rows */
   --wash-5:      rgba(255, 255, 255, 0.05);  /* highlighted table column, latest tick row */
@@ -79,8 +79,8 @@
      pop = floating pop-ups anchored to an element (odds hover, verify card); modal = centred modals / sheets. */
   --shadow-pop:  inset 0 0 0 1px rgba(255,255,255,0.10), 0 18px 48px rgba(0,0,0,0.55);
   --shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
-  --shadow-modal: 0 40px 120px rgba(0, 0, 0, 0.60);   /* centred modals / sheets only (founder TEN-376 U5) */
-  --backdrop:    rgba(3, 5, 9, 0.72);                  /* overlay dim, night + day; pair with backdrop-filter: blur(3px) */
+  --shadow-modal: 0 40px 120px rgba(9, 11, 18, 0.54);   /* centred modals / sheets only (U5; value measured on OFFICIAL VERSION 1) */
+  --backdrop:    rgba(9, 11, 18, 0.65);                /* overlay dim, night + day; + blur(3px) (U5; measured on OFFICIAL VERSION 1) */
 
   /* Type */
   --font-words:  'Hanken Grotesk', sans-serif;

@@ -54,7 +54,8 @@ stay valid. Reference build: `OFFICIAL VERSION 1.dc.html` — when README and re
   at most 4 lines at once; identity from the legend / end plates. Icons are white; category colours do not exist.
 - **Shadows** (U5): `--shadow-menu` (drop-downs, type-ahead, info popovers, slider marker), `--shadow-pop` (floating
   pop-ups anchored to an element), `--shadow-modal` (centred modals / sheets). Overlays dim with `--backdrop`
-  rgba(3,5,9,0.72) + `backdrop-filter: blur(3px)`, night and day. The only gradient is `--glow`.
+  rgba(9,11,18,0.65) + `backdrop-filter: blur(3px)`, night and day; `--shadow-modal` is `0 40px 120px rgba(9,11,18,0.54)` and
+  `--open-card` `rgba(106,154,248,0.30)` (all three measured on OFFICIAL VERSION 1, which outranks the README). The only gradient is `--glow`.
 - **Provider marks** (U4) are the providers' own files in `assets/brand/`, unmodified, shown as `<img>`; the buttons
   around them are site-style (`--inner`, no edge, 16% on hover, white label).
 - **Type** (README §7): two families — Hanken Grotesk 400–800 for words, IBM Plex Mono 400–800 (tabular) for every

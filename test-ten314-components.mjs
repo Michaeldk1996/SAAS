@@ -100,7 +100,7 @@ test('maPopFrame: README §4.4 / DF L1509–1512 geometry; Market edge pop-ups a
   const [o, box, , , , title, sub, x] = styles(h);   // overlay, box, header row, title column, title line, title, sub, ✕
   assert.deepEqual(pick(o, ['position', 'inset', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']),
     pick(dOver, ['position', 'inset', 'z-index', 'display', 'align-items', 'justify-content', 'padding', 'overflow-y']));
-  // TEN-376 U5: overlays dim with --backdrop (rgba(3,5,9,0.72), the design's pop-up scrim) + blur(3px)
+  // TEN-376 U5: overlays dim with --backdrop (rgba(9,11,18,0.65), measured on OFFICIAL VERSION 1) + blur(3px)
   assert.deepEqual([o.background, o['backdrop-filter']], ['var(--backdrop)', 'blur(3px)'], 'the one scrim');
   assert.deepEqual(pick(box, ['position', 'width', 'max-width', 'border-radius', 'padding', 'display', 'flex-direction', 'gap']),
     pick(dBox, ['position', 'width', 'max-width', 'border-radius', 'padding', 'display', 'flex-direction', 'gap']));

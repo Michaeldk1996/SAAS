@@ -50,7 +50,7 @@ const MUTANTS = [
   ['D1: the Odds-tab text on the wrong role token (the reading grey)', "  text: 'var(--text)',      // Text", "  text: 'var(--text-soft)',      // Text"],
   ['D1: the Odds-tab text back to the spec literal', "  text: 'var(--text)',      // Text", "  text: '#E7E9EE',      // Text"],
   ['D1: the nav-selected bg back to the 12a navy literal', '.modal-analysis .asidenav-item.active{ background:var(--selected);', '.modal-analysis .asidenav-item.active{ background:#0B1C4E;'],
-  ['D1: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--page);', '.modal-analysis{ background:var(--popup);'],
+  ['D1: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--card);', '.modal-analysis{ background:var(--popup);'],
   ['D1: a literal back in a shared builder (the Form bar)', "const c = r.won ? 'var(--pos)' : 'var(--neg)';", "const c = r.won ? '#3ed68c' : 'var(--neg)';"],
   ['D1: the modal scrim back to a literal', '  #analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }', '  #analysisModal{ background:rgba(4,5,8,0.72); backdrop-filter:blur(3px); }'],
   ['D4: Odds player A back to the link blue', "  a: 'var(--text)',         // Player A", "  a: 'var(--link)',         // Player A"],

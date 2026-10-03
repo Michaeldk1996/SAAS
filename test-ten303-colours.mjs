@@ -204,7 +204,7 @@ test('2: the rendered chrome reads the tokens (Night and Day): nav selected, mod
   // box --page with --shadow-modal over the one scrim; hairlines --line; clickable rows hover --tile-hover + --edge-16
   const want = [
     ['.modal-analysis .asidenav-item.active', 'background', 'selected'], ['.modal-analysis .asidenav-item.active', 'color', 'text'],
-    ['.modal-analysis', 'background', 'page'], ['.modal-analysis', 'box-shadow', 'shadow-modal'], ['#analysisModal', 'background', 'backdrop'],
+    ['.modal-analysis', 'background', 'card'], ['.modal-analysis', 'box-shadow', 'shadow-modal'], ['#analysisModal', 'background', 'backdrop'],
     ['.modal-analysis .asidenav-item', 'color', 'text-label'], ['.modal-analysis .asidenav-item:hover', 'background', 'inner'],
     ['#aSectionOdds', 'color', 'text'], ['.modal-analysis .ahead2 .close', 'color', 'text-label'], ['.modal-analysis .asidenav-download', 'border-top-color', 'line'],
     ['.modal-analysis .asidenav-download', 'color', 'link'], ['.modal-analysis .apname', 'color', 'text'], ['.modal-analysis .apname.b', 'color', 'text-soft'],
@@ -216,8 +216,8 @@ test('2: the rendered chrome reads the tokens (Night and Day): nav selected, mod
   assert.equal(resolve(applied(HTML, '.modal-analysis .asidenav-item.active', 'background')), fmt(rgba(T.selected)));
   assert.equal(resolve(applied(HTML, '.modal-analysis .asidenav-item.active', 'background'), 'day'), fmt(rgba(D.selected)), 'Day re-tones the selected tab');
   assert.notEqual(fmt(rgba(D.selected)), fmt(rgba(T.selected)));
-  assert.equal(resolve(applied(HTML, '.modal-analysis', 'background')), fmt(rgba(T.page)));
-  assert.equal(resolve(applied(HTML, '.modal-analysis', 'background'), 'day'), fmt(rgba(D.page)), 'Day re-tones the modal box');
+  assert.equal(resolve(applied(HTML, '.modal-analysis', 'background')), fmt(rgba(T.card)));   // OFFICIAL VERSION 1: modal box = --card
+  assert.equal(resolve(applied(HTML, '.modal-analysis', 'background'), 'day'), fmt(rgba(D.card)), 'Day re-tones the modal box');
   assert.equal(resolve(applied(HTML, '#aSectionOdds', 'color'), 'day'), resolve(applied(HTML, '#aSectionOdds', 'color')), 'text does not change with the theme');
   // the extract's type base, so the tab's boxes are the design's height (the modal inherits 14px / 1.5)
   assert.equal(applied(HTML, '#aSectionOdds', 'line-height'), 'normal');

@@ -69,7 +69,7 @@ const SPEC = [
   // app shell (both pages carry it; the dashboard uses buttons, account.html anchors)
   ['.sf-sidebar', 'width', '252px'], ['.sf-sidebar', 'padding', '18px 0 18px 18px'], ['.sf-sidebar', 'line-height', 'normal'],
   ['.sf-panel', 'padding', '20px 12px 14px'], ['.sf-panel', 'border-radius', '22px'], ['.sf-panel', 'background', 'var(--card)'],
-  ['.sf-panel', 'border', '1px solid transparent'], ['.sf-panel', 'box-shadow', 'var(--top-light)'],   // top-level card: no outline + top light ['.sf-brand', 'margin', '0 8px 26px'], ['.sf-logo', 'height', '26px'],
+  ['.sf-panel', 'border', '1px solid transparent'], ['.sf-panel', 'box-shadow', 'none'],   // OFFICIAL VERSION 1: sidebar panel, no outline, no top-light ['.sf-brand', 'margin', '0 8px 26px'], ['.sf-logo', 'height', '26px'],
   ['.sf-nav', 'gap', '3px'], ['.sf-foot', 'padding-top', '24px'], ['.sf-foot', 'gap', '10px'],
   ['.sf-userchip', 'padding', '6px 8px'], ['.sf-userchip', 'gap', '10px'], ['.sf-userav', 'width', '30px'], ['.sf-userav', 'font-size', '11px'],
   ['.sf-username', 'font-size', '12px'], ['.sf-userplan', 'font-size', '10.5px'],
@@ -101,12 +101,12 @@ const SPEC = [
   [`${M} .mc-sig-src`, 'width', '76px'], [`${M} .mc-sig-liq`, 'width', '72px'], [`${M} .mc-sig-bar__dog`, 'background', 'var(--bar-2)'],
   [`${M} .mc-sig-group + .mc-sig-group`, 'border-top', '1px solid var(--line)'],
   ['.mc-promo', 'padding', '13px 20px'], ['.mc-promo', 'gap', '16px'], ['.mc-promo__lead', 'gap', '12px'],
-  ['.mc-promo__icon', 'background', 'var(--inner)'], ['.mc-promo__icon', 'color', 'var(--text)'], ['.mc-promo__badge', 'background', 'var(--inner)'],   // badge = FAV treatment
+  ['.mc-promo__icon', 'background', 'var(--inner)'], ['.mc-promo__icon', 'color', 'var(--text)'], ['.mc-promo__badge', 'background', 'transparent'],   // OFFICIAL VERSION 1: PRO = outlined link pill
 ];
 const ACCT_SPEC = SPEC.filter(([s]) => s.startsWith('.sf-') && !s.startsWith('.sf-nav button'))
-  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '8px'], ['.sf-nav a', 'font-size', '13.5px'], ['.sf-nav a', 'color', 'var(--text-label)']]);
-const DASH_NAV = [['.sf-nav button', 'padding', '10px 12px'], ['.sf-nav button', 'border-radius', '8px'], ['.sf-nav button', 'font-size', '13.5px'],
-  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--text-label)']];   // foundation: sidebar items r8, idle = --text-label
+  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '12px'], ['.sf-nav a', 'font-size', '13.5px'], ['.sf-nav a', 'color', 'var(--text-label)']]);
+const DASH_NAV = [['.sf-nav button', 'padding', '10px 12px'], ['.sf-nav button', 'border-radius', '12px'], ['.sf-nav button', 'font-size', '13.5px'],
+  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--text-label)']];   // OFFICIAL VERSION 1: sidebar items r12 (README §8 said 8; reference wins), idle = --text-label (founder Q2.2)
 
 function specProblems(html, spec) {
   const p = [];
@@ -197,7 +197,7 @@ const FOUNDATION = { page: '#090B12', card: '#10131D', inner: '#171B28', selecte
   text: '#FFFFFF', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
   pro: '#2F52D6', 'pro-text': '#F2F3F7', pos: '#5CCB84', neg: '#E06266', 'serve-ball': '#EAF928',
   'edge-6': 'rgba(255,255,255,0.06)', 'edge-7': 'rgba(255,255,255,0.07)', 'edge-10': 'rgba(255,255,255,0.10)', 'edge-16': 'rgba(255,255,255,0.16)',
-  'edge-24': 'rgba(255,255,255,0.24)', line: 'rgba(255,255,255,0.05)', track: 'rgba(255,255,255,0.06)', 'open-card': 'rgba(143,170,255,0.28)',
+  'edge-24': 'rgba(255,255,255,0.24)', line: 'rgba(255,255,255,0.05)', track: 'rgba(255,255,255,0.06)', 'open-card': 'rgba(106,154,248,0.30)',
   'top-light': 'inset 0 1px 0 rgba(143,170,255,0.05)', 'font-words': "'Hanken Grotesk',sans-serif", 'font-nums': "'IBM Plex Mono',monospace" };
 // the 12a token names the foundation retired (the old block's names that tokens.css does not define)
 const RETIRED = ['nav-panel', 'surface', 'surface-inner', 'popup', 'line-soft', 'line-panel', 'line-open', 'line-avatar', 'text-sub', 'label',

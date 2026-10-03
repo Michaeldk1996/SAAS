@@ -34,7 +34,7 @@ const norm = v => { let s = String(v).replace(/\s+/g, '').toUpperCase(); if (/^#
 // Mutation: drift a foundation value in tokens.css (e.g. --text-soft #DDE0EA → #DDE0EB), or move a text / meaning token
 // into the Day block (founder Q2: only surfaces change between themes).
 test('tokens.css: the foundation values; Night is the default, Day re-tones ONLY the surfaces', () => {
-  // the values foundation.md quotes for a token (`--text` #FFF, `--text-soft` #DDE0EA, `--link` #6A9AF8, `--backdrop` rgba(3,5,9,0.72) …)
+  // the values foundation.md quotes for a token (`--text` #FFF, `--text-soft` #DDE0EA, `--link` #6A9AF8, `--backdrop` rgba(9,11,18,0.65) …)
   const quoted = [...RULES.matchAll(/`(--[\w-]+)`\s+(#[0-9A-Fa-f]{3,6}\b|rgba\([^)]*\))/g)].map(m => [m[1], m[2]]);
   assert.ok(quoted.length >= 5, `read the rule file's token values (${quoted.length})`);
   for (const [k, v] of quoted) assert.equal(norm(NIGHT[k]), norm(v), `${k} = foundation.md ${v}`);

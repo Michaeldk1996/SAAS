@@ -33,7 +33,7 @@ const MUTANTS = [
   ['lazy: Key factors pre-loads the News feed', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad()].map(p =>', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad(), ensureNewsData()].map(p =>'],
   ['lazy: a revisit rebuilds', '  if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }', '  if (true) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }'],
   ['lazy: the built set survives a new match', '  _aM = m; _aBuilt.clear();', '  _aM = m;'],
-  ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--page);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--page);'],
+  ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--card);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--page);'],
   ['lazy: a late shard of the previous match repaints the new one', 'function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }', 'function aBuilt(m, tab){ return _aBuilt.has(tab); }'],
   ['revisit: Weather / Market edge hooks only on the first open', "  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();\n", ''],
   ['direct tab: the completed-card path builds Key factors first', "  openAnalysisModal(id, 'matchstats');\n}", "  openAnalysisModal(id);\n  aGoTab('matchstats');\n}"],

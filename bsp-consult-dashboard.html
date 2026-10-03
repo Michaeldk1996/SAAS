@@ -901,7 +901,7 @@
   [data-page="matches"] .mc-sig-liq{ width:72px; flex:none; text-align:right; font-family:var(--mx-font-mono); font-size:11px; font-weight:500; color:var(--mc-muted); }
   [data-page="matches"] .mc-sig-row.unbound .mc-sig-fav, [data-page="matches"] .mc-sig-row.unbound .mc-sig-dog, [data-page="matches"] .mc-sig-row.unbound .mc-sig-liq{ color:var(--mc-muted-2); }
   [data-page="matches"] .mc-sig-note{ margin-top:11px; font-family:var(--mx-font-ui); font-size:10.5px; line-height:1.5; color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--text); font-family:var(--mx-font-ui); font-weight:600; font-size:13px; text-decoration:none; }
+  [data-page="matches"] .mc-analysis{ background:none; border:0; cursor:pointer; color:var(--link); font-family:var(--mx-font-ui); font-weight:600; font-size:13px; text-decoration:none; }
   [data-page="matches"] .mc-analysis:hover{ text-decoration:underline; }
   [data-page="matches"] .value-pill{ font-family:var(--mx-font-mono); font-size:11px; font-weight:700; letter-spacing:0.03em; padding:3px 9px; border-radius:var(--mc-r-pill); }
   [data-page="matches"] .value-pill.pos{ color:var(--mc-pos); background:var(--mc-pos-bg); border:1px solid var(--mc-pos-bd); }
@@ -1786,7 +1786,8 @@
   /* ================================================================= */
   :root{ --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
-  body{ background:var(--page); padding-left:252px; }
+  /* README §1 --glow, the one gradient — measured on OFFICIAL VERSION 1 (1500×640 ellipse centred 720px, −120px) */
+  body{ background:radial-gradient(1500px 640px at 720px -120px, var(--glow) 0%, transparent 100%) no-repeat, var(--page); padding-left:252px; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
 
   /* 12a app shell — measured against design/reference/portal-12a.html (TEN-286):
@@ -1797,17 +1798,17 @@
   .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:252px; box-sizing:border-box; display:flex;
     padding:18px 0 18px 18px; z-index:60; font-family:var(--sf-font-ui); line-height:normal; }
   .sf-panel{ flex:1; min-height:0; display:flex; flex-direction:column; box-sizing:border-box; padding:20px 12px 14px;
-    background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:22px; overflow-y:auto; }
+    background:var(--card); border:1px solid transparent; box-shadow:none; border-radius:22px; overflow-y:auto; }
   .sf-brand{ display:block; margin:0 8px 26px; }
   .sf-logo{ display:block; height:26px; width:auto; }
   .sf-nav{ display:flex; flex-direction:column; gap:3px; }
   .sf-nav button{ display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box; text-align:left; background:none;
-    border:1px solid transparent; border-radius:8px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
+    border:1px solid transparent; border-radius:12px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
     font-weight:600; color:var(--text-label); cursor:pointer; }
   .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; color:var(--text-label); }
   .sf-nav button::after{ content:''; flex:none; width:6px; height:6px; border-radius:50%; margin-left:auto; background:transparent; }
   .sf-nav button:hover{ background:var(--tile-hover); }
-  .sf-nav button.active, .sf-nav button.active:hover{ background:var(--selected); border-color:var(--selected); color:var(--text); font-weight:700; }
+  .sf-nav button.active, .sf-nav button.active:hover{ background:var(--selected); border-color:var(--edge-6); color:var(--text); font-weight:700; }
   .sf-nav button.active svg{ color:var(--text); }
   .sf-nav button.active::after{ display:none; }
   .sf-foot{ margin-top:auto; padding-top:24px; display:flex; flex-direction:column; gap:10px; }
@@ -33340,6 +33341,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* per element). Colours and hairlines only; layout is untouched.    */
   /* ================================================================= */
   html, body{ background:var(--page); }
+
   /* header live dot = lime, flat (the settled state stays label) */
   [data-page="matches"] .mx-datastatus:not(.settled) .dot{ display:none !important; }
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */
@@ -33402,9 +33404,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* stat boxes */
   [data-page="matches"] .mc-story-strip{ display:flex; align-items:stretch; gap:12px; }
   [data-page="matches"] .mc-story-strip > .mc-story{ flex:1 1 0; min-width:0; }
-  [data-page="matches"] .mc-story{ padding:15px 19px; gap:8px; border-radius:12px; border:1px solid var(--edge-6); }
-  [data-page="matches"] .mc-story.mc-story--click{ border-color:var(--edge-7); }
-  [data-page="matches"] .mc-story.mc-story--click:hover{ background:var(--tile-hover); border-color:var(--edge-16); }
+  [data-page="matches"] .mc-story{ padding:15px 19px; gap:8px; border-radius:12px; border:1px solid transparent; box-shadow:var(--top-light); }   /* reference OV1: top-level card */
+  [data-page="matches"] .mc-story.mc-story--click:hover{ background:var(--tile-hover); }
   [data-page="matches"] .mc-story__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .mc-story__od{ font-family:var(--sf-font-mono); font-size:20px; font-weight:700; letter-spacing:normal; }
   [data-page="matches"] .mc-story .mc-drift{ font-family:var(--sf-font-mono); font-size:12px; font-weight:700; }
@@ -33476,8 +33477,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .mc-promo__icon{ background:var(--inner); border:none; color:var(--text); }
   .mc-promo__body{ flex:none; align-items:stretch; }
   .mc-promo__right{ margin-left:auto; }
-  .mc-promo__badge{ font-family:var(--font-words); font-size:10px; font-weight:700; color:var(--text-label); border:none; border-radius:5px;
-    background:var(--inner); letter-spacing:0.10em; text-transform:uppercase; padding:2px 6px; }
+  .mc-promo__badge{ font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:700; color:var(--link); border:1px solid color-mix(in srgb, var(--link) 30%, transparent); border-radius:20px;
+    background:transparent; letter-spacing:0.12em; text-transform:uppercase; padding:3px 9px; }   /* reference OV1: outlined PRO pill */
   .mc-promo__cta{ font-size:12.5px; font-weight:700; color:var(--link); border-radius:9px; }
 </style>
 <style id="match-analysis-chrome">
@@ -33486,7 +33487,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
      Same selectors and properties as the design build; the values are tokens. Edges are 1px (TEN-376). */
   /* the modal box = README §3 "Page" (role conflict: only the modal box is Page) */
   /* every chrome colour below is the token of the design's own shade (--ma-s-<source>, founder 2026-09-29), DF L85–123 / L5323 */
-  .modal-analysis{ background:var(--page); border-color:var(--edge-10); box-shadow:var(--shadow-modal); }   /* modal edge = 10% (README §1); body tone pending founder (TEN-376) */
+  .modal-analysis{ background:var(--card); border-color:var(--edge-10); box-shadow:var(--shadow-modal); }   /* pop-up sheet = --card + 10% edge (README §1; measured on OFFICIAL VERSION 1) */
   /* the design file's overlay (DF L85) — the one scrim (U11) */
   #analysisModal{ background:var(--backdrop); backdrop-filter:blur(3px); }
   .modal-analysis .ahead2{ border-bottom-color:var(--line); }
