@@ -311,3 +311,29 @@ test('no colour value is hard-coded in a style attribute (was: the 12a tokeniser
   assert.equal(rawIn(s => s.replace('</body>', '<div style="color:#6e7a93">x</div></body>')).length, 1, 'mutant survived: a hard-coded label colour in a style attribute');
   assert.equal(rawIn(s => s.replace('</body>', '<div style="border:1px solid rgba(255,255,255,0.06)">x</div></body>')).length, 1, 'mutant survived: an rgba hairline');
 });
+
+// TEN-376 S1 (founder): a modal belongs to the page it was opened from — a USER's sidebar click closes every open
+// modal / sheet / pop-up, then navigates; the app's own programmatic nav clicks and the theme switch do not.
+//    mutants: the isTrusted guard dropped (internal "go to Players" flows would close their own modal), a module that
+//    stops registering its closer (its overlay would survive the page switch). Behaviour measured in Chrome by
+//    ~/.paperclip-ten376/verify/s1.mjs (trusted CDP clicks).
+test('S1: a trusted sidebar click runs every registered overlay closer; each overlay module registers one', () => {
+  const dash = readFileSync(new URL('./bsp-consult-dashboard.html', import.meta.url), 'utf8');
+  const nav = dash.slice(dash.indexOf("document.getElementById('mainNav').addEventListener('click'"));
+  assert.match(nav.slice(0, 400), /if \(!btn\) return;\s*if \(e\.isTrusted\) sfCloseOverlays\(\);/, 'the nav handler closes overlays on trusted clicks only');
+  assert.ok(!/data-sf-theme-switch/.test(dash.slice(dash.indexOf('<nav class="sf-nav" id="mainNav">'), dash.indexOf('</nav>', dash.indexOf('<nav class="sf-nav" id="mainNav">')))),
+    'the theme switch is outside #mainNav, so it leaves the modal open');
+  const REG = '(window.sfOverlayClosers = window.sfOverlayClosers || []).push(';
+  for (const f of ['bsp-consult-dashboard.html', 'live-tab.js', 'series.js', 'drops-page.js', 'player-profile-v2.js'])
+    assert.ok(readFileSync(new URL('./' + f, import.meta.url), 'utf8').includes(REG), `${f} registers its overlay closer`);
+  const own = dash.slice(dash.indexOf(REG), dash.indexOf('\n\n', dash.indexOf(REG)));
+  for (const c of ['closeAnalysisModal()', 'closeModal()', 'tourxCloseOverlays()', 'closePpSplitDrawer()', "getElementById('lvClose')"])
+    assert.ok(own.includes(c), `the dashboard closer covers ${c}`);
+});
+
+// TEN-376 S3 (founder): status lines are text only — no dot anywhere ("Live · updated", News feed line, Drops header).
+test('S3: no status-line dot on any page', () => {
+  const all = ['bsp-consult-dashboard.html', 'drops-page.js', 'drops-page.css', 'account.html', 'series.js', 'series.css', 'live-tab.js', 'trading-report.js']
+    .map(f => readFileSync(new URL('./' + f, import.meta.url), 'utf8')).join('\n');
+  assert.ok(!/news-livedot|do-dot|lt-dot|class="dot"><\/span>|mx-datastatus[^{\n]*\.dot/.test(all), 'a status dot came back');
+});

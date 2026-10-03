@@ -210,7 +210,6 @@
   [data-page="matches"] .mx-h1{ font-family:var(--mx-font-ui); }
   [data-page="matches"] .mx-subtitle{ font-family:var(--mx-font-ui); }
   [data-page="matches"] .mx-datastatus{ margin-top:6px; font-family:var(--mx-font-mono); display:flex; align-items:center; }
-  [data-page="matches"] .mx-datastatus .dot{ border-radius:50%;  flex-shrink:0; }
   [data-page="matches"] .mx-datastatus.error{ color:var(--neg); }
 
   [data-page="matches"] .mx-stats{ padding:20px 24px 0; }
@@ -1788,8 +1787,9 @@
   /* ================================================================= */
   :root{ --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
-  /* README §1 --glow, the one gradient — measured on OFFICIAL VERSION 1 (1500×640 ellipse centred 720px, −120px) */
-  body{ background:radial-gradient(1500px 640px at 720px -120px, var(--glow) 0%, transparent 100%) no-repeat, var(--page); padding-left:252px; }
+  /* the one gradient: --page-bg (tokens.css, founder S6) on the root, so it scrolls behind sidebar + content */
+  html{ background:var(--page-bg); }
+  body{ background:transparent; padding-left:252px; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
 
   /* 12a app shell — measured against design/reference/portal-12a.html (TEN-286):
@@ -1857,7 +1857,6 @@
      with NO dot (founder R3, TEN-376 — a known exception where OFFICIAL VERSION 1 draws a dot and is wrong). */
   [data-page="matches"] .mx-h1{ color:var(--text); }
   [data-page="matches"] .mx-datastatus{ color:var(--text-label) !important; }
-  [data-page="matches"] .mx-datastatus .dot{ display:none !important; }
   [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--text-label); font-family:var(--sf-font-ui); }
   [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--text-label); font-family:var(--sf-font-mono); }
   /* §2 — Completed status line: muted 'Settled · <date>', no green, no glow. */
@@ -1932,7 +1931,7 @@
      §"Design tokens" — the export is the authority, this page is not free to
      disagree with it. Where a value has no export counterpart (the shard-streaming
      pending glyph) it is called out in trading-report.js. */
-  [data-page="trading"]{ background:var(--page); }
+  [data-page="trading"]{ background:transparent; }   /* transparent: the root's --page-bg (page + glow) shows through, as on OFFICIAL VERSION 1 (founder S6) */
   [data-page="trading"] .tr-wrap{ max-width:1360px; margin:0 auto; padding:30px 40px 70px; }
   /* the page is a single flex column, gap 22px (README §Screen) */
   [data-page="trading"] .tr-page{ display:flex; flex-direction:column; gap:22px; font-family:'Hanken Grotesk',sans-serif; color:var(--text); }
@@ -2066,43 +2065,6 @@
      overflow-x wrapper would compute overflow-y to auto and kill the header's
      position:sticky. */
   [data-page="trading"] .tr-head,[data-page="trading"] .tr-rows{ min-width:1096px; }
-
-  /* TEN-107 Slice 4 — standalone Live tab (flag-gated; only page under data-page="live") */
-  [data-page="live"] .lt-wrap{ max-width:1080px; margin:0 auto; padding:24px 24px 60px; }
-  [data-page="live"] .lt-titlerow{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:20px; }
-  [data-page="live"] .lt-h1{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:24px; font-weight:800; letter-spacing:-0.02em; margin:0 0 8px; color:var(--text,var(--text)); }
-  [data-page="live"] .lt-subtitle{ margin:0; color:var(--text-label,var(--text-label)); font-size:13.5px; font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
-  [data-page="live"] .lt-status{ margin:8px 0 0; font-size:12.5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); display:flex; align-items:center; gap:8px; color:var(--pos); }
-  [data-page="live"] .lt-status.stale{ color:var(--text-label); }
-  [data-page="live"] .lt-status .lt-dot{ display:none; }
-
-  [data-page="live"] .lt-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(340px,1fr)); gap:14px; }
-  [data-page="live"] .lt-card{ background:var(--card,var(--card)); border:1px solid var(--edge-6,var(--edge-6)); border-radius:14px; padding:14px 16px 12px; transition:border-color 120ms; }
-  [data-page="live"] .lt-card:hover{ border-color:color-mix(in srgb, var(--pos) 35%, transparent); }
-  [data-page="live"] .lt-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
-  [data-page="live"] .lt-tourn{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:11.5px; color:var(--text-label,var(--text-label)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="live"] .lt-badge{ display:inline-flex; align-items:center; gap:5px; flex-shrink:0; background:transparent; color:var(--text); border-radius:5px; padding:2px 8px; font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; font-family:var(--font-words); }
-  [data-page="live"] .lt-badge .lt-dot{ display:none; }
-
-  [data-page="live"] .lt-players{ display:flex; flex-direction:column; gap:2px; }
-  [data-page="live"] .lt-row{ display:grid; grid-template-columns:26px 1fr 12px auto 30px; align-items:center; gap:9px; padding:5px 0; }
-  [data-page="live"] .lt-row.serving .lt-name{ color:var(--text,var(--text)); font-weight:700; }
-  [data-page="live"] .lt-av{ width:26px; height:26px; border-radius:50%; object-fit:cover; background:var(--inner,var(--card)); flex-shrink:0; }
-  [data-page="live"] .lt-av-blank{ display:inline-block; }
-  [data-page="live"] .lt-name{ font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); font-size:14.5px; font-weight:600; color:var(--text-label,var(--text-soft)); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  [data-page="live"] .lt-serve{ color:var(--serve-ball); font-size:11px; text-align:center; }
-  [data-page="live"] .lt-sets{ display:inline-flex; gap:5px; font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); }
-  [data-page="live"] .lt-set{ min-width:15px; text-align:center; font-size:14px; font-weight:600; color:var(--text-label,var(--text-label)); }
-  [data-page="live"] .lt-set.cur{ color:var(--text,var(--text)); }
-  [data-page="live"] .lt-set sup{ font-size:9px; font-weight:600; vertical-align:super; line-height:0; margin-left:1px; }
-  [data-page="live"] .lt-game{ font-family:var(--mx-font-mono,'IBM Plex Mono',monospace); font-size:14px; font-weight:700; color:var(--text); text-align:right; min-width:28px; }
-  [data-page="live"] .lt-pt{ letter-spacing:0.02em; }
-
-  [data-page="live"] .lt-empty{ grid-column:1/-1; text-align:center; padding:64px 20px; color:var(--text-label,var(--text-label)); }
-  [data-page="live"] .lt-empty-icon{ font-size:34px; opacity:0.5; margin-bottom:14px; }
-  [data-page="live"] .lt-empty-title{ margin:0 0 6px; font-size:15px; font-weight:600; color:var(--text-label,var(--text-label)); font-family:var(--mx-font-ui,'Hanken Grotesk',sans-serif); }
-  [data-page="live"] .lt-empty-sub{ margin:0; font-size:12.5px; }
-  @keyframes lt-pulse{ 0%,100%{ opacity:1; } 50%{ opacity:0.35; } }
 
   /* ── TEN-107 match-detail panel (Stats / Points / Ratings) ─────────────────
      Gated on FEATURE_LIVE_DETAIL; clickable cards + a modal built by live-tab.js.
@@ -2310,7 +2272,7 @@
     <div>
       <h1 class="mx-h1">Today's Matches</h1>
       <p class="mx-subtitle">Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.</p>
-      <p class="mx-datastatus" id="dataStatus"><span class="dot"></span>Loading…</p>
+      <p class="mx-datastatus" id="dataStatus">Loading…</p>
       <p class="mx-tzline" id="tzLine"></p>
     </div>
     <!-- Upcoming/Completed segmented control removed (TEN-8, founder ruling
@@ -3902,12 +3864,10 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:var(--text); }
   [data-page="news"] .news-head p{ margin:0; color:var(--text-soft); font-size:13.5px; }
   [data-page="news"] .news-live{ margin-top:9px; font-size:12px; color:var(--text-label); font-family:'IBM Plex Mono',ui-monospace,monospace; display:flex; align-items:center; gap:7px; }
-  [data-page="news"] .news-livedot{ width:7px; height:7px; border-radius:50%; background:var(--text);  flex-shrink:0; }   /* freshness is greyscale */
   [data-page="news"] .news-clock{ color:var(--text-label); }
-  /* Stale feed (TEN-8, 2026-08-02): header goes amber and drops the "Live" claim
-     when news-feed.json's own generatedAt is older than NEWS_STALE_HOURS. */
-  [data-page="news"] .news-live.news-stale{ color:var(--text-label); }
-  [data-page="news"] .news-live.news-stale .news-livedot{ background:var(--text-label);  }
+  /* Status lines are text only (founder S3, TEN-376): no dot, no colour. A stale feed drops the "Live" claim
+     (news-feed.json's generatedAt older than NEWS_STALE_HOURS) and steps up to --text-soft so the age stands out. */
+  [data-page="news"] .news-live.news-stale{ color:var(--text-soft); }
   [data-page="news"] .news-stalebanner{ border:1px solid var(--edge-10); background:var(--inner); border-radius:10px; padding:11px 14px; margin:0 0 16px; font-size:12.5px; line-height:1.5; color:var(--text-soft); }
 
   /* ---- Control rows. Row 1: All-tournaments dropdown then 4 category
@@ -4050,7 +4010,7 @@ window.EntryListsTab = (function(){
       <p>Latest market and tour information</p>
       <!-- Freshness reflects news-feed.json's OWN generatedAt (last successful
            fetch), NOT a wall clock. See newsRenderFreshness(). -->
-      <div class="news-live" id="newsLive"><span class="news-livedot"></span><span>Loading feed…</span></div>
+      <div class="news-live" id="newsLive"><span>Loading feed…</span></div>
     </div>
     <!-- Row 1: All-tournaments dropdown first, then the 4 derived category chips.
          Category is derived client-side (keyword classifier); no category field
@@ -4098,7 +4058,7 @@ window.EntryListsTab = (function(){
 <!-- ============================================================= -->
 <style>
   [data-page="edge"]{
-    background:var(--page);
+    background:transparent;   /* transparent: the root's --page-bg (page + glow) shows through, as on OFFICIAL VERSION 1 (founder S6) */
     font-family:'Hanken Grotesk', sans-serif;
     color:var(--text);
   }
@@ -4665,9 +4625,23 @@ window.EntryListsTab = (function(){
 
 <script>
 /* ---------- TAB SWITCHING ---------- */
+// S1 (founder, TEN-376): a modal belongs to the page it was opened from. A sidebar click by the USER closes every open
+// modal / sheet / pop-up (same as its ✕) and then navigates. Each surface registers its own closer on
+// window.sfOverlayClosers (a no-op when nothing is open). Programmatic nav clicks (isTrusted false — the app's own
+// "go to Players" flows) are left alone; the theme switch is outside #mainNav and leaves the modal open.
+function sfCloseOverlays(){ (window.sfOverlayClosers || []).forEach(fn => { try { fn(); } catch (err) { console.error('sfCloseOverlays', err); } }); }
+// one closer per surface, so one that throws cannot stop the others
+(window.sfOverlayClosers = window.sfOverlayClosers || []).push(
+  () => { if (document.getElementById('analysisModal')?.classList.contains('open')) closeAnalysisModal(); },
+  () => { if (document.getElementById('favModal')?.classList.contains('open')) closeModal(); },
+  () => { if (typeof tourxCloseOverlays === 'function') tourxCloseOverlays(); },
+  () => { if (typeof ppSplitDrawerState === 'object' && ppSplitDrawerState.open) closePpSplitDrawer(); },
+  () => { const lv = document.getElementById('lvClose'); if (lv) lv.click(); },   // the Live tab modal's own ✕
+  () => { if (typeof aOddsTipHide === 'function') aOddsTipHide(); });
 document.getElementById('mainNav').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
+  if (e.isTrusted) sfCloseOverlays();
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const tab = btn.dataset.tab;
@@ -5050,16 +5024,16 @@ function newsRenderFreshness(){
   const f = newsFreshness();
   if (!f.known){
     box.className = 'news-live';
-    box.innerHTML = `<span class="news-livedot"></span><span>Feed status unavailable</span>`;
+    box.innerHTML = `<span>Feed status unavailable</span>`;
     return;
   }
   const when = newsEscape(newsFmtDateTime(f.ts));
   if (f.stale){
     box.className = 'news-live news-stale';
-    box.innerHTML = `<span class="news-livedot"></span><span>Feed not live · last updated ${when}</span>`;
+    box.innerHTML = `<span>Feed not live · last updated ${when}</span>`;
   } else {
     box.className = 'news-live';
-    box.innerHTML = `<span class="news-livedot"></span><span>Live feed · updated ${when}</span>`;
+    box.innerHTML = `<span>Live feed · updated ${when}</span>`;
   }
 }
 
@@ -6284,7 +6258,7 @@ async function loadMatches(){
     matches = [];
     document.getElementById('dataStatus').classList.add('error');
     document.getElementById('dataStatus').innerHTML =
-      `<span class="dot"></span>Couldn't load matches.json — run bsp-pipeline.js first, and serve this page via a local server (not file://)`;
+      `Couldn't load matches.json — run bsp-pipeline.js first, and serve this page via a local server (not file://)`;
   }
   // Refresh the model output alongside matches each cycle. Fire-and-forget
   // (awaited so an open Edge Model re-render sees fresh numbers) but never
@@ -6830,7 +6804,7 @@ function mxHeaderStatusHtml(){
   if (b.oldest !== null) {
     const label = b.undated ? 'Live · odds from' : 'Live · oldest odds';
     const tail  = b.undated ? ' or older' : '';
-    return `<span class="dot"></span><span class="mx-live-txt" title="${escapeHtml(detail)}">${label}</span>`
+    return `<span class="mx-live-txt" title="${escapeHtml(detail)}">${label}</span>`
          + ` <span class="mx-clock" title="${escapeHtml(detail)}">${headerClockFmt(new Date(b.oldest))}${tail}</span>`;
   }
   const d = dataLoadedAt || new Date();
@@ -6838,7 +6812,7 @@ function mxHeaderStatusHtml(){
     ? `${b.shown} price${b.shown === 1 ? '' : 's'} shown, none carrying an observation clock — `
       + `this is when the page loaded, not when the odds were read`
     : 'no prices on this board — this is when the page loaded';
-  return `<span class="dot"></span><span class="mx-live-txt" title="${escapeHtml(noneDetail)}">Live · loaded</span>`
+  return `<span class="mx-live-txt" title="${escapeHtml(noneDetail)}">Live · loaded</span>`
        + ` <span class="mx-clock" title="${escapeHtml(noneDetail)}">${headerClockFmt(d)}</span>`;
 }
 // The one provenance string every surface shows: "bet365 · Sep 17, 09:14".
@@ -8956,7 +8930,7 @@ function updateMatchesHeaderChrome(){
     if (completed){
       ds.style.display = '';
       ds.classList.add('settled');
-      ds.innerHTML = `<span class="dot"></span><span class="mx-settled-txt">Settled ·</span> <span class="mx-clock">${settledDateLabel()}</span>`;
+      ds.innerHTML = `<span class="mx-settled-txt">Settled ·</span> <span class="mx-clock">${settledDateLabel()}</span>`;
     } else {
       ds.style.display = '';
       ds.classList.remove('settled');
@@ -27285,7 +27259,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
 
   // ================================ TEMPLATE ================================
   function pageHTML(v) {
-    return `<section style="min-height:100vh; background:var(--page); color:var(--text); font-family:'Hanken Grotesk',sans-serif; display:flex; flex-direction:column;">
+    return `<section style="min-height:100vh; background:transparent; color:var(--text); font-family:'Hanken Grotesk',sans-serif; display:flex; flex-direction:column;">
       ${selectorBar(v)}
       ${v.showEmpty ? emptyState(v) : ''}
       ${v.showLoading ? loadingState(v) : ''}
@@ -32517,18 +32491,19 @@ function momentumChart(bands2, aName, bName){
     kids+=`<text x="${x0+4}" y="${topRail-3}" fill="var(--text-label)" style="${mo('9px')}">${b.label}</text>`;
     gi+=b.games.length;
   });
-  kids+=`<path d="${close(smooth(upPts))}" fill="color-mix(in srgb, var(--bar) 30%, transparent)"/>`;
-  kids+=`<path d="${close(smooth(dnPts))}" fill="color-mix(in srgb, var(--text) 16%, transparent)"/>`;
-  kids+=`<path d="${smooth(upPts)}" fill="none" stroke="var(--bar)" stroke-width="1.4"/>`;
-  kids+=`<path d="${smooth(dnPts)}" fill="none" stroke="var(--text)" stroke-width="1.4" opacity="0.7"/>`;
+  // S2 (founder, TEN-376): the ribbon is a BAR-type mark (its thickness is the data), not an area under a line, so it
+  // keeps its fill under the bar rules: player A --viz-lead, player B --viz-second (the lead blue at 45%), both from the
+  // centre line; break markers --neg. Names are white text (blue is a fill, never text).
+  kids+=`<path d="${close(smooth(upPts))}" fill="var(--viz-lead)"/>`;
+  kids+=`<path d="${close(smooth(dnPts))}" fill="var(--viz-second)"/>`;
   all.forEach((g,i)=>{
     if(!g.brk) return;
-    const up=g.m>0,cx=x(i),rail=up?topRail:botRail,col=up?'var(--bar)':'var(--text)';
+    const up=g.m>0,cx=x(i),rail=up?topRail:botRail,col='var(--neg)';
     const tip=up?zY-thick(g):zY+thick(g);
     kids+=`<line x1="${cx}" x2="${cx}" y1="${rail+(up?5:-5)}" y2="${tip}" stroke="${col}" stroke-width="1" stroke-dasharray="1 4" opacity="0.4"/>`;
     kids+=`<text x="${cx}" y="${rail+(up?0:4)}" fill="${col}" text-anchor="middle" style="${mo('700 8.5px')}">BRK</text>`;
   });
-  kids+=`<text x="${W-right+12}" y="${topRail+4}" fill="var(--bar)" style="${mo('10px')}">${aName}</text>`;
+  kids+=`<text x="${W-right+12}" y="${topRail+4}" fill="var(--text)" style="${mo('10px')}">${aName}</text>`;
   kids+=`<text x="${W-right+12}" y="${zY+4}" fill="var(--text-label)" style="${mo('10px')}">EVEN</text>`;
   kids+=`<text x="${W-right+12}" y="${botRail+4}" fill="var(--text)" style="${mo('10px')}">${bName}</text>`;
 
@@ -33126,8 +33101,8 @@ ${ratingCardHtml}
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
     <span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Momentum · point swing by game</span>
     <span style="display:inline-flex;align-items:center;gap:14px;">
-      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);"><span style="width:14px;height:2px;background:var(--bar);"></span>${e(d.modal.aName)}</span>
-      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);"><span style="width:14px;height:2px;background:var(--text);"></span>${e(d.modal.bName)}</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);"><span style="width:10px;height:10px;border-radius:2px;background:var(--viz-lead);"></span>${e(d.modal.aName)}</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);"><span style="width:10px;height:10px;border-radius:2px;background:var(--viz-second);"></span>${e(d.modal.bName)}</span>
     </span>
   </div>
   <div style="margin-top:12px;">${d.momentumSvg||`<div style="padding:40px 20px;text-align:center;font-size:13px;color:var(--text-label);">No completed games to plot yet.</div>`}</div>
@@ -33323,10 +33298,6 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* TEN-285 theme 12a "Ink solid" — role overrides (HANDOFF §3 token   */
   /* per element). Colours and hairlines only; layout is untouched.    */
   /* ================================================================= */
-  html, body{ background:var(--page); }
-
-  /* header status line: no dot (founder R3, TEN-376) */
-  [data-page="matches"] .mx-datastatus:not(.settled) .dot{ display:none !important; }
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */
   [data-page="matches"] .mx-daytabs button.active{ color:var(--text); border-bottom-color:var(--text); }
   [data-page="matches"] .mx-daytabs button.active .dbottom{ color:var(--text-label); }
@@ -33363,9 +33334,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mx-h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; }
   [data-page="matches"] .mx-subtitle{ margin:8px 0 0; font-size:13.5px; font-weight:400; line-height:1.55; max-width:640px; color:var(--text-soft); }
   [data-page="matches"] .mx-datastatus{ margin:9px 0 0; gap:0; font-size:12px; line-height:normal; width:fit-content; }
-  [data-page="matches"] .mx-datastatus .dot{ margin-right:8px; }
   [data-page="matches"] .mx-datastatus .mx-live-txt::after{ content:' '; white-space:pre; }
-  [data-page="matches"] .mx-datastatus .dot{ width:8px; height:8px; }
   [data-page="matches"] .mx-datastatus .mx-live-txt, [data-page="matches"] .mx-datastatus .mx-clock,
   [data-page="matches"] .mx-datastatus.settled .mx-settled-txt{ font-size:12px; color:var(--text-label); }
   [data-page="matches"] .mx-tzline{ margin:6px 0 0; font-family:var(--sf-font-ui); font-size:12px; line-height:normal; color:var(--text-label); }

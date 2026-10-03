@@ -939,6 +939,8 @@
       if (_overlay) _overlay.classList.remove('open');
       document.body.style.overflow = '';
     }
+    // TEN-376 S1: a sidebar click closes this modal before it navigates
+    (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () { if (_ek != null) close(); });
     // Called on every snapshot apply — live-refresh the open modal (Stats/header),
     // and refresh pbp in the background if the Points/Ratings tab is showing.
     function onBoard(matches) {

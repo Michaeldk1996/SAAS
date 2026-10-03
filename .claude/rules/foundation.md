@@ -6,7 +6,11 @@ the modal's Night 24b / Day 26f and every older handoff palette are superseded; 
 stay valid. Reference build: `OFFICIAL VERSION 1.html` — **the reference wins every conflict** with the README or a
 written ruling (founder R1); measure its **computed** value in a browser (its source carries old hex the portal converts
 at runtime). *Known exception (R3):* the reference draws a dot before the Today's Matches header "Live · updated 11:41";
-ours has none (the Drops page's greyscale freshness dot is open with the founder).
+ours has none.
+- **Status lines are text only (S3), site-wide:** "Live · updated …", the News feed line, the Dropping Odds header — no
+  dot, no colour. `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
+  not live", Drops past its amber tier). The age is carried by the words ("updated 12 min ago"). The only *status* dot on
+  the site is the lime serve dot (data marks — chart end dots, the date strip's Today marker — are not status).
 
 ## Tests
 
@@ -37,6 +41,8 @@ ours has none (the Drops page's greyscale freshness dot is open with the founder
   value in pop-up headers, the losing player's name on Completed cards), `--text-label` #A3AABE (anything that
   *labels*: caps labels, column heads, meta, support lines, idle tabs inside pages, placeholders, mono meta, the header
   "Live · updated" line). No other grey. (Sidebar nav is the one place idle items are `--text-soft` — R1.)
+  `#F2F3F7` measured for text or an icon on the reference is a 15a leftover → `--text` (S5); `--pro-text` is only the
+  text on a `--pro` button (Upgrade, auth / verify primary).
 - **Blue `#007AFF` is a fill, never text.** Bars, the Live player-A series, the one primary-tier fill. Blue text is
   `--link` #6A9AF8 on real links only ("View all news →", "Compare all →", Back, ledger links, the "Most covered"
   label). **Names are white everywhere** (favourite, winner, player A — Q2.3). **Selection is lift (tone + edge),
@@ -55,7 +61,9 @@ ours has none (the Drops page's greyscale freshness dot is open with the founder
   3 pts). Nowhere else — not Weather severity, not News stale, not entry lists (U2, U3).
 - **Lime = one element:** the live serving dot (`--serve-ball`). Not the nav, not the header, not a LIVE badge.
 - **Surfaces are neutral** (Q2.4): Hard / Clay / Grass / Indoor labels are `--text-soft`. *Exception:* the Swing band
-  in the Calendar record modal keeps `--viz-hard / --viz-clay / --viz-grass / --viz-indoor`, bars at 75% (R5).
+  in the Calendar record modal (locked design, bundle `Stennisfy Website.html`, Player Stat Boxes — S4): `--viz-hard`
+  #4DB8FF, `--viz-clay` #E8A84E, `--viz-grass` #5CCB84, `--viz-indoor` #DDE0EA; bars 4px, radius 2px, opacity 0.75. These
+  four tokens are used there and nowhere else.
 - **Market edge (R5):** the top-level Market edge tab cards = `--card`, no outline, `--top-light` only; figure panels /
   stat boxes inside them = 1px `--edge-6`; the Market edge tile inside Key factors = clickable tile (7% / hover 16% /
   selected 24%).
@@ -66,19 +74,28 @@ ours has none (the Drops page's greyscale freshness dot is open with the founder
 - **Charts** (U1, README §5.7–5.8, R6.3 "Dotted guides"): bars `--bar` lead / `--bar-2` second; tracks `--track`;
   guides `--viz-guide` dotted (`stroke-dasharray: 2 6`), horizontal only — no vertical gridlines; **no area fill under
   a line** (Database, Market edge, both profile equity charts, Drops price-move box, Odds sparklines and movement chart;
-  the reference draws none) and no loss wash; break-even rule `--viz-rule` (32%), solid. (The Live momentum ribbon,
-  whose filled band thickness IS the data, is open with the founder.) Three or more series = no
+  the reference draws none) and no loss wash; break-even rule `--viz-rule` (32%), solid. The no-fill rule is for LINE
+  charts only (S2): a bar-type mark keeps its fill under the bar rules — the Live momentum ribbon (band thickness = the
+  data) is player A `--viz-lead`, player B `--viz-second`, both from the centre line, break markers `--neg`, names white.
+  Three or more series = no
   new hue: series 1 `--viz-lead` 2.4px, 2 `--viz-white-lead`, 3 `--viz-tick`, 4 `--viz-white-lead` dashed `6 5`;
   at most 4 lines at once; identity from the legend / end plates. Icons are white; category colours do not exist.
 - **Shadows** (U5): `--shadow-menu` (drop-downs, type-ahead, info popovers, slider marker), `--shadow-pop` (floating
   pop-ups anchored to an element), `--shadow-modal` (centred modals / sheets). Overlays dim with `--backdrop`
   rgba(9,11,18,0.65) + `backdrop-filter: blur(3px)`, night and day; `--shadow-modal` is `0 40px 120px rgba(9,11,18,0.54)` and
-  `--open-card` `rgba(106,154,248,0.30)` (all three measured on OFFICIAL VERSION 1, which outranks the README). The only gradient is `--glow`.
+  `--open-card` `rgba(106,154,248,0.30)` (all three measured on OFFICIAL VERSION 1, which outranks the README).
+  **The only gradient is the page glow** `--page-bg` (S6): on `<html>` only — behind sidebar + content, scrolling with
+  the page, same geometry at every width — never on a card, modal or the sidebar panel (`body` is transparent). Geometry
+  is the reference's (1500×640 at 720px −120px; pixel-identical night + day).
   **The backdrop covers the content area only (R6.5):** every scrim starts at `--sf-side` (the sidebar's 252px) and is
   `clip-path: inset(0)` (not in print) so a sheet's shadow cannot reach the sidebar; the sidebar is never dimmed and stays
   clickable. A fixed layer opened *inside* a blurred scrim takes `--sf-side: 0`, and a tooltip positioned from viewport
   coordinates subtracts its containing block's origin (the scrim is its containing block). At ≤900px the sidebar is
   static and `--sf-side` is 0.
+  **A modal belongs to the page it was opened from (S1):** a user's click on a sidebar page closes every open modal /
+  sheet / pop-up (same as its ✕) and then navigates. Each overlay registers its closer on `window.sfOverlayClosers`; the
+  `#mainNav` handler runs them for trusted clicks only (the app's own programmatic nav clicks don't). The Night · Day ·
+  Auto switch is the exception: it changes the theme and leaves the modal open.
 - **Provider marks** (U4) are the providers' own files in `assets/brand/`, unmodified, shown as `<img>`; the buttons
   around them are site-style (`--inner`, no edge, 16% on hover, white label).
 - **Type** (README §7): two families — Hanken Grotesk 400–800 for words, IBM Plex Mono 400–800 (tabular) for every

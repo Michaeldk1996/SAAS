@@ -10651,6 +10651,12 @@
     repaint();
   }
 
+  // TEN-376 S1: a sidebar click closes every profile layer (match page, sheet, heat, modal) before it navigates
+  (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () {
+    if (!mounted || !(state.matchPage || state.sheet || state.heat || state.modal)) return;
+    state.matchPage = null; state.sheet = null; state.heat = false; state.modal = null; state.careerDrill = null;
+    repaint();
+  });
   function onKey(e) {
     if (e.key !== 'Escape') return;
     // The sheet sits above the modal, so Escape closes the topmost layer only.

@@ -1399,6 +1399,8 @@
     document.addEventListener('keydown', onOvKey, true);
     if (panel && panel.focus) panel.focus();
   }
+  // TEN-376 S1: a sidebar click closes this overlay before it navigates (closeOverlay is a no-op when closed)
+  (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () { closeOverlay(); });
   function closeOverlay() {
     if (!_ov || _ov.hasAttribute('hidden')) return;
     _ov.setAttribute('hidden', '');

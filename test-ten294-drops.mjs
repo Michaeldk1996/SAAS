@@ -670,7 +670,8 @@ test('page render: past 5 min the export\'s banner as drawn, dimmed rows, "as of
   assert.match(stale, /Prices updated <span class="do-mono">12 min<\/span> ago/);
   assert.doesNotMatch(stale, /Live · updated/, 'never a fake-fresh line');
   const amber = (await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })], ageS: 120 })).html;
-  assert.match(amber, /do-dot amber/);
+  assert.match(amber, /class="do-status aging"/, 'an aging feed steps the status text up to --text-soft (founder S3)');
+  assert.doesNotMatch(amber + stale, /do-dot/, 'status lines are text only: no dot (founder S3)');
   assert.doesNotMatch(amber, /FEED DISCONNECTED/);
   const down = (await renderPage({ rows: [], reachable: false })).html;
   assert.match(down, /FEED DISCONNECTED/);

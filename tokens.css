@@ -25,6 +25,12 @@
 }
 
 :root {
+  /* The page glow (founder S6, TEN-376): on the page background only — <html>, behind sidebar + content, scrolling with
+     the page, same geometry at every width. Never on cards, modals or the sidebar panel. --glow is the theme's value.
+     Geometry = OFFICIAL VERSION 1 (reference wins, R1): 1500×640 at 720px −120px matches it pixel-for-pixel night + day;
+     the written 1100×420 at −60px came out up to 8 RGB steps dimmer at the edges. */
+  --page-bg: radial-gradient(ellipse 1500px 640px at 720px -120px, var(--glow) 0%, rgba(52,70,170,0) 100%) no-repeat, var(--page);
+
   /* Text — same in night and day */
   --text:        #FFFFFF;   /* titles, names, odds, key figures */
   --text-soft:   #DDE0EA;   /* descriptions, second-level names */
@@ -71,11 +77,12 @@
   --viz-guide:       rgba(255, 255, 255, 0.12);
   --viz-rule:        rgba(255, 255, 255, 0.32);
   --viz-tick:        #8B96B5;
-  /* Calendar record modal Swing band only (founder TEN-376 Q2 item 4) */
-  --viz-hard:        #6A9AF8;
-  --viz-clay:        #F2B45F;
-  --viz-grass:       #45D6B0;
-  --viz-indoor:      #D9DBDF;
+  /* Calendar record modal Swing band ONLY (founder S4, TEN-376: the locked design, bundle `Stennisfy Website.html`, Player Stat
+     Boxes; bars 4px, radius 2px, opacity 0.75). Everywhere else surfaces are neutral text, Grass included. */
+  --viz-hard:        #4DB8FF;
+  --viz-clay:        #E8A84E;
+  --viz-grass:       #5CCB84;
+  --viz-indoor:      #DDE0EA;
 
   /* Shadows (floating layers only; identical in day). menu = drop-downs, type-ahead, info popovers, slider marker;
      pop = floating pop-ups anchored to an element (odds hover, verify card); modal = centred modals / sheets. */

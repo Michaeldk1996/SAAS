@@ -577,12 +577,12 @@
     var biggest = !blank && v.list.length ? Math.max.apply(null, v.list.map(function (r) { return r.drop; })).toFixed(1) + '%' : '—';
     var a = ageS(), status;
     if (!st.everLoaded && st.reachable) {
-      status = '<span class="do-status"><span class="do-dot off"></span><span class="do-status-t">Loading prices…</span></span>';
+      status = '<span class="do-status"><span class="do-status-t">Loading prices…</span></span>';
     } else if (fs === 'disconnected') {
       var mins = a == null ? '—' : Math.max(1, Math.round(a / 60)) + ' min';
-      status = '<span class="do-status"><span class="do-dot off"></span><span class="do-status-t">Prices updated <span class="do-mono">' + esc(mins) + '</span> ago</span></span>';
+      status = '<span class="do-status aging"><span class="do-status-t">Prices updated <span class="do-mono">' + esc(mins) + '</span> ago</span></span>';
     } else {
-      status = '<span class="do-status"><span class="do-dot' + (fs === 'amber' ? ' amber' : '') + '"></span><span class="do-status-t">Live · updated ' + esc(ago(a * 1000)) + '</span></span>';
+      status = '<span class="do-status' + (fs === 'amber' ? ' aging' : '') + '"><span class="do-status-t">Live · updated ' + esc(ago(a * 1000)) + '</span></span>';
     }
     return '<div class="do-head"><div class="do-head-l">' +
       '<h1 class="do-h1">Dropping Odds</h1>' +
@@ -773,6 +773,8 @@
 
   // ─── modal ──────────────────────────────────────────────────────────────────
   function closeModal() { st.drawer = null; st.drBook = null; st.tip = false; renderModal(); }
+  // TEN-376 S1: a sidebar click closes the price-move box before it navigates
+  (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () { if (st.drawer) closeModal(); });
   function renderModal() {
     var ov = document.getElementById('doOverlay');
     var r = st.drawer && st.rows.filter(function (x) { return x.id === st.drawer; })[0];

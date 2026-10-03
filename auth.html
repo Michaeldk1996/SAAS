@@ -43,7 +43,8 @@
   }
   *{ box-sizing:border-box; }
   html,body{ height:100%; }
-  body{ margin:0; background:var(--page); color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
+  html{ background:var(--page-bg); }   /* founder S6: the page glow, on the root only */
+  body{ margin:0; background:transparent; color:var(--text); font-family:var(--font-ui); -webkit-font-smoothing:antialiased; }
   a{ color:var(--link); text-decoration:none; }
   ::selection{ background:color-mix(in srgb, var(--bar) 30%, transparent); }
 

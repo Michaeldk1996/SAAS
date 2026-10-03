@@ -32,7 +32,8 @@
     --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
   *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--page); color:var(--text); font-family:var(--sf-font-ui);
+  html{ background:var(--page-bg); }   /* founder S6: the page glow, on the root only */
+  body{ margin:0; background:transparent; color:var(--text); font-family:var(--sf-font-ui);
     -webkit-font-smoothing:antialiased; padding-left:252px; }
   a{ color:var(--link); text-decoration:none; }
   ::selection{ background:var(--inner); }
@@ -691,9 +692,6 @@
   /* TEN-285 theme 12a "Ink solid" — role overrides (HANDOFF §3 token   */
   /* per element). Colours and hairlines only; layout is untouched.    */
   /* ================================================================= */
-  html, body{ background:var(--page); }
-  /* header status line: no dot (founder R3, TEN-376) */
-  [data-page="matches"] .mx-datastatus:not(.settled) .dot{ display:none !important; }
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */
   [data-page="matches"] .mx-daytabs button.active{ color:var(--text); border-bottom-color:var(--text); }
   [data-page="matches"] .mx-daytabs button.is-today .dtop::before{ background:var(--bar); }

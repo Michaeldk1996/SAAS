@@ -3456,7 +3456,8 @@ check('the all-stores table covers every data store the module reads', () => {
   // helper singletons (logic, not data — they carry no player rows). MarketEdgeCore
   // (TEN-310) is the Market edge compute both surfaces share; HouseRatings (TEN-327) is the one
   // Serve / Return rating helper every surface shares.
-  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings']);
+  // sfOverlayClosers (TEN-376 S1): the shell's list of overlay-close functions a sidebar click runs — functions, no rows.
+  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call

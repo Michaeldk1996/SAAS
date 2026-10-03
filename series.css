@@ -31,7 +31,7 @@
 /* ── page frame (export §"Page frame") ── */
 /* Export page background is var(--page), two hex off the app's --bg. Scoped to
    the tab so it reverts the moment another page is shown — the body is never touched. */
-[data-page="series"] { background: var(--page); min-height: 100vh; }
+[data-page="series"] { background: transparent; min-height: 100vh; }   /* transparent: the root's --page-bg (page + glow) shows through, as on OFFICIAL VERSION 1 (founder S6) */
 [data-page="series"] .sr-wrap {
   max-width: 1360px;
   margin: 0 auto;

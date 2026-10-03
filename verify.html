@@ -14,13 +14,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <style>
   *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--page); color:var(--text); font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+  html{ background:var(--page-bg); }   /* founder S6: the page glow, on the root only */
+  body{ margin:0; background:transparent; color:var(--text); font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
   a{ color:var(--link); text-decoration:none; } a:hover{ color:var(--link); }
   ::selection{ background:color-mix(in srgb, var(--bar) 35%, transparent); }
 
   .page{ display:flex; justify-content:center; align-items:center; padding:48px 16px; min-height:100vh; }
   .card{ width:520px; max-width:100%; border:none; border-radius:20px; overflow:hidden; background:var(--card); box-shadow:var(--shadow-pop); position:relative; }
-  .card .glow{ position:absolute; inset:0; background:radial-gradient(600px 320px at 20% -10%, color-mix(in srgb, var(--bar) 16%, transparent), transparent 60%); pointer-events:none; }
   .inner{ position:relative; padding:40px 40px 36px; }
 
   .brand-id{ display:flex; align-items:center; gap:11px; margin-bottom:30px; }
@@ -55,7 +55,6 @@
 <body>
   <div class="page">
     <div class="card">
-      <div class="glow"></div>
       <div class="inner">
         <div class="brand-id">
           <img src="assets/logo-dark-transparent.png" alt="Stennisfy">
