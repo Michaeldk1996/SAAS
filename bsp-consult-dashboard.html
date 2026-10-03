@@ -360,7 +360,7 @@
   [data-page="matches"] #matchlist > .mx-daydivider,
   [data-page="matches"] #matchlist > .mc-promo,
   [data-page="matches"] #matchlist > .mx-empty{ grid-column:1 / -1; }
-  [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; color:var(--mc-muted); font-size:13.5px; font-family:var(--mx-font-ui); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); background:var(--mc-card); }
+  [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; font-family:var(--mx-font-ui); }
 
   /* TEN-179 item 2 — the Upcoming card takes the Completed card's box model, which is
      what "one component in two states" means: the card itself carries NO padding, and
@@ -18489,6 +18489,9 @@ document.getElementById('dayTabs').addEventListener('click', e => {
 function setMatchesView(view, opts){
   const next = (view === 'completed') ? 'completed' : 'upcoming';
   state.view = next;
+  // TEN-377 README §8: switching Upcoming / Completed KEEPS the selected date when the other
+  // rail shows it (yesterday and today are on both); otherwise it lands on Today as before.
+  const keepDay = state.day;
   state.day  = 'today';
   const tabs = document.getElementById('dayTabs');
   const todayBtn = tabs && tabs.querySelector('button[data-day="today"]');
@@ -18510,7 +18513,12 @@ function setMatchesView(view, opts){
   // and mxLandOnNearestDay() only walks visible tabs, so the chrome has to be settled first;
   // renderMatches() runs it again, which is idempotent.
   updateMatchesHeaderChrome();
-  mxLandOnNearestDay();
+  const keepBtn = keepDay && keepDay !== 'today' && tabs && tabs.querySelector(`button[data-day="${keepDay}"]`);
+  if (keepBtn && keepBtn.style.display !== 'none' && keepBtn.offsetParent !== null) {
+    state.day = keepDay; setActiveButton(tabs, keepBtn);
+  } else {
+    mxLandOnNearestDay();
+  }
   renderMatches();
 }
 
@@ -33342,6 +33350,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .match-card.cmpl .mc-tourn{ font-size:11.5px; }
   [data-page="matches"] .match-card.cmpl .mc-round{ border:none; box-shadow:inset 0 0 0 1px var(--edge-10); color:var(--text); }
   [data-page="matches"] .match-card.cmpl .mc-altdate-inl{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
+  /* README §8: empty day / no filter results = top-level card, centred 13px --text-label */
+  [data-page="matches"] .mx-empty{ font-size:13px; color:var(--text-label); background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:14px; }
   [data-page="matches"] .mc-head .mc-cmpl-head{ margin-left:auto; margin-right:10px; flex:none; display:grid; grid-template-columns:38px 14px 42px 44px; gap:0 4px; }
   [data-page="matches"] .mc-head .mc-cmpl-head span{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap; }
   [data-page="matches"] .mc-head .mc-cmpl-head span:first-child, [data-page="matches"] .mc-head .mc-cmpl-head span:last-child{ text-align:right; }

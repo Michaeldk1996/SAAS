@@ -150,3 +150,14 @@ test('founder Q1: Completed surface soft, round chip inner + 10% inset white, se
   assert.match(lastRule(`${M} .match-card.cmpl .mc-analysis`), /font-weight:600/);
   assert.match(lastRule(`${M} .match-card .mc-head`), /color-mix\(in srgb, var\(--text\) 3\.5%, transparent\)/, 'Upcoming hairlines: reference 3.5%');
 });
+
+test('README §8: Upcoming / Completed switch keeps the selected date when the other rail shows it', () => {
+  const body = slice('setMatchesView');
+  assert.match(body, /const keepDay = state\.day;/);
+  assert.match(body, /if \(keepBtn && keepBtn\.style\.display !== 'none' && keepBtn\.offsetParent !== null\) \{\n    state\.day = keepDay;/);
+  assert.match(body, /\} else \{\n    mxLandOnNearestDay\(\);/, 'a day the other rail does not show still lands as before');
+});
+
+test('README §8: empty day / no results = card tone, centred 13px label', () => {
+  assert.match(lastRule(`${M} .mx-empty`), /font-size:13px; color:var\(--text-label\); background:var\(--card\)/);
+});
