@@ -84,7 +84,11 @@ ours has none.
   pop-ups anchored to an element), `--shadow-modal` (centred modals / sheets). Overlays dim with `--backdrop`
   rgba(9,11,18,0.65) + `backdrop-filter: blur(3px)`, night and day; `--shadow-modal` is `0 40px 120px rgba(9,11,18,0.54)` and
   `--open-card` `rgba(106,154,248,0.30)` (all three measured on OFFICIAL VERSION 1, which outranks the README).
-  **The only gradient is the page glow** `--page-bg` (S6): on `<html>` only — behind sidebar + content, scrolling with
+  **The only colour gradient is the page glow** `--page-bg` (S6) — the rule is about colour gradients used as
+  decoration (T2). *Allowed:* functional masks (an overflow fade to transparent, e.g. profile chips) and greyscale
+  patterns that mark small-sample / missing data (white ≤ 12% on the surface, no hue, e.g. the Playing Styles hatch).
+  *Pending their page packages:* the court-speed scales (Tournament tab + Tournaments page → flat; Key factors' bar is
+  already flat white) and the price-journey bar on match cards (Today's Matches → flat bars per the bar rule). The glow: on `<html>` only — behind sidebar + content, scrolling with
   the page, same geometry at every width — never on a card, modal or the sidebar panel (`body` is transparent). Geometry
   is the reference's (1500×640 at 720px −120px; pixel-identical night + day).
   **The backdrop covers the content area only (R6.5):** every scrim starts at `--sf-side` (the sidebar's 252px) and is

@@ -131,7 +131,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Font weight.** Valid iff one of **{400, 500, 600, 700, 800}**. **Test:** any other weight is wrong. Heavy 600/700/800 use is the design — do not tone it down.
 
-- **Gradients, shadows, blur.** The only gradient is the page glow `--page-bg` (`--glow`), on `<html>` only — never a card, modal or the sidebar panel (founder TEN-376 S6). Shadows are `--shadow-menu` / `--shadow-pop` / `--shadow-modal`, overlays `--backdrop` + `blur(3px)` (founder TEN-376 U5). **Test:** the colour lint passes and every `box-shadow` on a floating layer is one of the three tokens.
+- **Gradients, shadows, blur.** The only colour gradient is the page glow `--page-bg` (`--glow`), on `<html>` only — never a card, modal or the sidebar panel (founder TEN-376 S6). Functional masks (overflow fades) and greyscale small-sample hatches (white ≤ 12%) are not decoration and are allowed (T2). Shadows are `--shadow-menu` / `--shadow-pop` / `--shadow-modal`, overlays `--backdrop` + `blur(3px)` (founder TEN-376 U5). **Test:** the colour lint passes and every `box-shadow` on a floating layer is one of the three tokens.
 
 - **Em dash vs zero.** Absent value renders **"—"**, never `0`. Genuinely-zero value renders **`0`**, never an em dash. **Test:** absent, or really zero? Never interchangeable.
 
