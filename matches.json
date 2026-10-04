@@ -227644,13 +227644,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.33,
+      "p2": 3.25,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.33,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 3.25,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 13091,
@@ -236812,13 +236818,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.11,
+      "p2": 6.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.11,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 6.5,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 9515,
