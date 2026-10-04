@@ -43,6 +43,8 @@ const MUTANTS = [
   ['TEN-325: no settlement note on Flat 1u', "  metrics.flat.ret = true;", "  metrics.flat.ret = false;"],
   ['hot lines: header loses the role', "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}", "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}"],
   ["review 2: Laver Cup back in Form", "&& !FH_FORM_NOT_ATP_RECORD.test(", "&& !/^$/.test("],
+  ['TEN-383: legacy profile tile back on every match', '  const last10 = formRows.slice(0, 10);', '  const last10 = recentMatches.slice(0, 10);'],
+  ['TEN-383: legacy profile list back on every match', "  const formMatches = formSurf === 'All' ? formRows : formRows.filter(", "  const formMatches = formSurf === 'All' ? recentMatches : recentMatches.filter("],
 ];
 const SUITES = ['test-ten330-form.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.
@@ -80,6 +82,7 @@ try {
 const pp2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 const PP2_MUTANTS = [
   ['TEN-383: Laver Cup back in the profile Recent form', '    var frows = lrows.filter(function (x) { return inForm(x.m); });', '    var frows = lrows;'],
+  ['TEN-383: the profile header filtered (Current run is a record)', '    var rows = ledgerMatches(p);\n    // One filtered set', '    var rows = ledgerMatches(p).filter(inForm);\n    // One filtered set'],
   ['TEN-383: the profile list drifts (Davis Cup out)', 'var FORM_NOT_ATP_RECORD = /laver cup|', 'var FORM_NOT_ATP_RECORD = /laver cup|davis cup|'],
   ['TEN-383: the ledger window counts Laver Cup again', '    var all = ctx.ledgerRows.filter(function (x) { return inForm(x.m); });', '    var all = ctx.ledgerRows;'],
 ];

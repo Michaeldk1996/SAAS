@@ -338,6 +338,8 @@ test('TEN-383: the Player Profile Recent form (ribbon, chips, ledger) counts the
   assert.ok(!ctx.formRows.some(x => /laver/i.test(t(x.m))), 'ledger: no Laver Cup row');
   assert.ok(ctx.filtered.some(r => /davis/i.test(t(r))) && ctx.filtered.some(r => /united/i.test(t(r))), 'Davis Cup and United Cup stay');
   assert.equal(ctx.ledgerRows.length, R.length, 'records keep every match (sheet lookup, career drills)');
+  assert.equal(ctx.rows.length, R.length, 'the header (Current run, Last played) keeps every match — a record, not form');
+  assert.equal(I.currentRun(ctx.rows).won, false, 'Current run reads the latest match played, a Laver Cup loss');
   const r10 = I.formRate(ctx.filtered.slice(-10));
   assert.equal(Math.round(r10.won / r10.n * 1000) / 10, PIPE.recentFormPct(R), 'profile last 10 = the card\'s Recent form %');
   assert.equal(PIPE.recentFormPct(R), 100);
@@ -349,4 +351,15 @@ test('TEN-383: the Player Profile Recent form (ribbon, chips, ledger) counts the
   const led = I.renderLedger(P0, Object.assign(I.build(P0), { ledgerOpen: true }));
   assert.ok(!/Laver/.test(led), 'the full ledger lists no Laver Cup match');
   assert.match(led, /Window: 11 matches/, 'the ledger window counts the 11 form rows');
+});
+
+// The legacy renderer (buildPlayerProfileHtml, reached on ?pp2=0) is ~900 lines of page-coupled template and is not
+// executed here; these source checks pin its two TEN-383 reads so a revert cannot pass silently. Mutations: the tile's
+// last10 or the list's formMatches back on the unfiltered recentMatches.
+test('TEN-383: the legacy profile renderer reads the Form list for its tile and list, every match for the season', () => {
+  const src = slice('buildPlayerProfileHtml');
+  assert.match(src, /const formRows = recentMatches\.filter\(m => !FH_FORM_NOT_ATP_RECORD\.test\(/);
+  assert.match(src, /const last10 = formRows\.slice\(0, 10\);/);
+  assert.match(src, /const formMatches = formSurf === 'All' \? formRows : formRows\.filter\(/);
+  assert.match(src, /const seasonMatches = recentMatches\.filter\(/, 'the season record keeps every match');
 });
