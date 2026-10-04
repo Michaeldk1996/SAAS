@@ -40,7 +40,7 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
   'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhRetNote', 'fhFormDataRows', 'fhSegStyle', 'fhSegTrack'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
-  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
+  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'FH_H2H_NOT_ATP_RECORD', 'FH_FORM_NOT_ATP_RECORD', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
@@ -265,4 +265,21 @@ test('Form filters: one nowrap row of four Darker tracks, Last N on its own trac
   assert.match(t, /^<div class="fh-track" style="display:inline-flex; flex:0 0 auto; gap:4px; background:var\(--card\); border:1px solid var\(--edge-6\); border-radius:9px; padding:3px;">/);
   assert.match(t, /padding:5px 11px;[^"]*font-weight:700; color:var\(--text\); background:var\(--inner\); border:1px solid var\(--edge-10\);[^>]*>Last 10</);
   assert.match(t, /font-weight:600; color:var\(--text-label\); background:transparent; border:1px solid transparent;[^>]*>Last 5</);
+});
+
+// Founder review 2 (TEN-380, 2026-10-04) item 5: Laver Cup is not in the ATP's official win-loss record, so it is never a
+// Form row — not in the last 10, the W–L or the hot lines; the next match slides in. Davis Cup still counts (the ATP counts it).
+// Mutation: the FH_FORM_NOT_ATP_RECORD filter dropped.
+test('review 2: a Laver Cup match is not a Form row; Davis Cup still is', () => {
+  const R = [
+    row('2026-07-18', 'L. Laver', false, [[4, 6], [6, 3], [8, 10]], { tournament: 'Laver Cup' }),
+    row('2026-07-17', 'D. Cup', true, [[6, 4], [6, 4]], { tournament: 'Davis Cup - Finals' }),
+    row('2026-07-10', 'B. Beta', true, [[6, 4], [6, 3]]),
+  ];
+  const m = { id: 'x', p1: 'A. Tester', p2: 'Z. Zed', p1Key: 1, p2Key: 2, date: '2026-07-20', surface: 'Hard', _fhFormRows: [R, []], _fhCloses: [null, null] };
+  const P = S.fhFormPlayer(m, 0, S.fhStateFor(m).form);
+  const all = P.shown;
+  assert.ok(!all.some(r => /laver/i.test(r.tournRaw || r.tourn || '')), 'no Laver Cup row');
+  assert.ok(all.some(r => /davis/i.test(r.tournRaw || r.tourn || '')), 'Davis Cup stays (it counts in the ATP record)');
+  assert.equal(P.wins, 2, 'W–L: 2–0 without the Laver Cup loss');
 });

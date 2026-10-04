@@ -13604,7 +13604,8 @@ function fhFormPlayer(m, idx, st){
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
     return r;
   }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself
-    && !r.wo);   // N2 (TEN-312): a walkover is not a match played — no bar, no row, no count, no price, no line
+    && !r.wo   // N2 (TEN-312): a walkover is not a match played — no bar, no row, no count, no price, no line
+    && !FH_FORM_NOT_ATP_RECORD.test(String(r.tournRaw || r.tourn || '')));   // founder review 2: Laver Cup is not a Form row
   const S = st, SURFSEL = S.surf, favOn = S.role === 'fav', dogOn = S.role === 'dog';
   const NWIN = S.wmode === 'n' ? S.n : 999, DWIN = S.wmode === 'n' ? null : S.days;
   const WLBL = S.wmode === 'n' ? 'Last ' + S.n : 'Last ' + S.days + ' days';
@@ -13951,6 +13952,10 @@ const FH_H2H_LEVELS = ['ATP', 'CH', 'ITF'];
 // (ruling 2026-09-25, TEN-273: "do as the ATP"). Same list as the pipeline's
 // H2H_NOT_ATP_RECORD: Hopman Cup and exhibitions never enter the meeting list.
 const FH_H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+// Form (founder review 2, TEN-380, 2026-10-04): a match outside the ATP's official win-loss record is never a Form row —
+// not in the last 10, the record, v market, the hot lines or Key factors' Recent form. Laver Cup is the case the record
+// leaves out (Davis Cup and United Cup count, as the ATP counts them), plus the exhibitions above.
+const FH_FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FH_H2H_NOT_ATP_RECORD.source, 'i');
 // A meeting's level. Names that settle it come first: a junior event is never a pro
 // meeting (null: unclassified, never guessed), an ITF-named event (M15…, W25…, "ITF") is
 // ITF — the form shards' tier calls some of those 'challenger'. Then the tour level: the

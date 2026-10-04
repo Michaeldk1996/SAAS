@@ -86,6 +86,10 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   row / bar opens the shared sheet. Form has no row or tooltip renderer of its own.
 - **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
   the form shards; the tab drops any that reach it (career-history rows included).
+- **A Laver Cup match never becomes a Form row** (founder TEN-380, 2026-10-04 07:33Z): not in the last 10, the W–L, v market,
+  the hot lines or Key factors' Recent form — the next match slides in. Exhibitions (`FH_H2H_NOT_ATP_RECORD`) are out too.
+  Davis Cup and United Cup stay (team events the founder did not exclude). One constant, `FH_FORM_NOT_ATP_RECORD`, applied
+  in `fhFormPlayer`. **Test:** `test-ten330-form.mjs` "review 2: a Laver Cup match is not a Form row; Davis Cup still is".
 - **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at
   `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G9).
 - **Retirement settlement note** (TEN-325): the v-market pill's tooltip and each Flat 1u value's tooltip carry
@@ -198,8 +202,9 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - The pipeline keeps **ATP, Challenger and ITF singles** (`H2H_EVENT_TYPES`). Exhibitions,
   doubles, juniors, UTR and women's events stay out. **Test:** the set holds exactly these three
   singles types.
-- **Team events count exactly as the ATP counts them in its official win-loss record** (ruling
-  2026-09-25, TEN-273: "do as the ATP"). Davis Cup, ATP Cup, United Cup, Laver Cup, the Olympics
+- **H2H: team events count exactly as the ATP counts them in its official win-loss record** (ruling
+  2026-09-25, TEN-273: "do as the ATP"). **Exception — Form:** Laver Cup is not a Form row (founder TEN-380, 2026-10-04,
+  rule above); this H2H rule is unchanged. Davis Cup, ATP Cup, United Cup, Laver Cup, the Olympics
   and the Next Gen Finals count. Hopman Cup (ITF-sanctioned, mixed) and exhibitions (UTS, Six Kings
   Slam, Kooyong, Mubadala…) never do, even when api-tennis tags them "Atp Singles". One list,
   applied in `fetchH2H` (`H2H_NOT_ATP_RECORD`) and in the career-history join

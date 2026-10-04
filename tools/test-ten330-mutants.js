@@ -6,8 +6,7 @@ const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
   ['Q27: a name links with no profile behind it', "  const has = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)];", "  const has = key != null;"],
-  ['N2: a walkover becomes a form row again', "  }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself\n    && !r.wo);",
-    "  }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk));"],
+  ["N2: a walkover becomes a form row again", "    && !r.wo   // N2 (TEN-312)", "    && true   // N2 (TEN-312)"],
   ['ruling A: a retirement left unpriced', '    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }\n    const d = fhDayNum(r.date); r.ago',
     '    if (c && !r.ret){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }\n    const d = fhDayNum(r.date); r.ago'],
   ['rows: " ret." dropped', "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');", "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ');"],
@@ -43,6 +42,7 @@ const MUTANTS = [
   ['TEN-325: no settlement note on the pill', "P.srcNote ? 'closing odds: ' + P.srcNote : '', retNote].filter(Boolean)", "P.srcNote ? 'closing odds: ' + P.srcNote : ''].filter(Boolean)"],
   ['TEN-325: no settlement note on Flat 1u', "  metrics.flat.ret = true;", "  metrics.flat.ret = false;"],
   ['hot lines: header loses the role', "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}", "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}"],
+  ["review 2: Laver Cup back in Form", "&& !FH_FORM_NOT_ATP_RECORD.test(", "&& !/^$/.test("],
 ];
 const SUITES = ['test-ten330-form.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.
