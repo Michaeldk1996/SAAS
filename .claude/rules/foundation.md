@@ -71,7 +71,12 @@ ours has none.
   specialist chips, stale, Odds PRE-MATCH / BOOKS) use the FAV-badge treatment — `--inner`, no edge, Hanken 10px caps
   0.10em 700, `--text-label`. **Tier chips** are caps labels too (GS, FNL → Hanken); only a pure figure ("500", a
   count) stays IBM Plex Mono (R5). LIVE = no badge, white caps text, no dot. STEAM = `--selected` + `--edge-16`, white caps.
-- **Charts** (U1, README §5.7–5.8, R6.3 "Dotted guides"): bars `--bar` lead / `--bar-2` second; tracks `--track`;
+- **Charts** (U1, README §5.7–5.8, R6.3 "Dotted guides"): bars `--bar` lead / `--bar-2` second; tracks `--track`.
+  **Locked exception — white bars on Match analysis** (founder TEN-383, 2026-10-04, "keep white, as the README draws it"):
+  the Market edge band and line win-rate bars, Profit at 1u flat, the H2H record and tug bars (H2H tab and Key factors), and the Key
+  factors court-speed and Fav wins bars are `--white-bar` lead (#E7E9EE solid) / `--white-bar-2` (white at 45%). Every other data
+  bar is `--bar` #007AFF / `--bar-2`. **Test:** `test-ten336-market-edge.mjs` "Q3" + "TEN-380 profit chart",
+  `test-ten331-h2h.mjs` tug (`--white-bar`), `test-ten314-gate.mjs` (`var(--white-bar)`); the rest of this rule:
   guides `--viz-guide` dotted (`stroke-dasharray: 2 6`), horizontal only — no vertical gridlines; **no area fill under
   a line** (Database, Market edge, both profile equity charts, Drops price-move box, Odds sparklines and movement chart;
   the reference draws none) and no loss wash; break-even rule `--viz-rule` (32%), solid. The no-fill rule is for LINE
