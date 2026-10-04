@@ -2537,8 +2537,8 @@
     },
     "12166494": {
       "fixtureId": "id1200303175094660",
-      "mappedAt": "2026-10-03T05:46:05Z",
-      "missHeldH": 120.25,
+      "mappedAt": "2026-10-04T18:17:48Z",
+      "missHeldH": 156.78,
       "missRuns": 5,
       "missSince": "2026-09-28T05:30:57Z",
       "orient": "same",
@@ -3388,30 +3388,19 @@
   "missAudit": {
     "observed": {
       "measuredRunsPerDay": 18.7,
-      "missResolutionHoursMax": 148.0,
+      "missResolutionHoursMax": 156.78,
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 142,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
       "observedSpanDays": 21.43,
       "projectedTtlUnitsPerDay": 4.7,
       "runs": 400,
-      "spentRuns": 230,
+      "spentRuns": 231,
       "ttlBitRuns": 101,
       "ttlBitShare": 0.253,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-13T07:00:07Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 1
-      },
       {
         "at": "2026-09-13T08:00:07Z",
         "fixturesUnitsSpent": 0,
@@ -7800,9 +7789,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 24
+      },
+      {
+        "at": "2026-10-04T18:17:48Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 24
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-04T14:54:09Z"
+  "updatedAt": "2026-10-04T18:17:48Z"
 }
