@@ -52,7 +52,9 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   `--line` rule; columns Price · Won · needs · Won · **Edge** · 1u stake (Needs and W–L columns gone — the W–L is the band
   pop-up's Record). One 7px bar per band: `--white-bar` fill = Won through the D2 gate, a 2px `--viz-tick` tick = Needs
   (any n > 0; decisions §1 — no tab override re-points `--viz-tick`). Edge = (Won − Needs) in pp, 1 dp, signed colours,
-  through the same gate as Won. **Today's band (founder Q2, 2026-10-03) = a neutral `--wash-5` row wash, no ring, no blue**
+  through the same gate as Won. **The 1u stake follows the same gate** (founder TEN-380 review item 6, 2026-10-04): Won,
+  Edge and 1u dash together under n = 5, grey at 5–9 — never a stake beside two dashes (`test-ten310-market-edge.mjs` §6 /
+  §4). **Today's band (founder Q2, 2026-10-03) = a neutral `--wash-5` row wash, no ring, no blue**
   (the open band takes the same wash); the caps word TODAY stays. **Bars (founder Q3, ruling 8):** per band the player with
   the higher (gated) rate is solid `--white-bar`, the other `--white-bar-2` (45%); a tie or a rival with no rate leads;
   figures and text stay white for both. Tests: "Q3" + "band rows" in `test-ten336-market-edge.mjs`.

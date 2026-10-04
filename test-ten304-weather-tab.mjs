@@ -149,7 +149,7 @@ test('Q21: the heat flag reads "Heat — high" at watch and at concern, at the W
   assert.equal(text(elements(watch, 'wx-reason')[0]), 'Heat — high');
   assert.equal(text(elements(concern, 'wx-reason')[0]), 'Heat — high');
   assert.equal(text(elements(calm, 'wx-reason')[0]), 'No concern', 'below the watch cut-off no flag');
-  assert.match(elements(watch, 'wx-dot')[0], /background:var\(--text-soft\)/); assert.match(elements(concern, 'wx-dot')[0], /background:var\(--text\)/);   // no severity colour (founder R4)
+  assert.equal(elements(watch, 'wx-dot').length + elements(concern, 'wx-dot').length, 0, 'TEN-380 review item 2: the flag is text only, no status dot');
   assert.ok(!/Feels like \d/.test(watch + concern), 'never the old "Feels like {v}°" flag');
 });
 
@@ -217,19 +217,18 @@ test('the test-only pixel fixture never ships: not referenced by the dashboard, 
 test('Weather tooltips use the ONE shared tooltip: data-aotip + tabindex, 250 ms delay, hover and keyboard focus', () => {
   const f = file((d, h) => d === '2026-09-27' && h === 14 ? { gusts: 40, feels: 36 } : {});   // two flags → "+1"
   const html = render(f);
-  const targets = { chip: attrsOf(html, 'wx-tbd'), more: attrsOf(html, 'wx-more'), day: attrsOf(html, 'wx-day') };
-  assert.equal(targets.chip.length, 1); assert.ok(targets.more.length >= 1); assert.equal(targets.day.length, 7);
+  const targets = { more: attrsOf(html, 'wx-more'), day: attrsOf(html, 'wx-day') };
+  assert.equal(attrsOf(html, 'wx-tbd').length, 0, 'TEN-380 review item 1: no THRESHOLDS chip'); assert.ok(targets.more.length >= 1); assert.equal(targets.day.length, 7);
   for (const [k, list] of Object.entries(targets)) for (const a of list) {
     assert.equal(a.tabindex, '0', k + ' is keyboard-focusable');
     assert.ok(a['data-aotip'] && a['data-aotip'].length > 20, k + ' carries a shared-tooltip body');
     assert.ok(!('title' in a) && !('data-sftip' in a), k + ': no native title, no second tooltip');
   }
   assert.ok(!/data-sftip|\bsfTip|SF_TIP/.test(HTML), 'no second tooltip component on the page');
-  assert.match(targets.chip[0]['data-aotip'], /Gusts: watch ≥ 25 · concern ≥ 35 km\/h/);
   assert.match(targets.more[0]['data-aotip'], /Heat — high/);   // founder Q21: the file's words
   assert.match(targets.day[0]['data-aotip'], /Max gusts.*40 km\/h.*Open-Meteo/s);
   for (const type of ['focusin', 'mouseover']) {
-    for (const a of [targets.chip[0], targets.more[0], targets.day[0]]) {
+    for (const a of [targets.more[0], targets.day[0]]) {
       const T = buildTips(); T.api.initAOddsTips();
       const el = T.mkEl(a);
       T.fire(type, el);
@@ -512,16 +511,14 @@ test('api-tennis 02:00Z placeholder = no time: "MATCH · TBC", "time TBC", no he
 });
 
 // ── TEN-337 re-verification against Match Analysis Progression v1.dc.html (TEN-312) ──
-// Mutation: drop `min-height:28px` from the chip row (every block below moves 5 px up from where the file draws it).
-test('no STATE switcher ships, and the chip row keeps the file\'s STATE-row height (28px) so the strip sits where the design draws it', () => {
+// TEN-380 review item 1 (founder 2026-10-04): the THRESHOLDS TBD chip is an internal note and never ships, so the STATE row
+// goes with it — the tab opens on the strip header, as the reference draws it. Mutation: the chip row back.
+test('no STATE switcher and no THRESHOLDS chip ship; the tab opens on the strip header', () => {
   const html = render(file(() => ({})));
-  const row = elements(html, 'wx-chiprow');
-  assert.equal(row.length, 1);
-  assert.match(row[0].slice(0, row[0].indexOf('>')), /min-height:28px; margin-bottom:18px;/);
-  assert.equal(elements(row[0], 'wx-tbd').length, 1, 'the THRESHOLDS TBD chip stays (D8)');
+  assert.equal(elements(html, 'wx-chiprow').length + elements(html, 'wx-tbd').length, 0);
+  assert.ok(!/THRESHOLDS TBD/.test(html), 'no internal note in the product');
+  assert.match(html, /^<div class="wx-tab"[^>]*><div class="wx-head"/, 'the strip header comes first');
   for (const s of ['a · Calm week', 'b · One problem day', 'c · Match day red', 'd · Indoor', 'e · Unavailable', '>STATE<']) assert.ok(!html.includes(s), s);
-  const indoor = render(null, {}, M, { key: 'Basel', indoor: true, file: null });
-  assert.equal(elements(indoor, 'wx-chiprow').length, 1, 'indoor keeps the same row');
 });
 
 // Mutation: write the pace copy's apostrophe as ’ (U+2019) — the file (DF wxFor) and the spec §5 write ASCII '.
@@ -556,5 +553,21 @@ test('TEN-380: no legend row, no "Forecast updated" stamp (the stale line stays)
   assert.match(html, /FROM TOURNAMENT/);
   assert.match(html, /font-size:9\.5px;[^"]*border:1px dashed var\(--edge-10\);">FROM TOURNAMENT</);
   assert.ok(elements(html, 'wx-day').every(d => /border:1px solid var\(--edge-(6|24)\)/.test(d)), 'day cards --edge-6 (match day keeps its edge, Q1)');
-  assert.match(html, /THRESHOLDS TBD/, 'the THRESHOLDS chip stays');
+  assert.ok(!/THRESHOLDS TBD/.test(html), 'TEN-380 review item 1: no THRESHOLDS chip');
+});
+
+// TEN-380 review items 2 + 3 (founder 2026-10-04): status lines are text only — no round dot on a day line, the verdict
+// line or a factor tile; and the court pace prints the figure only when conditions are calm ("usual" has no source,
+// ruling 14). Mutations: a dot back on the day reason / verdict / tile; "AS USUAL" or "close to its usual" back.
+test('TEN-380 review: no status dots anywhere on the tab; calm court pace = the figure only, no "usual"', () => {
+  const flagged = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
+  const calm = render(file(() => ({})));
+  for (const h of [flagged, calm]) {
+    assert.ok(!/border-radius:50%/.test(h), 'no round dot on the tab');
+    assert.equal(elements(h, 'wx-dot').length, 0);
+  }
+  const pace = elements(calm, 'wx-tile').find(t => /data-factor="pace"/.test(t));
+  assert.ok(pace, 'pace tile renders');
+  assert.ok(!/usual/i.test(text(pace)), 'no "usual" on a calm day: ' + text(pace));
+  assert.match(text(pace), /1\.17/, 'the figure still prints');
 });

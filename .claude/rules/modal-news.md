@@ -10,6 +10,10 @@ over this file where they conflict.
   `_newsData` as the News page. **Test:** `test-ten333-news-tab.mjs` "unavailable" / "groups".
 - **Rolling 5 days on the page too** (`A_NEWS_WINDOW_DAYS = 5`, = the builder's `WINDOW_DAYS`): a stale feed never shows
   an article older than 5 days as "recent". **Test:** a 6-day-old row is hidden, a 4-day-old row shows.
+- **One story, one line** (founder TEN-380 review, 2026-10-04, "remove duplicates"): two headlines in one player's feed whose
+  first five words match (hyphens split words; case and punctuation ignored) are the same story re-written — only the newest
+  shows, on the tab and in the Key factors box (`aNewsStoryKey`). Measured 2026-10-04: 1 of 22 articles across 55 players.
+  **Test:** `test-ten341-key-factors.mjs` "one story, one line".
 - **Attribution is data:** `player_key` is the join. A row without a key falls back to the News page's fail-closed
   headline resolver (`newsPlayerFor`: exactly one roster surname in the first two words). A keyed row is never
   re-attributed by its headline. **Test:** a row keyed to another player whose headline leads with this player's surname

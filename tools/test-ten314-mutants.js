@@ -94,7 +94,7 @@ const MUTANTS = [
   ['motion: sigIn 300ms', ".ma-sigin{ animation:sigIn .2s cubic-bezier(.2,.7,.3,1); }", ".ma-sigin{ animation:sigIn .3s cubic-bezier(.2,.7,.3,1); }"],
   ['motion: the frame without sigIn', "<div class=\"ma-pop${enter ? ' ma-sigin' : ''}${c ? ' ' + c : ''}\"", "<div class=\"ma-pop${c ? ' ' + c : ''}\""],
   ['motion: a re-render replays the entrance', "  if (popKey && popKey === E._popKey) maPopNoReplay(host);\n", ''],
-  ['rows: the file\'s old grid instead of README §5\'s (TEN-380)', "const MA_ROW_COLS = '40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px';", "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';"],
+  ['rows: the file\'s old grid instead of README §5\'s (TEN-380)', "const MA_ROW_COLS = '40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px';", "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';"],
   ['rows: the head back on the page tone (TEN-380)', "background:${o.bg || 'var(--card)'}; padding:${o.headPad || '6px 6px 7px'};", "background:${o.bg || 'var(--page)'}; padding:${o.headPad || '6px 6px 7px'};"],
   ['rows: header not sticky', "<div class=\"ma-rows-head\" style=\"position:sticky; top:0;", "<div class=\"ma-rows-head\" style=\"position:relative; top:0;"],
   ['rows: a row loses its sheet opener', "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''}${r.click || ''} style=\"display:grid; grid-template-columns:${COLS};", "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''} style=\"display:grid; grid-template-columns:${COLS};"],

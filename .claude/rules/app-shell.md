@@ -22,7 +22,9 @@ to it: the 12a design's aside computes 252px.
 ## The user row is a plain link — no chevron (founder ruling TEN-286 item 6, 2026-09-26)
 
 **The rule.** `.sf-userchip` is an `<a href="account.html">` holding the avatar, name and plan only.
-There is no `.sf-chev` element and no menu behind the row.
+There is no `.sf-chev` element and no menu behind the row. **Signed out there is no account** (founder TEN-380 review,
+2026-10-04): the row reads "Sign in" with no avatar initials and no plan line (`paintAcct` hides both; signing in restores
+them). Test: `test-ten314-modal-frame.mjs` "review item 5".
 
 **The test.** Neither page contains `sf-chev`, and the user row's `href` is `account.html`. Locked
 by `test-ten286-layout.mjs`.

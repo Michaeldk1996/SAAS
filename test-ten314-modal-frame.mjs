@@ -187,7 +187,7 @@ function modalVM(opts = {}) {
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
     tourxFetchMarket: rec('load:tournament-market'), pgEnsureData: rec('load:progression'), kfEnsureNews: rec('load:news-kf'), kfEnsureMarketEdge: rec('load:market-edge-kf'),
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
-    h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
+    h2hRoundLabel: () => 'Quarter-finals', maRoundName: () => 'Quarter-finals', _mcCardCloseOf: () => null, aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
     teTrack: undefined,
     maApplyTheme: () => 'night',   // the Night / Day / Auto writer (match-analysis-tokens.css); not under test here
   };
@@ -320,4 +320,16 @@ test('the deployed allowlist carries no fixture mode, no mkPr, no sample tables,
     FIXTURE_MARKERS.forEach(re => { if (re.test(s)) hits.push(`${f}: ${re}`); });
   }
   assert.deepEqual(hits, []);
+});
+
+// TEN-380 review item 5 (founder 2026-10-04; replaces 2026-09-28 "nothing in the header centre"): a completed match keeps the
+// matchup strip, its pills the card book's close (one book, as the card). And the sidebar chip: signed out there is no
+// account — no avatar initials, no plan line. Mutations: the 'done' toggle back; the pills on _mcCloseOf (the J fallback);
+// the signed-out branch leaving the "AM" avatar up.
+test('review item 5: a completed match keeps the header strip with the card-book close; signed out = no avatar, no plan', () => {
+  const o = slice('openAnalysisModal');
+  assert.match(o, /\} else if \(m\.finalScore\) \{[\s\S]*?const v = _mcCardCloseOf\(m, who\);/);
+  assert.ok(!/classList\.toggle\('done'/.test(o) && !/amatchup-center\.done/.test(HTML), 'the strip is never hidden');
+  assert.match(HTML, /if \(label\) label\.textContent = 'Sign in';[\s\S]{0,220}if \(avatar\) avatar\.style\.display = 'none';\s*if \(plan\) plan\.style\.display = 'none';/);
+  assert.match(HTML, /if \(avatar\)\{ avatar\.textContent = initials \|\| 'A'; avatar\.style\.display = ''; \}\s*if \(plan\) plan\.style\.display = '';/, 'signed in restores both');
 });

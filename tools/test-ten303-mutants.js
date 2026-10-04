@@ -8,6 +8,8 @@ const BASE = process.env.TEN303_MUT_BASE || path.join(ROOT, 'bsp-consult-dashboa
 const html = fs.readFileSync(BASE, 'utf8');
 const SUITES = ['test-ten303-odds-tab.mjs', 'test-ten303-colours.mjs'].map(f => path.join(ROOT, f));
 const MUTANTS = [
+  ['review item 4: the card stream left off the card book\'s table row', "    if (cr){\n      const ov = 1 / sp.p1 + 1 / sp.p2;", "    if (false){\n      const ov = 1 / sp.p1 + 1 / sp.p2;"],
+  ['review item 4: Key factors back on its own book order', "  if (card && card.now[0] != null && card.now[1] != null){", "  if (false){"],
   ['Q23: a native title on the price-mode hints', "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\"' + tip(t) +", "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\" title=\"' + t + '\"' +"],
   ['§6.1 a stale book keeps its last price as NOW', "row[x + 'Now'] = row.stale ? null : novig", "row[x + 'Now'] = novig"],
   ['§6.1 the 60-min staleness rule dropped', 'return !Number.isFinite(ck) || nowMs - ck > AODDS_STALE_MS;\n  };\n  const mapped', 'return false;\n  };\n  const mapped'],

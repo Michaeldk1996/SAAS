@@ -44,7 +44,7 @@ const PS_TOUR_META_SRC = /const PS_TOUR_META = \(\(\) => \{[\s\S]*?\n\}\)\(\);/.
 assert.ok(PS_TOUR_META_SRC, 'PS_TOUR_META not found');
 
 const HELPERS = ['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName',
-  'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'eventKeyOfMatch'];
+  'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'];
 function sandbox() {
   return new Function(`
     const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; },
@@ -266,7 +266,10 @@ test('Form pixel pass: mirrored priced count, pill tooltip only with a figure, o
   assert.equal((thin.match(/ title="v market on /g) || []).length, 1, 'no pill tooltip on a thin side (its figure is a dash)');
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-03-15', tournament: 'US Open', round: 'ATP US Open - 1/64-finals', surface: 'hard', result: '2 - 3', won: false,
     sets: [{ p: 6, o: 2 }, { p: 3, o: 6 }, { p: 3, o: 6 }, { p: 7, o: 5 }, { p: 5, o: 7 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'A. Shevchenko', 0);
-  assert.match(formRowHtml(S, r), /title="6-2, 3-6, 3-6, 7-5, 5-7" style="[^"]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis;/, 'a five-set score stays on one line (full text in the tooltip; TEN-330: the file\'s "6-4, 3-6" join)');
+  // TEN-380 review (founder 2026-10-04): a long score is never cut — it wraps between sets, each set kept whole
+  const sc = /class="ma-row-score" title="6-2, 3-6, 3-6, 7-5, 5-7" style="([^"]*)">([\s\S]*?)<\/span><\/span>/.exec(formRowHtml(S, r));
+  assert.ok(sc && !/overflow:hidden|text-overflow:ellipsis|white-space:nowrap/.test(sc[1]), 'the score cell never clips');
+  assert.deepEqual([...(sc[2] + '</span>').matchAll(/<span style="white-space:nowrap;">([^<]*)<\/span>/g)].map(x => x[1]), ['6-2,', '3-6,', '3-6,', '7-5,', '5-7'], 'every set whole; breaks only between sets');
 });
 test('Form: a side with no match in a Days window keeps its bar row', () => {
   const rows = Array.from({ length: 4 }, (_, i) => formRow(i, true, 'hard', `2026-08-${String(28 - i).padStart(2, '0')}`));

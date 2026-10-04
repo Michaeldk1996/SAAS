@@ -49,8 +49,9 @@ Applies to the Match analysis modal's **Key Factors** tab in `bsp-consult-dashbo
   expected wins (FH_THIN gate) and its collapsed hot lines; Tournament = the round words, the hold cell (`trHoldHtml`,
   founder Q9), `m.courtSpeed` (abstract speed + N4 category, the knob on the 0–100 index — founder TEN-380 Q14, no "usual"),
   tournament-market.json (`trMarketFor`, gated on n; "±x.xpp vs tour avg") and the Tournament tab's record model
-  (`trModelOf`; "first appearance" with no history — founder Q25); Odds = ONE ruled book (Pinnacle, Bet365, then the Odds
-  tab's order — founder Q17): open, sparkline (line only), now, vig-free Fair; **no Soft avg** (founder TEN-380 Q12); DNA =
+  (`trModelOf`; "first appearance" with no history — founder Q25); Odds = **the card's book** (founder TEN-380 review
+  item 4: its Open and Now are the match card's and the Match Winner tile's; the box order Pinnacle → Bet365 → the Odds tab's
+  order — founder Q17 — only for a match the card state does not cover): open, sparkline (line only), now, vig-free Fair; **no Soft avg** (founder TEN-380 Q12); DNA =
   `ps2DnaModel` percentiles on `--viz-lead` (blue: `#aSectionKey` makes `--bar` white for the other boxes), both players
   per axis the leader's bar solid `--viz-lead`, the trailer's `--viz-second` (45%) — founder ruling 8, TEN-380 Q3; H2H = `fhMeetings` (walkovers out, retirements in), the H2H tab's set / tiebreak / decider
   tallies + today's surface, its hot lines; Progression = `pgModel` (Pressure points kept — founder TEN-380 Q8, no draw avg — Q7);

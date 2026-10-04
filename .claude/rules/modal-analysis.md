@@ -108,8 +108,17 @@ this file wins.
 - **Not-completed, not-live match:** the design's centred matchup strip (avatars, names, price pills).
 - **Live / suspended match:** keep the **sets-won pills and the live bar** (the design draws no live state; logged as a
   design gap on TEN-312 document `design-gaps`). Don't invent new design for it.
-- **Completed match:** **nothing** in the header centre and **no sets score** beside the subtitle (design DF L105). The
-  result lives on the Match Stats tab.
+- **Completed match** (founder TEN-380 review item 5, 2026-10-04; replaces 2026-09-28 "nothing in the header centre"): the
+  matchup strip stays (avatars, names), its pills the **card book's close** (`_mcCardCloseOf`, the same one book as the card;
+  a missing close is "—", never another book); still **no sets score** beside the subtitle — the result lives on Match Stats.
+- **Prices on every surface are the card's one book** (founder TEN-380 review item 4, ruling 15): the header (= Market edge's
+  "today"), Key factors' Odds box and the Odds Match Winner tile all print the match card's pair — `_mcNowPair` (the card
+  state's book, its stream tick when newer) and that book's own Open — never `m.bestOdds` or another book. **Test:**
+  `test-ten310-market-edge.mjs` (header = card pair, never bestOdds), `test-ten303-odds-tab.mjs` "review item 4" (KF box =
+  tile).
+- **Round names are ours** (review item 5): the subtitle and the match stats sheet read `maRoundName` — 1/16-finals → R32,
+  1/8-finals → R16, 1/4 → Quarter-finals, 1/2 → Semi-finals; anything else as the feed writes it. **Test:**
+  `test-ten314-sheet.mjs` "review item 5".
 - **No footer line.** "All stats are updated live…" is removed (it isn't true and isn't in the design). If a real data
   timestamp exists for the open match, show "Updated X min ago"; otherwise show nothing. **Test:** the modal contains no
   "All stats are updated live" text.

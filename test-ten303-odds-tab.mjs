@@ -209,7 +209,8 @@ test('§6.5 a drawn line never leaves [series min, series max]', () => {
 });
 
 // ── ported TEN-295 rulings (the table kept its data rules; only the markup changed) ──
-test('rows: one per bookmaker, plain names, SHARP then SOFT, live first then stale then no-data', () => {
+// TEN-380 review (founder 2026-10-04): a book with no odds for the match is not listed (ruling 15, as unrecorded markets).
+test('rows: one per bookmaker with odds, plain names, SHARP then SOFT, live first then stale; books with no odds hidden', () => {
   const now = Date.now();
   const A = build();
   const m = fixture({ now, withAt: true, superbetChecked: now - 2 * H });
@@ -218,9 +219,9 @@ test('rows: one per bookmaker, plain names, SHARP then SOFT, live first then sta
   assert.deepEqual([...h.matchAll(/class="aox-grouphead" data-group="([^"]*)"/g)].map(x => x[1]), ['sharp', 'soft']);
   const rows = rowsOf(h);
   assert.deepEqual([...new Set(rows.map(r => r.group))], ['sharp', 'soft']);
-  // exact order: SOFT live (Betano) first, then stale (bet365 legacy capture 26 h old, Superbet), then no-data in config order
-  assert.deepEqual(rows.map(r => r.book), ['Pinnacle', 'Betfair Exchange', 'Bet105', 'Betano', 'bet365', 'Superbet',
-    'Betfair', 'BetVictor', '1xBet', 'Marathon', 'Sbobet', 'William Hill']);
+  // exact order: SOFT live (Betano) first, then stale (bet365 legacy capture 26 h old, Superbet); the no-data books are not listed
+  assert.deepEqual(rows.map(r => r.book), ['Pinnacle', 'Betfair Exchange', 'Bet105', 'Betano', 'bet365', 'Superbet']);
+  assert.ok(!/aox-nodata/.test(h), 'no no-data row');
   assert.equal(rows.find(r => r.book === 'bet365').src, 'bet365 (Oddspapi, capture ended 26 Sep)', 'bet365 falls back to the legacy capture');
   // no source text in any row; no native title tooltips; no ↗ icon; no chart / chips / dropdown / "Sources" paragraph
   for (const r of rows) { const rh = rowHtml(h, r.book); assert.ok(!/Oddspapi|api-tennis|\+30s|seen by us|not in feed|Kibl/.test(rh.replace(/data-aotip="[^"]*"/g, '').replace(/data-src="[^"]*"/g, '')), r.book); }
@@ -269,7 +270,9 @@ test('no carry-forward past checkedAt: the line ends at the last check, not the 
   assert.deepEqual(dots, [468, 468]);
 });
 
-test('no line: a dash row with its verdict — never a zero, never opens a pop-up', () => {
+// TEN-380 review (founder 2026-10-04): a book with no line is hidden, not a dash row; nothing at all → one line.
+// Mutation: the no-data filter dropped (the dash rows come back).
+test('no line: the book is not listed — never a dash row, never a zero; no book at all → one line', () => {
   const A = build();
   const m = fixture();
   delete m.oddsMovement.chart.books['Bet105'];
@@ -277,14 +280,11 @@ test('no line: a dash row with its verdict — never a zero, never opens a pop-u
   delete m.oddsMovement.chart.books['Superbet'];
   A.open(m);
   const h = A.buildOddsSection(m);
-  const b = rowHtml(h, 'Bet105');
-  assert.ok(/class="aox-row aox-nodata" data-book="Bet105"/.test(h) && b.includes('>not priced for this match<'));
-  assert.ok(!b.includes('onclick=') && !/>0\.00</.test(b));
-  assert.ok(rowHtml(h, 'Superbet').includes('>not recorded — our recording began 26 Sep<'), 'the writer\'s note wins');
-  assert.ok(rowHtml(h, 'Betano').includes('>not checked yet<'));
-  // nothing at all -> the reduced view + the 12 no-data rows
+  for (const book of ['Bet105', 'Superbet']) assert.ok(!new RegExp('data-book="' + book + '"').test(h), book + ' (no line) is not listed');
+  assert.ok(!/aox-nodata/.test(h) && !/>0\.00</.test(h), 'no dash row, never a zero');
+  // nothing at all -> the reduced view + one line, no rows
   const h0 = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00', oddsMovement: null, _oddsLoaded: true });
-  assert.ok(h0.includes('REDUCED') && (h0.match(/class="aox-row aox-nodata"/g) || []).length === 12);
+  assert.ok(h0.includes('REDUCED') && !/class="aox-row/.test(h0) && h0.includes('>No bookmaker has odds for this match yet.<'));
   // before the lazy shard lands: a loading line, no verdict rows, no reduced view
   const hl = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00' });
   assert.ok(hl.includes('aox-loading') && !hl.includes('aox-row') && !hl.includes('REDUCED'));
@@ -645,6 +645,28 @@ test('Q10: the Match Winner tile is the card book (Now, and the move vs the same
   m.__testOcs = { book: 'bet105', p1: { open: null, now: 2.30 }, p2: { open: null, now: 1.70 } };
   A.open(m); t = tileOf(A.buildOddsSection(m));
   assert.deepEqual([px(t, 'a'), mv(t, 'a').length], ['2.30', 0]);
+});
+
+// TEN-380 review item 4 (founder 2026-10-04, one book per fixture): Key factors' Odds box prints the card's book — the same
+// Open and Now as the Match Winner tile (and the header) — never the box's own book order (Pinnacle first). Mutation: the
+// card-book branch dropped from kfOddsBook (the box goes back to Pinnacle).
+test('review item 4: Key factors Odds box = the card book (Open + Now as the tile), stream Now when newer; no card → the box order', () => {
+  const now = Date.now();
+  const A = build(); const m = fixture({ now, withAt: true });
+  const before = A.kfOddsMove(m).row;
+  assert.ok(before && !/bet105/i.test(before.name), 'no card state: the box picks by its own order (control)');
+  m.__testOcs = { book: 'bet105', label: 'Bet105', p1: { open: 2.40, now: 2.30, close: null }, p2: { open: 1.62, now: 1.70, close: null } };
+  let r = A.kfOddsMove(m).row;
+  assert.deepEqual([r.name, r.aOpen, r.aNow, r.bOpen, r.bNow], ['Bet105', 2.40, 2.30, 1.62, 1.70], 'the card book, its own Open and Now');
+  m.__testStream = { p1: 2.26, p2: 1.72, book: 'bet105' };
+  r = A.kfOddsMove(m).row;
+  assert.deepEqual([r.aNow, r.bNow], [2.26, 1.72], 'the newer stream tick, as the tile and the match card');
+  // and the per-book table's card-book row prints the same Now (live, not "no recent data"); other books keep their own
+  const row = A.aOddsRowsOf(m, { nowMs: now }).rows.find(x => x.name === 'Bet105');
+  assert.deepEqual([row.aNow, row.bNow, row.stale], [2.26, 1.72, false], 'the table row = the card pair');
+  const pin = A.aOddsRowsOf(m, { nowMs: now }).rows.find(x => x.name === 'Pinnacle');
+  assert.ok(pin && pin.aNow !== 2.26, 'another book never takes the card stream');
+  delete m.__testStream; delete m.__testOcs;
 });
 
 // TEN-380 reference: one-row header, one flat panel, option-A head, "open → now" rows; the legend has no "lifted price".

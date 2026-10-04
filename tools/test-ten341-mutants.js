@@ -7,6 +7,8 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const PAGE = 'bsp-consult-dashboard.html';
 const MUTANTS = [
+  ['review: one story, one line dropped (re-written headlines shown twice)', "return !k || arr.findIndex(y => aNewsStoryKey(y.a.title) === k) === i;", "return true;"],
+  ['review item 2: a dot back on a news item', '<div class="kf-news-item" data-kf-news="${x.who.join(\'\')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;">', '<div class="kf-news-item" data-kf-news="${x.who.join(\'\')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;"><span style="width:7px; height:7px; border-radius:50%;"></span>'],
   ['review F1: the Market edge prefetch loads a match the modal left', "    .then(() => { if (_aM === m) meLoad(m);", "    .then(() => { meLoad(m);"],
   // Playing style (record vs the opponent's style)
   ['style: the tug drawn on the losses side', 'const tw = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;', 'const tl = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tw = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;'],

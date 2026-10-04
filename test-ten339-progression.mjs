@@ -51,7 +51,7 @@ const S = new Function(`
   let _aM = null; const _aBuilt = new Set(); function aBuilt(){ return false; } function aPaint(){}
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
   ${PS_TOUR_META_SRC}
-  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'eventKeyOfMatch',
+  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch',
      'matchStatsFromShard', 'progressionRoundRecordCount', 'progressionByesCredible'].map(slice).join('\n')}
   ${TEN263}
   ${PG}

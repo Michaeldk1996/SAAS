@@ -47,10 +47,10 @@ const S = new Function(`
   function ensureStyleMeetings(m){ return Promise.resolve(m); } function ensurePsMatrix(){ return Promise.resolve(); }
   function ppStyleFor(){ return null; } function psArchFor(){ return null; } function styleMeetRowsFor(){ return []; }
   function openPlayerProfileFromMatch(){} function aGoTab(){}
-  function aAvatarHtml(n){ return '<i>' + n + '</i>'; } function _mcCloseOf(m, w){ return m.closingOdds ? m.closingOdds[w] : null; }
+  function aAvatarHtml(n){ return '<i>' + n + '</i>'; } function _mcCardCloseOf(m, w){ return m.closingOdds ? m.closingOdds[w] : null; } function _mcCloseOf(m, w){ return m.closingOdds ? m.closingOdds[w] : null; }
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
   ${PS_TOUR_META_SRC}
-  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'eventKeyOfMatch',
+  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch',
      'pbpParseScore', 'pbpSplitSet'].map(slice).join('\n')}
   ${block()}
   ${consts(/const MA_MS_NOT_PLAYED = [^\n]*\n/)}${consts(/const MA_MS_NOT_PLAYED_SUB = [^\n]*\n/)}

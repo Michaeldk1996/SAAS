@@ -80,7 +80,7 @@ function fnSrc(name, src) {
 function constLine(name, src) { const s = src.indexOf(`\nconst ${name} = `); return src.slice(s, src.indexOf(';\n', s) + 1); }
 /** The page's Form row builder + close picker, executed: a feed-flagged retirement comes out priced. */
 function formRows(src) {
-  const fns = ['escapeHtml', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'psRoundAbbr', 'fhRoundCode',
+  const fns = ['escapeHtml', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'maRoundName', 'psRoundAbbr', 'fhRoundCode',
     'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhDayNum', 'fhIsInitial', 'fhNameKey', 'fhPickBook', 'fhParseCloses',
     'fhCloseFor', 'fhRowFromForm'];
   const api = new Function(`${['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_DASHC'].map((c) => constLine(c, src)).join('\n')}

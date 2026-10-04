@@ -29,7 +29,7 @@ const MUTANTS = [
   ['rows: an Elo slot back in the Form row (TEN-380 Q5)', "${esc(r.opp)}</span>${tagSlot(r)}</span>`", "${esc(r.opp)}</span>${tagSlot(r)} <span class=\"ma-row-elo\" data-elo=\"\">—</span></span>`"],
   // TEN-380 (README §5): the Score column, the README grid, the --card head on a --line rule, the --edge-10 divider
   ['rows: the column back to "Set scores"', "const labels = o.labels || ['Date', '', 'Opponent', 'Rd', 'Sets', 'Score', 'H', 'A'];", "const labels = o.labels || ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'];"],
-  ['rows: back on the file\'s grid', "const MA_ROW_COLS = '40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px';", "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';"],
+  ['rows: back on the file\'s grid', "const MA_ROW_COLS = '40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px';", "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';"],
   ['rows: the Score cell back to --text-soft', "<span class=\"ma-row-score\"${t(r.scoresTitle)} style=\"${mono} font-size:11px; color:var(--text-label);", "<span class=\"ma-row-score\"${t(r.scoresTitle)} style=\"${mono} font-size:11px; color:var(--text-soft);"],
   ['rows: the head back on the page tone', "background:${o.bg || 'var(--card)'}; padding:${o.headPad || '6px 6px 7px'};", "background:${o.bg || 'var(--page)'}; padding:${o.headPad || '6px 6px 7px'};"],
   ['divider: the blue rules back', "const rule = 'var(--edge-10)';   // README §5: the divider's rules", "const rule = 'var(--open-card)';"],

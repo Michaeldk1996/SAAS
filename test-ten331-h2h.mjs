@@ -43,7 +43,7 @@ const S = new Function(`
   function openPlayerProfileFromMatch(){} function aGoTab(){}
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
   ${PS_TOUR_META_SRC}
-  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'eventKeyOfMatch'].map(slice).join('\n')}
+  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'].map(slice).join('\n')}
   ${block()}
   return { fhBuildH2H, fhH2hRecCard, fhH2hSetScores, fhStateFor, fhH2hToList, get fh(){ return _fh; } };
 `)();
@@ -196,7 +196,7 @@ test('DoD 8: meetings are the shared helper\'s rows, grouped by year with an Eve
   // the level is never dropped (ruling 2026-09-24): it sits in every row's event tag, after the surface
   assert.match(list, /<span class="ma-row-tag" style="[^"]*">Clay · ATP<\/span>/);   // TEN-380 review F2: no Elo word in the tag (Q5)
   assert.match(list, /grid-template-columns:48px 12px minmax\(0,1\.4fr\) 36px 40px minmax\(0,1\.3fr\) 46px 46px; gap:0 10px;/, 'the reference\'s Meetings grid');
-  assert.ok(list.includes('>6-7(4), 2-1 ret.<'), 'tiebreak points and " ret." (N2)');
+  assert.ok(list.includes('<span style="white-space:nowrap;">6-7(4),</span> <span style="white-space:nowrap;">2-1 ret.</span>'), 'tiebreak points and " ret." (N2), wrapping only between sets');
   assert.ok(list.includes('>Home<') && list.includes('>Away<'));
   assert.equal(S.fhH2hSetScores({ sets: [[7, 6, 4], [6, 4, null]], ret: false }), '7-6(4), 6-4');
 });

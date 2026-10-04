@@ -65,7 +65,8 @@ Applies to the Progression tab of the Match analysis modal (`buildMatchProgressi
 - **Heat cards** `--card` + `--edge-6`; the better cell white 7%, the other white 3%; no name accent; the DRAW row upright.
 - **Facing row (founder Q7 / ruling 12, TEN-380):** above the title, a Darker track (`--card` + 1px `--edge-6`, r9, pad 3,
   gap 3; selected `--inner` + 1px `--edge-10`, 12/700 `--text`; idle 12/600 `--text-label`). It lists **only the rounds
-  already played**, each "Rn · {A's opponent} / {B's opponent}" from both players' results at this event (a click highlights
+  already played**, each "Rn · {A's opponent} / {B's opponent}" from both players' results at this event (both opponents: founder-accepted,
+  TEN-380 review 2026-10-04); a clicked round becomes the selected segment (the current round goes idle and clears it) (a click highlights
   that round), then **this match's round as the selected segment**. No future round, no projected opponent. "Bye" is written
   only when the draw data lists one — the feed never does (a bye is inferred), so such a round prints "—". A first-round
   match shows the current segment alone above the empty state. **Test:** `test-ten339-progression.mjs` "Q7" (mutations: a

@@ -45,7 +45,9 @@ found at restore time are marked inline.
   shards the guarded cache feeds (TEN-318). The old class-based point log stays for the other match-detail panels only.
 - **Bars — design exception:** the 2026-09-24 bar rule (`fhStatBarWidth`), not the file's share-of-total; W/UE and DR are
   numbers only (founder Q6). Reported as ruled, never as a divergence. Fills on a `--track` half, 6px, outer radius 3, gap
-  2 (README §10): the **leader solid `--bar`, the trailer 45% `--bar-2`** (the longer bar leads; a tie or a lone bar is
+  2 (README §10); a number-only row (DR, W/UE) draws **no track at all** (founder TEN-380 review item 5 / ruling 11). The
+  **leader solid `--bar`, the trailer 45% `--bar-2`** (the longer bar leads — size, not merit, founder-accepted TEN-380 review
+  for "more is worse" stats like unforced errors; a tie or a lone bar is
   solid), whichever side it is on (founder Q3 / ruling 8, TEN-380). The figures stay `--text` on both sides. **Test:**
   `test-ten338-match-stats.mjs` "TEN-380" (mutation: bars by identity, A solid / B 45%).
 - **Sheet styling (TEN-380, step 3 reference):** the inline sheet `--card` + `--edge-6`; meta line Plex 11 / 0.06em, sentence

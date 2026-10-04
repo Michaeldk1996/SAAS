@@ -95,7 +95,10 @@ function checkPlayer(ui, R, k, rows, scope) {
   // the oracle: every band's record and 1u stake
   bands.forEach((b, j) => {
     assert.equal(b.w, O.bands[j].w, `${k}${j} ${scope} wins`); assert.equal(b.l, O.bands[j].l, `${k}${j} ${scope} losses`);
-    if (b.w + b.l) assert.equal(b.u, Number(meRound(O.bands[j].cents / 100)), `${k}${j} ${scope} 1u`);
+    // TEN-380 review item 6 (founder 2026-10-04): the 1u stake follows the sample gate like Won and Edge — a number from
+    // n = 5, a dash under it (never a stake beside two dashes)
+    if (b.w + b.l >= 5) assert.equal(b.u, Number(meRound(O.bands[j].cents / 100)), `${k}${j} ${scope} 1u`);
+    else assert.equal(b.uTxt, '—', `${k}${j} ${scope} 1u dashed under n = 5 (n = ${b.w + b.l})`);
   });
   const leg = legend(R.html)[i];
   // (2) Σ band n = legend "N priced"; Σ band 1u = legend end = chart end (0.1u)
@@ -104,7 +107,9 @@ function checkPlayer(ui, R, k, rows, scope) {
   const sumU = O.bands.reduce((s, b) => s + b.cents, 0) / 100;
   if (sumN) {
     assert.ok(Math.abs(leg.end - sumU) <= 0.05 + 1e-9, `legend end ${leg.end} vs Σ ${sumU}`);
-    assert.ok(Math.abs(bands.reduce((s, b) => s + (b.u || 0), 0) - sumU) <= 0.05 * 8 + 1e-9, 'Σ rendered band 1u ≈ Σ');
+    // TEN-380 review item 6: a band under n = 5 dashes its 1u, so the rendered sum covers the gated bands only
+    const sumU5 = O.bands.reduce((s, b) => s + (b.w + b.l >= 5 ? b.cents : 0), 0) / 100;
+    assert.ok(Math.abs(bands.reduce((s, b) => s + (b.w + b.l >= 5 ? (b.u || 0) : 0), 0) - sumU5) <= 0.05 * 8 + 1e-9, 'Σ rendered band 1u (n ≥ 5) ≈ Σ');
     const pts = series(R.html, k), y2u = yToUnits(R.html);
     assert.ok(Math.abs(y2u(pts[pts.length - 1][1]) - sumU) <= 0.1, `chart end ${y2u(pts[pts.length - 1][1])} vs ${sumU}`);
     // (6) points in date order on the shared axis
@@ -125,7 +130,7 @@ function checkPlayer(ui, R, k, rows, scope) {
     assert.ok(b.clickable, 'band with rows is clickable');
     const P = R.band(k + j);
     assert.equal(stat(P, 'Record'), `W${b.w}–L${b.l}`);
-    assert.equal(stat(P, 'At 1u flat'), b.uTxt);
+    if (n >= 5) assert.equal(stat(P, 'At 1u flat'), b.uTxt); else assert.equal(b.uTxt, '—', 'row 1u dashed under n = 5 (review item 6)');
     assert.equal((P.match(/data-me-row="/g) || []).length, n, 'pop-up rows = band n');
     // TEN-380: the yield is the At 1u flat tile's sub-line; Edge = Won − Needs (pp) on the row and in the pop-up; the
     // row's grey tick sits at Needs (the pop-up's "needs x%")
@@ -278,11 +283,12 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   const m = { id: 'x', p1: 'A. Test', p2: 'B. None', p1Key: 9, p2Key: 10, date: '2026-09-27', tour: 'ATP Chengdu', tourBadge: 'ATP', bestOdds: { p1: { price: 1.21 }, p2: { price: 4.4 } } };
   const R = ui.render(m, { meView: 'winner' }, [rows, empty]);
   const b1 = bandRow(R, 'a0');   // the 1.205 row: 1.01 – 1.20
-  assert.deepEqual([b1.w, b1.l, b1.won], [1, 0, '—'], 'n < 5: W–L kept, Won dashed'); assert.equal(b1.uTxt, '+0.2u', '1u still shown (a sum)');
+  assert.deepEqual([b1.w, b1.l, b1.won], [1, 0, '—'], 'n < 5: W–L kept, Won dashed'); assert.equal(b1.uTxt, '—', 'TEN-380 review item 6: 1u dashed with Won and Edge under n = 5');
   assert.ok(bandRow(R, 'a1').today && bandRow(R, 'a1').w + bandRow(R, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.40');
   const b0 = bandRow(R, 'b0');
   assert.deepEqual([b0.w, b0.l, b0.won, b0.uTxt, b0.clickable], [0, 0, '—', '—', false]);
-  assert.ok(b0.raw.includes(`color:var(--text-soft);">—<`), 'n = 0 1u dash in the muted colour (ME_C.m1: the file\'s #8B96B5 shade, TEN-336 → foundation --text-soft, TEN-376)');
+  // TEN-380 review item 6: the 1u dash is the sample gate's, so it matches the Won and Edge dashes beside it
+  assert.ok(/class="me-units"[^>]*><span class="ma-rate" data-ma-gate="none" style="color:var\(--text-label\);">—</.test(b0.raw), 'n = 0 1u dash in the gate grey, like Won and Edge');
   const lg = legend(R.html);
   assert.equal(lg[1].n, 0); assert.equal(lg[1].end, null); assert.equal(series(R.html, 'b'), null, 'no line for 0 priced');
   const RL = ui.render(m, { meView: 'lines' }, [rows, empty]);
@@ -311,7 +317,9 @@ test('wiring: Market edge is the third tab, right after Odds (TEN-380 README §1
   // the header pills and the tab read one function
   assert.ok(/const ho = aHeaderOdds\(m\);\s*p1Pill\.textContent = ho\.p1;\s*p2Pill\.textContent = ho\.p2;/.test(HTML));
   const ui = buildUI();
-  assert.deepEqual(ui.aHeaderOdds(M), { p1: '1.54', p2: '2.62' });
+  // TEN-380 review item 4 (one book per fixture): the header = the match card's pair (_mcNowPair), never bestOdds
+  assert.deepEqual(ui.aHeaderOdds(Object.assign({}, M, { cardNow: { p1: 1.54, p2: 2.62, book: 'bet105' }, bestOdds: { p1: { price: 1.49 }, p2: { price: 2.80 } } })), { p1: '1.54', p2: '2.62' });
+  assert.deepEqual(ui.aHeaderOdds(Object.assign({}, M, { cardNow: null })), { p1: '', p2: '' }, 'no card pair → no header price, even with a bestOdds on file (never another book)');
   assert.deepEqual(ui.aHeaderOdds(Object.assign({}, M, { live: true, liveScore: [{ p1: 1, p2: 0 }] })), { p1: '', p2: '' });
   // loaded only when the tab opens, never at modal open; never the monolithic profiles file
   // TEN-314: every tab builds on its first open (A_TAB_BUILD); the modal open itself loads nothing of Market edge
@@ -429,7 +437,7 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
     pb.forEach((b, j) => {
       const t = bandRow(R, k + j);
       assert.equal(t.w, b.wins, `${k}${j} wins`); assert.equal(t.l, b.losses, `${k}${j} losses`);
-      if (b.n) assert.equal(t.u, Number(meRound(b.units)), `${k}${j} 1u`);
+      if (b.n >= 5) assert.equal(t.u, Number(meRound(b.units)), `${k}${j} 1u`);
       if (b.n) assert.equal((R.band(k + j).match(/data-me-row=/g) || []).length, b.n, `${k}${j} pop-up rows = profile band n`);
     });
     // Derived lines stay on career-history: the "Wins match" denominator is the career Bo3 population

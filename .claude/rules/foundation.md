@@ -51,7 +51,7 @@ ours has none.
 - **Green / red = signed values only** (+/−%, pp, profit/loss, W/L squares and result markers, winner pill, break
   outlines). Never a status, never a decoration, never a surface — so the Odds **best price is neutral** (white bold
   mono, no fill, no outline; only the clicked Per-book row is marked: `--inner` + `--edge-10`), and **Weather severity
-  has no colour** (dots / bars / legend: calm `--text-label` < WATCH `--text-soft` < CONCERN `--text`; values: CONCERN
+  has no colour** (bars and words: calm `--text-label` < WATCH `--text-soft` < CONCERN `--text`, no status dots — TEN-380 review; values: CONCERN
   `--text`, otherwise `--text-soft`; lead factor box `--card` + `--edge-6`) (R4). *Kept by ruling (R4):* Database Lines ≥65% green; SHARP VALUE green / NO VALUE red; Drops FEED DISCONNECTED =
   `--neg` caps text on a white 4% banner, no red fill. *Exceptions (page variants, README §6):* Playing
   Styles matchup Strong `--pos` / Weak `--neg`; hold/break heatmap and form cells tinted `--viz-up` / `--viz-down`

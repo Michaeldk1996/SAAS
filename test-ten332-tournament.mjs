@@ -52,7 +52,7 @@ const S = new Function('window', `
   ${constSrc('TOURNAMENT_CATALOG')}
   ${constSrc('COURT_CONDITIONS')}
   const TOURX_KNOB_PAD = 0.08;
-  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel',
+  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName',
      'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
   return { buildTournamentSection, trModelFor, trStateFor, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
@@ -381,4 +381,13 @@ test('TEN-380: ROI values --text (never green on a negative yield); Backing pop 
   assert.match(all, /class="elotip-pop" role="tooltip" style="bottom:calc\(100% \+ 8px\); left:auto; right:0; transform:none; white-space:normal; width:280px;"/, 'the Backing pop is right-anchored');
   assert.match(all, /font-size:11px; color:var\(--text-label\);">\d+ match/, 'count meta --text-label');
   S.market = null;
+});
+
+// TEN-380 review (founder 2026-10-04): the "B" beside a Tournament price (Bet365 filling a missing Pinnacle close) is said in
+// words under the records, as Form says it; no B on the page → no line. Mutation: the line dropped from the section.
+test('review: a B price is explained under the records ("Closing odds · Pinnacle, Bet365 where missing (N) · B = Bet365")', () => {
+  const f = new Function(`const FH_MONO = "m";\n${slice('trSrcLine')}; return trSrcLine;`)();
+  assert.equal(f([{ priced: [{ book: 'P' }] }, { priced: [] }]), '', 'no Bet365 price → no line');
+  assert.match(f([{ priced: [{ book: 'B' }, { book: 'P' }] }, { priced: [{ book: 'B' }] }]), />Closing odds · Pinnacle, Bet365 where missing \(2\) · B = Bet365</);
+  assert.match(slice('buildTournamentSection'), /\$\{trSrcLine\(P\)\}/, 'the section prints it');
 });

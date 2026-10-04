@@ -39,7 +39,7 @@ export function loadCore() {
 }
 
 const DATA_CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_DASHC', 'ME_NONSTD_EVENT', 'ME_PROFILE_BOOK', 'ME_TD_ROUND'];
-const DATA_FNS = ['escapeHtml', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'psRoundAbbr',
+const DATA_FNS = ['escapeHtml', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'maRoundName', 'psRoundAbbr',
   'fhRoundCode', 'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhLevelOf', 'fhDayNum', 'fhIsInitial',
   'fhNameKey', 'fhPickBook', 'fhParseCloses', 'fhCloseFor', 'meRowFromCareer', 'meRowsFor', 'meWinnerRows'];
 
@@ -69,6 +69,9 @@ export function buildUI({ src = HTML } = {}) {
   const window = { MarketEdgeCore: data.core };
   const ui = new Function('window', `
     let _me = null;
+    // TEN-380 review item 4: the header (and so Market edge's "today") reads the match card's pair; the fixture carries it as m.cardNow
+    // (a fixture without cardNow stands its bestOdds in as the card pair, so the older fixtures keep their meaning)
+    function _mcNowPair(m){ if (!m) return null; if ('cardNow' in m) return m.cardNow; const b = m.bestOdds; return b && b.p1 && b.p2 ? { p1: b.p1.price, p2: b.p2.price } : null; }
     ${UI_CONSTS.map((n) => constSrc(n, src)).join('\n')}
     ${UI_FNS.map((n) => slice(n, src)).join('\n')}
     function render(m, S, rows, states){

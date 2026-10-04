@@ -31,7 +31,7 @@ function constSrc(name) {
   if (/;\s*(\/\/.*)?$/.test(line)) return line;                       // one line (a trailing comment allowed)
   return html.slice(start, html.indexOf(';\n', start) + 1);
 }
-const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'psRoundAbbr', 'fhRoundCode',
+const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'maRoundName', 'psRoundAbbr', 'fhRoundCode',
   'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhRowFromForm', 'fhDayNum', 'fhDDMM', 'fhLongDate', 'fhIsInitial', 'fhNameKey',
   'fhPickBook', 'fhCloseFor', 'fhEloKey', 'fhEloKeyOwners', 'fhEloAt', 'fhRefDay', 'tourxSampleGate', 'maGate', 'maGateBar', 'maSmallNote', 'fhMedian',
   'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
@@ -136,13 +136,13 @@ test('the rows: "surface · W–L" group header, README §5 grid with its own Sc
   const L = S.fhFormListHtml(P);
   assert.match(text(L), /Test Open Hard · 2–0/);
   assert.match(text(L), /Other Cup Clay · 0–1/);
-  // TEN-380 (README §5): header + rows on `40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px; gap 0 6px`
-  const G = 'grid-template-columns:40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px; gap:0 6px;';
+  // TEN-380 (README §5): header + rows on `40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px; gap 0 6px`
+  const G = 'grid-template-columns:40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px; gap:0 6px;';
   assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
   assert.match(text(L), /Date Opponent Rd Sets Score H A/, 'the column is "Score" (was "Set scores")');
   assert.match(text(L), /18\.07\. Beta B\. R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'name, then Rd · Sets · Score · H · A — no Elo in the row (TEN-380 Q5)');
   assert.ok(!/ma-row-elo|data-elo/.test(L), 'TEN-380 Q5: the Elo lives in the bar tooltip, not the row');
-  assert.match(L, /class="ma-row-score" title="6-4, 6-3" style="[^"]*color:var\(--text-label\);[^"]*white-space:nowrap;/, 'Score = its own cell, --text-label, one line');
+  assert.match(L, /class="ma-row-score" title="6-4, 6-3" style="[^"]*color:var\(--text-label\);[^"]*"><span style="white-space:nowrap;">6-4,<\/span> <span style="white-space:nowrap;">6-3<\/span><\/span>/, 'Score = its own cell, --text-label; wraps only between sets, never cut (TEN-380 review)');
   // the header: --card on a 1px --line rule (decisions §1); the card: --card + 1px --edge-6
   assert.match(L, /class="ma-rows-head" style="[^"]*background:var\(--card\); padding:10px 14px 8px; border-bottom:1px solid var\(--line\);/);
   assert.match(L, /class="fh-fcard" style="border:1px solid var\(--edge-6\);[^"]*background:var\(--card\);/);

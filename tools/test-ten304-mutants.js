@@ -69,7 +69,8 @@ const MUTANTS = [
   ['archive: the committed copy is ignored', 'const prevArch = mergeArchives(readCommittedArchive(path.join(outDir, v.archive)), ', 'const prevArch = mergeArchives(null, ', 'bwt'],
   ['archive: the older of two copies wins', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? y : x)', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? x : y)', 'bwt'],
   // TEN-337 (re-verify against the TEN-312 design file)
-  ['chip row loses the file\'s STATE-row height', 'min-height:28px; margin-bottom:18px;', 'margin-bottom:18px;'],
+  ['review item 1: the THRESHOLDS chip back on the tab', "const wrap = inner => '<div class=\"wx-tab\" style=\"line-height:normal; color:' + C.text + ';\">' + inner + '</div>';", "const wrap = inner => '<div class=\"wx-tab\" style=\"line-height:normal; color:' + C.text + ';\"><div class=\"wx-chiprow\"><span class=\"wx-tbd\">THRESHOLDS TBD — MICHAEL</span></div>' + inner + '</div>';"],
+  ['review item 3: "usual" back on a calm court pace', "    : shift === 'usual' ? ''   // TEN-380 review item 3", "    : shift === 'usual' ? 'Conditions should leave the court playing close to its usual ' + speedTxt   // TEN-380 review item 3"],
   ['pace copy apostrophe curly, not the file\'s ASCII', "Today's {cause} should make it play", 'Today\u2019s {cause} should make it play'],
   ['archived day tooltip shows the match row fetch time', '[TP.fetched, wxStamp(d.fetchedMs, vm.zone)]', '[TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]'],
 ];

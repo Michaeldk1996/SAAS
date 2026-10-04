@@ -69,8 +69,8 @@ const S = new Function('CORE', `
   ${ODDS_CONSTS.map(n => constSrc(n, html)).join('\n')}
   ${['escapeHtml', 'psShortName', 'psCellFor', 'psMirrorN', 'psSurfaceCellFor', 'psArchIndex', 'psArchFor', 'psFmtMeetDate', 'psRoundAbbr', 'psNormTour', 'psTourMeta',
      'psGroupMeetings', 'styleMeetRowsFor', 'ppCleanTournamentName', 'surnameFirstName', 'formIni', 'eventKeyOfMatch',
-     'apiStartMs', 'h2hRoundLabel', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
-     'trHeaderHtml', 'trKeyOf', 'trMarketFor', 'trSameEvent', 'trRowOf', 'trModelOf', 'newsParseTs', 'aNewsFeedOk', 'aNewsArticlesFor',
+     'apiStartMs', 'h2hRoundLabel', 'maRoundName', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
+     'trHeaderHtml', 'trKeyOf', 'trMarketFor', 'trSameEvent', 'trRowOf', 'trModelOf', 'newsParseTs', 'aNewsFeedOk', 'aNewsArticlesFor', 'aNewsStoryKey',
      'progressionByesCredible'].map(slice).join('\n')}
   ${['TR_RG_NOTE', 'TR_NO_SPEED', 'TR_RESULT', 'TR_MONO', 'TR_BEST_RANK'].map(n => constSrc(n, html)).join('\n')}
   ${/const A_NEWS_WINDOW_DAYS = \d+;/.exec(html)[0]}
@@ -404,6 +404,21 @@ test('News: both players\' articles in the feed window, newest first, one shared
   S.news = null;
   assert.match(text(S.kfNewsCard(match())), /Loading news…/);
   assert.match(text(S.kfNewsCard(match({ _kfNews: 'unavailable' }))), /News feed unavailable\./);
+});
+
+// TEN-380 review (founder 2026-10-04, "remove duplicates"; "no status dots"): two headlines in one player's feed whose first
+// five words match (hyphens split words, case and punctuation ignored) are one story — only the newest shows, in the News box
+// and on the News tab; a distinct story stays. The timeline is text only (no dot). Mutation: the story filter dropped, or a
+// dot back on the item.
+test('News: one story, one line (same first five words → the newest only); distinct stories stay; no timeline dot', () => {
+  setup();
+  S.news = { articles: [art(11, '2', 'Alcaraz Defends Best-of-Five Format at Grand Slams', 30), art(12, '2', 'Alcaraz Defends Best-of-Five Format, Calls Instead for Calendar Reform', 40),
+    art(13, '2', 'Alcaraz Welcomes Ferrero\'s Expected Return to Coaching Circuit', 35)] };
+  const h = S.kfNewsCard(match()), t = text(h);
+  assert.match(head(h), /^News 2 articles · last 5 days ›$/);
+  assert.match(t, /Best-of-Five Format at Grand Slams/); assert.doesNotMatch(t, /Calendar Reform/, 'the older re-write of the same story is hidden');
+  assert.match(t, /Ferrero/, 'a different story stays');
+  assert.ok(!/border-radius:50%/.test(h), 'no dot on a news item');
 });
 
 // ---------- Stennisfy Model ----------

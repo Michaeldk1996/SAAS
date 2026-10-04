@@ -1136,7 +1136,6 @@
   .modal-analysis .atitleblock .acontext{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:400; line-height:normal; margin-top:5px; }
   /* Not-completed matches only (DF L92–104); a completed match leaves an empty centre cell (DF L105). */
   .modal-analysis .amatchup-center{ display:flex; flex-direction:column; align-items:center; gap:10px; }
-  .modal-analysis .amatchup-center.done > *{ display:none; }
   .modal-analysis .amatchuprow{ display:flex; align-items:center; gap:13px; }
   /* D5: ATP photo from player-atp-aliases.json (photoCandidatesFor), monogram fallback — the design's 40px ring. */
   .modal-analysis .aavatar{ display:inline-flex; flex:none; }
@@ -2169,17 +2168,22 @@
       var avatar = document.getElementById('acctAvatar');
       var signout = document.getElementById('acctSignout');
       var main = document.getElementById('acctMain');
+      var plan = main ? main.querySelector('.sf-userplan') : null;
       if (u){
         // Show a display name, never the raw email (review item 1): prefer the
         // account name; otherwise take the local part of the email ("alex.morgan").
         var display = u.name || (u.email ? String(u.email).split('@')[0] : 'Account');
         var initials = display.trim().split(/[\s._-]+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
-        if (avatar) avatar.textContent = initials || 'A';
+        if (avatar){ avatar.textContent = initials || 'A'; avatar.style.display = ''; }
+        if (plan) plan.style.display = '';
         if (label) label.textContent = display;
         if (signout) signout.style.display = 'none';
         if (main) main.href = 'account.html';
       } else {
         if (label) label.textContent = 'Sign in';
+        // TEN-380 review (founder 2026-10-04): signed out there is no account — no avatar initials, no plan line
+        if (avatar) avatar.style.display = 'none';
+        if (plan) plan.style.display = 'none';
         if (main) main.href = 'auth.html?mode=signin';
         if (signout) signout.style.display = 'none';
       }
@@ -11804,9 +11808,6 @@ const WX_CONFIG = {
 };
 // Every word on the tab — the founder edits wording here, no code change. {x} = filled at render.
 const WX_COPY = {
-  thresholdsChip: 'THRESHOLDS TBD — MICHAEL',
-  thresholdsTip: 'Severity cut-offs are not decided yet. Neutral / amber / red states here are placeholders.',
-  thresholdsLine: { gusts: 'Gusts: watch ≥ {watch} · concern ≥ {concern} km/h', feels: 'Feels like: watch ≥ {watch}° · concern ≥ {concern}°', rain: 'Rain chance: watch ≥ {watch}% · concern ≥ {concern}%' },
   stripTitle: 'Next 7 days',
   venueTimeNote: 'Times shown in venue local time',
   viewerTimeNote: 'Times shown in your time zone',
@@ -11848,8 +11849,7 @@ const WX_COPY = {
   },
   pace: {
     tag: 'FROM TOURNAMENT', detail: 'Court speed · {tour} · {surface} court',
-    usual: 'AS USUAL', slower: 'PLAYS SLOWER', quicker: 'PLAYS QUICKER',
-    asUsual: 'Conditions should leave the court playing close to its usual {speed} ({label}).',
+    slower: 'PLAYS SLOWER', quicker: 'PLAYS QUICKER',   // calm conditions print the figure only (TEN-380 review item 3)
     shifted: "Base court speed is {speed} ({label}). Today's {cause} should make it play {dir} than that.",   // ASCII ' as in the file (DF wxFor)
     causeSlower: 'damp air', causeQuicker: 'heat', dirSlower: 'slower', dirQuicker: 'quicker',
     windAdds: ' Wind adds variance on top.',
@@ -12136,12 +12136,12 @@ function wxModel(m, entry, file, nowMs, forced, arch){
   const shift = on('rain') ? 'slower' : sevOf('rain') !== 'n' ? null : on('heat') ? 'quicker' : sevOf('heat') === 'n' ? 'usual' : null;
   const P = CP.pace, speedTxt = spd == null ? null : spd.toFixed(2);
   const paceEffect = (unavail || speedTxt == null || shift == null) ? ''
-    : shift === 'usual' ? wxFmt(P.asUsual, { speed: speedTxt, label: spdLabel })
+    : shift === 'usual' ? ''   // TEN-380 review item 3 / ruling 14: "usual" has no source — the figure only
     : wxFmt(P.shifted, { speed: speedTxt, label: spdLabel, cause: shift === 'slower' ? P.causeSlower : P.causeQuicker, dir: shift === 'slower' ? P.dirSlower : P.dirQuicker })
       + (on('wind') ? P.windAdds : '');
   const tourName = String((m && m.tour) || '').replace(/^ATP\s+/, '') || '—';
   const pace = { id: 'pace', name: CP.names.pace, value: (unavail || speedTxt == null) ? '—' : speedTxt,
-    sevL: (speedTxt == null || shift == null) ? '' : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
+    sevL: (speedTxt == null || shift == null || shift === 'usual') ? '' : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
 
   let verdict;
   if (unavail) verdict = CP.verdictUnavailable;
@@ -12210,15 +12210,8 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
   const tipAttr = html => ' data-aotip="' + escapeHtml(html) + '"', TC = AODDS_C;   // the shared (TEN-303) tooltip
   const sevC = s => s === 'r' ? C.red : s === 'a' ? C.amber : C.bar;
   const dotC = s => s === 'r' ? C.red : s === 'a' ? C.amber : s === 'u' ? C.unavail : C.dim;
-  const T = CF.thresholds;
-  const chipTip = '<div style="font-size:12px; line-height:1.45; color:' + TC.text + '; max-width:280px;">' + escapeHtml(CP.thresholdsTip) + '</div>'
-    + '<div style="display:flex; flex-direction:column; gap:3px; margin-top:8px; ' + mono + ' font-size:11px; color:' + TC.sub + ';">'
-    + ['gusts', 'feels', 'rain'].map(k => '<span>' + escapeHtml(wxFmt(CP.thresholdsLine[k], T[k])) + '</span>').join('') + '</div>';
-  // The design's STATE row minus its review switcher (DoD: switchers never ship). min-height = the row's rendered
-  // height in the file (the 28px seg buttons set it), so every block below sits where the design draws it (TEN-337).
-  const chipRow = '<div class="wx-chiprow" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:28px; margin-bottom:18px;">'
-    + '<span class="wx-tbd" tabindex="0"' + tipAttr(chipTip) + ' style="margin-left:auto; ' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
-  const wrap = inner => '<div class="wx-tab" style="line-height:normal; color:' + C.text + ';">' + chipRow + inner + '</div>';
+  // TEN-380 review item 1 (founder 2026-10-04): no "THRESHOLDS TBD" chip — an internal note never ships; the tab opens on the strip.
+  const wrap = inner => '<div class="wx-tab" style="line-height:normal; color:' + C.text + ';">' + inner + '</div>';
 
   if (vm.indoor) {
     return wrap('<div class="wx-indoor" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:64px 24px; border-radius:16px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';">'
@@ -12248,7 +12241,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
     const icon = d.icon ? wIcon(d.icon, 26, d.icon === 'rain' ? C.dim : C.muted) : '<span style="' + mono + ' font-size:18px; color:' + C.dim + '; height:26px; line-height:26px;">—</span>';
     const deg = x => x == null ? '—' : x + '°';
     const more = d.flags && d.flags.length > 1
-      ? '<span class="wx-more" tabindex="0"' + tipAttr('<div style="display:flex; flex-direction:column; gap:5px;">' + d.flags.slice(1).map(f => '<span style="display:flex; align-items:center; gap:7px; font-size:12px; color:' + TC.text + ';"><span style="width:7px; height:7px; border-radius:50%; background:' + dotC(f.sev) + '; flex-shrink:0;"></span>' + escapeHtml(f.text) + '</span>').join('') + '</div>')
+      ? '<span class="wx-more" tabindex="0"' + tipAttr('<div style="display:flex; flex-direction:column; gap:5px;">' + d.flags.slice(1).map(f => '<span style="display:flex; align-items:center; gap:7px; font-size:12px; color:' + TC.text + ';">' + escapeHtml(f.text) + '</span>').join('') + '</div>')
         + ' style="' + mono + ' font-size:9.5px; font-weight:700; color:' + C.sub + '; padding:1px 4px; border-radius:3px; border:' + hw1 + ' solid ' + C.rule + '; flex-shrink:0;">+' + (d.flags.length - 1) + '</span>' : '';
     let tip = '';
     if (!d.unavail) {
@@ -12269,7 +12262,6 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
       + '<span style="display:flex; align-items:baseline; gap:6px; ' + mono + '"><span class="wx-hi" style="font-size:16px; font-weight:700;">' + deg(d.hi) + '</span><span class="wx-lo" style="font-size:11.5px; color:' + C.dim + ';">' + deg(d.lo) + '</span></span>'
       + '</div>'
       + '<div style="width:100%; min-height:34px; padding-top:9px; border-top:' + hw1 + ' solid ' + C.rule + '; display:flex; align-items:flex-start; justify-content:center; gap:6px;">'
-      + '<span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + dotC(v) + '; margin-top:4px; flex-shrink:0;"></span>'
       + '<span class="wx-reason" style="font-size:11.5px; line-height:1.35; font-weight:' + rw + '; color:' + rc + '; text-align:center;">' + escapeHtml(reason) + '</span>' + more + '</div>'
       + (d.lowConf ? '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.lowConf) + '</span>' : '')
       + '</div>';
@@ -12284,7 +12276,6 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
         + '<span class="wx-later" style="font-size:11.5px; color:' + C.faint + ';">' + escapeHtml(CP.mayStartLater) + '</span></span>'
       : '<span class="wx-athead" style="' + mono + ' font-size:12px; color:' + C.match + ';">' + escapeHtml(vm.atHead) + '</span>') + '</div>';
   h += '<div class="wx-verdict" style="display:flex; align-items:center; gap:12px; padding:15px 18px; margin-bottom:12px; border-radius:14px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';">'
-    + '<span style="width:10px; height:10px; border-radius:50%; background:' + (vm.verdictSev === 'u' ? C.unavail : vm.verdictSev === 'n' ? C.dim : sevC(vm.verdictSev)) + '; flex-shrink:0;"></span>'
     + '<span style="font-size:17px; font-weight:800; line-height:1.3;">' + escapeHtml(vm.verdict) + '</span></div>';
 
   const paceAttrs = ' role="button" tabindex="0" onclick="aGoTab(\'tournament\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();aGoTab(\'tournament\')}"';
@@ -12320,7 +12311,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
     const tile = (t, isPace) => {
       const s = isPace ? 'n' : t.sev;
       return '<div class="wx-tile" data-factor="' + t.id + '"' + (isPace ? paceAttrs : '') + ' style="display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';' + (isPace ? paceCss : '') + '">'
-        + '<span style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span class="wx-name" style="font-size:13px; font-weight:700; color:' + C.dim + ';">' + escapeHtml(t.name) + '</span><span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + (isPace ? C.dim : dotC(s)) + ';"></span></span>'
+        + '<span style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span class="wx-name" style="font-size:13px; font-weight:700; color:' + C.dim + ';">' + escapeHtml(t.name) + '</span></span>'
         + '<span class="wx-val" style="' + mono + ' font-size:20px; font-weight:700; color:' + (s === 'u' ? C.dim : C.sub) + ';">' + escapeHtml(t.value) + '</span>'
         + '<span style="font-size:11.5px; color:' + C.dim + ';">' + escapeHtml(t.detail) + '</span>'
         + '<span class="wx-effect" style="font-size:11.5px; line-height:1.45; color:' + C.dim + '; text-wrap:pretty;">' + escapeHtml(t.effect) + '</span>'
@@ -12725,6 +12716,15 @@ function h2hRoundLabel(round){
   const parts = round.split(' - ');
   return parts.length > 1 ? parts[parts.length - 1].trim() : round.trim();
 }
+// TEN-380 review item 5 (founder 2026-10-04): the modal names a round in our words, never the provider's "1/16-finals":
+// 1/N-finals → R(2N) for N ≥ 8 (1/16 → R32, 1/8 → R16), 1/4 → Quarter-finals, 1/2 → Semi-finals; anything else as the
+// feed writes it (Final, Round Robin, Qualification…). Used by the modal subtitle and the match stats sheet.
+function maRoundName(round){
+  const l = h2hRoundLabel(round); if (!l) return l;
+  const m = /^1\/(\d+)-finals?$/i.exec(l.trim()); if (!m) return l;
+  const n = +m[1];
+  return n === 4 ? 'Quarter-finals' : n === 2 ? 'Semi-finals' : n >= 8 ? 'R' + (n * 2) : l;
+}
 // TEN-263: the H2H tab is rebuilt from the design handoff — see fhBuildH2H.
 function buildH2HSection(m){ return fhBuildH2H(m); }
 
@@ -12901,7 +12901,10 @@ function maPopNoReplay(host){ if (host) host.querySelectorAll('.ma-sigin, .ma-fa
 // header and rows share it; the Score column is its own track; row padding 6, radius 6). ----
 // groups: [{ title, meta, rows: [{ date, won (bool|null), opp, rd, sets, scores, h, a, click, selected }] }]
 // `click` = the row's opener attribute (maRowOnclick(...) or ` onclick="fhOpenSheet('mid')"`) — every row opens the sheet.
-const MA_ROW_COLS = '40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px';
+// TEN-380 review (founder 2026-10-04): the README §5 grid with the Opponent / Score shares rebalanced (1.1fr / 1.3fr →
+// 1.4fr / 1fr, Opponent floor 78 → 96 px, Score 86 → 64 px) so a name like "Shimabukuro S." stays on one line; a long score
+// wraps between sets instead of being cut ("6-4, 4-6," / "7-6, 6-2").
+const MA_ROW_COLS = '40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px';
 const MA_ROW_GAP = '0 6px';
 // The H2H Meetings table (reference: one row per meeting under its year, an Event column in the opponent's slot).
 const MA_ROW_COLS_H2H = '48px 12px minmax(0,1.4fr) 36px 40px minmax(0,1.3fr) 46px 46px';
@@ -12971,7 +12974,7 @@ function maMatchRowsHtml(groups, opts){
       + oppCell(r)
       + `<span style="${mono} font-size:10.5px; color:var(--text-label);">${esc(r.rd)}</span>`
       + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.setsColor || wl(r)}; white-space:nowrap;">${esc(r.sets)}</span>`
-      + `<span class="ma-row-score"${t(r.scoresTitle)} style="${mono} font-size:11px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.scores)}</span>`
+      + `<span class="ma-row-score"${t(r.scoresTitle)} style="${mono} font-size:11px; color:var(--text-label); line-height:1.35;">${String(r.scores == null ? '' : r.scores).split(', ').map((x, i, A) => `<span style="white-space:nowrap;">${esc(x)}${i < A.length - 1 ? ',' : ''}</span>`).join(' ')}</span>`
       + `<span${t(r.hTitle)} style="position:relative; ${mono} font-size:11px; color:${r.h === '—' ? 'var(--text-label)' : 'var(--text-soft)'}; text-align:right;">${esc(r.h)}${mark(r.hMark)}</span>`
       + `<span${t(r.aTitle)} style="${mono} font-size:11px; color:var(--text-label); text-align:right;">${esc(r.a)}</span></div>`;
   const wrap = r => (o.inset != null || r.wrapCls ? `<div class="${r.wrapCls || ''}" style="transition:opacity .12s; padding:${o.rowPad || '0 ' + (o.inset || 0) + 'px'};">${row(r)}</div>` : row(r));
@@ -14664,17 +14667,19 @@ function fhSheetRowHtml(s){
   const val = (c, col) => `<span${c.gate ? ` data-ma-gate="${c.gate}"` : ''} style="${FH_MONO} font-size:15px; font-weight:700; color:${c.gate === 'small' ? MA_GREY : c.v == null && !c.gate ? FH_DASH : col};">${fhEsc(c.txt)}</span>`;
   const sub = c => c.sub ? `<span style="${FH_MONO} font-size:10px; color:var(--text-label);">${fhEsc(c.sub)}</span>` : '';
   // TEN-380 (step 3 reference): fills on a --track half, 6px, outer radius 3, gap 2 (leader / trailer colours above).
+  // TEN-380 review item 5 / ruling 11 (founder 2026-10-04): a number-only row (kind 'ratio': Dominance ratio, W/UE) draws
+  // no track at all — not an empty one.
   const fill = (w, col, c) => w == null ? '' : `<span class="fh-sbar" style="height:6px; width:${w.toFixed(1)}%; background:${c && c.gate === 'small' ? MA_GREY : col};"></span>`;
   return `<div class="fh-srow" style="display:flex; flex-direction:column; gap:6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
         <span${s.a.title ? ` title="${fhEsc(s.a.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px;">${val(s.a, 'var(--text)')}${sub(s.a)}</span>
         <span class="fh-slabel" style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); text-align:center;">${fhEsc(s.label)}</span>
         <span${s.b.title ? ` title="${fhEsc(s.b.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">${sub(s.b)}${val(s.b, 'var(--text)')}</span>
-      </div>
+      </div>${s.kind === 'ratio' ? '' : `
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px;">
         <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:6px; background:var(--track); border-radius:3px 0 0 3px; overflow:hidden;">${fill(aW, aCol, s.a)}</span>
         <span class="fh-shalf" style="display:flex; height:6px; background:var(--track); border-radius:0 3px 3px 0; overflow:hidden;">${fill(bW, bCol, s.b)}</span>
-      </div>
+      </div>`}
     </div>`;
 }
 // TEN-273: the empty Match tab says why — we hold no serve or return stats for
@@ -15257,7 +15262,9 @@ function meBandsCol(E, i, M, O){
           + meBarHtml(bar, n && b.needs != null ? b.needs * 100 : null)
           + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}</span>`
           + `<span class="me-edge" style="${FH_MONO} font-size:11px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: edge == null ? null : meSg(edge, 1, 'pp'), nopct: '—', note: 'title', color: edge == null ? ME_C.m1 : meUC(edge, 1) })}</span>`
-          + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right; color:${n ? meUC(b.units, 1) : ME_C.m1};">${n ? meSg(b.units, 1, 'u') : '—'}</span></div>`;
+          // TEN-380 review item 6 (founder 2026-10-04): the 1u stake follows the same gate as Won and Edge — all three dash
+          // together under n = 5 (never a stake beside two dashes), grey at 5–9.
+          + `<span class="me-units" style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: n ? meSg(b.units, 1, 'u') : null, nopct: '—', note: 'title', color: n ? meUC(b.units, 1) : ME_C.m1 })}</span></div>`;
       }).join('')).join('') + '</div>';
   }
   const meta = M.state === 'ready' && M.priced ? `today <span style="color:${ME_C.text}; font-weight:700;">${M.today == null ? '—' : M.today.toFixed(2)}</span> · ${M.priced.length} priced` : '';
@@ -15872,6 +15879,12 @@ function trTilesHtml(P){
   }
   return `<div class="tr-tiles" style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;">${wl}${best}${sets}${last}${back}</div>`;
 }
+// TEN-380 review (founder 2026-10-04): a "B" beside a price means Bet365 filled a missing Pinnacle close — said in words under the
+// records, as Form says it ("Closing odds · Pinnacle, Bet365 where missing (N)"); no B on the page → no line.
+function trSrcLine(P){
+  const nb = P.reduce((s, p) => s + ((p && p.priced) || []).filter(r => r.book === 'B').length, 0);
+  return nb ? `<div class="tr-srcline" style="margin-top:14px; text-align:center; ${FH_MONO} font-size:10.5px; color:var(--text-label);">Closing odds · Pinnacle, Bet365 where missing (${nb}) · B = Bet365</div>` : '';
+}
 function trRowData(r){
   // the opponent as the history names him (DF L315: "A. Cazaux", initial first — not the H2H list's surname-first order)
   return { date: fhDDMM(r.date) + '.', won: r.wo ? null : r.won, opp: r.opp || FH_DASHC, rd: r.round,
@@ -16058,7 +16071,7 @@ function buildTournamentSection(m){
   const recHead = `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:24px 0 12px;"><span style="font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t3};">Record at ${fhEsc(clean)}</span><span style="font-size:11px; color:${t4};">Career main-draw record at this event, newest edition first. Click a match for its stats.</span></div>`;
   return `<div class="tr" style="font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal; color:var(--text);">
       ${trHeaderHtml(m)}${toggle}${S.more ? trMarketHtml(m) : ''}${recHead}
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr)); gap:20px; align-items:start;">${P.map((p, i) => trPlayerCardHtml(m, p, i)).join('')}</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr)); gap:20px; align-items:start;">${P.map((p, i) => trPlayerCardHtml(m, p, i)).join('')}</div>${trSrcLine(P)}
     </div>`;
 }
 
@@ -16163,7 +16176,14 @@ function aNewsArticlesFor(key, name){
       const rn = newsPlayerFor(a.title);
       return rn ? String(rn).replace(/^[A-Z]\.\s*/, '').trim().toLowerCase() === surname : false;
     })
-    .sort((x, y) => y.ts - x.ts);
+    .sort((x, y) => y.ts - x.ts)
+    // TEN-380 review (founder 2026-10-04, "remove duplicates"): one story, one line — two headlines in this player's feed
+    // whose first five words match (case and punctuation ignored) are the same story re-written; only the newest shows.
+    .filter((x, i, arr) => { const k = aNewsStoryKey(x.a.title); return !k || arr.findIndex(y => aNewsStoryKey(y.a.title) === k) === i; });
+}
+function aNewsStoryKey(title){
+  const w = String(title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').split(' ').filter(Boolean);   // hyphens split words
+  return w.length >= 5 ? w.slice(0, 5).join(' ') : '';
 }
 // DF L2217–2243: name + count + hairline, then the compact wire (closed: one line, ellipsis; open: title wraps,
 // caret turns, body paragraphs under the title column).
@@ -16241,10 +16261,12 @@ function maMsSheetEntry(m){
   const won = m.finalScore ? (m.finalScore.winner === 'p1' ? true : m.finalScore.winner === 'p2' ? false : null) : null;
   const j = x => (x && (x.p1 || x.p2)) ? { own: x.p1 || {}, opp: x.p2 || {} } : null;
   const setJ = m.setStats ? Object.fromEntries(Object.keys(m.setStats).map(k => [Number(k), j(m.setStats[k])]).filter(x => Number.isFinite(x[0]) && x[1])) : null;
-  const close = w => { const v = typeof _mcCloseOf === 'function' ? Number(_mcCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
+  // TEN-380 review item 4 (one book per fixture, TEN-377 close rule): the card book's close — the header's and the card's —
+  // never the api-tennis J close another book printed.
+  const close = w => { const v = typeof _mcCardCloseOf === 'function' ? Number(_mcCardCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
   return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
     r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: close('p1'), oppPrice: close('p2'),
-      tourn: m.tour, surface: fhSurfName(m.surface), round: h2hRoundLabel(m.tournamentRound), date: m.date,
+      tourn: m.tour, surface: fhSurfName(m.surface), round: maRoundName(m.tournamentRound), date: m.date,
       inline: { match: j(m.matchStats), sets: setJ && Object.keys(setJ).length ? setJ : null } } };
 }
 function maMsSheetHtml(m){
@@ -16699,6 +16721,21 @@ function aOddsRowsOf(m, opts){
     });
     return row;
   });
+  // TEN-380 review item 4 (one book per fixture): the card book's own row carries the card's Now — its stream tick when that
+  // is newer (_streamNowOver, the same book's live feed) — so the table, the Match Winner tile, Key factors and the header
+  // print one price, and the row is live while its stream is.
+  if (upcoming && typeof _ocsOf === 'function' && typeof _streamNowOver === 'function'){
+    const o = _ocsOf(m), sp = o && o.book ? _streamNowOver(m, o) : null;
+    const key = v => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const ok = v => v != null && Number.isFinite(+v) && +v >= 1.01;
+    const cr = sp && ok(sp.p1) && ok(sp.p2) ? rows.find(r => !r.noData && key(r.name) === key(o.book)) : null;
+    if (cr){
+      const ov = 1 / sp.p1 + 1 / sp.p2;
+      cr.stale = false; cr.streamNow = true; cr.margin = ov - 1;
+      cr.aQNow = +sp.p1; cr.bQNow = +sp.p2;
+      cr.aNow = novig ? sp.p1 * ov : +sp.p1; cr.bNow = novig ? sp.p2 * ov : +sp.p2;
+    }
+  }
   const live = rows.filter(r => !r.noData && !r.stale);
   const num = v => (v == null ? null : +aOddsFmt(v));
   // Best price = highest displayed now per player, live books only; every tied book is green.
@@ -17055,15 +17092,18 @@ function buildOddsSection(m){
       + '<span class="aox-margin" style="' + mono + ' font-size:10px; color:' + C.label3 + ';">' + escapeHtml(marginLbl(r)) + '</span></span>'
       + cell(r, 'a') + move(r, 'a') + cell(r, 'b') + move(r, 'b') + '</div>';
   };
+  // TEN-380 review (founder 2026-10-04): a book with no odds for this match is not listed (as unrecorded markets are
+  // hidden, ruling 15) — its group label goes with it; no book at all → one line saying so.
   const groups = [['sharp', 'SHARP', C.sharp], ['soft', 'SOFT', C.soft]].map(([g, h, c]) => {
-    const rs = D.rows.filter(r => r.group === g);
+    const rs = D.rows.filter(r => r.group === g && !r.noData);
     if (!rs.length) return '';
     return '<div class="aox-grouphead" data-group="' + g + '" style="padding:14px 11px 4px;"><span style="font-family:var(--font-words); font-size:10.5px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:' + c + ';">' + h + '</span></div>'
       + rs.map(row).join('');
   }).join('');
   // The shard is lazy: until it lands there is nothing to verdict yet (never "not checked yet" rows).
   const loading = !m.oddsMovement && !m._oddsLoaded;
-  const body = loading ? '<div class="aox-loading" style="padding:12px 11px; font-size:13px; color:' + C.label + ';">Loading bookmaker odds…</div>' : groups;
+  const body = loading ? '<div class="aox-loading" style="padding:12px 11px; font-size:13px; color:' + C.label + ';">Loading bookmaker odds…</div>'
+    : groups || '<div class="aox-none" style="padding:12px 11px; font-size:13px; color:' + C.label + ';">No bookmaker has odds for this match yet.</div>';
   const table = '<div style="overflow-x:auto;"><div class="aox-table" style="min-width:0; display:flex; flex-direction:column; gap:2px; background:' + C.row + '; border:' + C.hw1 + ' solid ' + C.segTrackBd + '; border-radius:14px; padding:14px 14px 10px;">' + colHead + body + '</div></div>';
   // the legend line (the reference's, without its "lifted price" clause: no price is lifted — the best price is neutral)
   const legend = '<div class="aox-legend" style="font-size:11.5px; color:' + C.label + '; margin-top:10px;">Open → now per book, move in percent. Click a book for its odds movement.</div>';
@@ -17580,6 +17620,18 @@ function kfTourCard(m){
 const KF_BOOK_PREF = [/^pinnacle/i, /^bet365/i];
 function kfOddsBook(m){
   const D = aOddsRowsOf(m, {});
+  // TEN-380 review item 4 (one book per fixture): the card's book first — its Open and Now are the match card's and the
+  // Match Winner tile's (aOddsCardTile), its sparkline and Fair that book's own series. Only a match the card state does
+  // not cover falls back to the box's book order.
+  const card = aOddsCardTile(m, D);
+  if (card && card.now[0] != null && card.now[1] != null){
+    const key = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const own = D.rows.find(r => !r.noData && key(r.name) === key(card.book)) || null;
+    const o = _ocsOf(m);
+    const row = Object.assign({ name: (o && o.label) || (own && own.name) || card.book, series: {}, nv: { a: [], b: [] } }, own || {},
+      { aOpen: card.open[0], bOpen: card.open[1], aNow: card.now[0], bNow: card.now[1] });
+    return { D, row };
+  }
   const live = D.rows.filter(r => !r.noData && !r.stale && r.aNow != null && r.bNow != null && r.aNow >= 1.01 && r.bNow >= 1.01);
   const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;
   return { D, row: pick };
@@ -17761,6 +17813,8 @@ function kfNewsItems(m){
   return [...by.values()].sort((x, y) => y.ts - x.ts);
 }
 const KF_NEWS_SHOWN = 6;
+// TEN-380 review item 2 (founder 2026-10-04): the timeline is text only — no dot on an item; the date gutter is 64px so
+// "Yesterday" never runs into the rule.
 function kfNewsCard(m){
   const C = KF_C, M = FH_MONO, head = meta => kfHead('News', meta, { style: 'margin-bottom:4px;' });
   if (!aNewsFeedOk()) return kfCard('news', head(m._kfNews === 'unavailable' ? 'unavailable' : 'loading') + kfNote(m._kfNews === 'unavailable' ? 'News feed unavailable.' : 'Loading news…'), { gap: 6 });
@@ -17772,9 +17826,9 @@ function kfNewsCard(m){
     const day = kfNewsDay(x.ts), lbl = day === prev ? '' : day; prev = day;
     const tag = x.who.length > 1 ? 'Both' : fhSurname(x.who[0] === 'a' ? m.p1 : m.p2);
     return `<span class="kf-news-day" style="padding:8px 0; ${M} font-size:10.5px; color:${C.t3}; text-align:right; white-space:nowrap;">${fhEsc(lbl)}</span>
-      <div class="kf-news-item" data-kf-news="${x.who.join('')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;"><span style="position:absolute; top:13px; left:-3.5px; width:7px; height:7px; border-radius:50%; background:${C.text};"></span><span class="kf-news-tag" style="${KF_CAP}">${fhEsc(tag)}</span><span style="font-size:12.5px; line-height:17.5px; color:${C.text}; overflow-wrap:anywhere;">${fhEsc(x.a.title || FH_DASHC)}</span></div>`;
+      <div class="kf-news-item" data-kf-news="${x.who.join('')}" style="position:relative; display:flex; flex-direction:column; gap:2px; padding:8px 0 8px 12px; min-width:0;"><span class="kf-news-tag" style="${KF_CAP}">${fhEsc(tag)}</span><span style="font-size:12.5px; line-height:17.5px; color:${C.text}; overflow-wrap:anywhere;">${fhEsc(x.a.title || FH_DASHC)}</span></div>`;
   }).join('');
-  return kfCard('news', `${head(fhEsc(meta))}<div class="kf-news" style="position:relative; display:grid; grid-template-columns:44px minmax(0,1fr); column-gap:12px; flex:1 1 0; align-content:start;"><span style="position:absolute; top:12px; bottom:12px; left:55.5px; width:1px; background:${C.rule};"></span>${rows}</div>`, { gap: 6 });
+  return kfCard('news', `${head(fhEsc(meta))}<div class="kf-news" style="position:relative; display:grid; grid-template-columns:64px minmax(0,1fr); column-gap:12px; flex:1 1 0; align-content:start;"><span style="position:absolute; top:12px; bottom:12px; left:75.5px; width:1px; background:${C.rule};"></span>${rows}</div>`, { gap: 6 });
 }
 
 // ---- 9 · Stennisfy Model (span 6, header strip) ----
@@ -18608,7 +18662,11 @@ function buildStyleSection(m){
 function aHeaderOdds(m){
   const upcoming = !m.finalScore && !(m.interrupted && m.partialScore) && !(m.live && (m.liveScore || []).length);
   if (!upcoming) return { p1: '', p2: '' };
-  return { p1: m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '', p2: m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '' };
+  // TEN-380 review item 4 (one book per fixture): the header prints the match card's own pair — the card book's Now
+  // (_mcNowPair: the card state's book, its stream tick when newer), never matches.json's best-of-books bestOdds.
+  let np = null; try { np = _mcNowPair(m); } catch (e) { np = null; }
+  const f = v => (v != null && Number.isFinite(+v) && +v >= 1.01 ? (+v).toFixed(2) : '');
+  return np ? { p1: f(np.p1), p2: f(np.p2) } : { p1: '', p2: '' };
 }
 // TEN-314 (TEN-312 Phase 1 step 4): every tab builds — and so fetches — on its FIRST open, never at modal
 // open. Opening the modal paints the header and the Key factors tab only; each other tab's builder (and every
@@ -18759,6 +18817,12 @@ function openAnalysisModal(matchId, tab){
     // Live match — sets won so far (same).
     p1Pill.textContent = String(m.liveScore.filter(s => s.p1 > s.p2).length);
     p2Pill.textContent = String(m.liveScore.filter(s => s.p2 > s.p1).length);
+  } else if (m.finalScore) {
+    // TEN-380 review item 5 (founder 2026-10-04; replaces 2026-09-28 "nothing in the header centre"): a completed match
+    // keeps the matchup strip, its pills the card book's close (_mcCardCloseOf — the same one book as the card).
+    const cl = who => { const v = _mcCardCloseOf(m, who); return v != null && Number.isFinite(+v) && +v >= 1.01 ? (+v).toFixed(2) : '—'; };
+    p1Pill.textContent = cl('p1');
+    p2Pill.textContent = cl('p2');
   } else {
     // Upcoming — the header prices. aHeaderOdds is also the Market edge tab's "today's price" (TEN-310).
     const ho = aHeaderOdds(m);
@@ -18767,9 +18831,9 @@ function openAnalysisModal(matchId, tab){
   }
   document.getElementById('aP1Avatar').innerHTML = aAvatarHtml(m.p1, m.p1Key);
   document.getElementById('aP2Avatar').innerHTML = aAvatarHtml(m.p2, m.p2Key);
-  document.getElementById('aMatchup').classList.toggle('done', !!m.finalScore);
+  document.getElementById('aMatchup').classList.remove('done');   // TEN-380 review item 5: the strip shows on every match
 
-  const roundText = h2hRoundLabel(m.tournamentRound);
+  const roundText = maRoundName(m.tournamentRound);
   // TEN-304 ruling: the subtitle carries the start time in the viewer's zone (cardFmtStart, newsTz),
   // written as the ruling's example reads: "ATP Chengdu · Quarter-finals · 18:00". No instant → no time.
   document.getElementById('aContext').textContent = aContextLine(m, roundText);

@@ -34,7 +34,7 @@ const S = new Function(`
   function aAvatarHtml(name, key){ return '<AV ' + name + '|' + key + '>'; }
   function formPanelHtml(){ return ''; } function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); }
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
-  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'h2hRoundLabel', 'eventKeyOfMatch'].map(slice).join('\n')}
+  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'].map(slice).join('\n')}
   ${sliceBlock()}
   return { fhSheetModel, fhSheetKeyModel, fhSheetKeyHtml, fhSheetStatsHtml, fhSheetHeadHtml, fhSheetTabs, MA_SHEET_NA };
 `)();
@@ -118,8 +118,8 @@ test('header: the meta date follows the design per source (Form DD.MM · lists D
 test('the Match Stats tab renders THE sheet inline for a finished match, filled from the match\'s own box score', () => {
   assert.match(slice('buildMatchStatsSection'), /if \(hasPointLog\) return maMsSheetHtml\(m\);/);
   assert.match(html, /  matchstats\(m\)\{ aPaint\('aSectionMatchStats', buildMatchStatsSection\(m\)\); maMsSheetInit\(m\); \},/);
-  const entry = new Function('eventKeyOfMatch', 'h2hRoundLabel', '_mcCloseOf', `${slice('fhSurfName')}; ${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
-    () => 99, x => x, (m, w) => (w === 'p1' ? 1.54 : 2.62));
+  const entry = new Function('eventKeyOfMatch', 'h2hRoundLabel', 'maRoundName', '_mcCardCloseOf', `${slice('fhSurfName')}; ${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
+    () => 99, x => x, x => x, (m, w) => (w === 'p1' ? 1.54 : 2.62));
   const E = entry({ p1: 'A', p1Key: 1, p2: 'B', p2Key: 2, tour: 'ATP X', finalScore: { sets: [{ p1: 6, p2: 4 }, { p1: 6, p2: 3 }], p1Sets: 2, p2Sets: 0, winner: 'p1' },
     matchStats: { p1: { 'Service:Aces': 3 }, p2: { 'Service:Aces': 9 } }, setStats: { 1: { p1: { a: 1 }, p2: { a: 2 } } } });
   assert.deepEqual(E.r.sets, [[6, 4], [6, 3]]); assert.equal(E.r.won, true); assert.equal(E.r.ek, '99');
@@ -205,4 +205,20 @@ test('Download report prints the Match Stats sheet\'s full box score, not its Ke
 // Mutation: put the footer line back.
 test('the modal carries no footer line (founder 2026-09-28: no real data timestamp → nothing)', () => {
   assert.ok(!html.includes('All stats are updated live') && !html.includes('aanalysisfooter'));
+});
+
+// TEN-380 review item 5 (founder 2026-10-04): the modal names rounds in our words — 1/16-finals → R32, 1/8-finals → R16,
+// 1/4 → Quarter-finals, 1/2 → Semi-finals — on the subtitle and the sheet; a number-only row (Dominance ratio, W/UE; ruling
+// 11) draws no bar track at all. Mutations: the sheet back on h2hRoundLabel (provider words), or the ratio rows' track back.
+test('review item 5: rounds in our words on the subtitle and the sheet; number-only rows draw no track', () => {
+  const R = new Function(`${slice('h2hRoundLabel')}; ${slice('maRoundName')}; return maRoundName;`)();
+  assert.deepEqual(['ATP Tokyo - 1/16-finals', '1/8-finals', 'ATP Tokyo - 1/4-finals', '1/2-finals', 'Final', '1/32-finals', 'Qualification'].map(R),
+    ['R32', 'R16', 'Quarter-finals', 'Semi-finals', 'Final', 'R64', 'Qualification']);
+  assert.match(slice('maMsSheetEntry'), /round: maRoundName\(m\.tournamentRound\)/, 'the sheet');
+  assert.match(slice('openAnalysisModal'), /const roundText = maRoundName\(m\.tournamentRound\);/, 'the subtitle');
+  const row = new Function('FH_MONO', 'MA_GREY', 'FH_DASH', 'fhEsc', 'fhStatBarWidth', `${slice('fhSheetRowHtml')}; return fhSheetRowHtml;`)(
+    'x', 'g', 'd', s => String(s), (k, a, b) => (k === 'ratio' ? null : 50));
+  const cell = v => ({ v, txt: String(v), sub: '', title: '' });
+  assert.ok(!row({ label: 'Dominance ratio', kind: 'ratio', a: cell(1.2), b: cell(0.9) }).includes('fh-shalf'), 'ratio row: no track');
+  assert.equal((row({ label: 'Serve rating', kind: 'rating', a: cell(250), b: cell(220) }).match(/fh-shalf/g) || []).length, 2, 'control: a bar row keeps its two track halves');
 });
