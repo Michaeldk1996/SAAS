@@ -215,7 +215,8 @@ test('the test-only pixel fixture never ships: not referenced by the dashboard, 
 // another attribute / a second tooltip. The Weather tab's chip, "+1" and day cards are driven through
 // TEN-303's REAL initAOddsTips / aOddsTipShow (sliced from the page) with a fake DOM and clock.
 test('Weather tooltips use the ONE shared tooltip: data-aotip + tabindex, 250 ms delay, hover and keyboard focus', () => {
-  const f = file((d, h) => d === '2026-09-27' && h === 14 ? { gusts: 40, feels: 36 } : {});   // two flags → "+1"
+  // two flags at the match hour (10:00 Berlin = 16:00 Chengdu) → "+1" on the match-day tile (founder review 2: match-time figures)
+  const f = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, feels: 36 } : {});
   const html = render(f);
   const targets = { more: attrsOf(html, 'wx-more'), day: attrsOf(html, 'wx-day') };
   assert.equal(attrsOf(html, 'wx-tbd').length, 0, 'TEN-380 review item 1: no THRESHOLDS chip'); assert.ok(targets.more.length >= 1); assert.equal(targets.day.length, 7);
@@ -266,7 +267,12 @@ test('DST: a Sydney match after the 4 Oct 2026 change reads the RIGHT hour (real
   assert.match(lead[0], /data-factor="wind"/); assert.match(text(lead[0]), /41/);
   const d5 = elements(html, 'wx-day').find(x => /data-date="2026-10-05"/.test(x));
   assert.equal(text(elements(d5, 'wx-reason')[0]).replace(/\+1$/, ''), 'Gusts 41 km/h');
-  assert.match(d5, /Heat — high/, '10:00 AEDT is inside the playing window');
+  // founder review 2 (2026-10-04): the match-day tile prints the match-hour figures (feels 20° at 16:00 → no heat flag);
+  // its hover still carries the window max, so the 10:00 AEDT 33° proves the DST bucketing there, and 6 Oct's tile too.
+  assert.doesNotMatch(d5, /class="wx-reason"[^>]*>Heat/, 'match day: the match-hour figures, not the window max');
+  assert.match(d5, /Feels-like max.*?33°/s, '10:00 AEDT is inside the playing window (the day hover)');
+  const d6 = elements(html, 'wx-day').find(x => /data-date="2026-10-06"/.test(x));
+  assert.match(d6, /Heat — high/, '10:00 AEDT 6 Oct is inside that day\'s window');
 });
 
 // Mutation: wxFileDue never says due for a cached file; the matches reload no longer marks the index stale.
@@ -557,9 +563,10 @@ test('TEN-380: no legend row, no "Forecast updated" stamp (the stale line stays)
 });
 
 // TEN-380 review items 2 + 3 (founder 2026-10-04): status lines are text only — no round dot on a day line, the verdict
-// line or a factor tile; and the court pace prints the figure only when conditions are calm ("usual" has no source,
-// ruling 14). Mutations: a dot back on the day reason / verdict / tile; "AS USUAL" or "close to its usual" back.
-test('TEN-380 review: no status dots anywhere on the tab; calm court pace = the figure only, no "usual"', () => {
+// line or a factor tile; and the court pace never says "usual" (ruling 14 — no source). Founder review 2 (2026-10-04):
+// calm conditions read against the event's base court speed instead — "PLAYS AT BASE" + its sentence (below).
+// Mutations: a dot back on the day reason / verdict / tile; "AS USUAL" or "close to its usual" back.
+test('TEN-380 review: no status dots anywhere on the tab; calm court pace never says "usual"', () => {
   const flagged = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
   const calm = render(file(() => ({})));
   for (const h of [flagged, calm]) {
@@ -570,4 +577,41 @@ test('TEN-380 review: no status dots anywhere on the tab; calm court pace = the 
   assert.ok(pace, 'pace tile renders');
   assert.ok(!/usual/i.test(text(pace)), 'no "usual" on a calm day: ' + text(pace));
   assert.match(text(pace), /1\.17/, 'the figure still prints');
+});
+
+// Founder review 2 (TEN-380, 2026-10-04) item 4: calm rain and heat → the pace keeps its verdict, "PLAYS AT BASE", and the
+// sentence under the figure names the base speed — in the lead layout (wind leads) and the calm layout alike.
+// Mutations: the base label or sentence dropped; the calm layout prints no label.
+test('review 2: calm conditions → "PLAYS AT BASE" + "Base court speed is 1.17 (Fast)…" in both layouts', () => {
+  const windy = render(file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {}));
+  const calm = render(file(() => ({})));
+  for (const [name, h] of [['lead layout', windy], ['calm layout', calm]]) {
+    const pace = elements(h, 'wx-tile').find(t => /data-factor="pace"/.test(t));
+    assert.ok(pace, name + ': pace tile');
+    assert.equal(text(elements(pace, 'wx-sevl')[0]), 'PLAYS AT BASE', name);
+    assert.match(text(pace), /Base court speed is 1\.17 \(Fast\)\. Today's conditions should not change it\./, name);
+    assert.ok(!/usual/i.test(text(pace)), name + ': still no "usual"');
+  }
+  assert.match(text(elements(windy, 'wx-tile').find(t => /data-factor="pace"/.test(t))), /Wind adds variance on top\./, 'wind on → the variance clause');
+});
+
+// Founder review 2 item 3: the match-day tile prints the MATCH-HOUR figure, the same as Main factor — never the day's
+// max (57 at 13:00 vs 40 at the 16:00 match hour). Another day keeps its window max. Mutation: the match day keeps the max.
+test('review 2: the match-day tile = the match-hour figure (= Main factor); other days keep the window max', () => {
+  const f = file((d, h) => d === '2026-09-27' ? (h === 13 ? { gusts: 57 } : h === 16 ? { gusts: 40 } : {}) : d === '2026-09-28' && h === 13 ? { gusts: 57 } : {});
+  const html = render(f);
+  assert.match(text(elements(html, 'wx-verdict')[0]), /gusts 40 km\/h/);
+  const day = date => elements(html, 'wx-day').find(x => new RegExp('data-date="' + date + '"').test(x));
+  assert.equal(text(elements(day('2026-09-27'), 'wx-reason')[0]), 'Gusts 40 km/h', 'match day = match hour');
+  assert.match(day('2026-09-27'), /Max gusts.*?57 km\/h/s, 'its hover still lists the day max, labelled Max');
+  assert.equal(text(elements(day('2026-09-28'), 'wx-reason')[0]), 'Gusts 57 km/h', 'another day = its window max');
+});
+
+// Founder review 2 next-round item: "LOW CONFIDENCE" on one line where the day card holds it (≥ 1400px), wrapping inside
+// its card below that instead of spilling into the next card (clean review 3: 8px overflow per side at 1280).
+test('review 2: LOW CONFIDENCE is one line at ≥ 1400px and wraps inside its card below', () => {
+  assert.match(HTML, /\.modal-analysis \.wx-lowconf\{ white-space:nowrap; \}/);
+  assert.match(HTML, /@media \(max-width:1399px\)\{ \.modal-analysis \.wx-lowconf\{ white-space:normal; \} \}/);
+  const far = render(file(() => ({})), {}, Object.assign({}, M, { date: '2026-09-27' }));
+  assert.ok(elements(far, 'wx-lowconf').length >= 1, 'the label carries its class');
 });

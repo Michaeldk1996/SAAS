@@ -11849,7 +11849,9 @@ const WX_COPY = {
   },
   pace: {
     tag: 'FROM TOURNAMENT', detail: 'Court speed · {tour} · {surface} court',
-    slower: 'PLAYS SLOWER', quicker: 'PLAYS QUICKER',   // calm conditions print the figure only (TEN-380 review item 3)
+    slower: 'PLAYS SLOWER', quicker: 'PLAYS QUICKER',
+    // founder review 2 (2026-10-04): calm conditions keep a verdict — the event's base court speed, never "usual" (ruling 14)
+    base: 'PLAYS AT BASE', atBase: "Base court speed is {speed}{label}. Today's conditions should not change it.",
     shifted: "Base court speed is {speed} ({label}). Today's {cause} should make it play {dir} than that.",   // ASCII ' as in the file (DF wxFor)
     causeSlower: 'damp air', causeQuicker: 'heat', dirSlower: 'slower', dirQuicker: 'quicker',
     windAdds: ' Wind adds variance on top.',
@@ -12124,6 +12126,19 @@ function wxModel(m, entry, file, nowMs, forced, arch){
   ].map(f => Object.assign(f, { name: CP.names[f.id], unit: CP.units[f.id], keys: CP.metrics[f.id],
     effect: f.sev === 'u' ? '' : (f.sev === 'r' || f.sev === 'a') ? CP.effect[f.id].hot : CP.effect[f.id].calm }));
   if (unavail || hi < 0) F.forEach(f => { f.sev = 'u'; f.effect = ''; f.detail = '—'; f.value = '—'; f.big = '—'; f.metrics = ['—', '—']; });
+  // Founder review 2 (2026-10-04): on match day the day tile prints the MATCH-TIME figures (the same hourly row as Main
+  // factor and the Wind / Heat / Rain cards), so the strip can never say gusts 57 while Main factor says 40. Other days
+  // keep their window max; the tile's hover still lists the day's max values, labelled "Max".
+  if (!unavail && hi >= 0) {
+    const md = days.find(d => d.isMatch && !d.unavail);
+    if (md) {
+      const MF = [['wind', 'gusts', mt.gusts], ['heat', 'feels', mt.feels], ['rain', 'rain', mt.rain]].map(([id, kind, v]) => ({ id, v, sev: wxSev(kind, v) }));
+      md.flags = MF.filter(x => x.sev === 'r' || x.sev === 'a').sort((x, y) => wxRank(y.sev) - wxRank(x.sev))
+        .map(x => ({ id: x.id, sev: x.sev, text: wxFmt(typeof CP.flag[x.id] === 'object' ? CP.flag[x.id][x.sev] : CP.flag[x.id], { v: x.v }) }));
+      md.reason = md.flags.length ? 'flag' : MF.some(x => x.sev === 'u') ? 'u' : 'n';
+      md.atMatch = true;
+    }
+  }
   F.sort((x, y) => wxRank(y.sev) - wxRank(x.sev));
   const leadF = wxRank(F[0].sev) > 0 ? F[0] : null;
 
@@ -12131,17 +12146,17 @@ function wxModel(m, entry, file, nowMs, forced, arch){
   const cs = (m && m.courtSpeed) || {}, spd = wxNum(cs.abstractSpeed), spdLabel = cs.category || '';
   const sevOf = id => { const x = F.find(f => f.id === id); return x ? x.sev : 'u'; };
   const on = id => sevOf(id) === 'r' || sevOf(id) === 'a';
-  // spec: slower = rain amber/red; quicker = heat amber/red AND rain calm; as usual = both calm. Calm means
+  // spec: slower = rain amber/red; quicker = heat amber/red AND rain calm; at base = both calm. Calm means
   // AVAILABLE and below watch — an UNAVAILABLE rain (or heat) leaves the pace unknown: no status, no copy.
-  const shift = on('rain') ? 'slower' : sevOf('rain') !== 'n' ? null : on('heat') ? 'quicker' : sevOf('heat') === 'n' ? 'usual' : null;
+  const shift = on('rain') ? 'slower' : sevOf('rain') !== 'n' ? null : on('heat') ? 'quicker' : sevOf('heat') === 'n' ? 'base' : null;
   const P = CP.pace, speedTxt = spd == null ? null : spd.toFixed(2);
   const paceEffect = (unavail || speedTxt == null || shift == null) ? ''
-    : shift === 'usual' ? ''   // TEN-380 review item 3 / ruling 14: "usual" has no source — the figure only
+    : shift === 'base' ? wxFmt(P.atBase, { speed: speedTxt, label: spdLabel ? ' (' + spdLabel + ')' : '' }) + (on('wind') ? P.windAdds : '')
     : wxFmt(P.shifted, { speed: speedTxt, label: spdLabel, cause: shift === 'slower' ? P.causeSlower : P.causeQuicker, dir: shift === 'slower' ? P.dirSlower : P.dirQuicker })
       + (on('wind') ? P.windAdds : '');
   const tourName = String((m && m.tour) || '').replace(/^ATP\s+/, '') || '—';
   const pace = { id: 'pace', name: CP.names.pace, value: (unavail || speedTxt == null) ? '—' : speedTxt,
-    sevL: (speedTxt == null || shift == null || shift === 'usual') ? '' : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
+    sevL: (speedTxt == null || shift == null) ? '' : shift === 'base' ? P.base : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
 
   let verdict;
   if (unavail) verdict = CP.verdictUnavailable;
@@ -12263,7 +12278,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
       + '</div>'
       + '<div style="width:100%; min-height:34px; padding-top:9px; border-top:' + hw1 + ' solid ' + C.rule + '; display:flex; align-items:flex-start; justify-content:center; gap:6px;">'
       + '<span class="wx-reason" style="font-size:11.5px; line-height:1.35; font-weight:' + rw + '; color:' + rc + '; text-align:center;">' + escapeHtml(reason) + '</span>' + more + '</div>'
-      + (d.lowConf ? '<span style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.lowConf) + '</span>' : '')
+      + (d.lowConf ? '<span class="wx-lowconf" style="' + ' font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.lowConf) + '</span>' : '')
       + '</div>';
   }).join('');
   h += '<div class="wx-strip" style="display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px; padding-top:10px;">' + cards + '</div>';
@@ -12313,6 +12328,8 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
       return '<div class="wx-tile" data-factor="' + t.id + '"' + (isPace ? paceAttrs : '') + ' style="display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';' + (isPace ? paceCss : '') + '">'
         + '<span style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span class="wx-name" style="font-size:13px; font-weight:700; color:' + C.dim + ';">' + escapeHtml(t.name) + '</span></span>'
         + '<span class="wx-val" style="' + mono + ' font-size:20px; font-weight:700; color:' + (s === 'u' ? C.dim : C.sub) + ';">' + escapeHtml(t.value) + '</span>'
+        // founder review 2 (2026-10-04): the pace verdict prints in the calm layout too (PLAYS AT BASE / SLOWER / QUICKER)
+        + (isPace && t.sevL ? '<span class="wx-sevl" style="font-family:var(--font-words); font-size:9.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.muted + ';">' + escapeHtml(t.sevL) + '</span>' : '')
         + '<span style="font-size:11.5px; color:' + C.dim + ';">' + escapeHtml(t.detail) + '</span>'
         + '<span class="wx-effect" style="font-size:11.5px; line-height:1.45; color:' + C.dim + '; text-wrap:pretty;">' + escapeHtml(t.effect) + '</span>'
         + (isPace ? tag('align-self:flex-start; ') : '') + '</div>';
@@ -14668,14 +14685,16 @@ function fhSheetRowHtml(s){
   const sub = c => c.sub ? `<span style="${FH_MONO} font-size:10px; color:var(--text-label);">${fhEsc(c.sub)}</span>` : '';
   // TEN-380 (step 3 reference): fills on a --track half, 6px, outer radius 3, gap 2 (leader / trailer colours above).
   // TEN-380 review item 5 / ruling 11 (founder 2026-10-04): a number-only row (kind 'ratio': Dominance ratio, W/UE) draws
-  // no track at all — not an empty one.
+  // no track at all — not an empty one. Founder review 2 (2026-10-04): the same for any row where neither side has a bar
+  // (both "—", or counts only) — a track is drawn only under a row that carries at least one fill.
+  const noTrack = s.kind === 'ratio' || (!(aW > 0) && !(bW > 0));   // "—", counts only, or a real 0 | 0: no fill → no track
   const fill = (w, col, c) => w == null ? '' : `<span class="fh-sbar" style="height:6px; width:${w.toFixed(1)}%; background:${c && c.gate === 'small' ? MA_GREY : col};"></span>`;
   return `<div class="fh-srow" style="display:flex; flex-direction:column; gap:6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
         <span${s.a.title ? ` title="${fhEsc(s.a.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px;">${val(s.a, 'var(--text)')}${sub(s.a)}</span>
         <span class="fh-slabel" style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); text-align:center;">${fhEsc(s.label)}</span>
         <span${s.b.title ? ` title="${fhEsc(s.b.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">${sub(s.b)}${val(s.b, 'var(--text)')}</span>
-      </div>${s.kind === 'ratio' ? '' : `
+      </div>${noTrack ? '' : `
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:2px;">
         <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:6px; background:var(--track); border-radius:3px 0 0 3px; overflow:hidden;">${fill(aW, aCol, s.a)}</span>
         <span class="fh-shalf" style="display:flex; height:6px; background:var(--track); border-radius:0 3px 3px 0; overflow:hidden;">${fill(bW, bCol, s.b)}</span>
@@ -15267,7 +15286,7 @@ function meBandsCol(E, i, M, O){
           + `<span class="me-units" style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: n ? meSg(b.units, 1, 'u') : null, nopct: '—', note: 'title', color: n ? meUC(b.units, 1) : ME_C.m1 })}</span></div>`;
       }).join('')).join('') + '</div>';
   }
-  const meta = M.state === 'ready' && M.priced ? `today <span style="color:${ME_C.text}; font-weight:700;">${M.today == null ? '—' : M.today.toFixed(2)}</span> · ${M.priced.length} priced` : '';
+  const meta = M.state === 'ready' && M.priced ? `today <span style="color:${ME_C.text}; font-weight:700;">${M.today == null ? '—' : M.today.toFixed(2)}</span> · ${M.priced.length.toLocaleString('en-US')} priced` : '';
   return `<div style="display:flex; flex-direction:column; min-width:0;"><span class="me-phead" style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding:0 8px 8px; margin-bottom:6px; border-bottom:${ME_C.hw} solid ${ME_C.headLine};"><span style="font-size:13.5px; font-weight:700;">${fhEsc(name)}</span><span class="me-pmeta" style="${FH_MONO} font-size:11px; color:${ME_C.m3};">${meta}</span></span>${head}${body}</div>`;
 }
 function mePriceCard(E, MM){
@@ -15287,7 +15306,7 @@ function meChartCard(E, MM){
   const col = [[ME_C.wbar, '2.4'], [ME_C.wbar2, '2']];   // README §4: lead --white-bar 2.4px, other --white-bar-2 2px
   const legend = [0, 1].map(i => {
     const M = MM[i], has = M.state === 'ready' && M.priced.length > 0;
-    const nTxt = M.state === 'ready' ? M.priced.length + ' priced' : M.state === 'loading' ? '' : '—';
+    const nTxt = M.state === 'ready' ? M.priced.length.toLocaleString('en-US') + ' priced' : M.state === 'loading' ? '' : '—';
     return `<span style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:3px; border-radius:2px; background:${col[i][0]};"></span><span style="font-size:13px; font-weight:700;">${fhEsc(names[i])}</span><span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${nTxt}</span>`
       + (has ? `<span style="${FH_MONO} font-size:14px; font-weight:700; color:${meUC(M.units, 1)};">${meSg(M.units, 1, 'u')}</span>` : '') + '</span>';
   }).join('');
@@ -16627,6 +16646,15 @@ function aOddsFmt(v){
   if (v < 1.10){ const s = v.toFixed(3); if (s[s.length - 1] !== '0') return s; }
   return v.toFixed(2);
 }
+// TEN-380 founder review 2 (2026-10-04): ONE Move % for the per-book row and its pop-up — (now − open) / open on the
+// DISPLAYED prices, rounded to 1 decimal; null when either side is missing. A row reading 0.0% can never pop up +0.1%.
+function aOddsMovePct(open, now){
+  if (open == null || now == null || !Number.isFinite(+open) || !Number.isFinite(+now)) return null;
+  const o = +aOddsFmt(+open), n = +aOddsFmt(+now);
+  if (!(o > 0)) return null;
+  const p = (n - o) / o * 100, r1 = Math.round(Math.abs(p) * 10) / 10;
+  return { sign: !r1 ? 0 : p > 0 ? 1 : -1, abs: r1 };
+}
 function aOddsSrcTitle(key){ return key === 'Pinnacle +30s (Oddspapi)' ? 'Pinnacle +30s' : key; }
 function aOddsGapsMs(gaps){
   return (gaps || []).map(g => [Date.parse(g && g[0]), g && g[1] == null ? Infinity : Date.parse(g[1])])
@@ -17092,8 +17120,9 @@ function buildOddsSection(m){
     const o = r.noData ? null : r[x + 'Open'], n = r.noData ? null : r[x + 'Now'];
     const st = mono + ' font-size:11.5px; font-weight:700; text-align:right; white-space:nowrap;';
     if (o == null || n == null) return '<span class="aox-move" data-side="' + x + '" style="' + st + ' color:' + C.label + ';">' + AODDS_DASH + '</span>';
-    const p = (+aOddsFmt(n) - +aOddsFmt(o)) / +aOddsFmt(o) * 100, r1 = Math.round(Math.abs(p) * 10) / 10;
-    return '<span class="aox-move" data-side="' + x + '" style="' + st + ' color:' + (!r1 ? C.label : p > 0 ? C.up : C.dn) + ';">' + (!r1 ? '' : p > 0 ? '▲ ' : '▼ ') + r1.toFixed(1) + '%</span>';
+    const mp = aOddsMovePct(o, n);
+    if (!mp) return '<span class="aox-move" data-side="' + x + '" style="' + st + ' color:' + C.label + ';">' + AODDS_DASH + '</span>';
+    return '<span class="aox-move" data-side="' + x + '" style="' + st + ' color:' + (!mp.sign ? C.label : mp.sign > 0 ? C.up : C.dn) + ';">' + (!mp.sign ? '' : mp.sign > 0 ? '▲ ' : '▼ ') + mp.abs.toFixed(1) + '%</span>';
   };
   const marginLbl = r => r.noData ? r.verdict : r.stale ? 'no recent data' : novig ? 'margin removed' : r.margin == null ? 'margin ' + AODDS_DASH : 'margin ' + (r.margin * 100).toFixed(1) + '%';
   const row = r => {
@@ -17142,10 +17171,11 @@ function aOddsMvHtml(m, D, marginLbl){
     // on the DISPLAYED prices (the chart's own points), ties keep the earliest: 1.401 then 1.404 both read 1.40 → the first
     aOddsDispSeries(s).forEach(p => { if (!hi || p[1] > hi[1]) hi = p; if (!lo || p[1] < lo[1]) lo = p; });
     const shown = r.stale ? r[x + 'Last'] : r[x + 'Now'];
-    const chg = (!r.stale && open && r[x + 'Now'] != null) ? (r[x + 'Now'] - open[1]) / open[1] * 100 : null;
+    // the row's own Move (aOddsMovePct on the row's open → now), so the pop-up and its row always print the same figure
+    const chg = r.stale ? null : aOddsMovePct(r[x + 'Open'] != null ? r[x + 'Open'] : open && open[1], r[x + 'Now']);
     const right = r.stale
       ? '<span class="aox-lastseen" style="font-size:12px; font-weight:700; color:' + C.label + ';">last seen ' + aOddsWhen(lastSeen, D.nowMs) + '</span>'
-      : chg == null ? '' : '<span class="aox-chg" style="font-size:12px; font-weight:700; color:' + (chg >= 0 ? C.up : C.dn) + ';">' + (chg >= 0 ? '+' : '−') + Math.abs(chg).toFixed(1) + '%</span>';
+      : chg == null ? '' : '<span class="aox-chg" style="font-size:12px; font-weight:700; color:' + (!chg.sign ? C.label : chg.sign > 0 ? C.up : C.dn) + ';">' + (!chg.sign ? '' : chg.sign > 0 ? '+' : '−') + chg.abs.toFixed(1) + '%</span>';
     // the reference's tiles: --inner, no edge, every value white
     const box = (cap, p) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.pop + '; border:' + C.hw1 + ' solid transparent;">'
       + '<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:' + C.label + ';">' + cap + '</span>'
@@ -33924,6 +33954,10 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* TEN-380 side tabs (README §1, measured on OFFICIAL VERSION 1): idle words --text-label with a white icon and no
      hover tint; active = --inner + inset 1px --edge-10, white words + icon. No blue anywhere in the rail. */
   .modal-analysis .asidenav-item{ color:var(--text-label); background:transparent; }
+  /* founder review 2 (TEN-380): "LOW CONFIDENCE" on one line where the day card holds it (≥ 1400px: card ≥ 105px);
+     narrower, it wraps inside its card rather than spill into the next one */
+  .modal-analysis .wx-lowconf{ white-space:nowrap; }
+  @media (max-width:1399px){ .modal-analysis .wx-lowconf{ white-space:normal; } }
   .modal-analysis .asidenav-item .aicon{ color:var(--text); }
   .modal-analysis .asidenav-item.active{ background:var(--inner); box-shadow:inset 0 0 0 1px var(--edge-10); color:var(--text); }
   .modal-analysis .asidenav-item.active .aicon{ color:var(--text); }

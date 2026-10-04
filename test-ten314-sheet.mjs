@@ -222,3 +222,18 @@ test('review item 5: rounds in our words on the subtitle and the sheet; number-o
   assert.ok(!row({ label: 'Dominance ratio', kind: 'ratio', a: cell(1.2), b: cell(0.9) }).includes('fh-shalf'), 'ratio row: no track');
   assert.equal((row({ label: 'Serve rating', kind: 'rating', a: cell(250), b: cell(220) }).match(/fh-shalf/g) || []).length, 2, 'control: a bar row keeps its two track halves');
 });
+
+// Founder review 2 (TEN-380, 2026-10-04, ruling 11): a row where NEITHER side has a bar (both "—", counts only) draws no
+// track — the empty line under the three dash rows is gone. One side with a bar keeps the track.
+test('review 2: a row with no bar on either side draws no track; one bar keeps it', () => {
+  const real = new Function('FH_MONO', 'MA_GREY', 'FH_DASH', 'fhEsc', 'FH_BAR_CAP', `${slice('fhStatBarWidth')}; ${slice('fhSheetRowHtml')}; return fhSheetRowHtml;`)(
+    'x', 'g', 'd', s => String(s), 92);
+  const dash = { v: null, txt: '—', sub: '', title: '' }, cell = v => ({ v, txt: v + '%', sub: '', title: '' });
+  for (const label of ['Winners / total points', 'Unforced errors / total points'])
+    assert.ok(!real({ label, kind: 'pct', a: dash, b: dash }).includes('fh-shalf'), label + ': both "—" → no track');
+  assert.equal((real({ label: 'Net points won', kind: 'pct', a: cell(60), b: dash }).match(/fh-shalf/g) || []).length, 2, 'one side with a bar keeps both halves');
+  const n0 = v => ({ v, txt: String(v), sub: '', title: '' });
+  assert.ok(!real({ label: 'Aces', kind: 'count', k: 10, a: n0(0), b: n0(0) }).includes('fh-shalf'), 'a real 0 | 0 count: no fill → no track');
+  assert.equal((real({ label: 'Aces', kind: 'count', k: 10, a: n0(0), b: n0(3) }).match(/fh-shalf/g) || []).length, 2, '0 | 3 keeps the track');
+  assert.equal((real({ label: 'Net points won', kind: 'pct', a: cell(60), b: cell(55) }).match(/fh-sbar/g) || []).length, 2, 'control: two bars');
+});

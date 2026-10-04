@@ -26,7 +26,7 @@ export function constSrc(name, src = HTML) {
 export const CONSTS = ['ANALYSIS_P1_COLOR', 'ANALYSIS_P2_FILL', 'FH_AC', 'FH_MONO', 'KF_BOOK_PREF', 'KF_C', 'AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG',
   'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED', 'AODDS_SIDES', 'MA_POP'];
 export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries',
-  'aOddsPulledAt', 'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap',
+  'aOddsPulledAt', 'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsMovePct', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap',
   'aOddsPairTicks', 'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsMvChart', 'aOddsDayStrip', 'aOddsTipHtml',
   'aOddsStatusOf', 'aOddsBookTip', 'aOddsTipHide', 'initAOddsTips', 'renderOddsSection', 'aOddsSetMode', 'aOddsSetMarket',
   'aOddsOpenMv', 'aOddsCloseMv', 'aOddsCardTile', 'aOddsIni', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'];

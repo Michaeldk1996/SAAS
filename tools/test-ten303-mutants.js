@@ -28,8 +28,8 @@ const MUTANTS = [
   ['review: pairing without the gap check', 'pair: a != null && b != null && !aOddsInGap(t, G) };', 'pair: a != null && b != null };'],
   ['review: only the first tied book is green', "rows.forEach(r => { r[x + 'Best'] = best != null && !r.noData && !r.stale && num(r[x + 'Now']) === best; });",
     "let won = false; rows.forEach(r => { r[x + 'Best'] = !won && best != null && !r.noData && !r.stale && num(r[x + 'Now']) === best; if (r[x + 'Best']) won = true; });"],
-  ['TEN-380: the Move arrows swapped', "(!r1 ? '' : p > 0 ? '▲ ' : '▼ ')", "(!r1 ? '' : p > 0 ? '▼ ' : '▲ ')"],
-  ['TEN-380: the Move read on the raw prices', "const p = (+aOddsFmt(n) - +aOddsFmt(o)) / +aOddsFmt(o) * 100,", "const p = (n - o) / o * 100,"],
+  ["TEN-380: the Move arrows swapped", "(!mp.sign ? '' : mp.sign > 0 ? '▲ ' : '▼ ')", "(!mp.sign ? '' : mp.sign > 0 ? '▼ ' : '▲ ')"],
+  ["TEN-380: the Move read on the raw prices", "const o = +aOddsFmt(+open), n = +aOddsFmt(+now);", "const o = +open, n = +now;"],
   ['TEN-380: the per-row sparkline back', "+ '<span style=\"font-size:10px; color:' + C.label + ';\">→</span>'", "+ '<svg class=\"aox-spark\"></svg><span style=\"font-size:10px; color:' + C.label + ';\">→</span>'"],
   ['TEN-380: the legend keeps the lifted-price clause', "move in percent. Click a book", "move in percent; the lifted price is the best on that side. Click a book"],
   ['TEN-380: the STEAM sentence printed beside the chip', "padding:3px 7px;\">STEAM</span></span>' : '';", "padding:3px 7px;\">STEAM</span>' + escapeHtml(D.steam.text) + '</span>' : '';"],
@@ -82,6 +82,7 @@ const MUTANTS = [
   ['role: the STEAM chip fill on the link token', "  blueFill: 'var(--selected)',", "  blueFill: 'var(--link)',"],
   ['founder card 9e0ac649: a pulled book stops at "not in feed since"', 'end: endOf(key, last.t),', 'end: aOddsPulledAt(mt) != null ? Math.max(last.t, aOddsPulledAt(mt)) : endOf(key, last.t),'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
+  ["review 2: pop-up Move on raw prices", "const chg = r.stale ? null : aOddsMovePct(", "const chg = r.stale ? null : ((o, n) => o == null || n == null ? null : { sign: Math.sign(n - o), abs: Math.round(Math.abs((n - o) / o * 100) * 10) / 10 })("],
 ];
 // A mutant is only meaningful against a GREEN baseline: on a red suite every mutant would read as "caught".
 const base = spawnSync(process.execPath, ['--test', ...SUITES], { env: Object.assign({}, process.env, { TEN303_HTML: BASE }), encoding: 'utf8' });

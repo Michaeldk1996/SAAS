@@ -35,9 +35,18 @@ Spec: `design/handoff-weather/Weather Tab - Paperclip.md`. Code: `WX_CONFIG` / `
 - **Status lines are text only — no dots** (founder TEN-380 review item 2, 2026-10-04): a day card's flag line, the "Main factor at
   match time" verdict and the factor tiles carry the grey-ladder words and values, never a round marker. **Test:**
   `test-ten304-weather-tab.mjs` "TEN-380 review" (no `border-radius:50%` on the tab).
-- **Court pace prints the figure only on a calm day** (founder TEN-380 review item 3 / ruling 14): no "AS USUAL" word and no
-  "close to its usual" sentence — "usual" has no source. "PLAYS SLOWER" / "PLAYS QUICKER" stay (they come from the rain and
-  heat readings). **Test:** the same test (a calm pace tile has no "usual").
+- **Court pace always carries a verdict, never "usual"** (founder TEN-380 review item 3 / ruling 14 + review 2, 2026-10-04):
+  rain hot → "PLAYS SLOWER", heat hot with rain calm → "PLAYS QUICKER", both calm → **"PLAYS AT BASE"** with "Base court
+  speed is {speed} ({category}). Today's conditions should not change it." (+ " Wind adds variance on top." when wind is
+  hot) — read against the event's base court speed, which has a source; "AS USUAL" / "close to its usual" never return.
+  The label prints in the lead layout and the calm layout alike. An UNAVAILABLE rain or heat → no label, no sentence.
+  **Test:** `test-ten304-weather-tab.mjs` "review 2: calm conditions → PLAYS AT BASE".
+- **"LOW CONFIDENCE" stays on one line** where the day card holds it (≥ 1400px viewport, card ≥ 105px); narrower it wraps inside its card, never spilling into the next (founder review 2 + clean review 3). **Test:** "LOW CONFIDENCE is one line at ≥ 1400px".
+- **The match-day card prints the match-hour figures** (founder review 2, 2026-10-04): its flag line reads the same hourly
+  row as Main factor and the Wind / Heat / Rain cards, so the strip can never say gusts 57 while Main factor says 40. Every
+  other day keeps its playing-window max; each card's hover lists the day's max values, labelled "Max". No match hour
+  (time TBC, unavailable) → the match day falls back to its window max. **Test:** "review 2: the match-day tile = the
+  match-hour figure".
 - **A missing value is "—" and UNAVAILABLE, never 0, and never the lead factor.**
 - **Day-card flags use the worst hourly value in the playing window (10:00–23:00 venue-local)**; an hour outside it never flags the card. Hi/lo are the daily values.
 - **The heat flag is the file's words** (founder Q21, 2026-09-30; DF L2411 "Heat — high"), at the existing feels-like severities in `WX_CONFIG` (no threshold change; D8 is still open). The file draws no concern-level heat flag, so `WX_COPY.flag.heat` carries the same words at watch and concern and the colour tells them apart. Wind and rain keep their value flags ("Gusts 38 km/h", "Rain 44%"), as the file draws them. **Test:** `test-ten304-weather-tab.mjs` "Q21" (the flag text per severity; mutation: "Feels like {v}°").

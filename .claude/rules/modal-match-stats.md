@@ -45,7 +45,10 @@ found at restore time are marked inline.
   shards the guarded cache feeds (TEN-318). The old class-based point log stays for the other match-detail panels only.
 - **Bars — design exception:** the 2026-09-24 bar rule (`fhStatBarWidth`), not the file's share-of-total; W/UE and DR are
   numbers only (founder Q6). Reported as ruled, never as a divergence. Fills on a `--track` half, 6px, outer radius 3, gap
-  2 (README §10); a number-only row (DR, W/UE) draws **no track at all** (founder TEN-380 review item 5 / ruling 11). The
+  2 (README §10). **A track is drawn only under a row that carries at least one fill:** a number-only row (DR, W/UE) and a
+  row where neither side has a fill (both "—", counts only under the gate, or a real 0 | 0) draw **no track at all** (founder TEN-380
+  review item 5 + review 2, 2026-10-04 / ruling 11). The reference draws a Dominance bar; Q6 (numbers only) overrides it.
+  **Test:** `test-ten314-sheet.mjs` "review 2: a row with no bar on either side draws no track". The
   **leader solid `--bar`, the trailer 45% `--bar-2`** (the longer bar leads — size, not merit, founder-accepted TEN-380 review
   for "more is worse" stats like unforced errors; a tie or a lone bar is
   solid), whichever side it is on (founder Q3 / ruling 8, TEN-380). The figures stay `--text` on both sides. **Test:**

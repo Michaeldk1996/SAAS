@@ -134,6 +134,8 @@ const MUTANTS = [
   ['theme: the modal back on its own attribute', '<div class="modal-overlay ma-theme" id="analysisModal">', '<div class="modal-overlay ma-theme" id="analysisModal" data-ma-theme="night">'],
   ['theme: openAnalysisModal no longer applies the theme', '  maApplyTheme();', '  void 0;'],
   ['ships: tokens.css not linked', '<link rel="stylesheet" href="./tokens.css">\n', ''],
+  ["review 2: dash rows keep their track", "const noTrack = s.kind === 'ratio' || (!(aW > 0) && !(bW > 0));", "const noTrack = s.kind === 'ratio';"],
+  ["review 2: a 0 | 0 count keeps its track", "(!(aW > 0) && !(bW > 0));", "(aW == null && bW == null);"],
 ];
 // "two tabs swapped" is a structural mutant: swap the News and Playing style menu rows.
 function apply(src, name, from, to) {

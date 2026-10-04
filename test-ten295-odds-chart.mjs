@@ -48,7 +48,7 @@ export function build(src = html) {
     const _ocsOf = m => (m && m.__testOcs) || null;   // the page's card-state reader, stubbed
     const _streamNowOver = () => null;                 // the Kibl stream, off
     ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
-       'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
+       'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsMovePct', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
        'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsMvChart', 'aOddsDayStrip', 'aOddsTipHtml', 'aOddsStatusOf',
        'aOddsBookTip', 'aOddsCardTile', 'aOddsIni', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
     // the Key factors Odds card's movement chart (TEN-341: the card's own book, its pre-match series), '' when not drawn

@@ -70,9 +70,15 @@ const MUTANTS = [
   ['archive: the older of two copies wins', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? y : x)', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? x : y)', 'bwt'],
   // TEN-337 (re-verify against the TEN-312 design file)
   ['review item 1: the THRESHOLDS chip back on the tab', "const wrap = inner => '<div class=\"wx-tab\" style=\"line-height:normal; color:' + C.text + ';\">' + inner + '</div>';", "const wrap = inner => '<div class=\"wx-tab\" style=\"line-height:normal; color:' + C.text + ';\"><div class=\"wx-chiprow\"><span class=\"wx-tbd\">THRESHOLDS TBD — MICHAEL</span></div>' + inner + '</div>';"],
-  ['review item 3: "usual" back on a calm court pace', "    : shift === 'usual' ? ''   // TEN-380 review item 3", "    : shift === 'usual' ? 'Conditions should leave the court playing close to its usual ' + speedTxt   // TEN-380 review item 3"],
+  ["review item 3: \"usual\" back on a calm court pace", "    : shift === 'base' ? wxFmt(P.atBase, { speed: speedTxt, label: spdLabel ? ' (' + spdLabel + ')' : '' })", "    : shift === 'base' ? 'Conditions should leave the court playing close to its usual ' + speedTxt"],
   ['pace copy apostrophe curly, not the file\'s ASCII', "Today's {cause} should make it play", 'Today\u2019s {cause} should make it play'],
   ['archived day tooltip shows the match row fetch time', '[TP.fetched, wxStamp(d.fetchedMs, vm.zone)]', '[TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]'],
+  ["review 2: pace base label dropped", "shift === 'base' ? P.base : P[shift]", "shift === 'base' ? '' : P[shift]"],
+  ["review 2: pace base sentence dropped", "shift === 'base' ? wxFmt(P.atBase", "shift === 'base' ? '' && wxFmt(P.atBase"],
+  ["review 2: calm layout prints no pace label", "(isPace && t.sevL ? '<span class=\"wx-sevl\"", "(false ? '<span class=\"wx-sevl\""],
+  ["review 2: match day keeps the window max", "  if (!unavail && hi >= 0) {\n    const md = days.find", "  if (false) {\n    const md = days.find"],
+  ["review 2: LOW CONFIDENCE wraps at 1512", ".modal-analysis .wx-lowconf{ white-space:nowrap; }", ".modal-analysis .wx-lowconf{ }"],
+  ["review 2: LOW CONFIDENCE never wraps (spills on narrow cards)", "@media (max-width:1399px){ .modal-analysis .wx-lowconf{ white-space:normal; } }", ""],
 ];
 let caught = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-mut-'));

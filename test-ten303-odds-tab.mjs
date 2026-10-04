@@ -305,6 +305,24 @@ test('a book gone from the feed reads "Not in feed since", no Now, never best', 
   assert.ok(/Not in feed since \d\d:\d\d/.test(tipOf(h, 'Betano')), tipOf(h, 'Betano'));
 }));
 
+// Founder review 2 (TEN-380, 2026-10-04): the per-book row and its pop-up print ONE Move % — the row's rule (displayed
+// prices, 1 dp). 1.396 → 1.404 both display 1.40, so the row reads 0.0% and the pop-up may not say +0.6% (raw).
+test('review 2: the pop-up Move % = its row\'s Move % (displayed prices, one rounding)', () => {
+  const now = Date.parse('2026-09-27T08:00:00Z');
+  atClock(now, () => {
+  const A = build();
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.books['Pinnacle +30s'].p1 = [[iso(now - 20 * H), 1.396], [iso(now - 2 * H), 1.404]];
+  A.open(m); A.state().mv = 'Pinnacle';
+  const h = A.buildOddsSection(m);
+  const rowMv = cellTxt(rowHtml(h, 'Pinnacle'), 'aox-move', 'a');
+  const mv = h.slice(h.indexOf('aox-mv-overlay"'));
+  const popMv = (/class="aox-chg"[^>]*>([^<]*)</.exec(mv) || [])[1];
+  assert.equal(rowMv, '0.0%', 'row: 1.40 → 1.40');
+  assert.equal(popMv, '0.0%', 'pop-up: the same figure, not +0.6%');
+  });
+});
+
 test('start time: in-play points never draw (the page start is aOddsStartMs)', () => {
   const A = build();
   const m = { id: 'past-1', p1: 'A. B', p2: 'C. D', date: '2026-09-24', time: '14:00', finalScore: '6-4 6-4',
