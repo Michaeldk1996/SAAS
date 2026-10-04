@@ -92,9 +92,16 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   in `fhFormPlayer`. **The Matches board card's Recent form % follows the same rule** (founder TEN-383, 2026-10-04): the
   pipeline's `recentFormPct` scores the last 10 rows outside `FORM_NOT_ATP_RECORD` (bsp-pipeline.js; the same list as
   `FH_FORM_NOT_ATP_RECORD`), so the card equals the Form tab's All surfaces · Last 10 W–L. The form shard keeps every row;
-  the tab filters them. **Test:** `test-ten330-form.mjs` "review 2: a Laver Cup match is not a Form row; Davis Cup still
-  is" and "TEN-383: the board card's Recent form % counts the Form tab's matches" (one fixture through both: card = 100%,
-  Form tab 10–0; the two lists' sources are equal). Mutants for both in `tools/test-ten330-mutants.js`.
+  the tab filters them. **The Player Profile's Recent form follows it too** (founder TEN-383, 2026-10-04 10:04Z, "profile
+  too"): the V2 ribbon (its rate, strip and chips) and the full ledger (rows and "Window: N matches") read
+  `buildCtx`'s form rows (`inForm`, `FORM_NOT_ATP_RECORD` in player-profile-v2.js); the legacy renderer's Recent form tile,
+  strip and list read `formRows`. Data only — the layout is locked, the ribbon still rates its last 18. Records keep every
+  match: the header Current run / Last played / Season, Career record and its drills, the sheet lookup, the season W–L.
+  H2H keeps the 25 Sep ruling. **Test:** `test-ten330-form.mjs` "review 2: a Laver Cup match is not a Form row; Davis Cup
+  still is", "TEN-383: the board card's Recent form % counts the Form tab's matches" (one fixture: card = 100%, Form tab
+  10–0) and "TEN-383: the Player Profile Recent form … counts the same matches" (the real V2 `buildCtx` → ribbon + ledger:
+  no Laver Cup row, Davis/United Cup kept, last 10 = the card's 100%, "Window: 11 matches"); the three lists' sources are
+  asserted equal. Mutants for all three in `tools/test-ten330-mutants.js`.
 - **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at
   `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G9).
 - **Retirement settlement note** (TEN-325): the v-market pill's tooltip and each Flat 1u value's tooltip carry

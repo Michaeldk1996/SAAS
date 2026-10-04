@@ -22548,7 +22548,10 @@ function buildPlayerProfileHtml(p){
   // ---- Recent-form-derived figures (shared by the Recent Form tile + card) ----
   const rf = p.recentForm || { pct: 0, matches: [] };
   const recentMatches = rf.matches || [];
-  const last10 = recentMatches.slice(0, 10);
+  // TEN-383 (founder 2026-10-04, "profile too"): the Recent form tile, strip and list count the Form list
+  // (FH_FORM_NOT_ATP_RECORD: Laver Cup + exhibitions out); the season record keeps every match.
+  const formRows = recentMatches.filter(m => !FH_FORM_NOT_ATP_RECORD.test(String(m.tournament || '')));
+  const last10 = formRows.slice(0, 10);
   const last10Pct = last10.length ? Math.round((last10.filter(m => m.won).length / last10.length) * 1000) / 10 : null;
   const last10Sub = last10.length >= 10 ? 'Last 10 matches' : (last10.length ? `Last ${last10.length} match${last10.length === 1 ? '' : 'es'}` : 'No recent matches');
 
@@ -23061,7 +23064,7 @@ function buildPlayerProfileHtml(p){
   // card sizes its row list off the career table's length — see ppFormRowTarget.
   const cy = ppCareerYears(p);
   const formSurf = ppState.formSurface || 'All';
-  const formMatches = formSurf === 'All' ? recentMatches : recentMatches.filter(m => (m.surface || '').toLowerCase() === formSurf.toLowerCase());
+  const formMatches = formSurf === 'All' ? formRows : formRows.filter(m => (m.surface || '').toLowerCase() === formSurf.toLowerCase());
   const formLast10 = formMatches.slice(0, 10);
   const formLast10Pct = formLast10.length ? Math.round((formLast10.filter(m => m.won).length / formLast10.length) * 1000) / 10 : null;
   const formEmptyLabel = formSurf === 'All' ? 'recent' : formSurf.toLowerCase();

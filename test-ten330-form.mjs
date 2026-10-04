@@ -308,3 +308,45 @@ test('TEN-383: the board card\'s Recent form % counts the Form tab\'s matches (L
   assert.equal(n, 10, 'Form tab: ten matches in the window');
   assert.equal(Math.round(P.wins / n * 1000) / 10, card, 'board % = Form tab W–L %');
 });
+
+// TEN-383 "profile too" (founder 2026-10-04 10:04Z): the Player Profile's Recent form — the ribbon, its rate and chips, and
+// the full ledger — counts the same list. Drives the REAL V2 renderer (player-profile-v2.js buildCtx → renderRibbon) on the
+// Zverev-shaped fixture: no Laver Cup row, Davis Cup and United Cup kept, last 10 = 10–0 = the card's 100%. The three
+// lists (pipeline, Form tab, profile) must be one source. The legacy renderer applies FH_FORM_NOT_ATP_RECORD directly.
+// Mutations: the inForm filter dropped from buildCtx; the profile list drifting from the other two.
+function loadPP2() {
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, matches: [], addEventListener() {}, document: { addEventListener() {}, getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] } };
+  const prev = globalThis.window; globalThis.window = sb;
+  try { new Function('window', readFileSync(process.env.TEN330_PP2 || join(HERE, 'player-profile-v2.js'), 'utf8'))(sb); } finally { globalThis.window = prev; }
+  return sb.PlayerProfileV2;
+}
+test('TEN-383: the Player Profile Recent form (ribbon, chips, ledger) counts the same matches as the card and the Form tab', () => {
+  const R = [
+    row('2026-09-21', 'L. One', false, [[4, 6], [4, 6]], { tournament: 'ATP Laver Cup' }),
+    row('2026-09-20', 'L. Two', false, [[6, 7], [4, 6]], { tournament: 'ATP Laver Cup' }),
+    row('2026-09-12', 'D. Cup', true, [[6, 4], [6, 4]], { tournament: 'ATP Davis Cup - World Group I' }),
+    row('2026-01-04', 'U. Cup', true, [[6, 4], [6, 4]], { tournament: 'ATP United Cup' }),
+    ...[...Array(8)].map((_, i) => row(`2025-12-${String(20 - i).padStart(2, '0')}`, 'W. Win' + i, true, [[6, 3], [6, 3]])),
+    row('2025-11-01', 'O. Old', false, [[3, 6], [3, 6]]),
+  ];
+  const PP = loadPP2(), I = PP._internals;
+  assert.equal(I.FORM_NOT_ATP_RECORD.source, S.formRule.source, 'profile list = Form tab list');
+  assert.equal(I.FORM_NOT_ATP_RECORD.source, PIPE.FORM_NOT_ATP_RECORD.source, 'profile list = card list');
+  const ctx = I.build({ key: '1980', name: 'A. Zverev', recentForm: { pct: null, matches: R } });
+  const t = r => String(r.tournament || '');
+  assert.ok(!ctx.filtered.some(r => /laver/i.test(t(r))), 'ribbon / chips: no Laver Cup row');
+  assert.ok(!ctx.formRows.some(x => /laver/i.test(t(x.m))), 'ledger: no Laver Cup row');
+  assert.ok(ctx.filtered.some(r => /davis/i.test(t(r))) && ctx.filtered.some(r => /united/i.test(t(r))), 'Davis Cup and United Cup stay');
+  assert.equal(ctx.ledgerRows.length, R.length, 'records keep every match (sheet lookup, career drills)');
+  const r10 = I.formRate(ctx.filtered.slice(-10));
+  assert.equal(Math.round(r10.won / r10.n * 1000) / 10, PIPE.recentFormPct(R), 'profile last 10 = the card\'s Recent form %');
+  assert.equal(PIPE.recentFormPct(R), 100);
+  const rib = I.renderRibbon(ctx);
+  assert.ok(!/Laver/.test(rib), 'the ribbon html names no Laver Cup match');
+  assert.match(rib, />91%<\/span> <span[^>]*>10–1</, 'ribbon rate = 10–1 over the 11 form rows (13 minus the two Laver Cup losses)');
+  assert.match(rib, />last 11 · oldest/, 'the strip draws the 11 form rows');
+  const P0 = { key: '1980', name: 'A. Zverev', recentForm: { pct: null, matches: R } };
+  const led = I.renderLedger(P0, Object.assign(I.build(P0), { ledgerOpen: true }));
+  assert.ok(!/Laver/.test(led), 'the full ledger lists no Laver Cup match');
+  assert.match(led, /Window: 11 matches/, 'the ledger window counts the 11 form rows');
+});

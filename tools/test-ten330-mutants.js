@@ -75,6 +75,24 @@ try {
     if (r.status === 0 || !/✖ TEN-383/.test(r.stdout)) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
   }
 } finally { fs.rmSync(pfile, { force: true }); }
-const total = MUTANTS.length + PIPE_MUTANTS.length;
+// TEN-383 "profile too": the Player Profile V2 renderer (player-profile-v2.js) reads the same list. Loaded with new
+// Function (no relative requires), so the mutant can live in the temp dir; caught only when a TEN-383 test fails.
+const pp2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+const PP2_MUTANTS = [
+  ['TEN-383: Laver Cup back in the profile Recent form', '    var frows = lrows.filter(function (x) { return inForm(x.m); });', '    var frows = lrows;'],
+  ['TEN-383: the profile list drifts (Davis Cup out)', 'var FORM_NOT_ATP_RECORD = /laver cup|', 'var FORM_NOT_ATP_RECORD = /laver cup|davis cup|'],
+  ['TEN-383: the ledger window counts Laver Cup again', '    var all = ctx.ledgerRows.filter(function (x) { return inForm(x.m); });', '    var all = ctx.ledgerRows;'],
+];
+const ppDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten330-pp2-'));
+try {
+  for (const [name, from, to] of PP2_MUTANTS) {
+    if (pp2.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+    const f = path.join(ppDir, 'pp2.js');
+    fs.writeFileSync(f, pp2.replace(from, to));
+    const r = spawnSync(process.execPath, ['--test', ...SUITES.map(x => path.join(ROOT, x))], { env: Object.assign({}, process.env, { TEN330_PP2: f }), encoding: 'utf8' });
+    if (r.status === 0 || !/✖ TEN-383/.test(r.stdout)) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+  }
+} finally { fs.rmSync(ppDir, { recursive: true, force: true }); }
+const total = MUTANTS.length + PIPE_MUTANTS.length + PP2_MUTANTS.length;
 console.log(`mutants: ${total - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

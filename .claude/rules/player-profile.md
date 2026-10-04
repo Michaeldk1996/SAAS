@@ -21,6 +21,9 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   renderer is the default. Whether the three parity points bind the TEN-206 renderer has not been re-ruled.
   **Test:** the profile rail has no "Surface record" card; Recent form shows no tournament group headers;
   the archetype line is one label in primary text, not blue and with no Specialist suffix.
+- **Recent form counts the Form list** (founder TEN-383, 2026-10-04): Laver Cup and exhibitions are never a Recent form
+  row — the ribbon (rate, strip, chips) and the full ledger, in both renderers; Davis Cup and United Cup stay; records keep
+  every match. Rule and test: `modal-form-h2h.md` "A Laver Cup match never becomes a Form row".
 
 - **Per-event Backing = the Match analysis Tournament tab's rows (founder Q8, 2026-09-30).** The Record per tournament
   Backing column and the "Backing him here" tile (units, and "+Y.Ypt vs market" from 5 priced) are the tab's row-level

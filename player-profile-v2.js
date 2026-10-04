@@ -521,6 +521,15 @@
   // ribbon and ledger honour it instead of re-deriving from an empty score.
   function counts(m) { return !m.walkover; }
 
+  // Recent form (founder TEN-383, 2026-10-04: "profile too"): a match outside the ATP's
+  // official win-loss record is never a form row — not in the ribbon, its rate, the chips or
+  // the full ledger. Laver Cup and the exhibitions are out; Davis Cup and United Cup stay.
+  // The SAME list as the dashboard's FH_FORM_NOT_ATP_RECORD and the pipeline's
+  // FORM_NOT_ATP_RECORD (test-ten330-form.mjs asserts the three sources are equal). Records
+  // (header Season, Career record, its drills, the sheet lookup) keep every match.
+  var FORM_NOT_ATP_RECORD = /laver cup|hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+  function inForm(m) { return !FORM_NOT_ATP_RECORD.test(String((m && m.tournament) || '')); }
+
   function formRate(rows) {
     var w = 0, l = 0;
     rows.forEach(function (m) {
@@ -1140,7 +1149,7 @@
 
   function renderLedger(p, ctx) {
     if (!ctx.ledgerOpen) return '';
-    var all = ctx.ledgerRows;
+    var all = ctx.ledgerRows.filter(function (x) { return inForm(x.m); });   // TEN-383: the window counts form rows
     var rows = ctx.ledgerFiltered;
     // §4 reconciliation: "Recent-form ribbon W-L and % = the strip shown = the
     // ledger's last-N rows." The ribbon rates its last 18; this card must rate
@@ -10393,10 +10402,12 @@
     var lrows = ledgerRows(p);
     var subj = shortName(p);
     lrows.forEach(function (x) { x.subjectName = subj; });
-    var lfiltered = ledgerFiltered(lrows);
+    var frows = lrows.filter(function (x) { return inForm(x.m); });   // TEN-383: the form rows
+    var lfiltered = ledgerFiltered(frows);
     var ctx = {
       rows: rows,
       ledgerRows: lrows,
+      formRows: frows,
       ledgerFiltered: lfiltered,
       filtered: lfiltered.map(function (x) { return x.m; }),
       archetype: archetypeFor(p.key),
@@ -10727,6 +10738,7 @@
       headlineSize: headlineSize,
       currentRun: currentRun,
       formRate: formRate,
+      FORM_NOT_ATP_RECORD: FORM_NOT_ATP_RECORD,
       ledgerMatches: ledgerMatches,
       // §4 Full ledger
       ledgerRows: ledgerRows,
