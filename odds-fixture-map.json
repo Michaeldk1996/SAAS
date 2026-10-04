@@ -3128,6 +3128,17 @@
       "p2": "F. Cerundolo",
       "startTime": "2026-10-04T08:30:00.000Z",
       "tournamentId": 3025
+    },
+    "12168110": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-04T07:15:28Z",
+      "missRuns": 1,
+      "missSince": "2026-10-04T07:15:28Z",
+      "orient": null,
+      "p1": "C. Alcaraz",
+      "p2": "J. Munar",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -3140,23 +3151,12 @@
       "observedSpanDays": 21.47,
       "projectedTtlUnitsPerDay": 4.7,
       "runs": 400,
-      "spentRuns": 225,
+      "spentRuns": 226,
       "ttlBitRuns": 100,
       "ttlBitShare": 0.25,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-12T19:00:07Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 1
-      },
       {
         "at": "2026-09-12T20:00:07Z",
         "fixturesUnitsSpent": 0,
@@ -7545,9 +7545,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 7
+      },
+      {
+        "at": "2026-10-04T07:15:28Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 7
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-04T06:15:40Z"
+  "updatedAt": "2026-10-04T07:15:28Z"
 }
