@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-02T23:52:25.778Z",
+  "generatedAt": "2026-10-03T23:23:50.262Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1386,9 +1386,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 52.8,
+      "win_pct": 54.1,
       "clay_wr": 56,
-      "hard_wr": 57,
+      "hard_wr": 60,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Solid Baseliner"
@@ -1455,24 +1455,6 @@
       "grass_wr": 48,
       "top10_wins": 4,
       "archetype_label": "Solid Defender"
-    },
-    {
-      "name": "P. Kypson",
-      "rank": 89,
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": null,
-      "mcp_charted": 2,
-      "win_pct": 40,
-      "clay_wr": 44,
-      "hard_wr": 36,
-      "grass_wr": 50,
-      "top10_wins": 0,
-      "archetype_label": "Solid Baseliner"
     },
     {
       "name": "Z. Svajda",
@@ -2071,24 +2053,6 @@
       "grass_wr": 40,
       "top10_wins": 0,
       "archetype_label": "Counterpuncher"
-    },
-    {
-      "name": "N. Budkov Kjaer",
-      "rank": 124,
-      "archetype_data_coverage": "partial",
-      "partial_axes": [
-        "counter_puncher",
-        "solid_defender"
-      ],
-      "badges": [],
-      "pressure_score": null,
-      "mcp_charted": 3,
-      "win_pct": 48.3,
-      "clay_wr": 46,
-      "hard_wr": 50,
-      "grass_wr": 67,
-      "top10_wins": 0,
-      "archetype_label": "Attacking Baseliner"
     },
     {
       "name": "S. Wawrinka",
@@ -5655,6 +5619,20 @@
       "grass_wr": null,
       "matches": 137,
       "source": "challenger"
+    },
+    {
+      "name": "P. Kypson",
+      "archetype_data_coverage": "challenger",
+      "partial_axes": [],
+      "badges": [],
+      "win_pct": 58.4,
+      "clay_wr": 64,
+      "hard_wr": 57,
+      "grass_wr": 33,
+      "matches": 137,
+      "source": "challenger",
+      "player_key": "8130",
+      "archetype_label": "Solid Baseliner"
     },
     {
       "name": "Vasek Pospisil",
