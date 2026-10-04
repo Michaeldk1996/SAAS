@@ -48,7 +48,7 @@ const S = new Function(`
   ${CONSTS.map(constSrc).join('\n')}
   ${FNS.map(slice).join('\n')}
   const hotTable = (rows, sc) => fhHotLinesTable(rows, sc, { colMin: '22px', colHead: 'date', today: 'Hard', showAll: false, lineCls: k => 'fl-' + k, colTip: () => '', dotTip: () => '' });
-  return { fhSegTrack, hotTable, fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowData, maMatchRowsHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
+  return { formRule: FH_FORM_NOT_ATP_RECORD, fhSegTrack, hotTable, fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowData, maMatchRowsHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
     fhNameLink, profiles: playerProfiles, get fh(){ return _fh; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -282,4 +282,29 @@ test('review 2: a Laver Cup match is not a Form row; Davis Cup still is', () => 
   assert.ok(!all.some(r => /laver/i.test(r.tournRaw || r.tourn || '')), 'no Laver Cup row');
   assert.ok(all.some(r => /davis/i.test(r.tournRaw || r.tourn || '')), 'Davis Cup stays (it counts in the ATP record)');
   assert.equal(P.wins, 2, 'W–L: 2–0 without the Laver Cup loss');
+});
+
+// TEN-383 (founder 2026-10-04): the Matches board card's Recent form % uses the same Form rule — Laver Cup and exhibitions
+// out, the next match slides in; Davis Cup and United Cup stay. The card's % is the pipeline's recentFormPct over the very
+// rows the Form tab reads, so one fixture drives both and they must agree: board = Form tab (All surfaces, Last 10) = Key
+// factors' Recent form (fhFormPlayer). The Zverev shape: two Laver Cup losses in his last 10 → 80% counted, 100% ruled.
+// Mutation: the FORM_NOT_ATP_RECORD filter dropped from recentFormPct (TEN330_PIPELINE), or the two lists drifting apart.
+const PIPE = (await import('node:module')).createRequire(import.meta.url)(process.env.TEN330_PIPELINE || join(HERE, 'bsp-pipeline.js'));
+test('TEN-383: the board card\'s Recent form % counts the Form tab\'s matches (Laver Cup out, Davis/United Cup in)', () => {
+  const R = [
+    row('2026-09-21', 'L. One', false, [[4, 6], [4, 6]], { tournament: 'ATP Laver Cup' }),
+    row('2026-09-20', 'L. Two', false, [[6, 7], [4, 6]], { tournament: 'ATP Laver Cup' }),
+    row('2026-09-12', 'D. Cup', true, [[6, 4], [6, 4]], { tournament: 'Davis Cup - World Group I' }),
+    row('2026-01-04', 'U. Cup', true, [[6, 4], [6, 4]], { tournament: 'United Cup' }),
+    ...[...Array(8)].map((_, i) => row(`2025-12-${String(20 - i).padStart(2, '0')}`, 'W. Win' + i, true, [[6, 3], [6, 3]])),
+    row('2025-11-01', 'O. Old', false, [[3, 6], [3, 6]]),
+  ];
+  assert.equal(PIPE.FORM_NOT_ATP_RECORD.source, S.formRule.source, 'the pipeline and the Form tab share one list');
+  const card = PIPE.recentFormPct(R);
+  assert.equal(card, 100, 'card: last 10 without the two Laver Cup losses, Davis Cup and United Cup counted');
+  const m = { id: 'z', p1: 'A. Zverev', p2: 'Z. Zed', p1Key: 1, p2Key: 2, date: '2026-10-04', surface: 'Hard', _fhFormRows: [R, []], _fhCloses: [null, null] };
+  const P = player(m, { surf: 'all', wmode: 'n', n: 10 });
+  const n = P.n;
+  assert.equal(n, 10, 'Form tab: ten matches in the window');
+  assert.equal(Math.round(P.wins / n * 1000) / 10, card, 'board % = Form tab W–L %');
 });

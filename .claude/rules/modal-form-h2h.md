@@ -89,7 +89,12 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - **A Laver Cup match never becomes a Form row** (founder TEN-380, 2026-10-04 07:33Z): not in the last 10, the W–L, v market,
   the hot lines or Key factors' Recent form — the next match slides in. Exhibitions (`FH_H2H_NOT_ATP_RECORD`) are out too.
   Davis Cup and United Cup stay (team events the founder did not exclude). One constant, `FH_FORM_NOT_ATP_RECORD`, applied
-  in `fhFormPlayer`. **Test:** `test-ten330-form.mjs` "review 2: a Laver Cup match is not a Form row; Davis Cup still is".
+  in `fhFormPlayer`. **The Matches board card's Recent form % follows the same rule** (founder TEN-383, 2026-10-04): the
+  pipeline's `recentFormPct` scores the last 10 rows outside `FORM_NOT_ATP_RECORD` (bsp-pipeline.js; the same list as
+  `FH_FORM_NOT_ATP_RECORD`), so the card equals the Form tab's All surfaces · Last 10 W–L. The form shard keeps every row;
+  the tab filters them. **Test:** `test-ten330-form.mjs` "review 2: a Laver Cup match is not a Form row; Davis Cup still
+  is" and "TEN-383: the board card's Recent form % counts the Form tab's matches" (one fixture through both: card = 100%,
+  Form tab 10–0; the two lists' sources are equal). Mutants for both in `tools/test-ten330-mutants.js`.
 - **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at
   `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G9).
 - **Retirement settlement note** (TEN-325): the v-market pill's tooltip and each Flat 1u value's tooltip carry

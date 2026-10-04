@@ -257,7 +257,7 @@ test('TEN-380 band pop-up: four tiles with sub-lines — Record / n priced, Won 
   const b = R.MM[0].bands[2], P = R.band('a2');
   const tiles = [...P.matchAll(/class="me-tile"[^>]*><span[^>]*>([^<]*)<\/span><span class="me-stat"[^>]*color:([^;]+);[^>]*>([^<]*)<\/span><span class="me-tile-sub"[^>]*>([^<]*)</g)].map((m) => [m[1], m[3], m[4]]);
   assert.deepEqual(tiles.map((t) => t[0]), ['Record', 'Won', 'Edge', 'At 1u flat']);
-  assert.deepEqual(tiles[0].slice(1), [`W${b.w}–L${b.l}`, `${b.n} priced`]);
+  assert.deepEqual(tiles[0].slice(1), [`W${b.w}–L${b.l}`, `${b.n.toLocaleString('en-US')} priced`]);
   assert.equal(tiles[1][2], 'needs ' + (Math.round(b.needs * 1000) / 10).toFixed(1) + '%');
   assert.equal(tiles[2][2], 'won − needs');
   const e = (b.won - b.needs) * 100;

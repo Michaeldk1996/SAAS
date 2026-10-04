@@ -15519,7 +15519,7 @@ function meBandPopHtml(E, MM){
   const edge = b.won == null || b.needs == null ? null : (b.won - b.needs) * 100;
   const yieldTxt = b.yield == null ? '—' : meSg(b.yield * 100, 1, '%');
   const stats = `<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;">`
-    + meTile('Record', 'W' + b.w + '–L' + b.l, ME_C.text, b.n + ' priced')
+    + meTile('Record', 'W' + b.w + '–L' + b.l, ME_C.text, b.n.toLocaleString('en-US') + ' priced')
     + meTile('Won', b.won == null ? null : mePct1(b.won), ME_C.text, 'needs ' + mePct1(b.needs), { gate: [b.w, b.n] })
     + meTile('Edge', edge == null ? null : meSg(edge, 1, 'pp'), edge == null ? ME_C.m1 : meUC(edge, 1), 'won − needs', { gate: [b.w, b.n] })
     + meTile('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units, 1), 'yield ' + yieldTxt, { gate: [b.w, b.n] }) + '</div>';   // TEN-380 review 2: gated with Won / Edge
@@ -17955,7 +17955,7 @@ function kfMeCol(E, i, M, fmt, divider){
   const gc = c => (small ? MA_GREY : c);
   const edge = b && b.won != null && b.needs != null ? (b.won - b.needs) * 100 : null;
   const tiles = `<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;">`
-    + tile('kf-me-rec', 'Record', b ? `${b.w}–${b.l}` : FH_DASHC, b ? C.text : C.t3, b ? `${b.n} priced` : '&nbsp;')
+    + tile('kf-me-rec', 'Record', b ? `${b.w}–${b.l}` : FH_DASHC, b ? C.text : C.t3, b ? `${b.n.toLocaleString('en-US')} priced` : '&nbsp;')
     + tile('kf-me-won', 'Won', b && b.won != null ? mePct1(b.won) : FH_DASHC, b && b.won != null ? gc(C.text) : C.t3, b && b.needs != null ? 'needs ' + mePct1(b.needs) : '&nbsp;')
     + tile('kf-me-edge', 'Edge', edge == null ? FH_DASHC : meSg(edge, 1, 'pp'), edge == null ? C.t3 : gc(kfSignCol(edge, 1)), 'won − needs')
     + tile('kf-me-flat', 'At 1u flat', b && b.n ? meSg(b.units, 1, 'u') : FH_DASHC, b && b.n ? gc(kfSignCol(b.units, 1)) : C.t3, 'yield ' + (b && b.yield != null ? meSg(b.yield * 100, 1, '%') : FH_DASHC))

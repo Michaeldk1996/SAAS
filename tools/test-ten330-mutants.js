@@ -59,5 +59,22 @@ for (const [name, from, to] of MUTANTS) {
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });
-console.log(`mutants: ${MUTANTS.length - survived} caught, ${survived} survived`);
+// TEN-383: the board card's Recent form % is the pipeline's recentFormPct. Each pipeline mutant is written beside
+// bsp-pipeline.js (its relative requires must resolve) and only counts as caught when the TEN-383 test is what fails.
+const pipe = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
+const PIPE_MUTANTS = [
+  ['TEN-383: Laver Cup back in the card\'s Recent form %', ".filter(m => !FORM_NOT_ATP_RECORD.test(String(m.tournament || '')))", ''],
+  ['TEN-383: Davis Cup and United Cup out of the card\'s Recent form %', "new RegExp('laver cup|' + H2H_NOT_ATP_RECORD.source, 'i')", "new RegExp('laver cup|davis cup|united cup|' + H2H_NOT_ATP_RECORD.source, 'i')"],
+];
+const pfile = path.join(ROOT, '.ten330-mut-pipeline.js');
+try {
+  for (const [name, from, to] of PIPE_MUTANTS) {
+    if (pipe.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+    fs.writeFileSync(pfile, pipe.replace(from, to));
+    const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN330_PIPELINE: pfile }), encoding: 'utf8' });
+    if (r.status === 0 || !/✖ TEN-383/.test(r.stdout)) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+  }
+} finally { fs.rmSync(pfile, { force: true }); }
+const total = MUTANTS.length + PIPE_MUTANTS.length;
+console.log(`mutants: ${total - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

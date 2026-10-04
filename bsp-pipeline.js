@@ -297,6 +297,12 @@ const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf M
 // event-type filter alone keeps it — this name test removes it. The dashboard's
 // career-history join applies the same list (FH_H2H_NOT_ATP_RECORD).
 const H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+// Form (founder TEN-380 + TEN-383, 2026-10-04): a match outside the ATP's official
+// win-loss record never counts toward recent form — the card's Recent form %, the
+// Form tab and Key factors' Recent form count the same matches. Laver Cup is the
+// case the record leaves out (Davis Cup and United Cup count), plus the exhibitions
+// above. Same list as the dashboard's FH_FORM_NOT_ATP_RECORD. H2H keeps Laver Cup.
+const FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + H2H_NOT_ATP_RECORD.source, 'i');
 function h2hCountsInAtpRecord(m) {
   return !H2H_NOT_ATP_RECORD.test(String((m && (m.tournament_name || m.tournament)) || ''));
 }
@@ -3768,9 +3774,14 @@ const RECENT_FORM_ROW_CAP = Number(process.env.RECENT_FORM_ROW_CAP || 40);
 async function buildRecentFormForMatch(playerKey, surfaceMap) {
   const full = recentFormFromFixtures(await fetchRecentSinglesFixtures(playerKey), playerKey, surfaceMap);
   const matches = full.matches.slice(0, RECENT_FORM_ROW_CAP);
-  const scored = matches.slice(0, RECENT_FORM_PCT_WINDOW);
-  const pct = scored.length ? Math.round((scored.filter(m => m.won).length / scored.length) * 1000) / 10 : null;
-  return { pct, matches };
+  return { pct: recentFormPct(full.matches), matches };
+}
+// The card's Recent form %: the last RECENT_FORM_PCT_WINDOW matches that count toward
+// form (FORM_NOT_ATP_RECORD out, the next match slides in), newest first. The rows
+// themselves keep every match — the Form tab applies the same rule when it reads them.
+function recentFormPct(rows) {
+  const scored = (rows || []).filter(m => !FORM_NOT_ATP_RECORD.test(String(m.tournament || ''))).slice(0, RECENT_FORM_PCT_WINDOW);
+  return scored.length ? Math.round((scored.filter(m => m.won).length / scored.length) * 1000) / 10 : null;
 }
 
 // Lift every match's recent-form rows into one shard per player and blank the
@@ -7664,7 +7675,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
