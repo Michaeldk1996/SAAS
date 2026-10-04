@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-03T17:36:11.319Z",
+ "generatedAt": "2026-10-04T18:26:10.324Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "096ebde28c51399c7021260131ed4ece347d77fc",
-  "at": "2026-10-03T17:16:02Z"
+  "commit": "dc8b756dce183ed4a9b7bc1354cb6e55b848cf9e",
+  "at": "2026-10-04T18:17:53Z"
  },
- "commitsScanned": 4120,
+ "commitsScanned": 4224,
  "lastRun": {
-  "from": "2026-10-03T08:01:02Z",
-  "snapshots": 41,
-  "added": 4,
+  "from": "2026-10-03T17:16:02Z",
+  "snapshots": 105,
+  "added": 7,
   "replaced": 0,
-  "series": 57,
-  "kept": 46,
+  "series": 80,
+  "kept": 53,
   "bySource": {
-   "api-tennis-live": 46
+   "api-tennis-live": 53
   },
   "byBook": {
-   "Pinnacle +30s": 46
+   "Pinnacle +30s": 53
   },
   "dropped": {
-   "noStart": 11
+   "noStart": 27
   }
  },
  "stats": {
@@ -7294,6 +7294,104 @@
    "p2": 6.05,
    "at": "2026-10-03T05:48:23.274Z",
    "trueStart": "2026-10-03T10:02:57.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167840,
+   "date": "2026-10-04",
+   "p1Key": 2083,
+   "p2Key": 1335,
+   "p1Name": "J. Munar",
+   "p2Name": "K. Jacquet",
+   "p1": 1.689,
+   "p2": 2.31,
+   "at": "2026-10-03T22:35:24.239Z",
+   "trueStart": "2026-10-04T01:51:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167861,
+   "date": "2026-10-04",
+   "p1Key": 1852,
+   "p2Key": 1759,
+   "p1Name": "V. Vacherot",
+   "p2Name": "A. Fils",
+   "p1": 4.4,
+   "p2": 1.254,
+   "at": "2026-10-04T06:15:03.029Z",
+   "trueStart": "2026-10-04T06:51:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167891,
+   "date": "2026-10-04",
+   "p1Key": 2841,
+   "p2Key": 435,
+   "p1Name": "H. Hurkacz",
+   "p2Name": "K. Khachanov",
+   "p1": 2.38,
+   "p2": 1.657,
+   "at": "2026-10-04T04:01:36.123Z",
+   "trueStart": "2026-10-04T04:57:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167945,
+   "date": "2026-10-04",
+   "p1Key": 2382,
+   "p2Key": 431,
+   "p1Name": "C. Alcaraz",
+   "p2Name": "D. Shapovalov",
+   "p1": 1.113,
+   "p2": 7.5,
+   "at": "2026-10-04T02:57:00.700Z",
+   "trueStart": "2026-10-04T04:03:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167947,
+   "date": "2026-10-04",
+   "p1Key": 1106,
+   "p2Key": 2847,
+   "p1Name": "A. De Minaur",
+   "p2Name": "A. Rublev",
+   "p1": 1.819,
+   "p2": 2.1,
+   "at": "2026-10-04T05:05:27.403Z",
+   "trueStart": "2026-10-04T06:51:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167957,
+   "date": "2026-10-04",
+   "p1Key": 1980,
+   "p2Key": 1905,
+   "p1Name": "A. Zverev",
+   "p2Name": "N. Djokovic",
+   "p1": 1.383,
+   "p2": 3.32,
+   "at": "2026-10-04T10:22:15.381Z",
+   "trueStart": "2026-10-04T10:51:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12167991,
+   "date": "2026-10-04",
+   "p1Key": 1093,
+   "p2Key": 1104,
+   "p1Name": "D. Medvedev",
+   "p2Name": "F. Cerundolo",
+   "p1": 1.398,
+   "p2": 3.23,
+   "at": "2026-10-04T05:29:58.906Z",
+   "trueStart": "2026-10-04T08:24:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
