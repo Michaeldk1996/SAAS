@@ -3374,6 +3374,15 @@
       "p2": "V. Vacherot",
       "startTime": "2026-10-05T09:00:00.000Z",
       "tournamentId": 3031
+    },
+    "12168226": {
+      "fixtureId": "id1200302575051388",
+      "mappedAt": "2026-10-04T14:54:09Z",
+      "orient": "same",
+      "p1": "N. Djokovic",
+      "p2": "D. Medvedev",
+      "startTime": "2026-10-05T11:00:00.000Z",
+      "tournamentId": 3025
     }
   },
   "missAudit": {
@@ -3386,23 +3395,12 @@
       "observedSpanDays": 21.41,
       "projectedTtlUnitsPerDay": 4.7,
       "runs": 400,
-      "spentRuns": 229,
+      "spentRuns": 230,
       "ttlBitRuns": 101,
       "ttlBitShare": 0.253,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-13T04:00:08Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 1
-      },
       {
         "at": "2026-09-13T05:00:07Z",
         "fixturesUnitsSpent": 0,
@@ -7791,9 +7789,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 24
+      },
+      {
+        "at": "2026-10-04T14:54:09Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 24
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-04T12:53:21Z"
+  "updatedAt": "2026-10-04T14:54:09Z"
 }
