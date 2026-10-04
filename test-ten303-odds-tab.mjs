@@ -666,6 +666,22 @@ test('review item 4: Key factors Odds box = the card book (Open + Now as the til
   assert.deepEqual([row.aNow, row.bNow, row.stale], [2.26, 1.72, false], 'the table row = the card pair');
   const pin = A.aOddsRowsOf(m, { nowMs: now }).rows.find(x => x.name === 'Pinnacle');
   assert.ok(pin && pin.aNow !== 2.26, 'another book never takes the card stream');
+  // review 2: no newer stream → the card state's Now (never "no recent data" beside the header's price); Fair = that pair's
+  delete m.__testStream;
+  const r2 = A.aOddsRowsOf(m, { nowMs: now }).rows.find(x => x.name === 'Bet105');
+  assert.deepEqual([r2.aNow, r2.bNow, r2.stale], [2.30, 1.70, false], 'the card state Now on the table row');
+  const k = A.kfOddsMove(m).row, ov = 1 / 2.30 + 1 / 1.70;
+  assert.deepEqual([+k.nv.a[0][1].toFixed(4), +k.nv.b[0][1].toFixed(4)], [+(2.30 * ov).toFixed(4), +(1.70 * ov).toFixed(4)], 'Key factors Fair = the vig-free price of the pair it prints');
+  // review 2: a finished match → the card book's close on the table row (as the header, tile and Key factors)
+  const done = Object.assign({}, m, { finalScore: { sets: [], winner: 'p1' }, __testOcs: { book: 'bet105', p1: { open: 2.40, now: 2.30, close: 2.18 }, p2: { open: 1.62, now: 1.70, close: 1.79 } } });
+  const r3 = A.aOddsRowsOf(done, { nowMs: now }).rows.find(x => x.name === 'Bet105');
+  assert.deepEqual([r3.aNow, r3.bNow], [2.18, 1.79], 'the card close, not the last tick');
+  // review 2: no card state → the tile and Key factors follow the match card's own pair (the header's), never Pinnacle-first
+  delete m.__testOcs; m.__testNowPair = { p1: 2.20, p2: 1.75, book: 'bet105', bookName: 'Bet105' };
+  const D = A.aOddsRowsOf(m, { nowMs: now });
+  assert.deepEqual(A.aOddsCardTile(m, D).now, [2.20, 1.75], 'tile = the card pair');
+  assert.deepEqual([A.kfOddsMove(m).row.aNow, A.kfOddsMove(m).row.bNow], [2.20, 1.75], 'Key factors = the card pair');
+  delete m.__testNowPair;
   delete m.__testStream; delete m.__testOcs;
 });
 

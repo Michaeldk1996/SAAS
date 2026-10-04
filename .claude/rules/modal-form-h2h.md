@@ -50,10 +50,11 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 
 ## Shared rows, hot lines, segmented track (TEN-380, step-3 handoff README §5–§6, measured on OFFICIAL VERSION 1)
 - **Match rows** (`maMatchRowsHtml`, default path — Form, Tournament): README §5's grid `MA_ROW_COLS` =
-  `40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px`, gap `0 6px` (`MA_ROW_GAP`), header and rows alike;
+  `40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px`, gap `0 6px` (`MA_ROW_GAP`), header and rows alike;
   columns Date · · Opponent · Rd · Sets · **Score** · H · A (the Score column is its own track, `--text-label`). The
-  Opponent / Score shares are rebalanced from the README's 1.1fr / 1.3fr (founder TEN-380 review, 2026-10-04) so a name like
-  "Shimabukuro S." stays on one line, and **a score is never cut**: it wraps between sets only, each set kept whole;
+  Opponent floor is raised to 96 px and the two shares are equal (1fr / 1fr, Score floor 86 px; founder TEN-380 review,
+  2026-10-04) so a name like "Shimabukuro S." and a three-set score each stay on one line, and **a score is never cut**: a
+  four- or five-set score wraps between sets only, each set kept whole;
   H `--text-soft`. The head is `--card` on a 1px `--line` rule (decisions §1: the reference measures 5%, not `--line-strong`),
   labels never wrap. **Test:** `test-ten314-components.mjs` (README §5 grid), `test-ten330-form.mjs` (rows).
 - **No Elo in the opponent column** (founder TEN-380 Q5; the Elo lives in the Form bar tooltip, see below); names wrap between

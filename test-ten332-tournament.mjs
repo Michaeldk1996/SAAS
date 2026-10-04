@@ -387,7 +387,9 @@ test('TEN-380: ROI values --text (never green on a negative yield); Backing pop 
 // words under the records, as Form says it; no B on the page → no line. Mutation: the line dropped from the section.
 test('review: a B price is explained under the records ("Closing odds · Pinnacle, Bet365 where missing (N) · B = Bet365")', () => {
   const f = new Function(`const FH_MONO = "m";\n${slice('trSrcLine')}; return trSrcLine;`)();
-  assert.equal(f([{ priced: [{ book: 'P' }] }, { priced: [] }]), '', 'no Bet365 price → no line');
-  assert.match(f([{ priced: [{ book: 'B' }, { book: 'P' }] }, { priced: [{ book: 'B' }] }]), />Closing odds · Pinnacle, Bet365 where missing \(2\) · B = Bet365</);
-  assert.match(slice('buildTournamentSection'), /\$\{trSrcLine\(P\)\}/, 'the section prints it');
+  const mk = t => `<span class="ma-row-mark" aria-hidden="true" style="x">${t}</span>`;
+  assert.equal(f('<div>1.30</div>'), '', 'no B drawn → no line');
+  assert.match(f(mk('B') + mk('B') + '<div>1.20</div>'), />Closing odds · Pinnacle, Bet365 where missing \(2\) · B = Bet365</, 'counts the marks drawn');
+  // review 2: only the rendered (unfolded) editions count — a B in a folded edition is not on the page
+  assert.match(slice('buildTournamentSection'), /\$\{cards\}<\/div>\$\{trSrcLine\(cards\)\}/, 'the section counts the cards it prints');
 });

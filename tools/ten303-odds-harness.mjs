@@ -45,6 +45,7 @@ export function build(src = HTML, over = {}) {
     const psEsc = x => String(x);
     const _ocsOf = m => (m && m.__testOcs) || null;
     const _streamNowOver = (m, o) => (m && m.__testStream) || null;
+    const _mcNowPair = m => (m && m.__testNowPair) || null;   // the match card's pair when no card state covers it (TEN-380 review 2)
     ${FNS.map(n => slice(n, src)).join('\n')}
     return { buildOddsSection, aOddsRowsOf, aOddsLinePaths, aOddsMvChart, aOddsDayStrip, aOddsCardTile, aOddsSetMarket, aOddsSetMode, aOddsOpenMv,
              aOddsCloseMv, renderOddsSection, kfOddsMove, aOddsBooksOf, cardStartMs, aOddsStartMs, AODDS_C, aOddsFmt, aOddsDispSeries,

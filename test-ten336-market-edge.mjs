@@ -129,10 +129,10 @@ test('maMatchRowsHtml: the pop-up table variant is a parameter; the default rows
   // class="ma-row-score" — the only markup / text change (diffed style-stripped against TEN-376's output); styles = the
   // README §5 grid, the --card head, the Score / H shades.
   // TEN-380 review (founder 2026-10-04) re-pinned both: the score cell's sets are whole-set nowrap spans (wrap only between
-  // sets, never cut) and the Opponent / Score shares are rebalanced — diffed style-stripped against the previous output, the
+  // sets, never cut) and the Opponent / Score columns get equal shares with a 96 px Opponent floor (review 2) — diffed style-stripped against the previous output, the
   // score spans are the only markup change.
   assert.deepEqual(opts.map(hs), ['2c4c21d9a025ba0b', '379f513882cccd30', '1daa8048eea65de6', '28ca5fff8679b866'], 'Form / H2H / Tournament rows: markup and text = TEN-380 review');
-  assert.deepEqual(opts.map(h), ['53b23dd621de078e', '4f1798bca426d603', 'bbbf886b76195808', 'ba5bbf284c9be73d'], 'Form / H2H / Tournament rows unchanged since the TEN-380 review');
+  assert.deepEqual(opts.map(h), ['c2f9a2e936d1ffbc', 'f2b9079981c94f45', 'febb3d1e6c2c6c95', '197c818f09ea8988'], 'Form / H2H / Tournament rows unchanged since the TEN-380 review');
   const t = rowsFn([{ title: null, rows: [{ date: '05.09.25', won: false, opp: 'J. Draper', event: 'US Open', rd: 'QF', score: '4-6 3-6', price: '1.55', priceTip: 'Pinnacle close · Tennis-Data', oppPrice: '2.60', pnl: '−1.00u' }] }],
     { cols: ['date', 'sq', 'opp', 'event', 'rd', 'score', 'price', 'oppPrice', 'pnl'], grid: '64px 10px 1fr', labels: ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&L'], inset: 22 });
   assert.ok(!t.includes('ma-rows-group'), 'a titleless group draws no group header');

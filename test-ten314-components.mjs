@@ -158,7 +158,7 @@ test('motion: sigIn (opacity 0→1, translateY −6→0, 200ms cubic-bezier(.2,.
 // minmax(86px,1.3fr) 38px 38px; gap 0 6px`, header and rows — the handoff is not in the repo, so the README's string is
 // quoted here), the header stops being sticky, or a row loses its sheet opener. Position, padding and the group header
 // still read the file's Tournament-tab rows (DF L302 / L312).
-const README5_GRID = '40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px', README5_GAP = '0 6px';
+const README5_GRID = '40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px', README5_GAP = '0 6px';
 test('maMatchRowsHtml: README §5 grid (TEN-380) — sticky --card header, grouped by event, every row opens the sheet', () => {
   const at = DF.findIndex(l => l.includes('position:sticky; top:0; z-index:5; display:grid; grid-template-columns:48px'));
   const dHead = decl(/style="([^"]*)"/.exec(DF[at])[1]);

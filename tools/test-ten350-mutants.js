@@ -9,7 +9,7 @@ const MUTANTS = [
   ['wiring: the tooltip Elo loses its reason on hover', 'class="fh-tip-elo" title="${fhEsc(fhEloText(r.oppElo))}" style=', 'class="fh-tip-elo" style='],
   ['wiring: a missing Elo prints blank instead of a dash', "Elo ${r.oppElo && r.oppElo.v != null ? r.oppElo.v : FH_DASHC}</span>", "Elo ${r.oppElo && r.oppElo.v != null ? r.oppElo.v : ''}</span>"],
   ['TEN-380 Q5: an Elo slot back in the match row', "${esc(r.opp)}</span>${tagSlot(r)}</span>`", "${esc(r.opp)}</span>${tagSlot(r)} <span class=\"ma-row-elo\" data-elo=\"\">—</span></span>`"],
-  ['layout: the README §5 Opponent track loses its 78 px floor and its share (a long name broken mid-word)', "const MA_ROW_COLS = '40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px';", "const MA_ROW_COLS = '40px 10px minmax(0,0.4fr) 28px 34px minmax(86px,1.3fr) 38px 38px';"],
+  ['layout: the README §5 Opponent track loses its 78 px floor and its share (a long name broken mid-word)', "const MA_ROW_COLS = '40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px';", "const MA_ROW_COLS = '40px 10px minmax(0,0.4fr) 28px 34px minmax(86px,1.3fr) 38px 38px';"],
   ['layout: names never wrap (a long name runs into the Rd column)', "<span${r.oppAttrs || ''}${t(r.oppTitle)}>${esc(r.opp)}</span>${tagSlot(r)}", "<span${r.oppAttrs || ''}${t(r.oppTitle)} style=\"white-space:nowrap;\">${esc(r.opp)}</span>${tagSlot(r)}"],
 ];
 const SUITES = ['test-ten350-elo-slot.mjs'];

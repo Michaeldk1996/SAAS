@@ -136,8 +136,8 @@ test('the rows: "surface · W–L" group header, README §5 grid with its own Sc
   const L = S.fhFormListHtml(P);
   assert.match(text(L), /Test Open Hard · 2–0/);
   assert.match(text(L), /Other Cup Clay · 0–1/);
-  // TEN-380 (README §5): header + rows on `40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px; gap 0 6px`
-  const G = 'grid-template-columns:40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px; gap:0 6px;';
+  // TEN-380 (README §5): header + rows on `40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px; gap 0 6px`
+  const G = 'grid-template-columns:40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px; gap:0 6px;';
   assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
   assert.match(text(L), /Date Opponent Rd Sets Score H A/, 'the column is "Score" (was "Set scores")');
   assert.match(text(L), /18\.07\. Beta B\. R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'name, then Rd · Sets · Score · H · A — no Elo in the row (TEN-380 Q5)');

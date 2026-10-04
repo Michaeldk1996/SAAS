@@ -130,7 +130,8 @@ function checkPlayer(ui, R, k, rows, scope) {
     assert.ok(b.clickable, 'band with rows is clickable');
     const P = R.band(k + j);
     assert.equal(stat(P, 'Record'), `W${b.w}–L${b.l}`);
-    if (n >= 5) assert.equal(stat(P, 'At 1u flat'), b.uTxt); else assert.equal(b.uTxt, '—', 'row 1u dashed under n = 5 (review item 6)');
+    if (n >= 5) assert.equal(stat(P, 'At 1u flat'), b.uTxt);
+    else { assert.equal(b.uTxt, '—', 'row 1u dashed under n = 5 (review item 6)'); assert.equal(stat(P, 'At 1u flat'), '—', 'review 2: the pop-up\'s 1u dashes with its Won and Edge'); }
     assert.equal((P.match(/data-me-row="/g) || []).length, n, 'pop-up rows = band n');
     // TEN-380: the yield is the At 1u flat tile's sub-line; Edge = Won − Needs (pp) on the row and in the pop-up; the
     // row's grey tick sits at Needs (the pop-up's "needs x%")

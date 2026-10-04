@@ -8,6 +8,8 @@ const BASE = process.env.TEN303_MUT_BASE || path.join(ROOT, 'bsp-consult-dashboa
 const html = fs.readFileSync(BASE, 'utf8');
 const SUITES = ['test-ten303-odds-tab.mjs', 'test-ten303-colours.mjs'].map(f => path.join(ROOT, f));
 const MUTANTS = [
+  ['review 2: a finished match\'s table row keeps its last tick (not the card close)', "m.finalScore ? { p1: o.p1.close, p2: o.p2.close } : null;", "null;"],
+  ['review 2: Key factors Fair from another tick', "nv: { a: [[0, card.now[0] * ov]], b: [[0, card.now[1] * ov]] } });", "});"],
   ['review item 4: the card stream left off the card book\'s table row', "    if (cr){\n      const ov = 1 / sp.p1 + 1 / sp.p2;", "    if (false){\n      const ov = 1 / sp.p1 + 1 / sp.p2;"],
   ['review item 4: Key factors back on its own book order', "  if (card && card.now[0] != null && card.now[1] != null){", "  if (false){"],
   ['Q23: a native title on the price-mode hints', "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\"' + tip(t) +", "const seg = (on, label, t, v) => '<span class=\"aox-seg\" role=\"button\" tabindex=\"0\" title=\"' + t + '\"' +"],

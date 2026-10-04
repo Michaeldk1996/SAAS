@@ -12901,10 +12901,10 @@ function maPopNoReplay(host){ if (host) host.querySelectorAll('.ma-sigin, .ma-fa
 // header and rows share it; the Score column is its own track; row padding 6, radius 6). ----
 // groups: [{ title, meta, rows: [{ date, won (bool|null), opp, rd, sets, scores, h, a, click, selected }] }]
 // `click` = the row's opener attribute (maRowOnclick(...) or ` onclick="fhOpenSheet('mid')"`) — every row opens the sheet.
-// TEN-380 review (founder 2026-10-04): the README §5 grid with the Opponent / Score shares rebalanced (1.1fr / 1.3fr →
-// 1.4fr / 1fr, Opponent floor 78 → 96 px, Score 86 → 64 px) so a name like "Shimabukuro S." stays on one line; a long score
-// wraps between sets instead of being cut ("6-4, 4-6," / "7-6, 6-2").
-const MA_ROW_COLS = '40px 10px minmax(96px,1.4fr) 28px 34px minmax(64px,1fr) 38px 38px';
+// TEN-380 review (founder 2026-10-04): the README §5 grid with the Opponent floor raised 78 → 96 px and the two shares equal
+// (1fr / 1fr, Score floor 86 px) so a name like "Shimabukuro S." stays on one line and a three-set score fits one line; a
+// four- or five-set score wraps between sets instead of being cut ("6-4, 4-6," / "7-6, 6-2").
+const MA_ROW_COLS = '40px 10px minmax(96px,1fr) 28px 34px minmax(86px,1fr) 38px 38px';
 const MA_ROW_GAP = '0 6px';
 // The H2H Meetings table (reference: one row per meeting under its year, an Event column in the opponent's slot).
 const MA_ROW_COLS_H2H = '48px 12px minmax(0,1.4fr) 36px 40px minmax(0,1.3fr) 46px 46px';
@@ -15498,7 +15498,7 @@ function meBandPopHtml(E, MM){
     + meTile('Record', 'W' + b.w + '–L' + b.l, ME_C.text, b.n + ' priced')
     + meTile('Won', b.won == null ? null : mePct1(b.won), ME_C.text, 'needs ' + mePct1(b.needs), { gate: [b.w, b.n] })
     + meTile('Edge', edge == null ? null : meSg(edge, 1, 'pp'), edge == null ? ME_C.m1 : meUC(edge, 1), 'won − needs', { gate: [b.w, b.n] })
-    + meTile('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units, 1), 'yield ' + yieldTxt) + '</div>';
+    + meTile('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units, 1), 'yield ' + yieldTxt, { gate: [b.w, b.n] }) + '</div>';   // TEN-380 review 2: gated with Won / Edge
   const table = mePopTable(b.rows, ['date', 'sq', 'opp', 'event', 'rd', 'score', 'price', 'oppPrice', 'pnl'], ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&L'],
     ME_BAND_TCOLS, E, name, key, r => ({ oppPrice: fhOdd(r.oppPrice), pnl: meSg(core.plCents(r) / 100, 2, 'u') }));
   return mePopShell(name + ' · priced ' + b.label, chip, sub, stats + table, 'Every match with a closing price in this band, newest first. Flat 1u stake. Click a match for its stats.', "meSet({meBand:null})");
@@ -15881,8 +15881,9 @@ function trTilesHtml(P){
 }
 // TEN-380 review (founder 2026-10-04): a "B" beside a price means Bet365 filled a missing Pinnacle close — said in words under the
 // records, as Form says it ("Closing odds · Pinnacle, Bet365 where missing (N)"); no B on the page → no line.
-function trSrcLine(P){
-  const nb = P.reduce((s, p) => s + ((p && p.priced) || []).filter(r => r.book === 'B').length, 0);
+function trSrcLine(cardsHtml){
+  // counts the B marks actually drawn (earlier editions stay folded until opened) — never a mark the reader cannot see
+  const nb = (String(cardsHtml || '').match(/class="ma-row-mark"[^>]*>B</g) || []).length;
   return nb ? `<div class="tr-srcline" style="margin-top:14px; text-align:center; ${FH_MONO} font-size:10.5px; color:var(--text-label);">Closing odds · Pinnacle, Bet365 where missing (${nb}) · B = Bet365</div>` : '';
 }
 function trRowData(r){
@@ -16069,9 +16070,10 @@ function buildTournamentSection(m){
   const t3 = 'var(--text-label)', t4 = 'var(--text-label)';
   const toggle = `<div style="display:flex; justify-content:center; margin-top:14px;"><span class="seg tr-more-toggle" onclick="trSet({more:${!S.more}})" style="display:inline-flex; align-items:center; gap:8px; padding:6px 4px; font-size:12.5px; font-weight:600; color:var(--text); cursor:pointer;">${S.more ? 'Hide court speed &amp; market' : 'Show court speed &amp; market'}<svg width="10" height="10" viewBox="0 0 10 10" style="transform:${S.more ? 'rotate(180deg)' : 'none'};"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg></span></div>`;
   const recHead = `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:24px 0 12px;"><span style="font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t3};">Record at ${fhEsc(clean)}</span><span style="font-size:11px; color:${t4};">Career main-draw record at this event, newest edition first. Click a match for its stats.</span></div>`;
+  const cards = P.map((p, i) => trPlayerCardHtml(m, p, i)).join('');
   return `<div class="tr" style="font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal; color:var(--text);">
       ${trHeaderHtml(m)}${toggle}${S.more ? trMarketHtml(m) : ''}${recHead}
-      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr)); gap:20px; align-items:start;">${P.map((p, i) => trPlayerCardHtml(m, p, i)).join('')}</div>${trSrcLine(P)}
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr)); gap:20px; align-items:start;">${cards}</div>${trSrcLine(cards)}
     </div>`;
 }
 
@@ -16724,14 +16726,17 @@ function aOddsRowsOf(m, opts){
   // TEN-380 review item 4 (one book per fixture): the card book's own row carries the card's Now — its stream tick when that
   // is newer (_streamNowOver, the same book's live feed) — so the table, the Match Winner tile, Key factors and the header
   // print one price, and the row is live while its stream is.
-  if (upcoming && typeof _ocsOf === 'function' && typeof _streamNowOver === 'function'){
-    const o = _ocsOf(m), sp = o && o.book ? _streamNowOver(m, o) : null;
+  if (typeof _ocsOf === 'function'){
+    const o = _ocsOf(m);
     const key = v => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const ok = v => v != null && Number.isFinite(+v) && +v >= 1.01;
+    // the card's pair: upcoming = its stream tick when newer, else the card state's Now; finished = the card book's close
+    const st = o && o.book && upcoming && typeof _streamNowOver === 'function' ? _streamNowOver(m, o) : null;
+    const sp = !o || !o.book ? null : upcoming ? (st || { p1: o.p1.now, p2: o.p2.now }) : m.finalScore ? { p1: o.p1.close, p2: o.p2.close } : null;
     const cr = sp && ok(sp.p1) && ok(sp.p2) ? rows.find(r => !r.noData && key(r.name) === key(o.book)) : null;
     if (cr){
       const ov = 1 / sp.p1 + 1 / sp.p2;
-      cr.stale = false; cr.streamNow = true; cr.margin = ov - 1;
+      cr.stale = false; cr.cardPair = true; cr.margin = ov - 1;
       cr.aQNow = +sp.p1; cr.bQNow = +sp.p2;
       cr.aNow = novig ? sp.p1 * ov : +sp.p1; cr.bNow = novig ? sp.p2 * ov : +sp.p2;
     }
@@ -16990,8 +16995,17 @@ function aOddsKey(e, fn){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefa
 // 1.01 floor, or a started match → that leg is a dash.
 function aOddsCardTile(m, D){
   const o = _ocsOf(m);
-  if (!o || !o.book) return null;
   const ok = v => (v != null && Number.isFinite(+v) && +v >= 1.01 ? +v : null);
+  if (!o || !o.book){
+    // TEN-380 review 2 (one book per fixture): no card state → the match card's own pair (_mcNowPair names its book), its
+    // Open that book's own first quote in the table — the header prints the same pair. A finished match has no such pair.
+    if (!D.upcoming || typeof _mcNowPair !== 'function') return null;
+    let np = null; try { np = _mcNowPair(m); } catch (e) { np = null; }
+    if (!np || !(np.bookName || np.book)) return null;
+    const key = v => String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const nm = np.bookName || np.book, row = D.rows.find(r => !r.noData && key(r.name) === key(nm)) || null;
+    return { book: nm, now: [ok(np.p1), ok(np.p2)], open: row ? [ok(row.aQOpen), ok(row.bQOpen)] : [null, null], closed: false };
+  }
   let now = [null, null];
   if (D.upcoming){
     const sp = _streamNowOver(m, o);
@@ -17628,8 +17642,10 @@ function kfOddsBook(m){
     const key = s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
     const own = D.rows.find(r => !r.noData && key(r.name) === key(card.book)) || null;
     const o = _ocsOf(m);
-    const row = Object.assign({ name: (o && o.label) || (own && own.name) || card.book, series: {}, nv: { a: [], b: [] } }, own || {},
-      { aOpen: card.open[0], bOpen: card.open[1], aNow: card.now[0], bNow: card.now[1] });
+    const ov = 1 / card.now[0] + 1 / card.now[1];
+    // Fair = the vig-free price of the pair the box prints (never another tick's), as one matched pair
+    const row = Object.assign({ name: (o && o.label) || (own && own.name) || card.book, series: {} }, own || {},
+      { aOpen: card.open[0], bOpen: card.open[1], aNow: card.now[0], bNow: card.now[1], nv: { a: [[0, card.now[0] * ov]], b: [[0, card.now[1] * ov]] } });
     return { D, row };
   }
   const live = D.rows.filter(r => !r.noData && !r.stale && r.aNow != null && r.bNow != null && r.aNow >= 1.01 && r.bNow >= 1.01);
