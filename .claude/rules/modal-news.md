@@ -40,6 +40,9 @@ over this file where they conflict.
 - The pane is 16px / line-height normal / "Hanken Grotesk", sans-serif, like the file's content column.
 - **Loading** (undrawn, `// DESIGN GAP G8`): the empty block's secondary line "Loading news…".
 - Colours are foundation tokens only (TEN-376); blue text only on the "View all news →" link (`--link`); the selected tile is lifted (`--edge-24` outline), never blue.
+- **Rows (TEN-380, step 3 reference):** the caret `--text`; the open (and hovered) row white 2% on its `--line` rule, no
+  `--open-card` edge; the article body `--text-soft`; the group rule `--edge-10`; the pane 100% of its column.
+  **Test:** `test-ten333-news-tab.mjs` "TEN-380" + the colour check (mutation: the open row back on `--open-card`).
 
 ## Verification recipe
 - Structure diff: `tools/ten312-design-capture.mjs <d> --only 04-news,04b-news-article-expanded,04c-news-filter-player-a,04d-news-filter-player-b,04e-news-empty,04f-news-unavailable`

@@ -139,7 +139,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Empty states fabricate nothing.** Em dash, an explicit "no data" label, or nothing. **Test:** every value traces to real source data or it isn't a number.
 
-- **Modal tab rail.** Exactly **twelve** tabs, **News second**, **Market edge last** (founder brief TEN-310, 2026-09-27): Key factors, News, Playing style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds, Market edge. **Test:** count = 12, position 2 = News, position 12 = Market edge (`test-ten310-market-edge.mjs`).
+- **Modal tab rail** (founder step 3, TEN-380 README §1, 2026-10-03). Exactly **twelve** tabs in this order: Key factors, Odds, Market edge, Form, H2H, Playing style, Progression, Tournament, Weather, News, Overview, Match Stats; the modal **opens on Odds**. Active tab = `--inner` + inset 1px `--edge-10`, white words + icon; idle = `--text-label` words, white icon, no hover tint — no blue in the rail. **Test:** the rail lists exactly that order (`test-ten310-market-edge.mjs`, `test-ten314-modal-frame.mjs`), a plain open lands on Odds, and the rail's colours read those tokens (`test-ten303-colours.mjs`).
 
 - **Match-detail view toggle.** Every nested match-detail instance offers exactly two views: **Stats** and **Point by point**. Summary is removed product-wide. **Test:** a Summary button anywhere is wrong.
 
@@ -150,7 +150,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 ## Non-negotiables
 
 - Never show a pipeline health banner or infrastructure warning to end users. *Exception:* the Dropping Odds page's "FEED DISCONNECTED" banner, worded exactly as its export draws it (founder, TEN-297 card 79e9db02 Q3) — see `.claude/rules/drops.md`.
-- Never highlight the better stat between two players with colour — neutral display only
+- Never highlight the better stat between two players with colour — neutral display only. **Test:** both players' figures and text are the same colour. *Exception (founder ruling 8, TEN-380, 2026-10-03):* two-player BARS split leader / trailer — the leader's bar solid, the trailer's at 45% (`--white-bar` / `--white-bar-2`, or `--bar` / `--bar-2`); the figures beside them stay white.
 - Never show "went the distance (4+ sets)" for best-of-three tournaments
 - Recent form always includes Challenger and ITF — never ATP-only
 - Tournament records reflect full career history, not a truncated range

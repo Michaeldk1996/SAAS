@@ -35,18 +35,20 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhRowFromForm', 'fhDayNum', 'fhDDMM', 'fhLongDate', 'fhIsInitial', 'fhNameKey',
   'fhPickBook', 'fhCloseFor', 'fhEloKey', 'fhEloKeyOwners', 'fhEloAt', 'fhRefDay', 'tourxSampleGate', 'maGate', 'maGateBar', 'maSmallNote', 'fhMedian',
   'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
-  'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesTable', 'fhFormRowsFromCareer',
+  'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesHead', 'fhHotRateHtml', 'fhHotLinesTable', 'fhHotMoreHtml',
+  'maPct', 'maRate', 'maRateHtml', 'fhFormRowsFromCareer',
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
-  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhEloSlot', 'fhRetNote', 'fhFormDataRows'];
+  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhRetNote', 'fhFormDataRows', 'fhSegStyle', 'fhSegTrack'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
-  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_COLS_SB'];
+  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
   function eventKeyOfMatch(m){ return m.eventKey || null; }
   ${CONSTS.map(constSrc).join('\n')}
   ${FNS.map(slice).join('\n')}
-  return { fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowData, maMatchRowsHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
+  const hotTable = (rows, sc) => fhHotLinesTable(rows, sc, { colMin: '22px', colHead: 'date', today: 'Hard', showAll: false, lineCls: k => 'fl-' + k, colTip: () => '', dotTip: () => '' });
+  return { fhSegTrack, hotTable, fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowData, maMatchRowsHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
     fhNameLink, profiles: playerProfiles, get fh(){ return _fh; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -128,19 +130,64 @@ test('a player without a form shard reads career-history, capped at the form-row
 });
 
 // Mutation: the group header meta dropped, or the tooltip/rows back to the double-space score join, or Form back on the
-// file's 8-track grid (`scoresBelow: true` dropped).
-test('the file\'s rows: "surface · W–L" group header, set scores "6-4, 6-3" under the name (TEN-350: 48/12/1fr/36/40/46/46)', () => {
+// file's grid / the TEN-350 scores-under-the-name layout (TEN-380: README §5's grid with a Score column of its own).
+test('the rows: "surface · W–L" group header, README §5 grid with its own Score column, Elo after the name (TEN-380)', () => {
   const P = player(match());
   const L = S.fhFormListHtml(P);
   assert.match(text(L), /Test Open Hard · 2–0/);
   assert.match(text(L), /Other Cup Clay · 0–1/);
-  // TEN-350 (founder bbe5c072 "names are never cut"): two lists side by side leave the file's Opponent track ~59 px, so
-  // the set scores move under the name and their track goes.
-  const G = 'grid-template-columns:48px 12px minmax(0,1fr) 36px 40px 46px 46px';
+  // TEN-380 (README §5): header + rows on `40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px; gap 0 6px`
+  const G = 'grid-template-columns:40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px; gap:0 6px;';
   assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
-  assert.match(text(L), /Date Opponent Rd Sets H A/);
-  assert.match(text(L), /18\.07\. Beta B\. — 6-4, 6-3 R16 2 - 0 1\.50 2\.60/, 'name, Elo slot (a dash: no history loaded), the scores under them');
-  assert.match(L, /<span class="fh-opp" title="Beta B\.">Beta B\.<\/span> <span class="ma-row-elo" data-elo="" title="Elo — at the time of the match: Elo history not loaded"/);
+  assert.match(text(L), /Date Opponent Rd Sets Score H A/, 'the column is "Score" (was "Set scores")');
+  assert.match(text(L), /18\.07\. Beta B\. R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'name, then Rd · Sets · Score · H · A — no Elo in the row (TEN-380 Q5)');
+  assert.ok(!/ma-row-elo|data-elo/.test(L), 'TEN-380 Q5: the Elo lives in the bar tooltip, not the row');
+  assert.match(L, /class="ma-row-score" title="6-4, 6-3" style="[^"]*color:var\(--text-label\);[^"]*white-space:nowrap;/, 'Score = its own cell, --text-label, one line');
+  // the header: --card on a 1px --line rule (decisions §1); the card: --card + 1px --edge-6
+  assert.match(L, /class="ma-rows-head" style="[^"]*background:var\(--card\); padding:10px 14px 8px; border-bottom:1px solid var\(--line\);/);
+  assert.match(L, /class="fh-fcard" style="border:1px solid var\(--edge-6\);[^"]*background:var\(--card\);/);
+});
+
+// TEN-380 README §5: "Used in form stats" rules = --edge-10 (never the blue open-card outline). Mutation: back to --open-card.
+test('the "↑ used in form stats" divider: rules --edge-10, a mono lowercase label', () => {
+  const P = player(match(), { n: 5 });
+  const L = S.fhFormListHtml(P);
+  const d = /<div class="fh-used"[\s\S]*?<\/div>/.exec(L);
+  assert.ok(d, 'the divider is drawn under the window');
+  assert.equal((d[0].match(/height:1px; background:var\(--edge-10\);/g) || []).length, 2);
+  assert.ok(!/open-card/.test(d[0]));
+  assert.match(d[0], />↑ used in form stats</);
+});
+
+// TEN-380 (README §5): the hot lines are identical for both players — Line · Rate · Covered · dots; Rate on the D2 gate
+// (no % under 5 eligible, greyed 5–9); dots --hot-dot with a 1px ring; "Most covered" on --inner with no edge, its label
+// --link; "Show all lines (N)" --text, centred. Mutations: the player colour back on the dots, the gate bar back instead
+// of the Rate, a % printed on n 3–4, the Most covered row back on --selected + an outline.
+test('hot lines: Rate column on the D2 gate, --hot-dot dots for both players, Most covered = --inner, toggle centred', () => {
+  const m = match(); S.fhStateFor(m);
+  const A = player(m, { n: 10 }, 0), B = player(m, { n: 10 }, 1);
+  for (const P of [A, B]) {
+    const H = S.fhFormHotHtml(P);
+    assert.match(text(H), /Line Rate Covered/);
+    assert.ok(!/data-ma-gate="(full|small)"[^>]*style="height:5px/.test(H), 'no gate bar');
+    const dots = [...H.matchAll(/border:1px solid (var\(--[a-z-]+\)|transparent); box-sizing:border-box/g)].map(x => x[1]);
+    if (P.hot.ok) assert.ok(dots.length && dots.every(c => c === 'var(--hot-dot)' || c === 'transparent'), 'every eligible dot rings in --hot-dot (both players)');
+    const top = /<div class="[^"]*fh-hl-top" style="([^"]*)"/.exec(H);
+    if (top) { assert.match(top[1], /background:var\(--inner\);/); assert.ok(!/box-shadow|border:/.test(top[1]), 'no edge'); }
+  }
+  assert.ok(A.hot.ok, 'the fixture ranks lines for A'); assert.match(S.fhFormHotHtml(A), /Most covered/);
+  const rate = /class="fh-hl-rate"[^>]*>(?:<span[^>]*>)?([^<]*)</.exec(S.fhFormHotHtml(A))[1];
+  assert.ok(/^(\d+%|—)$/.test(rate), 'a Rate cell is a % or a gated dash: ' + rate);
+});
+test('hot lines Rate: n 3–4 a grey dash (no %), n 5–9 grey, 10+ the % in --text', () => {
+  S.fhStateFor(match());
+  const run = (c, n) => { const rows = Array.from({ length: n }, (_, i) => ({ mid: 'm' + i, date: '2026-07-0' + (i % 9 + 1), tourn: 'T', surface: 'Hard', pS: 2, oS: 0, sets: [[6, 1], [6, 1]], tot: i < c ? 30 : 12, diff: 10, bo: 3, tbN: 0, decider: false }));
+    const sc = { scored: [{ k: 0, L: { g: 'tot', name: 'Over 22.5 games', need: 'games', bo3: true, cov: r => r.tot > 22.5, basis: '' }, name: 'Over 22.5 games', n, c, r: c / n }], covMap: {} };
+    return S.fhFormHotHtml({ idx: 0, name: 'A', HC: 'x', hot: { ok: true, sc, hdr: { win: 'Last 10', surf: 'Hard', role: 'Any role' }, short: false, few: false,
+      table: S.hotTable(rows, sc) } }); };
+  assert.match(run(3, 4), /data-ma-gate="nopct"[^>]*>—</); assert.doesNotMatch(run(3, 4), />75%</);
+  assert.match(run(5, 7), /data-ma-gate="small"[^>]*color:var\(--text-label\);[^>]*>71%</);
+  assert.match(run(9, 12), /data-ma-gate="full"[^>]*color:var\(--text\);[^>]*>75%</);
 });
 
 // Mutation: the hot-line header back to one ctx string, or the Short chip shown again (DF L4773 short:false).
@@ -191,7 +238,7 @@ test('Form renders rows with maMatchRowsHtml and bar tooltips with maTipHtml; no
   const P = player(match());
   const L = S.fhFormListHtml(P);
   assert.equal((L.match(/class="seg ma-row fh-frow"/g) || []).length, P.win.length, 'every listed row is the shared row');
-  assert.ok(L.includes('padding:8px 14px 7px') && L.includes('padding:11px 14px 5px') && L.includes('padding:0 8px;'), 'Form inset = parameters of the shared helper');
+  assert.ok(L.includes('padding:10px 14px 8px') && L.includes('padding:11px 14px 5px') && L.includes('padding:0 8px;'), 'Form inset = parameters of the shared helper');
   const col = S.fhFormColumnHtml(P, false);
   assert.equal((col.match(/class="elotip fh-bar"/g) || []).length, P.win.length, 'every bar is the shared tooltip');
   assert.ok(!/fh-elotip/.test(col), 'no Form-local tooltip class');
@@ -205,4 +252,17 @@ test('Q27: a Form name with no profile is plain text; with a profile it links to
   assert.match(S.fhNameLink('A. Tester', '7', 'x'), /^<span class="plink" onclick="fhOpenProfile\('7'\)" style="x">A\. Tester<\/span>$/);
   for (const k of ['8', null, undefined]) assert.equal(S.fhNameLink('B. Nobody', k, 'x'), '<span style="x">B. Nobody</span>', 'key ' + k);
   delete S.profiles['7'];
+});
+
+// TEN-380 (README §5): all four Form filters on ONE row that never wraps (it scrolls sideways): surface | role |
+// Matches/Days, then Last N (or N days) on its own Darker track (track --card + 1px --edge-6; selected --inner + --edge-10).
+// Mutations 'form: the four filters wrap onto two lines', 'form: Last N back off its track'.
+test('Form filters: one nowrap row of four Darker tracks, Last N on its own track', () => {
+  const src = slice('fhBuildForm');
+  assert.match(src, /<div class="fh-filters" style="display:flex; align-items:center; gap:10px; flex-wrap:nowrap; overflow-x:auto; margin-bottom:22px;">\$\{surf\}\$\{vr\}\$\{role\}\$\{vr\}\$\{mode\}\$\{valsHtml\}<\/div>/);
+  assert.equal((src.match(/= fhSegTrack\(/g) || []).length, 4, 'four tracks: surface, role, Matches/Days, Last N');
+  const t = S.fhSegTrack([{ label: 'Last 5', on: false, onclick: 'x()' }, { label: 'Last 10', on: true, onclick: 'y()' }]);
+  assert.match(t, /^<div class="fh-track" style="display:inline-flex; flex:0 0 auto; gap:4px; background:var\(--card\); border:1px solid var\(--edge-6\); border-radius:9px; padding:3px;">/);
+  assert.match(t, /padding:5px 11px;[^"]*font-weight:700; color:var\(--text\); background:var\(--inner\); border:1px solid var\(--edge-10\);[^>]*>Last 10</);
+  assert.match(t, /font-weight:600; color:var\(--text-label\); background:transparent; border:1px solid transparent;[^>]*>Last 5</);
 });

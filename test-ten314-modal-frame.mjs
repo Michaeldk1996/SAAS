@@ -70,10 +70,15 @@ test('frame: overlay, modal, header, body grid and menu carry the design FILE va
 });
 
 // Mutation: reorder two menu items, or put back the old stroke-2 feather icons.
-test('left menu: the 12 tabs in the file\'s order with the file\'s icon paths (TABS, DF L5306)', () => {
+// TEN-380 (founder step 3, README §1): the order is Key factors · Odds · Market edge · Form · H2H · Playing style ·
+// Progression · Tournament · Weather · News · Overview · Match Stats; the icons stay the file's (TABS, DF L5306), as the
+// reference rail draws them.
+const TEN380_ORDER = ['Key factors', 'Odds', 'Market edge', 'Form', 'H2H', 'Playing style', 'Progression', 'Tournament', 'Weather', 'News', 'Overview', 'Match Stats'];
+test('left menu: the 12 tabs in the README §1 order with the file\'s icon paths (TABS, DF L5306)', () => {
   const tabsSrc = DF.slice(DF.indexOf('  const TABS = ['), DF.indexOf('];', DF.indexOf('  const TABS = [')));
-  const df = [...tabsSrc.matchAll(/\['([^']+)', '([^']+)'\]/g)].map(x => [x[1], x[2]]);
-  assert.equal(df.length, 12);
+  const icon = Object.fromEntries([...tabsSrc.matchAll(/\['([^']+)', '([^']+)'\]/g)].map(x => [x[1], x[2]]));
+  assert.equal(Object.keys(icon).length, 12);
+  const df = TEN380_ORDER.map(n => [n, icon[n]]);
   const rail = HTML.slice(HTML.indexOf('<div class="asidenav" id="aTabs">'), HTML.indexOf('asidenav-download', HTML.indexOf('<div class="asidenav" id="aTabs">')));
   const ours = [...rail.matchAll(/<path d="([^"]+)" stroke="currentColor" stroke-width="1\.7"[^>]*><\/path><\/svg><\/span>([^<]+)<\/div>/g)].map(x => [x[2], x[1]]);
   assert.deepEqual(ours, df);
@@ -121,7 +126,7 @@ test('Download report: printing waits for the unopened tabs to build and load', 
 // Mutation: drop `return` from a builder (the report stops waiting for that tab's load), or let a throwing builder escape.
 test('Download report: aBuildForReport settles only after every tab load, and survives a throwing builder', async () => {
   const { api, pending } = modalVM({ hold: true });
-  api.openAnalysisModal('a');
+  api.openAnalysisModal('a', 'key');                           // TEN-380: opened on Key factors by link (the default is Odds)
   while (pending.length) pending.shift()();                    // Key factors' own loads (built at open)
   let done = false; api.aBuildForReport().then(() => { done = true; });
   await flush();
@@ -180,6 +185,7 @@ function modalVM(opts = {}) {
     ensureFormRows: rec('load:form-shards'), fhEnsureH2hData: rec('load:h2h-data'), fhEnsureFormData: rec('load:form-data'), ensureOddsMovement: rec('load:odds-shard'), ensurePsMatrix: rec('load:matrix'),
     ensureOverviewProfiles: rec('load:profiles'), kfEnsureWeather: rec('load:weather-kf'), trHoldLoad: rec('load:event-hold'),
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
+    tourxFetchMarket: rec('load:tournament-market'), pgEnsureData: rec('load:progression'), kfEnsureNews: rec('load:news-kf'), kfEnsureMarketEdge: rec('load:market-edge-kf'),
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
     h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
     teTrack: undefined,
@@ -200,15 +206,21 @@ function modalVM(opts = {}) {
 }
 const flush = () => new Promise(r => setTimeout(r, 0));
 
-// Mutation: openAnalysisModal builds every tab (the pre-TEN-314 behaviour), or Key factors pre-loads the DNA / news files.
-test('lazy: opening the modal builds and loads Key factors only; every other tab builds on its first open, once', async () => {
+// Mutation: openAnalysisModal builds every tab (the pre-TEN-314 behaviour), or Key factors pre-loads the Overview's season rows.
+test('lazy: opening the modal builds and loads Odds only (TEN-380); every other tab builds on its first open, once', async () => {
   const { api, log } = modalVM();
   const built = () => [...new Set(log.filter(x => x.startsWith('build:')))];   // a repaint after a shard lands is not a build
   api.openAnalysisModal('a'); await flush();
+  assert.deepEqual(built(), ['build:odds']);
+  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:odds-shard'], 'Odds reads its own shard only');
+  log.length = 0;
+  api.aShowTab('key'); await flush();
   assert.deepEqual(built(), ['build:key']);
-  // TEN-341: Key factors reads what each card's own tab reads (matrix, Form rows, H2H meetings, DNA, season rows, odds shard,
-  // weather) — never the MCP radar (N10) and nothing another tab alone needs (the news feed, the meeting shards)
-  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:event-hold', 'load:form-data', 'load:h2h-data', 'load:matrix', 'load:odds-shard', 'load:profiles', 'load:weather-kf']);
+  // TEN-380: Key factors reads what each box's own tab reads (matrix + meeting shards, Form rows, H2H meetings, DNA, odds shard,
+  // event hold + tournament-market.json, the Progression rounds, the news feed, the Market edge shards, weather) — never the
+  // MCP radar (N10) and nothing no box shows (the Overview's season rows)
+  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:event-hold', 'load:form-data', 'load:h2h-data', 'load:market-edge-kf', 'load:matrix',
+    'load:news-kf', 'load:odds-shard', 'load:progression', 'load:style-meetings', 'load:tournament-market', 'load:weather-kf']);
   log.length = 0;
   api.aShowTab('style'); await flush();
   // TEN-340: the Playing style tab reads the 5-axis DNA only — never the MCP radar (N10: the modal never fetches style-radar.json)
@@ -222,30 +234,31 @@ test('lazy: opening the modal builds and loads Key factors only; every other tab
 });
 
 // Mutation: drop `_aBuilt.clear()` from openAnalysisModal (a second match would show the first match's tabs).
-// Founder Q26 (2026-09-30; replaces README §6 "reopens on the last-used tab"): every open starts on Key factors; an explicit
-// tab (a link: openAnalysisModal(id, tab)) still opens that tab. Mutation: the last-used tab restored (tools/test-ten341-mutants.js).
-test('Q26: a new match starts with nothing built and always opens on Key factors — no last-used tab; an explicit tab still wins', async () => {
+// TEN-380 (founder step 3, README §1 "Default tab on open = as the reference (Odds)"; replaces Q26 "always Key factors"):
+// every open starts on Odds; there is no last-used-tab memory; an explicit tab (a link: openAnalysisModal(id, tab)) still
+// opens that tab. Mutation: the last-used tab restored, or the default back on Key factors (tools/test-ten341-mutants.js).
+test('TEN-380: a new match starts with nothing built and always opens on Odds — no last-used tab; an explicit tab still wins', async () => {
   const { api, log, nav } = modalVM();
-  api.openAnalysisModal('a'); api.aShowTab('odds'); await flush();
+  api.openAnalysisModal('a'); api.aShowTab('key'); await flush();
   log.length = 0;
   api.openAnalysisModal('b'); await flush();
-  assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:key'], 'Key factors, rebuilt for the new match');
-  assert.deepEqual(api.built(), ['key']);
-  assert.ok(nav.key.classList.contains('active') && !nav.odds.classList.contains('active'));
-  // switch to Odds on match 'b', then reopen 'b': Key factors again
-  api.aShowTab('odds'); api.openAnalysisModal('b'); await flush();
-  assert.ok(nav.key.classList.contains('active') && !nav.odds.classList.contains('active'), 'reopen: Key factors, not Odds');
+  assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:odds'], 'Odds, rebuilt for the new match');
+  assert.deepEqual(api.built(), ['odds']);
+  assert.ok(nav.odds.classList.contains('active') && !nav.key.classList.contains('active'));
+  // switch to Key factors on match 'b', then reopen 'b': Odds again
+  api.aShowTab('key'); api.openAnalysisModal('b'); await flush();
+  assert.ok(nav.odds.classList.contains('active') && !nav.key.classList.contains('active'), 'reopen: Odds, not Key factors');
   // an explicit link still opens its tab
   api.openAnalysisModal('a', 'h2h'); await flush();
-  assert.ok(nav.h2h.classList.contains('active') && !nav.key.classList.contains('active'), 'openAnalysisModal(id, "h2h") opens H2H');
+  assert.ok(nav.h2h.classList.contains('active') && !nav.odds.classList.contains('active'), 'openAnalysisModal(id, "h2h") opens H2H');
   api.openAnalysisModal('a'); await flush();
-  assert.ok(nav.key.classList.contains('active'), 'and the next plain open is Key factors again');
+  assert.ok(nav.odds.classList.contains('active'), 'and the next plain open is Odds again');
 });
 
 // Mutation: drop the `_aM === m` half of aBuilt (a late shard of the previous match repaints the new one).
 test('lazy: a shard that lands after the modal was reopened on another match never repaints it', async () => {
   const { api, log, pending } = modalVM({ hold: true });
-  api.openAnalysisModal('a'); api.openAnalysisModal('b');
+  api.openAnalysisModal('a', 'key'); api.openAnalysisModal('b', 'key');   // TEN-380: Odds is the default; Key factors by link
   log.length = 0;
   pending.forEach(f => f()); await flush(); await flush();
   assert.deepEqual(log.filter(x => x.startsWith('paint:key')), ['paint:key:b'], 'only the open match repaints');
@@ -272,7 +285,7 @@ test('a named tab opens directly: nothing else is built first', async () => {
 test('Download report waits for H2H\'s meetings and Form\'s priced archives, not just their first paint', async () => {
   for (const held of ['load:h2h-data', 'load:form-data']) {
     const { api, pending } = modalVM({ hold: true });
-    api.openAnalysisModal('a'); while (pending.length) pending.shift()();
+    api.openAnalysisModal('a', 'key'); while (pending.length) pending.shift()();   // TEN-380: Key factors by link, its loads released
     let done = false; api.aBuildForReport().then(() => { done = true; });
     await flush();
     for (const f of pending.splice(0).filter(f => { if (f.n === held) return true; f(); return false; })) pending.push(f);

@@ -89,18 +89,20 @@ this file wins.
   `tools/test-ten368-event-hold.js` (the builder).
 
 ## Players and avatars (D4, D5)
-- **Both players are neutral on every tab, Odds included:** player A white/primary, player B grey — as on
-  Market edge. Blue is only links, TODAY and selection. **Test:** no player name, sparkline, chart line or
-  pop-up square takes the link/accent blue.
+- **Both players are neutral on every tab, Odds included** (TEN-380, measured on OFFICIAL VERSION 1): both names, both
+  header prices and both players' key figures are white (`--text`); a series that must tell the two apart uses the
+  chart rule (lead / second), never the link blue. **Test:** no player name, sparkline, chart line or pop-up square takes
+  the link blue, and the header's player-B name and price read `--text` (`test-ten303-colours.mjs`).
 - **Avatars = ATP photos from `player-atp-aliases.json`, monogram fallback**, in the header and the match stats
   sheet, **inside the design's ring and size geometry** (header 40px, sheet 56px, ring as designed).
   **Test:** a player with an alias renders an `<img>` from the alias chain at the design's size and ring; one
   without renders the monogram in the same ring.
 
-## Opening tab (founder Q26, 2026-09-30; replaces README §6 "reopens on the last-used tab")
-- **The modal always opens on Key factors.** There is no last-used-tab memory. An explicit link to a tab
-  (`openAnalysisModal(id, tab)`) still opens that tab. **Test:** `test-ten314-modal-frame.mjs` "Q26" (open, switch to
-  Odds, reopen: Key factors; an explicit tab still opens; mutation: the last-used tab restored).
+## Opening tab (founder step 3, TEN-380 README §1, 2026-10-03; replaces Q26 "always opens on Key factors")
+- **The modal always opens on Odds**, as the reference does. There is no last-used-tab memory. An explicit link to a
+  tab (`openAnalysisModal(id, tab)`) still opens that tab. **Test:** `test-ten314-modal-frame.mjs` "TEN-380" (open,
+  switch to Key factors, reopen: Odds; an explicit tab still opens; mutations in `tools/test-ten341-mutants.js`: the
+  last-used tab restored, the default back on Key factors).
 
 ## Header and footer (founder 2026-09-28, TEN-314 card answered in TEN-312 comment c1883bb0)
 - **Not-completed, not-live match:** the design's centred matchup strip (avatars, names, price pills).
@@ -194,6 +196,14 @@ this file wins.
   (`DatabaseTab.mount`, reused as built, mounted on `<body>` so the modal's `.modal button` rule cannot restyle it), and
   "Record at X": per player five tiles + the shared rows (`maMatchRowsHtml`), one group per edition
   ("X YYYY" + result · W–L), every row a registered sheet row (`fhOpenSheet`).
+- **Display (founder step 3, TEN-380, measured on OFFICIAL VERSION 1):** header card `--card` + `--edge-6`; the surface is a
+  chip ("Hard court", `--selected` + `--line`); meta values in IBM Plex Mono, the current cell (Round) on `--inner`; the
+  "Show court speed & market" toggle is plain text with white words; ROI values are `--text` (a value's colour never follows
+  its gap to the tour average — the "−3.7% drawn green" bug); favourite reliability = `--bar` on `--track`; record rows on the
+  shared README §5 grid with a "Score" head. No tooltip may widen the column (the Backing tooltip opens leftwards).
+  Charts (founder TEN-380 Q2, 2026-10-03): the court-speed bar is flat `--white-bar` with a white knob (README §11; no
+  gradient, no blue); the seven-season trend is a line only on dotted horizontal guides (`--viz-guide`, dash 2 6), no area
+  fill, no vertical ticks. **Test:** `test-ten332-tournament.mjs` "TEN-380" + the Q2 mutants in `tools/test-ten332-mutants.js`.
 - **Data:** editions = `m.p?TournamentHistory` (pipeline; main draw only, N7; walkovers out, N2; only editions entered,
   N6). Set scores from `career-history/{key}.json` joined by event key, else season + opponent + result (exactly one row).
   Prices from `match-closes/{key}.json` through the Form/H2H picker (R8, N5). Header / panel from `m.venue`, `m.courtSpeed`

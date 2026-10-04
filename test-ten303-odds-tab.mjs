@@ -56,7 +56,7 @@ const tipOf = (h, book) => { const r = rowHtml(h, book); const mm = /class="aox-
 
 // ── §6 test 1 ─ mutants: a stale "now" kept (drop `row.stale ? null :`); best over all books (drop `!r.stale`);
 //    STEAM counting every book (moving = rows) ──
-test('§6.1 a stale book: NOW and NET "—", never green, outside STEAM n and N', () => {
+test('§6.1 a stale book: NOW and MOVE "—", never green, outside STEAM n and N', () => {
   const now = Date.now();
   const A = build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0, minMovePct: 0 }' });
   const m = fixture({ now, withAt: true, superbetChecked: now - 2 * H });   // Superbet: last check 2 h ago, the HIGHEST p1 (2.60)
@@ -66,11 +66,12 @@ test('§6.1 a stale book: NOW and NET "—", never green, outside STEAM n and N'
   assert.ok(/class="aox-row aox-stale"/.test(h.slice(h.lastIndexOf('<div', h.indexOf('data-book="Superbet"')))), 'Superbet is the stale row');
   for (const x of ['a', 'b']) {
     assert.equal(cellTxt(sb, 'aox-now', x), '\u2014', `NOW ${x} is a dash`);
-    assert.equal(cellTxt(sb, 'aox-net', x), '\u2014', `NET ${x} is a dash`);
+    assert.equal(cellTxt(sb, 'aox-move', x), '\u2014', `MOVE ${x} is a dash`);
     assert.equal(colorOf(sb, 'aox-now', x), A.AODDS_C.label);
+    assert.equal(colorOf(sb, 'aox-move', x), A.AODDS_C.label, 'a stale move is grey, never signed');
   }
   assert.ok(sb.includes('>no recent data<'), 'margin line reads "no recent data"');
-  assert.ok(sb.includes('opacity:0.4'), 'sparkline at 40%');
+  assert.ok(!/<svg/.test(sb), 'TEN-380: no per-row sparkline (the reference rows are open → now + move)');
   assert.ok(sb.includes('onclick="aOddsOpenMv'), 'the row still opens the pop-up');
   // best p1 among LIVE books = 2.50 (Betano); the stale 2.60 never wins. The best price is neutral on screen
   // (founder R4/R6.1, TEN-376), so the rule is read from the rows, and no NOW is ever green.
@@ -87,7 +88,10 @@ test('§6.1 a stale book: NOW and NET "—", never green, outside STEAM n and N'
   const D2 = A.aOddsRowsOf(m2, { nowMs: now });
   assert.equal(D2.steam && D2.steam.text, '3 of 3 books shortened on J. Sinner', 'the stale Superbet is in neither n nor N');
   A.open(m2);
-  assert.ok(A.buildOddsSection(m2).includes('>3 of 3 books shortened on J. Sinner<'), 'the chip renders it');
+  // TEN-380: the chip's sentence lives in its shared tooltip (data-aotip), never on screen and never a native title
+  const h2 = A.buildOddsSection(m2), chip = /<span class="aox-steam" tabindex="0" data-aotip="([^"]*)"/.exec(h2);
+  assert.ok(chip && unesc(chip[1]).includes('>3 of 3 books shortened on J. Sinner<'), 'the chip carries it in its tooltip');
+  assert.ok(!h2.replace(/data-aotip="[^"]*"/g, '').includes('3 of 3 books'), 'the sentence is not printed beside the chip');
 });
 
 // ── §6 test 2 ─ mutants: series from the union of a book's sources; fallback taken although the primary has data ──
@@ -106,8 +110,12 @@ test('§6.2 no row mixes two sources: Pinnacle in both feeds draws only Pinnacle
   const h = A.buildOddsSection(m);
   const row = rowHtml(h, 'Pinnacle');
   assert.equal(cellTxt(row, 'aox-open', 'a'), '2.50'); assert.equal(cellTxt(row, 'aox-now', 'a'), '2.35');
-  assert.equal(cellTxt(row, 'aox-net', 'a'), '-0.15', 'net: a hyphen, never U+2212');
-  assert.equal(cellTxt(row, 'aox-net', 'b'), '+0.08');
+  // TEN-380 Move = (now − open) / open on the displayed prices, 1 dp, ▲ / ▼ in the signed colours:
+  // 2.50 → 2.35 = −6.0%; 1.578 → 1.657 reads 1.58 → 1.66 = +5.1% (the raw prices would give +5.0%)
+  assert.equal(cellTxt(row, 'aox-move', 'a'), '\u25bc 6.0%');
+  assert.equal(colorOf(row, 'aox-move', 'a'), A.AODDS_C.dn);
+  assert.equal(cellTxt(row, 'aox-move', 'b'), '\u25b2 5.1%', 'measured on the displayed prices');
+  assert.equal(colorOf(row, 'aox-move', 'b'), A.AODDS_C.up);
   assert.equal(rowsOf(h).filter(r => r.book === 'Pinnacle').length, 1, 'one row per bookmaker');
   assert.ok(!/data-book="Pinnacle \(api-tennis\)"|data-book="Pinnacle \+30s/.test(h), 'no sourced row name');
   const tip = tipOf(h, 'Pinnacle');
@@ -147,7 +155,7 @@ test('§6.3 No-vig: both players sum to 100% on every row with a matched pair; n
   const betano = rowHtml(h, 'Betano');
   assert.equal(cellTxt(betano, 'aox-now', 'a'), '\u2014', 'no matched pair -> no no-vig price');
   assert.equal(cellTxt(betano, 'aox-now', 'b'), '\u2014');
-  assert.ok(h.includes('>margin removed<') && h.includes('No-vig prices, margin stripped.'));
+  assert.ok(h.includes('>margin removed<') && /class="aox-meta"[^>]*>Match Winner \u00b7 \d+ books \u00b7 no-vig</.test(h), 'the header meta names the price mode');
   // Bet105 pairs across timestamps: 4 ticks, the first (p1 only) unpaired
   const b105 = D.rows.find(r => r.name === 'Bet105');
   assert.deepEqual(b105.ticks.map(t => t.pair), [false, true, true, true]);
@@ -156,21 +164,20 @@ test('§6.3 No-vig: both players sum to 100% on every row with a matched pair; n
   assert.equal((Dm.rows.find(r => r.name === 'Pinnacle').margin * 100).toFixed(1), '2.9');
 });
 
-// ── §6 test 4 ─ mutant: aOddsSetMarket without its `recorded` guard / a disabled tile given an onclick ──
-test('§6.4 the disabled market tiles do not change the table when clicked', () => {
+// ── §6 test 4 ─ founder Q10 (2026-10-03): the unrecorded markets are HIDDEN — only recorded tiles render; an unrecorded
+//    market still cannot be selected. mutants: aOddsSetMarket without its `recorded` guard · the hidden tiles back ──
+test('§6.4 Q10: only recorded markets render a tile; an unrecorded market cannot be selected', () => {
   const A = build();
   const m = fixture({ withAt: true });
   A.open(m); A.renderOddsSection();
   const before = A.section();
   const tiles = [...before.matchAll(/<div class="aox-tile[^"]*" data-market="([^"]*)"([^>]*)>/g)];
-  assert.equal(tiles.length, 7);
-  assert.deepEqual(tiles.map(t => t[1]), ['Match Winner', '1st set winner', 'Game handicap', 'Total games', 'Set betting', 'Set handicap', 'Tiebreak in match']);
-  for (const t of tiles.slice(1)) {
-    assert.ok(!/onclick=/.test(t[2]) && /cursor:default/.test(t[2]) && /aria-disabled="true"/.test(t[2]), `${t[1]} is inert`);
-    assert.ok(unesc(/data-aotip="([^"]*)"/.exec(t[2])[1]).includes('Not recorded yet \u2014 Match Winner only.'));
-    A.aOddsSetMarket(t[1]);
+  assert.deepEqual(tiles.map(t => t[1]), ['Match Winner'], 'only the recorded market');
+  assert.ok(!before.includes('not recorded') && !before.includes('aox-off'), 'no "not recorded" tile');
+  for (const name of ['1st set winner', 'Game handicap', 'Total games', 'Set betting', 'Set handicap', 'Tiebreak in match']) {
+    A.aOddsSetMarket(name);
     assert.equal(A.state().market, 'Match Winner');
-    assert.equal(A.section(), before, `clicking ${t[1]} leaves the tab unchanged`);
+    assert.equal(A.section(), before, `selecting ${name} leaves the tab unchanged`);
   }
 });
 
@@ -325,7 +332,7 @@ test('pop-up: real window, stat boxes from the real series (earliest on ties), b
   const stats = [...mv.matchAll(/class="aox-stat"[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)</g)].map(x => [x[1], x[2]]);
   // p1: OPENING 2.50 (26 Sep 12:00Z), HIGHEST 2.60 twice -> the EARLIER (22:00Z), LOWEST 2.35 (06:00Z); Europe/Brussels
   assert.deepEqual(stats.slice(0, 3), [['2.50', '26 Sep, 14:00'], ['2.60', '27 Sep, 00:00'], ['2.35', '27 Sep, 08:00']]);
-  assert.ok(/class="aox-chg"[^>]*>-6\.0%</.test(mv), '% change (now - open) / open, hyphen');
+  assert.ok(/class="aox-chg"[^>]*>\u22126\.0%</.test(mv), '% change (now - open) / open, the true minus (brief hard rule)');
   const tabs = [...mv.matchAll(/class="aox-seg aox-tab"[^>]*data-book="([^"]*)"/g)].map(x => x[1]);
   assert.deepEqual(tabs, D.rows.filter(r => !r.noData).map(r => r.name), 'one tab per row with a line, table order, stale included');
   // no hard-coded "last 72 hours", no Catmull-Rom
@@ -506,9 +513,6 @@ test('1a: a stored series with a 3-hour no-change gap (and a feed gap) draws ONE
   m.oddsMovement.chart.books['Pinnacle +30s'].p1 = s.map(p => [iso(p[0]), p[1]]);
   m.oddsMovement.chart.meta['Pinnacle +30s'].gaps = [[iso(t0 + 1.5 * H), iso(t0 + 3.5 * H)]];
   A.open(m);
-  const row = rowHtml(A.buildOddsSection(m), 'Pinnacle');
-  const d = /<svg class="aox-spark"[\s\S]*?<path d="([^"]+)"/.exec(row)[1];   // line only: no area path (README §5.8)
-  assert.equal((d.match(/M/g) || []).length, 1, 'sparkline: one line across the feed gap: ' + d);
   A.state().mv = 'Pinnacle';
   const mv = A.buildOddsSection(m); const pd = /class="aox-line" d="([^"]+)"/.exec(mv.slice(mv.indexOf('aox-mv-overlay"')))[1];
   assert.equal((pd.match(/M/g) || []).length, 1, 'pop-up: one line across the feed gap: ' + pd);
@@ -528,12 +532,6 @@ test('1a: every plotted y-value is a stored price at display precision (the NOW 
   assert.ok(ys.includes(1.47) && !ys.includes(1.4695) && !ys.includes(1.4712), 'raw 1.4695 / 1.4712 draw as the displayed 1.47');
   // 1.4695 and 1.4712 both display 1.47: one flat run, not a step between them
   assert.equal(vertices(P.line).filter(p => p[0] === 'V').length, 3, 'three changes after rounding: 1.47 → 1.52 → 1.068 → the 2.345 tick');
-  // the sparkline's y-range is the plotted range: back-map every vertex through its own scale
-  const r = { noData: false, stale: false, first: t0, end: t0 + 5 * H, series: { a: s } };
-  const d = /<path d="([^"]+)"/.exec(A.aOddsSparkSvg(r, 'a', '#fff'))[1];
-  const mn = Math.min(...allowed), mx = Math.max(...allowed);
-  for (const p of vertices(d)) { const v = mn + (18 - p[2]) / 14 * (mx - mn);
-    assert.ok([...allowed].some(a => Math.abs(a - v) < 0.012), `sparkline y ${p[2]} → ${v.toFixed(3)} not a displayed price`); }
 });
 // ── founder follow-up 1b: ONE missing-price mark on the tab, the design's DASH, defined once ──
 //    mutants: a stale NOW rendered with U+2013 · a second literal dash in the tab's code ──
@@ -545,10 +543,11 @@ test('1b: every missing price on the tab (NOW, NET, margin, pop-up header, stat 
   A.open(m);
   const h = A.buildOddsSection(m);
   const row = rowHtml(h, 'Betano');
-  for (const x of ['a', 'b']) { assert.equal(cellTxt(row, 'aox-now', x), '\u2014'); assert.equal(cellTxt(row, 'aox-net', x), '\u2014'); }
+  for (const x of ['a', 'b']) { assert.equal(cellTxt(row, 'aox-now', x), '\u2014'); assert.equal(cellTxt(row, 'aox-move', x), '\u2014'); }
   A.state().mv = 'Betano';
   const all = A.buildOddsSection(m);
-  assert.ok(!/[\u2013\u2012\u2212]/.test(all.replace(/<svg[\s\S]*?<\/svg>/g, '')), 'no en dash / figure dash / minus as a value mark');
+  // (U+2212 is no longer banned here: TEN-380 signs a negative move with the true minus, as the brief's hard rule)
+  assert.ok(!/[\u2013\u2012]/.test(all.replace(/<svg[\s\S]*?<\/svg>/g, '')), 'no en dash / figure dash as a value mark');
   // defined once: no dash literal in the tab's functions — every one goes through AODDS_DASH
   const code = FNS.map(n => slice(n)).join('\n').replace(/\/\/[^\n]*/g, '');
   const lits = code.match(/'[^'\n]*\u2014[^'\n]*'|"[^"\n]*\u2014[^"\n]*"/g) || [];
@@ -606,6 +605,85 @@ test('a book with an open feed gap holds its last price flat to the last check, 
     A.open(m); A.state().mv = 'Betano';
     const mv = A.buildOddsSection(m); const xs = [...mv.slice(mv.indexOf('aox-mv-overlay"')).matchAll(/class="aox-xt"[^>]*>([^<]+)</g)].map(x => x[1]);
     assert.equal(xs[4], '09:58', 'the pop-up x axis ends at the last check: ' + xs);
+  });
+});
+
+// TEN-380 / Q10 (founder 2026-10-03, parked as recommended): the Match Winner tile = the CARD's one book — its Now and the
+// move against that same book's Open (one book per fixture); missing = dash; a leg below the 1.01 floor is suppressed.
+//    mutants: the tile shows the best price across books · the move against another book's open · the floor dropped
+test('Q10: the Match Winner tile is the card book (Now, and the move vs the same book\'s Open); dashes when absent', () => {
+  const now = Date.now();
+  const A = build(); const m = fixture({ now, withAt: true });
+  const tileOf = h => { const i = h.indexOf('data-market="Match Winner"'); return h.slice(i, h.indexOf('class="aox-head"', i)); };
+  const px = (t, x) => (new RegExp(`class="aox-tile-px" data-side="${x}" style="[^"]*">([^<]*)<`).exec(t) || [])[1];
+  const mv = (t, x) => (new RegExp(`class="aox-tile-mv" data-side="${x}" style="[^"]*color:([^;"]+)[^"]*">([^<]*)<`).exec(t) || []).slice(1);
+  // no card row → both prices dashed, no move (never the best price of the table: Betano's 2.50 / Betfair Exchange's 1.67)
+  A.open(m); let t = tileOf(A.buildOddsSection(m));
+  assert.deepEqual([px(t, 'a'), px(t, 'b')], ['\u2014', '\u2014']);
+  assert.ok(!t.includes('aox-tile-mv'));
+  // the card's book (Bet105 here): its Now, and Now − its OWN Open with the true minus
+  m.__testOcs = { book: 'bet105', p1: { open: 2.40, now: 2.30, close: null }, p2: { open: 1.62, now: 1.70, close: null } };
+  A.open(m); const h = A.buildOddsSection(m); t = tileOf(h);
+  assert.deepEqual([px(t, 'a'), px(t, 'b')], ['2.30', '1.70']);
+  assert.deepEqual(mv(t, 'a'), [A.AODDS_C.dn, '\u22120.10']);
+  assert.deepEqual(mv(t, 'b'), [A.AODDS_C.up, '+0.08']);
+  const onFile = A.aOddsRowsOf(m, { nowMs: now }).rows.filter(r => !r.noData).length;
+  assert.ok(t.includes(`>${onFile} bk<`), 'TEN-380 review F4: the count = the books with a price on record (stale included), never 0 beside a price');
+  assert.ok(new RegExp(`class="aox-meta"[^>]*>Match Winner \\u00b7 ${onFile} books \\u00b7 as quoted<`).test(h), 'the header meta');
+  assert.ok(unesc(/data-aotip="([^"]*)"/.exec(t)[1]).includes('>bet105<'), 'the tile names its book on hover');
+  // the Kibl stream, where newer, is the card's Now (same book)
+  m.__testStream = { p1: 2.26, p2: 1.72, book: 'bet105' };
+  A.open(m); t = tileOf(A.buildOddsSection(m));
+  assert.deepEqual([px(t, 'a'), px(t, 'b')], ['2.26', '1.72']);
+  delete m.__testStream;
+  // a genuine zero move reads 0.00 in grey; a leg below the floor (1.005) is a dash and has no move
+  m.__testOcs = { book: 'bet105', p1: { open: 2.30, now: 2.30 }, p2: { open: 1.62, now: 1.005 } };
+  A.open(m); t = tileOf(A.buildOddsSection(m));
+  assert.deepEqual(mv(t, 'a'), [A.AODDS_C.label, '0.00']);
+  assert.equal(px(t, 'b'), '\u2014'); assert.deepEqual(mv(t, 'b'), []);
+  // a missing open: the price stands, the move is absent (never against another book's open)
+  m.__testOcs = { book: 'bet105', p1: { open: null, now: 2.30 }, p2: { open: null, now: 1.70 } };
+  A.open(m); t = tileOf(A.buildOddsSection(m));
+  assert.deepEqual([px(t, 'a'), mv(t, 'a').length], ['2.30', 0]);
+});
+
+// TEN-380 reference: one-row header, one flat panel, option-A head, "open → now" rows; the legend has no "lifted price".
+//    mutants: the per-row sparkline back · the legend keeps the lifted-price clause · the names leave the Open→Now block
+test('TEN-380 table: option-A head over Open → Now + Move, one flat panel, the legend line without "lifted"', () => {
+  const now = Date.now();
+  const A = build(); const m = fixture({ now, withAt: true }); A.open(m);
+  const h = A.buildOddsSection(m);
+  const heads = [...h.matchAll(/<span class="aox-phead" style="grid-column:span 2; justify-self:end; display:grid; grid-template-columns:auto 56px;[^"]*"><span style="grid-column:1 \/ -1;[^"]*border-bottom:1px solid var\(--line\)[^"]*">([^<]*)<\/span><span [^>]*>Open \u2192 Now<\/span><span [^>]*>Move<\/span><\/span>/g)].map(x => x[1]);
+  assert.deepEqual(heads, ['J. Sinner', 'C. Alcaraz'], 'each name sits on its rule over its own Open → Now + Move');
+  assert.equal((h.match(/class="aox-table"/g) || []).length, 1, 'one panel');
+  assert.match(h, /class="aox-table" style="[^"]*background:var\(--card\); border:1px solid var\(--edge-6\); border-radius:14px;/);
+  assert.ok(!/<svg/.test(h), 'no sparkline anywhere in the table');
+  assert.equal(cellTxt(rowHtml(h, 'Pinnacle'), 'aox-open', 'a'), '2.50');
+  assert.match(rowHtml(h, 'Pinnacle'), /class="aox-open" data-side="a"[^>]*>2\.50<\/span><span [^>]*>\u2192<\/span><span class="aox-now" data-side="a"/);
+  const leg = /class="aox-legend"[^>]*>([^<]*)</.exec(h);
+  assert.ok(leg && /^Open \u2192 now per book, move in percent\./.test(leg[1]) && !/lifted/i.test(h), leg && leg[1]);
+  // the group labels: caps, no trailing rule
+  assert.ok(!/class="aox-grouphead"[^>]*>[\s\S]{0,400}?flex:1; height:1px/.test(h.slice(h.indexOf('aox-grouphead'), h.indexOf('aox-grouphead') + 500)));
+});
+
+// founder Q2 (2026-10-03): the pop-up chart = A --bar, B --white-bar, dotted horizontal guides only (--viz-guide, dash 2 6),
+// no area fill, no vertical day line. mutants: A back on --text · the guides dashed 4 4 · an area path back
+test('Q2: odds pop-up chart — A --bar, B --white-bar, dotted guides only, no fill, no vertical lines', () => {
+  const now = Date.parse('2026-09-27T08:00:00Z');
+  atClock(now, () => {
+    const A = build(); const m = fixture({ now, withAt: true }); A.open(m); A.state().mv = 'Pinnacle';
+    const h = A.buildOddsSection(m), mv = h.slice(h.indexOf('aox-mv-overlay"'));
+    const lines = [...mv.matchAll(/class="aox-line" d="[^"]*" fill="none" style="stroke:([^"]+)"/g)].map(x => x[1]);
+    assert.deepEqual(lines, ['var(--bar)', 'var(--white-bar)']);
+    const svgs = [...mv.matchAll(/<svg class="aox-chart"[\s\S]*?<\/svg>/g)].map(x => x[0]);
+    assert.equal(svgs.length, 2);
+    for (const svg of svgs) {
+      const guides = [...svg.matchAll(/<line x1="([\d.]+)" x2="([\d.]+)" y1="([\d.]+)" y2="([\d.]+)" style="stroke:([^"]+)"( stroke-dasharray="([^"]+)")?/g)];
+      assert.ok(guides.length >= 3);
+      for (const g of guides) assert.equal(g[3], g[4], 'horizontal only');
+      assert.ok(guides.filter(g => g[7]).every(g => g[7] === '2 6' && g[5] === 'var(--viz-guide)'), 'dotted --viz-guide');
+      assert.ok(!/<path(?![^>]*fill="none")/.test(svg) && !/<polygon|<rect/.test(svg), 'no area fill');
+    }
   });
 });
 

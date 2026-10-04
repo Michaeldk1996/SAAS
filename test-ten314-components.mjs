@@ -28,7 +28,7 @@ function constSrc(name) {
   return html.slice(start, html.indexOf(';\n', start) + 1);
 }
 const S = new Function('document', `
-  ${['MA_SEG', 'MA_POP', 'MA_ROW_COLS', 'MA_ROW_CELLS', 'ME_C'].map(constSrc).join('\n')}
+  ${['MA_SEG', 'MA_POP', 'MA_ROW_COLS', 'MA_ROW_GAP', 'MA_ROW_CELLS', 'ME_C'].map(constSrc).join('\n')}
   ${['escapeHtml', 'fhEsc', 'maSeg', 'maPopFrame', 'maPopEscKey', 'maPopNoReplay', 'maMatchRowsHtml', 'maTipHtml', 'fhSheetSeg', 'meSegHtml', 'mePopShell'].map(slice).join('\n')}
   return { maSeg, maPopFrame, maPopEscKey, maPopNoReplay, maMatchRowsHtml, maTipHtml, fhSheetSeg, meSegHtml, mePopShell };
 `);
@@ -154,9 +154,12 @@ test('motion: sigIn (opacity 0→1, translateY −6→0, 200ms cubic-bezier(.2,.
   assert.match(slice('meRenderPop'), /if \(popKey && popKey === E\._popKey\) maPopNoReplay\(host\);/);
 });
 
-// Mutation: the match-row grid drifts from the file's Tournament-tab rows (DF L302 / L312), the header stops being sticky,
-// or a row loses its sheet opener.
-test('maMatchRowsHtml: DF Tournament-tab rows — sticky header, grouped by event, the file\'s grid, every row opens the sheet', () => {
+// Mutation: the match-row grid drifts from README §5 (TEN-380 step-3 handoff: `40px 10px minmax(78px,1.1fr) 28px 34px
+// minmax(86px,1.3fr) 38px 38px; gap 0 6px`, header and rows — the handoff is not in the repo, so the README's string is
+// quoted here), the header stops being sticky, or a row loses its sheet opener. Position, padding and the group header
+// still read the file's Tournament-tab rows (DF L302 / L312).
+const README5_GRID = '40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px', README5_GAP = '0 6px';
+test('maMatchRowsHtml: README §5 grid (TEN-380) — sticky --card header, grouped by event, every row opens the sheet', () => {
   const at = DF.findIndex(l => l.includes('position:sticky; top:0; z-index:5; display:grid; grid-template-columns:48px'));
   const dHead = decl(/style="([^"]*)"/.exec(DF[at])[1]);
   const dRow = decl(/<div class="seg" onClick="\{\{ r\.onClick \}\}" style="([^"]*)"/.exec(DF.slice(at, at + 20).join('\n'))[1]);
@@ -166,12 +169,17 @@ test('maMatchRowsHtml: DF Tournament-tab rows — sticky header, grouped by even
     { date: '01.08.', won: false, opp: 'T. Paul', rd: 'SF', sets: '1 - 2', scores: '6-7(5), 6-3, 4-6', h: '1.55', a: '2.50', click: ` onclick="fhOpenSheet('m2')"`, selected: true }] }]);
   const st = styles(h);
   const head = st.find(s => s.position === 'sticky');
-  assert.deepEqual(pick(head, ['position', 'top', 'z-index', 'display', 'grid-template-columns', 'gap', 'padding']),
-    pick(dHead, ['position', 'top', 'z-index', 'display', 'grid-template-columns', 'gap', 'padding']));
+  assert.deepEqual(pick(head, ['position', 'top', 'z-index', 'display', 'padding']), pick(dHead, ['position', 'top', 'z-index', 'display', 'padding']));
+  assert.deepEqual([head['grid-template-columns'], head.gap, head.background, head['border-bottom']], [README5_GRID, README5_GAP, 'var(--card)', '1px solid var(--line)'],
+    'README §5 grid; the head --card on a 1px --line rule (decisions §1: the reference measures 5%)');
   const rows = st.filter(s => s['grid-template-columns'] && s.position !== 'sticky');
   assert.equal(rows.length, 2);
-  for (const r of rows) assert.deepEqual(pick(r, ['display', 'grid-template-columns', 'gap', 'align-items', 'padding', 'border-radius']),
-    pick(dRow, ['display', 'grid-template-columns', 'gap', 'align-items', 'padding', 'border-radius']));
+  for (const r of rows) {
+    assert.deepEqual(pick(r, ['display', 'align-items', 'padding', 'border-radius']), pick(dRow, ['display', 'align-items', 'padding', 'border-radius']));
+    assert.deepEqual([r['grid-template-columns'], r.gap], [README5_GRID, README5_GAP], 'header and rows share the README §5 grid');
+  }
+  assert.match(h, />Score</, 'the column is "Score" (README §5, was "Set scores")');
+  assert.match(h, /<span class="ma-row-score" style="[^"]*color:var\(--text-label\);/, 'Score its own --text-label cell');
   assert.deepEqual(pick(st.find(s => s.padding === dGroup.padding), ['display', 'gap', 'padding']), pick(dGroup, ['display', 'gap', 'padding']));
   assert.ok(h.includes(`class="seg ma-row" onclick="fhOpenSheet('m1')"`) && h.includes(`onclick="fhOpenSheet('m2')"`), 'every row opens the sheet');
   // TEN-376: selection is lift (tone), never blue — the selected row (its sheet open) takes --selected
@@ -229,19 +237,22 @@ test('match rows: the Form geometry = options on the same renderer', () => {
   const t = U.maMatchRowsHtml(g), f = U.maMatchRowsHtml(g, { headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8 });
   const pad = (h, cls) => decl(new RegExp(`class="${cls}" style="([^"]*)"`).exec(h)[1]).padding;
   assert.deepEqual([pad(t, 'ma-rows-head'), pad(t, 'ma-rows-group')], ['6px 6px 7px', '11px 6px 5px']);
+  const f2 = U.maMatchRowsHtml(g, { headPad: '10px 14px 8px', groupPad: '11px 14px 5px', inset: 8 });
+  assert.deepEqual([pad(f2, 'ma-rows-head'), pad(f2, 'ma-rows-group')], ['10px 14px 8px', '11px 14px 5px']);
   assert.deepEqual([pad(f, 'ma-rows-head'), pad(f, 'ma-rows-group')], ['8px 14px 7px', '11px 14px 5px']);
   assert.match(f, /style="transition:opacity \.12s; padding:0 8px;"><div class="seg ma-row"/);
   assert.ok(!/padding:0 8px;/.test(t), 'the Tournament rows are not wrapped');
-  assert.match(html, /maMatchRowsHtml\(groups, \{ headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8,/, 'the Form tab passes the design Form geometry');
+  assert.match(html, /maMatchRowsHtml\(groups, \{ headPad: '10px 14px 8px', groupPad: '11px 14px 5px', inset: 8,/, 'the Form tab passes the reference Form geometry (TEN-380: head 10px 14px 8px)');
 });
 
-// DF L1706: the sheet's caption strip has a 1px white-0.07 border. TEN-376: every border is 1px on a token (the --ma-hw
-// width and the white-0.07 shade are gone; the hairline is --line). Mutation: drop the border (rows sit 2px higher).
-test('sheet caption strip: the design\'s 1px border on a line token; the caption is a Hanken caps label', () => {
+// DF L1706: the sheet's caption strip keeps its 1px border box. TEN-380 (step 3 reference): the band is --inner with no
+// edge, so the 1px border is transparent (the geometry stays); the caption is a Hanken caps label at 800.
+// Mutation: drop the border (rows sit 2px higher), or the band back on a visible edge.
+test('sheet caption strip: --inner band, a 1px transparent border (no edge); the caption is a Hanken caps label', () => {
   const f = /\nfunction fhSheetSectionHead\(t\)\{[^\n]*/.exec(html);
   assert.ok(f, 'fhSheetSectionHead');
-  assert.match(f[0], /border:1px solid var\(--line\);/);
-  assert.match(f[0], /font-family:var\(--font-words\); font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\);/);
+  assert.match(f[0], /background:var\(--inner\); border:1px solid transparent;/);
+  assert.match(f[0], /font-family:var\(--font-words\); font-size:10\.5px; font-weight:800; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\);/);
 });
 
 // Review 2026-09-29 (merge onto TEN-330): the Form list's sticky header and its card are one shade, as DF L1101–1102

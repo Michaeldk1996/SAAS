@@ -232,8 +232,8 @@ async function buildSide(dir) {
   const t0 = Date.now();
   while (!(await x.ev(`typeof matches === 'object' && Array.isArray(matches) && typeof openAnalysisModal === 'function' && typeof aShowTab === 'function'`).catch(() => false))) { if (Date.now() - t0 > 90000) throw new Error('dashboard did not boot'); await sleep(300); }
   await x.ev(`document.fonts.ready.then(() => true)`);
-  const served = await x.ev(`typeof kfDimCard === 'function' && typeof akCard === 'undefined' && typeof loadStyleRadar === 'undefined'`);
-  if (!served) throw new Error('the page served is not this checkout (no kfDimCard)');
+  const served = await x.ev(`typeof kfDnaCard === 'function' && typeof akCard === 'undefined' && typeof loadStyleRadar === 'undefined'`);
+  if (!served) throw new Error('the page served is not this checkout (no kfDnaCard)');
   const I = buildInputs();
   // the fixture match + the design's values for the fixture's names / keys only (every other lookup stays real)
   await x.ev(`(() => { const fx = ${JSON.stringify(FIXTURE)}, I = ${JSON.stringify(I)};

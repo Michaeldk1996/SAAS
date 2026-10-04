@@ -48,42 +48,72 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   from the Sets / Tiebreaks tallies; a retired match never counts as a deciding set and is not
   eligible for games or sets lines ("wins set 1" only if set 1 was finished).
 
-## Form tab build (TEN-330, TEN-312 design file `formFor` / template L914–1150)
-- **Built from the file:** filter tracks, header columns, bars with the **closing price under each bar** (`fh-bar-price`,
-  "—" when unpriced, nothing in an empty slot), Show form data (thin count as the aside), hot lines (name over
-  "window · surface · role"), Recent matches on the file's grid (`MA_ROW_COLS`, "surface · W–L" group header, set scores
-  "6-4, 6-3", " ret." on a retirement). The file hard-codes the "Short odds" chip off (`short:false`) and binds no
+## Shared rows, hot lines, segmented track (TEN-380, step-3 handoff README §5–§6, measured on OFFICIAL VERSION 1)
+- **Match rows** (`maMatchRowsHtml`, default path — Form, Tournament): README §5's grid `MA_ROW_COLS` =
+  `40px 10px minmax(78px,1.1fr) 28px 34px minmax(86px,1.3fr) 38px 38px`, gap `0 6px` (`MA_ROW_GAP`), header and rows alike;
+  columns Date · · Opponent · Rd · Sets · **Score** · H · A (the Score column is its own track, `--text-label`, one line);
+  H `--text-soft`. The head is `--card` on a 1px `--line` rule (decisions §1: the reference measures 5%, not `--line-strong`),
+  labels never wrap. **Test:** `test-ten314-components.mjs` (README §5 grid), `test-ten330-form.mjs` (rows).
+- **No Elo in the opponent column** (founder TEN-380 Q5; the Elo lives in the Form bar tooltip, see below); names wrap between
+  words, never cut (`fullNames`). The H2H Event cell reads "<surface> · <level>" with no Elo word. The TEN-350 "scores under the name" layout and `MA_ROW_COLS_SB` are gone. **Test:** `test-ten350-elo-slot.mjs`
+  (1296 px layout in Chrome; mutation: the Opponent track loses its 78 px floor).
+- **Hot lines** (`fhHotLinesTable`, identical on Form and H2H and for both players): Line · **Rate** · Covered · dots
+  (`FH_HOT_COLS`). Rate follows the D2 gate (`fhHotRateHtml`: n 3–4 a grey "—" saying why, 5–9 greyed, 10+ `--text`); no
+  gate bar. Dots `--hot-dot` with a 1px ring (filled = covered, ring = not covered, a small white-8% dot = not eligible); the
+  column-head dot is white for a match on today's surface, white 22% otherwise. "Most covered" row = `--inner`, no edge, its
+  label `--link`; "Show all lines (N)" / "Best line per family" `--text`, centred under the table (`fhHotMoreHtml`).
+  **Test:** `test-ten330-form.mjs` hot-line checks, `test-ten331-h2h.mjs` "hot lines" (mutations in both runners).
+- **Segmented track** (`fhSegTrack`): the Darker track — `--card` + 1px `--edge-6`, radius 9, padding 3, gap 4, never shrinks;
+  selected `--inner` + 1px `--edge-10`, white 700; items 5px 11px (Form), 5px 12px (H2H's surface filter).
+
+## Form tab build (TEN-330; restyled TEN-380)
+- **Filters:** all four on ONE row that never wraps and scrolls sideways (`fh-filters`: gap 10, margin-bottom 22):
+  surface | role | Matches/Days, then Last N (or N days) on its **own** track; `--edge-10` rules between the first three.
+  **Test:** `test-ten330-form.mjs` "Form filters".
+- **Built from the file:** header columns, bars with the **closing price under each bar** (`fh-bar-price`, "—" when unpriced,
+  nothing in an empty slot), Show form data (thin count as the aside), hot lines (name `--text` over "window · surface · role",
+  Hanken caps per foundation — the reference's mono caps are not used), Recent matches ("surface · W–L" group header, set
+  scores "6-4, 6-3", " ret." on a retirement). The file hard-codes the "Short odds" chip off (`short:false`) and binds no
   "priced in at" line: neither is shown.
-- **Shared helpers only** (DoD item 8): Recent-matches rows are `maMatchRowsHtml` rows (`fhFormRowData` maps a row;
-  the file's 14 px inset = `headPad` / `groupPad` / `inset: 8`), each bar is a `maTipHtml` tooltip (`popStyle:
-  bottom:20px`), and every row / bar opens the shared sheet. Form has no row or tooltip renderer of its own.
+- **Cards:** summary, hot lines (radius 16, 22 px apart) and Recent matches (radius 14) are `--card` + 1px `--edge-6`; the two
+  lists 22 px apart. "↑ used in form stats" = two `--edge-10` rules round a mono lowercase label. The v-market pill = white
+  3% + `--line`; "oldest → newest" mono 9, not caps. The hot-lines toggle's right meta is mono, sentence case ("Last 10 · Hard").
+- **Shared helpers only** (DoD item 8): Recent-matches rows are `maMatchRowsHtml` rows (`fhFormRowData`; head
+  `10px 14px 8px`, groups `11px 14px 5px`, `inset: 8`), each bar is a `maTipHtml` tooltip (`popStyle: bottom:20px`), and every
+  row / bar opens the shared sheet. Form has no row or tooltip renderer of its own.
 - **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
   the form shards; the tab drops any that reach it (career-history rows included).
 - **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at
   `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G9).
 - **Retirement settlement note** (TEN-325): the v-market pill's tooltip and each Flat 1u value's tooltip carry
   `MarketEdgeCore.RET_SETTLE_NOTE` (the tooltip form keeps the file's layout).
-- **Elo slot (TEN-350, founder bbe5c072 §2.4):** the opponent's Elo at the match date (D-12) is a plain grey number
-  after the name (`maMatchRowsHtml` row `elo` = `fhEloSlot`, class `ma-row-elo`, `data-elo`); no qualifying snapshot →
-  "—" with the reason on hover (`fhEloText`). The name's hover is the full name only. **Names are never cut:** the two
-  lists sit side by side (row ~438 px at 1296), so Form rows use `scoresBelow` (set scores on a second line under the
-  name, grid `MA_ROW_COLS_SB` 48/12/1fr/36/40/46/46) and `fullNames` (the name wraps between words, no ellipsis; a word
-  wider than the whole track wraps mid-word as a last resort rather than run into the Rd column).
-  The bar tooltip keeps the file's Elo line.
-- **"Most covered" line:** the file's blue 0.06 wash / 0.25 outline as their own design-shade tokens on both tabs
-  (`fhS('5b9bff-060')` / `fhS('5b9bff-250')`), never the 12a selected-tile pair (TEN-350: Form's unruled 06b difference).
-- **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`, 21 mutants). Pixel/structure harness (manual):
+- **No Elo in a match row (founder TEN-380 Q5, 2026-10-03; replaces the TEN-350 row slot):** Form, H2H, Tournament and
+  every other `maMatchRowsHtml` row follow the README §5 grid with no Elo. The opponent's Elo at the match date (D-12)
+  lives in the Form bar tooltip ("v Opponent · Elo N", class `fh-tip-elo`); no qualifying snapshot → "Elo —" with the
+  reason on hover (`fhEloText`); never the current Elo. The name's hover is the full name only. **Names are never cut:**
+  they wrap between words (`fullNames`); a word wider than the whole track wraps mid-word only as a last resort.
+  **Test:** `test-ten350-elo-slot.mjs` (tooltip Elo at date + reason; no `ma-row-elo` in any row) + `tools/test-ten350-mutants.js`.
+- **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`). Pixel/structure harness (manual):
   `tools/ten330-form-capture.mjs` + `tools/ten330-form-structure.py`.
 
-## H2H tab build (TEN-331, TEN-312 design file `h2hV2For` / template L1153–1360)
-- **Built from the file:** surface filter with counts ("filters everything below"), **one record card** (the file's varA:
-  "Overall", or "On clay" under a filter, over the filtered meetings; "Meetings ↓" scrolls to the list and keeps the filter),
-  the **tug bar from the centre** (DF L4351 — drawn at any n ≥ 1, the pull is a count; the card shows no %), the three stat
-  tiles with their **"Breakdown ▾" drawers** (sets / tiebreaks / deciding sets, every row opens the sheet), Price range,
-  Hot lines, Meetings. The file's "Today's surface" card belongs to its variant B, which the file does not draw: not built.
-  Every colour is the design's own shade (`fhS`), the players the D4 neutral pair.
-- **Shared helpers only** (DoD item 8): meetings are `maMatchRowsHtml` rows (`fhH2hRowData`; one group per meeting as the
-  file, meta "surface · level", `rowPad: '0 8px 2px'`, group `cls` = the hover-dim hooks), the price range's "every priced
+## H2H tab build (TEN-331; restructured TEN-380 on the reference)
+- **Order:** surface filter with counts ("filters everything below"), then sections whose **titles sit outside their cards**
+  (20/800 title, 12.5 `--text-label` subtitle, a `--line` rule 24 px above every section after the first; blocks 14 px apart):
+  "Head to head" (one record card + the three stat tiles), "Price range", "Hot lines", "Meetings". **Test:**
+  `test-ten331-h2h.mjs` "TEN-380: section titles outside the cards".
+- **Record card** (the file's varA: "Overall", or "On clay" under a filter; "Meetings ↓" `--text` scrolls to the list and
+  keeps the filter): both names and scores white; the **tug bar from the centre** (drawn at any n ≥ 1, the pull is a count)
+  is white — player A `--white-bar`, player B white-bar at 70% (measured, decisions §1), `--line` track, `--viz-tick` tick.
+- **Stat tiles** (Sets won / Tiebreaks / Deciding sets): title left, "Breakdown ▾" (`--text`) right on one header line; an
+  open tile = `--card` + 1px `--edge-24`; its drawer = a panel (`--card` + 1px `--edge-6`), no blue outline; drawer rows on
+  `--line`, dates `--text-label`, values `--text`; every row opens the sheet.
+- **Price range:** both players' panels `--card` + `--edge-6`, figures white, venue labels `--text-label`.
+- **Meetings:** "Meetings" + "{A}'s side · Home = {A}'s closing price", right "n on record · {X} leads a–b"; the shared rows on
+  the reference's grid `MA_ROW_COLS_H2H` (`48px 12px minmax(0,1.4fr) 36px 40px minmax(0,1.3fr) 46px 46px`, gap `0 10px`),
+  **grouped by year** (newest first, header "2025 · 1–0 · 1 meeting" in mono), one row per meeting with an **Event** column:
+  the event, its tag "surface · level · Elo" (`--text-label`, the level never dropped), then B's Elo at the meeting
+  (the Q5 slot). Set scores `--text-label`, Home `--text-soft`. Each row wrapper carries the hover-dim hooks.
+- **Shared helpers only** (DoD item 8): meetings are `maMatchRowsHtml` rows (`fhH2hRowData`), the price range's "every priced
   close" pop-up is `maTipHtml`, and every meeting, dot, breakdown row and Lowest / Highest opens the shared sheet (date
   DD.MM.YY). The H2H row renderer, W/L chip, sticky header and `.fh-elotip` are deleted.
 - **A walkover** is listed (marked "w/o") and enters no count, record, tally, line or price (N2); the list header says
@@ -94,9 +124,9 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   stand in (measured 2026-09-29: 1 of 26 upcoming board matches carried a Pinnacle now-price).
 - **An empty drawer** (no tiebreak / no decider in these meetings) opens with the file's empty-line pattern and says why
   (DESIGN GAP G10 — the file opens nothing).
-- **Elo slot (TEN-350):** the meetings carry the same visible slot after the name as Form (`fullNames`; the file's
-  8-track grid stays — the H2H row is ~918 px wide).
-- **Test:** `test-ten331-h2h.mjs` (+ `tools/test-ten331-mutants.js`, 27 mutants). Pixel/structure harness (manual):
+- **0 and 1 meeting:** 0 → the empty-state card and its two style tiles on `--edge-6`; 1 → the full layout with its n=1
+  chips and "Not enough meetings to rank lines (n=1)". **Test:** `test-ten331-h2h.mjs` "TEN-380: the 1-meeting and 0-meeting states".
+- **Test:** `test-ten331-h2h.mjs` (+ `tools/test-ten331-mutants.js`). Pixel/structure harness (manual):
   `tools/ten331-h2h-capture.mjs` (`--theme source --ruled-off`) + `tools/ten312-pixel-diff.py --regions` +
   `tools/ten330-form-structure.py`.
 
@@ -130,12 +160,11 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   captures of one report keep the earliest. Keys two players share within an archived report are
   in its `ambiguous` and never resolve. archive.today is not used.
 
-## H2H tab: Elo and labels (rulings 2026-09-24, H2H pixel pass)
+## H2H tab: Elo and labels (rulings 2026-09-24, H2H pixel pass; TEN-380 Event column)
 - **H2H meeting rows carry the opponent's Elo** on the Form basis above (overall, strictly before the
-  match day, at most 7 days old; `ELO —` otherwise), as a plain grey number after the name. The level
-  tag (ATP / CH / ITF) sits in every group header next to the surface, never after the name. A Bet365
-  row carries the "B" marker in the Home cell. **Test:** no level badge after the name; every group
-  header ends with its level.
+  match day, at most 7 days old; `ELO —` otherwise), as a plain grey number after the event's tag. The level
+  tag (ATP / CH / ITF) sits in every row's Event tag after the surface ("Clay · ATP · Elo"), never glued to a name. A Bet365
+  row carries the "B" marker in the Home cell. **Test:** `test-ten263.mjs` (level in every row's tag), `test-ten350-elo-slot.mjs`.
 - **Price range header:** any Bet365 figure in the section, today's price included, reads "Pinnacle,
   Bet365 where missing (…)". **Never a single book name over mixed data.** **Test:** Pinnacle meetings
   + a Bet365 today price → the mixed wording.

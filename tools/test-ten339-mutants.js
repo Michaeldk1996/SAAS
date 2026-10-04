@@ -5,6 +5,7 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const MUTANTS = [
+  ['review F5: the Facing row ignores the highlight', "seg(fhEsc(l + ' · ' + opp(P.roads[0].cells[j]) + ' / ' + opp(P.roads[1].cells[j])), hi === j,", "seg(fhEsc(l + ' · ' + opp(P.roads[0].cells[j]) + ' / ' + opp(P.roads[1].cells[j])), false,"],
   ['Serve rating: the Tournament Report 4-term (no aces / double faults)', "    serveRating: { v: hr.serve.v, why: hr.serve.missing },",
     "    serveRating: { v: hr.serve.v == null ? null : hr.serve.v - (Number(A['Service:Aces']) || 0) + (Number(A['Service:Double Faults']) || 0), why: hr.serve.missing },"],
   ['road: the analysed match itself on the road', "    if (ek && x.eventKey != null ? String(x.eventKey) === ek : (maSameOpp(x.opponent, oppName) && Math.abs(d - ref) <= 1)) return;\n", ''],
@@ -30,6 +31,12 @@ const MUTANTS = [
   ['DoD 8: a non-design hover text back on a native title', "      return `<span data-aotip=\"${fhEsc(tip)}\" style=\"text-align:center;", "      return `<span title=\"${fhEsc(tip)}\" style=\"text-align:center;"],
   ['seeded numbers back in the unplayed-round placeholder', "<span>— v —</span><span>DR —</span>", "<span>1.60 v 2.35</span><span>DR 1.20</span>"],
 ];
+MUTANTS.push(
+  ['Q7: a future round on the Facing track', "${played}${seg(fhEsc(P.facing), hi == null, P.facing + ' · this match', hi == null ? null : 'pgHi(' + hi + ')')}</div>", "${played}${seg(fhEsc(P.facing), hi == null, P.facing + ' · this match', hi == null ? null : 'pgHi(' + hi + ')')}${(P.future || []).map(l => seg(l, false, '', null)).join('')}</div>"],
+  ['Q7: the current round not selected', "${seg(fhEsc(P.facing), hi == null, P.facing", "${seg(fhEsc(P.facing), false, P.facing"],
+  ['Q7: a bye written from inference', "  const opp = c => (c.r ? fhSurname(c.r.opp) || c.r.opp : FH_DASHC);", "  const opp = c => (c.r ? fhSurname(c.r.opp) || c.r.opp : c.bye ? 'Bye' : FH_DASHC);"],
+  ['Q7: no Facing row on a first-round match', "${pgFacingHtml(P, null)}${head}", "${head}"],
+);
 const SUITES = ['test-ten339-progression.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.
 { const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { encoding: 'utf8' });

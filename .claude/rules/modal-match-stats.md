@@ -17,9 +17,9 @@ found at restore time are marked inline.
   colour in the legend, values and bar fills is fixed by name order, regardless of who won.
   *Superseded colours (TEN-312 D1 + D4, 2026-09-28):* the old values — point-log winner `#e7e9ee` / other
   `#4b5672`; "both score-header names `#e7e9ee`, winner and loser alike"; "player A stays `#6aaeff` and player
-  B `#e7e9ee`" — no longer apply. Colours come from `tokens.css` (TEN-376), and both players are neutral on
-  every tab: player A white/primary, player B grey; blue is only links, TODAY and selection (D4). The header
-  names therefore differ by **identity** (A primary, B grey), still never by outcome.
+  B `#e7e9ee`" — no longer apply. Colours come from `tokens.css` (TEN-376). On the sheet both players' names and
+  values are `--text` (TEN-380, step 3 reference); identity rides on the side and the bar fill (`--bar` / `--bar-2`),
+  never on the outcome.
   **Test:** the two score-header names never change tone with the result; the only permitted tone-marked
   outcome is the point-log game/tiebreak score; a player's identity colour must never change with the result.
 
@@ -44,7 +44,15 @@ found at restore time are marked inline.
   sets-needed check → set-1 SP reads MP) — built on TEN-349. Tiebreak points come from the pbp
   shards the guarded cache feeds (TEN-318). The old class-based point log stays for the other match-detail panels only.
 - **Bars — design exception:** the 2026-09-24 bar rule (`fhStatBarWidth`), not the file's share-of-total; W/UE and DR are
-  numbers only. Reported as ruled, never as a divergence.
+  numbers only (founder Q6). Reported as ruled, never as a divergence. Fills on a `--track` half, 6px, outer radius 3, gap
+  2 (README §10): the **leader solid `--bar`, the trailer 45% `--bar-2`** (the longer bar leads; a tie or a lone bar is
+  solid), whichever side it is on (founder Q3 / ruling 8, TEN-380). The figures stay `--text` on both sides. **Test:**
+  `test-ten338-match-stats.mjs` "TEN-380" (mutation: bars by identity, A solid / B 45%).
+- **Sheet styling (TEN-380, step 3 reference):** the inline sheet `--card` + `--edge-6`; meta line Plex 11 / 0.06em, sentence
+  case; avatars `--selected` + 1px `--line`, letter `--text`; price chips `--card` + `--line`, both `--text`; **both players'
+  names and values `--text`**; row labels `--text-label`; result pill Plex 10/700 0.14em on white 5% + `--line`; the caption
+  band (KEY STATS, section heads) `--inner` with a transparent 1px border, 800. **Test:** `test-ten338-match-stats.mjs`
+  "TEN-380", `test-ten314-sheet.mjs` header, `test-ten314-components.mjs` caption strip.
 - **Shared helpers (DoD 8):** the tab draws no match rows and no tooltip. The old tab sheet (`buildMatchStatsSheet`,
   `msheet*`, `buildMsScoreHead`, the Stats | Point by point sub-tabs) and its CSS are deleted.
 - **Test:** `test-ten338-match-stats.mjs` (+ `tools/test-ten338-mutants.js`, 17 mutants). Pixel/structure harness (manual):

@@ -683,8 +683,8 @@ check('N4: the three renderers print the pipeline stamp, and the stamp is courtS
     'no match builder may stamp courtSpeed any other way');
   // TEN-332: the rebuilt Tournament header prints the stamp beside the abstract speed (trHeaderHtml)
   assert(/Number\(cs\.abstractSpeed\)\.toFixed\(2\) \+ \(cs\.category \? ' · ' \+ cs\.category : ''\)/.test(DASH_SPEED_SRC), 'modal Tournament card no longer prints cs.category');
-  // TEN-341: the rebuilt Key factors Tournament card prints the stamp under "court speed" (kfTourCard)
-  assert(/cond\(speed, 'court speed', fhEsc\(cs && cs\.category \|\| FH_DASHC\)/.test(DASH_SPEED_SRC), 'Key factors no longer prints cs.category');
+  // TEN-380: the Key factors Tournament box prints the stamp beside "Court speed" (kfTourCard, kfSpeedCat)
+  assert(/const kfSpeedCat = fhEsc\(cs && cs\.category \|\| FH_DASHC\);/.test(DASH_SPEED_SRC), 'Key factors no longer prints cs.category');
   assert(/spdLabel = cs\.category/.test(DASH_SPEED_SRC), 'Weather pace tile no longer reads cs.category');
   assert(/const cat = courtSpeedCategory\(c\.speed\);/.test(DASH_SPEED_SRC), 'Tournament Report registry no longer calls courtSpeedCategory()');
 });

@@ -273,3 +273,30 @@ test('TEN-349: a Bo5 fifth-set tiebreak is 10 points; a repeated tiebreak point 
   assert.deepEqual(S.fhPbpMatchCtx(dup, 3)[3], { a: 1, b: 1, need: 2 }, 'set 1 still counted for A');
   assert.deepEqual(tags(model(dup, 3, 3)).mp, ['5-6B', '7-6A']);
 });
+
+// TEN-380 (step 3 reference, README §10): sheet --card + --edge-6; both players --text; row labels --text-label; bars
+// --bar (A) / --bar-2 (B) on a --track half, 6px, outer radius 3, gap 2; DR and W/UE stay numbers only (Q6 parked).
+// Mutation: player B's values back to grey, or a fill back on the white bars / --inner track.
+test('TEN-380: sheet frame, neutral values, labels --text-label, bars --bar / --bar-2 on --track (6px, r3, gap 2)', () => {
+  const h = S.fhSheetStatsHtml({ own: SIDE(), opp: SIDE({ 'Points:Winners': 12 }) });
+  const pairs = [...h.matchAll(/<div style="display:grid; grid-template-columns:1fr 1fr; gap:2px;">\s*<span class="fh-shalf" style="display:flex; justify-content:flex-end; height:6px; background:var\(--track\); border-radius:3px 0 0 3px; overflow:hidden;">(?:<span class="fh-sbar" style="height:6px; width:([\d.]+)%; background:([^;]+);"><\/span>)?<\/span>\s*<span class="fh-shalf" style="display:flex; height:6px; background:var\(--track\); border-radius:0 3px 3px 0; overflow:hidden;">(?:<span class="fh-sbar" style="height:6px; width:([\d.]+)%; background:([^;]+);"><\/span>)?<\/span>/g)];
+  assert.ok(pairs.length > 5, 'every row draws the 6px --track halves');
+  // founder Q3 (ruling 8): leader solid --bar, trailer --bar-2 (45%); a tie or a lone bar is solid
+  // the same rows with the players swapped, so player A trails somewhere: the trailer is 45% whichever side it is on
+  const h2 = S.fhSheetStatsHtml({ own: SIDE({ 'Points:Winners': 12 }), opp: SIDE() });
+  const pairs2 = [...h2.matchAll(/<span class="fh-sbar" style="height:6px; width:([\d.]+)%; background:([^;]+);"><\/span><\/span>\s*<span class="fh-shalf"[^>]*>(?:<span class="fh-sbar" style="height:6px; width:([\d.]+)%; background:([^;]+);"><\/span>)/g)];
+  const both = pairs.filter(p => p[1] && p[3]).concat(pairs2);
+  assert.ok(both.some(p => +p[1] > +p[3]) && both.some(p => +p[1] < +p[3]), 'a row where A leads and one where A trails');
+  for (const p of both) {
+    const [aw, ac, bw, bc] = [+p[1], p[2], +p[3], p[4]];
+    if (p[2] === 'var(--text-label)' || p[4] === 'var(--text-label)') continue;   // a 5–9 small sample is grey (D2)
+    assert.equal(ac, aw < bw ? 'var(--bar-2)' : 'var(--bar)', 'A: ' + p[0].slice(0, 0));
+    assert.equal(bc, bw < aw ? 'var(--bar-2)' : 'var(--bar)');
+  }
+  assert.ok(!/var\(--fh-pb\)|var\(--fh-pa\)|70%, transparent|var\(--text-soft\)/.test(h), 'no grey player B, no white bars, no --text-soft');
+  assert.ok([...h.matchAll(/class="fh-slabel" style="([^"]*)"/g)].every(x => /color:var\(--text-label\)/.test(x[1])), 'row labels --text-label');
+  const K = S.fhSheetKeyModel({ own: SIDE(), opp: SIDE() });
+  assert.deepEqual(K.filter(r => r.kind === 'ratio').map(r => r.label), ['Dominance ratio', 'Winners / unforced errors'], 'Q6: DR and W/UE stay numbers only');
+  const done = S.buildMatchStatsSection({ id: 'past-1', p1: 'A. Zverev', p2: 'B. C', p1Key: 1, p2Key: 2, finalScore: { sets: [{ p1: 6, p2: 4 }] }, date: '2026-07-18', tour: 'ATP Washington' });
+  assert.match(done, /class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:var\(--card\); border:1px solid var\(--edge-6\);/);
+});

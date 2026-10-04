@@ -71,34 +71,27 @@ function h2hMatch() {
     _fhH2hData: true, _fhCloses: [null, null], p1RecentFormMatches: [], p2RecentFormMatches: [], _fhElo: hist,
     _fhCh: [ch1, ch1.map(x => ({ eventKey: x.eventKey, date: x.date, won: !x.won }))] };
 }
-const slots = h => [...h.matchAll(/<span class="fh-opp"[^>]*>([^<]*)<\/span> <span class="ma-row-elo" data-elo="(\d*)"(?: title="([^"]*)")?[^>]*>([^<]*)<\/span>/g)]
-  .map(x => ({ name: x[1], v: x[2], title: x[3], txt: x[4] }));
+// TEN-380 Q5 (founder 2026-10-03): no Elo in any match row (README §5 grid). The opponent's Elo at the match date lives
+// in the Form bar tooltip ("v Opponent · Elo N"), with the reason on hover when no snapshot qualifies.
+const tipElos = h => [...h.matchAll(/v ([^<]+)<\/span><span class="fh-tip-elo" title="([^"]*)"[^>]*>Elo ([^<]+)<\/span>/g)]
+  .map(x => ({ opp: x[1].replace(/&#39;/g, "'"), title: x[2], txt: x[3] }));
 
-// Mutations: fhEloAt reads the newest snapshot (`if (a != null && a < d)` → `if (a != null)` — the current Elo) · the slot
-// loses its reason (`${t(r.elo.title)}` dropped) · the dash prints blank (fhEloSlot txt '') · Form rows lose the slot
-// (`elo: fhEloSlot(r.oppElo)` dropped from fhFormRowData) · H2H rows lose it (same, fhH2hRowData).
-test('Form: the Elo slot after the name is the opponent\'s Elo at the match date, never the current Elo; a dash with its reason when missing', () => {
+// Mutations: fhEloAt reads the newest snapshot (`if (a != null && a < d)` → `if (a != null)` — the current Elo) · the
+// tooltip's Elo loses its reason (the title dropped) · the dash prints blank · an Elo span back in the row renderer.
+test('Form: the bar tooltip shows the opponent\'s Elo at the match date, never the current Elo; a dash with its reason; no Elo in the rows', () => {
   const h = S.fhBuildForm(formMatch());
-  const A = slots(h.slice(h.indexOf('Recent matches · '), h.indexOf('Recent matches · ', h.indexOf('Recent matches · ') + 1)));
-  assert.deepEqual(A.map(s => [s.name, s.txt, s.v]), [
-    ['Davidovich Fokina A.', '1880', '1880'],   // 07-18 reads the 07-13 snapshot (5 days old), not 09-21's 1990
-    ['Van De Zandschulp B.', '1700', '1700'],   // 07-16 → 07-13, not 1750
-    ['Gueymard Wayenburg S.', '1610', '1610'],  // 07-15 → 07-13, not 1720
-    ['Mpetshi Perricard G.', '—', ''],          // 07-09: the only earlier snapshot is 407 days old → a dash
-  ]);
-  assert.match(A[0].title, /^Elo 1880 at the time of the match \(Tennis Abstract weekly snapshot of 13 Jul 2026\)$/);
-  assert.equal(A[3].title, 'Elo — at the time of the match: no Elo snapshot in the 7 days before the match', 'the dash says why on hover');
-  assert.ok(!/1990|1750|1720/.test(h.slice(h.indexOf('Recent matches · '))), 'no current Elo anywhere in the lists');
-  assert.ok(!/class="fh-opp"[^>]*(data-elo|title="[^"]*Elo)/.test(h), 'the hover-only interim is gone: the name carries no Elo');
+  const T = tipElos(h);
+  const by = Object.fromEntries(T.map(x => [x.txt === '—' ? 'dash' : x.txt, x]));
+  assert.ok(by['1880'] && by['1700'] && by['1610'] && by.dash, 'Elo at each match date: ' + JSON.stringify(T.map(x => x.txt)));
+  assert.match(by['1880'].title, /^Elo 1880 at the time of the match \(Tennis Abstract weekly snapshot of 13 Jul 2026\)$/);
+  assert.equal(by.dash.title, 'Elo — at the time of the match: no Elo snapshot in the 7 days before the match', 'the dash says why on hover');
+  assert.ok(!T.some(x => /1990|1750|1720/.test(x.txt)), 'the current Elo never stands in');
+  assert.ok(!/ma-row-elo|data-elo/.test(h), 'TEN-380 Q5: no Elo slot in any row');
 });
-test('H2H: every meeting shows the opponent\'s Elo at its date in the slot after the name, a dash with its reason when none qualifies', () => {
+test('H2H: no Elo in the meeting rows (TEN-380 Q5); the current Elo never appears', () => {
   const h = S.fhBuildH2H(h2hMatch());
-  const A = slots(h);
-  assert.deepEqual(A.map(s => [s.name, s.txt]), [['Davidovich Fokina A.', '—'], ['Davidovich Fokina A.', '1850'], ['Davidovich Fokina A.', '—']],
-    'newest first: 2026-03-09 (no snapshot within 7 days), 2025-06-01 (05-28 snapshot), 2022-07-14 (before the first snapshot)');
-  assert.equal(A[0].title, 'Elo — at the time of the match: no Elo snapshot in the 7 days before the match');
-  assert.equal(A[2].title, 'Elo — at the time of the match: before the first Elo snapshot (2025-05-28)');
-  assert.ok(!/>1990</.test(h) && !/data-elo="1990"/.test(h), 'the current Elo (1990) never stands in');
+  assert.ok(!/ma-row-elo|data-elo/.test(h), 'no Elo slot in any meeting row');
+  assert.ok(!/>1990</.test(h), 'the current Elo (1990) never stands in');
 });
 
 // ── layout: headless Chrome at the deployed geometry ──
@@ -147,8 +140,8 @@ async function inChrome(pageHtml, expr) {
     try { rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }); } catch {}
   }
 }
-// Mutations: Form back on the file's 8-track grid (`fullNames: true, scoresBelow: true` dropped → a ~59 px Opponent track: a
-// long name is broken mid-word) · names that never wrap (the name span gains `white-space:nowrap` → it runs into the Rd column).
+// Mutations: Form loses `fullNames` (the README §5 grid's 78 px+ Opponent track then cuts a long name with an ellipsis) ·
+// names that never wrap (the name span gains `white-space:nowrap` → it runs into the Rd column).
 test('layout at 1296 px: long real names are never truncated or overlapped on Form or H2H (Davidovich Fokina, Van De Zandschulp…)', async () => {
   const styles = [...html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n');
   // TEN-376 Foundation: match-analysis-tokens.css is deleted; the ONE token file is tokens.css, linked ahead of the page styles.
@@ -161,7 +154,7 @@ test('layout at 1296 px: long real names are never truncated or overlapped on Fo
     document.getElementById('aSectionForm').innerHTML = __T.fhBuildForm(fm);
     document.getElementById('aSectionH2H').innerHTML = __T.fhBuildH2H(hm);
     const read = sec => [...document.querySelectorAll('#' + sec + ' .ma-row')].map(row => {
-      const cell = row.children[2], next = row.children[3], name = row.querySelector('.fh-opp'), elo = row.querySelector('.ma-row-elo');
+      const cell = row.children[2], next = row.children[3], name = row.querySelector('.fh-opp');
       const c = cell.getBoundingClientRect(), n = next.getBoundingClientRect();
       const inCell = el => !el || [...el.getClientRects()].every(q => q.left >= c.left - 0.5 && q.right <= c.right + 0.5);
       // a word broken across two lines is a cut name too ("Davidov-/ich"): every word of the name must sit on one line
@@ -169,7 +162,7 @@ test('layout at 1296 px: long real names are never truncated or overlapped on Fo
       if (tn && tn.nodeType === 3) { let at = 0; for (const wd of tn.textContent.split(' ')) { const rg = document.createRange(); rg.setStart(tn, at); rg.setEnd(tn, at + wd.length);
         if (rg.getClientRects().length > 1) split++; at += wd.length + 1; } }
       return { name: name && name.textContent, split, rowW: row.getBoundingClientRect().width, cellW: c.width, overflow: cell.scrollWidth - cell.clientWidth,
-        overlap: c.right - n.left, nameIn: inCell(name), eloIn: inCell(elo), elo: elo && elo.textContent,
+        overlap: c.right - n.left, nameIn: inCell(name),
         ellipsis: [cell, name].some(e => e && getComputedStyle(e).textOverflow === 'ellipsis' && getComputedStyle(e).overflow !== 'visible') };
     });
     return { form: read('aSectionForm'), h2h: read('aSectionH2H') };
@@ -181,11 +174,10 @@ test('layout at 1296 px: long real names are never truncated or overlapped on Fo
     const who = `${r.name} (row ${r.rowW} px, cell ${r.cellW.toFixed(1)} px)`;
     assert.ok(r.overflow <= 1, `${who}: the name overflows its cell by ${r.overflow} px`);
     assert.equal(r.split, 0, `${who}: ${r.split} word(s) of the name broken across lines`);
-    assert.ok(r.nameIn && r.eloIn, `${who}: name or Elo outside its cell`);
+    assert.ok(r.nameIn, `${who}: the name outside its cell`);
     assert.ok(r.overlap <= 0.5, `${who}: the cell runs ${r.overlap.toFixed(1)} px into the Rd column`);
     assert.ok(!r.ellipsis, `${who}: an ellipsis can cut the name`);
-    assert.ok(r.elo != null && r.elo !== '', `${who}: the Elo slot is visible (a number or a dash)`);
   }
   assert.deepEqual(res.form.slice(0, 4).map(r => r.name), FORM, 'the full names are in the DOM, uncut');
-  assert.ok(res.h2h.every(r => r.name === 'Davidovich Fokina A.'));
+  assert.deepEqual(res.h2h.map(r => r.name), ['Indian Wells', 'Lyon', 'Umag'], 'TEN-380: the Event column, newest first');
 });

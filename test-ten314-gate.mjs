@@ -38,7 +38,7 @@ const S = new Function(`
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName',
-     'fhRecLevelMix', 'fhH2hRecCard', 'meBandsCol'].map(slice).join('\n')}
+     'fhRecLevelMix', 'fhH2hRecCard', 'meBarHtml', 'meLeadFill', 'meBandsCol'].map(slice).join('\n')}
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
   return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, fhH2hRecCard, meBandsCol,
     meRateBox, set psMatrix(v){ psMatrixData = v; } };
@@ -89,15 +89,23 @@ test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neut
   const row = n => S.meBandsCol({ m: { p1: 'J. Sinner', p2: 'C. Alcaraz' }, S: {} }, 0, { state: 'ready', tb: -1, bands: [band(n)] });
   const won = h => { const m = /text-align:right;">(<span class="ma-rate[^>]*>[^<]*<\/span>)<\/span>/.exec(h); return m && m[1]; };
   const barW = h => /<span style="width:([\d.]+)%; background:([^;]*);/.exec(h).slice(1);
+  // TEN-380: ONE bar per band (no loss share): the white fill = Won through the gate, the grey tick = Needs at any n > 0
+  const tick = h => /class="me-tick"/.test(h);
   assert.match(won(row(0)), /data-ma-gate="none"[^>]*>—</); assert.deepEqual(barW(row(0)), ['0.0', 'transparent']);
+  assert.ok(!tick(row(0)), 'n = 0: no Needs tick');
   assert.match(won(row(3)), /data-ma-gate="nopct"[^>]*>—</, 'ME_THIN_FLOOR keeps its dash');
   assert.deepEqual(barW(row(3)), ['0.0', 'transparent'], 'no win share drawn under 5');
-  assert.ok(row(3).includes('background:var(--track); border-radius:0 3px 3px 0;'), 'a neutral track, not a full "loss" bar');
-  assert.ok(!row(12).includes('background:var(--track); border-radius:0 3px 3px 0;'), 'a full sample draws the loss share, not the neutral track');
+  assert.ok(tick(row(3)), 'Needs is a property of the prices: its tick shows at any n > 0');
+  assert.ok(!/border-radius:0 3px 3px 0;/.test(row(12)), 'no loss share: one track');
   assert.match(won(row(7)), /data-ma-gate="small" title="small sample · n=7" style="color:var\(--text-label\);">57%</);
   assert.deepEqual(barW(row(7)), ['57.1', 'var(--text-label)']);
   assert.match(won(row(12)), /data-ma-gate="full"[^>]*>75%</);
-  assert.deepEqual(barW(row(12)), ['75.0', 'var(--text)']);   // TEN-336: ME_C.text (TEN-376 token)
+  assert.deepEqual(barW(row(12)), ['75.0', 'var(--white-bar)']);   // README §4 / TEN-380: the white bar (ME_C.wbar)
+  // the Edge cell is a rate too: dashed under 5, greyed 5–9, signed colour at 10+
+  const edge = h => { const m = /class="me-edge"[^>]*>(<span class="ma-rate[^>]*>[^<]*<\/span>)/.exec(h); return m && m[1]; };
+  assert.match(edge(row(3)), /data-ma-gate="nopct"[^>]*>—</);
+  assert.match(edge(row(7)), /data-ma-gate="small"[^>]*color:var\(--text-label\);">−22\.9pp</);
+  assert.match(edge(row(12)), /data-ma-gate="full"[^>]*color:var\(--neg\);">−5\.0pp</);
   // the band pop-up's Won / Yield boxes: greyed + a visible note at 5–9
   const box = S.meRateBox('Won', 4, 7, '57.1%', 'var(--text)', true);
   assert.ok(/color:var\(--text-label\); white-space:nowrap;">57\.1%<\/span><span class="ma-small-note"/.test(box));

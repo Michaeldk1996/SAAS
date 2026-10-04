@@ -344,3 +344,41 @@ test('Q8: two meetings with one opponent in an edition resolve by round; a profi
   assert.equal(v.pinTxt, tabU); assert.equal(v.vmTxt, tabVm);
   delete S.chShards['1']; delete S.fhCl['1']; delete S.profiles['1'];
 });
+
+// TEN-380 (step 3 reference): the two bugs and the foundation styling.
+// Bug 1: a −3.7% yield that beats a −6.9% tour average was drawn green (its colour followed the gap, not the value).
+// Bug 2: the Backing tile's hidden 280px pop, centred on the row's last tile, ran past the column → a horizontal scrollbar.
+test('TEN-380: ROI values --text (never green on a negative yield); Backing pop opens leftwards; panels, chip, toggle, bar', () => {
+  const m = fixture([nMatches(6, i => i % 2 === 0, null)]);
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -3.7, favRel: 74, archiveNames: ['Citi Open'] } } };
+  const h = S.trMarketHtml(m);
+  const val = side => new RegExp(`data-tr="roi-${side}"[^]*?font-size:26px;[^"]*color:([^;"]+);">([^<]*)<`).exec(h);
+  assert.equal(val('dog')[2], '−3.7%'); assert.equal(val('dog')[1], 'var(--text)', 'a negative yield is not green');
+  assert.equal(val('fav')[1], 'var(--text)');
+  assert.ok(!/var\(--pos\)|var\(--neg\)/.test(h), 'no signed colour on the panel');
+  assert.ok(text(h).includes('+3.2pp vs tour avg'), 'Q14: the sub-line keeps "±x.xpp vs tour avg"');
+  assert.match(h, /background:var\(--track\); overflow:hidden; margin-top:11px;"><span style="display:block; height:100%; width:74%; background:var\(--bar\);/, 'reliability bar --bar on --track');
+  assert.ok(!/var\(--page\)|var\(--text-soft\)/.test(h), 'panels on --card, greys --text-label');
+  assert.equal((h.match(/border:1px solid var\(--edge-6\)/g) || []).length, 4, 'speed card, two ROI cards, reliability: --edge-6');
+  // founder Q2 (TEN-380, README §11): the court-speed bar is flat --white-bar with a white knob — no gradient, no blue
+  assert.match(h, /class="tr-speed-bar" style="position:relative; height:8px; border-radius:5px; background:var\(--white-bar\);/);
+  assert.match(h, /class="tr-speed-knob" style="[^"]*background:var\(--text\); border:3px solid var\(--card\); box-shadow:0 0 0 1px var\(--edge-16\);/);
+  assert.ok(!/linear-gradient|var\(--bar\) 50%/.test(h), 'no gradient, no blue ring');
+  // the trend: line only, dotted horizontal guides, no area fill or gradient, no vertical tick
+  assert.equal((h.match(/class="tr-sp-guide" x1="0" x2="360" y1="(\d+)" y2="\1" stroke="var\(--viz-guide\)" stroke-width="1" stroke-dasharray="2 6"/g) || []).length, 3);
+  assert.ok(!/<path|<linearGradient|<rect|fill="url/.test(h), 'no area fill');
+  assert.ok(!/<line[^>]*x1="([\d.]+)"[^>]*x2="\1"/.test(h), 'no vertical tick');
+  const head = S.trHeaderHtml(m);
+  assert.match(head, /class="tr-head" style="border:1px solid var\(--edge-6\); border-radius:16px; background:var\(--card\);/, 'header card = panel');
+  assert.match(head, /class="tr-surf" style="[^"]*background:var\(--selected\); border:1px solid var\(--line\); border-radius:8px;[^"]*">Hard court</, 'surface chip');
+  assert.match(head, /class="tr-meta tr-meta-cur" style="background:var\(--inner\);/, 'the current meta cell (Round) on --inner');
+  assert.equal((head.match(/class="tr-meta" style="background:var\(--card\); padding:15px 16px; box-shadow:inset 0 0 0 1px var\(--edge-6\);/g) || []).length, 4);
+  assert.equal((head.match(/<div style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; white-space:nowrap;">/g) || []).length, 5, 'meta values in Plex');
+  const all = S.buildTournamentSection(m);
+  assert.match(all, /class="seg tr-more-toggle"[^>]*style="display:inline-flex; align-items:center; gap:8px; padding:6px 4px; font-size:12\.5px; font-weight:600; color:var\(--text\); cursor:pointer;">/, 'the toggle is plain text, white words, no box');
+  assert.match(all, /class="tr-card" style="background:var\(--card\); border:1px solid var\(--edge-6\);/);
+  assert.ok(!/class="tr-tile"[^>]*var\(--line\)/.test(all), 'tiles --edge-6');
+  assert.match(all, /class="elotip-pop" role="tooltip" style="bottom:calc\(100% \+ 8px\); left:auto; right:0; transform:none; white-space:normal; width:280px;"/, 'the Backing pop is right-anchored');
+  assert.match(all, /font-size:11px; color:var\(--text-label\);">\d+ match/, 'count meta --text-label');
+  S.market = null;
+});

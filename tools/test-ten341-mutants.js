@@ -1,4 +1,4 @@
-// TEN-341 — every check in test-ten341-key-factors.mjs (and the Key factors checks it shares with test-ten295-odds-chart.mjs
+// TEN-341 / TEN-380 — every check in test-ten341-key-factors.mjs (and the Key factors checks it shares with test-ten295-odds-chart.mjs
 // and test-ten314-modal-frame.mjs) must FAIL when the behaviour it locks is reverted. Each mutant is applied to a copy of
 // bsp-consult-dashboard.html and the suites are run against it (TEN341_HTML for this suite, TEN295_HTML for the odds
 // chart, TEN314_HTML for the modal frame); a mutant that leaves them green is a vacuous test and fails this runner.
@@ -7,65 +7,89 @@ const fs = require('fs'), os = require('os'), path = require('path'), { spawnSyn
 const ROOT = path.join(__dirname, '..');
 const PAGE = 'bsp-consult-dashboard.html';
 const MUTANTS = [
-  // Playing style
-  ['style: the bar drawn at p2\'s share', '<span style="width:${E.a}%; background:${FH_AC};"></span>', '<span style="width:${E.b}%; background:${FH_AC};"></span>'],
-  ['style: the file\'s gradient bar back', '<div class="kf-edge-bar" style="display:flex; height:8px;', '<div class="kf-edge-bar" style="background:linear-gradient(90deg,var(--ma-link),var(--ma-fill)); display:flex; height:8px;'],
-  ['style: a mirror dashed (no 50 / 50)', "const rated = E.kind === 'cell' || E.kind === 'mirror';", "const rated = E.kind === 'cell';"],
+  ['review F1: the Market edge prefetch loads a match the modal left', "    .then(() => { if (_aM === m) meLoad(m);", "    .then(() => { meLoad(m);"],
+  // Playing style (record vs the opponent's style)
+  ['style: the tug drawn on the losses side', 'const tw = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;', 'const tl = shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tw = shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;'],
+  ['style: the oldest meetings shown as "recent"', ".sort((x, y) => String(y.date || '').localeCompare(String(x.date || ''))).slice(0, 3)", ".sort((x, y) => String(x.date || '').localeCompare(String(y.date || ''))).slice(0, 3)"],
+  ['D2: a record-vs-style % printed at n = 2', "const pct = shown ? Math.round(R.w / n * 100) + '%' : FH_DASHC;", "const pct = n ? Math.round(R.w / n * 100) + '%' : FH_DASHC;"],
+  ['N2: a walkover counted in the record vs style', 'const rows = raw.filter(r => !ps2IsWalkover(r));', 'const rows = raw;'],
   // Recent form
-  ['N2: the pills read the raw rows (a walkover and the match itself become pills)', 'const pills = P.shown.slice(0, 5).map(', 'const pills = ((m._fhFormRows || [])[idx] || []).slice(0, 5).map('],
-  ['D2: "Last N" printed as a bare rate', 'maRateHtml(P.wins, n, { nopct: `${P.wins}–${n - P.wins}`, color: C.text })', '`${Math.round(P.wins / n * 100)}%`'],
-  ['season: an empty surface season printed as 0–0', 'txt: n ? `${c.won}–${c.lost}` : FH_DASHC,', 'txt: `${c ? c.won : 0}–${c ? c.lost : 0}`,'],
-  ['season: the form rows\' year read instead of the match season', "const key = idx ? m.p2Key : m.p1Key, season = /^\\d{4}/.test(String(m.date || '')) ? String(m.date).slice(0, 4) : ovSeasonYear();", "const key = idx ? m.p2Key : m.p1Key, season = '2025';"],
+  ['N2: the bars read the raw rows (a walkover and the match itself become bars)', 'const bars = P.win.slice().reverse().map(', 'const bars = (((m._fhFormRows || [])[idx]) || []).slice(0, 10).reverse().map('],
+  ['Q16: the box counts all surfaces', "{ surf: surf || 'all', role: 'all', wmode: 'n', n: 10 });   // the Form tab's default view (fhStateFor, N1)", "{ surf: 'all', role: 'all', wmode: 'n', n: 10 });"],
+  ['Q13: the meta loses the surface', "meta = fhEsc(`Last 10${surf ? ' · ' + surf : ''}`)", "meta = fhEsc('Last 10')"],
+  ['form: v market not coloured by its sign', "mktCol(d == null ? C.t3 : kfSignCol(d, 1) === C.t3 ? C.text : kfSignCol(d, 1))", 'mktCol(C.text)'],
+  ['form: every scored hot line (no best-per-family pick)', 'hot = FH_HOT_FAM.map(f => P.hot.sc.scored.find(x => fhFamOf(x.L.g) === f[0])).filter(Boolean).map(x => {', 'hot = P.hot.sc.scored.map(x => {'],
+  // Tournament
+  ['N6: a synthesised Withdrawal edition counted', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
+  ['Q25: "no record on file" back', "if (!hist) return `<span class=\"kf-tour-note\">${words('first appearance')}</span>`;", "if (!hist) return `<span class=\"kf-tour-note\">${words('no record on file')}</span>`;"],
+  ['tier: a fabricated tier for an unknown event', "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';", "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || 'ATP 250';"],
+  ['round: "1/16-finals" left in the feed\'s code', "return /^1\\/\\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;", "return rdRaw;"],
+  ['Q14: the knob placed on the abstract speed', 'const idx = cs && cs.speed != null && Number.isFinite(Number(cs.speed)) ? Math.max(0, Math.min(100, Number(cs.speed))) : null;', 'const idx = cs && cs.abstractSpeed != null ? Math.max(0, Math.min(100, Number(cs.abstractSpeed) * 50)) : null;'],
+  ['D2: the ROI tiles ungated', "rateOk = !!mk && (g === 'full' || g === 'small');", 'rateOk = !!mk;'],
+  ['ROI coloured by its delta to the tour, not its sign', "const col = !has ? C.t3 : g === 'small' ? MA_GREY : kfSignCol(v, 1) === C.t3 ? C.text : kfSignCol(v, 1);", "const col = !has ? C.t3 : g === 'small' ? MA_GREY : kfSignCol(dlt, 1);"],
+  // founder Q9 (2026-09-30): the event hold rate is the Tournament tab's cell (our box scores, n in the tooltip)
+  ['Q9: Key factors prints the court-conditions sheet\'s count-less %', "hold ${trHoldHtml(m, 'kf-hold')}", "hold ${cs && cs.serviceHold != null ? cs.serviceHold + '%' : FH_DASHC}"],
+  ['Q9: the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
+  ['Q9: the hold rate gated like a sample rate', "const val = H.state === 'ok' ? Math.round(H.pct) + '%' : FH_DASHC;", "const val = H.state === 'ok' && H.matches >= 100 ? Math.round(H.pct) + '%' : FH_DASHC;"],
+  // Odds
+  ['Q17: the book preference dropped (the Odds tab\'s first live row wins)', 'const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;', 'const pick = live[0] || null;'],
+  ['odds: a gapped book drawn across the gap', "if (row.gaps && row.gaps.length) return { a: '', b: '', svg: '',", "if (false) return { a: '', b: '', svg: '',"],
+  ['odds: the now from bestOdds (a second book)', "now = row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now']) : FH_DASHC;", "now = m.bestOdds && m.bestOdds[x === 'a' ? 'p1' : 'p2'] ? aOddsFmt(m.bestOdds[x === 'a' ? 'p1' : 'p2'].price) : FH_DASHC;"],
+  ['odds: Fair from two unmatched latest quotes', "const fair = x => (row && row.nv && row.nv[x].length ? aOddsFmt(row.nv[x][row.nv[x].length - 1][1]) : FH_DASHC);", "const fair = x => (row && row[x + 'Now'] != null ? aOddsFmt(row[x + 'Now'] * (1 / row.aNow + 1 / row.bNow)) : FH_DASHC);"],
+  ['odds: an all-stale market reads "no prices in the feed"', "kfNote(X.D.hasSeries ? 'No recent prices:", "kfNote(false ? 'No recent prices:"],
+  ['Q12: a "Soft avg" back', '<span>Fair<span class="kf-fair-${x}"', '<span>Soft avg 1.00</span><span>Fair<span class="kf-fair-${x}"'],
+  // DNA (N10)
+  ['N10: the MCP radar fetched again', 'kfEnsureNews(m), kfEnsureMarketEdge(m)]', "kfEnsureNews(m), kfEnsureMarketEdge(m), fetch('./style-radar.json')]"],
+  ['DNA: the raw rating printed instead of the percentile', 'const a = pctOf(D.a.vals[i]), b = pctOf(D.b.vals[i]);', 'const a = D.a.vals[i].raw, b = D.b.vals[i].raw;'],
+  ['ruling 8: the DNA trailer solid (no 45%)', "Math.round(p) < Math.round(o) ? C.dna2 : C.dna}", "Math.round(p) < Math.round(o) ? C.dna : C.dna}"],
+  ['ruling 8: the DNA bars toned per player, not per axis leader', '${val(a)}${bar(a, false, b)}', '${val(a)}${bar(a, false, -1)}'],
+  ["ruling 8: the reference's 40% opacity trailer", "Math.round(p) < Math.round(o) ? C.dna2 : C.dna}", "Math.round(p) < Math.round(o) ? C.dna + '; opacity:0.4' : C.dna}"],
+  ['DNA: the bars on --bar (white inside Key factors)', "dna: 'var(--viz-lead)',", "dna: 'var(--bar)',"],
+  ['DNA: an axis drawn under the 10-match floor', 'd.ok && !!d.ratings && d.ratings[i] != null;', '!!d.ratings && d.ratings[i] != null;'],
+  ['DNA: the axis note (population + n) dropped', '<span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="font-size:11.5px;', '<span tabindex="0" data-x="${escapeHtml(ps2AxisTip(D, i))}" style="font-size:11.5px;'],
   // Head to head
   ['N2: a walkover counted as a meeting', 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));', 'const counted = fhMeetings(m);'],
   ['H2H: a retirement dropped from the record', 'const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));', 'const counted = fhMeetings(m).filter(r => !r.wo && !r.ret);'],
-  ['H2H: the "last meeting" = the oldest', 'const lm = counted[n - 1] || null;', 'const lm = counted[0] || null;'],
-  // Dimension edge (N10)
-  ['N10: the MCP radar fetched again', '      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad()].map(p =>', "      ensureOddsMovement(m), kfEnsureWeather(m), trHoldLoad(), fetch('./style-radar.json')].map(p =>"],
-  ['DNA: the gaps ranked by the raw rating, not the percentile', '.sort((x, y) => Math.abs(y.a.pct - y.b.pct) - Math.abs(x.a.pct - x.b.pct)).slice(0, 3);', '.sort((x, y) => Math.abs(y.a.raw - y.b.raw) - Math.abs(x.a.raw - x.b.raw)).slice(0, 3);'],
-  ['DNA: a shape drawn under the 10-match floor', 'const shape = s => (s.d.ok ?', 'const shape = s => (true ?'],
-  ['DNA: the axis note (population + n) dropped from the gap rows', '<span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, g.i))}"', '<span tabindex="0" data-x="${escapeHtml(ps2AxisTip(D, g.i))}"'],
-  // Tournament
-  // founder Q9 (2026-09-30): the event hold rate is the Tournament tab's cell (our box scores, n in the tooltip)
-  ['Q9: Key factors back on the court-conditions sheet\'s count-less dash (MA_HOLD_NO_N)', "  const hold = trHoldHtml(m, 'kf-hold');", "  const hold = cs && cs.serviceHold != null ? maTipHtml('<b tabindex=\"0\">—</b>', 'Service hold at this event: the source gives a rate without its number of service games, so it is not shown.', { wrap: 220, start: true }) : dash(trSpeedNote(m));"],
-  ['Q9: Key factors prints the sheet\'s count-less %', "  const hold = trHoldHtml(m, 'kf-hold');", "  const hold = cs && cs.serviceHold != null ? `<b>${cs.serviceHold}%</b>` : trHoldHtml(m, 'kf-hold');"],
-  ['Q9: the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
-  ['Q9: the hold rate gated like a sample rate', "const val = H.state === 'ok' ? Math.round(H.pct) + '%' : FH_DASHC;", "const val = H.state === 'ok' && H.matches >= 10 ? Math.round(H.pct) + '%' : FH_DASHC;"],
-  ['Q9: the file\'s note "at this event" replaced', "${cond(hold, 'hold rate', 'at this event', 'kf-cond-hold')}", "${cond(hold, 'hold rate', 'n not published', 'kf-cond-hold')}"],
-  // founder Q25 (2026-09-30): the file's wording
-  ['Q25: "no record on file" back', "${hist ? 'no main-draw match' : 'first appearance'}", "${hist ? 'no main-draw match' : 'no record on file'}"],
-  ['Q25: "Closing odd" after the start', "mini: row ? kfOddsMini(row) : null", "mini: row ? (x => (!D.upcoming && x.svg ? Object.assign(x, { svg: x.svg.replace('<span>Current odd</span>', '<span>Closing odd</span>') }) : x))(kfOddsMini(row)) : null"],
-  // founder Q16 (2026-09-30): the Form tab's default view
-  ['Q16: the card counts all surfaces', "{ surf: fhSurfName(m.surface) || 'all', role: 'all', wmode: 'n', n: 10 });   // the Form tab's default view (fhStateFor, N1)", "{ surf: 'all', role: 'all', wmode: 'n', n: 10 });"],
-  // founder Q18 (2026-09-30): Last meeting goes to the H2H tab, not the sheet
-  ['Q18: the last meeting opens the sheet', '<div class="kf-h2h-last" style="text-align:center;">', '<div class="kf-h2h-last" onclick="event.stopPropagation();fhOpenSheet(\'x\')" style="text-align:center;">'],
-  ['N6: a synthesised Withdrawal edition counted', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
-  ['tier: a fabricated tier for an unknown event', "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || '';", "const tier = (m.venue && m.venue.category) || (catHit && catHit.category) || 'ATP 250';"],
-  ['round: "1/16-finals" left in the feed\'s code', "return /^1\\/\\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;", "return rdRaw;"],
-  // Odds
-  ['odds: the book preference dropped (the Odds tab\'s first live row wins)', 'const pick = KF_BOOK_PREF.map(re => live.find(r => re.test(r.name))).find(Boolean) || live[0] || null;', 'const pick = live[0] || null;'],
-  ['odds: a gapped book drawn across the gap', 'if (row.gaps && row.gaps.length) return { svg: \'\',', 'if (false) return { svg: \'\','],
-  ['odds: the prices from bestOdds (a second book)', 'const a = row.aNow, b = row.bNow, nvA =', 'const a = (m.bestOdds && m.bestOdds.p1 && m.bestOdds.p1.price) || row.aNow, b = (m.bestOdds && m.bestOdds.p2 && m.bestOdds.p2.price) || row.bNow, nvA ='],
-  // Weather
-  ['weather: the strip reads the card\'s own field, not the Weather tab\'s model', 'else { note = W.verdict; if (!W.unavail) at = W.at; }', 'else { note = W.verdict; if (!W.unavail) at = { temp: m.weather && m.weather.temperature }; }'],
+  ['H2H: the tug drawn toward the trailer', "style=\"position:absolute; top:0; bottom:0; ${a > b ? 'right' : 'left'}:50%;", "style=\"position:absolute; top:0; bottom:0; ${a > b ? 'left' : 'right'}:50%;"],
+  ['H2H: the sets counted per meeting', "scored.forEach(r => { if (r.done) r.done.forEach(x => { if (x[0] > x[1]) a++; else if (x[1] > x[0]) b++; }); else { a += r.pS; b += r.oS; } });", "scored.forEach(r => { if (r.won) a++; else b++; });"],
+  ['H2H: an absent tally printed as 0', "const pair = p => (p ? [String(p[0]), String(p[1])] : [FH_DASHC, FH_DASHC]);", "const pair = p => (p ? [String(p[0]), String(p[1])] : ['0', '0']);"],
+  ['H2H: hot-line rows on --inner', 'gap:4px 14px; align-items:center; padding:8px 12px; ${KF_PANEL}', 'gap:4px 14px; align-items:center; padding:8px 12px; background:var(--inner);'],
+  ['Q18: a hot line opens the sheet', '<div class="kf-h2h-hot" style=', '<div class="kf-h2h-hot" onclick="event.stopPropagation();fhOpenSheet(\'x\')" style='],
+  // Progression
+  ['progression: one round instead of the pooled figure', 'const fig = s => { const f = x ? pgFig(x.avg[s], mt)', 'const fig = s => { const f = x ? pgFig(x.series[s][0], mt)'],
+  ['Q7: Pressure points given a draw average', 'const dr = mt.noDraw || !x ? FH_DASHC : pgDrawFig(x.fAvg, mt).t;', "const dr = !x ? FH_DASHC : '50.0%';"],
+  ['Q8: Pressure points swapped out', 'const rows = PG_METRICS.map((mt, i) => {', "const rows = PG_METRICS.filter(mt => mt.key !== 'pressure').map((mt, i) => {"],
+  // News
+  ['news: an article in both lists shown twice', "const k = a.news_key != null ? String(a.news_key) : ts + '|' + (a.title || '');", "const k = who + (a.news_key != null ? String(a.news_key) : ts + '|' + (a.title || ''));"],
+  ['news: not newest first', 'return [...by.values()].sort((x, y) => y.ts - x.ts);', 'return [...by.values()];'],
   // Stennisfy Model
-  ['model: the soft book\'s "vs fair" computed', "${box('Best soft book', soft, fhEsc(bo && bo.bookmaker ? bo.bookmaker : FH_DASHC), FH_DASHC, 'kf-soft')}", "${box('Best soft book', soft, fhEsc(bo && bo.bookmaker ? bo.bookmaker : FH_DASHC), '+0.0pp vs fair', 'kf-soft')}"],
+  ['Q11: the Best soft gap computed', "${kfModelBox('Best soft', FH_DASHC, C.t3, soft,", "${kfModelBox('Best soft', has && bo && fairP > 0 ? '+' + ((fairP - 1 / bo.price) * 100).toFixed(1) + 'pp' : FH_DASHC, C.t3, soft,"],
+  ['model: the flag off another threshold', 'sharp = edge != null && edge > 0.005;', 'sharp = edge != null && edge > 0.05;'],
+  ['model: a verdict printed with no Pinnacle edge', 'const flag = has && edge != null ?', 'const flag = has ?'],
+  ['model: the box stops linking to the Model page', "go: `openEdgeModelFromMatch('${idAttr}')`", "go: `aGoTab('odds')`"],
+  ['model: the Model page\'s net adjustment ignored', 'const net = mo && mo.ok && mo.stage2 && mo.stage2.totalDeltaP1 != null ? Number(mo.stage2.totalDeltaP1) * 100 : null;', 'const net = null;'],
   ['model: "Now" from the legacy books only (chart-shape Pinnacle loses its Now)', "const pinRow = (m.oddsMovement || m._oddsLoaded) ? aOddsRowsOf(m, {}).rows.find(", "const pinRow = (m.oddsMovement && m.oddsMovement.books && Object.keys(m.oddsMovement.books).some(k => /pinnacle/i.test(k))) ? aOddsRowsOf(m, {}).rows.find("],
-  ['model: the move arrow read off unrounded prices', "arrow = po != null && pn != null ? (d2(pn) > d2(po) ?", "arrow = po != null && pn != null ? (pn > po ?"],
-  ['model: the flag off the Pinnacle edge', 'sharp = edge != null && edge > 0.005;', 'sharp = edge != null && edge > 0.05;'],
-  ['model: the empty state stops linking to the Model page', "if (!vs || vs.fairP1 == null || vs.fairP2 == null) return open(", "if (!vs || vs.fairP1 == null || vs.fairP2 == null) return (x => head + x)("],
-  // founder Q26 (2026-09-30): the modal always opens on Key factors (test-ten314-modal-frame.mjs "Q26")
-  ['Q26: the last-used tab restored', "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'key';", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : (Object.keys(A_TAB_BUILD).find(t => { const b = document.querySelector(`#aTabs .asidenav-item[data-atab=\"${t}\"]`); return b && b.classList.contains('active'); }) || 'key');"],
+  ['model: the move read off unrounded prices', 'mv = po != null && pn != null ? (d2(pn) - d2(po)) / d2(po) * 100 : null;', 'mv = po != null && pn != null ? (pn - po) / po * 100 : null;'],
+  ['model: a shortening move coloured red', 'color:${Math.abs(mv) < 0.05 ? C.t3 : mv < 0 ? C.up : C.dn};', 'color:${Math.abs(mv) < 0.05 ? C.t3 : mv < 0 ? C.dn : C.up};'],
+  // Market edge
+  ['market edge: the tiles read another band than today\'s', 'b = ready && M.tb >= 0 ? M.bands[M.tb] : null;', 'b = ready && M.tb >= 0 ? M.bands[0] : null;'],
+  ['market edge: the top-2 lines lose their wash', "background:${r.top ? C.wash : 'transparent'};", 'background:transparent;'],
+  // Weather
+  ['weather: the box reads the card\'s own field, not the Weather tab\'s model', 'else { verdict = W.verdict; if (!W.unavail) at = W.at; }', 'else { verdict = W.verdict; if (!W.unavail) at = { temp: m.weather && m.weather.temperature }; }'],
+  ['Q14: "usual" back on the court pace', "${tile('kf-wx-pace', 'Court pace', pace, cs && cs.category ? fhEsc(cs.category) : '')}", "${tile('kf-wx-pace', 'Court pace', pace, 'usual')}"],
+  // TEN-380 (founder step 3, README §1; replaces Q26): the modal always opens on Odds (test-ten314-modal-frame.mjs "TEN-380")
+  ['TEN-380: the last-used tab restored', "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'odds';   // TEN-380: the modal opens on Odds (README §1, reference)", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : (Object.keys(A_TAB_BUILD).find(t => { const b = document.querySelector(`#aTabs .asidenav-item[data-atab=\"${t}\"]`); return b && b.classList.contains('active'); }) || 'odds');"],
+  ['TEN-380: the default back on Key factors', "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'odds';   // TEN-380: the modal opens on Odds (README §1, reference)", "  const first = (tab && A_TAB_BUILD[tab]) ? tab : 'key';"],
   // the tab
-  ['tab: a card routed nowhere', "return `<div class=\"seg kf-card\" data-kf=\"${tab}\"${kfLink(`aGoTab('${tab}')`)}", "return `<div class=\"seg kf-card\" data-kf=\"${tab}\"${kfLink('')}"],
+  ['tab: a box routed nowhere', "const go = o.go || `aGoTab('${tab}')`;", "const go = o.go || '';"],
+  ['tab: the 3-column grid back', '<div class="kf-grid" style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr));', '<div class="kf-grid" style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr));'],
+  ['tab: a header title that can be clipped', '<span class="kf-title" style="flex:none; ${KF_CAP}">', '<span class="kf-title" style="flex:1 1 auto; min-width:0; overflow:hidden; ${KF_CAP}">'],
   ['DoD 4: the design\'s SAMPLE DATA chip back', '<div class="kf-grid" style="display:grid;', '<span>SAMPLE DATA</span><div class="kf-grid" style="display:grid;'],
-  ['DoD 8: a native title back', '<span class="kf-last" tabindex="0" data-aotip=', '<span class="kf-last" title="Last matches" tabindex="0" data-aotip='],
+  ['DoD 8: a native title back', '<span class="${cls}"${tip ? ` tabindex="0" data-aotip=', '<span class="${cls}" title="x"${tip ? ` tabindex="0" data-aotip='],
   ['DoD 8: an old renderer back (hidden, not deleted)', 'function buildKeyFactorsSection(m){', 'function akOddsMoveSvg(m){ return \'\'; }\nfunction buildKeyFactorsSection(m){'],
-  ['D1: a literal colour in a style attribute', '<span class="kf-tour-note" style="font-size:12px; color:${C.t4};">', '<span class="kf-tour-note" style="font-size:12px; color:#4b5672;">'],
-  ['odds: an all-stale market reads "no prices in the feed"', "kfNote(D.hasSeries ? 'No recent prices:", "kfNote(false ? 'No recent prices:"],
-  ['odds: the vig split from two unmatched latest quotes', "const p1 = nvA ? 100 / nvA : null,", "const p1 = (1 / a) / (1 / a + 1 / b) * 100,"],
+  ['D1: a literal colour in a style constant', "const KF_PANEL = 'background:var(--card); border:1px solid var(--edge-6);';", "const KF_PANEL = 'background:#10131d; border:1px solid var(--edge-6);';"],
+  ['D1: a literal colour in the tile surface', "  card: 'var(--card)', edge: 'var(--edge-7)',", "  card: '#10131d', edge: 'var(--edge-7)',"],
   ['escaping: the tournament title unescaped', "${fhEsc(tier ? `${clean} · ${tier}` : clean)}", "${tier ? `${clean} · ${tier}` : clean}"],
-  ['D1: a literal colour in the card surface', "card: 'var(--page)', line: 'var(--line)',", "card: '#0a0d14', line: 'var(--line)',"],
   ['lazy: Key factors stops loading the H2H meetings', 'fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(),', 'fhEnsureFormData(m), ensureMatchDna(),'],
   ['lazy: no final paint (Download report prints the loading lines)', '.then(() => { done = true; paint(); });', '.then(() => { done = true; });'],
 ];

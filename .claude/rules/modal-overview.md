@@ -6,14 +6,13 @@ Restored from CLAUDE.md before 011e3e20 (2026-09-21 trim); TEN-312 N13, founder-
 Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that file wins; the conflicts
 found at restore time are marked inline.
 
-- **Overview tab — identity vs outcome (founder ruling 2026-08-01).** Two distinct axes coexist on the
-  Overview modal tab. **(1) Identity by name order:** the career-card surface bars, the
-  `THIS SEASON · BY SURFACE` row left-accent, and the nested match-stats block's left name carry *whose
-  column this is* — fixed by name order, **never** by clay/hard/grass and never by value. (Reverses the
-  earlier "career bars all-neutral / accent surface-family-blue" calls.)
-  *Superseded colours (TEN-312 D4, 2026-09-28):* the old values "left player (P1) blue `#6aaeff`, right (P2)
-  neutral `#e7e9ee`" no longer apply — both players are neutral on every tab (player A white/primary,
-  player B grey; blue is only links, TODAY and selection). See `modal-analysis.md` "Players and avatars".
+- **Overview tab — identity vs outcome (founder ruling 2026-08-01; colours TEN-380).** Two distinct axes coexist on the
+  Overview modal tab. **(1) Identity is the column, never a hue:** both players' career-card surface bars are `--bar` on
+  `--track` (6px, radius 3; the D2 gate greys a 5–9 bar), **never** by clay/hard/grass and never by value; the
+  `THIS SEASON · BY SURFACE` rows carry no accent bar (`--card` + `--edge-6`, chevron `--link`). The surface % is 700
+  `--text` (small sample grey). Panels `--edge-6`; a count cell hovers white 5%; the ATP chip `--selected` + `--line`,
+  8.5/700 `--text-label`; the pop-up's figure tiles `--inner` with no edge (step 3 reference, TEN-380; supersedes the
+  per-player bar colours and the 3px accent of D4). **Test:** `test-ten334-overview.mjs` "TEN-380".
   **(2) Outcome as a data fact:** the result square and the Sets figure of a pop-up row are
   coloured by outcome — canonical W / L green / red — and a `ret.` suffix carries the loss red (`w/o` stays
   neutral). A completed match's result is a data-fact verdict, not a two-player comparison, so it is a
@@ -21,8 +20,8 @@ found at restore time are marked inline.
   call). *Colour values (TEN-312 D1):* the old hex `#3dd68c` / `#e0616f` is retired; the modal takes these
   colours from the foundation tokens (TEN-376). *Walkovers (TEN-312 N2):* a `w/o` row is excluded
   from every count on the page (`modal-analysis.md` "Walkovers and retirements").
-  **Test:** surface bars/accents/left-name never change hue with the *value* (identity only); the W/L letter
-  never stays neutral on a completed match.
+  **Test:** surface bars never change hue with the surface or the *value*; the W/L letter never stays neutral on a
+  completed match.
 
 - **Build (TEN-334, 2026-09-29): the tab is the design file's `overviewFor`** (DF L2969–3181, markup L1933–2076, pop-up
   L1484–1515) in its live variants: the tier control inside each career card (maSeg `ov`), the "Soft ink" card, the name

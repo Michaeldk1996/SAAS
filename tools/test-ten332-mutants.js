@@ -38,6 +38,11 @@ const MUTANTS = [
   ['Q9 (tab): the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
   ['Q11: an empty block reserving the paragraph\'s space', "      ${trHeaderHtml(m)}${toggle}", "      ${trHeaderHtml(m)}<div class=\"tr-reading\" style=\"min-height:48px;\"></div>${toggle}"],
 ];
+MUTANTS.push(
+  ['Q2: the court-speed gradient back', 'background:var(--white-bar); margin-top:18px;', 'background:linear-gradient(90deg,var(--inner),var(--text-label),var(--bar)); margin-top:18px;'],
+  ['Q2: an area fill under the trend', '${guides}${poly}</svg>', '${guides}<path d="M0 0 L1 1 Z" fill="url(#f)"></path>${poly}</svg>'],
+  ['Q2: the trend guides dropped', '${guides}${poly}</svg>', '${poly}</svg>'],
+);
 const SUITES = ['test-ten332-tournament.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env || {}), encoding: 'utf8' });
 if (run().status !== 0) { console.error('✖ the suite is red on the unmutated page — mutants are meaningless'); process.exit(1); }

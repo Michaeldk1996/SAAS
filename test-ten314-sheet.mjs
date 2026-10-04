@@ -91,7 +91,13 @@ test('header: D5 avatars in the 56px ring; the inline copy (Match Stats tab) has
   assert.ok(pop.includes('fhCloseSheet()') && />7-6</.test(pop));
   assert.ok(!tab.includes('fhCloseSheet()') && !/>7-6</.test(tab));
   assert.ok(tab.includes('SINNER WON') || /won 6-4 4-6 7-6/i.test(tab), 'the result pill');
-  assert.match(html, /\.fh-av img, \.fh-av \.avatar-fallback\{ width:56px; height:56px; border-radius:50%; border:2px solid var\(--edge-10\);/);   // TEN-376: --line-open → --edge-10
+  // TEN-380 (step 3 reference): the avatar is neutral, --selected + 1px --line, letter --text
+  assert.match(html, /\.fh-av img, \.fh-av \.avatar-fallback\{ width:56px; height:56px; border-radius:50%; border:1px solid var\(--line\);[^}]*color:var\(--text\); background:var\(--selected\); \}/);
+  // both price chips --card + --line, both --text; player B's name --text; the result pill Plex 10/700 on white 5% + --line
+  assert.equal((pop.match(/class="fh-price" style="[^"]*color:var\(--text\); background:var\(--card\); border:1px solid var\(--line\);/g) || []).length, 2);
+  assert.match(pop, /font-size:18px; font-weight:800; letter-spacing:-0\.015em; color:var\(--text\); text-align:right;">C\. Alcaraz</);
+  assert.ok(!/var\(--text-soft\); text-align:right|var\(--edge-10\); border-radius:999px/.test(pop));
+  assert.match(tab, /class="fh-result" style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0\.14em; text-transform:uppercase; color:var\(--text-soft\); background:color-mix\(in srgb, var\(--text\) 5%, transparent\); border:1px solid var\(--line\);/);
 });
 
 // Founder 2026-09-29: the header date is the design file's format exactly. DF mkSheet L4856 prints its SOURCE's date:
@@ -101,7 +107,7 @@ test('header: D5 avatars in the 56px ring; the inline copy (Match Stats tab) has
 // copy back to DD.MM.YY.
 test('header: the meta date follows the design per source (Form DD.MM · lists DD.MM.YY · Match Stats tab long)', () => {
   const r = { sets: [[6, 4], [6, 4]], pS: 2, oS: 0, won: true, price: 1.05, oppPrice: 10.53, tourn: 'Washington', surface: 'Hard', round: 'R16', date: '2026-07-18' };
-  const meta = h => /letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\);">([^<]*)<\/span>/.exec(h)[1];   // TEN-376: the meta caps label (Hanken 10.5/700/0.10em caps)
+  const meta = h => /class="fh-sheet-meta" style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0\.06em; color:var\(--text-label\);">([^<]*)<\/span>/.exec(h)[1];   // TEN-380: the meta line is Plex 11 / 0.06em, sentence case (the step 3 reference)
   assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor', noYear: true }, r)), 'Washington · Hard · R16 · 18.07');
   assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor' }, r)), 'Washington · Hard · R16 · 18.07.26');
   assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor' }, r, { inline: true })), 'Washington · Hard · R16 · Jul 18, 2026');

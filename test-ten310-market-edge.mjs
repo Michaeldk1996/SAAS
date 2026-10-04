@@ -29,11 +29,17 @@ function chunk(html, attr, key) {
   return html.slice(i, j < 0 ? html.length : j);
 }
 const unitsOf = (s) => (s === '—' ? null : (s.startsWith(MINUS) ? -1 : 1) * parseFloat(s.replace(/^[+−±]/, '')));
-function bandRow(html, key) {
-  const c = chunk(html, 'data-me-band', key); if (!c) return null;
+// TEN-380: a band row reads Price · bar (Won fill + Needs tick) · Won · Edge · 1u stake — its W–L is no longer printed in
+// the row, so the record is read where the tab prints it: the band pop-up's Record tile (an n = 0 band has none: 0–0).
+function bandRow(R, key) {
+  const html = R.html, c = chunk(html, 'data-me-band', key); if (!c) return null;
   const t = texts(c.slice(c.indexOf('>') + 1)).filter((x) => x !== 'TODAY');
-  const [w, l] = t[1].split('–').map(Number);
-  return { label: t[0], today: c.includes('>TODAY<'), w, l, won: t[2], needs: t[3], u: unitsOf(t[4]), uTxt: t[4], clickable: /onclick="meSet\(\{meBand:/.test(c.slice(0, c.indexOf('>'))), raw: c };
+  const clickable = /onclick="meSet\(\{meBand:/.test(c.slice(0, c.indexOf('>')));
+  const rec = clickable ? /^W(\d+)–L(\d+)$/.exec(stat(R.band(key), 'Record') || '') : null;
+  const [w, l] = rec ? [+rec[1], +rec[2]] : [0, 0];
+  const tick = /class="me-tick" style="position:absolute; left:calc\(([\d.]+)% - 1px\)/.exec(c);
+  return { label: t[0], today: c.includes('>TODAY<'), w, l, won: t[1], edge: t[2], u: unitsOf(t[3]), uTxt: t[3], clickable, raw: c,
+    needsTick: tick ? +tick[1] : null };
 }
 function lineRow(html, key) {
   const c = chunk(html, 'data-me-line', key); if (!c) return null;
@@ -42,6 +48,7 @@ function lineRow(html, key) {
   return { label: t[0], all: cell(t[1]), band: cell(t[2]), diff: t[3] || '' };
 }
 function legend(html) {
+  html = html.slice(html.indexOf('Profit at 1u flat'));   // the chart card's legend (the band card's headers say "N priced" too)
   const out = [];
   const re = /(\d+) priced<\/span>(?:<span[^>]*>([^<]*)<\/span>)?/g; let m;
   while ((m = re.exec(html))) out.push({ n: +m[1], end: m[2] ? unitsOf(m[2]) : null });
@@ -82,7 +89,7 @@ function oracle(rows, scope, refDay) {
 // Checks 1–5 for one render, one player, one scope. Throws AssertionError on any mismatch.
 function checkPlayer(ui, R, k, rows, scope) {
   const core = ui.core, refDay = Date.UTC(2026, 8, 27) / 86400000, i = k === 'a' ? 0 : 1;
-  const bands = [0, 1, 2, 3, 4, 5, 6, 7].map((b) => bandRow(R.html, k + b));
+  const bands = [0, 1, 2, 3, 4, 5, 6, 7].map((b) => bandRow(R, k + b));
   assert.ok(bands.every(Boolean), 'eight band rows');
   const O = oracle(rows, scope, refDay);
   // the oracle: every band's record and 1u stake
@@ -120,13 +127,24 @@ function checkPlayer(ui, R, k, rows, scope) {
     assert.equal(stat(P, 'Record'), `W${b.w}–L${b.l}`);
     assert.equal(stat(P, 'At 1u flat'), b.uTxt);
     assert.equal((P.match(/data-me-row="/g) || []).length, n, 'pop-up rows = band n');
-    const y = stat(P, 'Yield');
+    // TEN-380: the yield is the At 1u flat tile's sub-line; Edge = Won − Needs (pp) on the row and in the pop-up; the
+    // row's grey tick sits at Needs (the pop-up's "needs x%")
+    const sub = (l) => { const m = new RegExp(`data-me-stat="${l}"[^>]*>[^<]*<\\/span><span class="me-tile-sub"[^>]*>([^<]*)<`).exec(P); return m ? m[1] : null; };
+    const y = sub('At 1u flat').replace(/^yield /, '');
     if (n < core.ME_THIN_FLOOR) assert.equal(y, '—'); else assert.ok(Math.abs(unitsOf(y.replace('%', '')) - b.u / n * 100) <= 5 / n + 0.051, `yield ${y} vs ${b.u}/${n}`);
     if (n < core.ME_THIN_FLOOR) assert.equal(b.won, '—', 'thin sample dashes Won'); else assert.equal(b.won, Math.round(b.w / n * 100) + '%');
+    const needs = parseFloat(sub('Won').replace(/^needs /, ''));
+    assert.ok(Math.abs(b.needsTick - needs) <= 0.06, `${k}${j} tick ${b.needsTick} at needs ${needs}`);
+    if (n < core.ME_THIN_FLOOR) assert.equal(b.edge, '—', 'thin sample dashes Edge');
+    else {
+      const e = unitsOf(b.edge.replace(/pp$/, '')), won = parseFloat(stat(P, 'Won'));
+      assert.ok(Math.abs(e - (won - needs)) <= 0.1 + 1e-9, `${k}${j} edge ${b.edge} = won ${won} − needs ${needs} (three 1-dp roundings)`);
+      assert.equal(stat(P, 'Edge'), b.edge, 'the pop-up Edge = the row Edge');
+    }
   });
   // (4) line pop-up "Covered x of n" = the card's All / In band cell; (5) today's band = "In band = …"
   const today = bands.findIndex((b) => b.today);
-  const lbl = [...R.html.matchAll(/In band = ([^<]*) · n=(\d+)/g)][i];
+  const lbl = [...R.html.matchAll(/in band <span[^>]*>([^<]*)<\/span> · n=(\d+)/g)][i];
   assert.ok(today >= 0 && lbl, 'a TODAY band and an In band label');
   assert.equal(lbl[1], bands[today].label, 'today band = In band label');
   for (let li = 0; li < 6; li++) {
@@ -259,10 +277,10 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   const empty = Object.assign([], { notTour: 0 });
   const m = { id: 'x', p1: 'A. Test', p2: 'B. None', p1Key: 9, p2Key: 10, date: '2026-09-27', tour: 'ATP Chengdu', tourBadge: 'ATP', bestOdds: { p1: { price: 1.21 }, p2: { price: 4.4 } } };
   const R = ui.render(m, { meView: 'winner' }, [rows, empty]);
-  const b1 = bandRow(R.html, 'a0');   // the 1.205 row: 1.01 – 1.20
+  const b1 = bandRow(R, 'a0');   // the 1.205 row: 1.01 – 1.20
   assert.deepEqual([b1.w, b1.l, b1.won], [1, 0, '—'], 'n < 5: W–L kept, Won dashed'); assert.equal(b1.uTxt, '+0.2u', '1u still shown (a sum)');
-  assert.ok(bandRow(R.html, 'a1').today && bandRow(R.html, 'a1').w + bandRow(R.html, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.40');
-  const b0 = bandRow(R.html, 'b0');
+  assert.ok(bandRow(R, 'a1').today && bandRow(R, 'a1').w + bandRow(R, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.40');
+  const b0 = bandRow(R, 'b0');
   assert.deepEqual([b0.w, b0.l, b0.won, b0.uTxt, b0.clickable], [0, 0, '—', '—', false]);
   assert.ok(b0.raw.includes(`color:var(--text-soft);">—<`), 'n = 0 1u dash in the muted colour (ME_C.m1: the file\'s #8B96B5 shade, TEN-336 → foundation --text-soft, TEN-376)');
   const lg = legend(R.html);
@@ -284,10 +302,10 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   assert.equal(ui.render(m, {}, [rows, empty]).E && true, true);
 });
 
-test('wiring: Market edge is the last tab after Odds; today = the header price; lazy load; not in Download report', () => {
+test('wiring: Market edge is the third tab, right after Odds (TEN-380 README §1); today = the header price; lazy load; not in Download report', () => {
   const r0 = HTML.indexOf('<div class="asidenav" id="aTabs">'), rail = HTML.slice(r0, HTML.indexOf('asidenav-download', r0));
   const tabs = [...rail.matchAll(/data-atab="([a-z0-9]+)"/g)].map((x) => x[1]);
-  assert.deepEqual(tabs.slice(-2), ['odds', 'marketedge']); assert.equal(tabs.length, 12);
+  assert.deepEqual(tabs, ['key', 'odds', 'marketedge', 'form', 'h2h', 'style', 'progression', 'tournament', 'weather', 'news', 'overview', 'matchstats']);
   assert.ok(rail.includes('<path d="M4 16l4-5 3 3 5-7 4 5M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Market edge</div>'));
   assert.equal((HTML.match(/data-atab="marketedge"/g) || []).length, 1, 'one entry');
   // the header pills and the tab read one function
@@ -409,7 +427,7 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
     const pb = P.bands.favourite.concat(P.bands.underdog);
     assert.equal(pb.length, 8);
     pb.forEach((b, j) => {
-      const t = bandRow(R.html, k + j);
+      const t = bandRow(R, k + j);
       assert.equal(t.w, b.wins, `${k}${j} wins`); assert.equal(t.l, b.losses, `${k}${j} losses`);
       if (b.n) assert.equal(t.u, Number(meRound(b.units)), `${k}${j} 1u`);
       if (b.n) assert.equal((R.band(k + j).match(/data-me-row=/g) || []).length, b.n, `${k}${j} pop-up rows = profile band n`);

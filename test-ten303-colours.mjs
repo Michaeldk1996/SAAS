@@ -119,6 +119,8 @@ function modalLiterals(html) {
 const FOUNDATION = Object.fromEntries([...RULES.matchAll(/`--([\w-]+)`\s+(#[0-9A-Fa-f]{3,6}\b|rgba\([^)]*\))/g)].map(m => [m[1], fmt(rgba(m[2]))]));
 const SURFACES = /Only surfaces change\*\* between themes \(([^)]*)\)/.exec(RULES.replace(/\s+/g, ' '))[1].match(/--([\w-]+)/g).map(s => s.slice(2));
 const tokenOf = v => (/^var\(--([\w-]+)\)$/.exec(String(v).trim()) || [])[1] || null;
+// a token at an alpha, written color-mix(in srgb, var(--t) N%, transparent) → 't@N' (TEN-380: the reference's white washes)
+const mixOf = v => { const m = /^color-mix\(in srgb, var\(--([\w-]+)\) ([\d.]+)%, transparent\)$/.exec(String(v).trim()); return m ? m[1] + '@' + m[2] : tokenOf(v); };
 
 test('0: the modal\'s builders and CSS hold no literal colour (every colour is a tokens.css token)', () => {
   assert.deepEqual(modalLiterals(HTML).map(x => `${x.where} L${x.line} ${x.lit}`), []);
@@ -149,16 +151,19 @@ test('0b: every Odds-tab token is set by tokens.css; Night = foundation.md, Day 
 // names white (player A), the second player's line --text-soft; signed values --pos / --neg; reading text --text-soft,
 // labels / captions / column heads --text-label; blue is a fill, never text (the BOOKS tag and the SHARP heading are
 // white text); row / tile / pop-up / segmented track = --card, tile hover --tile-hover.
-const SPEC_ROLE = { 'Player A': [['a'], 'text'], 'Player B': [['b'], 'text-soft'], 'Up': [['up'], 'pos'], 'Down': [['dn'], 'neg'],
-  'Text': [['text'], 'text'], 'Muted 1': [['sub', 'soft'], 'text-soft'], 'Muted 2': [['label'], 'text-label'], 'Muted 3': [['label3'], 'text-label'],
-  'Header caps': [['caps'], 'text-label'], 'Blue': [['blue'], 'text'], 'Sharp heading': [['sharp'], 'text'], 'Row / tile bg': [['row'], 'card'],
-  'Row hover bg': [['rowHover'], 'tile-hover'], 'Pop-up bg': [['pop'], 'card'], 'Segmented bg': [['segTrack'], 'card'] };
+const SPEC_ROLE = { 'Player A': [['a'], 'text'], 'Player B': [['b'], 'text'], 'Up': [['up'], 'pos'], 'Down': [['dn'], 'neg'],
+  'Text': [['text'], 'text'], 'Muted 1': [['sub'], 'text-soft'], 'Muted 2': [['label'], 'text-label'], 'Muted 3': [['label3'], 'text-label'],
+  'Header caps': [['caps'], 'text-label'], 'Blue': [['blue'], 'text'], 'Sharp heading': [['sharp'], 'text-label'], 'Row / tile bg': [['row'], 'card'],
+  'Row hover bg': [['rowHover'], 'text@3'], 'Pop-up bg': [['pop'], 'inner'], 'Segmented bg': [['segTrack'], 'card'] };
 // the spec's prose values (§1–§6) by role: the darker track (README §5.1), clickable tiles (--edge-7 / hover --edge-16 /
 // selected --edge-24), the STEAM badge (--selected + --edge-16, white caps), hairlines, the one scrim, the shadows, charts.
-const PROSE_ROLE = { bFill: 'bar-2', blueFill: 'selected', steamInk: 'text', segOnBg: 'inner', segOnBd: 'edge-10', segTrackBd: 'edge-6',
-  tileBd: 'edge-7', tileHoverBd: 'edge-16', tileOnBg: 'card', tileOnBd: 'edge-24', hdrBd: 'line',
-  nameRule: 'line', groupRule: 'line', rowBd: 'line', rowHoverBd: 'edge-16', popBd: 'line', panelBd: 'line',
-  closeBd: 'edge-10', closeHoverBd: 'edge-16', tabBd: 'edge-10', tabOnBg: 'inner', tabOnBd: 'edge-10', tipBd: 'line',
+// TEN-380 (the reference, measured): SHARP / SOFT caps grey, the row hover white 3% with no edge, the market tile idle on an
+// inset hairline, the pop-up sheet --edge-10, its player panels --card + --edge-6, its stat tiles --inner with no edge, the
+// ✕ on --line, the day strip rule white 14%, the header rule white 8% (nearest token --edge-7).
+const PROSE_ROLE = { aLine: 'bar', bFill: 'white-bar', blueFill: 'selected', steamInk: 'text', segOnBg: 'inner', segOnBd: 'edge-10', segTrackBd: 'edge-6',
+  soft: 'text-label', tileBd: 'line', tileHoverBd: 'edge-16', tileOnBg: 'card', tileOnBd: 'edge-24', hdrBd: 'line',
+  nameRule: 'line', headRule: 'edge-7', dayRule: 'text@14', popBd: 'edge-10', panelBd: 'edge-6',
+  closeBd: 'line', tabOnBg: 'inner', tabOnBd: 'edge-10', tipBd: 'line',
   backdrop: 'backdrop', popShadow: 'shadow-pop', tipShadow: 'shadow-menu', grid: 'viz-guide', axis: 'edge-10' };
 
 test('1: every Odds-tab colour is the var() of the foundation token its role maps to', () => {
@@ -167,10 +172,10 @@ test('1: every Odds-tab colour is the var() of the foundation token its role map
   assert.deepEqual(rows.slice().sort(), Object.keys(SPEC_ROLE).sort(), 'every spec table row has a role');
   const C = build().AODDS_C;
   for (const name of rows) for (const k of SPEC_ROLE[name][0]) {
-    assert.equal(tokenOf(C[k]), SPEC_ROLE[name][1], `${name} (${k}) = var(--${SPEC_ROLE[name][1]})`);
+    assert.equal(mixOf(C[k]), SPEC_ROLE[name][1], `${name} (${k}) = var(--${SPEC_ROLE[name][1]})`);
     if (FOUNDATION[SPEC_ROLE[name][1]]) assert.equal(resolve(C[k]), FOUNDATION[SPEC_ROLE[name][1]], `${name} resolves (Night)`);
   }
-  for (const [k, t] of Object.entries(PROSE_ROLE)) assert.equal(tokenOf(C[k]), t, `${k} = var(--${t})`);
+  for (const [k, t] of Object.entries(PROSE_ROLE)) assert.equal(mixOf(C[k]), t, `${k} = var(--${t})`);
   // every colour key is covered by a role above (widths are the spec's)
   const covered = new Set([...Object.values(SPEC_ROLE).flatMap(r => r[0]), ...Object.keys(PROSE_ROLE)]);
   assert.deepEqual(Object.keys(C).filter(k => !covered.has(k)).sort(), ['hw1', 'hw125']);
@@ -200,22 +205,27 @@ function applied(src, selector, prop) {
 }
 
 test('2: the rendered chrome reads the tokens (Night and Day): nav selected, modal box, menu, close, the Odds tab text', () => {
-  // foundation roles: the selected nav item is lift (--selected, white), idle items --text-label, hover --inner; the modal
-  // box --page with --shadow-modal over the one scrim; hairlines --line; clickable rows hover --tile-hover + --edge-16
+  // TEN-380 (measured on OFFICIAL VERSION 1): the active side tab is --inner + an inset 1px --edge-10 ring, white words +
+  // icon; idle items --text-label words with a white icon and no hover tint; the modal box --card with --shadow-modal over
+  // the one scrim; hairlines --line; both header names white; clickable rows hover --tile-hover + --edge-16
   const want = [
-    ['.modal-analysis .asidenav-item.active', 'background', 'selected'], ['.modal-analysis .asidenav-item.active', 'color', 'text'],
+    ['.modal-analysis .asidenav-item.active', 'background', 'inner'], ['.modal-analysis .asidenav-item.active', 'color', 'text'],
+    ['.modal-analysis .asidenav-item .aicon', 'color', 'text'], ['.modal-analysis .asidenav-download svg', 'color', 'bar'],
     ['.modal-analysis', 'background', 'card'], ['.modal-analysis', 'box-shadow', 'shadow-modal'], ['#analysisModal', 'background', 'backdrop'],
-    ['.modal-analysis .asidenav-item', 'color', 'text-label'], ['.modal-analysis .asidenav-item:hover', 'background', 'inner'],
+    ['.modal-analysis .asidenav-item', 'color', 'text-label'],
     ['#aSectionOdds', 'color', 'text'], ['.modal-analysis .ahead2 .close', 'color', 'text-label'], ['.modal-analysis .asidenav-download', 'border-top-color', 'line'],
-    ['.modal-analysis .asidenav-download', 'color', 'link'], ['.modal-analysis .apname', 'color', 'text'], ['.modal-analysis .apname.b', 'color', 'text-soft'],
-    ['.aox-row:not(.aox-nodata):not(.aox-on):hover', 'background', 'tile-hover'], ['.aox-row:not(.aox-nodata):not(.aox-on):hover', 'border-color', 'edge-16'],
+    ['.modal-analysis .asidenav-download', 'color', 'link'], ['.modal-analysis .apname', 'color', 'text'], ['.modal-analysis .apname.b', 'color', 'text'],
+    ['.aox-row:not(.aox-nodata):not(.aox-on):hover', 'background', 'text@3'],
   ];
-  for (const [sel, prop, t] of want) assert.equal(tokenOf(applied(HTML, sel, prop)), t, `${sel} ${prop}`);
+  for (const [sel, prop, t] of want) assert.equal(mixOf(applied(HTML, sel, prop)), t, `${sel} ${prop}`);
+  assert.equal(applied(HTML, '.aox-row:not(.aox-nodata):not(.aox-on):hover', 'border-color'), null, 'TEN-380: the row hover draws no edge');
+  assert.equal(applied(HTML, '.modal-analysis .asidenav-item.active', 'box-shadow'), 'inset 0 0 0 1px var(--edge-10)', 'the active ring');
+  assert.equal(applied(HTML, '.modal-analysis .asidenav-item:hover', 'background'), null, 'no hover tint on the rail');
   assert.equal(applied(HTML, '#analysisModal', 'backdrop-filter'), 'blur(3px)', 'the scrim blurs (U5)');
   const T = tokens('night'), D = tokens('day');
-  assert.equal(resolve(applied(HTML, '.modal-analysis .asidenav-item.active', 'background')), fmt(rgba(T.selected)));
-  assert.equal(resolve(applied(HTML, '.modal-analysis .asidenav-item.active', 'background'), 'day'), fmt(rgba(D.selected)), 'Day re-tones the selected tab');
-  assert.notEqual(fmt(rgba(D.selected)), fmt(rgba(T.selected)));
+  assert.equal(resolve(applied(HTML, '.modal-analysis .asidenav-item.active', 'background')), fmt(rgba(T.inner)));
+  assert.equal(resolve(applied(HTML, '.modal-analysis .asidenav-item.active', 'background'), 'day'), fmt(rgba(D.inner)), 'Day re-tones the selected tab');
+  assert.notEqual(fmt(rgba(D.inner)), fmt(rgba(T.inner)));
   assert.equal(resolve(applied(HTML, '.modal-analysis', 'background')), fmt(rgba(T.card)));   // OFFICIAL VERSION 1: modal box = --card
   assert.equal(resolve(applied(HTML, '.modal-analysis', 'background'), 'day'), fmt(rgba(D.card)), 'Day re-tones the modal box');
   assert.equal(resolve(applied(HTML, '#aSectionOdds', 'color'), 'day'), resolve(applied(HTML, '#aSectionOdds', 'color')), 'text does not change with the theme');
@@ -225,7 +235,7 @@ test('2: the rendered chrome reads the tokens (Night and Day): nav selected, mod
   assert.ok(!HTML.includes('<style id="design-verbatim-analysis">'), 'the verbatim block is gone');
   // mutant: the old verbatim rule re-appended after the chrome block wins the cascade again
   const m = HTML.replace('</body>', '<style>.modal-analysis .asidenav-item.active{ background:#171D2F; }</style></body>');
-  assert.notEqual(resolve(applied(m, '.modal-analysis .asidenav-item.active', 'background')), fmt(rgba(T.selected)), 'control');
+  assert.notEqual(resolve(applied(m, '.modal-analysis .asidenav-item.active', 'background')), fmt(rgba(T.inner)), 'control');
   assert.ok(modalLiterals(m).length > 0, 'mutant survived: a literal in the chrome');
 });
 

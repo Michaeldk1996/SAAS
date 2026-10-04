@@ -96,19 +96,17 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
   assert.deepEqual(S.consts.FH_H2H_LEVELS, ['ATP', 'CH', 'ITF']);  // §3b: every level, one constant
 });
 
-// ── data check 4: no dated Elo → "No number" variant, no Elo in any row ──
-test('H2H and Form rows show the opponent Elo in a visible slot after the name (ruling D-12; TEN-350, founder bbe5c072)', () => {
+// ── data check 4 (TEN-380 Q5, founder 2026-10-03): no Elo in any match row; the reason text for the tooltip ──
+test('H2H and Form rows carry no Elo (TEN-380 Q5); the Elo-at-date text keeps its reason for the Form bar tooltip', () => {
   assert.equal(S.consts.FH_ELO_AT_TIME, false);
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-08-01', tournament: 'Cincinnati', round: 'ATP Cincinnati - Final',
     surface: 'hard', result: '2 - 0', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'J. Sinner', 0);
-  assert.match(h2hRowHtml(S, r), /<span class="ma-row-elo" data-elo="" title="Elo — at the time of the match: no snapshot on record"[^>]*>—<\/span>/, 'no Elo computed for the row → a dash with its reason, never blank');
   r.oppElo = { v: 2141, asOf: '2026-07-27' };
-  const slot = /<span class="ma-row-elo" data-elo="2141" title="Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"[^>]*>2141<\/span>/;
-  assert.match(formRowHtml(S, r), slot);
-  assert.match(h2hRowHtml(S, r), slot, 'H2H: the same Elo, in the same slot');
-  assert.ok(!/class="fh-opp"[^>]*(data-elo|title="[^"]*Elo)/.test(formRowHtml(S, r) + h2hRowHtml(S, r)), 'the hover-only interim is gone from the name');
-  r.oppElo = { v: null, why: 'before the first Elo snapshot (2026-07-18)' };
-  assert.match(formRowHtml(S, r), /<span class="ma-row-elo" data-elo="" title="Elo — at the time of the match: before the first Elo snapshot \(2026-07-18\)"[^>]*>—<\/span>/, 'no value → a dash with the reason on hover, never blank');
+  assert.ok(!/ma-row-elo|data-elo|2141/.test(formRowHtml(S, r) + h2hRowHtml(S, r)), 'no Elo in either row');
+  assert.ok(!/class="fh-opp"[^>]*(data-elo|title="[^"]*Elo)/.test(formRowHtml(S, r) + h2hRowHtml(S, r)), 'nor in the name\'s hover');
+  assert.equal(S.fhEloText({ v: 2141, asOf: '2026-07-27' }), 'Elo 2141 at the time of the match (Tennis Abstract weekly snapshot of 27 Jul 2026)');
+  assert.equal(S.fhEloText({ v: null, why: 'before the first Elo snapshot (2026-07-18)' }), 'Elo — at the time of the match: before the first Elo snapshot (2026-07-18)', 'no value → a dash with the reason');
+  assert.equal(S.fhEloText(null), 'Elo — at the time of the match: no snapshot on record');
 });
 // ── Ruling D-12 (2026-09-24): overall Elo AT THE MATCH DATE, snapshot no more than 7 days old ──
 const EH = { snapshots: [
@@ -147,7 +145,9 @@ test('Opposition Elo = the mean of the badges shown; Elo change reads the same s
   const h = S.fhBuildForm(m);
   // Rows 07-20..07-29 (snapshots strictly before): 07-27..07-29 read 07-26 = 2140 (3 rows), 07-20..07-26 read 07-19 = 2100 (7 rows) → mean 2112.
   const i1 = h.indexOf('Recent matches · '), i2 = h.indexOf('Recent matches · ', i1 + 1);
-  const badges = [...h.slice(i1, i2).matchAll(/data-elo="(\d+)"/g)].map(x => +x[1]);   // Sinner's list only
+  // TEN-380 Q5: the Elo lives in the Form card's bar tooltips (player A's card first), not in the rows
+  const tips = [...h.slice(0, i1).matchAll(/class="fh-tip-elo"[^>]*>Elo (\d+|—)</g)].map(x => x[1]);
+  const badges = tips.slice(0, 10).map(Number);   // Sinner's 10 bars
   assert.equal(badges.length, 10);
   const mean = Math.round(badges.reduce((a, b) => a + b, 0) / badges.length);
   assert.equal(mean, 2112);
@@ -243,7 +243,7 @@ test('Form: partial pricing shows "N of M priced"; thin window shows no ratios',
   assert.ok(h.includes('class="fh-srcline"') && h.includes('Closing odds · Pinnacle, Bet365 where missing (Sinner 2)'), 'shared book-source line names the player and count');
   assert.ok(h.includes('4 matches with these filters'), 'thin note missing for the 4-match player');
   assert.equal((h.match(/visibility:hidden;">—<\/span>/g) || []).length, 1, 'the other column reserves the thin slot, so both form bars share a baseline');
-  assert.ok(/data-elo="" title="[^"]*Elo — at the time of the match/.test(h) && !/data-elo="\d/.test(h), 'no Elo history loaded → every row reads Elo —');
+  assert.ok(/class="fh-tip-elo" title="Elo — at the time of the match[^"]*"[^>]*>Elo —</.test(h) && !/class="fh-tip-elo"[^>]*>Elo \d/.test(h), 'no Elo history loaded → every bar tooltip reads Elo — (TEN-380 Q5)');
   // Form data open: the priced count is a sub-caption, never after the value; mirrored on both sides.
   S.fhStateFor(m).form.card = true;
   const d = S.fhBuildForm(m);
@@ -325,9 +325,10 @@ test('H2H meetings: every level, de-duplicated by eventKey, never the fixture, e
   const ms = S.fhMeetings(m);
   assert.deepEqual(ms.map(r => [String(r.ek), r.level, r.round]), [['30', 'ITF', 'R16'], ['10', 'ATP', 'F'], ['20', 'CH', 'Q']]);
   const h = S.fhBuildH2H(m);
-  // H2H pixel pass (2026-09-24): the level sits in every group header next to the surface, never on the row.
-  assert.ok(/<span title="Challenger" style="[^"]*">Hard · CH<\/span><\/div>/.test(h) && /<span title="ITF" style="[^"]*">Hard · ITF<\/span><\/div>/.test(h) && /<span title="ATP tour" style="[^"]*">Clay · ATP<\/span><\/div>/.test(h), 'level in every group header, after the surface, with its hover text');
-  assert.ok(!/class="fh-opp"[^>]*>[^<]*<\/span><span[^>]*>(CH|ITF|ATP)</.test(h), 'no level badge after the opponent name');
+  // TEN-380 (meetings grouped by year, an Event column): the level sits in every row's event tag, after the surface
+  // (ruling 2026-09-24: a record built on lower levels never reads as a tour record), never a badge glued to the name.
+  assert.ok(/<span class="ma-row-tag" style="[^"]*">Hard · CH<\/span>/.test(h) && /<span class="ma-row-tag" style="[^"]*">Hard · ITF<\/span>/.test(h) && /<span class="ma-row-tag" style="[^"]*">Clay · ATP<\/span>/.test(h), 'level in every row\'s event tag, after the surface');
+  assert.ok(!/class="fh-opp"[^>]*>[^<]*<\/span><span[^>]*>(CH|ITF|ATP)</.test(h), 'no level badge glued to the name');
   assert.ok(h.includes('0 of 3 meetings priced'));
 });
 test('a shared eventKey counts only when both rows are one match: same day, opposite results', () => {
@@ -623,14 +624,13 @@ test('H2H pixel pass: header counts today\'s book, lead line carries the level m
   assert.equal(lvl, ' · incl. 1 CH'); assert.equal(S.fhRecLevelMix([{ level: 'ATP' }]), '', 'control: ATP-only adds nothing');
   const card = S.fhH2hRecCard('Overall', [{ won: false, level: 'CH' }, { won: false, level: 'ATP' }], null, 'A. One', 'B. Two', 'One', 'Two');
   assert.match(card, /Two leads<\/span><span[^>]*>·<\/span><span[^>]*>2 meetings · incl\. 1 CH<\/span>/);
-  // Row Elo (parked on the name, TEN-331): the value, or "Elo —" with its reason, never blank.
+  // TEN-380 Q5 (founder 2026-10-03): no Elo in an H2H meeting row (README §5 grid).
   const er = { opp: 'C. Alcaraz', oppKey: null, date: '2025-11-16', round: 'F', won: true, pS: 2, oS: 0, sets: [[7, 6, 4], [6, 4, null]], mid: 'x' };
-  assert.match(h2hRowHtml(S, Object.assign({}, er, { oppElo: { v: 2205, asOf: '2025-11-10' } })), /data-elo="2205" title="[^"]*Elo 2205 at the time/);
-  assert.match(h2hRowHtml(S, Object.assign({}, er, { oppElo: { v: null, why: 'before the first Elo snapshot (2026-07-18)' } })), /data-elo="" title="[^"]*Elo — at the time of the match: before the first Elo snapshot/);
+  assert.ok(!/ma-row-elo|data-elo|2205/.test(h2hRowHtml(S, Object.assign({}, er, { oppElo: { v: 2205, asOf: '2025-11-10' } }))), 'no Elo in the row');
   // Fixed dot columns: 4 meetings sit in 9-meeting columns, right-aligned; Form keeps stretched columns.
   assert.match(html, /const cols = opts\.fixedCols \? `repeat\(\$\{Math\.max\(1, rows\.length\)\},calc\(100% \/ \$\{Math\.max\(rows\.length, opts\.fixedCols\)\}\)\)`/);
   assert.match(html, /colHead: 'year', fixedCols: 9,/);
-  assert.equal((html.match(/<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">/g) || []).length, 1, 'one wrap');
+  assert.equal((html.match(/<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:14px;">/g) || []).length, 1, 'one wrap (TEN-380: blocks 14px apart, the reference)');
   assert.ok(!/\n  (?:if \([^)]*\)\{?\s*)?return `/.test(slice('fhBuildH2H')), 'every H2H state returns through the wrap');
   assert.match(sliceBlock(), /#aSectionForm, #aSectionH2H, #fhSheet\{ line-height:normal; \}/, 'design line-height, set once, covers every H2H state');
 });
@@ -1066,7 +1066,7 @@ test('popup bars: 50% fills exactly half, whatever the opponent\'s value; rating
 test('popup bars: a dash side draws no bar, and the other side keeps its own width', () => {
   assert.equal(S.fhStatBarWidth('pct', null, 50), null);
   const html = S.fhSheetRowHtml({ label: 'Break points saved', kind: 'pct', a: { v: 50, txt: '50.0%', sub: '(2/4)', title: '' }, b: { v: null, txt: '—', sub: '', title: 'No break points faced' } });
-  const bars = [...html.matchAll(/class="fh-sbar" style="height:7px; width:([\d.]+)%/g)].map(m => +m[1]);
+  const bars = [...html.matchAll(/class="fh-sbar" style="height:6px; width:([\d.]+)%/g)].map(m => +m[1]);
   assert.deepEqual(bars, [50], 'one bar, 50% of its half — the dash never hands the opponent a full bar');
   assert.match(html, /title="No break points faced"/);
 });

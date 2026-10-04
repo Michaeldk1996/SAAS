@@ -163,16 +163,21 @@ const CHECKS = {
     assert.match(h, /class="ov-career-rec"[^>]*>—</);
     assert.match(h, /No career record on file/);
   },
-  // Mutation: the career bars / season accents take the design's surface blues or a value colour (D4: identity by name order).
-  'D4: bars and season accents carry player identity by name order, never surface or value'(src) {
+  // TEN-380 (step 3 reference, supersedes the D4 per-player bar colours): both players' surface bars are --bar on --track,
+  // 6px, never a surface or value hue; the gate greys a 5–9 bar; the season rows carry no accent bar; the surface % is 700
+  // --text (small sample grey). Mutation: the bars take a surface / value colour, or the accent bar comes back.
+  'TEN-380: both players\' surface bars --bar on --track (gate grey at 5–9), no season accent, % 700 --text'(src) {
     const V = vm(src);
     const a = V.ovColumnHtml(0, 'Z. Zulu', '1', CBY, CBY, 'all'), b = V.ovColumnHtml(1, 'Y. Yankee', '1', CBY, CBY, 'all');
     // hard: n 16 (full); clay n 8 is greyed by the gate, whoever's bar it is
-    assert.match(a, /data-ov-bar="hard" style="width:\d+%; height:100%; background:var\(--fh-pa\);/);
-    assert.match(b, /data-ov-bar="hard" style="width:\d+%; height:100%; background:var\(--fh-pb-fill\);/);
-    assert.match(a, /data-ov-bar="clay" style="width:\d+%; height:100%; background:var\(--text-label\);/);
-    assert.equal((a.match(/border-left:3px solid var\(--fh-pa\)/g) || []).length, 3);
-    assert.equal((b.match(/border-left:3px solid var\(--fh-pb-fill\)/g) || []).length, 3);
+    for (const h of [a, b]) {
+      assert.match(h, /<div style="height:6px; border-radius:3px; background:var\(--track\); overflow:hidden;"><div class="ov-bar" data-ov-bar="hard" style="width:\d+%; height:100%; background:var\(--bar\);/);
+      assert.match(h, /data-ov-bar="clay" style="width:\d+%; height:100%; background:var\(--text-label\);/);
+      assert.ok(!/border-left:3px/.test(h), 'no season accent bar');
+      assert.match(h, /class="ov-surf-v"[^>]*>11-5 · <span class="ma-rate" data-ma-gate="full" style="color:var\(--text\);font-weight:700;">69%</);
+      assert.match(h, /class="seg ov-srow ov-open"[^>]*background:var\(--card\); border:1px solid var\(--edge-6\);/);
+      assert.match(h, /margin-left:auto; color:var\(--link\); font-size:14px;">›</, 'season chevron --link');
+    }
   },
   // Mutation: the tier control is a tab-local segmented control (not maSeg's 'ov' geometry), or a review switcher is built.
   'the tier control is maSeg (ov geometry, DF L1954) inside each card; no review switcher'(src) {
@@ -220,7 +225,8 @@ const MUTANTS = [
   ['aggregate row opens', "function ovListable(r){ return !!r && (r.allTier === true || (r.allTier === false && !!r.atp)); }", "function ovListable(r){ return !!r; }"],
   ['exact ATP row closed', "function ovListable(r){ return !!r && (r.allTier === true || (r.allTier === false && !!r.atp)); }", "function ovListable(r){ return !!r && r.allTier === true; }"],
   ['career rec 0-0', "function ovRec(c){ return c && (c.won + c.lost) ? `${c.won}-${c.lost}` : '—'; }", "function ovRec(c){ return c ? `${c.won}-${c.lost}` : '0-0'; }"],
-  ['bars by surface', "  const accent = i ? OV_C.pb : OV_C.pa;", "  const accent = OV_C.chev;"],
+  ['bars by value colour', "  const accent = OV_C.bar;", "  const accent = 'var(--pos)';"],
+  ['season accent bar back', "background:${OV_C.season}; border:1px solid ${OV_C.cardLine}; border-radius:10px;", "background:${OV_C.season}; border:1px solid ${OV_C.cardLine}; border-left:3px solid ${accent}; border-radius:10px;"],
   ['own tier control', "  const seg = maSeg('ov', OV_TIERS", "  const seg = maSeg('readme', OV_TIERS"],
   ['open season row keeps ›', "${can ? (_ov.cell === cid ? '▾' : '›') : ''}", "${can ? '›' : ''}"],
 ];

@@ -39,6 +39,9 @@ const MUTANTS = [
   ['header: a missing round dropped', "  const meta = [r.tourn, r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt]", "  const meta = [r.tourn, r.surface || FH_DASHC, r.round, dateTxt]"],
   ['DoD 8: the old stat sheet back', "function maMsNotPlayedHtml(live){", "function buildMatchStatsSheet(m, setNo){ return ''; }\nfunction maMsNotPlayedHtml(live){"],
 ];
+MUTANTS.push(
+  ['Q3: bars by identity (A solid, B 45%) instead of leader / trailer', "${fill(aW, aCol, s.a)}</span>", "${fill(aW, 'var(--bar)', s.a)}</span>"],
+);
 const SUITES = ['test-ten338-match-stats.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.
 { const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { encoding: 'utf8' });

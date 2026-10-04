@@ -136,7 +136,7 @@ test('DRAW avg: active events only (both players of every match at that round); 
   // DoD 8 (TEN-314 f0db3de8): a hover text the file does not draw rides on the one tooltip component, never a native title
   assert.ok(/data-aotip="Draw average: only for events on this week/.test(off), 'the draw reason is on the shared tooltip');
   assert.ok(!/title="Draw average/.test(off), 'not a native title');
-  const drawRow = h => h.slice(h.indexOf('font-style:italic'), h.indexOf('</div>', h.indexOf('font-style:italic')));
+  const drawRow = h => h.slice(h.indexOf('>Draw</span>'), h.indexOf('</div>', h.indexOf('>Draw</span>')));
   assert.ok(!/\d/.test(text(drawRow(off)).replace(/Draw/, '')), 'no number in the draw row');
   // two R1 matches: A beat B, C beat D — the Serve rating draw avg is the mean of all four player-rounds
   const pr = (svG, aces) => ({ firstServePct: 60, firstServeWonPct: 70, secondServeWonPct: 50, svHold: { won: svG, total: 10 }, aces, dfs: 1,
@@ -172,7 +172,7 @@ test('DRAW avg of Pressure points is "—" on every round and the AVG, with the 
   const h = S.buildMatchProgressionSection(match('QF', hA, hB));
   S.setTp({});
   const card = h.slice(h.indexOf('data-pg-metric="pressure"'));            // the last card
-  const drawRow = card.slice(card.indexOf('font-style:italic'), card.indexOf('</div></div>'));
+  const drawRow = card.slice(card.indexOf('>Draw</span>'), card.indexOf('</div></div>'));
   const cells = [...drawRow.matchAll(/<span data-aotip="([^"]*)"[^>]*>([^<]*)<\/span>/g)]
     .map(x => [x[1].replace(/&#0?39;|&apos;/g, "'").replace(/&amp;/g, '&'), x[2]]);
   assert.equal(cells.length, 3, 'R1, R2 and the AVG');
@@ -239,7 +239,7 @@ test('DoD 8: every match cell opens the shared sheet; no tab-local row or toolti
   const m = match('QF', hA, [row('2026-09-24', 'R1', 'X. One', W), row('2026-09-26', 'R2', 'X. Two', W)]);
   setBox(m, 0, 0, BOX_A, BOX_B);
   const h = S.buildMatchProgressionSection(m);
-  const cells = h.split('class="seg pg-cell"').slice(1);
+  const cells = h.split('class="seg pg-cell').slice(1);
   const played = cells.filter(c => /beat /.test(c.slice(0, 400)));
   assert.equal(played.length, 4, 'four played cells');
   assert.ok(played.every(c => /^[^>]*onclick="event\.stopPropagation\(\); maOpenRowSheet\('mr\d+', this\)"/.test(c)), 'each opens the shared sheet');
@@ -257,7 +257,7 @@ test('no seeded data: an unplayed round\'s blurred placeholder carries no number
   const fut = h.split('filter:blur(3.5px)').slice(1).map(x => x.slice(0, x.indexOf('</div>')));
   assert.ok(fut.length >= 2);
   assert.ok(fut.every(f => !/\d/.test(text('<x ' + f))), 'no digits: ' + fut.map(f => text('<x ' + f)).join(' | '));
-  assert.ok(!/SAMPLE DATA|FACING/.test(h), 'no review switcher, no sample chip');
+  assert.ok(!/SAMPLE DATA|Sample data/.test(h), 'no sample chip');
 });
 
 // Mutation 'this match: dropped by surname even when both carry an event key'
@@ -289,4 +289,71 @@ test('a Slam is a 128 draw: R2 with no history is not the first round', () => {
   const P = S.pgModel(m);
   assert.equal(P.isEmpty, false);
   assert.equal(P.facing, 'R2');
+});
+
+// TEN-380 (step 3 reference, README §2 tiles): road cards are clickable tiles, THIS MATCH the raised tile, the metric
+// chips one sideways row, heat cards on --edge-6 with no name accent, the better cell white 7%, the DRAW row upright.
+test('TEN-380: road tiles, THIS MATCH --edge-24, Metrics title, chips on one row, heat-card styling', () => {
+  const hA = [row('2026-09-24', 'R1', 'A. Shevchenko', W), row('2026-09-26', 'R2', 'M. Damm', W)];
+  const m = match('QF', hA, [row('2026-09-24', 'R1', 'X. One', W), row('2026-09-26', 'R2', 'X. Two', W)]);
+  setBox(m, 0, 0, BOX_A, BOX_B);
+  const h = S.buildMatchProgressionSection(m);
+  const tiles = h.split('class="seg pg-cell pg-tile"').slice(1);
+  assert.equal(tiles.length, 4, 'every played road card is a tile');
+  assert.ok(tiles.every(c => /^[^>]*background:var\(--card\); border:1px solid var\(--edge-7\)/.test(c)), 'tile = --card + --edge-7');
+  assert.ok(/#aSectionProgression \.pg-tile:hover\{ background:var\(--tile-hover\) !important; border-color:var\(--edge-16\) !important; \}/.test(html), 'hover = --tile-hover + --edge-16');
+  const now = h.slice(h.lastIndexOf('<div', h.indexOf('THIS MATCH')));
+  assert.ok(/class="seg pg-cell"[^>]*border:1px solid var\(--edge-24\)/.test(h.slice(h.lastIndexOf('class="seg pg-cell"', h.indexOf('THIS MATCH')), h.indexOf('THIS MATCH'))), 'THIS MATCH = --edge-24');
+  assert.ok(now.length > 0);
+  assert.ok(/class="pg-met-head"[^>]*border-top:1px solid var\(--line\)/.test(h), 'Metrics section after a --line divider');
+  assert.ok(/font-size:20px; font-weight:800;[^>]*>Metrics · round by round</.test(h), 'Metrics title 20/800');
+  assert.ok(/class="pg-chips" style="[^"]*flex-wrap:nowrap; overflow-x:auto;/.test(h), 'chips on one sideways-scrolling row');
+  assert.ok(/onclick="pgMet\('dominance'\)" style="[^"]*background:var\(--inner\); border:1px solid var\(--edge-10\)/.test(h), 'chip = --inner + --edge-10');
+  assert.ok((h.match(/class="pg-card"[^>]*border:1px solid var\(--edge-6\)/g) || []).length === 9, 'heat cards --edge-6');
+  assert.ok(!/border-left:2px solid/.test(h), 'no 2px name accent');
+  assert.ok(!/font-style:italic/.test(h), 'DRAW row upright');
+  assert.ok(/class="seg pg-hcell"[^>]*background:color-mix\(in srgb, var\(--text\) 7%, transparent\)/.test(h), 'better cell = white 7%');
+  assert.ok(!/var\(--text-soft\)/.test(h), 'no --text-soft on the tab (greys are --text-label)');
+});
+
+// Founder Q7 / ruling 12 (TEN-380): the Facing row on a Darker track — only the rounds already played, each with both
+// players' opponents from their results at this event; this match's round selected; no future round, no projected
+// opponent; never "Bye" (the feed lists none). Mutations: a future round on the track; the current round not selected;
+// a bye written from inference; the row missing on a first-round match.
+test('Q7: Facing row — played rounds with their opponents, this match selected, nothing projected', () => {
+  const hA = [row('2026-09-24', 'R1', 'A. Shevchenko', W), row('2026-09-26', 'R2', 'M. Damm', W)];
+  const hB = [row('2026-09-24', 'R1', 'X. One', W), row('2026-09-26', 'R2', 'X. Two', W)];
+  const h = S.buildMatchProgressionSection(match('QF', hA, hB));
+  const f = h.slice(h.indexOf('class="pg-facing"'), h.indexOf('</div>', h.indexOf('class="pg-face-track"')) + 6);
+  assert.ok(f.length > 50 && h.indexOf('class="pg-facing"') < h.indexOf('Tournament progression'), 'the row sits above the title');
+  assert.match(f, /class="pg-face-track" style="display:flex; gap:3px; padding:3px; border-radius:9px; background:var\(--card\); border:1px solid var\(--edge-6\);/, 'Darker track');
+  const segs = [...f.matchAll(/<span class="(seg pg-face|pg-face-cur)"[^>]*style="([^"]*)">([^<]*)<\/span>/g)].map(x => [x[1], x[2], x[3]]);
+  assert.deepEqual(segs.map(x => x[2]), ['R1 · Shevchenko / One', 'R2 · Damm / Two', 'QF'], 'played rounds with opponents, then this match; no SF / F');
+  assert.equal(segs[2][0], 'pg-face-cur');
+  assert.match(segs[2][1], /font-size:12px; font-weight:700; color:var\(--text\); background:var\(--inner\); border:1px solid var\(--edge-10\);/, 'selected segment');
+  assert.match(segs[0][1], /font-size:12px; font-weight:600; color:var\(--text-label\); background:transparent; border:1px solid transparent;/, 'idle segment');
+  assert.ok(!/bye/i.test(f), 'no bye on the track');
+  // a seed with no first-round row: the cell is inferred, so the track prints a dash, never "Bye"
+  const h2 = S.buildMatchProgressionSection(match('QF', [row('2026-09-26', 'R2', 'M. Damm', W)], hB));
+  const f2 = h2.slice(h2.indexOf('class="pg-facing"'), h2.indexOf('</div>', h2.indexOf('class="pg-face-track"')));
+  assert.ok(!/bye/i.test(f2.replace(/title="[^"]*"/g, '')), 'no "Bye" written from inference');
+  // first round: the current segment alone, above the empty state
+  const h1 = S.buildMatchProgressionSection(match('R1', [], []));
+  const f1 = h1.slice(h1.indexOf('class="pg-facing"'), h1.indexOf('</div>', h1.indexOf('class="pg-face-track"')));
+  assert.deepEqual([...f1.matchAll(/<span class="(?:seg pg-face|pg-face-cur)"[^>]*>([^<]*)<\/span>/g)].map(x => x[1]), ['R1']);
+  assert.match(h1, /No progression yet/);
+});
+
+// TEN-380 review F5: a highlighted played round is the selected segment of the Facing row (this match's round goes idle and
+// clicking it clears the highlight). Mutation: pgFacingHtml ignores `hi` (the row never marks the highlighted round).
+test('F5: the highlighted round is the Facing row\'s selected segment', () => {
+  const hA = [row('2026-09-24', 'R1', 'A. Shevchenko', W), row('2026-09-26', 'R2', 'M. Damm', W)];
+  const hB = [row('2026-09-24', 'R1', 'X. One', W), row('2026-09-26', 'R2', 'X. Two', W)];
+  const m = match('QF', hA, hB);
+  S.buildMatchProgressionSection(m); S.pg.hi = 0;
+  const h = S.buildMatchProgressionSection(m);
+  const f = h.slice(h.indexOf('class="pg-facing"'), h.indexOf('</div>', h.indexOf('class="pg-face-track"')) + 6);
+  const segs = [...f.matchAll(/<span class="(seg pg-face|pg-face-cur)"[^>]*>([^<]*)<\/span>/g)].map(x => [x[1], x[2]]);
+  assert.deepEqual(segs.map(x => x[0]), ['pg-face-cur', 'seg pg-face', 'seg pg-face'], 'R1 selected, QF idle');
+  assert.match(f, /onclick="pgHi\(0\)"[^>]*>QF</, 'the idle current round clears the highlight');
 });

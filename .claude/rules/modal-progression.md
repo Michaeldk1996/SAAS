@@ -6,8 +6,8 @@ Applies to the Progression tab of the Match analysis modal (`buildMatchProgressi
 ## Build
 - **The design file wins** (`Match Analysis Progression v1.dc.html` `progressionFor`, DF L3936–4168, template L668–839),
   in the variants it renders: palette A · Uniform, road cards A · Soft ink, road C · Timeline, THIS MATCH C · Raised ink,
-  metric chips B · Soft ink, heat cards B · 3 per row. The FACING R1…F / bye row and its SAMPLE DATA chip are the file's
-  review switcher: **not built** (the facing round is the match's own `tournamentRound`).
+  metric chips B · Soft ink, heat cards B · 3 per row. The file's SAMPLE DATA chip is not built; the FACING row is built
+  as ruled below (founder Q7 / ruling 12, TEN-380); the facing round is the match's own `tournamentRound`.
 - **The tab is listed in every round.** The R1 state is the file's empty state ("No progression yet", DF L681), not a
   hidden tab. **Test:** `test-ten339-progression.mjs` (R1 empty state).
 - **DoD 8:** the tab draws no match-row list and no pop-up tooltip; its hover text is the file's native `title`. Every match
@@ -54,6 +54,24 @@ Applies to the Progression tab of the Match analysis modal (`buildMatchProgressi
   file's "Second round", Q10) has no ruling: the live wording stays.
 - **A walkover** is listed "w/o" and counted nowhere (N2): not in the W–L, not in the sets, no figures.
 - The unplayed rounds' blurred placeholders carry **no numbers** (dashes where the file prints sample values).
+
+## Display (TEN-380, step 3 reference `OFFICIAL VERSION 1.html`)
+- **Road cards are clickable tiles:** `--card` + 1px `--edge-7`, hover `--tile-hover` + `--edge-16`; the highlighted round
+  `--edge-24`. **THIS MATCH** = `--card` + `--edge-24`, its label `--text` (blue text = links only; the reference's `--link`
+  is a residual). The facing round's axis chip has a `--bar-2` edge and `--text` label; unreached rounds `--edge-6`; the axis
+  line `--viz-guide`. Opponent style, the non-favourite price and player B's name line are `--text-label`; the card rule `--line`.
+- **Metrics section:** a `--line` divider, then the 20/800 title "Metrics · round by round" with its 12.5 sub-line; the nine
+  chips on **one** sideways-scrolling row (`--inner` + `--edge-10`, 11/700, padding 6 9, gap 5).
+- **Heat cards** `--card` + `--edge-6`; the better cell white 7%, the other white 3%; no name accent; the DRAW row upright.
+- **Facing row (founder Q7 / ruling 12, TEN-380):** above the title, a Darker track (`--card` + 1px `--edge-6`, r9, pad 3,
+  gap 3; selected `--inner` + 1px `--edge-10`, 12/700 `--text`; idle 12/600 `--text-label`). It lists **only the rounds
+  already played**, each "Rn · {A's opponent} / {B's opponent}" from both players' results at this event (a click highlights
+  that round), then **this match's round as the selected segment**. No future round, no projected opponent. "Bye" is written
+  only when the draw data lists one — the feed never does (a bye is inferred), so such a round prints "—". A first-round
+  match shows the current segment alone above the empty state. **Test:** `test-ten339-progression.mjs` "Q7" (mutations: a
+  future round on the track, the current round not selected, a bye written from inference, the row missing in R1).
+- **Founder Q8:** Pressure points stays the ninth metric.
+- **Test:** `test-ten339-progression.mjs` "TEN-380" (mutation: a tile back on `--inner`, the accent bar back, chips wrapping).
 
 ## Design gaps (TEN-312 `design-gaps`)
 - G12 loading line · G13 a round with no record · G14 THIS MATCH on a live/finished match prints nothing in the file's

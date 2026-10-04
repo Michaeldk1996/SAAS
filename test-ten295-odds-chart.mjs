@@ -39,17 +39,18 @@ export function build(src = html) {
   const s = n => slice(n, src), c = n => constSrc(n, src);
   return new Function(`
     ${['AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG', 'AODDS_BOOKS',
-       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED',
+       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED', 'AODDS_SIDES',
        'ANALYSIS_P2_FILL', 'FH_AC', 'FH_MONO', 'KF_BOOK_PREF', 'KF_C', 'MA_POP'].map(c).join(' ')}
     let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
     const newsTz = () => 'Europe/Brussels';
     const buildOddsReduced = () => 'REDUCED';
     const psEsc = x => String(x);
     const _ocsOf = m => (m && m.__testOcs) || null;   // the page's card-state reader, stubbed
+    const _streamNowOver = () => null;                 // the Kibl stream, off
     ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
        'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
-       'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml', 'aOddsStatusOf',
-       'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
+       'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsMvChart', 'aOddsDayStrip', 'aOddsTipHtml', 'aOddsStatusOf',
+       'aOddsBookTip', 'aOddsCardTile', 'aOddsIni', 'buildOddsSection', 'aOddsMvHtml', 'maPopFrame', 'kfOddsBook', 'kfOddsMini', 'kfOddsMove'].map(s).join(' ')}
     // the Key factors Odds card's movement chart (TEN-341: the card's own book, its pre-match series), '' when not drawn
     const kfMoveSvg = m => { const x = kfOddsMove(m); return (x.mini && x.mini.svg) || ''; };
     return { buildOddsSection, kfMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,

@@ -47,6 +47,33 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - Pixel harness (manual): `tools/ten336-me-capture.mjs <out> --theme source` → `tools/ten312-pixel-diff.py` +
   `tools/ten336-card-diff.py` (per card) + `tools/ten330-form-structure.py` (text leaves).
 
+## TEN-380 rebuild (founder's locked reference `OFFICIAL VERSION 1.html`, 2026-10-03) — each item is a test in `test-ten336-market-edge.mjs` "TEN-380"
+- **Price sensitivity:** per player a header "today **X** · N priced" (X = the header price, N = his priced matches) on a
+  `--line` rule; columns Price · Won · needs · Won · **Edge** · 1u stake (Needs and W–L columns gone — the W–L is the band
+  pop-up's Record). One 7px bar per band: `--white-bar` fill = Won through the D2 gate, a 2px `--viz-tick` tick = Needs
+  (any n > 0; decisions §1 — no tab override re-points `--viz-tick`). Edge = (Won − Needs) in pp, 1 dp, signed colours,
+  through the same gate as Won. **Today's band (founder Q2, 2026-10-03) = a neutral `--wash-5` row wash, no ring, no blue**
+  (the open band takes the same wash); the caps word TODAY stays. **Bars (founder Q3, ruling 8):** per band the player with
+  the higher (gated) rate is solid `--white-bar`, the other `--white-bar-2` (45%); a tie or a rival with no rate leads;
+  figures and text stay white for both. Tests: "Q3" + "band rows" in `test-ten336-market-edge.mjs`.
+- **Profit at 1u flat:** lead `--white-bar` 2.4px, other `--white-bar-2` 2px (legend swatches and end dots match); Y / X
+  labels and the BREAK EVEN chip `--text-label`; dotted horizontal guides only — no vertical ticks, no loss wash, no area
+  (founder Q2). Cards keep R5: top-light, no outline (founder Q4).
+- **Card titles** caps 800 `--text-label`.
+- **Derived lines view = two cards:** first **Cover rate by price band** — a segment of five lines (Wins match · Wins set 1
+  · ∓3.5 games · Over 22.5 games · Tiebreak in match; each player's own line of that kind), per player "<line> · all
+  matches X%"; per band of his career Bo3 rows (the Derived lines population) a white bar = the covered share (D2 gate),
+  "c/n", a `--viz-tick` tick = the same line over all his Bo3 rows; today's band the neutral `--wash-5` wash (Q2); the bars split leader / trailer per band (Q3); an empty
+  band at 45% and inert; a band click opens the band pop-up (that band's priced matches). Then **Derived lines at today's
+  price**: per player "in band **X** · n=N" on a `--line` rule; "In band" head `--link`; row rule `--line`; the two most
+  covered In band cells `--wash-4`, no edge (night + day).
+- **Band pop-up:** four tiles with sub-lines — Record / "n priced", Won / "needs x%", Edge / "won − needs", At 1u flat /
+  "yield ±x%"; tiles `--card` + `--edge-6`, value Plex 16/700; TODAY'S BAND chip `--inner` + `--edge-10`, radius 6.
+- **Line pop-up:** the All / In today's band segment + "Click a match for its stats" on one row; then Matches ("all priced" /
+  "priced in band"), Covered ("n not covered"), Rate ("this line" / "all matches x%"), **Vs all** = in-band rate − all rate
+  in pp (In today's band only, else "—"; `--inner`, no edge).
+- **Both pop-ups:** sheet 1px `--edge-10`; ✕ 1px `--line`, `--text-label`.
+
 ## Default view (TEN-312 D3, founder 2026-09-28)
 - The tab opens on **Match winner** (`meView` default `winner`), not Derived lines. **Test:** a fresh modal's Market edge tab renders the Price sensitivity card first.
 
@@ -81,8 +108,8 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - **Needs = n / Σ price** (= 100 / mean closing price in the band; the flat-stake break-even), shown at any n > 0.
   Not 100 / band midpoint. `ME_NEEDS` in `market-edge-core.js`. **Test:** a band of prices 1.10, 1.30 shows
   2 / 2.40 = 83%.
-- **Thin-sample floor = 5** (`ME_THIN_FLOOR`), both tables and both pop-ups: n < 5 → Won, Yield and line % read
-  "—"; W–L and 1u stay (1u is a sum). **n 5–9 → greyed + "small sample" note** via `tourxSampleGate` (TEN-312 D2, 2026-09-28). n = 0 → not clickable, Won "—", 1u "—". **Test:** a 1–0 band prints "—".
+- **Thin-sample floor = 5** (`ME_THIN_FLOOR`), both tables and both pop-ups: n < 5 → Won, Edge, Yield and line % read
+  "—"; W–L (the pop-up Record) and 1u stay (1u is a sum). **n 5–9 → greyed + "small sample" note** via `tourxSampleGate` (TEN-312 D2, 2026-09-28). n = 0 → not clickable, Won "—", 1u "—". **Test:** a 1–0 band prints "—".
 - **Pill = "CLOSING ODDS"**, hover = Pinnacle / Bet365 split + latest match date in scope. "SAMPLE DATA" never
   renders. **Test:** `test-ten310-market-edge.mjs` finds no "sample data" in the tab or its pop-ups.
 - **Today's price = the modal header's price** (`aHeaderOdds`, best across books), not the Form/H2H

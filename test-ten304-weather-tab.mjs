@@ -449,17 +449,17 @@ test('Escape with a tooltip up is consumed by the tooltip (capture phase, stoppe
 // Mutation: a WX_C value back to a literal (text #E7E9EE), CONCERN back to the Weather red, amber leaking into WX_C,
 // the badge fill on the text token, a hairline 0.33px.
 const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--text-soft)', dim: 'var(--text-label)', faint: 'var(--text-label)', card: 'var(--card)',
-  lead: 'var(--card)', bd: 'var(--line)', box: 'var(--line)', rule: 'var(--line)', ruleFx: 'var(--line)',
-  dashBd: 'var(--edge-10)', tagBd: 'var(--edge-16)', bar: 'var(--track)', amber: 'var(--text-soft)', red: 'var(--text)',   // founder R4: CONCERN has no colour
+  lead: 'var(--card)', bd: 'var(--edge-6)', box: 'var(--line)', rule: 'var(--line)', ruleFx: 'var(--line)', inner: 'var(--inner)',
+  dashBd: 'var(--edge-10)', tagBd: 'var(--edge-10)', bar: 'var(--track)', amber: 'var(--text-soft)', red: 'var(--text)',   // founder R4: CONCERN has no colour
   amberBd: 'var(--edge-6)', redBd: 'var(--edge-6)',
   chipBd: 'var(--edge-16)', unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',
-  match: 'var(--text)', matchFill: 'var(--bar)', matchBd: 'var(--edge-24)', badgeInk: 'var(--page)' };
+  match: 'var(--text)', matchFill: 'var(--inner)', matchBd: 'var(--edge-24)', badgeInk: 'var(--text-soft)', badgeBd: 'var(--edge-16)' };
 // tokens.css Night values the roles above must resolve to
 const WX_NIGHT = { text: '#FFFFFF', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
-  bd: 'RGBA(255,255,255,0.05)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)',
-  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.16)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#FFFFFF',
+  bd: 'RGBA(255,255,255,0.06)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)', inner: '#171B28',
+  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#FFFFFF',
   amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
-  match: '#FFFFFF', matchFill: '#007AFF', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#090B12' };
+  match: '#FFFFFF', matchFill: '#171B28', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#DDE0EA', badgeBd: 'RGBA(255,255,255,0.16)' };
 test('Weather colours are foundation role tokens (no literal), resolving to the tokens.css Night values; borders 1px', () => {
   const C = build({}).WX_C, n = v => String(v).replace(/\s/g, '');
   assert.deepEqual(Object.keys(C).sort(), Object.keys(WX_ROLE).concat(['hw', 'hw1']).sort(), 'every colour is locked');
@@ -470,9 +470,11 @@ test('Weather colours are foundation role tokens (no literal), resolving to the 
   assert.equal(C.hw, '1px'); assert.equal(C.hw1, '1px');
   // amber is Model + Trading Report only (TEN-376 U3): no WX_C colour reads the amber tokens
   assert.deepEqual(Object.keys(C).filter(k => /--(viz-)?amber\b/.test(C[k])), []);
-  // the MATCH badge is a FILL (--bar, never blue text) with page-tone ink
-  const badge = attrsOf(render(file(() => ({}))), 'wx-badge')[0] || {};
-  assert.match(badge.style || '', /color:var\(--page\); background:var\(--bar\);/, 'MATCH badge = page ink on the bar fill');
+  // founder Q1 (TEN-380, README §9): the MATCH badge is NEUTRAL — --inner fill, --text-soft ink, a neutral ring; no blue
+  const h = render(file(() => ({}))), badge = attrsOf(h, 'wx-badge')[0] || {};
+  assert.match(badge.style || '', /color:var\(--text-soft\); background:var\(--inner\); box-shadow:inset 0 0 0 1px var\(--edge-16\);/, 'MATCH badge neutral');
+  assert.ok(!/var\(--bar\)|var\(--open-card\)|var\(--link\)/.test(h), 'no blue anywhere on the tab');
+  assert.ok(elements(h, 'wx-day').filter(d => /is-match/.test(d)).every(d => /border:1px solid var\(--edge-24\)/.test(d)), 'match-day edge neutral --edge-24');
 });
 
 // Mutation: a literal put back into WX_C (the engine would re-tone it; a DESIGN_ZONES entry would be needed again).
@@ -526,4 +528,33 @@ test('no STATE switcher ships, and the chip row keeps the file\'s STATE-row heig
 test('pace copy quotes the file verbatim: "Today\'s heat should make it play quicker than that." (ASCII apostrophe)', () => {
   const pace = elements(render(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {})), 'wx-tile').find(t => /data-factor="pace"/.test(t));
   assert.equal(text(elements(pace, 'wx-effect')[0]), "Base court speed is 1.17 (Fast). Today's heat should make it play quicker than that.");
+});
+
+// TEN-380 (README §9, step 3 reference): the legend row and the "Forecast updated" stamp are gone; a 6–24 h old forecast
+// keeps its ruled staleness line. Lead box = panel, its metric tiles --inner with no edge, sentence-case names 14/700,
+// unit and effect text --text-label; side tiles 13/700 sentence case; FROM TOURNAMENT tag dashed --edge-10.
+// Mutation: the legend row back, or the fresh stamp printed again.
+test('TEN-380: no legend row, no "Forecast updated" stamp (the stale line stays); lead box and tiles restyled', () => {
+  const f = file((d, h) => d === '2026-09-27' && h === 16 ? { gusts: 40, wind: 22 } : {});
+  const html = render(f);
+  assert.ok(!/Days 4\+ ahead|Forecast updated/.test(text(html)), 'no legend, no fresh stamp');
+  assert.equal(elements(html, 'wx-fresh').length, 0);
+  assert.ok(!/legend/.test(JSON.stringify(build({}).WX_COPY || {})), 'the legend copy is deleted, not hidden');
+  const stale = render(file(() => ({}), { fetchedAt: '2026-09-26T20:00:00Z' }));
+  assert.match(text(elements(stale, 'wx-fresh')[0] || ''), /^Forecast updated 8h ago · Open-Meteo$/, 'a 6–24 h old forecast keeps its staleness line');
+  const lead = elements(html, 'wx-lead')[0];
+  assert.match(lead, /class="wx-lead-name" style="font-size:14px; font-weight:700;">Wind</, 'sentence case 14/700');
+  assert.match(lead, /class="wx-unit" style="font-size:14px; color:var\(--text-label\);">km\/h gusts</);
+  const met = elements(lead, 'wx-metric');
+  assert.equal(met.length, 2);
+  assert.ok(met.every(x => /background:var\(--inner\); border:1px solid transparent;/.test(x)), 'metric tiles --inner, no edge');
+  assert.match(elements(lead, 'wx-effect')[0], /color:var\(--text-label\)/);
+  const tiles = elements(html, 'wx-tile');
+  assert.ok(tiles.every(t => /border:1px solid var\(--edge-6\)/.test(t)), 'tiles --edge-6');
+  assert.ok(tiles.every(t => /class="wx-name" style="font-size:13px; font-weight:700;/.test(t)), 'tile names 13/700, no caps');
+  assert.ok(tiles.every(t => /class="wx-effect"[^>]*color:var\(--text-label\)/.test(t)), 'effect text --text-label');
+  assert.match(html, /FROM TOURNAMENT/);
+  assert.match(html, /font-size:9\.5px;[^"]*border:1px dashed var\(--edge-10\);">FROM TOURNAMENT</);
+  assert.ok(elements(html, 'wx-day').every(d => /border:1px solid var\(--edge-(6|24)\)/.test(d)), 'day cards --edge-6 (match day keeps its edge, Q1)');
+  assert.match(html, /THRESHOLDS TBD/, 'the THRESHOLDS chip stays');
 });

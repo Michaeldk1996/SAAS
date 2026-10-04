@@ -202,7 +202,10 @@ test('colour: tokens only; both group names primary text; blue only on View all 
   for (const s of [...h.matchAll(/class="anews-gname" style="([^"]*)"/g)].map(m => decl(m[1]))) assert.equal(s.color, 'var(--text)');
   assert.equal(styleOf(h, 'seg anews-viewall').color, 'var(--link)');   // TEN-376: blue text = --link on real links only
   const css = html.slice(html.indexOf('/* News tab (TEN-333)'), html.indexOf('.modal-analysis .asection.active'));
-  assert.ok(css.includes('#aSectionNews .anews-row:hover{ border-color:var(--open-card); background:var(--tile-hover); }'), 'the file\'s .wirerow hover, foundation tokens (TEN-376)');
+  // TEN-380 (step 3 reference): open / hover row = white 2% on its --line rule; the periwinkle --open-card edge is gone
+  assert.ok(css.includes('#aSectionNews .anews-row:hover, #aSectionNews .anews-row.open{ background:color-mix(in srgb, var(--text) 2%, transparent); }'), 'open row white 2%');
+  assert.ok(css.includes('#aSectionNews .anews-row.open{ border-bottom:1px solid var(--line); }'), 'open row --line bottom');
+  assert.ok(!/open-card/.test(css), 'no --open-card on the News rows');
   assert.deepEqual(css.match(/#[0-9a-fA-F]{3,8}\b(?![\w-])(?<!#aSectionNews)/g)?.filter(x => x !== '#aSectionNews') || [], []);
 });
 
@@ -252,4 +255,15 @@ test('hover: View all and the caret hover rules beat their inline colours', () =
   const css = html.slice(html.indexOf('/* News tab (TEN-333)'), html.indexOf('.modal-analysis .asection.active'));
   assert.ok(/#aSectionNews \.anews-viewall:hover\{ color:var\(--link\) !important; \}/.test(css));
   assert.ok(/#aSectionNews \.anews-row:hover \.anews-caret\{ color:var\(--text\) !important; \}/.test(css));
+});
+
+// TEN-380 (step 3 reference): caret --text, article body --text-soft, group rule --edge-10, the pane never wider than its column.
+// Mutation: the caret back to --text-label, or the body back to --text-label.
+test('TEN-380: caret white, body --text-soft, group rule --edge-10', () => {
+  const N = ok(); N.open = 'p2:k2382-5';
+  const h = N.buildNewsSection(M);
+  assert.equal(styleOf(h, 'anews-caret').color, 'var(--text)');
+  assert.ok(/class="anews-para"/.test(h), 'the open article has body paragraphs');
+  assert.equal(styleOf(h, 'anews-para').color, 'var(--text-soft)');
+  assert.equal(styleOf(h, 'anews-grule').background, 'var(--edge-10)');
 });

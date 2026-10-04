@@ -107,7 +107,8 @@ test('N2: a walkover is listed as "w/o" and enters no count, tally or record', (
   const h = build(m);
   assert.ok(h.includes('>w/o<'), 'listed, marked w/o');
   assert.match(h, /All<span[^>]*>2<\/span>/, 'surface count: 2 played');
-  assert.ok(text(h).includes('2 meetings') && text(h).includes('2 on record · 1 w/o not counted'));
+  assert.ok(text(h).includes('2 meetings') && text(h).includes('2 on record · Sinner leads 2–0 · 1 w/o not counted'));
+  assert.match(text(h), /2024 2–0 · 2 meetings · 1 w\/o/, 'the year header counts played meetings and names the walkover');
   assert.ok(h.includes('>2 – 0<') || />2<\/span><span[^>]*> – <\/span><span[^>]*>0</.test(h), 'record 2–0');
 });
 // Mutations 'N2: an all-walkover H2H lists nothing', 'N2: a w/o-only surface greyed out'
@@ -126,7 +127,7 @@ test('price header: today\'s Bet365 price is named only where it is drawn (the r
   const m = nMeet(3, () => true);
   m._fhCloses = [{ rows: [{ date: d(0), opp: 'Alcaraz C.', won: true, P: [1.8, 2.0], B: null, oppKey: '2' }], cap: [] }, null];
   m.bet365Now = { p1: 1.7, p2: 2.1 };
-  assert.ok(build(m).includes('· Closing odds · Pinnacle<'), 'n = 1: no Today marker, so today\'s book is not named');
+  assert.ok(build(m).includes('>Closing odds · Pinnacle<'), 'n = 1: no Today marker, so today\'s book is not named');
   m._fhCloses[0].rows.push({ date: d(1), opp: 'Alcaraz C.', won: true, P: [1.9, 1.95], B: null, oppKey: '2' });
   assert.ok(build(m).includes('Pinnacle, Bet365 where missing (today)'), 'control: n = 2 draws Today, so its book is named');
 });
@@ -141,8 +142,8 @@ test('Today with no Pinnacle / Bet365 price: a dash with its reason; the section
   // TEN-376 Foundation: the modal's own --ma-s-e7e9ee ink is gone; the section's ink is the one foundation token (tokens.css).
   assert.match(block(), /#aSectionH2H\{ color:var\(--text\); \}/, 'uncoloured text takes the foundation ink token (re-themes Night / Day)');
 });
-// Mutations 'hot lines: appear under 3', 'hot lines: bar ignores the gate', 'hot lines: column dots coloured by surface'
-test('hot lines: ≥ 3 meetings to appear; a 3-of-3 bar draws no fill; neutral column-head dots', () => {
+// Mutations 'hot lines: appear under 3', 'hot lines: Rate ignores the gate', 'hot lines: column dots coloured by surface'
+test('hot lines: ≥ 3 meetings to appear; a 3-of-3 line prints no rate (D2); white column-head dot = today\'s surface', () => {
   assert.ok(text(build(nMeet(2, () => true))).includes('Not enough meetings to rank lines (n=2)'));
   const h = build(nMeet(3, () => true));
   assert.ok(h.includes('3 of 3'), 'a line appears at 3');
@@ -150,12 +151,17 @@ test('hot lines: ≥ 3 meetings to appear; a 3-of-3 bar draws no fill; neutral c
   const r = build(fixture([[d(1), true, W2], [d(2), true, W2], [d(3), true, [[6, 3], [2, 1]], { ret: true }]]), { allLines: true });
   assert.ok(!/ of 2</.test(r) && !r.includes('Over 22.5 games'), 'a line on 2 eligible meetings is not shown');
   assert.ok(r.includes('wins set 1'), 'control: set-1 lines (3 eligible) show');
-  assert.match(h, /data-ma-gate="nopct" style="height:5px;[^"]*"><span style="width:0%; background:transparent;/, 'n = 3: no %, no fill');
-  assert.ok(/data-ma-gate="full"/.test(build(nMeet(10, () => true))), 'control: n = 10 fills');
-  const head = h.slice(h.indexOf('>LINE<'), h.indexOf('>HANDICAP<') > 0 ? h.indexOf('>HANDICAP<') : h.indexOf('fh-h2wrap') + 99999);
-  // TEN-376 Foundation: match-analysis-tokens.css (which re-pointed --court-* to --ma-t1 inside the modal) is deleted;
-  // the builder's surface map itself is now the neutral --text-soft for every surface ("surfaces neutral").
-  assert.ok(/border-radius:50%; background:var\(--text-soft\);/.test(head), 'column dot = the neutral surface token');
+  // TEN-380 (README §5–6): a Rate column on the D2 gate replaces the gate bar — n 3 prints a grey dash, never a %
+  assert.match(h, /class="fh-hl-rate" data-ma-gate="nopct"[^>]*color:var\(--text-label\);">—</, 'n = 3: no %');
+  assert.ok(!/ 100%</.test(h) && !/style="height:5px; background:var\(--inner\)/.test(h), 'no % and no gate bar');
+  assert.match(build(nMeet(10, () => true)), /class="fh-hl-rate"[^>]*><span class="ma-rate" data-ma-gate="full"[^>]*color:var\(--text\);[^>]*>100%</, 'control: n = 10 prints the rate');
+  const head = h.slice(h.indexOf('>Line<'), h.indexOf('>Handicap<') > 0 ? h.indexOf('>Handicap<') : h.indexOf('fh-h2wrap') + 99999);
+  // the head dot: white for a meeting on today's surface (the fixture is hard), white 22% otherwise — never a court colour
+  const dots = [...head.matchAll(/class="fh-hl-sdot" style="[^"]*background:([^;]*);/g)].map(x => x[1]);
+  assert.ok(dots.length === 3 && dots.every(c => c === 'var(--text)'), 'today\'s-surface meetings: a white head dot');
+  const mix = build(fixture([[d(1), true, W2], [d(2), true, W2, { s: 'clay' }], [d(3), true, W2]]));
+  const md = [...mix.matchAll(/class="fh-hl-sdot" style="[^"]*background:([^;]*);/g)].map(x => x[1]);
+  assert.deepEqual(md.slice().sort(), ['color-mix(in srgb, var(--text) 22%, transparent)', 'var(--text)', 'var(--text)'], 'another surface: white 22%');
   const FH_SURF = /\nconst FH_SURF = (\{[^\n]*\});/.exec(html);
   assert.ok(FH_SURF, 'FH_SURF found');
   assert.equal(FH_SURF[1], "{ Hard: 'var(--text-soft)', Clay: 'var(--text-soft)', Grass: 'var(--text-soft)' }", 'every surface neutral (never clay amber)');
@@ -176,16 +182,20 @@ test('price range: book actually used, n = 1 / 2 carry their count, the pop-up i
   assert.ok(three.includes('Retirements settled on the official ATP result.'), 'TEN-325 note on the price range');
 });
 // Mutations 'DoD 8: an H2H-local row renderer again', 'rows: group meta loses the level', 'rows: a row stops opening the sheet'
-test('DoD 8: meetings are the shared helper\'s rows, one group per meeting, each opening the sheet', () => {
+test('DoD 8: meetings are the shared helper\'s rows, grouped by year with an Event column, each opening the sheet', () => {
   assert.ok(!/function fhH2hRowHtml\(|function fhStickyHeadHtml\(|function fhWlChip\(/.test(html), 'no H2H row renderer left in the page');
   const m = fixture([[d(1), true, W2], [d(2), true, W2, { s: 'clay' }], [d(3), false, [[6, 7, 4], [2, 1]], { ret: true }]]);
   const h = build(m);
   const list = h.slice(h.indexOf('id="fhH2hList"'));
   assert.equal((list.match(/<div class="ma-rows"/g) || []).length, 1);
   assert.equal((list.match(/class="seg ma-row fh-h2row"/g) || []).length, 3);
-  assert.equal((list.match(/class="ma-rows-group"/g) || []).length, 3, 'a group per meeting, as the file');
+  assert.equal((list.match(/class="ma-rows-group"/g) || []).length, 1, 'TEN-380: one group per YEAR (all three in 2024)');
+  assert.match(text(list), /2024 2–1 · 3 meetings/, 'the year header: W–L · count');
   assert.equal((list.match(/onclick="fhOpenSheet\('h2h_/g) || []).length, 3, 'every row opens the shared sheet');
-  assert.match(list, /<span title="ATP tour" style="[^"]*">Clay · ATP<\/span>/);
+  assert.ok(list.includes('>Event<'), 'the Event column');
+  // the level is never dropped (ruling 2026-09-24): it sits in every row's event tag, after the surface
+  assert.match(list, /<span class="ma-row-tag" style="[^"]*">Clay · ATP<\/span>/);   // TEN-380 review F2: no Elo word in the tag (Q5)
+  assert.match(list, /grid-template-columns:48px 12px minmax\(0,1\.4fr\) 36px 40px minmax\(0,1\.3fr\) 46px 46px; gap:0 10px;/, 'the reference\'s Meetings grid');
   assert.ok(list.includes('>6-7(4), 2-1 ret.<'), 'tiebreak points and " ret." (N2)');
   assert.ok(list.includes('>Home<') && list.includes('>Away<'));
   assert.equal(S.fhH2hSetScores({ sets: [[7, 6, 4], [6, 4, null]], ret: false }), '7-6(4), 6-4');
@@ -223,3 +233,41 @@ test('Q4: no meeting reads "have no meeting on record" with the searched scope �
   assert.ok(!/have not played/.test(t));
 });
 
+
+// TEN-380 (README §6 + the measured reference, decisions §1): section titles outside the cards; the tug white (player A
+// --white-bar on the leader's side (ruling 8), --line track, --viz-tick tick); stat tiles title left + "Breakdown ▾" (--text) right, the
+// open tile --card + --edge-24, its drawer a panel (--card + --edge-6) with no blue outline; the surface track's selected
+// segment --inner + --edge-10. Mutations: tug back on the player colours / --inner track, Breakdown back to --link, the
+// drawer back on --open-card, the selected segment back on --selected + --open-card, a title back inside its card.
+test('TEN-380: section titles outside the cards, white tug, Breakdown header + panels, Darker surface track', () => {
+  const m = fixture([[d(1), true, W2], [d(2), false, L2], [d(3), true, [[6, 4], [3, 6], [6, 2]]]]);
+  const h = build(m);
+  for (const t of ['Head to head', 'Price range', 'Hot lines', 'Meetings']) {
+    const at = h.indexOf(`letter-spacing:-0.01em; color:var(--text);">${t}<`);
+    assert.ok(at > 0, t + ' is a 20/800 section title');
+    assert.ok(h.lastIndexOf('class="fh-h2sec"', at) > h.lastIndexOf('border-radius:16px', at), t + ' sits outside (before) its card');
+  }
+  const tug = /<div class="fh-tug"[\s\S]*?<\/div>/.exec(h)[0];
+  assert.match(tug, /height:8px; background:var\(--line\);/);
+  assert.match(tug, /right:50%;[^"]*background:var\(--white-bar\);/);
+  // founder ruling 8: the tug fills only the leader's side → solid --white-bar on either side (no 70% / 45% on a lead)
+  assert.match(tug, /left:50%; top:0;[^"]*background:var\(--white-bar\);/);
+  assert.match(tug, /width:1\.5px;[^"]*background:var\(--viz-tick\);/);
+  assert.ok(!/var\(--fh-p[ab]\)/.test(cardOf(h)), 'no player colour on the record card');
+  assert.match(h, /<span class="fh-h2bd" style="[^"]*color:var\(--text\);[^"]*">Breakdown ▾<\/span>/);
+  const open = build(m, { stat: 'sets' });
+  assert.match(open, /data-stat="sets"[^>]*style="background:var\(--card\); border:1px solid var\(--edge-24\);/);
+  assert.match(open, /class="fh-h2drawer" style="background:var\(--card\); border:1px solid var\(--edge-6\);/);
+  assert.ok(!/open-card|var\(--link\);[^"]*">(Breakdown|Show all lines)/.test(open), 'no blue outline, no blue toggle');
+  assert.match(h, /class="fh-track" style="[^"]*background:var\(--card\); border:1px solid var\(--edge-6\);/);
+  assert.match(h, /font-weight:700; color:var\(--text\); background:var\(--inner\); border:1px solid var\(--edge-10\);[^>]*>All</);
+});
+// TEN-380: a single meeting keeps the full layout with its n=1 chips; 0 meetings = the empty-state card on panel edges.
+test('TEN-380: the 1-meeting and 0-meeting states', () => {
+  const one = build(nMeet(1, () => true));
+  assert.ok(text(one).includes('Small sample · n=1') && text(one).includes('Not enough meetings to rank lines (n=1)'));
+  assert.match(text(one), /Meetings .* 1 on record · Sinner leads 1–0/);
+  const zero = build(fixture([]));
+  assert.match(zero, /border:1px solid var\(--edge-6\); border-radius:16px;/);
+  assert.ok(!/border:1px solid var\(--line\); border-radius:12px/.test(zero), 'the two style tiles on --edge-6');
+});
