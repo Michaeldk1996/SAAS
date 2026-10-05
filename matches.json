@@ -114442,11 +114442,27 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2406_t-daniel.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1880_s-mochizuki.jpg",
     "oddsMovement": {
@@ -115119,7 +115135,10 @@
         "seenAt": "2026-10-04T12:44:35.718Z",
         "since": "2026-10-04T12:22:11.992Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12168150",
@@ -117385,11 +117404,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 7
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3696_l-draxl.jpg",
     "oddsMovement": {
@@ -118266,7 +118296,10 @@
         "seenAt": "2026-10-04T12:44:35.718Z",
         "since": "2026-10-04T12:22:11.992Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12168151",
@@ -120482,11 +120515,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "40 - A",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/37936_a-ilagan.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "oddsMovement": {
@@ -121238,7 +121271,10 @@
         "seenAt": "2026-10-04T12:44:35.718Z",
         "since": "2026-10-04T12:22:11.992Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12168152",
@@ -124222,7 +124258,27 @@
         "seenAt": "2026-10-04T12:44:35.718Z",
         "since": "2026-10-04T12:22:11.992Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-3, 6-0",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 0
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12168153",
@@ -126315,11 +126371,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "40 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/798_a-dougaz.jpg",
     "oddsMovement": {
@@ -126956,7 +127012,10 @@
         "seenAt": "2026-10-04T12:44:35.718Z",
         "since": "2026-10-04T12:22:11.992Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12168155",
@@ -134582,11 +134641,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/389_c-h-tseng.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
     "oddsMovement": {
@@ -135475,7 +135540,10 @@
         "seenAt": "2026-10-04T12:44:35.718Z",
         "since": "2026-10-04T12:22:11.992Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12168159",
