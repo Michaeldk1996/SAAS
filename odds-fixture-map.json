@@ -3654,7 +3654,7 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 21.3,
+      "measuredRunsPerDay": 21.2,
       "missResolutionHoursMax": 156.78,
       "missResolutionHoursP50": 19.75,
       "missResolutionsMeasured": 162,
@@ -3668,17 +3668,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-16T15:00:13Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 2
-      },
       {
         "at": "2026-09-16T16:00:13Z",
         "fixturesUnitsSpent": 0,
@@ -8065,6 +8054,17 @@
         "openMisses": 20,
         "stale": 20,
         "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 44
+      },
+      {
+        "at": "2026-10-05T11:47:32Z",
+        "fixturesUnitsSpent": 0,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 0,
+        "ttlBit": false,
         "unmapped": 0,
         "upcoming": 44
       }
