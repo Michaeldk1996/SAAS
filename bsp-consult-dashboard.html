@@ -26189,7 +26189,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
   // every name was redundant noise. Ranking + the leader-highlight carry identity here.
   const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
-    const raw = entries.map(e => ({ name: e.name, last: e.last, val: e.values[m.key] })).filter(r => r.val != null);
+    const raw = entries.map(e => ({ name: e.name, last: e.last, won: e.won, val: e.values[m.key] })).filter(r => r.val != null);
     raw.sort((a, b) => lowerBetter ? a.val - b.val : b.val - a.val);
     const vals = raw.map(e => e.val);
     // Dashed reference line: the field average across all players in this round
@@ -26207,6 +26207,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
       const best = i === 0;
       return `<div style="display:grid;grid-template-columns:118px 1fr 46px;align-items:center;gap:10px;">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;white-space:nowrap;overflow:hidden;">
+          ${e.won == null ? '' : `<span style="margin-right:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:${e.won ? 'var(--pos)' : 'var(--neg)'};">${e.won ? 'W' : 'L'}</span>`}
           <span style="font-weight:${best ? 700 : 600};color:var(--text);overflow:hidden;text-overflow:ellipsis;">${e.last}</span>
           ${tourxRatingSpan(e.name, 11)}
         </div>
@@ -26232,9 +26233,9 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
   const cols = shownMetrics.length === 1 ? '1fr' : 'repeat(2,1fr)';
   return `<div class="tourx-chartgrid" style="display:grid;grid-template-columns:${cols};gap:14px;">${grid}</div>`;
 }
-// Round view. "All rounds" plots the selected player(s) across every round they
-// played (line / head-to-head charts); a specific round shows that round's
-// winners as ranked bars (identified from the draw structure; F = champion).
+// Round view. "All rounds" shows the latest played round; a specific round shows
+// everyone who played that round as ranked bars, each row carrying a W/L outcome
+// letter (TEN-386; identified from the draw structure).
 function tourxRoundViewHtml(T){
   const rounds = T.rounds;
   const selIdx = tourxState.roundIdx;
@@ -26261,10 +26262,8 @@ function tourxRoundViewHtml(T){
   let frontierIdx = -1;
   for (let i = 0; i < rounds.length; i++) if (T.players.some(p => hasBox(p, i))) frontierIdx = i;
 
-  // Renders the per-round box-score comparison grid for one round. A round whose
-  // NEXT round has already been played shows just the winners (players who
-  // advanced); the current frontier round shows everyone who played it, since a
-  // winner can't be inferred until the following round produces box scores.
+  // Renders the per-round box-score comparison grid for one round: every player
+  // with a box score in that round, winners and losers alike (TEN-386).
   const renderRound = (rIdx) => {
     const roundLabel = tourxActiveLabels[rIdx] || rounds[rIdx] || `Round ${rIdx + 1}`;
     // Round hasn't been played yet — nothing exists beyond the frontier round, so
@@ -26275,17 +26274,16 @@ function tourxRoundViewHtml(T){
       return filterBar + dnaCard(`<b style="color:var(--text-soft);">${roundLabel}</b> hasn't been played yet at ${T.name} — those matches haven't taken place, so there's no box-score data to show.${latest ? ` The latest completed round is <b style="color:var(--text-soft);">${latest}</b>.` : ''}`);
     }
     const lastIdx = tourxActiveLabels.length - 1;
-    // A player is shown in a round iff they WON that round — independent of
-    // whether the next round has started. "Won round i" = they have a box score
+    // TEN-386 (founder, 2026-10-05): a round shows EVERY player who played it, not
+    // just its winners — the QF losers belong in the QF comparison. The outcome is
+    // carried by a W/L letter on the row (identity vs outcome stay separate: the
+    // name is never dimmed for losing). "Won round i" = they have a box score
     // there AND either they went on to a later round (they advanced) OR that
     // round is their latest and they're not eliminated (they won their most
-    // recent match). So Collignon appears in R2 the moment his R2 finishes, even
-    // while the rest of R2 is still being played, and Altmaier is never shown in
-    // the R2 he lost. (resultDisplay can't tell who won — it's oriented to the
+    // recent match). (resultDisplay can't tell who won — it's oriented to the
     // fixture's first player — so the eliminated flag from event_winner is used.)
     const wonRound = (p, i) => hasBox(p, i) && (hasBox(p, i + 1) || !p.eliminated);
-    let players = T.players.filter(p => wonRound(p, rIdx));
-    const advancersOnly = true;
+    let players = T.players.filter(p => hasBox(p, rIdx));
     // Final: if the champion's final box score isn't ingested yet, cross-reference
     // the champion from tournament profiles so the Final still resolves to a row.
     if (rIdx === lastIdx && rounds.length >= tourxActiveLabels.length && !players.length){
@@ -26297,13 +26295,13 @@ function tourxRoundViewHtml(T){
     let entries = players.map(w => {
       const values = {};
       TOURX_METRICS.forEach(m => { values[m.key] = w.data[m.key][rIdx]; });
-      return { name: w.name, last: w.name.split(' ').slice(-1)[0], values };
+      return { name: w.name, last: w.name.split(' ').slice(-1)[0], won: wonRound(w, rIdx), values };
     });
     const nAll = entries.length;
     if (selNames.length) entries = entries.filter(e => selNames.includes(e.name));
     if (!entries.length){
       return filterBar + dnaCard(nAll
-        ? `None of the selected players are among the ${nAll} ${roundLabel} ${advancersOnly ? 'winner' : 'player'}${nAll === 1 ? '' : 's'}. Clear the player filter or pick a different round.`
+        ? `None of the selected players are among the ${nAll} ${roundLabel} player${nAll === 1 ? '' : 's'}. Clear the player filter or pick a different round.`
         : `No ${roundLabel} box scores have been ingested for ${T.name} yet.`);
     }
     // Dashed line = field average across ALL players who played this round
@@ -26313,19 +26311,16 @@ function tourxRoundViewHtml(T){
       const arr = T.field && T.field.metrics && T.field.metrics[m.key];
       roundAvgByKey[m.key] = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
     });
-    // Denominator = players who actually reached (played) this round in the data,
-    // not a theoretical 2^k. Byes and non-power-of-two draws (a 96-draw Masters)
-    // break the power-of-two assumption — that is how "15 of 8 reached QF" arose.
-    // Counting the real field keeps the numerator a genuine subset of it. The view
-    // shows the round's advancers, so the rest lost here or lack an ingested box.
-    const totW = T.players.filter(p => hasBox(p, rIdx)).length || nAll;
+    // Count = players who actually played this round in the data (a box score),
+    // not a theoretical 2^k — byes and non-power-of-two draws (a 96-draw Masters)
+    // break that assumption, which is how "15 of 8 reached QF" once arose.
     const titleLabel = `${roundLabel} · players ranked by metric`;
-    const baseNote = `${nAll} of ${totW} player${totW === 1 ? '' : 's'} who reached ${roundLabel} shown${nAll < totW ? ' — the rest lost this round or have no ingested box score.' : '.'}`;
-    const note = selNames.length ? `Filtered to ${entries.length} of ${nAll} winners — ${baseNote}` : baseNote;
+    const baseNote = `${nAll} player${nAll === 1 ? '' : 's'} with a box score in ${roundLabel} — W won the round, L lost it.`;
+    const note = selNames.length ? `Filtered to ${entries.length} of ${nAll} — ${baseNote}` : baseNote;
     return barBlock(titleLabel, note, entries, roundAvgByKey);
   };
 
-  // Round comparison is bar-only by design: it ranks each round's winners on
+  // Round comparison is bar-only by design: it ranks each round's players on
   // their box-score metrics. For a player's round-by-round TREND (line charts),
   // use the Player progression view — that's the deliberate split. "All rounds"
   // here means "the latest played round" (pick any specific round from the chips
