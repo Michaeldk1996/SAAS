@@ -3659,7 +3659,7 @@
       "missResolutionHoursP50": 19.75,
       "missResolutionsMeasured": 162,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.89,
+      "observedSpanDays": 18.87,
       "projectedTtlUnitsPerDay": 5.4,
       "runs": 400,
       "spentRuns": 233,
@@ -3668,17 +3668,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-17T00:00:13Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 2
-      },
       {
         "at": "2026-09-17T01:30:14Z",
         "fixturesUnitsSpent": 0,
@@ -8059,6 +8048,17 @@
       },
       {
         "at": "2026-10-05T21:17:29Z",
+        "fixturesUnitsSpent": 0,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 0,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 24
+      },
+      {
+        "at": "2026-10-05T22:17:24Z",
         "fixturesUnitsSpent": 0,
         "hitExpired": 0,
         "missExpired": 0,
