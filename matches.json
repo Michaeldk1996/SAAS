@@ -3132,7 +3132,27 @@
         "seenAt": "2026-10-05T09:43:11.904Z",
         "since": "2026-10-04T18:03:02.085Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-2",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12168226",
@@ -7109,13 +7129,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.72,
+      "p2": 2.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.78,
+        "bookmaker": "Pncl"
+      },
+      "p2": {
+        "price": 2.09,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "p1Key": 3145,
@@ -10439,13 +10465,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.18,
+      "p2": 4.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.21,
+        "bookmaker": "Pncl"
+      },
+      "p2": {
+        "price": 4.67,
+        "bookmaker": "Pncl"
+      }
     },
     "tournamentRound": null,
     "p1Key": 9515,
@@ -12747,13 +12779,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.22,
+      "p2": 4.33,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.27,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 4.33,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 358,
@@ -15704,13 +15742,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.75,
+      "p2": 2.07,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.75,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 2.2,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 8174,
@@ -18339,13 +18383,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.57,
+      "p2": 2.4,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.57,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 2.48,
+        "bookmaker": "Marathon"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 9210,
@@ -20963,13 +21013,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.0,
+      "p2": 1.8,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.0,
+        "bookmaker": "bet365"
+      },
+      "p2": {
+        "price": 1.9,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1766,
@@ -23898,13 +23954,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.27,
+      "p2": 1.65,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.27,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 1.65,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1764,
@@ -26741,13 +26803,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.35,
+      "p2": 3.25,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.36,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 3.4,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2841,
@@ -30138,13 +30206,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 3.1,
+      "p2": 1.37,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 3.25,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.37,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1083,
@@ -32857,13 +32931,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.85,
+      "p2": 1.44,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.85,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 1.44,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2978,
@@ -35698,13 +35778,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.85,
+      "p2": 1.98,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.85,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 2.0,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 39864,
@@ -38135,13 +38221,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.82,
+      "p2": 2.0,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.82,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 2.04,
+        "bookmaker": "Marathon"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 10148,
@@ -40617,13 +40709,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.57,
+      "p2": 2.37,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.62,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 2.37,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2083,
@@ -43221,13 +43319,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.07,
+      "p2": 1.75,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.1,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.79,
+        "bookmaker": "Marathon"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 949,
@@ -46036,13 +46140,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.1,
+      "p2": 1.75,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.11,
+        "bookmaker": "Marathon"
+      },
+      "p2": {
+        "price": 1.75,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1103,
@@ -48903,13 +49013,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.4,
+      "p2": 2.95,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.4,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 3.02,
+        "bookmaker": "Marathon"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 437,
@@ -51102,13 +51218,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.57,
+      "p2": 1.52,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.63,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.54,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 9608,
@@ -53559,13 +53681,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.72,
+      "p2": 2.12,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.73,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 2.2,
+        "bookmaker": "BetVictor"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 366,
@@ -55865,13 +55993,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.75,
+      "p2": 2.07,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.75,
+        "bookmaker": "Marathon"
+      },
+      "p2": {
+        "price": 2.1,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 9217,
@@ -58236,13 +58370,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.57,
+      "p2": 1.52,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.63,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.54,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1066,
@@ -61214,13 +61354,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.0,
+      "p2": 1.83,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.1,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.83,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2972,
@@ -63514,13 +63660,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.87,
+      "p2": 1.42,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.92,
+        "bookmaker": "Marathon"
+      },
+      "p2": {
+        "price": 1.42,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 590,
@@ -73352,7 +73504,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(2), 2-6",
+      "display": "6-4, 6-7, 2-6",
       "sets": [
         {
           "p1": 6,
@@ -96666,7 +96818,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-7(5), 6-2",
+      "display": "7-6, 6-7, 6-2",
       "sets": [
         {
           "p1": 7,
@@ -101322,7 +101474,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6(5), 7-5",
+      "display": "3-6, 7-6, 7-5",
       "sets": [
         {
           "p1": 3,
@@ -142804,7 +142956,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(2), 6-2",
+      "display": "7-6, 6-2",
       "sets": [
         {
           "p1": 7,
@@ -163999,7 +164151,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(4), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
