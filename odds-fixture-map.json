@@ -3368,11 +3368,11 @@
     },
     "12168186": {
       "fixtureId": "id1200303175051246",
-      "mappedAt": "2026-10-04T12:53:21Z",
+      "mappedAt": "2026-10-06T01:32:28Z",
       "orient": "same",
       "p1": "J. Lehecka",
       "p2": "V. Vacherot",
-      "startTime": "2026-10-05T09:00:00.000Z",
+      "startTime": "2026-10-05T10:05:00.000Z",
       "tournamentId": 3031
     },
     "12168226": {
@@ -3662,23 +3662,12 @@
       "observedSpanDays": 18.83,
       "projectedTtlUnitsPerDay": 5.4,
       "runs": 400,
-      "spentRuns": 233,
+      "spentRuns": 234,
       "ttlBitRuns": 102,
       "ttlBitShare": 0.255,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-17T04:30:14Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 2
-      },
       {
         "at": "2026-09-17T05:30:13Z",
         "fixturesUnitsSpent": 0,
@@ -8067,9 +8056,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 24
+      },
+      {
+        "at": "2026-10-06T01:32:28Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 24
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-05T10:45:46Z"
+  "updatedAt": "2026-10-06T01:32:28Z"
 }
