@@ -1,7 +1,7 @@
 {
  "_meta": {
   "task": "TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles",
-  "generatedAt": "2026-10-06T13:35:06.806Z",
+  "generatedAt": "2026-10-06T22:48:04.998Z",
   "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-10-06 — NO Sackmann/TML",
   "scopes": {
    "last52": "matches within 364d of player's most-recent match (last52From..latestMatch)",
@@ -17,7 +17,7 @@
   },
   "roster": {
    "source": "deployed",
-   "fetchedAt": "2026-10-06T13:27:12.883Z",
+   "fetchedAt": "2026-10-06T19:23:44.328Z",
    "players": 479
   },
   "rosterSize": 479,
@@ -6678,7 +6678,7 @@
    "playerMatchesWithoutSurface": 598,
    "distinctPlayersInCorpus": 736
   },
-  "wallClockMs": 44298
+  "wallClockMs": 51720
  },
  "players": [
   {
