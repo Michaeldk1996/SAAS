@@ -3132,27 +3132,7 @@
         "seenAt": "2026-10-05T09:43:11.904Z",
         "since": "2026-10-04T18:03:02.085Z"
       }
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-4, 6-2",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 4
-        },
-        {
-          "p1": 6,
-          "p2": 2
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12168226",
@@ -7129,19 +7109,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.72,
-      "p2": 2.0,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.78,
-        "bookmaker": "Pncl"
-      },
-      "p2": {
-        "price": 2.09,
-        "bookmaker": "Pncl"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "p1Key": 3145,
@@ -10222,6 +10196,10 @@
               [
                 "2026-10-06T01:07:09.781Z",
                 1.746
+              ],
+              [
+                "2026-10-06T02:12:07.045Z",
+                1.758
               ]
             ],
             "p2": [
@@ -10356,6 +10334,10 @@
               [
                 "2026-10-05T21:16:25.938Z",
                 2.12
+              ],
+              [
+                "2026-10-06T02:12:07.029Z",
+                2.11
               ]
             ]
           }
@@ -10365,19 +10347,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -10465,19 +10447,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.18,
-      "p2": 4.5,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.21,
-        "bookmaker": "Pncl"
-      },
-      "p2": {
-        "price": 4.67,
-        "bookmaker": "Pncl"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "p1Key": 9515,
@@ -12362,6 +12338,10 @@
               [
                 "2026-10-05T22:08:04.553Z",
                 1.23
+              ],
+              [
+                "2026-10-06T02:04:36.125Z",
+                1.24
               ]
             ],
             "p2": [
@@ -12584,6 +12564,14 @@
               [
                 "2026-10-06T01:17:51.289Z",
                 1.201
+              ],
+              [
+                "2026-10-06T02:07:06.583Z",
+                1.202
+              ],
+              [
+                "2026-10-06T02:14:24.456Z",
+                1.201
               ]
             ],
             "p2": [
@@ -12679,13 +12667,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -12779,19 +12767,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.22,
-      "p2": 4.33,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.27,
-        "bookmaker": "1xBet"
-      },
-      "p2": {
-        "price": 4.33,
-        "bookmaker": "bet365"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 358,
@@ -15648,6 +15630,22 @@
               [
                 "2026-10-06T02:00:51.077Z",
                 3.55
+              ],
+              [
+                "2026-10-06T02:03:51.081Z",
+                2.96
+              ],
+              [
+                "2026-10-06T02:04:56.174Z",
+                3.4
+              ],
+              [
+                "2026-10-06T02:10:26.129Z",
+                3.5
+              ],
+              [
+                "2026-10-06T02:15:21.262Z",
+                3.0
               ]
             ]
           }
@@ -15657,19 +15655,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -15758,19 +15756,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.75,
-      "p2": 2.07,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.75,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.2,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 8174,
@@ -18298,19 +18290,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -18399,19 +18391,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.57,
-      "p2": 2.4,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.57,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 2.48,
-        "bookmaker": "Marathon"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 9210,
@@ -20928,19 +20914,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -21029,19 +21015,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.0,
-      "p2": 1.8,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.0,
-        "bookmaker": "bet365"
-      },
-      "p2": {
-        "price": 1.9,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1766,
@@ -23864,6 +23844,18 @@
               [
                 "2026-10-06T01:55:51.062Z",
                 1.73
+              ],
+              [
+                "2026-10-06T02:05:01.173Z",
+                1.74
+              ],
+              [
+                "2026-10-06T02:06:01.694Z",
+                1.75
+              ],
+              [
+                "2026-10-06T02:11:56.223Z",
+                1.76
               ]
             ]
           }
@@ -23873,19 +23865,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -23974,19 +23966,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.27,
-      "p2": 1.65,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.27,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 1.65,
-        "bookmaker": "1xBet"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1764,
@@ -26722,19 +26708,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -26823,19 +26809,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.35,
-      "p2": 3.25,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.36,
-        "bookmaker": "1xBet"
-      },
-      "p2": {
-        "price": 3.4,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2841,
@@ -29674,6 +29654,18 @@
               [
                 "2026-10-06T01:53:41.019Z",
                 1.35
+              ],
+              [
+                "2026-10-06T02:05:01.173Z",
+                1.31
+              ],
+              [
+                "2026-10-06T02:09:11.190Z",
+                1.33
+              ],
+              [
+                "2026-10-06T02:14:21.206Z",
+                1.34
               ]
             ],
             "p2": [
@@ -30120,6 +30112,10 @@
               [
                 "2026-10-06T00:41:30.719Z",
                 2.84
+              ],
+              [
+                "2026-10-06T02:05:01.173Z",
+                2.92
               ]
             ]
           }
@@ -30129,19 +30125,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -30230,19 +30226,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.1,
-      "p2": 1.37,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 3.25,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.37,
-        "bookmaker": "Betano"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1083,
@@ -32854,19 +32844,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -32955,19 +32945,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.85,
-      "p2": 1.44,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.85,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 1.44,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2978,
@@ -35701,19 +35685,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -35802,19 +35786,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.85,
-      "p2": 1.98,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.85,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.0,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 39864,
@@ -38144,19 +38122,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -38245,19 +38223,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.82,
-      "p2": 2.0,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.82,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.04,
-        "bookmaker": "Marathon"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 10148,
@@ -40632,19 +40604,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -40733,19 +40705,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.57,
-      "p2": 2.37,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.62,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 2.37,
-        "bookmaker": "bet365"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2083,
@@ -43253,6 +43219,30 @@
               [
                 "2026-10-06T02:00:51.077Z",
                 2.2
+              ],
+              [
+                "2026-10-06T02:04:51.129Z",
+                2.22
+              ],
+              [
+                "2026-10-06T02:05:56.113Z",
+                2.24
+              ],
+              [
+                "2026-10-06T02:09:06.123Z",
+                2.26
+              ],
+              [
+                "2026-10-06T02:14:16.243Z",
+                2.1
+              ],
+              [
+                "2026-10-06T02:15:16.200Z",
+                2.12
+              ],
+              [
+                "2026-10-06T02:16:11.257Z",
+                2.14
               ]
             ]
           }
@@ -43262,19 +43252,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -43363,19 +43353,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.07,
-      "p2": 1.75,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.1,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.79,
-        "bookmaker": "Marathon"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 949,
@@ -46083,19 +46067,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -46184,19 +46168,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.1,
-      "p2": 1.75,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.11,
-        "bookmaker": "Marathon"
-      },
-      "p2": {
-        "price": 1.75,
-        "bookmaker": "Betano"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1103,
@@ -48956,19 +48934,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -49057,19 +49035,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.4,
-      "p2": 2.95,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.4,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 3.02,
-        "bookmaker": "Marathon"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 437,
@@ -51026,6 +50998,18 @@
               [
                 "2026-10-06T00:16:20.634Z",
                 1.32
+              ],
+              [
+                "2026-10-06T02:03:46.116Z",
+                1.36
+              ],
+              [
+                "2026-10-06T02:10:11.126Z",
+                1.22
+              ],
+              [
+                "2026-10-06T02:11:31.158Z",
+                1.32
               ]
             ],
             "p2": [
@@ -51161,19 +51145,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -51262,19 +51246,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.57,
-      "p2": 1.52,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.63,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.54,
-        "bookmaker": "1xBet"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 9608,
@@ -53624,19 +53602,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -53725,19 +53703,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.72,
-      "p2": 2.12,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.73,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 2.2,
-        "bookmaker": "BetVictor"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 366,
@@ -55936,19 +55908,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -56037,19 +56009,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.75,
-      "p2": 2.07,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.75,
-        "bookmaker": "Marathon"
-      },
-      "p2": {
-        "price": 2.1,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 9217,
@@ -58313,19 +58279,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -58414,19 +58380,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.57,
-      "p2": 1.52,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.63,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.54,
-        "bookmaker": "1xBet"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 1066,
@@ -61226,6 +61186,10 @@
               [
                 "2026-10-06T01:53:26.037Z",
                 2.36
+              ],
+              [
+                "2026-10-06T02:06:51.136Z",
+                2.38
               ]
             ],
             "p2": [
@@ -61301,19 +61265,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -61402,19 +61366,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.0,
-      "p2": 1.83,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.1,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.83,
-        "bookmaker": "Betano"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 2972,
@@ -63605,21 +63563,21 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -63708,19 +63666,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.87,
-      "p2": 1.42,
-      "bookmaker": "Betano"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.92,
-        "bookmaker": "Marathon"
-      },
-      "p2": {
-        "price": 1.42,
-        "bookmaker": "Betano"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": "ATP Shanghai - 1/64-finals",
     "p1Key": 590,
@@ -66288,6 +66240,10 @@
               [
                 "2026-10-06T01:49:21.027Z",
                 3.15
+              ],
+              [
+                "2026-10-06T02:14:21.206Z",
+                3.2
               ]
             ],
             "p2": [
@@ -66491,19 +66447,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-06T02:00:01.000Z"
+            "checkedAt": "2026-10-06T02:15:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-06T02:01:59.339Z"
+            "checkedAt": "2026-10-06T02:16:59.764Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -73560,7 +73516,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 2-6",
+      "display": "6-4, 6-7(2), 2-6",
       "sets": [
         {
           "p1": 6,
@@ -96874,7 +96830,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 6-2",
+      "display": "7-6(5), 6-7(5), 6-2",
       "sets": [
         {
           "p1": 7,
@@ -101530,7 +101486,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6, 7-5",
+      "display": "3-6, 7-6(5), 7-5",
       "sets": [
         {
           "p1": 3,
@@ -143012,7 +142968,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-2",
+      "display": "7-6(2), 6-2",
       "sets": [
         {
           "p1": 7,
@@ -164207,7 +164163,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-3",
+      "display": "7-6(4), 6-3",
       "sets": [
         {
           "p1": 7,
