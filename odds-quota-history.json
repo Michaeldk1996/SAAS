@@ -1,6 +1,6 @@
 {
   "schema": "odds-quota-history/1",
-  "updatedAt": "2026-10-06T02:32:21Z",
+  "updatedAt": "2026-10-06T03:32:19Z",
   "samples": [
     {
       "at": "2026-10-03T19:01:22Z",
@@ -245,6 +245,11 @@
     {
       "at": "2026-10-06T02:32:21Z",
       "used": 2368,
+      "by": "metered-now"
+    },
+    {
+      "at": "2026-10-06T03:32:19Z",
+      "used": 2370,
       "by": "metered-now"
     }
   ]
