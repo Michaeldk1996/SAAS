@@ -32,18 +32,31 @@
 //      - If the comment (state) cannot be written, the run is still cancelled but
 //        nothing is dispatched, the pass is red and Telegram says so.
 //
-// Dedupe state lives in the comments of one GitHub issue (the "post a comment"
-// destination): each comment carries hidden markers
-//   <!-- pipeline-stall-guard:alerted:<runId> -->, :cancelled:, :redispatched:
-// so the log the founder reads IS the state. No commit to main per tick, no cache
-// eviction, survives runner loss. If the issue cannot be read the pass takes NO
-// action and exits red — an unreadable state never turns into a second re-run.
+// LOG + STATE (founder ruling on the log, 7 Oct): "GitHub issue log + Telegram, but
+// the log goes on a PRIVATE repo … Keep the comment text to run id + state +
+// timestamp, nothing about data sources or counts."
+//   - The log issue lives in STALL_GUARD_LOG_REPO (default Michaeldk1996/stennisfy-ops,
+//     private), read/written with LOG_TOKEN (the WORKFLOW_PAT secret — GITHUB_TOKEN
+//     cannot write cross-repo). It is NEVER written on the public repo.
+//   - Each comment is one line `run <id> · <state> · <UTC timestamp>` plus hidden
+//     markers <!-- pipeline-stall-guard:alerted|cancelled|redispatched:<runId> -->,
+//     so the log IS the dedupe state. Telegram carries the same line.
+//   - Log repo unreadable/unwritable (no token, 403, 404, network) = state
+//     unreadable: NO action on any run, pass red, Telegram "can't reach its private
+//     log — needs a human".
+//   - stdout (the public repo's Actions log) carries run id + action only.
+//   - LOG_TOKEN expiry: GitHub returns `github-authentication-token-expiration` on
+//     every call made with a PAT that expires. Under TOKEN_WARN_DAYS (7) the guard
+//     Telegrams a renew warning once per UTC day (marker tokenwarn:<yyyymmdd>).
 //
-// Env: GH_TOKEN (actions:write + issues:write), GITHUB_REPOSITORY,
+// Env: GH_TOKEN (SAAS: actions:write — list/cancel/dispatch), GITHUB_REPOSITORY,
+//      LOG_TOKEN + STALL_GUARD_LOG_REPO (+ optional STALL_GUARD_ISSUE number),
 //      TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID (founder chat; TEN-280/294/347),
-//      STALL_GUARD_ISSUE (optional issue number; else found/created by title),
-//      GITHUB_API_URL / TELEGRAM_API_URL (overridable — the test points them at a
-//      fake server), STALL_GUARD_DRY_RUN=1 (log decisions, write nothing).
+//      STALL_GUARD_HEALTH=1 (also check the log + token when nothing is waiting —
+//      set on schedule/dispatch passes, so a broken log is caught a few times a
+//      day, not every 10 min), STALL_GUARD_DRY_RUN=1 (read everything, write
+//      nothing, print the token's scopes/expiry headers — the ship check),
+//      GITHUB_API_URL / TELEGRAM_API_URL (the test points them at a fake server).
 // Test: test-ten396-stall-guard.mjs (spawns THIS file against a fake GitHub API).
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -54,6 +67,8 @@ export const ALERT_AFTER_MIN = 60;
 export const CANCEL_AFTER_MIN = 120;
 export const PIPELINE_WORKFLOW = 'pipeline.yml';
 export const LOG_ISSUE_TITLE = 'Pipeline stall guard log (TEN-396)';
+export const DEFAULT_LOG_REPO = 'Michaeldk1996/stennisfy-ops';
+export const TOKEN_WARN_DAYS = 7;
 const MARK = 'pipeline-stall-guard';
 const MIN = 60000;
 
@@ -63,8 +78,8 @@ export const marker = (kind, runId) => `<!-- ${MARK}:${kind}:${runId} -->`;
 export function readMarkers(comments) {
   // redispatchedAt: when each re-run was recorded (comment created_at) — the
   // episode rule compares these with the last successful pipeline run.
-  const seen = { alerted: new Set(), cancelled: new Set(), redispatched: new Set(), redispatchedAt: [] };
-  const re = new RegExp(`<!-- ${MARK}:(alerted|cancelled|redispatched):(\\d+) -->`, 'g');
+  const seen = { alerted: new Set(), cancelled: new Set(), redispatched: new Set(), tokenwarn: new Set(), redispatchedAt: [] };
+  const re = new RegExp(`<!-- ${MARK}:(alerted|cancelled|redispatched|tokenwarn):(\\d+) -->`, 'g');
   for (const c of comments || []) {
     let m;
     while ((m = re.exec(String(c.body || '')))) {
@@ -129,31 +144,37 @@ export function decide({ run, jobs, now, markers }) {
   return { action: 'none', mins, reason: `waiting ${mins.toFixed(1)} min ≤ ${ALERT_AFTER_MIN}` };
 }
 
+// The ONLY text the guard writes, to the log and to Telegram alike.
+export const STATES = ['waiting>60', 'cancelled + re-dispatched', 'cancelled, needs a human', 'needs a human'];
+const utc = (t = Date.now()) => new Date(t).toISOString().replace(/:\d\d\.\d{3}Z$/, 'Z');
+export const logLine = (runId, state, t) => `run ${runId} · ${state} · ${utc(t)}`;
+
 // ── I/O ──────────────────────────────────────────────────────────────────────
 
-function client(env) {
-  const base = (env.GITHUB_API_URL || 'https://api.github.com').replace(/\/$/, '');
-  const repo = env.GITHUB_REPOSITORY || 'michaeldk1996/SAAS';
-  const token = env.GH_TOKEN || env.GITHUB_TOKEN;
-  if (!token) throw new Error('GH_TOKEN is not set');
+function client({ base, repo, token }) {
+  base = (base || 'https://api.github.com').replace(/\/$/, '');
   return async function gh(method, path, body) {
-    const url = `${base}/repos/${repo}${path}`;
-    const r = await fetch(url, {
-      method,
-      headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
-      body: body == null ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(20000),
-    });
-    const text = await r.text();
-    let json = null;
-    try { json = text ? JSON.parse(text) : null; } catch { /* non-JSON body */ }
-    return { status: r.status, json };
+    if (!token) return { status: 0, json: null, headers: new Headers() };
+    try {
+      const r = await fetch(`${base}/repos/${repo}${path}`, {
+        method,
+        headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
+        body: body == null ? undefined : JSON.stringify(body),
+        signal: AbortSignal.timeout(20000),
+      });
+      const text = await r.text();
+      let json = null;
+      try { json = text ? JSON.parse(text) : null; } catch { /* non-JSON body */ }
+      return { status: r.status, json, headers: r.headers };
+    } catch {
+      return { status: 0, json: null, headers: new Headers() };   // network: same as unreachable
+    }
   };
 }
 
 async function telegram(env, text) {
   const tok = env.TELEGRAM_BOT_TOKEN, chat = env.TELEGRAM_CHAT_ID;
-  if (!tok || !chat) return { ok: false, why: 'TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set' };
+  if (!tok || !chat) return { ok: false, why: 'not configured' };
   const base = (env.TELEGRAM_API_URL || 'https://api.telegram.org').replace(/\/$/, '');
   try {
     const r = await fetch(`${base}/bot${tok}/sendMessage`, {
@@ -167,77 +188,114 @@ async function telegram(env, text) {
   }
 }
 
-async function allComments(gh, issue) {
-  const out = [];
-  for (let page = 1; page <= 20; page++) {
-    const r = await gh('GET', `/issues/${issue}/comments?per_page=100&page=${page}`);
-    if (r.status !== 200 || !Array.isArray(r.json)) throw new Error(`reading issue #${issue} comments: HTTP ${r.status}`);
-    out.push(...r.json);
-    if (r.json.length < 100) return out;
-  }
-  return out;
-}
+class LogUnreachable extends Error {}
 
-async function findOrCreateIssue(gh, env, log) {
-  if (env.STALL_GUARD_ISSUE) return Number(env.STALL_GUARD_ISSUE);
-  for (let page = 1; page <= 10; page++) {
-    const r = await gh('GET', `/issues?state=all&per_page=100&page=${page}`);
-    if (r.status !== 200 || !Array.isArray(r.json)) throw new Error(`listing issues: HTTP ${r.status}`);
-    const hit = r.json.find((i) => !i.pull_request && i.title === LOG_ISSUE_TITLE);
-    if (hit) return hit.number;
-    if (r.json.length < 100) break;
+// Open the private log: find (or create) the issue, read every comment. Any
+// failure → LogUnreachable. Also returns the LOG_TOKEN's expiry/scopes headers.
+async function openLog(lg, env) {
+  let tokenHeaders = null;
+  const call = async (method, path, body, want) => {
+    const r = await lg(method, path, body);
+    if (!tokenHeaders && r.status) tokenHeaders = r.headers;
+    if (r.status !== want) throw new LogUnreachable(`HTTP ${r.status}`);
+    return r.json;
+  };
+  let issue = env.STALL_GUARD_ISSUE ? Number(env.STALL_GUARD_ISSUE) : null;
+  if (issue == null) {
+    for (let page = 1; page <= 10 && issue == null; page++) {
+      const list = await call('GET', `/issues?state=all&per_page=100&page=${page}`, null, 200);
+      if (!Array.isArray(list)) throw new LogUnreachable('bad issue list');
+      const hit = list.find((i) => !i.pull_request && i.title === LOG_ISSUE_TITLE);
+      if (hit) issue = hit.number;
+      else if (list.length < 100) break;
+    }
   }
-  if (env.STALL_GUARD_DRY_RUN === '1') { log('dry run: log issue does not exist and would be created'); return null; }
-  const c = await gh('POST', '/issues', {
-    title: LOG_ISSUE_TITLE,
-    body: 'Written by `.github/workflows/pipeline-stall-guard.yml` (TEN-396). One comment per stalled '
-      + '`pipeline.yml` run: alert after 60 min in `waiting`, cancel + one re-run after 120 min. The hidden '
-      + 'markers in these comments are the guard\'s dedupe state — do not edit or delete them.',
-  });
-  if (c.status !== 201) throw new Error(`creating the log issue: HTTP ${c.status}`);
-  return c.json.number;
+  if (issue == null && env.STALL_GUARD_DRY_RUN !== '1') {
+    const c = await call('POST', '/issues', { title: LOG_ISSUE_TITLE,
+      body: 'Written by the SAAS pipeline stall guard (TEN-396). Hidden markers in these comments are its dedupe state: do not edit or delete them.' }, 201);
+    issue = c.number;
+  }
+  const comments = [];
+  if (issue != null) {
+    for (let page = 1; page <= 20; page++) {
+      const c = await call('GET', `/issues/${issue}/comments?per_page=100&page=${page}`, null, 200);
+      if (!Array.isArray(c)) throw new LogUnreachable('bad comment list');
+      comments.push(...c);
+      if (c.length < 100) break;
+    }
+  }
+  return { issue, markers: readMarkers(comments), tokenHeaders };
 }
-
-const fmt = (iso) => String(iso || '?').replace('T', ' ').replace(/:\d\dZ$/, 'Z');
 
 export async function runGuard(env = process.env, log = console.log) {
-  const gh = client(env);
+  const repo = env.GITHUB_REPOSITORY || 'michaeldk1996/SAAS';
+  const gh = client({ base: env.GITHUB_API_URL, repo, token: env.GH_TOKEN || env.GITHUB_TOKEN });
+  const logRepo = env.STALL_GUARD_LOG_REPO || DEFAULT_LOG_REPO;
+  const lg = client({ base: env.GITHUB_API_URL, repo: logRepo, token: env.LOG_TOKEN });
   const dry = env.STALL_GUARD_DRY_RUN === '1';
+  const health = env.STALL_GUARD_HEALTH === '1' || dry;
   const now = Date.now();
   let red = false;
+  const notify = async (text) => {
+    if (dry) return;
+    const tg = await telegram(env, `Stennisfy pipeline: ${text}`);
+    if (!tg.ok) { red = true; log(`::error::Telegram not delivered (${tg.why})`); }
+  };
+
+  if (logRepo.toLowerCase() === repo.toLowerCase()) throw new Error('STALL_GUARD_LOG_REPO must not be the public repo');
 
   const lr = await gh('GET', `/actions/workflows/${PIPELINE_WORKFLOW}/runs?status=waiting&per_page=50`);
   if (lr.status !== 200) throw new Error(`listing waiting runs: HTTP ${lr.status}`);
   const runs = (lr.json && lr.json.workflow_runs) || [];
-  log(`${runs.length} ${PIPELINE_WORKFLOW} run(s) in status waiting`);
-  if (!runs.length) return { red, actions: [] };
+  log(`${runs.length} run(s) waiting`);
+  if (!runs.length && !health) return { red, actions: [] };
 
-  // State BEFORE any decision; unreadable state → no action at all.
-  const issue = await findOrCreateIssue(gh, env, log);
-  const markers = readMarkers(issue == null ? [] : await allComments(gh, issue));
+  // State BEFORE any decision; unreachable log → no action at all.
+  let state;
+  try {
+    state = await openLog(lg, env);
+  } catch (e) {
+    if (!(e instanceof LogUnreachable)) throw e;
+    log('::error::private log unreachable — no action taken');
+    await notify(`stall guard can't reach its private log — needs a human · ${utc(now)}`);
+    return { red: true, actions: [] };
+  }
+  const { issue, markers, tokenHeaders } = state;
+  const post = async (body) => (dry ? { status: 201 } : lg('POST', `/issues/${issue}/comments`, { body }));
+
+  // LOG_TOKEN expiry (header present only for an expiring PAT).
+  const expRaw = tokenHeaders && tokenHeaders.get('github-authentication-token-expiration');
+  const expAt = expRaw ? Date.parse(expRaw) : NaN;
+  if (dry) {
+    log(`log repo readable; issue ${issue == null ? 'absent (would be created)' : 'found'}`);
+    log(`LOG_TOKEN scopes: ${(tokenHeaders && tokenHeaders.get('x-oauth-scopes')) ?? '(none reported — fine-grained token?)'}`);
+    log(`LOG_TOKEN expires: ${expRaw || '(no expiration header)'}`);
+  }
+  if (Number.isFinite(expAt) && expAt - now < TOKEN_WARN_DAYS * 86400000) {
+    const day = utc(now).slice(0, 10).replace(/-/g, '');
+    if (!markers.tokenwarn.has(day) && !dry) {
+      const cr = await post(`token · expires ${utc(expAt)} · ${utc(now)}\n\n${marker('tokenwarn', day)}`);
+      if (cr.status === 201) markers.tokenwarn.add(day);
+      await notify(`WORKFLOW_PAT expires ${utc(expAt)} — renew it (the stall guard's log and the pg_cron pinger use it) · ${utc(now)}`);
+      red = true;
+    }
+  }
 
   const actions = [];
   for (const run of runs) {
     const jr = await gh('GET', `/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
-    if (jr.status !== 200) { log(`::warning::run ${run.id}: jobs unreadable (HTTP ${jr.status}) — left alone`); continue; }
+    if (jr.status !== 200) { log(`::warning::run ${run.id}: jobs unreadable — left alone`); continue; }
     const jobs = (jr.json && jr.json.jobs) || [];
     const d = decide({ run, jobs, now, markers });
-    log(`run ${run.id} (#${run.run_number}, created ${run.created_at}): ${d.action} — ${d.reason}`);
+    log(`run ${run.id}: ${d.action}`);
     actions.push({ runId: run.id, ...d });
     if (d.action === 'none' || dry) continue;
 
-    const url = run.html_url || `https://github.com/${env.GITHUB_REPOSITORY || 'michaeldk1996/SAAS'}/actions/runs/${run.id}`;
-    const since = new Date(now - d.mins * MIN).toISOString();
-    const head = `Pipeline run ${run.id} has sat in GitHub "waiting" for ${Math.round(d.mins)} min (since ${fmt(since)}). `
-      + 'It holds the bsp-pipeline group, so no tick can deploy and the site is frozen.';
-
     if (d.action === 'alert') {
-      const tg = await telegram(env, `Stennisfy: ${head} If it is still waiting at 120 min it will be cancelled and re-run automatically. ${url}`);
-      if (!tg.ok) { red = true; log(`::error::Telegram alert not delivered (${tg.why})`); }
-      const cr = await gh('POST', `/issues/${issue}/comments`, {
-        body: `**Alert** — ${head}\n\nAuto-cancel + one re-run at ${CANCEL_AFTER_MIN} min. Telegram: ${tg.ok ? 'sent' : `NOT sent (${tg.why})`}. ${url}\n\n${marker('alerted', run.id)}`,
-      });
-      if (cr.status !== 201) { red = true; log(`::error::log comment not posted (HTTP ${cr.status})`); }
+      const line = logLine(run.id, 'waiting>60');
+      await notify(line);
+      const cr = await post(`${line}\n\n${marker('alerted', run.id)}`);
+      if (cr.status !== 201) { red = true; log(`::error::run ${run.id}: log comment not posted`); }
       continue;
     }
 
@@ -246,60 +304,55 @@ export async function runGuard(env = process.env, log = console.log) {
     const fj = await gh('GET', `/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
     if (fresh.status !== 200 || fj.status !== 200) { red = true; log(`::error::run ${run.id}: re-read failed — not cancelled`); continue; }
     const recheck = decide({ run: fresh.json, jobs: (fj.json && fj.json.jobs) || [], now: Date.now(), markers });
-    if (recheck.action !== d.action) { log(`run ${run.id}: changed before acting (${recheck.reason}) — not cancelled`); continue; }
+    if (recheck.action !== d.action) { log(`run ${run.id}: changed before acting — not cancelled`); continue; }
 
     if (d.action === 'recancel') {
       // Cancelled once already and still waiting: cancel again, never a second re-run.
-      const rx = await gh('POST', `/actions/runs/${run.id}/cancel`);
+      await gh('POST', `/actions/runs/${run.id}/cancel`);
       red = true;
-      log(`::error::run ${run.id} still waiting after an earlier cancel — cancel re-sent (HTTP ${rx.status}), no second re-run`);
+      log(`::error::run ${run.id}: still waiting after an earlier cancel — cancel re-sent, no second re-run`);
       continue;
     }
 
     // Episode rule: has this stall already had its one re-run?
     const ls = await gh('GET', `/actions/workflows/${PIPELINE_WORKFLOW}/runs?status=success&per_page=1`);
     const lastOk = ls.status === 200 && ls.json && ls.json.workflow_runs && ls.json.workflow_runs[0];
-    const lastSuccessAt = lastOk ? Date.parse(lastOk.updated_at) : NaN;
-    const mayRerun = rerunAllowed(markers, lastSuccessAt);
+    const mayRerun = rerunAllowed(markers, lastOk ? Date.parse(lastOk.updated_at) : NaN);
 
-    // State FIRST: the markers (incl. the re-run intent) are written before the
+    // State FIRST: markers (incl. the re-run intent) are written before cancel and
     // dispatch. If they cannot be written, no dispatch — otherwise a cancel that
     // does not take would re-dispatch every pass.
     const marks = [marker('alerted', run.id), marker('cancelled', run.id)];
     if (mayRerun) marks.push(marker('redispatched', run.id));
-    const plan = mayRerun
-      ? 'cancelling it and dispatching ONE fresh pipeline.yml run on main'
-      : 'cancelling it with NO re-run: this stall episode was already re-run once since the last successful pipeline run and it stalled again — needs a human';
-    const cr = await gh('POST', `/issues/${issue}/comments`, {
-      body: `**Cancelling** — ${head}\n\nThe run is not executing (no job or step in progress). ${plan}. ${url}\n\n${marks.join('\n')}`,
-    });
+    const planned = mayRerun ? 'cancelled + re-dispatched' : 'cancelled, needs a human';
+    const cr = await post(`${logLine(run.id, planned)}\n\n${marks.join('\n')}`);
     const stateOk = cr.status === 201;
-    if (!stateOk) { red = true; log(`::error::log comment not posted (HTTP ${cr.status}) — no re-run will be dispatched without recorded state`); }
+    if (!stateOk) { red = true; log(`::error::run ${run.id}: log comment not posted — no re-run without recorded state`); }
     markers.cancelled.add(String(run.id));
     if (stateOk && mayRerun) { markers.redispatched.add(String(run.id)); markers.redispatchedAt.push(Date.now()); }
 
     const cx = await gh('POST', `/actions/runs/${run.id}/cancel`);
     if (cx.status !== 202) {
       red = true;
-      log(`::error::cancel of run ${run.id} refused: HTTP ${cx.status}`);
-      await telegram(env, `Stennisfy: ${head} The guard tried to cancel it and GitHub refused (HTTP ${cx.status}). A human must cancel it: ${url}`);
+      log(`::error::run ${run.id}: cancel refused`);
+      if (stateOk) await post(logLine(run.id, 'needs a human'));
+      await notify(logLine(run.id, 'needs a human'));
       continue;
     }
 
-    let note;
+    let state2;
     if (!stateOk) {
-      note = 'cancelled, but NOT re-run: the guard could not record its state (log comment failed) — needs a human';
+      state2 = 'cancelled, needs a human';
     } else if (!mayRerun) {
       red = true;
-      note = 'cancelled, NOT re-run: it stalled again after the one re-run of this episode — needs a human';
-      log(`::error::stalled twice in one episode — run ${run.id} cancelled, no second re-run`);
+      state2 = 'cancelled, needs a human';
+      log(`::error::run ${run.id}: stalled again in one episode — cancelled, no second re-run`);
     } else {
       const dr = await gh('POST', `/actions/workflows/${PIPELINE_WORKFLOW}/dispatches`, { ref: 'main' });
-      if (dr.status === 204) note = 'cancelled it automatically (founder ruling TEN-396) and dispatched one fresh pipeline.yml run on main';
-      else { red = true; note = `cancelled it, but the re-run dispatch FAILED (HTTP ${dr.status}); the next */10 tick will start anyway`; }
+      if (dr.status === 204) state2 = 'cancelled + re-dispatched';
+      else { red = true; state2 = 'cancelled, needs a human'; log(`::error::run ${run.id}: re-run dispatch failed`); await post(logLine(run.id, state2)); }
     }
-    const tg = await telegram(env, `Stennisfy: ${head} ${note}. ${url}`);
-    if (!tg.ok) { red = true; log(`::error::Telegram notice not delivered (${tg.why})`); }
+    await notify(logLine(run.id, state2));
   }
   return { red, actions };
 }

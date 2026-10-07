@@ -35,6 +35,12 @@ on:
     workflows: ['BSP data pipeline', 'BSP oddspapi post-match archive']
     types: [completed]
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Read-only ship check: read the private log + token headers, write nothing'
+        required: false
+        default: 'false'
+        type: string
   schedule:
     - cron: '7 * * * *'   # best-effort only — see the trigger note above
 
@@ -42,10 +48,12 @@ concurrency:
   group: bsp-pipeline-stall-guard
   cancel-in-progress: false
 
+# The log (comments + dedupe state) is NOT on this public repo (founder ruling,
+# 7 Oct): it lives in the private STALL_GUARD_LOG_REPO, reached with WORKFLOW_PAT
+# (GITHUB_TOKEN cannot write cross-repo). This repo only needs actions: write.
 permissions:
   contents: read
   actions: write   # list runs/jobs, cancel a waiting run, dispatch one re-run
-  issues: write    # the log issue: the comment the ruling asks for + dedupe state
 
 jobs:
   guard:
@@ -59,7 +67,13 @@ jobs:
       - name: Stalled pipeline run — alert at 60 min, cancel + one re-run at 120 min
         env:
           GH_TOKEN: ${{ github.token }}
+          LOG_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          STALL_GUARD_LOG_REPO: ${{ vars.STALL_GUARD_LOG_REPO || 'Michaeldk1996/stennisfy-ops' }}
+          STALL_GUARD_ISSUE: ${{ vars.STALL_GUARD_ISSUE }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          STALL_GUARD_ISSUE: ${{ vars.STALL_GUARD_ISSUE }}
+          # schedule + manual passes also check the log and the token's expiry when
+          # nothing is waiting (a few times a day — not on every 10-min tick)
+          STALL_GUARD_HEALTH: ${{ github.event_name != 'workflow_run' && '1' || '' }}
+          STALL_GUARD_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == 'true' && '1' || '' }}
         run: node tools/pipeline-stall-guard.mjs

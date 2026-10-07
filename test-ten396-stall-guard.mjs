@@ -19,6 +19,7 @@ import {
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.join(ROOT, 'tools', 'pipeline-stall-guard.mjs');
 const REPO = 'o/r';
+const LOG_REPO = 'o/ops';   // the private log repo
 const MIN = 60000;
 const ago = (m) => new Date(Date.now() - m * MIN).toISOString();
 
@@ -32,21 +33,33 @@ function waitingRun(id, m, { jobStatus = 'waiting', steps = [], runStatus = 'wai
 }
 
 // ── fake GitHub + Telegram ───────────────────────────────────────────────────
-function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false, commentsStatus = 200, commentPostStatus = 201, ignoreStatusFilter = false } = {}) {
+function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false, commentsStatus = 200, commentPostStatus = 201, ignoreStatusFilter = false, logStatus = 0, tokenExpiry = null } = {}) {
   const w = { runs: new Map(runs.map((r) => [String(r.run.id), r])), issues, comments, cancels: [], dispatches: [],
-    posted: [], telegrams: [], created: [], stickyCancel, commentsStatus, commentPostStatus, ignoreStatusFilter };
+    posted: [], telegrams: [], created: [], publicIssueCalls: [], logAuth: new Set(), stickyCancel, commentsStatus, commentPostStatus, ignoreStatusFilter };
   const srv = http.createServer((req, res) => {
     let body = '';
     req.on('data', (c) => { body += c; });
     req.on('end', () => {
       const u = new URL(req.url, 'http://x');
-      const send = (s, j) => { res.writeHead(s, { 'Content-Type': 'application/json' }); res.end(j == null ? '' : JSON.stringify(j)); };
       const p = u.pathname;
-      const pre = `/repos/${REPO}`;
+      const isLog = p.startsWith(`/repos/${LOG_REPO}/`);
+      const send = (s, j) => {
+        const h = { 'Content-Type': 'application/json' };
+        if (isLog && tokenExpiry) h['github-authentication-token-expiration'] = tokenExpiry;
+        res.writeHead(s, h); res.end(j == null ? '' : JSON.stringify(j));
+      };
       let m;
       if (req.method === 'POST' && (m = /^\/botTOKEN\/sendMessage$/.exec(p))) { w.telegrams.push(JSON.parse(body)); return send(200, { ok: true }); }
+      if (p.startsWith(`/repos/${REPO}/issues`)) { w.publicIssueCalls.push(`${req.method} ${p}`); return send(403, {}); }
+      if (isLog) {
+        w.logAuth.add(req.headers.authorization);
+        if (logStatus) return send(logStatus, { message: 'Resource not accessible' });
+      }
+      const pre = isLog ? `/repos/${LOG_REPO}` : `/repos/${REPO}`;
       if (!p.startsWith(pre)) return send(404, {});
       const q = p.slice(pre.length);
+      if (!isLog && q.startsWith('/issues')) return send(404, {});
+      if (isLog && q.startsWith('/actions')) return send(404, {});
       if (req.method === 'GET' && q === '/actions/workflows/pipeline.yml/runs') {
         const st = u.searchParams.get('status');
         const list = [...w.runs.values()].map((r) => r.run).filter((r) => w.ignoreStatusFilter || !st || r.status === st || r.conclusion === st)
@@ -89,7 +102,7 @@ async function withWorld(opts, fn) {
   await new Promise((r) => srv.listen(0, '127.0.0.1', r));
   const base = `http://127.0.0.1:${srv.address().port}`;
   const pass = (extraEnv = {}) => new Promise((resolve) => {
-    const env = { PATH: process.env.PATH, GH_TOKEN: 'x', GITHUB_REPOSITORY: REPO, GITHUB_API_URL: base,
+    const env = { PATH: process.env.PATH, GH_TOKEN: 'x', GITHUB_REPOSITORY: REPO, GITHUB_API_URL: base, LOG_TOKEN: 'PAT', STALL_GUARD_LOG_REPO: LOG_REPO,
       TELEGRAM_API_URL: base, TELEGRAM_BOT_TOKEN: 'TOKEN', TELEGRAM_CHAT_ID: '42', ...extraEnv };
     const ch = spawn(process.execPath, [SCRIPT], { env });
     let out = '';
@@ -137,7 +150,7 @@ test('61 min waiting → one alert (Telegram + comment with marker); the second 
     assert.equal(r1.code, 0, r1.out);
     assert.equal(w.telegrams.length, 1);
     assert.equal(w.telegrams[0].chat_id, '42');
-    assert.match(w.telegrams[0].text, /6101.*waiting/);
+    assert.match(w.telegrams[0].text, /run 6101 · waiting>60 · /);
     assert.equal(w.posted.length, 1);
     assert.ok(w.posted[0].body.includes(marker('alerted', 6101)));
     assert.equal(w.created.length, 1, 'the log issue is created on first need');
@@ -160,7 +173,7 @@ test('121 min waiting → cancel + exactly one re-run on main + comment + Telegr
     assert.equal(w.posted[0].issue, '9');
     for (const k of ['alerted', 'cancelled', 'redispatched']) assert.ok(w.posted[0].body.includes(marker(k, 12101)), k);
     assert.equal(w.telegrams.length, 1);
-    assert.match(w.telegrams[0].text, /cancelled it automatically/);
+    assert.match(w.telegrams[0].text, /run 12101 · cancelled \+ re-dispatched · /);
     await pass();
     assert.equal(w.cancels.length, 1);
     assert.equal(w.dispatches.length, 1);
@@ -196,7 +209,6 @@ test('a run in waiting whose job is executing is never cancelled', async () => {
   await withWorld({ runs: [waitingRun(7002, 300, { jobStatus: 'in_progress' })] }, async (w, pass) => {
     const res = await pass();
     assert.equal(res.code, 0, res.out);
-    assert.match(res.out, /executing/);
     assert.deepEqual([w.cancels.length, w.dispatches.length], [0, 0]);
   });
 });
@@ -208,20 +220,22 @@ test('a waiting job with a step in progress is never cancelled', async () => {
   });
 });
 
-test('unreadable dedupe state → no action at all and a red pass', async () => {
+test('unreadable dedupe state → no action on the run, a red pass and one "needs a human" alert', async () => {
   await withWorld({ runs: [waitingRun(7004, 300)], issues: [{ number: 9, title: 'Pipeline stall guard log (TEN-396)' }], commentsStatus: 500 }, async (w, pass) => {
     const res = await pass();
     assert.equal(res.code, 1);
-    assert.deepEqual([w.cancels.length, w.dispatches.length, w.telegrams.length, w.posted.length], [0, 0, 0, 0]);
+    assert.deepEqual([w.cancels.length, w.dispatches.length, w.posted.length], [0, 0, 0]);
+    assert.equal(w.telegrams.length, 1);
+    assert.match(w.telegrams[0].text, /can't reach its private log — needs a human/);
   });
 });
 
-test('Telegram not configured → the comment still lands, says NOT sent, and the pass is red', async () => {
+test('Telegram not configured → the comment still lands and the pass is red', async () => {
   await withWorld({ runs: [waitingRun(7005, 90)] }, async (w, pass) => {
     const res = await pass({ TELEGRAM_BOT_TOKEN: '', TELEGRAM_CHAT_ID: '' });
     assert.equal(res.code, 1);
     assert.equal(w.posted.length, 1);
-    assert.match(w.posted[0].body, /NOT sent/);
+    assert.match(w.posted[0].body, /^run 7005 · waiting>60 · /);
   });
 });
 
@@ -235,7 +249,9 @@ test('workflow: rides workflow_run on the two pg_cron-dispatched workflows by th
   assert.match(g, /types: \[completed\]/);
   assert.match(g, /group: bsp-pipeline-stall-guard\n\s+cancel-in-progress: false/);
   assert.match(g, /actions: write/);
-  assert.match(g, /issues: write/);
+  assert.doesNotMatch(g, /issues: write/, 'the public repo needs no issue write: the log is private');
+  assert.match(g, /LOG_TOKEN: \$\{\{ secrets\.WORKFLOW_PAT \}\}/);
+  assert.match(g, /STALL_GUARD_LOG_REPO: \$\{\{ vars\.STALL_GUARD_LOG_REPO \|\| 'Michaeldk1996\/stennisfy-ops' \}\}/);
   assert.match(g, /run: node tools\/pipeline-stall-guard\.mjs/);
   assert.match(wf('oddspapi-postmatch.yml'), /workflow_dispatch/);
 });
@@ -255,7 +271,7 @@ test('re-run once per EPISODE: the re-run (new run id) stalls too → cancelled,
     assert.deepEqual(w.cancels, ['13001', '13002']);
     assert.equal(w.dispatches.length, 1, 're-dispatched a second time in one episode');
     assert.match(w.telegrams.at(-1).text, /needs a human/);
-    assert.match(w.posted.at(-1).body, /NO re-run/);
+    assert.match(w.posted.at(-1).body, /^run 13002 · cancelled, needs a human · /);
     assert.ok(!w.posted.at(-1).body.includes(marker('redispatched', 13002)));
     // A later pass with nothing waiting does nothing more.
     await pass();
@@ -287,6 +303,98 @@ test('log comment cannot be written → NO dispatch (cancel still sent), pass re
     assert.equal(r2.code, 1);
     assert.equal(w.dispatches.length, 0, 'dispatched without recorded state');
     assert.deepEqual(w.cancels, ['13201', '13201']);
-    assert.match(w.telegrams.at(-1).text, /could not record its state.*needs a human/);
+    assert.match(w.telegrams.at(-1).text, /run 13201 · cancelled, needs a human · /);
+  });
+});
+
+// ── founder ruling on the log: private repo, minimal text ────────────────────
+const STRICT_BODY = /^run \d+ · (waiting>60|cancelled \+ re-dispatched|cancelled, needs a human|needs a human) · \d{4}-\d\d-\d\dT\d\d:\d\dZ(\n\n<!-- pipeline-stall-guard:(alerted|cancelled|redispatched):\d+ -->(\n<!-- pipeline-stall-guard:(alerted|cancelled|redispatched):\d+ -->)*)?$/;
+const STRICT_TG = /^Stennisfy pipeline: run \d+ · (waiting>60|cancelled \+ re-dispatched|cancelled, needs a human|needs a human) · \d{4}-\d\d-\d\dT\d\d:\d\dZ$/;
+
+test('every comment and every Telegram is minimal: run id · state · UTC timestamp (+ hidden markers), and all go to the PRIVATE log with LOG_TOKEN', async () => {
+  await withWorld({ runs: [successRun(1, 400), waitingRun(14001, 61), waitingRun(14002, 125)] }, async (w, pass) => {
+    await pass();
+    w.runs.set('14003', waitingRun(14003, 125));   // second stall in the episode → needs a human
+    await pass();
+    assert.ok(w.posted.length >= 3, `only ${w.posted.length} comments`);
+    for (const c of w.posted) assert.match(c.body, STRICT_BODY);
+    assert.ok(w.telegrams.length >= 3);
+    for (const t of w.telegrams) assert.match(t.text, STRICT_TG);
+    assert.deepEqual(w.publicIssueCalls, [], 'touched issues on the public repo');
+    assert.deepEqual([...w.logAuth], ['Bearer PAT'], 'log calls must use LOG_TOKEN, never GH_TOKEN');
+  });
+});
+
+for (const [label, status] of [['403', 403], ['404', 404]]) {
+  test(`log repo ${label} → no cancel, no dispatch, pass red, Telegram "can't reach its private log — needs a human", nothing on the public repo`, async () => {
+    await withWorld({ runs: [waitingRun(15001, 125)], logStatus: status }, async (w, pass) => {
+      const r = await pass();
+      assert.equal(r.code, 1);
+      assert.deepEqual([w.cancels.length, w.dispatches.length, w.posted.length], [0, 0, 0]);
+      assert.equal(w.telegrams.length, 1);
+      assert.match(w.telegrams[0].text, /^Stennisfy pipeline: stall guard can't reach its private log — needs a human · \d{4}-\d\d-\d\dT\d\d:\d\dZ$/);
+      assert.deepEqual(w.publicIssueCalls, []);
+    });
+  });
+}
+
+test('no LOG_TOKEN at all → treated as unreachable: no action, red, alert', async () => {
+  await withWorld({ runs: [waitingRun(15002, 125)] }, async (w, pass) => {
+    const r = await pass({ LOG_TOKEN: '' });
+    assert.equal(r.code, 1);
+    assert.deepEqual([w.cancels.length, w.dispatches.length], [0, 0]);
+    assert.match(w.telegrams[0].text, /can't reach its private log/);
+  });
+});
+
+test('the log repo can never be the public repo', async () => {
+  await withWorld({ runs: [waitingRun(15003, 125)] }, async (w, pass) => {
+    const r = await pass({ STALL_GUARD_LOG_REPO: REPO });
+    assert.equal(r.code, 1);
+    assert.deepEqual([w.cancels.length, w.dispatches.length, w.publicIssueCalls.length], [0, 0, 0]);
+  });
+});
+
+test('quiet pass (nothing waiting, not a health pass) does not touch the log', async () => {
+  await withWorld({ logStatus: 403 }, async (w, pass) => {
+    const r = await pass();
+    assert.equal(r.code, 0, r.out);
+    assert.equal(w.logAuth.size, 0);
+    assert.equal(w.telegrams.length, 0);
+  });
+});
+
+test('health pass with nothing waiting still checks the log: 403 → red + alert', async () => {
+  await withWorld({ logStatus: 403 }, async (w, pass) => {
+    const r = await pass({ STALL_GUARD_HEALTH: '1' });
+    assert.equal(r.code, 1);
+    assert.match(w.telegrams[0].text, /can't reach its private log/);
+  });
+});
+
+test('token expiry < 7 days → one renew warning per UTC day; ≥ 7 days → none', async () => {
+  const soon = new Date(Date.now() + 3 * 86400000).toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+  await withWorld({ tokenExpiry: soon }, async (w, pass) => {
+    const r1 = await pass({ STALL_GUARD_HEALTH: '1' });
+    await pass({ STALL_GUARD_HEALTH: '1' });
+    assert.equal(r1.code, 1);
+    assert.equal(w.telegrams.length, 1, 'warned more than once in a day');
+    assert.match(w.telegrams[0].text, /WORKFLOW_PAT expires/);
+    assert.match(w.posted[0].body, /^token · expires \S+ · \S+\n\n<!-- pipeline-stall-guard:tokenwarn:\d{8} -->$/);
+  });
+  const later = new Date(Date.now() + 9 * 86400000).toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+  await withWorld({ tokenExpiry: later }, async (w, pass) => {
+    const r = await pass({ STALL_GUARD_HEALTH: '1' });
+    assert.equal(r.code, 0, r.out);
+    assert.equal(w.telegrams.length, 0);
+  });
+});
+
+test('dry run reads the log, prints scopes/expiry, writes nothing anywhere', async () => {
+  await withWorld({ runs: [waitingRun(16001, 125)], tokenExpiry: '2026-10-25 02:15:28 UTC' }, async (w, pass) => {
+    const r = await pass({ STALL_GUARD_DRY_RUN: '1' });
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /LOG_TOKEN expires: 2026-10-25 02:15:28 UTC/);
+    assert.deepEqual([w.cancels.length, w.dispatches.length, w.posted.length, w.created.length, w.telegrams.length], [0, 0, 0, 0, 0]);
   });
 });
