@@ -1547,7 +1547,11 @@
       // support line keep their exact boxes (a non-breaking space at the same size / line-height, so
       // nothing shifts when the figure paints) and carry no dash and no sentence.
       var pend = !!v.pending;
-      var head = pend ? '' : v.headline == null ? DASH : String(v.headline);
+      // TEN-384 fx6 item 8 (founder r2): a tile whose figure does not exist for this player (Draw record with
+      // no career-splits entry) leaves the figure SLOT empty — the same non-breaking space a pending figure
+      // keeps, so the tile height holds — and keeps its support line. Not a dash.
+      var blankFig = pend || !!v.blankFigure;
+      var head = blankFig ? '' : v.headline == null ? DASH : String(v.headline);
       var suffix = v.hlSuffix == null ? '' : String(v.hlSuffix);
       var sz = headlineSize(head + suffix);
       return '' +
@@ -1568,7 +1572,7 @@
         '</div>' +
         '<div' + (pend ? ' data-pp2-pending="figure"' : '') + ' style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' +
           (v.headline == null ? DASH_COLOUR : 'var(--text)') + ';line-height:1;white-space:nowrap;' +
-          'font-size:' + sz + 'px;">' + (pend ? '&nbsp;' : esc(head) + esc(suffix)) + '</div>' +
+          'font-size:' + sz + 'px;">' + (blankFig ? '&nbsp;' : esc(head) + esc(suffix)) + '</div>' +
         '<div' + (pend || v.supportPending ? ' data-pp2-pending="support"' : '') + ' style="font-size:11.5px;color:var(--text-label);line-height:1.4;margin-top:auto;">' +
           (pend || v.supportPending ? '&nbsp;' : esc(v.support == null ? DASH : v.support)) + '</div>' +
         '</div>';
@@ -2245,7 +2249,7 @@
       // splits held but no split picked (none at n >= 10, or none above his rate) -> the OVERALL figure, his
       // rate across these splits (the modal's own baseline), never a dash (founder D10).
       : splitsNotBuilt(p.key)
-        ? { headline: null, support: SPLITS_NOT_BUILT }
+        ? { headline: null, support: SPLITS_NOT_BUILT, blankFigure: true }
         : bsBase == null
           ? { headline: null, support: 'no split data on record' }
           : (function () {
@@ -2778,9 +2782,9 @@
     career: 820, tourn: 1440, season: 1180, speed: 1120,
     styles: 820, splits: 900, market: 1080, profile: 820
   };
+  var CAREER_SUBTITLE = 'Record by surface and season, and his ratings against the field';
   function modalSubtitle(key, p, ctx) {
     var sn = shortName(p);
-    var fy = spineFirstYear(p);
     var ct = spineTotal(p);
     switch (key) {
       // Item 2. The design string is "All-time record, by surface, indoors and by
@@ -2801,13 +2805,11 @@
       //      is narrower than the GRID -- i.e. when dated match rows reach further
       //      back than the careerByYear spine this modal totals. Printed only when
       //      the two genuinely differ, so it is never noise.
-      case 'career': return (function () {
-        var base = 'Record by surface, indoors and by season';
-        var cs = calScope(p);
-        // String compare is safe and intentional: both are 4-digit year strings.
-        var narrower = fy && cs.from && String(cs.from) < String(fy);
-        return narrower ? base + ' ' + MIDDOT + ' since ' + fy : base;
-      })();
+      // TEN-384 fx6 item 7 (founder r2, 2026-10-07): "restore 'Record by surface and season, and his ratings
+      // against the field'". The Ratings tab has landed (CAREER_TABS), so the phase-C restore is due: the
+      // subtitle is that string EXACTLY, with no "indoors" re-add and no "since <year>" scope label (both
+      // Q4 amendments are superseded by this ruling).
+      case 'career': return CAREER_SUBTITLE;
       // §3: the export's "678 matches · 2016-2026" is placeholder copy; both
       // halves are real counts here or the clause is dropped entirely.
       // Item 2. Reverted to the design string verbatim (README §5.1). The
@@ -5611,7 +5613,8 @@
     if (!sc) {
       return '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:var(--text-label);">' +
-        (splitsNotBuilt(p.key) ? SPLITS_NOT_BUILT + '.' : 'No split data on record for this player.') + '</div>';
+        // fx6 item 8: the tile and the modal print the same words, no trailing period in either.
+        (splitsNotBuilt(p.key) ? SPLITS_NOT_BUILT : 'No split data on record for this player.') + '</div>';
     }
     // ONE baseline since RULING Q1 round 2: the population win rate over a
     // complete partition (pooledBaseline), the same figure the box and Key

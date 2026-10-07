@@ -5007,28 +5007,20 @@ function surfaceRowOrder(html) {
 // PHASE C: when the Ratings tab ships, append ', and his ratings against the
 // field' and update this assertion in the same commit. Both halves are locked
 // below so neither the re-add nor the premature restore can happen silently.
-check('item 2 / ruling Q4 · the career subtitle re-adds "indoors" and drops the Ratings clause', () => {
+// TEN-384 fx6 item 7 (founder r2, 2026-10-07) SUPERSEDES Q4 (a)–(c): the Ratings tab has landed, so the
+// subtitle is restored VERBATIM — "Record by surface and season, and his ratings against the field" — with no
+// "indoors" re-add and no "since <year>" scope label.
+const CAREER_SUB = 'Record by surface and season, and his ratings against the field';
+check('item 2 / fx6 item 7 · the career subtitle is exactly the restored string', () => {
   const sub = I.modalSubtitle('career', CM_PLAYER, {});
-  assert(/\bindoors\b/.test(sub), `subtitle lost "indoors" again: "${sub}"`);
-  assert(!/ratings against the field/.test(sub),
-    `the Ratings clause is back before the tab exists: "${sub}"`);
-  assert(sub.startsWith('Record by surface, indoors and by season'),
-    `subtitle is "${sub}"`);
+  assert.strictEqual(sub, CAREER_SUB);
   console.log(`        "${sub}"`);
 });
-mustFail('[neg] the subtitle check would catch the phase-A string with "indoors" missing', () => {
-  const sub = 'Record by surface and season, and his ratings against the field';
-  assert(/\bindoors\b/.test(sub), `subtitle lost "indoors": "${sub}"`);
+mustFail('[neg] the subtitle check would catch the Q4 string ("indoors", no Ratings clause)', () => {
+  assert.strictEqual('Record by surface, indoors and by season', CAREER_SUB);
 });
-mustFail('[neg] the subtitle check would catch the Ratings clause restored early', () => {
-  const sub = 'Record by surface, indoors and by season, and his ratings against the field';
-  assert(!/ratings against the field/.test(sub), 'premature Ratings clause not caught');
-});
-
-// Q4(c) · the scope label rides on a CONDITION, so both branches are exercised —
-// a label that is always present and one that is never present both pass a
-// one-branch check, and neither is the rule.
-check('ruling Q4(c) · "since <year>" appears only when the grid reaches further back', () => {
+// Q4(c) is superseded: the subtitle carries no scope label, whether or not the grid reaches further back.
+check('fx6 item 7 · no "since <year>" label, whether or not the grid reaches further back', () => {
   const narrow = {
     key: '__q4n', name: 'N. Arrow', tournamentHistory: [],
     careerByYear: [{ year: '2020', total: { won: 10, lost: 5 }, hard: { won: 10, lost: 5 } }]
@@ -5040,17 +5032,12 @@ check('ruling Q4(c) · "since <year>" appears only when the grid reaches further
   }
   const savedCh = W.careerHistory;
   try {
-    // Grid reaches back to 2016, spine starts 2020 -> the label must appear.
     W.careerHistory = Object.assign({}, CAREER_HIST, { __q4n: dated });
-    const withLabel = I.modalSubtitle('career', narrow, {});
-    assert(/· since 2020$/.test(withLabel), `no scope label: "${withLabel}"`);
-    // Same player, dated rows inside the window -> the label must NOT appear.
+    assert.strictEqual(I.modalSubtitle('career', narrow, {}), CAREER_SUB, 'grid reaching back to 2016');
     W.careerHistory = Object.assign({}, CAREER_HIST, {
       __q4n: dated.map(r => Object.assign({}, r, { year: '2020', date: r.date.replace('2016', '2020') }))
     });
-    const without = I.modalSubtitle('career', narrow, {});
-    assert(!/since/.test(without), `scope label printed with no narrower window: "${without}"`);
-    console.log(`        narrower -> "${withLabel}" | aligned -> "${without}"`);
+    assert.strictEqual(I.modalSubtitle('career', narrow, {}), CAREER_SUB, 'aligned window');
   } finally { W.careerHistory = savedCh; }
 });
 
@@ -7141,7 +7128,9 @@ check('fx3 item 7 · a profiled player with no career-splits entry reads "Splits
     assert.strictEqual(v.headline, null, `${p.name}: Draw headline without splits`);
     assert.strictEqual(v.support, 'Splits not built for this player yet', `${p.name}: Draw "${v.support}"`);
     assert.strictEqual(I.insightsEmptyText(p), 'Splits not built for this player yet.', `${p.name}: Key insights`);
-    assert(/Splits not built for this player yet\./.test(I.renderSplitsModal(p)), `${p.name}: Draw modal`);
+    // fx6 item 8: the modal prints the tile's words exactly, no trailing period in either
+    assert(/>Splits not built for this player yet<\/div>/.test(I.renderSplitsModal(p)), `${p.name}: Draw modal`);
+    assert.strictEqual(v.blankFigure, true, `${p.name}: the Draw figure slot is not left empty`);
   }
   for (const p of some.slice(0, 40)) {
     const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).splits;

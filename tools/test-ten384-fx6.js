@@ -10,6 +10,9 @@
 //                         result (US Open 2021 v Gojowczyk, "3 - 2" with four sets on file) takes the result's count.
 //   5 · Swing row         five FIXED tour bands: HARD Jan–Mar · CLAY Apr–May · GRASS Jun–Jul · HARD Aug–Sep ·
 //                         INDOORS Oct–Nov, December empty; same bars (4px, r2, 75%, band colour, caps label).
+//   7 · Career subtitle   exactly "Record by surface and season, and his ratings against the field".
+//   8 · Draw tile         a player with no career-splits entry: the figure slot is EMPTY (not "—"), the support line
+//                         stays, min-height 132; tile and modal print the same words, no trailing period in either.
 //
 // Run: node tools/test-ten384-fx6.js
 'use strict';
@@ -194,6 +197,45 @@ H.check('5 · the bands do not follow the rows: Clay rows in February and Outdoo
   const rows = [R(1, 'clay', 'Outdoor'), R(1, 'clay', 'Outdoor'), R(1, 'hard', null), R(9, 'hard', 'Outdoor'), R(9, 'hard', 'Outdoor'), R(10, 'hard', null), R(11, 'hard', 'Indoor')];
   const sp = I.calSurfaceSpans(rows);
   assert.deepStrictEqual(sp.map(s => [s.surface || '', s.len, s.label, s.colour]), BANDS, 'painted ' + sp.map(s => (s.surface || '·') + '×' + s.len).join(' '));
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 7 · Career record subtitle
+// ════════════════════════════════════════════════════════════════════════════
+H.check('7 · the Career record modal subtitle = "Record by surface and season, and his ratings against the field"', () => {
+  const { I, p } = fxModule();
+  const sub = I.modalSubtitle('career', p, {});
+  assert.strictEqual(sub, 'Record by surface and season, and his ratings against the field');
+  // and the rendered modal head carries it
+  const html = withState(I, { key: p.key, modal: 'career', careerTab: 'record', careerScope: 'career', careerTier: 'all', careerDrill: null },
+    () => I.renderModal(p, I.build ? I.build(p) : {}));
+  assert(T(html).includes('Record by surface and season, and his ratings against the field'), 'the modal head does not print it');
+  return '"' + sub + '"';
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 8 · Draw record tile for a player with no career-splits entry (Thompson, 207)
+// ════════════════════════════════════════════════════════════════════════════
+H.check('8 · no splits entry: the Draw tile\'s figure slot is empty (not "—"), the support line stays, min-height 132; the modal says the same words', () => {
+  // the store has loaded (another player's entry) and holds none for this player — Thompson's case
+  const { I, p } = fxModule({ extra: { careerSplits: { 99999: { career: {} } } } });
+  const ctx = { rows: I.ledgerMatches(p) };
+  ctx.boxVals = I.boxValues(p, ctx);
+  const html = I.renderBoxes(ctx);
+  const i = html.indexOf('data-box="splits"');
+  assert(i >= 0, 'no Draw record tile');
+  const tile = html.slice(html.lastIndexOf('<div class="pp2-box"', i), html.indexOf('<div class="pp2-box"', i + 1) > 0 ? html.indexOf('<div class="pp2-box"', i + 1) : undefined);
+  const divs = [...tile.matchAll(/<div[^>]*style="([^"]*)"[^>]*>([^<]*)<\/div>/g)].map(m => ({ style: m[1], text: m[2] }));
+  const fig = divs.find(d => /IBM Plex Mono/.test(d.style));
+  const sup = divs.find(d => /font-size:11\.5px/.test(d.style));
+  assert(fig, 'no figure slot');
+  assert.strictEqual(fig.text, '&nbsp;', 'the figure slot prints "' + fig.text + '"');
+  assert(/font-size:\d+px/.test(fig.style), 'the empty slot lost its size (the tile would shrink)');
+  assert(/min-height:132px/.test(tile), 'the tile lost min-height 132');
+  assert.strictEqual(sup && sup.text, 'Splits not built for this player yet');
+  const modal = T(I.renderSplitsModal(p)).trim();
+  assert.strictEqual(modal, sup.text, 'tile "' + sup.text + '" vs modal "' + modal + '"');
+  return 'figure slot &nbsp; · support / modal "' + modal + '"';
 });
 
 H.done();
