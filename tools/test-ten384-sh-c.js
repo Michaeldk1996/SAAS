@@ -8,7 +8,7 @@
 //
 // Drives the REAL renderer (player-profile-v2.js renderLedger via buildCtx) on constructed, pinned rows.
 // Control: `SHC_BASE=<sha> node tools/test-ten384-sh-c.js` runs the same checks against that commit's
-// player-profile-v2.js (read with `git show`); the expanded-head checks fail there.
+// player-profile-v2.js (read with `git show`); the expanded-head checks fail there (and on e58dc928, the walkover "N of M" checks).
 //
 // Run: node tools/test-ten384-sh-c.js
 'use strict';
@@ -52,18 +52,24 @@ rows.push({ opponent: 'L. Laver2', date: '2026-09-21', tournament: 'Laver Cup', 
   result: '0 - 2', won: false, sets: [], retired: false, walkover: false, qualifying: false, tier: 'atp' });
 const P = { key: KEY, name: 'S. Hcase', rank: 50, recentForm: { matches: rows.slice().reverse() } };
 
-const { I } = L.loadPp2({ src: PP2, now: '2026-10-07T12:00:00Z', players: { [KEY]: P }, careerHistory: {}, marketEdge: {} });
+// The same window with the walkover replaced by a played win: no walkover anywhere.
+const KEY2 = '__shc2';
+const rows2 = rows.map((r, i) => (i === 20 ? Object.assign({}, r, { walkover: false, result: '2 - 0', sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }] }) : r));
+const P2 = { key: KEY2, name: 'S. Hcasetwo', rank: 51, recentForm: { matches: rows2.slice().reverse() } };
+const { I } = L.loadPp2({ src: PP2, now: '2026-10-07T12:00:00Z', players: { [KEY]: P, [KEY2]: P2 }, careerHistory: {}, marketEdge: {} });
 const R = L.readers(I);
-const DASH_RE = /full ledger\s+([^ ]+) win · (?:last (\d+) of (\d+)|(\d+)) match(?:es)?/;
+const DASH_RE = /full ledger\s+([^ ]+) win · (?:last (\d+) of (\d+)|(\d+) of (\d+)|(\d+)) match(?:es)?/;
 
-function render(patch) {
-  return R.withState(Object.assign({ key: KEY, ledgerOpen: true, ledgerExpanded: false, surfaces: [], priceFilters: [] }, patch),
-    () => I.renderLedger(P, Object.assign(I.build(P), { ledgerOpen: true })));
+function render(patch, who) {
+  const pl = who || P;
+  return R.withState(Object.assign({ key: pl.key, ledgerOpen: true, ledgerExpanded: false, surfaces: [], priceFilters: [] }, patch),
+    () => I.renderLedger(pl, Object.assign(I.build(pl), { ledgerOpen: true })));
 }
 function head(html) {
   const m = DASH_RE.exec(L.text(html));
   assert(m, 'could not read the ledger head: ' + L.text(html).slice(0, 200));
-  return { rate: m[1], last: m[2] ? Number(m[2]) : null, of: m[3] ? Number(m[3]) : null, n: m[4] ? Number(m[4]) : null };
+  const N = x => (x ? Number(x) : null);
+  return { rate: m[1], last: N(m[2]), of: N(m[3]) != null ? N(m[3]) : N(m[5]), n: N(m[4]) != null ? N(m[4]) : N(m[6]) };
 }
 const rowCount = html => (html.match(/class="pp2-ledger-row"/g) || []).length;
 // independent expectation over a set of constructed rows (Form rule: walkover neither W nor L)
@@ -88,14 +94,24 @@ H.check('collapsed: the head is the strip\'s last 18 rows, "last n of 30 matches
   return '"' + h.rate + ' win · last ' + h.last + ' of ' + h.of + ' matches"';
 });
 
-H.check('expanded: the head rates EVERY row the ledger lists, "N matches" (walkover counted neither way)', () => {
+H.check('expanded with a walkover in the window: rate over decided matches, "29 of 30 matches" beside "See all 30"', () => {
   const html = render({ ledgerExpanded: true });
   const h = head(html), e = expect(form);
   assert.strictEqual(rowCount(html), 30, 'expanded lists all 30 form rows');
-  assert.deepStrictEqual([h.rate, h.n, h.last], [e.rate, e.n, null], 'one population, no "last 18 of"');
-  assert.strictEqual(h.n, 29, '30 rows listed, one a walkover → 29 counted');
+  assert.deepStrictEqual([h.rate, h.n, h.of, h.last], [e.rate, 29, 30, null], 'decided of listed, no "last 18 of"');
+  assert.strictEqual(e.n, 29, '30 rows listed, one a walkover → 29 decided');
   assert.notStrictEqual(h.rate, expect(form.slice(-CAP)).rate, 'the pinned set separates the two figures');
   assert(html.includes('Show the last ' + CAP), 'the toggle reads "Show the last 18"');
+  assert(render({}).includes('See all 30 results'), 'the "of" count is the button\'s count');
+  return '"' + h.rate + ' win · ' + h.n + ' of ' + h.of + ' matches"';
+});
+
+H.check('expanded with no walkover: one count, "N matches" (unchanged form)', () => {
+  const html = render({ ledgerExpanded: true }, P2);
+  const h = head(html), e = expect(rows2.filter(r => !/laver/i.test(r.tournament)));
+  assert.strictEqual(rowCount(html), 30);
+  assert.deepStrictEqual([h.rate, h.n, h.of, h.last], [e.rate, 30, null, null]);
+  assert(/· 30 matches/.test(L.text(html)) && !/ of 30 matches/.test(L.text(html)));
   return '"' + h.rate + ' win · ' + h.n + ' matches"';
 });
 
@@ -120,12 +136,12 @@ H.check('filters while expanded, over the cap (hard: 20 rows > cap; all 20 liste
   const hard = form.filter(r => r.surface === 'hard');
   const h = head(html), e = expect(hard);
   assert.strictEqual(rowCount(html), hard.length);
-  assert.deepStrictEqual([h.rate, h.n], [e.rate, e.n]);
+  assert.deepStrictEqual([h.rate, h.n, h.of], [e.rate, e.n, hard.length], 'the walkover sits in the hard rows: 19 of 20');
 });
 
 H.mustFail('the expanded check would catch a head left on the last-18 figure', () => {
   const h = head(render({}));                         // the collapsed head
-  assert.deepStrictEqual([h.rate, h.n], [expect(form).rate, expect(form).n]);
+  assert.deepStrictEqual([h.rate, h.n, h.of], [expect(form).rate, expect(form).n, 30]);
 });
 
 H.done();

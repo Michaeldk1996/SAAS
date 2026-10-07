@@ -23,9 +23,21 @@ function slice(name, src = html) {
   }
   return src.slice(start, i + 1);
 }
+// The REAL book-label map (exact anchor), so a regression in bsp-consult-dashboard.html's MX_BOOK_LABELS fails here.
+function sliceObj(name, src = html) {
+  const start = src.indexOf(`\nconst ${name} = {`);
+  assert.ok(start > 0, `const ${name} not found`);
+  let depth = 0, i = src.indexOf('{', start);
+  for (; i < src.length; i++) {
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}') { depth--; if (depth === 0) break; }
+  }
+  return src.slice(start + 1, i + 1) + ';';
+}
+const MX_BOOK_LABELS_SRC = sliceObj('MX_BOOK_LABELS');
 const A = new Function(`
   ${/const MX_3DP_BELOW = [^;]+;/.exec(html)[0]}
-  const MX_BOOK_LABELS = { pncl: 'Pinnacle', sbo: 'SBOBET' };
+  ${MX_BOOK_LABELS_SRC}
   const _mcNowPair = m => m.__pair || null;
   const _ocsOf = m => m.__ocs || null;
   const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
@@ -171,7 +183,7 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
     const mxOddsUpdatedAt = () => up;
     const _mcNowPair = m => m.__pair || null; const _ocsOf = () => null;
     const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
-    const MX_BOOK_LABELS = { pncl: 'Pinnacle' };
+    ${MX_BOOK_LABELS_SRC}
     ${slice('mxBookLabel')} ${slice('mcUpsetRows')} ${slice('mcBoardBooks')} ${slice('mcRenderHeaderStats')}
     mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
   const vals = h => [...h.matchAll(/mx-hstat__l">([^<]*)<\/span><span class="mx-hstat__v">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
@@ -192,11 +204,16 @@ test('review 4/8: Completed and Upcoming always draw three tiles; an empty tile 
   assert.match(body, /const stripHtml = `<div class="mc-story-strip">\$\{panels\.join\(''\)\}<\/div>`;/, 'Completed strip is unconditional');
 });
 test('review 5: the Market Signal drawer draws only rows with data, only groups with rows, no explainer', () => {
-  const S = new Function(`const MX_BOOK_LABELS = { pncl: 'Pinnacle' }; ${slice('mxBookLabel')} ${slice('mcSigPanel')}; return mcSigPanel;`)();
+  const S = new Function(`${MX_BOOK_LABELS_SRC} ${slice('mxBookLabel')} ${slice('mcSigPanel')}; return mcSigPanel;`)();
   const up = S({ p1: 'A. Rublev', p2: 'R. Safiullin', odds: { p1: 1.69, p2: 2.27, bookmaker: 'Betano' } });
   assert.match(up, /Sharp estimates/);
   assert.doesNotMatch(up, /Market money|Stennisfy|Polymarket|Kalshi|—|never invented|mc-sig-note/);
   assert.equal((up.match(/class="mc-sig-row"/g) || []).length, 1);
+  // TEN-384 item 6: the row names the book in the house style, through the real map.
+  for (const [raw, shown] of [['Pncl', 'Pinnacle'], ['WilliamHill', 'William Hill'], ['Bet365', 'bet365'], ['1xBet', '1xBet'], ['Betano', 'Betano']]) {
+    const h = S({ p1: 'A', p2: 'B', odds: { p1: 1.5, p2: 2.6, bookmaker: raw } });
+    assert.match(h, new RegExp('mc-sig-dotm"></span>' + shown.replace('.', '\\.') + '</span>'), `${raw} -> ${shown}`);
+  }
   const none = S({ p1: 'A', p2: 'B', odds: null });
   assert.match(none, /No market signal for this match yet/);
   assert.doesNotMatch(none, /Sharp estimates|mc-sig-row/);

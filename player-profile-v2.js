@@ -1285,9 +1285,11 @@
           // TEN-384 fix 4 · the rate is over the strip's last LEDGER_CAP rows (the Form rule: ribbon = strip =
           // this rate) and "See all N results" counts the whole window, so the head names both: "last 18 of
           // 33 matches". Under the cap the two are one number and it reads "11 matches".
-          // Expanded, the head is one population, "89% win · 35 matches" (the counted rows it rates).
-          MIDDOT + ' ' + (allShown ? hr.n : rows.length > r.n ? 'last ' + r.n + ' of ' + rows.length : r.n) + ' match' +
-          ((allShown ? hr.n : rows.length > r.n ? rows.length : r.n) === 1 ? '' : 'es') + '</span>' +
+          // Expanded, the head rates every row listed, "89% win · 35 matches"; a walkover in the window is listed
+          // but decides nothing, so the count names both, "89% win · 34 of 35 matches", and agrees with "See all 35".
+          MIDDOT + ' ' + (allShown ? (rows.length > hr.n ? hr.n + ' of ' + rows.length : hr.n)
+            : rows.length > r.n ? 'last ' + r.n + ' of ' + rows.length : r.n) + ' match' +
+          ((allShown ? rows.length : rows.length > r.n ? rows.length : r.n) === 1 ? '' : 'es') + '</span>' +
       '</div>';
 
     var legend = '' +
