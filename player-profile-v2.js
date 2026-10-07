@@ -5841,6 +5841,11 @@
   // list it was a 2–2 "best of 3" match in no Match shape row (156 + 59 + 26 + 28 = 269 of 270). Where the
   // list holds fewer sets than the result, the result's own count decides (won 3–2, best of 5) and the row is
   // marked `partial`: its games lines are not evaluable (lineCoverage drops its games), never summed short.
+  // fx7 item 2 · a per-set list LONGER than a decided result ("1 - 2" with 4-6 6-3 4-6 1-0 on file, Sinner's Monte
+  // Carlo 2024 SF) read as a level 2–2 and was dropped as "level". The result decides the shape (lost 1–2) and the
+  // junk is trimmed: the list keeps its COMPLETE sets (a side on 6+ games, not level: 1-0, 0-1 and 6-6 are not
+  // sets). When those make up the result they are the row's sets (`sets`, read by lineGames); else the result's
+  // count stands with no games (`partial`), as for a list that is short of the result.
   function lineSetCount(r) {
     var mm = String(r.sets || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
     var a = mm ? +mm[1] : 0, b = mm ? +mm[2] : 0;
@@ -5852,6 +5857,13 @@
         if (+s.p > +s.o) w++; else if (+s.o > +s.p) l++;
       }
       if ((w || l) && a !== b && a + b > w + l) return { w: a, l: b, partial: true };
+      if ((w || l) && a !== b && a + b < w + l) {
+        var kept = r.setGames.filter(function (x) {
+          return x.p != null && x.o != null && +x.p !== +x.o && Math.max(+x.p, +x.o) >= 6;
+        });
+        var kw = kept.filter(function (x) { return +x.p > +x.o; }).length;
+        return kw === a && kept.length - kw === b ? { w: a, l: b, sets: kept } : { w: a, l: b, partial: true };
+      }
       if (w || l) return { w: w, l: l };
     }
     if (!mm) return null;
@@ -5860,11 +5872,12 @@
   }
 
   /** Subject games for/against, or null when the row carries no per-set games. */
-  function lineGames(r) {
-    if (!r.setGames || !r.setGames.length) return null;
+  function lineGames(r, sets) {
+    var list = sets || r.setGames;
+    if (!list || !list.length) return null;
     var f = 0, a = 0, seen = 0;
-    for (var i = 0; i < r.setGames.length; i++) {
-      var s = r.setGames[i];
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
       if (s.p == null || s.o == null) continue;
       f += +s.p; a += +s.o; seen++;
     }
@@ -5910,7 +5923,7 @@
       // fx6 item 2 · a count that decides no shape (2–2 in this format) stays out of All and the note says so,
       // so the Match shape rows always sum to All matches.
       if (sc.w === sc.l) { unshaped++; continue; }
-      var g = sc.partial ? null : lineGames(r);
+      var g = sc.partial ? null : lineGames(r, sc.sets);
       // TEN-310: favourite = price under 2.00 (the Market edge rule).
       var MEC = window.MarketEdgeCore;
       // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
