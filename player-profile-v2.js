@@ -5595,7 +5595,10 @@
   // the MODAL HEADER (drawGrainHtml, placed by the shared shell).
   //
   // Column tracks are the reference's, per tab (392px inside a 14px-padded panel):
-  //   Results       name 208 · W–L 48 · Win % 54 · Vs avg 58
+  //   Results       name 200 · W–L 56 · Win % 54 · Vs avg 58
+  //                 (shard r2, founder: the reference's W–L 48 is 7 Plex Mono 11.5 characters less 0.3px, so a
+  //                 "124–141" wrapped onto two lines and a 4-digit career ("1044–199") cannot fit at all. The
+  //                 column takes 8 characters (55.2px) from the name column; the panel's width is unchanged.)
   //   Sets & Games  name 138 · Tiebreaks 68 · Games 48 · Sets 48 · Vs avg 58
   //   Service       name 144 · M 26 · Aces 42 · DF 42 · Holds 48 · Breaks 50
   // The tab's headline rate(s) are Plex 13/700 white (Win %, Sets, Holds + Breaks);
@@ -5604,7 +5607,7 @@
   // Founder Q7 (2026-10-05): Opponent runs through vs Top 10 only — no vs Top 50
   // row, dash or note (career-splits holds no Top-50 split).
   var SPLIT_TRACKS = {
-    results: '208px 48px 54px 58px',
+    results: '200px 56px 54px 58px',
     sets: '138px 68px 48px 48px 58px',
     service: '144px 26px 42px 42px 48px 50px'
   };
@@ -5702,6 +5705,39 @@
     return drawSeg('split-scope', 'data-scope', [['career', 'Career'], ['last52', 'Last 52']], scope);
   }
 
+  // ── Shard r2 (founder): why Level and By round sum short of Format ─────────
+  // The splits builder counts every tour-level match (lv G M A F D) in the totals, but Level has rows for G, M
+  // and A only, and By round for F SF QF R16–R128 only: Davis Cup (D) and Tour Finals / NextGen (F) matches have
+  // no Level row, round-robin (RR, which is how the source codes Davis Cup rubbers too) and bronze-medal (BR, 9
+  // matches over 7 players in splits-matches/ on 8 Oct) have no By round row.
+  // Ruling: state it in the footnote, no new rows. Format (Best of 5 + Best of 3) is the complete partition, so
+  // the gaps are Format total − Level sum and Format total − By round sum, over the scope shown. The scope holds
+  // aggregates only (the per-match drawer shard is not loaded here), so it cannot say WHICH of the excluded
+  // kinds a gap holds: the reason is the generic one. Both gaps 0 → no clause.
+  var DRAW_ROUND_ROWS = ['Finals', 'Semi-finals', 'Quarter-finals'].concat(EARLY_ROUND_MEMBERS);
+  function drawRowsSum(sc, labels) {
+    return labels.reduce(function (a, m) {
+      var r = sc && sc[m];
+      return a + (r && r.W != null && r.L != null ? r.W + r.L : 0);
+    }, 0);
+  }
+  function drawGaps(sc) {
+    var fmt = DRAW_GROUPS.filter(function (g) { return g.id === 'format'; })[0];
+    var lvl = DRAW_GROUPS.filter(function (g) { return g.id === 'level'; })[0];
+    var total = drawRowsSum(sc, fmt.members);
+    if (!total) return null;
+    return { total: total, level: total - drawRowsSum(sc, lvl.members), round: total - drawRowsSum(sc, DRAW_ROUND_ROWS) };
+  }
+  function drawGapClause(sc) {
+    var g = drawGaps(sc);
+    if (!g || (g.level <= 0 && g.round <= 0)) return '';
+    function nm(n) { return n + ' match' + (n === 1 ? '' : 'es'); }
+    var parts = [];
+    if (g.level > 0) parts.push('Level leaves out ' + nm(g.level));
+    if (g.round > 0) parts.push(parts.length ? 'By round ' + g.round : 'By round leaves out ' + nm(g.round));
+    return parts.join(', ') + ' (Davis Cup, Tour Finals, round-robin and bronze-medal matches have no level or knockout round)';
+  }
+
   function renderSplitsModal(p) {
     var scope = state.splitScope === 'last52' ? 'last52' : 'career';
     var tab = SPLIT_TABS.filter(function (t) { return t.id === state.splitTab; })[0] || SPLIT_TABS[0];
@@ -5719,6 +5755,7 @@
     // disclosed in the footnote.
     var baseline = pooledBaseline(p.key, scope);
     var setBase = setBaseline(sc);
+    var gapClause = drawGapClause(sc);
     var tracks = SPLIT_TRACKS[tab.id];
     var heads = tab.id === 'results' ? ['W' + ENDASH + 'L', 'Win %', 'Vs avg']
       : tab.id === 'sets' ? ['Tiebreaks', 'Games', 'Sets', 'Vs avg']
@@ -5735,7 +5772,8 @@
     // A supporting figure (Plex 11.5 label) or the tab's headline rate (Plex 13/700 white).
     function fig(txt, lead) {
       var dash = txt === DASH;
-      return '<span style="' + CELL + 'text-align:right;font-family:\'IBM Plex Mono\',monospace;' +
+      // nowrap: an en dash is a line-break opportunity, so a W–L that overruns its track breaks AFTER the dash.
+      return '<span style="' + CELL + 'text-align:right;white-space:nowrap;font-family:\'IBM Plex Mono\',monospace;' +
         (lead ? 'font-size:13px;font-weight:700;color:' + (dash ? DASH_COLOUR : 'var(--text)') + ';'
               : 'font-size:11.5px;color:var(--text-label);') + '">' + esc(txt) + '</span>';
     }
@@ -5826,7 +5864,8 @@
         '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,422px));gap:10px;align-items:start;">' +
           col(['level', 'format', 'round']) + col(['opponent']) +
         '</div>' +
-        '<div data-pp2-draw="note" style="font-size:12px;line-height:19.2px;color:var(--text-label);">' + legend() + '</div>' +
+        '<div data-pp2-draw="note" style="font-size:12px;line-height:19.2px;color:var(--text-label);">' + legend() +
+          (gapClause ? ' ' + MIDDOT + ' ' + esc(gapClause) : '') + '</div>' +
       '</div>';
 
     // One line each, the reference's wording. The Results line carries the
@@ -6206,7 +6245,7 @@
           (softRow
             ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n) + '</span>'
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
-          '<span style="' + MK_MONO + 'font-size:12px;text-align:right;color:var(--text-label);">' + r.record + '</span>' +
+          '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
           '<span style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;color:' +
             (vsR == null ? DASH_COLOUR : vsR > 0 ? 'var(--pos)' : vsR < 0 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
             (vsR == null ? DASH : (vsR > 0 ? '+' : vsR < 0 ? MINUS : '') + Math.abs(vsR).toFixed(1) + 'pp') + '</span>' +
@@ -6355,7 +6394,7 @@
           '<span style="' + MK_MONO + 'font-size:13px;font-weight:700;white-space:nowrap;color:' +
             (b.n ? 'var(--text)' : DASH_COLOUR) + ';">' + esc(b.label) + '</span>' +
           '<span style="' + MK_MONO + 'font-size:12px;color:var(--text-label);text-align:right;">' + (b.n || DASH) + '</span>' +
-          '<span style="' + MK_MONO + 'font-size:12px;color:var(--text-label);text-align:right;">' +
+          '<span style="' + MK_MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' +
             (b.n ? recordText(b.wins, b.losses) : DASH) + '</span>' +
           '<span style="' + MK_MONO + 'font-size:13px;font-weight:700;text-align:right;color:' +
             (rate === DASH ? DASH_COLOUR : 'var(--text)') + ';">' + rate + '</span>' +
@@ -7440,7 +7479,7 @@
           '<span style="font-size:13.5px;font-weight:700;color:var(--text);">' + MON_FULL[x.m] + '</span>' +
           '<span style="font-size:11.5px;color:var(--text-label);overflow:hidden;text-overflow:ellipsis;' +
             'white-space:nowrap;">' + esc(x.events.join(' ' + MIDDOT + ' ')) + '</span></span>' +
-        '<span style="' + MONO_W + 'font-size:13px;font-weight:700;color:var(--text);text-align:right;">' +
+        '<span style="' + MONO_W + 'font-size:13px;font-weight:700;color:var(--text);text-align:right;white-space:nowrap;">' +
           recordText(x.won, x.lost) + '</span>' +
         cal26Rate(x) +
         '<span style="font-size:15px;line-height:1;color:var(--text-label);text-align:right;' +
@@ -7637,7 +7676,7 @@
         var cls = c.won > c.lost ? 'calw' : c.won < c.lost ? 'call' : 'caln';
         return '<span class="' + cls + '" data-pp2="cal-cell" data-v="' + yr.year + '|' + m + '" ' +
           'style="' + MONO + 'font-size:11.5px;text-align:center;color:var(--text);background:' + bg + ';' +
-          'border-radius:4px;padding:5px 0;margin:3px 0;cursor:pointer;' +
+          'border-radius:4px;padding:5px 0;margin:3px 0;cursor:pointer;white-space:nowrap;' +
           (on ? 'box-shadow:inset 0 0 0 1px var(--edge-16);' : '') +
           'transition:background .12s ease;">' + c.won + ENDASH + c.lost + '</span>';
       }).join('');
@@ -7787,7 +7826,7 @@
       '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:3px;">' +
         // K6 · the reference titles the drill with the short month ("Apr 2026").
         '<span style="font-size:13px;font-weight:700;">' + esc(MON3[dm] + ' ' + dy) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
           recordText(won, cell.length - won) + '</span>' +
         '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:15px;' +
           'font-weight:700;white-space:nowrap;color:' + (priced ? sign : DASH_COLOUR) + ';">' +
@@ -8887,7 +8926,7 @@
               'text-overflow:ellipsis;white-space:nowrap;">' + esc(r.axis.label) + '</span>' +
             '<span style="flex:none;' + STYLE_MONO + 'font-size:10px;color:var(--text-label);">' + esc(r.axis.abbr) + '</span>' +
           '</span>' +
-          '<span style="' + STYLE_MONO + 'font-size:12px;color:var(--text-label);text-align:right;">' +
+          '<span style="' + STYLE_MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' +
             (n ? recordText(r.won, r.lost) : DASH) + '</span>' +
           '<span style="' + STYLE_MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' +
             (ok ? String(n) : n + ' ' + MIDDOT + ' min 5') + '</span>' +
@@ -8907,7 +8946,7 @@
     var total = '<div data-pp2-mu="career" style="display:grid;' + STYLE_TRACKS + 'align-items:center;padding:11px 0 0;' +
       'border-top:1px solid var(--line);">' +
       '<span style="' + STYLE_CAPS + '">Career</span>' +
-      '<span style="' + STYLE_MONO + 'font-size:12px;color:var(--text-label);text-align:right;">' +
+      '<span style="' + STYLE_MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' +
         (tn ? recordText(tw, tl) : DASH) + '</span>' +
       '<span style="' + STYLE_MONO + 'font-size:12px;color:var(--text-label);text-align:right;white-space:nowrap;">' +
         tn + ' rated</span>' +
@@ -8924,7 +8963,7 @@
       '<span style="' + STYLE_CAPS + '">Record by archetype ' + MIDDOT + ' career</span>' +
       '<span data-pp2-mu="summary" style="display:flex;align-items:baseline;gap:8px;' + STYLE_MONO + 'font-size:12px;color:var(--text-label);">' +
         '<span style="' + STYLE_CAPS + '">Career</span>' +
-        '<span style="font-weight:700;color:var(--text);">' + (tn ? recordText(tw, tl) : DASH) + '</span>' + dot +
+        '<span style="font-weight:700;color:var(--text);white-space:nowrap;">' + (tn ? recordText(tw, tl) : DASH) + '</span>' + dot +
         '<span style="font-weight:700;color:' + (trate === DASH ? 'var(--text-label)' : 'var(--text)') + ';">' + trate + '</span>' + dot +
         '<span>' + rows.total.toLocaleString('en-US') + ' matches</span>' + dot +
         '<span style="font-weight:700;color:' + styleUnitsColour(tcents, tpriced) + ';">' + styleUnits(tcents, tpriced) + '</span>' +
@@ -10709,7 +10748,8 @@
 
     var cell = function (txt, colour, size, weight, markN) {
       return '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:' + size + ';color:' + colour + ';padding:8px 0;' + SIT_CELLBD +
+        // nowrap (shard r2): the Record cell is a W–L, and an en dash is a line-break opportunity.
+        'font-size:' + size + ';color:' + colour + ';padding:8px 0;white-space:nowrap;' + SIT_CELLBD +
         (soft ? 'align-self:stretch;' : '') +
         (weight ? 'font-weight:' + weight + ';' : '') + '">' +
         (markN ? rateOverMark(esc(txt), markN) : esc(txt)) + '</div>';
