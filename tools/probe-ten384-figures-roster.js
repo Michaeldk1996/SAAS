@@ -14,6 +14,9 @@
 //   6  Court speed H / A = ledger H / A on every priced ledger row
 //   Y  Calendar Career yield = Market edge box, for every player with a shard
 //   J  every Calendar row the join prices agrees with its Market edge row on the result
+//   C  (fx7 item 1) the Last 52 window and the season table split courts with ONE classifier: for the top-120 by rank,
+//      every dated season (2021+) and tier, the window's filter run over the season lists the season table's Indoors
+//      exactly, and Hard / Clay / Grass differ from the table only by that season's undated matches on that surface
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -115,5 +118,37 @@ H.check('J · roster: every Calendar row priced by the join agrees with its Mark
   assert.deepStrictEqual(bad.slice(0, 5), [], `${bad.length} joined rows disagree on the result`);
   return `${players} players: ${joined} of ${shard} Market edge rows joined (${(100 * joined / shard).toFixed(1)}%) · 0 mispaired · ` +
     `${ret} retirements settled differently · ${conflict.length} same-day result conflicts${conflict.length ? ' (' + conflict.slice(0, 6).join(', ') + ')' : ''}`;
+});
+H.check('C · top-120: the Last 52 window and the season table split every dated season\'s courts the same way', () => {
+  const SURF = ['hard', 'clay', 'grass', 'indoors'];
+  const top = keys.filter(k => PLAYERS[k].rank > 0).sort((a, b) => PLAYERS[a].rank - PLAYERS[b].rank).slice(0, 120);
+  const wl = c => (c ? (c.won || 0) + '–' + (c.lost || 0) : '—');
+  let seasons = 0; const bad = [];
+  top.forEach((k) => {
+    const p = PLAYERS[k], sp = I.calSpine(p);
+    (p.careerByYear || []).filter(y => y && y.total && +y.year >= 2021).forEach(y => ['all', 'atp', 'chitf'].forEach((tier) => {
+      const raw = tier === 'all' ? y : y[tier];
+      if (!raw) return;
+      seasons++;
+      const yr = String(y.year), table = I.seasonCells(p, y, tier);
+      const inTier = r => tier === 'all' || r.tier === tier;
+      const dated = {};
+      SURF.forEach((s) => { dated[s] = { won: 0, lost: 0 }; });
+      sp.forEach((r) => { if (r.year === yr && inTier(r) && dated[r.surface]) dated[r.surface][r.won ? 'won' : 'lost']++; });
+      SURF.forEach((s) => {
+        const win = { won: 0, lost: 0 };
+        I.drillRows(p, s, yr, yr + '-01-01').filter(inTier).forEach((r) => { win[r.won ? 'won' : 'lost']++; });
+        const t = table[s] || { won: 0, lost: 0 };
+        const rr = raw[s] || { won: 0, lost: 0 };
+        const ok = s === 'indoors'
+          ? t.won === win.won && t.lost === win.lost
+          : (t.won || 0) - win.won === (rr.won || 0) - dated[s].won && (t.lost || 0) - win.lost === (rr.lost || 0) - dated[s].lost;
+        if (!ok) bad.push(`${p.name} ${yr} [${tier}] ${s}: table ${wl(table[s])}, window ${wl(win)}`);
+      });
+    }));
+  });
+  assert(seasons > 0, 'no dated season walked');
+  assert.deepStrictEqual(bad.slice(0, 6), [], `${bad.length} season-surfaces disagree`);
+  return `${top.length} players · ${seasons} season-tier rows (2021+) · 0 disagreements`;
 });
 H.done();

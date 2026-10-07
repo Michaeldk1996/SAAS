@@ -3177,7 +3177,7 @@
       return { won: acc.won + (r.won || 0), lost: acc.lost + (r.lost || 0) };
     };
     spineYears(p).forEach(function (y) {
-      var g = gridCells(y);
+      var g = seasonCells(p, y, 'all');
       out.clay = add(out.clay, g.clay);
       out.hard = add(out.hard, g.hard);
       out.grass = add(out.grass, g.grass);
@@ -3257,26 +3257,53 @@
     // signed so tools/test-ten384-figures-agree.js fails on it; the page prints the note only when > 0.
     return n - dated;
   }
-  // TEN-384 fx6 item 1 (founder r2, 2026-10-07) · THE WINDOW SPLITS ON THE SEASON TABLE'S FIELD. The Last 52
-  // rows used to carve nothing: every indoor match sat under Hard (Alcaraz Hard 31–5, Indoors "—") while the
-  // season table beside it carves Indoors out of each season. The season table's court is API-Tennis's
-  // tournament court type ("Hard (Indoor)", careerByYear[].indoor, counted per tournament by the pipeline);
-  // the dated rows carry no tournament key to read it per match. So each dated row takes its court from:
+  // TEN-384 fx6 item 1 + fx7 item 1 (founder r2, 2026-10-07) · ONE PER-MATCH COURT CLASSIFIER, read by BOTH the
+  // Last 52 window AND the season table's Indoors / Hard split for every dated season (2021+, seasonCells()).
+  // fx6 split the window on the season table's field by searching the season's court-less events for the ONE
+  // set whose W–L made up careerByYear's indoor record; where two sets fitted (Zverev 2026: United Cup 1–1 and
+  // Laver Cup 1–1 both fit indoor 1–1) the row stayed under Hard and the two sides disagreed, and a season the
+  // table did not split (FAA 2025, Indoors "—") was still split in the window. Now each dated row takes its
+  // court, in this order, from:
   //   1. the odds archive's per-match Indoor / Outdoor column (calSpine `court`), the field the Calendar's
   //      Indoors chip and Court speed read;
   //   2. else the archive court of the SAME event in the same season (a court is a tournament property:
-  //      one missed price join does not make Melbourne indoor-unknown);
-  //   3. else the season table itself: in a season that carries the indoor split, the indoor W–L the
-  //      table holds beyond the archive's indoor rows must sit among that season's court-less events of
-  //      that surface. When exactly ONE set of whole events makes up that W–L, those events are Indoor
-  //      and the rest Outdoor (Alcaraz 2026: indoor 1–0, court-less Laver Cup 1–0 + Tokyo 5–0 -> Laver
-  //      Cup). Zero left over -> all Outdoor. More than one candidate set, or the archive already holds
-  //      more indoor than the table -> the court stays unknown and the row stays under its surface.
+  //      one missed price join does not make an event court-unknown);
+  //   3. else a KNOWN INDOOR event (COURT_KNOWN_INDOOR: Laver Cup, ATP Finals, Next Gen Finals; no price, so
+  //      never in the archive);
+  //   4. else a KNOWN OUTDOOR event where that is certain (COURT_KNOWN_OUTDOOR);
+  //   5. else unknown (null): the row counts under its surface, on both sides.
+  // The season table's Indoors cell is the season's rows this classifier calls Indoor and its Hard / Clay / Grass
+  // cells are the season's surface record less those, so Σ columns = total still holds and a window row and its
+  // season cell are one classification. careerByYear's own indoor split (API-Tennis tournament court type,
+  // counted by the pipeline) is NOT reproducible per match — the dated rows carry no tournament key — so where it
+  // differs, the classifier wins: it is the split that keeps the two sides equal. Pre-2021 seasons hold no dated
+  // rows and keep careerByYear's figures (the window never reaches them).
   // Returns an array parallel to calSpine(p): 'Indoor' | 'Outdoor' | null.
+  var COURT_KNOWN_INDOOR = [
+    { name: 'Laver Cup', re: /\blaver cup\b/i },
+    { name: 'ATP Finals', re: /^\s*(atp\s+)?(nitto\s+)?(atp\s+)?(tour\s+)?finals\b/i },
+    { name: 'Next Gen Finals', re: /\bnext\s*gen(eration)?\s+(atp\s+)?finals\b/i }
+  ];
+  var COURT_KNOWN_OUTDOOR = [
+    { name: 'Australian Open', re: /^\s*(atp\s+)?australian open\b/i },
+    { name: 'Roland Garros', re: /^\s*(atp\s+)?(roland garros|french open)\b/i },
+    { name: 'Wimbledon', re: /^\s*(atp\s+)?wimbledon\b/i },
+    { name: 'US Open', re: /^\s*(atp\s+)?us open\b/i },
+    { name: 'United Cup', re: /^\s*(atp\s+)?united cup\b/i },
+    { name: 'ATP Cup', re: /^\s*(atp\s+)?atp cup\b/i }
+  ];
+  function knownCourtOf(r) {
+    var names = [r.event, r.tournament];
+    function hit(list) {
+      return list.some(function (k) { return names.some(function (n) { return n && k.re.test(String(n)); }); });
+    }
+    if (hit(COURT_KNOWN_INDOOR)) return 'Indoor';
+    if (hit(COURT_KNOWN_OUTDOOR)) return 'Outdoor';
+    return null;
+  }
   function seasonCourts(p) {
     var sp = calSpine(p);
-    var cby = (p && p.careerByYear) || null;
-    if (seasonCourts._v === sp && seasonCourts._y === cby) return seasonCourts._c;
+    if (seasonCourts._v === sp) return seasonCourts._c;
     var courts = sp.map(function (r) { return r.court === 'Indoor' || r.court === 'Outdoor' ? r.court : null; });
     var evCourt = {};
     sp.forEach(function (r, i) {
@@ -3285,54 +3312,44 @@
       evCourt[k] = evCourt[k] === undefined || evCourt[k] === courts[i] ? courts[i] : false;
     });
     sp.forEach(function (r, i) {
-      if (!courts[i] && evCourt[r.year + '|' + r.event]) courts[i] = evCourt[r.year + '|' + r.event];
-    });
-    var seasons = {};
-    (cby || []).forEach(function (y) { if (y && y.indoor) seasons[String(y.year)] = y.indoor; });
-    var groups = {};
-    sp.forEach(function (r, i) {
-      if (!seasons[r.year] || !r.surface) return;
-      var g = groups[r.year + '|' + r.surface] || (groups[r.year + '|' + r.surface] = { year: r.year, surf: r.surface, w: 0, l: 0, ev: {} });
-      if (courts[i] === 'Indoor') { if (r.won) g.w++; else g.l++; return; }
       if (courts[i]) return;
-      var e = g.ev[r.event] || (g.ev[r.event] = { w: 0, l: 0, idx: [] });
-      if (r.won) e.w++; else e.l++;
-      e.idx.push(i);
+      courts[i] = evCourt[r.year + '|' + r.event] || knownCourtOf(r);
     });
-    Object.keys(groups).forEach(function (k) {
-      var g = groups[k], rec = seasons[g.year][g.surf] || { won: 0, lost: 0 };
-      var rw = (rec.won || 0) - g.w, rl = (rec.lost || 0) - g.l;
-      var evs = Object.keys(g.ev).map(function (n) { return g.ev[n]; });
-      if (!evs.length || rw < 0 || rl < 0) return;
-      var pick = seasonCourtPick(evs, rw, rl);
-      if (!pick) return;
-      evs.forEach(function (e, j) { e.idx.forEach(function (i) { courts[i] = pick[j] ? 'Indoor' : 'Outdoor'; }); });
-    });
-    seasonCourts._v = sp; seasonCourts._y = cby; seasonCourts._c = courts;
+    seasonCourts._v = sp; seasonCourts._c = courts;
     return courts;
   }
-  // The ONE set of events whose W–L sums to (rw, rl), as a boolean per event, or null when none or several do.
-  function seasonCourtPick(evs, rw, rl) {
-    var W = rw + 1, n = evs.length, dp = [], k, w, l;
-    function cell() { var a = []; for (var x = 0; x < W * (rl + 1); x++) a.push(0); return a; }
-    dp.push(cell()); dp[0][0] = 1;
-    for (k = 0; k < n; k++) {
-      var prev = dp[k], next = prev.slice(), e = evs[k];
-      for (w = 0; w + e.w < W; w++) for (l = 0; l + e.l <= rl; l++) {
-        if (!prev[l * W + w]) continue;
-        var t = (l + e.l) * W + w + e.w;
-        next[t] = Math.min(2, next[t] + prev[l * W + w]);
-      }
-      dp.push(next);
+  // The first dated season whose table split comes off the classifier (the per-match rows start in 2021).
+  var COURT_DATED_FROM = 2021;
+  /**
+   * A dated season's indoor record off the classifier, shaped like careerByYear[].indoor ({ total, hard, clay,
+   * grass }, each null when empty), for `tier`. undefined = keep careerByYear's own split: a pre-2021 season, or
+   * the dated store has not answered yet.
+   */
+  function seasonIndoorOf(p, year, tier) {
+    if (!(+year >= COURT_DATED_FROM)) return undefined;
+    var sp = calSpine(p);
+    if (!sp.length && !careerHistorySettled(p.key)) return undefined;
+    var courts = seasonCourts(p), yr = String(year);
+    var out = { total: null, hard: null, clay: null, grass: null };
+    function add(k, r) {
+      var c = out[k] || (out[k] = { won: 0, lost: 0 });
+      if (r.won) c.won++; else c.lost++;
     }
-    if (dp[n][rl * W + rw] !== 1) return null;
-    var pick = [];
-    w = rw; l = rl;
-    for (k = n; k > 0; k--) {
-      if (dp[k - 1][l * W + w]) { pick[k - 1] = false; continue; }
-      pick[k - 1] = true; w -= evs[k - 1].w; l -= evs[k - 1].l;
-    }
-    return pick;
+    sp.forEach(function (r, i) {
+      if (r.year !== yr || courts[i] !== 'Indoor') return;
+      if (tier && tier !== 'all' && r.tier !== tier) return;
+      add('total', r);
+      if (r.surface === 'hard' || r.surface === 'clay' || r.surface === 'grass') add(r.surface, r);
+    });
+    return out.total ? out : null;
+  }
+  /** The season table's carved cells for one season and tier: careerByYear's record, split on the classifier. */
+  function seasonCells(p, y, tier) {
+    var r = tierRowOf(y, tier);
+    if (!r) return { total: null, clay: null, hard: null, grass: null, indoors: null, noSplit: true };
+    var ind = seasonIndoorOf(p, y.year, tier);
+    if (ind !== undefined) r = Object.assign({}, r, { indoor: ind });
+    return gridCells(r);
   }
   // The window's surface key for a row and its resolved court: Indoor -> 'indoors', else its surface.
   function last52SurfOf(r, court) {
@@ -3372,7 +3389,8 @@
     var rows = spineYears(p);
     return {
       rows: rows.length,
-      withCourt: rows.filter(function (y) { return !!y.indoor; }).length,
+      // fx7 item 1: a dated season carries court type through the classifier once the dated store answers.
+      withCourt: rows.filter(function (y) { return seasonIndoorOf(p, y.year, 'all') !== undefined || !!y.indoor; }).length,
       window: rows.filter(function (y) { return y.allTier !== false; }).length
     };
   }
@@ -4042,12 +4060,8 @@
     return { year: y.year, total: t.total || null, clay: t.clay || null, hard: t.hard || null,
       grass: t.grass || null, indoor: t.indoor || null };
   }
-  /** Carved season cells for a tier; every cell null where the row holds no split for it. */
-  function tierGridCells(y, tier) {
-    var r = tierRowOf(y, tier);
-    if (!r) return { total: null, clay: null, hard: null, grass: null, indoors: null, noSplit: true };
-    return gridCells(r);
-  }
+  // (Carved season cells for a tier = seasonCells(p, y, tier): every cell null where the row holds no split for
+  // it, and a dated season's Indoors split read off the one court classifier — fx7 item 1.)
   /** Career footer cells for a tier: the same carve-out summed over the rows that carry the tier. */
   function careerTierCells(p, tier) {
     var out = { total: null, clay: null, hard: null, grass: null, indoors: null };
@@ -4057,7 +4071,7 @@
       return { won: acc.won + (r.won || 0), lost: acc.lost + (r.lost || 0) };
     };
     spineYears(p).forEach(function (y) {
-      var g = tierGridCells(y, tier);
+      var g = seasonCells(p, y, tier);
       ['total', 'clay', 'hard', 'grass', 'indoors'].forEach(function (k) { out[k] = add(out[k], g[k]); });
     });
     return out;
@@ -4549,7 +4563,7 @@
     }
     var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
     var body = years.map(function (y) {
-      var g = tierGridCells(y, tier);
+      var g = seasonCells(p, y, tier);
       var yearStr = String(y.year);
       var openCell = state.careerDrill && state.careerDrill.kind === 'cell' &&
         state.careerDrill.year === yearStr ? state.careerDrill.surf : null;
@@ -11289,7 +11303,8 @@
       calScope: calScope,
       calResidual: calResidual,
       // TEN-384 fix 1 + 2 · the Last-52 window over the Calendar's rows
-      last52Rows: last52Rows, seasonCourts: seasonCourts, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
+      last52Rows: last52Rows, seasonCourts: seasonCourts, seasonCells: seasonCells, seasonIndoorOf: seasonIndoorOf,
+      COURT_KNOWN_INDOOR: COURT_KNOWN_INDOOR, careerTierCells: careerTierCells, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
       calResidualNote: calResidualNote,
       renderCalDrill: renderCalDrill,
       renderCalFooter: renderCalFooter,
