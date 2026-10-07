@@ -599,7 +599,8 @@ async function loadProfileShards(keys, names) {
         const { status, body } = await get(SITE + 'profiles/' + encodeURIComponent(k) + '.json');
         if (status === 200) { const d = JSON.parse(body); p = d && (d.profile || d); }
       } catch (e) { /* fall back to the index name */ }
-      out[k] = { name: (p && p.name) || names[k], age: p && p.age != null ? p.age : null, searchOnly: true };
+      out[k] = { name: (p && p.name) || names[k], age: p && p.age != null ? p.age : null,
+        country: (p && p.country) || null, searchOnly: true };
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker));
@@ -656,9 +657,16 @@ function nameIndex(list) {
   return { idx, altIdx, anyIdx, bySet, byFull };
 }
 
-// Every TA page a profile may be, best first. `ambiguous` marks a list hit that
-// shares its initial + surname with another man: it is accepted only when the
-// identity check can positively confirm it.
+// Every TA page a profile may be, best first. `ambiguous` marks a hit that is a
+// guess: an initial + surname shared by more than one TA player (or, after the
+// roster pass in main(), already claimed by another profile key). An ambiguous
+// candidate is accepted only when the identity check POSITIVELY confirms it
+// (ATP id, age or country) — never on "nothing contradicts it".
+//
+// ORDER (review fix, 2026-10-07): the FULL-NAME match first. The old order put
+// the best-ranked initial + surname hit first, which built Andrej Martin
+// (101792, Slovakia, no age on his profile) from Andres Martin's page — the
+// American who is also profile 1056.
 function resolveCandidates(p, ixName, R, L) {
   const out = [], seen = new Set();
   const rankOf = full => { const e = R.byFull.get(nameTokens(full).join(' ')); return e ? e.rank : null; };
@@ -669,24 +677,30 @@ function resolveCandidates(p, ixName, R, L) {
     out.push({ full, rank, via, id, ambiguous: !!ambiguous });
   };
   const t = nameTokens(p.name);
+  // 1 · the full name (the deployed index, or the profile's own name when it is
+  //     a full one), word order free, in TA's full men's list.
+  for (const full of [ixName, looksFull(p.name) ? p.name : null]) {
+    if (!looksFull(full)) continue;
+    const hits = L.bySet.get(tokenSet(full)) || [];
+    hits.forEach(c => push(c.full, rankOf(c.full), 'index-name', hits.length > 1));
+  }
+  // 2 · TA's current ranking list by initial + surname. Every same-initial
+  //     namesake is a candidate, best-ranked first, and all are ambiguous when
+  //     there is more than one.
   if (t.length >= 2) {
     const lookup = t[0][0] + '|' + t[t.length - 1];
-    let cands = R.idx.get(lookup);
-    if (!cands || !cands.length) {
+    // (No initials filter here: TA's ranking list drops middle names — "J. J.
+    // Schwaerzler" is TA's "Joel Schwaerzler".)
+    let cands = R.idx.get(lookup) || [];
+    if (!cands.length) {
       // The middle-name index only when it names exactly one player. Two
       // same-surname candidates (A. Zverev / M. Zverev) would be a guess.
       const alt = R.altIdx.get(lookup) || [];
       const uniq = [...new Map(alt.map(c => [c.full, c])).values()];
-      cands = uniq.length === 1 ? uniq : null;
+      cands = uniq.length === 1 ? uniq : [];
     }
-    if (cands && cands.length) {
-      const hit = cands.slice().sort((a, b) => a.rank - b.rank)[0];
-      push(hit.full, hit.rank, 'rank', false);
-    }
-  }
-  if (looksFull(ixName)) {
-    const hits = L.bySet.get(tokenSet(ixName)) || [];
-    hits.forEach(c => push(c.full, rankOf(c.full), 'index-name', hits.length > 1));
+    cands.slice().sort((a, b) => a.rank - b.rank).slice(0, 3)
+      .forEach(c => push(c.full, c.rank, 'rank', cands.length > 1));
   }
   if (t.length >= 2) {
     // The list by initial + surname, then by initial + any later word (double
@@ -697,14 +711,43 @@ function resolveCandidates(p, ixName, R, L) {
       hits.slice(0, 3).forEach(c => push(c.full, c.rank != null ? c.rank : rankOf(c.full), via, hits.length > 1));
     }
   }
+  // One exception to full-name-first: TA sometimes keeps TWO pages for one man
+  // ("Chak Lam Coleman Wong", 2 matches, and "Coleman Wong", the ranked page
+  // with his career). A ranking-list hit whose every word is in the full name
+  // is that man's current page, so it goes first.
+  const fullName = looksFull(ixName) ? ixName : looksFull(p.name) ? p.name : null;
+  const fullWords = fullName ? new Set(nameTokens(fullName)) : null;
+  // When we hold his full name, an initial-route hit that is NOT that name (Andres
+  // for Andrej Martin) is a guess, whatever the ranking list says.
+  if (fullWords) out.forEach(c => { if (c.via !== 'index-name' && !nameTokens(c.full).every(w => fullWords.has(w))) c.ambiguous = true; });
+  if (fullWords && out.length && out[0].via === 'index-name') {
+    const i = out.findIndex(c => c.via === 'rank' && nameTokens(c.full).every(w => fullWords.has(w)));
+    if (i > 0) out.unshift(out.splice(i, 1)[0]);
+  }
   return out;
+}
+
+// A TA page that is a candidate for more than one profile key is a guess for
+// every key that reached it by an initial (not a full-name hit): Andres Martin
+// is both 1056's full-name hit and Andrej Martin's (101792) initial + surname
+// hit. Such candidates turn ambiguous, so they need a positive identity check.
+function markSharedCandidates(work) {
+  const byId = new Map();
+  for (const w of work) for (const c of w.cands) {
+    if (!byId.has(c.id)) byId.set(c.id, new Set());
+    byId.get(c.id).add(w.pkey);
+  }
+  for (const w of work) for (const c of w.cands) {
+    if (c.via !== 'index-name' && byId.get(c.id).size > 1) c.ambiguous = true;
+  }
+  return work;
 }
 
 // The page's own identity block (player-classic.cgi carries it as plain vars).
 function pageMeta(html) {
   const v = name => { const m = html.match(new RegExp('var ' + name + "\\s*=\\s*'([^']*)'")); return m ? m[1] : null; };
   const n = name => { const m = html.match(new RegExp('var ' + name + '\\s*=\\s*(\\d+)')); return m ? +m[1] : null; };
-  return { fullName: v('fullname'), atpId: v('atp_id'), dob: n('dob'), currentRank: n('currentrank') };
+  return { fullName: v('fullname'), atpId: v('atp_id'), dob: n('dob'), currentRank: n('currentrank'), country: v('country') };
 }
 function ageAt(dob, stamp) {
   if (!dob || !/^\d{8}$/.test(String(dob)) || !/^\d{8}$/.test(String(stamp))) return null;
@@ -726,18 +769,62 @@ function ageAt(dob, stamp) {
 // headshots and is not always right — M. Damm (1317, 23) is aliased to D214, his
 // father's id; the page that matches his age is D0DT. Alias wrong AND age wrong
 // (or no age) = rejected.
+//   · the country: the profile's country name vs the page's IOC code (COUNTRY_IOC;
+//     "World" = the neutral flag, which TA writes as RUS or BLR). A match is a
+//     positive confirmation; a mismatch rejects unless the ATP id or the age
+//     confirms him (a player who changed nationality keeps his page).
 function normAtpId(id) { return String(id || '').split('/').pop().trim().toUpperCase(); }
+const COUNTRY_IOC = {
+  Argentina: ['ARG'], Aruba: ['ARU'], Australia: ['AUS'], Austria: ['AUT'], Barbados: ['BAR', 'BRB'], Belgium: ['BEL'],
+  Benin: ['BEN'], Bermuda: ['BER'], Bolivia: ['BOL'], 'Bosnia and Herzegovina': ['BIH'], Brazil: ['BRA'], Bulgaria: ['BUL'],
+  Canada: ['CAN'], Chile: ['CHI'], China: ['CHN'], Colombia: ['COL'], 'Costa Rica': ['CRC'], Croatia: ['CRO'], Cyprus: ['CYP'],
+  'Czech Republic': ['CZE'], Czechia: ['CZE'], Denmark: ['DEN'], 'Dominican Republic': ['DOM'], Ecuador: ['ECU'], Egypt: ['EGY'],
+  'El Salvador': ['ESA'], Estonia: ['EST'], Finland: ['FIN'], France: ['FRA'], Georgia: ['GEO'], Germany: ['GER'], Greece: ['GRE'],
+  Honduras: ['HON'], 'Hong Kong': ['HKG'], Hungary: ['HUN'], India: ['IND'], Indonesia: ['INA'], Ireland: ['IRL'], Israel: ['ISR'],
+  Italy: ['ITA'], 'Ivory Coast': ['CIV'], Jamaica: ['JAM'], Japan: ['JPN'], Jordan: ['JOR'], Kazakhstan: ['KAZ'], Latvia: ['LAT'],
+  Lebanon: ['LBN', 'LIB'], Lithuania: ['LTU'], Luxembourg: ['LUX'], Mexico: ['MEX'], Moldova: ['MDA'], Monaco: ['MON'],
+  Montenegro: ['MNE'], Morocco: ['MAR'], Namibia: ['NAM'], Netherlands: ['NED'], 'New Zealand': ['NZL'], Nigeria: ['NGR'],
+  'North Macedonia': ['MKD'], Norway: ['NOR'], Pakistan: ['PAK'], Paraguay: ['PAR', 'PRY'], Peru: ['PER'], Poland: ['POL'],
+  Portugal: ['POR'], 'Puerto Rico': ['PUR'], Qatar: ['QAT'], Romania: ['ROU'], Senegal: ['SEN'], Serbia: ['SRB'], Slovakia: ['SVK'],
+  Slovenia: ['SLO'], 'South Africa': ['RSA'], 'South Korea': ['KOR'], Spain: ['ESP'], Sweden: ['SWE'], Switzerland: ['SUI'],
+  Syria: ['SYR'], Taiwan: ['TPE'], Thailand: ['THA'], Tunisia: ['TUN'], Turkey: ['TUR'], USA: ['USA'], Ukraine: ['UKR'],
+  'United Arab Emirates': ['UAE'], 'United Kingdom': ['GBR'], Uruguay: ['URU'], Uzbekistan: ['UZB'], Venezuela: ['VEN'],
+  World: ['RUS', 'BLR'], Zimbabwe: ['ZIM'],
+};
+function countryFits(pageIoc, profCountry) {
+  const ioc = String(pageIoc || '').trim().toUpperCase();
+  const want = COUNTRY_IOC[String(profCountry || '').trim()];
+  if (!/^[A-Z]{3}$/.test(ioc) || !want) return null;   // nothing to compare
+  return want.indexOf(ioc) >= 0;
+}
 function identityCheck(meta, prof, aliasId, today) {
   const age = ageAt(meta.dob, today);
   const pAge = prof && prof.age != null && prof.age !== '' && isFinite(+prof.age) && +prof.age <= 50 ? +prof.age : null;
   const ageOk = age != null && pAge != null ? Math.abs(age - pAge) <= 1 : null;
+  const ctryOk = countryFits(meta.country, prof && prof.country);
   if (aliasId && meta.atpId) {
     if (normAtpId(meta.atpId) === normAtpId(aliasId)) return { ok: true, by: 'atp-id' };
     return ageOk ? { ok: true, by: 'age', note: `ATP alias ${aliasId} disagrees with the page's ${meta.atpId}` }
       : { ok: false, why: `ATP id ${meta.atpId} is not ${aliasId}` + (ageOk === false ? `, age ${age} is not ${pAge}` : '') };
   }
-  if (ageOk != null) return ageOk ? { ok: true, by: 'age' } : { ok: false, why: `age ${age} is not ${pAge}` };
+  if (ageOk === false) return { ok: false, why: `age ${age} is not ${pAge}` };
+  if (ctryOk === false && !ageOk) return { ok: false, why: `country ${meta.country} is not ${prof.country}` };
+  if (ageOk) return ctryOk === false ? { ok: true, by: 'age', note: `country ${meta.country} vs ${prof.country}` } : { ok: true, by: 'age' };
+  if (ctryOk) return { ok: true, by: 'country' };
   return { ok: true, by: 'none' };
+}
+
+// A match a player cannot have played: dated before his 14th birthday. TA's
+// page for one man can carry a namesake's rows — MiguelTobon (b. 2006) holds an
+// older Colombian Miguel Tobon's 1989-2001 Davis Cup ties. Those rows are
+// dropped (and counted); a page whose rows are MOSTLY impossible is not his.
+const MIN_PLAY_AGE = 14;
+function possibleForDob(matches, dob) {
+  if (!dob || !/^\d{8}$/.test(String(dob))) return { kept: matches, dropped: 0 };
+  const d = String(dob);
+  const floor = String(+d.slice(0, 4) + MIN_PLAY_AGE) + d.slice(4);
+  const kept = matches.filter(m => String(m.date) >= floor);
+  return { kept, dropped: matches.length - kept.length };
 }
 
 // The slim row a TOUR-WIDE reader needs per player (career-splits-tour.json
@@ -799,6 +886,7 @@ async function main() {
     if (rank != null ? rank > RANK_MAX : RANK_MAX !== Infinity) { missing[pkey] = 'outside the requested rank cap'; continue; }
     work.push({ pkey, name: p.name, prof: p, cands, rank });
   }
+  markSharedCandidates(work);
   work.sort((a, b) => (a.rank == null ? 1e9 : a.rank) - (b.rank == null ? 1e9 : b.rank));
   const targets = work.slice(0, MAX_PLAYERS);
   console.log(`Resolved ${work.length} of ${Object.keys(profiles).length} profiles to a Tennis Abstract name; ingesting ${targets.length}` +
@@ -811,7 +899,8 @@ async function main() {
   const shardMatches = {};
   let ok = 0, miss = 0, empty = 0, rejected = 0, cached = 0, fetched = 0, staleFallback = 0;
   const viaCount = {};
-  const aliasDisagreements = {};
+  const identityNotes = {};      // key -> an accepted page that one source disagrees with (alias id / country)
+  const impossibleDropped = {};   // key -> rows dropped as dated before DOB + 14 years
   // Why fetches failed, tallied by reason. Without this a total failure just
   // reports "ingested 0" and gives no way to tell a TA block (403) from a
   // rate-limit (429) from a network fault — they need opposite fixes.
@@ -861,13 +950,21 @@ async function main() {
       const idc = identityCheck(meta, t.prof, aliases[t.pkey], TODAY);
       if (!idc.ok) { rejected++; reasons.push(`${c.full}: identity mismatch (${idc.why})`); continue; }
       if (idc.by === 'none' && c.ambiguous) { reasons.push(`${c.full}: ambiguous name, nothing to confirm it`); continue; }
-      if (idc.note) aliasDisagreements[t.pkey] = idc.note;
-      const matches = parseMatches(html).filter(isTourLevel);
+      const all = parseMatches(html).filter(isTourLevel);
+      const dobGate = possibleForDob(all, meta.dob);
+      if (dobGate.dropped && dobGate.dropped * 2 > all.length) {
+        rejected++;
+        reasons.push(`${c.full}: ${dobGate.dropped} of ${all.length} matches predate his 14th birthday (b. ${meta.dob}) — another man's page`);
+        continue;
+      }
+      if (dobGate.dropped) impossibleDropped[t.pkey] = dobGate.dropped;
+      const matches = dobGate.kept;
       if (!matches.length) {
         empty++;
         missing[t.pkey] = `${c.full}: no tour-level matches on Tennis Abstract (Challenger / ITF / qualifying only)`;
         return 'done';
       }
+      if (idc.note) identityNotes[t.pkey] = idc.note;
       const cut52 = cutoff52(matches);
       const last52 = matches.filter(m => daysAgoStamp(m.date, cut52));
       players[t.pkey] = {
@@ -943,7 +1040,7 @@ async function main() {
     gamesRule: 'gameW/gameL/gamePct AND tbW/tbL/tbPct are averaged over gameM, not M. gameM excludes matches played on a different games scale (NextGen Finals: best-of-five SHORT sets, first to four, tiebreak at 3-3 rather than 6-6 — so its tiebreaks are differently REACHED as well as its games). Such a match still counts in M/W/L, in the surface row and in the SET columns. A row where gameM < M also carries gameX (the excluded count); a percentage over an empty population is null, never 0.',
     coverage: {
       roster: Object.keys(profiles).length, boardProfiles: Object.keys(roster.players).length, searchOnlyProfiles: extraKeys.length,
-      rosterSource: roster.source, aliasDisagreements,
+      rosterSource: roster.source, identityNotes, impossibleDropped,
       ingested: ok, noPage: miss, noMatches: empty, identityRejected: rejected, attempted: targets.length,
       fetched, fromCache: cached, staleFallback, resolvedVia: viaCount,
       missing,
@@ -989,6 +1086,7 @@ module.exports = {
   splits, altFormatOf, gameRecord, setRecord, tbRecord, isTourLevel, CATEGORIES,
   // TEN-391: the roster join, the identity check, and the two writers.
   nameIndex, resolveCandidates, pageMeta, identityCheck, ageAt, pooledRow, writePlayerFiles,
+  markSharedCandidates, possibleForDob, countryFits, COUNTRY_IOC,
 };
 
 if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });

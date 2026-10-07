@@ -282,7 +282,7 @@ this file wins.
     A before-switch copy of the board's fair prices and picks is kept; after deploy, 3 matches' live fair prices must
     equal the re-fit report; after 7 days live, report picks, hit rate and ROI (each with n) beside what legacy would
     have produced on the same matches. **Test:** `test-ten327-house-ratings.js` fails if the switch is rolled back
-    or a layer stops reading it. The **deployed** `career-splits.json` must carry `acesPM` / `dfPM` (the house serve
+    or a layer stops reading it. The **deployed** `career-splits/<key>.json` files must carry `acesPM` / `dfPM` (the house serve
     abstains without them).
 - **Under pressure** has **one builder**: the `surface-ratings.js` formula with its floors (50 BP faced, 50 BP chances,
   6 tiebreaks, 5 deciders; 3-of-4 → mean × 4; Challenger fold-in × 0.9), used by **every display** — the Edge Ratings

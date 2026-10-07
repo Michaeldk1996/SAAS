@@ -251,17 +251,57 @@ const notFound = () => Promise.resolve({ ok: false, status: 404, json: () => Pro
   const R = B.nameIndex([
     { full: 'Carlos Alcaraz', rank: 3 }, { full: 'Jordan Thompson', rank: 432 }, { full: 'Kai Thompson', rank: 2083 },
     { full: "Christopher O'Connell", rank: 400 }, { full: 'Diego Dedura Palomero', rank: 190 },
+    { full: 'Andres Martin', rank: 300 }, { full: 'Coleman Wong', rank: 100 }, { full: 'Jason Thompson', rank: 900 },
   ].map(e => e));
-  const Lm = B.nameIndex(['Bu Yunchaokete', 'Fabio Fognini', 'Connor Henry Van Schalkwyk', 'Alejandro Hernandez', 'Antonio Hernandez']
+  const Lm = B.nameIndex(['Bu Yunchaokete', 'Fabio Fognini', 'Connor Henry Van Schalkwyk', 'Alejandro Hernandez', 'Antonio Hernandez',
+    'Andres Martin', 'Andrej Martin', 'Jordan Thompson', 'Chak Lam Coleman Wong', 'Coleman Wong']
     .map((full, order) => ({ full, order })));
   const cand = (name, ix) => B.resolveCandidates({ name }, ix, R, Lm);
-  H.check('5 · rank > 250 resolves (Thompson 432, best-ranked namesake first); retired players resolve off TA\'s full list', () => {
-    assert.strictEqual(cand('J. Thompson')[0].full, 'Jordan Thompson');
-    assert.strictEqual(cand('C. Alcaraz')[0].via, 'rank');
+  H.check('5 · rank > 250 resolves; the FULL-NAME match comes first; same-initial namesakes are ambiguous; retired players resolve off TA\'s full list', () => {
+    assert.strictEqual(cand('J. Thompson', 'Jordan Thompson')[0].full, 'Jordan Thompson', 'rank 432 (over the old cap) resolves');
+    const jt = cand('J. Thompson');
+    assert(jt[0].full === 'Jordan Thompson' && jt.filter(c => c.via === 'rank').length === 2 && jt.every(c => c.ambiguous),
+      'Jordan (432) and Jason (900) share "J. Thompson": both ranking hits must need a positive identity check: ' + JSON.stringify(jt));
+    // Andrej Martin (101792, Slovakia): his full name wins over the best-ranked "A. Martin" (Andres, the American, 1056)
+    const am = cand('Andrej Martin', 'Andrej Martin');
+    assert.strictEqual(am[0].full, 'Andrej Martin');
+    assert.strictEqual(am[0].via, 'index-name');
+    assert(am.filter(c => c.full === 'Andres Martin').every(c => c.ambiguous), 'the namesake must need a positive identity check');
+    // TA keeps two pages for Coleman Wong; the ranked one (every word in his full name) goes first
+    assert.strictEqual(cand('C. Wong', 'Coleman Wong Chak Lam')[0].full, 'Coleman Wong');
     assert.strictEqual(cand('F. Fognini')[0].full, 'Fabio Fognini');
     assert.strictEqual(cand('Y. Bu', 'Yunchaokete Bu')[0].full, 'Bu Yunchaokete', 'word-order-free index name');
     assert.strictEqual(cand("C. O'Connell")[0].full, "Christopher O'Connell");
     assert.strictEqual(cand('D. Dedura')[0].full, 'Diego Dedura Palomero', 'double surname');
+  });
+  H.check('5 · a page that is a candidate for two profile keys is ambiguous for the key that reached it by an initial', () => {
+    const work = [
+      { pkey: '1056', cands: cand('A. Martin', 'Andres Martin') },
+      { pkey: '101792', cands: B.resolveCandidates({ name: 'A. Martin' }, null, R, Lm) },
+    ];
+    B.markSharedCandidates(work);
+    assert.strictEqual(work[0].cands[0].ambiguous, false, '1056\'s own full-name hit stays confirmed');
+    assert.strictEqual(work[1].cands.find(c => c.full === 'Andres Martin').ambiguous, true, 'the shared initial hit is not flagged');
+  });
+  H.check('5 · rows dated before DOB + 14 are dropped; a page that is mostly such rows is another man\'s (M. Tobon)', () => {
+    const rows = [{ date: '19890505' }, { date: '20010303' }, { date: '20230101' }];
+    const g = B.possibleForDob(rows, 20060619);
+    assert.strictEqual(g.dropped, 2);
+    assert.deepStrictEqual(g.kept.map(r => r.date), ['20230101']);
+    assert.strictEqual(B.possibleForDob(rows, null).dropped, 0, 'no DOB = nothing dropped');
+    assert.strictEqual(B.possibleForDob([{ date: '20200619' }], 20060619).dropped, 0, 'the 14th birthday itself is possible');
+    const src = fs.readFileSync(path.join(ROOT, 'tools', 'build-career-splits.js'), 'utf8');
+    assert(/dobGate\.dropped \* 2 > all\.length/.test(src), 'the builder no longer rejects a mostly-impossible page');
+  });
+  H.check('5 · country: a match confirms, a mismatch rejects unless the age confirms (a changed nationality)', () => {
+    assert.strictEqual(B.countryFits('SVK', 'Slovakia'), true);
+    assert.strictEqual(B.countryFits('USA', 'Slovakia'), false);
+    assert.strictEqual(B.countryFits('RUS', 'World'), true);
+    assert.strictEqual(B.countryFits('', 'Slovakia'), null);
+    assert.strictEqual(B.identityCheck({ country: 'USA' }, { country: 'Slovakia' }, undefined, '20261007').ok, false, 'Andres Martin passed as Andrej');
+    assert.strictEqual(B.identityCheck({ country: 'SVK' }, { country: 'Slovakia' }, undefined, '20261007').by, 'country');
+    const sw = B.identityCheck({ country: 'AUS', dob: 19970120 }, { country: 'Japan', age: 29 }, undefined, '20261007');
+    assert(sw.ok && sw.by === 'age' && /country/.test(sw.note), 'a nationality switch confirmed by age must pass with a note');
   });
   H.check('5 · initials the profile carries must fit: "C. S. van Schalkwyk" is not Connor Henry', () => {
     assert.deepStrictEqual(cand('C. S. van Schalkwyk'), []);
@@ -271,7 +311,7 @@ const notFound = () => Promise.resolve({ ok: false, status: 404, json: () => Pro
   });
   H.check('5 · the identity check: ATP id where held, else age vs date of birth', () => {
     const meta = B.pageMeta("var fullname = 'Hubert Hurkacz'\nvar currentrank = 39\nvar dob = 19970211\nvar atp_id = 'HB71'\n");
-    assert.deepStrictEqual(meta, { fullName: 'Hubert Hurkacz', atpId: 'HB71', dob: 19970211, currentRank: 39 });
+    assert.deepStrictEqual(meta, { fullName: 'Hubert Hurkacz', atpId: 'HB71', dob: 19970211, currentRank: 39, country: null });
     assert.strictEqual(B.identityCheck(meta, { age: 29 }, 'HB71', '20261007').by, 'atp-id');
     assert.strictEqual(B.identityCheck(meta, { age: 19 }, 'XX99', '20261007').ok, false, 'a wrong ATP id AND a wrong age passed');
     assert.strictEqual(B.identityCheck(meta, {}, 'XX99', '20261007').ok, false, 'a wrong ATP id with no age to decide passed');
