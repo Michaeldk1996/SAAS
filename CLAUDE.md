@@ -281,6 +281,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Tournaments → Reports — Round comparison shows every player in a round, W/L outcome letter | `.claude/rules/tournament-reports.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |
+| Database page (TEN-399) — one price join, header, control bar, Tour / Tournament / Player layout, compare events, charts | `.claude/rules/database.md` |
 | Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
 | Pre-match drops page — B′ Fly endpoint, what a row is, Dropped to vs Latest, 24 h window, freshness, watchdog | `.claude/rules/drops.md` |
 

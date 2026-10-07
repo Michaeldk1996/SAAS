@@ -104,8 +104,11 @@ Wawrinka, Lestienne, Balleret, Bautista-Agut, Carreno-Busta and Basilashvili, ea
 
 **The test.** Paint any board with the file loaded: no retired name appears, and the
 Overview count is exactly (unfiltered count − retired players who were in it). If the
-file fails to load, the board says (in `--text-soft`; amber is Model + Trading Report only, TEN-376) that retired players were NOT removed —
-never a silent fallback to the full roster. Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
+file fails to load, the board says (in `--text-soft`; amber is Model + Trading Report only, TEN-376) "Retired players could not be
+excluded just now, so this board may include them." — never a silent fallback to the full roster.
+**Footnote copy (founder TEN-399 fix 4, card ff586600):** with the file loaded the note reads exactly "Retired players are
+excluded." — no file name, no list of names, no "N of M stored players". The same holds for every Database footnote: no
+file names, pipeline notes or unresolved-name lists, one plain sentence each. Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
 TEN-262 names present, Kyrgios absent) by `test-ten262.mjs`.
 
 ## Mental Edge: three views, 200-point ranking minimum (founder rulings TEN-254, built TEN-260)
@@ -135,9 +138,9 @@ fold-in)", for the combined and Challenger views.
 
 **The rule.**
 - The control switches **every board column** between the store's `career` and `last52`
-  scopes (`surface-ratings.json` → `surfaces.<surface>.<scope>`), and moves the compare
-  panel's **highlighted (blue-wash) column** to the selected scope. The panel still shows
-  both periods and the Δ (Last 52 − career).
+  scopes (`surface-ratings.json` → `surfaces.<surface>.<scope>`). The compare panel shows both periods and the
+  Δ (Last 52 − career); its **highlighted column** (the 4% white wash) is **Last 52 at every scope** (founder
+  TEN-399 fix 5, card ff586600, 2026-10-08 — replaces "the wash follows the selected scope").
 - It stays on screen and enabled **while players are picked**. This replaces TEN-260 Part C
   "hidden while players are picked".
 - Style and labels are the Lines tab's control: `db-pills lines`, "Career" / "Last 52".
@@ -149,5 +152,27 @@ fold-in)", for the combined and Challenger views.
 **The test.** Paint the Serve board at each scope: C. Alcaraz's painted rating equals
 `surfaces.All.<scope>.serve.rating`; the Return board's rows at each scope equal the players
 whose node at that scope clears the gate; on Last 52 no Overview Elo cell is a number; the
-compare panel's `live` sub-heads read "Career" on Career and "Last 52" on Last 52; the
+compare panel's `live` sub-heads read "Last 52" on both scopes; the
 control renders enabled with two players picked. Locked by `test-ten262.mjs` (5 mutants).
+
+## Surfaces and ink (founder step-6 ticket TEN-399 item 7, 2026-10-07)
+
+**The rule.** Tokens only (`tokens.css`); night and day re-theme with no reload.
+- The Ratings card is a top-level card: `--card` + `--top-light`, **no outline**.
+- Board tabs (Overview · Elo · Serve · Return · Under pressure · Mental Edge) are the
+  Darker track: track `--card` + 1px `--edge-6`; selected `--inner` + 1px `--edge-10`,
+  white 700; idle `--text-label` 600.
+- Compare panel = nested panel, `--card` + 1px `--edge-6`. The scope column (sub-head and
+  cells) is a **4% white wash** (`--wash-4`) — never blue, never `--inner`. Δ keeps the
+  three-way sign colour (`--pos` / `--neg`, `--text-label` at zero or a dash).
+- Avatars: initials, white mono, on `--inner` — no gradient, no blue ink.
+- Sortable heads: `--text-label` idle, `--text` (white) on the sort column; the ↑/↓ arrow
+  is white, never blue, and carries no inline colour.
+- Field-median row: a **2.5% white wash** (`--text` at 2.5%).
+- Player names are links in white, white on hover too.
+- Places 1–3 of a ranked block print white 700 (the reference); 4 on stay `--text-label`.
+
+**The test.** Read each rule off the page's stylesheet and paint the boards and the
+compare panel from the published store: Δ cells carry `var(--pos)` / `var(--neg)` by sign,
+the ascending head reads `↑` in a bare `<i>`, only rows 1–3 carry `.top`. Locked by
+`test-ten262.mjs` (TEN-399 block, 14 mutants).

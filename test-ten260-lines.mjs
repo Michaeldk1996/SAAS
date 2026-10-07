@@ -127,26 +127,30 @@ const CHECKS = {
     if (!/^\d/.test(rate)) return `rate dashed without the field file: ${rate}`;
     if (field !== '—' || vs !== '—' || rank !== '—') return `field columns not dashed without the file: ${field} ${vs} ${rank}`;
     if (!/not published yet/.test(text)) return 'no note saying the field file is not published';
+    if (/\.json|pipeline/.test(text)) return 'a Lines note names a file or the pipeline (TEN-399 fix 4)';
     return null;
   },
-  // Two players side by side: per line a Rate and a Vs field for EACH player.
+  // Two players side by side (TEN-399 founder fix 3): one shared Field cell, then per player Record · Rate · Vs field,
+  // with Vs field in the three-way sign colour like the single table.
   compare(src) {
     const { rows: R, host } = paint(src, [{ nm: 'C', rows: FIELD.C }, { nm: 'A', rows: FIELD.A }]);
     const names = host.querySelectorAll('db-lnnm').map(n => n.textContent);
     if (names.join('|') !== 'C|A') return `compare name band reads ${names.join('|')}`;
     const row = R.find(r => r.label === '+1.5 sets');
-    if (!row || row.cells.length !== 4) return `compare row has ${row && row.cells.length} cells, expected 4 (Rate + Vs field × 2)`;
-    if (!row.cells[0].text.startsWith('60.0%') || !row.cells[2].text.startsWith('90.0%')) return `compare rates ${row.cells[0].text} / ${row.cells[2].text}`;
-    if (!/pp$/.test(row.cells[1].text) || !/pp$/.test(row.cells[3].text)) return 'compare vs-field cells are not filled';
-    // README: the compare delta is deliberately neutral - no sign colour
-    if (row.cells[1].color || row.cells[3].color) return 'compare delta carries a sign colour';
+    if (!row || row.cells.length !== 7) return `compare row has ${row && row.cells.length} cells, expected 7 (Field + (Record, Rate, Vs field) × 2)`;
+    if (!/^\d+\.\d%(field \d+)?$/.test(row.cells[0].text)) return `compare Field cell reads ${row.cells[0].text}`;
+    if (!/^\d+–\d+$/.test(row.cells[1].text) || !/^\d+–\d+$/.test(row.cells[4].text)) return `compare records ${row.cells[1].text} / ${row.cells[4].text}`;
+    if (!row.cells[2].text.startsWith('60.0%') || !row.cells[5].text.startsWith('90.0%')) return `compare rates ${row.cells[2].text} / ${row.cells[5].text}`;
+    if (!/pp$/.test(row.cells[3].text) || !/pp$/.test(row.cells[6].text)) return 'compare vs-field cells are not filled';
+    for (const c of [row.cells[3], row.cells[6]])
+      if (!/^var\(--(pos|neg)\)$/.test(c.color || '') && !/^0\.0pp$/.test(c.text)) return `compare vs field ${c.text} painted ${c.color || 'uncoloured'}`;
     return null;
   },
   // An unresolved name dashes with the reason; a failed load says so.
   unresolved(src) {
     const { rows: R, text } = paint(src, [{ nm: 'C', rows: FIELD.C }, { nm: 'Z. Nobody', rows: null }]);
     const row = R.find(r => r.label === '+1.5 sets');
-    if (row.cells[2].text !== '—' || row.cells[3].text !== '—') return 'unresolved player shows figures';
+    if (row.cells[4].text !== '—' || row.cells[5].text !== '—' || row.cells[6].text !== '—') return 'unresolved player shows figures';
     if (!/does not resolve to a profile key/.test(text)) return 'no reason for the unresolved player';
     // rows PRESENT but the load flagged failed (the shard cache was not written):
     // the cells must still dash - a partial or stale array is not an answer.
@@ -165,7 +169,7 @@ const CHECKS = {
     if (b.brow.textContent !== 'Line coverage · 15 lines') return `bo5 eyebrow "${b.brow.textContent}"`;
     return null;
   },
-  // README TAB 5: the highlight is a FULL-SAMPLE (n >= 10) rate at 65% or better.
+  // The highlight is a FULL-SAMPLE (n >= 10) rate at 65% or better (README TAB 5; its colours re-ruled by TEN-399, see lines.md).
   highlight(src) {
     const mk = (won, n) => paint(src, [{ nm: 'X', rows: rows(won, n) }]).rows.find(r => r.label === '+1.5 sets').cells[2].pill;
     if (!/strong/.test(mk(13, 20))) return '65.0% at n=20 is not highlighted';
@@ -224,7 +228,8 @@ const MUTANTS = [
   ['rate waits for the field', 'noField', s => s.replace('var rate = L ? lnRate(L) : null;', 'var rate = (L && LNF) ? lnRate(L) : null;')],
   ['field columns filled from nothing', 'noField', s => s.replace("if(!LNF || !LNF.slices) return null;", "if(!LNF || !LNF.slices) return {median:50,size:1,rank:1};")],
   ['compare shows one player', 'compare', s => s.replace("var cmp = subjects.length>1;", "var cmp = subjects.length>1; subjects=subjects.slice(0,1);")],
-  ['compare delta coloured', 'compare', s => s.replace("var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', null, 'cmpd');", "var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', delta==null?null:lnSgnCol(delta), 'cmpd');")],
+  ['compare delta neutral', 'compare', s => s.replace("var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', delta==null ? null : lnSgnCol(delta), 'cmpc');", "var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', null, 'cmpc');")],
+  ['compare drops Record', 'compare', s => s.replace("rc.title=title; row.appendChild(rc);", "rc.title=title;")],
   ['unresolved reason dropped', 'unresolved', s => s.replace("this name does not resolve to a profile key", "no data")],
   ['failed load reads as zero', 'unresolved', s => s.replace("s.P = (s.rows && !s.failed) ?", "s.P = (s.rows) ?")],
   ['eyebrow counts both formats', 'eyebrow', s => s.replace("        linesShown++;\n", "        linesShown+=2;\n")],
@@ -245,4 +250,115 @@ test('CONTROL: every TEN-260 Lines mutant is caught', async () => {
   }
   assert.deepEqual(survivors, [], `${survivors.length} of ${MUTANTS.length} mutants SURVIVED: ${survivors.join(' · ')}`);
   console.log(`  mutants: ${MUTANTS.length} caught, 0 survived`);
+});
+
+// ── TEN-399 item 8 · the Lines re-skin (founder step-6 ticket, 2026-10-07) ─────
+// Each ruling is read off the page's OWN stylesheet (the rule that paints it, merged
+// in cascade order the way the browser does) and, where the renderer decides the
+// state, off the painted cells. Every check has a mutant that puts the superseded
+// value back.
+//   · card = top-level card: --card + --top-light, no outline
+//   · state chips = --inner, no edge, grey caps
+//   · group headings = Hanken 10.5 / 700 / 0.10em caps in BOTH views
+//   · rate pill highlight (n >= 10 and >= 65%) = --pos text on a 12% --pos wash, no border
+//   · small-sample marks + n < 10 rates = --text-label; no amber anywhere on the tab
+//   · compare name bands on a 14% white rule
+function cssRule(src, sel) {
+  const css = [...src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  const out = {}; let found = false;
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!m[1].split(',').map(x => x.trim()).includes(sel)) continue;
+    found = true;
+    for (const d of m[2].split(';')) { const k = d.indexOf(':'); if (k > 0) out[d.slice(0, k).trim()] = d.slice(k + 1).trim(); }
+  }
+  return found ? out : null;
+}
+// The page aliases (--db-sec etc.) resolved to the foundation token they stand for.
+function tok(src, v) {
+  const m = /^var\((--db-[\w-]+)\)$/.exec(v || '');
+  if (!m) return v;
+  return (cssRule(src, '[data-page="database"]') || {})[m[1]] || v;
+}
+const LN_CSS = {
+  card(src) {
+    const r = cssRule(src, '.db-rcard'); if (!r) return 'no .db-rcard rule';
+    if (tok(src, r.background) !== 'var(--card)') return 'card background ' + r.background;
+    if (r['box-shadow'] !== 'var(--top-light)') return 'card shadow ' + r['box-shadow'];
+    if (!/transparent|none/.test(r.border || 'none')) return 'card has an outline: ' + r.border;
+    return null;
+  },
+  chips(src) {
+    const r = cssRule(src, '.db-lnchip'); if (!r) return 'no .db-lnchip rule';
+    if (r.background !== 'var(--inner)') return 'chip background ' + r.background;
+    if (!/transparent|none/.test(r.border || 'none')) return 'chip has an edge: ' + r.border;
+    if (tok(src, r.color) !== 'var(--text-label)') return 'chip ink ' + r.color;
+    if (r['text-transform'] !== 'uppercase' || r['font-size'] !== '10.5px' || r['font-weight'] !== '700') return 'chip is not a caps label';
+    return null;
+  },
+  groups(src) {
+    const r = cssRule(src, '.db-lngrp'), c = cssRule(src, '.db-lngrp.cmp') || {};
+    if (!r) return 'no .db-lngrp rule';
+    const want = { 'font-family': 'var(--font-words)', 'font-size': '10.5px', 'font-weight': '700', 'letter-spacing': '0.10em', 'text-transform': 'uppercase', color: 'var(--text-label)' };
+    for (const [k, v] of Object.entries(want)) {
+      if (r[k] !== v) return `group heading ${k} ${r[k]}, want ${v}`;
+      if (k in c && tok(src, c[k]) !== v) return `compare group heading overrides ${k} to ${c[k]}`;
+    }
+    return null;
+  },
+  pill(src) {
+    const base = cssRule(src, '.db-lnpill'), s = cssRule(src, '.db-lnpill.strong');
+    if (!base || !s) return 'no rate pill rules';
+    if (s.color !== 'var(--pos)') return 'highlight ink ' + s.color;
+    if (s.background !== 'color-mix(in srgb, var(--pos) 12%, transparent)') return 'highlight wash ' + s.background;
+    const bc = s['border-color'] || (/solid\s+(.+)$/.exec(base.border || '') || [])[1];
+    if (bc !== 'transparent') return 'highlight carries a border: ' + bc;
+    // and the renderer still decides who wears it: n >= 10 and >= 65% only
+    const mk = (won, n) => paint(src, [{ nm: 'X', rows: rows(won, n) }]).rows.find(r => r.label === '+1.5 sets').cells[2].pill;
+    if (!/strong/.test(mk(13, 20)) || /strong/.test(mk(9, 9))) return 'the highlight state moved off n >= 10 and >= 65%';
+    return null;
+  },
+  smallSample(src) {
+    for (const sel of ['.db-lnsmall', '.db-lnpill.low']) {
+      const r = cssRule(src, sel); if (!r) return 'no ' + sel + ' rule';
+      if (tok(src, r.color) !== 'var(--text-label)') return `${sel} ink ${r.color}, want var(--text-label)`;
+    }
+    // the painted marks carry no inline colour of their own (the stylesheet decides)
+    const p = paint(src, [{ nm: 'X', rows: rows(2, 4) }]);
+    const marks = p.host.querySelectorAll('db-lnsmall');
+    if (!marks.length) return 'control: an n < 5 slice painted no small-sample mark';
+    if (marks.some(m => m.style.color)) return 'a small-sample mark carries an inline colour';
+    // no amber anywhere on the tab: its rules and its renderers
+    const css = [...src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) if (/\.db-ln|\.db-rcard/.test(m[1]) && /amber/i.test(m[2])) return 'amber in ' + m[1].trim();
+    for (const f of ['lnPaint', 'lnHead', 'lnFoot', 'renderLines']) if (/amber/i.test(fnSource(src, f))) return 'amber in ' + f;
+    return null;
+  },
+  nameBand(src) {
+    const r = cssRule(src, '.db-lnnm'); if (!r) return 'no .db-lnnm rule';
+    if (r['border-bottom'] !== '1px solid color-mix(in srgb, var(--text) 14%, transparent)') return 'name band rule ' + r['border-bottom'];
+    if (r.color !== 'var(--text)') return 'name band ink ' + r.color;
+    return null;
+  },
+};
+for (const [name, fn] of Object.entries(LN_CSS)) test('TEN-399 Lines · ' + name, () => { const e = fn(SRC); assert.equal(e, null, e); });
+const LN_CSS_MUTANTS = [
+  ['card outline back', 'card', s => s.replace('.db-rcard{ background:var(--card); border:1px solid transparent;', '.db-rcard{ background:var(--card); border:1px solid var(--edge-6);')],
+  ['chip edge back', 'chips', s => s.replace('background:var(--inner); border:1px solid transparent; border-radius:7px; padding:5px 10px; }   /* TEN-399 item 8', 'background:var(--inner); border:1px solid var(--edge-6); border-radius:7px; padding:5px 10px; }   /* TEN-399 item 8')],
+  ['compare group headings back to 9px / 600', 'groups', s => s.replace('.db-lngrp.cmp{ padding:15px 6px 5px; }', '.db-lngrp.cmp{ font-size:9px; font-weight:600; letter-spacing:0.15em; padding:15px 6px 5px; }')],
+  ['highlight wash back to 15%', 'pill', s => s.replace('background:color-mix(in srgb, var(--pos) 12%, transparent); border-color:transparent; }', 'background:color-mix(in srgb, var(--pos) 15%, transparent); border-color:transparent; }')],
+  ['highlight border back', 'pill', s => s.replace('background:color-mix(in srgb, var(--pos) 12%, transparent); border-color:transparent; }', 'background:color-mix(in srgb, var(--pos) 12%, transparent); border-color:color-mix(in srgb, var(--pos) 34%, transparent); }')],
+  ['small-sample mark in amber', 'smallSample', s => s.replace(".db-lnsmall{font-family:var(--font-words); font-style:normal; margin-left:6px; font-size:10.5px; letter-spacing:0; text-transform:none; font-weight:700; color:var(--text-label); }", ".db-lnsmall{font-family:var(--font-words); font-style:normal; margin-left:6px; font-size:10.5px; letter-spacing:0; text-transform:none; font-weight:700; color:var(--amber); }")],
+  ['n < 10 rate in amber', 'smallSample', s => s.replace('.db-lnpill.low{ color:var(--text-label); }', '.db-lnpill.low{ color:var(--amber); }')],
+  ['name band rule back to the 5% hairline', 'nameBand', s => s.replace('padding-bottom:9px; border-bottom:1px solid color-mix(in srgb, var(--text) 14%, transparent);', 'padding-bottom:9px; border-bottom:1px solid var(--line);')],
+];
+test('CONTROL: every TEN-399 Lines mutant is caught', () => {
+  const survivors = [];
+  for (const [name, which, mutate] of LN_CSS_MUTANTS) {
+    const m = mutate(SRC);
+    assert.notEqual(m, SRC, `mutant "${name}" did not apply — it proves nothing`);
+    let caught; try { caught = LN_CSS[which](m) !== null; } catch { caught = true; }
+    if (!caught) survivors.push(name);
+  }
+  assert.deepEqual(survivors, [], `${survivors.length} of ${LN_CSS_MUTANTS.length} mutants SURVIVED: ${survivors.join(' · ')}`);
+  console.log(`  TEN-399 Lines mutants: ${LN_CSS_MUTANTS.length} caught, 0 survived`);
 });

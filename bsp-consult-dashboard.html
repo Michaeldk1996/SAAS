@@ -2596,8 +2596,8 @@
      recomputed from the archive and no export constant ships. -->
 <style>
   [data-page="database"] .pagewrap{ max-width:1360px; padding:30px 40px 70px; display:flex; flex-direction:column; gap:22px; }
-  [data-page="database"]{ --db-surface:var(--card); --db-strip:var(--inner); --db-fill:var(--inner);
-    --db-bd:var(--edge-6); --db-bd2:var(--edge-6);
+  [data-page="database"]{ --db-surface:var(--card);
+    --db-bd:var(--edge-6);
     --db-txt:var(--text); --db-emph:var(--text-label); --db-sec:var(--text-label); --db-ctl:var(--text-soft); --db-mute:var(--text-label); --db-faint:var(--text-label);
     /* --db-acc2 (var(--bar)) was the underdog colour and is GONE, not merely unused:
        leaving it declared makes it a decoy for the next reader looking for that
@@ -2612,16 +2612,28 @@
     display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; }
   .db-headcard h1{ font-family:var(--db-ui); font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; color:var(--db-txt); }
   .db-headcard p{ font-family:var(--db-ui); margin:8px 0 0; font-size:13.5px; line-height:1.55; color:var(--text-soft); max-width:640px; text-wrap:pretty; }
-  .db-headcard p strong{ color:var(--db-emph); font-weight:700; }
+  .db-headcard p strong{ color:var(--text); font-weight:700; }
   .db-fresh{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); white-space:nowrap; }
+  /* TEN-399 item 2: caps line over the title + the Today's Matches header stats (label Hanken 10.5 caps, value Plex 17/700). */
+  .db-headcap{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin:0 0 8px; line-height:normal; }
+  .db-hstats{ display:flex; gap:34px; flex:none; line-height:normal; }
+  .db-hstats:empty{ display:none; }
+  .db-hstat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  .db-hstat__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  .db-hstat__v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .db-hstat__n{ font-family:var(--font-words); font-size:11.5px; color:var(--text-label); white-space:nowrap; }
 
-  /* 2 - control bar */
-  .db-ctl{ display:flex; flex-direction:column; border:1px solid var(--db-bd); border-radius:12px; position:relative; z-index:4; }
+  /* 2 - control bar. TEN-399 item 3 + foundation surfaces: the bar is a top-level card (--card +
+     --top-light, no outline); every pill group and the tab row are the darker track (track --card
+     + 6% edge, selected --inner + 10% edge, white 700; idle --text-label); controls (triggers,
+     search, chips box, year range) are --inner with no edge, focus 16%; menus are the compact
+     site menu (--card + 10% edge, radius 10, padding 4, --shadow-menu). */
+  .db-ctl{ display:flex; flex-direction:column; background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; position:relative; z-index:4; }
   .db-ctltop{ display:flex; align-items:center; gap:10px; padding:11px 16px; background:var(--db-surface); border-radius:12px 12px 0 0; }
-  .db-seg{ display:inline-flex; flex:none; gap:3px; background:var(--db-surface); border:1px solid var(--db-bd); border-radius:9px; padding:2px; }
+  .db-seg{ display:inline-flex; flex:none; gap:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:9px; padding:2px; }
   .db-seg button{ font-family:var(--db-ui); font-size:11.5px; font-weight:600; padding:6px 13px; border-radius:7px; white-space:nowrap;
-    background:transparent; border:1px solid var(--edge-6); color:var(--db-mute); cursor:pointer; transition:background .14s ease,color .14s ease,border-color .14s ease; }
-  .db-seg button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--db-txt); font-weight:700; }
+    background:transparent; border:1px solid transparent; color:var(--text-label); cursor:pointer; transition:background .14s ease,color .14s ease,border-color .14s ease; }
+  .db-seg button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--text); font-weight:700; }
   /* TEN-260 Part C · the active tab is the design's FILLED pill. The ring live showed
      on a clicked tab was the browser's default focus outline left behind by the mouse
      click; the ring now appears on KEYBOARD focus only, on every Database control. */
@@ -2632,56 +2644,70 @@
   .db-subject{ display:inline-flex; align-items:center; gap:9px; height:36px; padding:0 12px 0 13px; border-radius:9px;
     background:var(--inner); border:1px solid var(--edge-10); white-space:nowrap; }
   .db-subject span{ font-family:var(--db-ui); font-size:13.5px; font-weight:700; color:var(--db-txt); }
-  .db-subject button{ width:19px; height:19px; border-radius:50%; border:1px solid var(--edge-6); background:transparent;
-    color:var(--text-label); font-size:11px; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; }
+  .db-subject button{ width:17px; height:17px; border-radius:50%; border:1px solid var(--line); background:transparent;
+    color:var(--text-label); font-size:10px; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; }
   .db-subject button:hover{ color:var(--db-txt); }
 
   .db-search{ position:relative; flex:1 1 200px; min-width:0; max-width:290px; }
-  .db-search input{ width:100%; height:36px; background:var(--db-fill); border:1px solid var(--db-bd); border-radius:9px;
+  .db-search input{ width:100%; height:36px; background:var(--inner); border:1px solid transparent; border-radius:9px;
     padding:0 12px; color:var(--db-txt); font-size:13px; font-family:var(--db-ui); outline:none; }
-  .db-search.prompting input{ border-color:var(--edge-10); }
-  .db-pop{ position:absolute; z-index:6; top:42px; left:0; width:290px; max-height:266px; overflow:auto;
-    background:var(--db-surface); border:1px solid var(--db-bd2); border-radius:11px; padding:7px;
-    display:flex; flex-direction:column; gap:1px;  }
-  .db-prow{ display:flex; align-items:baseline; gap:10px; padding:8px 10px; border-radius:7px; font-family:var(--db-ui); font-size:13px;
-    color:var(--db-ctl); font-weight:500; cursor:pointer; transition:background .14s ease,color .14s ease; }
-  .db-prow.on{ color:var(--db-txt); font-weight:700; background:var(--inner); }
-  .db-prow:hover{ background:var(--tile-hover); }
-  .db-prow em{ margin-left:auto; font-style:normal; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
-  .db-pempty{ padding:10px; font-family:var(--db-ui); font-size:12.5px; color:var(--db-mute); }
+  .db-search input::placeholder, .db-chipin input::placeholder, .db-msearch input::placeholder{ color:var(--text-label); }
+  .db-search input:focus{ border-color:var(--edge-16); }
+  /* Search results + menus: the compact site menu. ~6 rows then scroll: 212px for a search
+     list, 252px for a filter menu (rows 12.5px, 6x9 padding). */
+  .db-pop{ position:absolute; z-index:6; top:40px; left:0; width:290px; max-height:212px; overflow:auto; box-sizing:border-box;
+    background:var(--card); border:1px solid var(--edge-10); border-radius:10px; padding:4px; box-shadow:var(--shadow-menu);
+    display:flex; flex-direction:column; gap:0; line-height:normal; }
+  .db-prow{ display:flex; align-items:baseline; gap:10px; padding:6px 9px; border-radius:7px; font-family:var(--db-ui); font-size:12.5px;
+    color:var(--text-soft); font-weight:500; cursor:pointer; transition:background .14s ease,color .14s ease; }
+  .db-prow:hover{ background:var(--inner); }
+  .db-prow.on{ color:var(--text); font-weight:700; background:var(--selected); box-shadow:inset 0 0 0 1px var(--edge-10); }
+  .db-prow em{ margin-left:auto; font-style:normal; font-family:var(--db-mono); font-size:11px; color:var(--text-label); }
+  .db-pempty{ padding:6px 9px; font-family:var(--db-ui); font-size:12.5px; color:var(--text-label); }
 
   .db-trigwrap{ position:relative; }
   .db-trig{ display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 13px; border-radius:9px;
     font-family:var(--db-ui); font-size:13px; font-weight:600; white-space:nowrap; cursor:pointer;
-    background:transparent; border:1px solid var(--db-bd); color:var(--db-ctl); transition:background .14s ease,color .14s ease,border-color .14s ease; }
-  .db-trig.open{ border-color:var(--edge-10); color:var(--db-txt); }
-  .db-trig.on{ background:var(--inner); border-color:var(--edge-10); color:var(--db-txt); }
-  .db-trig i{ font-style:normal; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
+    background:var(--inner); border:1px solid transparent; color:var(--text-soft); transition:background .14s ease,color .14s ease,border-color .14s ease; }
+  .db-trig.open{ border-color:var(--edge-16); color:var(--text); }
+  .db-trig.on{ background:var(--selected); color:var(--text); }
+  .db-trig i{ font-style:normal; font-family:var(--db-mono); font-size:11px; font-weight:600; color:var(--text-label); }
   .db-trig.on i{ color:var(--text); }
-  .db-trig u{ text-decoration:none; font-size:9px; color:var(--db-mute); }
-  .db-menu{ position:absolute; z-index:5; top:42px; left:0; min-width:260px; max-height:340px; overflow:auto;
-    background:var(--db-surface); border:1px solid var(--db-bd2); border-radius:11px; padding:7px;
-    display:flex; flex-direction:column; gap:1px;  }
-  .db-msearch{ position:sticky; top:0; background:var(--db-surface); padding-bottom:7px; }
-  .db-msearch input{ width:100%; height:40px; background:var(--db-fill); border:1px solid var(--db-bd2); border-radius:9px;
-    padding:0 12px; font-size:13.5px; font-family:var(--db-ui); color:var(--db-txt); outline:none; }
-  .db-mrow{ display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:7px; font-family:var(--db-ui); font-size:13px;
-    color:var(--db-ctl); font-weight:500; cursor:pointer; transition:background .14s ease,color .14s ease; }
-  .db-mrow.on{ color:var(--db-txt); font-weight:700; background:var(--inner); }
-  .db-mrow:hover{ background:var(--tile-hover); }
-  .db-box{ width:14px; height:14px; border-radius:4px; border:1px solid var(--edge-10); background:transparent; flex:none; }
-  .db-mrow.on .db-box{ background:var(--bar); border-color:var(--edge-16); }
+  /* THE caret - one glyph, size, colour and gap for every trigger on the bar (TEN-399 item 3). */
+  .db-caret{ text-decoration:none; font-family:var(--db-ui); font-size:9px; font-weight:600; line-height:1; color:var(--text-label); }
+  .db-clear{ width:17px; height:17px; box-sizing:border-box; border-radius:50%; border:1px solid var(--line); display:inline-flex; align-items:center; justify-content:center;
+    font-size:10px; line-height:1; color:var(--text-label); }
+  .db-clear:hover{ color:var(--text); }
+  .db-menu{ position:absolute; z-index:5; top:40px; left:0; min-width:240px; max-height:252px; overflow:auto; box-sizing:border-box;
+    background:var(--card); border:1px solid var(--edge-10); border-radius:10px; padding:4px; box-shadow:var(--shadow-menu);
+    display:flex; flex-direction:column; gap:0; line-height:normal; }
+  .db-menu.has-search{ max-height:212px; }
+  .db-menu.year{ min-width:96px; max-height:212px; }
+  .db-msearch{ position:sticky; top:-4px; background:var(--card); padding:0 0 4px; margin-top:-4px; padding-top:4px; z-index:1; }
+  .db-msearch input{ width:100%; height:32px; box-sizing:border-box; background:var(--inner); border:1px solid transparent; border-radius:8px;
+    padding:0 10px; font-size:12.5px; font-family:var(--db-ui); color:var(--db-txt); outline:none; }
+  .db-msearch input:focus{ border-color:var(--edge-16); }
+  .db-mrow{ display:flex; align-items:center; gap:8px; padding:6px 9px; border-radius:7px; font-family:var(--db-ui); font-size:12.5px;
+    color:var(--text-soft); font-weight:500; cursor:pointer; white-space:nowrap; transition:background .14s ease,color .14s ease; }
+  .db-mrow:hover{ background:var(--inner); }
+  .db-mrow.on{ color:var(--text); font-weight:700; background:var(--selected); box-shadow:inset 0 0 0 1px var(--edge-10); }
+  .db-menu.year .db-mrow{ font-family:var(--db-mono); font-size:12px; gap:10px; }
+  .db-box{ width:12px; height:12px; box-sizing:border-box; border-radius:3px; border:1px solid var(--edge-10); background:transparent; flex:none; }
+  .db-mrow.on .db-box{ background:var(--text); border-color:var(--text); }   /* ticks white */
+  .db-tick{ margin-left:auto; padding-left:12px; color:var(--text); font-family:var(--db-ui); font-weight:700; line-height:1; visibility:hidden; }
+  .db-mrow.on .db-tick{ visibility:visible; }
 
-  .db-yr{ display:inline-flex; align-items:stretch; height:36px; border-radius:9px; border:1px solid var(--db-bd); }   /* no overflow:hidden — the sfDd menu drops below */
-  .db-yr .sf-dd-trig{ height:100%; border-radius:0; background:transparent; }
-  .db-yr .db-yrend:first-child .sf-dd-trig{ border-radius:9px 0 0 9px; }
-  .db-yr .db-yrend:last-child .sf-dd-trig{ border-radius:0 9px 9px 0; }
-  .db-yr.on{ border-color:var(--edge-10); }
-  .db-yrend{ position:relative; display:inline-flex; align-items:center; }
-  .db-yrend .sf-dd-trig{ font-family:var(--db-mono); font-size:12px; font-weight:400; padding:6px 10px; }
-  .db-yrsep{ display:inline-flex; align-items:center; font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:0 3px; }
-  .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--link); background:none; border:none; cursor:pointer; padding:0; }   /* Reset is a link (founder R6.4) */
-  .db-reset:hover{ color:var(--link); }
+  .db-yr{ display:inline-flex; align-items:stretch; height:36px; border-radius:9px; background:var(--inner); border:1px solid transparent; }
+  .db-yr.on{ background:var(--selected); }
+  .db-yrend{ display:inline-flex; }
+  .db-yrend .db-trig{ height:34px; background:transparent; border:none; font-family:var(--db-mono); }
+  .db-yrend:first-child .db-trig{ padding:0 4px 0 10px; border-radius:9px 0 0 9px; }
+  .db-yrend:last-child .db-trig{ padding:0 10px 0 4px; border-radius:0 9px 9px 0; }
+  .db-yrend .db-trig i{ font-size:12px; font-weight:400; color:var(--text); }
+  .db-yrend .db-trig.open{ box-shadow:inset 0 0 0 1px var(--edge-16); }
+  .db-yrsep{ display:inline-flex; align-items:center; font-family:var(--db-ui); font-size:12px; color:var(--text-label); padding:0 3px; }
+  .db-reset{ margin-left:auto; font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--text); background:none; border:none; cursor:pointer; padding:0; }   /* TEN-399 item 3: Reset is white, not blue */
+  .db-reset:hover{ color:var(--text); }
 
   /* TEN-242 phase 2: an ID selector cannot match the embedded mount, whose body
      is addressed by data-db. Both forms, one rule. */
@@ -2692,27 +2718,35 @@
 
   /* 3 - cards */
   .db-card{ background:var(--db-surface); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; padding:16px 18px; }
-  .db-bands{ display:grid; grid-template-columns:repeat(auto-fit, minmax(470px,1fr)); gap:34px; align-items:start; }
-  .db-bandpanel{ min-width:0; }
-  .db-ph{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; padding-bottom:10px; }
-  .db-ph h3{ font-family:var(--db-ui); font-size:16px; font-weight:700; color:var(--db-txt); margin:0; }
+  /* TEN-399 item 4: Favourites | Underdogs side by side, each a panel (card + 6% edge), the
+     reference's 16px gutter and 18/20 padding; title 18/800 as the reference. */
+  .db-bands{ display:grid; grid-template-columns:repeat(auto-fit, minmax(470px,1fr)); gap:16px; align-items:stretch; }
+  .db-bandpanel{ min-width:0; background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:18px 20px; line-height:normal; }
+  .db-ph{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; }
+  .db-ph h3{ font-family:var(--db-ui); font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); margin:0; }
   .db-eyebrow{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); }
 
   /* Row rules must run unbroken across the table, so every row is its own grid on
      the shared track list (the export's own construction). display:contents would
      put the border on each cell and leave a gap at every column gutter. */
   .db-grid{ display:block; }
-  .db-gh, .db-gr, .db-ga{ display:grid; grid-template-columns:var(--dbcols); gap:0 10px; align-items:baseline; }
-  .db-gh{ padding-bottom:9px; border-bottom:1px solid var(--line); }
+  .db-gh, .db-gr, .db-ga{ display:grid; grid-template-columns:var(--dbcols); gap:0 9px; align-items:baseline; }
+  /* TEN-399 item 4: column heads Hanken 10.5 caps on a 10% rule. */
+  .db-gh{ margin-top:16px; padding-bottom:9px; border-bottom:1px solid var(--edge-10); }
   .db-gh > div{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); text-align:right; }
   .db-gh > div:first-child{ text-align:left; }
   .db-gr{ padding:12px 0; border-bottom:1px solid var(--line); }
   .db-gr > div{ text-align:right; font-family:var(--db-mono); font-size:13px; color:var(--db-sec); }
-  .db-gr > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:14px; font-weight:700; color:var(--db-txt); }
-  .db-gmed{ font-weight:600; color:var(--db-txt) !important; }
-  .db-ga{ padding:13px 0 0; border-top:2px solid var(--line); }
+  /* Reference (measured): band name Hanken 13.5/600 soft grey; From / To mono 15/700 white;
+     median and matches mono 13 grey; yield mono 14/700 in the sign colour. */
+  .db-gr > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:13.5px; font-weight:600; color:var(--text-soft); }
+  .db-gr > div.db-gft, .db-ga > div.db-gft{ font-family:var(--db-mono); font-size:15px; font-weight:700; letter-spacing:-0.01em; color:var(--text); }
+  .db-gmed{ color:var(--db-sec); }
+  .db-gr:has(+ .db-ga){ border-bottom:none; }
+  /* TEN-399 item 4: the All row sits on a 14% 2px rule (no 14% token: white via color-mix). */
+  .db-ga{ padding:13px 0 0; border-top:2px solid color-mix(in srgb, var(--text) 14%, transparent); }
   .db-ga > div{ text-align:right; font-family:var(--db-mono); font-size:13px; font-weight:700; color:var(--db-txt); }
-  .db-ga > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:14px; font-weight:700; }
+  .db-ga > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:13.5px; font-weight:700; }
   .db-yieldcell{ font-family:var(--db-mono); font-size:14px; font-weight:700; letter-spacing:-0.01em; }
   .db-ga .db-yieldcell{ font-size:14px; }
   /* TEN-243 sample gates (README "Sample gates on a yield cell"). Soft-gated keeps
@@ -2730,14 +2764,14 @@
   .db-split b{ font-family:var(--db-mono); font-weight:500; color:var(--db-sec); }
 
   /* 4 - cumulative profit chart (Tour / Tournaments) */
-  .db-charthead{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .db-charthead{ display:flex; align-items:baseline; justify-content:space-between; gap:14px; flex-wrap:wrap; line-height:normal; }
   .db-charthead h3{ font-family:var(--db-ui); font-size:19px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); margin:0; }
   /* Legend swatches are SOLID BARS, not dashes (CHARTS.md §9, and §10 retires the
      dashed series line that the dashed swatch used to stand for). */
   .db-legend{ display:flex; gap:18px; font-family:var(--db-ui); font-size:12px; color:var(--db-sec); }
   .db-legend span{ display:inline-flex; align-items:center; gap:7px; }
   .db-legend i{ width:18px; height:3px; border-radius:2px; display:inline-block; flex:none; }
-  .db-subline{ margin-top:6px; font-family:var(--db-mono); font-size:11px; color:var(--db-mute); }
+  .db-subline{ margin-top:6px; font-family:var(--db-mono); font-size:11px; line-height:normal; color:var(--db-mute); }
   /* §4 — three flex columns: axis (70px), PLOT (flex:1), end-plate column (104px),
      with the 12px gap between them supplying the spec's "+12px gap" on both sides.
      .db-plotarea IS THE POSITIONING CONTEXT for everything drawn on the plot. It
@@ -2746,17 +2780,16 @@
      percentage offset then includes the padding and lands off-target. The padding
      is gone and the plates moved to their own column. */
   .db-plot{ margin-top:18px; display:flex; gap:12px; }
-  .db-yaxis{ position:relative; width:70px; height:400px; flex:none; }
+  .db-yaxis{ position:relative; width:70px; height:340px; flex:none; }   /* TEN-399 item 4: plot 340px */
   .db-yaxis div{ position:absolute; right:0; transform:translateY(-50%); font-family:var(--db-mono); font-size:11.5px; font-weight:500; color:var(--db-sec); }
-  .db-plotarea{ position:relative; flex:1; min-width:0; height:400px; }
+  .db-plotarea{ position:relative; flex:1; min-width:0; height:340px; }
   .db-plotarea svg{ width:100%; height:100%; display:block; overflow:visible; }
-  .db-endcol{ position:relative; width:104px; height:400px; flex:none; }
+  .db-endcol{ position:relative; width:104px; height:340px; flex:none; }
   /* §6 — HTML overlays on the plot. The opaque --db-surface background is what makes
      these legible where they cross a gridline. */
   .db-ovl{ position:absolute; padding:2px 7px; border-radius:5px; background:var(--db-surface);
     font-family:var(--font-words);  font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.10em; white-space:nowrap; }
-  .db-belab{ left:8px; transform:translateY(-50%); letter-spacing:0.14em; color:var(--db-sec); }
-  .db-seamlab{ top:-9px; transform:translateX(-50%); letter-spacing:0.12em; color:var(--text-label); }
+  .db-belab{ left:8px; transform:translateY(-50%); color:var(--text-label); }   /* caps label 0.10em (TEN-376) */
   .db-enddot{ position:absolute; right:-4.5px; width:9px; height:9px; margin-top:-4.5px;
     border-radius:50%; box-shadow:0 0 0 3px var(--db-surface); }
   /* §7 — end-value plates. The tinted background and the border are what separate the
@@ -2764,44 +2797,40 @@
      painting the same colour) was a FLAT text label with no other cue, which this is
      not. Value stays --db-txt per the spec. */
   .db-plate{ position:absolute; left:0; right:0; transform:translateY(-50%); padding:7px 9px; border-radius:9px; }
-  .db-plate b{ display:block; font-family:var(--db-ui); font-size:11px; font-weight:700; }
+  .db-plate b{ display:block; font-family:var(--db-ui); font-size:11px; font-weight:700; line-height:normal; }
   .db-plate span{ display:block; margin-top:3px; font-family:var(--db-mono); font-size:16px; font-weight:700; line-height:1; color:var(--db-txt); }
-  .db-plate.fav{ background:var(--inner); border:1px solid var(--edge-10); }
+  /* TEN-399 (reference, measured): both plates --selected on a 5% hairline; the series names are
+     white / soft grey - the reference's blue "Favourites" is link ink, which the foundation forbids. */
+  .db-plate.fav, .db-plate.dog{ background:var(--selected); border:1px solid var(--line); }
   .db-plate.fav b{ color:var(--text); }
-  .db-plate.dog{ background:color-mix(in srgb, var(--text-soft) 8%, transparent); border:1px solid var(--edge-6); }
   .db-plate.dog b{ color:var(--text-soft); }
   /* 82px = 70px axis column + 12px gap; 116px = 104px plate column + 12px gap. */
   .db-xaxis{ margin:10px 116px 0 82px; position:relative; height:18px; }
   .db-xaxis div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11.5px; color:var(--db-sec); }
-  .db-xcap{ margin:4px 116px 0 82px; text-align:center; }
-  .db-seamfoot{ margin:16px 0 0; padding-left:12px; border-left:2px solid var(--edge-16);
-    font-family:var(--db-ui); font-size:12.5px; line-height:1.6; color:var(--db-sec); max-width:820px; }
+  .db-xcap{ margin:4px 116px 0 82px; text-align:center; line-height:normal; }
 
   /* 5 - players */
+  /* TEN-399 item 6: the all-matches line and the role cards are top-level cards —
+     --card + --top-light, no outline (foundation "Surfaces by role"). */
   .db-allline{ display:flex; align-items:baseline; flex-wrap:wrap; gap:8px 22px; padding:14px 18px;
-    background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; }
+    background:var(--db-surface); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; }
   .db-allline .lbl{ font-family:var(--db-ui); font-size:14px; font-weight:700; color:var(--db-txt); }
   .db-allline .big{ font-family:var(--db-mono); font-size:22px; font-weight:700; letter-spacing:-0.02em; line-height:1; }
   .db-allline .meta{ font-family:var(--db-mono); font-size:12.5px; color:var(--db-sec); white-space:nowrap; }
   .db-allline .meta b{ color:var(--db-txt); font-weight:700; }
   .db-roles{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
   @media (max-width:900px){ .db-roles{ grid-template-columns:1fr; } }
-  .db-role{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; display:flex; flex-direction:column; gap:18px; }
-  .db-role h3{ font-family:var(--db-ui); font-size:20px; font-weight:800; color:var(--db-txt); margin:0; }
+  .db-role{ background:var(--db-surface); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; padding:18px 20px; display:flex; flex-direction:column; gap:18px; }
+  .db-role h3{ font-family:var(--db-ui); font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); margin:0; }
   .db-role .desc{ font-family:var(--db-ui); font-size:13px; color:var(--db-mute); margin-top:4px; }
   .db-figs{ display:flex; flex-wrap:wrap; gap:14px 26px; }
-  .db-fig b{ display:block; font-family:var(--db-mono); font-size:28px; font-weight:700; color:var(--db-txt); }
+  .db-fig b{ display:block; font-family:var(--db-mono); font-size:26px; font-weight:700; letter-spacing:-0.02em; color:var(--db-txt); }
   .db-fig span{ display:block; margin-top:4px; font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); }
-  .db-bar{ display:block; position:relative; height:9px; border-radius:5px; background:var(--inner); }
-  .db-barfill{ position:absolute; top:0; bottom:0; border-radius:5px; }
-  .db-barmark{ position:absolute; left:50%; top:-3px; bottom:-3px; width:2px; background:color-mix(in srgb, var(--text) 60%, transparent); }
-  .db-barleg{ display:flex; justify-content:space-between; font-family:var(--db-ui); font-size:10.5px; color:var(--db-faint); margin-top:8px; }
-  .db-barleg i{ display:inline-block; width:8px; height:8px; border-radius:2px; margin-right:6px; vertical-align:middle; }
+  /* TEN-399 item 6: gap bar, its legend and the verdict pill are deleted; the gap row
+     is the only rendering of the gap (reference: mono 18 / 700). */
   .db-gaprow{ border-top:1px solid var(--line); padding-top:15px; display:flex; justify-content:space-between; align-items:baseline; gap:12px; }
   .db-gaprow .lbl{ font-family:var(--db-ui); font-size:13.5px; color:var(--db-mute); }
-  .db-gaprow .val{ font-family:var(--db-mono); font-size:22px; font-weight:700; }
-  .db-verdict{ border-radius:11px; padding:12px 14px; display:flex; align-items:center; gap:9px; font-family:var(--db-ui); font-size:12.5px; color:var(--db-txt); }
-  .db-verdict i{ width:8px; height:8px; border-radius:50%; flex:none; }
+  .db-gaprow .val{ font-family:var(--db-mono); font-size:18px; font-weight:700; }
   .db-rolemeta{ font-family:var(--db-mono); font-size:12.5px; color:var(--db-sec); }
   .db-rolemeta b{ color:var(--db-txt); font-weight:700; }
   .db-pcmain{ margin-top:16px; }
@@ -2822,6 +2851,37 @@
   @media (max-width:900px){ .db-pcpair{ grid-template-columns:1fr; } }
   .db-pcpair .db-pchead h4{ font-size:14px; }
   .db-pcpair .db-pchead span{ font-size:15px; }
+
+  /* TEN-399 item 5 - Compare events (README "Compare events", CHARTS.md §3). Panel card
+     (--card + 6% edge); table + multi-series chart; no hues, no plates. */
+  .db-tcmp{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:20px 22px; }
+  .db-tcscroll{ overflow-x:auto; margin-top:16px; }
+  .db-tch, .db-tcr{ display:grid; gap:14px; }
+  .db-tch{ align-items:end; padding-bottom:14px; }
+  .db-tcname{ display:flex; align-items:baseline; gap:8px; min-width:0; }
+  .db-tcname b{ font-family:var(--db-ui); font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .db-tcname button{ flex:none; width:17px; height:17px; border-radius:50%; border:1px solid var(--edge-16); background:transparent; padding:0;
+    display:inline-flex; align-items:center; justify-content:center; font-size:10px; line-height:1; color:var(--text-label); cursor:pointer; }
+  .db-tcname button:hover{ color:var(--text); }
+  .db-tcr{ align-items:center; padding:12px 0; border-top:1px solid var(--line); }
+  .db-tclab{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  .db-tcval{ font-family:var(--db-mono); font-size:15px; font-weight:700; font-variant-numeric:tabular-nums; }
+  .db-tcval.w{ font-family:var(--db-ui); }
+  .db-tcsoft{ font-weight:500; }
+  .db-tchard{ font-size:11px; font-weight:500; }
+  .db-tcchart{ margin-top:22px; padding-top:18px; border-top:1px solid var(--edge-10); }
+  .db-tchead{ display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+  .db-tchead h3{ font-family:var(--db-ui); font-size:17px; font-weight:800; letter-spacing:-0.01em; color:var(--text); margin:0; }
+  .db-tcleg{ margin-top:14px; display:flex; flex-wrap:wrap; gap:18px; }
+  .db-tcleg span{ display:inline-flex; align-items:center; gap:8px; font-family:var(--db-ui); font-size:12.5px; color:var(--text-label); }
+  .db-tcleg svg{ display:block; flex:none; }
+  .db-tcleg em{ font-style:normal; }
+  .db-tcleg b{ font-family:var(--db-mono); font-weight:700; }
+  .db-tcplot{ margin-top:16px; }
+  .db-tcx{ margin:10px 0 0 82px; position:relative; height:18px; }
+  .db-tcx div{ position:absolute; transform:translateX(-50%); font-family:var(--db-mono); font-size:11.5px; color:var(--text-label); }
+  .db-tccap{ margin:4px 0 0 82px; text-align:center; }
+  .db-tcnote{ margin-top:14px; font-family:var(--db-ui); font-size:12px; line-height:1.6; color:var(--text-label); }
 
   /* 6 - states, footnote */
   .db-prompt{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 26px; max-width:560px; }
@@ -2845,7 +2905,8 @@
      once the left zone has something in it - on Tour the whole bar is one run
      of controls." So the border and the 14px pad are applied by a class the
      renderer only adds when the left zone rendered content, never unconditionally. */
-  .db-zL{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-width:0; }
+  /* TEN-399: the subject chip and its search sit on ONE line (they wrapped onto two on Tournament / Player). */
+  .db-zL{ display:flex; align-items:center; flex-wrap:nowrap; gap:10px; min-width:0; }
   .db-zR{ display:flex; align-items:center; flex-wrap:wrap; flex:1 1 auto; gap:10px; min-width:0; }
   .db-zR.div{ padding-left:14px; border-left:1px solid var(--line); }
 
@@ -2854,28 +2915,32 @@
      on Ratings, picking compare players disables Career/Last 52 because the
      compare panel already shows both periods. Hiding it would make the control
      look absent rather than temporarily inapplicable. */
-  .db-pills{ display:inline-flex; gap:3px; background:var(--card); border:1px solid var(--db-bd); border-radius:9px; padding:3px; }
+  /* TEN-399 item 3: every pill group is the darker track - track --card + 6% edge, selected --inner +
+     10% edge white 700, idle --text-label; a disabled option is 40% grey with no fill. */
+  .db-pills{ display:inline-flex; gap:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:9px; padding:3px; }
   .db-pills button{ font-family:var(--db-ui); font-size:12px; font-weight:600; border-radius:7px; white-space:nowrap;
-    background:transparent; border:1px solid transparent; color:var(--db-mute); cursor:pointer; padding:6px 14px;
+    background:transparent; border:1px solid transparent; color:var(--text-label); cursor:pointer; padding:6px 14px;
     transition:background .14s ease,color .14s ease,border-color .14s ease; }
   .db-pills.lines button{ padding:6px 13px; }
-  .db-pills button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--db-txt); font-weight:700; }
-  .db-pills button[disabled]{ color:var(--text-label); cursor:default; background:transparent; border-color:transparent; }
-  .db-pills button[disabled].active{ color:var(--text-label); background:transparent; border-color:transparent; font-weight:600; }
+  .db-pills button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--text); font-weight:700; }
+  .db-pills button[disabled], .db-pills button[disabled].active{ color:color-mix(in srgb, var(--text-label) 40%, transparent); cursor:default; background:transparent; border-color:transparent; font-weight:600; }
 
   /* Chips-and-search box - README section 2. Distinct from .db-search (one
      query field): this wraps N chips AND the input in one bordered box, and at
      the cap the input is REPLACED by a note rather than merely disabled. */
   .db-chipbox{ position:relative; flex:0 1 auto; min-width:200px; max-width:520px; }
-  .db-chipin{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:36px; padding:4px 9px; border-radius:9px;
-    background:var(--db-fill); border:1px solid var(--db-bd); }
-  .db-chipin.hot{ border-color:var(--edge-10); }
-  .db-chip{ display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 7px 0 10px; border-radius:6px; background:var(--inner); }
-  .db-chip span{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db-txt); white-space:nowrap; }
-  .db-chip button{ background:none; border:none; padding:0; cursor:pointer; font-size:11px; color:var(--text); line-height:1; }
+  /* TEN-399 item 3: the box is a control (--inner, no edge, focus 16%); chips --inner + 10% edge
+     (the reference's chip) with white text; the remove × is grey; the cap note grey. */
+  .db-chipin{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:36px; box-sizing:border-box; padding:4px 9px; border-radius:9px;
+    background:var(--inner); border:1px solid transparent; }
+  .db-chipin.hot, .db-chipin:focus-within{ border-color:var(--edge-16); }
+  .db-chip{ display:inline-flex; align-items:center; gap:7px; height:26px; box-sizing:border-box; padding:0 7px 0 10px; border-radius:6px; background:var(--inner); border:1px solid var(--edge-10); }
+  .db-chip span{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap; }
+  .db-chip button{ background:none; border:none; padding:0; cursor:pointer; font-size:11px; color:var(--text-label); line-height:1; }
+  .db-chip button:hover{ color:var(--text); }
   .db-chipin input{ flex:1 1 110px; min-width:110px; height:26px; background:transparent; border:none; outline:none;
     font-family:var(--db-ui); font-size:13px; color:var(--db-txt); }
-  .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--db-faint); padding:0 2px; }
+  .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--text-label); padding:0 2px; }
 
   /* ---- TEN-243 STEP 5: the unwired marker. STENNISFY-DESIGN-INSTRUCTIONS
      section 5 - if placeholder or unwired data is on screen, SAY SO, in a
@@ -2897,24 +2962,18 @@
   .db-lnav{ width:34px; height:34px; border-radius:50%; flex:0 0 34px; display:flex; align-items:center; justify-content:center;
     background:var(--inner); border:1px solid var(--edge-10);
     font-family:var(--db-mono); font-size:11px; font-weight:700; color:var(--text); }
-  .db-lnname{ font-size:22px; font-weight:800; letter-spacing:-0.012em; color:var(--db-txt); text-decoration:none; }
+  .db-lnname{ font-size:20px; font-weight:800; letter-spacing:-0.012em; color:var(--db-txt); text-decoration:none; }
   .db-lnname:hover{ color:var(--text); }
   .db-lnrank{ margin-left:6px; font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db-mute); }
   .db-lnchips{ margin-top:14px; display:flex; flex-wrap:wrap; gap:7px; }
   .db-lnchip{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-sec);
-    background:var(--inner); border:1px solid var(--edge-6); border-radius:7px; padding:5px 10px; }
+    background:var(--inner); border:1px solid transparent; border-radius:7px; padding:5px 10px; }   /* TEN-399 item 8: inner, no edge */
   .db-lngrp{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   .db-lnfoot{ margin-top:14px; font-size:11.5px; line-height:1.6; color:var(--db-faint); }
-  /* The Matches cell is the denominator, not a headline — README TAB 5 puts it
-     at var(--text-label) with the small-sample mark in the page's caution amber. */
-  .db-rfig.lnmatch{ color:var(--db-mute); }
-  .db-lnsmall{font-family:var(--font-words); font-style:normal; margin-left:6px; font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  /* The rate pill — README TAB 5's focal cell. The wash and border are carried
-     by the inner <b> so the pill hugs the figure instead of the grid track. */
-  .db-lnrate b{ display:inline-block; padding:3px 8px; border-radius:7px; font-family:var(--db-mono);
-    font-size:15px; font-weight:600; color:var(--text); background:transparent; border:1px solid transparent; }
-  .db-lnrate.low b{ color:var(--db-sec); }
-  .db-lnrate.strong b{ color:var(--pos); font-weight:700; background:color-mix(in srgb, var(--pos) 15%, transparent); border-color:color-mix(in srgb, var(--pos) 34%, transparent); }
+  /* The Matches cell is the denominator, not a headline: var(--text-label). Its
+     small-sample mark (n < 5 / small n / field N) is a grey caps label — TEN-399
+     item 8: no amber on this page. */
+  .db-lnsmall{font-family:var(--font-words); font-style:normal; margin-left:6px; font-size:10.5px; letter-spacing:0; text-transform:none; font-weight:700; color:var(--text-label); }   /* n is notation: never capitalised */
 
   /* ---- TEN-260 Part B/C · the Lines table, rebuilt to Database.dc.html ----
      ONE GRID PER ROW, as the prototype draws it: the row carries its padding
@@ -2936,40 +2995,46 @@
   .db-lnpill{ display:inline-block; padding:3px 8px; border-radius:7px; font-family:var(--db-mono); font-size:15px; font-weight:600;
     color:var(--text); background:transparent; border:1px solid transparent; font-variant-numeric:tabular-nums;
     margin:-1px 0; /* baseline alignment adds ~2px over the prototype's centred row; -1px top and bottom takes it back */ }
-  .db-lnpill.low{ color:var(--db-sec); }
-  .db-lnpill.strong{ color:var(--pos); font-weight:700; background:color-mix(in srgb, var(--pos) 15%, transparent); border-color:color-mix(in srgb, var(--pos) 34%, transparent); }
-  /* compare view (README TAB 5 "Compare view") */
+  /* TEN-399 item 8: a small-sample rate (n < 10) is grey ink, never amber; the
+     highlight (n >= 10 and >= 65%) is --pos text on a 12% --pos wash, NO border. */
+  .db-lnpill.low{ color:var(--text-label); }
+  .db-lnpill.strong{ color:var(--pos); font-weight:700; background:color-mix(in srgb, var(--pos) 12%, transparent); border-color:transparent; }
+  /* compare view (README TAB 5 "Compare view"). TEN-399 item 8: each player's
+     name band sits on a 14% white rule (--text at 14%); the name is white 14/800. */
   .db-lnnames{ display:grid; gap:12px; padding:18px 6px 8px; }
-  .db-lnnm{ grid-column:span 2; text-align:center; padding-bottom:7px; border-bottom:1px solid var(--line); font-family:var(--font-words); 
-    font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-sec); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .db-lnnm{ grid-column:span 3; text-align:center; padding-bottom:9px; border-bottom:1px solid color-mix(in srgb, var(--text) 14%, transparent); font-family:var(--font-words);
+    font-size:14px; font-weight:800; letter-spacing:-0.01em; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .db-lnsub{ text-align:center; font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label);
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .db-lngrp.cmp{ font-size:9px; font-weight:600; letter-spacing:0.15em; color:var(--db-mute); padding:15px 6px 5px; }
+  .db-lngrp.cmp{ padding:15px 6px 5px; }   /* TEN-399 item 8: same Hanken 10.5 / 700 / 0.10em caps as the single view */
   .db-lngrp{ padding:16px 6px 7px; }
   .db-lnrow.cmp{ padding:8px 6px; border-bottom:none; }
   .db-lnrow.cmp .db-lnlab{ font-size:13px; font-weight:500; color:var(--db-ctl); }
   .db-lnrow.cmp .db-lnratec{ text-align:center; }
   .db-lnpill.cmp{ font-size:14px; font-weight:700; }
-  .db-lnfig.cmpd{ text-align:center; font-size:10.5px; font-weight:700; color:var(--db-mute); }
+  .db-lnfig.cmpc{ text-align:center; }   /* compare cells: the single table's 13px mono, centred under the name band */
   /* The two notes above the table are both the section 5 note (10.5px mono,
      var(--text-label)): the coverage line, then the partial / not-wired marker. */
   .db-lnnote{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-faint); margin-top:14px; line-height:1.55; }
 
   /* ---- TEN-243 STEP 3: Ratings board (README "TAB 4") ---- */
-  .db-rcard{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; }
+  /* TEN-399 items 7 + 8: the Ratings and Lines cards are top-level cards — --card +
+     --top-light, no outline. */
+  .db-rcard{ background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; padding:22px 24px; }
   /* The Ratings/Lines card eyebrow is 0.16em per README "TAB 4"; the page's
      existing .db-eyebrow is 0.14em and is used by the Season caption, the
      chart captions and the band-panel heads. Redefining .db-eyebrow here
      would win on cascade order and restyle all of that ruled chrome, so this
      is its OWN class and .db-eyebrow is left exactly as it was. */
   .db-rbrow{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); }
-  .db-rtitle{ font-size:22px; font-weight:800; letter-spacing:-0.01em; margin:8px 0 0; color:var(--db-txt); }
-  .db-rdesc{ font-size:13px; line-height:1.55; color:var(--db-mute); max-width:760px; margin:6px 0 0; }
+  .db-rtitle{ font-size:18px; font-weight:800; letter-spacing:-0.01em; margin:5px 0 0; color:var(--db-txt); }
+  .db-rdesc{ font-size:13px; line-height:1.55; color:var(--db-mute); max-width:760px; margin:8px 0 0; }
   .db-rcount{ font-size:13px; margin-top:10px; color:var(--db-mute); }
   .db-rcount b{ font-family:var(--db-mono); font-weight:400; color:var(--db-txt); }
 
+  /* TEN-399 item 7: the compare panel is a nested panel — --card + 1px --edge-6. */
   .db-cmp{ margin-top:20px; width:fit-content; max-width:100%; overflow-x:auto;
-    background:var(--db-strip); border:1px solid var(--edge-10); border-radius:12px; padding:18px 20px; }
+    background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:18px 20px; }
   /* TEN-260 Part C · the prototype's compare panel: a header grid, then one
      grid PER METRIC ROW that carries its own top rule (so the rule is unbroken
      across the column gaps), avatar centred above a baseline row of name ·
@@ -2979,31 +3044,39 @@
   .db-cmpline{ display:flex; align-items:baseline; gap:7px; }
   .db-cmpmrow{ display:grid; gap:0 12px; align-items:stretch; border-top:1px solid var(--line); }
   .db-cmpview{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-faint); margin-top:4px; white-space:nowrap; }
+  /* TEN-399 item 7: initials on --inner, white ink — no gradient, no blue. */
   .db-av{ width:28px; height:28px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
-    background:var(--inner); border:1px solid var(--edge-6);
+    background:var(--inner); background-image:none; border:1px solid var(--edge-10);
     font-family:var(--db-mono); font-size:10px; font-weight:700; color:var(--text); }
-  .db-cmpname{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); text-decoration:none; white-space:nowrap; }
+  .db-cmpname{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--text); text-decoration:none; white-space:nowrap; }
   .db-cmpname:hover{ color:var(--text); }
   .db-cmprank{ font-family:var(--db-mono); font-size:10px; color:var(--db-faint); }
-  .db-cmpx{ background:none; border:none; padding:0; cursor:pointer; font-size:11px; color:var(--db-mute); }
+  .db-cmpx{ background:none; border:none; padding:0; cursor:pointer; font-family:var(--font-words); font-size:11px; color:var(--db-mute); }
   .db-sub{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase;
     text-align:center; padding:9px 0 4px; color:var(--db-mute); }
   .db-sub.live{ padding:9px 6px 4px; }
-  .db-sub.live{ color:var(--text); background:var(--inner); border-left:1px solid var(--edge-10); }
+  /* TEN-399 item 7: the highlighted (scope) column is a 4% white wash, never blue. */
+  .db-sub.live{ color:var(--text); background:var(--wash-4); border-left:1px solid var(--line); }
   .db-cmprow{ padding:11px 0; display:flex; flex-direction:column; justify-content:center; }
   .db-cmpcell{ font-family:var(--db-mono); text-align:center; padding:11px 0; font-variant-numeric:tabular-nums;
     display:flex; flex-direction:column; justify-content:center; align-items:center; }
-  .db-cmpcell.live{ padding:11px 6px; font-size:16px; font-weight:700; color:var(--db-txt); background:var(--inner); border-left:1px solid var(--edge-10); }
+  .db-cmpcell.live{ padding:11px 6px; font-size:16px; font-weight:700; color:var(--db-txt); background:var(--wash-4); border-left:1px solid var(--edge-10); }   /* TEN-399: one wash down the column, no per-cell outline */
   .db-cmpcell.thin{ font-size:11px; font-weight:500; color:var(--db-mute); }
   .db-cmpcell.ref{ font-size:16px; font-weight:400; color:var(--db-sec); }
   .db-cmpcell.delta{ font-size:12.5px; font-weight:700; }
 
-  .db-btabs{ display:flex; flex-wrap:wrap; gap:3px; background:var(--card); border:1px solid var(--db-bd); border-radius:10px;
-    padding:3px; margin-top:20px; width:fit-content; }
-  .db-btabs button{ font-family:var(--db-ui); font-size:12px; font-weight:600; padding:7px 14px; border-radius:8px;
-    background:transparent; border:1px solid transparent; color:var(--db-mute); cursor:pointer; white-space:nowrap;
+  /* TEN-399 item 7: board tabs = Darker track. Track --card + 1px --edge-6; selected
+     --inner + 1px --edge-10, white 700; idle --text-label 600. Geometry = reference
+     (track radius 9 / padding 3 / gap 3, button 5px 12px radius 7). */
+  .db-btabs{ display:flex; flex-wrap:wrap; gap:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:9px;
+    padding:3px; width:fit-content; flex:none; }
+  .db-rcardhead{ display:flex; justify-content:space-between; align-items:flex-start; gap:20px; }
+  .db-rcardhead-l{ min-width:0; }
+  @media (max-width:900px){ .db-rcardhead{ flex-direction:column; } }
+  .db-btabs button{ font-family:var(--db-ui); font-size:12px; font-weight:600; padding:5px 12px; border-radius:7px;
+    background:transparent; border:1px solid transparent; color:var(--text-label); cursor:pointer; white-space:nowrap;
     transition:background .14s ease,color .14s ease,border-color .14s ease; }
-  .db-btabs button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--db-txt); font-weight:700; }
+  .db-btabs button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--text); font-weight:700; }
 
   .db-rscroll{ overflow-x:auto; }
   /* TEN-260 Part C · NO grid gap. The prototype draws each row as its own grid
@@ -3023,17 +3096,23 @@
   .db-rblock b{ font-weight:600; color:var(--db-faint); margin-left:6px; }
   .db-rtag{ font-family:var(--font-words);  font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); text-align:right; margin-top:2px; white-space:nowrap; }
   .db-mview{ margin-top:12px; }
+  .db-rslice{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   .db-rh{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); }
   .db-rh.sortable{ letter-spacing:0.10em; line-height:1.4; color:var(--text-label); cursor:pointer; background:none; border:none; padding:0; text-align:inherit;
     font-family:var(--font-words);  font-size:10.5px; font-weight:700; text-transform:uppercase; }
-  .db-rh.sortable.on{ color:var(--db-txt); }
+  /* TEN-399 item 7: a sortable head is --text-label idle, white when it is the
+     sort column, and its arrow is white — never blue. */
+  .db-rh.sortable.on{ color:var(--text); }
   .db-rh.sortable i{ font-style:normal; color:var(--text); }
-  .db-rmed{ padding:10px 6px; background:var(--inner); border-bottom:1px solid var(--line); }
+  /* TEN-399 item 7: the field-median row is a 2.5% white wash (--text at 2.5%). */
+  .db-rmed{ padding:10px 6px; background:color-mix(in srgb, var(--text) 2.5%, transparent); border-bottom:1px solid var(--line); }
   .db-rrow{ padding:11px 6px; border-bottom:1px solid var(--line); }
   .db-rnum{ font-family:var(--db-mono); font-size:12px; color:var(--db-mute); }
+  .db-rnum.top{ font-weight:700; color:var(--text); }   /* reference: places 1-3 of a ranked block in white 700 */
   .db-rplayer{ display:flex; align-items:center; gap:10px; min-width:0; }
-  .db-av26{ width:26px; height:26px; font-size:9.5px; }
-  .db-rname{ font-size:13.5px; font-weight:600; color:var(--db-txt); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:none; }
+  .db-av26{ width:26px; height:26px; font-size:9.5px; border-color:var(--line); }
+  /* TEN-399 item 7: player names are links, white at rest and on hover. */
+  .db-rname{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:none; }
   .db-rname:hover{ color:var(--text); }
   .db-rfig{ font-family:var(--db-mono); font-size:13px; color:var(--db-txt); text-align:right; font-variant-numeric:tabular-nums; }
   .db-rfig.mut{ color:var(--db-sec); }
@@ -3065,10 +3144,12 @@
   <div class="pagewrap" data-db-root="standalone">
     <div class="db-headcard" data-db="head">
       <div>
+        <div class="db-headcap">ATP tour · closing-line archive</div>
         <h1>Database</h1>
         <p id="dbSubtitle" data-db="subtitle">Historical yield by odds band from our own ATP closing-line archive.</p>
       </div>
-      <div class="db-fresh" id="dbFresh" data-db="fresh"></div>
+      <!-- TEN-399 item 2: mono stats right (Matches · Seasons · Updated), the Today's Matches pattern. Filled by renderChrome. -->
+      <div class="db-hstats" id="dbFresh" data-db="fresh" aria-label="Archive summary"></div>
     </div>
     <div class="db-ctl" id="dbCtl" data-db="ctl">
       <div class="db-ctltop">
@@ -28683,6 +28764,9 @@ window.DatabaseTab = (function(){
       levels:null, surfaces:null, rounds:null,
       yearMin:null, yearMax:null,
       tournament:null, tournLabel:null, player:null,
+      // TEN-399 item 5 · Compare events: the 2nd–4th picks ({names, label}) after
+      // `tournament` (pick 1), and the compare chart's side (README `tcSide`).
+      tcmp:[], tcSide:'all',
       tq:'', pq:'', menu:null, menuQ:'',
       period:'all', psurf:null, plevel:null, ptourn:null, stance:'back',
       // TEN-243 STEP 3 - Ratings slicers and compare set (README "State" table:
@@ -28736,7 +28820,23 @@ window.DatabaseTab = (function(){
   // dash goes.
   //
   // Those three reserved tokens remain reserved. A series must never take one.
-  var COL_FAV='var(--bar)', COL_DOG='var(--text-soft)', POS='var(--pos)', NEG='var(--neg)';
+  // TEN-399 item 9 (override of CHARTS.md, founder): lead series Ring blue (--viz-lead), second
+  // series white at 45% - the ticket's words for Underdogs, line, end dot and legend swatch alike.
+  // Superseded: the --text-soft second series above (TEN-196). --pos / --neg stay reserved for
+  // signed values; a series never takes one.
+  var COL_FAV='var(--viz-lead)', COL_DOG='color-mix(in srgb, var(--viz-white-lead) 45%, transparent)', POS='var(--pos)', NEG='var(--neg)';
+  // ---------- shared chart treatment (TEN-399 item 9) ----------
+  // One definition of every chart mark on this page, so Tour, Tournament and Player charts
+  // cannot drift: horizontal guides only, --viz-guide dotted 2 6; break-even --viz-rule 1.25px
+  // solid; lead line 2.4px, second line 2px; no vertical gridlines, no loss wash, no area fill;
+  // end dots in the series colour; legend swatches 18x3 bars. Axis + tick labels are mono
+  // --text-label in CSS (.db-yaxis / .db-xaxis / .db-pcaxis / .db-pcticks).
+  var DB_PLOT_H=340;   // TEN-399 item 4: the cumulative-profit plot is 340px tall (was 400)
+  function dbGuide(y){ return '<line x1="0" y1="'+y.toFixed(1)+'" x2="1000" y2="'+y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; }
+  function dbBreakEven(y){ return '<line x1="0" y1="'+y.toFixed(1)+'" x2="1000" y2="'+y.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>'; }
+  function dbSeries(points, col, lead){ return '<polyline points="'+points+'" fill="none" stroke="'+col+'" stroke-width="'+(lead?'2.4':'2')+'" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'; }
+  function dbLegend(items){ return '<div class="db-legend">'+items.map(function(it){ return '<span><i style="background:'+it[1]+'"></i>'+esc(it[0])+'</span>'; }).join('')+'</div>'; }
+  function dbEndDot(pct, col){ var d=el('div','db-enddot'); d.style.top=pct.toFixed(2)+'%'; d.style.background=col; return d; }
 
   // ---------- display smoothing (CHARTS.md §3) ----------
   // FOUNDER RULING, TEN-196 round 5, gate e8453243 (2026-09-13): SMOOTH_MODE='guarded'.
@@ -28804,8 +28904,9 @@ window.DatabaseTab = (function(){
     out[0]=vals[0]; out[n-1]=vals[n-1];
     return out;
   }
-  var FAV_NAMES=['Super Fav','Mid Fav','Slight Fav'];
-  var DOG_NAMES=['Slight Dog','Mid Dog','Super Dog'];
+  // TEN-399 founder fix 7 (card ff586600): band names on Tour + Tournament, names only.
+  var FAV_NAMES=['Heavy favourite','Firm favourite','Narrow favourite'];
+  var DOG_NAMES=['Narrow underdog','Mid underdog','Long shot'];
   // ===== FOUNDER RULING TEN-243, gate `2ebfa608` (2026-09-19): `hardgate`. =====
   // C8 IS OVERTURNED. C8 (TEN-196) read "a thin band still prints its yield, flagged
   // with its count — there is no suppression threshold on this page". The design
@@ -28837,10 +28938,10 @@ window.DatabaseTab = (function(){
   function yr(di){ return Math.floor(di/10000); }
   function dnum(di){ var s=''+di; return Date.UTC(+s.slice(0,4), (+s.slice(4,6))-1, +s.slice(6,8))/86400000; }
   function fmtP(x){ return x==null?'—':x.toFixed(2); }
-  function fmtPct(x){ if(x==null) return '—'; var v=x*100; return (v>=0?'+':'')+v.toFixed(2)+'%'; }
-  function fmtPP(v){ return (v>=0?'+':'')+v.toFixed(2)+'pp'; }
+  function fmtPct(x){ if(x==null) return '—'; var v=x*100; return (v>=0?'+':'')+v.toFixed(2).replace('-','\u2212')+'%'; }  // TEN-399: true minus
+  function fmtPP(v){ return (v>=0?'+':'')+v.toFixed(2).replace('-','\u2212')+'pp'; }
   function fmtInt(n){ return n==null?'—':(''+n).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
-  function fmtU(v){ return fmtInt(Math.round(v))+'u'; }
+  function fmtU(v){ return fmtInt(Math.round(v)).replace('-','\u2212')+'u'; }
   function signCol(txt){ return (''+txt).replace(/^\s+/,'').charAt(0)==='+' ? POS : NEG; }
   function median(a){ if(!a.length) return null; var s=a.slice().sort(function(p,q){return p-q;}); var m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
   var MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -29145,7 +29246,18 @@ window.DatabaseTab = (function(){
   // Tour baselines for the Players tab, recomputed over the archive under the same
   // period / surface / tournament filter the player figures use, so the comparison
   // is like-for-like and never has to be withheld.
+  // TEN-399 open question (DoD "Player with Surface = Clay (baseline — path)"). Two
+  // readings, one switch:
+  //   'recompute' (AS BUILT, TEN-196 rulings) — the baseline is recomputed under the
+  //               same period / surface / level / tournament filter, so it is never
+  //               withheld; the — path only shows when that slice is empty.
+  //   'gate'      — README `baselineScope` gate: any Player filter off "All" prints the
+  //               — path (baseline, gap and the all-matches "Tour" figure).
+  // The README itself says a build that CAN recompute should drop the — path, so the
+  // as-built value stays until the founder answers.
+  var PLAYER_BASELINE_SCOPE='recompute';
   function playerBaselines(){
+    if(PLAYER_BASELINE_SCOPE==='gate' && (state.psurf!=null || state.plevel!=null || state.ptourn!=null || state.period!=='all')) return null;
     var rows=DATA.rows, anchor=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
     var fp=0, dp=0, n=0;
     for(var i=0;i<rows.length;i++){
@@ -29176,15 +29288,17 @@ window.DatabaseTab = (function(){
   function baselineAllowed(){ return state.rounds===null && fullYearRange(); }
 
   // ---------- filtering ----------
-  function filteredRows(){
+  // `names` (TEN-399 Compare events) filters to that event instead of state.tournament.
+  function filteredRows(names){
     var rows=DATA.rows, out=[];
     // state.tournament is EITHER one official archive string (the picker) or an
     // ARRAY of them (the Tournaments-page overlay, which opens on a whole event
     // whose sponsor name changed across seasons — Hamburg has 3, Estoril 4).
     // One string yields a one-element set, so the picker path is unchanged.
     var tSet = null;
-    if(state.view==='tournaments' && state.tournament!=null){
-      var _names = Array.isArray(state.tournament) ? state.tournament : [state.tournament];
+    var _subj = names || state.tournament;
+    if(state.view==='tournaments' && _subj!=null){
+      var _names = Array.isArray(_subj) ? _subj : [_subj];
       tSet = [];
       for(var _n=0;_n<_names.length;_n++){
         var _ix = M.tournaments.indexOf(_names[_n]);
@@ -29241,14 +29355,31 @@ window.DatabaseTab = (function(){
   }
 
   // ================= control bar =================
-  function trigger(label, countTxt, active, key, buildMenu){
+  // TEN-399 item 3: ONE dropdown trigger for the whole bar (Level, Surface, Round, the two
+  // year ends, Period, Side, Line group ...): --inner, no edge, label + mono value + the one
+  // caret. DB_CARET is the only ▼ on the bar, so every trigger shares its glyph, size, colour
+  // and gap (.db-caret: Hanken 9px --text-label, 8px trigger gap). `clear` (multi-select
+  // triggers only, README §2) adds the 17px × once something is picked.
+  var DB_CARET='<u class="db-caret" aria-hidden="true">▼</u>';
+  function trigger(label, countTxt, active, key, buildMenu, clear){
     var wrap=el('div','db-trigwrap');
     var open = state.menu===key;
     var t=el('button','db-trig'+(active?' on':'')+(open?' open':''));
-    t.innerHTML=label+' <i>'+esc(countTxt)+'</i><u>▼</u>';
-    t.onclick=function(ev){ ev.stopPropagation(); state.menu = open?null:key; state.menuQ=''; renderFilters(); };
+    t.type='button';
+    t.setAttribute('aria-haspopup','listbox'); t.setAttribute('aria-expanded', open?'true':'false');
+    t.innerHTML=(label?'<span class="db-tl">'+label+'</span>':'')+'<i>'+esc(countTxt)+'</i>'+
+      (clear && active ? '<span class="db-clear" title="Clear">×</span>' : '')+DB_CARET;
+    t.onclick=function(ev){
+      ev.stopPropagation();
+      if(clear && active && ev.target && ev.target.classList && ev.target.classList.contains('db-clear')){ clear(); state.menu=null; state.menuQ=''; render(); return; }
+      state.menu = open?null:key; state.menuQ=''; renderFilters();
+    };
     wrap.appendChild(t);
-    if(open){ var m=buildMenu(); m.onclick=function(ev){ ev.stopPropagation(); }; wrap.appendChild(m); }
+    if(open){
+      var m=buildMenu(); m.onclick=function(ev){ ev.stopPropagation(); }; wrap.appendChild(m);
+      // A list taller than the menu opens scrolled to its picked row (2026 is the 17th year).
+      if(!m.classList.contains('has-search')) setTimeout(function(){ var s=m.querySelector('.db-mrow.on'); if(s && s.offsetTop+s.offsetHeight>m.clientHeight) m.scrollTop=s.offsetTop-m.clientHeight/2; },0);
+    }
     return wrap;
   }
   // The artefact's round dictionary is insertion-ordered, so 3rd/4th Round sit
@@ -29313,6 +29444,7 @@ window.DatabaseTab = (function(){
   }
   function multiMenu(opts, activeSet, setter, isRounds){
     var m=el('div','db-menu');
+    m.setAttribute('role','listbox'); m.setAttribute('aria-multiselectable','true');
     // Checked boxes mean EXACTLY those boxes — founder ruling TEN-196 2026-09-13,
     // overturning the previous "all offered rows checked collapses to All".
     //
@@ -29330,6 +29462,7 @@ window.DatabaseTab = (function(){
       var idx=o[0], name=o[1];
       var on = !!activeSet && activeSet.has(idx);
       var row=el('div','db-mrow'+(on?' on':''));
+      row.setAttribute('role','option'); row.setAttribute('aria-selected', on?'true':'false');
       row.innerHTML='<span class="db-box"></span><span>'+esc(name)+'</span>';
       row.onclick=function(){
         var st = activeSet ? new Set(activeSet) : new Set();
@@ -29341,8 +29474,12 @@ window.DatabaseTab = (function(){
     });
     return m;
   }
-  function singleMenu(opts, cur, onPick, searchable){
-    var m=el('div','db-menu');
+  // Single-select menu: the picked row carries the selected tone and a white ✓ (the
+  // reference's year menu); multi-select rows carry the white tick box. `kind` 'year'
+  // is the narrow mono year list (TEN-399 item 3: the year boxes are custom menus).
+  function singleMenu(opts, cur, onPick, searchable, kind){
+    var m=el('div','db-menu'+(kind?(' '+kind):'')+(searchable?' has-search':''));
+    m.setAttribute('role','listbox');
     var list=opts;
     if(searchable){
       var sh=el('div','db-msearch');
@@ -29358,8 +29495,9 @@ window.DatabaseTab = (function(){
     if(!list.length){ m.appendChild(el('div','db-pempty','No tournament matches that.')); return m; }
     list.forEach(function(o){
       var on = cur===o[0];
-      var row=el('div','db-mrow'+(on?' on':''));
-      row.innerHTML='<span class="db-box"></span><span>'+esc(o[1])+'</span>';
+      var row=el('div','db-mrow single'+(on?' on':''));
+      row.setAttribute('role','option'); row.setAttribute('aria-selected', on?'true':'false');
+      row.innerHTML='<span>'+esc(o[1])+'</span><span class="db-tick" aria-hidden="true">✓</span>';
       row.onclick=function(){ onPick(o[0]); state.menu=null; state.menuQ=''; render(); };
       m.appendChild(row);
     });
@@ -29367,6 +29505,7 @@ window.DatabaseTab = (function(){
   }
   function searchField(opts){
     var wrap=el('div','db-search'+(opts.prompting?' prompting':''));
+    wrap.setAttribute('data-search','');   // TEN-399 item 3: a control box - --inner, no edge
     var inp=el('input'); inp.type='text'; inp.placeholder=opts.placeholder; inp.value=opts.query;
     inp.oninput=function(){ opts.onInput(inp.value); renderFilters();
       var n=qsel('.db-search input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
@@ -29400,27 +29539,31 @@ window.DatabaseTab = (function(){
     var ys={}; for(var i=0;i<DATA.rows.length;i++) ys[yr(DATA.rows[i][0])]=1;
     return Object.keys(ys).map(Number).sort(function(a,b){return a-b;});
   }
+  // TEN-399 item 3: the year range is two of the bar's own triggers + custom menus (never a
+  // native <select>, never the site sfDd - so the ▼ is the same DB_CARET as Level / Surface /
+  // Round). One joined --inner box, no edge; each end opens a mono year list.
   function yearControl(){
     var years=presentYears(), y0=years[0], y1=years[years.length-1];
     var lo=state.yearMin!=null?state.yearMin:y0, hi=state.yearMax!=null?state.yearMax:y1;
     var moved = !(lo===y0 && hi===y1);
     var box=el('div','db-yr'+(moved?' on':''));
-    function end(val, onPick){
-      // TEN-376 README §5.5: the site dropdown (sfDd), never a native <select>
-      var e=el('div','db-yrend');
-      sfDdRender(e, { ariaLabel:'Year', value:val, options:years.map(function(y){ return { value:y, label:String(y) }; }),
-        onChange:function(v){ onPick(+v); render(); } });
-      return e;
+    function end(key, val, onPick){
+      var w=trigger('', String(val), false, key, function(){
+        return singleMenu(years.map(function(y){ return [y, String(y)]; }), val, onPick, false, 'year');
+      });
+      w.classList.add('db-yrend');
+      return w;
     }
-    box.appendChild(end(lo, function(v){ state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
+    box.appendChild(end('y0', lo, function(v){ state.yearMin=v; if(state.yearMax!=null && v>state.yearMax) state.yearMax=v; }));
     box.appendChild(el('span','db-yrsep','–'));
-    box.appendChild(end(hi, function(v){ state.yearMax=v; if(state.yearMin!=null && v<state.yearMin) state.yearMin=v; }));
+    box.appendChild(end('y1', hi, function(v){ state.yearMax=v; if(state.yearMin!=null && v<state.yearMin) state.yearMin=v; }));
     return box;
   }
   function resetFilters(){
     state.levels=null; state.surfaces=null; state.rounds=null;
     state.yearMin=null; state.yearMax=null;
     state.tq=''; state.pq=''; state.menu=null; state.menuQ='';
+    state.tcmp=[]; state.tcSide='all';   // TEN-399 b: Reset clears the compared events
     state.period='all'; state.psurf=null; state.plevel=null; state.ptourn=null; state.stance='back';
     // TEN-243 STEP 1.8 - "Reset clears every tab's state at once", so the
     // Ratings keys are cleared here too and not only while that tab is open.
@@ -29456,6 +29599,7 @@ window.DatabaseTab = (function(){
     var wrap=el('div','db-chipbox');
     var q=(o.query||'').trim();
     var box=el('div','db-chipin'+((o.prompting||q)?' hot':''));
+    box.setAttribute('data-search','');   // TEN-399 item 3: chips-and-search box - --inner, no edge
     o.picks.forEach(function(name){
       var chip=el('div','db-chip','<span>'+esc(name)+'</span>');
       if(!o.fixed){
@@ -29588,13 +29732,40 @@ window.DatabaseTab = (function(){
       // Clear the filter alongside the control, matching the Players branch. Without
       // it a dropped control could leave an applied filter with no way to clear it.
       if(!lvOpts) state.levels=null;
-      if(lvOpts) zR.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }));
-      zR.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }));
+      if(lvOpts) zR.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }, function(){ state.levels=null; }));
+      zR.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }, function(){ state.surfaces=null; }));
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
-      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
+      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
+      zR.appendChild(yearControl());
+    } else if(state.view==='tournaments' && !(I && I.lockSubject)){
+      // TEN-399 item 5 · Compare events. The subject is the chips-and-search box: the
+      // event chip sits INSIDE the box (so a long name never adds a row to the bar and
+      // pushes the band boxes down), and up to four events can be picked; a second pick
+      // swaps the band view for the compare panel (README "Compare events").
+      var tpicks=tournPicks();
+      zL.appendChild(chipSearch({
+        picks:tpicks.map(function(p){ return p.label; }), cap:4, capNote:'Four events maximum', noun:'tournament',
+        placeholder:'Search tournaments…', placeholder2:'Add an event…', query:state.tq,
+        prompting:!state.tournament,
+        onInput:function(v){ state.tq=v; },
+        match:function(qs){
+          var taken=tpicks.map(function(p){ return p.label; });
+          // One row per catalog entry (TEN-242), minus the events already picked.
+          return tournCatalog()
+            .filter(function(e){ return taken.indexOf(e.label)<0 && catalogHit(e, qs); })
+            .sort(function(a,b){ return a.label<b.label ? -1 : a.label>b.label ? 1 : 0; })
+            .slice(0,40).map(function(e){ return {label:e.label, value:e, meta:catalogSurface(e)}; });
+        },
+        onPick:function(e){ addTournPick(e); state.tq=''; },
+        onRemove:function(label){ removeTournPick(label); }
+      }));
+      var rdOptsT=roundOpts();
+      if(!rdOptsT) state.rounds=null;
+      if(rdOptsT) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOptsT, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
       zR.appendChild(yearControl());
     } else if(state.view==='tournaments'){
+      // Locked embed (Tournaments → ROI overlay): one fixed subject, no picker, no compare.
       if(state.tournament){
         // An array subject is a whole event pooled across its sponsor names, so
         // the chip carries the event's own label rather than one archive string.
@@ -29611,37 +29782,10 @@ window.DatabaseTab = (function(){
         }
         zL.appendChild(chip);
       }
-      if(!(I && I.lockSubject)) zL.appendChild(searchField({
-        placeholder:'Search tournaments…', query:state.tq, noun:'tournament', prompting:!state.tournament,
-        onInput:function(v){ state.tq=v; },
-        match:function(q){
-          // ONE ROW PER CATALOG ENTRY, not per archive string (TEN-242, founder
-          // ruling 2026-09-21). The picker used to offer 169 rows — one per
-          // archive string — and hand `state.tournament` a single one. That is
-          // the scalar: picking "Miami Open" filtered to 549 rows while 899 more
-          // sat under "Sony Ericsson Open" one row away, and the season suffix on
-          // the label was the split leaking onto the screen.
-          //
-          // `value` is now the SET of official archive strings. filteredRows()
-          // already takes an array; it was only ever being handed one string.
-          var hits=tournCatalog()
-            .filter(function(e){ return catalogHit(e, q); })
-            .sort(function(a,b){ return a.label<b.label ? -1 : a.label>b.label ? 1 : 0; });
-          lastTotal=hits.length;
-          return hits.slice(0,40).map(function(e){ return {label:e.label, value:e.names, meta:catalogSurface(e)}; }); },
-        total:function(){ return lastTotal; },
-        selectedByLabel:true,
-        selected:(function(){ var e=catalogEntryForState(); return e ? e.label : null; })(),
-        onPick:function(names){
-          // The array, not a string. A one-string entry yields a one-element set,
-          // so nothing special-cases the 77 unmerged events.
-          state.tournament=Array.isArray(names)?names.slice():[names];
-          state.tournLabel=null; state.tq=''; render(); }
-      }));
       // C11 — no Surface filter here; Round + years only, per the export.
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
-      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
+      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }, function(){ state.rounds=null; }));
       zR.appendChild(yearControl());
     } else {
       if(state.player){
@@ -30165,6 +30309,7 @@ window.DatabaseTab = (function(){
     if(state.view==='ratings'){ renderRatings(body); return; }
     if(state.view==='lines'){ renderLines(body); return; }
     if(state.view==='players'){ renderPlayers(body); return; }
+    if(tournCompareOn()){ renderCompare(body); return; }
     renderBandView(body);
   }
   // ================= TEN-243 STEP 3 - Ratings (README "TAB 4") =================
@@ -30381,13 +30526,16 @@ window.DatabaseTab = (function(){
       return;
     }
     var card=el('div','db-rcard');
-    card.appendChild(el('div','db-rbrow','Ratings board'));
-    card.appendChild(el('h2','db-rtitle','Player ratings by surface'));
+    // TEN-399 founder fix 6 (card ff586600): the board tabs sit in the card header, right of the title.
+    var rhead=el('div','db-rcardhead'), rtl=el('div','db-rcardhead-l');
+    rhead.appendChild(rtl); rhead.appendChild(ratBoardTabs()); card.appendChild(rhead);
+    rtl.appendChild(el('div','db-rbrow','Ratings board'));
+    rtl.appendChild(el('h2','db-rtitle','Player ratings by surface'));
     // TEN-260 Part A.6 · the description says where each column comes from and
     // no more. Elo is NOT ours (a scraped weekly list), serve / return / under
     // pressure fold Challenger in only for players thin at tour level, and
     // Mental Edge now counts Challenger break points on two of its three views.
-    card.appendChild(el('p','db-rdesc','Surface Elo from an external weekly rating list. Serve, return and under-pressure ratings are derived from the ATP-level match archive, with a player\u2019s Challenger matches folded in (discounted \u00d70.9) only when he is thin at tour level. Mental Edge counts break points won and lost at ATP level, Challenger level or both \u2014 the view on that board says which. Higher is better across every column.'));
+    rtl.appendChild(el('p','db-rdesc','Surface Elo from an external weekly rating list. Serve, return and under-pressure ratings are derived from the ATP-level match archive, with a player\u2019s Challenger matches folded in (discounted \u00d70.9) only when he is thin at tour level. Mental Edge counts break points won and lost at ATP level, Challenger level or both \u2014 the view on that board says which. Higher is better across every column.'));
     var pool=ratPool();
     // The count names the field of the board on screen. It is not one number for
     // the tab: the Serve board and the Mental Edge board have different fields
@@ -30411,7 +30559,6 @@ window.DatabaseTab = (function(){
     card.appendChild(cnt);
 
     if(state.ratSel.length) card.appendChild(ratComparePanel());
-    card.appendChild(ratBoardTabs());
     if(state.ratBoard==='mental') card.appendChild(ratMViewPills());
     // Each board has its OWN field, because each rests on its own match set.
     card.appendChild(state.ratBoard==='overview'
@@ -30439,14 +30586,13 @@ window.DatabaseTab = (function(){
   function ratRetiredNote(){
     var n=el('div','db-unwired');
     if(!RETIRED){
-      n.textContent='The retired-players list could not be loaded, so retired players have NOT been removed from this board.';
+      n.textContent='Retired players could not be excluded just now, so this board may include them.';
       n.style.color='var(--text-soft)';
       return n;
     }
     var gone=ratRetiredOnStore();
-    n.textContent = gone.length
-      ? 'Removed as retired (confirmed retirements, retired-players.json): '+gone.join(', ')+' \u2014 '+gone.length+' of '+fmtInt(RAT.players.length)+' stored players.'
-      : 'No player on this store is on the retired list.';
+    // TEN-399 founder fix 4 (card ff586600): plain sentence, no file names or counts.
+    n.textContent = 'Retired players are excluded.';
     return n;
   }
 
@@ -30509,7 +30655,8 @@ window.DatabaseTab = (function(){
     var parts=[ state.ratScope==='career'?'Career':'Last 52 weeks',
                 state.ratSurf==='All'?'all surfaces':state.ratSurf.toLowerCase(),
                 gateWord===null ? 'no match floor' : ('n ≥ '+RAT_GATE+' '+(gateWord||'matches')) ];
-    var n=el('div','db-unwired', esc(parts.join(' · ')));
+    // TEN-399: the slice itself is a caps label (reference); prose notes under it stay the section 5 note.
+    var n=el('div','db-unwired', '<span class="db-rslice">'+esc(parts.join(' · '))+'</span>');
     // TEN-254 Step 2, bundle README TAB 4: "Note, `margin-top:12px`". The 12px is
     // set HERE, on the Ratings note only, rather than by moving the shared
     // `.db-unwired` rule.
@@ -30562,7 +30709,7 @@ window.DatabaseTab = (function(){
 
     rows.forEach(function(p, i){
       var r=function(){ return el('div','db-rrow'); };
-      var c0=r(); c0.appendChild(el('div','db-rnum',String(i+1))); g.appendChild(c0);
+      var c0=r(); c0.appendChild(el('div','db-rnum'+(i<3?' top':''),String(i+1))); g.appendChild(c0);
       var c1=r();
       var pl=el('div','db-rplayer', ratAvatar(p.name,true));
       var nm=el('a','db-rname',esc(p.name));
@@ -30655,7 +30802,7 @@ window.DatabaseTab = (function(){
       g.appendChild(bl);
     }
     blk.rows.forEach(function(p,i){
-      var c0=el('div','db-rrow'); c0.appendChild(el('div','db-rnum', blk.ranked ? String(i+1) : '—')); g.appendChild(c0);
+      var c0=el('div','db-rrow'); c0.appendChild(el('div','db-rnum'+(blk.ranked && i<3?' top':''), blk.ranked ? String(i+1) : '—')); g.appendChild(c0);
       var c1=el('div','db-rrow');
       var pl=el('div','db-rplayer', ratAvatar(p.name,true));
       var nm=el('a','db-rname',esc(p.name)); nm.href='#'; nm.title=p.name;
@@ -30725,7 +30872,7 @@ window.DatabaseTab = (function(){
 
   // Compare panel (2-4 players). The panel always shows both periods and the
   // delta (Last 52 − career, in the sign colour). The column of the scope the
-  // Career / Last 52 control has selected carries the blue wash (TEN-262
+  // Career / Last 52 control has selected carries the 4% white wash (TEN-399; TEN-262
   // ruling 1: the control moves the highlight; it used to be Last 52 always).
   function ratComparePanel(){
     var picks=state.ratSel.map(function(n){
@@ -30759,7 +30906,9 @@ window.DatabaseTab = (function(){
     });
 
     g.appendChild(el('div'));
-    var hiL52 = state.ratScope==='last52';
+    // TEN-399 founder fix 5 (card ff586600): the 4% white wash sits on the Last 52 column at every scope
+    // (supersedes TEN-262 #1's "highlight follows the scope"; the board columns still follow the control).
+    var hiL52 = true;
     picks.forEach(function(){
       g.appendChild(el('div','db-sub'+(hiL52?' live':''),'Last 52'));
       g.appendChild(el('div','db-sub'+(hiL52?'':' live'),'Career'));
@@ -31221,20 +31370,12 @@ window.DatabaseTab = (function(){
           part.noGames.toLocaleString() + ' of ' + (have + part.noGames).toLocaleString() +
           ' eligible matches do not carry them yet (' + gamesPct.toFixed(1) + '% do). Every rate below is computed over the ' +
           have.toLocaleString() + ' that do and no others, so it will move as the rest land.');
-      if(s.P.untyped) notes.push((cmp ? s.nm+': ' : '')+s.P.untyped+' match'+(s.P.untyped===1?'':'es')+' carried games but no readable best-of, so '+
-        (s.P.untyped===1?'it is':'they are')+' in no ladder.');
     });
     if(!LNF){
-      notes.push('Field, Vs field and Ranking are dashes: the field file (lines-field.json, built in the pipeline) is not published yet. Rate is computed from each player’s own matches and does not wait for it.');
+      notes.push('Field, Vs field and Ranking are not published yet; Rate is computed from each player’s own matches.');
     } else {
-      var src=LNF.source||{};
-      notes.push('Field = the median rate on each line across every roster player with at least '+LN_MIN_N+' matches on that line at this slice; Ranking is the place in that field. '+
-        'The roster is '+fmtInt(src.rosterSize)+' players'+
-        (src.retiredExcluded && src.retiredExcluded.length ? ' after removing '+src.retiredExcluded.length+' retired (retired-players.json)' : '')+
-        ', of whom '+fmtInt(src.resolved)+' resolve to a match record'+
-        (src.unresolved && src.unresolved.length ? ' ('+src.unresolved.length+' do not: '+src.unresolved.join(', ')+')' : '')+
-        '. Field sizes vary by line - each Ranking shows its own.'+
-        (state.lnScope==='l52' ? ' Last 52 = matches since '+fmtDate(LNF.l52Cutoff)+'.' : ''));
+      // TEN-399 founder fix 4 (card ff586600): one plain sentence, no file names, counts or unresolved lists.
+      notes.push('Field is the median rate on each line across roster players with at least '+LN_MIN_N+' matches on it; Ranking is the place in that field. Retired players are excluded.');
     }
     if(notes.length){
       var un=el('div','db-unwired');
@@ -31247,7 +31388,8 @@ window.DatabaseTab = (function(){
     var table=el('div','db-lntbl');
     var sc=el('div','db-rscroll'); sc.appendChild(table); host.appendChild(sc);
     var COLS_SINGLE='minmax(130px,1.2fr) repeat(7,minmax(78px,1fr))';
-    var COLS_CMP='minmax(130px,1.2fr) '+subjects.map(function(){ return 'minmax(84px,1fr) minmax(84px,1fr)'; }).join(' ');
+    // TEN-399 founder fix 3 (card ff586600): compare = Line | Field (one shared median) | per player Record · Rate · Vs field.
+    var COLS_CMP='minmax(130px,1.2fr) minmax(70px,0.8fr) '+subjects.map(function(){ return 'minmax(70px,0.9fr) minmax(78px,1fr) minmax(70px,0.9fr)'; }).join(' ');
     function grid(cls, cols){ var d=el('div',cls); d.style.gridTemplateColumns=cols; return d; }
 
     if(!cmp){
@@ -31258,11 +31400,13 @@ window.DatabaseTab = (function(){
         .forEach(function(h){ var x=el('span','db-lnh',esc(h[0])); x.title=h[1]; hd.appendChild(x); });
       table.appendChild(hd);
     } else {
-      var nb=grid('db-lnnames', COLS_CMP); nb.appendChild(el('span'));
+      var nb=grid('db-lnnames', COLS_CMP); nb.appendChild(el('span')); nb.appendChild(el('span'));
       subjects.forEach(function(s){ var x=el('span','db-lnnm',esc(s.nm)); x.title=s.nm; nb.appendChild(x); });
       table.appendChild(nb);
       var sh=grid('db-lnhd cmp', COLS_CMP); sh.appendChild(el('span','db-rh','Line'));
+      var fh=el('span','db-lnsub','Field'); fh.title='Field median rate'; sh.appendChild(fh);
       subjects.forEach(function(s){
+        var r0=el('span','db-lnsub','Record'); r0.title=s.nm+' — record, hit–missed'; sh.appendChild(r0);
         var r1=el('span','db-lnsub','Rate'); r1.title=s.nm+' — coverage rate';
         var r2=el('span','db-lnsub','Vs field'); r2.title=s.nm+' — rate vs field median, in percentage points';
         sh.appendChild(r1); sh.appendChild(r2);
@@ -31298,6 +31442,13 @@ window.DatabaseTab = (function(){
         var label=spec[0], kind=spec[1], arg=spec[2];
         var row=grid('db-lnrow'+(cmp?' cmp':''), cmp?COLS_CMP:COLS_SINGLE);
         var lab=el('span','db-lnlab',esc(label)); lab.title=label; row.appendChild(lab);
+        if(cmp){
+          // The field median does not depend on the player: one shared Field cell per line.
+          var F0 = lnFieldStats(fmt, label, null, null);
+          var f0=fig(F0 ? F0.median.toFixed(1)+'%' : DASH, 'var(--text-label)', 'cmpc');
+          if(F0){ f0.title='Median of '+F0.size+' players on this line at this slice'; if(F0.size<10) f0.appendChild(el('i','db-lnsmall','field '+F0.size)); }
+          row.appendChild(f0);
+        }
         subjects.forEach(function(s){
           var L = s.P ? lnLine(s.P.byFmt[fmt], kind, arg) : null;
           var rate = L ? lnRate(L) : null;
@@ -31319,10 +31470,10 @@ window.DatabaseTab = (function(){
             row.appendChild(fig(avg==null ? DASH : lnSgn(avg), avg==null ? null : lnSgnCol(avg)));
             Array.prototype.forEach.call(row.children, function(c,i){ if(i && !c.title) c.title=title; });
           } else {
+            var rc=fig(L && L.n ? (L.hit+'–'+(L.n-L.hit)) : DASH, 'var(--text-label)', 'cmpc'); rc.title=title; row.appendChild(rc);
             var pc=pill(rate, L ? L.n : 0, true); pc.title=title; row.appendChild(pc);
-            // README compare view: the delta is deliberately NEUTRAL (var(--text-label)),
-            // so the rate colour carries the signal.
-            var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', null, 'cmpd'); dc.title=title+(F?' · field of '+F.size:''); row.appendChild(dc);
+            // TEN-399 founder fix 3: Vs field in the three-way sign colour, the single table's size and weight.
+            var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', delta==null ? null : lnSgnCol(delta), 'cmpc'); dc.title=title+(F?' · field of '+F.size:''); row.appendChild(dc);
           }
         });
         blk.appendChild(row);
@@ -31355,26 +31506,35 @@ window.DatabaseTab = (function(){
     var today=Date.parse(new Date(nowMs).toISOString().slice(0,10)+'T00:00:00Z');
     return (today-t)/864e5 > 14;
   }
+  // TEN-399 D3 (lead default): the header stats. Matches = the archive total on the one join
+  // (meta.used, unfiltered); Seasons = how many seasons the archive holds (counted from the rows);
+  // Updated = the archive's latest match (meta.dateRange[1]) - never typed. The old
+  // "Archive through ... Updates pending." line folds into Updated: past 14 days old the
+  // stat carries the same quiet note (the archive refresh is a manual drop-in, not a cron).
+  function dbHeadStats(){
+    var seasons = DATA && DATA.rows ? presentYears().length : null;
+    var stale = dbArchiveStale(M.dateRange[1], Date.now());
+    return [['Matches', fmtInt(M.used), null], ['Seasons', fmtInt(seasons), null],
+            ['Updated', fmtDate(M.dateRange[1]), stale ? 'Updates pending' : null]];
+  }
   function renderChrome(){
     var sub=q('subtitle'), fr=q('fresh');
     if(sub){
       var y0=(''+M.dateRange[0]).slice(0,4), y1=(''+M.dateRange[1]).slice(0,4);
-      // TEN-384 founder ruling (2026-10-07, option "me", superseding TEN-262's one book per
-      // season): every row is priced Pinnacle closing, else Bet365 closing. Where the source's
-      // Pinnacle prices stop is read from the data (meta.pinnacleLastPriced), never typed; it
-      // is printed only when the archive runs past it (every later row is Bet365, and the
-      // change is marked on the curves). No date in the store = no parenthetical.
-      var pl=M.pinnacleLastPriced, stops=!!pl && (''+pl)<(''+M.dateRange[1]);
+      // TEN-399 item 1 (override): ONE join site-wide, Pinnacle closing, else Bet365, per match.
+      // The 2026 book seam is gone from the page, so the header carries no seam sentence
+      // (no "prices stop on", no "marked on the curves"). Book names and years read from the store.
+      // TEN-262 founder ruling (option A, 2026-09-23): never "settled on" (reads as bet settlement).
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
-        esc(M.books[0])+' closing prices, else '+esc(M.books[1])+', '+y0+'–'+y1+'</strong>'+
-        // TEN-262 founder ruling (option A, 2026-09-23): never "settled on" (reads as bet settlement).
-        (stops ?
-          ' (the source\u2019s '+esc(M.books[0])+' prices stop on '+esc(fmtDate(pl))+'). The change is marked on the curves.' : '.');
+        esc(M.books[0])+' closing, else '+esc(M.books[1])+', per match, '+y0+'–'+y1+'</strong>.';
     }
-    // The date is the latest match in the published archive (build-database-yield.js
-    // writes meta.dateRange from the CSVs) - never typed. TEN-262: past 14 days old the
-    // same quiet line says so; the archive refresh is a manual drop-in, not a cron.
-    if(fr) fr.textContent='Archive through '+fmtDate(M.dateRange[1])+(dbArchiveStale(M.dateRange[1], Date.now()) ? '. Updates pending.' : '');
+    if(fr){
+      fr.className='db-hstats';
+      fr.innerHTML=dbHeadStats().map(function(s){
+        return '<div class="db-hstat"><span class="db-hstat__l">'+s[0]+'</span><span class="db-hstat__v">'+esc(s[1])+'</span>'+
+          (s[2] ? '<span class="db-hstat__n">'+s[2]+'</span>' : '')+'</div>';
+      }).join('');
+    }
     var tabs=q('viewtabs');
     if(tabs) tabs.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.dbview===state.view); });
   }
@@ -31383,14 +31543,14 @@ window.DatabaseTab = (function(){
   function renderBandView(body){
     if(state.view==='tournaments' && state.tournament==null){
       var p=el('div','db-prompt');
-      p.innerHTML='<h3>Choose a tournament</h3><p>Search above to pick an event, and this tab will show its favourite and underdog yields by price band, the per-book split, and the cumulative profit curve across the whole archive.</p>';
+      p.innerHTML='<h3>Choose a tournament</h3><p>Search above to pick an event, and this tab will show its favourite and underdog yields by price band and the cumulative profit curve across the whole archive.</p>';
       body.appendChild(p); renderFootnote(body); return;
     }
     var rows=filteredRows();
+    // TEN-399 D4 (lead default): the blue-dot book line above the tables is gone (a blue dot
+    // breaks the site rules and the join is stated once, in the header sub). bookLabel still
+    // decides whether both books are in view, which gates the per-book split under each table.
     var bl=bookLabel(rows.map(function(r){return r[8];}));
-    var line=el('div','db-bookline');
-    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— both books in this selection; per-book split below each table</u>':'');
-    body.appendChild(line);
 
     if(!rows.length){
       var e=el('div','db-empty');
@@ -31403,14 +31563,14 @@ window.DatabaseTab = (function(){
     var favRes=bands(favVals), dogRes=bands(dogVals);
 
     var isTourn = state.view==='tournaments';
-    var card=el('div','db-card');
+    // TEN-399 item 4: Favourites left | Underdogs right, side by side, each its own panel
+    // (card + 6% edge) - no outer card around the pair (one container per block).
     var grid=el('div','db-bands');
     grid.appendChild(bandPanel('Favourites', favRes, FAV_NAMES, 'fav', isTourn, bl.seam));
     grid.appendChild(bandPanel('Underdogs', dogRes, DOG_NAMES, 'dog', isTourn, bl.seam));
-    card.appendChild(grid);
-    body.appendChild(card);
+    body.appendChild(grid);
 
-    body.appendChild(renderCurveCard(rows, bl.seam, isTourn));
+    body.appendChild(renderCurveCard(rows, isTourn));
     renderFootnote(body);
   }
 
@@ -31420,33 +31580,40 @@ window.DatabaseTab = (function(){
   // applied only in the full state — a muted soft-gated yield keeps its sign in the
   // glyph, not in the ink, which is the point of muting it.
   function yieldCell(a){
-    if(a.n<HARD_GATE) return '<span class="db-yieldcell hard">n='+fmtInt(a.n)+' — too few matches for a yield</span>';
+    // TEN-399: the side-by-side tables leave the Yield column 70px wide - the cell carries a dash and the
+    // panel states the gate once under the table (bandPanel), so the sentence never spills out of its column.
+    if(a.n<HARD_GATE) return '<span class="db-yieldcell hard">—</span>';
     var txt=fmtPct(a.yield);
     if(a.n<SOFT_GATE) return '<span class="db-yieldcell soft">'+txt+'</span>';
     return '<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
   }
-  // The "Split by book" sentence, shared by the band panel and the player panel so the
-  // wording cannot drift between them. TEN-262 founder ruling (option A): "priced on Bet365",
-  // never "Bet365-settled". TEN-384 (option "me"): Bet365 prices any row Pinnacle cannot, in
-  // any season, so the Bet365 count names no season.
+  // The "Split by book" sentence lives on the Player tab only (playerBookSplit; TEN-399 ruling). TEN-262
+  // founder ruling (option A): "priced on Bet365", never "Bet365-settled". TEN-384 (option "me"): Bet365
+  // prices any row Pinnacle cannot, in any season, so the Bet365 count names no season.
   // TEN-384 fx4 item 6: a count of one is "1 match" (a player filter can leave one Bet365-priced row).
   function dbMatchWord(n){ return Number(n) === 1 ? 'match' : 'matches'; }
-  function dbBookSplit(book, tail){
-    return 'Split by book: <b>'+fmtPct(book.ps.yield)+'</b> across '+fmtInt(book.ps.n)+' '+esc(M.books[0])+
-      '-priced '+dbMatchWord(book.ps.n)+', <b>'+fmtPct(book.b365.yield)+'</b> across '+fmtInt(book.b365.n)+
-      ' '+dbMatchWord(book.b365.n)+' priced on '+esc(M.books[1])+' (where '+esc(M.books[0])+' has no price). '+tail;
-  }
+
+  // TEN-399 item 4 (founder card 52bf5cc5 "superdog" = to-plus): the Super Dog row is open-ended - From is its real lower
+  // cut, To prints "<From>+" (3.75 / 3.75+ unfiltered) - and the Underdogs All row reads
+  // "<Slight Dog From>+" (1.88 / 1.88+). Favourites All = Super Fav From / Slight Fav To
+  // (1.01 / 1.97). Every cut follows the active filter (the bands are recomputed terciles).
+  // Flip to false to print the Super Dog band's real highest price again (TEN-196's 86.00).
+  var DB_DOG_OPEN_TOP=true;
+  function bandTo(sideKey, lo, hi){ return (DB_DOG_OPEN_TOP && sideKey==='dog') ? fmtP(lo)+'+' : fmtP(hi); }
   function bandPanel(title, res, names, sideKey, isTourn, seam){
     var panel=el('div','db-bandpanel');
-    var head=el('div','db-ph'); head.innerHTML='<h3>'+title+'</h3><span class="db-eyebrow"></span>';
+    // TEN-399 item 4: the title only - "Back the shorter / longer price" is removed from every box.
+    var head=el('div','db-ph'); head.innerHTML='<h3>'+title+'</h3>';
     panel.appendChild(head);
     if(!res.all){ panel.appendChild(el('div','db-note','No matches on this side.')); return panel; }
 
     var showBase = isTourn && baselineAllowed();
     var g=el('div','db-grid');
+    // From / To are five mono characters wide (Plex Mono 15px: 0.6em x 5 = 45px), the same
+    // track in both tables, so "86.00", "3.75+" and "1.88+" line up across Favourites | Underdogs.
     g.style.setProperty('--dbcols', isTourn
-      ? 'minmax(72px,1fr) 40px 40px 52px 58px 74px 74px'
-      : 'minmax(76px,1fr) 40px 40px 56px 60px 72px');
+      ? 'minmax(72px,1fr) 45px 45px 52px 58px 74px 74px'
+      : 'minmax(76px,1fr) 45px 45px 52px 58px 70px');
 
     var hdr=el('div','db-gh');
     var cols=['Band','From','To','Median','Matches', isTourn?'Event':'Yield'];
@@ -31454,20 +31621,16 @@ window.DatabaseTab = (function(){
     cols.forEach(function(c){ hdr.appendChild(el('div',null,c)); });
     g.appendChild(hdr);
 
+    var last=res.bands.length-1;
     res.bands.forEach(function(b,i){
       if(!b) return;
       var nm = (!res.single && names[i]) ? names[i] : 'Band';
       var row=el('div','db-gr');
       row.appendChild(el('div',null,esc(nm)));
-      row.appendChild(el('div',null,fmtP(b.lo)));
-      // Founder ruling, 2026-09-13 (TEN-196): the top band prints its REAL upper
-      // bound, not an open-ended "lo+". The export's `Super Dog -> from + '+'` rule
-      // is overturned. b.hi is the band's own highest closing price, so the cell now
-      // reports what the archive holds (Tour 86.00, AO 81.00) instead of hiding it.
-      // Do not reinstate the '+' suffix: on a page whose claim is "our own archive,
-      // real closing prices", a band that hides its top end is the one cell not
-      // telling you what it knows.
-      row.appendChild(el('div',null,fmtP(b.hi)));
+      row.appendChild(el('div','db-gft',fmtP(b.lo)));
+      // TEN-399 D1 supersedes TEN-196's "real upper bound" on the TOP UNDERDOG band only: the
+      // ticket draws Super Dog To as "3.75+". Every other band prints its real upper cut.
+      row.appendChild(el('div','db-gft', (i===last && !res.single) ? bandTo(sideKey, b.lo, b.hi) : fmtP(b.hi)));
       row.appendChild(el('div','db-gmed',fmtP(b.median)));
       row.appendChild(el('div',null,fmtInt(b.n)));
       row.appendChild(el('div',null,yieldCell(b)));
@@ -31478,11 +31641,15 @@ window.DatabaseTab = (function(){
       g.appendChild(row);
     });
 
+    // The All row is the whole side: its count is the three band counts summed (the terciles
+    // partition the side), its yield the match-weighted average (total profit / matches, 2 dp,
+    // sign colour) and its median the POOLED median of every price on the side - never an
+    // average of the three band figures. From / To are filled (D1).
     var a=res.all, arow=el('div','db-ga');
     arow.appendChild(el('div',null,'All'));
-    arow.appendChild(el('div',null,''));
-    arow.appendChild(el('div',null,''));
-    arow.appendChild(el('div',null,fmtP(a.median)));
+    arow.appendChild(el('div','db-gft',fmtP(a.lo)));
+    arow.appendChild(el('div','db-gft',bandTo(sideKey, a.lo, a.hi)));
+    arow.appendChild(el('div','db-gmed',fmtP(a.median)));
     arow.appendChild(el('div',null,fmtInt(a.n)));
     arow.appendChild(el('div',null,yieldCell(a)));
     if(isTourn){
@@ -31493,10 +31660,11 @@ window.DatabaseTab = (function(){
     panel.appendChild(g);
 
     if(isTourn && !showBase) panel.appendChild(el('div','db-note','Tour baselines are not computed for this round or year range.'));
+    if(res.bands.concat([res.all]).some(function(b){ return b && b.n<HARD_GATE; }))
+      panel.appendChild(el('div','db-note db-hardnote','— fewer than '+HARD_GATE+' matches: too few for a yield.'));
     if(res.single) panel.appendChild(el('div','db-note','Fewer than three matches — shown as one band rather than split into terciles.'));
-    if(seam && a.book.ps && a.book.b365){
-      panel.appendChild(el('div','db-split',dbBookSplit(a.book, 'The All row blends both books; '+esc(M.books[1])+' carries the wider margin.')));
-    }
+    // Founder ruling (TEN-399 card 52bf5cc5 "split"): the per-book split paragraph is on the Player tab only —
+    // Tour and Tournament band panels carry none.
     return panel;
   }
 
@@ -31505,12 +31673,11 @@ window.DatabaseTab = (function(){
   // C3 date basis). The season ticks and the book seam sit on that same basis, which
   // is what puts the seam ON the tick it marks rather than beside it — full note
   // inside the function.
-  function renderCurveCard(rows, seam, isTourn){
+  function renderCurveCard(rows, isTourn){
     var card=el('div','db-card');
     var head=el('div','db-charthead');
-    head.innerHTML='<h3>Cumulative profit, flat 1u</h3>'+
-      '<div class="db-legend"><span><i style="background:'+COL_FAV+'"></i>Favourites</span>'+
-      '<span><i style="background:'+COL_DOG+'"></i>Underdogs</span></div>';
+    // TEN-399 item 4: legend swatches Ring blue (Favourites) · white 45% (Underdogs).
+    head.innerHTML='<h3>Cumulative profit, flat 1u</h3>'+dbLegend([['Favourites',COL_FAV],['Underdogs',COL_DOG]]);
     card.appendChild(head);
     card.appendChild(el('div','db-subline','Units returned on a flat 1-unit stake, cumulative — below zero is a loss.'));
 
@@ -31575,7 +31742,7 @@ window.DatabaseTab = (function(){
     // Dead air is the remaining honest cost of a calendar axis, and it is the reason
     // the founder was shown this choice: a one-week-a-year event occupies one week of
     // the width. That is now a true statement about time rather than a drawing defect.
-    var favV=[], dogV=[], xs=[], cf=0, cd=0, seamX=null;
+    var favV=[], dogV=[], xs=[], cf=0, cd=0;
     // The domain starts at 1 JANUARY of the first season in view, not at the first
     // match's own date. `calendarTicks` drops any tick outside [0,1] rather than
     // clamping it (a clamped tick is a label pointing at a date it does not mark), so
@@ -31603,19 +31770,14 @@ window.DatabaseTab = (function(){
     // is 0 today. It exists so a late series stays late rather than being
     // stretched across the full width.
     var x0=0, nPts=ordered.length;
-    var seamAfter = M.pinnacleLastPriced ? +String(M.pinnacleLastPriced).replace(/-/g,'') : null;
     for(var i=0;i<nPts;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
       cd += r[7] ? -1 : (r[6]-1);
       var x = nPts>1 ? (x0 + (1-x0) * i/(nPts-1)) : 0;
       favV.push(cf); dogV.push(cd); xs.push(x);
-      // The seam is the first Bet365-priced row AFTER the source's last Pinnacle price
-      // (meta.pinnacleLastPriced) — derived from r[8] and the data, never hardcoded.
-      // TEN-384 (option "me"): Bet365 also fills single rows Pinnacle did not price in
-      // earlier seasons; those are not a book change and are not marked. From the stop
-      // on, every row is Bet365, which is the change the mark names.
-      if(seamX===null && r[8]===1 && seamAfter!=null && r[0]>seamAfter) seamX=x;
+      // TEN-399 item 1 (override): no book seam. One join per match (Pinnacle closing, else
+      // Bet365) in every season, so there is no book change to mark on the curve.
     }
     var rawHi=Math.max.apply(null,[Math.max.apply(null,favV), Math.max.apply(null,dogV)]);
     var rawLo=Math.min.apply(null,[Math.min.apply(null,favV), Math.min.apply(null,dogV)]);
@@ -31669,7 +31831,7 @@ window.DatabaseTab = (function(){
 
     var gy=[], v;
     for(v=Math.floor(hi/step)*step; v>0; v-=step) gy.push({y:Y(v), label:'+'+fmtInt(v)+'u'});
-    for(v=0; v>=lo; v-=step) gy.push({y:Y(v), label: v===0?'0':fmtInt(v)+'u'});
+    for(v=0; v>=lo; v-=step) gy.push({y:Y(v), label: v===0?'0':fmtU(v)});
 
     // TEN-243 `season-axis`: calendar ticks off the same d0/span the curve is drawn
     // on, so a label sits at that season's actual 1 January. CHARTS.md §2's pitch rule
@@ -31692,16 +31854,15 @@ window.DatabaseTab = (function(){
 
     var area=el('div','db-plotarea');
     var NV = isTourn ? N_TOURN : N_TOUR;   // the export's own per-chart vertex budget
-    // Layer order, bottom to top: dotted horizontal guides, break-even rule, book seam,
+    // Layer order, bottom to top: dotted horizontal guides, break-even rule,
     // lines (underdogs then favourites on top).
     var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
     // README §5.8 "Dotted guides" (founder R6.3, TEN-376): no area fill, no loss wash, no vertical gridlines —
     // dotted 12% horizontal guides only and the 32% break-even rule.
-    gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; });
-    s+='<line x1="0" y1="'+zeroY.toFixed(1)+'" x2="1000" y2="'+zeroY.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
-    if(seam && seamX!=null) s+='<line x1="'+(seamX*1000).toFixed(1)+'" y1="0" x2="'+(seamX*1000).toFixed(1)+'" y2="'+H+'" stroke="var(--text-label)" stroke-width="1" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>';
-    s+='<polyline points="'+poly(xs,dogV,Y,NV)+'" fill="none" stroke="'+COL_DOG+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
-    s+='<polyline points="'+poly(xs,favV,Y,NV)+'" fill="none" stroke="'+COL_FAV+'" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    gy.forEach(function(g){ s+=dbGuide(g.y); });
+    s+=dbBreakEven(zeroY);
+    s+=dbSeries(poly(xs,dogV,Y,NV), COL_DOG, false);
+    s+=dbSeries(poly(xs,favV,Y,NV), COL_FAV, true);
     s+='</svg>';
     area.innerHTML=s;
 
@@ -31709,11 +31870,6 @@ window.DatabaseTab = (function(){
     var be=el('div','db-ovl db-belab','Break even');
     be.style.top=(zeroY/H*100).toFixed(2)+'%';
     area.appendChild(be);
-    if(seam && seamX!=null){
-      var sl=el('div','db-ovl db-seamlab',esc(M.books[1]));
-      sl.style.left=(seamX*100).toFixed(2)+'%';
-      area.appendChild(sl);
-    }
 
     // The end value is the LAST PAINTED vertex, which `poly` pins to the true last
     // point under every smoothing mode — so the dot, the plate and the line always
@@ -31724,19 +31880,16 @@ window.DatabaseTab = (function(){
     ];
     ends.forEach(function(e){
       e.pct = Y(e.v)/H*100;
-      var dot=el('div','db-enddot');
-      dot.style.top=e.pct.toFixed(2)+'%';
-      dot.style.background=e.col;
-      area.appendChild(dot);
+      area.appendChild(dbEndDot(e.pct, e.col));
     });
     plot.appendChild(area);
 
-    // §7 collision handling. A plate is ~54px on a 400px plot = 13.50% of the height.
+    // §7 collision handling. A plate is ~54px; on the 340px plot (TEN-399) that is 15.88% of the height.
     // Measured across 207 views, 39 collide — the tightest is Open Sud de France at
     // 0.42% (fav -15.7u, dog -15.9u), so this branch is exercised by real data and the
     // probe asserts it THERE, not on a chart whose ends are far apart.
     var endcol=el('div','db-endcol');
-    var MINGAP=54/400*100, tops=[ends[0].pct, ends[1].pct];
+    var MINGAP=54/DB_PLOT_H*100, tops=[ends[0].pct, ends[1].pct];
     if(Math.abs(tops[0]-tops[1]) < MINGAP){
       var mid=(tops[0]+tops[1])/2, half=MINGAP/2;
       var hiFirst = tops[0] <= tops[1];
@@ -31751,8 +31904,11 @@ window.DatabaseTab = (function(){
     // season-label row, which starts at +410px. Clean-context review measured it on the
     // built page: Shanghai Masters overlaps the x-axis labels by ~9.5px, Hall of Fame
     // Championships by ~10.8px, and 12 of 169 tournaments are outside 4..96 without it.
-    tops[0]=Math.max(4,Math.min(96,tops[0]));
-    tops[1]=Math.max(4,Math.min(96,tops[1]));
+    // TEN-399: on the 340px plot the bottom bound is derived, not typed - a ~50px plate centred
+    // on it must end above the season-label row (+10px under the plot).
+    var CLAMP_HI=(DB_PLOT_H+10-27)/DB_PLOT_H*100;
+    tops[0]=Math.max(4,Math.min(CLAMP_HI,tops[0]));
+    tops[1]=Math.max(4,Math.min(CLAMP_HI,tops[1]));
     ends.forEach(function(e,i){
       var pl=el('div','db-plate '+e.cls,'<b>'+e.name+'</b><span>'+fmtU(e.v)+'</span>');
       pl.style.top=tops[i].toFixed(2)+'%';
@@ -31772,7 +31928,6 @@ window.DatabaseTab = (function(){
     // an axis that does not carry them — the objection recorded when the axis
     // last changed. Naming both is the honest form and costs nothing.
     card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season · match index</span>'));
-    if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change after '+esc(fmtDate(M.pinnacleLastPriced))+', where the source’s '+esc(M.books[0])+' prices stop ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
   // Season ticks on a CALENDAR axis — now the ONE tick ladder on this page, used by
@@ -32002,10 +32157,9 @@ window.DatabaseTab = (function(){
       e.innerHTML='<h3>No matches for this filter</h3><p>No archive rows for '+esc(state.player)+' in the selected period, surface, level and tournament.</p>';
       body.appendChild(e); renderFootnote(body); return;
     }
+    // TEN-399 item 6 / D4: no blue-dot basis line above the Player figures — the
+    // per-book split strip below states the join instead (ticket item 1).
     var bl=bookLabel(recs.map(function(v){return v.b;}));
-    var line=el('div','db-bookline');
-    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— both books in this selection; per-book split below</u>':'');
-    body.appendChild(line);
 
     var favRecs=recs.filter(function(v){ return v.fav; });
     var dogRecs=recs.filter(function(v){ return !v.fav; });
@@ -32039,27 +32193,40 @@ window.DatabaseTab = (function(){
     // 2 - role cards
     var gapF = (F.yield==null||!known) ? null : (F.yield-baseF)*100;
     var gapD = (D.yield==null||!known) ? null : (D.yield-baseD)*100;
-    var scale = Math.max(Math.abs(gapF||0), Math.abs(gapD||0)) || 1;
     var roles=el('div','db-roles');
-    roles.appendChild(roleCard('As Favourite', F, baseF, gapF, scale, known, fading, 'when favoured',
+    roles.appendChild(roleCard('As Favourite', F, baseF, gapF, known,
       fading ? 'Matches where he was the shorter price, with his opponent backed flat 1u.' : 'Matches where he was the shorter price, backed flat 1u.'));
-    roles.appendChild(roleCard('As Underdog', D, baseD, gapD, scale, known, fading, 'as underdog',
+    roles.appendChild(roleCard('As Underdog', D, baseD, gapD, known,
       fading ? 'Matches where he was the longer price, with his opponent backed flat 1u.' : 'Matches where he was the longer price, backed flat 1u.'));
     body.appendChild(roles);
 
-    // 3 - per-book split (computed on both stances — X3/X4 ruling)
-    if(bl.seam && A.book.ps && A.book.b365){
-      body.appendChild(el('div','db-card','<div class="db-split">'+dbBookSplit(A.book, 'The figures above blend both books; '+esc(M.books[1])+' carries the wider margin.')+'</div>'));
-    } else {
-      body.appendChild(el('div','db-card','<div class="db-split">'+esc(bl.text)+' — a single book across this selection.</div>'));
-    }
+    // 3 - per-book split (computed on both stances — X3/X4 ruling). TEN-399 item 6:
+    // both figures in ONE convention (playerBookSplit) and the strip states the join.
+    body.appendChild(el('div','db-card db-psplit','<div class="db-split">'+playerBookSplit(A.book, bl)+'</div>'));
 
     // 4 - charts
     body.appendChild(playerCharts(recs, favRecs, dogRecs, fading));
     renderFootnote(body);
   }
 
-  function roleCard(title, a, base, gapPP, scale, known, fading, sidePhrase, desc){
+  // TEN-399 item 6 "Split-by-book strip: both figures one convention". Each book's
+  // figure goes through the SAME formatter — same phrase ("across N matches priced on
+  // <book>"), same type, same sample gate — so neither reads as the qualified one.
+  // The strip opens with the join (ticket item 1: "the per-book split paragraph on the
+  // Player tab stays and states the join").
+  function playerBookSplit(book, bl){
+    function seg(s, name){
+      if(!s) return 'none priced on '+esc(name);
+      // Hard gate (n < 30): no yield, the count is already in the phrase.
+      var fig = s.n<HARD_GATE ? 'too few matches for a yield' : '<b>'+fmtPct(s.yield)+'</b>';
+      return fig+' across '+fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '+esc(name);
+    }
+    var both = !!(bl && bl.seam && book.ps && book.b365);
+    return 'Each match is priced on its '+esc(M.books[0])+' closing price, else '+esc(M.books[1])+'. '+
+      'Split by book: '+seg(book.ps, M.books[0])+', '+seg(book.b365, M.books[1])+'.'+
+      (both ? ' The figures above blend both books; '+esc(M.books[1])+' carries the wider margin.' : '');
+  }
+  function roleCard(title, a, base, gapPP, known, desc){
     var c=el('div','db-role');
     c.appendChild(el('div',null,'<h3>'+title+'</h3><div class="desc">'+esc(desc)+'</div>'));
     if(!a.n){
@@ -32077,8 +32244,9 @@ window.DatabaseTab = (function(){
         : '<b style="color:'+signCol(ytxt)+'">'+ytxt+'</b>');
     var figs=el('div','db-figs');
     figs.appendChild(el('div','db-fig','<b>'+fmtInt(a.n)+'</b><span>Matches</span>'));
-    figs.appendChild(el('div','db-fig',yfig+'<span>Flat-stake yield</span>'));
-    figs.appendChild(el('div','db-fig','<b style="color:var(--text-label)">'+(known?fmtPct(base):'—')+'</b><span>Tour baseline</span>'));
+    figs.appendChild(el('div','db-fig yield',yfig+'<span>Flat-stake yield</span>'));
+    // TEN-399: the tour-baseline figure is neutral (--text-label), never a sign colour.
+    figs.appendChild(el('div','db-fig base','<b style="color:var(--text-label)">'+(known?fmtPct(base):'—')+'</b><span>Tour baseline</span>'));
     c.appendChild(figs);
 
     // Compare on the DISPLAYED precision: a gap that prints "+0.00pp" must not be
@@ -32087,36 +32255,10 @@ window.DatabaseTab = (function(){
     var better = gapShown!=null && gapShown>0;
     var level  = gapShown===0;
     var gcol = gapPP==null ? 'var(--text-label)' : (level ? 'var(--text-label)' : (better?POS:NEG));
-    var barWrap=el('div');
-    var bar=el('div','db-bar');
-    if(gapPP!=null){
-      var w=Math.min(Math.abs(gapPP)/scale*45, 45);
-      var fill=el('div','db-barfill');
-      fill.style.background=gcol;
-      fill.style.width=w.toFixed(1)+'%';
-      fill.style.left = better ? '50%' : (50-w).toFixed(1)+'%';
-      bar.appendChild(fill);
-      bar.appendChild(el('div','db-barmark'));
-    }
-    barWrap.appendChild(bar);
-    barWrap.appendChild(el('div','db-barleg',
-      '<span><i style="background:'+(gapPP==null?'var(--track)':gcol)+'"></i>Gap vs tour baseline</span>'+
-      '<span style="color:'+(known?'var(--text-label)':'var(--text-label)')+'">'+(known?'| tour baseline':'tour baseline not computed')+'</span>'));
-    c.appendChild(barWrap);
-
+    // TEN-399 item 6: the gap bar + its legend and the green/red verdict pill are
+    // DELETED. This row is the only rendering of the gap, and the only green on the card.
     c.appendChild(el('div','db-gaprow','<span class="lbl">Gap vs tour baseline</span>'+
       '<span class="val" style="color:'+gcol+'">'+(gapPP==null?'—':fmtPP(gapPP))+'</span>'));
-
-    var note=el('div','db-verdict');
-    var verdict;
-    if(gapPP==null) verdict='Tour baseline not computed for this filter.';
-    else if(level) verdict='Level with the tour '+sidePhrase+'.';
-    else if(better && a.yield>=0) verdict='Beats the tour '+sidePhrase+', and turns a profit.';
-    else if(better) verdict='Loses less than the tour '+sidePhrase+'.';
-    else verdict='Loses more than the tour '+sidePhrase+'.';
-    note.style.background = (gapPP==null||level) ? 'var(--wash-4)' : (better?'color-mix(in srgb, var(--pos) 10%, transparent)':'color-mix(in srgb, var(--neg) 10%, transparent)');
-    note.innerHTML='<i style="background:'+gcol+'"></i><span>'+verdict+'</span>';
-    c.appendChild(note);
 
     // Per-role record and median odds are live today (in the tiles the export
     // replaces) and the export's role card has no slot for them. Kept rather than
@@ -32129,7 +32271,8 @@ window.DatabaseTab = (function(){
 
   function playerCharts(recs, favRecs, dogRecs, fading){
     var card=el('div','db-card');
-    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale · season axis, ticks mark season starts'));
+    // TEN-399 item 6: coverage/axis captions removed from the eyebrow; the tick rows carry the seasons.
+    card.appendChild(el('div','db-eyebrow','Cumulative profit, flat 1u · shared scale'));
     var suffix = fading ? ', opponent backed' : '';
     var series=[
       // §2: "The Players charts are all one player, so the second colour would carry
@@ -32325,7 +32468,7 @@ window.DatabaseTab = (function(){
     // two independent parsers both get 667 off the shipped ladder. 672 was carried,
     // never measured. Re-measure before quoting it again.)
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step)
-      grid.push({y:Y(v), label: v===0?'0':(v>0?'+'+fmtInt(v)+'u':fmtInt(v)+'u')});
+      grid.push({y:Y(v), label: v===0?'0':(v>0?'+'+fmtU(v):fmtU(v))});
 
     // One tick ladder per panel size, both off the SAME career spine, so the season
     // lines on the small panels sit at the same x as on the big one. Placed at the
@@ -32335,21 +32478,51 @@ window.DatabaseTab = (function(){
     // formula would put the label in the wrong place on every panel.
     var spineX=spine.map(function(v,i){ return N>1 ? i/(N-1) : 0; });
     var dOf=function(r){ return r.d; };
-    var tMain=seasonIndexTicks(spine, spineX, [2,1], dOf);
-    var tSub=seasonIndexTicks(spine, spineX, [4,2,1], dOf);
+    // TEN-399 item 6: ONE tick set for all three panels — same x-domain (the career
+    // spine, e.g. 2013–2026 for Khachanov), identical ticks, and every chart carries
+    // the first AND the last season. See playerTicks.
+    var tAll=playerTicks(spine, spineX, dOf);
     // §4 rendered plot heights: Players main 360px, pair panels 230px.
     var geo={ zeroIn:zeroIn, zeroY:pZeroY };
-    card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 360, true, geo));
+    card.appendChild(panelFor(series[0], grid, Y, PH, tAll, 360, true, geo));
     var pair=el('div','db-pcpair');
-    pair.appendChild(panelFor(series[1], grid, Y, PH, tSub, 230, false, geo));
-    pair.appendChild(panelFor(series[2], grid, Y, PH, tSub, 230, false, geo));
+    pair.appendChild(panelFor(series[1], grid, Y, PH, tAll, 230, false, geo));
+    pair.appendChild(panelFor(series[2], grid, Y, PH, tAll, 230, false, geo));
     card.appendChild(pair);
     return card;
+  }
+  // TEN-399 item 6 — the Player tick ladder. All three panels share it, so the pair
+  // panels' ticks are identical to each other and to the main chart. It always labels
+  // the FIRST and the LAST season of the spine ("every chart carries 2013–2026"), and
+  // fills between them on the smallest regular pitch (1, 2, 4, 8 seasons) that needs at
+  // most PLAYER_TICK_MAX labels; a label closer than PLAYER_TICK_GAP to the one before
+  // it (or to the last season) is skipped, never overlapped. The old per-panel ladders started
+  // at the first season and stepped blindly, which painted "20132017" on the pair
+  // panels (2013 and 2017 sit ~1% apart on Khachanov's index) and never reached 2026.
+  // The gap is a fraction of the pair panel's width (~500px at 1512 → ~42px).
+  var PLAYER_TICK_GAP=0.085, PLAYER_TICK_MAX=7;
+  function playerTicks(spine, spineX, dOf){
+    var all=seasonIndexTicks(spine, spineX, [1], dOf);
+    if(all.length<=2) return all;
+    var first=all[0], last=all[all.length-1], pick=null;
+    [1,2,4,8].some(function(stp){
+      var out=[first];
+      for(var k=1;k<all.length-1;k++){
+        var t=all[k];
+        if((+t.label - +first.label) % stp !== 0) continue;
+        if(t.x - out[out.length-1].x >= PLAYER_TICK_GAP) out.push(t);
+      }
+      while(out.length>1 && last.x - out[out.length-1].x < PLAYER_TICK_GAP) out.pop();
+      out.push(last);
+      pick=out;
+      return out.length<=PLAYER_TICK_MAX;
+    });
+    return pick;
   }
   function panelFor(s, grid, Y, PH, ticks, hpx, isMain, geo){
     var p=el('div', isMain?'db-pcmain':null);
     var head=el('div','db-pchead');
-    var endTxt = s.end==null ? '—' : ((s.end>0?'+':'')+s.end.toFixed(1)+'u');
+    var endTxt = s.end==null ? '—' : ((s.end>0?'+':'')+s.end.toFixed(1).replace('-','\u2212')+'u');
     head.innerHTML='<h4>'+esc(s.title)+'</h4><span style="color:'+(s.end==null?'var(--text-label)':(s.end>=0?POS:NEG))+'">'+endTxt+'</span>';
     p.appendChild(head);
     if(!s.vals.length){ p.appendChild(el('div','db-note','No matches in this state for the current filter.')); return p; }
@@ -32365,8 +32538,9 @@ window.DatabaseTab = (function(){
     // README §5.8 "Dotted guides" (founder R6.3, TEN-376 — supersedes the TEN-196 vertical season gridlines):
     // no area fill, no loss wash; dotted 12% horizontal guides only and the 32% break-even rule.
     grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; });
-    if(geo.zeroIn) svg+='<line x1="0" y1="'+geo.zeroY.toFixed(1)+'" x2="1000" y2="'+geo.zeroY.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
-    svg+='<polyline points="'+poly(s.xs,s.vals,Y,NV)+'" fill="none" stroke="'+s.col+'" stroke-width="'+(isMain?'2.6':'2.2')+'" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    // TEN-399 item 9: break-even 1.25px; every Player series is the lead series → 2.4px.
+    if(geo.zeroIn) svg+='<line x1="0" y1="'+geo.zeroY.toFixed(1)+'" x2="1000" y2="'+geo.zeroY.toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>';
+    svg+='<polyline points="'+poly(s.xs,s.vals,Y,NV)+'" fill="none" stroke="'+s.col+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
     svg+='</svg>';
     area.innerHTML=svg;
     // §6 — break-even label on the Players MAIN chart only; end marker on every chart.
@@ -32395,6 +32569,214 @@ window.DatabaseTab = (function(){
     return p;
   }
 
+  // ================= TEN-399 item 5 · Compare events (Tournament, 2–4 picks) =================
+  // Spec: design_handoff_database/README.md "Compare events" + CHARTS.md §3, re-coloured
+  // by the ticket / foundation: panel = --card + 1px --edge-6; series 1 --viz-lead 2.4px,
+  // 2 --viz-white-lead, 3 --viz-tick, 4 --viz-white-lead dashed 6 5 (max 4, no hues);
+  // end values in the legend only (no plates, no end dots, no gutter).
+  // Picks: pick 1 is `state.tournament` (a set of archive strings, unchanged so the
+  // ROI embed, filteredRows() and every existing probe keep working); picks 2–4 live
+  // in `state.tcmp` as {names, label}. A label is the catalog entry's label.
+  var TC_MAX=4;
+  var TC_SERIES=[
+    { stroke:'var(--viz-lead)',       w:2.4, dash:null },
+    { stroke:'var(--viz-white-lead)', w:2,   dash:null },
+    { stroke:'var(--viz-tick)',       w:2,   dash:null },
+    { stroke:'var(--viz-white-lead)', w:2,   dash:'6 5' }
+  ];
+  function catalogEntryForNames(names){
+    var c=tournCatalog(), want=names&&names[0];
+    for(var k=0;k<c.length;k++) if(c[k].names.indexOf(want)>=0) return c[k];
+    return null;
+  }
+  function tournPicks(){
+    if(state.tournament==null) return [];
+    var first=Array.isArray(state.tournament)?state.tournament:[state.tournament];
+    var e=catalogEntryForNames(first);
+    return [{ names:first, label: state.tournLabel || (e ? e.label : tournLabelOf(first[0])) }].concat(state.tcmp||[]);
+  }
+  function addTournPick(e){
+    if(state.tournament==null){ state.tournament=e.names.slice(); state.tournLabel=null; return; }
+    if(tournPicks().length>=TC_MAX) return;
+    state.tcmp=(state.tcmp||[]).concat([{ names:e.names.slice(), label:e.label }]);
+  }
+  // Removing pick 1 promotes the next pick, so the remaining events keep their order.
+  function removeTournPick(label){
+    var picks=tournPicks();
+    if(!picks.length) return;
+    if(picks[0].label===label){
+      var next=(state.tcmp||[])[0];
+      state.tcmp=(state.tcmp||[]).slice(1);
+      state.tournament = next ? next.names.slice() : null;
+      state.tournLabel = next ? next.label : null;
+      return;
+    }
+    state.tcmp=(state.tcmp||[]).filter(function(p){ return p.label!==label; });
+  }
+  function tournCompareOn(){
+    return state.view==='tournaments' && !(I && I.lockSubject) && state.tournament!=null && (state.tcmp||[]).length>0;
+  }
+  // README three-way sign colour (Compare panel): + green, − red, exactly zero neutral —
+  // judged on the DISPLAYED figure, so "+0.00%" is neutral, not green.
+  function tcSignCol(txt){
+    var t=String(txt).replace(/^\s+/,'');
+    if(parseFloat(t.replace(/^[+\-−]/,'').replace(/,/g,''))===0) return 'var(--text-label)';
+    return t.charAt(0)==='+' ? POS : NEG;
+  }
+  function tcYield(a){
+    if(!a) return { html:'—', col:'var(--text-label)' };
+    if(a.n<HARD_GATE) return { html:'<span class="db-tchard">n='+fmtInt(a.n)+' — too few matches for a yield</span>', col:'var(--text-label)' };
+    var t=fmtPct(a.yield);
+    if(a.n<SOFT_GATE) return { html:'<span class="db-tcsoft">'+t+'</span>', col:'var(--text-label)' };
+    return { html:t, col:tcSignCol(t) };
+  }
+  function tcUnits(v){
+    var r=Math.round(v);
+    return (r>0?'+':r<0?'−':'')+fmtInt(Math.abs(r))+'u';
+  }
+  function tcProfit(r, side){
+    var f = r[7] ? (r[5]-1) : -1, d = r[7] ? -1 : (r[6]-1);
+    return side==='fav' ? f : side==='dog' ? d : f+d;
+  }
+  function renderCompare(body){
+    var picks=tournPicks().slice(0,TC_MAX), side=state.tcSide||'all';
+    var evs=picks.map(function(p){
+      var rows=filteredRows(p.names);
+      var fav=bands(rows.map(function(r){ return {p:r[5], w:r[7], b:r[8]}; })).all;
+      var dog=bands(rows.map(function(r){ return {p:r[6], w:r[7]?0:1, b:r[8]}; })).all;
+      var e=catalogEntryForNames(p.names);
+      return { label:p.label, rows:rows, n:rows.length, fav:fav, dog:dog, surface: e ? (catalogSurface(e)||'—') : '—' };
+    });
+    var card=el('div','db-tcmp');
+    card.appendChild(el('div','db-eyebrow','Compare events'));
+
+    // ---- table: one column per event (README rows, in order) ----
+    var cols='150px repeat('+evs.length+', minmax(170px,1fr))';
+    var scroll=el('div','db-tcscroll'), tbl=el('div','db-tctable');
+    tbl.style.minWidth=(150+evs.length*184)+'px';
+    var hd=el('div','db-tch'); hd.style.gridTemplateColumns=cols;
+    hd.appendChild(el('span'));
+    evs.forEach(function(ev){
+      var h=el('span','db-tcname','<b title="'+esc(ev.label)+'">'+esc(ev.label)+'</b>');
+      var x=el('button',null,'×'); x.title='Remove '+ev.label;
+      x.onclick=function(e2){ e2.stopPropagation(); removeTournPick(ev.label); render(); };
+      h.appendChild(x); hd.appendChild(h);
+    });
+    tbl.appendChild(hd);
+    var ROWS=[
+      ['Surface',          function(ev){ return { html:esc(ev.surface), col:'var(--text-soft)', cls:'w' }; }],
+      ['Matches',          function(ev){ return { html:fmtInt(ev.n), col:'var(--text)' }; }],
+      ['Favourite yield',  function(ev){ return tcYield(ev.fav); }],
+      ['Underdog yield',   function(ev){ return tcYield(ev.dog); }],
+      ['Median fav price', function(ev){ return { html:fmtP(ev.fav?ev.fav.median:null), col:'var(--text-soft)' }; }],
+      ['Median dog price', function(ev){ return { html:fmtP(ev.dog?ev.dog.median:null), col:'var(--text-soft)' }; }]
+    ];
+    ROWS.forEach(function(rw){
+      var r=el('div','db-tcr'); r.style.gridTemplateColumns=cols;
+      r.appendChild(el('span','db-tclab',rw[0]));
+      evs.forEach(function(ev){ var c=rw[1](ev), s=el('span','db-tcval'+(c.cls?' '+c.cls:''),c.html); s.style.color=c.col; r.appendChild(s); });
+      tbl.appendChild(r);
+    });
+    scroll.appendChild(tbl); card.appendChild(scroll);
+
+    // ---- multi-series chart ----
+    var ch=el('div','db-tcchart');
+    var head=el('div','db-tchead');
+    head.appendChild(el('h3',null,'Cumulative profit, flat 1u'));
+    head.appendChild(pillGroup([['all','All matches'],['fav','Favourites'],['dog','Underdogs']],
+      side, function(v){ state.tcSide=v; }, false, 'db-tcside'));
+    ch.appendChild(head);
+
+    // ONE shared x, in SEASON SLOTS: every season in the union of the picked events gets
+    // the same width, and inside a slot each event's matches are spaced by their own
+    // match index. So two events read side by side season for season, an event that
+    // joined the archive later starts later (CHARTS.md §5 late-start rule) instead of
+    // being stretched across the width, and a one-fortnight event is not a staircase —
+    // the defect a shared calendar or a shared match spine both draw (on the union spine
+    // each event is flat while the other events' matches advance x — seen on AO / RG /
+    // Wimbledon before this layout).
+    // Each series starts at 0 at the opening of its first season. No date span is used.
+    var seasons={}, N=0;
+    evs.forEach(function(ev){ ev.rows.forEach(function(r){ seasons[yr(r[0])]=1; }); N+=ev.rows.length; });
+    var years=Object.keys(seasons).map(Number).sort(function(a,b){ return a-b; }), S=years.length;
+    var series=evs.map(function(ev, k){
+      var s={ ev:ev, sty:TC_SERIES[k], xs:[], vals:[], c:0 };
+      var ord=ev.rows.slice().sort(function(a,b){ return a[0]-b[0]; }), byY={};
+      ord.forEach(function(r){ var y=yr(r[0]); (byY[y]||(byY[y]=[])).push(r); });
+      if(ord.length){ s.xs.push(years.indexOf(yr(ord[0][0]))/S); s.vals.push(0); }
+      years.forEach(function(y, si){
+        var rs=byY[y]; if(!rs) return;
+        for(var j=0;j<rs.length;j++){ s.c+=tcProfit(rs[j], side); s.xs.push((si+(j+1)/rs.length)/S); s.vals.push(s.c); }
+      });
+      s.end = ord.length ? s.c : null;
+      return s;
+    });
+
+    var leg=el('div','db-tcleg');
+    series.forEach(function(s){
+      var endTxt = s.end==null ? '—' : tcUnits(s.end);
+      leg.appendChild(el('span',null,
+        '<svg width="18" height="3" viewBox="0 0 18 3" aria-hidden="true"><line x1="0" y1="1.5" x2="18" y2="1.5" stroke="'+s.sty.stroke+'" stroke-width="3"'+(s.sty.dash?' stroke-dasharray="'+s.sty.dash+'"':'')+'/></svg>'+
+        '<em>'+esc(s.ev.label)+'</em><b style="color:'+(s.end==null?'var(--text-label)':tcSignCol(endTxt))+'">'+endTxt+'</b>'));
+    });
+    ch.appendChild(leg);
+
+    if(!N){
+      ch.appendChild(el('div','db-note','No matches for these events under the current round and year range.'));
+      card.appendChild(ch); body.appendChild(card); return;
+    }
+    // CHARTS.md §3 y-axis: shared across every series AND zero; step = first of
+    // [5,10,25,50,100,250,500] with span/step <= 8, else 1000.
+    var allV=[0];
+    series.forEach(function(s){ allV=allV.concat(s.vals); });
+    var rawHi=Math.max.apply(null,allV), rawLo=Math.min.apply(null,allV), span=Math.max(1, rawHi-rawLo);
+    var step=[5,10,25,50,100,250,500].filter(function(v){ return span/v<=8; })[0] || 1000;
+    var hi=Math.ceil(rawHi/step)*step, lo=Math.floor(rawLo/step)*step;
+    if(hi===lo) hi=lo+step;
+    var H=300;
+    function Y(v){ return ((hi-v)/(hi-lo))*H; }
+    var gy=[];
+    for(var v=hi; v>=lo; v-=step) gy.push({ y:Y(v), label: v===0 ? '0' : tcUnits(v) });
+
+    var plot=el('div','db-plot db-tcplot');
+    var yax=el('div','db-yaxis');
+    gy.forEach(function(g){ var d=el('div',null,g.label); d.style.top=(g.y/H*100).toFixed(2)+'%'; yax.appendChild(d); });
+    plot.appendChild(yax);
+    var area=el('div','db-plotarea');
+    var svg='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit of each compared event by match index">';
+    gy.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="var(--viz-guide)" stroke-width="1" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>'; });
+    svg+='<line class="db-tczero" x1="0" y1="'+Y(0).toFixed(1)+'" x2="1000" y2="'+Y(0).toFixed(1)+'" stroke="var(--viz-rule)" stroke-width="1.25" vector-effect="non-scaling-stroke"/>';
+    // Paint 4 → 1 so the lead series sits on top.
+    series.slice().reverse().forEach(function(s){
+      if(!s.vals.length) return;
+      svg+='<polyline data-series="'+(series.indexOf(s)+1)+'" points="'+poly(s.xs,s.vals,Y,N_TOURN)+'" fill="none" stroke="'+s.sty.stroke+'" stroke-width="'+s.sty.w+'"'+
+        (s.sty.dash?' stroke-dasharray="'+s.sty.dash+'"':'')+' stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    });
+    svg+='</svg>';
+    area.innerHTML=svg;
+    var be=el('div','db-ovl db-belab','Break even');
+    be.style.top=(Y(0)/H*100).toFixed(2)+'%';
+    area.appendChild(be);
+    plot.appendChild(area);
+    ch.appendChild(plot);
+
+    // Season ticks at each slot's opening; the Tour pitch rule (4 over 12 seasons, 2 over
+    // 6, else 1), always closing on the last season.
+    var pitch = S>12 ? 4 : (S>6 ? 2 : 1), ticks=[];
+    years.forEach(function(y, si){ if(si%pitch===0 || si===S-1) ticks.push({ label:String(y), x:si/S }); });
+    if(ticks.length>2 && ticks[ticks.length-1].x - ticks[ticks.length-2].x < 0.5*pitch/S) ticks.splice(ticks.length-2, 1);
+    var xax=el('div','db-tcx');
+    ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
+    ch.appendChild(xax);
+    ch.appendChild(el('div','db-tccap','<span class="db-eyebrow">Season · match index · flat 1u · '+
+      (side==='fav' ? 'backing the favourite' : side==='dog' ? 'backing the underdog' : 'both sides of every match')+'</span>'));
+    card.appendChild(ch);
+    card.appendChild(el('div','db-tcnote','Yields are flat 1u on each match’s '+esc(M.books[0])+' closing price, else '+esc(M.books[1])+
+      ', across the selected round and year range. Every season takes the same width and each event’s matches are spaced in order inside it, so an event that joined the archive later starts later.'));
+    body.appendChild(card);
+    renderFootnote(body);
+  }
+
   // ---------- footnote (S1) + disclaimer ----------
   function renderFootnote(body){
     var ex=M.exclusions, bc=M.bookCounts, f=el('div','db-footnote');
@@ -32403,7 +32785,8 @@ window.DatabaseTab = (function(){
       // TEN-384 founder ruling (2026-10-07, option "me"): one join, per match, every season.
       'Each match is priced on its '+esc(M.books[0])+' closing price, or on its '+esc(M.books[1])+' closing price where '+esc(M.books[0])+' has none'+
       (M.pinnacleLastPriced && (''+M.pinnacleLastPriced)<(''+M.dateRange[1]) ? ' (the source’s '+esc(M.books[0])+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')' : '')+
-      ' — the book line above each table names the books in it, and prices are never de-vigged. '+
+      // TEN-399 D4: the book line above the tables is gone, so the note no longer points at it.
+      '; prices are never de-vigged. '+
       'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. '+
       'Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
       '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+

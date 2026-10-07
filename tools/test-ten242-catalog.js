@@ -148,16 +148,19 @@ ok('...and every archive string now carries an alias — TOURN_HELD is empty',
 
 // ── The resolution layer takes the SET. ───────────────────────────────────
 ok('filteredRows() matches on membership, not indexOf against one string',
-  /var\s+_names\s*=\s*Array\.isArray\(state\.tournament\)/.test(html) && /tSet\.indexOf\(r\[4\]\)/.test(html),
+  // TEN-399: the subject set is `names` (a compared event) or state.tournament.
+  /var _subj = names \|\| state\.tournament;/.test(html) && /var\s+_names\s*=\s*Array\.isArray\(_subj\)/.test(html) && /tSet\.indexOf\(r\[4\]\)/.test(html),
   'array -> tSet -> membership');
 ok('the picker hands it the SET, not a string',
-  /onPick:function\(names\)\{[\s\S]{0,400}state\.tournament=Array\.isArray\(names\)\?names\.slice\(\):\[names\]/.test(html),
+  // TEN-399: the chips-and-search picker hands addTournPick the catalog ENTRY; its set is stored.
+  /onPick:function\(e\)\{ addTournPick\(e\);/.test(html) &&
+    /function addTournPick\(e\)\{\s*if\(state\.tournament==null\)\{ state\.tournament=e\.names\.slice\(\);/.test(html),
   'onPick stores an array');
 ok('...and the picker offers one row per CATALOG ENTRY, not per archive string',
-  /var hits=tournCatalog\(\)/.test(html) && !/var hits=M\.tournaments\.map/.test(html),
+  /return tournCatalog\(\)\s*\.filter\(function\(e\)\{ return taken\.indexOf\(e\.label\)<0 && catalogHit\(e, qs\); \}\)/.test(html) && !/var hits=M\.tournaments\.map/.test(html),
   'hits come from tournCatalog()');
-ok('the selected row cannot be compared by identity against a set',
-  /selectedByLabel/.test(html), 'searchField compares on label for this picker');
+ok('the picked events are compared by LABEL, never by identity against a set',
+  /var taken=tpicks\.map\(function\(p\)\{ return p\.label; \}\);/.test(html), 'chips and hits key on the catalog label');
 
 // ── An embedded mount must never render an h1 (founder ruling 2026-09-21) ──
 // The DOM proof lives in probe-ten242-roi-overlay.mjs, which reads the real

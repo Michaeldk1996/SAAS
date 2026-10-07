@@ -39,10 +39,38 @@ paints Ranking "—" while the active player paints "1/3". Locked by `test-ten26
 field under 10 carries a `field N` small-sample mark and every Ranking shows its
 denominator — flagged, not hidden, not filled.
 
-## Rate highlight = full sample at 65% (README TAB 5, quoted)
+## Compare view and notes (founder TEN-399 fix 3 + 4, card ff586600, 2026-10-08)
 
-> "A **full-sample rate at 65% or better** is the highlight state: `#7ee0a8` on
-> `rgba(78,200,130,0.15)` with `border:1px solid rgba(78,200,130,0.34)` at weight 700."
+**Test:** a compare row reads Line | Field (one shared field median) | per player Record · Rate · Vs field; Vs field is in
+the three-way sign colour at the single table's 13px mono (the old "neutral compare delta" is retired). The notes above
+the table name no file and no pipeline step: with the field file "Field is the median rate on each line across roster
+players with at least 5 matches on it; Ranking is the place in that field. Retired players are excluded."; without it
+"Field, Vs field and Ranking are not published yet; Rate is computed from each player’s own matches." No "no readable
+best-of" line and no unresolved-name list. Locked by `test-ten260-lines.mjs` (compare, noField).
 
-Full sample = n ≥ 10. **Test:** 65.0% at n = 20 highlighted; 64.5% at n = 200 not;
-100% at n = 9 not. Locked by `test-ten260-lines.mjs`.
+## Rate highlight = full sample at 65% (founder step-6 ticket TEN-399 item 8, 2026-10-07)
+
+A **full-sample rate at 65% or better** is the highlight state: `--pos` text, weight 700,
+on a **12% `--pos` wash** (`color-mix(in srgb, var(--pos) 12%, transparent)`), **no
+border**. This SUPERSEDES README TAB 5's lighter green on a 15% wash with a 34% green border —
+do not put the border back.
+
+Full sample = n ≥ 10. A rate on n < 10 is `--text-label` ink with no wash. **Test:** 65.0%
+at n = 20 highlighted; 64.5% at n = 200 not; 100% at n = 9 not (and grey). Locked by
+`test-ten260-lines.mjs`.
+
+## Surfaces and marks (TEN-399 item 8)
+
+- The Lines card is a top-level card: `--card` + `--top-light`, no outline.
+- State chips (format · surface · period · line group): `--inner`, no edge, Hanken 10.5 /
+  700 / 0.10em caps in `--text-label`.
+- Group headings: Hanken 10.5 / 700 / 0.10em caps, `--text-label`, the same in the
+  compare view (the old 9px / 600 compare heading is gone).
+- Small-sample marks (`n < 5`, `small n`, `field N`) are grey caps labels
+  (`--text-label`). **No amber anywhere on the tab.**
+- Compare view: each player's name band is white 14 / 800 on a **14% white rule**
+  (`--text` at 14%).
+
+**Test:** each rule read off the page's stylesheet, plus the painted small-sample marks
+(no inline colour) and the highlight state. Locked by `test-ten260-lines.mjs` (TEN-399
+block, 8 mutants).

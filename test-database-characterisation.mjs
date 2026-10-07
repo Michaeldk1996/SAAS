@@ -133,7 +133,7 @@ const ROWS = [
 test('CHARACTERISATION: yieldCell — all three TEN-243 sample-gate states', () => {
   // HARD: no yield at all, the count replaces the number.
   const hard = F.yieldCell({ n: HARD_GATE - 1, yield: 0.1234 });
-  assert.equal(hard, `<span class="db-yieldcell hard">n=${F.fmtInt(HARD_GATE - 1)} — too few matches for a yield</span>`);
+  assert.equal(hard, '<span class="db-yieldcell hard">—</span>', 'TEN-399: a dash in the cell; the panel states the gate once');
   assert.ok(!/%/.test(hard), 'the hard state must emit NO percentage a reader could mistake for a rate');
 
   // SOFT: the yield, muted, and NO sign colour in the ink.
@@ -143,7 +143,7 @@ test('CHARACTERISATION: yieldCell — all three TEN-243 sample-gate states', () 
 
   // FULL: the yield with the sign colour.
   assert.equal(F.yieldCell({ n: SOFT_GATE, yield: 0.1234 }), `<span class="db-yieldcell" style="color:${POS}">+12.34%</span>`);
-  assert.equal(F.yieldCell({ n: SOFT_GATE, yield: -0.0567 }), `<span class="db-yieldcell" style="color:${NEG}">-5.67%</span>`);
+  assert.equal(F.yieldCell({ n: SOFT_GATE, yield: -0.0567 }), `<span class="db-yieldcell" style="color:${NEG}">−5.67%</span>`);
 
   // the exact boundaries, which is where an off-by-one would live
   assert.match(F.yieldCell({ n: HARD_GATE, yield: 0.1 }), /db-yieldcell soft/);
@@ -188,13 +188,14 @@ test('CHARACTERISATION: bands — the tercile partition, and the <3 honest singl
 
 test('CHARACTERISATION: every number-to-string on the page', () => {
   assert.equal(F.fmtPct(0.1234), '+12.34%');
-  assert.equal(F.fmtPct(-0.1234), '-12.34%');
+  assert.equal(F.fmtPct(-0.1234), '−12.34%', 'true minus (TEN-399)');
   assert.equal(F.fmtPct(0), '+0.00%');
   assert.equal(F.fmtPct(null), '—', 'no data is an em dash, never a zero');
   assert.equal(F.fmtP(1.5), '1.50');
   assert.equal(F.fmtP(null), '—');
   assert.equal(F.fmtPP(2.5), '+2.50pp');
-  assert.equal(F.fmtPP(-2.5), '-2.50pp');
+  assert.equal(F.fmtPP(-2.5), '−2.50pp');
+  assert.equal(F.fmtU(-891.6), '−892u');
   assert.equal(F.fmtInt(1234567), '1,234,567');
   assert.equal(F.fmtInt(null), '—');
   assert.equal(F.fmtU(1234.6), '1,235u');

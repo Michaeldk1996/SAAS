@@ -635,11 +635,10 @@ test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
   assert.match(fn, /var x0=0, nPts=ordered\.length;/, 'x0 must exist so a late series stays late');
   assert.match(fn, /ticks=seasonIndexTicks\(ordered, xs, tickSteps\)/,
     'season labels must be placed at the match index where each season starts');
-  // the seam stays derived from the book column and the data, never hardcoded. TEN-384
-  // (option "me"): it is the first Bet365 row AFTER meta.pinnacleLastPriced — Bet365 fills
-  // in earlier seasons are not a book change.
-  assert.match(fn, /if\(seamX===null && r\[8\]===1 && seamAfter!=null && r\[0\]>seamAfter\) seamX=x;/);
-  assert.match(fn, /var seamAfter = M\.pinnacleLastPriced \? \+String\(M\.pinnacleLastPriced\)\.replace\(\/-\/g,''\) : null;/);
+  // TEN-399 item 1 (override, supersedes the TEN-384 seam mark): one join per match in every
+  // season, so the curve carries NO book seam — no seam line, no Bet365 pill, no footnote.
+  assert.ok(!/seamX|seamAfter|db-seamlab|db-seamfoot|book artefact/.test(fn),
+    'the profit chart still draws a book seam — TEN-399 removed it with the one join');
 
   // Smoothing: centred, w=3, endpoints pinned. Display only.
   const sv = /function smoothVals\(vals, k\)\{[\s\S]*?\n  \}/.exec(DASH);
@@ -730,8 +729,10 @@ test('RULING: the Player panels use the career match index and its season ticks'
   assert.match(fn, /xs\.push\(N>1 \? rankOf\(v\.d\)\/\(N-1\) : 0\)/,
     'player x must be the rank of that match in the career sequence');
   assert.match(fn, /function rankOf\(d\)/, 'rank must be derived from date order, not object identity');
-  assert.match(fn, /seasonIndexTicks\(spine, spineX, \[2,1\], dOf\)/);
-  assert.match(fn, /seasonIndexTicks\(spine, spineX, \[4,2,1\], dOf\)/);
+  // TEN-399 item 6: one tick set for all three panels (playerTicks), built from the
+  // same spine on the same season-start rule.
+  assert.match(fn, /var tAll=playerTicks\(spine, spineX, dOf\);/);
+  assert.match(DASH, /var all=seasonIndexTicks\(spine, spineX, \[1\], dOf\);/);
   assert.ok(!/anchorHi/.test(fn), 'the calendar anchor is still being computed');
 
   // seasonIndexTicks serves two row shapes; without the accessor it reads r[0]

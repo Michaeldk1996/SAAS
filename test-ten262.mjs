@@ -78,6 +78,9 @@ function makeDoc() {
   return { createElement: mk };
 }
 const hasCls = (n, c) => (n.className || '').split(/\s+/).includes(c);
+// The page's OWN sign colours (TEN-399): an injected fake would let a renderer that
+// paints a raw value pass a sign-colour check.
+const SIGN = (() => { const m = /POS='([^']+)', NEG='([^']+)'/.exec(SRC); if (!m) throw new Error('POS / NEG are gone from the Database tab'); return { POS: m[1], NEG: m[2] }; })();
 
 const NEED = ['el', 'esc', 'fmtInt', 'median', 'ratEloKey', 'ratLastTok', 'ratEloRec', 'ratNode',
   'ratMatches', 'ratVal', 'ratRating', 'ratN', 'ratBoardPool', 'ratPool', 'ratMedian', 'ratFmt',
@@ -97,7 +100,7 @@ function build(src, { scope = 'career', board = 'overview', sel = [] } = {}) {
   const sandbox = {
     document: doc, RAT, ELO, RETIRED: null,
     RAT_GATE: constOf(src, 'RAT_GATE'), ME_RANK_MIN: constOf(src, 'ME_RANK_MIN'),
-    ELO_CAVEAT: '', POS: '#3dd68c', NEG: '#e0616f', MUT: '#8b96b5', I: {},
+    ELO_CAVEAT: '', POS: SIGN.POS, NEG: SIGN.NEG, MUT: '#8b96b5', I: {},
     state: { ratSurf: 'All', ratScope: scope, ratBoard: board, ratSortKey: board === 'overview' ? 'elo' : 'rtg',
              ratSortDir: 'desc', ratSel: sel, ratQ: '', ratMView: 'both', view: 'ratings' },
     render() {}, ratOpenPlayer() {}, q(id) { return id === 'filters' ? bar : null; }, use() {}, loadRatings() {},
@@ -189,7 +192,7 @@ const CHECKS = {
     if (a2.ratBoardPool('elo').length < 50) return 'career Elo board lost its rows';
     return null;
   },
-  // 1 · the compare panel's highlighted (blue-wash) column follows the scope.
+  // 1 · the compare panel's highlighted (4% white wash) column is Last 52 at EVERY scope (TEN-399 fix 5).
   compareHighlight(src) {
     for (const scope of ['career', 'last52']) {
       const { api } = build(src, { scope, board: 'overview', sel: PICKS });
@@ -197,13 +200,13 @@ const CHECKS = {
       const head = panel.children[0];
       const subs = head.children.filter(c => hasCls(c, 'db-sub'));
       const liveSubs = subs.filter(c => hasCls(c, 'live')).map(c => c.textContent);
-      const want = scope === 'career' ? 'Career' : 'Last 52';
+      const want = 'Last 52';
       if (liveSubs.length !== PICKS.length || liveSubs.some(t => t !== want)) return `${scope}: highlighted sub-heads ${JSON.stringify(liveSubs)}`;
       // Serve row: the highlighted cell holds that scope's figure from the store.
       const serveRow = panel.children.find(r => hasCls(r, 'db-cmpmrow') && /Serve rating/.test(r.children[0].textContent));
       const live = serveRow.children.filter(c => hasCls(c, 'live'));
       const RAT = JSON.parse(readFileSync(STORE, 'utf8'));
-      const exp = RAT.players.find(p => p.name === PICKS[0]).surfaces.All[scope].serve.rating.toFixed(0);
+      const exp = RAT.players.find(p => p.name === PICKS[0]).surfaces.All.last52.serve.rating.toFixed(0);
       if (live.length !== PICKS.length || live[0].textContent !== exp) return `${scope}: highlighted serve cell "${live[0] && live[0].textContent}", store ${exp}`;
     }
     return null;
@@ -239,7 +242,7 @@ const MUTANTS = {
   scopeValues: s => s.replace("return s ? (s[state.ratScope]||null) : null;", "return s ? (s['career']||null) : null;"),
   gatePerScope: s => s.replace("return s ? (s[state.ratScope]||null) : null;", "return s ? (s['last52']||null) : null;"),
   eloDash: s => s.split("state.ratScope!=='career') return null;").join("false) return null;"),
-  compareHighlight: s => s.replace("var hiL52 = state.ratScope==='last52';", "var hiL52 = true;"),
+  compareHighlight: s => s.replace("    var hiL52 = true;", "    var hiL52 = state.ratScope==='last52';"),
   control: s => s.replace("state.ratScope, function(v){ state.ratScope=v; }, false, 'lines'));", "state.ratScope, function(v){ state.ratScope=v; }, state.ratSel.length>0));"),
 };
 
@@ -369,62 +372,65 @@ function checkShell(pages) {
 const SHELL = { 'bsp-consult-dashboard.html': SRC, 'account.html': readFileSync(join(HERE, 'account.html'), 'utf8') };
 test('TEN-262/TEN-286 app shell · sidebar 252px + star icon on both pages', () => { assert.equal(checkShell(SHELL), null); });
 
-// 6 · the "Archive through" line: the date is meta.dateRange[1] (the store's latest
-// match), and past 14 days it adds ". Updates pending." Painted by the real renderChrome
-// with a fixed clock. The Database tab's fmtDate is its own one-liner (the page defines
-// fmtDate twice), so that exact one is sliced.
-function paintFresh(src, latest, todayIso, pinLast = '2026-01-13', which = 'fresh') {
+// 6 · the archive date. TEN-399 D3 folds the old "Archive through … Updates pending." line
+// into the header's Updated stat: the value is meta.dateRange[1] (the store's latest match),
+// and past 14 days the stat carries the note "Updates pending". Painted by the real
+// renderChrome (+ dbHeadStats) with a fixed clock. The Database tab's fmtDate is its own
+// one-liner (the page defines fmtDate twice), so that exact one is sliced.
+function paintChrome(src, latest, todayIso, books = ['Pinnacle', 'Bet365'], first = '2010-01-04') {
   const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';");
   if (i < 0) throw new Error('the Database fmtDate is gone');
-  const code = src.slice(i, src.indexOf('\n', i)) + '\n' + fnSource(src, 'dbArchiveStale') + '\n' + fnSource(src, 'renderChrome');
-  const els = { subtitle: { innerHTML: '' }, fresh: { textContent: '' } };
+  const code = src.slice(i, src.indexOf('\n', i)) + '\n' + ['fmtInt', 'dbArchiveStale', 'dbHeadStats', 'renderChrome'].map(f => fnSource(src, f)).join('\n');
+  const els = { subtitle: { innerHTML: '' }, fresh: { innerHTML: '', className: '' } };
   const RealDate = globalThis.Date;
   class FixedDate extends RealDate { static now() { return RealDate.parse(todayIso + 'T12:00:00Z'); } }
-  const M = { dateRange: ['2010-01-04', latest], books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: pinLast };
-  new Function('q', 'M', 'esc', 'state', 'MON', 'Date', code + '\nrenderChrome();')(
+  const M = { dateRange: [first, latest], books, pinnacleLastPriced: '2026-01-13', used: 40972 };
+  const y0 = +first.slice(0, 4), y1 = +latest.slice(0, 4), years = [];
+  for (let y = y0; y <= y1; y++) years.push(y);
+  new Function('q', 'M', 'esc', 'state', 'MON', 'Date', 'DATA', 'presentYears', code + '\nrenderChrome();')(
     k => els[k] || null, M, x => String(x), { view: 'tour' },
-    ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FixedDate);
-  return which === 'subtitle' ? els.subtitle.innerHTML.replace(/<[^>]*>/g, '') : els.fresh.textContent;
+    ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FixedDate, { rows: [0] }, () => years);
+  const stats = [...els.fresh.innerHTML.matchAll(/<div class="db-hstat"><span class="db-hstat__l">([^<]*)<\/span><span class="db-hstat__v">([^<]*)<\/span>(?:<span class="db-hstat__n">([^<]*)<\/span>)?<\/div>/g)]
+    .map(m => ({ l: m[1], v: m[2], n: m[3] || null }));
+  return { sub: els.subtitle.innerHTML.replace(/<[^>]*>/g, ''), stats, cls: els.fresh.className };
 }
+const updated = (src, latest, today) => paintChrome(src, latest, today).stats.find(s => s.l === 'Updated') || null;
 const STALE = {
   fresh(src) {
-    const t = paintFresh(src, '2026-09-13', '2026-09-23');
-    return t === 'Archive through 13 Sep 2026' ? null : 'at 10 days: ' + JSON.stringify(t);
+    const u = updated(src, '2026-09-13', '2026-09-23');
+    return u && u.v === '13 Sep 2026' && u.n === null ? null : 'at 10 days: ' + JSON.stringify(u);
   },
   boundary(src) {
-    const t14 = paintFresh(src, '2026-09-13', '2026-09-27'), t15 = paintFresh(src, '2026-09-13', '2026-09-28');
-    if (t14 !== 'Archive through 13 Sep 2026') return 'at exactly 14 days: ' + JSON.stringify(t14);
-    if (t15 !== 'Archive through 13 Sep 2026. Updates pending.') return 'at 15 days: ' + JSON.stringify(t15);
+    const u14 = updated(src, '2026-09-13', '2026-09-27'), u15 = updated(src, '2026-09-13', '2026-09-28');
+    if (!u14 || u14.v !== '13 Sep 2026' || u14.n !== null) return 'at exactly 14 days: ' + JSON.stringify(u14);
+    if (!u15 || u15.v !== '13 Sep 2026' || u15.n !== 'Updates pending') return 'at 15 days: ' + JSON.stringify(u15);
     return null;
   },
   fromData(src) {
-    const t = paintFresh(src, '2026-07-26', '2026-07-30');
-    return t === 'Archive through 26 Jul 2026' ? null : 'the date does not follow dateRange[1]: ' + JSON.stringify(t);
+    const u = updated(src, '2026-07-26', '2026-07-30');
+    return u && u.v === '26 Jul 2026' ? null : 'the date does not follow dateRange[1]: ' + JSON.stringify(u);
   },
 };
-// TEN-384 founder ruling (2026-10-07, option "me", superseding TEN-262's one book per season):
-// every row is priced Pinnacle closing, else Bet365 closing; where the source's Pinnacle prices
-// stop is read from meta.pinnacleLastPriced and printed only when the archive runs past it.
+// TEN-399 item 2 + D3: the header card carries Matches · Seasons · Updated, in that order;
+// Matches = meta.used (the one join, unfiltered), Seasons = the seasons the rows hold.
+STALE.stats = function (src) {
+  const p = paintChrome(src, '2026-09-13', '2026-09-23');
+  if (p.cls !== 'db-hstats') return 'stats container class: ' + p.cls;
+  const got = p.stats.map(s => s.l + '=' + s.v).join(' · ');
+  if (got !== 'Matches=40,972 · Seasons=17 · Updated=13 Sep 2026') return 'header stats: ' + got;
+  const p27 = paintChrome(src, '2027-03-01', '2027-03-05');
+  if (p27.stats[1].v !== '18') return 'Seasons does not follow the rows: ' + JSON.stringify(p27.stats[1]);
+  return null;
+};
+// TEN-399 item 1 (override) + D3: ONE join, stated once; the header carries no seam sentence.
 STALE.header = function (src) {
-  const want = 'Historical yield by odds band from our own ATP closing-line archive — Pinnacle closing prices, else Bet365, 2010–2026 (the source’s Pinnacle prices stop on 13 Jan 2026). The change is marked on the curves.';
-  const t = paintFresh(src, '2026-09-13', '2026-09-23', '2026-01-13', 'subtitle');
+  const want = 'Historical yield by odds band from our own ATP closing-line archive — Pinnacle closing, else Bet365, per match, 2010–2026.';
+  const t = paintChrome(src, '2026-09-13', '2026-09-23').sub;
   if (t !== want) return 'header: ' + JSON.stringify(t);
-  if (/2026 uses|one book|settled/.test(t)) return 'header still states the superseded rule: ' + JSON.stringify(t);
-  const none = paintFresh(src, '2026-09-13', '2026-09-23', null, 'subtitle');
-  if (/stop on|change is marked/.test(none)) return 'no Pinnacle date in the store, but the header printed one: ' + JSON.stringify(none);
-  if (!/Pinnacle closing prices, else Bet365, 2010–2026\.$/.test(none)) return 'header without the date: ' + JSON.stringify(none);
-  // A different stop date must move the text - a typed "13 Jan 2026" cannot pass this.
-  const other = paintFresh(src, '2026-09-13', '2026-09-23', '2026-02-03', 'subtitle');
-  if (!/prices stop on 3 Feb 2026\)/.test(other)) return 'stop date not read from the store: ' + JSON.stringify(other);
-  // A stop in an earlier season is still where Pinnacle stops: there is no season seam.
-  const early = paintFresh(src, '2026-09-13', '2026-09-23', '2025-11-16', 'subtitle');
-  if (!/prices stop on 16 Nov 2025\)/.test(early)) return 'a stop date in an earlier season was dropped: ' + JSON.stringify(early);
-  // An archive that ends ON the last Pinnacle date: Pinnacle has not stopped, nothing to mark.
-  const pre = paintFresh(src, '2025-11-16', '2025-11-20', '2025-11-16', 'subtitle');
-  if (!/Pinnacle closing prices, else Bet365, 2010–2025\.$/.test(pre) || /stop on|change is marked/.test(pre)) return 'archive within Pinnacle coverage: ' + JSON.stringify(pre);
-  // The years follow the data, none is typed.
-  const s27 = paintFresh(src, '2027-03-01', '2027-03-05', '2027-01-10', 'subtitle');
-  if (!/else Bet365, 2010–2027 \(the source’s Pinnacle prices stop on 10 Jan 2027\)/.test(s27)) return '2027 archive: ' + JSON.stringify(s27);
+  if (/stop on|marked on the curves|seam|2026 uses|one book|settled/.test(t)) return 'header still carries a seam / superseded sentence: ' + JSON.stringify(t);
+  // The years and the book names follow the data, none is typed.
+  const s27 = paintChrome(src, '2027-03-01', '2027-03-05', ['BookA', 'BookB']).sub;
+  if (!/— BookA closing, else BookB, per match, 2010–2027\.$/.test(s27)) return '2027 / other books: ' + JSON.stringify(s27);
   return null;
 };
 // TEN-262 founder ruling (option A): the method note says "priced on", never "settled on".
@@ -471,12 +477,13 @@ STALE.footnote2 = function (src) {
   if (/stop on/.test(b2.textContent)) return 'archive within Pinnacle coverage, but the note claims a stop';
   return null;
 };
-// Both "Split by book" lines come from dbBookSplit. Paint the real bandPanel (fed by the
-// page's own bands()/agg()) and read its split line; call the helper for the player tail.
+// TEN-399 founder ruling (card 52bf5cc5 "split" = player-only): the per-book split paragraph is on the
+// Player tab only. Paint the real bandPanel (fed by the page's own bands()/agg()) with both books in
+// view: it must carry NO split line. The Player strip (playerBookSplit) keeps the wording + hard gate.
 STALE.split = function (src) {
   const i = src.indexOf('function median(a){ if(!a.length)');
-  const code = ['el', 'esc', 'fmtInt', 'fmtP', 'fmtPct', 'yieldCell', 'agg', 'bands', 'dbMatchWord', 'dbBookSplit', 'bandPanel'].map(f => fnSource(src, f)).join('\n') +
-    '\n' + src.slice(i, src.indexOf('\n', i)) + '\nreturn { bands, bandPanel, dbBookSplit };';
+  const code = 'var DB_DOG_OPEN_TOP=true;\n' + ['el', 'esc', 'fmtInt', 'fmtP', 'fmtPct', 'yieldCell', 'agg', 'bands', 'dbMatchWord', 'bandTo', 'bandPanel', 'playerBookSplit'].map(f => fnSource(src, f)).join('\n') +
+    '\n' + src.slice(i, src.indexOf('\n', i)) + '\nreturn { bands, bandPanel, playerBookSplit };';
   const doc = makeDoc(), mkEl = doc.createElement;
   doc.createElement = t => { const e = mkEl(t); e.style.setProperty = function (k, v) { this[k] = v; }; return e; };
   const mk = M => new Function('document', 'M', 'SOFT_GATE', 'HARD_GATE', 'baselineAllowed', code)(doc, M, 100, 30, () => false);
@@ -484,33 +491,36 @@ STALE.split = function (src) {
   for (let k = 0; k < 30; k++) vals.push({ p: 1.2 + k / 100, w: k % 3 !== 0, b: k < 25 ? 0 : 1 });
   const api = mk({ books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: '2026-01-13' });
   const res = api.bands(vals);
-  const panel = api.bandPanel('Favourites', res, ['Short', 'Mid', 'Long'], 'fav', false, true);
-  const split = panel.querySelectorAll('db-split')[0];
-  if (!split) return 'bandPanel painted no split line';
-  const t = split.textContent;
-  // TEN-384 (option "me"): Bet365 fills any row Pinnacle cannot price, in any season, so the
-  // Bet365 count names no season.
-  if (!/across 5 matches priced on Bet365 \(where Pinnacle has no price\)\. The All row blends both books; Bet365 carries the wider margin\.$/.test(t)) return 'band split: ' + JSON.stringify(t);
-  if (/settled|2026/.test(t)) return 'band split says "settled" or names a season';
-  // The book names come from the store.
+  if (!(res.all.book && res.all.book.ps && res.all.book.b365)) return 'fixture lost one of the two books (vacuous)';
+  for (const tourn of [false, true]) {
+    const panel = api.bandPanel('Favourites', res, ['Short', 'Mid', 'Long'], 'fav', tourn, true);
+    if (panel.querySelectorAll('db-split').length || /Split by book/.test(panel.textContent)) return 'a ' + (tourn ? 'Tournament' : 'Tour') + ' band panel paints a split-by-book line';
+  }
+  // Player strip: book names from the store, one convention, the hard gate (n < 30 prints no yield).
   const apiX = mk({ books: ['BookA', 'BookB'] });
-  const p = apiX.dbBookSplit({ ps: { n: 9, yield: -0.01 }, b365: { n: 4, yield: 0.02 } }, 'The figures above blend both books.');
-  if (p !== 'Split by book: <b>-1.00%</b> across 9 BookA-priced matches, <b>+2.00%</b> across 4 matches priced on BookB (where BookA has no price). The figures above blend both books.')
-    return 'player split: ' + JSON.stringify(p);
+  const p = apiX.playerBookSplit({ ps: { n: 90, yield: -0.01 }, b365: { n: 40, yield: 0.02 } }, null);
+  if (!/^Each match is priced on its BookA closing price, else BookB\. Split by book: <b>−1\.00%<\/b> across 90 matches priced on BookA, <b>\+2\.00%<\/b> across 40 matches priced on BookB\.$/.test(p))
+    return 'player split wording: ' + JSON.stringify(p);
+  const g = apiX.playerBookSplit({ ps: { n: 90, yield: -0.01 }, b365: { n: 29, yield: 0.66 } }, null);
+  if (/66\.00/.test(g) || !/too few matches for a yield across 29 matches priced on BookB/.test(g))
+    return 'hard-gated player split: ' + JSON.stringify(g);
   // TEN-384 fx4 item 6: a count of one reads "1 match", never "1 matches".
-  const one = apiX.dbBookSplit({ ps: { n: 1, yield: -0.01 }, b365: { n: 1, yield: 0.02 } }, '');
-  if (/\b1 matches\b|1 BookA-priced matches/.test(one) || !/across 1 BookA-priced match, .*across 1 match priced on BookB/.test(one))
+  const one = apiX.playerBookSplit({ ps: { n: 1, yield: -0.01 }, b365: { n: 1, yield: 0.02 } }, null);
+  if (/\b1 matches\b/.test(one) || !/across 1 match priced on BookA, .*across 1 match priced on BookB/.test(one))
     return 'one-match split: ' + JSON.stringify(one);
   return null;
 };
+STALE.splitGate = STALE.split;   // the gate mutant is judged by the split check, not by a missing key
 const STALE_MUTANTS = {
   footnote2: s => s.replace("+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')'", "+' prices stop on 13 Jan 2026)'"),
-  split: s => s.replace("' '+dbMatchWord(book.b365.n)+' priced on '+esc(M.books[1])+' (where '+esc(M.books[0])+' has no price). '+tail;", "'-settled matches. '+tail;"),
+  split: s => s.replace("// Tour and Tournament band panels carry none.\n    return panel;", "// Tour and Tournament band panels carry none.\n    panel.appendChild(el('div','db-split','Split by book: x'));\n    return panel;"),
+  splitGate: s => s.replace("var fig = s.n<HARD_GATE ?", "var fig = false ?"),
   footnote: s => s.replace("fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '", "fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '"),
-  header: s => s.replace("stops=!!pl && (''+pl)<(''+M.dateRange[1]);", "stops=!!pl;"),
-  fresh: s => s.replace("(dbArchiveStale(M.dateRange[1], Date.now()) ? '. Updates pending.' : '')", "'. Updates pending.'"),
+  header: s => s.replace("' closing, else '+esc(M.books[1])+', per match, '", "' closing, else Bet365, per match, '"),
+  stats: s => s.replace("['Seasons', fmtInt(seasons), null]", "['Seasons', fmtInt(17), null]"),
+  fresh: s => s.replace("stale ? 'Updates pending' : null", "'Updates pending'"),
   boundary: s => s.replace('return (today-t)/864e5 > 14;', 'return (today-t)/864e5 >= 14;'),
-  fromData: s => s.replace("'Archive through '+fmtDate(M.dateRange[1])", "'Archive through '+fmtDate('2026-09-13')"),
+  fromData: s => s.replace("['Updated', fmtDate(M.dateRange[1])", "['Updated', fmtDate('2026-09-13')"),
 };
 for (const [name, fn] of Object.entries(STALE)) test('TEN-262 archive stamp · ' + name, () => { assert.equal(fn(SRC), null); });
 test('CONTROL: every archive-stamp mutant is caught', () => {
@@ -569,4 +579,160 @@ test('CONTROL: every TEN-262 mutant is caught', { skip: !HAVE && 'published stor
   };
   for (const [name, v] of Object.entries(shellMutants)) if (checkShell(v) === null) survived.push('shell:' + name);
   assert.deepEqual(survived, [], 'mutants survived: ' + survived.join(', '));
+});
+
+// ── TEN-399 item 7 · the Ratings re-skin (founder step-6 ticket, 2026-10-07) ────
+// Read off the page's own stylesheet (the rule that paints each element, merged in
+// cascade order) and off the real renderers, painted against the published store.
+//   · card no outline; board tabs = Darker track (track --card + --edge-6, selected
+//     --inner + --edge-10 white 700, idle --text-label)
+//   · compare panel = --card + 1px --edge-6; the scope column is a 4% white wash
+//     (--wash-4), never blue; Δ in the sign colour
+//   · avatars = initials on --inner, white, no gradient, no blue
+//   · sortable heads --text-label idle / white active; the arrow white (not blue)
+//   · field-median row = 2.5% white wash; names white at rest and on hover
+function cssRule(src, sel) {
+  const css = [...src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
+  const out = {}; let found = false;
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!m[1].split(',').map(x => x.trim()).includes(sel)) continue;
+    found = true;
+    for (const d of m[2].split(';')) { const k = d.indexOf(':'); if (k > 0) out[d.slice(0, k).trim()] = d.slice(k + 1).trim(); }
+  }
+  return found ? out : null;
+}
+const BLUE = /--(link|bar|bar-2|viz-lead|viz-second|hot-dot|pro|open-card)\b/;
+const RAT_CSS = {
+  card(src) {
+    const r = cssRule(src, '.db-rcard'); if (!r) return 'no .db-rcard rule';
+    if (r.background !== 'var(--card)' || r['box-shadow'] !== 'var(--top-light)') return `card ${r.background} / ${r['box-shadow']}`;
+    if (!/transparent|none/.test(r.border || 'none')) return 'card has an outline: ' + r.border;
+    return null;
+  },
+  boardTabs(src) {
+    const t = cssRule(src, '.db-btabs'), b = cssRule(src, '.db-btabs button'), a = cssRule(src, '.db-btabs button.active');
+    if (!t || !b || !a) return 'board tab rules missing';
+    if (t.background !== 'var(--card)' || t.border !== '1px solid var(--edge-6)') return `track ${t.background} / ${t.border}`;
+    if (b.color !== 'var(--text-label)') return 'idle tab ink ' + b.color;
+    if (a.background !== 'var(--inner)' || a['border-color'] !== 'var(--edge-10)' || a.color !== 'var(--text)' || a['font-weight'] !== '700') return 'selected tab ' + JSON.stringify(a);
+    return null;
+  },
+  comparePanel(src) {
+    const p = cssRule(src, '.db-cmp'); if (!p) return 'no .db-cmp rule';
+    if (p.background !== 'var(--card)' || p.border !== '1px solid var(--edge-6)') return `compare panel ${p.background} / ${p.border}`;
+    for (const sel of ['.db-sub.live', '.db-cmpcell.live']) {
+      const r = cssRule(src, sel); if (!r) return 'no ' + sel + ' rule';
+      if (r.background !== 'var(--wash-4)') return `${sel} wash ${r.background}, want var(--wash-4)`;
+      if (Object.values(r).some(v => BLUE.test(v))) return sel + ' carries a blue token';
+      if (r['box-shadow']) return sel + ' outlines each cell (' + r['box-shadow'] + ') - the column is one wash';
+    }
+    return null;
+  },
+  avatar(src) {
+    const r = cssRule(src, '.db-av'); if (!r) return 'no .db-av rule';
+    if (r.background !== 'var(--inner)' || r.color !== 'var(--text)') return `avatar ${r.background} / ${r.color}`;
+    for (const sel of ['.db-av', '.db-av26', '.db-lnav']) {
+      const x = cssRule(src, sel) || {};
+      if (Object.values(x).some(v => /gradient/.test(v) || BLUE.test(v))) return sel + ' carries a gradient or a blue token';
+    }
+    if (/style=|gradient/.test(fnSource(src, 'ratAvatar'))) return 'ratAvatar paints its own style';
+    return null;
+  },
+  sortHeads(src) {
+    const idle = cssRule(src, '.db-rh.sortable'), on = cssRule(src, '.db-rh.sortable.on'), i = cssRule(src, '.db-rh.sortable i');
+    if (!idle || !on || !i) return 'sortable head rules missing';
+    if (idle.color !== 'var(--text-label)') return 'idle head ' + idle.color;
+    if (on.color !== 'var(--text)') return 'active head ' + on.color;
+    if (i.color !== 'var(--text)') return 'sort arrow ' + i.color;
+    return null;
+  },
+  medianRow(src) {
+    const r = cssRule(src, '.db-rmed'); if (!r) return 'no .db-rmed rule';
+    return r.background === 'color-mix(in srgb, var(--text) 2.5%, transparent)' ? null : 'field-median wash ' + r.background;
+  },
+  names(src) {
+    for (const sel of ['.db-rname', '.db-rname:hover', '.db-cmpname', '.db-cmpname:hover']) {
+      const r = cssRule(src, sel); if (!r) return 'no ' + sel + ' rule';
+      if (r.color !== 'var(--text)') return `${sel} ${r.color}`;
+    }
+    return null;
+  },
+};
+for (const [name, fn] of Object.entries(RAT_CSS)) test('TEN-399 Ratings · ' + name, () => { const e = fn(SRC); assert.equal(e, null, e); });
+
+// Painted by the real renderers against the published store.
+const RAT_PAINT = {
+  // The arrow is a bare <i> (the stylesheet makes it white); the active head flips it.
+  sortArrow(src) {
+    const { api } = build(src, { board: 'serve' });
+    api.state.ratSortDir = 'asc';
+    const grid = api.ratLeaderboard(api.ratBoardPool('serve'), 'serve').children[0].children[0];
+    const heads = grid.children.filter(c => hasCls(c, 'db-rhead')).map(h => h.children[0]);
+    const on = heads.filter(h => hasCls(h, 'on'));
+    if (on.length !== 1) return `${on.length} active sort heads`;
+    if (!/<i>↑<\/i>$/.test(on[0].innerHTML)) return 'ascending head reads ' + on[0].innerHTML;
+    if (heads.some(h => h.style.color || /style=/.test(h.innerHTML))) return 'a sort head carries an inline colour';
+    return null;
+  },
+  // Places 1-3 of a ranked block are white 700 (.top); 4 on are not.
+  topThree(src) {
+    const { api } = build(src, { board: 'overview' });
+    const grid = api.ratOverview(api.ratPool()).children[0].children[0];
+    const nums = grid.children.flatMap(c => c.querySelectorAll('db-rnum'));
+    if (nums.length < 5) return 'control: fewer than 5 ranked rows';
+    const tops = nums.map(n => hasCls(n, 'top'));
+    if (tops.slice(0, 3).some(t => !t) || tops.slice(3).some(Boolean)) return 'top marks ' + JSON.stringify(tops.slice(0, 6));
+    return null;
+  },
+  // Δ = Last 52 − career in the sign colour: + --pos, − --neg, 0 / dash --text-label.
+  // Picks are found in the store, so the check never goes vacuous as ratings move.
+  delta(src) {
+    const RAT = JSON.parse(readFileSync(STORE, 'utf8'));
+    const retired = new Set(JSON.parse(readFileSync(RETIRED_FILE, 'utf8')).retired.map(r => r.name));
+    const gate = constOf(src, 'RAT_GATE');
+    const d = p => { const a = p.surfaces.All || {}, c = a.career && a.career.serve, l = a.last52 && a.last52.serve;
+      return (c && l && c.svMatches >= gate && l.svMatches >= gate && typeof c.rating === 'number' && typeof l.rating === 'number') ? Math.round(l.rating) - Math.round(c.rating) : null; };
+    const ok = RAT.players.filter(p => !retired.has(p.name) && d(p) != null);
+    const up = ok.find(p => d(p) > 2), dn = ok.find(p => d(p) < -2);
+    if (!up || !dn) return 'control: no player with a rising and a falling serve rating on the store';
+    const { api } = build(src, { board: 'overview', sel: [up.name, dn.name] });
+    const panel = api.ratComparePanel();
+    const row = panel.children.find(r => hasCls(r, 'db-cmpmrow') && /Serve rating/.test(r.children[0].textContent));
+    const cells = row.children.filter(c => hasCls(c, 'delta'));
+    const col = t => /^\+/.test(t) ? SIGN.POS : /^−/.test(t) ? SIGN.NEG : 'var(--text-label)';
+    if (cells.length !== 2) return `${cells.length} delta cells`;
+    if (!/^\+/.test(cells[0].textContent) || !/^−/.test(cells[1].textContent)) return 'deltas read ' + cells.map(c => c.textContent).join(' / ');
+    for (const c of cells) if (c.style.color !== col(c.textContent)) return `delta ${c.textContent} painted ${c.style.color}`;
+    if (SIGN.POS !== 'var(--pos)' || SIGN.NEG !== 'var(--neg)') return `sign colours are ${SIGN.POS} / ${SIGN.NEG}, not the tokens`;
+    return null;
+  },
+};
+for (const [name, fn] of Object.entries(RAT_PAINT)) test('TEN-399 Ratings (painted) · ' + name, { skip: !HAVE && 'published stores absent' }, () => { const e = fn(SRC); assert.equal(e, null, e); });
+
+const RAT_MUTANTS = [
+  ['card outline back', RAT_CSS.card, s => s.replace('.db-rcard{ background:var(--card); border:1px solid transparent;', '.db-rcard{ background:var(--card); border:1px solid var(--edge-6);')],
+  ['selected board tab blue', RAT_CSS.boardTabs, s => s.replace('.db-btabs button.active{ background:var(--inner); border-color:var(--edge-10); color:var(--text);', '.db-btabs button.active{ background:var(--bar); border-color:var(--edge-10); color:var(--text);')],
+  ['compare panel back to --inner + 10% edge', RAT_CSS.comparePanel, s => s.replace('background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:18px 20px; }', 'background:var(--db-strip); border:1px solid var(--edge-10); border-radius:12px; padding:18px 20px; }')],
+  ['scope column back to --inner', RAT_CSS.comparePanel, s => s.replace('.db-sub.live{ color:var(--text); background:var(--wash-4);', '.db-sub.live{ color:var(--text); background:var(--inner);')],
+  ['scope cells washed blue', RAT_CSS.comparePanel, s => s.replace('color:var(--db-txt); background:var(--wash-4); border-left:1px solid var(--edge-10);', 'color:var(--db-txt); background:color-mix(in srgb, var(--bar) 10%, transparent); border-left:1px solid var(--edge-10);')],
+  ['avatar gradient', RAT_CSS.avatar, s => s.replace('background:var(--inner); background-image:none; border:1px solid var(--edge-10);', 'background:var(--inner); background-image:linear-gradient(var(--bar), var(--inner)); border:1px solid var(--edge-10);')],
+  ['avatar blue ink', RAT_CSS.avatar, s => s.replace("font-family:var(--db-mono); font-size:10px; font-weight:700; color:var(--text); }", "font-family:var(--db-mono); font-size:10px; font-weight:700; color:var(--link); }")],
+  ['sort arrow blue', RAT_CSS.sortHeads, s => s.replace('.db-rh.sortable i{ font-style:normal; color:var(--text); }', '.db-rh.sortable i{ font-style:normal; color:var(--link); }')],
+  ['active head grey', RAT_CSS.sortHeads, s => s.replace('.db-rh.sortable.on{ color:var(--text); }', '.db-rh.sortable.on{ color:var(--text-label); }')],
+  ['median row back to --inner', RAT_CSS.medianRow, s => s.replace('.db-rmed{ padding:10px 6px; background:color-mix(in srgb, var(--text) 2.5%, transparent);', '.db-rmed{ padding:10px 6px; background:var(--inner);')],
+  ['name hover blue', RAT_CSS.names, s => s.replace('.db-rname:hover{ color:var(--text); }', '.db-rname:hover{ color:var(--link); }')],
+  ['arrow painted inline', RAT_PAINT.sortArrow, s => s.replace("(on?(' <i>'+(state.ratSortDir==='desc'?'↓':'↑')+'</i>'):''));", "(on?(' <i style=\"color:var(--link)\">'+(state.ratSortDir==='desc'?'↓':'↑')+'</i>'):''));")],
+  ['top four marked', RAT_PAINT.topThree, s => s.replace("el('div','db-rnum'+(i<3?' top':''),String(i+1))", "el('div','db-rnum'+(i<4?' top':''),String(i+1))")],
+  ['delta uncoloured', RAT_PAINT.delta, s => s.replace("d.style.color = r===0 ? 'var(--text-label)' : diff>0 ? POS : NEG;", "d.style.color = 'var(--text-label)';")],
+];
+test('CONTROL: every TEN-399 Ratings mutant is caught', { skip: !HAVE && 'published stores absent' }, () => {
+  const survivors = [];
+  for (const [name, check, mutate] of RAT_MUTANTS) {
+    const m = mutate(SRC);
+    assert.notEqual(m, SRC, `mutant "${name}" did not apply — it proves nothing`);
+    let caught; try { caught = check(m) !== null; } catch { caught = true; }
+    if (!caught) survivors.push(name);
+  }
+  assert.deepEqual(survivors, [], `${survivors.length} of ${RAT_MUTANTS.length} mutants SURVIVED: ${survivors.join(' · ')}`);
+  console.log(`  TEN-399 Ratings mutants: ${RAT_MUTANTS.length} caught, 0 survived`);
 });
