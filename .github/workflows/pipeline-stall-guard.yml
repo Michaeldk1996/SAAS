@@ -1,0 +1,65 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TEN-396 — pipeline stall guard. Founder ruling (7 Oct 12:37Z): "Alert when a
+# pipeline run has sat in the waiting state for more than 1 hour. After 2 hours,
+# auto-cancel it, re-run once and post a comment. Never cancel a run that is
+# actually executing."
+#
+# This is the ONE workflow allowed to cancel a pipeline run, and only a run in
+# GitHub status `waiting` with no job or step executing. pipeline-watchdog.yml
+# stays an alarm that never touches a run (founder ruling 2026-09-18 item 5: a
+# cancelled MID-WRITE run is worse than a late one — a `waiting` run has written
+# nothing, which is why this ruling can allow it). Logic + tests:
+# tools/pipeline-stall-guard.mjs, test-ten396-stall-guard.mjs.
+#
+# WHY THE TRIGGER FIRES (measured 7 Oct, not assumed)
+# Actions `schedule:` is throttled on this repo (pipeline-watchdog's */15 cron fired
+# 5 times on 6 Oct, against 96 due). So the guard rides on `workflow_run: completed` of two
+# workflows that the Supabase pg_cron pingers dispatch on the boundary:
+#   - "BSP data pipeline" (pipeline.yml, ten141-pipeline-ping, every 10 min). It
+#     keeps firing DURING a stall: every tick queues behind the waiting run and is
+#     cancelled while pending, and a cancelled run still `completes` — 106 of them
+#     between 6 Oct 19:20Z and 7 Oct 12:03Z, i.e. one guard pass every ~10 min;
+#   - "BSP oddspapi post-match archive" (its own pg_cron job, every 15 min) — a
+#     second, independent pinger, so the guard survives either one dying.
+# `schedule:` stays as a best-effort third trigger. workflow_dispatch is for a
+# manual pass (and for a pg_cron dispatch if the lead adds one).
+#
+# Its own concurrency group (never bsp-pipeline: a guard that queues behind the
+# stuck run never runs). cancel-in-progress: false, so a pass is never cut off
+# between its cancel and its re-run; the queue keeps one pass pending at most.
+# ─────────────────────────────────────────────────────────────────────────────
+name: BSP pipeline stall guard
+
+on:
+  workflow_run:
+    workflows: ['BSP data pipeline', 'BSP oddspapi post-match archive']
+    types: [completed]
+  workflow_dispatch:
+  schedule:
+    - cron: '7 * * * *'   # best-effort only — see the trigger note above
+
+concurrency:
+  group: bsp-pipeline-stall-guard
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write   # list runs/jobs, cancel a waiting run, dispatch one re-run
+  issues: write    # the log issue: the comment the ruling asks for + dedupe state
+
+jobs:
+  guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tools/pipeline-stall-guard.mjs
+          sparse-checkout-cone-mode: false
+      - name: Stalled pipeline run — alert at 60 min, cancel + one re-run at 120 min
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          STALL_GUARD_ISSUE: ${{ vars.STALL_GUARD_ISSUE }}
+        run: node tools/pipeline-stall-guard.mjs
