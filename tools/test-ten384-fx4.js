@@ -5,7 +5,7 @@
 // tools/test-ten384-fx4.js` runs the same checks against that commit's player-profile-v2.js,
 // bsp-consult-dashboard.html and tournament-identity.js (read with `git show`).
 //
-//   1 · Swing Oct–Nov       a month in Oct / Nov holding ANY indoor match reads INDOORS (founder D13), whatever the
+//   1 · Swing Oct–Nov       Oct / Nov read INDOORS (founder D13; fx6 item 5: a fixed tour band), whatever the
 //                           outdoor count: Alcaraz's October + Tokyo 2026's 5 outdoor rows stays Indoors.
 //   2 · header rank         the profile header's "No. N" = the Players card's "#N": live standings first, one source.
 //   3 · same-event rows     "Olympic Games" + "Paris Olympics" (one 2024 edition) = one row, surface from the per-year
@@ -64,6 +64,8 @@ const T = L.text;
 // 1 · Swing row: Oct–Nov = INDOORS
 // ════════════════════════════════════════════════════════════════════════════
 H.check('1 · Alcaraz October (13 indoor : 13 outdoor) + Tokyo 2026\'s 5 outdoor rows still reads INDOORS', () => {
+  // fx6 item 5 (founder r2): Oct–Nov is now a FIXED tour band (INDOORS), whatever the rows hold; the intent of this
+  // check (Tokyo's outdoor rows never flip October to HARD) holds a fortiori.
   const { I } = fxModule();
   const R = (mon, surface, court) => ({ mon, surface, court });
   const oct = [];
@@ -71,10 +73,11 @@ H.check('1 · Alcaraz October (13 indoor : 13 outdoor) + Tokyo 2026\'s 5 outdoor
   for (let k = 0; k < 5; k++) oct.push(R(9, 'hard', 'Outdoor'));   // Tokyo 2026
   const at = (sp, m) => { let i = 0; for (const s of sp) { if (m < i + s.len) return s.surface; i += s.len; } return null; };
   assert.strictEqual(at(I.calSurfaceSpans(oct), 9), 'indoors', '13 indoor : 18 outdoor October painted ' + at(I.calSurfaceSpans(oct), 9));
-  // the rule is Oct–Nov only, and needs an indoor match
+  assert.strictEqual(at(I.calSurfaceSpans(oct), 10), 'indoors');
+  // February is the HARD band and December carries none, whatever the rows hold
   assert.strictEqual(at(I.calSurfaceSpans([R(1, 'hard', 'Indoor'), R(1, 'hard', 'Outdoor'), R(1, 'hard', 'Outdoor')]), 1), 'hard');
-  assert.strictEqual(at(I.calSurfaceSpans([R(10, 'hard', 'Outdoor'), R(10, 'hard', 'Outdoor')]), 10), 'hard');
-  return 'Oct 13 indoor : 18 outdoor → indoors; Feb 1 : 2 → hard; Nov 0 indoor → hard';
+  assert.strictEqual(at(I.calSurfaceSpans([R(11, 'hard', 'Indoor')]), 11), null);
+  return 'Oct 13 indoor : 18 outdoor → indoors; Feb → hard; Dec → no band';
 });
 
 // ════════════════════════════════════════════════════════════════════════════

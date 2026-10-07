@@ -7760,12 +7760,11 @@
 
     // SWING row — ruling Q2 (founder 2026-10-05): band colours on the BAR only — 4px, r2, 75% opacity,
     // --viz-hard / --viz-clay / --viz-grass / --viz-indoor, the same night and day — with the surface
-    // name centred UNDER it in caps --text-label. The spans are DERIVED: each month takes the surface
-    // that carries most of its career rows, adjacent months sharing it merge, a month with none breaks
-    // the span. No month is given a surface its own matches do not show.
-    // fx4 item 4 · the Indoor court column rides on the shard: while it loads the row keeps its height with
-    // no bar and no label (one blank 12-month span), then paints once.
-    var spans = pend ? [{ surface: null, len: 12, label: '', colour: 'transparent' }] : calSurfaceSpans(rows);
+    // name centred UNDER it in caps --text-label. fx6 item 5: the spans are the five FIXED tour bands
+    // (calSurfaceSpans / CAL_SWING_BANDS), not derived from his rows.
+    // fx4 item 4 · while the shard loads the whole tab paints once: the row keeps its height with no bar and
+    // no label (one blank 12-month span).
+    var spans = pend ? [{ surface: null, len: 12, label: '', colour: 'transparent' }] : calSurfaceSpans();
     var swingRow = '<span style="' + LAB + 'padding:10px 8px 8px 0;align-self:start;">Swing</span>' +
       spans.map(function (s) {
         return '<span style="grid-column:span ' + s.len + ';display:flex;flex-direction:column;' +
@@ -7876,86 +7875,26 @@
   var SWING_COLOUR = { hard: 'var(--viz-hard)', clay: 'var(--viz-clay)', grass: 'var(--viz-grass)',
     indoors: 'var(--viz-indoor)' };   // Calendar Swing band only (TEN-376 Q2.4)
   var SWING_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', indoors: 'Indoors' };
-  // The SWING row's spans, derived. A month takes the surface holding most of
-  // its career rows (court-carrying rows first, fix item 11); a month with no rows
-  // takes none and breaks the span.
-  // TEN-384 fix item 11: the Swing row can read INDOORS. The court is the odds archive's own
-  // per-match column (Indoor / Outdoor, 100% populated on the ATP main-draw archive), carried onto
-  // the spine row by calSpine() from the market-edge shard — the same field the Court speed
-  // "Indoors" chip filters on. A row the archive does not hold (Challenger, team events,
-  // qualifying) has NO court, which is "not known", not "outdoor": so where a month holds any
-  // court-carrying rows, only those vote (Indoor -> indoors, Outdoor -> its surface). A month
-  // with none, or a tie at the top, falls back to every row's surface — the previous rule.
-  function calSwingSurface(r) {
-    if (r.court === 'Indoor') return 'indoors';
-    return r.surface || null;
-  }
-  var CAL_SWING_TIE_ORDER = ['hard', 'clay', 'grass', 'indoors'];
-  function calSwingTieBreak(counts, prev) {
-    var keys = Object.keys(counts);
-    if (!keys.length) return null;
-    var max = 0;
-    keys.forEach(function (k) { if (counts[k] > max) max = counts[k]; });
-    var lead = keys.filter(function (k) { return counts[k] === max; });
-    if (prev && lead.indexOf(prev) >= 0) return prev;
-    lead.sort(function (x, y) {
-      var ix = CAL_SWING_TIE_ORDER.indexOf(x), iy = CAL_SWING_TIE_ORDER.indexOf(y);
-      ix = ix < 0 ? 99 : ix; iy = iy < 0 ? 99 : iy;
-      return ix !== iy ? ix - iy : (x < y ? -1 : x > y ? 1 : 0);
+  // TEN-384 fx6 item 5 (founder r2, 2026-10-07) · THE SWING ROW IS THE TOUR'S CALENDAR: five FIXED bands,
+  // the same for every player — HARD Jan–Mar · CLAY Apr–May · GRASS Jun–Jul · HARD Aug–Sep · INDOORS Oct–Nov;
+  // December carries no band. This replaces the per-month vote over the player's own rows (fix item 11, the
+  // fx2 tie order) and the fx4 Oct–Nov any-indoor rule: a vote painted seven segments for Alcaraz, with
+  // Clay over February (his Rio / Buenos Aires rows). The bars keep their look (4px, r2, 75%, band colour,
+  // caps label under each bar); the two Hard bands stay two bands, each with its own label.
+  // `mon` is 0-based (0 = January); `len` months per band.
+  var CAL_SWING_BANDS = [
+    { surface: 'hard', mon: 0, len: 3 }, { surface: 'clay', mon: 3, len: 2 }, { surface: 'grass', mon: 5, len: 2 },
+    { surface: 'hard', mon: 7, len: 2 }, { surface: 'indoors', mon: 9, len: 2 }, { surface: null, mon: 11, len: 1 }
+  ];
+  /** The Swing row's spans: the five fixed tour bands and December's empty slot (rows are not read). */
+  function calSurfaceSpans() {
+    return CAL_SWING_BANDS.map(function (b) {
+      return {
+        surface: b.surface, len: b.len,
+        label: b.surface ? SWING_LABEL[b.surface] : '',
+        colour: b.surface ? SWING_COLOUR[b.surface] : 'transparent'
+      };
     });
-    return lead[0];
-  }
-  // TEN-384 fx4 (founder D13, 2026-10-07): "Oct–Nov = INDOORS (Paris, Basel, Vienna, Finals)". The tour's
-  // indoor swing is a CALENDAR fact, not a vote: in October and November (mon 9 / 10, 0-based) a month in
-  // which the player played ANY indoor match (court === 'Indoor') reads INDOORS. Every other month keeps
-  // the court vote below. (Replaces the fx3 13:13 tie rule, which a few outdoor Tokyo rows flipped to HARD.)
-  var CAL_SWING_INDOOR_MONTHS = [9, 10];
-  function calSwingIndoorSwing(mon, c) {
-    return CAL_SWING_INDOOR_MONTHS.indexOf(mon) >= 0 && (c.indoors || 0) > 0;
-  }
-  function calSurfaceSpans(rows) {
-    var known = [], all = [];
-    var i;
-    for (i = 0; i < 12; i++) { known.push({}); all.push({}); }
-    rows.forEach(function (r) {
-      if (r.surface) all[r.mon][r.surface] = (all[r.mon][r.surface] || 0) + 1;
-      if (!r.court) return;
-      var sf = calSwingSurface(r);
-      if (sf) known[r.mon][sf] = (known[r.mon][sf] || 0) + 1;
-    });
-    function top(c) {
-      var keys = Object.keys(c).sort(function (a, b) { return c[b] - c[a]; });
-      if (!keys.length) return null;
-      if (keys.length > 1 && c[keys[0]] === c[keys[1]]) return undefined;   // a tie decides nothing
-      return keys[0];
-    }
-    // TEN-384 fx2 item 8 · a tie on EVERY row is broken by a FIXED rule, never by object-key order
-    // (which is row-insertion order, so the same counts painted a different span when the store's
-    // rows arrived in another order): (1) the previous month's surface, when it is one of the tied
-    // leaders, so a tie never breaks a span the season is already on; (2) otherwise the first tied
-    // leader in CAL_SWING_TIE_ORDER. Never a surface the month holds no row of.
-    // TEN-384 fx4 (founder D13): Oct–Nov with ANY indoor match reads INDOORS (calSwingIndoorSwing), before
-    // any vote; the vote never applies to those months while an indoor row exists.
-    var dom = [];
-    known.forEach(function (c, m) {
-      if (calSwingIndoorSwing(m, c)) { dom.push('indoors'); return; }
-      var k = top(c);
-      if (k) { dom.push(k); return; }
-      var a = top(all[m]);
-      if (a) { dom.push(a); return; }
-      dom.push(calSwingTieBreak(all[m], m ? dom[m - 1] : null));
-    });
-    var out = [];
-    for (i = 0; i < 12; i++) {
-      var last = out[out.length - 1];
-      if (last && last.surface === dom[i]) { last.len++; continue; }
-      out.push({
-        surface: dom[i], len: 1,
-        label: dom[i] ? (SWING_LABEL[dom[i]] || SPINE_LABEL[dom[i]] || '') : '',
-        colour: dom[i] ? (SWING_COLOUR[dom[i]] || 'var(--viz-indoor)') : 'transparent'
-      });
-    }
-    return out;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -11316,7 +11255,7 @@
       calMonths: calMonths,
       calTiles: calTiles,
       calFindings: calFindings,
-      calSurfaceSpans: calSurfaceSpans,
+      calSurfaceSpans: calSurfaceSpans, CAL_SWING_BANDS: CAL_SWING_BANDS,
       calWindowJoin: calWindowJoin,
       roundClass: roundClass,
       renderSpeedPanel: renderSpeedPanel,
@@ -11388,7 +11327,6 @@
       liveTileFallback: liveTileFallback,
       eventName: eventName,
       smallSampleText: smallSampleText,
-      calSwingSurface: calSwingSurface,
       fromASetDown: fromASetDown,
       barFillColour: barFillColour,
       BAR_FULL: BAR_FULL,
@@ -11469,9 +11407,8 @@
       archetypeFor: archetypeFor,
       SPLIT_GROUPS: SPLIT_GROUPS,
       // TEN-384 fx2
-      renderModal: renderModal, calPpLine: calPpLine, calSwingTieBreak: calSwingTieBreak, headerRank: headerRank,
-      CAL_SWING_TIE_ORDER: CAL_SWING_TIE_ORDER, calSwingIndoorSwing: calSwingIndoorSwing,
-      CAL_SWING_INDOOR_MONTHS: CAL_SWING_INDOOR_MONTHS, insightsEmptyText: insightsEmptyText, tournHistOf: tournHistOf,
+      renderModal: renderModal, calPpLine: calPpLine, headerRank: headerRank,
+      insightsEmptyText: insightsEmptyText, tournHistOf: tournHistOf,
       marketPending: marketPending, shardPending: shardPending, tournRecordAll: tournRecordAll,
       tournBackingPending: tournBackingPending,
       get TOURN_TILE_SUMMED_UNITS() { return TOURN_TILE_SUMMED_UNITS; },

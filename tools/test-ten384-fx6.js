@@ -8,6 +8,8 @@
 //                         rows of a season = that season's row in the season table, surface by surface.
 //   2 · Match shape       the Match shape rows = All matches, every format and role: a per-set list short of the
 //                         result (US Open 2021 v Gojowczyk, "3 - 2" with four sets on file) takes the result's count.
+//   5 · Swing row         five FIXED tour bands: HARD Jan–Mar · CLAY Apr–May · GRASS Jun–Jul · HARD Aug–Sep ·
+//                         INDOORS Oct–Nov, December empty; same bars (4px, r2, 75%, band colour, caps label).
 //
 // Run: node tools/test-ten384-fx6.js
 'use strict';
@@ -153,6 +155,45 @@ H.check('2 · a "2 - 0" win with one set on file is a Bo3 won 2–0, not dropped
   const sum = a.groups.find(g => g.title === 'Match shape').rows.reduce((x, r) => x + r.hit, 0);
   assert.strictEqual(sum, a.n);
   return `Bo3 ${b.n} -> ${a.n} = the shapes`;
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 5 · Swing row = the five fixed tour bands
+// ════════════════════════════════════════════════════════════════════════════
+const BANDS = [['hard', 3, 'Hard', 'var(--viz-hard)'], ['clay', 2, 'Clay', 'var(--viz-clay)'], ['grass', 2, 'Grass', 'var(--viz-grass)'],
+  ['hard', 2, 'Hard', 'var(--viz-hard)'], ['indoors', 2, 'Indoors', 'var(--viz-indoor)'], ['', 1, '', 'transparent']];
+function swingOf(I, p) {
+  const html = withState(I, { key: p.key, calTab: 'calendar', calSurface: 'all', calCell: null }, () => I.renderSeasonModal(p));
+  const re = /grid-column:span (\d+);[^>]*>\s*<span data-pp2-swing="([a-z]*)" style="([^"]*)"><\/span>\s*<span style="([^"]*)">([^<]*)<\/span>/g;
+  return [...html.matchAll(re)].map(m => ({ len: +m[1], surface: m[2], bg: (/background:([^;]+);/.exec(m[3]) || [])[1],
+    look: /height:4px/.test(m[3]) && /border-radius:2px/.test(m[3]) && /opacity:0\.75/.test(m[3]),
+    label: m[5].replace(/&nbsp;/g, '').trim(), capsLabel: /text-transform:uppercase/.test(m[4]) && /var\(--text-label\)/.test(m[4]) }));
+}
+H.check('5 · Korda\'s Calendar Swing row = HARD Jan–Mar · CLAY Apr–May · GRASS Jun–Jul · HARD Aug–Sep · INDOORS Oct–Nov · Dec empty', () => {
+  // Korda's record plus a clay-court February: forty clay rows (Buenos Aires / Rio) priced in the archive
+  // (court Outdoor), outnumbering his 24 February hard rows. The superseded vote painted CLAY over February.
+  const feb = [], mk = [];
+  for (let k = 0; k < 40; k++) {
+    const date = String(2016 + (k % 10)) + '-02-' + String(10 + Math.floor(k / 10)).padStart(2, '0');
+    feb.push({ year: date.slice(0, 4), surface: 'clay', level: 'atp', date, tournament: k % 2 ? 'Rio de Janeiro' : 'Buenos Aires',
+      round: 'R32', opponent: 'Z. Clayer' + k, result: '2 - 0', won: true, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }], bestOf: 3 });
+    mk.push({ date, event: k % 2 ? 'Rio de Janeiro' : 'Buenos Aires', level: 'ATP 500', surface: 'Clay', court: 'Outdoor', round: '1st Round',
+      opp: 'Clayer' + k + ' Z.', won: true, price: 1.3, oppPrice: 3.5, book: 'pinnacle', role: 'fav', band: 'f121_140', pl: 0.3, inBasis: true, ret: false });
+  }
+  const { I, p } = fxModule({ ch: FX.careerHistory.concat(feb), me: Object.assign({}, FX.marketEdge, { matches: FX.marketEdge.matches.concat(mk) }) });
+  const sw = swingOf(I, p);
+  assert.deepStrictEqual(sw.map(b => [b.surface, b.len, b.label, b.bg]), BANDS,
+    'painted ' + sw.map(b => (b.surface || '·') + '×' + b.len).join(' '));
+  assert(sw.every(b => b.look), 'a bar lost its 4px / r2 / 75% look');
+  assert(sw.every(b => !b.label || b.capsLabel), 'a label is not a caps --text-label label');
+  return sw.map(b => (b.label || '·') + '×' + b.len).join(' ');
+});
+H.check('5 · the bands do not follow the rows: Clay rows in February and Outdoor rows in October paint the fixed bands', () => {
+  const { I } = fxModule();
+  const R = (mon, surface, court) => ({ mon, surface, court });
+  const rows = [R(1, 'clay', 'Outdoor'), R(1, 'clay', 'Outdoor'), R(1, 'hard', null), R(9, 'hard', 'Outdoor'), R(9, 'hard', 'Outdoor'), R(10, 'hard', null), R(11, 'hard', 'Indoor')];
+  const sp = I.calSurfaceSpans(rows);
+  assert.deepStrictEqual(sp.map(s => [s.surface || '', s.len, s.label, s.colour]), BANDS, 'painted ' + sp.map(s => (s.surface || '·') + '×' + s.len).join(' '));
 });
 
 H.done();

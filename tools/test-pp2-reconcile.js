@@ -7272,99 +7272,37 @@ check('fix 10 · two initials stay together: "Cerundolo J. M.", "Etcheverry T. M
   }
 });
 
-// item 11 · the Swing row reads INDOORS from the archive's own per-match court column.
-check('fix 11 · a month whose rows are mostly Indoor courts is an INDOORS span', () => {
+// item 11 → fx6 item 5 (founder r2, 2026-10-07) · the Swing row is the tour's calendar: five FIXED bands
+// (HARD Jan–Mar · CLAY Apr–May · GRASS Jun–Jul · HARD Aug–Sep · INDOORS Oct–Nov, December empty). It replaces
+// the per-month court / surface vote (fix 11, the fx2 tie order) and the fx4 Oct–Nov any-indoor rule.
+const SWING_FIXED = [['hard', 3, 'Hard', 'var(--viz-hard)'], ['clay', 2, 'Clay', 'var(--viz-clay)'],
+  ['grass', 2, 'Grass', 'var(--viz-grass)'], ['hard', 2, 'Hard', 'var(--viz-hard)'],
+  ['indoors', 2, 'Indoors', 'var(--viz-indoor)'], [null, 1, '', 'transparent']];
+check('fix 11 · fx6 · the Swing row is the five fixed tour bands, whatever rows the player holds', () => {
   const R = (mon, surface, court) => ({ mon, surface, court });
-  const rows = [R(0, 'hard', 'Outdoor'), R(0, 'hard', null), R(9, 'hard', 'Indoor'), R(9, 'hard', 'Indoor'),
-    R(9, 'hard', 'Outdoor'), R(10, 'hard', 'Indoor'), R(5, 'grass', 'Outdoor')];
-  const spans = I.calSurfaceSpans(rows);
-  const at = (m) => { let i = 0; for (const s of spans) { if (m < i + s.len) return s; i += s.len; } return null; };
-  assert.strictEqual(at(0).surface, 'hard');
-  assert.strictEqual(at(9).surface, 'indoors', 'October (2 Indoor of 3) is not Indoors');
-  assert.strictEqual(at(10).surface, 'indoors');
-  assert.strictEqual(at(9).label, 'Indoors');
-  assert.strictEqual(at(9).colour, 'var(--viz-indoor)');
-  assert.strictEqual(at(9), at(10), 'Oct and Nov did not merge into one span');
-  assert.strictEqual(I.calSwingSurface({ surface: 'hard', court: null }), 'hard', 'a row with no court became indoor');
-  // A row with no court is NOT KNOWN, not outdoor: three Challenger (no-court) hard rows do not
-  // outvote two archive Indoor rows. A month with no court at all keeps its surface. fx4 (founder D13,
-  // "Oct–Nov = INDOORS (Paris, Basel, Vienna, Finals)"): in October and November ANY indoor match makes the
-  // month INDOORS — a calendar rule, not a vote. Every other month keeps the court vote / surface vote.
-  const s2 = I.calSurfaceSpans([R(9, 'hard', null), R(9, 'hard', null), R(9, 'hard', null),
-    R(9, 'hard', 'Indoor'), R(9, 'hard', 'Indoor'), R(3, 'clay', null),
-    R(10, 'hard', 'Indoor'), R(10, 'hard', 'Outdoor'), R(10, 'hard', null),
-    R(1, 'hard', 'Outdoor'), R(1, 'clay', 'Outdoor'), R(1, 'clay', null)]);
-  const at2 = (m) => { let i = 0; for (const s of s2) { if (m < i + s.len) return s; i += s.len; } return null; };
-  assert.strictEqual(at2(9).surface, 'indoors', 'no-court rows outvoted the archive\'s Indoor rows');
-  assert.strictEqual(at2(3).surface, 'clay', 'a month with no court lost its surface');
-  assert.strictEqual(at2(10).surface, 'indoors', 'a November holding an Indoor match did not read Indoors (D13)');
-  assert.strictEqual(at2(1).surface, 'clay', 'a 1–1 court tie with no indoor leader did not fall back to the surface vote');
-  // the 13 : 13 shape of Alcaraz's October, with the indoor rows also carrying surface "hard"
-  const oct = [];
-  for (let k = 0; k < 13; k++) oct.push(R(9, 'hard', 'Indoor'), R(9, 'hard', 'Outdoor'));
-  const at3 = (sp, m) => { let i = 0; for (const s of sp) { if (m < i + s.len) return s.surface; i += s.len; } return null; };
-  assert.strictEqual(at3(I.calSurfaceSpans(oct), 9), 'indoors',
-    'a 13 : 13 Indoor : outdoor-hard October painted HARD');
-  // fx4 control · Tokyo 2026 adds 5 OUTDOOR hard rows to that October (13 indoor : 18 outdoor). The fx3 tie rule
-  // flipped it to HARD; the indoor-swing rule keeps it INDOORS.
-  const octTokyo = oct.concat([0, 1, 2, 3, 4].map(() => R(9, 'hard', 'Outdoor')));
-  assert.strictEqual(at3(I.calSurfaceSpans(octTokyo), 9), 'indoors',
-    'Alcaraz October + 5 Tokyo outdoor rows (13 indoor : 18 outdoor) painted HARD — the swing is still indoor');
-  // one indoor match among ten outdoor in November still reads Indoors …
-  const nov1 = [R(10, 'hard', 'Indoor')].concat(Array.from({ length: 10 }, () => R(10, 'hard', 'Outdoor')));
-  assert.strictEqual(at3(I.calSurfaceSpans(nov1), 10), 'indoors', 'a November with one indoor match is not Indoors');
-  // … but an October with NO indoor match keeps the vote (no invented indoor swing) …
-  assert.strictEqual(at3(I.calSurfaceSpans([R(9, 'hard', 'Outdoor'), R(9, 'hard', null)]), 9), 'hard',
-    'an October with no indoor match was painted Indoors');
-  // … and outside Oct–Nov a minority of indoor rows keeps the vote (February: 1 indoor : 3 outdoor hard → Hard)
-  const feb = [R(1, 'hard', 'Indoor'), R(1, 'hard', 'Outdoor'), R(1, 'hard', 'Outdoor'), R(1, 'hard', 'Outdoor')];
-  assert.strictEqual(at3(I.calSurfaceSpans(feb), 1), 'hard', 'the indoor-swing rule leaked outside Oct–Nov');
-  assert.deepStrictEqual(I.CAL_SWING_INDOOR_MONTHS, [9, 10]);
-  assert.strictEqual(I.calSwingIndoorSwing(9, { indoors: 1, hard: 30 }), true);
-  assert.strictEqual(I.calSwingIndoorSwing(10, { hard: 30 }), false);
-  assert.strictEqual(I.calSwingIndoorSwing(1, { indoors: 1, hard: 3 }), false);
+  // rows that the old vote would have painted Clay over February and Hard over October
+  const rows = [R(1, 'clay', 'Outdoor'), R(1, 'clay', 'Outdoor'), R(9, 'hard', 'Outdoor'), R(9, 'hard', 'Outdoor'), R(11, 'hard', 'Indoor')];
+  [I.calSurfaceSpans(rows), I.calSurfaceSpans([]), I.calSurfaceSpans()].forEach((spans) => {
+    assert.deepStrictEqual(spans.map(s => [s.surface, s.len, s.label, s.colour]), SWING_FIXED);
+  });
+  assert.strictEqual(I.CAL_SWING_BANDS.reduce((a, b) => a + b.len, 0), 12, 'the bands do not cover twelve months');
+  // the superseded rules are gone, not merely bypassed
+  ['calSwingSurface', 'calSwingTieBreak', 'calSwingIndoorSwing', 'CAL_SWING_TIE_ORDER', 'CAL_SWING_INDOOR_MONTHS']
+    .forEach(k => assert.strictEqual(I[k], undefined, k + ' is still exported'));
 });
-// fx2: the "real spine" case runs on the pinned fixture (S. Korda's complete record: 12 November rows, 7 on
-// Indoor courts) so it measures something in every checkout; the live Zverev read below needs career-history/.
-check('fix 11 · [fixture] on a real spine, November reads Indoors where the archive says so', () => {
+check('fix 11 · fx6 · [fixture] Korda\'s Calendar paints the fixed bands (bar order, labels, December empty)', () => {
   const { I: FI, p } = fx2FixturePlayerModule();
-  const rows = FI.calSpine(p);
-  const spans = FI.calSurfaceSpans(rows);
-  let i = 0; const byMon = {};
-  spans.forEach((s) => { for (let k = 0; k < s.len; k++) byMon[i + k] = s.surface; i += s.len; });
-  const nov = rows.filter((r) => r.mon === 10);
-  const ind = nov.filter((r) => r.court === 'Indoor').length;
-  assert(nov.length > 0, 'the fixture holds no November rows');
-  assert(ind * 2 > nov.length, `the fixture's November is ${ind}/${nov.length} Indoor — not an Indoors month, the check would be vacuous`);
-  assert.strictEqual(byMon[10], 'indoors', `Nov: ${ind}/${nov.length} indoor, span ${byMon[10]}`);
-  console.log(`        ${p.name} Nov: ${ind} of ${nov.length} rows indoor → ${byMon[10]}`);
-});
-// fx2 item 8 · a tie on EVERY row is decided by a fixed rule, never by the order the rows arrive in.
-check('fix 11 · a month tied on every row resolves the same way whatever order its rows arrive in', () => {
-  const R = (mon, surface) => ({ mon, surface, court: null });
-  const a = [R(4, 'clay'), R(4, 'hard'), R(5, 'grass'), R(6, 'grass'), R(6, 'hard')];
-  const b = a.slice().reverse();
-  const at = (sp, m) => { let i = 0; for (const s of sp) { if (m < i + s.len) return s.surface; i += s.len; } return null; };
-  [4, 6].forEach(m => assert.strictEqual(at(I.calSurfaceSpans(a), m), at(I.calSurfaceSpans(b), m), `month ${m} depends on row order`));
-  // the documented rule: the previous month's surface when it is a tied leader, else CAL_SWING_TIE_ORDER
-  assert.strictEqual(at(I.calSurfaceSpans(a), 4), 'hard', 'a tie with no previous span → first in CAL_SWING_TIE_ORDER (hard)');
-  assert.strictEqual(at(I.calSurfaceSpans(a), 6), 'grass', 'a tie including the previous month\'s surface keeps the span');
-  assert.deepStrictEqual(I.CAL_SWING_TIE_ORDER, ['hard', 'clay', 'grass', 'indoors']);
-  assert.strictEqual(I.calSwingTieBreak({ clay: 2, grass: 2 }, null), 'clay');
-  assert.strictEqual(I.calSwingTieBreak({ clay: 2, grass: 2 }, 'grass'), 'grass');
-  assert.strictEqual(I.calSwingTieBreak({ clay: 3, grass: 2 }, 'grass'), 'clay', 'a non-tie is not a tie-break');
-});
-checkCareer('fix 11 · on the real spine, a player\'s Oct–Nov reads Indoors where the archive says so (live, Zverev)', () => {
-  const p = fixturePlayer(FIXTURE_KEYS.zverev);
-  const rows = I.calSpine(p);
-  const spans = I.calSurfaceSpans(rows);
-  let i = 0; const byMon = {};
-  spans.forEach((s) => { for (let k = 0; k < s.len; k++) byMon[i + k] = s.surface; i += s.len; });
-  const nov = rows.filter((r) => r.mon === 10);
-  const ind = nov.filter((r) => r.court === 'Indoor').length;
-  assert(nov.length > 0, 'no November rows — the check measured nothing');
-  if (ind * 2 > nov.length) assert.strictEqual(byMon[10], 'indoors', `Nov: ${ind}/${nov.length} indoor, span ${byMon[10]}`);
-  console.log(`        Zverev Nov: ${ind} of ${nov.length} rows indoor → ${byMon[10]}`);
+  const saved = Object.assign({}, FI.state);
+  Object.assign(FI.state, { key: p.key, calTab: 'calendar', calSurface: 'all', calCell: null });
+  let html;
+  try { html = FI.renderSeasonModal(p); } finally { Object.keys(FI.state).forEach(k => delete FI.state[k]); Object.assign(FI.state, saved); }
+  const bars = [...html.matchAll(/data-pp2-swing="([a-z]*)" style="([^"]*)"/g)].map(m => [m[1], /background:([^;]+);/.exec(m[2])[1], /opacity:0\.75/.test(m[2]), /height:4px/.test(m[2])]);
+  assert.deepStrictEqual(bars.map(b => b[0]), ['hard', 'clay', 'grass', 'hard', 'indoors', '']);
+  assert.deepStrictEqual(bars.map(b => b[1]), SWING_FIXED.map(x => x[3]));
+  assert(bars.every(b => b[2] && b[3]), 'a bar lost its 4px / 75% look');
+  const spans = [...html.matchAll(/grid-column:span (\d+);[^>]*>\s*<span data-pp2-swing/g)].map(m => +m[1]);
+  assert.deepStrictEqual(spans, [3, 2, 2, 2, 2, 1]);
+  console.log('        ' + bars.map((b, i) => (b[0] || '·') + '×' + spans[i]).join(' '));
 });
 
 // item 13 · the "ATP " prefix: one name rule on every surface.
