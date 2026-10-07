@@ -25,7 +25,7 @@
 // =================================================================
 const fs = require('fs');
 const path = require('path');
-const { canonicalTournament } = require('./tournament-identity');
+const { canonicalTournament, editionYear } = require('./tournament-identity');
 
 const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/master/';
 const TML_CACHE_DIR = path.join(__dirname, 'tml-cache');
@@ -713,14 +713,26 @@ function mergePlayer(history, tmlMatches) {
     return g;
   }
 
+  // TEN-384 fx5 item 5 · the SAME re-year mergeHistory (tournament-identity.js) applies at read time: an
+  // identity with an EDITION_YEAR rule files each edition under the year it was PLAYED. api-tennis files the
+  // Tokyo Games as season 2020, the archive as "Tokyo Olympics" 2021; without the re-year the API 2020 edition
+  // and the TML 2021 edition were two seasons of one row (8–4, editions [2021, 2020]) — the Games counted twice.
+  const playedYear = (name, year) => Number(editionYear(name, year));
+  // Two existing rows holding one played season (a stale cache with both spellings) keep the LARGER edition
+  // (more matches played, then more rows), as mergeHistory does — never the two summed.
+  const edSize = ms => ({ played: ms.filter(m => !m.walkover).length, rows: ms.length });
+
   // Existing (API) editions first.
   for (const t of (Array.isArray(history) ? history : [])) {
     const { id, display } = canonicalTournament(t.name);
     const g = group(id, display, true);
     for (const ed of (t.editions || [])) {
-      const y = Number(ed.year);
+      const y = playedYear(t.name, ed.year);
       g.apiYears.add(y);
-      if (!(y in g.byYear)) g.byYear[y] = (ed.matches || []).slice();
+      const ms = (ed.matches || []).slice();
+      if (!(y in g.byYear)) { g.byYear[y] = ms; continue; }
+      const a = edSize(g.byYear[y]), b = edSize(ms);
+      if (b.played > a.played || (b.played === a.played && b.rows > a.rows)) g.byYear[y] = ms;
     }
   }
 
@@ -745,7 +757,7 @@ function mergePlayer(history, tmlMatches) {
   for (const [id, e] of tml) {
     const g = group(id, e.display, false);
     for (const [yStr, ms] of Object.entries(e.byYear)) {
-      const y = Number(yStr);
+      const y = playedYear(e.display, yStr);   // fx5 item 5: the played year, as the API side
       if (g.apiYears.has(y) || (y in g.byYear)) continue; // existing/API year wins
       g.byYear[y] = ms;
       addedEditions++;

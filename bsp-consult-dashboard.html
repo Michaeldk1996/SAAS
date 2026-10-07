@@ -19262,9 +19262,10 @@ function getPlayersFromMatches(){
     // Rank for the card's "#N": live standings (player-index.json) first, then the match
     // row's rank, else the profile's. The profile rank is frozen per build and reused for
     // up to 14 days, so it carried duplicates (Darderi / Paul both #19) — TEN-384 fix.
+    // fx5 item 7: the precedence is pp2LiveRankOf's alone (the header reads the same function); a row with
+    // no player key has no standings or profile to read, so its own rank is all there is.
     if (rec.rank == null) {
-      const live = pp2LiveRankOf(p.key);
-      rec.rank = (live != null) ? live : pgRankOf(p.rank, canon ? playerProfiles[String(p.key)].rank : null);
+      rec.rank = (p.key != null && p.key !== '') ? pp2LiveRankOf(p.key) : pgRankOf(p.rank);
     }
     return rec;
   };
@@ -19351,14 +19352,29 @@ function pgEloFor(name){ return psEloFor(pgEloData, name); }
 const PG_EXT_SVG = '<svg viewBox="0 0 20 20" fill="none"><path d="M7 5h8v8M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
 // A positive integer rank, else null (never a guess).
-// TEN-384 fx4 item 2 · ONE live-rank read for the Players card AND the profile header: the live
-// standings (player-index.json → playerIndex) for this key, else null (each caller then falls back to
-// the frozen profile rank). Exposed to the profile module through pp2Bridge() as window.pp2LiveRank.
+// TEN-384 fx4 item 2 · ONE live-rank read for the Players card AND the profile header. Exposed to the
+// profile module through pp2Bridge() as window.pp2LiveRank.
+// fx5 item 7 · the WHOLE precedence lives here, so the two cannot fall back differently for a player the
+// standings do not list (the card fell back to the match row's rank, the header to the frozen profile rank):
+//   1. the live standings (player-index.json → playerIndex) for this key;
+//   2. the board's match-row rank for this key (the first row in `matches` carrying a rank for him);
+//   3. the frozen profile rank (built per run, reused for up to 14 days).
+// null = none of the three holds a positive rank (never a guess).
 function pp2LiveRankOf(key){
   if (key == null || key === '') return null;
+  const k = String(key);
   const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : [];
-  const live = idx.find(r => String(r.key) === String(key));
-  return (live && live.rank != null && live.rank !== '') ? pgRankOf(live.rank) : null;
+  const live = idx.find(r => String(r.key) === k);
+  const liveRank = (live && live.rank != null && live.rank !== '') ? pgRankOf(live.rank) : null;
+  if (liveRank != null) return liveRank;
+  const rows = (typeof matches !== 'undefined' && Array.isArray(matches)) ? matches : [];
+  for (const m of rows){
+    if (!m) continue;
+    const r = String(m.p1Key) === k ? pgRankOf(m.p1Rank) : String(m.p2Key) === k ? pgRankOf(m.p2Rank) : null;
+    if (r != null) return r;
+  }
+  const prof = (typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[k] : null;
+  return prof ? pgRankOf(prof.rank) : null;
 }
 function pgRankOf(...vals){
   for (const v of vals){
@@ -20324,15 +20340,20 @@ async function loadPlayerIndex(){
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     playerIndex = Array.isArray(data.players) ? data.players : [];
-    // The Players landing reads its "#N" from these live standings: repaint it if it is up.
-    if (document.getElementById('playerGroups')) renderPlayers();
-    // TEN-384 fx4 item 2: an open profile's header rank reads the same standings — repaint it once.
-    if (typeof ppState !== 'undefined' && ppState && ppState.key) pp2RepaintIfOpen(ppState.key);
   } catch (err) {
     // Additive: search falls back to the eager roster, i.e. today's behaviour.
     console.error('Could not load player-index.json:', err);
     playerIndex = [];
+    return;
   }
+  // TEN-384 fx5 item 7 · the repaints sit OUTSIDE the load's try: a render error here used to land in the
+  // catch above and wipe the standings that had just loaded. Each is guarded on its own.
+  // The Players landing reads its "#N" from these live standings: repaint it if it is up.
+  try { if (document.getElementById('playerGroups')) renderPlayers(); }
+  catch (err) { console.error('Players landing repaint failed:', err); }
+  // TEN-384 fx4 item 2: an open profile's header rank reads the same standings — repaint it once.
+  try { if (typeof ppState !== 'undefined' && ppState && ppState.key) pp2RepaintIfOpen(ppState.key); }
+  catch (err) { console.error('Profile repaint failed:', err); }
 }
 // Fetch one player's profile shard on demand and fold it into playerProfiles, so
 // every downstream renderer keeps reading the one map it already reads. Resolves
@@ -21838,6 +21859,10 @@ async function loadPp2CareerHistory(key){
 // still fetched only when a profile opens.
 async function loadPp2TourHist(key){
   const k = String(key);
+  // TEN-384 fx5 item 2: in flight -> every module surface reading the shard (Record per tournament tile and
+  // modal, the season titles count, career drills) claims nothing (player-profile-v2.js tournHistPending).
+  // Set synchronously, before the first await, so the first paint already sees it; cleared when it settles.
+  (window.tourHistPending = window.tourHistPending || {})[k] = true;
   try {
     const rows = await loadTourHistShard(k);
     // A miss caches as null in loadTourHistShard. Assigning [] here would turn
@@ -21845,6 +21870,7 @@ async function loadPp2TourHist(key){
     // data that ppCareerHistoryPending() exists to prevent. Leave it absent.
     if (Array.isArray(rows) && playerProfiles[k]) playerProfiles[k].tournamentHistory = rows;
   } catch (e) { /* additive; the tile keeps its own empty state */ }
+  delete window.tourHistPending[k];
   pp2RepaintIfOpen(k);
 }
 // §8.1 · the court-speed venue map. Until now the Court speed bands were counted

@@ -197,7 +197,8 @@ function canonicalTournament(name) {
 // resolve to one identity into ONE row named by the canonical display; per SEASON, the duplicate
 // editions count ONCE — the edition with the larger record (more matches played, then more rows)
 // is kept, never the two summed. A row with no twin is returned untouched (same object), so a
-// shard with no duplicates renders exactly as before. Pure; the input is never mutated.
+// shard with no duplicates renders exactly as before — unless its name is an alias, which takes the
+// canonical display name (fx5 item 3). Pure; the input is never mutated.
 const FINISH_RANK = {
   Won: 9, Final: 8, 'Semi-final': 7, 'Quarter-final': 6, RR: 5,
   'Round of 16': 4, 'Round of 32': 3, 'Round of 64': 2, 'Round of 128': 1,
@@ -226,7 +227,15 @@ function mergeHistory(rows) {
     const reYear = EDITION_YEAR[id] ? (e => (editionYear(g[0].name, e.year) !== e.year
       ? Object.assign({}, e, { year: editionYear(g[0].name, e.year) }) : e)) : null;
     const needsReYear = !!reYear && g.some(r => (r.editions || []).some(e => reYear(e) !== e));
-    if (g.length === 1 && !needsReYear) { out.push(g[0]); return; }
+    // fx5 item 3 · a lone row of an ALIASED identity still takes the canonical name: Thompson's only Olympics
+    // row read "Rio Olympics" while every player with two read "Olympic Games". Only the name changes (a new
+    // object; the input is never mutated). A row whose name is not an alias stays the same object.
+    if (g.length === 1 && !needsReYear) {
+      const canon = canonicalTournament(g[0].name);
+      out.push(CANONICAL_ALIASES[identityKey(g[0].name)] && g[0].name !== canon.display
+        ? Object.assign({}, g[0], { name: canon.display, mergedFrom: [g[0].name] }) : g[0]);
+      return;
+    }
     const byYear = new Map();
     g.forEach(r => (r.editions || []).forEach((e0) => {
       const e = reYear ? reYear(e0) : e0;

@@ -3880,8 +3880,10 @@ check('the all-stores table covers every data store the module reads', () => {
   // sfOverlayClosers (TEN-376 S1): the shell's list of overlay-close functions a sidebar click runs — functions, no rows.
   // TEN-384 fx2: TournamentIdentity is the builders' canonical-name table (logic, no rows); marketEdgePending is
   // the host's in-flight flag per market-edge shard (a loading state, no rows — the shard itself is marketEdge).
+  // TEN-384 fx5: tourHistPending is the same in-flight flag for the tournament-history shard (the rows land on
+  // playerProfiles[key].tournamentHistory).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
-    'TournamentIdentity', 'marketEdgePending']);
+    'TournamentIdentity', 'marketEdgePending', 'tourHistPending']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call

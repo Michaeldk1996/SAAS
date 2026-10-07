@@ -801,7 +801,7 @@
     cells.push(cell('Next match',
       nx && nx.label ? esc(nx.label) : DASH,
       nx ? 'var(--text)' : DASH_COLOUR,
-      nx ? 'vs ' + (nx.opponent ? '<span style="font-weight:600;color:var(--text);">' + esc(nx.opponent) + '</span>' : DASH)
+      nx ? 'vs ' + (nx.opponent ? '<span style="font-weight:600;color:var(--text);">' + esc(initialSurname(nx.opponent)) + '</span>' : DASH)
         : 'no fixture on record'));
 
     // Season
@@ -1374,10 +1374,12 @@
     return res ? res[1] + ENDASH + res[2] : null;
   }
 
-  // fx4 item 4 · while the open player's shard loads, an unpriced H / A cell is blank, not a "no price" dash
-  // (a price the bet365 capture already holds still prints).
+  // fx4 item 4 · while the open player's shard loads, an unpriced H / A cell is blank, not a "no price" dash.
+  // fx5 item 1 · and a PRICED cell is blank too: the bet365 capture price the row holds before the shard lands
+  // is not the final join (the shard's close replaces it), so printing it then changing it is a claim
+  // withdrawn. Every H / A cell keeps its width with a non-breaking space and paints once, from the final join.
   function ledgerOdds(v) {
-    if (v == null && state.key != null && shardPending({ key: state.key })) return '&nbsp;';
+    if (state.key != null && shardPending({ key: state.key })) return '&nbsp;';
     return oddsText(v);
   }
   function ledgerRowHtml(x) {
@@ -1567,8 +1569,8 @@
         '<div' + (pend ? ' data-pp2-pending="figure"' : '') + ' style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' +
           (v.headline == null ? DASH_COLOUR : 'var(--text)') + ';line-height:1;white-space:nowrap;' +
           'font-size:' + sz + 'px;">' + (pend ? '&nbsp;' : esc(head) + esc(suffix)) + '</div>' +
-        '<div' + (pend ? ' data-pp2-pending="support"' : '') + ' style="font-size:11.5px;color:var(--text-label);line-height:1.4;margin-top:auto;">' +
-          (pend ? '&nbsp;' : esc(v.support == null ? DASH : v.support)) + '</div>' +
+        '<div' + (pend || v.supportPending ? ' data-pp2-pending="support"' : '') + ' style="font-size:11.5px;color:var(--text-label);line-height:1.4;margin-top:auto;">' +
+          (pend || v.supportPending ? '&nbsp;' : esc(v.support == null ? DASH : v.support)) + '</div>' +
         '</div>';
     }).join('');
 
@@ -1866,8 +1868,23 @@
     (tournViews(p) || []).forEach(function (t) { won += t.won || 0; lost += t.lost || 0; });
     return { won: won, lost: lost };
   }
-  /** fx4 item 4 · true while the page's per-event Backing join has not answered for some listed event. */
+  /**
+   * fx5 item 2 · true while the player's tournament-history shard is IN FLIGHT. The host marks it on
+   * window.tourHistPending[key] (bsp-consult-dashboard.html loadPp2TourHist) and clears the mark when the
+   * fetch settles, answered or not; the rows themselves land on p.tournamentHistory. An empty list read
+   * while the mark is up is "not loaded", not "no tournaments": nothing reading the shard may claim the
+   * empty state then. No mark (the Node harnesses, a settled fetch) = settled.
+   */
+  function tournHistPending(p) {
+    if (!p || Array.isArray(p.tournamentHistory)) return false;
+    var m = window.tourHistPending;
+    return !!(m && m[String(p.key)]);
+  }
+  /** fx4 item 4 · true while the page's per-event Backing join has not answered for some listed event.
+   *  fx5 item 2 · or while the shard that LISTS the events is still loading: some() over an empty list is
+   *  false, which painted "no matches on record" before the rows arrived. */
   function tournBackingPending(p) {
+    if (tournHistPending(p)) return true;
     if (typeof window.trProfileBacking !== 'function') return false;   // no join on this page (harnesses)
     return (tournViews(p) || []).some(function (t) { return t.backingPending; });
   }
@@ -2043,8 +2060,11 @@
     })[0];
     var sw = sr && sr.total ? sr.total.won : 0, sl = sr && sr.total ? sr.total.lost : 0;
     var ti = titlesThisSeason(p);
+    // fx5 item 2 · the titles count reads the tournament-history shard: while it loads the support line
+    // keeps its box blank (supportPending) rather than print "— titles" and then a number.
     v.season = (sw + sl)
       ? { headline: recordText(sw, sl),
+          supportPending: ti == null && tournHistPending(p),
           support: currentYear() + ' season ' + MIDDOT + ' all surfaces ' + MIDDOT + ' ' +
             (ti == null ? DASH + ' titles' : ti + (ti === 1 ? ' title' : ' titles')) }
       : { headline: null, support: 'no matches this season' };
@@ -2701,7 +2721,11 @@
   function shardPending(p) {
     return !!p && marketPending(p.key) && !marketFor(p.key);
   }
-  var PEND_HTML = '<span data-pp2-pending="figure">&nbsp;</span>';
+  // fx5 item 6 · `line-height:inherit`: the page's `.pp2-scrim *` / `.pp2-main *` rule resets every nested element
+  // to line-height normal, so the marker span inside a 24px/line-height-24 figure drew a 32px line box (the
+  // Calendar tiles stood 102px pending against 94px painted). The painted figure is text in the PARENT, so the
+  // marker takes the parent's line height and the pending box is the painted box exactly.
+  var PEND_HTML = '<span data-pp2-pending="figure" style="line-height:inherit;">&nbsp;</span>';
   // Biggest price band, by the SAME rule the founder ruled for biggest split.
   function biggestBand(key) {
     var mk = marketFor(key);
@@ -3510,7 +3534,11 @@
     // TEN-384 · under the Tier control a drill lists the rows that carry that tier; a row whose
     // per-match store holds no tier cannot be placed and is left out (the note's count says so).
     var tierOk = function (r) { return !opts.tier || opts.tier === 'all' || drillRowTier(r) === opts.tier; };
-    var rows = drillRows(p, opts.surf, opts.year, opts.since).filter(tierOk);
+    // fx5 item 2 · a drill whose scope reads tournament-history edition rows (a career drill, or a year the
+    // form store does not cover) lists nothing and states nothing while that shard loads — never "no
+    // matches in the per-match store" — and paints once when it lands.
+    var thPend = !opts.since && tournHistPending(p) && (!opts.year || drillSourceFor(p, opts.year) !== 'form');
+    var rows = thPend ? [] : drillRows(p, opts.surf, opts.year, opts.since).filter(tierOk);
     var shown = rows.slice(0, DRILL_PAGE);
     var cellN = (opts.won || 0) + (opts.lost || 0);
     // Rows that are in the store for this scope but carry no surface. Only a
@@ -3518,7 +3546,7 @@
     var surfaceless = (opts.surf && opts.surf !== 'indoors')
       ? drillRows(p, null, opts.year, opts.since).filter(tierOk).filter(function (r) { return !r.surface; }).length
       : 0;
-    var note = drillNote(rows.length, shown.length, cellN, opts.surf, surfaceless);
+    var note = thPend ? '' : drillNote(rows.length, shown.length, cellN, opts.surf, surfaceless);
 
     var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
                 ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
@@ -5153,9 +5181,13 @@
       head +
       '<div style="max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto;display:flex;' +
         'flex-direction:column;padding:0 12px 0 0;">' +
-        (shown.length ? rows :
+        // fx5 item 2 · while the tournament-history shard loads the list area stays empty (the frame keeps its
+        // min-height): no empty-state sentence until the shard has answered. A settled, genuinely empty shard
+        // says so; the search sentence is for a search that matched nothing.
+        (shown.length ? rows : tournHistPending(p) ? '' :
           '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;margin-top:12px;' +
-          'text-align:center;font-size:13px;color:var(--text-label);">No tournament matches that search.</div>') +
+          'text-align:center;font-size:13px;color:var(--text-label);">' +
+          (q ? 'No tournament matches that search.' : 'No tournaments on record.') + '</div>') +
       '</div>';
   }
 
@@ -5312,11 +5344,11 @@
           // and what renderDrill still does. `Player Stat Boxes.dc.html`:2325 —
           // the file that owns this modal (README §12) and the first file in the
           // founder's own precedence order — writes it initial-first
-          // ("J. Sinner"). So this block carries the feed form unchanged. The
-          // page is internally inconsistent as a result; that is reported, not
-          // silently reconciled in either direction.
+          // ("J. Sinner"). This block prints initial-first through initialSurname, the
+          // rule every other drill uses (fx3 D12), so the feed's "J.J. Wolf" reads "J. J. Wolf".
+          // fx5 item 4 · the opponent goes through the drills' one name rule ("J. J. Wolf", "J-L. Struff").
           cell('font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 0;',
-               esc(m.opp || DASH)) +
+               esc(m.opp ? initialSurname(m.opp) : DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);padding:5px 0;',
                esc(m.round || DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + wl +
@@ -8201,7 +8233,7 @@
           (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span></span>' +
         // §8.15 · the opponent is the page's sans face, not mono.
         '<span ' + hook + 'style="' + cell + 'font-size:12.5px;overflow:hidden;text-overflow:ellipsis;' +
-          'white-space:nowrap;">' + esc(m.opp || DASH) + '</span>' +
+          'white-space:nowrap;">' + esc(m.opp ? initialSurname(m.opp) : DASH) + '</span>' +   // fx5 item 4: the drills' name rule
         // §8.16 · draw-size codes (roundLabel() via calSpine()).
         '<span ' + hook + 'style="' + cell + MONO + 'font-size:10.5px;' +
           'color:var(--text-label);">' + esc(m.round || DASH) + '</span>' +
