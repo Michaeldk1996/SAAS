@@ -838,7 +838,9 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
 // over the same fixtures — the two MUST stay tallyable against each other, which
 // is why an unknown-surface row is kept rather than dropped (see below).
 // No matchStats — kept lean so the side file stays small.
-function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
+// `courtMap` defaults exactly as buildAllTierYearly's does, so a row's `indoor` and the table's Indoors read one map.
+function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtMap) {
+  if (courtMap === undefined) courtMap = defaultCourtMap();
   const cutoff = currentYear - 5;
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
   const out = [];
@@ -968,8 +970,15 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // Keyed on the feed's tournament_key, which survives the rename and the
     // move from Milan to Jeddah; see NEXTGEN_TOURNAMENT_KEY for the evidence.
     const altFormat = String(f.tournament_key) === NEXTGEN_TOURNAMENT_KEY ? 'nextgen' : null;
+    // TEN-395: the row's court, by the SAME join and the same map buildAllTierYearly counts the season table's
+    // Indoors with (tournament_key -> courts, never the name), so the Last 52 window can place each match where the
+    // table counts it. `indoor: false` = not in the table's Indoors (an outdoor court, or a key the map lacks — the
+    // table counts that under its surface too). Absent when the map is empty (a cache that predates court capture):
+    // the table then carries no indoor split either.
+    const indoor = courtMap && courtMap.size ? courtMap.get(String(f.tournament_key)) === 'indoor' : null;
     out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
       _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
+      ...(indoor !== null ? { indoor } : {}),
       ...(sets ? { sets } : {}),
       ...(altFormat ? { altFormat } : {}),
       ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
@@ -3783,6 +3792,22 @@ function recentFormPct(rows) {
   const scored = (rows || []).filter(m => !FORM_NOT_ATP_RECORD.test(String(m.tournament || ''))).slice(0, RECENT_FORM_PCT_WINDOW);
   return scored.length ? Math.round((scored.filter(m => m.won).length / scored.length) * 1000) / 10 : null;
 }
+// TEN-391 (founder 2026-10-07): the Player Profile ribbon is the last 18 matches under the Form rule for EVERY
+// player. The stored profile list used to be the current season + the last 10 RAW rows, so a player with five 2026
+// matches (J. Thompson) drew a 10-chip ribbon while his fixtures held hundreds; 85 of 479 published profiles held
+// fewer than 18 Form rows. The list now keeps the current season + every row (newest first) down to the 18th that
+// counts toward form: a Laver Cup / exhibition row inside that span is kept (records read it) but does not count,
+// so the ribbon, its chips and the ledger (player-profile-v2.js inForm) always have 18 Form rows to draw when the
+// player has played them. `matches` is recentFormFromFixtures' list, newest first, walkovers already out.
+const PROFILE_FORM_WINDOW = 18;
+function capRecentFormMatches(matches, currentYear) {
+  let formRows = 0;
+  return (matches || []).filter((m) => {
+    if (formRows >= PROFILE_FORM_WINDOW && String(m.date || '').slice(0, 4) !== String(currentYear)) return false;
+    if (!FORM_NOT_ATP_RECORD.test(String(m.tournament || ''))) formRows++;
+    return true;
+  });
+}
 
 // Lift every match's recent-form rows into one shard per player and blank the
 // fields on the match objects, so matches.json ships the scalar form pct and
@@ -4936,17 +4961,16 @@ async function buildOneProfile(key, name, surfaceMap) {
   // published profile and written to its own per-player shard (see writeCareerHistoryShards).
   const careerMatches = playerMatchHistory(allTierFixtures, key, currentYear, surfaceMap);
 
-  // The Player Profile page only reads current-season matches (season tiles +
-  // the expandable "all results this season" list) and the last 10 (form % and
-  // form dots) from recentForm — never older history. So cap the stored match
-  // list to current-year + the last 10 instead of the full ~5-year all-tier
-  // window. This is the single biggest driver of player-profiles.json size
-  // (~68% of the file); capping it trims the file dramatically with zero UI
-  // change. matches.json's Form tab uses its own separate field, untouched.
+  // The Player Profile page reads current-season matches (season tiles + the
+  // expandable "all results this season" list) and the ribbon's last 18 Form rows
+  // from recentForm — never older history. So the stored list is capped to the
+  // current season + the last 18 Form-rule rows (capRecentFormMatches) instead of
+  // the full ~5-year all-tier window, the single biggest driver of
+  // player-profiles.json size. matches.json's Form tab uses its own field, untouched.
   const _recentForm = recentFormFromFixtures(allTierFixtures, key, surfaceMap);
   const recentFormCapped = {
     ..._recentForm,
-    matches: (_recentForm.matches || []).filter((m, i) => i < 10 || String(m.date || '').slice(0, 4) === String(currentYear)),
+    matches: capRecentFormMatches(_recentForm.matches, currentYear),
   };
 
   const profile = {
@@ -7675,7 +7699,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

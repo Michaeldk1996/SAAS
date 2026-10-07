@@ -14,6 +14,8 @@
 //   6  Court speed H / A = ledger H / A on every priced ledger row
 //   Y  Calendar Career yield = Market edge box, for every player with a shard
 //   J  every Calendar row the join prices agrees with its Market edge row on the result
+//   S  (TEN-395) EVERY player: Last 52 surfaces = the season table inside the window (last52SeasonAudit); a shard
+//      without the per-match court flag (built before TEN-395) is reported with that reason, not failed
 //   C  (fx8) the Last 52 window follows the season table: for the top-120 by rank, every dated season (2021+) and tier,
 //      (i) the season table = careerByYear's own carve (the 439b8605 table, untouched); (ii) a season the table does
 //      not split has no row called Indoor; (iii) the window's rows of a season are a subset of that season's
@@ -178,5 +180,29 @@ H.check('C · top-120: the Last 52 window follows the season table (table untouc
   return `${top.length} players · ${seasons} season-tier rows (2021+) · table = careerByYear on all · window ⊆ season on all · ` +
     `residual season-surfaces ${resid.length}, ${wResid.length} of them in the ${wSeasons} season-tier rows the window touches ` +
     `(several event sets fit the table's leftover indoor W–L; PROBE_C_VERBOSE=1 lists them)`;
+});
+H.check('S · roster (TEN-395): Last 52 surfaces = the season table inside the window, for EVERY player with a shard', () => {
+  // ten384-figures-lib.js last52SeasonAudit — the pinned gate (tools/test-ten391-ten395.js) runs the same audit. A
+  // player whose career-history shard carries the per-match court flag must agree exactly; one whose shard predates
+  // the flag (built before TEN-395; the pipeline rewrites it when his profile rebuilds) is placed by the fallback
+  // classifier and is REPORTED with that reason, asserted only never to read MORE indoor than the table.
+  let walked = 0, flaggedN = 0; const flaggedBad = [], legacyBad = [], over = [];
+  keys.forEach((k) => {
+    const a = L.last52SeasonAudit(I, PLAYERS[k]);
+    if (!a.seasons) return;
+    walked++;
+    if (a.flagged) flaggedN++;
+    if (a.bad.length) (a.flagged ? flaggedBad : legacyBad).push({ k, a });
+    over.push(...a.over);
+  });
+  if (process.env.PROBE_S_VERBOSE) {
+    flaggedBad.concat(legacyBad).forEach(({ k, a }) => console.log(`        ${k} [${a.flagged ? 'court flag' : 'shard built before the court flag'}] ` + a.bad.join(' | ')));
+  }
+  assert(walked > 0, 'no player walked');
+  assert.deepStrictEqual(flaggedBad.slice(0, 5).map(x => x.a.bad[0]), [], `${flaggedBad.length} players WITH the court flag disagree`);
+  assert.deepStrictEqual(over.slice(0, 6), [], `${over.length} window seasons call more indoor than the table`);
+  return `${walked} players · ${flaggedBad.length + legacyBad.length} disagree (${flaggedN} shards carry the court flag: ` +
+    `${flaggedBad.length} disagree; ${walked - flaggedN} predate it: ${legacyBad.length} disagree, reason "shard built before the ` +
+    'court flag", fixed when the profile rebuilds) · PROBE_S_VERBOSE=1 lists them';
 });
 H.done();

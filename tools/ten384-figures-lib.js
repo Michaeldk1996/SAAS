@@ -272,6 +272,66 @@ function joinAudit(I, p) {
   return { joined, ret, bad, conflict };
 }
 
+// TEN-395 · "Last 52 surface rows = the season table's surfaces inside the window", for ONE player. A window that opens
+// mid-season cannot be compared month for month (fx7/fx8), so every season-tier the window touches is compared WHOLE:
+// the season's classified dated rows (I.seasonCourts) must hold the table's Indoors exactly (I.tierGridCells) and its
+// Hard / Clay / Grass up to the season's undated matches only, and the window's rows of the season (I.drillRows with the
+// cut-off) must be a subset of the season's. Also: Last 52 Indoors = the window rows the table counts indoor, match by
+// match (career-history's `indoor` flag) — checked only where every window row of a split season carries the flag.
+// Returns { seasons, bad: [line], over: [line] (window season calls MORE indoor than the table), flagged, l52 }.
+function last52SeasonAudit(I, p) {
+  const z = () => ({ won: 0, lost: 0 });
+  const wl = c => (c ? (c.won || 0) + '–' + (c.lost || 0) : '—');
+  const tally = (a, r) => { a[r.won ? 'won' : 'lost']++; };
+  const cut = I.last52Cutoff();
+  const sp = I.calSpine(p), courts = I.seasonCourts(p);
+  const out = { seasons: 0, bad: [], over: [], flagged: sp.some(r => r.seasonIndoor === true || r.seasonIndoor === false), l52: null };
+  (p.careerByYear || []).filter(y => y && y.total && +y.year >= 2021).forEach((y) => {
+    const yr = String(y.year);
+    ['all', 'atp', 'chitf'].forEach((tier) => {
+      const raw = tier === 'all' ? y : y[tier];
+      if (!raw) return;
+      const inT = r => tier === 'all' || r.tier === tier;
+      if (!sp.some(r => r.year === yr && inT(r) && r.date >= cut)) return;
+      out.seasons++;
+      const table = I.tierGridCells(y, tier);
+      const ti = (raw.indoor && raw.indoor.total) || z();
+      const season = { hard: z(), clay: z(), grass: z(), indoors: z() }, dated = { hard: z(), clay: z(), grass: z() };
+      sp.forEach((r, i) => {
+        if (r.year !== yr || !inT(r)) return;
+        if (dated[r.surface]) tally(dated[r.surface], r);
+        const s = courts[i] === 'Indoor' ? 'indoors' : r.surface;
+        if (season[s]) tally(season[s], r);
+      });
+      const tag = `${p.name} (${p.key}) ${yr} [${tier}]`;
+      if (season.indoors.won !== ti.won || season.indoors.lost !== ti.lost) {
+        out.bad.push(`${tag} Indoors: table ${wl(raw.indoor ? ti : null)}, season rows ${wl(season.indoors)}`);
+      }
+      if (season.indoors.won > ti.won || season.indoors.lost > ti.lost) out.over.push(tag);
+      ['hard', 'clay', 'grass'].forEach((s) => {
+        const t = table[s] || z(), r0 = raw[s] || z();
+        if ((t.won || 0) - season[s].won !== (r0.won || 0) - dated[s].won || (t.lost || 0) - season[s].lost !== (r0.lost || 0) - dated[s].lost) {
+          out.bad.push(`${tag} ${s}: table ${wl(t)}, season rows ${wl(season[s])} beyond its undated matches`);
+        }
+        const win = z();
+        I.drillRows(p, s, yr, cut).filter(inT).forEach(r => tally(win, r));
+        if (win.won > season[s].won || win.lost > season[s].lost) out.bad.push(`${tag} ${s}: window ${wl(win)} exceeds the season's ${wl(season[s])}`);
+      });
+    });
+  });
+  const split = {};
+  (p.careerByYear || []).forEach((y) => { if (y && y.indoor) split[String(y.year)] = true; });
+  const win = sp.filter(r => r.date >= cut && split[r.year]);
+  if (win.length && win.every(r => r.seasonIndoor === true || r.seasonIndoor === false)) {
+    const want = z();
+    win.forEach((r) => { if (r.seasonIndoor) tally(want, r); });
+    const g = I.last52GridCells(p, 'all');
+    out.l52 = { got: wl(g && g.cells.indoors), want: want.won + want.lost ? wl(want) : '—' };
+    if (out.l52.got !== out.l52.want) out.bad.push(`${p.name} (${p.key}) Last 52 Indoors ${out.l52.got}, the window rows the table counts indoor ${out.l52.want}`);
+  }
+  return out;
+}
+
 function harness() {
   let pass = 0, fail = 0, skip = 0;
   const failures = [];
@@ -298,4 +358,4 @@ function harness() {
   };
 }
 
-module.exports = { ROOT, pinnedDate, loadPp2, readers, playerChecks, joinAudit, boxYield, harness, text, num, fmt1, MONTHS };
+module.exports = { ROOT, pinnedDate, loadPp2, readers, playerChecks, joinAudit, last52SeasonAudit, boxYield, harness, text, num, fmt1, MONTHS };

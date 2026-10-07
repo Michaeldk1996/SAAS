@@ -3325,13 +3325,18 @@
     // The season table's indoor split per season; a season absent here splits nothing.
     var seasons = {};
     (cby || []).forEach(function (y) { if (y && y.indoor) seasons[String(y.year)] = y; });
-    var courts = sp.map(function (r) {
+    // TEN-395 · step 0: a row that carries career-history's court flag is placed by it — the table's own per-match
+    // count, so the season's flagged rows reproduce its Indoors exactly. Steps 1–4 place only the rows without it
+    // (shards built before the flag); `fixed` keeps step 4 off the flagged rows.
+    var fixed = sp.map(function (r) { return !!seasons[r.year] && r.seasonIndoor !== null && r.seasonIndoor !== undefined; });
+    var courts = sp.map(function (r, i) {
       if (!seasons[r.year]) return null;
+      if (fixed[i]) return r.seasonIndoor ? 'Indoor' : 'Outdoor';
       return r.court === 'Indoor' || r.court === 'Outdoor' ? r.court : null;
     });
     var evCourt = {};
     sp.forEach(function (r, i) {
-      if (!courts[i]) return;
+      if (!courts[i] || fixed[i]) return;
       var k = r.year + '|' + r.event;
       evCourt[k] = evCourt[k] === undefined || evCourt[k] === courts[i] ? courts[i] : false;
     });
@@ -3355,7 +3360,7 @@
       var go = groupOf(r);
       if (!go) return;
       var g = groups[go.k] || (groups[go.k] = { rec: go.rec || { won: 0, lost: 0 }, all: [], tw: 0, tl: 0, w: 0, l: 0, ev: {} });
-      g.all.push(i);
+      if (!fixed[i]) g.all.push(i);
       if (r.won) g.tw++; else g.tl++;
       if (courts[i] === 'Indoor') { if (r.won) g.w++; else g.l++; return; }
       if (courts[i]) return;
@@ -3501,10 +3506,19 @@
   function drillSpine(p) {
     if (drillSpine._k === p.key && drillSpine._v) return drillSpine._v;
     var out = [], seen = {};
+    // TEN-391 · the ribbon's list now runs back to its 18th Form row (bsp-pipeline.js capRecentFormMatches), into
+    // seasons whose drills read the edition store before. A season drill takes ONE store, and a form store that holds
+    // only the tail of such a season would replace its edition rows with a partial list (measured on the deployed
+    // roster: 16 player-seasons, Draper 2025 from 39 rows to 3). So the form store answers the seasons it answered
+    // before — the current season and the seasons of the 10 most recent matches — with every row it now holds for them.
+    var lr = ledgerRows(p), formYears = {};
+    formYears[currentYear()] = true;
+    lr.slice(-10).forEach(function (x) { formYears[String(x.m.date || '').slice(0, 4)] = true; });
     // 1. recentForm, through the LEDGER's own price join — item 19: one join,
     //    not a second lookup. ledgerRows() is the single place a price is chosen.
-    ledgerRows(p).forEach(function (x) {
+    lr.forEach(function (x) {
       var m = x.m;
+      if (!formYears[String(m.date || '').slice(0, 4)]) return;
       var ev = String(m.tournament || '') || DASH, rd = roundLabel(m);   // raw feed name: drillKey's contract
       var k = drillKey(String(m.date).slice(0, 4), ev, m.opponent);
       seen[k] = true;
@@ -6890,6 +6904,9 @@
         won: !!r.won,
         surface: r.surface ? String(r.surface).toLowerCase() : null,
         court: hit ? (hit.court || null) : null,
+        // TEN-395 · career-history's own per-match court flag (bsp-pipeline.js playerMatchHistory): true = counted in
+        // the season table's Indoors, by the table's own tournament_key join. null on a row built before the flag.
+        seasonIndoor: typeof r.indoor === 'boolean' ? r.indoor : null,
         event: evOf(r),
         // §8.17 · the REAL tier, and only the real one. career-history's own
         // `level` column holds 'atp'/'chitf' — a feed scope, not a tour tier — and
