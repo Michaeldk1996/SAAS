@@ -176,6 +176,30 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    report on your ticket: who holds the lane, since when, whether that run is alive,
    and your position. It repeats every 30 min while you wait.
 
+## Pipeline stall guard (TEN-396, founder ruling 2026-10-07)
+
+A `pipeline.yml` run stuck in GitHub's `waiting` state holds the single `bsp-pipeline`
+group, and every tick behind it is cancelled. On 6–7 Oct this froze the site for
+16.5 h without an alert. `.github/workflows/pipeline-stall-guard.yml` +
+`tools/pipeline-stall-guard.mjs` enforce the ruling. Each line is a test (`test-ten396-stall-guard.mjs`):
+- **Over 60 min in `waiting`:** one alert per run (Telegram + log comment).
+- **Over 120 min in `waiting`:** cancel it, dispatch **one** fresh `pipeline.yml` run on
+  main, comment, alert. "Once" is **per stall episode**: an episode ends at the next successful
+  pipeline run. If the re-run also sticks, it is cancelled with **no** further dispatch, and the
+  alert says "needs a human".
+- **Never** cancel a run whose status, or any of whose jobs or steps, is `in_progress`.
+- **No recorded state, no dispatch.** The intent is written to the log before cancel and
+  dispatch. If the log can't be read or written, the guard takes no action, goes red and alerts.
+- **The log is private.** It is an issue in `Michaeldk1996/stennisfy-ops`
+  (`STALL_GUARD_LOG_REPO`), written with `WORKFLOW_PAT`. It is never on the public SAAS repo,
+  and there is no fallback to it. Comment and Telegram text is `run <id> · <state> · <UTC time>`
+  only, with nothing about data sources, counts, step names or errors.
+- The guard runs outside the `bsp-pipeline` group, so the stuck run can't block it. It is
+  triggered by every completed `pipeline.yml` / `oddspapi-postmatch.yml` run (cancelled ticks
+  included) plus a best-effort hourly schedule.
+- When the token's `github-authentication-token-expiration` is under 7 days away, it sends one
+  warning per UTC day.
+
 ## Combining ready commits (one build for several)
 
 - **The ready queue is not the waiter queue.** `ready` offers your commit to the
