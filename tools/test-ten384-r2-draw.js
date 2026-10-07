@@ -86,7 +86,7 @@ function main() {
 
   H.check('2a · Thompson-shaped career: the footnote says Level and By round each leave out 10', () => {
     const t = note(modal(THOMPSON, 'career'));
-    assert(t.includes('Level leaves out 10 matches, By round 10 (Davis Cup, Tour Finals, round-robin and bronze-medal matches have no level or knockout round)'), t);
+    assert(t.includes('Level leaves out 10 matches, By round 10 (Level has no row for Davis Cup or Tour Finals; By round has none for round-robin or bronze-medal matches)'), t);
     return t.slice(t.indexOf('Level leaves'));
   });
   H.check('2b · the same clause on the Sets and Service tabs (same rows)', () => {
