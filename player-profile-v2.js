@@ -3211,12 +3211,9 @@
   //
   // TWO THINGS IT CANNOT DO, both stated on the page rather than papered over:
   //
-  //   a. INDOORS. Indoors is a court type the Career scope carves out of the
-  //      provider's season buckets. The per-match spine carries a surface and no
-  //      court type (drillRows() already refuses an Indoors drill for this exact
-  //      reason), so inside the window there is no source for the row. It dashes
-  //      with its reason instead of reading 0–0, and instead of being folded into
-  //      Hard where it would inflate a row the Career scope keeps separate.
+  //   a. INDOORS. (Superseded by TEN-384 fx6 item 1: the window carves Indoors out of its surfaces
+  //      on the season table's court, see seasonCourts(); the Indoors drill lists those rows. Only a
+  //      row whose court cannot be resolved stays under its surface.)
   //
   //   b. UNDATED MATCHES. Career-record matches with no dated match row cannot
   //      be placed in a 52-week window at all. They are counted with the
@@ -3257,16 +3254,100 @@
     // signed so tools/test-ten384-figures-agree.js fails on it; the page prints the note only when > 0.
     return n - dated;
   }
+  // TEN-384 fx6 item 1 (founder r2, 2026-10-07) · THE WINDOW SPLITS ON THE SEASON TABLE'S FIELD. The Last 52
+  // rows used to carve nothing: every indoor match sat under Hard (Alcaraz Hard 31–5, Indoors "—") while the
+  // season table beside it carves Indoors out of each season. The season table's court is API-Tennis's
+  // tournament court type ("Hard (Indoor)", careerByYear[].indoor, counted per tournament by the pipeline);
+  // the dated rows carry no tournament key to read it per match. So each dated row takes its court from:
+  //   1. the odds archive's per-match Indoor / Outdoor column (calSpine `court`), the field the Calendar's
+  //      Indoors chip and Court speed read;
+  //   2. else the archive court of the SAME event in the same season (a court is a tournament property:
+  //      one missed price join does not make Melbourne indoor-unknown);
+  //   3. else the season table itself: in a season that carries the indoor split, the indoor W–L the
+  //      table holds beyond the archive's indoor rows must sit among that season's court-less events of
+  //      that surface. When exactly ONE set of whole events makes up that W–L, those events are Indoor
+  //      and the rest Outdoor (Alcaraz 2026: indoor 1–0, court-less Laver Cup 1–0 + Tokyo 5–0 -> Laver
+  //      Cup). Zero left over -> all Outdoor. More than one candidate set, or the archive already holds
+  //      more indoor than the table -> the court stays unknown and the row stays under its surface.
+  // Returns an array parallel to calSpine(p): 'Indoor' | 'Outdoor' | null.
+  function seasonCourts(p) {
+    var sp = calSpine(p);
+    var cby = (p && p.careerByYear) || null;
+    if (seasonCourts._v === sp && seasonCourts._y === cby) return seasonCourts._c;
+    var courts = sp.map(function (r) { return r.court === 'Indoor' || r.court === 'Outdoor' ? r.court : null; });
+    var evCourt = {};
+    sp.forEach(function (r, i) {
+      if (!courts[i]) return;
+      var k = r.year + '|' + r.event;
+      evCourt[k] = evCourt[k] === undefined || evCourt[k] === courts[i] ? courts[i] : false;
+    });
+    sp.forEach(function (r, i) {
+      if (!courts[i] && evCourt[r.year + '|' + r.event]) courts[i] = evCourt[r.year + '|' + r.event];
+    });
+    var seasons = {};
+    (cby || []).forEach(function (y) { if (y && y.indoor) seasons[String(y.year)] = y.indoor; });
+    var groups = {};
+    sp.forEach(function (r, i) {
+      if (!seasons[r.year] || !r.surface) return;
+      var g = groups[r.year + '|' + r.surface] || (groups[r.year + '|' + r.surface] = { year: r.year, surf: r.surface, w: 0, l: 0, ev: {} });
+      if (courts[i] === 'Indoor') { if (r.won) g.w++; else g.l++; return; }
+      if (courts[i]) return;
+      var e = g.ev[r.event] || (g.ev[r.event] = { w: 0, l: 0, idx: [] });
+      if (r.won) e.w++; else e.l++;
+      e.idx.push(i);
+    });
+    Object.keys(groups).forEach(function (k) {
+      var g = groups[k], rec = seasons[g.year][g.surf] || { won: 0, lost: 0 };
+      var rw = (rec.won || 0) - g.w, rl = (rec.lost || 0) - g.l;
+      var evs = Object.keys(g.ev).map(function (n) { return g.ev[n]; });
+      if (!evs.length || rw < 0 || rl < 0) return;
+      var pick = seasonCourtPick(evs, rw, rl);
+      if (!pick) return;
+      evs.forEach(function (e, j) { e.idx.forEach(function (i) { courts[i] = pick[j] ? 'Indoor' : 'Outdoor'; }); });
+    });
+    seasonCourts._v = sp; seasonCourts._y = cby; seasonCourts._c = courts;
+    return courts;
+  }
+  // The ONE set of events whose W–L sums to (rw, rl), as a boolean per event, or null when none or several do.
+  function seasonCourtPick(evs, rw, rl) {
+    var W = rw + 1, n = evs.length, dp = [], k, w, l;
+    function cell() { var a = []; for (var x = 0; x < W * (rl + 1); x++) a.push(0); return a; }
+    dp.push(cell()); dp[0][0] = 1;
+    for (k = 0; k < n; k++) {
+      var prev = dp[k], next = prev.slice(), e = evs[k];
+      for (w = 0; w + e.w < W; w++) for (l = 0; l + e.l <= rl; l++) {
+        if (!prev[l * W + w]) continue;
+        var t = (l + e.l) * W + w + e.w;
+        next[t] = Math.min(2, next[t] + prev[l * W + w]);
+      }
+      dp.push(next);
+    }
+    if (dp[n][rl * W + rw] !== 1) return null;
+    var pick = [];
+    w = rw; l = rl;
+    for (k = n; k > 0; k--) {
+      if (dp[k - 1][l * W + w]) { pick[k - 1] = false; continue; }
+      pick[k - 1] = true; w -= evs[k - 1].w; l -= evs[k - 1].l;
+    }
+    return pick;
+  }
+  // The window's surface key for a row and its resolved court: Indoor -> 'indoors', else its surface.
+  function last52SurfOf(r, court) {
+    if (!r) return null;
+    if (court === 'Indoor') return 'indoors';
+    return r.surface === 'clay' || r.surface === 'grass' || r.surface === 'hard' ? r.surface : null;
+  }
   function last52GridCells(p, tier) {
     if (!careerHistorySettled(p.key) && !calSpine(p).length) return null;
     var cut = last52Cutoff();
     var rows = last52Rows(p, tier);
+    var sp = calSpine(p), courts = seasonCourts(p);
     var out = { hard: null, grass: null, clay: null, indoors: null };
     var total = { won: 0, lost: 0 };
     rows.forEach(function (r) {
       var w = r.won ? 1 : 0, l = r.won ? 0 : 1;
       total.won += w; total.lost += l;
-      var id = r.surface === 'clay' || r.surface === 'grass' || r.surface === 'hard' ? r.surface : null;
+      var id = last52SurfOf(r, courts[sp.indexOf(r)]);
       if (!id) return;                       // no surface on record -> the residual
       if (!out[id]) out[id] = { won: 0, lost: 0 };
       out[id].won += w; out[id].lost += l;
@@ -3458,12 +3539,12 @@
   function drillRows(p, surf, year, since) {
     // The Last-52 window lists the rows it counted (last52Rows), newest first like the spine.
     if (since) {
-      return calSpine(p).filter(function (r) {
+      var courts = seasonCourts(p);
+      return calSpine(p).filter(function (r, i) {
         if (!(r.date && r.date >= since)) return false;
         if (year && r.year !== String(year)) return false;
         if (!surf) return true;
-        if (surf === 'indoors') return false;
-        return r.surface === surf;
+        return last52SurfOf(r, courts[i]) === surf;
       }).map(last52DrillRow).reverse();
     }
     var src = drillSourceMap(p);
@@ -4347,7 +4428,7 @@
       }).join('');
     var srows = CAREER_ROWS.map(function (s) {
       var c = cells[s.id];
-      var noIndoor = s.id === 'indoors' && (isL52 || c === null);
+      var noIndoor = s.id === 'indoors' && !isL52 && c === null;
       var w = (c && !noIndoor) ? (c.won || 0) : 0, l = (c && !noIndoor) ? (c.lost || 0) : 0, n = w + l;
       var g = gateFor(n);
       var rated = g === GATE.FULL || g === GATE.SMALL;
@@ -4355,7 +4436,7 @@
       var open = state.careerDrill && state.careerDrill.kind === 'surface' && state.careerDrill.surf === s.id;
       var can = rated;
       var why = noIndoor
-        ? (isL52 ? 'No court type in the dated window' : 'No court type on record')
+        ? 'No court type on record'
         : (n && !rated ? n + ' match' + (n === 1 ? '' : 'es') + ' ' + MIDDOT + ' under the five-match minimum'
           : (g === GATE.SMALL ? smallSampleText(n) : ''));
       var fill = barFillColour(n);
@@ -11231,7 +11312,7 @@
       calScope: calScope,
       calResidual: calResidual,
       // TEN-384 fix 1 + 2 · the Last-52 window over the Calendar's rows
-      last52Rows: last52Rows, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
+      last52Rows: last52Rows, seasonCourts: seasonCourts, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
       calResidualNote: calResidualNote,
       renderCalDrill: renderCalDrill,
       renderCalFooter: renderCalFooter,
