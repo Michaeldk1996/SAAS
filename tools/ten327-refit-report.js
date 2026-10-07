@@ -60,10 +60,10 @@ function completedMatches() {
 // Without them every house serve rating is null and layer #9 would abstain for the wrong reason,
 // so refuse rather than report a difference that is only a missing field.
 {
-  const cs = JSON.parse(fs.readFileSync(path.join(ROOT, 'career-splits.json'), 'utf8')).players || {};
+  const cs = require('./career-splits-store').loadAll(ROOT).players;   // TEN-391: one file per player
   const rows = Object.values(cs).flatMap((p) => ['career', 'last52'].flatMap((s) => Object.values((p && p[s]) || {})));
   const withPM = rows.filter((r) => r && r.acesPM != null).length;
-  if (!withPM) { console.error('career-splits.json carries no acesPM/dfPM — rebuild it with the TEN-327 builder first'); process.exit(2); }
+  if (!withPM) { console.error('career-splits/ carries no acesPM/dfPM — rebuild it with the TEN-327 builder first'); process.exit(2); }
 }
 const config = require('../h2h-model/config');
 const { runModel } = require('../h2h-model/model');

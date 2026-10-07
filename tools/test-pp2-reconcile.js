@@ -122,10 +122,14 @@ console.log(`  ····  profile store: ${STORE_WORD.toUpperCase()}${BUILT ? ` (
   + `(committed copy: ${STORE.drift.committedFetchedAt}, ${STORE.drift.committedPlayers} players; `
   + `+${STORE.drift.onlyDeployed} live-only / −${STORE.drift.onlyCommitted} dropped).`);
 
-// career-splits.json feeds the Splits modal; the market-edge shards feed Market
+// career-splits/ feeds the Splits modal; the market-edge shards feed Market
 // edge. Both are loaded from the REAL committed artefacts — a fixture would let
 // the page and the pipeline drift apart, which is the bug class §4 exists for.
-const SPLITS = JSON.parse(fs.readFileSync(path.join(ROOT, 'career-splits.json'), 'utf8')).players || {};
+// TEN-391: one file per player. SPLITS is the store exactly as the host publishes
+// it once every profile's file has answered: his object, or NULL (no file — the
+// only "not built" state; an absent key means "not asked for / in flight").
+const SPLITS_BUILT = require('./career-splits-store').loadAll(ROOT).players;
+const SPLITS = Object.assign(Object.fromEntries(Object.keys(PLAYERS).map(k => [k, null])), SPLITS_BUILT);
 const MARKET_DIR = path.join(ROOT, 'market-edge');
 const MARKET = {};
 if (fs.existsSync(MARKET_DIR)) {
@@ -429,6 +433,9 @@ const SAMPLE = [
   fixturePlayer(FIXTURE_KEYS.schwartzman),
   Object.values(PLAYERS).find(p => !(p.tournamentHistory || []).length)
 ].filter(Boolean);
+// TEN-391: a sample player off the board roster (a fixture) gets the same settled answer the host gives
+// any profile it opened: his object, or NULL when he has no career-splits file.
+SAMPLE.forEach((p) => { if (!Object.prototype.hasOwnProperty.call(SPLITS, String(p.key))) SPLITS[String(p.key)] = null; });
 
 console.log('TEN-206 §4 reconciliation — ' + SAMPLE.length + ' players\n');
 
@@ -993,7 +1000,7 @@ console.log('\n12 · Biggest split / biggest band (largest |pp| vs own baseline,
 
 check('the picked split really is the largest |pp| among those clearing n>=10', () => {
   let tested = 0;
-  for (const key of Object.keys(SPLITS).slice(0, 60)) {
+  for (const key of Object.keys(SPLITS_BUILT).slice(0, 60)) {
     const cands = I.splitCandidates(key, 'career');
     const got = I.pickByLargestGap(cands);
     if (!got) continue;
@@ -3538,13 +3545,13 @@ const STORES = [
   },
   {
     name: 'careerSplits',
-    file: 'career-splits.json',
+    file: 'career-splits/{key}.json',
     // splitCandidates takes the KEY, not the player object. The first draft of
     // this row passed the object, got [] for everyone, and reported the store
     // "unwired" — a false alarm from the gate's own accessor. Call the page's
     // accessors the way the page calls them or the gate measures itself.
     resolve: () => Object.keys(PLAYERS).filter(k => (I.splitCandidates(k, 'career') || []).length > 0).length,
-    universe: () => Object.keys(SPLITS).length,
+    universe: () => Object.keys(SPLITS_BUILT).length,
     floor: 0.5,
   },
   {
@@ -3882,8 +3889,10 @@ check('the all-stores table covers every data store the module reads', () => {
   // the host's in-flight flag per market-edge shard (a loading state, no rows — the shard itself is marketEdge).
   // TEN-384 fx5: tourHistPending is the same in-flight flag for the tournament-history shard (the rows land on
   // playerProfiles[key].tournamentHistory).
+  // TEN-391: careerSplitsPending is the same in-flight flag for a player's career-splits file (the rows land on
+  // careerSplits[key]).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
-    'TournamentIdentity', 'marketEdgePending', 'tourHistPending']);
+    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call
@@ -7310,15 +7319,15 @@ check('fix 13 · an event is named without its feed prefix, the same as the Cale
   }
 });
 
-// item 7 · RULED (founder, 2026-10-07): ship WITH the rank cap. The builder and the refresh job keep rank <= 250 by
-// default and the job passes "250 400" (6ba09992's state, restored in fx2). Thompson (TA rank 432) therefore has no
-// career-splits entry and reads "Splits not built for this player yet" (fx3 item 7), never a false sample-size reason.
-check('fix 7 · build-career-splits keeps its rank cap (250) and the refresh job passes "250 400" (founder: ship with the cap)', () => {
+// item 7 · TEN-391 (founder, 2026-10-07, after shipping with the cap): the rank cap is REMOVED. The builder
+// defaults to no cap and the refresh job passes none, so every profiled player with real Tennis Abstract data
+// gets a file; "Splits not built for this player yet" is left for a player with genuinely none.
+check('fix 7 · build-career-splits has NO default rank cap and the refresh job passes none (TEN-391)', () => {
   const b = fs.readFileSync(path.join(ROOT, 'tools', 'build-career-splits.js'), 'utf8');
   const sh = fs.readFileSync(path.join(ROOT, 'tools', 'refresh-career-splits.sh'), 'utf8');
-  assert(/const RANK_MAX = parseInt\(process\.argv\[2\], 10\) \|\| 250;/.test(b), 'the rank cap was removed again');
-  assert(!/\|\| Infinity;/.test(b.split('\n').filter(l => /RANK_MAX =/.test(l)).join('\n')), 'RANK_MAX defaults to Infinity');
-  assert(/^node tools\/build-career-splits\.js 250 400 2>&1/m.test(sh), 'refresh-career-splits.sh no longer passes "250 400"');
+  assert(/const RANK_MAX = parseInt\(process\.argv\[2\], 10\) \|\| Infinity;/.test(b), 'the rank cap is back');
+  assert(/^node tools\/build-career-splits\.js 2>&1/m.test(sh), 'refresh-career-splits.sh passes a cap again');
+  assert(!/build-career-splits\.js (?!2>&1)\d/.test(sh), 'refresh-career-splits.sh passes a numeric cap');
 });
 
 // ════════════════════════════════════════════════════════════════════════════

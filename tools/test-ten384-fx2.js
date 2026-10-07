@@ -66,6 +66,7 @@ function mountHarness() {
     scrollTo() { calls.push('scrollTo'); }
   };
   let releaseShard = null;
+  const splitLoads = {};
   const stub = name => (k) => { calls.push(name + ':' + (k == null ? '' : k)); return Promise.resolve(); };
   const env = {
     document: doc, window: win, setTimeout: (f) => { timers.push(f); return timers.length; },
@@ -73,6 +74,11 @@ function mountHarness() {
     ppState: { key: null },
     loadPp2MarketShard: k => new Promise((r) => { calls.push('shard:' + k); releaseShard = () => { win.marketEdge[k] = { headline: { n: 1 } }; r(); }; }),
     pp2Bridge: () => calls.push('bridge'), tourBaselines: {}, loadTourBaselines: () => Promise.resolve(null),
+    // TEN-391: his career-splits file (one per player). Like the host's loader, one start per key (a second
+    // caller gets the in-flight load), settled a microtask later.
+    careerSplits: {},
+    loadCareerSplitsFor: k => splitLoads[k] || (splitLoads[k] = (calls.push('splits:' + k),
+      Promise.resolve().then(() => { env.careerSplits[k] = null; return null; }))),
     loadPp2Bet365: stub('bet365'), loadPp2CareerHistory: stub('careerHistory'), loadPp2TourHist: stub('tourHist'),
     loadPp2Closes: stub('closes'), loadPp2SpeedMap: stub('speedMap'), loadPp2Dna: stub('dna'),
     pp2RepaintIfOpen() {}, closePpSplitDrawer() {}, pp2FlagOn: () => true,
@@ -130,7 +136,7 @@ async function mountChecks() {
   await H.checkAsync('3 · every per-profile load starts at click time, in parallel with the market shard (not after the wait)', async () => {
     const h = mountHarness();
     h.api.showPlayerProfileV2('207');          // synchronously: nothing has resolved, no timer has fired
-    const want = ['careerHistory:207', 'tourHist:207', 'closes:207', 'speedMap:207', 'bet365:207', 'dna:'];
+    const want = ['careerHistory:207', 'tourHist:207', 'closes:207', 'speedMap:207', 'bet365:207', 'dna:', 'splits:207'];
     const missing = want.filter(w => !h.calls.includes(w));
     assert.deepStrictEqual(missing, [], 'not started at click time: ' + missing.join(', ') + ' (calls: ' + h.calls.join(', ') + ')');
     await h.flush();

@@ -162,12 +162,12 @@ export const DATA_FILES = new Set([
   'elo-ratings.json', 'elo-history.json', 'points-at-risk.json', 'surface-ratings.json', 'wue-store.json',
   'radar-calibration.json', 'style-radar.json',                                   // style-radar.yml writes both
   'atp-entry-harvest-state.json', 'atp-entry-harvest-queue.json',
-  'career-splits.json', 'splits-matches-index.json',                              // refresh-career-splits.sh / career-splits.yml
+  'career-splits-tour.json', 'splits-matches-index.json',                         // refresh-career-splits.sh / career-splits.yml (TEN-391)
   'playing-styles.json', 'matchup-matrix.json', 'holdbreak.json', 'situational.json', 'style-meetings-index.json', // refresh-playing-styles.sh
   'entry_lists.json', 'entry_lists_advance.json',                                 // refresh-entry-lists*.sh
   'dna-apitennis-ratings.json',                                                   // dna-ratings.yml (TEN-319)
 ]);
-export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304)
+export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304); career-splits/: refresh-career-splits.sh (TEN-391)
 const CODE_FILE = /\.(js|mjs|cjs|py|sh|ya?ml|html|css)$/i;
 export function isDataPath(f) {
   const base = f.split('/').pop();

@@ -1700,11 +1700,25 @@
   // insights say "Splits not built for this player yet". The ten-match wording stays for a player whose
   // splits exist and none clears 10. A store that has not loaded (empty) claims nothing about the player.
   var SPLITS_NOT_BUILT = 'Splits not built for this player yet';
+  // TEN-391 (founder, 2026-10-07): career splits are ONE FILE PER PLAYER, fetched when his profile opens
+  // (bsp-consult-dashboard.html loadCareerSplitsFor). The host writes window.careerSplits[key] = his
+  // object, or NULL when the server answered that no file exists — the only state that is "not built".
+  // While his file is in flight (window.careerSplitsPending[key]), or the host has no answer for him yet
+  // (a failed fetch settles nothing), every reader of it is PENDING and claims nothing. No pending map
+  // (the Node harnesses) = settled, as before.
   function splitsNotBuilt(key) {
     var store = window.careerSplits;
-    return !!store && Object.keys(store).length > 0 && !store[String(key)];
+    return !!store && Object.prototype.hasOwnProperty.call(store, String(key)) && store[String(key)] === null;
   }
+  function splitsPending(key) {
+    var m = window.careerSplitsPending, store = window.careerSplits || {};
+    if (!m) return false;
+    return !!m[String(key)] || !Object.prototype.hasOwnProperty.call(store, String(key));
+  }
+  // The pending copy of an empty-state sentence: the same box, a non-breaking space for the words.
+  var SPLITS_PEND_HTML = '<span data-pp2-pending="splits">&nbsp;</span>';
   function insightsEmptyText(p) {
+    if (splitsPending(p.key)) return SPLITS_PEND_HTML;
     // fx7 item 3 · the same words as the Draw tile and modal, no trailing period in any of the three.
     if (splitsNotBuilt(p.key)) return SPLITS_NOT_BUILT;
     if (pooledBaseline(p.key, 'career') == null) return 'No split data on record.';
@@ -2249,6 +2263,9 @@
       // TEN-384 fx3: no career-splits entry -> "Splits not built for this player yet" (founder, item 7);
       // splits held but no split picked (none at n >= 10, or none above his rate) -> the OVERALL figure, his
       // rate across these splits (the modal's own baseline), never a dash (founder D10).
+      // TEN-391: his splits file still in flight -> the pending tile (same box, no claim).
+      : splitsPending(p.key)
+        ? { headline: null, support: null, pending: true }
       : splitsNotBuilt(p.key)
         ? { headline: null, support: SPLITS_NOT_BUILT, blankFigure: true }
         : bsBase == null
@@ -5671,7 +5688,8 @@
       return '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:var(--text-label);">' +
         // fx6 item 8: the tile and the modal print the same words, no trailing period in either.
-        (splitsNotBuilt(p.key) ? SPLITS_NOT_BUILT : 'No split data on record for this player.') + '</div>';
+        (splitsPending(p.key) ? SPLITS_PEND_HTML
+          : splitsNotBuilt(p.key) ? SPLITS_NOT_BUILT : 'No split data on record for this player.') + '</div>';
     }
     // ONE baseline since RULING Q1 round 2: the population win rate over a
     // complete partition (pooledBaseline), the same figure the box and Key
@@ -11493,6 +11511,7 @@
       // TEN-384 fx2
       renderModal: renderModal, calPpLine: calPpLine, headerRank: headerRank,
       insightsEmptyText: insightsEmptyText, tournHistOf: tournHistOf,
+      splitsPending: splitsPending, splitsNotBuilt: splitsNotBuilt,
       marketPending: marketPending, shardPending: shardPending, tournRecordAll: tournRecordAll,
       tournBackingPending: tournBackingPending,
       get TOURN_TILE_SUMMED_UNITS() { return TOURN_TILE_SUMMED_UNITS; },

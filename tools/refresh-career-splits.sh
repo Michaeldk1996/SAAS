@@ -3,7 +3,7 @@
 # Daily career-splits refresh  (TEN-8, Plan A)
 #
 # WHY THIS RUNS IN THE OPERATOR ENVIRONMENT AND NOT GITHUB ACTIONS:
-#   career-splits.json is sourced from Tennis Abstract (Jeff Sackmann's data).
+#   Career splits are sourced from Tennis Abstract (Jeff Sackmann's data).
 #   TA returns 200 to this machine's residential IP but 403 to every datacenter
 #   IP, so the pipeline CI job cannot fetch it. The only automated source that
 #   works from CI is TML-Database, which is tour-only and shrinks every player's
@@ -12,12 +12,15 @@
 #   builder and schedules it here instead. See AUTOMATION-splits.md.
 #
 # WHAT IT DOES (idempotent, safe to run any time):
-#   1. Rebuild career-splits.json from TA (builder self-refreshes its cache via
+#   1. Rebuild career splits from TA (builder self-refreshes its cache via
 #      SPLITS_CACHE_TTL_HOURS, default 20h, so a daily run pulls fresh matches).
+#      TEN-391: one file per player (career-splits/<key>.json) + the small tour
+#      file (career-splits-tour.json), for EVERY profiled player — no rank cap.
 #   2. Regression guard: refuse to publish if player coverage drops >5% (a TA
-#      outage that starves the fetch must never overwrite a good file).
-#   3. Commit + push career-splits.json to main, then dispatch the pipeline so
-#      GitHub Pages redeploys with the new file (pipeline has no push trigger).
+#      outage that starves the fetch must never overwrite good files).
+#   3. Commit + push career-splits/ + career-splits-tour.json (+ the TEN-162
+#      drawer shards) to main, then dispatch the pipeline so GitHub Pages
+#      redeploys with the new files (pipeline has no push trigger).
 #
 # It is invoked by ~/.bsp-splits-cron/bootstrap.sh from a dedicated clone, so it
 # never touches the founder's working tree.
@@ -79,19 +82,21 @@ echo "===== $START_ISO career-splits refresh start ====="
 [ -d node_modules ] || npm ci --silent
 
 # --- capture current coverage for the regression guard -----------------------
-PREV_COUNT=$(node -e "try{console.log(Object.keys(require('./career-splits.json').players||{}).length)}catch(e){console.log(0)}")
+# Coverage = the number of per-player files (TEN-391: career-splits/<key>.json).
+COUNT_JS="const fs=require('fs');try{console.log(fs.readdirSync('career-splits').filter(f=>f.endsWith('.json')).length)}catch(e){console.log(0)}"
+PREV_COUNT=$(node -e "$COUNT_JS")
 
 # --- rebuild -----------------------------------------------------------------
-# rank<=250, up to 400 players (comfortably covers the ~233 currently shipped;
-# passing explicit caps is load-bearing -- no-arg runs silently drop to 160).
+# TEN-391 (founder 2026-10-07): NO caps. Every profiled player on the live
+# roster; a player with no tour-level TA data simply gets no file.
 BUILD_LOG=$(mktemp)
-node tools/build-career-splits.js 250 400 2>&1 | tee "$BUILD_LOG"
+node tools/build-career-splits.js 2>&1 | tee "$BUILD_LOG"
 # the builder prints "WARNING: every page came from cache" when it served 100%
 # from cache (no fresh matches pulled this run); otherwise it fetched.
 if grep -q "every page came from cache" "$BUILD_LOG"; then FRESH="cached"; else FRESH="fresh"; fi
 rm -f "$BUILD_LOG"
 
-NEW_COUNT=$(node -e "console.log(Object.keys(require('./career-splits.json').players||{}).length)")
+NEW_COUNT=$(node -e "$COUNT_JS")
 echo "coverage: prev=$PREV_COUNT new=$NEW_COUNT"
 
 # --- regression guard --------------------------------------------------------
@@ -99,18 +104,22 @@ if ! node -e "if($NEW_COUNT < $PREV_COUNT*0.95){console.error('REGRESSION: cover
   STATUS="regression"; exit 1
 fi
 
-if git diff --quiet -- career-splits.json; then
-  echo "no change in career-splits.json; nothing to publish"
+# The published set. `git status --porcelain` (not `git diff --quiet`): a NEW
+# player's file is untracked, and diff never sees untracked files.
+SPLITS_PATHS="career-splits career-splits-tour.json splits-matches-index.json splits-matches"
+if [ -z "$(git status --porcelain -- $SPLITS_PATHS)" ]; then
+  echo "no change in career splits; nothing to publish"
   STATUS="no-op"; exit 0
 fi
 
 # --- publish (race-safe: rebase our splits change onto latest main) ----------
-# career-splits.json (aggregates) travels with its TEN-162 drawer shards
-# (splits-matches/ + splits-matches-index.json). They are produced by the SAME
-# builder run, so a row count in the drawer reconciles with the split's M; they
-# must publish together or the two drift apart. Back all three up before the
-# reset so the mixed reset below can't strand them.
-cp career-splits.json /tmp/bsp-new-splits.json
+# The aggregates (career-splits/ + career-splits-tour.json) travel with their
+# TEN-162 drawer shards (splits-matches/ + splits-matches-index.json). They are
+# produced by the SAME builder run, so a row count in the drawer reconciles with
+# the split's M; they must publish together or the two drift apart. Back all
+# four up before the reset so the mixed reset below can't strand them.
+rm -rf /tmp/bsp-new-career-splits && cp -r career-splits /tmp/bsp-new-career-splits
+cp career-splits-tour.json /tmp/bsp-new-splits-tour.json
 rm -rf /tmp/bsp-new-splits-matches && cp -r splits-matches /tmp/bsp-new-splits-matches
 cp splits-matches-index.json /tmp/bsp-new-splits-index.json
 pushed=0
@@ -122,11 +131,15 @@ for attempt in 1 2 3; do
   # restyle the tooling session measures). Mixed reset + a scoped `git add` of only
   # the splits artefacts publishes just those and never clobbers.
   git reset --quiet origin/main
-  cp /tmp/bsp-new-splits.json career-splits.json
+  rm -rf career-splits && cp -r /tmp/bsp-new-career-splits career-splits
+  cp /tmp/bsp-new-splits-tour.json career-splits-tour.json
   rm -rf splits-matches && cp -r /tmp/bsp-new-splits-matches splits-matches
   cp /tmp/bsp-new-splits-index.json splits-matches-index.json
-  if git diff --quiet -- career-splits.json splits-matches-index.json splits-matches; then echo "matched remote after fetch; no-op"; STATUS="no-op"; exit 0; fi
-  git add career-splits.json splits-matches-index.json splits-matches
+  if [ -z "$(git status --porcelain -- $SPLITS_PATHS)" ]; then echo "matched remote after fetch; no-op"; STATUS="no-op"; exit 0; fi
+  # A directory pathspec stages additions, edits AND removals inside it, so a
+  # player dropped by this build leaves the site with it (as the old single
+  # file did). Nothing else is staged: the obsolete career-splits.json is gone.
+  git add -- $SPLITS_PATHS
   # embed run timing in the message so the public GitHub history records
   # BOTH when (commit timestamp) and how long (this string) -- durable.
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))

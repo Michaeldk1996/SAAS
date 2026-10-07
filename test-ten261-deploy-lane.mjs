@@ -1250,7 +1250,7 @@ Object.assign(CASES, {
   async dataPathsAreWhatTheBotsWrite(mod) {
     const d = (subject, authorEmail, files) => mod.isDataCommit({ subject, authorEmail, files });
     const S = 'chore: refresh [skip ci]';
-    return d(S, 'bot@bspconsult.local', ['career-splits.json', 'splits-matches-index.json', 'splits-matches/12345.json'])
+    return d(S, 'bot@bspconsult.local', ['career-splits-tour.json', 'career-splits/12345.json', 'splits-matches-index.json', 'splits-matches/12345.json'])
       && d(S, 'bsp-atp-entry-bot@users.noreply.github.com', ['atp-entry-harvest-state.json', 'atp-entry-harvest-queue.json'])
       && d(S, 'bsp-radar-bot@users.noreply.github.com', ['radar-calibration.json', 'style-radar.json'])
       && d(S, 'bsp-odds-bot@users.noreply.github.com', ['matches.json', 'underway-audit.jsonl', 'alert-state.json'])
@@ -1543,7 +1543,9 @@ const MUTANTS = [
   ['any root .json is data (the old rule)', 'dataPathsAreWhatTheBotsWrite',
     '  if (DATA_FILES.has(f)) return true;', "  if (DATA_FILES.has(f) || (!f.includes('/') && /\\.json$/i.test(f))) return true;"],
   ['splits-matches/ is not a data directory', 'dataPathsAreWhatTheBotsWrite',
-    "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'weather/archive/'];", "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'weather/archive/'];"],
+    "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];", "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'career-splits/', 'weather/archive/'];"],
+  ['career-splits/ is not a data directory (TEN-391)', 'dataPathsAreWhatTheBotsWrite',
+    "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];", "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'weather/archive/'];"],
   ['the atp-entry bot is not a data bot', 'dataPathsAreWhatTheBotsWrite',
     "  'bsp-atp-entry-bot@users.noreply.github.com',", ''],
   ['code files in a data directory pass', 'dataPathsAreWhatTheBotsWrite',

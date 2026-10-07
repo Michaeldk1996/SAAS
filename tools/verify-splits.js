@@ -9,7 +9,7 @@ const fs = require('fs');
 const https = require('https');
 const path = require('path');
 
-const SPLITS = path.join(__dirname, '..', 'career-splits.json');
+const SPLITS_STORE = require('./career-splits-store');   // TEN-391: one file per player
 const CACHE = '/tmp/ta-gt-cache';
 
 function get(url) {
@@ -75,7 +75,7 @@ function eq(mine, theirs, col) {
 }
 
 async function main() {
-  const data = JSON.parse(fs.readFileSync(SPLITS, 'utf8'));
+  const data = SPLITS_STORE.loadAll();
   const byName = new Map(Object.values(data.players).map(p => [p.fullName, p]));
   let names = process.argv.slice(2);
   if (!names.length) {

@@ -1,12 +1,12 @@
 name: BSP career-splits refresh
 
-# Rebuilds career-splits.json (the Career / Last-52-Weeks splits behind the
+# Rebuilds career splits — career-splits/<key>.json + career-splits-tour.json, TEN-391 — (the Career / Last-52-Weeks splits behind the
 # player profile tables) from Tennis Abstract and commits it back to main. The
 # main pipeline (pipeline.yml) already copies the committed file into _site, so
 # a refresh reaches the live site on the next pipeline cycle — this workflow
 # only has to keep the committed file current.
 #
-# Why this exists: career-splits.json is built by tools/build-career-splits.js,
+# Why this exists: career splits are built by tools/build-career-splits.js,
 # which nothing ran on a schedule. The committed file was frozen at its build
 # date and drifted a match at a time as players kept playing.
 #
@@ -68,7 +68,7 @@ jobs:
         # Captured before the rebuild overwrites it, so the next step can tell a
         # real refresh from a build that quietly lost players to a TA outage.
         run: |
-          echo "PREV_PLAYERS=$(node -e 'console.log(Object.keys(require("./career-splits.json").players || {}).length)')" >> "$GITHUB_ENV"
+          echo "PREV_PLAYERS=$(node -e 'console.log(Object.keys(require("./tools/career-splits-store").loadAll().players).length)')" >> "$GITHUB_ENV"
 
       - name: Rebuild career splits
         # Every restored page is past its TTL by the next daily run, so all 160
@@ -83,37 +83,39 @@ jobs:
         # AND no cached page), so a count regression means something is wrong.
         run: |
           node -e '
-            const d = require("./career-splits.json");
-            const n = Object.keys(d.players || {}).length;
+            const d = require("./tools/career-splits-store").loadAll();   // TEN-391: one file per player
+            const n = Object.keys(d.players).length;
             const prev = parseInt(process.env.PREV_PLAYERS, 10) || 0;
             if (!d.coverage || !d.coverage.fetched) { console.error("::error::no pages were fetched — this is a cache replay, not a refresh"); process.exit(1); }
             if (n < Math.floor(prev * 0.95)) { console.error(`::error::player count regressed ${prev} -> ${n} (TA likely rate-limited this run) — refusing to commit`); process.exit(1); }
             console.log(`OK: ${n} players (was ${prev}), fetchedAt ${d.fetchedAt}, ${d.coverage.fetched} pages fetched.`);
           '
 
-      - name: Commit refreshed career-splits.json
+      - name: Commit refreshed career splits
         # In practice this commits every day even when no player's splits moved,
         # because `fetchedAt` carries the run date — which is what makes the
         # file's freshness auditable from the repo. The guard below is just a
         # backstop for the identical-file case (e.g. a same-day re-run).
         run: |
-          if git diff --quiet -- career-splits.json; then
-            echo "File is byte-identical — nothing to commit."
+          # TEN-391: one file per player + the tour file. `git status`, not `git diff`:
+          # a new player's file is untracked and diff never sees it.
+          if [ -z "$(git status --porcelain -- career-splits career-splits-tour.json splits-matches splits-matches-index.json)" ]; then
+            echo "Files are byte-identical — nothing to commit."
             exit 0
           fi
           git config user.name  "bsp-splits-bot"
           git config user.email "bsp-splits-bot@users.noreply.github.com"
-          git add career-splits.json
+          git add -- career-splits career-splits-tour.json splits-matches splits-matches-index.json
           git commit -m "chore(splits): refresh career / last-52 splits [skip ci]"
           # Another workflow may have advanced main since checkout; rebase and
           # retry so the refresh is never lost to a benign race.
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
-              echo "Pushed career-splits.json on attempt $attempt."
+              echo "Pushed career splits on attempt $attempt."
               exit 0
             fi
             echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
             git pull --rebase origin main || true
           done
-          echo "::error::Could not push career-splits.json after 3 attempts."
+          echo "::error::Could not push career splits after 3 attempts."
           exit 1

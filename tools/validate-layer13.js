@@ -40,7 +40,7 @@ for (const m of matches) {
 // ---- Pass B: synthetic Bo5 over real player pairs ----
 // Build ctx directly against the layer function so we can force bestOf=5 without
 // a Grand-Slam board record. Pull players that actually carry a Bo5 bucket.
-const C = data.load('career-splits.json');
+const C = require('./career-splits-store').loadAll();   // TEN-391: one file per player
 const players = C.players || C;
 const withBo5 = [];
 for (const k in players) {

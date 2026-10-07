@@ -29,6 +29,19 @@ function load(file) {
   return _cache[file];
 }
 
+// Career splits (TEN-391): one file per player, career-splits/<key>.json — the
+// object the old single career-splits.json held under players[key]. Read per
+// player and cached; no file = the player is not built (null, never invented).
+const _splitsCache = {};
+function splitsFor(idStr) {
+  const k = String(idStr);
+  if (!(k in _splitsCache)) {
+    const full = path.join(ROOT, 'career-splits', k + '.json');
+    _splitsCache[k] = /^[A-Za-z0-9_-]+$/.test(k) && fs.existsSync(full) ? JSON.parse(fs.readFileSync(full, 'utf8')) : null;
+  }
+  return _splitsCache[k];
+}
+
 // Under-pressure supplement (TEN-8). clutch-rating.js derives from TML (tour-only),
 // so players below its floors — young / Challenger-heavy names like Merida, Buse,
 // Draxl — carry no clutch row, and the model's Clutch layer stays silent for them.
@@ -140,13 +153,13 @@ function resolvePlayer(numericKey, abbrName) {
   const idStr = numericKey != null ? String(numericKey) : null;
 
   const eloAll = load('elo-ratings.json').elo || {};
-  const splitsAll = load('career-splits.json').players || {};
+
   const clutchArr = playersOf(load('clutch-rating.json'));
   const radarAll = load('style-radar.json').players || {};
   const stylesArr = playersOf(load('playing-styles.json'));
   const profilesAll = playersOf(load('player-profiles.json'));
 
-  const splits = (idStr && splitsAll[idStr]) || null;
+  const splits = (idStr && splitsFor(idStr)) || null;
   const profile = (idStr && profilesAll[idStr]) || null;
 
   // best available full name (career-splits is cleanest, then profile). TEN-263: a

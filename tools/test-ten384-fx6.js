@@ -220,8 +220,9 @@ H.check('7 · the Career record modal subtitle = "Record by surface and season, 
 // 8 · Draw record tile for a player with no career-splits entry (Thompson, 207)
 // ════════════════════════════════════════════════════════════════════════════
 H.check('8 · no splits entry: the Draw tile\'s figure slot is empty (not "—"), the support line stays, min-height 132; the modal says the same words', () => {
-  // the store has loaded (another player's entry) and holds none for this player — Thompson's case
-  const { I, p } = fxModule({ extra: { careerSplits: { 99999: { career: {} } } } });
+  // TEN-391: one file per player — the host stores NULL for him when the server answered "no file" (genuinely
+  // not built); another player's entry beside it changes nothing
+  const { I, p } = fxModule({ extra: { careerSplits: { 99999: { career: {} }, [FX.key]: null } } });
   const ctx = { rows: I.ledgerMatches(p) };
   ctx.boxVals = I.boxValues(p, ctx);
   const html = I.renderBoxes(ctx);

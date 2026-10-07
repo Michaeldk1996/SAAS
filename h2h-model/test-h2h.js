@@ -326,7 +326,7 @@ console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 foll
   const W=(f,o)=>fs.writeFileSync(path.join(root,f),JSON.stringify(o));
   W('elo-ratings.json',{ elo:{ 'yunchaokete|b':rec(1700), 'wu|t':rec(1650), 'wu|y':rec(1680), 'shang|j':rec(1750), 'sinner|j':rec(2300), 'zhang|z':rec(1616), 'blanch|d':rec(1427) },
     names:{ 'shang|j':'Juncheng Shang', 'zhang|z':'Zhizhen Zhang', 'blanch|d':'Darwin Blanch', 'yunchaokete|b':'Bu Yunchaokete' }, ambiguous:['blanch|d'] });
-  W('career-splits.json',{ players:{ '47':{ fullName:'Jannik Sinner' } } });
+  fs.mkdirSync(path.join(root,'career-splits')); W('career-splits/47.json',{ fullName:'Jannik Sinner' });   // TEN-391: one file per player
   W('player-profiles.json',{ players:{ '796':{ name:'Y. Bu' }, '1062':{ name:'Wu Tung-Lin' } } });
   W('clutch-rating.json',[]); W('style-radar.json',{players:{}}); W('playing-styles.json',[]);
   const D=require(path.join(root,'h2h-model','data.js'));

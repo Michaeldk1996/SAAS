@@ -44,7 +44,7 @@ function readJson(f, fallback) {
   catch (e) { return fallback; }
 }
 const PROFILES = (readJson('player-profiles.json', {}).players) || {};
-const SPLITS = (readJson('career-splits.json', {}).players) || {};
+const SPLITS = require('./career-splits-store').loadAll(ROOT).players;   // TEN-391: one file per player
 const MARKET = (readJson('market-edge.json', {}).players) || {};
 const STYLES = readJson('playing-styles.json', {});
 const SPEED_MAP = readJson('court-speed-map.json', null);

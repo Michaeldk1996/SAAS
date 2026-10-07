@@ -15,7 +15,7 @@ const E = require('./engine.js');
 const ROOT = path.join(__dirname, '..');
 const rd = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
 
-const splits = rd('career-splits.json').players;
+const splits = require('../tools/career-splits-store').loadAll(ROOT).players;   // TEN-391: one file per player
 const stylesFile = rd('playing-styles.json');
 const styles = stylesFile.players || [];
 const oddsIdx = rd('odds-performance-index.json');

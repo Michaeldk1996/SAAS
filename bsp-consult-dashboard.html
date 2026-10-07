@@ -19640,14 +19640,79 @@ let ppTourAverage = { dna: {}, stats: {} };
 // tools/apply-radar-recalibration.js into player-profiles.json.
 let radarCalibration = { cardBenchmarks: {} };
 // Task 12 — career + last-52-week splits (Jeff Sackmann ATP data via
-// tennisabstract), keyed by profile key. Loaded lazily; the profile page shows
-// the sections only for players that were ingested.
+// tennisabstract), keyed by profile key.
+// TEN-391 (founder, 2026-10-07): ONE FILE PER PLAYER, career-splits/<key>.json,
+// fetched only when a surface shows that player (his profile, or the H2H page's
+// two players). Nothing loads career splits up front. `careerSplits` keeps its
+// shape — key -> the player's object — but holds only the players asked for:
+//   key absent            not asked for yet, or in flight (careerSplitsPending)
+//   key -> object         his splits
+//   key -> null           the server answered 404: genuinely not built
+// A network failure settles NOTHING (no claim), so the next open retries.
 let careerSplits = {};
-async function loadCareerSplits(){
-  try {
-    const res = await fetch('./career-splits.json', { cache: 'no-cache' });
-    if (res.ok){ const d = await res.json(); careerSplits = d.players || {}; }
-  } catch (err) { /* additive; absence just hides the sections */ }
+const _careerSplitsLoads = {};
+function loadCareerSplitsFor(key){
+  const k = String(key == null ? '' : key);
+  if (!k) return Promise.resolve(null);
+  if (Object.prototype.hasOwnProperty.call(careerSplits, k)) return Promise.resolve(careerSplits[k]);
+  if (_careerSplitsLoads[k]) return _careerSplitsLoads[k];
+  // In flight -> the profile module paints its pending state (player-profile-v2.js splitsPending).
+  (window.careerSplitsPending = window.careerSplitsPending || {})[k] = true;
+  _careerSplitsLoads[k] = (async () => {
+    let settled = false, v = null;
+    try {
+      const res = await fetch(`./career-splits/${encodeURIComponent(k)}.json`, { cache: 'no-cache' });
+      if (res.ok){ v = await res.json(); settled = true; }
+      else if (res.status === 404) settled = true;
+    } catch (err) { /* network: no answer, no claim */ }
+    delete window.careerSplitsPending[k];
+    if (settled) careerSplits[k] = v;
+    else delete _careerSplitsLoads[k];
+    window.careerSplits = careerSplits;
+    return v;
+  })();
+  return _careerSplitsLoads[k];
+}
+// The small tour file (career-splits-tour.json): build metadata + `pooled`, the
+// slim per-player rows the TOUR-WIDE readers need — the legacy profile's tier
+// medians (ppSplitBaselines) and its Key insights engine tour averages. Loaded
+// only when the legacy profile opens; the v2 profile and H2H never read it.
+let careerSplitsTour = null;
+let _careerSplitsTourLoad = null;
+function loadCareerSplitsTour(){
+  if (careerSplitsTour) return Promise.resolve(careerSplitsTour);
+  if (_careerSplitsTourLoad) return _careerSplitsTourLoad;
+  _careerSplitsTourLoad = (async () => {
+    try {
+      const res = await fetch('./career-splits-tour.json', { cache: 'no-cache' });
+      if (res.ok){
+        careerSplitsTour = await res.json();
+        // Anything computed before the pool landed is recomputed on the next read.
+        ppSplitBaseCache = null;
+        if (typeof insResetTourAverages === 'function') insResetTourAverages();
+      }
+    } catch (err) { /* additive; the legacy tables grade neutral without it */ }
+    if (!careerSplitsTour) _careerSplitsTourLoad = null;
+    return careerSplitsTour;
+  })();
+  return _careerSplitsTourLoad;
+}
+// The legacy Key insights engine's input: the tour pool with this player's own
+// full record over his slim row (the same M / W, so the tour sums are unmoved).
+// Null until both have landed -> the engine falls back to the pipeline insights
+// and memoises nothing.
+function ppInsightsSplits(key){
+  const k = String(key), own = careerSplits[k];
+  if (!own || !careerSplitsTour || !careerSplitsTour.pooled) return null;
+  return Object.assign({}, careerSplitsTour.pooled, { [k]: own });
+}
+// The legacy profile's splits loads: his file + the tour pool, repainting once
+// whichever lands while his profile is still the one on screen.
+function ppLegacySplitsLoads(key){
+  const k = String(key);
+  const repaint = () => { if (ppState.key === k) ppRepaint(); };
+  if (!Object.prototype.hasOwnProperty.call(careerSplits, k)) loadCareerSplitsFor(k).then(repaint);
+  if (!careerSplitsTour) loadCareerSplitsTour().then(t => { if (t) repaint(); });
 }
 // TEN-8 ASAP Sports — "Player's own words" pre-match readiness signal, keyed by
 // profile key (tools/asapsports-signal.js output). Loaded lazily; the profile
@@ -20520,9 +20585,14 @@ const PP_SPLIT_K = 1.28, PP_SPLIT_FLOOR = 4;
 let ppSplitBaseCache = null;
 function ppSplitBaselines(){
   if (ppSplitBaseCache) return ppSplitBaseCache;
+  // TEN-391: the tour pool is career-splits-tour.json `pooled` (one slim row per
+  // built player). Until it lands there is nothing to grade against — neutral,
+  // and not cached, so the first read after it lands builds the real medians.
+  const pool = careerSplitsTour && careerSplitsTour.pooled;
+  if (!pool) return { career: {}, last52: {} };
   const acc = { career: {}, last52: {} };
-  Object.keys(careerSplits || {}).forEach(k => {
-    const p = careerSplits[k];
+  Object.keys(pool).forEach(k => {
+    const p = pool[k];
     const tier = ppSplitTier(p && p.rank);
     if (!tier) return;
     ['career','last52'].forEach(which => {
@@ -21953,6 +22023,18 @@ function pp2StartLoads(key){
   loadPp2Closes(key);
   loadPp2SpeedMap(key);
   loadPp2Dna();
+  pp2LoadSplits(key);
+}
+// TEN-391 · his career-splits file (career-splits/<key>.json), started at click time with the
+// other loads. Draw record, its modal and Key insights read it; while it is in flight they paint
+// the pending state (no claim), and the first paint waits for it alongside the market shard, so
+// in practice they paint once. Repaints once on arrival only if the profile is already up.
+function pp2LoadSplits(key){
+  const k = String(key);
+  if (Object.prototype.hasOwnProperty.call(careerSplits, k)) return Promise.resolve(careerSplits[k]);
+  const load = loadCareerSplitsFor(k);
+  load.then(() => pp2RepaintIfOpen(k));
+  return load;
 }
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
@@ -21962,8 +22044,11 @@ function showPlayerProfileV2(key){
   const seq = ++_pp2OpenSeq;
   const shard = loadPp2MarketShard(key);
   pp2StartLoads(key);
-  if (Object.prototype.hasOwnProperty.call(window.marketEdge || {}, String(key))) return pp2MountNow(key);
-  Promise.race([shard, new Promise(r => setTimeout(r, PP2_FIRST_PAINT_WAIT_MS))])
+  const splitsHeld = Object.prototype.hasOwnProperty.call(careerSplits, String(key));
+  if (splitsHeld && Object.prototype.hasOwnProperty.call(window.marketEdge || {}, String(key))) return pp2MountNow(key);
+  // TEN-391: the first paint waits for his splits file too (same cap), so Draw record and Key insights paint once.
+  const firstData = splitsHeld ? shard : Promise.all([shard, loadCareerSplitsFor(key)]);
+  Promise.race([firstData, new Promise(r => setTimeout(r, PP2_FIRST_PAINT_WAIT_MS))])
     .then(() => { if (pp2MountStillWanted(seq, key)) pp2MountNow(key); });
   return true;
 }
@@ -21985,6 +22070,7 @@ function showPlayerProfile(key){
   pp2CancelPendingMount();   // fx2 item 2: a pending v2 mount must not land over the legacy profile
   ppState.key = String(key);
   if (typeof loadPointsAtRisk === 'function') loadPointsAtRisk();  // lazy; repaints tile on completion
+  if (typeof ppLegacySplitsLoads === 'function') ppLegacySplitsLoads(key);  // TEN-391: his splits file + the tour pool
   ppState.surface = 'All';
   ppState.tournamentQuery = '';
   ppState.tournamentPicked = null;
@@ -23138,7 +23224,7 @@ function buildPlayerProfileHtml(p){
   // yet — passing null makes the engine use its measured INS_TOUR_FALLBACK medians, and
   // it upgrades automatically the day the index starts carrying one.
   const ppInsights = ppDynamicInsights(
-    p.key, p.name, careerSplits, ppStyleFor(p.name), p.insights,
+    p.key, p.name, ppInsightsSplits(p.key), ppStyleFor(p.name), p.insights,
     _oddsPerfShards[String(p.key)] || null,
     oddsPerfMeta.tourBaseline || null,
     (playerStyles.data || {}).tourAverage,
@@ -28401,9 +28487,19 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }
 
     // serve / return / under-pressure splits (Batch-2 item 4).
+    // TEN-391: career splits are one file per player, fetched for the players this page shows;
+    // a file not yet held is loaded and this player's card repaints once when it lands.
     const csAll = DV('careerSplits') || {};
-    const sa = splitArrays(e.key != null ? csAll[String(e.key)] : null);
-    if (sa) { e.serve = sa.serve; e.ret = sa.ret; e.press = sa.press; e.splitBySurf = sa.bySurf; }
+    const applySplits = cs => {
+      const sa = splitArrays(cs);
+      if (sa) { e.serve = sa.serve; e.ret = sa.ret; e.press = sa.press; e.splitBySurf = sa.bySurf; }
+      return !!sa;
+    };
+    if (e.key != null && Object.prototype.hasOwnProperty.call(csAll, String(e.key))) applySplits(csAll[String(e.key)]);
+    else if (e.key != null) {
+      const lcs = fn('loadCareerSplitsFor');
+      if (lcs) lcs(e.key).then(cs => { if (applySplits(cs)) render(); }).catch(() => {});
+    }
     e.upBySurf = pressUnderFrom(e.full);
 
     // market performance + profit curve (Batch-2 items 5 & 6). Shard is lazily fetched;
@@ -28526,7 +28622,7 @@ _tpLoad = loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap

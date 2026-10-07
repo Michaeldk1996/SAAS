@@ -259,7 +259,8 @@ H.check('2 · a longer list whose complete sets do not make up the result ("1 - 
 // 3 · "Splits not built for this player yet": one wording, no period, in all three places
 // ════════════════════════════════════════════════════════════════════════════
 H.check('3 · no splits entry: Key insights, the Draw tile and the Draw modal print "Splits not built for this player yet" (no period)', () => {
-  const { I, p } = fxModule({ extra: { careerSplits: { '999999': { career: {} } } } });
+  // TEN-391: his file answered "none" -> the host stores NULL for him (the only "not built" state)
+  const { I, p } = fxModule({ extra: { careerSplits: { '999999': { career: {} }, [FX.key]: null } } });
   const WANT = 'Splits not built for this player yet';
   const ins = I.insightsEmptyText(p);
   assert.strictEqual(ins, WANT, 'Key insights "' + ins + '"');

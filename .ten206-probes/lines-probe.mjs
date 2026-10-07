@@ -39,7 +39,7 @@ if (fs.existsSync(MDIR)) for (const f of fs.readdirSync(MDIR)) if (f.endsWith('.
 const sandbox = {
   FEATURE_PP2: true, playerProfiles: { players: PLAYERS },
   courtSpeedMap: rd('court-speed-map.json', null),
-  careerSplits: (rd('career-splits.json', {}) || {}).players || {},
+  careerSplits: require('../tools/career-splits-store.js').loadAll().players,   // TEN-391: one file per player
   marketEdge: MARKET, playingStyles: rd('playing-styles.json', {}),
   holdbreak: rd('holdbreak.json', {}), careerHistory: CAREER_HIST
 };

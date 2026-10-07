@@ -615,7 +615,20 @@ jobs:
           cp match-stat-event-coverage.json _site/
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
-          cp career-splits.json _site/
+          # TEN-391: career splits are ONE FILE PER PLAYER (career-splits/<key>.json, fetched
+          # when a profile / the H2H page shows him) + the small tour file. Committed by the
+          # local splits refresh (TA-sourced; CI can't fetch it). The old single
+          # career-splits.json is retired. ZERO files is its own failure, like profiles/ below:
+          # an empty folder would put "Splits not built" on every profile, silently.
+          cp career-splits-tour.json _site/
+          mkdir -p _site/career-splits
+          SPLIT_FILES=$(ls career-splits/*.json 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$SPLIT_FILES" -eq 0 ]; then
+            echo "::error::career-splits/ is empty - publishing it would mark every profile's splits as not built."
+            exit 1
+          fi
+          cp career-splits/*.json _site/career-splits/
+          echo "published $SPLIT_FILES career-splits file(s)."
           # TEN-206: the searchable ATP roster (every ranked player, ~34 KB gz) plus
           # the per-player profile shards it points at. player-profiles.json only
           # ever carried today's field, so search could not reach anyone off the
@@ -647,7 +660,7 @@ jobs:
           cp points-at-risk.json _site/
           # TEN-162: per-player match lists behind each split row (the profile
           # splits drawer). Committed by the local career-splits refresh alongside
-          # career-splits.json (TA-sourced, CI can't fetch it). Index-gated on the
+          # career-splits/ (TA-sourced, CI can't fetch it). Index-gated on the
           # client, so a missing shard degrades to an empty drawer, never a broken
           # table — tolerant copy, NOT in the assert list.
           cp splits-matches-index.json _site/ 2>/dev/null || true
@@ -903,7 +916,7 @@ jobs:
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
                    holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js \
-                   matches.json player-profiles.json career-splits.json form-index.json \
+                   matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
                    points-at-risk.json \
                    player-atp-aliases.json \
