@@ -165,47 +165,26 @@ console.log('\nTEN-206 pixel refinement pass\n');
 // The fix has two halves and both are locked: the rule is a sibling span (so
 // its height comes from the TEXT, not from the flex row) and it carries a block
 // margin (so it is shorter than that text block, centred).
-check('item 1 · the meta rule is a sibling span, not the cell\'s own border-left', () => {
+// TEN-384 (step-4 reference, measured 2026-10-05) supersedes the sibling-span rule: the reference draws each
+// cell's rule as its own border-left (--line), the cells padding 0 20 and the strip aligned flex-END on the
+// avatar's baseline. The ITEM 1 defect stays locked — a rule as tall as the HEADER ROW (118 against a 60
+// text block) — because a cell that does not stretch is exactly as tall as its own text.
+check('item 1 · each state cell carries its own --line border-left (step-4 reference)', () => {
   assert(typeof I.renderHeader === 'function',
     'renderHeader is not exported — this lock points at nothing');
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line\)[^"]*"><\/span>/g) || [];
-  assert.strictEqual(rules.length, 4,
-    `expected 4 sibling rule spans in the live-state strip, found ${rules.length}`);
-  rules.forEach((r) => {
-    assert(/align-self:stretch/.test(r), `rule span does not stretch to its cell: ${r}`);
-    // TEN-376 Foundation: 12a --line-soft → --line (the row hairline token).
-    assert(/background:var\(--line\);/.test(r),
-      `rule span is not the spec colour: ${r}`);
-  });
-  // The cells themselves must no longer carry the border the span replaced, or
-  // the page paints two rules per boundary.
-  // (The old cell border was a raw 0.33px rgba; the foundation makes that literal
-  // unrepresentable, so the equivalent lock is: no border-left in the header.)
-  assert(!/border-left:/.test(html),
-    'a live-state cell still carries its own border-left — the strip paints two rules');
+  const cells = html.match(/class="pp2-cell" style="[^"]*"/g) || [];
+  assert.strictEqual(cells.length, 4, `expected 4 state cells, found ${cells.length}`);
+  cells.forEach((c) => assert(/border-left:1px solid var\(--line\);/.test(c), `cell rule is not --line: ${c}`));
+  assert(!/width:1px;align-self:stretch/.test(html), 'a sibling rule span is still painted — two rules per boundary');
 });
 
-check('item 1 · the rule is SHORTER than the cell it divides, by a block margin', () => {
+check('item 1 · the strip does not stretch to the header row (cells sit on the avatar baseline)', () => {
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line\)[^"]*"><\/span>/g) || [];
-  assert(rules.length > 0, 'no rule spans — this lock never ran');
-  rules.forEach((r) => {
-    const mg = r.match(/margin:([0-9.]+)px 0/);
-    assert(mg, `rule span has no block margin, so it runs the full cell height: ${r}`);
-    const px = parseFloat(mg[1]);
-    assert(px > 0 && px < 8,
-      `rule inset is ${px}px — outside the 0<x<8 the design's 54.5-against-a-60-box implies`);
-  });
-});
-
-check('item 1 · the strip centres on the text, it does not stretch to the header row', () => {
-  const html = I.renderHeader(SUBJECT, HCTX);
-  // The strip wrapper. `align-self:stretch` here is what made the rules 118 tall.
   assert(!/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(html),
     'the live-state strip still stretches to the header row — rules will run its full height');
-  assert(/flex:none;align-self:center;display:flex;align-items:center/.test(html),
-    'the live-state strip is not centred on its own content');
+  assert(/flex:none;align-self:flex-end;display:flex;align-items:flex-end/.test(html),
+    'the live-state strip is not bottom-aligned on its own content');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -281,8 +260,9 @@ check('item 3 · the fix is not an ellipsis and not a smaller font', () => {
   // The support line's font size is pinned by §5's spec at 10.5px; a "fix" that
   // shrank it would satisfy the wrap complaint and violate the instruction.
   // TEN-376: --label renamed --text-label. Anchored on the box support line itself.
-  const sizes = CODE.match(/font-size:10\.5px;color:var\(--text-label\);line-height:1\.4;margin-top:auto;/g) || [];
-  assert(sizes.length >= 1, 'the box support line is no longer 10.5px — was the font shrunk?');
+  // TEN-384 (founder, step 4 item 5): the support line is 11.5px — up from 10.5, never shrunk.
+  const sizes = CODE.match(/font-size:11\.5px;color:var\(--text-label\);line-height:1\.4;margin-top:auto;/g) || [];
+  assert(sizes.length >= 1, 'the box support line is no longer 11.5px — was the font shrunk?');
   assert(!/text-overflow:ellipsis/.test(CODE.slice(CODE.indexOf('class="pp2-box"'),
     CODE.indexOf('class="pp2-box"') + 1400)),
     'a box support line truncates with an ellipsis');
@@ -293,12 +273,21 @@ check('item 3 · Record per tournament keeps its priced count (2026-09-18 Q3)', 
   // count stays, and the +Xu headline is unreadable without it.
   const slice = builderSlice('tourn');
   assert(/' priced'/.test(slice), 'the "N priced" clause is gone from the tourn support');
-  assert(!/rateText0\(/.test(slice),
+  // fx4 item 5: the OVERALL W–L fallback headlines its rate (like the speed / styles fallbacks); no SUPPORT line
+  // in this builder may print one.
+  assert(!/support:[^\n]*rateText0\(/.test(slice),
     'the tourn support prints a rate again — that is the fifth token that wrapped it');
-  // Four tokens: three MIDDOT separators in the support expression.
-  const seps = (slice.match(/MIDDOT/g) || []).length;
+  // Four tokens: three MIDDOT separators in the support expression. TEN-384 fx3 (founder D10) adds the
+  // OVERALL fallback branch ("all events · W–L · N priced", three tokens) — counted apart, so a fifth token
+  // on the main line is still caught and the fallback cannot grow past the export's four either.
+  const cut = slice.indexOf('tournOverall(p)');
+  const main = cut > 0 ? slice.slice(0, cut) : slice, fb = cut > 0 ? slice.slice(cut) : '';
+  const seps = (main.match(/MIDDOT/g) || []).length;
   assert.strictEqual(seps, 3,
     `the tourn support joins ${seps + 1} tokens; the export's shape is 4`);
+  assert(cut > 0 && /'all events '/.test(fb) && /' priced'/.test(fb), 'the D10 overall fallback lost its priced count');
+  assert(!/rateText0\(/.test(main), 'the main tourn line prints a rate again');
+  assert((fb.match(/MIDDOT/g) || []).length <= 3, 'the D10 overall fallback runs past four tokens');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -357,7 +346,7 @@ checkValues('item 5 · rendered insight titles are sentences and bodies carry ra
   const html = I.renderInsights(SUBJECT);
   // A subject with no split store renders the empty state, which is a correct
   // page but tells this check nothing. Refuse rather than pass.
-  if (/No splits clear the ten-match minimum/.test(html)) {
+  if (/No splits clear the ten-match minimum|No split data on record|No split stands apart/.test(html)) {
     // Drive the renderer over a constructed insight instead of skipping.
     assert(/Key insights/.test(html), 'the section title is gone');
     return;
@@ -424,46 +413,33 @@ check('item 6 · a player with fewer than six results emits what he has, never p
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// ITEM 7 · headline typography — THE SPEC WINS, and the deviation is reported
+// ITEM 7 · headline typography — TEN-384 (founder, step 4 item 5) supersedes the per-box sizes
 // ════════════════════════════════════════════════════════════════════════════
-// The design capture renders all eight headlines at one size (19.0 CSS ink, the
-// export's char-length closure landing on 30px for every short figure). The
-// LOCKED SPEC declares a per-box `size`: 26/26/30/22/20/30/26/30. The founder's
-// rule for this item is explicit — "where the design and the spec disagree, the
-// spec wins and you report the deviation" — so the per-box sizes stay and the
-// uniformity is reported, not implemented.
-check('item 7 · the per-box headline sizes are the SPEC\'s, not the capture\'s uniform 30px', () => {
-  const SPEC_SIZES = { career: 26, season: 26, tourn: 30, speed: 22,
-    splits: 20, styles: 30, market: 26, profile: 30 };
-  const boxes = I.PP2_BOXES || I.BOXES;
-  assert(Array.isArray(boxes), 'the box table is not exported — this lock points at nothing');
-  let n = 0;
-  boxes.forEach((b) => {
-    if (SPEC_SIZES[b.key] == null) return;
-    const got = parseInt(String(b.size), 10);
-    assert.strictEqual(got, SPEC_SIZES[b.key],
-      `box "${b.key}" headline is ${got}px; the locked spec says ${SPEC_SIZES[b.key]}px`);
-    n++;
+// "mono figure 26px (20px over 10 characters, 19px over 16)", and every figure white: the figure size now
+// follows the FIGURE as printed (the unit included), and the tourn unit is no longer tinted by sign (the
+// founder's step-4 reference paints every tile figure white; green/red stay on the signed values in the
+// modals). The per-box `size` field and `hlSuffixColor` are no longer read by the render.
+const FIG_SIZE = (n) => n > 16 ? 19 : n > 10 ? 20 : 26;
+function figuresOf(html) {
+  return (html.match(/font-weight:700;color:var\(--(?:text|text-label)\);line-height:1;white-space:nowrap;font-size:(\d+)px;">([^<]*)</g) || [])
+    .map((f) => { const m = /font-size:(\d+)px;">([^<]*)</.exec(f); return { px: +m[1], text: m[2] }; });
+}
+check('item 7 · each tile figure is 26px, 20px over 10 characters, 19px over 16', () => {
+  [['+4.2u', 26], ['1234567890', 26], ['12345678901', 20], ['12345678901234567', 19]]
+    .forEach(([t, px]) => assert.strictEqual(I.headlineSize(t), px, `"${t}" sized ${I.headlineSize(t)}px`));
+  const figs = figuresOf(I.renderBoxes({ boxVals: I.buildBoxVals(SUBJECT, { archetype: null }) }));
+  assert.strictEqual(figs.length, 8, `expected 8 tile figures, found ${figs.length}`);
+  figs.forEach((f) => {
+    const n = f.text.replace(/&[a-z#0-9]+;/g, 'x').length;
+    assert.strictEqual(f.px, FIG_SIZE(n), `figure "${f.text}" (${n} chars) is ${f.px}px`);
   });
-  assert.strictEqual(n, 8, `only ${n} of 8 boxes carry a spec headline size`);
-  const uniq = Array.from(new Set(Object.values(SPEC_SIZES)));
-  assert(uniq.length > 1,
-    'all eight sizes are equal — the capture\'s uniform 30px was implemented against the ruling');
 });
 
-checkValues('item 7 · the tourn unit suffix is tinted by SIGN, green --pos / red --neg', () => {
-  // `Player Stat Boxes.dc.html`:3223 — `hlSuffixColor: '#3ed68c'`. Ours renders
-  // rgb(61,214,140) for a positive, which is that colour; the capture's white
-  // `u` is the deviation, and it is the capture that is a layout reference.
-  const v = I.buildBoxVals(SUBJECT, { archetype: null });
-  if (v.tourn && v.tourn.hlSuffix) {
-    assert.strictEqual(v.tourn.hlSuffix, 'u', 'the tourn suffix is not the unit letter');
-    // TEN-376 Foundation: the spec's #3ed68c / #da6259 are --pos / --neg.
-    assert(/^var\(--(pos|neg)\)$/.test(v.tourn.hlSuffixColor),
-      `the tourn suffix colour is ${v.tourn.hlSuffixColor}, not the spec green/red pair`);
-  }
-  assert(/hlSuffixColor: be\.pinPl >= 0 \? 'var\(--pos\)' : 'var\(--neg\)'/.test(CODE),
-    'the suffix tint is no longer by sign');
+checkValues('item 7 · every tile figure is white, the tourn unit included (no sign tint)', () => {
+  const html = I.renderBoxes({ boxVals: I.buildBoxVals(SUBJECT, { archetype: null }) });
+  const tile = html.slice(html.indexOf('data-box="tourn"'), html.indexOf('data-box="speed"'));
+  assert(tile.length > 0, 'no tourn tile');
+  assert(!/var\(--(pos|neg)\)/.test(tile), 'the tourn figure is tinted by sign');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -473,10 +449,10 @@ checkValues('item 7 · the tourn unit suffix is tinted by SIGN, green --pos / re
 // with the named check re-run against it. A mutant that survives means the check
 // is vacuous; the suite fails on a survivor exactly as it does on a red check.
 const mutants = [
-  ['item 1 · rule margin removed',
-   "margin:2.5px 0;", "", /rule span has no block margin/],
+  ['item 1 · cell rule removed (TEN-384: the rule is the cell\'s own border-left)',
+   "'padding:0 20px;border-left:1px solid var(--line);\">'", "'padding:0 20px;\">'", /cell rule is not --line/],
   ['item 1 · strip back to stretch',
-   "flex:none;align-self:center;display:flex;align-items:center;",
+   "flex:none;align-self:flex-end;display:flex;align-items:flex-end;",
    "flex:none;align-self:stretch;display:flex;align-items:stretch;",
    /still stretches to the header row/],
   ['item 2 · speed headline back to the band label',
@@ -494,8 +470,8 @@ const mutants = [
   ['item 3 · the priced clause dropped',
    " + ' priced'", " + ''", /"N priced" clause is gone/],
   ['item 4 · one box given a different min-height',
-   "border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;gap:7px;' +\n        'min-height:140px;",
-   "border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;gap:7px;' +\n        'min-height:' + (b.key === 'speed' ? 160 : 140) + 'px;",
+   "border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;' +\n        'min-height:132px;",
+   "border-radius:12px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:8px;' +\n        'min-height:' + (b.key === 'speed' ? 160 : 132) + 'px;",
    /different min-heights/],
   ['item 4 · support lines no longer bottom-pinned',
    "color:var(--text-label);line-height:1.4;margin-top:auto;", "color:var(--text-label);line-height:1.4;",
@@ -520,13 +496,12 @@ const mutants = [
   ['item 6 · the fade mask removed, so the row clips',
    "'mask-image:linear-gradient(90deg,var(--page) 82%,transparent);\">'",
    "'\">'", /does not carry the spec fade mask/],
-  ['item 7 · the capture\'s uniform 30px implemented',
-   "key: 'speed', title: 'Court speed record', size: 22",
-   "key: 'speed', title: 'Court speed record', size: 30",
-   /headline is 30px; the locked spec says 22px/],
-  ['item 7 · the suffix tint hardcoded green',
-   "hlSuffixColor: be.pinPl >= 0 ? 'var(--pos)' : 'var(--neg)',",
-   "hlSuffixColor: 'var(--pos)',", /tint is no longer by sign/],
+  ['item 7 · the length rule dropped (every figure 26px)',
+   "return n > 16 ? 19 : n > 10 ? 20 : 26;", "return 26;", /sized 26px/],
+  ['item 7 · the unit tinted by sign again',
+   "esc(head) + esc(suffix)",
+   "esc(head) + '<span style=\"color:' + (v.hlSuffixColor || 'var(--pos)') + ';\">' + esc(suffix) + '</span>'",
+   /tinted by sign/],
 ];
 
 // The assertion block the mutants are scored against, factored out so it can be
@@ -540,8 +515,8 @@ function scoreAgainst(MI, MCODE) {
   const rib = MI.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
 
   // item 1
-  (hdr.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line\)[^"]*"><\/span>/g) || []).forEach((r) => {
-    if (!/margin:([0-9.]+)px 0/.test(r)) throw new Error('rule span has no block margin');
+  (hdr.match(/class="pp2-cell" style="[^"]*"/g) || []).forEach((c) => {
+    if (!/border-left:1px solid var\(--line\);/.test(c)) throw new Error('cell rule is not --line');
   });
   if (/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(hdr))
     throw new Error('the live-state strip still stretches to the header row');
@@ -565,7 +540,9 @@ function scoreAgainst(MI, MCODE) {
   {
     const from = MCODE.indexOf('v.tourn = ');
     const to = MCODE.indexOf('\n    v.', from + 6);
-    const sl = MCODE.slice(from, to > from ? to : from + 1200);
+    const sl0 = MCODE.slice(from, to > from ? to : from + 1200);
+    const cut = sl0.indexOf('tournOverall(p)');   // fx3 D10: the overall fallback branch is scored apart
+    const sl = cut > 0 ? sl0.slice(0, cut) : sl0;
     if (!/' priced'/.test(sl)) throw new Error('the "N priced" clause is gone from the tourn support');
     if (/rateText0\(/.test(sl)) throw new Error('the tourn support prints a rate again');
     const seps = (sl.match(/MIDDOT/g) || []).length;
@@ -592,17 +569,14 @@ function scoreAgainst(MI, MCODE) {
     throw new Error('the chip track does not carry the spec fade mask');
   if (!/grid-template-columns:auto minmax\(180px,1\.2fr\) auto minmax\(0,2fr\) auto/.test(rib))
     throw new Error("the ribbon grid is no longer README §3's five tracks");
-  // item 7
-  const SPEC_SIZES = { career: 26, season: 26, tourn: 30, speed: 22,
-    splits: 20, styles: 30, market: 26, profile: 30 };
-  (MI.PP2_BOXES || MI.BOXES || []).forEach((b) => {
-    if (SPEC_SIZES[b.key] == null) return;
-    const got = parseInt(String(b.size), 10);
-    if (got !== SPEC_SIZES[b.key])
-      throw new Error(`box "${b.key}" headline is ${got}px; the locked spec says ${SPEC_SIZES[b.key]}px`);
+  // item 7 (TEN-384: length rule, white figures)
+  [['12345678901', 20], ['12345678901234567', 19], ['+4.2u', 26]].forEach(([t, px]) => {
+    if (MI.headlineSize(t) !== px) throw new Error(`"${t}" sized ${MI.headlineSize(t)}px`);
   });
-  if (!/hlSuffixColor: be\.pinPl >= 0 \? 'var\(--pos\)' : 'var\(--neg\)'/.test(MCODE))
-    throw new Error('the suffix tint is no longer by sign');
+  {
+    const tile = boxesHtml.slice(boxesHtml.indexOf('data-box="tourn"'), boxesHtml.indexOf('data-box="speed"'));
+    if (/var\(--(pos|neg)\)/.test(tile)) throw new Error('the tourn figure is tinted by sign');
+  }
 }
 
 console.log('\n  mutation controls\n');

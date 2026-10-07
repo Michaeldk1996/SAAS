@@ -83,9 +83,8 @@ const name = await evaluate(`(function(){try{
 let painted=false;
 for(let i=0;i<80;i++){ painted = await evaluate(`(function(){var v=document.getElementById('playerProfileView'); return !!(v&&v.style.display!=='none'&&v.querySelector('.pp-shell'));})()`).catch(()=>false); if(painted) break; await sleep(200); }
 await sleep(700); // let radar SVG / bars settle
-// Market panel loads its odds-perf shard async (loadOddsPerfShardThenRerender), so wait
-// for #ppMarketPanel before shooting — otherwise we race the fetch and miss the panel.
-for(let i=0;i<50;i++){ const has = await evaluate(`!!document.querySelector('#ppMarketPanel')`).catch(()=>false); if(has) break; await sleep(200); }
+// TEN-384: the Market performance panel (#ppMarketPanel) is gone from the legacy
+// renderer; it lives in Database only. Probe its ABSENCE below instead of waiting for it.
 await sleep(300);
 
 const probe = await evaluate(`(function(){
@@ -98,7 +97,7 @@ const probe = await evaluate(`(function(){
     painted:true, name:h1?h1.textContent:null,
     hasShell:!!q('.pp-shell'), hasRail:!!q('.pp-rail'),
     hasFormCard:!!q('#ppRecentFormCard'), hasCareerCard:!!q('#ppCareerRecordCard'),
-    hasMarketPanel:!!q('#ppMarketPanel'),
+    marketPanelRemoved:!q('#ppMarketPanel') && !/Read on the market|Favourite vs underdog reliability|Market performance/.test(text),
     formTitle:(function(){var e=q('#ppRecentFormCard'); if(!e)return null; var d=e.querySelector('div'); return d?d.textContent.trim():null;})(),
     careerTitle:(function(){var e=q('#ppCareerRecordCard'); if(!e)return null; var d=e.querySelector('div'); return d?d.textContent.trim():null;})(),
     hasBackLink:/Back to Players/.test(text),

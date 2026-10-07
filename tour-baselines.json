@@ -1,0 +1,31 @@
+{
+ "schema": 1,
+ "basis": "market-edge",
+ "equalsDatabaseTour": true,
+ "source": "build-database-yield.js over odds-archive/*.csv, the same run that writes database-yield.json",
+ "priceRule": "Pinnacle closing, else Bet365 closing, per row (build-market-edge.js pickBook)",
+ "filters": "ATP main tour, all levels incl. Finals, all surfaces, seasons 2010 on; completed matches only (walkovers, retirements and other non-results excluded); exact price ties and overround > 1.15 excluded; favourite = the shorter price; flat 1u, a win pays price − 1",
+ "dateRange": [
+  "2010-01-04",
+  "2026-09-13"
+ ],
+ "bookCounts": {
+  "Pinnacle": 38830,
+  "Bet365": 2142
+ },
+ "roles": {
+  "all": {
+   "matches": 40972,
+   "bets": 81944,
+   "yield": -0.04367602264961453
+  },
+  "favourite": {
+   "n": 40972,
+   "yield": -0.017772844869667456
+  },
+  "underdog": {
+   "n": 40972,
+   "yield": -0.0695792004295616
+  }
+ }
+}

@@ -93,8 +93,10 @@ ok('Miami is ONE entry carrying both sponsor eras',
     && byDisplay['Miami'].includes('Sony Ericsson Open')
     && byDisplay['Miami'].includes('Miami Open'),
   (byDisplay['Miami'] || []).join(' | '));
-ok('...and it carries 1,448 rows, not the 549 under the current sponsor',
-  entryRows('Miami') === 1448, `${entryRows('Miami')} rows`);
+// Row counts are on the TEN-384 per-row join (Pinnacle, else Bet365): were 1,448 (Miami) and
+// 472 (Delray Beach) on one book per season.
+ok('...and it carries 1,453 rows, not the 549 under the current sponsor',
+  entryRows('Miami') === 1453, `${entryRows('Miami')} rows`);
 for (const [name, n] of [['Madrid', 2], ['Canada', 2], ['Washington', 2], ['Umag', 4], ['Hamburg', 4]]) {
   ok(`...${name} carries its full set`, (byDisplay[name] || []).length === n,
     `${(byDisplay[name] || []).length} strings, ${entryRows(name)} rows`);
@@ -128,7 +130,7 @@ ok('Santiago is one event across four sponsors',
   (byDisplay['Santiago'] || []).length === 4 && entryRows('Santiago') === 325,
   (byDisplay['Santiago'] || []).join(' | '));
 ok('Delray Beach absorbs International Championships',
-  (byDisplay['Delray Beach'] || []).includes('International Championships') && entryRows('Delray Beach') === 472,
+  (byDisplay['Delray Beach'] || []).includes('International Championships') && entryRows('Delray Beach') === 473,
   `${entryRows('Delray Beach')} rows`);
 ok('Estoril absorbs Portugal Open', (byDisplay['Estoril'] || []).includes('Portugal Open'),
   (byDisplay['Estoril'] || []).join(' | '));

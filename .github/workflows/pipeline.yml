@@ -563,6 +563,10 @@ jobs:
           # TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). Not
           # copied = 404 => the tab renders nothing. Required; asserted below.
           cp market-edge-core.js _site/
+          # TEN-384 fx2: the canonical tournament identity table (window.TournamentIdentity). The page
+          # merges a served tournament-history shard's same-event rows through it ("London" + "Queen's
+          # Club"). Not copied = 404 => the rows are listed raw again. Required; asserted below.
+          cp tournament-identity.js _site/
           # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
           # and the per-player market-edge shards + index (build-market-edge.js).
           # The shards also feed the full ledger's two closing-odds columns.
@@ -652,6 +656,11 @@ jobs:
           # built by build-database-yield.js from odds-archive/*.csv. Committed but not
           # copied = silent 404 → the Database tab renders empty. Required when the flag is on.
           cp database-yield.json database-yield-players.json _site/
+          # TEN-384: the player profile's Market edge tour baselines, written by the SAME
+          # build-database-yield.js run (so they equal the Database Tour aggregates) and loaded
+          # with the profile data. Committed but not copied = 404 = every profile's tour line
+          # dashes. Required: in the assert list below, with its roles checked.
+          cp tour-baselines.json _site/
           # TEN-136: ATP headshot alias map ({player_key: ATP_ALIAS}), hand-committed,
           # written by no job. The dashboard avatar chain fetches it as the ATP step
           # above the api-tennis logo. Committed but not copied = silent 404, which
@@ -893,7 +902,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js \
+                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    player-index.json \
                    points-at-risk.json \
@@ -904,6 +913,7 @@ jobs:
                    odds-performance-index.json odds-index.json \
                    tournament-history-index.json \
                    court-speed-map.json \
+                   tour-baselines.json \
                    match-stat-event-coverage.json \
                    series.js series.css tokens.css theme.js \
                    drops-page.js drops-page.css \
@@ -923,6 +933,13 @@ jobs:
           # still works and nothing complains, we just silently pay the 700 KB again.
           [ -d _site/tournament-history ] && [ -n "$(ls -A _site/tournament-history 2>/dev/null)" ] \
             || { echo "MISSING from _site: tournament-history/ shard dir is absent or empty"; exit 1; }
+          # TEN-384: tour-baselines.json must carry all three role yields, not merely exist.
+          node -e '
+            const r = (JSON.parse(require("fs").readFileSync("_site/tour-baselines.json","utf8")).roles) || {};
+            const bad = ["all","favourite","underdog"].filter(k => !r[k] || typeof r[k].yield !== "number" || !isFinite(r[k].yield));
+            if (bad.length) { console.error("tour-baselines.json lacks a yield for: " + bad.join(", ") + " — the profile Market edge tour line would dash"); process.exit(1); }
+            console.log("TEN-384: tour-baselines.json carries all three role yields.");
+          '
           node -e '
             const p = JSON.parse(require("fs").readFileSync("_site/player-profiles.json","utf8")).players || {};
             const bad = Object.keys(p).filter(k => p[k] && p[k].tournamentHistory !== undefined);

@@ -88,6 +88,9 @@ function deltaE2000(c1, c2) {
 }
 
 // ── independent re-derivation of the chart geometry from the artefact ──────────
+// TEN-384 (option "me"): the seam is the first Bet365 row AFTER meta.pinnacleLastPriced
+// (Bet365 fills single rows in earlier seasons; those are not a book change). Set from the artefact.
+let SEAM_AFTER = null;
 function cumSeries(rows) {
   const ord = rows.slice().sort((a, b) => a[0] - b[0]);
   const fav = [], dog = []; let cf = 0, cd = 0, seamX = null;
@@ -96,7 +99,7 @@ function cumSeries(rows) {
     cf += r[7] ? (r[5] - 1) : -1;
     cd += r[7] ? -1 : (r[6] - 1);
     fav.push(cf); dog.push(cd);
-    if (seamX === null && r[8] === 1) seamX = i / den;
+    if (seamX === null && r[8] === 1 && SEAM_AFTER != null && r[0] > SEAM_AFTER) seamX = i / den;
   });
   return { fav, dog, seamX, n: ord.length, ord };
 }
@@ -164,6 +167,7 @@ function client(wsUrl) {
   console.log(`TEN-196 round 5 · CHARTS.md conformance · ${URL}\n`);
   const art = await (await fetch(`${BASE}/database-yield.json${bust()}`)).json();
   const rows = art.rows, TOURN = art.meta.tournaments;
+  SEAM_AFTER = art.meta.pinnacleLastPriced ? +String(art.meta.pinnacleLastPriced).replace(/-/g, '') : null;
 
   // PRECONDITIONS pinned as literals. A derived expectation cannot detect a change in
   // what it derives from (round 2: 22/22 against a deleted-data artefact).

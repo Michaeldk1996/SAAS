@@ -12,7 +12,7 @@
 #
 #   1. fresh `git clone --depth 100` of main + `npm ci`
 #   2. tools/odds-archive-refresh.py  (validate → merge → never-thinner → log)
-#   3. rebuild the committed readers of the archive: database-yield*.json and
+#   3. rebuild the committed readers of the archive: database-yield*.json (+ tour-baselines.json) and
 #      tournament-market.json (the ROI cards must equal the panel they open)
 #   4. full `npm test`, exit code read from the log
 #   5. get the commit READY before touching the lane (TEN-273): rebase onto origin/main,
@@ -161,7 +161,7 @@ node build-database-yield.js > "$RUN/build.log" 2>&1 || failed "build-database-y
 node build-tournament-market.js >> "$RUN/build.log" 2>&1 || failed "build-tournament-market.js"
 suite suite.log || failed "full suite red (see suite.log)"
 
-OUT=( "odds-archive/$SEASON.csv" odds-archive/refresh-log.jsonl database-yield.json database-yield-players.json tournament-market.json )
+OUT=( "odds-archive/$SEASON.csv" odds-archive/refresh-log.jsonl database-yield.json database-yield-players.json tour-baselines.json tournament-market.json )
 git add -- "${OUT[@]}" || failed "git add"
 git -c user.name=bsp-ceo-bot -c user.email=bsp-ceo-bot@users.noreply.github.com commit -q \
   -m "odds-archive: refresh $SEASON from tennis-data drop-in (+$ADDED rows, $CHANGED changed, through $LATEST)" || failed "git commit"

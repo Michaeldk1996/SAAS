@@ -373,14 +373,14 @@ test('TEN-262/TEN-286 app shell · sidebar 252px + star icon on both pages', () 
 // match), and past 14 days it adds ". Updates pending." Painted by the real renderChrome
 // with a fixed clock. The Database tab's fmtDate is its own one-liner (the page defines
 // fmtDate twice), so that exact one is sliced.
-function paintFresh(src, latest, todayIso, pinLast = '2026-01-13', which = 'fresh', seam = 2026) {
+function paintFresh(src, latest, todayIso, pinLast = '2026-01-13', which = 'fresh') {
   const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';");
   if (i < 0) throw new Error('the Database fmtDate is gone');
   const code = src.slice(i, src.indexOf('\n', i)) + '\n' + fnSource(src, 'dbArchiveStale') + '\n' + fnSource(src, 'renderChrome');
   const els = { subtitle: { innerHTML: '' }, fresh: { textContent: '' } };
   const RealDate = globalThis.Date;
   class FixedDate extends RealDate { static now() { return RealDate.parse(todayIso + 'T12:00:00Z'); } }
-  const M = { dateRange: ['2010-01-04', latest], books: ['Pinnacle', 'Bet365'], seamSeason: seam, pinnacleLastPriced: pinLast };
+  const M = { dateRange: ['2010-01-04', latest], books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: pinLast };
   new Function('q', 'M', 'esc', 'state', 'MON', 'Date', code + '\nrenderChrome();')(
     k => els[k] || null, M, x => String(x), { view: 'tour' },
     ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FixedDate);
@@ -402,27 +402,29 @@ const STALE = {
     return t === 'Archive through 26 Jul 2026' ? null : 'the date does not follow dateRange[1]: ' + JSON.stringify(t);
   },
 };
-// TEN-262 founder ruling on the header: Pinnacle covers the seasons BEFORE the seam, and
-// where the source's Pinnacle prices stop is read from meta.pinnacleLastPriced.
+// TEN-384 founder ruling (2026-10-07, option "me", superseding TEN-262's one book per season):
+// every row is priced Pinnacle closing, else Bet365 closing; where the source's Pinnacle prices
+// stop is read from meta.pinnacleLastPriced and printed only when the archive runs past it.
 STALE.header = function (src) {
-  const want = 'Historical yield by odds band from our own ATP closing-line archive — Pinnacle closing prices, 2010–2025; 2026 uses Bet365 prices (the source’s Pinnacle prices stop on 13 Jan 2026). The change is marked on the curves.';
+  const want = 'Historical yield by odds band from our own ATP closing-line archive — Pinnacle closing prices, else Bet365, 2010–2026 (the source’s Pinnacle prices stop on 13 Jan 2026). The change is marked on the curves.';
   const t = paintFresh(src, '2026-09-13', '2026-09-23', '2026-01-13', 'subtitle');
   if (t !== want) return 'header: ' + JSON.stringify(t);
+  if (/2026 uses|one book|settled/.test(t)) return 'header still states the superseded rule: ' + JSON.stringify(t);
   const none = paintFresh(src, '2026-09-13', '2026-09-23', null, 'subtitle');
-  if (/stop on/.test(none)) return 'no Pinnacle date in the store, but the header printed one: ' + JSON.stringify(none);
-  if (!/2010–2025; 2026 uses Bet365 prices\. The change is marked on the curves\.$/.test(none)) return 'header without the date: ' + JSON.stringify(none);
+  if (/stop on|change is marked/.test(none)) return 'no Pinnacle date in the store, but the header printed one: ' + JSON.stringify(none);
+  if (!/Pinnacle closing prices, else Bet365, 2010–2026\.$/.test(none)) return 'header without the date: ' + JSON.stringify(none);
   // A different stop date must move the text - a typed "13 Jan 2026" cannot pass this.
   const other = paintFresh(src, '2026-09-13', '2026-09-23', '2026-02-03', 'subtitle');
   if (!/prices stop on 3 Feb 2026\)/.test(other)) return 'stop date not read from the store: ' + JSON.stringify(other);
-  // An archive that ends BEFORE the seam season: one book, its own last year, no Bet365 clause.
+  // A stop in an earlier season is still where Pinnacle stops: there is no season seam.
+  const early = paintFresh(src, '2026-09-13', '2026-09-23', '2025-11-16', 'subtitle');
+  if (!/prices stop on 16 Nov 2025\)/.test(early)) return 'a stop date in an earlier season was dropped: ' + JSON.stringify(early);
+  // An archive that ends ON the last Pinnacle date: Pinnacle has not stopped, nothing to mark.
   const pre = paintFresh(src, '2025-11-16', '2025-11-20', '2025-11-16', 'subtitle');
-  if (!/Pinnacle closing prices, 2010–2025\.$/.test(pre) || /Bet365|change is marked/.test(pre)) return 'pre-seam archive: ' + JSON.stringify(pre);
-  // The seam moves: every year in the sentence follows seamSeason, none is typed.
-  const s27 = paintFresh(src, '2027-03-01', '2027-03-05', '2027-01-10', 'subtitle', 2027);
-  if (!/2010–2026; 2027 uses Bet365 prices \(the source’s Pinnacle prices stop on 10 Jan 2027\)/.test(s27)) return 'seam 2027: ' + JSON.stringify(s27);
-  // A Pinnacle date outside the seam season says nothing about where it stops in the seam season.
-  const off = paintFresh(src, '2026-09-13', '2026-09-23', '2025-11-16', 'subtitle');
-  if (/stop on/.test(off)) return 'a pre-seam Pinnacle date was printed as the seam-season stop: ' + JSON.stringify(off);
+  if (!/Pinnacle closing prices, else Bet365, 2010–2025\.$/.test(pre) || /stop on|change is marked/.test(pre)) return 'archive within Pinnacle coverage: ' + JSON.stringify(pre);
+  // The years follow the data, none is typed.
+  const s27 = paintFresh(src, '2027-03-01', '2027-03-05', '2027-01-10', 'subtitle');
+  if (!/else Bet365, 2010–2027 \(the source’s Pinnacle prices stop on 10 Jan 2027\)/.test(s27)) return '2027 archive: ' + JSON.stringify(s27);
   return null;
 };
 // TEN-262 founder ruling (option A): the method note says "priced on", never "settled on".
@@ -431,61 +433,81 @@ STALE.footnote = function (src) {
   const code = ['el', 'esc', 'fmtInt'].map(f => fnSource(src, f)).join('\n') + '\n' +
     (() => { const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';"); return src.slice(i, src.indexOf('\n', i)); })() + '\n' +
     fnSource(src, 'renderFootnote');
-  const M = { dateRange: ['2010-01-04', '2026-09-13'], books: ['Pinnacle', 'Bet365'], seamSeason: 2026, used: 40791, archiveRows: 59855,
-    windowStart: 2010, bookCounts: { Pinnacle: 38761, Bet365: 2030 },
-    exclusions: { preWindow: 13228, noResolvingBookPrice: 3385, walkover: 346, retired: 1850, exactTie: 243, edge: 8, overroundGt115: 4 } };
+  // TEN-384 (option "me") figures: the published store after the per-row join.
+  const M = { dateRange: ['2010-01-04', '2026-09-13'], books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: '2026-01-13', used: 40972, archiveRows: 59855,
+    windowStart: 2010, bookCounts: { Pinnacle: 38830, Bet365: 2142 },
+    exclusions: { preWindow: 15883, noResolvingBookPrice: 498, walkover: 346, retired: 1850, exactTie: 294, edge: 8, overroundGt115: 4 } };
   const doc = makeDoc(), body = doc.createElement('div');
   new Function('document', 'M', 'MON', code + '\nrenderFootnote(arguments[3]);')(doc, M,
     ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], body);
   const t = body.textContent;
-  if (!/38,761 priced on Pinnacle and 2,030 on Bet365 \(2026\)/.test(t)) return 'method note: ' + JSON.stringify(t.slice(t.indexOf('What is included'), t.indexOf('What is included') + 200));
+  if (!/38,830 priced on Pinnacle and 2,142 on Bet365 \(where Pinnacle has no price\)/.test(t)) return 'method note: ' + JSON.stringify(t.slice(t.indexOf('What is included'), t.indexOf('What is included') + 200));
+  if (!/Each match is priced on its Pinnacle closing price, or on its Bet365 closing price where Pinnacle has none \(the source’s Pinnacle prices stop on 13 Jan 2026\)/.test(t))
+    return 'method note does not state the per-row join: ' + JSON.stringify(t.slice(0, 400));
+  if (!/498 with no closing price on either book/.test(t)) return 'method note: the no-price exclusion is not "neither book"';
   if (/settled on/.test(t)) return 'method note still says "settled on"';
+  if (/\(2026\)|uses Bet365|never blended/.test(t)) return 'method note still states the superseded one-book-per-season rule';
   return null;
 };
-// Second method-note fixture: other counts and another seam year, so a hard-coded
-// "38,761" or "(2026)" cannot pass.
+// Second method-note fixture: other counts and another stop date, so a hard-coded
+// "38,830" or "13 Jan 2026" cannot pass.
 STALE.footnote2 = function (src) {
   const code = ['el', 'esc', 'fmtInt'].map(f => fnSource(src, f)).join('\n') + '\n' +
     (() => { const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';"); return src.slice(i, src.indexOf('\n', i)); })() + '\n' +
     fnSource(src, 'renderFootnote');
-  const M = { dateRange: ['2010-01-04', '2027-03-01'], books: ['Pinnacle', 'Bet365'], seamSeason: 2027, used: 123, archiveRows: 456,
+  const M = { dateRange: ['2010-01-04', '2027-03-01'], books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: '2027-01-10', used: 123, archiveRows: 456,
     windowStart: 2010, bookCounts: { Pinnacle: 100, Bet365: 23 },
     exclusions: { preWindow: 1, noResolvingBookPrice: 2, walkover: 3, retired: 4, exactTie: 5, edge: 6, overroundGt115: 7 } };
   const doc = makeDoc(), body = doc.createElement('div');
   new Function('document', 'M', 'MON', code + '\nrenderFootnote(arguments[3]);')(doc, M,
     ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], body);
-  return /100 priced on Pinnacle and 23 on Bet365 \(2027\)/.test(body.textContent) ? null : 'second fixture: ' + JSON.stringify(body.textContent.slice(0, 400));
+  const t = body.textContent;
+  if (!/100 priced on Pinnacle and 23 on Bet365 \(where Pinnacle has no price\)/.test(t)) return 'second fixture: ' + JSON.stringify(t.slice(0, 400));
+  if (!/Pinnacle prices stop on 10 Jan 2027\)/.test(t)) return 'second fixture: the stop date is not read from the store: ' + JSON.stringify(t.slice(0, 400));
+  // The archive ends ON the last Pinnacle date: no stop is claimed.
+  const M2 = { ...M, pinnacleLastPriced: '2027-03-01' }, b2 = doc.createElement('div');
+  new Function('document', 'M', 'MON', code + '\nrenderFootnote(arguments[3]);')(doc, M2,
+    ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], b2);
+  if (/stop on/.test(b2.textContent)) return 'archive within Pinnacle coverage, but the note claims a stop';
+  return null;
 };
 // Both "Split by book" lines come from dbBookSplit. Paint the real bandPanel (fed by the
 // page's own bands()/agg()) and read its split line; call the helper for the player tail.
 STALE.split = function (src) {
   const i = src.indexOf('function median(a){ if(!a.length)');
-  const code = ['el', 'esc', 'fmtInt', 'fmtP', 'fmtPct', 'yieldCell', 'agg', 'bands', 'dbBookSplit', 'bandPanel'].map(f => fnSource(src, f)).join('\n') +
+  const code = ['el', 'esc', 'fmtInt', 'fmtP', 'fmtPct', 'yieldCell', 'agg', 'bands', 'dbMatchWord', 'dbBookSplit', 'bandPanel'].map(f => fnSource(src, f)).join('\n') +
     '\n' + src.slice(i, src.indexOf('\n', i)) + '\nreturn { bands, bandPanel, dbBookSplit };';
   const doc = makeDoc(), mkEl = doc.createElement;
   doc.createElement = t => { const e = mkEl(t); e.style.setProperty = function (k, v) { this[k] = v; }; return e; };
   const mk = M => new Function('document', 'M', 'SOFT_GATE', 'HARD_GATE', 'baselineAllowed', code)(doc, M, 100, 30, () => false);
   const vals = [];
   for (let k = 0; k < 30; k++) vals.push({ p: 1.2 + k / 100, w: k % 3 !== 0, b: k < 25 ? 0 : 1 });
-  const api = mk({ books: ['Pinnacle', 'Bet365'], seamSeason: 2026 });
+  const api = mk({ books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: '2026-01-13' });
   const res = api.bands(vals);
   const panel = api.bandPanel('Favourites', res, ['Short', 'Mid', 'Long'], 'fav', false, true);
   const split = panel.querySelectorAll('db-split')[0];
   if (!split) return 'bandPanel painted no split line';
   const t = split.textContent;
-  if (!/across 5 2026 matches priced on Bet365\. The All row blends both books; Bet365 carries the wider margin\.$/.test(t)) return 'band split: ' + JSON.stringify(t);
-  if (/settled/.test(t)) return 'band split says "settled"';
-  const api27 = mk({ books: ['Pinnacle', 'Bet365'], seamSeason: 2027 });
-  const p = api27.dbBookSplit({ ps: { n: 9, yield: -0.01 }, b365: { n: 4, yield: 0.02 } }, 'The figures above blend both books; Bet365 carries the wider margin.');
-  if (p !== 'Split by book: <b>-1.00%</b> across 9 Pinnacle-priced matches, <b>+2.00%</b> across 4 2027 matches priced on Bet365. The figures above blend both books; Bet365 carries the wider margin.')
+  // TEN-384 (option "me"): Bet365 fills any row Pinnacle cannot price, in any season, so the
+  // Bet365 count names no season.
+  if (!/across 5 matches priced on Bet365 \(where Pinnacle has no price\)\. The All row blends both books; Bet365 carries the wider margin\.$/.test(t)) return 'band split: ' + JSON.stringify(t);
+  if (/settled|2026/.test(t)) return 'band split says "settled" or names a season';
+  // The book names come from the store.
+  const apiX = mk({ books: ['BookA', 'BookB'] });
+  const p = apiX.dbBookSplit({ ps: { n: 9, yield: -0.01 }, b365: { n: 4, yield: 0.02 } }, 'The figures above blend both books.');
+  if (p !== 'Split by book: <b>-1.00%</b> across 9 BookA-priced matches, <b>+2.00%</b> across 4 matches priced on BookB (where BookA has no price). The figures above blend both books.')
     return 'player split: ' + JSON.stringify(p);
+  // TEN-384 fx4 item 6: a count of one reads "1 match", never "1 matches".
+  const one = apiX.dbBookSplit({ ps: { n: 1, yield: -0.01 }, b365: { n: 1, yield: 0.02 } }, '');
+  if (/\b1 matches\b|1 BookA-priced matches/.test(one) || !/across 1 BookA-priced match, .*across 1 match priced on BookB/.test(one))
+    return 'one-match split: ' + JSON.stringify(one);
   return null;
 };
 const STALE_MUTANTS = {
-  footnote2: s => s.replace("' ('+M.seamSeason+'). '+", "' (2026). '+"),
-  split: s => s.replace("' matches priced on '+esc(M.books[1])+'. '+tail;", "'-settled matches. '+tail;"),
+  footnote2: s => s.replace("+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')'", "+' prices stop on 13 Jan 2026)'"),
+  split: s => s.replace("' '+dbMatchWord(book.b365.n)+' priced on '+esc(M.books[1])+' (where '+esc(M.books[0])+' has no price). '+tail;", "'-settled matches. '+tail;"),
   footnote: s => s.replace("fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '", "fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '"),
-  header: s => s.replace("pEnd=(+y1>=seam) ? (seam-1) : y1", "pEnd=y1"),
+  header: s => s.replace("stops=!!pl && (''+pl)<(''+M.dateRange[1]);", "stops=!!pl;"),
   fresh: s => s.replace("(dbArchiveStale(M.dateRange[1], Date.now()) ? '. Updates pending.' : '')", "'. Updates pending.'"),
   boundary: s => s.replace('return (today-t)/864e5 > 14;', 'return (today-t)/864e5 >= 14;'),
   fromData: s => s.replace("'Archive through '+fmtDate(M.dateRange[1])", "'Archive through '+fmtDate('2026-09-13')"),

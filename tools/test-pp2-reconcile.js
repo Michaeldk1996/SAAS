@@ -47,7 +47,10 @@ function loadModule(profiles, extra) {
     { FEATURE_PP2: true, playerProfiles: { players: profiles }, courtSpeedMap: SPEED_MAP,
       // N4: on the page the profile bands through the dashboard's own
       // COURT_CONDITIONS + courtSpeedCategory; the shim supplies the same two.
-      COURT_CONDITIONS: DASH_SPEED.cc, courtSpeedCategory: DASH_SPEED.cat },
+      COURT_CONDITIONS: DASH_SPEED.cc, courtSpeedCategory: DASH_SPEED.cat,
+      // TEN-384 fx2 item 5: the page loads tournament-identity.js (window.TournamentIdentity) and the module
+      // folds a served shard's same-event rows through it; the shim supplies the same table.
+      TournamentIdentity: require('../tournament-identity.js') },
     extra || {});
   global.window = sandbox;
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
@@ -735,24 +738,22 @@ n4Mutant('the Report copy of courtSpeedCategory drifts one index point (68 -> 67
 // 8 · HEADLINE SIZE RULE (README §5)
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n8 · Headline size rule');
-// SUPERSEDED by handoff v7 / A2 (2026-09-17). The char-length rule this used to
-// lock is now explicitly dead: "Headline size comes from the per-box `size`
-// field, NOT from string length."
-check('headline size comes from the per-box `size` field, not the string', () => {
-  const want = { career: 26, season: 26, tourn: 30, speed: 22,
-                 splits: 20, styles: 30, market: 26, profile: 30 };
-  for (const b of I.BOXES) {
-    assert.strictEqual(I.headlineSize(b), want[b.key], `${b.key}: size is not the file's`);
-  }
+// SUPERSEDED again by TEN-384 (founder, step 4 item 5): "mono figure 26px (20px over 10 characters, 19px over
+// 16)". The size follows the FIGURE as printed (unit suffix included), at three fixed steps; the per-box
+// `size` field of handoff v7 / A2 is no longer read.
+check('headline size follows the figure length: 26, 20 over 10 chars, 19 over 16', () => {
+  const cases = [['12–4', 26], ['1234567890', 26], ['12345678901', 20], ['1234567890123456', 20],
+                 ['12345678901234567', 19], ['', 26]];
+  for (const [t, want] of cases) assert.strictEqual(I.headlineSize(t), want, `"${t}" (${t.length} chars)`);
+  // the render feeds it the headline + suffix it prints
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  assert(/headlineSize\(head \+ suffix\)/.test(src), 'renderBoxes does not size by the printed figure');
 });
 
-mustFail('[neg] the size lock would catch a revert to the char-length rule', () => {
+mustFail('[neg] the size lock would catch a revert to the old 30/23/19 char rule', () => {
   const charRule = (t) => { const n = String(t || '').length;
     return n <= 10 ? 30 : n <= 16 ? 23 : 19; };
-  // The old rule emits only 30/23/19, so it cannot produce `splits`' locked
-  // 20px or `speed`'s 22px for ANY headline — the revert is unrepresentable.
-  assert([30, 23, 19].includes(20) || charRule('Other Tours') === 20,
-    'char rule can still hit the locked 20px');
+  assert.strictEqual(charRule('12–4'), 26, 'old rule prints 30 for a short figure');
 });
 
 check('the eight boxes are the v7 set, in the v7 order', () => {
@@ -1257,6 +1258,189 @@ check('the tour baseline is computed, not a rounded constant', () => {
     `(the export's placeholder was -3.79%)`);
 });
 
+// ── TEN-384 · founder Q8: the profile's tour baselines ARE the Database's Tour aggregates ──
+// Checked first, as the ruling asked: the Database page's "Favourites All" / "Underdogs All" are
+// real computed data (database-yield.json, recomputed in the browser by the Database tab's own
+// agg()/bands()). So the Market edge tiles quote them: As favourite = Favourites All, As underdog =
+// Underdogs All, All = both sides of the same matches pooled.
+// Founder ruling (2026-10-05): those figures ship in a small baselines file, tour-baselines.json,
+// written by build-database-yield.js in the same run as database-yield.json and loaded WITH the
+// profile data; the profile never loads database-yield.json. These checks run the DATABASE's own
+// functions, sliced out of the dashboard, over database-yield.json (unfiltered: ATP main tour, all
+// surfaces, every season the file holds) and assert the baselines file holds the same figures —
+// bit-identical, because the builder sums in agg()'s own price order — and that the tiles print them.
+// Founder ruling TEN-384 (2026-10-07, option "me"): there is ONE price join for both — each row
+// priced Pinnacle closing, else Bet365 closing (build-market-edge.js pickBook) — so the file
+// declares basis 'market-edge' AND equalsDatabaseTour, and both are checked against the store.
+function dbSlice(src, sig) {
+  const at = src.indexOf(sig);
+  assert(at > -1, `Database ${sig} not found in the dashboard`);
+  let d = 0, i = src.indexOf('{', at);
+  for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}') { d--; if (!d) break; } }
+  return src.slice(at, i + 1);
+}
+const DB_SRC = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+const DB_BLOCK = DB_SRC.slice(DB_SRC.indexOf("var BASE_URL = './database-yield.json';"));
+const DB_FNS = new Function(dbSlice(DB_BLOCK, 'function median(a){') + '\n' + dbSlice(DB_BLOCK, 'function agg(slice){') +
+  '\n' + dbSlice(DB_BLOCK, 'function bands(values){') + '\nreturn { bands: bands };')();
+const DB_ROWS = JSON.parse(fs.readFileSync(path.join(ROOT, 'database-yield.json'), 'utf8')).rows;
+const TB_PATH = path.join(ROOT, 'tour-baselines.json');
+const TB_RAW = fs.readFileSync(TB_PATH, 'utf8');
+const TB = JSON.parse(TB_RAW);
+function databaseTour(rows) {
+  // renderBandView's own mapping (Tour view, no filters): favourite = r[5], underdog = r[6].
+  const fav = DB_FNS.bands(rows.map(r => ({ p: r[5], w: r[7], b: r[8] }))).all;
+  const dog = DB_FNS.bands(rows.map(r => ({ p: r[6], w: r[7] ? 0 : 1, b: r[8] }))).all;
+  return { n: fav.n, fav: fav.yield, dog: dog.yield, all: (fav.yield + dog.yield) / 2 };
+}
+/** The baselines file as the same four figures. */
+function fileTour(tb) {
+  const r = tb.roles;
+  return { n: r.favourite.n, nDog: r.underdog.n, nAll: r.all.matches, fav: r.favourite.yield, dog: r.underdog.yield, all: r.all.yield };
+}
+function assertFileIsDatabase(tb, rows) {
+  const db = databaseTour(rows), f = fileTour(tb);
+  assert.strictEqual(tb.basis, 'market-edge', `tour-baselines.json is built on basis "${tb.basis}", not the one join (Pinnacle, else Bet365)`);
+  assert.strictEqual(tb.equalsDatabaseTour, true, 'tour-baselines.json does not declare that it equals the Database Tour aggregates');
+  assert(/^Pinnacle closing, else Bet365 closing, per row/.test(tb.priceRule || ''), `tour-baselines.json priceRule "${tb.priceRule}" is not the per-row join`);
+  // The store itself is on the per-row join: each row carries the book actually used, and
+  // Bet365 fills rows Pinnacle did not price in seasons before 2026 (191 of them today).
+  assert(rows.some(r => r[8] === 1 && r[0] < 20260101), 'database-yield.json has no Bet365-priced row before 2026 — it is not on the per-row join');
+  [['favourite', f.n], ['underdog', f.nDog], ['all', f.nAll]].forEach(([k, n]) =>
+    assert.strictEqual(n, db.n, `${k}: the file counts ${n} matches, the Database ${db.n}`));
+  ['fav', 'dog', 'all'].forEach((k) => {
+    assert.strictEqual(f[k], db[k], `${k}: the file holds ${f[k]}, the Database computes ${db[k]}`);
+  });
+  return db;
+}
+const fmtPct = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(2) + '%';
+check('Q8 · tour-baselines.json equals the Database Tour aggregates (Favourites All / Underdogs All)', () => {
+  const db = assertFileIsDatabase(TB, DB_ROWS);
+  console.log(`        Database Tour: fav ${fmtPct(100 * db.fav)} · dog ${fmtPct(100 * db.dog)} · all ${fmtPct(100 * db.all)} over ${db.n} matches — tour-baselines.json identical`);
+});
+mustFail('Q8 would catch the favourite and underdog baselines swapped in the file', () => {
+  const tb = JSON.parse(TB_RAW);
+  [tb.roles.favourite, tb.roles.underdog] = [tb.roles.underdog, tb.roles.favourite];
+  assertFileIsDatabase(tb, DB_ROWS);
+});
+mustFail('Q8 would catch a stale baselines file (database-yield.json rebuilt without it)', () => {
+  assertFileIsDatabase(TB, DB_ROWS.slice(0, -1));
+});
+mustFail('Q8 would catch the file built on the superseded one-book-per-season basis', () => {
+  const tb = JSON.parse(TB_RAW); tb.basis = 'database';
+  assertFileIsDatabase(tb, DB_ROWS);
+});
+mustFail('Q8 would catch a store still on one book per season (no Bet365 row before 2026)', () => {
+  assertFileIsDatabase(TB, DB_ROWS.map(r => (r[0] < 20260101 ? r.slice(0, 8).concat([0]) : r)));
+});
+check('Q8 · tour-baselines.json is small (≤ 10 KB)', () => {
+  const bytes = Buffer.byteLength(TB_RAW);
+  assert(bytes <= 10240, `tour-baselines.json is ${bytes} B`);
+  console.log(`        tour-baselines.json: ${bytes} B`);
+});
+check('Q8 · the three role tiles print the baselines file', () => {
+  const saved = W.tourBaselines;
+  W.tourBaselines = TB;
+  try {
+    const p = SAMPLE.find(x => { const mk = MARKET[String(x.key)]; return mk && mk.headline && mk.headline.n; });
+    assert(p, 'no sampled player has a market shard — this check never ran');
+    I.state.marketTab = 'winner'; I.state.marketRole = 'all';
+    const html = I.renderMarketModal(p);
+    const f = fileTour(TB);
+    [['all', f.all], ['favourite', f.fav], ['underdog', f.dog]].forEach(([id, v]) => {
+      const tile = html.slice(html.indexOf(`data-role="${id}"`));
+      assert(tile.slice(0, tile.indexOf('</div>')).includes('tour ' + fmtPct(100 * v)),
+        `${p.name}: the ${id} tile does not print the Database figure "tour ${fmtPct(100 * v)}"`);
+    });
+  } finally { W.tourBaselines = saved; }
+});
+// The ruling: "database-yield.json stays on the Database page only. The profile never loads it."
+// Statically: no string literal in the module names it, and the module fetches nothing for the
+// baselines. At runtime: a profile render with the baselines absent requests nothing at all
+// (fetch is trapped in the sandbox), and the host loads tour-baselines.json with the profile data.
+const Q8_PP2_SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+function assertNeverLoadsDbYield(src) {
+  const lit = src.match(/(['"`])[^'"`\n]*database-yield[^'"`\n]*\1/g) || [];
+  assert(!lit.length, `player-profile-v2.js names database-yield in a string: ${lit.join(' ')}`);
+}
+check('Q8 · the profile never requests database-yield.json', () => {
+  assertNeverLoadsDbYield(Q8_PP2_SRC);
+  const saved = W.tourBaselines, savedFetch = W.fetch, savedGlobal = global.fetch, asked = [];
+  const trap = (u) => { asked.push(String(u)); return new Promise(() => {}); };
+  W.tourBaselines = undefined; W.fetch = trap; global.fetch = trap;
+  try {
+    const p = SAMPLE.find(x => { const mk = MARKET[String(x.key)]; return mk && mk.headline && mk.headline.n; });
+    I.buildBoxVals(p, { archetype: null }); I.renderMarketModal(p);
+    assert(!asked.some(u => /database-yield/.test(u)), `the profile requested ${asked.join(', ')}`);
+  } finally { W.tourBaselines = saved; W.fetch = savedFetch; global.fetch = savedGlobal; }
+  // The host side: the baselines load inside loadPlayerProfiles (with the profile data), and the bridge
+  // hands them to the module.
+  const lpp = dbSlice(DB_SRC, 'async function loadPlayerProfiles(){');
+  assert(/loadTourBaselines\(\)/.test(lpp) && /await baselines;/.test(lpp),
+    'loadPlayerProfiles() must load the tour baselines and settle them before the profiles are published');
+  assert(/fetch\('\.\/tour-baselines\.json'/.test(dbSlice(DB_SRC, 'function loadTourBaselines(){')), 'loadTourBaselines() must fetch tour-baselines.json');
+  assert(/window\.tourBaselines = tourBaselines;/.test(dbSlice(DB_SRC, 'function pp2Bridge(){')), 'pp2Bridge() must publish window.tourBaselines');
+});
+mustFail('the never-requests check would catch the old database-yield.json loader', () => {
+  assertNeverLoadsDbYield("var TOUR_DB_URL = './database-yield.json';");
+});
+check('Q8 · tour-baselines.json is published (pipeline.yml cp + assert) and rebuilt with database-yield.json', () => {
+  const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
+  assert(/\n\s*cp tour-baselines\.json _site\/\n/.test(yml), 'tour-baselines.json is never copied to _site — it would 404');
+  const assertList = yml.slice(yml.indexOf('for f in index.html'), yml.indexOf('done', yml.indexOf('for f in index.html')));
+  assert(/\btour-baselines\.json\b/.test(assertList), 'tour-baselines.json is not in the fail-closed assert list');
+  const dropin = fs.readFileSync(path.join(ROOT, 'tools', 'odds-archive-dropin.sh'), 'utf8');
+  assert(/^OUT=\(.*database-yield\.json.*tour-baselines\.json/m.test(dropin), 'the drop-in job rebuilds database-yield.json but does not commit tour-baselines.json');
+  const builder = fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8');
+  assert(/OUT_BASELINES = path\.join\(__dirname, 'tour-baselines\.json'\)/.test(builder), 'build-database-yield.js does not write tour-baselines.json');
+});
+
+// TEN-384 (founder, 2026-10-05): the Market edge BOX support line quotes the SAME tour figure as the
+// modal's All tile — the Database-aggregate baseline — and dashes (never the shard's tour.all) if
+// tour-baselines.json is absent.
+function mkBoxTour(support) { const m = /tour (\S+)$/.exec(support); return m ? m[1] : null; }
+function mkAllTileTour(html) {
+  const tile = html.slice(html.indexOf('data-role="all"'));
+  const m = /tour ([^<]+)<\/span>/.exec(tile.slice(0, tile.indexOf('</div>')));
+  return m ? m[1] : null;
+}
+check('Market edge box = All tile: the box support line prints the modal\'s All-tile tour figure', () => {
+  const saved = W.tourBaselines;
+  try {
+    const players = SAMPLE.filter(x => { const mk = MARKET[String(x.key)]; return mk && mk.headline && mk.headline.yield != null; });
+    assert(players.length, 'no sampled player has a market shard — this check never ran');
+    W.tourBaselines = TB;
+    I.state.marketTab = 'winner'; I.state.marketRole = 'all';
+    const first = mkBoxTour(I.buildBoxVals(players[0], { archetype: null }).market.support);
+    for (const p of players) {
+      const box = mkBoxTour(I.buildBoxVals(p, { archetype: null }).market.support);
+      const tile = mkAllTileTour(I.renderMarketModal(p));
+      assert(box && tile, `${p.name}: box "${box}" / tile "${tile}" not found`);
+      assert.strictEqual(box, tile, `${p.name}: box says tour ${box}, the All tile says tour ${tile}`);
+      assert.notStrictEqual(box, '—', `${p.name}: the box dashed with the baseline loaded`);
+    }
+    // Absent (the file failed to load / not yet arrived): the tour clause is LEFT OUT — TEN-384 fx2 item 3,
+    // founder: "the tour line hidden until the data arrives, with no dash" — never a dash, never the shard's
+    // own tour.all.
+    W.tourBaselines = null;
+    for (const p of players) {
+      const sup = I.buildBoxVals(p, { archetype: null }).market.support;
+      assert(!/tour/.test(sup) && sup.indexOf('—') < 0, `${p.name}: the box printed "${sup}" with no baselines file`);
+    }
+    console.log(`        ${players.length} players: box tour = All tile tour (${first}); no tour clause (and no dash) with no baselines file`);
+  } finally { W.tourBaselines = saved; }
+});
+mustFail('box = tile would catch the box quoting the shard\'s tour.all', () => {
+  const p = SAMPLE.find(x => { const mk = MARKET[String(x.key)]; return mk && mk.headline && mk.headline.yield != null; });
+  const saved = W.tourBaselines;
+  W.tourBaselines = TB;
+  try {
+    const t = MARKET[String(p.key)].tour.all.yield;
+    const old = (t < 0 ? '−' : '') + Math.abs(t).toFixed(2) + '%';
+    assert.strictEqual(old, mkAllTileTour(I.renderMarketModal(p)), 'the shard figure differs from the All tile');
+  } finally { W.tourBaselines = saved; }
+});
+
 check('market box headline and the modal quote the same yield and n', () => {
   for (const p of SAMPLE) {
     const mk = MARKET[String(p.key)];
@@ -1398,21 +1582,40 @@ check('item 2 · the yield layer counts ONLY the priced rows', () => withCal(() 
   console.log(`        Jan n=24 grid / 12 priced; Σ buckets ${sumN} grid + ${sumP} priced`);
 }));
 
-check('item 7 · a stretch is ADJACENT MONTHS and the n>=10 gate holds', () => withCal(() => {
-  I.state.calSurface = 'all';
-  const info = I.calMonths(I.calSpineFiltered(CAL_P));
-  const s = I.calStretches(info);
-  assert(s.best, 'no stretch cleared the gate');
-  // Every eligible stretch must be a 2- or 3-month adjacent run, never a year.
-  [s.best, s.worst].forEach((w) => {
-    assert(/^[A-Z][a-z]{2}–[A-Z][a-z]{2}$/.test(w.label),
-      `stretch label "${w.label}" is not a month range — a year label is the cal-0 shape`);
-    assert(w.n >= 10, `stretch ${w.label} shipped with n=${w.n}, under the gate`);
+// TEN-384 (founder correction, 2026-10-05): the four tiles are Career yield · Best month · Worst month ·
+// Seasons on record. The Best / Worst stretch tiles (and calStretches) are gone. The intent the stretch
+// check carried — no month reaches a tile under the n>=10 priced gate, never a 1-match −100% — is kept
+// on the month tiles, which are the only gated tiles left.
+check('Calendar tiles · Career yield · Best month · Worst month · Seasons on record, n>=10 gate', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const rows = I.calSpineFiltered(CAL_P);
+  const info = I.calMonths(rows);
+  const html = I.renderSeasonModal(CAL_P);
+  ['Career yield', 'Best month', 'Worst month', 'Seasons on record'].forEach((cap) => {
+    assert(html.includes('>' + cap + '<'), `the ${cap} tile is missing`);
   });
-  // March holds one priced match. It must not reach a tile under any label.
+  assert(!/Best stretch|Worst stretch/.test(html), 'a stretch tile survived the correction');
+  assert.strictEqual(I.calStretches, undefined, 'calStretches is still exported — stretch-only code survived');
+  // Career yield = the mean P&L per priced match: (8 × +0.50 + 1 × +0.50 − 4 × 1.00) / 13 = +3.8%.
+  const cy = info.careerY;
+  assert(Math.abs(cy - 100 * (9 * 0.5 - 4) / 13) < 1e-9, `career yield ${cy}`);
+  assert(html.includes('>+3.8%<'), 'the Career yield tile does not print +3.8%');
+  assert(html.includes(`>${CAL_EXPECT.priced} priced matches<`), 'Career yield support is not "N priced matches"');
+  // Seasons on record: 2 seasons, support "25 matches · 2 seasons".
+  assert(/>2<\/span><span style="font-size:11px;color:var\(--text-label\);">25 matches · 2 seasons</.test(html),
+    'Seasons on record is not "2" over "25 matches · 2 seasons"');
+  // The gate: only January (12 priced) clears n>=10; March (1 priced) must reach no tile.
   const monthIdx = info.months.filter(x => x.priced >= 10 && x.pp != null);
   assert(!monthIdx.some(x => x.m === 2), 'the 1-match March month cleared the n>=10 gate');
-  console.log(`        best ${s.best.label} n=${s.best.n}; the 1-match month is gated out`);
+  assert(html.includes('>January<'), 'the one eligible month (January) is not the Best month');
+  assert(!html.includes('>March<'), 'the 1-match March month reached a tile');
+  assert(html.includes('one month clears n=10 priced'), 'Worst month repeats the only eligible month');
+  // Colour: every tile VALUE is white; only the pp figure is signed-coloured.
+  const strip = html.slice(html.indexOf('>Career yield<'), html.indexOf('>Seasons on record<') + 400);
+  assert(!/font-size:24px;[^"]*color:var\(--(pos|neg)\)/.test(strip), 'a tile value took green/red');
+  assert(/data-pp2-cal="pp" style="font-weight:700;color:var\(--(pos|neg|text-label)\);"/.test(strip),
+    'the pp figure is not the coloured part');
+  console.log(`        tiles: Career yield ${cy.toFixed(1)}% · Best month January · Seasons 2; March gated out`);
 }));
 
 mustFail('[neg] the gate check would catch a 1-match month reaching a tile', () => withCal(() => {
@@ -1444,7 +1647,8 @@ check('the footnote discloses the spine gap rather than hiding it', () => withCa
   const html = I.renderSeasonModal(CAL_P);
   assert(html.includes(`the ${CAL_EXPECT.priced} priced`),
     'the footnote never states the priced count');
-  assert(html.includes(`the grid covers all ${CAL_EXPECT.grid}`),
+  // TEN-384 fix 3: the sentence now names the Market edge basis and the N row, then "The grid covers all M".
+  assert(html.includes(`The grid covers all ${CAL_EXPECT.grid}`),
     'the footnote never states the grid total');
   // FOUNDER 2026-09-18 — the clause is no longer a net. This fixture carries
   // only ONE of the two populations (2 undated, 0 outside the window), so it can
@@ -1478,9 +1682,9 @@ check('the drill opens, groups by event, and its P&L is the priced rows only', (
   I.state.calTab = 'calendar'; I.state.calSurface = 'all';
   I.state.calCell = '2026|0';                       // January 2026 — 12 rows, 0 priced
   let html = I.renderSeasonModal(CAL_P);
-  // TEN-376: the drill container is --inner + 1px --edge-10 (was --surface-inner + 0.33px --seg-active-line).
-  assert(html.includes('margin:12px 0 4px;background:var(--inner);border:1px solid var(--edge-10);'), 'the drill did not open');
-  assert(html.includes('January 2026'), 'the drill header names the wrong month');
+  // TEN-384 K6: the drill is a panel inside the Calendar panel — --card + 1px --edge-6 (was --inner + --edge-10).
+  assert(html.includes('margin:12px 0 4px;background:var(--card);border:1px solid var(--edge-6);'), 'the drill did not open');
+  assert(html.includes('>Jan 2026<'), 'the drill header names the wrong month');   // TEN-384 K6: "Apr 2026" form
   assert(html.includes('3–09') || html.includes('3–9'), 'the drill record is not 3-9');
   assert(html.includes('no priced match in this month'),
     'an unpriced month must say so, not print a 0.00u yield');
@@ -1545,7 +1749,8 @@ check('a player with no priced match keeps the grid and dashes the yield layer',
     assert.strictEqual(rows.length, CAL_EXPECT.grid,
       'the grid shrank when the price source went away — the two scopes are coupled');
     const html = I.renderSeasonModal(CAL_P);
-    assert(html.includes('None of these ' + CAL_EXPECT.grid + ' matches carries a Pinnacle closing price'),
+    // TEN-384: the yield basis is the Market edge's (Pinnacle, else Bet365), named in the reason.
+    assert(html.includes('None of these ' + CAL_EXPECT.grid + ' matches carries a closing price (Pinnacle, else Bet365)'),
       'the unpriced footnote does not say why every yield is a dash');
     assert(!/across the 0 priced/.test(html), 'the footnote still reads "across the 0 priced matches"');
     assert(!/NaN|undefined|Infinity/.test(html), 'the unpriced state leaked a non-number');
@@ -1650,10 +1855,10 @@ check('the Indoors segment refuses rather than showing a partial grid', () => wi
 
 check('every tab and segment renders without leaking NaN/undefined into the DOM', () => withCal(() => {
   let rendered = 0;
-  for (const tab of ['calendar', 'streaks']) {
+  for (const tab of ['calendar', '2026']) {
     for (const s of ['all', 'hard', 'clay', 'grass', 'indoors']) {
       I.state.calTab = tab; I.state.calSurface = s;
-      I.state.calCell = null; I.state.calRun = null;
+      I.state.calCell = null;
       const html = I.renderSeasonModal(CAL_P);
       ['NaN', 'undefined', 'Infinity', '[object'].forEach((t) => {
         assert(!html.includes(t), `${tab}/${s}: "${t}" reached the DOM`);
@@ -1695,13 +1900,12 @@ check('real shards: Σ grid cells = subtitle M, and the priced set is a subset',
   console.log(`        ${checked} real shards — Σ cells = M, priced ⊆ grid`);
 });
 
-check('cal-2 · runs partition the CAREER sequence — lengths sum to the match count', () => {
-  // RULING cal-2 (founder, 2026-09-17): Streaks moved off the priced archive
-  // onto the same career rows the Calendar tab counts. The lock is two-sided —
-  // the run set must equal the career spine AND must NOT equal the archive it
-  // came from, or a fixture where the two happen to be the same size would let a
-  // revert pass.
+check('cal-2 · the Calendar spine is the CAREER rows, never the priced archive (real stores)', () => {
+  // RULING cal-2 (founder, 2026-09-17) moved the whole modal onto the career rows. The Streaks tab it
+  // also covered is gone (TEN-384 Q1); the two-sided lock stays on the Calendar spine: the rows must
+  // equal the dated career rows AND must NOT equal the archive, so a same-size coincidence can't pass.
   const saved = { ...I.state };
+  let checked = 0;
   try {
     I.state.calSurface = 'all';
     for (const k of CAL_PLAYERS) {
@@ -1710,47 +1914,20 @@ check('cal-2 · runs partition the CAREER sequence — lengths sum to the match 
       const rows = I.calSpineFiltered(p);
       assert.strictEqual(rows.length, (CAREER_HIST[k] || [])
         .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date))).length,
-        `${k}: the Streaks spine is not the career match rows`);
-      assert.notStrictEqual(rows.length, I.calMarketRows(p).length,
-        `${k}: the Streaks spine equals the priced archive — ruling cal-2 was reverted`);
-      const runs = I.calRuns(rows);
-      const summed = runs.reduce((a, r) => a + r.len, 0);
-      // The partition is over the rows calRuns() SEQUENCES, not over the spine.
-      // Founder ruling (item 27; TEN-313 2026-09-28 widened it to BOTH sides): a
-      // walkover is neither a win nor a loss and is stepped over without breaking
-      // the run, so it belongs to no run by
-      // design. Asserting `summed === rows.length` contradicted the ruling the
-      // renderer implements and failed on any player who has ever given one —
-      // 473 vs 474 on key 67, whose single skipped row is 2020-02-10 Buenos
-      // Aires vs P. Sousa (empty result, lost). The identity that actually holds
-      // is summed + skipped = n, and the skipped set is checked for what it is
-      // so this cannot become a licence to lose arbitrary rows.
-      const skippedRows = rows.filter(r => r.wo);
-      assert.strictEqual(I.calRunsSkipped(rows), skippedRows.length,
-        `${k}: calRunsSkipped disagrees with a direct scan for walkovers`);
-      assert.strictEqual(summed + skippedRows.length, rows.length,
-        `${k}: runs sum to ${summed} + ${skippedRows.length} skipped, not ${rows.length}`);
-      skippedRows.forEach((r) => {
-        assert(r.wo,
-          `${k}: ${r.date} was dropped from the run sequence without being a walkover`);
-      });
-      for (let i = 1; i < runs.length; i++) {
-        assert(runs[i].res !== runs[i - 1].res, `${k}: two ${runs[i].res} runs in a row`);
+        `${k}: the Calendar spine is not the career match rows`);
+      if (rows.length) {
+        assert.notStrictEqual(rows.length, I.calMarketRows(p).length,
+          `${k}: the Calendar spine equals the priced archive — ruling cal-2 was reverted`);
       }
-      let cur = 0, best = 0;
-      rows.forEach((r) => { if (r.wo) return; cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
-      const lw = runs.filter(r => r.res === 'W').sort((a, b) => b.len - a.len)[0];
-      assert.strictEqual(lw ? lw.len : 0, best, `${k}: longest win run disagrees with a direct scan`);
-      // The priced set is a SUBSET of the run rows, never the other way round —
-      // this is the relation that replaced "every run row carries a price".
       const priced = rows.filter(r => r.cents != null).length;
       assert(priced <= rows.length, `${k}: ${priced} priced rows in a ${rows.length}-row sequence`);
+      checked++;
     }
   } finally { Object.assign(I.state, saved); }
-  console.log(`        ${CAL_PLAYERS.length} players — Streaks on the career spine; runs alternate and sum to n`);
+  console.log(`        ${checked} players — Calendar on the career spine; priced ⊆ grid`);
 });
 
-mustFail('[neg] the cal-2 lock would catch Streaks reverting to the archive', () => withCal(() => {
+mustFail('[neg] the cal-2 lock would catch the Calendar reverting to the archive', () => withCal(() => {
   // Drive the assertion the lock makes, with the OLD spine substituted. If this
   // ever stops throwing, the lock above has gone inert.
   const rows = I.calMarketRows(CAL_P);
@@ -1758,45 +1935,197 @@ mustFail('[neg] the cal-2 lock would catch Streaks reverting to the archive', ()
     `archive holds ${rows.length}, not the ${CAL_EXPECT.grid} career rows`);
 }));
 
-check('cal-2 · the rendered Streaks tab carries the career count, not the archive count', () => withCal(() => {
-  const saved = { ...I.state };
-  try {
-    I.state.calTab = 'streaks'; I.state.calSurface = 'all'; I.state.calRun = null;
-    const html = I.renderSeasonModal(CAL_P);
-    const runs = I.calRuns(I.calSpineFiltered(CAL_P));
-    assert(html.includes(`${runs.length} runs`), `the run count ${runs.length} is not painted`);
-    // The footnote is now the FILE's wording (`Player Stat Boxes.dc.html`:2021)
-    // rather than the sentence the cal-2 pass wrote, so the lock moves onto the
-    // file's opening clause — and keeps asserting the CAREER count inside it,
-    // which is the fact cal-2 actually protects.
-    assert(html.includes(`Runs count all ${CAL_EXPECT.grid} matches on record`),
-      'the footnote does not carry the file wording over the career count');
-    assert(html.includes('not a tour average'),
-      'the footnote dropped the file clause that the expectations are his own rate');
-    assert(!html.includes('the archive carries no match dates'),
-      'the archive-dates clause survived, but our rows are dated');
-    assert(!html.includes('priced tour archive'), 'the old archive scope sentence survived');
-    console.log(`        Streaks paints ${runs.length} runs over ${CAL_EXPECT.grid} career rows`);
-  } finally { Object.assign(I.state, saved); }
-}));
-
-check('Erdos-Renyi expectations match the design formula, and degenerate rates dash', () => {
-  // Transcribed independently here from the .dc.html comment, not from the
-  // module — if the module drifts, these disagree.
-  const expLong = (n, p) => Math.round(Math.log(n * (1 - p)) / Math.log(1 / p)
-    + 0.5772 / Math.log(1 / p) - 0.5);
-  const exp5 = (n, p) => Math.round(n * (1 - p) * Math.pow(p, 5) + n * p * Math.pow(1 - p, 5));
-  [[678, 0.544], [413, 0.806], [100, 0.5], [50, 0.2]].forEach(([n, p]) => {
-    assert.strictEqual(I.expectedLongest(n, p), expLong(n, p), `expectedLongest(${n},${p})`);
-    assert.strictEqual(I.expectedRuns5(n, p), exp5(n, p), `expectedRuns5(${n},${p})`);
+// ── TEN-384 Q1 (founder, 2026-10-05) · tabs = Calendar (default) · 2026; Streaks REMOVED ──────────
+// The tab, its tiles, the run timeline, "What follows a run" and the code only it used are gone. The
+// 2026 tab's content ruling landed the same day (second card): it is pinned by the "2026 tab" checks below.
+check('TEN-384 Q1 · Calendar record tabs are Calendar · 2026 and Streaks is gone', () => withCal(() => {
+  assert.deepStrictEqual(I.CAL_TABS.map(t => t[0]), ['calendar', '2026'], 'the tab set is not Calendar · 2026');
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const html = I.renderSeasonModal(CAL_P);
+  assert(/data-pp2="cal-tab" data-v="calendar"/.test(html) && /data-pp2="cal-tab" data-v="2026"/.test(html),
+    'the Calendar · 2026 tab buttons are not painted');
+  assert(!/data-v="streaks"|>Streaks</.test(html), 'a Streaks tab is still painted');
+  assert(!/Run timeline|What follows a run|Longest win run|Runs of 5\+/.test(html), 'Streaks content survived');
+  // The selected tab is the darker track's selected item (--inner + --edge-10, white 700).
+  assert(/data-v="calendar" style="[^"]*font-weight:700;[^"]*background:var\(--inner\);border:1px solid var\(--edge-10\)/.test(html),
+    'Calendar is not the selected (default) tab');
+  ['calRuns', 'renderStreakTab', 'expectedLongest', 'expectedRuns5', 'followStats', 'runSpan'].forEach((k) => {
+    assert.strictEqual(I[k], undefined, `${k} is still exported — Streaks-only code survived`);
   });
-  // A player who never lost (or never won) makes the formula undefined. It must
-  // dash, not render Infinity or NaN as if it were a number.
-  assert.strictEqual(I.expectedLongest(20, 1), null);
-  assert.strictEqual(I.expectedLongest(20, 0), null);
-  assert.strictEqual(I.expectedRuns5(20, 1), null);
-  console.log('        expected-longest and runs-of-5+ match the .dc.html formula');
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  assert(!/kind === 'cal-run'|function renderStreakTab|function renderFollowsCard|pp2-xscroll/.test(src),
+    'Streaks-only code survived in the module');
+  I.state.calTab = '2026';
+  const t26 = I.renderSeasonModal(CAL_P);
+  assert(!/data-pp2-stub/.test(t26), 'the 2026 tab is still the stub — its content ruling has landed');
+  assert(/data-pp2-cal26="list"/.test(t26), 'the 2026 tab does not paint its month list');
+  assert(!/NaN|undefined|Infinity/.test(t26), 'the 2026 tab leaked a non-number');
+  console.log('        tabs Calendar · 2026; no Streaks tab, content or code; 2026 = the ruled season tab');
+}));
+mustFail('[neg] the Q1 check would catch a Streaks tab coming back', () => {
+  const html = '<button data-pp2="cal-tab" data-v="streaks">Streaks</button>';
+  assert(!/data-v="streaks"|>Streaks</.test(html), 'a Streaks tab is still painted');
 });
+
+// ── TEN-384 · the 2026 tab (founder ruling, 2026-10-05 second card) ────────────────────────────────
+// A synthetic 2026 season whose every figure is known by construction:
+//   January  Adelaide 250 R32 W · R16 W · QF W · SF W · F L, Australian Open R128..QF W · SF L  → 9–2 (n 11, full)
+//   February Rotterdam 500 R32 W · R16 W · QF W · SF W · F W (the title)                      → 5–0 (n 5, small)
+//   March    Miami 1000 R64 L                                                                   → 0–1 (n 1, dash)
+//   September Laver Cup, no draw round (an exhibition the FORM rule drops — the record keeps it) → 1–0
+// plus one 2025 row that must not count. Season: 15–3, 83%; best result = the Rotterdam title (a title
+// is deeper than the AO semi-final, whatever the prestige), month February.
+const C26_SPINE = [];
+function c26(date, ev, round, won, opp) {
+  C26_SPINE.push({ year: date.slice(0, 4), date, surface: 'hard', level: 'atp', tournament: ev, round,
+    opponent: opp, result: won ? '2 - 0' : '0 - 2', won,
+    sets: won ? [{ p: 6, o: 3 }, { p: 6, o: 4 }] : [{ p: 3, o: 6 }, { p: 4, o: 6 }] });
+}
+['R32', 'R16', 'QF', 'SF'].forEach((r, i) => c26(`2026-01-0${i + 1}`, 'Adelaide', r, true, `A${i} Opp`));
+c26('2026-01-05', 'Adelaide', 'F', false, 'A4 Opp');
+['R128', 'R64', 'R32', 'R16', 'QF'].forEach((r, i) => c26(`2026-01-${String(18 + i).padStart(2, '0')}`, 'Australian Open', r, true, `B${i} Opp`));
+c26('2026-01-24', 'Australian Open', 'SF', false, 'B5 Opp');
+['R32', 'R16', 'QF', 'SF', 'F'].forEach((r, i) => c26(`2026-02-1${i}`, 'Rotterdam', r, true, `C${i} Opp`));
+c26('2026-03-21', 'Miami', 'R64', false, 'D0 Opp');
+c26('2026-09-20', 'Laver Cup', '', true, 'E0 Opp');
+c26('2025-11-02', 'Paris', 'F', true, 'F0 Opp');
+const C26_P = { key: '__c26', name: 'T. Season', tournamentHistory: [],
+  careerByYear: [{ year: '2025', total: { won: 1, lost: 0 } }, { year: '2026', total: { won: 15, lost: 3 } }] };
+function withC26(fn) {
+  const savedCh = W.careerHistory, savedMk = W.marketEdge, savedSt = { ...I.state };
+  W.careerHistory = Object.assign({}, CAREER_HIST, { __c26: C26_SPINE });
+  W.marketEdge = Object.assign({}, MARKET, { __c26: { matches: [] } });
+  try { return fn(); } finally {
+    W.careerHistory = savedCh; W.marketEdge = savedMk; Object.assign(I.state, savedSt);
+  }
+}
+function c26Tab() {
+  I.state.calTab = '2026'; I.state.calSurface = 'all'; I.state.calCell = null;
+  return I.renderSeasonModal(C26_P);
+}
+check('2026 tab · three white tiles: Win–loss, Win rate, Best result (computed off the career spine)', () => withC26(() => {
+  assert.strictEqual(I.CAL_SEASON, '2026');
+  assert.deepStrictEqual(I.CAL_TABS[1], ['2026', '2026'], 'the tab label is not the counted season');
+  I.state.cal26Month = null;
+  const html = c26Tab();
+  const rows = I.cal26Rows(C26_P);
+  assert.strictEqual(rows.length, 18, `the season holds ${rows.length} rows, not 18 (the 2025 row leaked or one dropped)`);
+  // Records count every match: the Laver Cup row the Form rule drops is IN the 15–3.
+  assert(/>Win–loss<\/span><span[^>]*color:var\(--text\);[^>]*>15–3</.test(html), 'Win–loss is not a white 15–3');
+  assert(html.includes('>2026 season<'), 'Win–loss support is not "2026 season"');
+  assert(/>Win rate<\/span><span[^>]*color:var\(--text\);[^>]*>83%</.test(html), 'Win rate is not a white 83%');
+  assert(html.includes('>18 matches<'), 'Win rate support is not "18 matches"');
+  assert(/>Best result<\/span><span[^>]*color:var\(--text\);[^>]*>Rotterdam</.test(html),
+    'Best result is not the Rotterdam title (depth beats prestige)');
+  assert(html.includes('>title · February<'), 'Best result support is not "title · February"');
+  assert(!/>Titles?</.test(html), 'a Titles tile is painted');
+  // NO grid row, priced strip or Swing row on this tab.
+  assert(!/data-pp2="cal-cell"|>Swing<|>Best swing<|>Vs other months<|>Yield<|flat 1u/.test(html),
+    'a Calendar-tab block (grid, priced strip or Swing row) leaked onto the 2026 tab');
+  assert(!/NaN|undefined|Infinity/.test(html), 'the 2026 tab leaked a non-number');
+  console.log('        15–3 · 83% · 18 matches · Rotterdam (title · February); Laver Cup counted; no grid/strip/swing');
+}));
+mustFail('the 2026 tile check would catch the Form rule\'s exhibition cut applied to the record', () => withC26(() => {
+  const rows = I.cal26Rows(C26_P).filter(r => r.event !== 'Laver Cup');
+  assert.strictEqual(rows.length, 18, 'Laver Cup dropped from the season record');
+}));
+check('2026 tab · best result tie rule: deeper round, then bigger event, then earlier', () => {
+  const R = (event, level, round, won, date) => ({ event, level, round, won, date, mon: +date.slice(5, 7) - 1 });
+  // Equal depth (lost final): the Slam beats the earlier 250.
+  let b = I.cal26Best([R('Adelaide', 'ATP 250', 'F', false, '2026-01-10'), R('Australian Open', 'Grand Slam', 'F', false, '2026-01-30')]);
+  assert.strictEqual(b.ev, 'Australian Open', `equal depth went to ${b.ev}, not the bigger event`);
+  assert.strictEqual(b.code, 'F');
+  // Equal depth and prestige: the earlier event.
+  b = I.cal26Best([R('Dubai', 'ATP 500', 'SF', false, '2026-02-25'), R('Doha', 'ATP 500', 'SF', false, '2026-02-17')]);
+  assert.strictEqual(b.ev, 'Doha', `equal depth and tier went to ${b.ev}, not the earlier event`);
+  // A won final is the title and beats a lost Slam final; a row with no draw round never wins.
+  b = I.cal26Best([R('Australian Open', 'Grand Slam', 'F', false, '2026-01-30'), R('Doha', 'ATP 500', 'F', true, '2026-02-21'),
+    R('Laver Cup', null, '—', true, '2026-09-20')]);
+  assert.strictEqual(b.ev, 'Doha'); assert.strictEqual(b.code, 'W');
+  assert.strictEqual(I.cal26Best([R('Laver Cup', null, '—', true, '2026-09-20')]), null, 'an exhibition produced a best result');
+  // "AO" style where the host's hot-line code map names the event (FH_TCODE + psNormTour), else our name.
+  global.FH_TCODE = { 'australian open': 'AO' }; global.psNormTour = s => String(s).toLowerCase();
+  try {
+    assert.strictEqual(I.cal26Short('Australian Open'), 'AO');
+    assert.strictEqual(I.cal26Short('Adelaide'), 'Adelaide', 'an unmapped event did not keep our name');
+  } finally { delete global.FH_TCODE; delete global.psNormTour; }
+  console.log('        depth > prestige > earlier; title beats a lost Slam final; AO short code via FH_TCODE');
+});
+mustFail('the tie check would catch "earliest wins" outranking prestige', () => {
+  const R = (event, level, round, won, date) => ({ event, level, round, won, date, mon: 0 });
+  const rows = [R('Adelaide', 'ATP 250', 'F', false, '2026-01-10'), R('Australian Open', 'Grand Slam', 'F', false, '2026-01-30')];
+  const earliest = rows.slice().sort((a, b) => (a.date < b.date ? -1 : 1))[0];
+  assert.strictEqual(earliest.event, I.cal26Best(rows).ev, 'earliest-first picked a different event');
+});
+// Small-sample rule on the month rows: ≥10 full size white 700; 5–9 one step smaller, 400, grey, with
+// "small sample · n=X" mono under; <5 W–L only and the rate a dash.
+function c26MonthRow(html, m) {
+  const at = html.indexOf(`data-pp2="cal26-month" data-v="${m}"`);
+  assert(at > -1, `month ${m} has no row`);
+  const end = html.indexOf('data-pp2="cal26-month"', at + 10);
+  return html.slice(at, end < 0 ? at + 3000 : end);
+}
+check('2026 tab · month list: one row per month played, Jan → latest, small-sample rule', () => withC26(() => {
+  I.state.cal26Month = null;
+  const html = c26Tab();
+  assert(html.includes('>Month by month · 2026<'), 'the caps label is not "Month by month · 2026"');
+  const order = [...html.matchAll(/data-pp2="cal26-month" data-v="(\d+)"/g)].map(x => +x[1]);
+  assert.deepStrictEqual(order, [0, 1, 2, 8], `month rows ${order} — must be the months played, Jan → latest`);
+  assert(/data-pp2-cal26="list" style="max-height:420px;overflow-y:auto;"/.test(html), 'the list does not scroll at 420px');
+  const jan = c26MonthRow(html, 0), feb = c26MonthRow(html, 1), mar = c26MonthRow(html, 2);
+  assert(/padding:11px 10px;/.test(jan), 'a month row is not padded 11×10');
+  assert(/border-top:1px solid var\(--edge-6\)/.test(feb), 'rows are not split by a 6% hairline');
+  assert(/font-size:13.5px;font-weight:700;color:var\(--text\);">January</.test(jan), 'the month name is not 13.5/700 white');
+  assert(jan.includes('>Adelaide · Australian Open<'), 'the grey note does not name the month\'s events');
+  assert(/>9–2</.test(jan) && /data-gate="full"[^>]*font-size:13.5px;font-weight:700;color:var\(--text\);">82%</.test(jan),
+    'January (n 11) is not a full-size white 82%');
+  assert(/>5–0</.test(feb) && /data-gate="small"/.test(feb) &&
+    /font-size:12.5px;font-weight:400;color:var\(--text-label\);">100%</.test(feb) && feb.includes('small sample · n=5'),
+    'February (n 5) is not the smaller grey rate with "small sample · n=5"');
+  assert(/>0–1</.test(mar) && /data-gate="thin"[^>]*>—</.test(mar) && !/%</.test(mar),
+    'March (n 1) shows a rate — under 5 is W–L only with a dash');
+  assert(/>›</.test(jan) || jan.includes('&rsaquo;'), 'the row has no › caret');
+  assert(/10 or more matches[^<]*5–9 is a small sample[^<]*under 5 shows the W–L only/.test(html),
+    'the footnote does not state the thresholds');
+  console.log('        rows Jan · Feb · Mar · Sep; 9–2 82% full · 5–0 small n=5 · 0–1 dash; footnote states 10 / 5–9 / <5');
+}));
+mustFail('the month gate check would catch a 5-match month painted full', () => {
+  const fake = '<div data-pp2="cal26-month" data-v="1"><span data-pp2-cal26="rate" data-gate="full">100%</span></div>';
+  assert(/data-gate="small"/.test(c26MonthRow(fake, 1)), 'February painted full');
+});
+check('2026 tab · a month row opens its matches on the profile ledger grid; rows open the step-3 sheet', () => withC26(() => {
+  I.state.cal26Month = '0';
+  const html = c26Tab();
+  const jan = c26MonthRow(html, 0);
+  assert(/^data-pp2="cal26-month" data-v="0" style="[^"]*background:var\(--selected\);/.test(jan), 'the open row is not --selected');
+  assert(!/background:var\(--selected\)/.test(c26MonthRow(html, 1).split('data-pp2-cal26="panel"')[0]), 'a closed row is selected');
+  const pi = jan.indexOf('data-pp2-cal26="panel"');
+  assert(pi > -1, 'the month panel did not open under its row');
+  const panel = jan.slice(pi);
+  assert(/^data-pp2-cal26="panel" style="background:var\(--card\);border:1px solid var\(--edge-6\);/.test(panel),
+    'the open panel is not --card + 1px --edge-6');
+  assert(!/var\(--link\)|var\(--blue/.test(panel), 'the open panel carries a blue outline');
+  // The ledger's own head row and row builder: Date · W/L · Opponent · Rd · Sets · Set scores · H · A.
+  assert(panel.includes('class="pp2-ledger-head"'), 'the panel does not use the ledger head row');
+  const heads = [...panel.slice(panel.indexOf('pp2-ledger-head'), panel.indexOf('padding:12px 8px 6px'))
+    .matchAll(/text-align:(?:left|right);">([^<]+)</g)].map(x => x[1]);
+  assert.deepStrictEqual(heads, ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'], `heads ${heads}`);
+  const rowsN = (panel.match(/class="pp2-ledger-row"/g) || []).length;
+  assert.strictEqual(rowsN, 11, `the January panel holds ${rowsN} ledger rows, not 11`);
+  const ids = [...panel.matchAll(/data-pp2="sheet" data-v="([^"]+)"/g)].map(x => x[1]);
+  assert.strictEqual(ids.length, 11, 'a month row does not open the sheet');
+  const ctx = { ledgerRows: I.ledgerRows(C26_P) };
+  ids.forEach((id) => assert(I.sheetRowFor(C26_P, ctx, id), `sheet id ${id} resolves to no match — the click would open nothing`));
+  assert(panel.includes('>Australian Open<') && panel.includes('>Adelaide<'), 'the panel does not group by event');
+  // Closing: re-clicking the row toggles it shut (the same toggle the handler uses).
+  I.state.cal26Month = null;
+  assert(!c26Tab().includes('data-pp2-cal26="panel"'), 'the panel stayed open with no month selected');
+  console.log(`        January opens ${rowsN} ledger rows (8-column head), every id resolves to a sheet; open row --selected`);
+}));
+mustFail('the drill check would catch a month panel that opens nothing', () => withC26(() => {
+  I.state.cal26Month = '5';                        // June: not played
+  assert(c26Tab().includes('data-pp2-cal26="panel"'), 'no panel');
+}));
 
 check('month "vs other months" is the OTHER-ELEVEN baseline, the tile pp is CAREER', () => withCal(() => {
   I.state.calSurface = 'all';
@@ -2061,7 +2390,7 @@ checkCareer('every banded career row carries its venue\'s site-wide label (grass
 checkCareer('the Court speed headline is a band name or a dash, never a surface', () => {
   const LABELS = I.SPEED_BANDS.map(b => b.label);
   const SURFACES = ['Hard', 'Clay', 'Grass', 'Carpet', 'Indoor'];
-  let headlined = 0, dashed = 0;
+  let headlined = 0, dashed = 0, overall = 0;
   for (const k of Object.keys(PLAYERS)) {
     const p = Object.assign({ key: k }, PLAYERS[k]);
     const v = I.buildBoxVals(p, { archetype: null });
@@ -2077,6 +2406,8 @@ checkCareer('the Court speed headline is a band name or a dash, never a surface'
     assert(/^[0-9]+%$/.test(h),
       `${p.name}: Court speed headline "${h}" is not a whole-percent figure`);
     const band = String(v.speed.support).split(' · ')[0];
+    // fx3 (founder D10): no band above his rated-match rate at n >= 10 -> the OVERALL figure, "all rated courts".
+    if (band === 'all rated courts') { overall++; continue; }
     assert(LABELS.indexOf(band) > -1,
       `${p.name}: Court speed support leads with "${band}", not one of ${LABELS.join(' · ')}`);
     const tile = h + ' ' + v.speed.support;
@@ -2084,7 +2415,7 @@ checkCareer('the Court speed headline is a band name or a dash, never a surface'
       `${p.name}: Court speed tile "${tile}" names a surface`));
   }
   assert(headlined > 0, 'no player produced a Court speed headline — this check never ran');
-  console.log(`        ${headlined} band headlines, ${dashed} dashes, 0 surface names ` +
+  console.log(`        ${headlined - overall} band headlines, ${overall} overall (D10), ${dashed} dashes, 0 surface names ` +
     `across ${headlined + dashed} players`);
 });
 mustFail('the headline check would catch the old "Grass courts" wording', () => {
@@ -2100,31 +2431,94 @@ mustFail('the headline check would catch a LABEL back in the headline slot', () 
   assert(/^[0-9]+%$/.test(h), `Court speed headline "${h}" is not a whole-percent figure`);
 });
 
-// The band order is a README-vs-file conflict resolved in the file's favour:
-// win rate descending, un-rateable bands last. Locking it stops a future tidy-up
-// from "restoring" the README's slow-to-fast order.
-check('bands sort by win rate descending, un-rateable last', () => {
+// TEN-384 Q5 · the three bands are three tiles side by side, slowest to fastest under the reference's
+// "Slower courts … Faster courts" rule — so the order is the speed order, whatever the rates. (The
+// win-rate sort belonged to the retired vertical list.)
+checkCareer('bands run slowest to fastest: Slow · Medium · Fast (TEN-384 Q5)', () => {
+  let n = 0;
   for (const p of SAMPLE) {
     if (!I.speedRows(p).length) continue;
-    const bands = I.speedBands(p);
-    let lastRate = Infinity, seenNull = false;
-    bands.forEach((b) => {
-      const n = b.won + b.lost;
-      const rateable = n >= 5;
-      if (!rateable) { seenNull = true; return; }
-      assert(!seenNull, `${p.name}: a rateable band sits below an un-rateable one`);
-      const r = b.won / n;
-      assert(r <= lastRate + 1e-9, `${p.name}: ${b.band.label} at ${r} follows a lower rate`);
-      lastRate = r;
-    });
+    assert.deepStrictEqual(I.speedBands(p).map(b => b.band.id), ['slow', 'med', 'fast'],
+      `${p.name}: the bands are not in speed order`);
+    const html = I.renderSpeedModal(p);
+    assert(/>Slower courts<[\s\S]*>Faster courts</.test(html), `${p.name}: the Slower … Faster rule is missing`);
+    assert(/grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px/.test(html), `${p.name}: the tiles are not three side by side`);
+    n++;
   }
+  assert(n > 0, 'no sampled player had a speed row — this check never ran');
 });
-mustFail('the sort check would catch an ascending band list', () => {
-  let lastRate = Infinity;
-  [0.4, 0.8].forEach((r) => {
-    assert(r <= lastRate + 1e-9, 'band at ' + r + ' follows a lower rate');
-    lastRate = r;
+mustFail('[neg] the order check would catch the retired win-rate sort', () => {
+  assert.deepStrictEqual(['fast', 'slow', 'med'], ['slow', 'med', 'fast'], 'the bands are not in speed order');
+});
+
+// TEN-384 Q4.5 / Q5 · chips on the Darker track; an openable band is a clickable tile (7 / 16 / 24),
+// a sub-minimum band a stat box (--edge-6); the match panel spans the modal under the tiles.
+// A synthetic career whose events sit at rated venues in all three bands, so the layout check runs
+// with career-history/ absent (it is gitignored locally). Slow: Roland Garros 12-4; Medium and Fast:
+// whichever rated venues the committed map bands there. Built from the map itself, never assumed.
+const SPEED_FIX = (() => {
+  const rows = [];
+  if (!SPEED_MAP || !SPEED_MAP.venues) return null;
+  const byBand = { slow: [], med: [], fast: [] };
+  Object.keys(SPEED_MAP.venues).forEach((venue) => {
+    const b = I.speedBandFor(venue);
+    const guard = (SPEED_MAP.surfaceGuard || {})[venue];
+    const keep = guard && guard.keep ? String(guard.keep).split('/')[0] : null;
+    if (b && byBand[b.id] && !byBand[b.id].length) byBand[b.id].push({ venue, surface: keep && keep !== '?' ? keep.toLowerCase() : 'hard' });
   });
+  const plan = [['slow', 12, 4], ['med', 6, 2], ['fast', 2, 1]];
+  plan.forEach(([id, w, l], k) => {
+    const v = byBand[id][0];
+    if (!v) return;
+    for (let i = 0; i < w + l; i++) {
+      rows.push({ year: '2025', date: `2025-0${k + 3}-${String(i + 1).padStart(2, '0')}`, surface: v.surface, level: 'atp',
+        tournament: v.venue, round: 'R32', opponent: `S${k}${i} Peed`, result: i < w ? '2 - 0' : '0 - 2', won: i < w });
+    }
+  });
+  return { rows, picked: byBand };
+})();
+check('Court speed: chips on the Darker track, band tiles 7/24 or a 6% stat box, full-width panel', () => {
+  assert(SPEED_FIX && SPEED_FIX.rows.length, 'the synthetic speed career could not be built from the venue map');
+  const p = { key: '__spd', name: 'S. Peed', tournamentHistory: [],
+    careerByYear: [{ year: '2025', total: { won: 20, lost: 7 }, hard: { won: 20, lost: 7 } }] };
+  const savedCh = W.careerHistory;
+  W.careerHistory = Object.assign({}, CAREER_HIST, { __spd: SPEED_FIX.rows });
+  try {
+    I.state.speedSurf = 'all'; I.state.speedBand = null;
+    const bands = I.speedBands(p);
+    assert.deepStrictEqual(bands.map(b => b.band.id), ['slow', 'med', 'fast'], 'the bands are not in speed order');
+    const html = I.renderSpeedModal(p);
+    assert(/>Slower courts<[\s\S]*>Faster courts</.test(html), 'the Slower … Faster rule is missing');
+    assert(/grid-template-columns:repeat\(3,minmax\(0,1fr\)\);gap:8px/.test(html), 'the tiles are not three side by side');
+    assert(/<span style="display:flex;gap:3px;background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:9px;padding:2px;flex:none;"><button type="button" data-pp2="speed-surf"/.test(html),
+      'the surface chips are not on the Darker track');
+    assert(!/color-mix\(in srgb, var\(--text\) 4\.5%, transparent\)/.test(html), 'the always-on idle chip edge survived');
+    const open = bands.filter(b => b.won + b.lost >= 5);
+    const thin = bands.filter(b => { const n = b.won + b.lost; return n > 0 && n < 5; });
+    assert(open.length && thin.length, `the fixture did not produce both states (open ${open.length}, thin ${thin.length})`);
+    open.forEach((b) => assert(new RegExp('data-pp2="speed-band" data-v="' + b.band.id + '"').test(html), `${b.band.label} does not open`));
+    thin.forEach((b) => {
+      assert(!new RegExp('data-pp2="speed-band" data-v="' + b.band.id + '"').test(html), `thin ${b.band.label} opens`);
+      assert(html.includes('>' + (b.won + b.lost) + ' matches · min 5<'), `thin ${b.band.label} does not read "n matches · min 5"`);
+    });
+    assert(/class="pp2-tile on" data-pp2="speed-band"[^>]*border:1px solid var\(--edge-24\)/.test(html),
+      'the selected band is not the --edge-24 clickable tile');
+    assert(/class="pp2-tile" data-pp2="speed-band"[^>]*border:1px solid var\(--edge-7\)/.test(html),
+      'an idle openable band is not the --edge-7 clickable tile: ' + (html.match(/data-pp2="speed-band"[^>]*>/g) || []).join(' | '));
+    assert(/border-radius:12px;background:var\(--card\);border:1px solid var\(--edge-6\);cursor:default;/.test(html),
+      'the sub-minimum band is not a --edge-6 stat box');
+    assert(/data-pp2-speed-panel="1" style="background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:10px;padding:14px 16px 12px;/.test(html),
+      'the match panel is not the full-width --card + --edge-6 panel');
+    assert(!/grid-template-columns:268px/.test(html), 'the 268px band column survived');
+    assert(/data-pp2-speed-career="1"/.test(html) && html.includes('>' + (bands.reduce((a, b) => a + b.won + b.lost, 0)) + ' matches<'),
+      'the career summary is not in the chip row');
+    assert(!/NaN|undefined|\[object/.test(html), 'the modal leaked a non-number');
+    console.log(`        fixture bands ${bands.map(b => b.band.id + ' ' + b.won + '–' + b.lost).join(' · ')}`);
+  } finally { W.careerHistory = savedCh; I.state.speedBand = null; }
+});
+mustFail('[neg] the layout check would catch the retired 268px list', () => {
+  const html = '<div class="pp2-speed" style="display:grid;grid-template-columns:268px minmax(0,1fr);gap:18px;">';
+  assert(!/grid-template-columns:268px/.test(html), 'the 268px band column survived');
 });
 
 // A band under the five-match minimum shows its record and a dash, and does not
@@ -2340,9 +2734,11 @@ checkCareer('item 27 · "ret." and "w/o" render on every named surface', () => {
         `${p.name}: the Career drill status suffix did not attach`);
       found.drill = true;
 
-      // Match sheet.
-      const sheetHtml = I.renderSheet(p, { sheetId: (ret[0] || wo[0]).sheetId });
-      if (sheetHtml) { found.sheet = /ret\.|w\/o/.test(sheetHtml) || found.sheet; }
+      // Match sheet. TEN-384: the §8.1 sheet is retired; the step-3 sheet prints the status from the row the
+      // hand-off gives it, so the flag must survive the hand-off.
+      const sid = (ret[0] || wo[0]).sheetId;
+      const pay = sid ? I.sheetPayload(p, I.build(p), sid) : null;
+      if (pay) { found.sheet = !!(pay.row.retired || pay.row.walkover) || found.sheet; }
     }
   } finally { Object.assign(I.state, saved); }
   assert.ok(found.speed, 'no sampled player produced a Court speed list with a retirement — this check never ran');
@@ -2597,13 +2993,17 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and
         `${p.name}: thin archetype ${r.axis.label} is still clickable`);
       assert(html.indexOf(n + ' matches · below the five-match minimum') > -1,
         `${p.name}: thin archetype ${r.axis.label} does not carry the file's meta line`);
+      // TEN-384 (reference): the Matches cell reads "N · min 5"
+      assert(html.indexOf('>' + n + ' · min 5<') > -1,
+        `${p.name}: thin archetype ${r.axis.label} does not read "${n} · min 5"`);
     });
     // The file's DIM — item 23 names it. 12a (TEN-285) set DIM_COLOUR to #6e7a93, the --label
     // value, emitted as the literal; d2fd80fb rewrote this needle to var(--label), a string the
     // renderer never emits. Unseen because this check SKIPs wherever career-history/ is absent,
     // which was every CI run until the TEN-329 built-store gate. TEN-376 Foundation: DIM_COLOUR
     // is now the --text-label token, emitted as var(--text-label).
-    assert(html.indexOf('font-size:14px;font-weight:700;color:var(--text-label);') > -1,
+    // TEN-384: the ledger row's name is 13.5/700 (reference), dimmed to --text-label under the minimum.
+    assert(html.indexOf('font-size:13.5px;font-weight:700;color:var(--text-label);') > -1,
       `${p.name}: the under-minimum name is not the file's DIM colour`);
     if (++found >= 3) break;
   }
@@ -2819,66 +3219,71 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
   const html = I.renderStylesModal(subject);
   I.state.styleRow = null;
 
+  // TEN-384 · re-pinned to the reference (OFFICIAL VERSION 1, inventory C rows 16-28). Same
+  // intent per item: the chart panel, its head, the plot geometry, the dot styles, the EVEN
+  // rule, the ledger-table list with its Career footer, the selected-row lift and the drill.
   const want = [
-    // item 7 · the eyebrow, and the flex gap that gives the plot clear space
-    ['WIN RATE BY ARCHETYPE eyebrow', 'Win rate by archetype · bubble size is match count'],
-    ['item 7 · chart card clear space', 'display:flex;flex-direction:column;gap:14px;'],
-    // item 8 · layout and plot box
-    ['item 8 · 52px 1fr layout', 'grid-template-columns:52px minmax(0,1fr);gap:12px;'],
-    // Items 8, 11, 19, 24 and 29 below carried the TEN-285 12a values (0.33px --line-soft hairlines,
-    // periwinkle #6a9af8, selection #2e4fa8, P&L #3ed68c/#da6259). TEN-376 Foundation re-expresses
-    // them as tokens: 1px --line hairlines, --bar fills, --edge-10 selection edge, --pos/--neg P&L.
-    ['item 8 · 240px plot with foundation hairline borders',
-      'height:240px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);'],
-    // item 9 · tick labels right-aligned in the gutter, rotated label at its left
-    ['item 9 · rotated label left of the ticks', 'left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);'],
+    // item 7 · the chart head: caps title + the Plex legend on the right
+    ['WIN RATE BY ARCHETYPE eyebrow', '>Win rate by archetype</span>'],
+    ['chart legend', 'dot size = matches · serve-first → baseline-first'],
+    // item 16 · the chart panel: --card + --edge-6, radius 12, pad 14/16/12, 12px head gap
+    ['item 16 · chart panel', 'background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 16px 12px;'],
+    // item 8 · layout and plot box: a 36px tick gutter, no rotated axis title
+    ['item 8 · 36px 1fr layout', 'grid-template-columns:36px minmax(0,1fr);gap:0 10px;'],
+    ['item 8 · 212px plot (200 drawable + the 12px inset) with hairline axes',
+      'height:212px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);'],
     ['item 9 · tick label', 'font-size:10px;color:var(--text-label);'],
-    // item 11 · the EVEN rule and its right-aligned, uppercased label
+    // item 19 · dotted guides (foundation: --viz-guide, dash 2 / gap 6)
+    ['item 19 · dotted guide', 'background-image:linear-gradient(to right, var(--viz-guide) 2px, transparent 2px);background-size:8px 1px;'],
+    // item 11 · the EVEN label, right-aligned and uppercased
     ['item 11 · EVEN label right-aligned', 'right:6px;top:'],
     ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:var(--text-label);">even<'],
-    // item 12 · the value label above the bubble
-    ['item 12 · value label above the bubble', 'font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;'],
-    // item 13 · disc
-    ['item 13 · disc border', 'border-radius:50%;'],
-    ['item 13 · disc fill', 'background:color-mix(in srgb, var(--bar) '],
-    // item 15 · abbreviations and the foot labels
-    ['item 15 · x tick label class', 'class="pp2-stk'],
-    ['item 15 · foot label SERVE', '>Serve<'],
-    ['item 15 · foot label BASELINE', '>Baseline<'],
-    ['item 15 · foot label ARCHETYPE', '>Archetype<'],
-    // items 17-19 · the row is a card with the minimal bar
-    ['item 17 · row card grid', 'grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;border-radius:10px;padding:13px 16px;'],
-    ['item 18 · row name', 'font-size:14px;font-weight:700;'],
-    ['item 18 · row meta', 'font-size:11.5px;color:var(--text-label);'],
-    ['item 19 · minimal bar track (foundation --track token)', 'height:4px;border-radius:2px;background:var(--track);'],
-    ['item 19 · minimal bar fill', 'background:var(--bar);border-radius:2px;'],
-    // item 20 · units above the rate
-    ['item 20 · right column stacks', 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;'],
-    ['item 20 · units', 'font-size:12px;font-weight:700;color:var(--'],
-    // item 24 · the selected row — TEN-376 correction: selection is a lift (--selected), never a blue wash
-    ['item 24 · selected row background', 'background:var(--selected);'],
-    ['item 24 · selected row border', 'border:1px solid var(--edge-10);background:var(--selected);'],
-    // item 25 · the CAREER footer
-    ['item 25 · Career eyebrow', '>Career<'],
-    // items 26-28 · the drill
-    ['item 26 · drill container', 'background:var(--inner);border:1px solid var(--edge-10);border-radius:10px;padding:13px 15px;'],
+    // item 12 · the value label above the dot (Plex 11.5/700 white)
+    ['item 12 · value label above the dot', 'font-size:11.5px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;'],
+    // item 18 · dots: unselected --bar 30% + 1px --bar ring; the open archetype solid --bar
+    ['item 18 · unselected dot', 'background:color-mix(in srgb, var(--bar) 30%, transparent);border:1px solid var(--bar);'],
+    ['item 18 · selected dot', 'background:var(--bar);border:1px solid var(--bar);'],
+    ['item 13 · disc', 'border-radius:50%;'],
+    // item 20 · abbreviations and the foot labels
+    ['item 20 · x tick label class', 'class="pp2-stk'],
+    ['item 20 · foot label SERVE', '>Serve<'],
+    ['item 20 · foot label BASELINE', '>Baseline<'],
+    // item 21 · the ledger table: head, tracks, row type
+    ['item 21 · list head', '>Record by archetype · career<'],
+    ['item 21 · ledger tracks', 'grid-template-columns:minmax(0,1fr) 56px 76px 60px 64px;gap:0 12px;'],
+    ['item 21 · row name 13.5/700', 'font-size:13.5px;font-weight:700;color:var(--text);'],
+    ['item 21 · archetype code Plex 10', 'font-size:10px;color:var(--text-label);'],
+    ['item 21 · Win % Plex 13.5/700', 'font-size:13.5px;font-weight:700;text-align:right;color:var(--text);'],
+    ['item 21 · Backing Plex 12/600', 'font-size:12px;font-weight:600;text-align:right;color:var(--'],
+    // item 24 · no bars in the list
+    // item 25 · the selected row lifts to --selected, bled 10px each side
+    ['item 25 · selected row lift', 'background:var(--selected);box-shadow:-10px 0 0 var(--selected),10px 0 0 var(--selected);'],
+    // item 23 · the CAREER footer: caps + rated count
+    ['item 23 · Career footer', '>Career</span>'],
+    ['item 23 · rated count', ' rated</span>'],
+    // items 26-28 · the drill: panel, scrolling table, sticky heads, W/L squares
+    ['item 26 · drill panel', 'background:var(--card);border:1px solid var(--edge-6);border-radius:10px;padding:14px 16px 12px;margin:8px 0 10px;'],
+    ['item 26 · drill scrolls inside 360px', 'max-height:360px;overflow-y:auto;'],
+    ['item 26 · sticky heads', 'position:sticky;top:0;'],
     ['item 28 · drill grid',
-      'grid-template-columns:16px 64px minmax(0,1.1fr) minmax(0,1fr) 38px 104px 48px 48px 58px;gap:0 12px;'],
+      'grid-template-columns:12px 64px minmax(0,1.25fr) minmax(0,1fr) 36px 128px 46px 46px 54px;gap:0 10px;'],
+    ['item 27 · W/L square', 'width:8px;height:8px;border-radius:2px;background:var(--'],
     ['item 28 · drill head Score', '>Score<'],
     ['item 28 · drill head P&L', '>P&amp;L<']
   ];
   want.forEach(([what, needle]) => {
     assert(html.indexOf(needle) > -1, `${subject.name}: ${what} missing — "${needle}"`);
   });
+  // item 24 · no bar track left in the list (the old card rows carried one per archetype)
+  assert(html.indexOf('height:4px;border-radius:2px;background:var(--track);') < 0,
+    `${subject.name}: item 24 · a bar is still drawn in the archetype list`);
 
-  // item 11 · the EVEN rule, read as the rule that immediately precedes its "even" label (an
-  // elite divider may sit between). Its style alone also matches the 50% gridline, so a bare
-  // indexOf stayed green with the rule deleted.
-  const evenTop = (/right:6px;top:([0-9.]+px);transform:translateY\(-135%\)/.exec(html) || [])[1];
-  assert(evenTop && new RegExp('left:0;right:0;top:' + evenTop.replace('.', '\\.') +
-    ';height:1px;background:var\\(--line\\);"></span>(<span[^>]*dashed[^>]*></span>)?' +
-    '<span style="position:absolute;right:6px;top:' + evenTop.replace('.', '\\.') + ';').test(html),
-    `${subject.name}: item 11 · even rule missing at the EVEN label's ${evenTop}`);
+  // item 19 · the EVEN rule is the break-even rule (--viz-rule) at the EVEN label's own top — read as
+  // the rule that immediately precedes its label, so deleting the rule cannot leave this green.
+  const evenTop = (/right:6px;top:([0-9.]+px);transform:translateY\(-130%\)/.exec(html) || [])[1];
+  assert(evenTop && new RegExp('<span data-even="1" style="position:absolute;left:0;right:0;top:' + evenTop.replace('.', '\\.') +
+    ';height:1px;background:var\\(--viz-rule\\);"></span><span style="position:absolute;right:6px;top:' + evenTop.replace('.', '\\.') + ';').test(html),
+    `${subject.name}: item 19 · EVEN rule missing at the EVEN label's ${evenTop}`);
 
   // item 21 · a whole-number win rate. The live build printed "81.2%".
   assert(!/\d\.\d%</.test(html.replace(/[+−]\d+\.\d%/g, '')),
@@ -2895,10 +3300,10 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     `${subject.name}: the drill date is not the file's "Mon YYYY"`);
   console.log(`        ${want.length + 5} values verified on ${subject.name}/${open.axis.label}`);
 });
-mustFail('the chrome check would catch the plain-text row list coming back', () => {
-  const html = '<div style="display:grid;grid-template-columns:1fr 300px 58px;">';
-  assert(html.indexOf('grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;') > -1,
-    'X: item 17 · row card grid missing');
+mustFail('the chrome check would catch the old card-row list coming back', () => {
+  const html = '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;">';
+  assert(html.indexOf('grid-template-columns:minmax(0,1fr) 56px 76px 60px 64px;gap:0 12px;') > -1,
+    'X: item 21 · ledger tracks missing');
 });
 
 check('item 5 · the shell says "Matchup record" with the file\'s subtitle', () => {
@@ -3090,6 +3495,22 @@ const STORES = [
           return I.mpAvailable({ eventKey: 5 }).stats ? 1 : 0; }) },
     ];
   })(),
+  {
+    // TEN-384 · founder Q8: the Market edge tour baselines are the Database's Tour aggregates,
+    // shipped as tour-baselines.json and published on window.tourBaselines with the profile data.
+    // Measured through the page's own accessor over the REAL file (fav / dog / all must all resolve).
+    name: 'tourBaselines',
+    file: 'tour-baselines.json',
+    resolve: () => {
+      const saved = W.tourBaselines;
+      try {
+        W.tourBaselines = JSON.parse(fs.readFileSync(path.join(ROOT, 'tour-baselines.json'), 'utf8'));
+        return ['all', 'favourite', 'underdog'].filter(id => I.tourBaselineFor(id) != null).length;
+      } finally { W.tourBaselines = saved; }
+    },
+    universe: () => 3,
+    floor: 1,
+  },
   {
     name: 'situational',
     file: 'situational.json',
@@ -3457,14 +3878,23 @@ check('the all-stores table covers every data store the module reads', () => {
   // (TEN-310) is the Market edge compute both surfaces share; HouseRatings (TEN-327) is the one
   // Serve / Return rating helper every surface shares.
   // sfOverlayClosers (TEN-376 S1): the shell's list of overlay-close functions a sidebar click runs — functions, no rows.
-  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers']);
+  // TEN-384 fx2: TournamentIdentity is the builders' canonical-name table (logic, no rows); marketEdgePending is
+  // the host's in-flight flag per market-edge shard (a loading state, no rows — the shard itself is marketEdge).
+  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
+    'TournamentIdentity', 'marketEdgePending']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call
   // site. Simply widening NOT_STORES would have let any future window.* through
   // the gate by being named plausibly.
   // trProfileBacking (founder Q8, TEN-368): the page's Tournament-tab row join for the per-event Backing — logic, not data.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2SheetOpen', 'onPp2MatchPageOpen', 'trProfileBacking']);
+  // TEN-384: the §8.1 sheet's onPp2SheetOpen is gone with the sheet; the hand-off to the step-3 stats sheet
+  // (pp2OpenMatchSheet / pp2CloseMatchSheet), the header's Elo (pp2EloFor, the Players card's pgEloFor), its
+  // Next match (pp2NextMatchFor, today's fixture feed) and the avatar photo chain (photoCandidatesFor) are host
+  // logic, not data stores. TEN-384 fx4: pp2LiveRank is the host's live-standings read (pp2LiveRankOf over
+  // player-index.json) — the SAME function the Players card ranks with, so the header and the card agree.
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking',
+    'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -3547,7 +3977,8 @@ check('the modal states its own match count, never the career total', () => {
     // prints the engine's string and not a computed one — which is what
     // tools/test-heatmap-launcher.js locks, including against the mock's 71.5%.
     const launcher = I.hbLauncherHtml(p);
-    assert(launcher.indexOf('Open') > -1 || launcher.indexOf('no point-by-point') > -1,
+    // TEN-384: the reference's entry tile has no "Open ›" — the whole tile is the control.
+    assert(/data-pp2="heat"/.test(launcher) || launcher.indexOf('no point-by-point') > -1,
       `${p.name}: the launcher neither offers the grid nor says why it cannot`);
     // The shard's horizon is 24 months; the ledger is a whole career. If the
     // modal ever printed the career total it would claim coverage we lack.
@@ -3612,10 +4043,15 @@ check('the surface chips read their own node and change the figures', () => {
   // markup is vacuous: the surface control paints a "Clay" button whatever is
   // selected, so freezing the chip to "All surfaces" left that check green.
   // Caught by mutation, not by reading.
+  // TEN-384: the context chip became the reference's caps EYEBROW (data-hb="eyebrow"), and the
+  // surface CONTROL is no longer rendered (founder Q6) — the path behind it (state.hbSurf) is kept,
+  // so the clay view is still reached through state and must still say it is the clay view.
   const chipText = (h) => {
-    const at = h.indexOf('padding:8px 14px;">');
-    return at < 0 ? '' : h.slice(at + 19, h.indexOf('</span>', at));
+    const m = /data-hb="eyebrow"[^>]*>([^<]*)</.exec(h);
+    return m ? m[1] : '';
   };
+  assert(!/data-pp2="hb-surf"/.test(all) && !/data-pp2="hb-surf"/.test(clay),
+    'founder Q6: the heatmap renders Hold | Break only — a surface control is still on screen');
   assert(/Clay/.test(chipText(clay)),
     `the clay view's context chip does not name clay (chip reads "${chipText(clay)}")`);
   assert(/All surfaces/.test(chipText(all)),
@@ -3787,11 +4223,11 @@ check('the bridge hands playerProfiles the shape the module reads', () => {
 
 check('every data-pp2 hook the module paints has a handler in the mount', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-  // Hooks emitted with a literal value. (The one computed hook is calSegBtn's
-  // `attr`, whose two call sites pass 'cal-tab' and 'cal-surface'.)
+  // Hooks emitted with a literal value. (The computed hooks are recSegBtn's `hook`, whose call sites
+  // pass 'cal-tab', 'cal-surface', 'career-tab', 'career-scope' and 'career-tier'.)
   const painted = new Set((src.match(/data-pp2="([a-z-]+)"/g) || [])
     .map(s => s.replace(/data-pp2="|"/g, '')));
-  painted.add('cal-tab'); painted.add('cal-surface');
+  ['cal-tab', 'cal-surface', 'career-tab', 'career-scope', 'career-tier'].forEach(h => painted.add(h));
   // 'sheet' appears in the source inside sheetHook(), but MATCH_SHEET_BUILT
   // gates it out of the emitted markup — §8 is not built. Requiring a handler
   // for it would force the mount to wire a click to a modal that does not
@@ -3834,16 +4270,18 @@ check('every ledger row that advertises a click opens a sheet that renders', () 
     .map(s => s.replace(/data-pp2="sheet" data-v="|"/g, ''));
   assert(ids.length > 0, 'the ledger paints no match-sheet hook although §8.1 is built');
   assert(/cursor:pointer/.test(html), 'the rows advertise no pointer cursor');
+  // TEN-384: the profile's own §8.1 sheet is retired — every hook hands a payload to the step-3 Match
+  // analysis stats sheet (window.pp2OpenMatchSheet -> fhOpenSheet). A hook "opens a sheet that renders" when
+  // it resolves to a dated row with both names in the sheet's "I. Surname" form.
   let rendered = 0;
   for (const id of ids) {
-    I.state.sheet = id.replace(/&amp;/g, '&');
-    const sheet = I.renderSheet(p, ctx);
-    if (/Dominance ratio/.test(sheet)) rendered++;
+    const x = I.sheetPayload(p, ctx, id.replace(/&amp;/g, '&'));
+    if (x && x.row && x.row.date && /^[A-Z][A-Za-z-]{0,3}\. \S/.test(x.subjectName) &&
+        /^[A-Z][A-Za-z-]{0,3}\. \S/.test(x.oppName)) rendered++;
   }
-  I.state.sheet = null;
   assert.strictEqual(rendered, ids.length,
     `${ids.length - rendered} of ${ids.length} ledger hooks open nothing`);
-  console.log(`        ${ids.length} ledger hooks, all open a rendered sheet`);
+  console.log(`        ${ids.length} ledger hooks, all hand the step-3 sheet a row`);
 });
 
 mustFail('the affordance check would catch a hook that opens nothing', () => {
@@ -3875,14 +4313,7 @@ check('TEN-313: a drill list carries no walkover edition row (drillSpine)', () =
   const rows = I.drillSpine(p).filter(r => r.src === 'edition');
   assert.deepStrictEqual(rows.map(r => r.opp), ['A. One']);
 });
-// Mutation: restore `if (r.wo && !r.won) return;` in calRuns → the W/O received joins the win run (len 3).
-check('TEN-313: a streak steps over a walkover received as well as a given one (calRuns)', () => {
-  const rows = [{ date: '2026-01-01', won: true }, { date: '2026-01-02', won: true, wo: true },
-    { date: '2026-01-03', won: true }, { date: '2026-01-04', won: false, wo: true }, { date: '2026-01-05', won: false }];
-  const runs = I.calRuns(rows);
-  assert.deepStrictEqual(runs.map(r => r.res + r.len), ['W2', 'L1']);
-  assert.strictEqual(I.calRunsSkipped(rows), 2);
-});
+// (TEN-384 Q1: the Streaks tab and its calRuns() walkover check were removed with the tab.)
 
 // The two recent-form record helpers, fed a walkover each way. The live ledger check
 // below only bites when a deployed strip carries a walkover; these always run.
@@ -3930,8 +4361,15 @@ check('the ledger rate is taken over exactly the rows its strip draws', () => {
     // .toFixed(0) values, so the expectation is a whole number here and stays at
     // one decimal everywhere else.
     const expected = n >= 5 ? (100 * w / n).toFixed(0) + '%' : DASH_CH;
-    const m = html.match(/font-weight:700;">([^<]+) win<\/span>\s*·\s*(\d+) match/);
+    // TEN-384 fix 4: over the cap the head names both counts, "last 18 of 35 matches" — the strip's
+    // rows (the rate) and the window "See all 35 results" counts.
+    const m = html.match(/font-weight:700;">([^<]+) win<\/span>\s*·\s*(?:last (\d+) of (\d+)|(\d+)) match/);
     assert(m, `${p.name}: could not read the ledger headline`);
+    m[2] = m[2] || m[4];
+    if (m[3]) {
+      assert.strictEqual(Number(m[3]), filtered.length, `${p.name}: head says of ${m[3]} but the window holds ${filtered.length}`);
+      assert(html.includes('See all ' + filtered.length + ' results'), `${p.name}: head and "See all" disagree`);
+    }
     assert.strictEqual(m[1], expected,
       `${p.name}: headline rate ${m[1]} but the strip's ${n} rows give ${expected}`);
     assert.strictEqual(Number(m[2]), n,
@@ -4053,12 +4491,13 @@ mustFail('the scoping check would catch an override that reached body', () => {
   assert(!/(^|[^-\w.])body\b/.test(s), 'the override targets body');
 });
 
-check('item 13 · ledger rows align on center and set the outer name span to 13px', () => {
+// TEN-384: the step-4 reference row — the opponent span sets its own 12.5px (it must not inherit the card).
+check('item 13 · ledger rows align on center and the name span sets its own 12.5px', () => {
   const html = ledgerHtmlFor(ZVEREV);
   const row = html.slice(html.indexOf('class="pp2-ledger-row"'));
-  assert(/align-items:center/.test(row.slice(0, 400)), 'the row still aligns on baseline');
-  assert(/<span style="font-size:13px;overflow:hidden/.test(html),
-    'the outer name span does not set 13px, so it inherits the card size');
+  assert(/align-items:center/.test(row.slice(0, 600)), 'the row still aligns on baseline');
+  assert(/<span style="font-size:12\.5px;font-weight:600;color:var\(--text\);min-width:0;overflow:hidden/.test(html),
+    'the name span does not set 12.5px, so it inherits the card size');
 });
 mustFail('the row-alignment check would catch a baseline row', () => {
   assert(/align-items:center/.test('align-items:baseline;'), 'the row still aligns on baseline');
@@ -4091,9 +4530,16 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // the band's win rate. Net 9, and the INVENTORY below is what carries the
   // meaning — the count alone would have read as "nothing changed".
   const calls = (PP2_SRC.match(/rateText0\(/g) || []).length;
-  assert.strictEqual(calls, 9,
-    `rateText0 appears ${calls} times (expected 9: the definition + ribbon + ledger ` +
-    `header + 4 in §5.3 + the speed box headline + the styles box headline)`);
+  // TEN-384 (founder 2026-10-05, 2026 tab): the founder's own figures are whole ("78%") on the Win rate
+  // tile and the month list, which rounds at two sites (the full rate and the small-sample rate). 9 → 12.
+  // TEN-384 fx3 (founder D10): the Court speed and Matchup tiles fall back to the OVERALL whole-number
+  // rate when no band / archetype clears ten, the same notation as the headline they replace. 12 → 14.
+  // TEN-384 fx4 item 5: Record per tournament's overall fallback is his W–L over every event (pending the
+  // founder's Backing-source answer), headlined by its whole-number rate like the other two. 14 → 15.
+  assert.strictEqual(calls, 15,
+    `rateText0 appears ${calls} times (expected 15: the definition + ribbon + ledger ` +
+    `header + 4 in §5.3 + the speed box headline + the styles box headline + the 2026 tab's ` +
+    `Win rate tile + its two month-row rates + the speed, styles and tournament OVERALL fallbacks)`);
 
   // The old guard here was "rateText must outnumber rateText0". v7 broke it
   // legitimately — 8 vs 9 — and that is worth saying out loud rather than
@@ -4117,7 +4563,11 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
     // win rate and rounds because a pace band's rate is a coarse figure and the
     // modal it opens has always rounded it.
     'box 4 (speed) headline',            // item 2, 2026-09-19
-    'box 6 (styles) headline'            // measured: the Matchup list rounds
+    'box 6 (styles) headline',           // measured: the Matchup list rounds
+    '2026 tab Win rate tile',            // TEN-384 founder: "78%"
+    '2026 tab month row (full)', '2026 tab month row (small sample)',
+    'box 4 (speed) OVERALL fallback', 'box 6 (styles) OVERALL fallback',  // fx3, founder D10
+    'box 3 (tournament) OVERALL W–L fallback'                              // fx4 item 5
   ];
   assert.strictEqual(WHOLE_SURFACES.length, calls - 1,
     `the named whole-number surfaces (${WHOLE_SURFACES.length}) no longer account ` +
@@ -4140,9 +4590,15 @@ check('items 4/8 · names are re-ordered at the initial, never token-swapped', (
   assert.strictEqual(I.surnameFirst('F. Meligeni Alves'), 'Meligeni Alves F.');
   // A name with no initial prefix is left exactly as it arrived.
   assert.strictEqual(I.surnameFirst('Zsombor Piros'), 'Zsombor Piros');
+  // TEN-384: the ledger row names the opponent surname-first and not the subject (the page is his); the
+  // step-3 sheet gets both as "I. Surname", converted at the initial the same way.
   const html = ledgerHtmlFor(ZVEREV);
-  assert(!/>Zverev\s+A\.</.test(html), 'the SUBJECT is rendered surname-first; the export has it bare');
-  assert(/>Zverev</.test(html), 'the subject surname is missing from the ledger');
+  assert(!/>Zverev\s+A\.</.test(html), 'the SUBJECT is rendered surname-first in a row');
+  assert(/>[A-Z][\w' -]+ [A-Z][a-z]?\.</.test(html), 'no opponent is rendered surname-first');
+  assert.strictEqual(I.initialSurname('Shelton B.'), 'B. Shelton');
+  assert.strictEqual(I.initialSurname('Van De Zandschulp B.'), 'B. Van De Zandschulp');
+  assert.strictEqual(I.initialSurname('Carlos Alcaraz'), 'C. Alcaraz');
+  assert.strictEqual(I.initialSurname('C. Alcaraz'), 'C. Alcaraz');
 });
 mustFail('the name-form check would catch a whitespace token swap', () => {
   const swap = n => n.split(/\s+/).reverse().join(' ');
@@ -4154,7 +4610,7 @@ check('item 7 · ledger dates are dd.mm and the header prose is not', () => {
   assert.strictEqual(I.fmtDotDate('2026-09-13'), '13.09');
   const html = ledgerHtmlFor(ZVEREV);
   // TEN-376: --label renamed --text-label.
-  const dates = (html.match(/font-size:11px;color:var\(--text-label\);">([^<]+)</g) || [])
+  const dates = (html.match(/font-size:11\.5px;color:var\(--text-label\);">([^<]+)</g) || [])   // TEN-384: 11.5
     .map(s => s.replace(/.*">|</g, ''));
   assert(dates.length > 0, 'no ledger date cells found');
   dates.forEach(d => assert(/^\d{2}\.\d{2}$/.test(d), `ledger date "${d}" is not dd.mm`));
@@ -4198,7 +4654,7 @@ check('item 9 · every ledger round cell is a short code on one line', () => {
   assert(cells > 5000, `only ${cells} rows inspected`);
   assert.strictEqual(long, 0, `${long} of ${cells} round cells are still prose`);
   const html = ledgerHtmlFor(ZVEREV);
-  assert(/font-size:10.5px;color:var\(--text-label\);white-space:nowrap/.test(html),   // TEN-376: --label → --text-label
+  assert(/font-size:11px;color:var\(--text-label\);white-space:nowrap/.test(html),   // TEN-384: Rd = Plex 11
     'the round cell does not set white-space:nowrap');
   console.log(`        ${cells} round cells, all <=4 chars and nowrap`);
 });
@@ -4371,58 +4827,25 @@ mustFail('the capture-join check would catch a first-point close', () => {
 });
 
 // ── item 14 · the match sheet ──────────────────────────────────────────────
-check('item 14 · the match sheet renders real stats and dashes what we do not hold', () => {
+// TEN-384: the profile's own §8.1 sheet (renderSheet) is retired; the step-3 Match analysis stats sheet
+// renders the stats (its own dash rules are pinned in test-ten314-sheet.mjs). What the profile still owns is
+// the JOIN: the row it hands over must carry the match's event key and the subject's own key, so the
+// step-3 sheet finds this match's stats block and orients it by key, never by position.
+check('item 14 · the hand-off gives the step-3 sheet the stats join (event key + subject key)', () => {
   const rows = I.ledgerRows(ZVEREV);
   const withStats = rows.filter(r => I.statsFor(r.m.eventKey));
   assert(withStats.length > 0, `${ZVEREV.name} has no ledger row with a stats block`);
   const ctx = { ledgerOpen: true, ledgerRows: rows, ledgerFiltered: I.ledgerFiltered(rows) };
-  const target = withStats[withStats.length - 1];
-  I.state.sheet = target.m.date + '|' + (target.m.opponent || '');
-  const html = I.renderSheet(ZVEREV, ctx);
-  I.state.sheet = null;
-  assert(/Dominance ratio/.test(html), 'the sheet did not render');
-  // The rows we genuinely do not hold must be dashed, on every sheet.
-  ['Serve rating', 'Return rating'].forEach((label) => {
-    const at = html.indexOf(label);
-    assert(at > 0, `${label} row is missing from the sheet`);
-    const before = html.slice(Math.max(0, at - 420), at);
-    // TEN-376: the dash colour #6e7a93 is now var(--text-label) (DASH_COLOUR).
-    assert(/color:var\(--text-label\);">—</.test(before), `${label} rendered a value — we do not hold it`);
-  });
-  // Net points is NOT one of them. Founder ruling 2026-09-18 (Q2): it IS an
-  // api-tennis field — measured on the committed floor at 1,674 of 3,494
-  // populated sides (47.9%) — and "a dash must only ever mean we don't hold
-  // it". So the row follows the store PER MATCH: a value where this side
-  // carries one, a dash where it does not. Asserting a blanket dash is the
-  // struck-down premise, and it passed for months while the page told users a
-  // field we hold does not exist.
-  {
-    const at = html.indexOf('Net points won');
-    assert(at > 0, 'Net points won row is missing from the sheet');
-    const before = html.slice(Math.max(0, at - 420), at);
-    const dashed = /color:var\(--text-label\);">—</.test(before);
-    const recNp = I.statsFor(target.m.eventKey);
-    const sideNp = String(recNp.p1Key) === String(ZVEREV.key)
-      ? recNp.matchStats.p1 : recNp.matchStats.p2;
-    const npHeld = sideNp && sideNp['Points:Net points won'] != null;
-    if (npHeld) {
-      assert(!dashed, 'Net points won dashed on a match whose side carries the field'
-        + ` (${sideNp['Points:Net points won']}) — a dash must only mean we do not hold it`);
-    } else {
-      assert(dashed, 'Net points won rendered a value on a side that carries none');
-    }
-    console.log(`        net points: side ${npHeld ? 'holds the field → value' : 'holds none → dash'}`);
+  let joined = 0;
+  for (const target of withStats) {
+    const x = I.sheetPayload(ZVEREV, ctx, target.m.date + '|' + (target.m.opponent || ''));
+    assert(x, `no payload for ${target.m.date}`);
+    assert.strictEqual(String(x.subjectKey), String(ZVEREV.key), 'the subject key is not handed over');
+    if (String(x.row.eventKey) === String(target.m.eventKey)) joined++;
   }
-  // ...and a stat we DO hold must not be dashed on a match that carries it.
-  const rec = I.statsFor(target.m.eventKey);
-  const side = String(rec.p1Key) === String(ZVEREV.key) ? rec.matchStats.p1 : rec.matchStats.p2;
-  const aces = side['Service:Aces'];
-  if (aces != null) {
-    assert(html.indexOf('>' + Math.round(aces) + '<') > 0,
-      `the sheet does not show the stored ace count (${aces})`);
-  }
-  console.log(`        sheet for ${ZVEREV.name} ${target.m.date}: real stats rendered, ` +
-    `3 unheld rows dashed`);
+  assert.strictEqual(joined, withStats.length,
+    `${withStats.length - joined} of ${withStats.length} stats-bearing rows lose their event key on hand-off`);
+  console.log(`        ${joined} stats-bearing ledger rows hand the step-3 sheet their event key`);
 });
 mustFail('the match-sheet check would catch a net-points value invented on a side that holds none', () => {
   // The control now points at the defect that is still real after the Q2
@@ -4561,13 +4984,11 @@ function renderCareer(player, scope) {
     return I.renderCareerModal(player, { archetype: null });
   } finally { Object.assign(I.state, saved); }
 }
-// The surface-row labels, in DOM order. Anchored on the 14px/700 name div that
-// only a §5.2A row emits, so the season table's cells cannot leak in.
+// The surface-row labels, in DOM order. TEN-384: the rows are the Overview career card's table, and
+// only its name cell carries `data-pp2-srow`, so the season table's cells cannot leak in.
 function surfaceRowOrder(html) {
   const out = [];
-  // Anchored on the row's own wrapper so the season table's 14px/700 TOTAL
-  // cells (which are mono) cannot be mistaken for surface-row names.
-  const re = /<div style="min-width:0;"><div style="font-size:14px;font-weight:700;[^"]*">([^<]+)</g;
+  const re = /data-pp2-srow="[a-z]+"[^>]*>([^<]+)</g;
   let m;
   while ((m = re.exec(html))) out.push(m[1]);
   return out;
@@ -4631,14 +5052,17 @@ check('ruling Q4(c) · "since <year>" appears only when the grid reaches further
   } finally { W.careerHistory = savedCh; }
 });
 
-check('item 4 · rows are Hard · Grass · Clay · Indoors, in the FILE\'s order', () => {
+// TEN-384 · the Record tab opens with the Match analysis Overview career card (profile variant), whose
+// table reads Hard · Clay · Grass · Indoors — the reference's order and README §5.2A's. The set is the
+// same four carved rows (never "Unrecorded surface").
+check('item 4 · rows are Hard · Clay · Grass · Indoors (TEN-384: the reference\'s order)', () => {
   const order = surfaceRowOrder(renderCareer(CM_PLAYER));
-  assert.deepStrictEqual(order, ['Hard', 'Grass', 'Clay', 'Indoors'],
+  assert.deepStrictEqual(order, ['Hard', 'Clay', 'Grass', 'Indoors'],
     `row order is ${JSON.stringify(order)}`);
 });
 mustFail('[neg] the order check would catch the shipped Hard/Clay/Grass/Unrecorded set', () => {
   const order = ['Hard', 'Clay', 'Grass', 'Unrecorded surface'];
-  assert.deepStrictEqual(order, ['Hard', 'Grass', 'Clay', 'Indoors'],
+  assert.deepStrictEqual(order, ['Hard', 'Clay', 'Grass', 'Indoors'],
     `row order is ${JSON.stringify(order)}`);
 });
 
@@ -4673,9 +5097,10 @@ check('item 6 · every surface ROW equals its own season-table COLUMN', () => {
   assert.deepStrictEqual(g.hard, { won: 9, lost: 5 });
   assert.deepStrictEqual(g.clay, { won: 6, lost: 2 });
   assert.deepStrictEqual(g.indoors, { won: 5, lost: 3 });
-  // the ROW meta line must quote the same carved pair, not the raw bucket
-  assert(html.includes('9\u20135 \u00b7 14 matches'), 'the Hard row is not the carved record');
-  assert(!html.includes('13\u20137 \u00b7 20 matches'), 'the Hard row still shows the RAW bucket');
+  // the ROW's W–L cell must quote the same carved pair, not the raw bucket
+  const wl = (lab) => { const m = new RegExp('data-v="' + lab + '"[^>]*white-space:nowrap;">(\\d+\u2013\\d+)<').exec(html); return m && m[1]; };
+  assert.strictEqual(wl('hard'), '9\u20135', 'the Hard row is not the carved record');
+  assert(!html.includes('>13\u20137<'), 'the Hard row still shows the RAW bucket');
   // and the four rows + footnote must sum to the career total
   const n = r => (r ? r.won + r.lost : 0);
   assert.strictEqual(n(g.hard) + n(g.grass) + n(g.clay) + n(g.indoors),
@@ -4694,12 +5119,13 @@ mustFail('[neg] the row=column check would catch the live build\'s uncarved Hard
 // rate, colour carries the sample gate. Both rules cannot hold at once, so the
 // old assertions are gone rather than weakened — a test kept but loosened is how
 // an override silently half-lands.
-check('item 3 · the bar is minimal: 4px track and fill, radius 2, ONE solid colour', () => {
+// TEN-384 · the bar is the Overview card's Wins · losses bar: a 6px r3 --track with one solid fill.
+check('item 3 · the bar is minimal: 6px track and fill, radius 3, ONE solid colour', () => {
   const html = renderCareer(CM_PLAYER);
   // TEN-376: --bar-track renamed --track; the fill is --bar (full) / --text-label (small sample).
-  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--track\);/g) || []);
+  const tracks = (html.match(/height:6px;border-radius:3px;background:var\(--track\);/g) || []);
   assert(tracks.length >= 4, `only ${tracks.length} minimal tracks rendered (expected one per surface row)`);
-  const fills = (html.match(/height:4px;width:[\d.]+%;background:([^;]+);border-radius:2px;/g) || []);
+  const fills = (html.match(/height:6px;width:[\d.]+%;background:([^;]+);/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
   fills.forEach((f) => {
     assert(/background:(var\(--bar\)|var\(--text-label\));/.test(f), `a fill is not one of the two solid colours: ${f}`);
@@ -4745,67 +5171,83 @@ check('item 3 · under the gate the track is drawn and the fill is not', () => {
       clay: null, hard: { won: 3, lost: 1 }, grass: null, indoor: null }],
   };
   const html = renderCareer(thin);
-  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--track\);/g) || []);
+  const tracks = (html.match(/height:6px;border-radius:3px;background:var\(--track\);/g) || []);
   assert(tracks.length >= 4, 'the track disappeared along with the fill');
-  assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
+  assert(!/height:6px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
 mustFail('[neg] the sub-gate check would catch a fill painted at n=4', () => {
-  const html = '<div style="height:4px;width:75.0%;background:var(--periwinkle);border-radius:2px;">';
-  assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
+  const html = '<span style="display:block;height:6px;width:75.0%;background:var(--bar);"></span>';
+  assert(!/height:6px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
 
-check('item 8 · the win rate is a WHOLE number at 19px', () => {
+// TEN-384 · the Overview career card's Win % (mono 12.5/700 white, one decimal) and its "vs all"
+// (surface rate minus the all-surface rate, signed pp, green/red only at full size).
+check('item 8 · the win rate is the Overview card\'s one-decimal Win % plus a signed vs all', () => {
   const html = renderCareer(CM_PLAYER);
-  // hard is 9-5 = 64.28...% -> "64%"
-  assert(/font-size:19px;font-weight:700;color:var\(--text\);">64%/.test(html),
-    'the Hard rate is not a whole number at 19px in var(--text)');   // TEN-376: #ebf1f2 → --text
-  assert(!/>6[0-9]\.[0-9]%/.test(html), 'a one-decimal rate is still being printed in this modal');
+  // hard is 9-5 = 64.29%; all is 22-12 = 64.71% -> vs all −0.4pp (n=14, full)
+  assert(/font-size:12\.5px;font-weight:700;white-space:nowrap;color:var\(--text\);">64\.3%</.test(html),
+    'the Hard rate is not 64.3% at 12.5/700 in var(--text)');
+  assert(/color:var\(--neg\);">\u22120\.4pp</.test(html), 'the Hard vs all is not −0.4pp in --neg');
+  assert(/font-size:31px;font-weight:800;[^>]*>22\u201312</.test(html), 'the hero record is not 22–12 at 31/800');
 });
-mustFail('[neg] the whole-number check would catch the shipped 69.1%', () => {
-  const html = '<div style="font-size:19px;">69.1%</div>';
-  assert(!/>6[0-9]\.[0-9]%/.test(html), 'a one-decimal rate is still being printed');
+mustFail('[neg] the Win % check would catch the retired whole-number 19px rate', () => {
+  const html = '<div style="font-size:19px;font-weight:700;color:var(--text);">64%</div>';
+  assert(/font-size:12\.5px;font-weight:700;white-space:nowrap;color:var\(--text\);">64\.3%</.test(html),
+    'the Hard rate is not 64.3%');
 });
 
 check('item 9 · the §9 sample gate is applied to the ROW rate', () => {
   const html = renderCareer(CM_PLAYER);
-  // clay n=8 -> SMALL: greyed, smaller, marked
-  assert(new RegExp('font-size:' + 15 + 'px;font-weight:700;color:var\\(--text-label\\);">75%').test(html),
-    'the 8-match Clay row is not greyed and shrunk');
-  assert(/small sample/.test(html), 'the small-sample mark is missing');
-  // grass n=4 -> THIN: no rate at all
-  const grassBlock = html.slice(html.indexOf('>Grass<'));
-  const grassRate = grassBlock.slice(0, grassBlock.indexOf('</div></div>') + 12);
-  assert(!/\d+%/.test(grassRate.match(/font-size:19px[^>]*>([^<]*)</) ? RegExp.$1 : ''),
-    'a 4-match row printed a rate');
+  // clay n=8 -> SMALL: greyed, and marked by the ONE small-sample mark (TEN-384 fix item 9, founder
+  // 2026-10-05: "small sample · n=X" everywhere, no asterisk) — on the row's hover and in the note.
+  // fx3 (founder D11): the mark sits UNDER the rate in the row (rate, then the mark, in one column), and the
+  // small-sample footnote line is gone.
+  assert(/white-space:nowrap;color:var\(--text-label\);"><span data-pp2-ratemark="8"[^>]*>75\.0%<span data-pp2-small="8"[^>]*>small sample \u00b7 n=8</.test(html),
+    'the 8-match Clay row is not greyed with "small sample · n=8" under its rate');
+  assert(!/\d%\*/.test(html) && !/\* 5\u20139/.test(html), 'an asterisk small-sample mark is back');
+  const clayRow = html.slice(html.indexOf('data-pp2-srow="clay"'), html.indexOf('data-pp2-srow="grass"'));
+  assert(/title="small sample \u00b7 n=8"/.test(clayRow), 'the Clay row does not carry "small sample · n=8"');
+  assert(!/Clay small sample \u00b7 n=8/.test(html), 'the small-sample footnote line is back (D11: the mark replaces it)');
+  // grass n=4 -> THIN: the W–L alone, no rate (a dash)
+  const grassRow = html.slice(html.indexOf('data-pp2-srow="grass"'), html.indexOf('data-pp2-srow="indoors"'));
+  assert(!/\d+\.\d%/.test(grassRow), 'a 4-match row printed a rate');
+  assert(/>2\u20132</.test(grassRow), 'the 4-match row lost its W–L');
   // and a sub-5 row must not advertise a click
   assert(!/data-pp2="career-surf" data-v="grass"/.test(html),
     'the 4-match Grass row opens, against §9');
 });
-mustFail('[neg] the gate check would catch the shipped full-size white 83.3%', () => {
-  const html = 'font-size:19px;font-weight:700;color:var(--text);">83.3%<div>small sample</div>';
-  assert(new RegExp('font-size:15px;font-weight:700;color:var\\(--text-label\\);">83%').test(html),
-    'a small-sample rate rendered full size and white');
+mustFail('[neg] the gate check would catch a small-sample rate painted white', () => {
+  const html = 'white-space:nowrap;color:var(--text);">75.0%<span>small sample</span>';
+  assert(/white-space:nowrap;color:var\(--text-label\);">75\.0%</.test(html),
+    'a small-sample rate rendered white');
+});
+mustFail('[neg] the mark check would catch the retired asterisk', () => {
+  const html = 'white-space:nowrap;color:var(--text-label);">75.0%*</span> · * 5\u20139 matches, a small sample';
+  assert(!/\d%\*/.test(html) && !/\* 5\u20139/.test(html), 'an asterisk small-sample mark is back');
 });
 
-check('item 10 · the row card carries the file\'s background, grid and meta spacing', () => {
+// TEN-384 C2/C4 · the card is a panel (--card + --edge-6, joined on top of the season panel, r 16 16 0 0,
+// 22/24/24) and its table is the reference's `64px 1fr 64px 60px 68px`, gap 0 14.
+check('item 10 · the career card carries the reference\'s panel and table grid', () => {
   const html = renderCareer(CM_PLAYER);
-  assert(/grid-template-columns:minmax\(0,1fr\) 300px 58px;gap:16px/.test(html), 'grid tracks drifted');
-  assert(/border-radius:10px;padding:13px 16px/.test(html), 'radius/padding drifted');
-  // TEN-376: the row card's #0c0e16 is the --inner surface; meta --label → --text-label.
-  assert(/background:var\(--inner\);/.test(html), 'the row has no background — it was transparent live');
-  assert(/font-size:11\.5px;color:var\(--text-label\);margin-top:4px/.test(html),
-    'the meta line lost its 4px offset from the name');
+  assert(/grid-template-columns:64px minmax\(0,1fr\) 64px 60px 68px;gap:0 14px/.test(html), 'grid tracks drifted');
+  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-bottom:0;border-radius:16px 16px 0 0;padding:22px 24px 24px/.test(html),
+    'the card is not the joined --card + --edge-6 top panel');
+  assert(/border-radius:0 0 16px 16px;padding:20px 24px 22px/.test(html), 'the season panel is not joined under it');
+  ['Surface', 'Wins · losses', 'W–L', 'Win %', 'vs all'].forEach((h) => {
+    assert(html.includes('>' + h + '<'), `the table head is missing ${h}`);
+  });
 });
-mustFail('[neg] the card check would catch the shipped transparent row', () => {
-  const html = 'border-radius:10px;padding:13px 16px;border:1px solid rgba(255,255,255,0.07);';
-  assert(/background:var\(--inner\);/.test(html), 'the row has no background');
+mustFail('[neg] the card check would catch the retired --inner row cards', () => {
+  const html = 'background:var(--inner);border-radius:10px;padding:13px 16px;';
+  assert(/grid-template-columns:64px minmax\(0,1fr\) 64px 60px 68px;gap:0 14px/.test(html), 'grid tracks drifted');
 });
 
 check('items 11-13,15 · the season table head, helper and footer are the file\'s', () => {
   const html = renderCareer(CM_PLAYER);
   // 11 — the eyebrow the founder found missing
   // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label, never mono caps.
-  assert(/font-family:var\(--font-words\); font-size:10\.5px;letter-spacing:0\.10em;[^>]*font-weight:700;[^>]*color:var\(--text-label\);">Wins \/ losses</.test(html),
+  assert(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;[^>]*color:var\(--text-label\);">Wins \/ losses</.test(html),
     'the WINS / LOSSES eyebrow is missing from the title line');
   // 12 — the file's helper copy, not the invented one
   assert(/Click any record to browse those matches/.test(html), 'the helper copy is not the file\'s');
@@ -4814,8 +5256,9 @@ check('items 11-13,15 · the season table head, helper and footer are the file\'
   // 13 — head colours AND the 11px bottom padding that was missing live
   // TEN-376: the 12a hexes as the product's token mapping (#6e7a93/#a3abba → --text-label; every surface head
   // → --text-soft — correction: surfaces are not colour-coded, blue/green are data-viz/signed values only).
-  [['Year', 'var\\(--text-label\\)'], ['Total', 'var\\(--text-label\\)'], ['Clay', 'var\\(--text-soft\\)'],
-   ['Hard', 'var\\(--text-soft\\)'], ['Indoors', 'var\\(--text-soft\\)'], ['Grass', 'var\\(--text-soft\\)']].forEach(([label, col]) => {
+  // TEN-384 C8: the reference draws every head in --text-label (the surface heads are caps labels too).
+  [['Year', 'var\\(--text-label\\)'], ['Total', 'var\\(--text-label\\)'], ['Clay', 'var\\(--text-label\\)'],
+   ['Hard', 'var\\(--text-label\\)'], ['Indoors', 'var\\(--text-label\\)'], ['Grass', 'var\\(--text-label\\)']].forEach(([label, col]) => {
     assert(new RegExp('color:' + col + ';padding-bottom:11px;[^>]*>' + label + '<').test(html),
       `the ${label} head is not ${col} with 11px padding-bottom`);
   });
@@ -5182,8 +5625,8 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
     html = I.renderCareerModal(withForm, { archetype: null });
   } finally { Object.assign(I.state, saved); }
   // the drill card itself
-  // TEN-376 Foundation: 0.33px --seg-active-line is now the 1px --edge-10 open/selected edge.
-  assert(/border:1px solid var\(--edge-10\);border-radius:1[01]px;/.test(html), 'the drill card border is not the file\'s');
+  // TEN-384 C6: the drill is a panel inside the season panel — 1px --edge-6, r11 (was --inner + --edge-10).
+  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:11px;/.test(html), 'the drill card border is not the reference\'s');
   assert(/grid-template-columns:46px 12px minmax\(0,1\.15fr\) 38px 40px minmax\(0,1\.35fr\) 48px 48px/.test(html),
     'the drill grid tracks are not the file\'s');
   assert(/max-height:340px;overflow-y:auto/.test(html), 'the drill list has no 340px scroll cap');
@@ -5312,21 +5755,20 @@ mustFail('[neg] the overflow check would catch the "All N matches" wording that 
   assert(!/All 7 matches/.test(html), 'an overflowing list still claims to be complete');
 });
 
-check('the bold name in a ledger row is the SUBJECT, in both orders', () => {
+// TEN-384 (step-4 reference): a ledger row names the OPPONENT only (surname-first, 12.5/600, white) — the
+// subject is the page. The founder's 2026-09-16 bold-name bug stays fixed by construction: no name on the
+// row takes its weight from the result (W/L square, sets colour and score carry it).
+check('no name in a ledger row takes its weight from the result', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const fn = src.slice(src.indexOf('function ledgerRowHtml'));
   const body = fn.slice(0, fn.indexOf('\n  }\n'));
-  // the subject span's weight must not depend on the result
-  assert(/var sub = 'font-size:13px;font-weight:700;color:var\(--text\);'/.test(body),
-    'the subject name is still conditionally bold');
-  assert(/var opp = 'font-size:13px;font-weight:400;color:var\(--text-label\);'/.test(body),   // TEN-376: --text-sub → --text-label
-    'the opponent name can still take the bold');
-  assert(!/subjWin \? '700' : '400'/.test(body), 'emphasis still keys on who won');
+  assert(/font-size:12\.5px;font-weight:600;color:var\(--text\);/.test(body),
+    'the opponent name is not the fixed 12.5/600 white');
+  assert(!/(won|subjWin|w) \? '700' : '[46]00'/.test(body), 'emphasis still keys on who won');
 });
 mustFail('[neg] the bold check would catch the shipped winner-keyed emphasis', () => {
   const body = "var sub = 'font-size:13px;font-weight:' + (subjWin ? '700' : '400') + ';color:'";
-  assert(/var sub = 'font-size:13px;font-weight:700;color:var\(--text\);'/.test(body),
-    'the subject name is still conditionally bold');
+  assert(!/(won|subjWin|w) \? '700' : '[46]00'/.test(body), 'emphasis still keys on who won');
 });
 
 
@@ -5345,56 +5787,66 @@ const T_HTML = (() => {
   return I.renderTournModal(ZVEREV);
 })();
 
-check('§5.3 items 2-3 · the subtitle is the design string and the helper keeps the name', () => {
+// TEN-384 T3 · the helper sentence, the list footnote and the in-detail explainer are removed (the
+// ticket: "footnotes and slot-explainer text removed"); the head is the caps "Record per tournament · career".
+check('§5.3 items 2-3 · the subtitle is the design string; the helper and footnotes are gone (TEN-384 T3)', () => {
   assert.strictEqual(I.modalSubtitle('tourn', ZVEREV, {}),
     'Career win–loss at every event he has played');
-  assert(/Search a tournament to see [^<]*full career win–loss record there\./.test(T_HTML),
-    'the helper line is not the design string');
-  assert(/Zverev/.test(T_HTML), 'the helper does not substitute the player short name');
-  assert(!/win-loss/.test(T_HTML), 'the helper uses a hyphen where the design uses an en dash');
+  assert(!/Search a tournament to see/.test(T_HTML), 'the helper sentence is still painted');
+  assert(!/Each W–L is the sum of the editions/.test(T_HTML), 'the list footnote is still painted');
+  assert(/>Record per tournament · career</.test(T_HTML), 'the caps head is missing');
+  I.state.tournOpen = 'Australian Open';
+  const open = I.renderTournModal(ZVEREV);
+  I.state.tournOpen = null;
+  assert(!/Sets are oriented from/.test(open), 'the in-detail explainer is still painted');
 });
 mustFail('[neg] the subtitle check would catch the rejected coverage wording', () => {
   const s = 'Career win–loss at every event Zverev’s record carries';
   assert.strictEqual(s, 'Career win–loss at every event he has played');
 });
 
-check('§5.3 item 5 · the search field is the file\'s label + 17px magnifier, not a bare input', () => {
-  assert(/<svg width="17" height="17"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
-    'the 17px magnifier is missing');
-  // TEN-376: --surface-inner renamed --inner (control surface).
-  assert(/<label style="display:flex;align-items:center;gap:12px;background:var\(--inner\);/.test(T_HTML),
-    'the field is not the file\'s label wrapper');
-  assert(/border-radius:12px;padding:14px 18px;/.test(T_HTML), 'the field radius/padding drifted');
-  assert(/placeholder="Search a tournament\.\.\."/.test(T_HTML), 'the placeholder drifted');
+// TEN-384 T2 · the compact search in the head: a 220px control (--inner, no edge, r9, 7/12) with a 14px
+// magnifier and a 12.5px input.
+check('§5.3 item 5 · the search field is the reference\'s compact control + 14px magnifier', () => {
+  assert(/<svg width="14" height="14"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
+    'the 14px magnifier is missing');
+  assert(/<label style="display:flex;align-items:center;gap:9px;width:220px;box-sizing:border-box;background:var\(--inner\);border:1px solid transparent;border-radius:9px;padding:7px 12px;/.test(T_HTML),
+    'the field is not the compact --inner control');
+  assert(/placeholder="Search a tournament"/.test(T_HTML), 'the placeholder drifted');
+  assert(/data-pp2="tourn-search"[^>]*font-size:12\.5px/.test(T_HTML), 'the input is not 12.5px');
 });
-mustFail('[neg] the search check would catch the shipped bare input', () => {
-  const shipped = '<input type="search" data-pp2="tourn-search" placeholder="Search a tournament..." ' +
-    'style="width:100%;background:var(--surface-inner);border:1px solid rgba(255,255,255,0.09);">';
-  assert(/<svg width="17" height="17"/.test(shipped), 'the 17px magnifier is missing');
+mustFail('[neg] the search check would catch the retired full-width field', () => {
+  const shipped = '<label style="display:flex;align-items:center;gap:12px;background:var(--inner);' +
+    'border:1px solid var(--edge-6);border-radius:12px;padding:14px 18px;"><svg width="17" height="17">';
+  assert(/<svg width="14" height="14"/.test(shipped), 'the 14px magnifier is missing');
 });
 
-check('§5.3 items 6-7 · six columns on the file\'s grid, with SURFACE and BACKING', () => {
-  const grid = 'grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;gap:0 14px';
-  assert(T_HTML.indexOf(grid) > 0, 'the head/row grid tracks are not the file\'s');
-  ['Tournament', 'Surface', 'Best result', 'W–L', 'Win%', 'Backing'].forEach((h) => {
+// TEN-384 T4/T5 · seven columns: the reference adds the Wins · losses bar (8px, white 10% track, r4,
+// gated --bar fill, a 1px --bar-2 tick at 50%).
+check('§5.3 items 6-7 · seven columns on the reference grid, with SURFACE, the bar and BACKING', () => {
+  const grid = 'grid-template-columns:minmax(0,1.2fr) 60px 72px 56px minmax(0,1fr) 52px 64px;gap:0 12px';
+  assert(T_HTML.indexOf(grid) > 0, 'the head/row grid tracks are not the reference\'s');
+  ['Tournament', 'Surface', 'Best', 'W–L', 'Wins · losses', 'Win %', 'Backing'].forEach((h) => {
     assert(T_HTML.indexOf('>' + h + '</span>') > 0, `the ${h} column head is missing`);
   });
   assert(T_HTML.indexOf('>Seasons<') < 0, 'the SEASONS column was not removed');
-  // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label
-  // (was mono 9px/0.1em/#6e7a93); row hairlines are 1px --line (was 0.33px --line-soft);
-  // the hover fill is --tile-hover (was --nav-hover).
-  assert(/font-family:var\(--font-words\); font-size:10\.5px;letter-spacing:0\.10em; text-transform:uppercase; font-weight:700;[^"]*color:var\(--text-label\)/.test(T_HTML),
-    'the head eyebrow is not the foundation caps label (Hanken 10.5 / 0.10em / 700 / --text-label)');
-  assert(/padding:11px 10px;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML),
+  // TEN-376 Foundation: caps labels are Hanken var(--font-words) 10.5/700/0.10em/--text-label; row hairlines
+  // are 1px --line; the hover fill is --tile-hover.
+  assert(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*border-bottom:1px solid var\(--line\)/.test(T_HTML),
+    'the head is not the foundation caps label over a --line rule');
+  assert(/padding:11px 0;cursor:pointer;border-top:1px solid var\(--line\)/.test(T_HTML),
     'the row padding or border-top drifted');
+  assert(/height:8px;border-radius:4px;overflow:hidden;background:color-mix\(in srgb, var\(--text\) 10%, transparent\);/.test(T_HTML),
+    'the Wins · losses bar track is missing');
+  assert(/left:50%;width:1px;background:var\(--bar-2\)/.test(T_HTML), 'the 50% tick is missing');
   assert(/\.pp2-trow:hover\{background:var\(--tile-hover\);\}/.test(PP2_SRC),
     'the row has no hover fill');
 });
 mustFail('[neg] the column check would catch the shipped five-column table', () => {
-  const shipped = '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px;' +
+  const shipped = '<div style="display:grid;grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;' +
     'gap:0 14px;"><div>Tournament</div><div>Seasons</div></div>';
-  assert(shipped.indexOf('grid-template-columns:minmax(0,1.6fr) 74px 96px 56px 52px 58px;gap:0 14px') > 0,
-    'the head/row grid tracks are not the file\'s');
+  assert(shipped.indexOf('grid-template-columns:minmax(0,1.2fr) 60px 72px 56px minmax(0,1fr) 52px 64px;gap:0 12px') > 0,
+    'the head/row grid tracks are not the reference\'s');
 });
 
 check('§5.3 item 8 · best result carries the year of its most recent edition', () => {
@@ -5413,6 +5865,14 @@ check('§5.3 item 8 · best result carries the year of its most recent edition',
       'the best-result year is not the most recent edition that achieved it');
   }
   console.log(`        ${withBest.length} of ${v.length} tournaments carry a dated best result`);
+});
+// TEN-384 T5 · the Best column prints the reference's draw code + year; the word survives as the tooltip.
+check('§5.3 item 8 · Best prints the draw code (W · F · SF · QF · R16 …) and the year', () => {
+  assert.deepStrictEqual(I.tournBestParts('Won 2025'), { code: 'W', year: '2025', label: 'Won' });
+  assert.deepStrictEqual(I.tournBestParts('Semi-final 2026'), { code: 'SF', year: '2026', label: 'Semi-final' });
+  assert.strictEqual(I.tournBestParts('Round of 128').code, 'R128');
+  assert.strictEqual(I.tournBestParts(null), null);
+  assert(!/>Quarter-final</.test(T_HTML) && !/>Won</.test(T_HTML), 'a finish word reached the Best column');
 });
 mustFail('[neg] the best-result check would catch the shipped bare finish', () => {
   assert(/\s\d{4}$/.test('Won'), 'best result "Won" carries no year');
@@ -5458,10 +5918,10 @@ mustFail('[neg] the display-name check would catch the shipped feed name', () =>
 check('§5.3 items 11-12 · the open row is highlighted and BACKING is the Tournament tab\'s row join (founder Q8)', () => {
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
-  // TEN-376 Foundation: selection is lift — the open row takes --inner (was #0b1c4e); closed rows stay transparent.
-  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--inner\);/.test(open),
+  // TEN-384 T6: selection is lift — the open row takes the --selected wash, spread ±10px; closed rows carry none.
+  assert(/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);box-shadow:-10px 0 0 0 var\(--selected\),10px 0 0 0 var\(--selected\);/.test(open),
     'the selected row carries no highlight');
-  assert(!/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--inner\);/.test(T_HTML),
+  assert(!/data-pp2="tourn-row" data-t="Australian Open" style="[^"]*background:var\(--selected\);/.test(T_HTML),
     'a closed row carries the selected highlight');
   I.state.tournOpen = null;
   // BACKING (founder Q8, 2026-09-30; supersedes the N5 market-shard sum): the Match analysis Tournament tab's row join,
@@ -5493,17 +5953,16 @@ check('§5.3 items 13-14 · the detail is the file\'s container and carries the 
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  // TEN-376: --surface-inner → --inner, 0.33px --seg-active-line → 1px --edge-10.
-  assert(open.indexOf('background:var(--inner);border:1px solid var(--edge-10);border-radius:10px;' +
-    'margin:7px 0 9px;padding:13px 15px;') > 0, 'the detail container drifted from the file');
-  assert(/showing \d+ matches/.test(open), 'the header meta line is missing');
-  assert(/font-size:13px;font-weight:700;white-space:nowrap;">Australian Open</.test(open),
-    'the detail header name is missing');
+  // TEN-384 T6: the detail is a panel — --card + 1px --edge-6, r10 (was --inner + --edge-10).
+  assert(open.indexOf('background:var(--card);border:1px solid var(--edge-6);border-radius:10px;' +
+    'margin:7px 0 9px;padding:13px 15px;') > 0, 'the detail container drifted from the reference');
+  assert(/\d+–\d+ · \d+% · \d+ matches listed/.test(open), 'the header meta line is missing');
+  assert(/>Australian Open · career</.test(open), 'the detail caps head is missing');
 });
 mustFail('[neg] the detail check would catch the shipped header-less container', () => {
-  const shipped = '<div style="background:var(--inner);border:1px solid var(--edge-10);' +
+  const shipped = '<div style="background:var(--card);border:1px solid var(--edge-6);' +
     'border-radius:10px;margin:7px 0 9px;padding:13px 15px;"><div>2026 · WON</div></div>';
-  assert(/showing \d+ matches/.test(shipped), 'the header meta line is missing');
+  assert(/\d+–\d+ · \d+% · \d+ matches listed/.test(shipped), 'the header meta line is missing');
 });
 
 check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non-Slam\'s', () => {
@@ -5515,23 +5974,22 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   const oHtml = I.renderTournDetail(ZVEREV, other);
   // TEN-376: the tile caption is the foundation caps label (Hanken 10.5/700/0.10em, was mono 0.12em caps)
   const tiles = h => (h.match(/font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);[^"]*">([^<]+)</g) || [])
-    .map(x => x.replace(/.*">/, '').replace(/</, ''));
+    .map(x => x.replace(/.*">/, '').replace(/</, '')).filter(x => !/ · career$/.test(x));
   assert.deepStrictEqual(tiles(sHtml),
     ['W–L record', 'Grand Slam career', 'Over 3.5 sets · this event',
      'Over 3.5 sets · other majors', 'Backing him here']);
   assert.deepStrictEqual(tiles(oHtml),
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
-  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(sHtml),
-    'the tile grid is not 5 x gap 10');
-  // TEN-376 Foundation: stat box = --card + 1px --edge-6 (was --surface + 0.33px 12a --line).
-  assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:11px;padding:14px 15px/
-    .test(sHtml), 'the tile box drifted from the file');
-  assert(/font-size:23px;font-weight:700/.test(sHtml), 'the tile figure is not mono 23/700');
+  // TEN-384 T6: the five tiles are ONE joined strip (--card + 1px --edge-6, r12, --line dividers), figure mono 24/700.
+  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:12px;/.test(sHtml),
+    'the tiles are not one joined 5-cell strip');
+  assert(/padding:13px 12px;min-width:0;border-left:1px solid var\(--line\)/.test(sHtml), 'the strip cells lost their --line dividers');
+  assert(/font-size:24px;font-weight:700/.test(sHtml), 'the tile figure is not mono 24/700');
 });
-mustFail('[neg] the tile check would catch a detail with no tiles at all', () => {
-  const shipped = '<div style="background:var(--surface-inner);"><div>2026</div></div>';
-  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(shipped),
-    'the tile grid is not 5 x gap 10');
+mustFail('[neg] the tile check would catch the retired separate tiles', () => {
+  const shipped = '<div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;">';
+  assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:0;background:var\(--card\)/.test(shipped),
+    'the tiles are not one joined 5-cell strip');
 });
 
 check('§5.3 item 15 · Over 3.5 counts only completed main-draw Slam matches', () => {
@@ -5602,9 +6060,12 @@ check('§5.3 item 18 · the opponent takes the FILE\'s name form, not the ledger
   assert(initialFirst > surnameFirst,
     `the modal renders ${surnameFirst} surname-first names against ${initialFirst} ` +
     `initial-first — it is following the ledger's rule, not the file's`);
-  // and the LEDGER must be unchanged — this ruling is scoped to §5.3 only
-  assert(/surnameFirst\(r\.opp\)/.test(PP2_SRC),
-    'renderDrill stopped using surnameFirst — the ledger ruling was broken');
+  // and the LEDGER must be unchanged — "Surname I." stays on the ledger and ribbon only. fx3 (founder D12,
+  // 2026-10-07): every other surface, the Career / Calendar drills included, reads "I. M. Surname".
+  assert(/surnameFirst\(m\.opponent\)/.test(PP2_SRC),
+    'the ledger stopped using surnameFirst — the ledger ruling was broken');
+  assert(/esc\(r\.opp \? initialSurname\(r\.opp\)/.test(PP2_SRC) && !/surnameFirst\(r\.opp\)/.test(PP2_SRC),
+    'a drill still prints the ledger\'s "Surname I." form (D12: other places keep "I. Surname")');
   console.log(`        §5.3 opponents: ${initialFirst} initial-first, ${surnameFirst} surname-first`);
 });
 mustFail('[neg] the name-form check would catch the ledger rule leaking in', () => {
@@ -5799,18 +6260,18 @@ function speedModalFor(store) {
   return { html: m._internals.renderSpeedModal(p), I: m._internals };
 }
 
-// The SAME pending-vs-empty split, on the Streaks tab, which never adopted it.
-// Found by rendering the tab with the lazy store absent: the footnote asserted
-// "his win rate across these 0 matches (0.0%)" and "0 of 0 carry a Pinnacle
-// closing price" — bare zeros standing for a network fact, which §3 forbids.
-function streakTabFor(store) {
+// The SAME pending-vs-empty split, on the Calendar record. It lived on the Streaks tab (found there by
+// rendering with the lazy store absent: bare zeros standing for a network fact, which §3 forbids);
+// TEN-384 Q1 removed Streaks, so the guard and its pair of checks moved onto the Calendar tab.
+function calendarTabFor(store) {
   const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
   const m = loadModule(profiles, {
     careerSplits: SPLITS, marketEdge: {}, playingStyles: STYLES,
     holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
     matchStats: {}, bet365History: {}, careerHistory: store,
   });
-  return m._internals.renderStreakTab(m._internals.profileFor(ONE_KEY));
+  m._internals.state.calTab = 'calendar'; m._internals.state.calSurface = 'all';
+  return m._internals.renderSeasonModal(m._internals.profileFor(ONE_KEY));
 }
 function stylesModalFor(store) {
   const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
@@ -5853,27 +6314,26 @@ mustFail('[neg] the §5.6 guard would catch the claim it replaced', () => {
   assert(/has not loaded/.test(html), 'unsettled store does not say so');
 });
 
-check('§6.4 Streaks · an UNSETTLED store never prints a bare 0 or 0%', () => {
-  const html = streakTabFor({});                             // key absent
+check('§5.4 Calendar · an UNSETTLED store never claims the player has no matches', () => {
+  const html = calendarTabFor({});                           // key absent
   assert(/has not loaded/.test(html), 'unsettled store does not say so: ' + html.slice(0, 200));
-  assert(!/0 matches \(0\.0%\)/.test(html), 'the footnote still prints "0 matches (0.0%)"');
-  assert(!/0 of 0 carry/.test(html), 'the footnote still prints "0 of 0 carry a Pinnacle closing price"');
-  assert(!/no matches on record/i.test(html),
+  assert(!/>0 matches</.test(html), 'an unsettled store prints a bare "0 matches"');
+  assert(!/no dated career match rows on record|no matches on record/i.test(html),
     'an unsettled store claims the player has no matches on record');
 });
 
-check('§6.4 Streaks · a SETTLED-EMPTY store makes the honest claim instead', () => {
+check('§5.4 Calendar · a SETTLED-EMPTY store makes the honest claim instead', () => {
   const store = {}; store[ONE_KEY] = [];                     // key present, 0 rows
-  const html = streakTabFor(store);
-  assert(/no matches on record/i.test(html), 'settled-empty does not say so: ' + html.slice(0, 200));
+  const html = calendarTabFor(store);
+  assert(/no dated career match rows on record/i.test(html), 'settled-empty does not say so: ' + html.slice(0, 200));
   assert(!/has not loaded/.test(html), 'settled-empty blames the network');
 });
 
-mustFail('[neg] the Streaks guard would catch the zeros it replaced', () => {
-  // The exact pre-fix sentence. If this ever passes the assertion above, the
-  // guard has been removed and the footnote is asserting network state again.
-  const pre = 'derived from his win rate across these 0 matches (0.0%)';
-  assert(!/0 matches \(0\.0%\)/.test(pre), 'the pre-fix footnote slipped through');
+mustFail('[neg] the Calendar guard would catch the claim it replaced', () => {
+  // The pre-guard sentence. If this ever passes the assertion above, the
+  // guard has been removed and the empty state is asserting network state again.
+  const pre = 'No dated career match rows on record, so there is no match to place in a calendar.';
+  assert(!/no dated career match rows on record/i.test(pre), 'the pre-fix claim slipped through');
 });
 
 check('§5.5 · an UNSETTLED store reads "has not loaded", never "no matches on record"', () => {
@@ -6094,17 +6554,23 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
     }
     if (!bs) {
       dashed++;
-      assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`);
       // Three empty facts, asserted apart. A single sentence covering all three
-      // is exactly the defect the browser read caught.
+      // is exactly the defect the browser read caught. fx3: no splits entry = "Splits not built for this
+      // player yet" (founder, item 7); splits held but no pick = the OVERALL figure (founder D10) — his rate
+      // across these splits, the modal's own baseline — never a dash and never a thin split.
       const eligible = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS).length;
-      assert.strictEqual(vals.splits.support,
-        expectBase == null
-          ? 'no split data on record'
-          : !eligible
-            ? 'no split clears the ten-match minimum'
-            : `no split above his ${expectBase.toFixed(1)}% across these splits`,
-        `${p.name}: empty copy is "${vals.splits.support}" (base=${expectBase}, eligible=${eligible})`);
+      const pop = I.splitPopulation(p.key, 'career');
+      if (!SPLITS[p.key]) {
+        assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without splits`);
+        assert.strictEqual(vals.splits.support, 'Splits not built for this player yet', `${p.name}: empty copy is "${vals.splits.support}"`);
+      } else if (expectBase == null || !pop || pop.n < 5) {
+        assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a population`);
+      } else {
+        assert.strictEqual(vals.splits.headline, expectBase.toFixed(1) + '%', `${p.name}: overall headline is not his rate across these splits`);
+        assert.strictEqual(vals.splits.support,
+          `all splits · ${!eligible ? 'none at 10+ matches' : 'no split above it'} · ${pop.won}–${pop.n - pop.won}`,
+          `${p.name}: overall copy is "${vals.splits.support}" (base=${expectBase}, eligible=${eligible})`);
+      }
       // And it must be dashed for the RIGHT reason: nothing positive, not
       // nothing at all. A player with a positive split and a dashed tile is the
       // bug this whole ruling exists to remove.
@@ -6415,9 +6881,30 @@ check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units
     const vals = I.buildBoxVals(p, { archetype: null });
     if (!be) {
       dashed++;
-      assert.strictEqual(vals.tourn.headline, null, `${p.name}: headline without a pick`);
-      assert.strictEqual(vals.tourn.support, 'no event with 10+ priced matches',
-        `${p.name}: empty copy is "${vals.tourn.support}"`);
+      // fx3 (founder D10): no event clears ten priced -> the OVERALL figure. fx4 item 5: until the founder answers
+      // the Backing-source question it is his W–L over every event, never a summed units figure; the fx3 summed
+      // path stays behind TOURN_TILE_SUMMED_UNITS and is checked with the flag on.
+      const views = I.tournViews(p) || [];
+      const won = views.reduce((a, t) => a + t.won, 0), lost = views.reduce((a, t) => a + t.lost, 0);
+      if (won + lost) {
+        assert.strictEqual(vals.tourn.support, `all events · ${won}–${lost}`, `${p.name}: overall support "${vals.tourn.support}"`);
+        assert.strictEqual(vals.tourn.headline, Math.round(100 * won / (won + lost)) + '%', `${p.name}: overall headline`);
+        assert(!vals.tourn.hlSuffix, `${p.name}: a units suffix on the W–L fallback`);
+      }
+      const pinN = views.reduce((a, t) => a + (t.pinN && t.pinPl != null ? t.pinN : 0), 0);
+      I.TOURN_TILE_SUMMED_UNITS = true;
+      const sv = I.buildBoxVals(p, { archetype: null }).tourn;
+      I.TOURN_TILE_SUMMED_UNITS = false;
+      if (!pinN) {
+        assert.strictEqual(sv.headline, null, `${p.name}: headline with nothing priced`);
+        assert.strictEqual(sv.support, 'no event with 10+ priced matches',
+          `${p.name}: empty copy is "${sv.support}"`);
+      } else {
+        const pl = Math.round(views.reduce((a, t) => a + (t.pinN && t.pinPl != null ? t.pinPl : 0), 0) * 10) / 10;
+        assert.strictEqual(sv.headline, (pl.toFixed(1).charAt(0) === '-' ? '\u2212' + pl.toFixed(1).slice(1) : '+' + pl.toFixed(1)), `${p.name}: overall headline is not the summed Backing`);
+        assert(String(sv.support).startsWith('all events · ') && sv.support.endsWith(`${pinN} priced`),
+          `${p.name}: overall support "${sv.support}"`);
+      }
       continue;
     }
     picked++;
@@ -6479,7 +6966,10 @@ check('Q1/Q2 · the superseded empty copy is gone from the BOX builder', () => {
   }
   assert(!box.includes("'no split above his career rate'"),
     'the round-1 career-rate empty copy is still shipping — Q1 round 2 replaced it');
-  assert(box.includes("'no split above his '"), 'the Q1 round-2 empty copy is missing');
+  // fx3 (founder D10 + item 7): the round-2 "no split above his X%" dash is replaced by the OVERALL figure;
+  // a player with no splits entry reads "Splits not built for this player yet".
+  assert(!box.includes("'no split above his '"), 'the Q1 round-2 dash copy is back (D10: the overall figure replaces it)');
+  assert(box.includes("'no split above it'") && box.includes('SPLITS_NOT_BUILT'), 'the fx3 overall / not-built copy is missing');
   // ITEM 3 (2026-09-19) · the Q1 round-2 ruling asked for the baseline to be
   // printed "so the gap is reproducible". Item 3 capped the tile at the design's
   // three tokens, which will not carry a gap AND a baseline AND a record on one
@@ -6504,6 +6994,397 @@ check('Q1/Q2 · the superseded empty copy is gone from the BOX builder', () => {
     assert(box.includes(`'${required}'`), `the Q1 round-2 empty branch "${required}" is gone`);
   }
   assert(box.includes("'no event with 10+ priced matches'"), 'the Q2 empty copy is missing');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// TEN-384 fix round 1 (founder "Not ready", 2026-10-05) · items 7–13 (fxmisc)
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\nTEN-384 fix items 7–13');
+
+// item 8 · a tile headline only from a split of n >= 10; else the next best.
+// fx2 (2026-10-07): the FALLBACK is proven on a pinned fixture (tools/fixtures/ten384-fx2/matchup-fallback.json:
+// a 6–0 archetype row tops the rate-sorted list, a 9–3 row is the first n >= 10) — the live roster may or may
+// not hold such a player on a given day, and a gate must not depend on it. The roster scan below asserts the
+// rule wherever it reaches and needs career-history/ (styleRows reads the career spine): absent, it SKIPS.
+const FX2_LIB = require('./ten384-figures-lib.js');
+const FX2_DIR = path.join(__dirname, 'fixtures', 'ten384-fx2');
+const FX2_MATCHUP = JSON.parse(fs.readFileSync(path.join(FX2_DIR, 'matchup-fallback.json'), 'utf8'));
+function fx2MatchupModule(src) {
+  const f = FX2_MATCHUP;
+  return FX2_LIB.loadPp2({ src, now: f.asOf, players: { [f.profile.key]: f.profile },
+    careerHistory: { [f.profile.key]: f.careerHistory }, extra: { playingStyles: { players: f.playingStyles } } });
+}
+check('fix 8 · [fixture] a 5–9 row at the top of the Matchup list is passed over for the first n >= 10 row', () => {
+  const { I: FI } = fx2MatchupModule();
+  const p = FX2_MATCHUP.profile;
+  const rows = FI.styleRows(p);
+  const top = rows[0], tn = top.won + top.lost;
+  assert(rows.total > 0, 'the fixture spine is empty');
+  assert(tn >= 5 && tn < 10, `the fixture's top row is n=${tn}, not a 5–9 row — the fallback would not be exercised`);
+  const want = rows.find(r => r.won + r.lost >= 10);
+  const bm = FI.bestMatchup(p);
+  assert(bm && bm.n >= 10, `tile n=${bm && bm.n}`);
+  assert.strictEqual(bm.label, want.axis.label, `tile ${bm && bm.label}, list's first n>=10 row ${want.axis.label}`);
+  const box = FI.boxValues(p, { rows: FI.ledgerMatches(p) }).styles;
+  assert(box.support.indexOf(want.axis.label) === 0, `the tile reads "${box.support}"`);
+  console.log(`        top row ${top.axis.label} ${top.won}–${top.lost} (n=${tn}) passed over → tile ${bm.label} ${bm.won}–${bm.lost}`);
+});
+mustFail('fix 8 · a tile taken from the top row (the pre-fix rule) is caught', () => {
+  const { I: FI } = fx2MatchupModule();
+  const rows = FI.styleRows(FX2_MATCHUP.profile);
+  assert.strictEqual(FI.bestMatchup(FX2_MATCHUP.profile).label, rows[0].axis.label);
+});
+checkCareer('fix 8 · the Matchup tile names the first n >= 10 row of the list, never a 5–9 row (live roster)', () => {
+  let walked = 0, scanned = 0;
+  for (const p of Object.values(PLAYERS).slice(0, 160)) {
+    const rows = I.styleRows(p) || [];
+    if (!rows.total) continue;           // no career spine for him: nothing to measure (never a pass)
+    scanned++;
+    const bm = I.bestMatchup(p);
+    const want = rows.find((r) => r.won + r.lost >= 10) || null;
+    if (!want) { assert.strictEqual(bm, null, `${p.name}: a tile from a sub-10 row`); continue; }
+    assert(bm && bm.n >= 10, `${p.name}: tile n=${bm && bm.n}`);
+    assert.strictEqual(bm.label, want.axis.label, `${p.name}: tile ${bm.label}, list's first n>=10 row ${want.axis.label}`);
+    const top = rows[0], tn = top.won + top.lost;
+    if (tn >= 5 && tn < 10) walked++;
+  }
+  assert(scanned > 20, `only ${scanned} players carried matchup rows — this check measured nothing`);
+  // The fallback itself is proven on the pinned fixture above; here it is reported, not required — whether
+  // today's roster holds a 5–9 top row is a fact about live data.
+  console.log(`        ${scanned} players · ${walked} fell back past a 5–9 top row` +
+    (walked ? '' : ' (none today — the fixture check above exercises the fallback)'));
+});
+check('fix 8 · the Live trading tile never headlines a sample under ten, and never says "small sample"', () => {
+  let fell = 0, scanned = 0;
+  for (const p of Object.values(PLAYERS).slice(0, 120)) {
+    const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).profile;
+    scanned++;
+    assert(!/small sample/.test(v.support), `${p.name}: "${v.support}"`);
+    if (!v.headline) continue;
+    const [w, l] = v.headline.split('–').map(Number);
+    assert(w + l >= 10, `${p.name}: Live trading headline ${v.headline} is n=${w + l}`);
+    if (!/^from a set down/.test(v.support)) fell++;
+  }
+  assert(fell > 0, `none of ${scanned} players fell back — the fallback was never exercised`);
+  console.log(`        ${scanned} players · ${fell} fell back to a Situational row`);
+});
+check('fix 8 · the fallback is the Situational row the modal prints, with its own tour gap', () => {
+  const p = Object.values(PLAYERS).find((q) => {
+    const sd = I.boxValues(q, { rows: I.ledgerMatches(q) }).profile;
+    return sd.headline && !/^from a set down/.test(sd.support);
+  });
+  assert(p, 'no fallback subject');
+  const f = I.liveTileFallback(p);
+  const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).profile;
+  assert.strictEqual(v.headline, f.w + '–' + f.l);
+  assert(v.support.startsWith(f.label + ' · '), `support "${v.support}" does not name "${f.label}"`);
+  assert(/pp (below|above) tour$/.test(v.support), `support "${v.support}" has no tour gap`);
+  assert(f.n >= 10);
+});
+
+// ── TEN-384 fx3 (founder fixes 2026-10-07) ─────────────────────────────────────────────────────────
+// D10 · a tile headline comes only from a split of n >= 10; with none, the tile shows the OVERALL figure.
+check('fx3 D10 · no tile headline from a split under ten; none qualifies -> the OVERALL figure, not a dash', () => {
+  let overall = { styles: 0, profile: 0, splits: 0, speed: 0 }, scanned = 0;
+  for (const p of Object.values(PLAYERS).slice(0, 200)) {
+    const v = I.boxValues(p, { rows: I.ledgerMatches(p) });
+    scanned++;
+    // Matchup: a pick is n >= 10; no pick + a labelled population of 5+ -> the overall rate over every archetype.
+    const rows = I.styleRows(p) || [];
+    const rw = rows.reduce((a, r) => a + r.won, 0), rl = rows.reduce((a, r) => a + r.lost, 0);
+    const bm = I.bestMatchup(p);
+    if (bm) assert(bm.n >= 10, `${p.name}: Matchup tile from n=${bm.n}`);
+    else if (rw + rl >= 5) {
+      overall.styles++;
+      assert.strictEqual(v.styles.headline, I.rateText0(rw, rl), `${p.name}: Matchup overall headline ${v.styles.headline}`);
+      assert(v.styles.support.startsWith('all archetypes · '), `${p.name}: Matchup overall support "${v.styles.support}"`);
+    }
+    // Live trading: the headline record is n >= 10, or the overall record over every set-scored match.
+    if (v.profile.headline) {
+      const [w, l] = v.profile.headline.split('–').map(Number);
+      if (/^all matches with set scores/.test(v.profile.support)) overall.profile++;
+      else assert(w + l >= 10, `${p.name}: Live trading headline ${v.profile.headline} is n=${w + l}`);
+    }
+    // Draw record and Court speed: a named split / band is n >= 10; otherwise the overall line.
+    if (v.splits.headline && /^all splits · /.test(v.splits.support)) overall.splits++;
+    else if (v.splits.headline) assert(I.bestSplit(p).pick.n >= 10, `${p.name}: Draw tile from a thin split`);
+    if (v.speed.headline && /^all rated courts · /.test(v.speed.support)) overall.speed++;
+  }
+  assert(scanned > 50, 'too few players scanned');
+  assert(Object.values(overall).some(Boolean), 'no tile fell back to its overall figure — D10 unexercised');
+  console.log(`        ${scanned} players · overall fallbacks: matchup ${overall.styles}, live ${overall.profile}, draw ${overall.splits}, speed ${overall.speed}`);
+});
+mustFail('[neg] fx3 D10 · the pre-fx3 dash ("no archetype clears the ten-match minimum") is caught', () => {
+  const v = { headline: null, support: 'no archetype clears the ten-match minimum' };
+  assert.strictEqual(v.headline, '83%', 'Matchup tile dashed while 355 labelled matches exist');
+});
+check('fx3 D10 · (roster) the Live trading tile with no in-play state at ten shows the overall record', () => {
+  // A player whose set-scored rows clear five but no state clears ten: the overall record, never a dash.
+  const p = Object.values(PLAYERS).find((q) => {
+    const sd = I.fromASetDown(q), lf = I.liveTileFallback(q);
+    return sd && sd.gate !== 'full' && !lf && I.ledgerMatches(q).filter(m => m.sets && m.sets[0]).length >= 5;
+  });
+  if (!p) { console.log('        (no roster player in that state today — the roster sweep above covers the rule)'); return; }
+  const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).profile;
+  assert(v.headline && /^all matches with set scores · /.test(v.support), `${p.name}: "${v.headline}" / "${v.support}"`);
+  console.log(`        ${p.name}: ${v.headline} · ${v.support}`);
+});
+// item 7 (founder ruling, step 4 ships WITH the rank cap): no career-splits entry -> "Splits not built".
+check('fx3 item 7 · a profiled player with no career-splits entry reads "Splits not built for this player yet"', () => {
+  const none = Object.values(PLAYERS).filter(p => !SPLITS[p.key]);
+  const some = Object.values(PLAYERS).filter(p => SPLITS[p.key]);
+  assert(none.length > 0 && some.length > 0, 'the store holds no player on one side of the rule');
+  for (const p of none.slice(0, 40)) {
+    const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).splits;
+    assert.strictEqual(v.headline, null, `${p.name}: Draw headline without splits`);
+    assert.strictEqual(v.support, 'Splits not built for this player yet', `${p.name}: Draw "${v.support}"`);
+    assert.strictEqual(I.insightsEmptyText(p), 'Splits not built for this player yet.', `${p.name}: Key insights`);
+    assert(/Splits not built for this player yet\./.test(I.renderSplitsModal(p)), `${p.name}: Draw modal`);
+  }
+  for (const p of some.slice(0, 40)) {
+    const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).splits;
+    assert(!/Splits not built/.test(v.support || ''), `${p.name} has splits but reads "not built"`);
+    assert(!/Splits not built/.test(I.insightsEmptyText(p)), `${p.name}: Key insights claims not built`);
+  }
+  console.log(`        ${none.length} profiled players without a splits entry, ${some.length} with`);
+});
+// D11 · the mark sits UNDER the rate in Record per tournament (fx2 printed it after the event name).
+check('fx3 D11 · Record per tournament prints "small sample · n=X" under the win rate, not after the name', () => withJoin(playedOf, () => {
+  const p = SAMPLE[0];
+  const html = I.renderTournModal(p);
+  const rows = html.split('data-pp2="tourn-row"').slice(1);
+  const small = rows.filter(r => /data-pp2-small="[5-9]"/.test(r));
+  assert(small.length > 0, `${p.name}: no 5–9 row — the check would be vacuous`);
+  for (const r of small) {
+    const n = /data-pp2-small="(\d)"/.exec(r)[1];
+    assert(new RegExp('<span data-pp2-ratemark="' + n + '"[^>]*><span[^>]*>\\d+%</span><span data-pp2-small="' + n + '"').test(r),
+      'a 5–9 row\'s mark is not under its rate');
+    const name = r.slice(0, r.indexOf('</span></span>'));
+    assert(!/small sample/.test(name), 'the mark still follows the event name');
+  }
+  assert(!/5–9 matches/.test(html), 'a "5–9 matches" footnote line is back');
+  console.log(`        ${p.name}: ${small.length} small-sample rows, mark under the rate on each`);
+}));
+
+// item 9 · one mark, "small sample · n=X", no asterisk.
+// fx2 item 4: the source check only looked for a bare '*' literal, so `'">*</span>'` (Record per tournament's
+// win-% mark) and calPpLine's `">*</span>` shipped past it. The mark is now checked where it MATTERS — in the
+// rendered HTML of every modal, on the pinned fixture player and the sample — for any star glyph in the text
+// (style blocks excluded: a CSS `>*` selector is not a mark), and for `>*</span>` in the markup.
+const FX2_STARS = /[*\u2217\u204E\u2731\u2732\u2605\u2606\uFE61\uFF0A]/;
+function fx2StarsIn(html) {
+  const noStyle = String(html).replace(/<style[\s\S]*?<\/style>/g, '');
+  const markup = /[*\u2217\u204E\u2731\u2732\u2605\u2606]<\/span>/.exec(noStyle);
+  const t = FX2_LIB.text(noStyle.replace(/<[^>]+>/g, ' '));
+  const i = t.search(FX2_STARS);
+  return markup ? 'markup "' + noStyle.slice(Math.max(0, markup.index - 60), markup.index + 8) + '"'
+    : i >= 0 ? 'text "' + t.slice(Math.max(0, i - 50), i + 10) + '"' : null;
+}
+const FX2_MODALS = ['career', 'tourn', 'season', 'splits', 'market', 'speed', 'styles', 'profile'];
+function fx2ModalStars(MI, p) {
+  const ctx = MI.build(p);
+  const saved = Object.assign({}, MI.state);
+  const out = [];
+  try {
+    // The modal bodies through the module's own renderers (renderModal adds the shell; a module that does not
+    // export it — the bfa68f21 control — is read body by body, so the control measures the mark, not an export).
+    const BODY = { career: q => MI.renderCareerModal(q, ctx), tourn: MI.renderTournModal, season: MI.renderSeasonModal,
+      splits: MI.renderSplitsModal, market: MI.renderMarketModal, speed: MI.renderSpeedModal, styles: MI.renderStylesModal,
+      profile: MI.renderProfileModal };
+    FX2_MODALS.forEach((k) => {
+      MI.state.modal = k; MI.state.key = p.key;
+      const hit = fx2StarsIn(MI.renderModal ? MI.renderModal(p, ctx) : BODY[k](p));
+      if (hit) out.push(k + ': ' + hit);
+    });
+  } finally { Object.keys(MI.state).forEach(k => delete MI.state[k]); Object.assign(MI.state, saved); }
+  return out;
+}
+function fx2FixturePlayerModule(src) {
+  const fx = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'ten384-figures', 'player-2840.json'), 'utf8'));
+  const p = Object.assign({}, fx.profile, { tournamentHistory: fx.tournamentHistory });
+  const m = FX2_LIB.loadPp2({ src, now: fx.asOf, players: { [fx.key]: p }, careerHistory: { [fx.key]: fx.careerHistory },
+    marketEdge: { [fx.key]: fx.marketEdge }, bet365History: fx.bet365History });
+  return { I: m.I, p };
+}
+check('fix 9 · [fixture] no star glyph in any rendered modal; 5–9 rows read "small sample · n=X"', () => {
+  const { I: FI, p } = fx2FixturePlayerModule();
+  const hits = fx2ModalStars(FI, p);
+  assert.deepStrictEqual(hits, [], 'a star mark is rendered');
+  // Record per tournament carries 5–9 rows on this fixture, so the mark is exercised, not assumed.
+  const small = FI.tournViews(p).filter(t => t.n >= 5 && t.n < 10);
+  assert(small.length > 0, 'the fixture holds no 5–9 tournament row — the mark is not exercised');
+  FI.state.modal = 'tourn'; FI.state.key = p.key;
+  const html = FI.renderTournModal(p);
+  FI.state.modal = null;
+  small.forEach(t => assert(html.indexOf('data-pp2-small="' + t.n + '"') > 0, `${t.display} (n=${t.n}) carries no small-sample mark`));
+  if (FI.calPpLine) {   // exported from fx2 on; the source check below covers a module that does not export it
+    assert.strictEqual(FX2_LIB.text(FI.calPpLine(4.2, 7)).trim(), '+4.2pp small sample · n=7', 'calPpLine at n=7');
+    assert(!fx2StarsIn(FI.calPpLine(4.2, 7)), 'calPpLine marks a 5–9 tile with a star');
+  }
+  console.log(`        8 modals clean · ${small.length} Record-per-tournament rows at n 5–9 carry "small sample · n=X"`);
+});
+mustFail('fix 9 · the star check catches the bfa68f21 mark `">*</span>`', () => {
+  const html = '<span style="color:var(--text-label);">78%<span style="font-size:9px;color:var(--text-label);">*</span></span>';
+  assert(!fx2StarsIn(html), 'caught');
+});
+for (const p of SAMPLE) {
+  check(`fix 9 · ${p.name}: no star glyph in any rendered modal`, () => {
+    assert.deepStrictEqual(fx2ModalStars(I, p), [], 'a star mark is rendered');
+  });
+}
+check('fix 9 · one small-sample mark: "small sample · n=X", and no asterisk anywhere in the module', () => {
+  assert.strictEqual(I.smallSampleText(7), 'small sample · n=7');
+  assert(!/'\*'/.test(PP2_SRC), 'an asterisk mark literal is back in player-profile-v2.js');
+  assert(!/>\*<\/span>/.test(PP2_SRC), 'a `>*</span>` mark is back in player-profile-v2.js');
+  assert(!/\* 5–9|'\* 5' \+ ENDASH/.test(PP2_SRC), 'the asterisk footnote is back');
+  const sit = I.sitRowHtml('Win first set', { w: 4, l: 3 }, 50);
+  assert(sit.includes('small sample · n=7'), 'the Situational 5–9 slot does not read "small sample · n=7"');
+  assert(!I.sitRowHtml('Win first set', { w: 8, l: 4 }, 50).includes('small sample'), 'a 12-match row was marked');
+});
+mustFail('[neg] the mark check would catch the old bare "small sample" slot', () => {
+  const sit = '<span>small sample</span>';
+  assert(sit.includes('small sample · n=7'), 'bare mark');
+});
+
+// item 10 · two-part first names.
+check('fix 10 · two initials stay together: "Cerundolo J. M.", "Etcheverry T. M."', () => {
+  assert.strictEqual(I.surnameFirst('J. M. Cerundolo'), 'Cerundolo J. M.');
+  assert.strictEqual(I.surnameFirst('T. M. Etcheverry'), 'Etcheverry T. M.');
+  assert.strictEqual(I.surnameFirst('J.M. Cerundolo'), 'Cerundolo J. M.');
+  assert.strictEqual(I.surnameOf('J. M. Cerundolo'), 'Cerundolo');
+  assert.strictEqual(I.surnameFirst('F. Meligeni Alves'), 'Meligeni Alves F.', 'a two-word surname broke');
+  assert.strictEqual(I.mkOppName('Cerundolo J.M.'), 'J. M. Cerundolo');
+  // fx3 (founder D12): the sheet hand-off and the drills take "I. M. Surname", every initial kept.
+  assert.strictEqual(I.initialSurname('Cerundolo J. M.'), 'J. M. Cerundolo', 'was "M. Cerundolo J."');
+  assert.strictEqual(I.initialSurname('Cerundolo J.M.'), 'J. M. Cerundolo', 'was "C. J.M."');
+  assert.strictEqual(I.initialSurname('J. M. Cerundolo'), 'J. M. Cerundolo');
+  assert.strictEqual(I.initialSurname('J.J. Wolf'), 'J. J. Wolf', 'was "J. Wolf" (a dropped initial)');
+  assert.strictEqual(I.initialSurname('Shelton B.'), 'B. Shelton');
+  assert.strictEqual(I.initialSurname('J-L. Struff'), 'J-L. Struff');
+  assert.strictEqual(I.initialSurname('Carlos Alcaraz'), 'C. Alcaraz');
+  assert.strictEqual(I.initialSurname('De Minaur A.'), 'A. De Minaur');
+  // and on a rendered ledger: no "M. Cerundolo J."-style row anywhere on the sample
+  for (const p of SAMPLE) {
+    const html = ledgerHtmlFor(p);
+    assert(!/>[A-Z]\. [A-Z][a-z]+ [A-Z]\.</.test(html), `${p.name}: a second initial is printed before the surname`);
+  }
+});
+
+// item 11 · the Swing row reads INDOORS from the archive's own per-match court column.
+check('fix 11 · a month whose rows are mostly Indoor courts is an INDOORS span', () => {
+  const R = (mon, surface, court) => ({ mon, surface, court });
+  const rows = [R(0, 'hard', 'Outdoor'), R(0, 'hard', null), R(9, 'hard', 'Indoor'), R(9, 'hard', 'Indoor'),
+    R(9, 'hard', 'Outdoor'), R(10, 'hard', 'Indoor'), R(5, 'grass', 'Outdoor')];
+  const spans = I.calSurfaceSpans(rows);
+  const at = (m) => { let i = 0; for (const s of spans) { if (m < i + s.len) return s; i += s.len; } return null; };
+  assert.strictEqual(at(0).surface, 'hard');
+  assert.strictEqual(at(9).surface, 'indoors', 'October (2 Indoor of 3) is not Indoors');
+  assert.strictEqual(at(10).surface, 'indoors');
+  assert.strictEqual(at(9).label, 'Indoors');
+  assert.strictEqual(at(9).colour, 'var(--viz-indoor)');
+  assert.strictEqual(at(9), at(10), 'Oct and Nov did not merge into one span');
+  assert.strictEqual(I.calSwingSurface({ surface: 'hard', court: null }), 'hard', 'a row with no court became indoor');
+  // A row with no court is NOT KNOWN, not outdoor: three Challenger (no-court) hard rows do not
+  // outvote two archive Indoor rows. A month with no court at all keeps its surface. fx4 (founder D13,
+  // "Oct–Nov = INDOORS (Paris, Basel, Vienna, Finals)"): in October and November ANY indoor match makes the
+  // month INDOORS — a calendar rule, not a vote. Every other month keeps the court vote / surface vote.
+  const s2 = I.calSurfaceSpans([R(9, 'hard', null), R(9, 'hard', null), R(9, 'hard', null),
+    R(9, 'hard', 'Indoor'), R(9, 'hard', 'Indoor'), R(3, 'clay', null),
+    R(10, 'hard', 'Indoor'), R(10, 'hard', 'Outdoor'), R(10, 'hard', null),
+    R(1, 'hard', 'Outdoor'), R(1, 'clay', 'Outdoor'), R(1, 'clay', null)]);
+  const at2 = (m) => { let i = 0; for (const s of s2) { if (m < i + s.len) return s; i += s.len; } return null; };
+  assert.strictEqual(at2(9).surface, 'indoors', 'no-court rows outvoted the archive\'s Indoor rows');
+  assert.strictEqual(at2(3).surface, 'clay', 'a month with no court lost its surface');
+  assert.strictEqual(at2(10).surface, 'indoors', 'a November holding an Indoor match did not read Indoors (D13)');
+  assert.strictEqual(at2(1).surface, 'clay', 'a 1–1 court tie with no indoor leader did not fall back to the surface vote');
+  // the 13 : 13 shape of Alcaraz's October, with the indoor rows also carrying surface "hard"
+  const oct = [];
+  for (let k = 0; k < 13; k++) oct.push(R(9, 'hard', 'Indoor'), R(9, 'hard', 'Outdoor'));
+  const at3 = (sp, m) => { let i = 0; for (const s of sp) { if (m < i + s.len) return s.surface; i += s.len; } return null; };
+  assert.strictEqual(at3(I.calSurfaceSpans(oct), 9), 'indoors',
+    'a 13 : 13 Indoor : outdoor-hard October painted HARD');
+  // fx4 control · Tokyo 2026 adds 5 OUTDOOR hard rows to that October (13 indoor : 18 outdoor). The fx3 tie rule
+  // flipped it to HARD; the indoor-swing rule keeps it INDOORS.
+  const octTokyo = oct.concat([0, 1, 2, 3, 4].map(() => R(9, 'hard', 'Outdoor')));
+  assert.strictEqual(at3(I.calSurfaceSpans(octTokyo), 9), 'indoors',
+    'Alcaraz October + 5 Tokyo outdoor rows (13 indoor : 18 outdoor) painted HARD — the swing is still indoor');
+  // one indoor match among ten outdoor in November still reads Indoors …
+  const nov1 = [R(10, 'hard', 'Indoor')].concat(Array.from({ length: 10 }, () => R(10, 'hard', 'Outdoor')));
+  assert.strictEqual(at3(I.calSurfaceSpans(nov1), 10), 'indoors', 'a November with one indoor match is not Indoors');
+  // … but an October with NO indoor match keeps the vote (no invented indoor swing) …
+  assert.strictEqual(at3(I.calSurfaceSpans([R(9, 'hard', 'Outdoor'), R(9, 'hard', null)]), 9), 'hard',
+    'an October with no indoor match was painted Indoors');
+  // … and outside Oct–Nov a minority of indoor rows keeps the vote (February: 1 indoor : 3 outdoor hard → Hard)
+  const feb = [R(1, 'hard', 'Indoor'), R(1, 'hard', 'Outdoor'), R(1, 'hard', 'Outdoor'), R(1, 'hard', 'Outdoor')];
+  assert.strictEqual(at3(I.calSurfaceSpans(feb), 1), 'hard', 'the indoor-swing rule leaked outside Oct–Nov');
+  assert.deepStrictEqual(I.CAL_SWING_INDOOR_MONTHS, [9, 10]);
+  assert.strictEqual(I.calSwingIndoorSwing(9, { indoors: 1, hard: 30 }), true);
+  assert.strictEqual(I.calSwingIndoorSwing(10, { hard: 30 }), false);
+  assert.strictEqual(I.calSwingIndoorSwing(1, { indoors: 1, hard: 3 }), false);
+});
+// fx2: the "real spine" case runs on the pinned fixture (S. Korda's complete record: 12 November rows, 7 on
+// Indoor courts) so it measures something in every checkout; the live Zverev read below needs career-history/.
+check('fix 11 · [fixture] on a real spine, November reads Indoors where the archive says so', () => {
+  const { I: FI, p } = fx2FixturePlayerModule();
+  const rows = FI.calSpine(p);
+  const spans = FI.calSurfaceSpans(rows);
+  let i = 0; const byMon = {};
+  spans.forEach((s) => { for (let k = 0; k < s.len; k++) byMon[i + k] = s.surface; i += s.len; });
+  const nov = rows.filter((r) => r.mon === 10);
+  const ind = nov.filter((r) => r.court === 'Indoor').length;
+  assert(nov.length > 0, 'the fixture holds no November rows');
+  assert(ind * 2 > nov.length, `the fixture's November is ${ind}/${nov.length} Indoor — not an Indoors month, the check would be vacuous`);
+  assert.strictEqual(byMon[10], 'indoors', `Nov: ${ind}/${nov.length} indoor, span ${byMon[10]}`);
+  console.log(`        ${p.name} Nov: ${ind} of ${nov.length} rows indoor → ${byMon[10]}`);
+});
+// fx2 item 8 · a tie on EVERY row is decided by a fixed rule, never by the order the rows arrive in.
+check('fix 11 · a month tied on every row resolves the same way whatever order its rows arrive in', () => {
+  const R = (mon, surface) => ({ mon, surface, court: null });
+  const a = [R(4, 'clay'), R(4, 'hard'), R(5, 'grass'), R(6, 'grass'), R(6, 'hard')];
+  const b = a.slice().reverse();
+  const at = (sp, m) => { let i = 0; for (const s of sp) { if (m < i + s.len) return s.surface; i += s.len; } return null; };
+  [4, 6].forEach(m => assert.strictEqual(at(I.calSurfaceSpans(a), m), at(I.calSurfaceSpans(b), m), `month ${m} depends on row order`));
+  // the documented rule: the previous month's surface when it is a tied leader, else CAL_SWING_TIE_ORDER
+  assert.strictEqual(at(I.calSurfaceSpans(a), 4), 'hard', 'a tie with no previous span → first in CAL_SWING_TIE_ORDER (hard)');
+  assert.strictEqual(at(I.calSurfaceSpans(a), 6), 'grass', 'a tie including the previous month\'s surface keeps the span');
+  assert.deepStrictEqual(I.CAL_SWING_TIE_ORDER, ['hard', 'clay', 'grass', 'indoors']);
+  assert.strictEqual(I.calSwingTieBreak({ clay: 2, grass: 2 }, null), 'clay');
+  assert.strictEqual(I.calSwingTieBreak({ clay: 2, grass: 2 }, 'grass'), 'grass');
+  assert.strictEqual(I.calSwingTieBreak({ clay: 3, grass: 2 }, 'grass'), 'clay', 'a non-tie is not a tie-break');
+});
+checkCareer('fix 11 · on the real spine, a player\'s Oct–Nov reads Indoors where the archive says so (live, Zverev)', () => {
+  const p = fixturePlayer(FIXTURE_KEYS.zverev);
+  const rows = I.calSpine(p);
+  const spans = I.calSurfaceSpans(rows);
+  let i = 0; const byMon = {};
+  spans.forEach((s) => { for (let k = 0; k < s.len; k++) byMon[i + k] = s.surface; i += s.len; });
+  const nov = rows.filter((r) => r.mon === 10);
+  const ind = nov.filter((r) => r.court === 'Indoor').length;
+  assert(nov.length > 0, 'no November rows — the check measured nothing');
+  if (ind * 2 > nov.length) assert.strictEqual(byMon[10], 'indoors', `Nov: ${ind}/${nov.length} indoor, span ${byMon[10]}`);
+  console.log(`        Zverev Nov: ${ind} of ${nov.length} rows indoor → ${byMon[10]}`);
+});
+
+// item 13 · the "ATP " prefix: one name rule on every surface.
+check('fix 13 · an event is named without its feed prefix, the same as the Calendar names it', () => {
+  assert.strictEqual(I.eventName({ tournament: 'ATP Indian Wells' }), 'Indian Wells');
+  assert.strictEqual(I.eventName({ tournament: 'Australian Open' }), 'Australian Open');
+  assert.strictEqual(I.eventName({ tournament: '' }), '—');
+  for (const p of SAMPLE) {
+    const html = ledgerHtmlFor(p);
+    assert(!/font-weight:700;color:var\(--text\);">ATP /.test(html), `${p.name}: a ledger group reads "ATP …"`);
+  }
+});
+
+// item 7 · RULED (founder, 2026-10-07): ship WITH the rank cap. The builder and the refresh job keep rank <= 250 by
+// default and the job passes "250 400" (6ba09992's state, restored in fx2). Thompson (TA rank 432) therefore has no
+// career-splits entry and reads "Splits not built for this player yet" (fx3 item 7), never a false sample-size reason.
+check('fix 7 · build-career-splits keeps its rank cap (250) and the refresh job passes "250 400" (founder: ship with the cap)', () => {
+  const b = fs.readFileSync(path.join(ROOT, 'tools', 'build-career-splits.js'), 'utf8');
+  const sh = fs.readFileSync(path.join(ROOT, 'tools', 'refresh-career-splits.sh'), 'utf8');
+  assert(/const RANK_MAX = parseInt\(process\.argv\[2\], 10\) \|\| 250;/.test(b), 'the rank cap was removed again');
+  assert(!/\|\| Infinity;/.test(b.split('\n').filter(l => /RANK_MAX =/.test(l)).join('\n')), 'RANK_MAX defaults to Infinity');
+  assert(/^node tools\/build-career-splits\.js 250 400 2>&1/m.test(sh), 'refresh-career-splits.sh no longer passes "250 400"');
 });
 
 // ════════════════════════════════════════════════════════════════════════════

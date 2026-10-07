@@ -635,8 +635,11 @@ test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
   assert.match(fn, /var x0=0, nPts=ordered\.length;/, 'x0 must exist so a late series stays late');
   assert.match(fn, /ticks=seasonIndexTicks\(ordered, xs, tickSteps\)/,
     'season labels must be placed at the match index where each season starts');
-  // the seam stays derived from the book column, never hardcoded
-  assert.match(fn, /if\(seamX===null && r\[8\]===1\) seamX=x;/);
+  // the seam stays derived from the book column and the data, never hardcoded. TEN-384
+  // (option "me"): it is the first Bet365 row AFTER meta.pinnacleLastPriced — Bet365 fills
+  // in earlier seasons are not a book change.
+  assert.match(fn, /if\(seamX===null && r\[8\]===1 && seamAfter!=null && r\[0\]>seamAfter\) seamX=x;/);
+  assert.match(fn, /var seamAfter = M\.pinnacleLastPriced \? \+String\(M\.pinnacleLastPriced\)\.replace\(\/-\/g,''\) : null;/);
 
   // Smoothing: centred, w=3, endpoints pinned. Display only.
   const sv = /function smoothVals\(vals, k\)\{[\s\S]*?\n  \}/.exec(DASH);

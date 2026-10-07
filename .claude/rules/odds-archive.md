@@ -37,7 +37,7 @@ historical backfill only.
   workbook is refused even for a season with no published file.
 - **A missing price is a dash.** `-`, blanks and anything outside 1.01–1000 are written as
   empty cells. Never a zero, and never another book's price (a missing Pinnacle price
-  stays empty).
+  stays an empty CELL; which book prices a Database row is the join rule below).
 - **Every refresh is logged** in `odds-archive/refresh-log.jsonl`: time, source sha256,
   rows before and after, added, changed, latest date.
 - **"Archive through" comes from the data.** It is `database-yield.json`
@@ -52,34 +52,57 @@ historical backfill only.
 Locked by `test-odds-archive-refresh.py` (the tool, 11 mutants, plus the published archive,
 log and store agreeing) and `test-ten262.mjs` (the stamp, 3 mutants).
 
-## Book per season (unchanged, TEN-146)
+## Price join: Pinnacle, else Bet365, per row (founder ruling TEN-384, 2026-10-07, option "me")
 
-`build-database-yield.js` uses **Pinnacle** for 2010–2025 and **Bet365 for the whole 2026
-season**. The source's Pinnacle column stops on 2026-01-13 (71 rows, 4–13 Jan). Those rows
-are not used, because one season is one book. Never fill a missing Pinnacle price from
-another book.
+`build-database-yield.js` prices **each row** the way Market edge does (`build-market-edge.js`
+`pickBook`): **Pinnacle closing when both Pinnacle prices are valid, else Bet365 closing
+when both Bet365 prices are valid**, in every season. A row with no valid pair on either
+book is dropped (`meta.exclusions.noResolvingBookPrice`, e.g. all of 2009). Each row's
+`r[8]` is the book actually used. The Database rows (Tour, Tournaments, Players) and
+`tour-baselines.json` are the **same rows** (`basis: 'market-edge'`,
+`equalsDatabaseTour: true`); there is no `--baseline-basis` flag and no `seamSeason`.
+This replaces TEN-146 / TEN-262 "one book per season: Pinnacle 2010–2025, Bet365 for the
+whole 2026 season; never fill a missing Pinnacle price from another book" for the
+DATABASE JOIN. (The archive CSV itself still never fills a cell from another book: see
+"A missing price is a dash" above.)
 
-**The Database says so in plain words (founder rulings, 2026-09-23; wording = option A).**
-The header reads: "Pinnacle closing prices, 2010–2025; 2026 uses Bet365 prices (the
-source's Pinnacle prices stop on 13 Jan 2026). The change is marked on the curves." The
-"Split by book" lines say "… N 2026 matches priced on Bet365" and the method note says
-"38,761 priced on Pinnacle and 2,030 on Bet365 (2026)". **Never "settled on"**: it reads
-as bet settlement. "Closing" stays (founder's call), although the source's own wording is
-only "the most recent before play starts" (a 2020 copy of its notes; the files carry no
-timestamp).
-- The first range ends the season before `seamSeason`; the stop date is
-  `meta.pinnacleLastPriced` (the latest archive row with a valid Pinnacle pair), never
-  typed. No date in the store → no parenthetical. An archive that ends before the seam
-  season has no change to mark, so the sentence just ends.
+The source's Pinnacle column stops on 2026-01-13 (`meta.pinnacleLastPriced`), so Bet365
+prices every later row; earlier, Bet365 fills single rows Pinnacle did not price (191 rows
+in 2010–2025 + early Jan 2026 today). Measured at the change (2026-10-07): 40,972 matches,
+38,830 priced on Pinnacle and 2,142 on Bet365; All −4.37%, Favourites −1.78%, Underdogs
+−6.96% (was 40,791 · 38,761 / 2,030 · −4.33% / −1.79% / −6.88%).
+
+**The Database says so in plain words.** The header reads: "Pinnacle closing prices, else
+Bet365, 2010–2026 (the source's Pinnacle prices stop on 13 Jan 2026). The change is marked
+on the curves." The book line reads "Pinnacle closing, else Bet365 — both books in this
+selection; per-book split below …"; the "Split by book" lines say "… N matches priced on
+Bet365 (where Pinnacle has no price)" (no season); the method note says "Each match is
+priced on its Pinnacle closing price, or on its Bet365 closing price where Pinnacle has
+none (…stop on 13 Jan 2026)" and "38,830 priced on Pinnacle and 2,142 on Bet365 (where
+Pinnacle has no price)"; the no-price exclusion is "with no closing price on either book".
+**Never "settled on"**: it reads as bet settlement. "Closing" stays (founder's call),
+although the source's own wording is only "the most recent before play starts" (a 2020
+copy of its notes; the files carry no timestamp).
+- The years are `meta.dateRange`; the stop date is `meta.pinnacleLastPriced` (the latest
+  archive row with a valid Pinnacle pair), never typed, and printed only when the archive
+  runs past it. No date in the store → no parenthetical and no change to mark.
+- **The curve mark** (dashed line, "Bet365" label, "Book change after 13 Jan 2026, where the
+  source's Pinnacle prices stop …" footnote) sits at the first Bet365-priced row AFTER
+  `meta.pinnacleLastPriced`. Earlier Bet365 fills are not a book change and are not marked.
 - **Test:** paint `renderChrome` and read exactly that header (plus fixtures for another
-  stop date, a 2027 seam, a pre-seam archive, and an out-of-season Pinnacle date); paint
-  `renderFootnote` and read "priced on", never "settled on". The published store's stop
-  date must equal the value recomputed from the CSVs. Locked by `test-ten262.mjs` and
-  `test-odds-archive-refresh.py`. This replaces "2026 settled on Bet365 …, seam-marked on
-  the curves" and the earlier "2010–2026", which over-claimed Pinnacle by a season.
-- **The blend stays (ruling, 2026-09-23):** curves, ROI cards, player panels, Form, H2H and
-  the matrix keep mixing Pinnacle (≤2025) and Bet365 (2026) until 2026 Pinnacle prices
-  arrive. Tracked in TEN-266 (child of TEN-262).
+  stop date, a stop in an earlier season, an archive that ends on the last Pinnacle date,
+  and a 2027 archive); paint `renderFootnote` (two fixtures) and read the per-row join,
+  "priced on", never "settled on", never "(2026)"; paint `bandPanel` / `dbBookSplit` and
+  read the seasonless Bet365 clause (`test-ten262.mjs`, with mutants). The seam keys on
+  `seamAfter` (`test-ten242-rulings.mjs`). `tools/test-pp2-reconcile.js` Q8: the baselines
+  file is `basis 'market-edge'`, `equalsDatabaseTour`, equals the Database `agg`/`bands`
+  over `database-yield.json` bit for bit, and the store carries Bet365 rows before 2026
+  (mutants: the old basis, a one-book-per-season store). The published store's stop date
+  must equal the value recomputed from the CSVs (`test-odds-archive-refresh.py`).
+- **The blend is the rule:** curves, ROI cards (`tournament-market.json`, built from
+  `database-yield.json`), player panels and the profile's tour baselines all read the
+  per-row join. Every figure that spans both books shows the per-book split. (TEN-266: if
+  2026 Pinnacle prices arrive, the join picks them up row by row with no code change.)
 
 ## Who writes it, who reads it
 
@@ -88,7 +111,9 @@ timestamp).
   `odds-archive/`.**
 - **Rebuilt by the drop-in job and committed:** `database-yield.json` and
   `database-yield-players.json` (Database tab: header, Archive through, Tour, Tournament
-  and Player curves), and `tournament-market.json` (Tournament ROI cards; also rebuilt on
+  and Player curves), `tour-baselines.json` (the profile's Market edge tour yields per role,
+  written by the same `build-database-yield.js` run from the same rows, so they equal the
+  Database Tour aggregates; TEN-384), and `tournament-market.json` (Tournament ROI cards; also rebuilt on
   every pipeline run).
 - **Rebuilt on every pipeline run:** `odds-performance/` and its index (player profile
   market section), and `tournament-market.json`.

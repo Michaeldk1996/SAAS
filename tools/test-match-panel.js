@@ -336,20 +336,29 @@ check('a side with no raw block prints no fraction anywhere', () => {
     'a zero denominator is not a denominator');
 });
 
-check('the rendered sheet carries the fractions', () => {
+// TEN-384: the profile's §8.1 sheet (renderSheet) is retired — chips, strip cells, ledger rows and W/L cells
+// open the step-3 Match analysis stats sheet, which renders the fractions itself (test-ten314-sheet.mjs). The
+// profile's half is the hand-off: the payload must carry this match's event key, sets and the subject's key,
+// so the step-3 sheet joins the same feeds the fractions are read from.
+check('the hand-off gives the step-3 sheet the match the fractions are read from', () => {
   const I = load(FULL());
-  I.state.sheet = SHEET_ID;
-  const html = I.renderSheet(SUBJECT, I.build(SUBJECT));
-  assert.ok(/25\/39/.test(html), 'the sheet rendered no frac sub-line');
-  assert.ok(/4\/6/.test(html), 'break points saved lost its record');
+  const x = I.sheetPayload(SUBJECT, I.build(SUBJECT), SHEET_ID);
+  assert.ok(x, 'the ledger row resolves to no payload');
+  assert.strictEqual(String(x.row.eventKey), String(EK), 'the event key is lost on hand-off');
+  assert.strictEqual(String(x.subjectKey), '4242', 'the subject key is lost on hand-off');
+  assert.deepStrictEqual(x.row.sets, MATCH.sets, 'the set scores are lost on hand-off');
+  assert.strictEqual(x.subjectName, 'A. Subject');
+  assert.strictEqual(x.oppName, 'B. Opponent');
 });
 
 // ── the opener ──────────────────────────────────────────────────────────────
-check('the sheet offers "Full match" only where a panel has something to show', () => {
+// With §8.1 retired, nothing on the profile paints the "Full match" opener (the step-3 sheet carries Point
+// by point itself). mpHasPanel still gates any future entry: a bare match has nothing to show.
+check('no retired-sheet opener is painted, and a bare match still has no panel', () => {
   const I = load(FULL());
-  I.state.sheet = SHEET_ID;
-  const html = I.renderSheet(SUBJECT, I.build(SUBJECT));
-  assert.ok(/data-pp2="match-page"/.test(html), 'no opener on a fully-fed match');
+  const html = I.buildHtml(SUBJECT);
+  assert.ok(!/data-pp2="match-page"/.test(html), 'a "Full match" opener is still painted');
+  assert.ok(!/class="pp2-sheet"/.test(html), 'the retired §8.1 sheet still renders');
 
   const bare = load({ pbpIndex: new Set(), setStatsIndex: new Set(), matchStatsIndex: new Set(),
                       pbpShards: { [String(EK)]: null }, setStatsShards: { [String(EK)]: null },
@@ -388,14 +397,12 @@ check('box 8 prints the TOUR GAP, not the sample count', () => {
     peers[9000 + i] = { key: 9000 + i, name: 'P' + i,
       recentForm: { pct: 0, matches: [setDownMatch('2026-01-0' + (i % 9 + 1), i % 3 === 0)] } };
   }
-  // The subject for the tile assertion needs to CLEAR the sample gate — the gate
-  // withholds the rate under five matches, and a gated tile legitimately prints
-  // its count instead. Six matches, so the ruling is what is being measured.
-  peers[9500] = { key: 9500, name: 'D. Downer', recentForm: { pct: 0, matches: [
-    setDownMatch('2026-02-01', true), setDownMatch('2026-02-02', true),
-    setDownMatch('2026-02-03', false), setDownMatch('2026-02-04', false),
-    setDownMatch('2026-02-05', true), setDownMatch('2026-02-06', false),
-  ] } };
+  // The subject for the tile assertion needs to CLEAR the tile gate — TEN-384 fix item 8: a tile
+  // headline only from a split of n >= 10 (under ten it falls back to a Situational row). Twelve
+  // matches, so the ruling is what is being measured.
+  peers[9500] = { key: 9500, name: 'D. Downer', recentForm: { pct: 0, matches:
+    [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) =>
+      setDownMatch('2026-02-' + String(i).padStart(2, '0'), i % 2 === 0)) } };
   const sandbox = { FEATURE_PP2: true, playerProfiles: { players: peers }, matchStats: null };
   global.window = sandbox;
   // eslint-disable-next-line no-new-func
@@ -432,8 +439,9 @@ check('a pool too thin to strike a tour figure falls back to the count, never a 
   // The subject must HAVE from-a-set-down matches and clear the sample gate, or
   // the tile says "he never was" and this check measures nothing — which is
   // exactly what let a hardcoded "6.4pp below tour" survive the first version.
-  const lone = { key: 5555, name: 'L. Lone', recentForm: { pct: 0, matches: [1,2,3,4,5,6].map((i) => ({
-    date: '2026-03-0' + i, opponent: 'X. Y', won: i % 2 === 0, eventKey: null,
+  // Twelve: the tile gate is n >= 10 (TEN-384 fix item 8).
+  const lone = { key: 5555, name: 'L. Lone', recentForm: { pct: 0, matches: [1,2,3,4,5,6,7,8,9,10,11,12].map((i) => ({
+    date: '2026-03-' + String(i).padStart(2, '0'), opponent: 'X. Y', won: i % 2 === 0, eventKey: null,
     sets: [{ p: 2, o: 6 }, { p: 6, o: 3 }, { p: 6, o: 4 }], tournament: 'T', tier: 'atp' })) } };
   const sandbox = { FEATURE_PP2: true, playerProfiles: { players: { 5555: lone } }, matchStats: null };
   global.window = sandbox;

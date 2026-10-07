@@ -146,7 +146,9 @@ check('the layer carries the full grid body', () => {
   const grids = (open.match(/class="pp2-hb-grid"/g) || []).length;
   assert.strictEqual(grids, 1, `the layer rendered ${grids} grids; the export has one`);
   assert.ok(!/pp2-hb-grids/.test(open), 'the old two-panel container is still rendering');
-  assert.ok(/data-pp2="hb-surf"/.test(open), 'the surface chips must live inside the layer');
+  // TEN-384 founder Q6: the pop-up renders Hold | Break ONLY — the surface control is not on
+  // screen (its state path is kept; tools/test-heatmap-shape.js proves it still re-derives).
+  assert.ok(!/data-pp2="hb-surf"/.test(open), 'founder Q6: a surface control is still rendered in the layer');
   assert.ok(/data-pp2="hb-mode"/.test(open), 'the Hold|Break toggle must live inside the layer');
 });
 
@@ -158,23 +160,29 @@ check('the Live trading modal body is the launcher, not the inlined grid', () =>
     'the modal body still inlines the grid — item 2 moves it behind the launcher');
 });
 
-// ── the export's own chrome (Player Stat Boxes.dc.html:904-918) ────────────
-check('the launcher matches the export\'s chrome', () => {
+// ── the reference's entry tile (TEN-384, inventory C row 47) ────────────────
+// A clickable tile (--card + --edge-7, radius 12, pad 13/15; hover lives in the
+// .pp2-atile rule), a 30px icon tile on --selected with a --line edge, title
+// 13.5/700, a Hanken 11.5 sentence, and ONE mono figure "Hold 87.1%" — no
+// "Open ›", no caps pill.
+check('the launcher matches the reference\'s entry tile', () => {
   I.state.hbSurf = 'all';
   const html = I.hbLauncherHtml(SUBJECT);
   const want = [
-    // TEN-376 Foundation: the 12a --surface-inner token is renamed --inner.
-    ['background:var(--inner)', 'card background'],
-    ['border-radius:11px', 'card radius'],
-    ['padding:13px 15px', 'card padding'],
-    ['width:30px;height:30px', 'icon tile size'],
-    ['Hold / break heatmap', 'title, spaced slash'],
-    ['hold and break by service-game pair, set by set', 'the export subtitle'],
-    ["font-family:'IBM Plex Mono',monospace;font-size:10.5px", 'mono subtitle'],
+    ['class="pp2-atile"', 'clickable-tile class (hover rule)'],
+    ['background:var(--card);border:1px solid var(--edge-7);border-radius:12px;padding:13px 15px;', 'tile chrome'],
+    ['width:30px;height:30px;border-radius:9px;box-sizing:border-box;background:var(--selected);border:1px solid var(--line);', 'icon tile'],
+    ['font-size:13.5px;font-weight:700;color:var(--text);">Hold / break heatmap<', 'title 13.5/700, spaced slash'],
+    ['font-size:11.5px;color:var(--text-label);">Hold and break rate by service-game pair, set by set<', 'the reference sentence'],
+    ["font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:var(--text);\">Hold ", 'one mono figure'],
+    ['.pp2-atile:not(.on):hover{background:var(--tile-hover)!important;border-color:var(--edge-16)!important;}', 'hover = --tile-hover + --edge-16'],
   ];
   for (const [needle, what] of want) {
-    assert.ok(html.includes(needle), `${what} is off the export: missing ${needle}`);
+    assert.ok(html.includes(needle), `${what} is off the reference: missing ${needle}`);
   }
+  assert.ok(!/Open ›|>HOLD</.test(html), 'the old "Open ›" / caps pill is still on the tile');
+  const fig = /(\d+(?:\.\d+)?%)$/.exec(ENGINE.heatFor(HB, SUBJECT.key, 'HOLD', I.HB_BEST_OF, 'all').globalLabel)[1];
+  assert.ok(html.includes('>Hold ' + fig + '<'), `the tile figure is not the engine's hold rate ${fig}`);
 });
 
 console.log(`\nheatmap launcher: ${pass} pass, ${fail} fail`);

@@ -350,7 +350,10 @@ test('TEN-383: the Player Profile Recent form (ribbon, chips, ledger) counts the
   const P0 = { key: '1980', name: 'A. Zverev', recentForm: { pct: null, matches: R } };
   const led = I.renderLedger(P0, Object.assign(I.build(P0), { ledgerOpen: true }));
   assert.ok(!/Laver/.test(led), 'the full ledger lists no Laver Cup match');
-  assert.match(led, /Window: 11 matches/, 'the ledger window counts the 11 form rows');
+  // TEN-384: the provenance footnote ("Window: N matches") gave way to the reference's head ("pct · N matches")
+  // and "See all N results"; the window is still the 11 form rows, counted in the head and drawn as rows.
+  assert.match(led, /full ledger<\/span>.*?> · 11 matches</, 'the ledger head counts the 11 form rows');
+  assert.equal((led.match(/class="pp2-ledger-row"/g) || []).length, 11, 'the ledger draws the 11 form rows');
 });
 
 // The legacy renderer (buildPlayerProfileHtml, reached on ?pp2=0) is ~900 lines of page-coupled template and is not

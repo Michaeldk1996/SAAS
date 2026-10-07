@@ -121,6 +121,48 @@ function sliceOriginal() {
   }
   if (/rgba\(|#[0-9a-fA-F]{6}\b/.test(src))
     throw new Error('a raw colour literal survived the foundation map in the recovered original');
+  // TEN-384 (founder TEN-376 U3): the CELL COLOUR RULE changed — a set cell is now
+  // coloured by its gap to the pair's all-sets rate (green from +3 pts, red from
+  // −3 pts, neutral within; n 5–9 a muted wash), and the all-sets cell is never
+  // tinted. That is a deliberate behaviour change, so the original is brought to
+  // the NEW rule by exact substitution, exactly as the foundation map above does
+  // for colours. The rule itself is written out HERE, independently of the
+  // module (GAP_RULE below), so the deep-equal still proves the module computes
+  // every number, tooltip, size and tag the original did — and colours by the
+  // gap rule as this test states it, not as the module happens to.
+  const GAP_RULE = `
+const GAP_PTS = 3;
+function gapBand(pctInt, gPctInt, small){
+  const d = (gPctInt===null || gPctInt===undefined) ? null : (pctInt - gPctInt);
+  const up = d!==null && d>=GAP_PTS, down = d!==null && d<=-GAP_PTS;
+  if (up) return small
+    ? { bg:'color-mix(in srgb, var(--viz-up) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 16%, transparent)', color:'var(--viz-up)', tag:'up' }
+    : { bg:'color-mix(in srgb, var(--viz-up) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 36%, transparent)', color:'var(--viz-up)', tag:'up' };
+  if (down) return small
+    ? { bg:'color-mix(in srgb, var(--viz-down) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-down) 16%, transparent)', color:'var(--viz-down)', tag:'down' }
+    : { bg:'color-mix(in srgb, var(--viz-down) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-down) 36%, transparent)', color:'var(--viz-down)', tag:'down' };
+  return small
+    ? { bg:'color-mix(in srgb, var(--text) 2%, transparent)', bd:'var(--line)', color:'var(--text)', tag:'even' }
+    : { bg:'color-mix(in srgb, var(--text) 3%, transparent)', bd:'var(--line)', color:'var(--text)', tag:'even' };
+}
+function gapText(d){ return d===null ? '' : (d>0?'+':d<0?'\u2212':'')+Math.abs(d)+' pts'; }
+`;
+  const TEN384_MAP = [
+    ["const gBand = g.pct===null ? null : band(g.pct/100, metric);", "", 1],
+    ["const bd2 = band(rate, metric);", "const bd2 = gapBand(pctInt, gPctInt, den<10);", 1],
+    ["bg:bd2.bg, bd:bd2.bd, tag:bd2.tag,", "bg:bd2.bg, bd:bd2.bd, tag:bd2.tag, gap:dPts,", 1],
+    ["tipNote:bd2.tag+' band'+(dPts===null?'':' · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+gPctInt+'%')+(small?' · small sample':''),",
+     "tipNote:(dPts===null?'no all-sets rate for this pair':gapText(dPts)+' vs this pair’s all-sets '+gPctInt+'%')+(small?' · small sample · n='+den:''),", 1],
+    ["gColor: gBand ? gBand.color : 'var(--text-label)',", "gColor: g.pct===null ? 'var(--text-label)' : 'var(--text)',", 1],
+  ];
+  for (const [from, to, want] of TEN384_MAP) {
+    const got = src.split(from).length - 1;
+    if (got !== want) throw new Error(`TEN-384 gap-rule map: ${JSON.stringify(from)} occurs ${got}× in ${BASE_REF}, expected ${want}`);
+    src = src.split(from).join(to);
+  }
+  if (/\bband\(rate, metric\);|gBand/.test(src.replace(bandFn, '')))
+    throw new Error('the recovered original still colours a cell by the retired absolute band');
+  src = GAP_RULE + src;
   // eslint-disable-next-line no-new-func
   return new Function('LF', src)(() => ({ holdbreak: () => HB }));
 }
@@ -323,6 +365,43 @@ mustFail('the wired-path check would catch a swapped best-of', () => {
   const b = HBE.heatFor(HB, key, 'HOLD', 3);
   assert.deepStrictEqual(b, a);
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// 1c · The TEN-384 colour rule, read straight off the model: every printed set
+//      cell's tag follows the sign of its gap to the pair's all-sets rate on the
+//      PRINTED integers (≥ +3 up, ≤ −3 down, else even), and the all-sets cell is
+//      never tinted. The ±3 boundary itself must occur, or the sweep is blind to
+//      an off-by-one (> 3 vs ≥ 3).
+// ════════════════════════════════════════════════════════════════════════════
+function gapRuleSweep(threshold) {
+  let cells = 0, boundary = 0;
+  for (const key of KEYS) for (const metric of METRICS) {
+    const r = HBE.heatFor(HB, key, metric, 5);
+    for (const row of r.rows) {
+      assert(row.gColor === 'var(--text)' || row.gColor === 'var(--text-label)', `${key}: the all-sets cell is tinted ${row.gColor}`);
+      const g = row.gPct === '—' ? null : parseInt(row.gPct, 10);
+      for (const c of row.cells) {
+        if (!/^\d+%$/.test(c.pct)) continue;
+        const d = g === null ? null : parseInt(c.pct, 10) - g;
+        assert.strictEqual(c.gap, d, `${key} ${c.tipHead}: gap ${c.gap} is not printed cell − printed all-sets (${d})`);
+        const want = d === null ? 'even' : d >= threshold ? 'up' : d <= -threshold ? 'down' : 'even';
+        assert.strictEqual(c.tag, want, `${key} ${c.tipHead}: gap ${d} tagged ${c.tag}, rule says ${want}`);
+        if (Math.abs(d) === 3) boundary++;
+        cells++;
+      }
+    }
+  }
+  return { cells, boundary };
+}
+check('every set cell is coloured by its gap to the pair’s all-sets rate (±3 pts)', () => {
+  const { cells, boundary } = gapRuleSweep(3);
+  assert(cells > 1000, `only ${cells} printed cells checked`);
+  assert(boundary > 0, 'no cell sits exactly on ±3 — the boundary is untested');
+  assert.strictEqual(HBE.gapText(-4), '\u22124 pts', 'the sub must use a true minus');
+  assert.strictEqual(HBE.gapText(7), '+7 pts');
+  console.log(`        ${cells} cells follow the gap rule, ${boundary} on the ±3 boundary`);
+});
+mustFail('the gap-rule sweep would catch a > 3 (not ≥ 3) boundary', () => gapRuleSweep(4));
 
 // ════════════════════════════════════════════════════════════════════════════
 // 2 · The axis the engine reads is the axis the shard emits.

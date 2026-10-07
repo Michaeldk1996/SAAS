@@ -74,8 +74,6 @@
   }
   .display{ font-family:var(--font-words); }
   .mono{ font-family:'IBM Plex Mono', monospace; }
-  /* Market-performance chips and split tabs. */
-  .mkt-seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
 
   /* Top nav */
   .topnav{ align-items:center; justify-content:space-between; gap:28px;
@@ -863,12 +861,31 @@
   .pagehead h1{ font-family:var(--font-words); font-size:22px; margin:0 0 4px 0; font-weight:600; }
   .pagehead p{ margin:0; color:var(--text-label); font-size:13px; }
 
-  /* Players — tournament groups */
-  .pgroup{ margin-top:34px; }
-  .pgroup:first-child{ margin-top:26px; }
+  /* Players landing frame (TEN-384): reference section padding 30 40 70, max-width 1400,
+     column with a 24px gap. .pagewrap (22 24 48) also frames the profile view, so the
+     difference is added on the list view only. */
+  #playerListView{ display:flex; flex-direction:column; gap:24px; padding:8px 16px 22px; max-width:1352px; line-height:normal; }
+
+  /* Players header card: the Today's Matches header pattern (.mx-titlerow), own class names. */
+  .pgh-card{ display:flex; align-items:flex-end; justify-content:space-between; gap:28px; padding:22px 26px; border-radius:12px;
+    background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); }
+  .pgh-text{ flex:1; min-width:0; }
+  /* Ruling Q4.1: the eyebrow is the site caps label. */
+  .pgh-eyebrow{ margin:0 0 9px; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; }
+  .pgh-title{ margin:0; font-family:var(--font-words); font-size:29px; font-weight:800; line-height:1.1; letter-spacing:-0.015em; color:var(--text); }
+  .pgh-sub{ margin:8px 0 0; max-width:520px; font-family:var(--font-words); font-size:13.5px; font-weight:400; line-height:1.55; color:var(--text-soft); }
+  .pgh-stats{ display:flex; flex:none; gap:34px; }
+  .pgh-stats:empty{ display:none; }
+  .pgh-stat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
+  .pgh-stat-l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; }
+  .pgh-stat-v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); line-height:normal; font-variant-numeric:tabular-nums; }
+
+  /* Players — tournament groups (column, 30px apart) */
+  #playerGroups{ display:flex; flex-direction:column; gap:30px; }
   /* Export group head: full-width hairline UNDER the row (border-bottom), meta sits
      right after the name (gap:14px) — not a trailing hair to the right edge. */
   .pgroup-head{ display:flex; align-items:baseline; gap:14px; border-bottom:1px solid var(--line); padding-bottom:13px; margin-bottom:18px; }
+  .pgroup-title{ display:flex; align-items:center; gap:9px; flex:none; }
   .pgroup-dot{ width:8px; height:8px; border-radius:50%; flex:none; }
   .pgroup-dot.hard{ background:var(--bar); }
   .pgroup-dot.clay{ background:var(--text-soft); }
@@ -876,47 +893,40 @@
   .pgroup-name{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:15px; color:var(--text); flex:none; letter-spacing:-0.01em; }
   /* Meta is a UI label, count included — Hanken (not mono) per the export. */
   .pgroup-meta{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; color:var(--text-label); flex:none; text-transform:uppercase; }
-  .pgroup-hair{ display:none; }
 
   /* Players grid + card */
   /* auto-fill 268px columns per the export (its own responsive behaviour). */
   .playergrid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(268px,1fr)); gap:14px; }
-  /* Card: near-page fill (var(--card)) defined by its border, not a raised panel. */
-  .playercard{ display:flex; flex-direction:column; gap:13px; min-width:0; background:var(--card); border:1px solid var(--edge-7); border-radius:16px; padding:18px 19px; }
-  .playercard:hover{ background:var(--tile-hover); border-color:var(--edge-16); }
+  /* Card: top-level card, no outline, no hover lift (TEN-384). */
+  .playercard{ display:flex; flex-direction:column; gap:13px; min-width:0; background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:16px; padding:18px 19px; }
   .playercard .pc-id{ display:flex; align-items:center; gap:12px; }
-  /* 48px avatar: real photo layered over an initials fallback (photo hides on error). */
+  .playercard .pc-idtext{ min-width:0; }
+  /* 48px avatar: real photo layered over a two-initial fallback (photo hides on error).
+     Ruling Q3: the avatar sits on --selected with a 5% hairline; initials stay white. */
   .playercard .pc-avatar{ position:relative; width:48px; height:48px; flex:none; }
-  .playercard .pc-avatar-init{ position:absolute; inset:0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:15px; color:var(--text); background:var(--inner); border:1px solid var(--edge-6); }
+  .playercard .pc-avatar-init{ position:absolute; inset:0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:14px; color:var(--text); background:var(--selected); border:1px solid var(--line); }
   .playercard .pc-avatar-img{ position:absolute; inset:0; width:48px; height:48px; border-radius:50%; object-fit:cover; }
-  .playercard .name{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:16px; color:var(--text); line-height:1.25; }
+  .playercard .name{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:16px; color:var(--text); line-height:normal; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .playercard .pc-rank{ margin-top:2px; font-family:var(--font-nums); font-size:11px; font-weight:400; color:var(--text-label); line-height:normal; }
   .playercard .pc-arch{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
-  .playercard .pc-arch-l{ display:inline-flex; align-items:center; gap:7px; min-width:0; }
-  /* Archetype bullet is muted, not blue — blue is navigation/identity only. */
-  .playercard .pc-arch-dot{ width:6px; height:6px; border-radius:50%; background:var(--text-label); flex:none; }
-  /* No truncation: long archetypes WRAP in the export, they don't clip. */
-  .playercard .pc-arch-label{ font-size:11.5px; color:var(--text-label); font-weight:600; min-width:0; }
-  .playercard .pc-elo{ display:inline-flex; align-items:baseline; gap:5px; flex:none; }
-  /* ELO carries the export's explainable-label dotted underline. */
-  .playercard .pc-elo-lab{font-family:var(--font-words); font-size:10.5px; color:var(--text-label); letter-spacing:0.10em; text-transform:uppercase; font-weight:700; border-bottom:1px dotted var(--text-label); }
+  .playercard .pc-arch-l{ display:flex; align-items:center; gap:7px; min-width:0; }
+  .playercard .pc-arch-dot{ width:6px; height:6px; border-radius:50%; background:var(--text); flex:none; }
+  .playercard .pc-arch-label{ font-size:11.5px; color:var(--text-label); font-weight:600; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .playercard .pc-elo{ display:flex; align-items:baseline; gap:6px; flex:none; }
+  .playercard .pc-elo-lab{ font-family:var(--font-words); font-size:10.5px; color:var(--text-label); letter-spacing:0.10em; text-transform:uppercase; font-weight:700; }
   .playercard .pc-elo b{ font-family:'IBM Plex Mono', monospace; color:var(--text); font-weight:600; font-size:13px; }
   /* Footer: divider is the row's own border-top (no separate .pc-div). */
-  .playercard .pc-foot{ display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid var(--line); padding-top:12px; }
-  .playercard .pc-foot-l{ display:flex; flex-direction:column; min-width:0; }
-  .playercard .pc-oddslabel{ font-size:10px; color:var(--text-label); }
-  .playercard .pc-pill{ display:inline-flex; align-items:center; gap:6px; margin-top:5px; align-self:flex-start; min-width:0; padding:5px 10px; border:1px solid var(--edge-10); border-radius:9px; background:var(--inner); }
+  .playercard .pc-foot{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; border-top:1px solid var(--line); padding-top:12px; }
+  /* Best odds: a lifted tile, not a link (we hold no per-book URL). Ruling Q3: --selected + 5% hairline. */
+  .playercard .pc-odds{ display:flex; align-items:center; gap:7px; min-width:0; padding:7px 12px; border:1px solid var(--line); border-radius:9px; background:var(--selected); }
   .playercard .pc-price{ font-family:'IBM Plex Mono', monospace; font-weight:700; font-size:15px; color:var(--text); flex:none; }
-  .playercard .pc-book{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:400; color:var(--text-label); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .playercard .pc-ext{ display:flex; color:var(--text); }
+  .playercard .pc-book{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; color:var(--text-soft); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .playercard .pc-ext{ display:flex; flex:none; color:var(--text); }
   .playercard .pc-ext svg{ width:11px; height:11px; }
-  /* View profile is subordinate: muted, not the loudest thing on the card. */
-  .playercard .pc-view{ font-size:12px; font-weight:600; color:var(--text-label); white-space:nowrap; }
-  .playercard[data-clickable="1"]{ cursor:pointer; transition:border-color .14s ease, box-shadow .14s ease, transform .14s ease; }
-  .playercard[data-clickable="1"]:hover{ border-color:var(--edge-10);  transform:translateY(-2px); }
+  .playercard .pc-view{ padding-bottom:7px; font-size:12px; font-weight:600; color:var(--link); white-space:nowrap; }
+  .playercard[data-clickable="1"]{ cursor:pointer; }
+  /* No built profile: nothing to open, so not a link. */
   .playercard[data-clickable="0"] .pc-view{ color:var(--text-label); }
-
-  /* Players — search helper line */
-  .pgsearch-helper{ margin-top:11px; font-size:12.5px; color:var(--text-label); }
 
   /* Players — search autocomplete dropdown */
   .psearch-results{ position:absolute; top:calc(100% + 4px); left:0; right:0; z-index:60; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; max-height:340px; overflow-y:auto;  }
@@ -936,7 +946,7 @@
   .pgsearchbar:focus-within{ border-color:var(--edge-10); }
   .pgsearch-icon{ display:flex; align-items:center; justify-content:center; width:19px; height:19px; color:var(--text); flex:none; }
   .pgsearch-icon svg{ width:19px; height:19px; }
-  .pgsearchbar input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:16px; font-weight:500; }
+  .pgsearchbar input{ flex:1; min-width:0; background:transparent; border:none; outline:none; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:16px; font-weight:400; }
   .pgsearchbar input::placeholder{ color:var(--text-label); }
   .pgsearch-tag{ flex:none; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
 
@@ -2326,9 +2336,15 @@
 <div class="tabpage" data-page="players">
   <div class="pagewrap">
     <div id="playerListView">
-      <div class="pagehead">
-        <h1>Players</h1>
-        <p>Full profiles, ratings and form — the context behind every price.</p>
+      <!-- TEN-384: header card on the Today's Matches pattern (.mx-titlerow):
+           caps eyebrow, title, sub, mono stats right. Stats filled by pgRenderHeaderStats. -->
+      <div class="pgh-card">
+        <div class="pgh-text">
+          <div class="pgh-eyebrow">ATP tour · this week's draws</div>
+          <h1 class="pgh-title">Players</h1>
+          <p class="pgh-sub">Full profiles, ratings and form: the context behind every price.</p>
+        </div>
+        <div class="pgh-stats" id="pgHeaderStats" aria-label="Players summary"></div>
       </div>
       <div class="playersearchwrap" style="position:relative;">
         <div class="pgsearchbar">
@@ -2337,7 +2353,6 @@
         </div>
         <div id="playerSearchResults" class="psearch-results" style="display:none;"></div>
       </div>
-      <div class="pgsearch-helper">Search the full ATP tour — current and historical players.</div>
       <div id="playerGroups"></div>
     </div>
     <!-- pp-formsurface marks this as a second host for the shared form panel
@@ -4578,6 +4593,8 @@ document.getElementById('mainNav').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
   if (e.isTrusted) sfCloseOverlays();
+  // TEN-384 fx2 item 2: leaving the page cancels a profile mount still waiting on its first paint.
+  if (typeof pp2CancelPendingMount === 'function') pp2CancelPendingMount();
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   const tab = btn.dataset.tab;
@@ -14508,7 +14525,9 @@ function fhOpenSheet(mid){
   let host = document.getElementById('fhSheet');
   // Mounted inside the modal card so the existing match-detail body (formPanelHtml)
   // picks up its scoped styles (:is(.modal-analysis, …) rules).
-  const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
+  // TEN-384: only an OPEN modal hosts it — the closed modal stays in the DOM (display:none), so the profile's
+  // hand-off falls back to document.body instead of mounting the sheet inside a hidden card.
+  const card = document.querySelector('#analysisModal.open .modal-analysis') || document.body;
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
   host.innerHTML = `<div style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:110; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--text);">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
@@ -19211,41 +19230,82 @@ function closeModal(){ document.getElementById('favModal').classList.remove('ope
 
 /* ---------- PLAYERS (derived from real matches, no fake stats) ---------- */
 function getPlayersFromMatches(){
+  // TEN-384 ruling Q9: the landing lists every player in each event's main draw
+  // this week, and a player who has lost STAYS on the page. Two real sources:
+  //   1. the board (matches.json): every row of an active event, finished, live or
+  //      pending, carries both players with their rank;
+  //   2. tournament-progression.json: the pipeline's per-event draw for the same
+  //      active events, every player who has played a finished main-draw match
+  //      (eliminated or not), so the players who lost before today's rows stay in.
+  // The union is the draw as far as we hold it. A player who has not yet played
+  // and has no row on the board (a bye still waiting) cannot be listed: we hold
+  // no entry for him, and no name is invented.
   const map = new Map();
+  const canonOf = key => (key != null && typeof playerProfiles !== 'undefined' && playerProfiles &&
+                          playerProfiles[String(key)] && playerProfiles[String(key)].name) || null;
+  const upsert = (p, ev) => {
+    // Identity = player_key when present, else the display name. Keying on the
+    // key collapses the "Alex de Minaur" / "A. De Minaur" duplicate a feed can
+    // emit for ONE player (both resolve to the same key). If two feed rows carry
+    // DIFFERENT keys for the same human, they stay split here — that is an
+    // upstream player_key-resolution problem, not a card-render bug.
+    const id = (p.key != null && p.key !== '') ? 'k:' + p.key : 'n:' + p.name;
+    if (!map.has(id)) map.set(id, { name:p.name, key:p.key, photo:p.photo || null, rank:null,
+                                    tour:ev.tour, surface:ev.surface, category:ev.category, odds:null });
+    const rec = map.get(id);
+    // One name format: prefer the canonical profile name, else the fuller of the
+    // variants seen (so "Alex de Minaur" wins over "A. De Minaur").
+    const canon = canonOf(p.key);
+    if (canon) rec.name = canon;
+    else if (p.name && p.name.length > (rec.name || '').length) rec.name = p.name;
+    if (!rec.photo && p.photo) rec.photo = p.photo;
+    // Rank for the card's "#N": live standings (player-index.json) first, then the match
+    // row's rank, else the profile's. The profile rank is frozen per build and reused for
+    // up to 14 days, so it carried duplicates (Darderi / Paul both #19) — TEN-384 fix.
+    if (rec.rank == null) {
+      const live = pp2LiveRankOf(p.key);
+      rec.rank = (live != null) ? live : pgRankOf(p.rank, canon ? playerProfiles[String(p.key)].rank : null);
+    }
+    return rec;
+  };
+  const nowMs = Date.now();
   matches.forEach(m => {
-    // Players page = pre-match opportunities only (Option A, founder-confirmed).
-    // Drop a player the moment his match goes live or finishes: once in play the
-    // card has no purpose and m.bestOdds drifts to a stale in-play price (the
-    // "Jodar 26.00" bug). A match is pre-match iff it is neither live nor settled.
-    if (m.live || m.finalScore != null) return;
-    // Event-driven cut (TEN-80): also drop once the start instant has passed on the
-    // client clock. The feed's live flag lags our ~hourly pipeline by up to an hour,
-    // so a just-started match can still read live:false with no finalScore; without
-    // this it lingers as a bettable card on an already-underway match — the one
-    // genuinely harmful case. Same client-clock trigger the Matches "Underway" chip
-    // uses (cardStartMs, now timezone-correct). No usable start instant → never
-    // dropped here (never a guess).
+    const ev = { tour:m.tour, surface:m.surface, category:(m.venue && m.venue.category) || null };
+    // "Best odds to win" is a PRE-MATCH price only (Option A, founder-confirmed): once
+    // a match is live or settled m.bestOdds drifts to a stale in-play price (the
+    // "Jodar 26.00" bug). Event-driven cut (TEN-80): a passed start instant on the
+    // client clock also ends pre-match, since the feed's live flag lags the hourly
+    // pipeline. No usable start instant → still pre-match (never a guess).
     const startMs = cardStartMs(m);
-    if (isFinite(startMs) && Date.now() >= startMs) return;
-    [{name:m.p1, key:m.p1Key, photo:m.p1PhotoUrl, odds:m.bestOdds?.p1 || null},
-     {name:m.p2, key:m.p2Key, photo:m.p2PhotoUrl, odds:m.bestOdds?.p2 || null}].forEach(p => {
-      // Identity = player_key when present, else the display name. Keying on the
-      // key collapses the "Alex de Minaur" / "A. De Minaur" duplicate a feed can
-      // emit for ONE player (both resolve to the same key). If two feed rows carry
-      // DIFFERENT keys for the same human, they stay split here — that is an
-      // upstream player_key-resolution problem, not a card-render bug.
-      const id = (p.key != null && p.key !== '') ? 'k:' + p.key : 'n:' + p.name;
-      if (!map.has(id)) map.set(id, { name:p.name, key:p.key, photo:p.photo || null, matches:[] });
-      const rec = map.get(id);
-      // One name format: prefer the canonical profile name, else the fuller of the
-      // variants seen (so "Alex de Minaur" wins over "A. De Minaur").
-      const canon = (p.key != null && typeof playerProfiles !== 'undefined' && playerProfiles &&
-                     playerProfiles[String(p.key)] && playerProfiles[String(p.key)].name) || null;
-      if (canon) rec.name = canon;
-      else if (p.name && p.name.length > (rec.name || '').length) rec.name = p.name;
-      if (!rec.photo && p.photo) rec.photo = p.photo;
-      rec.matches.push({ opponent: p.name === m.p1 ? m.p2 : m.p1, tour:m.tour, surface:m.surface, odds:p.odds });
+    const pre = !(m.live || m.finalScore != null) && !(isFinite(startMs) && nowMs >= startMs);
+    [{name:m.p1, key:m.p1Key, photo:m.p1PhotoUrl, odds:m.bestOdds?.p1 || null, rank:m.p1Rank},
+     {name:m.p2, key:m.p2Key, photo:m.p2PhotoUrl, odds:m.bestOdds?.p2 || null, rank:m.p2Rank}].forEach(p => {
+      const rec = upsert(p, ev);
+      if (pre && !rec.odds && p.odds && p.odds.price) rec.odds = p.odds;
     });
+  });
+  // The draw from tournament-progression.json, joined to the board's event: the
+  // same bare name ("ATP Tokyo" ↔ "Tokyo"), else the board event sharing the most
+  // player keys (a brand-aliased event is keyed by its host city). An event the
+  // board no longer carries is not this week's: skipped.
+  let tp = {};
+  try { tp = (tournamentProgression && tournamentProgression.tournaments) || {}; } catch (e) { tp = {}; }
+  const boardEvents = new Map();
+  matches.forEach(m => { if (m.tour && !boardEvents.has(m.tour)) boardEvents.set(m.tour,
+    { tour:m.tour, surface:m.surface, category:(m.venue && m.venue.category) || null, keys:new Set() }); });
+  matches.forEach(m => { const b = boardEvents.get(m.tour); if (b) { if (m.p1Key) b.keys.add(String(m.p1Key)); if (m.p2Key) b.keys.add(String(m.p2Key)); } });
+  Object.keys(tp).forEach(evName => {
+    const players = (tp[evName] && Array.isArray(tp[evName].players)) ? tp[evName].players : [];
+    let ev = Array.from(boardEvents.values()).find(b => b.tour.replace(/^ATP\s+/, '').trim() === evName) || null;
+    if (!ev) {
+      let best = 0;
+      boardEvents.forEach(b => {
+        const n = players.filter(pl => pl.playerKey != null && b.keys.has(String(pl.playerKey))).length;
+        if (n > best) { best = n; ev = b; }
+      });
+    }
+    if (!ev) return;
+    players.forEach(pl => { if (pl && pl.name) upsert({ name:pl.name, key:pl.playerKey, photo:null, rank:null }, ev); });
   });
   return Array.from(map.values());
 }
@@ -19290,31 +19350,89 @@ function pgEloFor(name){ return psEloFor(pgEloData, name); }
 // path), not picked by name from the imported icon set.
 const PG_EXT_SVG = '<svg viewBox="0 0 20 20" fill="none"><path d="M7 5h8v8M15 5 5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 
+// A positive integer rank, else null (never a guess).
+// TEN-384 fx4 item 2 · ONE live-rank read for the Players card AND the profile header: the live
+// standings (player-index.json → playerIndex) for this key, else null (each caller then falls back to
+// the frozen profile rank). Exposed to the profile module through pp2Bridge() as window.pp2LiveRank.
+function pp2LiveRankOf(key){
+  if (key == null || key === '') return null;
+  const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : [];
+  const live = idx.find(r => String(r.key) === String(key));
+  return (live && live.rank != null && live.rank !== '') ? pgRankOf(live.rank) : null;
+}
+function pgRankOf(...vals){
+  for (const v of vals){
+    const n = (v == null || v === '') ? NaN : parseInt(v, 10);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+// Group tier for the meta line ("Hard · 500 · 4 players"): the live feed's
+// venue.category through the existing tier-code map (TOURX_TIER_CODE). An
+// unmapped or absent category omits the tier: no invented tier.
+function pgTierCode(category){
+  if (!category || typeof TOURX_TIER_CODE === 'undefined') return null;
+  return TOURX_TIER_CODE[category] || null;
+}
+// Two-letter initials for the avatar fallback: first name + surname ("CA").
+function pgInitials(name){
+  const parts = String(name || '').replace(/\./g, ' ').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '?';
+  const a = parts[0][0], b = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (a + b).toUpperCase();
+}
+// Header stats: Players · Tournaments · Updated. Same clock as the Today's
+// Matches header (mxOddsUpdatedAt, HH:MM in the reader's news zone).
+function pgRenderHeaderStats(players, tournaments){
+  const el = document.getElementById('pgHeaderStats');
+  if (!el) return;
+  let hhmm = '—';
+  const up = (typeof mxOddsUpdatedAt === 'function') ? mxOddsUpdatedAt() : null;
+  if (up != null){
+    const fmt = tz => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(up)).replace(/^24/, '00');
+    try { hhmm = fmt((typeof newsTz === 'function' && newsTz()) || undefined); } catch (e) { hhmm = fmt(undefined); }
+  }
+  const n = v => Number(v).toLocaleString('en-US');
+  el.innerHTML = [['Players', n(players)], ['Tournaments', n(tournaments)], ['Updated', hhmm]]
+    .map(([l, v]) => `<div class="pgh-stat"><span class="pgh-stat-l">${l}</span><span class="pgh-stat-v">${v}</span></div>`).join('');
+}
+
 function renderPlayers(filter){
   const host = document.getElementById('playerGroups');
   if (!host) return;
   if (!pgLookupsLoaded) loadPlayerCardLookups();   // lazy; re-renders on completion
   const q = (filter||"").toLowerCase();
-  const all = getPlayersFromMatches().filter(p => p.name.toLowerCase().includes(q));
-  // Group by tournament; each group states its own surface + player count.
+  const field = getPlayersFromMatches();
+  const all = field.filter(p => p.name.toLowerCase().includes(q));
+  // Group by tournament (ruling Q9); each group states its own surface, tier +
+  // player count, and lists its players by rank (unranked last, then by name).
   const groups = new Map();
   all.forEach(p => {
-    const tour = p.matches[0].tour || 'Other';
-    if (!groups.has(tour)) groups.set(tour, { tour, surface: p.matches[0].surface, players: [] });
+    const tour = p.tour || 'Other';
+    if (!groups.has(tour)) groups.set(tour, { tour, surface: p.surface, tier: pgTierCode(p.category), players: [] });
     groups.get(tour).players.push(p);
   });
+  const byRank = (a, b) => (a.rank == null) - (b.rank == null) || (a.rank || 0) - (b.rank || 0) || String(a.name).localeCompare(String(b.name));
+  groups.forEach(g => g.players.sort(byRank));
+  // Header stats read the whole draw, not the search-filtered list.
+  pgRenderHeaderStats(field.length, new Set(field.map(p => p.tour || 'Other')).size);
   const cardHtml = p => {
-    const odds = p.matches[0].odds;
+    const odds = p.odds;
     // Only players with a built profile (player-profiles.json) open a real page;
     // others still render an identical card — "View profile" is always present so
     // every card is the same height — but aren't wired to a broken route.
     const hasProfile = p.key != null && playerProfiles[String(p.key)];
     const arch = pgArchetypeFor(p.name);
     const elo = pgEloFor(p.name);
-    const initial = pesc((p.name.trim()[0] || '?').toUpperCase());
+    const initial = pesc(pgInitials(p.name));
     const eloVal = elo != null ? elo : '—';
-    const price = odds?.price ? odds.price.toFixed(2) : 'pending';
-    const book = odds?.bookmaker ? pesc(odds.bookmaker) : '—';
+    // Pre-match price only; a player who is out, in play or without a priced
+    // next match reads "—" (absent, never a stale or invented price).
+    const priced = !!(odds && odds.price);
+    const price = priced ? Number(odds.price).toFixed(2) : '—';
+    // No price: "—" plus a grey note, as the profile's "no fixture on record".
+    const book = priced ? (odds.bookmaker ? `<span class="pc-book">${pesc(odds.bookmaker)}</span>` : '')
+                        : '<span class="pc-book">no price</span>';
     // Real headshot layered over the initials fallback (same source as match rows,
     // m.pNPhotoUrl); the photo hides itself on error and the initials show through.
     // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
@@ -19326,7 +19444,10 @@ function renderPlayers(filter){
     <div class="playercard" data-clickable="${hasProfile ? 1 : 0}"${hasProfile ? ` onclick="showPlayerProfile('${p.key}')"` : ''}>
       <div class="pc-id">
         <span class="pc-avatar"><span class="pc-avatar-init">${initial}</span>${photo}</span>
-        <div class="name">${pesc(p.name)}</div>
+        <div class="pc-idtext">
+          <div class="name">${pesc(p.name)}</div>
+          <div class="pc-rank">${p.rank != null ? '#' + p.rank : '—'}</div>
+        </div>
       </div>
       <div class="pc-arch">
         <span class="pc-arch-l">
@@ -19336,28 +19457,25 @@ function renderPlayers(filter){
         <span class="pc-elo"><span class="pc-elo-lab">ELO</span><b>${eloVal}</b></span>
       </div>
       <div class="pc-foot">
-        <span class="pc-foot-l">
-          <span class="pc-oddslabel">Best odds to win</span>
-          <span class="pc-pill">
-            <span class="pc-price">${price}</span>
-            <span class="pc-book">${book}</span>
-            <span class="pc-ext">${PG_EXT_SVG}</span>
-          </span>
+        <span class="pc-odds" title="Best odds to win">
+          <span class="pc-price">${price}</span>${book}${priced ? `<span class="pc-ext">${PG_EXT_SVG}</span>` : ''}
         </span>
-        <span class="pc-view">View profile →</span>
+        <span class="pc-view"${hasProfile ? ' role="link"' : ''}>View profile →</span>
       </div>
     </div>`;
   };
   const surfName = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
   host.innerHTML = Array.from(groups.values()).map(g => {
     const n = g.players.length;
+    const meta = [surfName(g.surface), g.tier, `${n} player${n===1?'':'s'}`].filter(Boolean).join(' · ');
     return `
     <div class="pgroup">
       <div class="pgroup-head">
-        <span class="pgroup-dot ${g.surface}"></span>
-        <span class="pgroup-name">${pesc(g.tour)}</span>
-        <span class="pgroup-meta">${(g.surface||'').toUpperCase()} · ${n} PLAYER${n===1?'':'S'}</span>
-        <span class="pgroup-hair"></span>
+        <span class="pgroup-title">
+          <span class="pgroup-dot ${g.surface}"></span>
+          <span class="pgroup-name">${pesc(g.tour)}</span>
+        </span>
+        <span class="pgroup-meta">${pesc(meta)}</span>
       </div>
       <div class="playergrid">${g.players.map(cardHtml).join('')}</div>
     </div>`;
@@ -20206,6 +20324,10 @@ async function loadPlayerIndex(){
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     playerIndex = Array.isArray(data.players) ? data.players : [];
+    // The Players landing reads its "#N" from these live standings: repaint it if it is up.
+    if (document.getElementById('playerGroups')) renderPlayers();
+    // TEN-384 fx4 item 2: an open profile's header rank reads the same standings — repaint it once.
+    if (typeof ppState !== 'undefined' && ppState && ppState.key) pp2RepaintIfOpen(ppState.key);
   } catch (err) {
     // Additive: search falls back to the eager roster, i.e. today's behaviour.
     console.error('Could not load player-index.json:', err);
@@ -20227,6 +20349,7 @@ async function ensurePlayerProfile(key){
       if (!res.ok) return false;
       const data = await res.json();
       if (!data || !data.profile) return false;
+      await loadTourBaselines();   // TEN-384: the shard path settles the baselines too (see loadTourBaselines)
       playerProfiles[k] = data.profile;
       // A shard opened before the eager file lands would otherwise have no tour
       // baseline to compare against; only fill, never overwrite a real one.
@@ -20240,11 +20363,31 @@ async function ensurePlayerProfile(key){
   ppShardInflight.set(k, p);
   return p;
 }
+// TEN-384 · founder ruling (2026-10-05): the profile's Market edge tour baselines (All ·
+// Favourite · Underdog) come from tour-baselines.json — < 1 KB, written by
+// build-database-yield.js in the same run as database-yield.json, so they equal the Database
+// Tour aggregates. It is loaded WITH the profile data (a profile is never openable before it
+// has settled), so the Market edge box and tiles draw complete on first paint. The profile
+// never loads database-yield.json. A success is kept; a failure is retried on the next open.
+let tourBaselines = null;
+let _tourBaselinesInflight = null;
+function loadTourBaselines(){
+  if (tourBaselines) return Promise.resolve(tourBaselines);
+  if (_tourBaselinesInflight) return _tourBaselinesInflight;
+  _tourBaselinesInflight = fetch('./tour-baselines.json', { cache: 'no-cache' })
+    .then(r => (r.ok ? r.json() : null))
+    .then(j => { if (j && j.roles && j.roles.all) tourBaselines = j; return tourBaselines; })
+    .catch(() => null)
+    .then(v => { _tourBaselinesInflight = null; return v; });
+  return _tourBaselinesInflight;
+}
 async function loadPlayerProfiles(){
+  const baselines = loadTourBaselines();   // in parallel; settled before any profile is openable
   try {
     const res = await fetch('./player-profiles.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+    await baselines;
     playerProfiles = data.players || {};
     ppTourAverage = data.tourAverage || { dna: {}, stats: {} };
     radarCalibration = data.radarCalibration || { cardBenchmarks: {} };
@@ -20265,7 +20408,7 @@ async function loadPlayerProfiles(){
 
 // Per-session UI state for the open profile: which player, which surface lens,
 // and follow toggles (persisted only in-memory for now, per the spec's note).
-const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', careerLockPx: null, splitsOpen: { career: true, last52: true }, splitsTab: { career: 'results', last52: 'results' }, mktPeriod: 'career', mktWindow: null, mktSurface: 'All', mktSide: 'back', mktRole: 'all' };
+const ppState = { key: null, surface: 'All', following: {}, tournamentQuery: '', tournamentPicked: null, formExpanded: false, formSurface: 'All', careerLockPx: null, splitsOpen: { career: true, last52: true }, splitsTab: { career: 'results', last52: 'results' } };
 
 // Upstream match history (recentForm.matches) is only complete from 2023 on.
 // Measured across all 437 players carrying form data: 2023-2026 hold a median
@@ -21355,6 +21498,8 @@ function pp2Bridge(){
   window.holdbreak = holdbreak;
   window.situational = situational;
   window.marketEdge = window.marketEdge || {};
+  window.tourBaselines = tourBaselines;   // TEN-384: the Market edge tour baselines (loadTourBaselines)
+  window.pp2LiveRank = pp2LiveRankOf;     // TEN-384 fx4 item 2: header rank = the Players card's live rank
   // TEN-206 correction pass: the ledger's second price source (item 11) and the
   // match sheet's per-match stats (item 14). Both are lazy and both default to an
   // empty store, so an absent fetch degrades to a dash with a stated reason
@@ -21443,7 +21588,84 @@ function loadPp2MatchStats(key){
   });
   return _pp2StatsPromise;
 }
-window.onPp2SheetOpen = function(key){ loadPp2MatchStats(key); pp2PrefetchFeedIndexes(key); };
+// TEN-384: window.onPp2SheetOpen retired with the profile's §8.1 sheet (the step-3 sheet loads its own feeds).
+// ── TEN-384 · the profile's hand-off to the step-3 Match analysis stats sheet ──
+// player-profile-v2.js retired its own §8.1 sheet: chips, strip cells, ledger rows, W/L cells and drill rows
+// hand a recentForm-shaped row here, and this registers it in the shared sheetMap and opens THE sheet
+// (fhOpenSheet: Match · Key stats · Set N · Point by point, opening on Key stats). With the Match analysis
+// modal closed, fhOpenSheet mounts on document.body (z 110, above every profile layer); the host takes
+// .pp-formsurface so the sheet's scoped point-by-point styles still apply there. Names arrive "I. Surname".
+window.pp2OpenMatchSheet = function(x){
+  if (!x || !x.row || typeof fhOpenSheet !== 'function') return false;
+  const r = fhRowFromForm(x.row, x.subjectKey, x.subjectName, 0);
+  r.mid = fhSafeId('pp2_' + x.subjectKey + '_' + x.id);
+  if (x.price != null && x.oppPrice != null){ r.price = x.price; r.oppPrice = x.oppPrice; r.book = x.book; r.src = x.src; }
+  // A row with no score on record (an odds-archive-only row) is not a walkover: no result line, dashes for sets.
+  if (!x.scored){ r.wo = false; r.ret = false; r.won = null; r.pS = null; r.oS = null; r.complete = false; r.decider = false; }
+  const st = _fh || fhStateFor({ pp2: true, key: x.subjectKey });
+  st.sheetMap[r.mid] = { r, aName: x.subjectName, aKey: x.subjectKey, bName: x.oppName,
+    bKey: x.row.opponentKey != null ? String(x.row.opponentKey) : null, noYear: true };
+  fhOpenSheet(r.mid);
+  const host = document.getElementById('fhSheet');
+  if (!host || !host.innerHTML) return false;
+  if (host.parentNode === document.body) host.classList.add('pp-formsurface');
+  // The open ledger row keeps its wash until the sheet empties (✕, scrim, Escape) or is re-mounted elsewhere.
+  if (window._pp2SheetObs) window._pp2SheetObs.disconnect();
+  window._pp2SheetObs = new MutationObserver(() => {
+    if (host.isConnected && host.innerHTML) return;
+    window._pp2SheetObs.disconnect(); window._pp2SheetObs = null;
+    if (window.PlayerProfileV2 && window.PlayerProfileV2.sheetClosed) window.PlayerProfileV2.sheetClosed();
+  });
+  window._pp2SheetObs.observe(host, { childList: true });
+  return true;
+};
+window.pp2CloseMatchSheet = function(){ if (typeof fhCloseSheet === 'function') fhCloseSheet(); };
+// TEN-384 · the header's Next match cell (wired for the first time: ctx.nextMatch was a constant null since
+// TEN-206). The subject's earliest pre-match fixture in today's feed (`matches`), on the same pre-match rule as
+// the Players page (not live, not settled, start not passed): "Today · Tokyo SF" + "vs J. Munar" (the feed's own
+// "I. Surname"). Day words in the member zone (newsTz), as the Matches page reads its days. None -> null, and
+// the cell keeps "—" / "no fixture on record".
+window.pp2NextMatchFor = function(key){
+  if (key == null || typeof matches === 'undefined' || !Array.isArray(matches)) return null;
+  const now = Date.now();
+  let best = null, bestMs = Infinity;
+  matches.forEach(m => {
+    if (!m || m.live || m.finalScore != null) return;
+    const side = String(m.p1Key) === String(key) ? 1 : String(m.p2Key) === String(key) ? 2 : 0;
+    if (!side) return;
+    const ms = apiStartMs(m);
+    if (isFinite(ms) && ms <= now) return;
+    const sortMs = isFinite(ms) ? ms : Date.parse((m.date || '9999-12-31') + 'T23:59:59Z');
+    if (best && !(sortMs < bestMs)) return;
+    best = { m, side, ms }; bestMs = sortMs;
+  });
+  if (!best) return null;
+  const m = best.m, tz = newsTz();
+  const dayKey = t => { try { return new Date(t).toLocaleDateString('en-CA', { timeZone: tz }); } catch (e) { return new Date(t).toLocaleDateString('en-CA'); } };
+  const key0 = isFinite(best.ms) ? dayKey(best.ms) : (m.date || null);
+  let day = null;
+  if (key0){
+    const today = dayKey(now), tomorrow = dayKey(now + 86400000);
+    if (key0 === today) day = 'Today';
+    else if (key0 === tomorrow) day = 'Tomorrow';
+    else { const d = new Date(key0 + 'T12:00:00Z'); day = d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + ' ' + d.getUTCDate(); }
+  }
+  const event = String(m.tour || '').replace(/^ATP\s+/, '').trim();
+  const rd = m.tournamentRound ? roundBadgeText(m.tournamentRound) : null;
+  const where = [event, rd].filter(Boolean).join(' ');
+  return { label: [day, where].filter(Boolean).join(' · ') || null, opponent: (best.side === 1 ? m.p2 : m.p1) || null,
+    opponentKey: best.side === 1 ? m.p2Key : m.p1Key };
+};
+// TEN-384 · the header's "Elo N": the Players card's own source (pgEloFor over elo-ratings.json). The lookup
+// file is lazy; a profile opened before it lands repaints once it does.
+window.pp2EloFor = function(name){
+  if (!pgLookupsLoaded && !window._pp2EloWait){
+    window._pp2EloWait = true;
+    const again = () => { if (pgLookupsLoaded){ window._pp2EloWait = false; if (ppState && ppState.key) pp2RepaintIfOpen(ppState.key); } else setTimeout(again, 400); };
+    Promise.resolve(loadPlayerCardLookups()).then(again, again);
+  }
+  return pgEloFor(name);
+};
 // ── §8.2 · the match panel's two feeds ──────────────────────────────────────
 // Both loaders, both indexes and the shard shapes ALREADY EXIST for the Live
 // tab's match rows (loadPbpShard / loadSetStatsShard / loadPbpIndex /
@@ -21546,16 +21768,26 @@ async function loadPp2Dna(){
   }
 }
 const _pp2Shards = {};
-async function loadPp2MarketShard(key){
+const _pp2ShardLoads = {};   // TEN-384: key -> the in-flight/settled load, so the first paint can wait for it
+function loadPp2MarketShard(key){
+  const k = String(key);
+  if (!_pp2ShardLoads[k]) _pp2ShardLoads[k] = _loadPp2MarketShard(k);
+  return _pp2ShardLoads[k];
+}
+async function _loadPp2MarketShard(key){
   const k = String(key);
   if (Object.prototype.hasOwnProperty.call(_pp2Shards, k)) return;
   _pp2Shards[k] = null;
+  // TEN-384 fx2 item 3: in flight -> the module paints a neutral pending line, never "no priced
+  // matches on record" (player-profile-v2.js marketPending). Cleared when the shard settles either way.
+  (window.marketEdgePending = window.marketEdgePending || {})[k] = true;
   try {
     const res = await fetch(`./market-edge/${encodeURIComponent(k)}.json`, { cache: 'no-cache' });
     if (res.ok) _pp2Shards[k] = await res.json();
   } catch (e) { /* additive; the columns dash and say why */ }
   window.marketEdge = window.marketEdge || {};
   window.marketEdge[k] = _pp2Shards[k];
+  delete window.marketEdgePending[k];
   const view = document.getElementById('playerProfileView');
   if (view && view.style.display !== 'none' && window.PlayerProfileV2
       && window.PlayerProfileV2.repaint && ppState.key === k) {
@@ -21647,23 +21879,61 @@ function loadPp2Closes(key){
       pp2RepaintIfOpen(k);
     });
 }
-function showPlayerProfileV2(key){
-  const profile = playerProfiles[String(key)];
-  if (!profile) return false;
-  if (!window.PlayerProfileV2 || !window.PlayerProfileV2.mount) return false;
-  ppState.key = String(key);
-  document.getElementById('playerListView').style.display = 'none';
-  const view = document.getElementById('playerProfileView');
-  view.style.display = '';
+// TEN-384 · founder ruling (2026-10-05): the Market edge box and tiles draw COMPLETE on first
+// paint — no "—" / "no priced matches on record" that fills in a moment later. The box reads the
+// player's market-edge shard, so the first paint waits for that one shard to settle (cached after
+// the first open; capped at PP2_FIRST_PAINT_WAIT_MS, after which the page paints and the shard's
+// own repaint fills it as before). The list stays on screen meanwhile, as it does while
+// selectSearchedPlayer() fetches a profile shard. The tour baselines are already in hand
+// (loadTourBaselines settles with the profile data).
+//
+// TEN-384 fx2 item 2 · A DEFERRED MOUNT IS CANCELLED BY EVERY LEAVE PATH. The wait above is a window in
+// which the reader can go back, switch page or open someone else. Each of those bumps _pp2OpenSeq
+// (pp2CancelPendingMount: showPlayerList, every sidebar page switch, a legacy-profile open), and the
+// timer mounts only if its own sequence is still current AND the Players page is still the one on
+// screen — so a profile can never appear over the list, or scroll another page, seconds after the
+// reader left it.
+// fx2 item 3 · every other per-profile load starts at CLICK time, in parallel with the market shard,
+// not after the wait; and if the cap fires first, the box paints a neutral pending line (no claim)
+// until the shard lands and repaints it once.
+const PP2_FIRST_PAINT_WAIT_MS = 2500;
+let _pp2OpenSeq = 0;
+function pp2CancelPendingMount(){ _pp2OpenSeq++; }
+function pp2MountStillWanted(seq, key){
+  if (seq !== _pp2OpenSeq || ppState.key !== String(key)) return false;
+  const page = document.querySelector('.tabpage[data-page="players"]');
+  return !page || page.classList.contains('active');
+}
+function pp2StartLoads(key){
   pp2Bridge();
-  if (!window.PlayerProfileV2.mount(view, key)) return false;
-  loadPp2MarketShard(key);
+  // A failed tour-baselines load (rare: it settles with the profile data) is retried here.
+  if (!tourBaselines) loadTourBaselines().then(v => { if (v) pp2RepaintIfOpen(key); });
   loadPp2Bet365(key);
   loadPp2CareerHistory(key);
   loadPp2TourHist(key);
   loadPp2Closes(key);
   loadPp2SpeedMap(key);
   loadPp2Dna();
+}
+function showPlayerProfileV2(key){
+  const profile = playerProfiles[String(key)];
+  if (!profile) return false;
+  if (!window.PlayerProfileV2 || !window.PlayerProfileV2.mount) return false;
+  ppState.key = String(key);
+  const seq = ++_pp2OpenSeq;
+  const shard = loadPp2MarketShard(key);
+  pp2StartLoads(key);
+  if (Object.prototype.hasOwnProperty.call(window.marketEdge || {}, String(key))) return pp2MountNow(key);
+  Promise.race([shard, new Promise(r => setTimeout(r, PP2_FIRST_PAINT_WAIT_MS))])
+    .then(() => { if (pp2MountStillWanted(seq, key)) pp2MountNow(key); });
+  return true;
+}
+function pp2MountNow(key){
+  document.getElementById('playerListView').style.display = 'none';
+  const view = document.getElementById('playerProfileView');
+  view.style.display = '';
+  pp2Bridge();
+  if (!window.PlayerProfileV2.mount(view, key)) return false;
   window.scrollTo(0, 0);
   return true;
 }
@@ -21673,6 +21943,7 @@ function showPlayerProfile(key){
   // v2 first; a false return (module absent, key unknown) falls through to the
   // legacy renderer rather than leaving the reader on a blank page.
   if (pp2FlagOn() && showPlayerProfileV2(key)) return;
+  pp2CancelPendingMount();   // fx2 item 2: a pending v2 mount must not land over the legacy profile
   ppState.key = String(key);
   if (typeof loadPointsAtRisk === 'function') loadPointsAtRisk();  // lazy; repaints tile on completion
   ppState.surface = 'All';
@@ -21683,15 +21954,6 @@ function showPlayerProfile(key){
   // Each player's Career record box is a different height, so the previous
   // player's lock must not carry over.
   ppState.careerLockPx = null;
-  // Same reason, for the market panel: the window is a rolling COUNT, so a
-  // "Last 8" carried over from a player with 1,270 priced matches silently
-  // reframes a player who only has 30 -- the panel would open on a window the
-  // user never chose for him. Both controls return to their defaults.
-  ppState.mktPeriod = 'career';
-  ppState.mktWindow = null;
-  ppState.mktSurface = 'All';
-  ppState.mktSide = 'back';
-  ppState.mktRole = 'all';
   // A splits drawer left open for the previous player would show his matches
   // under the new name — close it on every profile switch (TEN-162).
   if (typeof closePpSplitDrawer === 'function') closePpSplitDrawer();
@@ -21704,6 +21966,7 @@ function showPlayerProfile(key){
   window.scrollTo(0, 0);
 }
 function showPlayerList(){
+  pp2CancelPendingMount();   // TEN-384 fx2 item 2: back within the first-paint wait cancels the mount
   if (typeof closePpSplitDrawer === 'function') closePpSplitDrawer();
   const view = document.getElementById('playerProfileView');
   if (view){ view.style.display = 'none'; view.innerHTML = ''; }
@@ -21714,49 +21977,6 @@ function setPpSurface(s){
   ppState.surface = s;
   const profile = playerProfiles[ppState.key];
   if (profile) ppRepaint();
-}
-// Market-performance filters (v5 single filter-driven panel). Every control below is a
-// pure state write + ppRepaint: the panel recomputes every figure client-side from the
-// shard's per-match `sides` rows, so nothing here needs to know the arithmetic.
-//   mktPeriod  : 'career' | 'w52' | 'y2' | 'custom'  (PERIOD pills / slider; w52/y2 = rolling)
-//   mktWindow  : N most-recent matches, only read when mktPeriod === 'custom'
-//   mktSurface : 'All' | 'Clay' | 'Hard' | 'Grass'
-//   mktSide    : 'back' (stake the player) | 'fade' (stake the opponent, opp price)
-//   mktRole    : 'all' | 'fav' | 'dog'  (role selector on the headline)
-function setPpMktPeriod(pd){ ppState.mktPeriod = pd; ppState.mktWindow = null; if (playerProfiles[ppState.key]) ppRepaint(); }
-function setPpMktSurface(sf){ ppState.mktSurface = sf; if (playerProfiles[ppState.key]) ppRepaint(); }
-function setPpMktSide(sd){ ppState.mktSide = (sd === 'fade' ? 'fade' : 'back'); if (playerProfiles[ppState.key]) ppRepaint(); }
-function setPpMktRole(r){ ppState.mktRole = r; if (playerProfiles[ppState.key]) ppRepaint(); }
-// Count of priced matches the WINDOW slider spans: the surface-filtered set, so "last N"
-// is N of the currently-shown surface, and dragging to the max returns to the whole set.
-function ppMktBaseCount(){
-  const perf = _oddsPerfShards[String(ppState.key)];
-  if (!perf || !perf.sides) return 0;
-  const leg = perf.sidesLegend || {}; const fields = leg.fields || [];
-  const si = fields.indexOf('surface');
-  const sf = ppState.mktSurface;
-  if (sf === 'All' || si < 0) return perf.sides.length;
-  const surfI = (leg.surfaces || []).indexOf(sf);
-  if (surfI < 0) return perf.sides.length;
-  return perf.sides.filter(r => r[si] === surfI).length;
-}
-// Slider commit (on pointer release — see ppMktSliderInput). Dragging to the maximum is
-// the same question as the Career pill, so it normalises back to a date-free 'career'
-// window; anything short becomes a custom last-N count and deselects the PERIOD pills.
-function setPpMktWindow(v){
-  const base = ppMktBaseCount();
-  const n = Math.max(1, parseInt(v, 10) || base);
-  if (base && n >= base) { ppState.mktPeriod = 'career'; ppState.mktWindow = null; }
-  else { ppState.mktPeriod = 'custom'; ppState.mktWindow = n; }
-  if (playerProfiles[ppState.key]) ppRepaint();
-}
-// Live label while the slider is being dragged. It deliberately does NOT commit:
-// setPpMktWindow runs ppRepaint, which rebuilds the whole profile and would destroy the
-// range input under the pointer, ending the drag on the first tick. Commit is on `change`.
-function ppMktSliderInput(el){
-  const n = parseInt(el.value, 10), max = parseInt(el.max, 10);
-  const lab = document.getElementById('ppMktWinLabel');
-  if (lab && Number.isFinite(n)) lab.textContent = (n >= max ? `ALL ${max} MATCHES` : `LAST ${n} MATCHES`);
 }
 function togglePpFollow(){
   ppState.following[ppState.key] = !ppState.following[ppState.key];
@@ -22510,7 +22730,12 @@ function loadTourHistShard(playerKey){
   _tourHistPromises[pk] = fetch(`./tournament-history/${pk}.json`, { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
     .then(d => {
-      _tourHistShards[pk] = (d && Array.isArray(d.tournamentHistory)) ? d.tournamentHistory : null;
+      // TEN-384 fx2 item 5: a shard written before an identity alias landed carries one row per NAME
+      // ("London" 11-1 + "Queen's Club" 11-1, the same editions). Folded to one row per event here, at
+      // the one place every reader (profile, H2H, Tournament backing) takes the shard from.
+      const TI = window.TournamentIdentity;
+      const th = (d && Array.isArray(d.tournamentHistory)) ? d.tournamentHistory : null;
+      _tourHistShards[pk] = th && TI && typeof TI.mergeHistory === 'function' ? TI.mergeHistory(th) : th;
       return _tourHistShards[pk];
     })
     .catch(err => { console.warn(`tournament history shard ${pk} load failed:`, err.message); _tourHistShards[pk] = null; return null; });
@@ -22680,384 +22905,10 @@ function buildPlayerProfileHtml(p){
       </div>`;
   }).join('');
 
-  // ---- Market performance (real closing prices — see loadOddsPerfShard) ----
-  const gcol = 'var(--pos)', rcol = 'var(--neg)', ncol = 'var(--text-label)';
-  const signed = (v, unit) => (v >= 0 ? '+' : '−') + Math.abs(v) + (unit || '');
-  // Single source of truth for the "where the prices come from" wording, so the
-  // footnote, the empty state and the error fallback can never drift apart.
-  const MKT_SOURCE = 'tennis-data.co.uk';
-  const MKT_LEVEL = 'ATP tour level';
-  const mktNoteBox = (msg) => `
-    <div style="border:1px solid var(--edge-6);border-radius:16px;background:var(--card);padding:22px 24px;">
-      <div style="font-size:10.5px;font-family:var(--font-words); letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);margin-bottom:11px;">Market performance</div>
-      <div style="font-size:13px;color:var(--text-label);line-height:1.6;text-wrap:pretty;">${msg}</div>
-    </div>`;
-  const perfIndexed = oddsPerfIndex[String(p.key)];
-  const perf = _oddsPerfShards[String(p.key)];
-  if (perfIndexed && perf === undefined) loadOddsPerfShardThenRerender(p.key);
-  const oddsHtml = !perfIndexed ? mktNoteBox(
-      `There is not enough reliable market data on this player at ${MKT_LEVEL} to assess how the market prices him. Closing prices come from ${MKT_SOURCE} and cover ${MKT_LEVEL.toLowerCase()} only — Challenger and qualifying matches are not priced, so lower-ranked players often have too few priced matches to report.`
-    ) : (!perf ? `
-    <div style="border:1px solid var(--edge-6);border-radius:16px;background:var(--card);padding:22px 24px;">
-      <div style="font-size:12.5px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;">Loading market performance…</div>
-    </div>` : (() => { try {
-  // ==== Market performance v5: single filter-driven panel ==========================
-  // Everything below is recomputed client-side from the shard's per-match `sides` rows on
-  // every filter change. Fields are read by legend index (never a hardcoded position) so
-  // a column move in the builder cannot silently mis-map — the surfaces legend order is
-  // Hard,Clay,Grass, which is exactly why this matters.
-  const sides = perf.sides || null;
-  const legend = perf.sidesLegend || null;
-  if (!sides || !legend || !legend.fields) {
-    // This rebuilt panel is entirely row-driven, so a pre-v5 shard (no per-match rows)
-    // degrades to a note rather than rendering an empty frame.
-    return mktNoteBox('Per-match market data for this player has not been rebuilt yet, so the filter-driven view cannot be shown.');
-  }
-  const FI = {}; legend.fields.forEach((f, i) => { FI[f] = i; });
-  const rDate = r => r[FI.date], rWon = r => r[FI.won], rP = r => r[FI.p],
-        rPrice = r => r[FI.price], rFav = r => r[FI.fav], rSurf = r => r[FI.surface],
-        rOppP = r => r[FI.oppP], rOppPrice = r => r[FI.oppPrice];
-  const surfNames = legend.surfaces || ['Hard', 'Clay', 'Grass'];
-  const surfIdx = name => surfNames.indexOf(name);
-
-  // Existing gate: below the builder's floor of priced matches the panel does not appear.
-  // The shard only exists above the floor, but guard anyway so a hand-built shard cannot
-  // sneak a low-sample panel in.
-  if (sides.length < (perf.minMatches || 30)) {
-    return mktNoteBox(`There are only ${sides.length} priced matches on record for this player at ${MKT_LEVEL.toLowerCase()} — too few to assess how the closing market prices him.`);
-  }
-
-  // ---- Tokens (match the surrounding profile idiom) -------------------------------
-  const MKMONO = `'IBM Plex Mono',monospace`;
-  const MKG = 'var(--pos)', MKR = 'var(--neg)', MKM = 'var(--text-label)';
-  const SURFACE_HEX = { Grass: 'var(--text-soft)', Clay: 'var(--text-soft)', Hard: 'var(--text-soft)' };
-  const mkR1 = v => Math.round(v * 10) / 10;
-  const mkPt = v => (v > 0 ? '+' : (v < 0 ? '−' : '')) + Math.abs(mkR1(v)) + 'pt';
-  const mkSignPct = v => (v >= 0 ? '+' : '−') + Math.abs(mkR1(v)) + '%';
-  const median = arr => { if (!arr.length) return null; const s = arr.slice().sort((a, b) => a - b); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-  const SUPP = 20; // small-sample floor: below this, no rate/ROI/vs-market is shown — only the record.
-
-  // ---- Active filter state --------------------------------------------------------
-  const side = ppState.mktSide === 'fade' ? 'fade' : 'back';
-  const sfSel = ['Clay', 'Hard', 'Grass'].includes(ppState.mktSurface) ? ppState.mktSurface : 'All';
-  const roleSel = ['fav', 'dog'].includes(ppState.mktRole) ? ppState.mktRole : 'all';
-  const period = ['w52', 'y2', 'custom'].includes(ppState.mktPeriod) ? ppState.mktPeriod : 'career';
-
-  // ---- Row filtering: surface -> period/window -> role ----------------------------
-  const bySurface = sfSel === 'All' ? sides.slice() : sides.filter(r => rSurf(r) === surfIdx(sfSel));
-  const baseN = bySurface.length; // slider domain (surface-filtered)
-  // Rolling windows (founder ruling 2026-08-07): calendar "this season / last N seasons"
-  // shrink through winter and are never comparable between two players read at different
-  // times, so PERIOD is a rolling cut measured from *now* — a stable sample on every read.
-  const nowMs = Date.now();
-  const cutW52 = nowMs - 364 * 864e5;   // last 52 weeks
-  const cutY2 = nowMs - 730 * 864e5;    // last 2 years
-  const rowMs = r => Date.parse(rDate(r));
-  let periodRows, periodLabel, crumbPeriod, winReadout;
-  if (period === 'custom') {
-    const n = Math.min(Math.max(1, +ppState.mktWindow || baseN), baseN);
-    periodRows = bySurface.slice(-n);
-    periodLabel = `last ${n} matches`; crumbPeriod = `LAST ${n} MATCHES`; winReadout = `LAST ${n} MATCHES`;
-  } else if (period === 'w52') {
-    periodRows = bySurface.filter(r => rowMs(r) >= cutW52);
-    periodLabel = 'last 52 weeks'; crumbPeriod = 'LAST 52 WEEKS'; winReadout = `ALL ${periodRows.length} MATCHES`;
-  } else if (period === 'y2') {
-    periodRows = bySurface.filter(r => rowMs(r) >= cutY2);
-    periodLabel = 'last 2 years'; crumbPeriod = 'LAST 2 YEARS'; winReadout = `ALL ${periodRows.length} MATCHES`;
-  } else {
-    periodRows = bySurface.slice();
-    periodLabel = 'career'; crumbPeriod = 'CAREER'; winReadout = `ALL ${periodRows.length} MATCHES`;
-  }
-  // Role subset drives the headline + equity curve. The two reliability boxes below read
-  // their own fav/dog subsets directly, so they ignore the role selector.
-  const roleRows = roleSel === 'all' ? periodRows
-    : periodRows.filter(r => (roleSel === 'fav' ? rFav(r) === 1 : rFav(r) === 0));
-  const favRows = periodRows.filter(r => rFav(r) === 1);
-  const dogRows = periodRows.filter(r => rFav(r) === 0);
-
-  // ---- Side-aware aggregation -----------------------------------------------------
-  // Backing: 1u on THIS player at his own closing price. P/L = won ? price-1 : -1;
-  //          expected win rate is his implied prob p.
-  // Fading:  1u on the OPPONENT at the OPPONENT's closing price. The fade wins when this
-  //          player LOSES: P/L = won ? -1 : oppPrice-1; expected win rate is oppP. This is
-  //          NOT -1x the backing figure — it is priced on the opponent's own number.
-  const agg = rows => {
-    const n = rows.length;
-    if (!n) return { n: 0, wins: 0, losses: 0, actualWinRate: null, expectedWinRate: null, vsMarket: null, roi: null, pl: 0, medianOdds: null };
-    let wins = 0, expSum = 0, pl = 0; const oddsArr = [];
-    rows.forEach(r => {
-      const won = rWon(r);
-      if (side === 'fade') { wins += won ? 0 : 1; expSum += rOppP(r); pl += won ? -1 : rOppPrice(r) - 1; oddsArr.push(rOppPrice(r)); }
-      else { wins += won; expSum += rP(r); pl += won ? rPrice(r) - 1 : -1; oddsArr.push(rPrice(r)); }
-    });
-    const actual = wins / n * 100, expected = expSum / n * 100;
-    return { n, wins, losses: n - wins, actualWinRate: mkR1(actual), expectedWinRate: mkR1(expected), vsMarket: mkR1(actual - expected), roi: mkR1(pl / n * 100), pl, medianOdds: median(oddsArr) };
-  };
-  const equitySeries = rows => {
-    let cum = 0;
-    return rows.map(r => { const won = rWon(r); cum += side === 'fade' ? (won ? -1 : rOppPrice(r) - 1) : (won ? rPrice(r) - 1 : -1); return { date: rDate(r), cum }; });
-  };
-
-  const o = agg(roleRows);
-  const nm = pesc(surname0(p));
-  const sideWord = side === 'fade' ? 'Fading' : 'Backing';
-
-  // ---- 1. Filter bar --------------------------------------------------------------
-  // Compact segmented pills housed in a shared container, per the market-performance
-  // handoff (design_handoff_market_performance): pill 5×11 / 11px, active = blue wash,
-  // inactive = transparent. Each group is label-above-housing so the row aligns on one grid.
-  const seg = (onclick, label, on) => `<span onclick="${onclick}" class="mkt-seg" style="padding:5px 11px;border-radius:7px;font-size:11px;font-weight:${on ? 700 : 600};white-space:nowrap;cursor:pointer;color:${on ? 'var(--text)' : 'var(--text-label)'};background:${on ? 'var(--inner)' : 'transparent'};border:1px solid ${on ? 'var(--inner)' : 'transparent'};">${label}</span>`;
-  const mktGroup = (lab, pills) => `<div style="display:flex;flex-direction:column;gap:6px;"><span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);">${lab}</span><div style="display:flex;gap:3px;background:var(--card);border:1px solid var(--edge-6);border-radius:9px;padding:2px;">${pills}</div></div>`;
-  const periodBar = [
-    seg("setPpMktPeriod('career')", 'Career', period === 'career'),
-    seg("setPpMktPeriod('w52')", 'Last 52 weeks', period === 'w52'),
-    seg("setPpMktPeriod('y2')", 'Last 2 years', period === 'y2'),
-  ].join('');
-  const surfaceBar = ['All', 'Clay', 'Hard', 'Grass']
-    .map(s => seg(`setPpMktSurface('${s}')`, s, sfSel === s)).join('');
-  const sideBar = [
-    seg("setPpMktSide('back')", 'Backing ' + nm, side === 'back'),
-    seg("setPpMktSide('fade')", 'Fading ' + nm, side === 'fade'),
-  ].join('');
-  // WINDOW slider: domain is the surface-filtered set; value is the current sample size,
-  // so a PERIOD selection shows its own sample on the track. It commits on `change`.
-  const sliderVal = Math.min(Math.max(periodRows.length, 1), baseN);
-  const sliderGroup = baseN < 2 ? '' : `
-    <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:6px;">
-      <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words);">Window · <span id="ppMktWinLabel" style="color:var(--text-label);">${winReadout}</span></span>
-      <div style="display:flex;align-items:center;height:29px;background:var(--card);border:1px solid var(--edge-6);border-radius:9px;padding:0 12px;">
-        <input id="ppMktWinRange" type="range" min="1" max="${baseN}" value="${sliderVal}" oninput="ppMktSliderInput(this)" onchange="setPpMktWindow(this.value)" style="width:100%;accent-color:var(--bar);cursor:pointer;">
-      </div>
-    </div>`;
-
-  // ---- Internal surface breakdown (drives badge + narrative; not rendered as bars) --
-  // Player-perspective (backing) vsMarket — a side-invariant measure of how the market
-  // prices HIM, so the "overpriced / underpriced on X" conclusion is identical whether the
-  // reader is backing or fading (fading is just the inverse bet on the same mispricing).
-  // Recomputed inside the active PERIOD + SURFACE window.
-  const backAgg = rows => {
-    const n = rows.length; if (!n) return null;
-    let wins = 0, expSum = 0; rows.forEach(r => { wins += rWon(r); expSum += rP(r); });
-    return { matches: n, actualWinRate: mkR1(wins / n * 100), expectedWinRate: mkR1(expSum / n * 100), vsMarket: mkR1(wins / n * 100 - expSum / n * 100) };
-  };
-  const surfBreak = ['Clay', 'Hard', 'Grass']
-    .map(s => ({ s, r: backAgg(periodRows.filter(r => rSurf(r) === surfIdx(s))) }))
-    .filter(x => x.r && x.r.matches >= 4);
-  const mkWorst = surfBreak.slice().sort((a, b) => Math.abs(b.r.vsMarket) - Math.abs(a.r.vsMarket))[0] || null;
-  const mkWorstNeg = !!(mkWorst && mkWorst.r.vsMarket < -0.5);
-  const mkWorstPos = !!(mkWorst && mkWorst.r.vsMarket > 0.5);
-  const mkBadgeCol = (!mkWorst || (!mkWorstNeg && !mkWorstPos)) ? MKM : (mkWorstNeg ? MKR : MKG);
-  const mkBadgeTxt = !mkWorst ? 'No surface sample'
-    : (mkWorstNeg ? `↓ Overpriced on ${mkWorst.s}` : (mkWorstPos ? `↑ Underpriced on ${mkWorst.s}` : `On the market on ${mkWorst.s}`));
-
-  // ---- Breadcrumb -----------------------------------------------------------------
-  const crumbSurface = sfSel === 'All' ? 'ALL SURFACES' : sfSel.toUpperCase();
-  const crumb = `MARKET PERFORMANCE · ${crumbPeriod} · ${crumbSurface} · ${side === 'fade' ? 'FADING' : 'BACKING'}`;
-
-  // ---- 3. Role selector + headline ------------------------------------------------
-  const roleCounts = { all: periodRows.length, fav: favRows.length, dog: dogRows.length };
-  const roleSeg = [
-    { id: 'all', lab: 'All matches' }, { id: 'fav', lab: 'As favourite' }, { id: 'dog', lab: 'As underdog' },
-  ].map(x => {
-    const on = roleSel === x.id;
-    return `<span onclick="setPpMktRole('${x.id}')" class="mkt-seg" style="display:inline-flex;align-items:baseline;gap:7px;padding:8px 15px;border-radius:9px;font-size:13px;font-weight:${on ? 700 : 600};cursor:pointer;white-space:nowrap;background:${on ? 'var(--inner)' : 'transparent'};color:${on ? 'var(--text)' : 'var(--text-label)'};border:1px solid ${on ? 'var(--inner)' : 'color-mix(in srgb, var(--text) 4.5%, transparent)'};">${x.lab}<span style="font-family:${MKMONO};font-size:12px;font-weight:700;color:${on ? 'var(--bar)' : 'var(--text-label)'};">${roleCounts[x.id]}</span></span>`;
-  }).join('');
-  const enough = o.n >= SUPP;
-  const roiCol = !enough ? MKM : (o.roi >= 0 ? MKG : MKR);
-  const recStr = `${o.wins}–${o.losses}`;
-  const roleWord = roleSel === 'fav' ? ' as favourite' : (roleSel === 'dog' ? ' as underdog' : '');
-  const headlineFigure = enough
-    ? `<span style="font-family:${MKMONO};font-size:46px;font-weight:800;line-height:1;color:${roiCol};">${mkSignPct(o.roi)}</span><span style="font-size:12px;color:var(--text-label);margin-left:11px;">flat-stake ROI</span>`
-    : `<span style="font-family:${MKMONO};font-size:30px;font-weight:800;line-height:1;color:var(--text-soft);">${o.n ? recStr : '—'}</span><span style="font-size:12px;color:var(--text-label);margin-left:11px;">${o.n ? `record · insufficient sample (under ${SUPP}) for ROI` : 'no priced matches under these filters'}</span>`;
-  const statCell = (val, lab) => `<span style="display:inline-flex;flex-direction:column;gap:3px;"><span style="font-family:${MKMONO};font-size:18px;font-weight:700;color:var(--text);">${val}</span><span style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);;font-weight:700">${lab}</span></span>`;
-  const headlineLine = o.n === 0 ? '' : [
-    statCell(recStr, 'Record'),
-    statCell(enough ? mkR1(o.actualWinRate) + '%' : '—', side === 'fade' ? 'Fade win rate' : 'Win rate'),
-    statCell(o.medianOdds != null ? o.medianOdds.toFixed(2) : '—', 'Median closing odds'),
-  ].join('<span style="width:1px;align-self:stretch;background:var(--line);"></span>');
-  const headlineHtml = `
-    <div style="background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;">
-      <div style="display:flex;flex-wrap:wrap;gap:10px;">${roleSeg}</div>
-      <div style="display:flex;align-items:baseline;flex-wrap:wrap;">${headlineFigure}</div>
-      ${headlineLine ? `<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">${headlineLine}</div>` : ''}
-      <div style="font-size:11.5px;color:var(--text-label);line-height:1.5;">${sideWord} ${nm}${roleWord} over ${o.n} priced ${o.n === 1 ? 'match' : 'matches'} (${periodLabel}${sfSel === 'All' ? '' : ' · ' + sfSel.toLowerCase()}). ${side === 'fade' ? `ROI is 1u on the opponent at the opponent’s closing price.` : `ROI is 1u on ${nm} at his closing price.`}${!enough && o.n ? ` Below ${SUPP} matches only the record is shown, never a rate.` : ''}</div>
-    </div>`;
-
-  // ---- 4. Equity curve ------------------------------------------------------------
-  // Cumulative P/L in units, 1u flat stake at the closing odds actually taken (the
-  // opponent's price when fading). Chronological. The path renders at any n>=1; the
-  // headline ROI figure above still obeys the n>=20 floor.
-  const eq = equitySeries(roleRows);
-  // Fractional-year position for a date string (2026-08-01 -> ~2026.58), so the x-axis is
-  // a true time axis and the year ticks land where the calendar year actually turns.
-  const fracYear = ds => { const t = Date.parse(ds); if (isNaN(t)) return null; const d = new Date(t); const y = d.getUTCFullYear(); const s = Date.UTC(y, 0, 1), e = Date.UTC(y + 1, 0, 1); return y + (t - s) / (e - s); };
-  // Full-height equity curve (handoff spec): viewBox 1000×300 stretched to a fixed pixel
-  // height; axis labels are HTML overlays (NOT SVG <text>, which preserveAspectRatio="none"
-  // would squash into an unreadable smear); no area fill, no loss wash — dotted 12% guides and the
-  // 32% break-even rule (README §5.8, founder R6.3); neutral line. y auto-scales to the data with an 8% + 0.5u pad so a
-  // small-range player still shows the *shape* of the curve rather than a flat band.
-  const CHART_H = 280;
-  const equityChart = (() => {
-    if (!eq.length) return `<div style="border:1px dashed var(--edge-6);border-radius:12px;padding:36px;text-align:center;font-size:12.5px;color:var(--text-label);">No priced matches in this window — nothing to chart.</div>`;
-    const t1 = fracYear(new Date().toISOString()) || 2026;
-    const fys = eq.map(d => fracYear(d.date)).filter(v => v != null);
-    const firstYr = fys.length ? Math.floor(Math.min(...fys)) : Math.floor(t1) - 1;
-    const t0 = period === 'w52' ? t1 - 1 : period === 'y2' ? t1 - 2 : firstYr;
-    const pts = [{ x: 0, v: 0 }];
-    eq.forEach(d => { const fy = fracYear(d.date); const x = (fy != null && t1 > t0) ? (fy - t0) / (t1 - t0) : 0; pts.push({ x, v: d.cum }); });
-    let lo = Math.min(0, ...pts.map(p => p.v)), hi = Math.max(0, ...pts.map(p => p.v));
-    const pad = (hi - lo) * 0.08 + 0.5; lo -= pad; hi += pad;
-    const Y = v => (1 - (v - lo) / (hi - lo)) * 300;
-    const X = x => 12 + Math.max(0, Math.min(1, x)) * 976;
-    const linePath = pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
-    const span = hi - lo, step = span > 40 ? 20 : span > 20 ? 10 : span > 8 ? 4 : span > 3 ? 2 : span > 1.2 ? 1 : span > 0.6 ? 0.5 : span > 0.3 ? 0.2 : 0.1;
-    const grid = [];
-    for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) { const vr = Math.round(v / step) * step; if (Math.abs(vr) > 1e-6) grid.push({ y: Y(vr), label: (vr > 0 ? '+' : '') + (Math.round(vr * 10) / 10) + 'u' }); }
-    const zeroY = Y(0);
-    const gridLines = grid.map(g => `<line x1="0" x2="1000" y1="${g.y.toFixed(1)}" y2="${g.y.toFixed(1)}" stroke="var(--viz-guide)" stroke-dasharray="2 6" vector-effect="non-scaling-stroke"/>`).join('');
-    const yLabels = grid.map(g => `<span style="position:absolute;left:4px;top:${(g.y / 3).toFixed(1)}%;transform:translateY(-110%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:var(--text-label);">${g.label}</span>`).join('')
-      + `<span style="position:absolute;left:4px;top:${(zeroY / 3).toFixed(1)}%;transform:translateY(-110%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:var(--text-soft);">0u</span>`;
-    const years = [];
-    for (let y = Math.ceil(t0 - 1e-9); y <= Math.floor(t1 + 1e-9); y++) { const x = (y - t0) / (t1 - t0); if (x >= 0 && x <= 1) years.push({ left: (1.2 + x * 97.6).toFixed(1), label: String(y) }); }
-    const yearLabels = years.map(yr => `<span style="position:absolute;bottom:-17px;left:${yr.left}%;transform:translateX(-50%);font-size:10.5px;font-weight:700;font-family:${MKMONO};color:var(--text-label);">${yr.label}</span>`).join('');
-    return `
-      <div style="position:relative;margin:4px 0 26px;">
-        <svg viewBox="0 0 1000 300" preserveAspectRatio="none" style="display:block;width:100%;height:${CHART_H}px;background:var(--inner);border-radius:10px;">
-          ${gridLines}
-          <line x1="0" x2="1000" y1="${zeroY.toFixed(1)}" y2="${zeroY.toFixed(1)}" stroke="var(--viz-rule)" vector-effect="non-scaling-stroke"/>
-          <path d="${linePath}" fill="none" stroke="var(--text-soft)" stroke-width="1.8" vector-effect="non-scaling-stroke"/>
-        </svg>
-        ${yLabels}
-        ${yearLabels}
-      </div>`;
-  })();
-  const eqEnd = eq.length ? eq[eq.length - 1].cum : 0;
-  const equityCard = `
-    <div style="background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
-        <span style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);;font-weight:700">Equity curve · ${sideWord.toLowerCase()}${roleWord}</span>
-        <span style="font-family:${MKMONO};font-size:13px;font-weight:700;color:${eq.length ? (eqEnd >= 0 ? MKG : MKR) : MKM};">${eq.length ? (eqEnd >= 0 ? '+' : '−') + Math.abs(mkR1(eqEnd)) + 'u' : '—'}</span>
-      </div>
-      ${equityChart}
-      <div style="font-size:11px;color:var(--text-label);line-height:1.5;">Cumulative profit/loss in units, 1u flat stake every match at the ${side === 'fade' ? 'opponent’s' : 'player’s'} closing price${side === 'fade' ? ` (fading ${nm})` : ''}. Above the dashed zero line is cumulative profit; below it, loss.</div>
-    </div>`;
-
-  // ---- 6. Read on the market (kept; player-perspective market-efficiency story) ----
-  const ob = backAgg(periodRows) || { matches: 0, actualWinRate: 0, expectedWinRate: 0, vsMarket: 0 };
-  const mkFrac = ob.actualWinRate / 100;
-  const mkSE = ob.matches > 1 ? 1.96 * Math.sqrt(mkFrac * (1 - mkFrac) / ob.matches) * 100 : 0;
-  const ciTxt = `95% range ${mkPt(ob.vsMarket - mkSE)} to ${mkPt(ob.vsMarket + mkSE)}`;
-  const beats = (ob.vsMarket - mkSE) > 0, trails = (ob.vsMarket + mkSE) < 0;
-  const worstTxt = mkWorst ? `${mkPt(mkWorst.r.vsMarket)} on ${mkWorst.s.toLowerCase()}` : null;
-  let readout;
-  if (ob.matches < SUPP) {
-    readout = `Only ${ob.matches} priced ${ob.matches === 1 ? 'match' : 'matches'} match these filters — too few to read how the closing market prices ${nm}. Widen the window or clear the surface filter.`;
-  } else if (beats || trails) {
-    readout = `Over <strong style="color:var(--text);">${ob.matches}</strong> priced matches the closing market has ${beats ? 'underrated' : 'overrated'} ${nm} by <strong style="color:var(--text);">${mkPt(ob.vsMarket)}</strong> (${ciTxt})${worstTxt ? `, and his largest single gap is <strong style="color:var(--neg);">${worstTxt}</strong>` : ''}.`;
-  } else if (Math.abs(ob.vsMarket) >= 3) {
-    readout = `Across <strong style="color:var(--text);">${ob.matches}</strong> priced matches ${nm} sits ${mkPt(ob.vsMarket)} against the closing market, but on this sample the ${ciTxt} spans zero — the aggregate is not yet separable from noise.${worstTxt ? ` His largest single gap is <strong style="color:var(--neg);">${worstTxt}</strong>.` : ''}`;
-  } else {
-    readout = `Across <strong style="color:var(--text);">${ob.matches}</strong> priced matches ${nm} has finished within the closing market’s expectation (${mkPt(ob.vsMarket)}, ${ciTxt})${worstTxt ? `, though his largest single gap is <strong style="color:var(--neg);">${worstTxt}</strong>` : ''}.`;
-  }
-
-  // ---- 7. Favourite vs underdog reliability (kept; filter + side responsive) --------
-  const favA = agg(favRows), dogA = agg(dogRows);
-  const relVerdict = (role_, a) => {
-    if (a.n < SUPP) return null;
-    const g = a.vsMarket;
-    if (g > -3 && g < 3) return 'Roughly in line with the market’s expectation.';
-    const good = g >= 3;
-    if (side === 'fade') return good
-      ? `Fading him ${role_ === 'fav' ? 'when favoured' : 'as underdog'} has beaten the closing market.`
-      : `Fading him ${role_ === 'fav' ? 'when favoured' : 'as underdog'} has lost to the closing market.`;
-    return good
-      ? (role_ === 'fav' ? 'Reliable when favoured — wins more often than the market expects.' : 'Reliable underdog — outperforms the market’s expectation.')
-      : (role_ === 'fav' ? 'Underperforms when favoured — wins less often than the market expects.' : 'Underperforms as underdog — wins less than the market implies.');
-  };
-  const relCard = (title, plain, a, role_) => {
-    const enoughR = a.n >= SUPP;
-    const g = a.vsMarket || 0, pos = enoughR && g >= 0;
-    const gapCol = !enoughR ? MKM : (pos ? MKG : MKR);
-    const act = a.actualWinRate || 0, imp = a.expectedWinRate || 0;
-    const verdict = relVerdict(role_, a);
-    return `
-      <div style="background:var(--card);border:1px solid var(--edge-6);border-radius:16px;padding:22px 24px;display:flex;flex-direction:column;gap:18px;">
-        <div>
-          <div style="font-size:20px;font-weight:800;">${title}</div>
-          <div style="font-size:12px;color:var(--text-label);margin-top:4px;line-height:1.5;">${plain}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;">${a.n}</div><div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;;font-weight:700">Matches</div></div>
-          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:${gapCol};">${enoughR ? act + '%' : '—'}</div><div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;;font-weight:700">${side === 'fade' ? 'Fade win rate' : 'Actual win rate'}</div></div>
-          <div><div style="font-family:${MKMONO};font-size:28px;font-weight:700;line-height:1;color:var(--text-soft);">${enoughR ? imp + '%' : '—'}</div><div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:6px;;font-weight:700">Market implied</div></div>
-        </div>
-        ${enoughR ? `<div>
-          <span style="position:relative;height:8px;border-radius:5px;background:var(--inner);display:block;">
-            <span style="position:absolute;top:0;bottom:0;left:0;width:${Math.min(100, Math.round(act))}%;background:${gapCol};border-radius:5px;"></span>
-            <span style="position:absolute;top:-3px;bottom:-3px;left:${Math.min(100, Math.round(imp))}%;width:1.5px;background:color-mix(in srgb, var(--text) 60%, transparent);"></span>
-          </span>
-          <div style="display:flex;justify-content:space-between;margin-top:7px;font-size:10px;font-family:${MKMONO};color:var(--text-label);"><span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:8px;height:8px;border-radius:2px;background:${gapCol};"></span>${side === 'fade' ? 'Fade win rate' : 'Actual win rate'}</span><span>| market implied</span></div>
-        </div>` : ''}
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:14px;border-top:1px solid var(--line);">
-          <span style="font-size:13.5px;color:var(--text-label);">Gap vs market expectation</span>
-          <span style="font-family:${MKMONO};font-size:22px;font-weight:700;color:${gapCol};">${enoughR ? mkPt(g) : '—'}</span>
-        </div>
-        <div style="display:flex;align-items:flex-start;gap:9px;background:${!enoughR ? 'var(--inner)' : (pos ? 'color-mix(in srgb, var(--pos) 8%, transparent)' : 'color-mix(in srgb, var(--neg) 8%, transparent)')};border:1px solid ${!enoughR ? 'color-mix(in srgb, var(--text) 4.5%, transparent)' : (pos ? 'color-mix(in srgb, var(--pos) 24%, transparent)' : 'color-mix(in srgb, var(--neg) 24%, transparent)')};border-radius:10px;padding:11px 13px;">
-          <span style="width:6px;height:6px;border-radius:50%;background:${gapCol};margin-top:5px;flex:none;"></span>
-          <span style="font-size:12.5px;color:var(--text-soft);line-height:1.5;">${a.n === 0 ? 'No priced matches in this role under these filters.' : (verdict || `${a.wins}–${a.losses} on record · insufficient sample (under ${SUPP}) to read the gap.`)}</span>
-        </div>
-      </div>`;
-  };
-  const roleCmpHtml = `
-    <div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-top:4px;;font-weight:700">Favourite vs underdog reliability</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;" class="pp-odds-lower">
-      ${relCard('As Favourite', `Matches where the market expected ${nm} to win.`, favA, 'fav')}
-      ${relCard('As Underdog', `Matches where the market expected ${nm} to lose.`, dogA, 'dog')}
-    </div>`;
-
-  // ---- Assemble ------------------------------------------------------------------
-  // Order (founder ruling 2026-08-07): Favourite-vs-Underdog reliability LEADS — it is the
-  // read; the filters / ROI headline / equity curve below are the evidence behind it.
-  return `
-    <div id="ppMarketPanel" style="background:var(--card);border:1px solid var(--edge-6);border-radius:18px;padding:26px 28px;display:flex;flex-direction:column;gap:20px;">
-
-      ${roleCmpHtml}
-
-      <div style="font-size:10.5px;font-family:var(--font-words);letter-spacing:0.10em;color:var(--text-label);;font-weight:700;text-transform:uppercase">${crumb}</div>
-
-      <div style="display:flex;gap:14px;align-items:flex-start;">
-        <span style="width:40px;height:40px;border-radius:11px;background:var(--inner);border:1px solid var(--edge-10);display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;color:var(--text);"><span style="width:19px;height:19px;display:flex;">${BSP_ICONS.target}</span></span>
-        <div style="min-width:0;flex:1;">
-          <div style="font-size:26px;font-weight:800;letter-spacing:-0.01em;color:var(--text);">Market performance</div>
-          <div style="font-size:13.5px;color:var(--text-label);margin-top:5px;max-width:720px;line-height:1.55;">How ${nm} has performed against the closing market’s implied probability. Every figure recomputes from his per-match priced results as you change the filters below.</div>
-        </div>
-        <span style="display:inline-flex;align-items:center;gap:7px;font-family:font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${mkBadgeCol};background:${ppHexA(mkBadgeCol, 0.1)};border:1px solid ${ppHexA(mkBadgeCol, 0.32)};border-radius:9px;padding:8px 13px;white-space:nowrap;flex:none;">${mkBadgeTxt}</span>
-      </div>
-
-      <div style="display:flex;align-items:flex-end;gap:16px 26px;flex-wrap:wrap;border:1px solid var(--edge-6);border-radius:11px;padding:13px 16px;background:var(--inner);">
-        ${mktGroup('Period', periodBar)}
-        ${mktGroup('Surface', surfaceBar)}
-        ${mktGroup('Side', sideBar)}
-        ${sliderGroup}
-      </div>
-
-      ${headlineHtml}
-
-      ${equityCard}
-
-      <div style="background:var(--card);border:1px solid var(--edge-6);border-radius:14px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;">
-        <div style="display:inline-flex;align-items:center;gap:9px;color:var(--text);"><span style="width:16px;height:16px;display:flex;flex:none;">${BSP_ICONS.bulb}</span><span style="font-size:15px;font-weight:700;color:var(--text);">Read on the market</span></div>
-        <div style="font-size:13.5px;color:var(--text-soft);line-height:1.65;text-wrap:pretty;">${readout}</div>
-      </div>
-    </div>`;
-
-  } catch (mktErr) {
-    // A malformed shard must never take the whole profile down: the profile is one
-    // innerHTML write, so an unguarded throw here would blank Recent form, Key insights
-    // and Record by season too. Degrade to a small note instead.
-    console.error('[market-panel] render failed for', p && p.key, mktErr);
-    return mktNoteBox('Market-performance data for this player could not be displayed.');
-  } })());
+  // The odds-performance shard still feeds the Key insights market card (ppDynamicInsights).
+  // TEN-384 removed the Market performance section (with Favourite vs underdog reliability and
+  // Read on the market; they live in Database only), which used to trigger this lazy load.
+  if (oddsPerfIndex[String(p.key)] && _oddsPerfShards[String(p.key)] === undefined) loadOddsPerfShardThenRerender(p.key);
 
   // ---- Recent form card (carries its own surface filter, expandable season list) ----
   // Computed here rather than with the Career record card below because the form
@@ -23326,7 +23177,6 @@ function buildPlayerProfileHtml(p){
     }
     @media (max-width: 820px){
       .pp-form-career{ grid-template-columns:1fr !important; }
-      .pp-odds-lower{ grid-template-columns:1fr !important; }
       .pp-odds-tiles{ grid-template-columns:1fr 1fr !important; }
       .pp-insights{ grid-template-columns:1fr !important; }
     }
@@ -23382,9 +23232,8 @@ function buildPlayerProfileHtml(p){
         ${recordSearchCard}
       </div>
 
-      <!-- RIGHT: market performance + reliability + by-split -->
+      <!-- RIGHT: player signals -->
       <div style="padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;min-width:0;">
-        ${oddsHtml}
         ${ppAsapSignalHtml(p)}
       </div>
     </div>
@@ -23411,8 +23260,6 @@ function buildPlayerProfileHtml(p){
     </div>
   </div>`;
 }
-// Short surname for prose (odds block copy).
-function surname0(p){ return (p && p.name ? String(p.name).split(' ').pop() : 'this player'); }
 
 /* ---------- TOURNAMENTS ---------- */
 // Curated static reference facts (category, surface, indoor/outdoor) — same
@@ -23650,6 +23497,8 @@ async function loadTournamentProgression(){
     tournamentProgression = { tournaments: {} };
   }
   renderTournamentsTab();
+  // The Players landing lists each event's whole draw from this file (TEN-384 Q9).
+  if (document.getElementById('playerGroups')) renderPlayers();
 }
 
 function showTournamentList(){
@@ -29234,7 +29083,10 @@ window.DatabaseTab = (function(){
   function bookLabel(books){
     var ps=false,b=false;
     for(var i=0;i<books.length;i++){ if(books[i]===0) ps=true; else b=true; if(ps&&b) break; }
-    if(ps&&b) return {text:M.books[0]+' closing · '+M.seamSeason+' '+M.books[1], seam:true};
+    // TEN-384 (founder ruling 2026-10-07, option "me"): each row is priced Pinnacle closing,
+    // else Bet365 closing, so a selection with both books says so. `seam` = both books in view
+    // (it gates the per-book split; the curve mark also needs a row past the Pinnacle stop).
+    if(ps&&b) return {text:M.books[0]+' closing, else '+M.books[1], seam:true};
     if(b) return {text:M.books[1]+' closing', seam:false};
     if(ps) return {text:M.books[0]+' closing', seam:false};
     return {text:'—', seam:false};
@@ -31201,7 +31053,7 @@ window.DatabaseTab = (function(){
       var part=s.P.part, total=part.scoped.length, have=part.usable.length;
       if(!total) return who+'No matches on record at this slice.';
       return who+esc('Lines computed on ' + have.toLocaleString() + ' of ' + total.toLocaleString() +
-        ' matches (' + (have/total*100).toFixed(1) + '%)' +
+        ' ' + (total === 1 ? 'match' : 'matches') + ' (' + (have/total*100).toFixed(1) + '%)' +
         (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : '') +
         (part.noGames ? ' · ' + part.noGames + ' still awaiting per-set games' : '') +
         ' · ' + s.P.byFmt[fmt].length.toLocaleString() + (fmt==='bo3' ? ' best of three' : ' best of five'));
@@ -31359,17 +31211,17 @@ window.DatabaseTab = (function(){
     var sub=q('subtitle'), fr=q('fresh');
     if(sub){
       var y0=(''+M.dateRange[0]).slice(0,4), y1=(''+M.dateRange[1]).slice(0,4);
-      // TEN-262 founder ruling (2026-09-23): the first book covers the seasons BEFORE the
-      // seam only, and where the source's first-book prices stop is read from the data
-      // (meta.pinnacleLastPriced), never typed. No date in the store = no parenthetical.
-      var seam=M.seamSeason, pEnd=(+y1>=seam) ? (seam-1) : y1, pl=M.pinnacleLastPriced;
+      // TEN-384 founder ruling (2026-10-07, option "me", superseding TEN-262's one book per
+      // season): every row is priced Pinnacle closing, else Bet365 closing. Where the source's
+      // Pinnacle prices stop is read from the data (meta.pinnacleLastPriced), never typed; it
+      // is printed only when the archive runs past it (every later row is Bet365, and the
+      // change is marked on the curves). No date in the store = no parenthetical.
+      var pl=M.pinnacleLastPriced, stops=!!pl && (''+pl)<(''+M.dateRange[1]);
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
-        esc(M.books[0])+' closing prices, '+y0+'–'+pEnd+'</strong>'+
-        // TEN-262 founder ruling (option A, 2026-09-23): "uses Bet365 prices", never
-        // "settled on" (reads as bet settlement). No switch in range = no change to mark.
-        (+y1>=seam ? '; '+seam+' uses '+esc(M.books[1])+' prices'+
-          (pl && (''+pl).slice(0,4)===String(seam) ? ' (the source\u2019s '+esc(M.books[0])+' prices stop on '+esc(fmtDate(pl))+')' : '')+
-          '. The change is marked on the curves.' : '.');
+        esc(M.books[0])+' closing prices, else '+esc(M.books[1])+', '+y0+'–'+y1+'</strong>'+
+        // TEN-262 founder ruling (option A, 2026-09-23): never "settled on" (reads as bet settlement).
+        (stops ?
+          ' (the source\u2019s '+esc(M.books[0])+' prices stop on '+esc(fmtDate(pl))+'). The change is marked on the curves.' : '.');
     }
     // The date is the latest match in the published archive (build-database-yield.js
     // writes meta.dateRange from the CSVs) - never typed. TEN-262: past 14 days old the
@@ -31389,7 +31241,7 @@ window.DatabaseTab = (function(){
     var rows=filteredRows();
     var bl=bookLabel(rows.map(function(r){return r[8];}));
     var line=el('div','db-bookline');
-    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— spans the book seam; per-book split below each table</u>':'');
+    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— both books in this selection; per-book split below each table</u>':'');
     body.appendChild(line);
 
     if(!rows.length){
@@ -31426,12 +31278,15 @@ window.DatabaseTab = (function(){
     return '<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
   }
   // The "Split by book" sentence, shared by the band panel and the player panel so the
-  // wording cannot drift between them. TEN-262 founder ruling (option A): "N <season>
-  // matches priced on Bet365", never "Bet365-settled".
+  // wording cannot drift between them. TEN-262 founder ruling (option A): "priced on Bet365",
+  // never "Bet365-settled". TEN-384 (option "me"): Bet365 prices any row Pinnacle cannot, in
+  // any season, so the Bet365 count names no season.
+  // TEN-384 fx4 item 6: a count of one is "1 match" (a player filter can leave one Bet365-priced row).
+  function dbMatchWord(n){ return Number(n) === 1 ? 'match' : 'matches'; }
   function dbBookSplit(book, tail){
     return 'Split by book: <b>'+fmtPct(book.ps.yield)+'</b> across '+fmtInt(book.ps.n)+' '+esc(M.books[0])+
-      '-priced matches, <b>'+fmtPct(book.b365.yield)+'</b> across '+fmtInt(book.b365.n)+' '+M.seamSeason+
-      ' matches priced on '+esc(M.books[1])+'. '+tail;
+      '-priced '+dbMatchWord(book.ps.n)+', <b>'+fmtPct(book.b365.yield)+'</b> across '+fmtInt(book.b365.n)+
+      ' '+dbMatchWord(book.b365.n)+' priced on '+esc(M.books[1])+' (where '+esc(M.books[0])+' has no price). '+tail;
   }
   function bandPanel(title, res, names, sideKey, isTourn, seam){
     var panel=el('div','db-bandpanel');
@@ -31600,16 +31455,19 @@ window.DatabaseTab = (function(){
     // is 0 today. It exists so a late series stays late rather than being
     // stretched across the full width.
     var x0=0, nPts=ordered.length;
+    var seamAfter = M.pinnacleLastPriced ? +String(M.pinnacleLastPriced).replace(/-/g,'') : null;
     for(var i=0;i<nPts;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
       cd += r[7] ? -1 : (r[6]-1);
       var x = nPts>1 ? (x0 + (1-x0) * i/(nPts-1)) : 0;
       favV.push(cf); dogV.push(cd); xs.push(x);
-      // The seam is the FIRST Bet365-priced row's own index — still derived from
-      // r[8], never hardcoded. On an index axis it marks where the book changes,
-      // which is a different fact from where a season starts.
-      if(seamX===null && r[8]===1) seamX=x;
+      // The seam is the first Bet365-priced row AFTER the source's last Pinnacle price
+      // (meta.pinnacleLastPriced) — derived from r[8] and the data, never hardcoded.
+      // TEN-384 (option "me"): Bet365 also fills single rows Pinnacle did not price in
+      // earlier seasons; those are not a book change and are not marked. From the stop
+      // on, every row is Bet365, which is the change the mark names.
+      if(seamX===null && r[8]===1 && seamAfter!=null && r[0]>seamAfter) seamX=x;
     }
     var rawHi=Math.max.apply(null,[Math.max.apply(null,favV), Math.max.apply(null,dogV)]);
     var rawLo=Math.min.apply(null,[Math.min.apply(null,favV), Math.min.apply(null,dogV)]);
@@ -31766,7 +31624,7 @@ window.DatabaseTab = (function(){
     // an axis that does not carry them — the objection recorded when the axis
     // last changed. Naming both is the honest form and costs nothing.
     card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season · match index</span>'));
-    if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change at '+M.seamSeason+' ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
+    if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change after '+esc(fmtDate(M.pinnacleLastPriced))+', where the source’s '+esc(M.books[0])+' prices stop ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
   // Season ticks on a CALENDAR axis — now the ONE tick ladder on this page, used by
@@ -31998,7 +31856,7 @@ window.DatabaseTab = (function(){
     }
     var bl=bookLabel(recs.map(function(v){return v.b;}));
     var line=el('div','db-bookline');
-    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— spans the book seam; per-book split below</u>':'');
+    line.innerHTML='<i></i>'+esc(bl.text)+(bl.seam?' <u>— both books in this selection; per-book split below</u>':'');
     body.appendChild(line);
 
     var favRecs=recs.filter(function(v){ return v.fav; });
@@ -32045,7 +31903,7 @@ window.DatabaseTab = (function(){
     if(bl.seam && A.book.ps && A.book.b365){
       body.appendChild(el('div','db-card','<div class="db-split">'+dbBookSplit(A.book, 'The figures above blend both books; '+esc(M.books[1])+' carries the wider margin.')+'</div>'));
     } else {
-      body.appendChild(el('div','db-card','<div class="db-split">'+esc(bl.text)+' — a single book across this selection, no seam.</div>'));
+      body.appendChild(el('div','db-card','<div class="db-split">'+esc(bl.text)+' — a single book across this selection.</div>'));
     }
 
     // 4 - charts
@@ -32394,14 +32252,16 @@ window.DatabaseTab = (function(){
     var ex=M.exclusions, bc=M.bookCounts, f=el('div','db-footnote');
     f.innerHTML=
       '<p><b>How this is built.</b> Closing prices from our own ATP archive, '+fmtDate(M.dateRange[0])+' to '+fmtDate(M.dateRange[1])+'. '+
-      'Every season through the last with '+esc(M.books[0])+' coverage uses '+esc(M.books[0])+' closing; '+M.seamSeason+' uses '+esc(M.books[1])+
-      ' — the two are never blended into one unlabelled figure and never de-vigged. '+
+      // TEN-384 founder ruling (2026-10-07, option "me"): one join, per match, every season.
+      'Each match is priced on its '+esc(M.books[0])+' closing price, or on its '+esc(M.books[1])+' closing price where '+esc(M.books[0])+' has none'+
+      (M.pinnacleLastPriced && (''+M.pinnacleLastPriced)<(''+M.dateRange[1]) ? ' (the source’s '+esc(M.books[0])+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')' : '')+
+      ' — the book line above each table names the books in it, and prices are never de-vigged. '+
       'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. '+
       'Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
       '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+
-      fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' ('+M.seamSeason+'). '+
+      fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' (where '+esc(M.books[0])+' has no price). '+
       '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the '+M.windowStart+' window, '+fmtInt(ex.noResolvingBookPrice)+
-      ' with no resolving-book closing price, '+fmtInt(ex.walkover)+' walkovers, '+
+      ' with no closing price on either book, '+fmtInt(ex.walkover)+' walkovers, '+
       // FOUNDER RULING 2026-09-20: retirements are VOIDED, not settled — most books
       // void the match market, so settling them would price a bet the reader could
       // never have had. The footnote used to name walkovers and say nothing about
@@ -32636,6 +32496,9 @@ window.DatabaseTab = (function(){
 <script src="holdbreak-heatmap.js"></script>
 <!-- TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). -->
 <script src="market-edge-core.js"></script>
+<!-- TEN-384 fx2: the canonical tournament identity table (window.TournamentIdentity) the builders group on;
+     the page folds a served tournament-history shard's same-event rows through it. -->
+<script src="tournament-identity.js"></script>
 <!-- TEN-206: the rebuilt Player Profile. Guarded by window.FEATURE_PP2, which
      pp2Bridge() sets immediately before the first mount — the module reads the
      flag at parse time, so it must be set BEFORE this tag executes for the

@@ -163,6 +163,12 @@ check('the footnote keeps the ruled wording', () => {
   assert.ok(/counted per match, so a match can appear in several rows/.test(html),
     'the footnote must say situations are counted per match');
   assert.ok(/matches with set-by-set data/.test(html), 'the footnote must state the set-by-set N');
+  // TEN-384 (row 53): the reference has no visible footnote; the ruled wording rides on the
+  // head cell's tooltip so the caveat stays reachable — and is NOT a paragraph under the table.
+  assert.ok(/<div data-sit="head" title="These rows rest on the [^"]*not the full career figure/.test(html),
+    'the ruled wording is not on the Situational head\'s tooltip');
+  assert.ok(!/<div style="font-size:11\.5px;color:var\(--text-label\);line-height:1\.6;">These rows rest/.test(html),
+    'the visible footnote paragraph is still rendering');
 });
 
 // ── 7. a player with nothing gets words, not an empty table ─────────────────
@@ -205,7 +211,8 @@ check('a closed group hides its rows but keeps its header', () => {
 // screenshot's own column right-edges (916.0 / 983.5 / 1037.0 / 1104.5 CSS at a
 // 1680-wide viewport rendered at 90%) reproduce from 62/62/48/62 and do not
 // reproduce from 62/74/62/72.
-const TRACKS = 'grid-template-columns:minmax(0,1fr) 62px 62px 48px 62px;gap:0 12px;';
+// TEN-384: the reference's tracks (inventory C row 49) — label · Record 64 · Rate 64 · Tour 56 · Vs tour 72.
+const TRACKS = 'grid-template-columns:minmax(0,1fr) 64px 64px 56px 72px;gap:0 12px;';
 
 check('rows and head use the export\'s grid tracks', () => {
   const I = load(ROSTER, PBP_STORE);
@@ -219,6 +226,7 @@ check('rows and head use the export\'s grid tracks', () => {
   // together when a group is collapsed.
   assert.strictEqual(n, 15, `expected 15 grids on the export tracks (1 head + 14 rows), found ${n}`);
   assert.ok(!/62px 74px 62px 72px/.test(html), 'the pre-export track widths are still being emitted');
+  assert.ok(!/minmax\(0,1fr\) 62px 62px 48px 62px/.test(html), 'the TEN-206 export tracks are still being emitted');
   assert.ok(!/gap:10px/.test(html.split('Situational')[1] || ''), 'the 10px gap is still being emitted');
 });
 
@@ -234,11 +242,14 @@ check('the head row renders ONCE, not once per group', () => {
   assert.strictEqual(recs, 1, `"Record" appears ${recs} times in the head`);
 });
 
-check('the panel carries the export\'s "Situational" title', () => {
+// TEN-384 (inventory C row 48): the reference names the table in the head row's FIRST CELL,
+// caps "Situational · set-by-set data", instead of a 20px/800 title above it.
+check('the table is named in its head row: caps "Situational · set-by-set data"', () => {
   const I = load(ROSTER, PBP_STORE);
   const html = I.renderSituational(SUBJECT);
-  assert.ok(/font-size:20px;font-weight:800;">Situational</.test(html),
-    'the 20px/800 "Situational" title is missing — the export puts it above the launcher');
+  assert.ok(/<div data-sit="head"[^>]*style="font-family:var\(--font-words\);font-size:10\.5px;font-weight:700;letter-spacing:0\.10em;text-transform:uppercase;color:var\(--text-label\);">Situational · set-by-set data<\/div>/.test(html),
+    'the head row\'s first cell is not the caps "Situational · set-by-set data"');
+  assert.ok(!/font-size:20px;font-weight:800;">Situational</.test(html), 'the old 20px/800 title is still rendering');
 });
 
 console.log(`\nsituational panel: ${pass} pass, ${fail} fail`);

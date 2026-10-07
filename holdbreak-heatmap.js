@@ -25,7 +25,7 @@
 // Sample gates (README §9, same ladder as the rest of the profile):
 //   n = 0      → em dash, "no matches on record". Never a 0%.
 //   n = 1–4    → the raw count only (won/n), no percentage, neutral background.
-//   n = 5–9    → rate shown, smaller + greyed, "small sample".
+//   n = 5–9    → rate shown, smaller + greyed, "small sample · n=X" (TEN-384 fix item 9).
 //   n >= 10    → full rate.
 // Nothing is ever estimated or defaulted.
 // =============================================================================
@@ -39,12 +39,34 @@
   // the set, 7th+ folded into row 6). Same order, so index i ↔ id String(i+1).
   const HB_SETS = ['1','2','3','4','5'];
 
-  function band(rate, metric){
-    const T = metric==='HOLD'?[85,70]:[30,18];
-    const pct = Math.round(rate*100);
-    if(pct>=T[0]) return { bg:'color-mix(in srgb, var(--viz-up) 20%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 48%, transparent)', color:'var(--viz-up)', tag:'strong' };
-    if(pct>=T[1]) return { bg:'var(--edge-6)',  bd:'var(--edge-10)',  color:'var(--text-soft)', tag:'mid'    };
-    return              { bg:'color-mix(in srgb, var(--viz-down) 18%, transparent)',   bd:'color-mix(in srgb, var(--viz-down) 46%, transparent)',   color:'var(--viz-down)', tag:'weak'   };
+  // ── The cell colour (founder TEN-376 U3, built in TEN-384) ──────────────────
+  // A set cell is coloured by its GAP to the pair's own ALL-SETS rate, not by an
+  // absolute hold/break threshold: green from +3 pts, red from −3 pts, neutral
+  // within. The gap is taken on the two PRINTED integers (the cell's "77%" and the
+  // all-sets "81%"), so the colour, the figure and the "−4 pts" sub can never
+  // disagree. A cell whose pair has no all-sets rate cannot have a gap → neutral.
+  // n 5–9 keeps its gap colour as a muted wash (8% fill, 16% edge); n ≥ 10 is the
+  // full tint (16% fill, 36% edge). The all-sets cell itself is never tinted.
+  // The old absolute band (85/70 hold, 30/18 break) is retired: it painted Hold and
+  // Break on two different scales and said nothing about where in the set a player
+  // is better or worse than himself, which is the question the grid asks.
+  const GAP_PTS = 3;
+  function gapBand(pctInt, gPctInt, small){
+    const d = (gPctInt===null || gPctInt===undefined) ? null : (pctInt - gPctInt);
+    if(d!==null && d>=GAP_PTS) return small
+      ? { bg:'color-mix(in srgb, var(--viz-up) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 16%, transparent)', color:'var(--viz-up)', tag:'up' }
+      : { bg:'color-mix(in srgb, var(--viz-up) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 36%, transparent)', color:'var(--viz-up)', tag:'up' };
+    if(d!==null && d<=-GAP_PTS) return small
+      ? { bg:'color-mix(in srgb, var(--viz-down) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-down) 16%, transparent)', color:'var(--viz-down)', tag:'down' }
+      : { bg:'color-mix(in srgb, var(--viz-down) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-down) 36%, transparent)', color:'var(--viz-down)', tag:'down' };
+    return small
+      ? { bg:'color-mix(in srgb, var(--text) 2%, transparent)', bd:'var(--line)', color:'var(--text)', tag:'even' }
+      : { bg:'color-mix(in srgb, var(--text) 3%, transparent)', bd:'var(--line)', color:'var(--text)', tag:'even' };
+  }
+  // "+7 pts" / "−4 pts" / "0 pts" — true minus (U+2212), never a hyphen.
+  function gapText(d){
+    if(d===null || d===undefined) return '';
+    return (d>0?'+':d<0?'\u2212':'')+Math.abs(d)+' pts';
   }
 
   function hbSum(cells){
@@ -76,7 +98,6 @@
       const rowCells = HB_SETS.map(s => (node && node[s]) ? node[s][id] : null);
       const g = hbSum(rowCells);
       const gPctInt = g.pct===null ? null : Math.round(g.pct);
-      const gBand = g.pct===null ? null : band(g.pct/100, metric);
       const cells = [1,2,3,4,5].map(si=>{
         const head = b[0]+' · Set '+si;
         // A set the format cannot reach is not missing data — it is impossible.
@@ -91,24 +112,24 @@
         if(den<5) return { pct:num+'/'+den, frac:'raw', bg:'color-mix(in srgb, var(--text) 3%, transparent)', bd:'var(--edge-7)', color:'var(--text-label)', size:'11px', opacity:1, tipHead:head, tipRate:num+'/'+den, tipNote:'too few matches for a rate' };
         const rate = num/den;
         const pctInt = Math.round(rate*100);
-        const bd2 = band(rate, metric);
-        const small = den<10;                         // n 5–9 → smaller, greyed, band bg kept
+        const small = den<10;                         // n 5–9 → smaller, greyed, muted gap wash
+        const bd2 = gapBand(pctInt, gPctInt, small);
         const dPts = gPctInt===null ? null : (pctInt - gPctInt);
         return {
           pct:pctInt+'%', frac:num+'/'+den,
-          bg:bd2.bg, bd:bd2.bd, tag:bd2.tag,
+          bg:bd2.bg, bd:bd2.bd, tag:bd2.tag, gap:dPts,
           color:small?'var(--text-label)':bd2.color,
           size:small?'12px':'15px', opacity:small?0.72:1,
           tipHead:head,
           tipRate:pctInt+'%  ·  '+num+'/'+den,
-          tipNote:bd2.tag+' band'+(dPts===null?'':' · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+gPctInt+'%')+(small?' · small sample':''),
+          tipNote:(dPts===null?'no all-sets rate for this pair':gapText(dPts)+' vs this pair’s all-sets '+gPctInt+'%')+(small?' · small sample · n='+den:''),
         };
       });
       return {
         bucket:b[0], sub:b[1],
         gPct: gPctInt===null ? '—' : gPctInt+'%',
         gFrac: g.pct===null ? '' : g.won+'/'+g.n,
-        gColor: gBand ? gBand.color : 'var(--text-label)',
+        gColor: g.pct===null ? 'var(--text-label)' : 'var(--text)',
         cells,
       };
     });
@@ -141,5 +162,5 @@
     };
   }
 
-  root.HoldBreakHeatmap = { BUCKETS, HB_SETS, band, hbSum, heatFor, coverageFor };
+  root.HoldBreakHeatmap = { BUCKETS, HB_SETS, GAP_PTS, gapBand, gapText, hbSum, heatFor, coverageFor };
 })(typeof window !== 'undefined' ? window : globalThis);

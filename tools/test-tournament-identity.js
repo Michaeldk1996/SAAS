@@ -95,6 +95,94 @@ check('same-city SECOND events stay separate — merging those is the opposite b
   assert.notStrictEqual(id('Stuttgart'), id('Stuttgart 1'));
 });
 
+console.log('\n── TEN-384 fix item 12 · London is Queen\'s Club ─────────────────');
+
+check('"London", "ATP London" and "Queen\'s Club" are ONE identity, displayed "Queen\'s Club"', () => {
+  ['London', 'ATP London', "Queen's Club", 'Queens Club'].forEach((n) => {
+    assert.strictEqual(disp(n), "Queen's Club", `"${n}" displayed "${disp(n)}"`);
+    assert.strictEqual(id(n), id("Queen's Club"), `"${n}" kept its own identity`);
+  });
+});
+
+check('the London Olympics stays apart from Queen\'s Club (the bare key matches the WHOLE name)', () => {
+  assert.notStrictEqual(id('London Olympics'), id("Queen's Club"));
+  // fx4: it joins the Olympics identity instead (one event across years, per-year surface)
+  assert.strictEqual(disp('London Olympics'), 'Olympic Games');
+});
+
+check('the REAL mergePlayer folds an API "London" and a TML "Queen\'s Club" into one row, API years winning', () => {
+  const { _internal } = require('../career-backfill.js');
+  const m = (opp, res) => ({ res, round: 'R16', opp, oppKey: '', score: '2 - 0' });
+  // The deployed Alcaraz shape: API "London" 2023-2025 and the SAME seasons from the archive.
+  const api = [{ name: 'London', editions: [
+    { year: 2025, matches: [m('J. Lehecka', 'W')] }, { year: 2024, matches: [m('J. Draper', 'L')] }] }];
+  const tml = [
+    { year: 2025, tourney: "Queen's Club", round: 'R16', won: true, oppName: 'J. Lehecka', score: '0 - 2' },
+    { year: 2024, tourney: "Queen's Club", round: 'R16', won: false, oppName: 'J. Draper', score: '2 - 0' },
+    { year: 2017, tourney: "Queen's Club", round: 'R32', won: true, oppName: 'X. Older', score: '0 - 2' },
+  ];
+  const { history } = _internal.mergePlayer(api, tml);
+  const rows = history.filter((t) => /london|queen/i.test(t.name));
+  assert.strictEqual(rows.length, 1, `got ${rows.length} rows: ${rows.map((t) => t.name).join(' + ')}`);
+  assert.strictEqual(rows[0].name, "Queen's Club");
+  assert.deepStrictEqual(rows[0].editions.map((e) => e.year).sort(), [2017, 2024, 2025]);
+  assert.strictEqual(rows[0].won + rows[0].lost, 3, 'a shared season was counted twice');
+});
+
+check('fx3 · "Melbourne (Great Ocean Road Open)" and "Great Ocean Road Open" are ONE event (2021)', () => {
+  assert.strictEqual(id('Melbourne (Great Ocean Road Open)'), id('Great Ocean Road Open'));
+  assert.strictEqual(disp('Melbourne (Great Ocean Road Open)'), 'Great Ocean Road Open');
+  assert.notStrictEqual(id('Melbourne'), id('Great Ocean Road Open'), 'a bare "Melbourne" must not join it');
+});
+
+const TI = require('../tournament-identity.js');
+check('fx4 · every Olympics spelling is ONE identity, "Olympic Games"; no other event joins it', () => {
+  ['Olympic Games', 'Olympics', 'Beijing Olympics', 'London Olympics', 'Rio Olympics', 'Tokyo Olympics', 'Paris Olympics']
+    .forEach((n) => { assert.strictEqual(id(n), id('Olympic Games'), n); assert.strictEqual(disp(n), 'Olympic Games', n); });
+  ['London', "Queen's Club", 'Paris', 'Tokyo', 'Beijing', 'Rio de Janeiro', 'Roland Garros', 'Wimbledon']
+    .forEach((n) => assert.notStrictEqual(id(n), id('Olympic Games'), `"${n}" merged into the Olympics`));
+});
+check('fx4 · the Olympics surface is per YEAR (2012 grass, 2016 / 2021 hard, 2024 clay), never one label', () => {
+  assert.strictEqual(TI.editionSurface('Olympic Games', 2024), 'clay');
+  assert.strictEqual(TI.editionSurface('Paris Olympics', 2024), 'clay');
+  assert.strictEqual(TI.editionSurface('Olympic Games', 2021), 'hard');
+  assert.strictEqual(TI.editionSurface('Olympic Games', 2020), 'hard');
+  assert.strictEqual(TI.editionSurface('Rio Olympics', 2016), 'hard');
+  assert.strictEqual(TI.editionSurface('London Olympics', 2012), 'grass');
+  assert.strictEqual(TI.editionSurface("Queen's Club", 2024), null, 'a fixed-surface event has no per-year map');
+  assert.strictEqual(TI.editionYear('Olympic Games', 2020), 2021, 'the Tokyo Games (season 2020) were played in 2021');
+  assert.strictEqual(TI.editionYear('Olympic Games', 2024), 2024);
+  assert.strictEqual(TI.editionYear('Wimbledon', 2020), 2020);
+});
+check('fx4 · mergeHistory folds the Alcaraz shape (Olympic Games 5-1 + Paris Olympics 5-1, 2024) into one 5-1 row', () => {
+  const m = (opp, res, round) => ({ res, round, opp, oppKey: '', score: '2 - 0' });
+  const ed = { year: 2024, finish: 'Final', matches: ['WR64', 'WR32', 'WR16', 'WQF', 'WSF', 'LF'].map((x, i) => m('O' + i, x[0], x.slice(1))) };
+  const out = TI.mergeHistory([{ name: 'Olympic Games', won: 5, lost: 1, editions: [ed] },
+    { name: 'Paris Olympics', won: 5, lost: 1, editions: [JSON.parse(JSON.stringify(ed))] }]);
+  assert.strictEqual(out.length, 1, out.map(t => t.name).join(' + '));
+  assert.deepStrictEqual([out[0].name, out[0].won, out[0].lost], ['Olympic Games', 5, 1]);
+});
+check('fx4 · the Tokyo Games fold across the feed\'s season label: "Olympic Games" 2020 ≡ "Tokyo Olympics" 2021', () => {
+  const m = (opp, res) => ({ res, round: 'R64', opp, oppKey: '', score: '0 - 2' });
+  const out = TI.mergeHistory([
+    { name: 'Olympic Games', won: 0, lost: 2, editions: [{ year: 2024, matches: [m('F. Cerundolo', 'L')] }, { year: 2020, matches: [m('J. Chardy', 'L')] }] },
+    { name: 'Tokyo Olympics', won: 0, lost: 1, editions: [{ year: 2021, matches: [m('J. Chardy', 'L')] }] }]);
+  assert.strictEqual(out.length, 1);
+  assert.deepStrictEqual(out[0].editions.map(e => e.year), [2024, 2021]);
+  assert.deepStrictEqual([out[0].won, out[0].lost], [0, 2], 'the 2020/2021 Tokyo edition was counted twice');
+  // a lone "Olympic Games" row is re-yeared too (so it joins career-history's 2021 dates)
+  const solo = TI.mergeHistory([{ name: 'Olympic Games', won: 0, lost: 1, editions: [{ year: 2020, matches: [m('J. Chardy', 'L')] }] }]);
+  assert.strictEqual(solo[0].editions[0].year, 2021);
+});
+check('fx4 · "Melbourne" ≡ "Melbourne (Summer Set)" (2022); the Murray River Open pair is one event; GORO stays apart', () => {
+  assert.strictEqual(id('Melbourne'), id('Melbourne (Summer Set)'));
+  assert.strictEqual(disp('Melbourne'), 'Melbourne (Summer Set)');
+  assert.strictEqual(id('Melbourne (Murray River Open)'), id('Murray River Open'));
+  assert.notStrictEqual(id('Melbourne'), id('Murray River Open'));
+  assert.notStrictEqual(id('Melbourne'), id('Australian Open'));
+  assert.notStrictEqual(id('Melbourne (Summer Set)'), id('Great Ocean Road Open'));
+});
+
 check('identityKey keeps digits and strips only the tour prefix', () => {
   assert.strictEqual(identityKey('ATP Adelaide 2'), 'adelaide 2');
   assert.strictEqual(identityKey("'s-Hertogenbosch"), 's hertogenbosch');

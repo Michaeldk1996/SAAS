@@ -228,7 +228,12 @@ ok('deploy copies and asserts both the index and the shard dir');
 const v2src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 const v2ReadsField = (v2src.match(/\.tournamentHistory\b/g) || []).length;
 if (v2ReadsField > 0) {
-  const v2Mount = (html.match(/function showPlayerProfileV2\([\s\S]*?\n\}/) || [''])[0];
+  // TEN-384: showPlayerProfileV2() hands the mount (and the per-profile loads) to pp2MountNow()
+  // once the market shard has settled, so the open path is the two together.
+  // TEN-384 fx2: the per-profile loads start at CLICK time in pp2StartLoads(), which showPlayerProfileV2() calls.
+  const v2Mount = (html.match(/function showPlayerProfileV2\([\s\S]*?\n\}/) || [''])[0]
+    + (html.match(/function pp2MountNow\([\s\S]*?\n\}/) || [''])[0]
+    + (html.match(/function pp2StartLoads\([\s\S]*?\n\}/) || [''])[0];
   assert.ok(v2Mount, 'could not lift showPlayerProfileV2() — the harness is stale');
   assert.ok(/loadPp2TourHist\(key\)/.test(v2Mount),
     `player-profile-v2.js reads .tournamentHistory in ${v2ReadsField} place(s), so `
