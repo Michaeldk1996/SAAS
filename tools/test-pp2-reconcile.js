@@ -7132,7 +7132,7 @@ check('fx3 item 7 · a profiled player with no career-splits entry reads "Splits
     const v = I.boxValues(p, { rows: I.ledgerMatches(p) }).splits;
     assert.strictEqual(v.headline, null, `${p.name}: Draw headline without splits`);
     assert.strictEqual(v.support, 'Splits not built for this player yet', `${p.name}: Draw "${v.support}"`);
-    assert.strictEqual(I.insightsEmptyText(p), 'Splits not built for this player yet.', `${p.name}: Key insights`);
+    assert.strictEqual(I.insightsEmptyText(p), 'Splits not built for this player yet', `${p.name}: Key insights`);
     // fx6 item 8: the modal prints the tile's words exactly, no trailing period in either
     assert(/>Splits not built for this player yet<\/div>/.test(I.renderSplitsModal(p)), `${p.name}: Draw modal`);
     assert.strictEqual(v.blankFigure, true, `${p.name}: the Draw figure slot is not left empty`);

@@ -1705,7 +1705,8 @@
     return !!store && Object.keys(store).length > 0 && !store[String(key)];
   }
   function insightsEmptyText(p) {
-    if (splitsNotBuilt(p.key)) return SPLITS_NOT_BUILT + '.';
+    // fx7 item 3 · the same words as the Draw tile and modal, no trailing period in any of the three.
+    if (splitsNotBuilt(p.key)) return SPLITS_NOT_BUILT;
     if (pooledBaseline(p.key, 'career') == null) return 'No split data on record.';
     if (!rankedInsights(p, 'career', null, INSIGHT_GROUPS).length) return 'No splits clear the ten-match minimum.';
     return 'No split stands apart from his rate ' + baselinePopLabel() + '.';
