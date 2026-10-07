@@ -34,7 +34,7 @@ const PS_ARCH_SRC = /const PS_ARCHETYPES = \[[\s\S]*?\n\];/.exec(html)[0];
 // the Odds tab's row model (the shared harness list) minus the Key factors functions the KF block itself declares
 const ODDS = ODDS_FNS.filter(n => !/^kf|^fhS$/.test(n));
 const ODDS_CONSTS = ['ANALYSIS_P2_FILL', 'AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG',
-  'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'];
+  'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED', 'MX_BOOK_LABELS'];
 const S = new Function('CORE', `
   const window = { MarketEdgeCore: CORE };
   const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; }, querySelectorAll(){ return []; },
@@ -71,7 +71,7 @@ const S = new Function('CORE', `
      'psGroupMeetings', 'styleMeetRowsFor', 'ppCleanTournamentName', 'surnameFirstName', 'formIni', 'eventKeyOfMatch',
      'apiStartMs', 'h2hRoundLabel', 'maRoundName', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
      'trHeaderHtml', 'trKeyOf', 'trMarketFor', 'trSameEvent', 'trRowOf', 'trModelOf', 'newsParseTs', 'aNewsFeedOk', 'aNewsArticlesFor', 'aNewsStoryKey',
-     'progressionByesCredible'].map(slice).join('\n')}
+     'progressionByesCredible', 'mxBookLabel'].map(slice).join('\n')}
   ${['TR_RG_NOTE', 'TR_NO_SPEED', 'TR_RESULT', 'TR_MONO', 'TR_BEST_RANK'].map(n => constSrc(n, html)).join('\n')}
   ${/const A_NEWS_WINDOW_DAYS = \d+;/.exec(html)[0]}
   ${ODDS.map(slice).join('\n')}
@@ -430,7 +430,8 @@ test('Model: fair odd + its probability, SHARP / NO VALUE from the Pinnacle edge
     pinnacleOpen: { p1: 1.63, p2: 2.49 }, bestOdds: { p1: { price: 1.66, bookmaker: 'Bet365' }, p2: { price: 2.67, bookmaker: 'Unibet' } } });
   const h = S.kfModelCard(m), t = text(h);
   assert.match(t, /^Stennisfy Model · adjusted model price vs the market · Hard Net adjustment — ›/);
-  assert.match(t, /J\. Sinner SHARP VALUE 1\.59 Adjusted fair odd · 62\.9% Best soft — 1\.66 Bet365 Pinnacle \+2\.1pp 1\.63 1\.63/);
+  assert.match(t, /J\. Sinner SHARP VALUE 1\.59 Adjusted fair odd · 62\.9% Best soft — 1\.66 bet365 Pinnacle \+2\.1pp 1\.63 1\.63/);
+  // TEN-384 item 6: the fixture book "Bet365" prints in the house style "bet365" (mxBookLabel).
   assert.match(t, /C\. Alcaraz NO VALUE 2\.70 Adjusted fair odd · 37\.0% Best soft — 2\.67 Unibet Pinnacle −1\.1pp 2\.49 2\.49/);
   assert.equal((t.match(/[+−]\d+\.\dpp/g) || []).length, 2, 'exactly the two Pinnacle boxes carry a pp gap');
   assert.match(h, /class="kf-flag" style="[^"]*background:var\(--inner\); border:1px solid transparent;/, 'the flag chip is --inner, no edge');

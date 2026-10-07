@@ -409,13 +409,20 @@ console.log('\nTEN-225 item G1 — vendor-confirmed book labels');
   // The books that must pass through untouched. A relabel map that rewrote an
   // unrelated book would be a false label, which is the defect class this whole
   // issue keeps paying for.
-  check('every other book is returned VERBATIM — the map relabels three books, '
+  check('every other book is returned VERBATIM — the map relabels named books, '
       + 'not "book names in general"',
-        ['bet365', '1xBet', 'Betano', 'Betfair', 'Marathon', 'WilliamHill',
+        ['bet365', '1xBet', 'Betano', 'Betfair', 'Marathon', 'Superbet', 'Unibet (NL)',
          'sports411'].every(b => api.mxBookLabel(b) === b));
-  check('exactly THREE entries in the map, so a fourth cannot be added without '
-      + 'this assertion being revisited',
-        Object.keys(api.MX_BOOK_LABELS).length === 3,
+  // TEN-384 (founder 2026-10-07) revisits the count this assertion guarded: ONE house style
+  // for every book name — "William Hill", "Pinnacle", "bet365", "1xBet", "Betano".
+  check('TEN-384 house style: WilliamHill -> William Hill, Bet365 -> bet365, 888Sport -> 888sport, '
+      + 'Marathon Bet -> Marathon',
+        api.mxBookLabel('WilliamHill') === 'William Hill' && api.mxBookLabel('Bet365') === 'bet365'
+        && api.mxBookLabel('1XBET') === '1xBet' && api.mxBookLabel('888Sport') === '888sport'
+        && api.mxBookLabel('Marathon Bet') === 'Marathon');
+  check('exactly TEN entries in the map (3 vendor-confirmed + 7 TEN-384 house-style), so another '
+      + 'cannot be added without this assertion being revisited',
+        Object.keys(api.MX_BOOK_LABELS).length === 10,
         JSON.stringify(Object.keys(api.MX_BOOK_LABELS)));
   check('null / empty is passed through rather than becoming a label',
         api.mxBookLabel(null) === null && api.mxBookLabel('') === '');

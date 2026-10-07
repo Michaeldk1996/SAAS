@@ -6848,6 +6848,18 @@ const MX_BOOK_LABELS = {
   sbo: 'SBOBET',
   pncl: 'Pinnacle',
   victorchandler: 'BetVictor',
+  // TEN-384 (founder 2026-10-07): ONE house style for every book name a member reads —
+  // "William Hill", "Pinnacle", "bet365", "1xBet", "Betano"; never the feed's "WilliamHill" / "Pncl".
+  // The rest are the casing / spelling variants measured on matches.json since July (api-tennis keys
+  // beside the-odds-api titles: "888Sport" / "888sport", "Marathon Bet" / "Marathon"). Display only:
+  // stored rows keep the vendor's string, as above.
+  williamhill: 'William Hill',
+  pinnacle: 'Pinnacle',
+  bet365: 'bet365',
+  '1xbet': '1xBet',
+  betano: 'Betano',
+  '888sport': '888sport',
+  marathonbet: 'Marathon',
 };
 function mxBookLabel(book){
   if (!book) return book;
@@ -8589,7 +8601,7 @@ function mcSigPanel(m){
   const hasBook = o1 > 0 && o2 > 0;
   const clamp = v => Math.max(3, Math.min(97, Math.round(v)));
   const pinA = hasBook ? clamp(100 * (1/o1) / ((1/o1) + (1/o2))) : null;
-  const book = (m.odds && m.odds.bookmaker) || 'Sharp';
+  const book = mxBookLabel((m.odds && m.odds.bookmaker) || 'Sharp');
   // TEN-377 review item 5: a source without data is not drawn at all (no "—" rows, no empty bars).
   const row = (label, aPct, hasLiq) => {
     const liqCell = hasLiq ? `<span class="mc-sig-liq">—</span>` : '';
@@ -17271,7 +17283,7 @@ function buildOddsReduced(m){
     const a = present && snap.p1 != null ? snap.p1.toFixed(2) : AODDS_DASH;
     const b = present && snap.p2 != null ? snap.p2.toFixed(2) : AODDS_DASH;
     const book = snap && snap.bookmaker
-      ? (snap.vendor ? `${snap.bookmaker} via ${snap.vendor}` : snap.bookmaker)
+      ? (snap.vendor ? `${mxBookLabel(snap.bookmaker)} via ${snap.vendor}` : mxBookLabel(snap.bookmaker))
       : '';
     const meta = [book, ocSnapAt(snap && (snap.at || snap.seenAt)),
                   (snap && SRC_TEXT[snap.src]) || '', (snap && snap.note) || ''].filter(Boolean).join(' · ');
@@ -17405,7 +17417,7 @@ function buildOddsReduced(m){
   const fairPanel = `<div style="border:1px solid var(--edge-6);border-radius:12px;background:var(--card);padding:13px 15px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;">
       <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); ">Market-implied win probability</span>
-      <span style="font-size:11px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;">via ${m.odds.bookmaker} · vig removed</span>
+      <span style="font-size:11px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;">via ${mxBookLabel(m.odds.bookmaker)} · vig removed</span>
     </div>
     <div style="display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px;"><span style="color:${ANALYSIS_P1_COLOR};">${p1Fair}%</span><span style="color:var(--text);">${p2Fair}%</span></div>
     <div style="height:6px;border-radius:4px;background:var(--track);overflow:hidden;"><div style="height:100%;width:${p1Fair}%;background:var(--bar);"></div></div>
@@ -17422,7 +17434,7 @@ function buildOddsReduced(m){
       ? `<span class="aodds-price na">${AODDS_DASH}</span>`
       : `<span class="aodds-price${b === bestB ? ' best' : ''}">${b.toFixed(2)}</span>`;
     return `<div class="aodds-brow">
-      <span class="aob-name">${book}</span>
+      <span class="aob-name">${mxBookLabel(book)}</span>
       <span class="aob-cell">${aCell}</span>
       <span class="aob-cell">${bCell}</span>
     </div>`;
@@ -17951,7 +17963,7 @@ function kfModelCard(m){
           <span style="display:flex; flex-direction:column; align-items:flex-start; gap:6px; min-width:0;">${kfName(name)}${flag}</span>
           <span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; flex:none;"><span class="kf-fair" style="${M} font-size:40px; font-weight:700; line-height:36px; color:${fair === FH_DASHC ? C.t3 : C.text};">${fair}</span><span style="${KF_CAP}">Adjusted fair odd${pctTxt}</span></span>
         </div>
-        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">${kfModelBox('Best soft', FH_DASHC, C.t3, soft, fhEsc(has && bo && bo.bookmaker ? bo.bookmaker : FH_DASHC), 'kf-soft')}${kfModelBox('Pinnacle', gap, gap === FH_DASHC ? C.t3 : edge > 0 ? C.up : C.dn, px, pinSub, 'kf-pin')}</div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px;">${kfModelBox('Best soft', FH_DASHC, C.t3, soft, fhEsc(has && bo && bo.bookmaker ? mxBookLabel(bo.bookmaker) : FH_DASHC), 'kf-soft')}${kfModelBox('Pinnacle', gap, gap === FH_DASHC ? C.t3 : edge > 0 ? C.up : C.dn, px, pinSub, 'kf-pin')}</div>
       </div>`;
   };
   const body = `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${col(1, m.p1, has ? vs.fairP1 : null, has ? vs.edgeVsPinnacleP1 : null, true)}${col(2, m.p2, has ? vs.fairP2 : null, has ? vs.edgeVsPinnacleP2 : null, false)}</div>`;
@@ -19447,7 +19459,8 @@ function renderPlayers(filter){
     const priced = !!(odds && odds.price);
     const price = priced ? Number(odds.price).toFixed(2) : '—';
     // No price: "—" plus a grey note, as the profile's "no fixture on record".
-    const book = priced ? (odds.bookmaker ? `<span class="pc-book">${pesc(odds.bookmaker)}</span>` : '')
+    // TEN-384: the book name in the house style (mxBookLabel), never the feed's key ("Pncl", "WilliamHill").
+    const book = priced ? (odds.bookmaker ? `<span class="pc-book">${pesc(mxBookLabel(odds.bookmaker))}</span>` : '')
                         : '<span class="pc-book">no price</span>';
     // Real headshot layered over the initials fallback (same source as match rows,
     // m.pNPhotoUrl); the photo hides itself on error and the initials show through.

@@ -192,7 +192,7 @@ test('review 4/8: Completed and Upcoming always draw three tiles; an empty tile 
   assert.match(body, /const stripHtml = `<div class="mc-story-strip">\$\{panels\.join\(''\)\}<\/div>`;/, 'Completed strip is unconditional');
 });
 test('review 5: the Market Signal drawer draws only rows with data, only groups with rows, no explainer', () => {
-  const S = new Function(`${slice('mcSigPanel')}; return mcSigPanel;`)();
+  const S = new Function(`const MX_BOOK_LABELS = { pncl: 'Pinnacle' }; ${slice('mxBookLabel')} ${slice('mcSigPanel')}; return mcSigPanel;`)();
   const up = S({ p1: 'A. Rublev', p2: 'R. Safiullin', odds: { p1: 1.69, p2: 2.27, bookmaker: 'Betano' } });
   assert.match(up, /Sharp estimates/);
   assert.doesNotMatch(up, /Market money|Stennisfy|Polymarket|Kalshi|—|never invented|mc-sig-note/);

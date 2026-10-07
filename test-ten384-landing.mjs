@@ -29,6 +29,13 @@ function constLine(name) {
   assert.ok(start > 0, `const ${name} not found`);
   return html.slice(start, html.indexOf('\n', start + 1));
 }
+function constObj(name) {
+  const start = html.indexOf(`\nconst ${name} = {`);
+  assert.ok(start > 0, `const ${name} not found`);
+  let d = 0, i = html.indexOf('{', start);
+  for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
+  return html.slice(start, i + 1) + ';';
+}
 function cssRule(sel) {
   const re = new RegExp('\\n\\s*' + sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\{([^}]*)\\}', 'g');
   const all = [...html.matchAll(re)];
@@ -40,7 +47,8 @@ function runLanding(matches, profiles, progression = { tournaments: {} }, indexR
   const els = { playerGroups: { innerHTML: '' }, pgHeaderStats: { innerHTML: '' } };
   const src = [
     'pesc', 'pgRankOf', 'pp2LiveRankOf', 'pgTierCode', 'pgInitials', 'pgRenderHeaderStats', 'getPlayersFromMatches', 'renderPlayers',
-  ].map(slice).join('\n') + '\n' + constLine('TOURX_TIER_CODE') + '\n' + constLine('PG_EXT_SVG');
+    'mxBookLabel',
+  ].map(slice).join('\n') + '\n' + constLine('TOURX_TIER_CODE') + '\n' + constLine('PG_EXT_SVG') + '\n' + constObj('MX_BOOK_LABELS');
   const body = `
     const document = { getElementById: id => els[id] || null };
     const matches = ${JSON.stringify(matches)};
@@ -101,7 +109,7 @@ test('player card: rank, two initials, a lifted odds tile that is not a link, Vi
   assert.match(cards[1], /class="pc-avatar-init">AM</, 'surname initial is the LAST token ("de Minaur" → M)');
   assert.match(cards[0], /class="pc-rank">#3</);
   assert.match(cards[1], /class="pc-rank">—</, 'no rank on the row or the profile → "—", never a guess');
-  assert.match(cards[0], /<span class="pc-odds"[^>]*>\s*<span class="pc-price">1\.11<\/span><span class="pc-book">Pncl<\/span><span class="pc-ext">/);
+  assert.match(cards[0], /<span class="pc-odds"[^>]*>\s*<span class="pc-price">1\.11<\/span><span class="pc-book">Pinnacle<\/span><span class="pc-ext">/);
   assert.ok(!/<a\b|href=/.test(g.innerHTML), 'the odds tile is not a link: we hold no per-book URL');
   assert.ok(!/Best odds to win<\/span>/.test(g.innerHTML), 'no label text above the tile');
   assert.match(cards[0], /class="pc-view" role="link">View profile →/);
@@ -180,4 +188,42 @@ test('rank "#N" reads live standings (player-index.json) before the frozen profi
   // Control: with no live standings loaded, the old fallback is all there is (and shows the duplicate).
   const stale = runLanding(ms, prof).playerGroups.innerHTML;
   assert.equal((stale.match(/class="pc-rank">#19</g) || []).length, 2);
+});
+
+// TEN-384 shard item 6 (founder 2026-10-07): ONE style for book names — "William Hill", "Pinnacle", "bet365", "1xBet",
+// "Betano"; never "WilliamHill" / "Pncl". Every bookmaker identifier measured on matches.json bestOdds since 2026-07-01
+// (281 sampled commits) is pinned here and driven through the REAL card renderer.
+const BOOKS_SEEN = {
+  // api-tennis keys
+  Pncl: 'Pinnacle', WilliamHill: 'William Hill', bet365: 'bet365', '1xBet': '1xBet', Betano: 'Betano',
+  Betfair: 'Betfair', Marathon: 'Marathon', Sbo: 'SBOBET', BetVictor: 'BetVictor', Superbet: 'Superbet', Unibet: 'Unibet',
+  // the-odds-api titles
+  Pinnacle: 'Pinnacle', 'William Hill': 'William Hill', Matchbook: 'Matchbook', GTbets: 'GTbets', Coolbet: 'Coolbet',
+  '888sport': '888sport', '888Sport': '888sport', 'BetOnline.ag': 'BetOnline.ag', '10Bet': '10Bet',
+  'Unibet (NL)': 'Unibet (NL)', 'Unibet (SE)': 'Unibet (SE)', 'Unibet (FR)': 'Unibet (FR)', 'Winamax (DE)': 'Winamax (DE)',
+  'Winamax (FR)': 'Winamax (FR)', 'LeoVegas (SE)': 'LeoVegas (SE)', 'Nordic Bet': 'Nordic Bet', Tipico: 'Tipico',
+  'Betclic (FR)': 'Betclic (FR)', BetAnything: 'BetAnything', Betsson: 'Betsson', 'Marathon Bet': 'Marathon',
+  'MyBookie.ag': 'MyBookie.ag', 'PMU (FR)': 'PMU (FR)',
+  // casing the feed has used elsewhere / could send
+  Bet365: 'bet365', PINNCL: 'PINNCL', 'Victor Chandler': 'BetVictor',
+};
+test('item 6: every measured bookmaker identifier renders in the house style on the Players card', () => {
+  const ids = Object.keys(BOOKS_SEEN).filter(b => b !== 'PINNCL');
+  const rows = ids.map((b, i) => M(`A. P${i}`, 7000 + 2 * i, 1 + i, `B. Q${i}`, 7001 + 2 * i, 500 + i, 'ATP Tokyo', 'ATP 500',
+    { bestOdds: { p1: { price: 1.5, bookmaker: b }, p2: { price: 2.5, bookmaker: b } } }));
+  const { playerGroups: g } = runLanding(rows, {});
+  const books = new Map();
+  for (const c of g.innerHTML.split('class="playercard"').slice(1)) {
+    const name = c.match(/class="name">A\. P(\d+)</);
+    if (name) books.set(ids[+name[1]], c.match(/class="pc-book">([^<]*)</)[1]);
+  }
+  assert.equal(books.size, ids.length, 'one priced card per identifier');
+  for (const [id, shown] of books) assert.equal(shown, BOOKS_SEEN[id], `${id} renders as ${BOOKS_SEEN[id]}`);
+  // The founder's five, by name, and no raw feed key on any card.
+  for (const want of ['William Hill', 'Pinnacle', 'bet365', '1xBet', 'Betano']) assert.ok([...books.values()].includes(want), want);
+  assert.ok(!/pc-book">(Pncl|WilliamHill|Sbo|888Sport|Marathon Bet|Bet365)</.test(g.innerHTML), 'no feed spelling reaches a card');
+  // An unknown book is printed verbatim — the map relabels known spellings, it never invents a name.
+  const u = runLanding([M('A. X', 1, 1, 'B. Y', 2, 2, 'ATP Tokyo', 'ATP 500',
+    { bestOdds: { p1: { price: 1.5, bookmaker: 'PINNCL' }, p2: null } })], {}).playerGroups.innerHTML;
+  assert.match(u, /pc-book">PINNCL</);
 });

@@ -725,6 +725,9 @@
            '</span>';
   }
 
+  // TEN-384: the book in the page's house style (mxBookLabel: "Pinnacle", "William Hill"), display only.
+  function bookLabel(b) { return b && typeof mxBookLabel === 'function' ? mxBookLabel(b) : b; }
+
   function oddsHtml(row) {
     var o = row.odds;
     if (!o) {
@@ -732,11 +735,11 @@
     }
     var tip = (o.kind === 'close'
       ? 'Closing price — the last quote before the match started'
-      : 'Pre-match price') + (o.book ? ', ' + o.book : '') + (o.at ? ', captured ' + o.at : '') +
+      : 'Pre-match price') + (o.book ? ', ' + bookLabel(o.book) : '') + (o.at ? ', captured ' + o.at : '') +
       '. Never an in-running or carried-forward price.';
     return '<span class="tr-odds" title="' + esc(tip) + '">' +
              '<span class="tr-price">' + esc(fmtOdds(o.price)) + '</span>' +
-             '<span class="tr-book">' + esc(o.book || '') + '</span>' +
+             '<span class="tr-book">' + esc(bookLabel(o.book) || '') + '</span>' +
            '</span>';
   }
 
