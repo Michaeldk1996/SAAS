@@ -1249,6 +1249,11 @@
     // the SAME 18, not the whole filtered set.
     var stripRows = rows.slice(-LEDGER_CAP);
     var r = formRate(stripRows.map(function (x) { return x.m; }));
+    // TEN-384 (founder 2026-10-07) · while "See all N results" has the WHOLE window open, the head rates
+    // every row the ledger lists (the same filtered form rows, the same Form rule: a walkover is neither a
+    // win nor a loss); collapsed back, it returns to the strip's last LEDGER_CAP above. Filters narrow both.
+    var allShown = !!state.ledgerExpanded && rows.length > LEDGER_CAP;
+    var hr = allShown ? formRate(rows.map(function (x) { return x.m; })) : r;
     var surfOn = state.surfaces;
     var chips = LEDGER_SURFACES.map(function (s) {
       var on = s.id === 'all' ? !surfOn.length : surfOn.indexOf(s.id) >= 0;
@@ -1275,13 +1280,14 @@
         '<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;' +
           'text-transform:uppercase;color:var(--text-label);">Recent form ' + MIDDOT + ' full ledger</span>' +
         '<span style="' + MONO + 'font-size:12px;color:var(--text-label);">' +
-          (r.n ? '<span style="color:var(--text);font-weight:700;">' + rateText0(r.won, r.lost) + ' win</span> '
+          (hr.n ? '<span style="color:var(--text);font-weight:700;">' + rateText0(hr.won, hr.lost) + ' win</span> '
             : '<span style="color:' + DASH_COLOUR + ';font-weight:700;">' + DASH + '</span> ') +
           // TEN-384 fix 4 · the rate is over the strip's last LEDGER_CAP rows (the Form rule: ribbon = strip =
           // this rate) and "See all N results" counts the whole window, so the head names both: "last 18 of
           // 33 matches". Under the cap the two are one number and it reads "11 matches".
-          MIDDOT + ' ' + (rows.length > r.n ? 'last ' + r.n + ' of ' + rows.length : r.n) + ' match' +
-          ((rows.length > r.n ? rows.length : r.n) === 1 ? '' : 'es') + '</span>' +
+          // Expanded, the head is one population, "89% win · 35 matches" (the counted rows it rates).
+          MIDDOT + ' ' + (allShown ? hr.n : rows.length > r.n ? 'last ' + r.n + ' of ' + rows.length : r.n) + ' match' +
+          ((allShown ? hr.n : rows.length > r.n ? rows.length : r.n) === 1 ? '' : 'es') + '</span>' +
       '</div>';
 
     var legend = '' +
