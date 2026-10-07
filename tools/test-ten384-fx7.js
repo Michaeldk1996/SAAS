@@ -1,15 +1,21 @@
 // tools/test-ten384-fx7.js — TEN-384 fix round 7 (fx7, 2026-10-07): the independent review of the founder's r2 list.
 //
 // Every check runs on PINNED inputs (the committed fixture with constructed rows, the module's clock pinned), so it is
-// identical in every checkout, CI included. Each one fails on 439b8605 — the control: `FX7_BASE=439b8605 node
-// tools/test-ten384-fx7.js` runs the same checks against that commit's player-profile-v2.js (read with `git show`).
+// identical in every checkout, CI included. Controls: `FX7_BASE=<sha> node tools/test-ten384-fx7.js` runs the same
+// checks against that commit's player-profile-v2.js (read with `git show`). On 439b8605 item 1's ambiguous season and
+// items 2 + 3 fail; on 5816003c (fx7, which re-split the season table) the table-unchanged and no-split checks fail.
 //
-//   1 · Last 52 = season table  ONE per-match court classifier (archive Indoor / Outdoor -> same event's archive court
-//                               that season -> known indoor events -> known outdoor) splits BOTH the Last 52 window and
-//                               the season table. With the clock at 31 Dec 2026 the window IS the 2026 season, so its
-//                               surface rows must equal the season table's 2026 row: (a) a season where United Cup 1–1
-//                               and Laver Cup 1–1 both fit the table's leftover indoor 1–1 (fx6 left both under Hard),
-//                               (b) a season whose careerByYear row carries NO indoor split (fx6 split the window only).
+//   1 · Last 52 = season table  (fx8, superseding fx7's version) THE WINDOW FOLLOWS THE SEASON TABLE, which is NOT
+//                               touched: every season-table cell equals careerByYear's carve (the 439b8605 table). The
+//                               window classifies each dated row so its season reproduces the table's split: a season
+//                               with no indoor split splits nothing; else archive Indoor / Outdoor -> same event's
+//                               archive court -> known events (Laver Cup / ATP Finals / Next Gen Finals indoor; Slams /
+//                               United Cup / ATP Cup outdoor) -> the table's leftover indoor W–L. With the clock at 31 Dec
+//                               2026 the window IS the 2026 season, so its surface rows must equal the table's 2026 row:
+//                               (a) a season where United Cup 1–1 and Laver Cup 1–1 both fit the leftover indoor 1–1
+//                               (fx6 left both under Hard — the 439b8605 control fails here), (b) a season whose
+//                               careerByYear row carries NO indoor split (the 5816003c control re-split the TABLE here).
+//                               A mid-season window is a subset: its season-S cells are <= the table's S cells.
 //                               The roster-wide form (top-120, live stores) is probe-only: tools/probe-ten384-figures-
 //                               roster.js sweep C — a deploy gate must not pin live data.
 //   2 · Match shape             a per-set list LONGER than a decided result (Sinner, Monte Carlo 2024 SF: "1 - 2",
@@ -145,20 +151,64 @@ H.check('1 · ambiguous season: Laver Cup sits under Indoors (3–2) and United 
   assert.strictEqual(tab.indoors, '3–2', 'season Indoors ' + tab.indoors);
   return 'Last 52 ' + fmt(win);
 });
-H.check('1 · no-split season: the season table now carves the classifier\'s indoor rows (Dallas 2–1 + Laver Cup 1–1 = 3–2, Hard 15–7), not "—" / 18–9', () => {
+H.check('1 · no-split season: the window splits nothing either — Indoors "—", Hard 18–9 (Dallas\'s archive Indoor 2–1 stays under Hard, as in the table)', () => {
   const { I, p } = fxModule({ now: YEAR_END, ch: FX.careerHistory.concat(TEAM), profile: { careerByYear: seasons('nosplit') } });
-  const tab = seasonTableRow(I, p, '2026');
-  assert.strictEqual(tab.indoors, '3–2', 'season Indoors ' + tab.indoors);
-  assert.strictEqual(tab.hard, '15–7', 'season Hard ' + tab.hard);
-  return 'season table ' + fmt(tab);
+  const win = last52Row(I, p), tab = seasonTableRow(I, p, '2026');
+  assert.strictEqual(tab.indoors, '—', 'season Indoors ' + tab.indoors + ' (the season table was re-split)');
+  assert.strictEqual(tab.hard, '18–9', 'season Hard ' + tab.hard + ' (the season table was re-split)');
+  assert.strictEqual(win.indoors, '—', 'Last 52 Indoors ' + win.indoors);
+  assert.strictEqual(win.hard, '18–9', 'Last 52 Hard ' + win.hard);
+  const sp = I.calSpine(p), c = I.seasonCourts(p);
+  const split = sp.filter((r, i) => r.year === '2026' && c[i] === 'Indoor').map(r => r.event);
+  assert.deepStrictEqual(split, [], '2026 rows called Indoor: ' + split.join(', '));
+  return 'window + table ' + fmt(win);
 });
-H.check('1 · a pre-2021 season keeps careerByYear\'s figures (no dated rows; the window never reaches it)', () => {
-  const { I, p } = fxModule();
-  const y = p.careerByYear.find(r => +r.year < 2021 && r.total);
-  const tab = seasonTableRow(I, p, String(y.year));
-  const g = I.gridCells(y);
-  ['hard', 'clay', 'grass', 'indoors'].forEach(s => assert.strictEqual(tab[s], wl(g[s]), y.year + ' ' + s));
-  return y.year + ' ' + fmt(tab);
+// The 439b8605 season table, computed here from careerByYear (not through the module), so a module that re-splits the
+// table — 5816003c did, for every dated season — fails.
+function carve(s, i) {
+  if (!s) return null;
+  if (!i) return s;
+  const w = (s.won || 0) - (i.won || 0), l = (s.lost || 0) - (i.lost || 0);
+  return w + l > 0 ? { won: w, lost: l } : null;
+}
+function expectedRow(y, tier) {
+  const t = tier === 'all' ? y : y[tier];
+  if (!t) return null;
+  const ind = t.indoor || null;
+  return { total: wl(t.total), clay: wl(carve(t.clay, ind && ind.clay)), hard: wl(carve(t.hard, ind && ind.hard)),
+    grass: wl(carve(t.grass, ind && ind.grass)), indoors: wl(ind && ind.total) };
+}
+H.check('1 · the season table is unchanged: every season row and tier = careerByYear\'s own carve (the 439b8605 table), both constructed seasons', () => {
+  let n = 0;
+  ['ambiguous', 'nosplit'].forEach((kind) => {
+    const { I, p } = fxModule({ now: YEAR_END, ch: FX.careerHistory.concat(TEAM), profile: { careerByYear: seasons(kind) } });
+    p.careerByYear.filter(y => y && y.total).forEach((y) => ['all', 'atp', 'chitf'].forEach((tier) => {
+      const want = expectedRow(y, tier);
+      if (!want || (tier !== 'all' && !y[tier])) return;
+      const got = seasonTableRow(I, p, String(y.year), tier);
+      ['total', 'hard', 'clay', 'grass', 'indoors'].forEach((s) => {
+        assert.strictEqual(got[s], want[s], `${kind} ${y.year} [${tier}] ${s}: table ${got[s]}, careerByYear ${want[s]}`);
+      });
+      n++;
+    }));
+  });
+  return n + ' season-tier rows = careerByYear';
+});
+H.check('1 · a mid-season window (clock 30 Jun 2027, window from 1 Jul 2026) holds a SUBSET of 2026: Laver Cup 1–1 under Indoors, <= the table\'s 3–2', () => {
+  const { I, p } = fxModule({ now: '2027-06-30T12:00:00.000Z', ch: FX.careerHistory.concat(TEAM), profile: { careerByYear: seasons('ambiguous') } });
+  const cut = I.last52Cutoff();
+  assert.strictEqual(cut, '2026-07-01', 'cut-off ' + cut);
+  const tab = seasonTableRow(I, p, '2026');
+  const sub = {};
+  ['hard', 'clay', 'grass', 'indoors'].forEach((s) => {
+    const c = { won: 0, lost: 0 };
+    I.drillRows(p, s, '2026', cut).forEach((r) => { c[r.won ? 'won' : 'lost']++; });
+    sub[s] = c;
+    const t = tab[s] === '—' ? [0, 0] : tab[s].split('–').map(Number);
+    assert(c.won <= t[0] && c.lost <= t[1], `${s}: window's 2026 rows ${wl(c)} exceed the table's ${tab[s]}`);
+  });
+  assert.strictEqual(wl(sub.indoors), '1–1', 'window 2026 Indoors ' + wl(sub.indoors));
+  return 'window 2026: ' + ['hard', 'clay', 'grass', 'indoors'].map(s => s + ' ' + wl(sub[s])).join(' · ') + ' | table ' + fmt(tab);
 });
 
 // ════════════════════════════════════════════════════════════════════════════

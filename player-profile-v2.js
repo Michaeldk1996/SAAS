@@ -3177,7 +3177,7 @@
       return { won: acc.won + (r.won || 0), lost: acc.lost + (r.lost || 0) };
     };
     spineYears(p).forEach(function (y) {
-      var g = seasonCells(p, y, 'all');
+      var g = gridCells(y);
       out.clay = add(out.clay, g.clay);
       out.hard = add(out.hard, g.hard);
       out.grass = add(out.grass, g.grass);
@@ -3257,27 +3257,27 @@
     // signed so tools/test-ten384-figures-agree.js fails on it; the page prints the note only when > 0.
     return n - dated;
   }
-  // TEN-384 fx6 item 1 + fx7 item 1 (founder r2, 2026-10-07) · ONE PER-MATCH COURT CLASSIFIER, read by BOTH the
-  // Last 52 window AND the season table's Indoors / Hard split for every dated season (2021+, seasonCells()).
-  // fx6 split the window on the season table's field by searching the season's court-less events for the ONE
-  // set whose W–L made up careerByYear's indoor record; where two sets fitted (Zverev 2026: United Cup 1–1 and
-  // Laver Cup 1–1 both fit indoor 1–1) the row stayed under Hard and the two sides disagreed, and a season the
-  // table did not split (FAA 2025, Indoors "—") was still split in the window. Now each dated row takes its
-  // court, in this order, from:
-  //   1. the odds archive's per-match Indoor / Outdoor column (calSpine `court`), the field the Calendar's
-  //      Indoors chip and Court speed read;
-  //   2. else the archive court of the SAME event in the same season (a court is a tournament property:
-  //      one missed price join does not make an event court-unknown);
-  //   3. else a KNOWN INDOOR event (COURT_KNOWN_INDOOR: Laver Cup, ATP Finals, Next Gen Finals; no price, so
-  //      never in the archive);
-  //   4. else a KNOWN OUTDOOR event where that is certain (COURT_KNOWN_OUTDOOR);
-  //   5. else unknown (null): the row counts under its surface, on both sides.
-  // The season table's Indoors cell is the season's rows this classifier calls Indoor and its Hard / Clay / Grass
-  // cells are the season's surface record less those, so Σ columns = total still holds and a window row and its
-  // season cell are one classification. careerByYear's own indoor split (API-Tennis tournament court type,
-  // counted by the pipeline) is NOT reproducible per match — the dated rows carry no tournament key — so where it
-  // differs, the classifier wins: it is the split that keeps the two sides equal. Pre-2021 seasons hold no dated
-  // rows and keep careerByYear's figures (the window never reaches them).
+  // TEN-384 fx6 item 1 + fx8 (founder r2, 2026-10-07: "split surfaces with the same field as the season table") ·
+  // THE LAST 52 WINDOW FOLLOWS THE SEASON TABLE; the season table is not touched. Its Indoors column is
+  // careerByYear's split (API-Tennis's tournament court type, counted per match by the pipeline:
+  // bsp-pipeline.js buildAllTierYearly). The dated rows carry no tournament key, so that field cannot be read per
+  // match; instead each dated row is classified so that its season's rows reproduce the table's split:
+  //   * a season whose careerByYear row carries NO indoor split (Indoors "—": the pipeline counted no indoor
+  //     match that season, FAA 2025) splits nothing — every row of that season counts under its surface, as the
+  //     table does, whatever the odds archive says;
+  //   * a season that carries the split, in this order:
+  //       1. the odds archive's per-match Indoor / Outdoor column (calSpine `court`);
+  //       2. else the archive court of the SAME event in the same season (a court is a tournament property);
+  //       3. else a known event: COURT_KNOWN_INDOOR (Laver Cup, ATP Finals, Next Gen Finals — unpriced, so never
+  //          in the archive) / COURT_KNOWN_OUTDOOR (the four Slams, United Cup, ATP Cup);
+  //       4. else the season table itself: the indoor W–L the table holds on that surface beyond the rows already
+  //          called Indoor must sit among that season's still court-less events of that surface. When exactly ONE
+  //          set of whole events makes it up, those are Indoor and the rest Outdoor (zero left over -> all
+  //          Outdoor). Several candidate sets, none, or more indoor already than the table holds -> the court
+  //          stays unknown (null) and the row counts under its surface.
+  // A window that opens mid-season reads that season's rows as classified over the WHOLE season, so the window's
+  // rows of season S, per column, are a subset of S's classified rows, which equal the table's S cells less S's
+  // undated matches. (fx7 had done the reverse — re-split the season table on this classifier — and was reverted.)
   // Returns an array parallel to calSpine(p): 'Indoor' | 'Outdoor' | null.
   var COURT_KNOWN_INDOOR = [
     { name: 'Laver Cup', re: /\blaver cup\b/i },
@@ -3303,8 +3303,15 @@
   }
   function seasonCourts(p) {
     var sp = calSpine(p);
-    if (seasonCourts._v === sp) return seasonCourts._c;
-    var courts = sp.map(function (r) { return r.court === 'Indoor' || r.court === 'Outdoor' ? r.court : null; });
+    var cby = (p && p.careerByYear) || null;
+    if (seasonCourts._v === sp && seasonCourts._y === cby) return seasonCourts._c;
+    // The season table's indoor split per season; a season absent here splits nothing.
+    var seasons = {};
+    (cby || []).forEach(function (y) { if (y && y.indoor) seasons[String(y.year)] = y; });
+    var courts = sp.map(function (r) {
+      if (!seasons[r.year]) return null;
+      return r.court === 'Indoor' || r.court === 'Outdoor' ? r.court : null;
+    });
     var evCourt = {};
     sp.forEach(function (r, i) {
       if (!courts[i]) return;
@@ -3312,44 +3319,76 @@
       evCourt[k] = evCourt[k] === undefined || evCourt[k] === courts[i] ? courts[i] : false;
     });
     sp.forEach(function (r, i) {
-      if (courts[i]) return;
+      if (courts[i] || !seasons[r.year]) return;
       courts[i] = evCourt[r.year + '|' + r.event] || knownCourtOf(r);
     });
-    seasonCourts._v = sp; seasonCourts._c = courts;
+    // Step 4 runs per season, surface AND tier where the season row carries the tier split (every 2021+ row:
+    // careerByYear[].atp / .chitf each hold their own indoor record), so a Challenger indoor W–L is matched among
+    // that season's Challenger events and an ATP one among its ATP events; the all-tier split is their sum.
+    function groupOf(r) {
+      var y = seasons[r.year];
+      if (!y.atp && !y.chitf) return { k: r.year + '|*|' + r.surface, rec: y.indoor[r.surface] };
+      if (r.tier !== 'atp' && r.tier !== 'chitf') return null;
+      var t = y[r.tier];
+      return { k: r.year + '|' + r.tier + '|' + r.surface, rec: t && t.indoor ? t.indoor[r.surface] : null };
+    }
+    var groups = {};
+    sp.forEach(function (r, i) {
+      if (!seasons[r.year] || !r.surface) return;
+      var go = groupOf(r);
+      if (!go) return;
+      var g = groups[go.k] || (groups[go.k] = { rec: go.rec || { won: 0, lost: 0 }, all: [], tw: 0, tl: 0, w: 0, l: 0, ev: {} });
+      g.all.push(i);
+      if (r.won) g.tw++; else g.tl++;
+      if (courts[i] === 'Indoor') { if (r.won) g.w++; else g.l++; return; }
+      if (courts[i]) return;
+      var e = g.ev[r.event] || (g.ev[r.event] = { w: 0, l: 0, idx: [] });
+      if (r.won) e.w++; else e.l++;
+      e.idx.push(i);
+    });
+    Object.keys(groups).forEach(function (k) {
+      var g = groups[k], tw = g.rec.won || 0, tl = g.rec.lost || 0;
+      // What the table settles outright, over steps 1–3: an indoor record of 0–0 on this surface means no row of
+      // it is indoor (the archive or a known-event list notwithstanding); an indoor record equal to the whole
+      // surface record means every row is.
+      if (!tw && !tl) { g.all.forEach(function (i) { courts[i] = 'Outdoor'; }); return; }
+      if (tw === g.tw && tl === g.tl) { g.all.forEach(function (i) { courts[i] = 'Indoor'; }); return; }
+      var rw = tw - g.w, rl = tl - g.l;
+      var evs = Object.keys(g.ev).map(function (n) { return g.ev[n]; });
+      if (!evs.length || rw < 0 || rl < 0) return;
+      var force = seasonCourtForce(evs, rw, rl);
+      if (!force) return;
+      evs.forEach(function (e, j) {
+        if (force[j] === null) return;
+        e.idx.forEach(function (i) { courts[i] = force[j] ? 'Indoor' : 'Outdoor'; });
+      });
+    });
+    seasonCourts._v = sp; seasonCourts._y = cby; seasonCourts._c = courts;
     return courts;
   }
-  // The first dated season whose table split comes off the classifier (the per-match rows start in 2021).
-  var COURT_DATED_FROM = 2021;
-  /**
-   * A dated season's indoor record off the classifier, shaped like careerByYear[].indoor ({ total, hard, clay,
-   * grass }, each null when empty), for `tier`. undefined = keep careerByYear's own split: a pre-2021 season, or
-   * the dated store has not answered yet.
-   */
-  function seasonIndoorOf(p, year, tier) {
-    if (!(+year >= COURT_DATED_FROM)) return undefined;
-    var sp = calSpine(p);
-    if (!sp.length && !careerHistorySettled(p.key)) return undefined;
-    var courts = seasonCourts(p), yr = String(year);
-    var out = { total: null, hard: null, clay: null, grass: null };
-    function add(k, r) {
-      var c = out[k] || (out[k] = { won: 0, lost: 0 });
-      if (r.won) c.won++; else c.lost++;
+  // Which events the leftover indoor W–L (rw, rl) forces, as one entry per event: true = in EVERY set of whole
+  // events whose W–L sums to it (Indoor), false = in none (Outdoor), null = in some but not all (left unknown).
+  // When exactly one set fits, every event is forced (fx6's unique fit). null when no set fits at all.
+  function seasonCourtForce(evs, rw, rl) {
+    var W = rw + 1, n = evs.length;
+    function fits(skip, tw, tl) {
+      if (tw < 0 || tl < 0) return false;
+      var reach = []; for (var x = 0; x < W * (rl + 1); x++) reach.push(false);
+      reach[0] = true;
+      for (var k = 0; k < n; k++) {
+        if (k === skip) continue;
+        var e = evs[k];
+        for (var l = tl - e.l; l >= 0; l--) for (var w = tw - e.w; w >= 0; w--) {
+          if (reach[l * W + w]) reach[(l + e.l) * W + w + e.w] = true;
+        }
+      }
+      return reach[tl * W + tw];
     }
-    sp.forEach(function (r, i) {
-      if (r.year !== yr || courts[i] !== 'Indoor') return;
-      if (tier && tier !== 'all' && r.tier !== tier) return;
-      add('total', r);
-      if (r.surface === 'hard' || r.surface === 'clay' || r.surface === 'grass') add(r.surface, r);
+    if (!fits(-1, rw, rl)) return null;
+    return evs.map(function (e, j) {
+      var inSome = fits(j, rw - e.w, rl - e.l), outSome = fits(j, rw, rl);
+      return inSome && outSome ? null : inSome;
     });
-    return out.total ? out : null;
-  }
-  /** The season table's carved cells for one season and tier: careerByYear's record, split on the classifier. */
-  function seasonCells(p, y, tier) {
-    var r = tierRowOf(y, tier);
-    if (!r) return { total: null, clay: null, hard: null, grass: null, indoors: null, noSplit: true };
-    var ind = seasonIndoorOf(p, y.year, tier);
-    if (ind !== undefined) r = Object.assign({}, r, { indoor: ind });
-    return gridCells(r);
   }
   // The window's surface key for a row and its resolved court: Indoor -> 'indoors', else its surface.
   function last52SurfOf(r, court) {
@@ -3389,8 +3428,7 @@
     var rows = spineYears(p);
     return {
       rows: rows.length,
-      // fx7 item 1: a dated season carries court type through the classifier once the dated store answers.
-      withCourt: rows.filter(function (y) { return seasonIndoorOf(p, y.year, 'all') !== undefined || !!y.indoor; }).length,
+      withCourt: rows.filter(function (y) { return !!y.indoor; }).length,
       window: rows.filter(function (y) { return y.allTier !== false; }).length
     };
   }
@@ -4060,8 +4098,12 @@
     return { year: y.year, total: t.total || null, clay: t.clay || null, hard: t.hard || null,
       grass: t.grass || null, indoor: t.indoor || null };
   }
-  // (Carved season cells for a tier = seasonCells(p, y, tier): every cell null where the row holds no split for
-  // it, and a dated season's Indoors split read off the one court classifier — fx7 item 1.)
+  /** Carved season cells for a tier; every cell null where the row holds no split for it. */
+  function tierGridCells(y, tier) {
+    var r = tierRowOf(y, tier);
+    if (!r) return { total: null, clay: null, hard: null, grass: null, indoors: null, noSplit: true };
+    return gridCells(r);
+  }
   /** Career footer cells for a tier: the same carve-out summed over the rows that carry the tier. */
   function careerTierCells(p, tier) {
     var out = { total: null, clay: null, hard: null, grass: null, indoors: null };
@@ -4071,7 +4113,7 @@
       return { won: acc.won + (r.won || 0), lost: acc.lost + (r.lost || 0) };
     };
     spineYears(p).forEach(function (y) {
-      var g = seasonCells(p, y, tier);
+      var g = tierGridCells(y, tier);
       ['total', 'clay', 'hard', 'grass', 'indoors'].forEach(function (k) { out[k] = add(out[k], g[k]); });
     });
     return out;
@@ -4563,7 +4605,7 @@
     }
     var MONO = 'font-family:\'IBM Plex Mono\',monospace;font-variant-numeric:tabular-nums;';
     var body = years.map(function (y) {
-      var g = seasonCells(p, y, tier);
+      var g = tierGridCells(y, tier);
       var yearStr = String(y.year);
       var openCell = state.careerDrill && state.careerDrill.kind === 'cell' &&
         state.careerDrill.year === yearStr ? state.careerDrill.surf : null;
@@ -11303,8 +11345,8 @@
       calScope: calScope,
       calResidual: calResidual,
       // TEN-384 fix 1 + 2 · the Last-52 window over the Calendar's rows
-      last52Rows: last52Rows, seasonCourts: seasonCourts, seasonCells: seasonCells, seasonIndoorOf: seasonIndoorOf,
-      COURT_KNOWN_INDOOR: COURT_KNOWN_INDOOR, careerTierCells: careerTierCells, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
+      last52Rows: last52Rows, seasonCourts: seasonCourts, tierGridCells: tierGridCells, knownCourtOf: knownCourtOf,
+      COURT_KNOWN_INDOOR: COURT_KNOWN_INDOOR, COURT_KNOWN_OUTDOOR: COURT_KNOWN_OUTDOOR, careerTierCells: careerTierCells, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
       calResidualNote: calResidualNote,
       renderCalDrill: renderCalDrill,
       renderCalFooter: renderCalFooter,

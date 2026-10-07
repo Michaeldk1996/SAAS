@@ -5530,9 +5530,7 @@ check('item 4 · every drill header carries the CLICKED cell\'s record, never th
   keys.forEach((k) => {
     const p = { key: k, ...PLAYERS[k] };
     I.spineYears(p).forEach((y) => {
-      // fx7 item 1: the season table's cells are seasonCells() (a dated season's Indoors split comes off the one
-      // per-match court classifier), so the clicked cell's record is read from the same function the table paints.
-      const g = I.seasonCells(p, y, 'all');
+      const g = I.gridCells(y);
       ['', 'clay', 'hard', 'grass'].forEach((s) => {
         const rec = s ? g[s] : g.total;
         if (!rec || (rec.won + rec.lost) === 0) return;

@@ -14,9 +14,13 @@
 //   6  Court speed H / A = ledger H / A on every priced ledger row
 //   Y  Calendar Career yield = Market edge box, for every player with a shard
 //   J  every Calendar row the join prices agrees with its Market edge row on the result
-//   C  (fx7 item 1) the Last 52 window and the season table split courts with ONE classifier: for the top-120 by rank,
-//      every dated season (2021+) and tier, the window's filter run over the season lists the season table's Indoors
-//      exactly, and Hard / Clay / Grass differ from the table only by that season's undated matches on that surface
+//   C  (fx8) the Last 52 window follows the season table: for the top-120 by rank, every dated season (2021+) and tier,
+//      (i) the season table = careerByYear's own carve (the 439b8605 table, untouched); (ii) a season the table does
+//      not split has no row called Indoor; (iii) the window's rows of a season are a subset of that season's
+//      classified rows (window cell <= table cell); (iv) REPORTED, not asserted: the season's dated rows run through
+//      the classifier list the table's Indoors exactly and Hard / Clay / Grass differ only by undated matches — the
+//      residuals are seasons whose leftover indoor W–L several event sets fit (court unknown, under its surface);
+//      asserted only that no window season has a group where rows 1–3 call MORE indoor than the table holds
 'use strict';
 const fs = require('fs');
 const path = require('path');
@@ -119,36 +123,60 @@ H.check('J · roster: every Calendar row priced by the join agrees with its Mark
   return `${players} players: ${joined} of ${shard} Market edge rows joined (${(100 * joined / shard).toFixed(1)}%) · 0 mispaired · ` +
     `${ret} retirements settled differently · ${conflict.length} same-day result conflicts${conflict.length ? ' (' + conflict.slice(0, 6).join(', ') + ')' : ''}`;
 });
-H.check('C · top-120: the Last 52 window and the season table split every dated season\'s courts the same way', () => {
+H.check('C · top-120: the Last 52 window follows the season table (table untouched; window season rows reproduce it)', () => {
   const SURF = ['hard', 'clay', 'grass', 'indoors'];
   const top = keys.filter(k => PLAYERS[k].rank > 0).sort((a, b) => PLAYERS[a].rank - PLAYERS[b].rank).slice(0, 120);
   const wl = c => (c ? (c.won || 0) + '–' + (c.lost || 0) : '—');
-  let seasons = 0; const bad = [];
+  const z = () => ({ won: 0, lost: 0 });
+  const tally = (a, r) => { a[r.won ? 'won' : 'lost']++; };
+  const carve = (x, i) => { if (!x) return null; if (!i) return x; const w = (x.won || 0) - (i.won || 0), l = (x.lost || 0) - (i.lost || 0); return w + l > 0 ? { won: w, lost: l } : null; };
+  const cut = I.last52Cutoff();
+  let seasons = 0, wSeasons = 0; const changed = [], splitNoSplit = [], notSubset = [], resid = [], wResid = [], over = [];
   top.forEach((k) => {
-    const p = PLAYERS[k], sp = I.calSpine(p);
-    (p.careerByYear || []).filter(y => y && y.total && +y.year >= 2021).forEach(y => ['all', 'atp', 'chitf'].forEach((tier) => {
-      const raw = tier === 'all' ? y : y[tier];
-      if (!raw) return;
-      seasons++;
-      const yr = String(y.year), table = I.seasonCells(p, y, tier);
-      const inTier = r => tier === 'all' || r.tier === tier;
-      const dated = {};
-      SURF.forEach((s) => { dated[s] = { won: 0, lost: 0 }; });
-      sp.forEach((r) => { if (r.year === yr && inTier(r) && dated[r.surface]) dated[r.surface][r.won ? 'won' : 'lost']++; });
-      SURF.forEach((s) => {
-        const win = { won: 0, lost: 0 };
-        I.drillRows(p, s, yr, yr + '-01-01').filter(inTier).forEach((r) => { win[r.won ? 'won' : 'lost']++; });
-        const t = table[s] || { won: 0, lost: 0 };
-        const rr = raw[s] || { won: 0, lost: 0 };
-        const ok = s === 'indoors'
-          ? t.won === win.won && t.lost === win.lost
-          : (t.won || 0) - win.won === (rr.won || 0) - dated[s].won && (t.lost || 0) - win.lost === (rr.lost || 0) - dated[s].lost;
-        if (!ok) bad.push(`${p.name} ${yr} [${tier}] ${s}: table ${wl(table[s])}, window ${wl(win)}`);
+    const p = PLAYERS[k], sp = I.calSpine(p), courts = I.seasonCourts(p);
+    (p.careerByYear || []).filter(y => y && y.total && +y.year >= 2021).forEach((y) => {
+      const yr = String(y.year);
+      if (!y.indoor) sp.forEach((r, i) => { if (r.year === yr && courts[i] === 'Indoor') splitNoSplit.push(`${p.name} ${yr} ${r.event}`); });
+      ['all', 'atp', 'chitf'].forEach((tier) => {
+        const raw = tier === 'all' ? y : y[tier];
+        if (!raw) return;
+        seasons++;
+        const inTier = r => tier === 'all' || r.tier === tier;
+        const touched = sp.some(r => r.year === yr && inTier(r) && r.date >= cut);
+        if (touched) wSeasons++;
+        const ind = raw.indoor || null;
+        const want = { hard: carve(raw.hard, ind && ind.hard), clay: carve(raw.clay, ind && ind.clay), grass: carve(raw.grass, ind && ind.grass), indoors: ind ? ind.total : null };
+        const table = I.tierGridCells(y, tier);
+        const dated = {};
+        SURF.forEach((s) => { dated[s] = z(); });
+        sp.forEach((r) => { if (r.year === yr && inTier(r) && dated[r.surface]) tally(dated[r.surface], r); });
+        SURF.forEach((s) => {
+          if (wl(table[s]) !== wl(want[s])) changed.push(`${p.name} ${yr} [${tier}] ${s}: table ${wl(table[s])}, careerByYear ${wl(want[s])}`);
+          const t = want[s] || z();
+          const season = z(), win = z();
+          I.drillRows(p, s, yr, yr + '-01-01').filter(inTier).forEach(r => tally(season, r));
+          I.drillRows(p, s, yr, cut).filter(inTier).forEach(r => tally(win, r));
+          if (win.won > season.won || win.lost > season.lost) notSubset.push(`${p.name} ${yr} [${tier}] ${s}: window ${wl(win)} > season ${wl(season)}`);
+          const rr = raw[s] || z();
+          const ok = s === 'indoors' ? t.won === season.won && t.lost === season.lost
+            : (t.won || 0) - season.won === (rr.won || 0) - dated[s].won && (t.lost || 0) - season.lost === (rr.lost || 0) - dated[s].lost;
+          if (ok) return;
+          const line = `${p.name} ${yr} [${tier}] ${s}: table ${wl(want[s])}, season classified ${wl(season)}, window ${wl(win)}`;
+          resid.push(line);
+          if (touched) wResid.push(line);
+          if (s === 'indoors' && touched && (season.won > t.won || season.lost > t.lost)) over.push(line);
+        });
       });
-    }));
+    });
   });
   assert(seasons > 0, 'no dated season walked');
-  assert.deepStrictEqual(bad.slice(0, 6), [], `${bad.length} season-surfaces disagree`);
-  return `${top.length} players · ${seasons} season-tier rows (2021+) · 0 disagreements`;
+  assert.deepStrictEqual(changed.slice(0, 6), [], `${changed.length} season-table cells differ from careerByYear's carve`);
+  assert.deepStrictEqual(splitNoSplit.slice(0, 6), [], `${splitNoSplit.length} rows called Indoor in a season the table does not split`);
+  assert.deepStrictEqual(notSubset.slice(0, 6), [], `${notSubset.length} window cells exceed their season's`);
+  assert.deepStrictEqual(over.slice(0, 6), [], `${over.length} window seasons call more indoor than the table`);
+  if (process.env.PROBE_C_VERBOSE) wResid.forEach(l => console.log('        ' + l));
+  return `${top.length} players · ${seasons} season-tier rows (2021+) · table = careerByYear on all · window ⊆ season on all · ` +
+    `residual season-surfaces ${resid.length}, ${wResid.length} of them in the ${wSeasons} season-tier rows the window touches ` +
+    `(several event sets fit the table's leftover indoor W–L; PROBE_C_VERBOSE=1 lists them)`;
 });
 H.done();
