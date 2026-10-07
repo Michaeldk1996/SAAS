@@ -5832,7 +5832,14 @@
   var LINE_SPLIT_KINDS = { gh: true, sh: true };
 
   /** Subject set counts for a spine row, or null when the row carries none. */
+  // TEN-384 fx6 item 2 (founder r2) · A PER-SET LIST SHORT OF THE RESULT. Alcaraz's US Open 2021 v P. Gojowczyk
+  // reads "3 - 2" with four per-set scores on file (5-7 6-1 5-7 6-2, the fifth set missing): counted off the
+  // list it was a 2–2 "best of 3" match in no Match shape row (156 + 59 + 26 + 28 = 269 of 270). Where the
+  // list holds fewer sets than the result, the result's own count decides (won 3–2, best of 5) and the row is
+  // marked `partial`: its games lines are not evaluable (lineCoverage drops its games), never summed short.
   function lineSetCount(r) {
+    var mm = String(r.sets || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+    var a = mm ? +mm[1] : 0, b = mm ? +mm[2] : 0;
     if (r.setGames && r.setGames.length) {
       var w = 0, l = 0;
       for (var i = 0; i < r.setGames.length; i++) {
@@ -5840,11 +5847,10 @@
         if (s.p == null || s.o == null) continue;
         if (+s.p > +s.o) w++; else if (+s.o > +s.p) l++;
       }
+      if ((w || l) && a !== b && a + b > w + l) return { w: a, l: b, partial: true };
       if (w || l) return { w: w, l: l };
     }
-    var mm = String(r.sets || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
     if (!mm) return null;
-    var a = +mm[1], b = +mm[2];
     if (!a && !b) return null;
     return { w: a, l: b };
   }
@@ -5887,7 +5893,7 @@
   function lineCoverage(p, fmt, role) {
     var def = LINE_DEFS[fmt] || LINE_DEFS.bo3;
     var spine = calSpine(p) || [];
-    var excluded = 0, noScore = 0, pool = [];
+    var excluded = 0, noScore = 0, unshaped = 0, pool = [];
     for (var i = 0; i < spine.length; i++) {
       var r = spine[i];
       if (r.retired || r.wo) { excluded++; continue; }
@@ -5897,7 +5903,10 @@
       // best-of-5 took three sets.
       var need = Math.max(sc.w, sc.l);
       if (need !== def.setsToWin) continue;
-      var g = lineGames(r);
+      // fx6 item 2 · a count that decides no shape (2–2 in this format) stays out of All and the note says so,
+      // so the Match shape rows always sum to All matches.
+      if (sc.w === sc.l) { unshaped++; continue; }
+      var g = sc.partial ? null : lineGames(r);
       // TEN-310: favourite = price under 2.00 (the Market edge rule).
       var MEC = window.MarketEdgeCore;
       // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
@@ -5955,7 +5964,7 @@
       // TEN-384 fix 5 · All = As favourite + As underdog + unpriced, by construction; the note states the
       // unpriced count so the three tiles reconcile on the page.
       groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel,
-      withGames: withGames, excluded: excluded, noScore: noScore, fmtLabel: def.label, avg: avg
+      withGames: withGames, excluded: excluded, noScore: noScore, unshaped: unshaped, fmtLabel: def.label, avg: avg
     };
   }
 
@@ -6106,6 +6115,8 @@
           ' no closing price and count under All matches only.'
         : ' = all ' + d.all + '.');
     if (d.excluded) note += ' ' + d.excluded + ' retired or abandoned ' + (d.excluded === 1 ? 'match is' : 'matches are') + ' excluded.';
+    if (d.unshaped) note += ' ' + d.unshaped + (d.unshaped === 1 ? ' match is' : ' matches are') +
+      ' excluded because the set score on file is level and decides no match shape.';
     if (d.withGames < d.n) note += ' Games lines rest on the ' + d.withGames + ' of ' + d.n + ' with per-set games.';
     return head + tiles + colHead + body +
       '<div data-lc="note" style="font-size:11.5px;line-height:18.4px;color:var(--text-label);margin-top:16px;">' + esc(note) + '</div>';
