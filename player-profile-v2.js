@@ -5735,7 +5735,10 @@
     var parts = [];
     if (g.level > 0) parts.push('Level leaves out ' + nm(g.level));
     if (g.round > 0) parts.push(parts.length ? 'By round ' + g.round : 'By round leaves out ' + nm(g.round));
-    return parts.join(', ') + ' (Level has no row for Davis Cup or Tour Finals; By round has none for round-robin or bronze-medal matches)';
+    var why = [];
+    if (g.level > 0) why.push('Level has no row for Davis Cup or Tour Finals');
+    if (g.round > 0) why.push((why.length ? 'By round has none' : 'By round has no row') + ' for round-robin or bronze-medal matches');
+    return parts.join(', ') + ' (' + why.join('; ') + ')';
   }
 
   function renderSplitsModal(p) {
