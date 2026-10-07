@@ -10,6 +10,8 @@
 //                         result (US Open 2021 v Gojowczyk, "3 - 2" with four sets on file) takes the result's count.
 //   5 · Swing row         five FIXED tour bands: HARD Jan–Mar · CLAY Apr–May · GRASS Jun–Jul · HARD Aug–Sep ·
 //                         INDOORS Oct–Nov, December empty; same bars (4px, r2, 75%, band colour, caps label).
+//   6 · Tokyo prices      a career row the Market edge shard does not price takes the page's match-closes join (the
+//                         Match analysis meRowFromCareer -> fhCloseFor, sliced from the dashboard), display only.
 //   7 · Career subtitle   exactly "Record by surface and season, and his ratings against the field".
 //   8 · Draw tile         a player with no career-splits entry: the figure slot is EMPTY (not "—"), the support line
 //                         stays, min-height 132; tile and modal print the same words, no trailing period in either.
@@ -34,6 +36,7 @@ function srcOf(rel) {
   return f;
 }
 const PP2 = srcOf('player-profile-v2.js');
+const DASH_SRC = fs.readFileSync(srcOf('bsp-consult-dashboard.html'), 'utf8');
 // eslint-disable-next-line import/no-dynamic-require
 const TI = require(srcOf('tournament-identity.js'));
 const H = L.harness();
@@ -236,6 +239,74 @@ H.check('8 · no splits entry: the Draw tile\'s figure slot is empty (not "—")
   const modal = T(I.renderSplitsModal(p)).trim();
   assert.strictEqual(modal, sup.text, 'tile "' + sup.text + '" vs modal "' + modal + '"');
   return 'figure slot &nbsp; · support / modal "' + modal + '"';
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 6 · Tokyo 2026 H / A: the page's match-closes join prices what the shard does not
+// ════════════════════════════════════════════════════════════════════════════
+function sliceFn(name) {
+  const start = DASH_SRC.indexOf('\nfunction ' + name + '(');
+  if (start < 0) return '';
+  let d = 0, i = DASH_SRC.indexOf('{', start);
+  for (; i < DASH_SRC.length; i++) { if (DASH_SRC[i] === '{') d++; else if (DASH_SRC[i] === '}' && --d === 0) break; }
+  return DASH_SRC.slice(start, i + 1);
+}
+function constStmt(name) {
+  const st = DASH_SRC.indexOf('\nconst ' + name + ' = ');
+  return st < 0 ? '' : DASH_SRC.slice(st, DASH_SRC.indexOf(';\n', st) + 2);
+}
+/** The host's real bridge (window.pp2ClosesOf / pp2CareerClose) over the real join, on a given closes shard. */
+function hostBridge(closesJson, key) {
+  const a = DASH_SRC.indexOf('window.pp2ClosesOf = ');
+  if (a < 0) throw new Error('the dashboard defines no window.pp2ClosesOf / pp2CareerClose bridge');
+  const b = DASH_SRC.indexOf('\n};\n', DASH_SRC.indexOf('window.pp2CareerClose = ', a)) + 3;
+  const fns = ['meRowFromCareer', 'fhCloseFor', 'fhPickBook', 'fhDayNum', 'fhNameKey', 'fhFinishRow', 'fhSafeId', 'fhTournClean',
+    'fhSurfName', 'fhRoundCode', 'fhLevelOf', 'fhSetsFrom', 'fhParseCloses', 'ppCleanTournamentName', 'psRoundAbbr',
+    'h2hRoundLabel', 'fhSetDone', 'fhBestOf', 'psNormTour', 'fhIsInitial'];
+  const src = fns.map(sliceFn).join('\n') + ['FH_BOOK_ORDER', 'ME_NONSTD_EVENT', 'FH_DASHC', 'FH_SLAMS'].map(constStmt).join('\n') +
+    '\nconst _fhCl = {}; _fhCl[KEY] = fhParseCloses(CL);\n' + DASH_SRC.slice(a, b) + '\nreturn window;';
+  // eslint-disable-next-line no-new-func
+  return new Function('window', 'KEY', 'CL', src)({}, String(key), closesJson);
+}
+// Alcaraz's Tokyo R32 as career-history and recentForm hold it, on Korda's fixture (whose shard ends 2026-03-24),
+// and the closes shard's captured Pinnacle row for it (match-closes/2382.json `cap`, keyed by eventKey).
+const TOKYO_CH = { year: '2026', surface: 'hard', level: 'atp', date: '2026-10-01', tournament: 'Tokyo', round: '1/16-finals',
+  opponent: 'A. Michelsen', result: '2 - 1', won: true, eventKey: 12166489, src: 'fixtures',
+  sets: [{ p: 7, o: 6, pTb: 7, oTb: 1 }, { p: 4, o: 6 }, { p: 6, o: 1 }] };
+const TOKYO_RF = { date: '2026-10-01', opponent: 'A. Michelsen', opponentKey: '10884', tournament: 'Tokyo', round: '1/16-finals',
+  result: '2 - 1', won: true, sets: [{ p: 7, o: 6 }, { p: 4, o: 6 }, { p: 6, o: 1 }], eventKey: 12166489, tier: 'atp' };
+const TOKYO_CLOSES = { key: FX.key, rows: [], cap: [['2026-10-01', '10884', 1.182, 5.48, null, null, '12166489']] };
+function tokyoModule(withBridge) {
+  const rf = Object.assign({}, FX.profile.recentForm, { matches: [TOKYO_RF].concat((FX.profile.recentForm || {}).matches || []) });
+  const host = withBridge ? hostBridge(TOKYO_CLOSES, FX.key) : {};
+  return fxModule({ ch: FX.careerHistory.concat([TOKYO_CH]), profile: { recentForm: rf },
+    extra: { pp2ClosesOf: host.pp2ClosesOf, pp2CareerClose: host.pp2CareerClose } });
+}
+H.check('6 · a Tokyo 2026 row the shard does not reach: the ledger prints the closes-shard Pinnacle pair (1.18 / 5.48), not "—"', () => {
+  const { I, p } = tokyoModule(true);
+  I.state.key = p.key;
+  try {
+    const row = I.ledgerRows(p).find(r => r.m.date === '2026-10-01');
+    assert(row, 'the Tokyo row is not on the ledger');
+    assert.deepStrictEqual([row.price, row.oppPrice, row.book], [1.182, 5.48, 'pinnacle'], 'ledger ' + JSON.stringify([row.price, row.oppPrice, row.book]));
+    const cells = I.ledgerRowHtml(row).split('<span').slice(-2).map(c => T('<span' + c).trim());
+    assert.deepStrictEqual(cells, ['1.18', '5.48']);
+    // display only: the row carries no P&L, so no yield, unit or Derived-lines role moves
+    const sp = I.calSpine(p).find(r => r.date === '2026-10-01');
+    assert.strictEqual(sp.cents, null, 'the display price entered the P&L');
+    assert.strictEqual(sp.priceBasis, 'closes');
+    return 'H / A ' + cells.join(' / ') + ' (basis ' + sp.priceBasis + ', cents null)';
+  } finally { I.state.key = null; }
+});
+H.check('6 · the closes shard not landed (bridge answers null): the row stays unpriced and nothing else moves', () => {
+  const a = tokyoModule(false), b = tokyoModule(true);
+  const ra = a.I.ledgerRows(a.p).find(r => r.m.date === '2026-10-01');
+  assert.strictEqual(ra.price, null);
+  // every shard-priced row is untouched by the bridge
+  const pa = a.I.calSpine(a.p).filter(r => r.priceBasis === 'close').map(r => r.date + r.price);
+  const pb = b.I.calSpine(b.p).filter(r => r.priceBasis === 'close').map(r => r.date + r.price);
+  assert.deepStrictEqual(pb, pa);
+  return pa.length + ' shard-priced rows identical with and without the bridge';
 });
 
 H.done();

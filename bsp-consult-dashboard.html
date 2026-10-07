@@ -21905,6 +21905,19 @@ function loadPp2Closes(key){
       pp2RepaintIfOpen(k);
     });
 }
+// TEN-384 fx6 item 6 (founder r2): the profile's display price for a career row its Market edge shard does not
+// price = the price every other surface reads for that match — the Match analysis join (meRowFromCareer over
+// match-closes/{key}.json: Pinnacle captured, Tennis-Data Pinnacle, Tennis-Data Bet365, Bet365 captured; one book,
+// both sides). pp2ClosesOf hands the module the shard's identity so its memo rebuilds when the shard lands
+// (loadPp2Closes repaints). Display only: the module gives these rows no P&L.
+window.pp2ClosesOf = key => _fhCl[String(key == null ? '' : key)] || null;
+window.pp2CareerClose = function (key, x){
+  const k = String(key == null ? '' : key), cl = _fhCl[k];
+  if (!cl || !x || x.walkover) return null;
+  const r = meRowFromCareer(x, cl, k, '', 0);
+  if (r.wo || r.price == null || r.oppPrice == null) return null;
+  return { price: r.price, oppPrice: r.oppPrice, book: r.book === 'P' ? 'pinnacle' : 'bet365', src: r.src };
+};
 // TEN-384 · founder ruling (2026-10-05): the Market edge box and tiles draw COMPLETE on first
 // paint — no "—" / "no priced matches on record" that fills in a moment later. The box reads the
 // player's market-edge shard, so the first paint waits for that one shard to settle (cached after

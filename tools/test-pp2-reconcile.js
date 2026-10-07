@@ -3896,7 +3896,9 @@ check('the all-stores table covers every data store the module reads', () => {
   // logic, not data stores. TEN-384 fx4: pp2LiveRank is the host's live-standings read (pp2LiveRankOf over
   // player-index.json) — the SAME function the Players card ranks with, so the header and the card agree.
   const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking',
-    'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank']);
+    'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank',
+    // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
+    'pp2ClosesOf', 'pp2CareerClose']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -4780,7 +4782,7 @@ check('item 11 · the bet365 capture prices rows the archive never reached', () 
   // player's committed window may sit entirely before it (A. Zverev's does —
   // the committed file is a 22-Jul seed and his last row is 2026-01-23). A
   // single-player assertion would have been measuring the seed, not the join.
-  let close = 0, pre = 0, dash = 0, tot = 0;
+  let close = 0, pre = 0, dash = 0, tot = 0, closes = 0;
   const lifted = new Set();
   for (const k of Object.keys(PLAYERS)) {
     for (const r of I.ledgerRows(PLAYERS[k])) {
@@ -4790,10 +4792,13 @@ check('item 11 · the bet365 capture prices rows the archive never reached', () 
         pre++; lifted.add(PLAYERS[k].name);
         assert.strictEqual(r.book, 'bet365', 'a pre-match row is labelled with the wrong book');
         assert(I.b365PriceFor(PLAYERS[k].name, r.m), 'a pre-match row has no capture behind it');
+      } else if (r.basis === 'closes') {
+        // fx6 item 6: the page's match-closes join (host bridge), display only — never on the Market edge basis
+        closes++; assert(r.price != null && r.oppPrice != null, 'a closes row without both sides');
       } else { dash++; assert.strictEqual(r.price, null, 'an unlabelled row carries a price'); }
     }
   }
-  assert.strictEqual(close + pre + dash, tot, 'a row is counted twice or not at all');
+  assert.strictEqual(close + pre + closes + dash, tot, 'a row is counted twice or not at all');
   assert(pre > 0, 'the capture priced nothing — the second source is not reaching the ledger');
   console.log(`        ${tot} ledger rows — ${close} archive closing, ${pre} bet365 pre-match ` +
     `(${lifted.size} players), ${dash} unpriced; priced share ` +

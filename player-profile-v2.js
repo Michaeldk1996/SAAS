@@ -6735,8 +6735,10 @@
     var ch = careerHistoryFor(p.key);
     var mk = marketFor(p.key);
     var b365 = window.bet365History;
+    // fx6 item 6 · the page's match-closes shard (fhLoadCloses), bridged by the host; null until it lands.
+    var cl = typeof window.pp2ClosesOf === 'function' ? window.pp2ClosesOf(p.key) : null;
     if (calSpine._k === p.key && calSpine._ch === ch && calSpine._mk === mk && calSpine._b === b365 &&
-        calSpine._v) {
+        calSpine._cl === cl && calSpine._v) {
       return calSpine._v;
     }
     var alias = calNameMap(p);
@@ -6787,7 +6789,14 @@
       // ledger's second source, b365PriceFor) prices the row for DISPLAY only (H / A): it carries no
       // P&L, so it never enters a yield, a unit or a favourite/underdog role. ledgerRows() reads this
       // row back, so the ledger and every modal show one price per match.
-      var lr = pin ? null : b365PriceFor(p.name, { date: r.date, opponent: r.opponent });
+      // TEN-384 fx6 item 6 (founder r2) · Tokyo 2026 read "—" under H / A on all five rows: the shard is built from
+      // the Tennis-Data archive (Alcaraz's last row 2026-09-09) and the bet365 capture's October file is empty,
+      // while the page's own closes shard (match-closes/{key}.json, `cap` = our captured Pinnacle / Bet365 closes)
+      // already held four of the five. Between the two, the row now takes the price EVERY other surface reads for
+      // it — the Match analysis join (meRowFromCareer -> fhCloseFor, R8 book order), bridged as
+      // window.pp2CareerClose. Display only, like the capture: no P&L, never a yield, unit or role basis.
+      var cc = !pin && cl && typeof window.pp2CareerClose === 'function' ? window.pp2CareerClose(p.key, r) : null;
+      var lr = pin ? null : (cc || b365PriceFor(p.name, { date: r.date, opponent: r.opponent }));
       return {
         date: r.date, year: y, mon: parseInt(r.date.slice(5, 7), 10) - 1,
         won: !!r.won,
@@ -6848,7 +6857,8 @@
         oppPrice: pin ? (pin.oppPrice != null ? pin.oppPrice : null) : (lr ? lr.oppPrice : null),
         // Which source priced the row: 'close' = the Market edge basis (carries `cents`), 'prematch' =
         // the ledger's bet365 capture (H / A only), null = unpriced.
-        priceBasis: pin ? 'close' : (lr && lr.price != null ? 'prematch' : null),
+        // fx6: 'closes' = the page's match-closes join (H / A only, no P&L).
+        priceBasis: pin ? 'close' : (lr && lr.price != null ? (lr === cc ? 'closes' : 'prematch') : null),
         book: pin ? (pin.book || null) : (lr ? lr.book : null),
         role: pin ? (pin.role || null) : null,
         // The Market edge row's own result and retirement flag, kept so the join can be audited
@@ -6871,7 +6881,7 @@
         sheetId: r.date + '|' + (r.opponent || '')
       };
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-    calSpine._k = p.key; calSpine._ch = ch; calSpine._mk = mk; calSpine._b = b365; calSpine._v = out;
+    calSpine._k = p.key; calSpine._ch = ch; calSpine._mk = mk; calSpine._b = b365; calSpine._cl = cl; calSpine._v = out;
     return out;
   }
   /**
