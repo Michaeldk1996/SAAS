@@ -56,11 +56,16 @@ export const marker = (kind, runId) => `<!-- ${MARK}:${kind}:${runId} -->`;
 
 // Markers already posted, from the log issue's comment bodies.
 export function readMarkers(comments) {
-  const seen = { alerted: new Set(), cancelled: new Set(), redispatched: new Set() };
+  // redispatchedAt: when each re-run was recorded (comment created_at) — the
+  // episode rule compares these with the last successful pipeline run.
+  const seen = { alerted: new Set(), cancelled: new Set(), redispatched: new Set(), redispatchedAt: [] };
   const re = new RegExp(`<!-- ${MARK}:(alerted|cancelled|redispatched):(\\d+) -->`, 'g');
   for (const c of comments || []) {
     let m;
-    while ((m = re.exec(String(c.body || '')))) seen[m[1]].add(m[2]);
+    while ((m = re.exec(String(c.body || '')))) {
+      seen[m[1]].add(m[2]);
+      if (m[1] === 'redispatched') seen.redispatchedAt.push(Date.parse(c.created_at));
+    }
   }
   return seen;
 }
@@ -88,6 +93,16 @@ export function waitingMinutes(run, jobs, now) {
   }
   if (!Number.isFinite(since)) return null;
   return (now - since) / MIN;
+}
+
+// "Re-run once" is per stall EPISODE, not per run id: the re-run gets a new id and
+// can stall too. An episode ends when a pipeline run completes successfully, so a
+// re-run is allowed only if no re-run was recorded after the last success (or the
+// last success is unknown → treat the episode as open: never a second re-run on
+// a guess). A recorded re-run with an unparseable time also counts as open.
+export function rerunAllowed(markers, lastSuccessAt) {
+  if (!Number.isFinite(lastSuccessAt)) return markers.redispatchedAt.length === 0;
+  return !markers.redispatchedAt.some((t) => !Number.isFinite(t) || t > lastSuccessAt);
 }
 
 // Pure decision for one run. Returns { action, mins, reason }.
@@ -228,6 +243,36 @@ export async function runGuard(env = process.env, log = console.log) {
     const recheck = decide({ run: fresh.json, jobs: (fj.json && fj.json.jobs) || [], now: Date.now(), markers });
     if (recheck.action !== d.action) { log(`run ${run.id}: changed before acting (${recheck.reason}) — not cancelled`); continue; }
 
+    if (d.action === 'recancel') {
+      // Cancelled once already and still waiting: cancel again, never a second re-run.
+      const rx = await gh('POST', `/actions/runs/${run.id}/cancel`);
+      red = true;
+      log(`::error::run ${run.id} still waiting after an earlier cancel — cancel re-sent (HTTP ${rx.status}), no second re-run`);
+      continue;
+    }
+
+    // Episode rule: has this stall already had its one re-run?
+    const ls = await gh('GET', `/actions/workflows/${PIPELINE_WORKFLOW}/runs?status=success&per_page=1`);
+    const lastOk = ls.status === 200 && ls.json && ls.json.workflow_runs && ls.json.workflow_runs[0];
+    const lastSuccessAt = lastOk ? Date.parse(lastOk.updated_at) : NaN;
+    const mayRerun = rerunAllowed(markers, lastSuccessAt);
+
+    // State FIRST: the markers (incl. the re-run intent) are written before the
+    // dispatch. If they cannot be written, no dispatch — otherwise a cancel that
+    // does not take would re-dispatch every pass.
+    const marks = [marker('alerted', run.id), marker('cancelled', run.id)];
+    if (mayRerun) marks.push(marker('redispatched', run.id));
+    const plan = mayRerun
+      ? 'cancelling it and dispatching ONE fresh pipeline.yml run on main'
+      : 'cancelling it with NO re-run: this stall episode was already re-run once since the last successful pipeline run and it stalled again — needs a human';
+    const cr = await gh('POST', `/issues/${issue}/comments`, {
+      body: `**Cancelling** — ${head}\n\nThe run is not executing (no job or step in progress). ${plan}. ${url}\n\n${marks.join('\n')}`,
+    });
+    const stateOk = cr.status === 201;
+    if (!stateOk) { red = true; log(`::error::log comment not posted (HTTP ${cr.status}) — no re-run will be dispatched without recorded state`); }
+    markers.cancelled.add(String(run.id));
+    if (stateOk && mayRerun) { markers.redispatched.add(String(run.id)); markers.redispatchedAt.push(Date.now()); }
+
     const cx = await gh('POST', `/actions/runs/${run.id}/cancel`);
     if (cx.status !== 202) {
       red = true;
@@ -235,29 +280,21 @@ export async function runGuard(env = process.env, log = console.log) {
       await telegram(env, `Stennisfy: ${head} The guard tried to cancel it and GitHub refused (HTTP ${cx.status}). A human must cancel it: ${url}`);
       continue;
     }
-    if (d.action === 'recancel') {
-      // Cancelled once already and still waiting: cancel again, never a second re-run.
-      red = true;
-      log(`::error::run ${run.id} still waiting after an earlier cancel — cancel re-sent, no second re-run`);
-      continue;
-    }
 
-    let redispatched = markers.redispatched.has(String(run.id));
-    let dispatchNote = 'not re-run (already re-run once for this stall)';
-    if (!redispatched) {
+    let note;
+    if (!stateOk) {
+      note = 'cancelled, but NOT re-run: the guard could not record its state (log comment failed) — needs a human';
+    } else if (!mayRerun) {
+      red = true;
+      note = 'cancelled, NOT re-run: it stalled again after the one re-run of this episode — needs a human';
+      log(`::error::stalled twice in one episode — run ${run.id} cancelled, no second re-run`);
+    } else {
       const dr = await gh('POST', `/actions/workflows/${PIPELINE_WORKFLOW}/dispatches`, { ref: 'main' });
-      redispatched = dr.status === 204;
-      dispatchNote = redispatched ? 'one fresh pipeline.yml run dispatched on main' : `re-run dispatch FAILED (HTTP ${dr.status}); the next */10 tick will start anyway`;
-      if (!redispatched) red = true;
+      if (dr.status === 204) note = 'cancelled it automatically (founder ruling TEN-396) and dispatched one fresh pipeline.yml run on main';
+      else { red = true; note = `cancelled it, but the re-run dispatch FAILED (HTTP ${dr.status}); the next */10 tick will start anyway`; }
     }
-    const tg = await telegram(env, `Stennisfy: ${head} Cancelled it automatically (founder ruling TEN-396); ${dispatchNote}. ${url}`);
+    const tg = await telegram(env, `Stennisfy: ${head} ${note}. ${url}`);
     if (!tg.ok) { red = true; log(`::error::Telegram notice not delivered (${tg.why})`); }
-    const marks = [marker('alerted', run.id), marker('cancelled', run.id)];
-    if (redispatched) marks.push(marker('redispatched', run.id));
-    const cr = await gh('POST', `/issues/${issue}/comments`, {
-      body: `**Cancelled** — ${head}\n\nThe run was not executing (no job or step in progress). Cancelled at ${fmt(new Date().toISOString())}; ${dispatchNote}. Telegram: ${tg.ok ? 'sent' : `NOT sent (${tg.why})`}. ${url}\n\n${marks.join('\n')}`,
-    });
-    if (cr.status !== 201) { red = true; log(`::error::log comment not posted (HTTP ${cr.status}) — dedupe for run ${run.id} rests on the run no longer being waiting`); }
   }
   return { red, actions };
 }

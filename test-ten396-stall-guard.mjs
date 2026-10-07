@@ -32,9 +32,9 @@ function waitingRun(id, m, { jobStatus = 'waiting', steps = [], runStatus = 'wai
 }
 
 // ── fake GitHub + Telegram ───────────────────────────────────────────────────
-function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false, commentsStatus = 200, ignoreStatusFilter = false } = {}) {
+function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false, commentsStatus = 200, commentPostStatus = 201, ignoreStatusFilter = false } = {}) {
   const w = { runs: new Map(runs.map((r) => [String(r.run.id), r])), issues, comments, cancels: [], dispatches: [],
-    posted: [], telegrams: [], created: [], stickyCancel, commentsStatus, ignoreStatusFilter };
+    posted: [], telegrams: [], created: [], stickyCancel, commentsStatus, commentPostStatus, ignoreStatusFilter };
   const srv = http.createServer((req, res) => {
     let body = '';
     req.on('data', (c) => { body += c; });
@@ -49,7 +49,8 @@ function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false
       const q = p.slice(pre.length);
       if (req.method === 'GET' && q === '/actions/workflows/pipeline.yml/runs') {
         const st = u.searchParams.get('status');
-        const list = [...w.runs.values()].map((r) => r.run).filter((r) => w.ignoreStatusFilter || !st || r.status === st);
+        const list = [...w.runs.values()].map((r) => r.run).filter((r) => w.ignoreStatusFilter || !st || r.status === st || r.conclusion === st)
+          .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
         return send(200, { total_count: list.length, workflow_runs: list });
       }
       if (req.method === 'GET' && (m = /^\/actions\/runs\/(\d+)\/jobs$/.exec(q))) return send(200, { jobs: w.runs.get(m[1]).jobs });
@@ -72,7 +73,8 @@ function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false
           if (w.commentsStatus !== 200) return send(w.commentsStatus, { message: 'boom' });
           return send(200, w.comments[n] || []);
         }
-        const c = { id: Date.now(), body: JSON.parse(body).body };
+        if (w.commentPostStatus !== 201) return send(w.commentPostStatus, { message: 'boom' });
+        const c = { id: Date.now(), created_at: new Date().toISOString(), body: JSON.parse(body).body };
         (w.comments[n] = w.comments[n] || []).push(c); w.posted.push({ issue: n, ...c });
         return send(201, c);
       }
@@ -158,7 +160,7 @@ test('121 min waiting → cancel + exactly one re-run on main + comment + Telegr
     assert.equal(w.posted[0].issue, '9');
     for (const k of ['alerted', 'cancelled', 'redispatched']) assert.ok(w.posted[0].body.includes(marker(k, 12101)), k);
     assert.equal(w.telegrams.length, 1);
-    assert.match(w.telegrams[0].text, /Cancelled/);
+    assert.match(w.telegrams[0].text, /cancelled it automatically/);
     await pass();
     assert.equal(w.cancels.length, 1);
     assert.equal(w.dispatches.length, 1);
@@ -236,4 +238,55 @@ test('workflow: rides workflow_run on the two pg_cron-dispatched workflows by th
   assert.match(g, /issues: write/);
   assert.match(g, /run: node tools\/pipeline-stall-guard\.mjs/);
   assert.match(wf('oddspapi-postmatch.yml'), /workflow_dispatch/);
+});
+
+// A successful pipeline run (ends a stall episode) that completed `m` minutes ago.
+const successRun = (id, m) => ({ run: { id, status: 'completed', conclusion: 'success', created_at: ago(m + 15), updated_at: ago(m) }, jobs: [] });
+
+test('re-run once per EPISODE: the re-run (new run id) stalls too → cancelled, NO second dispatch, loud "needs a human"; a success ends the episode', async () => {
+  // Last success 300 min ago: the stall episode started after it.
+  await withWorld({ runs: [successRun(1, 300), waitingRun(13001, 125)] }, async (w, pass) => {
+    await pass();
+    assert.deepEqual([w.cancels.length, w.dispatches.length], [1, 1]);
+    // The guard's re-run (new id) also stalls past 120 min; no success in between.
+    const again = waitingRun(13002, 125); w.runs.set('13002', again);
+    const r2 = await pass();
+    assert.equal(r2.code, 1, 'a second stall in one episode must turn the pass red');
+    assert.deepEqual(w.cancels, ['13001', '13002']);
+    assert.equal(w.dispatches.length, 1, 're-dispatched a second time in one episode');
+    assert.match(w.telegrams.at(-1).text, /needs a human/);
+    assert.match(w.posted.at(-1).body, /NO re-run/);
+    assert.ok(!w.posted.at(-1).body.includes(marker('redispatched', 13002)));
+    // A later pass with nothing waiting does nothing more.
+    await pass();
+    assert.equal(w.dispatches.length, 1);
+    // A successful run completes (episode over); a NEW stall gets its one re-run again.
+    w.runs.set('2', successRun(2, 0));
+    await new Promise((r) => setTimeout(r, 20));
+    w.runs.set('13003', waitingRun(13003, 130));
+    const r4 = await pass();
+    assert.equal(r4.code, 0, r4.out);
+    assert.equal(w.dispatches.length, 2, 'a new episode after a success must get its one re-run');
+  });
+});
+
+test('no recorded success at all → only the first re-run is allowed (episode treated as open)', async () => {
+  await withWorld({ runs: [waitingRun(13101, 125)] }, async (w, pass) => {
+    await pass();
+    w.runs.set('13102', waitingRun(13102, 125));
+    await pass();
+    assert.equal(w.dispatches.length, 1);
+  });
+});
+
+test('log comment cannot be written → NO dispatch (cancel still sent), pass red, Telegram says needs a human; repeated passes never dispatch', async () => {
+  await withWorld({ runs: [waitingRun(13201, 125)], stickyCancel: true, commentPostStatus: 500 }, async (w, pass) => {
+    const r1 = await pass();
+    const r2 = await pass();
+    assert.equal(r1.code, 1);
+    assert.equal(r2.code, 1);
+    assert.equal(w.dispatches.length, 0, 'dispatched without recorded state');
+    assert.deepEqual(w.cancels, ['13201', '13201']);
+    assert.match(w.telegrams.at(-1).text, /could not record its state.*needs a human/);
+  });
 });
