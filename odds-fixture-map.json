@@ -3779,23 +3779,12 @@
       "observedSpanDays": 18.71,
       "projectedTtlUnitsPerDay": 4.8,
       "runs": 400,
-      "spentRuns": 220,
+      "spentRuns": 219,
       "ttlBitRuns": 89,
       "ttlBitShare": 0.223,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-18T11:45:00Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 6,
-        "openMisses": 6,
-        "stale": 16,
-        "ttlBit": false,
-        "unmapped": 10,
-        "upcoming": 78
-      },
       {
         "at": "2026-09-18T12:45:00Z",
         "fixturesUnitsSpent": 1,
@@ -8176,6 +8165,17 @@
       },
       {
         "at": "2026-10-07T04:48:08Z",
+        "fixturesUnitsSpent": 0,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 0,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 34
+      },
+      {
+        "at": "2026-10-07T05:47:50Z",
         "fixturesUnitsSpent": 0,
         "hitExpired": 0,
         "missExpired": 0,
