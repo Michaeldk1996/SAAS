@@ -24,8 +24,13 @@
 //      never early;
 //   4. waiting > ALERT_AFTER_MIN (60)  → one alert (Telegram + log-issue comment);
 //      waiting > CANCEL_AFTER_MIN (120) → re-check the run is still `waiting` and
-//      not executing, cancel it, dispatch ONE fresh pipeline.yml run on main, post
-//      a comment, alert.
+//      not executing, post the comment (markers = state) FIRST, cancel it, then
+//      dispatch ONE fresh pipeline.yml run on main, alert.
+//      - "Re-run once" is per stall EPISODE (ends at a successful pipeline run): if
+//        the re-run itself stalls, it is cancelled with NO second re-run and a
+//        "needs a human" alert (rerunAllowed()).
+//      - If the comment (state) cannot be written, the run is still cancelled but
+//        nothing is dispatched, the pass is red and Telegram says so.
 //
 // Dedupe state lives in the comments of one GitHub issue (the "post a comment"
 // destination): each comment carries hidden markers
