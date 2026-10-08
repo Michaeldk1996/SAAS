@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-10-08T06:51:26.401Z",
+ "generatedAt": "2026-10-08T14:13:45.690Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "d831f5d1aa7942b9f79a03852f7d2f3d07b200d8",
-  "at": "2026-10-08T06:31:52Z"
+  "commit": "307b34a279e8b027092c4409564ee1582f184343",
+  "at": "2026-10-08T14:04:24Z"
  },
- "commitsScanned": 4556,
+ "commitsScanned": 4589,
  "lastRun": {
-  "from": "2026-10-07T16:03:24Z",
-  "snapshots": 63,
-  "added": 9,
+  "from": "2026-10-08T06:31:52Z",
+  "snapshots": 34,
+  "added": 7,
   "replaced": 0,
-  "series": 76,
+  "series": 80,
   "kept": 51,
   "bySource": {
    "api-tennis-live": 51
@@ -21,7 +21,7 @@
    "Pinnacle +30s": 51
   },
   "dropped": {
-   "noStart": 25
+   "noStart": 29
   }
  },
  "stats": {
@@ -7914,6 +7914,20 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12168283,
+   "date": "2026-10-08",
+   "p1Key": 1766,
+   "p2Key": 1101,
+   "p1Name": "M. Giron",
+   "p2Name": "S. Baez",
+   "p1": 2.13,
+   "p2": 1.787,
+   "at": "2026-10-08T01:27:34.247Z",
+   "trueStart": "2026-10-08T07:03:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12168285,
    "date": "2026-10-08",
    "p1Key": 2841,
@@ -7924,6 +7938,48 @@
    "p2": 3.17,
    "at": "2026-10-08T02:29:33.874Z",
    "trueStart": "2026-10-08T05:33:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12168286,
+   "date": "2026-10-08",
+   "p1Key": 1083,
+   "p2Key": 1064,
+   "p1Name": "V. Kopriva",
+   "p2Name": "Z. Bergs",
+   "p1": 3.21,
+   "p2": 1.393,
+   "at": "2026-10-08T08:27:38.754Z",
+   "trueStart": "2026-10-08T11:15:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12168288,
+   "date": "2026-10-08",
+   "p1Key": 39864,
+   "p2Key": 2831,
+   "p1Name": "M. Landaluce",
+   "p2Name": "J-L. Struff",
+   "p1": 2.02,
+   "p2": 1.869,
+   "at": "2026-10-08T07:17:18.096Z",
+   "trueStart": "2026-10-08T09:18:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12168289,
+   "date": "2026-10-08",
+   "p1Key": 10148,
+   "p2Key": 2986,
+   "p1Name": "F. Marozsan",
+   "p2Name": "Z. Svajda",
+   "p1": 1.781,
+   "p2": 2.14,
+   "at": "2026-10-08T01:25:52.526Z",
+   "trueStart": "2026-10-08T07:21:03.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   },
@@ -7970,6 +8026,34 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12168297,
+   "date": "2026-10-08",
+   "p1Key": 1066,
+   "p2Key": 796,
+   "p1Name": "L. van Assche",
+   "p2Name": "Y. Bu",
+   "p1": 2.34,
+   "p2": 1.666,
+   "at": "2026-10-08T09:51:39.016Z",
+   "trueStart": "2026-10-08T09:54:08.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12168878,
+   "date": "2026-10-08",
+   "p1Key": 388,
+   "p2Key": 7641,
+   "p1Name": "J. M. Cerundolo",
+   "p2Name": "N. Mejia",
+   "p1": 1.46,
+   "p2": 2.9,
+   "at": "2026-10-07T23:58:31.034Z",
+   "trueStart": "2026-10-08T08:03:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12168879,
    "date": "2026-10-08",
    "p1Key": 1205,
@@ -7994,6 +8078,20 @@
    "p2": 1.495,
    "at": "2026-10-08T03:30:27.632Z",
    "trueStart": "2026-10-08T03:51:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12168881,
+   "date": "2026-10-08",
+   "p1Key": 1103,
+   "p2Key": 1754,
+   "p1Name": "C. Norrie",
+   "p2Name": "D. Svrcina",
+   "p1": 1.529,
+   "p2": 2.67,
+   "at": "2026-10-08T10:55:22.514Z",
+   "trueStart": "2026-10-08T11:57:00.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   },
