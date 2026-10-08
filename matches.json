@@ -88986,13 +88986,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.1,
+      "p2": 1.72,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.1,
+        "bookmaker": "WilliamHill"
+      },
+      "p2": {
+        "price": 1.78,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1754,
@@ -263707,7 +263713,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 7-6(1), 5-7",
+      "display": "3-6, 7-6, 5-7",
       "sets": [
         {
           "p1": 3,
@@ -269449,7 +269455,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 7-5, 4-6",
+      "display": "6-7, 7-5, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -282987,7 +282993,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7(7), 6-3, 6-3",
+      "display": "6-7, 6-3, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -286050,7 +286056,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-4, 6-7(3), 6-7(5)",
+      "display": "6-4, 6-7, 6-7",
       "sets": [
         {
           "p1": 6,
@@ -289051,7 +289057,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7(4), 7-6(4), 3-6",
+      "display": "6-7, 7-6, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -294360,7 +294366,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "4-6, 7-5, 7-6(3)",
+      "display": "4-6, 7-5, 7-6",
       "sets": [
         {
           "p1": 4,
@@ -300050,7 +300056,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6(8), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
