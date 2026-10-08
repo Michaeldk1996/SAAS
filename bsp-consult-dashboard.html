@@ -3288,6 +3288,7 @@
   [data-page="entry-lists"] .el-table .el-card{ background:transparent; border:none; border-radius:0; overflow:visible; }
   [data-page="entry-lists"] .el-tierchip{ min-width:46px; height:22px; padding:0 7px; box-sizing:border-box; border-radius:6px; background:var(--inner); border:none; color:var(--text-label);
     font-size:10px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; flex:none; }
+  [data-page="entry-lists"] .el-ndash{ font-family:var(--font-nums); }
   [data-page="entry-lists"] .el-tierchip--fig{ font-family:var(--font-nums); letter-spacing:0.04em; }
   [data-page="entry-lists"] .el-tierchip--code{ font-family:var(--font-words); letter-spacing:0.10em; text-transform:uppercase; }
   [data-page="entry-lists"] .el-caret{ width:26px; height:26px; box-sizing:border-box; border-radius:7px; display:inline-flex; align-items:center; justify-content:center;
@@ -3353,6 +3354,12 @@ window.EntryListsTab = (function(){
     if(mon.getMonth() === sun.getMonth())
       return mon.getDate() + '–' + sun.getDate() + ' ' + MON[mon.getMonth()];
     return mon.getDate() + ' ' + MON[mon.getMonth()] + ' – ' + sun.getDate() + ' ' + MON[sun.getMonth()];
+  }
+  // TEN-401 f1 item 3: the label has always carried U+2013, but Hanken Grotesk draws its en dash 5.99px wide at 14/700
+  // against a 4.58px hyphen — on screen "26 Oct – 1 Nov" reads as a hyphen. Every rendered range (week chips, empty-state
+  // copy) sets the dash in IBM Plex Mono (.el-ndash, --font-nums), where it is drawn full-cell; the text stays U+2013.
+  function weekRangeHtml(k){
+    return weekRangeLabel(k).replace(/\u2013/g, '<span class="el-ndash">\u2013</span>');
   }
   function computeWeeks(){
     var m0 = isoMonday(new Date()), out = [];
@@ -3484,7 +3491,9 @@ window.EntryListsTab = (function(){
         + '<span style="text-align:right;font-family:'+M+';font-size:11px;font-variant-numeric:tabular-nums;color:var(--text-label);">'+(isBye?'':i+1)+'</span>'
         // TEN-401 r1 fix 6: the full name; one ellipsis at the END of the cell, only when it really overflows.
         + '<span class="el-pname" style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">'+inner+tag+'</span>'
-        + '<span style="text-align:right;font-family:'+M+';font-size:10.5px;letter-spacing:0.06em;color:var(--text-label);">'+((!isBye && p.country)?p.country:'')+'</span>'
+        // TEN-401 f1 item 4: a player with no country (Medvedev, Rublev, Khachanov, Safiullin play under no flag) shows a grey
+        // "—", never a blank cell. A Bye is not a player: blank, like its rank.
+        + '<span class="el-pcountry" style="text-align:right;font-family:'+M+';font-size:10.5px;letter-spacing:0.06em;color:var(--text-label);">'+(isBye ? '' : (p.country || '—'))+'</span>'
         // TEN-401 r1 fix 5: every player row carries a rank, grey mono "#12"; unknown = a grey "—" (a Bye is not a player).
         + '<span class="el-prank" style="text-align:right;font-family:'+M+';font-size:11.5px;font-variant-numeric:tabular-nums;color:var(--text-label);"'
           + (rk && rk.src === 'atp' ? ' title="Current ATP ranking (the list prints none)"' : '') + '>'+(isBye ? '' : (rk ? '#'+rk.rank : '—'))+'</span>'
@@ -3595,7 +3604,7 @@ window.EntryListsTab = (function(){
       var nEv = weekEventCount(k);
       var sub = nEv + ' event' + (nEv===1?'':'s');
       return { on: k === activeWeek, cls: 'el-weektab', attrs: 'data-elweek="'+k+'"',
-        label: '<span class="el-weektab-range">'+weekRangeLabel(k)+'</span><span class="el-weektab-sub">'+sub+'</span>' };
+        label: '<span class="el-weektab-range">'+weekRangeHtml(k)+'</span><span class="el-weektab-sub">'+sub+'</span>' };
     }), { cls: 'el-weekseg', wrap: true, label: 'Entry list weeks' });
   }
 
@@ -3724,7 +3733,7 @@ window.EntryListsTab = (function(){
       // TEN-401 item 8: the empty state is a card (nested: --card + 1px --edge-6, radius 12).
       body.innerHTML = banner + '<div class="el-empty">'
         + '<div class="el-empty__t">No lists loaded for this week</div>'
-        + '<div class="el-empty__d">The ATP has ' + nAll + ' event' + (nAll===1?'':'s') + ' in the week of ' + weekRangeLabel(activeWeek) + '. Their acceptance lists are not in the build yet — once they are loaded they appear here, grouped by tier.</div>'
+        + '<div class="el-empty__d">The ATP has ' + nAll + ' event' + (nAll===1?'':'s') + ' in the week of ' + weekRangeHtml(activeWeek) + '. Their acceptance lists are not in the build yet — once they are loaded they appear here, grouped by tier.</div>'
         + '</div>';
       renderFreshness();
       return;
@@ -3820,7 +3829,7 @@ window.EntryListsTab = (function(){
     // §2.3 footer. Item 6.4: `rank` is read verbatim from the acceptance list the source publishes
     // (build-entry-lists-advance.mjs, row[0]). TEN-401 r1 fix 5: where the list prints none (a protennislive draw
     // ranks only its seeds) the row reads the current ATP standings (rankOf / rosterFor) — the footer says so.
-    el.innerHTML = '<div style="font-family:var(--font-words);font-size:12px;color:var(--text-label);margin-bottom:6px;">Ranks are the ATP singles ranking printed on the list at publication; where the list prints none (official draws rank seeds only), the current ATP ranking; a dash = no ranking found. Acceptance order, not seeding.</div>'
+    el.innerHTML = '<div style="font-family:var(--font-words);font-size:12px;color:var(--text-label);margin-bottom:6px;">Ranks are the ATP singles ranking printed on the list at publication; where the list prints none (official draws rank seeds only), the current ATP ranking; a dash = not listed in the feed. Acceptance order, not seeding.</div>'
       + (parts.join('<br>') || 'Freshness unavailable');
   }
 
@@ -24777,12 +24786,43 @@ function tourxLoadQuotes(){
 // (builtAt 2026-09-21): 161 of 409 notes across 16 of 45 events pass; 229 have no year, 58 no resolved speaker.
 // Flip: TOURX_QUOTE_RULE = 'all' restores every imported note.
 const TOURX_QUOTE_RULE = 'traceable';
-function tourxQuoteTraceable(q){
-  return !!(q && q.player && q.year && (q.playerMatch === 'exact' || q.playerMatch === 'surname'));
+// TEN-401 f1: a note ships only when its words are the credited speaker's, at this event. Three rules, each "not traceable":
+//  - its own lead-in names the credited speaker as the opponent ("after his win over McDonald" filed under M. McDonald;
+//    "said after defeating Musetti" under L. Musetti) — someone else's words (tourxQuoteClean().conflict);
+//  - its lead-in / context names ANOTHER event of our registry and not its own ("after beating Poljicak in Umag" filed under
+//    Bastad) — the words are about that other event (tourxQuoteOtherEvent);
+//  - it is on TOURX_QUOTE_EXCLUDE, the hand-reviewed list below (the source CSV stays verbatim; review fix 2026-10-08).
+// Served build 2026-10-08: 160 notes pass speaker + year; 155 ship (2 conflict, 1 other event, 2 hand-excluded).
+const TOURX_QUOTE_EXCLUDE = {
+  // "On the match: … my opponent needed a medical timeout. I could see she was physically struggling" — the later answers
+  // are from a women's match, joined onto the Tien quote; the note cannot be credited to Fucsovics as one quote.
+  'Wimbledon|M. Fucsovics|2026': 'mixes in answers from a women\'s match ("she was physically struggling")',
+  // "He likes high bouncing conditions and coming to the net." is third-person narration about the player, not his words;
+  // the sheet's quote marks open but never close, so the narration sits inside the quote.
+  'Marrakech|M. Bellucci|2025': 'narration ("He likes high bouncing conditions") inside the quote',
+  // "after beating Poljicak in Umag: … It goes less fast than Bastad" — said at Umag, about Umag (also caught by
+  // tourxQuoteOtherEvent; listed so the reason is on record).
+  'Bastad|J. De Jong|2025': 'said in Umag about Umag, filed under Bastad',
+};
+let tourxQuoteEventNamesMemo = null;
+function tourxQuoteEventNames(){
+  if (!tourxQuoteEventNamesMemo) tourxQuoteEventNamesMemo = tourxConditionRegistry().map(t => t.name);
+  return tourxQuoteEventNamesMemo;
+}
+function tourxQuoteOtherEvent(q, ev){
+  const ctx = tourxQuoteClean(q).context;
+  if (!ev || !ctx) return null;
+  const has = (n) => new RegExp('(^|[^A-Za-z])' + n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^A-Za-z])', 'i').test(ctx);
+  if (has(ev)) return null;                                     // "on choosing Munich over Barcelona" stays under Munich
+  return tourxQuoteEventNames().find(n => n !== ev && has(n)) || null;
+}
+function tourxQuoteTraceable(q, ev){
+  return !!(q && q.player && q.year && (q.playerMatch === 'exact' || q.playerMatch === 'surname')) && !tourxQuoteClean(q).conflict
+    && !(ev && (TOURX_QUOTE_EXCLUDE[ev + '|' + q.player + '|' + q.year] || tourxQuoteOtherEvent(q, ev)));
 }
 function tourxQuotesFor(name){
   const t = tourxQuotes && tourxQuotes[name];
-  const list = (t || []).filter(q => TOURX_QUOTE_RULE === 'all' || tourxQuoteTraceable(q));
+  const list = (t || []).filter(q => TOURX_QUOTE_RULE === 'all' || tourxQuoteTraceable(q, name));
   return list.length ? list : null;
 }
 
@@ -25024,7 +25064,8 @@ function tourxFmt(v, kind){
   if (kind === 'ratio') return Number(v).toFixed(2);
   if (kind === 'rating') return String(Math.round(Number(v)));   // summed-component rating — whole number, no % suffix
   if (kind === 'perpoint') return (Math.round(Number(v)) / 100).toFixed(2);
-  return (Number.isInteger(v) ? v : Number(v).toFixed(1)) + '%';
+  // Founder TEN-401 card ff400963 "decimals = all": every % in Reports carries one decimal (67.0%, never 67%).
+  return Number(v).toFixed(1) + '%';
 }
 // Court-speed value colour by real category (Fast → blue, Medium → light, Slow → clay).
 function tourxSpeedColor(cat){ return 'var(--text)'; }   // speed bands are words, not colours (TEN-376)
@@ -25321,12 +25362,49 @@ function tourxConditionRegistry(){
 // left, an enriched conditions panel for the selected tournament on the right.
 function renderTourxOverview(){
   const el = document.getElementById('tourxOverview');
+  // TEN-401 f1 item 5: the rail list is rebuilt on every render — keep its scroll (same search), then bring the selected
+  // tile into view (tourxRevealRailSel).
+  // The reveal's bottom spacer (if any) is carried over BEFORE the scroll is restored: without it the rebuilt list is
+  // shorter, the browser clamps scrollTop and every tile jumps (review fix: Hamburg → Barcelona moved 50px).
+  const prevList = el.querySelector('.tourlist');
+  const same = !!prevList && tourxState.railQ === tourxState.tsQ;
+  const keepTop = same ? prevList.scrollTop : 0, keepPad = same ? prevList.style.paddingBottom : '';
+  tourxState.railQ = tourxState.tsQ;
   el.innerHTML = `<div class="tourx-ovwrap"><div class="tourx-ovgrid">
       <div class="tourx-ovleft"><div class="tourx-ovleft-inner">${tourxOverviewListHtml()}</div></div>
       <div class="tourx-ovright">${tourxConditionsPanelHtml()}</div>
     </div></div>`;
+  const list = el.querySelector('.tourlist');
+  if (list) { if (keepPad) list.style.paddingBottom = keepPad; list.scrollTop = keepTop; }
+  tourxRevealRailSel();
+  // first paint: layout / web fonts may settle after this frame — check once more (instant, never smooth)
+  requestAnimationFrame(tourxRevealRailSel);
   const inp = document.getElementById('tourxOvSearch');
-  if (inp && tourxState.tsOpen){ inp.focus(); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
+  if (inp && tourxState.tsOpen){ inp.focus({ preventScroll: true }); const v = inp.value; inp.setSelectionRange(v.length, v.length); }
+}
+// TEN-401 f1 item 5 (founder: "when an event is opened, scroll the rail so its selected tile is visible"). Scrolls ONLY the
+// rail's own list (.tourlist), never the page, instantly, by the least amount ("nearest"): the tile must sit inside the
+// part of the list that is on screen — the list box clipped to the viewport — with a 6px breath. Runs after every
+// Overview render: first load (Wimbledon), a rail click / search pick (tourxSelectCondition), Reports → Overview.
+// No-op when the list is hidden or entirely off screen.
+function tourxRevealRailSel(){
+  const list = document.querySelector('#tourxOverview .tourlist');
+  const row = list && list.querySelector('.tourx-ovrow.on');
+  if (!row || !list.clientHeight) return;
+  const lr = list.getBoundingClientRect(), rr = row.getBoundingClientRect();
+  const vh = window.innerHeight || document.documentElement.clientHeight;
+  const top = Math.max(lr.top, 0) + 6, bottom = Math.min(lr.bottom, vh) - 6;
+  if (bottom <= top) return;
+  if (rr.top < top) { list.scrollTop -= (top - rr.top); return; }
+  if (rr.bottom <= bottom) return;
+  const want = Math.min(rr.bottom - bottom, rr.top - top);
+  // The rail is as tall as the detail column (the reference's geometry), so it runs past the fold; a tile in the last
+  // rows (Hamburg, 0.58) can need more travel than the list has. Only then the list gets a bottom spacer for exactly the
+  // missing travel. It is kept across renders of the same search (renderTourxOverview) so restoring the scroll never
+  // clamps; a new search drops it. A tile already fully visible never moves (the early returns above).
+  const room = list.scrollHeight - list.clientHeight - list.scrollTop;
+  if (want > room) list.style.paddingBottom = ((parseFloat(list.style.paddingBottom) || 0) + Math.ceil(want - room)) + 'px';
+  list.scrollTop += want;
 }
 // Left rail: search box + "This week" (from the match feed) then "Season"
 // (every other tournament with conditions), each row a real abstract speed.
@@ -25449,8 +25527,8 @@ function tourxConditionsPanelHtml(){
 
   // README §1.2 "What players say" sits between the conditions read and the
   // court-speed trend, per the spec. Phase 2 imported the founder's sheet; TEN-401
-  // L3 ships only traceable notes (speaker + year — tourxQuoteTraceable), 161 across
-  // 16 events. C2: an event with no such quotes renders NO CARD AT ALL, not an empty
+  // L3 ships only traceable notes (tourxQuoteTraceable: speaker + year, not someone else's
+  // words, not another event's, not hand-excluded) — 155 across 16 events on the served build of 2026-10-08. C2: an event with no such quotes renders NO CARD AT ALL, not an empty
   // state; the detail column's own 16px gap closes the space, there is no
   // spacer to remove.
 
@@ -25464,36 +25542,94 @@ function tourxConditionsPanelHtml(){
 // rule 48 of our 64 rated events have none and simply do not show it; the detail column's own 16px gap closes
 // cleanly because this returns an empty string, not an empty node.
 //
-// ⚠️ THE TEXT IS RENDERED VERBATIM (founder ruling 2026-09-19). 378 of 425
-// imported values already carry their own quotation marks — they are narration
-// AROUND reported speech (`CHENGDU: "…," said T. Daniel.`), not clean quotes.
-// Wrapping those in the export's curly quotes double-quotes them, and lifting
-// the inner span out would mean choosing a subset of a person's words. So the
-// curly quotes are added ONLY to the values that carry none of their own, which
-// the importer marks per record as `selfQuoted`.
+// TEN-401 f1 item 1 (founder follow-up, 2026-10-08 — SUPERSEDES the 2026-09-19 "render verbatim" ruling): each note is
+// just the player's words in curly quotes. The imported values are narration around reported speech
+// (`MADRID: "…," said F. Cerundolo.`), so tourxQuoteClean() strips, at render, (a) the city dateline (a leading ALL-CAPS
+// place + colon / dash / straight into the quote), (b) the "said X" attributions ("…," said Buse. / Navone said after
+// beating Wawrinka.) — a comma that closed a quote before "said" becomes a full stop — and (c) the lead-in outside the
+// quote ("on the conditions:", "after beating Tien:"), which moves to the meta line ("2026 · after beating Tien").
+// A topic lead-in between two answers ("On adapting:") becomes " … "; a segment another speaker / source said
+// ("Misolic: …", "Reddit: …") is cut, so only the credited speaker's words remain. Words are never rewritten: the text is
+// the source's own quoted spans, in order. The importer (tools/quotes/build-tournament-quotes.mjs) still writes the
+// sheet verbatim — tournament-quotes.json stays the audit copy of the founder's sheet.
+// Measured over the 160 traceable notes of the served tournament-quotes.json (builtAt 2026-10-08): dateline 71 → 0,
+// "said X" 71 → 0, lead-in 58 → 0, 64 notes gain a meta context (test-ten401-f1a.mjs runs this function on every note). No `occasion` field exists on any record; the
+// meta context is only ever the note's own lead-in / "said … after" clause / dateline detail.
+function tourxQuoteSurname(player){
+  // "B. Nakashima" → "Nakashima"; "J-L. Struff" → "Struff"; "A. Davidovich Fokina" → "Davidovich Fokina"
+  return String(player || '').trim().split(/\s+/).filter(w => !/^[A-Z](?:-[A-Z])?\.$/.test(w)).join(' ');
+}
+const tourxQuoteCleanCache = new WeakMap();
+function tourxQuoteClean(qt){
+  if (qt && typeof qt === 'object' && tourxQuoteCleanCache.has(qt)) return tourxQuoteCleanCache.get(qt);
+  const out = { text: '', context: '', dateline: false, said: false, leadIn: false, trimmed: false, conflict: false, unsafe: [] };
+  let s = String((qt && qt.text) || '').replace(/\s+/g, ' ').trim();
+  const sur = tourxQuoteSurname(qt && qt.player);
+  // (a) dateline — "WIMBLEDON:", "MONTE CARLO:", "WASHINGTON \"…", "WIMBLEDON - X:", "WIMBLEDON, Centre Court …:"
+  const dl = s.match(/^([A-Z][A-Z\x27’.\-]{2,}(?: [A-Z][A-Z\x27’.\-]+)*)\s*(?:,\s*([^:\x22“”]+?))?\s*(?::|\s[-–](?=\s)|(?=[\x22“]))\s*/);
+  let dlCtx = '';
+  if (dl) { out.dateline = true; dlCtx = (dl[2] || '').trim(); s = s.slice(dl[0].length); }
+  const marks = (s.match(/[\x22“”]/g) || []).length;
+  const said = /^[,.]?\s*(?:said\s+(?:[A-Z][\w’\x27.\-]*\s?)+|(?:[A-Z][\w’\x27.\-]*\s)+said)\s*((?:after|before|ahead of)\b[^.]*)?\.?\s*$/;
+  let lead = '', saidCtx = '';
+  if (!marks) {
+    out.text = s;
+  } else {
+    if (marks % 2) {                                                                  // one mark lost in the sheet
+      if (/^[\x22“”]\s/.test(s)) s = s.replace(/^[\x22“”]\s*/, '');                         // stray mark before a lead-in
+      else if (/[\x22“”]$/.test(s) && !/^[\x22“”]/.test(s)) s = '“' + s;                      // opening mark missing
+      else s = s + '”';                                                                  // closing mark missing
+    }
+    const segs = ['']; let inQ = false;                                                 // [outside, quote, outside, quote, …]
+    for (const ch of s) {
+      if (ch === '"' || ch === '“' || ch === '”') { inQ = !inQ; segs.push(''); continue; }
+      segs[segs.length - 1] += ch;
+    }
+    let n0 = segs[0].trim().replace(/[:,]\s*$/, '').trim();
+    if (n0) {
+      if (sur && n0.replace(/[.\s]+$/, '') === sur) n0 = '';                             // a speaker label, not context
+      else { out.leadIn = true; lead = n0.replace(/^said\s+/i, ''); }                    // (c)
+    }
+    const parts = [];
+    for (let i = 1; i < segs.length; i += 2) {
+      let q = segs[i].trim();
+      const nt = (segs[i + 1] || '').trim();
+      let kind;
+      if (!nt || /^[.,;]+$/.test(nt)) kind = 'join';
+      else if (said.test(nt)) { kind = 'said'; out.said = true; const m = nt.match(said); if (m[1] && !saidCtx) saidCtx = m[1].trim(); }   // (b)
+      else if (/^On\s[^:]{1,90}:$/i.test(nt)) kind = 'topic';
+      else if (/^[A-Z][\w’\x27.\- ]{0,40}:$/.test(nt)) kind = 'other';
+      else { kind = 'join'; out.unsafe.push('narration between quotes: ' + nt.slice(0, 60)); }
+      if (kind === 'said') q = q.replace(/,$/, '.');
+      if (q) parts.push(q);
+      if (i + 2 >= segs.length) break;
+      if (kind === 'other') { out.trimmed = true; break; }
+      if (kind === 'topic') { out.leadIn = true; parts.push('…'); }
+    }
+    out.text = parts.join(' ');
+  }
+  out.text = out.text.replace(/^(?:[,;:]|\.(?!\.))\s*/, '').replace(/\s+/g, ' ').trim();   // a lone leading ". " — an ellipsis stays
+  if (/[\x22“”]/.test(out.text)) out.unsafe.push('quote mark left inside');
+  let ctx = lead || saidCtx || dlCtx;
+  if (/^On\b/.test(ctx)) ctx = 'o' + ctx.slice(1);
+  out.context = ctx;
+  // the note's own lead-in names its credited speaker as the opponent ("after his win over McDonald" under M. McDonald):
+  // the words are someone else's — not traceable (tourxQuoteTraceable).
+  if (sur && ctx && new RegExp('\\b' + sur.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b').test(ctx)) out.conflict = true;
+  if (qt && typeof qt === 'object') tourxQuoteCleanCache.set(qt, out);
+  return out;
+}
 function tourxQuoteAttrib(qt){
-  // C4: show only what exists. Never an invented year, never "n.d.", never a
-  // placeholder.
-  //
-  // `occasion` IS GONE, and it was never reachable. Measured 2026-09-21 over the
-  // shipped tournament-quotes.json: 424 records across 45 tournaments, and the
-  // field frequency is player / playerRaw / playerMatch / year / text /
-  // selfQuoted / sourceRow — no `occasion` on any record, and nothing anywhere
-  // in the repo writes one. So the branch could not fire, and the comment above
-  // it promised "year · occasion if present" about a field that never exists.
-  //
-  // Same class as the Lines note that promised rows would "land" when they were
-  // permanently excluded: a conditional on a field no producer emits reads as
-  // optional data when it is absent data. If the importer ever starts emitting
-  // an occasion, that is the change that adds the branch back, with a record
-  // carrying one as its control.
+  // C4: show only what exists — the year, then the note's own lead-in context. Never an invented year, never "n.d.",
+  // never a placeholder.
   const bits = [];
   if (qt.year) bits.push(String(qt.year));
+  const ctx = tourxQuoteClean(qt).context;
+  if (ctx) bits.push(ctx);
   return bits.join(' · ');
 }
 function tourxQuoteText(qt){
-  const t = tourxEscHtml(qt.text);
-  return qt.selfQuoted ? t : `“${t}”`;
+  return `“${tourxEscHtml(tourxQuoteClean(qt).text)}”`;
 }
 function tourxEscHtml(s){
   return String(s == null ? '' : s)
@@ -25514,7 +25650,7 @@ function tourxQuotesCardHtml(c){
         <span style="font-family:${MONO};font-size:11px;color:var(--text-label);">${list.length} note${list.length === 1 ? '' : 's'}</span>
         <span style="margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;color:var(--link);white-space:nowrap;">Read all ${list.length}<span style="font-family:${MONO};">→</span></span>
       </div>
-      <div style="margin-top:13px;font-size:13.5px;line-height:1.7;color:var(--text-soft);text-wrap:pretty;">${tourxQuoteText(lead)}</div>
+      <div class="tourx-qlead" style="margin-top:13px;font-size:13.5px;line-height:1.7;color:var(--text-soft);text-wrap:pretty;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;">${tourxQuoteText(lead)}</div>
       <div style="margin-top:8px;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
         <span style="font-size:12.5px;font-weight:700;color:var(--text);">${tourxEscHtml(lead.player)}</span>
         ${attrib ? `<span style="font-family:${MONO};font-size:11px;color:var(--text-label);">${tourxEscHtml(attrib)}</span>` : ''}
@@ -29618,19 +29754,21 @@ window.DatabaseTab = (function(){
   function baselineAllowed(){ return state.rounds===null && fullYearRange(); }
 
   // ---------- filtering ----------
-  // TEN-401 row lock: tournament-market.json archiveFilter { "<archive string>": { years:[…], surfaces:[idx…] } }
-  // → { <tournament idx>: { years:Set, surfaces:Set } }. A row of a locked string must match both; others pass.
+  // TEN-401 row lock: tournament-market.json archiveFilter { "<archive string>": { years:[…], surfaces:[idx…], months:[1–12…] } }
+  // → { <tournament idx>: { years:Set, surfaces:Set, months:Set } } (each optional). A row of a locked string must match
+  // every set given (month = the match date's month: European Open = Hamburg July / Antwerp October); others pass.
   function rowLockFor(filter){
     if(!filter) return null;
     var out={}, any=false;
     for(var k in filter){ var ix=M.tournaments.indexOf(k); if(ix<0) continue; any=true;
-      out[ix]={ years:filter[k].years?new Set(filter[k].years):null, surfaces:filter[k].surfaces?new Set(filter[k].surfaces):null }; }
+      out[ix]={ years:filter[k].years?new Set(filter[k].years):null, surfaces:filter[k].surfaces?new Set(filter[k].surfaces):null, months:filter[k].months?new Set(filter[k].months):null }; }
     return any?out:null;
   }
   function rowLockOk(lock, r){
     var f=lock && lock[r[4]]; if(!f) return true;
     if(f.years && !f.years.has(Math.floor(r[0]/10000))) return false;
     if(f.surfaces && !f.surfaces.has(r[2])) return false;
+    if(f.months && !f.months.has(Math.floor(r[0]/100)%100)) return false;
     return true;
   }
   // `names` (TEN-399 Compare events) filters to that event instead of state.tournament.

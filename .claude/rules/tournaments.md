@@ -18,16 +18,29 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 - **Shared archive strings are split by row** (founder card c572b773 "canada = split", + review fix): `build-tournament-market.js`
   `ROW_SPLIT` pools "Rogers Masters" / "Canadian Open" by the men's host year (to 2019 Toronto even / Montreal odd; from
   2021 Toronto odd / Montreal even — every edition 2010–26 checked against the Wikipedia infobox; 2020 not held, 0
-  unplaced), "Masters Cup" = Turin 2021+ only, and "European Open" by surface (clay = Hamburg's July editions 2021–24,
-  hard = Antwerp). Each split event emits `archiveFilter`; the ROI panel locks to those rows (`DatabaseTab`
+  unplaced), "Masters Cup" = Turin 2021+ only, and "European Open" by surface + month (clay in July = Hamburg's editions 2021–24,
+  hard in October = Antwerp; founder follow-up 697cbed9). Each split event emits `archiveFilter`; the ROI panel locks to those rows (`DatabaseTab`
   `initialTournamentFilter` → `rowLockFor` / `rowLockOk`, dropped on any new pick); Match analysis never joins career rows
   on a split string (`trArchiveNames`). Measured: Montreal 460 + Toronto 446 = Canada 906; Turin 73; Hamburg 565
-  (−4.8 / +4.6); Antwerp 260. **Test:** `test-ten242-rulings.mjs` "row lock" (runs the panel's functions against a
+  (−4.8 / +4.6); Antwerp 260. **Test:** `test-ten242-rulings.mjs` "row lock" + `test-ten401-f1a.mjs` "review 3" (month branch, synthetic rows) (runs the panel's functions against a
   fixed host-city table) + the card-equals-panel recompute.
 - **One court-speed registry** (`tourxConditionRegistry()`) feeds the rail, hero, rank / median and Compare all.
   *Known limit:* the page's `COURT_CONDITIONS` is a hand copy of the pipeline's table, held identical by a drift test.
 - **What players say = real, traceable notes only** (speaker matched to one of our players + a year); an event with none
-  shows no card. `TOURX_QUOTE_RULE` flips it. No placeholder quote ships.
+  shows no card. `TOURX_QUOTE_RULE` flips it. No placeholder quote ships. A note whose own lead-in names its credited
+  speaker as the opponent ("after his win over McDonald" under M. McDonald) is someone else's words — not traceable; so is
+  one whose lead-in names another registry event and not its own ("after beating Poljicak in Umag" under Bastad;
+  `tourxQuoteOtherEvent`), and one on `TOURX_QUOTE_EXCLUDE` — a hand-reviewed list keyed `event|speaker|year` with a reason
+  per entry (Fucsovics 2026 mixes in women's-match answers, Bellucci 2025 is narration, De Jong 2025 is about Umag); the
+  CSV stays verbatim. **Test:** `test-ten401-f1a.mjs` "review: hand-reviewed exclusions".
+- **Each note = the player's words only, in curly quotes** (founder TEN-401 f1, supersedes "render verbatim"):
+  `tourxQuoteClean` strips at render the city dateline ("WIMBLEDON:"), every "said X" attribution (a comma closing a
+  quote before "said" becomes a full stop) and the lead-in outside the quote; the lead-in ("after beating Tien", "on the
+  conditions", or a "… said after beating X" clause) goes to the meta line: "2026 · after beating Tien". A second answer
+  after "On X:" joins with " … "; a segment another speaker / source said ("Misolic:", "Reddit:") is cut. Never rewrite
+  words — the text is the source's own quoted spans in order; the context is a piece of the note. The importer and
+  `tournament-quotes.json` stay verbatim (audit copy of the sheet). Measured on 160 traceable notes: dateline 71 → 0,
+  "said" 71 → 0, lead-in 58 → 0; 155 of 160 ship (16 events; Wimbledon 13). **Test:** `test-ten401-f1a.mjs` f1.1 (every note).
 - **An unsourced metric is `—`, never 0.**
 
 ## Header + tabs
@@ -45,6 +58,14 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 ## Overview
 - Rail = panel (`--card` + `--edge-6`); search `--inner`, no edge; group heads Hanken 10.5 caps grey; **selected row =
   `--selected` + inset 16% ring**, no surface wash; tier chip `--inner`, grey, no edge.
+- **The selected rail tile is always on screen** (founder TEN-401 f1): after every Overview render (first load =
+  Wimbledon, a rail click / search pick, Reports → Overview) `tourxRevealRailSel` scrolls only the rail's own list
+  (`.tourlist`), instantly, by the least amount, into the part of the list that is inside the viewport; the page never
+  scrolls. The list keeps its scroll across renders (same search). A tile in the last rows (Hamburg) gets the missing
+  travel as a bottom spacer, carried over on the next render of the same search before the scroll is restored (else the
+  shorter list clamps and visible tiles jump); a fully visible tile never moves. **Test:** `test-ten401-f1a.mjs` f1.5 +
+  "review: re-rendering keeps the spacer".
+- What players say card: one quote, clamped to 3 lines (`-webkit-line-clamp:3`), meta = player · year · context.
 - **Court-speed hero *(override)*:** 8px `--track`, no gradient, white 16px knob with a 3px `--card` ring; Slow / Medium /
   Fast Hanken 10.5 caps grey; band word white; "Compare all →", "Read all N →", "Open … graphics →" are `--link`.
 - Condition tiles + Favourite reliability = panels (`--edge-6`), figures mono white; reliability bar `--bar` on `--track`.
@@ -74,4 +95,11 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
     surname first so the ellipsis is at the end. The name cell ellipsises at its end, on real overflow only.
   - **No "published {date}"** on an event row: neither shard holds the list's publication date (a draw's
     `sourcePublished` = the PDF's modDate, re-stamped per re-post; an advance list's = the aggregator page's update).
-  - En dash in week ranges ("2–8 Nov", "12–18 Oct"); empty state "The ATP has {n} events in the week of {range}. …"
+  - En dash in week ranges ("2–8 Nov", "12–18 Oct", "26 Oct – 1 Nov"); empty state "The ATP has {n} events in the week
+    of {range}. …". Hanken draws its en dash 5.99px vs a 4.58px hyphen (it reads as a hyphen), so every rendered range
+    (`weekRangeHtml`: chips + empty state) sets the dash in Plex (`.el-ndash`, `--font-nums`); the text stays U+2013.
+    **Test:** `test-ten401-f1a.mjs` f1.3 (every weekStart in both shards + the computed chips).
+  - **A missing country is a grey `—`** (`--text-label`), never blank — Medvedev, Rublev, Khachanov, Safiullin play under no
+    flag; a Bye stays blank. **Test:** `test-ten401-f1a.mjs` f1.4.
+  - **Footnote** reads "… a dash = not listed in the feed. Acceptance order, not seeding." (founder 634ea470: the dash
+    marks a missing rank or a missing country). **Test:** `test-ten401-f1a.mjs` "footnote".

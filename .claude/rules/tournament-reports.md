@@ -66,9 +66,10 @@ which slices and executes the real functions.
 - Opened by a Round comparison bar or a Player progression heat cell: that player's match in that round, both players'
   ten metrics side by side from the same `tournament-progression.json` rows (the opponent's row for the same round). A
   figure either side lacks is a grey `—` and marks neither side better.
-- **Every % row prints one decimal** (80.0% / 63.9%, founder r1 fix 13); ratios and per-point figures keep two decimals,
-  ratings stay whole. The sheet formats through `tourxMsFmt` — the shared `tourxFmt` still drops ".0" on a whole
-  percentage elsewhere in Reports (bars, heat cells: "67%" beside "62.3%"); only the sheet was ruled.
+- **Every % in Reports prints one decimal** — the sheet (80.0% / 63.9%, founder r1 fix 13) and every bar value, heat
+  cell, average and H2H label (founder card ff400963 "decimals = all": 67.0%, never 67%); the shared `tourxFmt` does it.
+  Ratios and per-point figures keep two decimals, ratings stay whole. **Test:** `tools/test-ten386-round-comparison.js`
+  "every % in Reports has one decimal".
 - **Ties are judged on the printed value:** two figures that print the same (63.94 / 63.88 → 63.9%) mark neither side.
 - Pop-up sheet: `--card` + 1px `--edge-10`, radius 14, `--shadow-modal`, max 640, no blue outline; over `--backdrop` +
   blur(3px) from `--sf-side` with `clip-path: inset(0)`. Header "Name v Opponent" 17/800 (the `v` grey) + Plex 11 meta

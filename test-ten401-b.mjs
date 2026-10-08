@@ -318,7 +318,7 @@ function playersHtml(src, players, roster) {
     'return renderPlayers;', ['playerIndex'], [roster])(players);
 }
 function playerRows(html) {
-  return [...html.matchAll(/<span class="el-pname"[^>]*>(.*?)<\/span><span style="text-align:right[^>]*>[^<]*<\/span><span class="el-prank" style="([^"]*)"[^>]*>([^<]*)<\/span>/g)]
+  return [...html.matchAll(/<span class="el-pname"[^>]*>(.*?)<\/span><span class="el-pcountry" style="text-align:right[^>]*>[^<]*<\/span><span class="el-prank" style="([^"]*)"[^>]*>([^<]*)<\/span>/g)]
     .map(m => ({ name: m[1].replace(/<[^>]*>/g, '').trim(), style: m[2], rank: m[3] }));
 }
 function checkRanksNames(src) {
@@ -372,12 +372,13 @@ function checkEmptyCopy(src) {
   if (lbl('2026-11-02') !== '2\u20138 Nov' || lbl('2026-10-12') !== '12\u201318 Oct') return 'week range is not an en dash: ' + lbl('2026-11-02') + ' / ' + lbl('2026-10-12');
   const body = { innerHTML: '' };
   const tourns = Array.from({ length: 21 }, (_, i) => ({ tour: 'ATP', name: 'E' + i, city: 'C' + i, weekStart: '2026-11-02', sections: [] }));
-  const render = entryFns(src, ['isoMonday', 'fmtKey', 'keyToDate', 'weekRangeLabel', 'norm', 'hasList', 'weekEventCount', 'levelGroup', 'deriveWeeks', 'pickDefaultWeek', 'render'],
+  const render = entryFns(src, ['isoMonday', 'fmtKey', 'keyToDate', 'weekRangeLabel', 'weekRangeHtml', 'norm', 'hasList', 'weekEventCount', 'levelGroup', 'deriveWeeks', 'pickDefaultWeek', 'render'],
     'function renderWeekTabs(){} function renderHead(){} function staleBannerHtml(){ return ""; } function renderFreshness(){}\nreturn render;',
     ['document', 'Date', 'data', 'activeWeek', 'weeks', 'weekPicked', 'tourxThisWeekEvents'],
     [{ getElementById: () => body }, fixedDate('2026-10-08T10:00:00Z'), { tournaments: tourns }, '2026-11-02', [], true, () => null]);
   render();
-  if (!/The ATP has 21 events in the week of 2\u20138 Nov\. Their acceptance lists are not in the build yet/.test(body.innerHTML)) return 'empty state: ' + body.innerHTML.replace(/<[^>]*>/g, ' ').trim();
+  // TEN-401 f1 item 3: the range's dash is wrapped in .el-ndash (Plex) — read the copy as text
+  if (!/The ATP has 21 events in the week of 2\u20138 Nov\. Their acceptance lists are not in the build yet/.test(body.innerHTML.replace(/<span class="el-ndash">(\u2013)<\/span>/g, '$1'))) return 'empty state: ' + body.innerHTML.replace(/<[^>]*>/g, ' ').trim();
   return null;
 }
 
@@ -419,6 +420,6 @@ test('CONTROL: each ruling goes red on its mutant', () => {
   assert.ok(red(checkRanksNames, m("      var nm = displayName(p);", "      var nm = fmtName(p);")), 'r1.6 cut names printed as the source cut them');
   assert.ok(red(checkRanksNames, m("    return fmtName(p, true);", "    return fmtName(p);")), 'r1.6 unresolved cut mid-name');
   assert.ok(red(checkNoPublished, m("    if(t.regime === 'draw') bits.push('official draw');", "    bits.push('published '+shortDate(t.sourcePublished));\n    if(t.regime === 'draw') bits.push('official draw');")), 'r1.7 published back');
-  assert.ok(red(checkEmptyCopy, m("' in the week of ' + weekRangeLabel(activeWeek)", "' in ' + weekRangeLabel(activeWeek)")), 'r1.8 old copy');
+  assert.ok(red(checkEmptyCopy, m("' in the week of ' + weekRangeHtml(activeWeek)", "' in ' + weekRangeHtml(activeWeek)")), 'r1.8 old copy');
   assert.ok(red(checkEmptyCopy, m("      return mon.getDate() + '–' + sun.getDate() + ' ' + MON[mon.getMonth()];", "      return mon.getDate() + '-' + sun.getDate() + ' ' + MON[mon.getMonth()];")), 'r1.8 hyphen');
 });

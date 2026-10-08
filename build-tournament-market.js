@@ -40,16 +40,17 @@ const MIN_MATCHES = 30;
 // even years / Montreal in odd years to 2019, swapped from 2021 (2021 Toronto … 2025 Toronto, 2026 Montreal — matches
 // player-profiles.json). Not held (2020 cancelled) simply has no rows.
 // Review fix (TEN-401): the archive files Hamburg's July clay editions 2021–24 under "European Open", Antwerp's
-// October name — so "European Open" splits by SURFACE: clay = Hamburg, hard = Antwerp.
-// ROW_SPLIT[event][archive string] = { year?: y => bool, surface?: 'Hard' | 'Clay' | 'Grass' }. A filtered string never
+// October name — so "European Open" splits by SURFACE + MONTH (founder TEN-401 follow-up): clay in July = Hamburg,
+// hard in October = Antwerp (Antwerp is indoor hard; the archive's surface field reads 'Hard').
+// ROW_SPLIT[event][archive string] = { year?: y => bool, surface?: 'Hard' | 'Clay' | 'Grass', month?: m => bool }. A filtered string never
 // counts unfiltered; the event emits archiveFilter (pooled years + surfaces per string) so the panel can lock the same rows.
 const CANADA = { montreal: y => (y <= 2019 ? y % 2 === 1 : y % 2 === 0), toronto: y => (y <= 2019 ? y % 2 === 0 : y % 2 === 1) };
 const ROW_SPLIT = {
   'Montreal': { 'Rogers Masters': { year: CANADA.montreal }, 'Canadian Open': { year: CANADA.montreal } },
   'Toronto': { 'Rogers Masters': { year: CANADA.toronto }, 'Canadian Open': { year: CANADA.toronto } },
   'Turin': { 'Masters Cup': { year: y => y >= 2021 } },
-  'Hamburg': { 'European Open': { surface: 'Clay' } },
-  'Antwerp': { 'European Open': { surface: 'Hard' } },
+  'Hamburg': { 'European Open': { surface: 'Clay', month: m => m === 7 } },
+  'Antwerp': { 'European Open': { surface: 'Hard', month: m => m === 10 } },
 };
 const ALIAS = {
   'Montreal': ['Rogers Masters', 'Canadian Open'],
@@ -187,9 +188,10 @@ function main() {
       const rule = split[a];
       const surfIx = rule && rule.surface ? (meta.surfaces || []).indexOf(rule.surface) : null;
       if (rule && rule.surface && surfIx < 0) throw new Error(`ROW_SPLIT surface ${rule.surface} is not in database-yield.json meta.surfaces`);
-      const kept = rule ? rs.filter(r => (!rule.year || rule.year(Math.floor(r[0] / 10000))) && (surfIx == null || r[R_SURF] === surfIx)) : rs;
+      const kept = rule ? rs.filter(r => (!rule.year || rule.year(Math.floor(r[0] / 10000))) && (!rule.month || rule.month(Math.floor(r[0] / 100) % 100)) && (surfIx == null || r[R_SURF] === surfIx)) : rs;
       if (!kept.length) { miss.push(a); continue; }
-      if (rule) filter[a] = { years: [...new Set(kept.map(r => Math.floor(r[0] / 10000)))].sort((p, q) => p - q), surfaces: [...new Set(kept.map(r => r[R_SURF]))].sort() };
+      if (rule) filter[a] = Object.assign({ years: [...new Set(kept.map(r => Math.floor(r[0] / 10000)))].sort((p, q) => p - q), surfaces: [...new Set(kept.map(r => r[R_SURF]))].sort() },
+        rule.month ? { months: [...new Set(kept.map(r => Math.floor(r[0] / 100) % 100))].sort((p, q) => p - q) } : {});
       hit.push(a);
       pool = pool.concat(kept);
     }

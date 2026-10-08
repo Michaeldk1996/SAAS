@@ -327,7 +327,12 @@ const tieSh = sheetBox.sheet({ ...ST, players: [mk('A. Alive', 'B. Beaten', [63.
 const tieCells = label => { const r = tieSh.split(label)[1] || ''; return [...r.matchAll(/class="tourx-msv( better)?"[^>]*>([^<]+)</g)].slice(0, 2).map(m => [m[2], !!m[1]]); };
 ok('tie rule on the printed value: 63.94 / 63.88 both print 63.9% → neither side marked', JSON.stringify(tieCells('1st serve %')) === JSON.stringify([['63.9%', false], ['63.9%', false]]), tieCells('1st serve %'));
 ok('tie rule: 280 / 280.4 both print 280 → neither side marked', JSON.stringify(tieCells('Serve rating')) === JSON.stringify([['280', false], ['280', false]]), tieCells('Serve rating'));
-ok('the sheet rows format through tourxMsFmt (the shared tourxFmt is untouched)', /tourxMsFmt\(x, m\.kind\)/.test(grab('tourxMatchSheetHtml')) && !/tourxFmt\(x, m\.kind\)/.test(grab('tourxMatchSheetHtml')));
+{ // founder card ff400963 "decimals = all": the SHARED Reports formatter prints one decimal on every % (bars, heat cells, H2H)
+  const fbox = {}; vm.createContext(fbox); vm.runInContext(grab('tourxFmt') + '\nthis.f = tourxFmt;', fbox);
+  ok('every % in Reports has one decimal: 67 → 67.0%, 62.34 → 62.3%, 0 → 0.0%; ratio keeps 2dp',
+    fbox.f(67, 'pct') === '67.0%' && fbox.f(62.34, 'pct') === '62.3%' && fbox.f(0, 'pct') === '0.0%' && fbox.f(1.734, 'ratio') === '1.73', [fbox.f(67, 'pct'), fbox.f(62.34, 'pct'), fbox.f(0, 'pct')]);
+}
+ok('the sheet rows format through tourxMsFmt', /tourxMsFmt\(x, m\.kind\)/.test(grab('tourxMatchSheetHtml')) && !/tourxFmt\(x, m\.kind\)/.test(grab('tourxMatchSheetHtml')));
 
 console.log('=== TEN-401 r1 fix 14: non-leader bars composite to 45% on the card ===');
 const rowsHtml = [...qfCard.matchAll(/<div class="tourx-rcell"[\s\S]*?<\/div>\s*<\/div>/g)].map(m => m[0]);

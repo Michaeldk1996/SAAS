@@ -195,10 +195,10 @@ test('phase 2 C2: the quotes card renders ONLY when quotes exist — never a pla
   assert.ok(!/coming soon|not yet|no quotes|placeholder/i.test(cardCode),
     'no empty state, no "coming soon", nothing that implies the data exists');
 
-  // FOUNDER RULING: render VERBATIM; curly-wrap only values carrying no quotes
-  // of their own. 378 of 425 already contain their own quotation marks.
-  assert.match(DASH, /return qt\.selfQuoted \? t : `“\$\{t\}”`;/,
-    'the curly wrap is conditional on selfQuoted — wrapping narration double-quotes it');
+  // FOUNDER TEN-401 f1 (2026-10-08) SUPERSEDES the 2026-09-19 "render verbatim" ruling: every note is the player's
+  // words only, in curly quotes — tourxQuoteClean strips dateline / "said X" / lead-in (test-ten401-f1a.mjs item 1).
+  assert.match(DASH, /return `“\$\{tourxEscHtml\(tourxQuoteClean\(qt\)\.text\)\}”`;/,
+    'the note renders as its cleaned words in one pair of curly quotes');
 
   // C4: attribution shows only what exists. Never an invented year, never "n.d."
   const attrib = DASH.slice(DASH.indexOf('function tourxQuoteAttrib(qt){'),
@@ -557,7 +557,7 @@ test('RULING: DatabaseTab contains NO document-wide DOM lookup (the class, not t
 function lockOk(filter, names, r) {
   const f = filter && filter[names[r[4]]];
   if (!f) return true;
-  return (!f.years || f.years.includes(Math.floor(r[0] / 10000))) && (!f.surfaces || f.surfaces.includes(r[2]));
+  return (!f.years || f.years.includes(Math.floor(r[0] / 10000))) && (!f.surfaces || f.surfaces.includes(r[2])) && (!f.months || f.months.includes(Math.floor(r[0] / 100) % 100));
 }
 
 test('RULING: every ROI card equals the panel it links to, recomputed from the store', () => {
@@ -764,7 +764,8 @@ test('TEN-401 item 5 / L1: ROI yield is green / red by SIGN, grey within 1pp of 
 });
 
 test('TEN-401 Data 3 / L3: a quote ships only with a traceable source (resolved speaker + year)', () => {
-  const src = fnSource(DASH, 'function tourxQuoteTraceable(q){');
+  const src = fnSource(DASH, 'function tourxQuoteTraceable(q, ev){') + '\nconst tourxQuoteCleanCache = new WeakMap();\n'
+    + fnSource(DASH, 'function tourxQuoteSurname(player){') + '\n' + fnSource(DASH, 'function tourxQuoteClean(qt){');
   const ok = eval(`(function(){ ${src} return tourxQuoteTraceable; })()`);
   assert.equal(ok({ player: 'J. Sinner', playerMatch: 'surname', year: 2026 }), true);
   assert.equal(ok({ player: 'J. Sinner', playerMatch: 'exact', year: 2025 }), true);
@@ -773,10 +774,10 @@ test('TEN-401 Data 3 / L3: a quote ships only with a traceable source (resolved 
   assert.equal(ok({ player: 'Cerundolo', playerMatch: 'ambiguous', year: 2026 }), false, 'speaker ambiguous');
   assert.match(DASH, /const TOURX_QUOTE_RULE = 'traceable';/);
   const fr = fnSource(DASH, 'function tourxQuotesFor(name){');
-  assert.match(fr, /filter\(q => TOURX_QUOTE_RULE === 'all' \|\| tourxQuoteTraceable\(q\)\)/, 'the card, its count and the panel read the filtered list');
+  assert.match(fr, /filter\(q => TOURX_QUOTE_RULE === 'all' \|\| tourxQuoteTraceable\(q, name\)\)/, 'the card, its count and the panel read the filtered list');
   // the shipped artefact: every event that renders a card has >= 1 traceable note, and the count is measured
   const Q = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
-  const events = Object.keys(Q).filter((k) => Q[k].some(ok));
+  const events = Object.keys(Q).filter((k) => Q[k].some((q) => ok(q)));
   assert.ok(events.length > 0 && events.length < Object.keys(Q).length, `vacuous: ${events.length} of ${Object.keys(Q).length} events pass`);
 });
 
@@ -873,7 +874,8 @@ test('TEN-401: the ROI panel row lock reproduces Montreal / Toronto / Turin / Ha
   const eoH = mkt.tournaments.Hamburg.archiveFilter['European Open'], eoA = mkt.tournaments.Antwerp.archiveFilter['European Open'];
   assert.deepEqual(eoH.surfaces, [M.surfaces.indexOf('Clay')], 'Hamburg takes European Open clay only');
   assert.deepEqual(eoA.surfaces, [M.surfaces.indexOf('Hard')], 'Antwerp takes European Open hard only');
-  const eoRows = (f) => y.rows.filter((r) => M.tournaments[r[4]] === 'European Open' && f.years.includes(Math.floor(r[0] / 10000)) && f.surfaces.includes(r[2])).length;
+  assert.deepEqual(eoH.months, [7], 'Hamburg takes European Open in July only'); assert.deepEqual(eoA.months, [10], 'Antwerp takes European Open in October only');
+  const eoRows = (f) => y.rows.filter((r) => M.tournaments[r[4]] === 'European Open' && lockOk({ 'European Open': f }, M.tournaments, r)).length;
   assert.equal(eoRows(eoH) + eoRows(eoA), eo, 'Hamburg + Antwerp must partition every European Open row');
   assert.equal(count('Hamburg'), mkt.tournaments.Hamburg.n); assert.equal(count('Antwerp'), mkt.tournaments.Antwerp.n);
   // the lock is wired into filteredRows and dies with its subject (a new pick)
