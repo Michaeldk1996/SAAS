@@ -39,14 +39,22 @@ paints Ranking "—" while the active player paints "1/3". Locked by `test-ten26
 field under 10 carries a `field N` small-sample mark and every Ranking shows its
 denominator — flagged, not hidden, not filled.
 
-## Compare view and notes (founder TEN-399 fix 3 + 4, card ff586600, 2026-10-08)
+## Compare view and notes (founder TEN-399 fix 3 + 4, card ff586600, and R2 post-live, 2026-10-08)
 
-**Test:** a compare row reads Line | Field (one shared field median) | per player Record · Rate · Vs field; Vs field is in
-the three-way sign colour at the single table's 13px mono (the old "neutral compare delta" is retired). The notes above
-the table name no file and no pipeline step: with the field file "Field is the median rate on each line across roster
-players with at least 5 matches on it; Ranking is the place in that field. Retired players are excluded."; without it
-"Field, Vs field and Ranking are not published yet; Rate is computed from each player’s own matches." No "no readable
-best-of" line and no unresolved-name list. Locked by `test-ten260-lines.mjs` (compare, noField).
+**Test:** a compare row reads Line | Field (one shared field median) | per player **Rate · Vs field · Record** (R2 item 4);
+Vs field is in the three-way sign colour at the single table's 13px mono (the old "neutral compare delta" is retired).
+The note above the table names no file and no pipeline step. With the field file it reads exactly "Field = the median
+rate on each line across tour players with at least 5 matches on that line. Last 52 = matches since <date>."; without it
+"Field, Vs field and Ranking are not published yet; Rate is computed from each player’s own matches." The coverage line
+keeps "Lines computed on N of M matches (x%) · K best of three" and carries no "excluded as unfinished or a different
+format" clause (R2 item 1); no "no readable best-of" line and no unresolved-name list. Locked by `test-ten260-lines.mjs`
+(compare, noField) and `test-ten399-fixes.mjs` (linesCoverage).
+
+## Vs field adds up on screen (founder card 0122a989 "ship-rounded", 2026-10-08)
+
+**Test:** Vs field = the displayed Rate (1 dp) minus the displayed Field (1 dp), in the single table and in compare, so
+the three figures on screen always add up (Alcaraz −1.5 sets: 57.8% − 37.9% = +19.9pp, not the unrounded +20.0pp).
+Ranking still uses the unrounded rate. Locked by `test-ten399-fixes.mjs` (vsFieldDisplayed) and `test-ten260-lines.mjs` (field).
 
 ## Rate highlight = full sample at 65% (founder step-6 ticket TEN-399 item 8, 2026-10-07)
 

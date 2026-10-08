@@ -109,7 +109,9 @@ const CHECKS = {
     const [matches, record, rate, field, vs, rank] = row.cells.map(c => c.text);
     if (!rate.startsWith(own.toFixed(1) + '%')) return `rate ${rate}, expected ${own.toFixed(1)}%`;
     if (!field.startsWith(med.toFixed(1) + '%')) return `field ${field}, expected ${med.toFixed(1)}% (median of ${rates.length}; G has 4 matches and is out)`;
-    if (vs !== sgn(own - med) + 'pp') return `vs field ${vs}, expected ${sgn(own - med)}pp`;
+    // TEN-399 R2: Vs field = displayed Rate − displayed Field (both 1 dp)
+    const dvs = sgn(Number(own.toFixed(1)) - Number(med.toFixed(1)));
+    if (vs !== dvs + 'pp') return `vs field ${vs}, expected ${dvs}pp`;
     const expRank = 1 + rates.filter(r => r > own).length;
     if (rank !== expRank + '/' + rates.length) return `ranking ${rank}, expected ${expRank}/${rates.length}`;
     // A subject the file does not contain (a stale file, one tick behind his
@@ -130,19 +132,19 @@ const CHECKS = {
     if (/\.json|pipeline/.test(text)) return 'a Lines note names a file or the pipeline (TEN-399 fix 4)';
     return null;
   },
-  // Two players side by side (TEN-399 founder fix 3): one shared Field cell, then per player Record · Rate · Vs field,
+  // Two players side by side (TEN-399 founder fix 3 + R2 item 4): one shared Field cell, then per player Rate · Vs field · Record,
   // with Vs field in the three-way sign colour like the single table.
   compare(src) {
     const { rows: R, host } = paint(src, [{ nm: 'C', rows: FIELD.C }, { nm: 'A', rows: FIELD.A }]);
     const names = host.querySelectorAll('db-lnnm').map(n => n.textContent);
     if (names.join('|') !== 'C|A') return `compare name band reads ${names.join('|')}`;
     const row = R.find(r => r.label === '+1.5 sets');
-    if (!row || row.cells.length !== 7) return `compare row has ${row && row.cells.length} cells, expected 7 (Field + (Record, Rate, Vs field) × 2)`;
+    if (!row || row.cells.length !== 7) return `compare row has ${row && row.cells.length} cells, expected 7 (Field + (Rate, Vs field, Record) × 2)`;
     if (!/^\d+\.\d%(field \d+)?$/.test(row.cells[0].text)) return `compare Field cell reads ${row.cells[0].text}`;
-    if (!/^\d+–\d+$/.test(row.cells[1].text) || !/^\d+–\d+$/.test(row.cells[4].text)) return `compare records ${row.cells[1].text} / ${row.cells[4].text}`;
-    if (!row.cells[2].text.startsWith('60.0%') || !row.cells[5].text.startsWith('90.0%')) return `compare rates ${row.cells[2].text} / ${row.cells[5].text}`;
-    if (!/pp$/.test(row.cells[3].text) || !/pp$/.test(row.cells[6].text)) return 'compare vs-field cells are not filled';
-    for (const c of [row.cells[3], row.cells[6]])
+    if (!/^\d+–\d+$/.test(row.cells[3].text) || !/^\d+–\d+$/.test(row.cells[6].text)) return `compare records ${row.cells[3].text} / ${row.cells[6].text}`;
+    if (!row.cells[1].text.startsWith('60.0%') || !row.cells[4].text.startsWith('90.0%')) return `compare rates ${row.cells[1].text} / ${row.cells[4].text}`;
+    if (!/pp$/.test(row.cells[2].text) || !/pp$/.test(row.cells[5].text)) return 'compare vs-field cells are not filled';
+    for (const c of [row.cells[2], row.cells[5]])
       if (!/^var\(--(pos|neg)\)$/.test(c.color || '') && !/^0\.0pp$/.test(c.text)) return `compare vs field ${c.text} painted ${c.color || 'uncoloured'}`;
     return null;
   },
@@ -229,7 +231,8 @@ const MUTANTS = [
   ['field columns filled from nothing', 'noField', s => s.replace("if(!LNF || !LNF.slices) return null;", "if(!LNF || !LNF.slices) return {median:50,size:1,rank:1};")],
   ['compare shows one player', 'compare', s => s.replace("var cmp = subjects.length>1;", "var cmp = subjects.length>1; subjects=subjects.slice(0,1);")],
   ['compare delta neutral', 'compare', s => s.replace("var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', delta==null ? null : lnSgnCol(delta), 'cmpc');", "var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', null, 'cmpc');")],
-  ['compare drops Record', 'compare', s => s.replace("rc.title=title; row.appendChild(rc);", "rc.title=title;")],
+  ['compare drops Record', 'compare', s => s.replace("\n            row.appendChild(rc);", "")],
+  ['compare puts Record first', 'compare', s => s.replace("var pc=pill(rate, L ? L.n : 0, true); pc.title=title; row.appendChild(pc);", "row.appendChild(rc); var pc=pill(rate, L ? L.n : 0, true); pc.title=title; row.appendChild(pc);").replace("row.appendChild(dc);\n            row.appendChild(rc);", "row.appendChild(dc);")],
   ['unresolved reason dropped', 'unresolved', s => s.replace("this name does not resolve to a profile key", "no data")],
   ['failed load reads as zero', 'unresolved', s => s.replace("s.P = (s.rows && !s.failed) ?", "s.P = (s.rows) ?")],
   ['eyebrow counts both formats', 'eyebrow', s => s.replace("        linesShown++;\n", "        linesShown+=2;\n")],

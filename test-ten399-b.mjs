@@ -145,7 +145,7 @@ function checkRoleCards(src) {
   const p = readPlayer(playerHarness(src, { player: KH }));
   if (p.deleted) return 'a gap bar / legend / verdict pill / blue-dot book line is still painted';
   for (let i = 0; i < 2; i++) {
-    if (!/color:var\(--text-label\)/.test(p.base[i])) return 'tour-baseline figure is not neutral: ' + p.base[i];
+    if (!/color:var\(--text-label\);font-weight:500/.test(p.base[i])) return 'tour-baseline figure is not neutral grey at weight 500 (TEN-399 R2 item 6): ' + p.base[i];
     if (!/^.*Gap vs tour baseline.*pp/.test(p.gap[i].replace(/<[^>]*>/g, ''))) return 'gap row missing';
   }
   // the gap is rendered ONCE per card
@@ -269,7 +269,7 @@ const MUTANTS = {
   checkSideFlip: s => s.replace("price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;", "price=v.p, won=v.w;"),
   checkSharedAxes: s => s.replace("pair.appendChild(panelFor(series[1], grid, Y, PH, tAll, 230, false, geo));",
     "pair.appendChild(panelFor(series[1], grid, Y, PH, seasonIndexTicks(spine, spineX, [4,2,1], dOf), 230, false, geo));"),
-  checkRoleCards: s => s.replace("'<b style=\"color:var(--text-label)\">'+(known?fmtPct(base):'—')", "'<b style=\"color:'+POS+'\">'+(known?fmtPct(base):'—')"),
+  checkRoleCards: s => s.replace("'<b style=\"color:var(--text-label);font-weight:500\">'+(known?fmtPct(base):'—')", "'<b style=\"color:var(--text-label)\">'+(known?fmtPct(base):'—')"),
   checkClay: s => s.replace("if(PLAYER_BASELINE_SCOPE==='gate' && ", "if(false && "),
   checkTournRow: s => s.replace("row.appendChild(el('div','db-tourcell'+(bs?'':' none'), bs?fmtPct(bs.yield):'—'));",
     "row.appendChild(el('div',null,'')); g.appendChild(row); row=el('div','db-gr'); row.appendChild(el('div','db-tourcell'+(bs?'':' none'), bs?fmtPct(bs.yield):'—'));"),

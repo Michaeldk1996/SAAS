@@ -106,9 +106,13 @@ Wawrinka, Lestienne, Balleret, Bautista-Agut, Carreno-Busta and Basilashvili, ea
 Overview count is exactly (unfiltered count − retired players who were in it). If the
 file fails to load, the board says (in `--text-soft`; amber is Model + Trading Report only, TEN-376) "Retired players could not be
 excluded just now, so this board may include them." — never a silent fallback to the full roster.
-**Footnote copy (founder TEN-399 fix 4, card ff586600):** with the file loaded the note reads exactly "Retired players are
-excluded." — no file name, no list of names, no "N of M stored players". The same holds for every Database footnote: no
-file names, pipeline notes or unresolved-name lists, one plain sentence each. Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
+**Footnote copy (founder TEN-399 fix 4 + R2 item 2, 2026-10-08):** under the Overview table, after the caps slice label,
+exactly three short lines: "n is the serve-stat match count." · "Elo is a weekly snapshot from an external list: Last 52 is a
+dash, Career is today’s rating." · "Retired players are excluded." No file name, no list of names, no "N of M stored
+players". The card subtitle is two lines with no discount factor ("Elo comes from an external weekly list. Serve, return
+and under-pressure are built from our ATP match archive, with Challenger matches added for players thin at tour level.
+Higher is better in every column."). The compare panel's Career figures are `--text`, weight 400 (R2 item 3); Δ is
+sign-coloured. Locked by `test-ten399-fixes.mjs` (ratingsCopy, careerWhite). Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
 TEN-262 names present, Kyrgios absent) by `test-ten262.mjs`.
 
 ## Mental Edge: three views, 200-point ranking minimum (founder rulings TEN-254, built TEN-260)

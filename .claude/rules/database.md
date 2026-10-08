@@ -47,7 +47,7 @@ take styling from it, structure from the rules below.
   excluded) and each carries its own median and yield — never one shared row.
 - Sample gates as built (soft 100 grey / hard 30 no yield). A hard-gated band or All cell prints `—` and the panel
   carries one note under the table (founder card ff586600 "hardnote" = ok) ("— fewer than 30 matches: too few for a yield."); the Player book split gates each
-  book the same way ("too few matches for a yield across N matches priced on …").
+  book the same way ("N matches priced on … (too few for a yield)").
 - No "Back the shorter price" / "Back the longer price" copy anywhere. Column heads Hanken 10.5 caps on a 10% rule;
   All row on a 14% 2px rule. Chart plot 340px, title 19/800, legend swatches `--viz-lead` (Favourites) · white 45%
   (Underdogs).
@@ -68,7 +68,10 @@ take styling from it, structure from the rules below.
 - **Test:** Side = Backing him / Fading him flips every figure, note and curve.
 - **Test:** As favourite / As underdog = card, no outline; no status pill, no gap bar or legend; the "Gap vs tour
   baseline" row is the only rendering of the gap and its only sign colour besides the player's yield; the tour-baseline
-  figure is `--text-label`.
+  figure is `--text-label` (#A3AABE) at the same 26px, **weight 500** (R2 item 6), so it reads as secondary.
+- **Test (R2 item 5):** the Player split strip reads "Each match is priced on its Pinnacle closing price, else Bet365. Split
+  by book: <yield> across N matches priced on Pinnacle, <yield> across M matches priced on Bet365."; a book under 30
+  matches reads "M matches priced on Bet365 (too few for a yield)" — never "too few matches for a yield across M".
 - **Test:** the three charts share one y-domain and one tick set (match-index axis, season ticks, first season to
   2026); no coverage caption.
 - **Test (founder card ff586600 "clay" = recompute, 2026-10-08):** under a Player Surface / Level filter the tour baseline

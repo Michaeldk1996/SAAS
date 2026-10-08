@@ -3062,7 +3062,7 @@
     display:flex; flex-direction:column; justify-content:center; align-items:center; }
   .db-cmpcell.live{ padding:11px 6px; font-size:16px; font-weight:700; color:var(--db-txt); background:var(--wash-4); border-left:1px solid var(--edge-10); }   /* TEN-399: one wash down the column, no per-cell outline */
   .db-cmpcell.thin{ font-size:11px; font-weight:500; color:var(--db-mute); }
-  .db-cmpcell.ref{ font-size:16px; font-weight:400; color:var(--db-sec); }
+  .db-cmpcell.ref{ font-size:16px; font-weight:400; color:var(--text); }   /* TEN-399 R2 item 3: Career figures white, regular weight */
   .db-cmpcell.delta{ font-size:12.5px; font-weight:700; }
 
   /* TEN-399 item 7: board tabs = Darker track. Track --card + 1px --edge-6; selected
@@ -29140,8 +29140,8 @@ window.DatabaseTab = (function(){
   // surface that prints an Elo carries this line, because a reader looking at a
   // board captioned "Last 52 weeks" would otherwise reasonably read the Elo
   // column as a 52-week figure.
-  var ELO_CAVEAT='Elo is a current weekly snapshot from an external list: there is no dated Elo series, so Last 52 is a dash and Career is today\u2019s rating. '+
-    'Peak Elo and Vs pk come from the same weekly list and are OVERALL figures: the source publishes no per-surface peak, so both dash on the Hard, Clay and Grass pills rather than compare a surface rating against an overall peak.';
+  // TEN-399 R2 item 2: one short line.
+  var ELO_CAVEAT='Elo is a weekly snapshot from an external list: Last 52 is a dash, Career is today\u2019s rating.';
 
   // Column dictionaries. `k` is the path inside the scope node; a column with
   // `k:null` is NOT WIRED - we hold no field for it - and every one of its cells
@@ -30535,7 +30535,8 @@ window.DatabaseTab = (function(){
     // no more. Elo is NOT ours (a scraped weekly list), serve / return / under
     // pressure fold Challenger in only for players thin at tour level, and
     // Mental Edge now counts Challenger break points on two of its three views.
-    rtl.appendChild(el('p','db-rdesc','Surface Elo from an external weekly rating list. Serve, return and under-pressure ratings are derived from the ATP-level match archive, with a player\u2019s Challenger matches folded in (discounted \u00d70.9) only when he is thin at tour level. Mental Edge counts break points won and lost at ATP level, Challenger level or both \u2014 the view on that board says which. Higher is better across every column.'));
+    // TEN-399 R2 item 2: two lines, no discount factor.
+    rtl.appendChild(el('p','db-rdesc','Elo comes from an external weekly list. Serve, return and under-pressure are built from our ATP match archive, with Challenger matches added for players thin at tour level. Higher is better in every column.'));
     var pool=ratPool();
     // The count names the field of the board on screen. It is not one number for
     // the tab: the Serve board and the Mental Edge board have different fields
@@ -30736,7 +30737,7 @@ window.DatabaseTab = (function(){
     // narrowest of the four ratings on show. Say so rather than let a reader
     // assume one n backs all four.
     var note=ratSliceNote(ELO?null:['Elo (the scraped Elo store did not load)'],'matches on record');
-    note.innerHTML += '<br>'+esc('n is the serve-stat match count — the narrowest of the four ratings shown. Serve, return and under-pressure fold in a player\u2019s Challenger sample when he is thin at tour level, and the count follows the rating.')+
+    note.innerHTML += '<br>'+esc('n is the serve-stat match count.')+
       '<br>'+esc(ELO_CAVEAT);
     wrap.appendChild(note);
     return wrap;
@@ -31351,7 +31352,6 @@ window.DatabaseTab = (function(){
       if(!total) return who+'No matches on record at this slice.';
       return who+esc('Lines computed on ' + have.toLocaleString() + ' of ' + total.toLocaleString() +
         ' ' + (total === 1 ? 'match' : 'matches') + ' (' + (have/total*100).toFixed(1) + '%)' +
-        (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : '') +
         (part.noGames ? ' · ' + part.noGames + ' still awaiting per-set games' : '') +
         ' · ' + s.P.byFmt[fmt].length.toLocaleString() + (fmt==='bo3' ? ' best of three' : ' best of five'));
     }).join('<br>');
@@ -31375,7 +31375,9 @@ window.DatabaseTab = (function(){
       notes.push('Field, Vs field and Ranking are not published yet; Rate is computed from each player’s own matches.');
     } else {
       // TEN-399 founder fix 4 (card ff586600): one plain sentence, no file names, counts or unresolved lists.
-      notes.push('Field is the median rate on each line across roster players with at least '+LN_MIN_N+' matches on it; Ranking is the place in that field. Retired players are excluded.');
+      // TEN-399 R2 (founder wording, comment 24885032): one plain sentence + the Last 52 date.
+      notes.push('Field = the median rate on each line across tour players with at least '+LN_MIN_N+' matches on that line.'+
+        ' Last 52 = matches since '+fmtDate(lnCutoff())+'.');
     }
     if(notes.length){
       var un=el('div','db-unwired');
@@ -31388,8 +31390,8 @@ window.DatabaseTab = (function(){
     var table=el('div','db-lntbl');
     var sc=el('div','db-rscroll'); sc.appendChild(table); host.appendChild(sc);
     var COLS_SINGLE='minmax(130px,1.2fr) repeat(7,minmax(78px,1fr))';
-    // TEN-399 founder fix 3 (card ff586600): compare = Line | Field (one shared median) | per player Record · Rate · Vs field.
-    var COLS_CMP='minmax(130px,1.2fr) minmax(70px,0.8fr) '+subjects.map(function(){ return 'minmax(70px,0.9fr) minmax(78px,1fr) minmax(70px,0.9fr)'; }).join(' ');
+    // TEN-399 founder fix 3 + R2 item 4: compare = Line | Field (one shared median) | per player Rate · Vs field · Record.
+    var COLS_CMP='minmax(130px,1.2fr) minmax(70px,0.8fr) '+subjects.map(function(){ return 'minmax(78px,1fr) minmax(70px,0.9fr) minmax(70px,0.9fr)'; }).join(' ');
     function grid(cls, cols){ var d=el('div',cls); d.style.gridTemplateColumns=cols; return d; }
 
     if(!cmp){
@@ -31406,10 +31408,10 @@ window.DatabaseTab = (function(){
       var sh=grid('db-lnhd cmp', COLS_CMP); sh.appendChild(el('span','db-rh','Line'));
       var fh=el('span','db-lnsub','Field'); fh.title='Field median rate'; sh.appendChild(fh);
       subjects.forEach(function(s){
-        var r0=el('span','db-lnsub','Record'); r0.title=s.nm+' — record, hit–missed'; sh.appendChild(r0);
+        var r0=el('span','db-lnsub','Record'); r0.title=s.nm+' — record, hit–missed';
         var r1=el('span','db-lnsub','Rate'); r1.title=s.nm+' — coverage rate';
         var r2=el('span','db-lnsub','Vs field'); r2.title=s.nm+' — rate vs field median, in percentage points';
-        sh.appendChild(r1); sh.appendChild(r2);
+        sh.appendChild(r1); sh.appendChild(r2); sh.appendChild(r0);
       });
       table.appendChild(sh);
     }
@@ -31453,7 +31455,9 @@ window.DatabaseTab = (function(){
           var L = s.P ? lnLine(s.P.byFmt[fmt], kind, arg) : null;
           var rate = L ? lnRate(L) : null;
           var F = lnFieldStats(fmt, label, rate, s.nm);
-          var delta = (rate!=null && F) ? rate - F.median : null;
+          // TEN-399 R2 (founder card 0122a989 "ship-rounded"): Vs field = the DISPLAYED Rate minus the DISPLAYED Field
+          // (both 1 dp), so the three figures on screen always add up.
+          var delta = (rate!=null && F) ? (Math.round(Number(rate.toFixed(1))*10) - Math.round(Number(F.median.toFixed(1))*10))/10 : null;
           var title = s.nm+' · '+grp+' · '+label+' · '+(!L ? 'no match record' : (L.n ? L.hit+' of '+L.n : 'no matches on record'));
           if(!cmp){
             var mc=fig(L && L.n ? L.n.toLocaleString() : DASH, null, 'lnmatch');
@@ -31470,10 +31474,11 @@ window.DatabaseTab = (function(){
             row.appendChild(fig(avg==null ? DASH : lnSgn(avg), avg==null ? null : lnSgnCol(avg)));
             Array.prototype.forEach.call(row.children, function(c,i){ if(i && !c.title) c.title=title; });
           } else {
-            var rc=fig(L && L.n ? (L.hit+'–'+(L.n-L.hit)) : DASH, 'var(--text-label)', 'cmpc'); rc.title=title; row.appendChild(rc);
+            var rc=fig(L && L.n ? (L.hit+'–'+(L.n-L.hit)) : DASH, 'var(--text-label)', 'cmpc'); rc.title=title;
             var pc=pill(rate, L ? L.n : 0, true); pc.title=title; row.appendChild(pc);
             // TEN-399 founder fix 3: Vs field in the three-way sign colour, the single table's size and weight.
             var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', delta==null ? null : lnSgnCol(delta), 'cmpc'); dc.title=title+(F?' · field of '+F.size:''); row.appendChild(dc);
+            row.appendChild(rc);
           }
         });
         blk.appendChild(row);
@@ -32217,9 +32222,9 @@ window.DatabaseTab = (function(){
   function playerBookSplit(book, bl){
     function seg(s, name){
       if(!s) return 'none priced on '+esc(name);
-      // Hard gate (n < 30): no yield, the count is already in the phrase.
-      var fig = s.n<HARD_GATE ? 'too few matches for a yield' : '<b>'+fmtPct(s.yield)+'</b>';
-      return fig+' across '+fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '+esc(name);
+      // TEN-399 R2 item 5: hard gate (n < 30) = the count, then "(too few for a yield)"; never a yield.
+      if(s.n<HARD_GATE) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '+esc(name)+' (too few for a yield)';
+      return '<b>'+fmtPct(s.yield)+'</b> across '+fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '+esc(name);
     }
     var both = !!(bl && bl.seam && book.ps && book.b365);
     return 'Each match is priced on its '+esc(M.books[0])+' closing price, else '+esc(M.books[1])+'. '+
@@ -32246,7 +32251,8 @@ window.DatabaseTab = (function(){
     figs.appendChild(el('div','db-fig','<b>'+fmtInt(a.n)+'</b><span>Matches</span>'));
     figs.appendChild(el('div','db-fig yield',yfig+'<span>Flat-stake yield</span>'));
     // TEN-399: the tour-baseline figure is neutral (--text-label), never a sign colour.
-    figs.appendChild(el('div','db-fig base','<b style="color:var(--text-label)">'+(known?fmtPct(base):'—')+'</b><span>Tour baseline</span>'));
+    // TEN-399 R2 item 6: same 26px, weight 500 so the grey reads as secondary next to the 700 figures.
+    figs.appendChild(el('div','db-fig base','<b style="color:var(--text-label);font-weight:500">'+(known?fmtPct(base):'—')+'</b><span>Tour baseline</span>'));
     c.appendChild(figs);
 
     // Compare on the DISPLAYED precision: a gap that prints "+0.00pp" must not be

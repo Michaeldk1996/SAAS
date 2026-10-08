@@ -502,11 +502,11 @@ STALE.split = function (src) {
   if (!/^Each match is priced on its BookA closing price, else BookB\. Split by book: <b>−1\.00%<\/b> across 90 matches priced on BookA, <b>\+2\.00%<\/b> across 40 matches priced on BookB\.$/.test(p))
     return 'player split wording: ' + JSON.stringify(p);
   const g = apiX.playerBookSplit({ ps: { n: 90, yield: -0.01 }, b365: { n: 29, yield: 0.66 } }, null);
-  if (/66\.00/.test(g) || !/too few matches for a yield across 29 matches priced on BookB/.test(g))
+  if (/66\.00/.test(g) || !/, 29 matches priced on BookB \(too few for a yield\)\.$/.test(g))
     return 'hard-gated player split: ' + JSON.stringify(g);
   // TEN-384 fx4 item 6: a count of one reads "1 match", never "1 matches".
   const one = apiX.playerBookSplit({ ps: { n: 1, yield: -0.01 }, b365: { n: 1, yield: 0.02 } }, null);
-  if (/\b1 matches\b/.test(one) || !/across 1 match priced on BookA, .*across 1 match priced on BookB/.test(one))
+  if (/\b1 matches\b/.test(one) || !/1 match priced on BookA \(too few for a yield\), 1 match priced on BookB \(too few for a yield\)/.test(one))
     return 'one-match split: ' + JSON.stringify(one);
   return null;
 };
@@ -514,7 +514,7 @@ STALE.splitGate = STALE.split;   // the gate mutant is judged by the split check
 const STALE_MUTANTS = {
   footnote2: s => s.replace("+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')'", "+' prices stop on 13 Jan 2026)'"),
   split: s => s.replace("// Tour and Tournament band panels carry none.\n    return panel;", "// Tour and Tournament band panels carry none.\n    panel.appendChild(el('div','db-split','Split by book: x'));\n    return panel;"),
-  splitGate: s => s.replace("var fig = s.n<HARD_GATE ?", "var fig = false ?"),
+  splitGate: s => s.replace("if(s.n<HARD_GATE) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '", "if(false) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '"),
   footnote: s => s.replace("fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '", "fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '"),
   header: s => s.replace("' closing, else '+esc(M.books[1])+', per match, '", "' closing, else Bet365, per match, '"),
   stats: s => s.replace("['Seasons', fmtInt(seasons), null]", "['Seasons', fmtInt(17), null]"),
