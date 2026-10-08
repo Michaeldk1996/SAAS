@@ -3932,6 +3932,33 @@
       "p2": "N. Borges",
       "startTime": "2026-10-09T04:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12169487": {
+      "fixtureId": "id1200308575151602",
+      "mappedAt": "2026-10-08T08:32:12Z",
+      "orient": "same",
+      "p1": "M. Arnaldi",
+      "p2": "T. Fritz",
+      "startTime": "2026-10-09T02:00:00.000Z",
+      "tournamentId": 3085
+    },
+    "12169488": {
+      "fixtureId": "id1200308575151636",
+      "mappedAt": "2026-10-08T08:32:12Z",
+      "orient": "same",
+      "p1": "N. Djokovic",
+      "p2": "H. Hurkacz",
+      "startTime": "2026-10-09T02:00:00.000Z",
+      "tournamentId": 3085
+    },
+    "12169489": {
+      "fixtureId": "id1200308575151642",
+      "mappedAt": "2026-10-08T08:32:12Z",
+      "orient": "same",
+      "p1": "C. Ugo Carabelli",
+      "p2": "F. Auger-Aliassime",
+      "startTime": "2026-10-09T02:00:00.000Z",
+      "tournamentId": 3085
     }
   },
   "missAudit": {
@@ -3945,22 +3972,11 @@
       "projectedTtlUnitsPerDay": 4.2,
       "runs": 400,
       "spentRuns": 209,
-      "ttlBitRuns": 79,
-      "ttlBitShare": 0.198,
+      "ttlBitRuns": 78,
+      "ttlBitShare": 0.195,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-19T16:18:10Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 13,
-        "openMisses": 13,
-        "stale": 13,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 81
-      },
       {
         "at": "2026-09-19T17:18:28Z",
         "fixturesUnitsSpent": 1,
@@ -8349,9 +8365,20 @@
         "ttlBit": false,
         "unmapped": 3,
         "upcoming": 30
+      },
+      {
+        "at": "2026-10-08T08:32:12Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 3,
+        "upcoming": 32
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-08T07:31:46Z"
+  "updatedAt": "2026-10-08T08:32:12Z"
 }
