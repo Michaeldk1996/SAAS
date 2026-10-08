@@ -482,7 +482,8 @@ STALE.footnote2 = function (src) {
 // view: it must carry NO split line. The Player strip (playerBookSplit) keeps the wording + hard gate.
 STALE.split = function (src) {
   const i = src.indexOf('function median(a){ if(!a.length)');
-  const code = 'var DB_DOG_OPEN_TOP=true;\n' + ['el', 'esc', 'fmtInt', 'fmtP', 'fmtPct', 'yieldCell', 'agg', 'bands', 'dbMatchWord', 'bandTo', 'bandPanel', 'playerBookSplit'].map(f => fnSource(src, f)).join('\n') +
+  // TEN-401: the All row keeps its sign colour under the soft gate (yieldCell(a, true)), so signCol is sliced too.
+  const code = "var DB_DOG_OPEN_TOP=true;\nvar POS='var(--pos)', NEG='var(--neg)';\n" + ['el', 'esc', 'fmtInt', 'fmtP', 'fmtPct', 'signCol', 'yieldCell', 'agg', 'bands', 'dbMatchWord', 'bandTo', 'bandPanel', 'playerBookSplit'].map(f => fnSource(src, f)).join('\n') +
     '\n' + src.slice(i, src.indexOf('\n', i)) + '\nreturn { bands, bandPanel, playerBookSplit };';
   const doc = makeDoc(), mkEl = doc.createElement;
   doc.createElement = t => { const e = mkEl(t); e.style.setProperty = function (k, v) { this[k] = v; }; return e; };

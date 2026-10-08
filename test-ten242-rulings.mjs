@@ -366,14 +366,15 @@ test('EXECUTED: the speed-series trend states the year SPAN, not the number of p
   const montreal = tourxSpeedSeriesHtml({ as2023: 1.07, as2024: null, as2025: 1.02 });
   assert.ok(!/>2024</.test(montreal), 'a missing season must not be plotted or labelled');
   assert.match(montreal, /Abstract court speed · 2023–2025/, 'the eyebrow states the real range');
-  // TEN-376: the dot ring #ffffff is now var(--text).
-  assert.equal((montreal.match(/border:2px solid var\(--text\)/g) || []).length, 2, 'exactly one dot per real season');
+  // TEN-401 item 6: a white dot inside a 2px card-tone ring (one per real season).
+  const DOT = /width:9px;height:9px;border-radius:50%;background:var\(--text\);border:2px solid var\(--card\);/g;
+  assert.equal((montreal.match(DOT) || []).length, 2, 'exactly one dot per real season');
 
   // a single season: one dot, single-year eyebrow, and NO trend (nothing to trend)
   const one = tourxSpeedSeriesHtml({ as2023: null, as2024: 1.01, as2025: null });
   assert.match(one, /Abstract court speed · 2024/);
   assert.ok(!/Holding steady|Trending/.test(one), 'one point is not a trend');
-  assert.equal((one.match(/border:2px solid var\(--text\)/g) || []).length, 1);
+  assert.equal((one.match(DOT) || []).length, 1);
 
   // no seasons at all: render nothing rather than an empty chart
   assert.equal(tourxSpeedSeriesHtml({ as2023: null, as2024: null, as2025: null }), '');
@@ -551,6 +552,14 @@ test('RULING: DatabaseTab contains NO document-wide DOM lookup (the class, not t
 // window, book and exclusion rules. This test recomputes every card's figures
 // straight from that store and requires an exact match, so the two can never
 // drift apart again the way they did (Hamburg: card -10.5%, panel +0.71%).
+// An independent reading of tournament-market.json archiveFilter (not the dashboard's code): a row of a filtered
+// archive string counts only if its season and surface are listed.
+function lockOk(filter, names, r) {
+  const f = filter && filter[names[r[4]]];
+  if (!f) return true;
+  return (!f.years || f.years.includes(Math.floor(r[0] / 10000))) && (!f.surfaces || f.surfaces.includes(r[2]));
+}
+
 test('RULING: every ROI card equals the panel it links to, recomputed from the store', () => {
   const mkt = JSON.parse(readFileSync(join(HERE, 'tournament-market.json'), 'utf8'));
   const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
@@ -567,7 +576,9 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
   for (const [name, t] of Object.entries(mkt.tournaments)) {
     const want = (t.archiveNames || []).map((n) => idx.get(n)).filter((i) => i !== undefined);
     if (!want.length) continue;
-    const rs = y.rows.filter((r) => want.includes(r[4]));
+    // TEN-401 row split (Montreal / Toronto / Turin / Hamburg / Antwerp share archive strings): the card pools only the
+    // rows its archiveFilter names, and the panel locks to the same rows (DatabaseTab rowLockOk).
+    const rs = y.rows.filter((r) => want.includes(r[4]) && lockOk(t.archiveFilter, names, r));
     let sf = 0, sd = 0, fw = 0;
     for (const r of rs) { const w = !!r[7]; sf += (w ? r[5] : 0) - 1; sd += (w ? 0 : r[6]) - 1; if (w) fw++; }
     const exp = {
@@ -589,7 +600,7 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
   // card and confirm the same comparison catches it.
   const probe = Object.entries(mkt.tournaments)[0];
   const want = probe[1].archiveNames.map((n) => idx.get(n)).filter((i) => i !== undefined);
-  const rs = y.rows.filter((r) => want.includes(r[4]));
+  const rs = y.rows.filter((r) => want.includes(r[4]) && lockOk(probe[1].archiveFilter, names, r));
   assert.notEqual(rs.length, probe[1].n + 1,
     'control setup is degenerate');
   assert.ok(rs.length === probe[1].n,
@@ -654,32 +665,119 @@ test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
   assert.match(cap[1], /match index/i);
 });
 
-test('RULING: speed-panel columns stay NEUTRAL; only the selected row is tinted, by its own surface', () => {
+// TEN-401 ticket item 7 (founder, step 7) supersedes the 2026-09-20 surface-tinted selection (gate 33f71aab).
+test('TEN-401 item 7: Compare all — matched row is the selected tile, white text, Ring-blue bars; columns and marks neutral', () => {
   const i = DASH.indexOf('function tourxSpeedPanelHtml');
   assert.ok(i > 0, 'tourxSpeedPanelHtml not found');
   const fn = DASH.slice(i, DASH.indexOf('\n/* ---------- Section 1', i));
-
-  // Selection is tinted from the ROW, not the column.
-  assert.match(fn, /const tint = tintOf\(t\);/);
-  assert.match(fn, /const tintOf = t => SURF\[t\.surface\] \|\| SURF\.hard;/,
-    'the tint must derive from the row own surface — bucketOf puts any indoor event in the Indoor column, so a column-derived tint would paint an indoor clay event blue');
-  assert.match(fn, /background:\$\{on \? hexA\(tint,0\.13\) : 'transparent'\}/);
-  assert.match(fn, /box-shadow:inset 2px 0 0 \$\{tint\}/);
-  assert.deepEqual(
-    // TEN-376 Foundation supersedes the 12a surface hues (TEN-285): surfaces are neutral
-    // (Q2.4, --text-soft); the hard/default row keeps the --bar fill. The ruling's intent —
-    // the tint comes from a fixed per-surface token map — is what stays pinned.
-    Object.entries({ clay: 'var(--text-soft)', hard: 'var(--bar)', grass: 'var(--text-soft)' })
-      .filter(([k, v]) => !fn.includes(`${k}:'${v}'`)), [],
-    'the tokens must be the foundation surface tokens (TEN-376)');
-
-  // The COLUMN chrome must carry no hue — that is the "keep it neutral" half.
+  const fnCode = code(fn);
+  // matched row = the selected tile class (--selected + inset 16% ring), never a tint or an inset bar
+  assert.match(fn, /class="tourx-cmprow\$\{on \? ' on' : ''\}"/);
+  assert.match(DASH, /\.tourx-cmprow\.on\{ background:var\(--selected\); box-shadow:inset 0 0 0 1px var\(--edge-16\); \}/);
+  assert.ok(!/inset 2px 0 0|tintOf|SURF\[|hexA\(/.test(fnCode), 'a surface tint / inset bar survives on the matched row');
+  // white text, white value — no blue value
+  assert.match(fn, /color:\$\{on \? 'var\(--text\)' : 'var\(--text-soft\)'\}/);
+  assert.match(fn, /font-weight:700;color:var\(--text\);flex:none;">\$\{t\.abstractSpeed\.toFixed\(2\)\}/);
+  // bars: solid --bar for the matched event, --bar-2 (45%) for the rest
+  assert.match(fn, /background:\$\{on \? 'var\(--bar\)' : 'var\(--bar-2\)'\}/);
+  // columns card tone; marks = badges (--inner, no edge, grey)
+  assert.match(fn, /return `<div style="background:var\(--card\);display:flex;flex-direction:column;">/);
   const head = /height:41px[\s\S]*?\$\{rows\.length\} · med/.exec(fn);
   assert.ok(head, 'column header block not found');
-  assert.ok(!/\$\{colTint|SURF\.|tintOf/.test(head[0]),
-    'a column heading or mark chip is tinted — the ruling keeps the columns neutral');
-  assert.ok(!/#5b9bff/.test(fn.slice(fn.indexOf('const tint = tintOf'), fn.indexOf('</div>`;'))),
-    'the selected row still carries the old accent blue');
+  assert.match(head[0], /background:var\(--inner\);color:var\(--text-label\);font-family:var\(--font-words\)/);
+  assert.ok(!/border:1px solid/.test(head[0]), 'the IND / OUT / CLY / GRS mark carries an edge');
+});
+
+test('TEN-401 item 7: every overlay is a pop-up sheet over a content-area scrim; Close is a control', () => {
+  const sh = fnSource(DASH, 'function tourxOverlayShell(opts){');
+  assert.match(sh, /inset:0 0 0 var\(--sf-side, 0px\)/, 'the scrim must start at the sidebar edge');
+  assert.match(sh, /background:var\(--backdrop\); backdrop-filter:blur\(3px\);clip-path:inset\(0\)/);
+  assert.match(sh, /background:var\(--card\);border:1px solid var\(--edge-10\);border-radius:16px;box-shadow:var\(--shadow-modal\)/);
+  assert.match(sh, /class="tourx-closebtn"[^>]*background:var\(--inner\)/);
+  assert.ok(!/border:1px solid var\(--edge-6\)/.test(sh), 'the sheet or its Close button still carries the old 6% panel edge');
+  // Esc + outside click + the sidebar closer
+  assert.match(DASH, /if \(e\.key === 'Escape'\) tourxCloseOverlays\(\);/);
+  assert.match(DASH, /if \(scrim && e\.target === scrim\) tourxCloseOverlays\(\);/);
+  assert.match(DASH, /\(\) => \{ if \(typeof tourxCloseOverlays === 'function'\) tourxCloseOverlays\(\); \}/);
+  // quote avatars: initials grey on --inner, no edge
+  const qp = fnSource(DASH, 'function tourxQuotesPanelHtml(){');
+  assert.match(qp, /border-radius:50%;background:var\(--inner\);display:inline-flex;[^"]*color:var\(--text-label\);/);
+});
+
+test('TEN-401 items 3–5: rail, hero scale and Overview blocks', () => {
+  const rail = fnSource(DASH, 'function tourxOverviewListHtml(){');
+  // selected row = selected tile, no surface wash; tier chip grey, no edge
+  assert.match(rail, /class="tourx-ovrow\$\{seld \? ' on' : ''\}"/);
+  assert.ok(!/TOURX_RAIL_SURF|background:\$\{bg\}/.test(rail), 'a surface-coloured row wash survives');
+  assert.match(rail, /border:none;color:var\(--text-label\);\$\{chipFont\}/);
+  // search = control: --inner, no edge
+  assert.match(rail, /class="tourx-search" style="display:flex;align-items:center;gap:10px;background:var\(--inner\);/);
+  assert.match(DASH, /#tourxOverview \.tourx-search\{ border:1px solid transparent; \}/);
+  const panel = fnSource(DASH, 'function tourxConditionsPanelHtml(){');
+  // item 4 (override): 8px track at 6% white, no gradient; white knob + 3px card ring, nothing else
+  assert.match(panel, /height:8px;border-radius:5px;background:var\(--track\);cursor:pointer;/);
+  assert.ok(!/linear-gradient/.test(code(panel)), 'the court-speed scale still carries a gradient');
+  assert.match(panel, /width:16px;height:16px;border-radius:50%;background:var\(--text\);border:3px solid var\(--card\);transform:translate\(-50%,-50%\);"/);
+  // Completed badge: inner, grey caps, no edge
+  assert.match(panel, /text-transform:uppercase;color:var\(--text-label\);background:var\(--inner\);border:1px solid transparent;[^`]*>Completed</);
+  // ROI cards: clickable tiles when they open something; report button: inner, white, 10% edge on hover only
+  const roi = fnSource(DASH, 'function tourxRoiPairHtml(c){');
+  assert.match(roi, /class="tourx-roitile open"/);
+  assert.match(DASH, /#tourxOverview \.tourx-roitile\{ background:var\(--card\); border:1px solid var\(--edge-7\);/);
+  assert.match(DASH, /#tourxOverview \.tourx-roitile\.open:hover\{ background:var\(--tile-hover\); border-color:var\(--edge-16\); \}/);
+  const cta = fnSource(DASH, 'function tourxReportCtaHtml(c){');
+  assert.match(cta, /class="tourx-reportbtn"[^>]*color:var\(--text\);background:var\(--inner\)/);
+  assert.ok(!/border:1px solid var\(--edge-10\)|var\(--bar\)/.test(cta), 'the report button carries a resting edge or a blue fill');
+  assert.match(DASH, /#tourxOverview \.tourx-reportbtn:hover\{ border-color:var\(--edge-10\); \}/);
+  // reliability bar: Ring blue on the 6% track
+  const rel = fnSource(DASH, 'function tourxReliabilityHtml(c){');
+  assert.match(rel, /background:var\(--track\);overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:\$\{v\}%;background:var\(--bar\)/);
+});
+
+test('TEN-401 item 6: seven-year chart — no area fill, white 2.4px line, grey mono years', () => {
+  const src = fnSource(DASH, 'function tourxSpeedSeriesHtml(c){');
+  const f = eval(`(function(){ ${src} return tourxSpeedSeriesHtml; })()`);
+  const h = f({ as2023: 1.10, as2024: 1.08, as2025: 1.11 });
+  assert.ok(!/<path|linearGradient|fill="url/.test(h), 'an area fill (or its gradient) is drawn under the line');
+  assert.match(h, /<polyline [^>]*fill="none" stroke="var\(--text\)" stroke-width="2\.4"/);
+  assert.equal((h.match(/font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:0\.06em;color:var\(--text-label\);">20\d\d</g) || []).length, 3);
+  assert.equal((h.match(/font-size:12\.5px;font-weight:700;color:var\(--text\);white-space:nowrap;">\d\.\d\d</g) || []).length, 3, 'value labels are mono white');
+});
+
+test('TEN-401 item 5 / L1: ROI yield is green / red by SIGN, grey within 1pp of the tour; a thin event is a dash, never 0', () => {
+  const src = fnSource(DASH, 'function tourxRoiPairHtml(c){');
+  const gate = (n) => n == null ? { mode: 'none' } : n >= 30 ? { mode: 'full' } : { mode: 'small' };
+  const run = (mkt) => eval(`(function(){ const tourxSampleGate = ${gate.toString()}; const tourxMarketFor = () => (${JSON.stringify(mkt)}); ${src} return tourxRoiPairHtml; })()`)({ name: 'X' });
+  const vals = (h) => [...h.matchAll(/font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:([^;]+);">([^<]+)</g)].map(m => [m[1], m[2]]);
+  const base = { roiFav: -1.8, roiDog: -7 };
+  assert.deepEqual(vals(run({ n: 1949, roiFav: 0.3, roiDog: -12, baseline: base, archiveNames: ['Wimbledon'] })),
+    [['var(--pos)', '+0.3%'], ['var(--neg)', '−12.0%']], 'beyond 1pp: green above the tour, red below, true minus');
+  assert.deepEqual(vals(run({ n: 987, roiFav: -2.0, roiDog: -7.5, baseline: base, archiveNames: ['Madrid'] })),
+    [['var(--text-label)', '−2.0%'], ['var(--text-label)', '−7.5%']], 'within 1pp of the tour: grey');
+  assert.deepEqual(vals(run(null)), [['var(--text-label)', '—'], ['var(--text-label)', '—']], 'no join: a grey dash, not a zero');
+  // Founder ruling TEN-401 (card c572b773 roicol = sign): colour follows the SIGN, not the gap to the tour. Madrid
+  // underdogs −4.4% (tour −7.0) beat the tour by 2.6pp but lose money → red; a +0.5% favourite 2.3pp above the tour → green.
+  assert.deepEqual(vals(run({ n: 987, roiFav: 0.5, roiDog: -4.4, baseline: base, archiveNames: ['Madrid'] })),
+    [['var(--pos)', '+0.5%'], ['var(--neg)', '−4.4%']], 'sign, not gap: a losing yield above the tour is red');
+  // a card that opens nothing is a panel, not a clickable tile
+  assert.ok(!/tourx-roitile/.test(run({ n: 40, roiFav: 1, roiDog: 1, baseline: base, archiveNames: [] })));
+});
+
+test('TEN-401 Data 3 / L3: a quote ships only with a traceable source (resolved speaker + year)', () => {
+  const src = fnSource(DASH, 'function tourxQuoteTraceable(q){');
+  const ok = eval(`(function(){ ${src} return tourxQuoteTraceable; })()`);
+  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'surname', year: 2026 }), true);
+  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'exact', year: 2025 }), true);
+  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'surname', year: null }), false, 'no date: not traceable');
+  assert.equal(ok({ player: 'Ball kid', playerMatch: 'unmatched', year: 2026 }), false, 'speaker not resolved to a player');
+  assert.equal(ok({ player: 'Cerundolo', playerMatch: 'ambiguous', year: 2026 }), false, 'speaker ambiguous');
+  assert.match(DASH, /const TOURX_QUOTE_RULE = 'traceable';/);
+  const fr = fnSource(DASH, 'function tourxQuotesFor(name){');
+  assert.match(fr, /filter\(q => TOURX_QUOTE_RULE === 'all' \|\| tourxQuoteTraceable\(q\)\)/, 'the card, its count and the panel read the filtered list');
+  // the shipped artefact: every event that renders a card has >= 1 traceable note, and the count is measured
+  const Q = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
+  const events = Object.keys(Q).filter((k) => Q[k].some(ok));
+  assert.ok(events.length > 0 && events.length < Object.keys(Q).length, `vacuous: ${events.length} of ${Object.keys(Q).length} events pass`);
 });
 
 // ---------------------------------------------------------------------------
@@ -745,4 +843,42 @@ test('RULING: the Player panels use the career match index and its season ticks'
   assert.ok(caps.length >= 2, `expected a caption on both the Tour curve and the Player main panel, found ${caps.length}`);
   assert.deepEqual([...new Set(caps)], ['Season · match index'],
     `every profit-curve caption must name both axes; found ${JSON.stringify(caps)}`);
+});
+
+// ---------------------------------------------------------------------------
+// TEN-401 review fix: the ROI panel's ROW LOCK runs the DASHBOARD's own functions, against a host-city table fixed
+// here from outside sources (Wikipedia "YYYY Rogers Cup / National Bank Open" infobox, men's location; 2020 not held;
+// ATP Finals London 2009–20, Turin 2021+; Hamburg's July clay editions 2021–24 filed as "European Open").
+test('TEN-401: the ROI panel row lock reproduces Montreal / Toronto / Turin / Hamburg / Antwerp, and only on its own subject', () => {
+  const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
+  const mkt = JSON.parse(readFileSync(join(HERE, 'tournament-market.json'), 'utf8'));
+  const M = y.meta;
+  const grab = (sig) => { const i = DASH.indexOf(sig); assert.ok(i > 0, sig + ' not found'); let d = 0, j = DASH.indexOf('{', i);
+    for (let k = j; k < DASH.length; k++) { if (DASH[k] === '{') d++; else if (DASH[k] === '}' && --d === 0) return DASH.slice(i, k + 1); } };
+  const { rowLockFor, rowLockOk } = eval(`(function(){ ${grab('function rowLockFor(filter){')} ${grab('function rowLockOk(lock, r){')} return { rowLockFor, rowLockOk }; })()`);
+  const HOST = { Toronto: [2010, 2012, 2014, 2016, 2018, 2021, 2023, 2025], Montreal: [2011, 2013, 2015, 2017, 2019, 2022, 2024, 2026] };
+  const count = (ev) => { const t = mkt.tournaments[ev]; const ix = t.archiveNames.map((n) => M.tournaments.indexOf(n)); const lock = rowLockFor(t.archiveFilter);
+    return y.rows.filter((r) => ix.includes(r[4]) && rowLockOk(lock, r)).length; };
+  for (const city of ['Montreal', 'Toronto']) {
+    const f = mkt.tournaments[city].archiveFilter;
+    const yrs = [...new Set(Object.values(f).flatMap((x) => x.years))].sort();
+    assert.deepEqual(yrs, HOST[city], city + ': the pooled seasons are not the men\'s host years');
+    assert.equal(count(city), mkt.tournaments[city].n, city + ': panel lock ≠ card');
+  }
+  const canada = y.rows.filter((r) => ['Rogers Masters', 'Canadian Open'].includes(M.tournaments[r[4]])).length;
+  assert.equal(count('Montreal') + count('Toronto'), canada, 'Montreal + Toronto must partition every Canada row');
+  assert.ok(Object.values(mkt.tournaments.Turin.archiveFilter).every((x) => x.years.every((v) => v >= 2021)), 'Turin pools a London season');
+  assert.equal(count('Turin'), mkt.tournaments.Turin.n);
+  const eo = y.rows.filter((r) => M.tournaments[r[4]] === 'European Open').length;
+  const eoH = mkt.tournaments.Hamburg.archiveFilter['European Open'], eoA = mkt.tournaments.Antwerp.archiveFilter['European Open'];
+  assert.deepEqual(eoH.surfaces, [M.surfaces.indexOf('Clay')], 'Hamburg takes European Open clay only');
+  assert.deepEqual(eoA.surfaces, [M.surfaces.indexOf('Hard')], 'Antwerp takes European Open hard only');
+  const eoRows = (f) => y.rows.filter((r) => M.tournaments[r[4]] === 'European Open' && f.years.includes(Math.floor(r[0] / 10000)) && f.surfaces.includes(r[2])).length;
+  assert.equal(eoRows(eoH) + eoRows(eoA), eo, 'Hamburg + Antwerp must partition every European Open row');
+  assert.equal(count('Hamburg'), mkt.tournaments.Hamburg.n); assert.equal(count('Antwerp'), mkt.tournaments.Antwerp.n);
+  // the lock is wired into filteredRows and dies with its subject (a new pick)
+  const fr = grab('function filteredRows(names){');
+  assert.match(fr, /state\.tournLock && state\.tournLockFor===state\.tournament\) \? rowLockFor\(state\.tournLock\)/, 'filteredRows no longer binds the lock to its subject');
+  assert.match(fr, /if\(_lock && !rowLockOk\(_lock, r\)\) continue;/, 'filteredRows no longer applies the row lock');
+  assert.match(DASH, /state\.tournLock=opts\.initialTournamentFilter\|\|null;[^\n]*\n\s*state\.tournLockFor=state\.tournament;/, 'mount no longer sets the lock for this subject');
 });

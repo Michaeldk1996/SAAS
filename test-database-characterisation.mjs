@@ -150,6 +150,11 @@ test('CHARACTERISATION: yieldCell — all three TEN-243 sample-gate states', () 
   assert.match(F.yieldCell({ n: HARD_GATE - 1, yield: 0.1 }), /db-yieldcell hard/);
   assert.match(F.yieldCell({ n: SOFT_GATE, yield: 0.1 }), /style="color:/);
   assert.match(F.yieldCell({ n: SOFT_GATE - 1, yield: 0.1 }), /db-yieldcell soft/);
+
+  // TEN-401 step-6 carry-over: the ALL row keeps its sign colour under the soft gate; a hard-gated All row still dashes.
+  assert.equal(F.yieldCell({ n: SOFT_GATE - 1, yield: -0.0304 }, true), `<span class="db-yieldcell" style="color:${NEG}">−3.04%</span>`);
+  assert.equal(F.yieldCell({ n: HARD_GATE, yield: 0.0154 }, true), `<span class="db-yieldcell" style="color:${POS}">+1.54%</span>`);
+  assert.equal(F.yieldCell({ n: HARD_GATE - 1, yield: 0.1 }, true), '<span class="db-yieldcell hard">—</span>');
 });
 
 // ---------------------------------------------------------------- the numbers
@@ -268,7 +273,9 @@ test('the Database module still exposes init(), whatever else it gains', () => {
   // The refactor may ADD mount(); it must never REMOVE init(), because the nav
   // hook calls it and that call site is deliberately left untouched.
   assert.match(DASH, /window\.DatabaseTab = \(function\(\)\{/);
-  assert.match(DASH, /return \{ (mount: mount, )?init: init \};/);
+  // TEN-401 r1: the old pattern (no extra members) matched window.EntryListsTab's `return { init: init };`, not the
+  // Database module's — it went vacuous once the Database module gained instanceCount. Pinned to the Database line now.
+  assert.match(DASH, /return \{ (mount: mount, )?init: init(, instanceCount: function\(\)\{ return INSTANCES\.length; \})? \};/);
   assert.match(DASH, /if \(tab === 'database'\) \{ if \(window\.DatabaseTab\) window\.DatabaseTab\.init\(\); \}/,
     'the standalone nav call site must keep working exactly as today');
 });

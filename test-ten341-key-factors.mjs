@@ -70,7 +70,7 @@ const S = new Function('CORE', `
   ${['escapeHtml', 'psShortName', 'psCellFor', 'psMirrorN', 'psSurfaceCellFor', 'psArchIndex', 'psArchFor', 'psFmtMeetDate', 'psRoundAbbr', 'psNormTour', 'psTourMeta',
      'psGroupMeetings', 'styleMeetRowsFor', 'ppCleanTournamentName', 'surnameFirstName', 'formIni', 'eventKeyOfMatch',
      'apiStartMs', 'h2hRoundLabel', 'maRoundName', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
-     'trHeaderHtml', 'trKeyOf', 'trMarketFor', 'trSameEvent', 'trRowOf', 'trModelOf', 'newsParseTs', 'aNewsFeedOk', 'aNewsArticlesFor', 'aNewsStoryKey',
+     'trHeaderHtml', 'trKeyOf', 'trMarketFor', 'trArchiveNames', 'trSameEvent', 'trRowOf', 'trModelOf', 'newsParseTs', 'aNewsFeedOk', 'aNewsArticlesFor', 'aNewsStoryKey',
      'progressionByesCredible', 'mxBookLabel'].map(slice).join('\n')}
   ${['TR_RG_NOTE', 'TR_NO_SPEED', 'TR_RESULT', 'TR_MONO', 'TR_BEST_RANK'].map(n => constSrc(n, html)).join('\n')}
   ${/const A_NEWS_WINDOW_DAYS = \d+;/.exec(html)[0]}

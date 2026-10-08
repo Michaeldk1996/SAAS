@@ -4,11 +4,10 @@
  * ---------------------------------------------------------------------------
  * Per-tournament market performance, computed from settled results-and-prices.
  *
- * Source: odds-archive/*.csv — tennis-data.co.uk closing prices (avgw/avgl =
- * average closing price across books for the match winner / loser). This is the
- * same settled set build-odds-performance.js reads; here we group BY TOURNAMENT
- * instead of by player. odds-archive/ is never fetched by the browser — it is
- * the raw source the build reads.
+ * Source: database-yield.json — the Database page's own rows (build-database-yield.js
+ * from odds-archive/*.csv: Pinnacle closing, else Bet365 closing, per match; 2010+;
+ * walkovers, retirements, exact ties and >1.15-overround markets excluded). Grouped
+ * BY TOURNAMENT here. See the founder ruling in main().
  *
  * For every completed match we take the favourite = the shorter closing price:
  *   - ROI backing favourites  flat 1u on the favourite every match, at its
@@ -29,15 +28,33 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = __dirname;
-const ARCHIVE_DIR = path.join(ROOT, 'odds-archive');
 const OUT = path.join(ROOT, 'tournament-market.json');
 const MIN_MATCHES = 30;
 
 // Dashboard tournament name -> every archive `tournament` string it has shipped
 // under (sponsor names change season to season). Only high-confidence joins are
 // listed; anything not here em-dashes. Montreal/Toronto and Turin (ATP Finals)
-// are deliberately absent — their archive strings do not identify the city/venue.
+// share archive strings with other venues, so those strings are pooled by a ROW FILTER (ROW_SPLIT).
+// FOUNDER RULING TEN-401 (2026-10-08, card c572b773 "canada = split by year"): the Canadian Masters alternates
+// cities and the archive names it by sponsor, the ATP Finals moved London → Turin in 2021. Men's Canada: Toronto in
+// even years / Montreal in odd years to 2019, swapped from 2021 (2021 Toronto … 2025 Toronto, 2026 Montreal — matches
+// player-profiles.json). Not held (2020 cancelled) simply has no rows.
+// Review fix (TEN-401): the archive files Hamburg's July clay editions 2021–24 under "European Open", Antwerp's
+// October name — so "European Open" splits by SURFACE: clay = Hamburg, hard = Antwerp.
+// ROW_SPLIT[event][archive string] = { year?: y => bool, surface?: 'Hard' | 'Clay' | 'Grass' }. A filtered string never
+// counts unfiltered; the event emits archiveFilter (pooled years + surfaces per string) so the panel can lock the same rows.
+const CANADA = { montreal: y => (y <= 2019 ? y % 2 === 1 : y % 2 === 0), toronto: y => (y <= 2019 ? y % 2 === 0 : y % 2 === 1) };
+const ROW_SPLIT = {
+  'Montreal': { 'Rogers Masters': { year: CANADA.montreal }, 'Canadian Open': { year: CANADA.montreal } },
+  'Toronto': { 'Rogers Masters': { year: CANADA.toronto }, 'Canadian Open': { year: CANADA.toronto } },
+  'Turin': { 'Masters Cup': { year: y => y >= 2021 } },
+  'Hamburg': { 'European Open': { surface: 'Clay' } },
+  'Antwerp': { 'European Open': { surface: 'Hard' } },
+};
 const ALIAS = {
+  'Montreal': ['Rogers Masters', 'Canadian Open'],
+  'Toronto': ['Rogers Masters', 'Canadian Open'],
+  'Turin': ['Masters Cup'],
   'Australian Open': ['Australian Open'],
   'French Open': ['French Open'], 'Roland Garros': ['French Open'],
   'Wimbledon': ['Wimbledon'],
@@ -63,7 +80,7 @@ const ALIAS = {
   'Basel': ['Swiss Indoors', 'Davidoff Swiss Indoors'],
   'Beijing': ['China Open'],
   'Tokyo': ['Rakuten Japan Open Tennis Championships', 'Japan Open', 'AIG Japan Open Tennis Championships', 'Japan Open Tennis Championships'],
-  'Hamburg': ['Hamburg TMS', 'German Open Tennis Championships', 'International German Open', 'Hamburg Open', 'bet-at-home Open'],
+  'Hamburg': ['Hamburg TMS', 'German Open Tennis Championships', 'German Tennis Championships', 'International German Open', 'Hamburg Open', 'bet-at-home Open', 'European Open'],
   'Stuttgart': ['Mercedes Cup', 'Mercedes-Benz Cup', 'Stuttgart Open'],
   'Estoril': ['Estoril Open', 'Millennium Estoril Open', 'Millenium Estoril Open', 'Portugal Open'],
   'Marseille': ['Open 13'],
@@ -89,7 +106,8 @@ const ALIAS = {
   'Umag': ['Croatia Open', 'Studena Croatia Open', 'ATP Vegeta Croatia Open', 'Konzum Croatia Open'],
   'Kitzbuhel': ['Generali Open', 'Austrian Open'],
   'Delray Beach': ['Delray Beach Open', 'International Championships'],
-  'Adelaide': ['Adelaide International'],
+  'Adelaide': ['Adelaide International', 'Adelaide International 1', 'Adelaide International 2'],
+  'Bucharest': ['Open Romania', 'BRD Nastase Tiriac Trophy', 'Tiriac Open'],
   'Lyon': ['Lyon Open', 'Open de Nice Côte d’Azur'],
   'Antwerp': ['European Open'],
   'Dallas': ['Dallas Open'],
@@ -100,45 +118,10 @@ const ALIAS = {
   'Hangzhou': ['Hangzhou Open'],
 };
 
-function parseCsv(file) {
-  const lines = fs.readFileSync(file, 'utf8').split('\n').filter((l) => l.length);
-  const header = lines[0].split(',');
-  return lines.slice(1).map((line) => {
-    const cells = []; let cur = ''; let quoted = false;
-    for (let i = 0; i < line.length; i++) {
-      const ch = line[i];
-      if (quoted) {
-        if (ch === '"' && line[i + 1] === '"') { cur += '"'; i++; }
-        else if (ch === '"') quoted = false;
-        else cur += ch;
-      } else if (ch === '"') quoted = true;
-      else if (ch === ',') { cells.push(cur); cur = ''; }
-      else cur += ch;
-    }
-    cells.push(cur);
-    const row = {}; header.forEach((h, i) => { row[h] = cells[i] === undefined ? '' : cells[i]; });
-    return row;
-  });
-}
-
-const num = (x) => { const v = parseFloat(x); return Number.isFinite(v) ? v : null; };
-
-// A match contributes (favWon, favPrice, dogPrice) or null when unusable.
-function contrib(r) {
-  if ((r.comment || 'completed').toLowerCase() !== 'completed') return null;
-  const aw = num(r.avgw); const al = num(r.avgl);
-  if (!aw || !al || aw === al) return null;
-  const favWon = aw < al; // winner's price is aw; if it was the shorter one the fav won
-  return [favWon, Math.min(aw, al), Math.max(aw, al)];
-}
-
-function agg(cs) {
-  const n = cs.length;
-  if (!n) return null;
-  let sf = 0, sd = 0, fw = 0;
-  for (const [won, fp, dp] of cs) { sf += (won ? fp : 0) - 1; sd += (won ? 0 : dp) - 1; if (won) fw += 1; }
-  return { n, roiFav: +(sf / n * 100).toFixed(1), roiDog: +(sd / n * 100).toFixed(1), favRel: Math.round(fw / n * 100) };
-}
+// TEN-401 Data 1: the old archive path (parseCsv + contrib/agg over tennis-data avgw/avgl, the cross-book average
+// price) is deleted. It had been dead since the 2026-09-20 ruling below and was a second, drifting definition of
+// "ROI backing favourites". The ONE definition is aggRows() over database-yield.json rows — Pinnacle closing, else
+// Bet365 closing, per match (database-yield meta.priceRule) — so a card equals the Database → Tournament All row.
 
 function main() {
   // FOUNDER RULING 2026-09-20 — "so card and panel agree".
@@ -175,7 +158,7 @@ function main() {
   if (!Array.isArray(names) || !names.length) throw new Error('database-yield.json carries no meta.tournaments.');
 
   // row = [date, level, surface, round, tournamentIdx, favPrice, dogPrice, favWon, book]
-  const R_TOURN = 4, R_FAV = 5, R_DOG = 6, R_WON = 7;
+  const R_SURF = 2, R_TOURN = 4, R_FAV = 5, R_DOG = 6, R_WON = 7;
 
   const idxOf = new Map();
   names.forEach((n, i) => idxOf.set(n, i));
@@ -194,13 +177,21 @@ function main() {
   for (const [name, arcs] of Object.entries(ALIAS)) {
     const hit = [], miss = [];
     let pool = [];
+    const split = ROW_SPLIT[name] || {};
+    const filter = {};
     for (const a of arcs) {
       const ix = idxOf.get(a);
       if (ix === undefined) { miss.push(a); continue; }
       const rs = byIdx.get(ix);
       if (!rs || !rs.length) { miss.push(a); continue; }
+      const rule = split[a];
+      const surfIx = rule && rule.surface ? (meta.surfaces || []).indexOf(rule.surface) : null;
+      if (rule && rule.surface && surfIx < 0) throw new Error(`ROW_SPLIT surface ${rule.surface} is not in database-yield.json meta.surfaces`);
+      const kept = rule ? rs.filter(r => (!rule.year || rule.year(Math.floor(r[0] / 10000))) && (surfIx == null || r[R_SURF] === surfIx)) : rs;
+      if (!kept.length) { miss.push(a); continue; }
+      if (rule) filter[a] = { years: [...new Set(kept.map(r => Math.floor(r[0] / 10000)))].sort((p, q) => p - q), surfaces: [...new Set(kept.map(r => r[R_SURF]))].sort() };
       hit.push(a);
-      pool = pool.concat(rs);
+      pool = pool.concat(kept);
     }
     if (miss.length) unresolved[name] = miss;
     const a = aggRows(pool);
@@ -208,7 +199,9 @@ function main() {
       // Emit the archive strings this figure was ACTUALLY pooled from. The
       // Tournaments page hands these to the Database panel, so the panel's
       // population is the card's population - the same rows, not a re-derivation.
-      tournaments[name] = Object.assign({}, a, { archiveNames: hit });
+      // A split string also emits the rows it pooled (years + surface indices): the panel locks to them (card = panel).
+      const extra = Object.keys(filter).length ? { archiveFilter: filter } : {};
+      tournaments[name] = Object.assign({}, a, { archiveNames: hit }, extra);
     }
   }
 

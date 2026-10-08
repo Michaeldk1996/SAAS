@@ -183,10 +183,12 @@ CHECKS.bands = (src) => {
     if (all.cells[3] !== med(t.rows.map(price)).toFixed(2)) return `${side}: All median ${all.cells[3]} is not the pooled median`;
     if (!all.cells[1] || !all.cells[2] || all.cells[1] === '—') return `${side}: All From / To empty: ${JSON.stringify(all.cells)}`;
     if (all.cells[1] !== bandRows[0].cells[1]) return `${side}: All From ${all.cells[1]} != first band From ${bandRows[0].cells[1]}`;
-    if (side === 'fav' && all.cells[2] !== bandRows[2].cells[2]) return `fav: All To ${all.cells[2]} != Slight Fav To ${bandRows[2].cells[2]}`;
+    // TEN-401 r1 founder fix 1 (both sides): All To = the TOP band's To exactly as printed (Narrow favourite To;
+    // Long shot "<From>+") — never the side's lowest price + "+".
+    if (all.cells[2] !== bandRows[2].cells[2]) return `${side}: All To ${all.cells[2]} != top band To ${bandRows[2].cells[2]}`;
     if (side === 'dog') {
-      if (all.cells[2] !== bandRows[0].cells[1] + '+') return `dog: All To ${all.cells[2]} != Slight Dog From + "+"`;
-      if (bandRows[2].cells[2] !== bandRows[2].cells[1] + '+') return `dog: Super Dog To ${bandRows[2].cells[2]} != its From + "+"`;
+      if (bandRows[2].cells[2] !== bandRows[2].cells[1] + '+') return `dog: Long shot To ${bandRows[2].cells[2]} != its From + "+"`;
+      if (all.cells[2] === bandRows[0].cells[1] + '+') return `dog: All To is the lowest price + "+" (${all.cells[2]})`;
     }
     // From / To are five mono characters at most, so one 45px track holds them all
     const long = P.rows.flatMap(r => [r.cells[1], r.cells[2]]).filter(c => c.length > 5);
@@ -196,6 +198,9 @@ CHECKS.bands = (src) => {
   if (t.fav.rows.find(r => r.all).cells[1] !== '1.01') return 'Favourites All From is not 1.01 on the published archive';
   return null;
 };
+const MUTANTS_BANDS3 = s => s.replace("    arow.appendChild(el('div','db-gft', topTo!=null ? topTo : fmtP(a.hi)));",
+  "    arow.appendChild(el('div','db-gft',bandTo(sideKey, a.lo, a.hi)));");   // the pre-r1 lowest-price "+"
+const MUTANTS_SEAM2 = s => s.replace("COL_DOG='var(--viz-white-lead)'", "COL_DOG='color-mix(in srgb, var(--viz-white-lead) 45%, transparent)'");
 MUTANTS.bands = s => s.replace("    arow.appendChild(el('div','db-gft',fmtP(a.lo)));", "    arow.appendChild(el('div','db-gft',''));");
 const MUTANTS_BANDS2 = s => s.replace("  function bandTo(sideKey, lo, hi){ return (DB_DOG_OPEN_TOP && sideKey==='dog') ? fmtP(lo)+'+' : fmtP(hi); }",
   "  function bandTo(sideKey, lo, hi){ return fmtP(hi); }");
@@ -228,9 +233,11 @@ CHECKS.seam = (src) => {
   const pl = [...svg.matchAll(/<polyline [^>]*>/g)].map(m => m[0]);
   if (pl.length !== 2) return `${pl.length} series`;
   if (!/stroke="var\(--viz-lead\)" stroke-width="2.4"/.test(pl[1])) return 'lead series is not --viz-lead 2.4px: ' + pl[1].slice(-200);
-  if (!/stroke="color-mix\(in srgb, var\(--viz-white-lead\) 45%, transparent\)" stroke-width="2"/.test(pl[0])) return 'second series is not white 45% 2px';
+  // TEN-401 r1 founder fix 3: Underdogs = white (--viz-white-lead) 2px; legend swatch and end dot follow.
+  if (!/stroke="var\(--viz-white-lead\)" stroke-width="2"/.test(pl[0])) return 'Underdogs series is not white (--viz-white-lead) 2px: ' + pl[0].slice(-160);
   const dots = all.filter(n => has(n, 'db-enddot')).map(n => n.style.background);
-  if (dots.join('|') !== 'var(--viz-lead)|color-mix(in srgb, var(--viz-white-lead) 45%, transparent)') return 'end dots do not match their series: ' + dots;
+  if (dots.join('|') !== 'var(--viz-lead)|var(--viz-white-lead)') return 'end dots do not match their series: ' + dots;
+  if (!/<i style="background:var\(--viz-white-lead\)"><\/i>Underdogs/.test(html)) return 'Underdogs legend swatch is not white';
   if (!/var DB_PLOT_H=340;/.test(src)) return 'plot height constant is not 340';
   for (const sel of ['.db-yaxis', '.db-plotarea', '.db-endcol']) if (!/height:340px/.test(cssRule(src, sel) || '')) return sel + ' is not 340px tall';
   return null;
@@ -280,7 +287,7 @@ for (const [name, fn] of Object.entries(CHECKS)) {
 }
 test('CONTROL: every TEN-399 a mutant is caught', { skip: !HAVE && 'database-yield.json absent' }, () => {
   const survived = [];
-  const all = Object.entries(MUTANTS).concat([['bands', MUTANTS_BANDS2]]);
+  const all = Object.entries(MUTANTS).concat([['bands', MUTANTS_BANDS2], ['bands', MUTANTS_BANDS3], ['seam', MUTANTS_SEAM2]]);
   for (const [name, mut] of all) {
     const m = mut(SRC);
     if (m === SRC) { survived.push(name + ' (mutation did not apply)'); continue; }

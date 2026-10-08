@@ -36,21 +36,28 @@ take styling from it, structure from the rules below.
 - **Test:** Favourites left | Underdogs right, each a panel (`--card` + `--edge-6`); rows Heavy favourite · Firm favourite ·
   Narrow favourite and Narrow underdog · Mid underdog · Long shot (founder fix 7, card ff586600, 2026-10-08 — replaces the
   ticket's Super / Mid / Slight names; Tour and Tournament; `FAV_NAMES` / `DOG_NAMES`, `test-ten399-fixes.mjs`), each with its
-  own From / To (a 45px track = five mono characters, the same in both tables).
+  own From / To (a 45px track = five mono characters, the same in both tables). **Band names never wrap**
+  (`white-space:nowrap` on the band cell; founder TEN-401 r1 fix 2): the band track is `minmax(108px,1fr)` and the yield
+  columns are 62px, so the ROI overlay at 1512 keeps "Narrow underdog" (107px) on one line. **Test:** `test-ten401-b.mjs` r1.2.
 - **Test:** each band carries its own Matches; the three bands sum to the All row on each side. All yield =
   match-weighted (total profit ÷ matches, 2 dp, sign colour); All median = pooled median, inside the side's range.
 - **Test (card 52bf5cc5 "superdog" = to-plus; reverses TEN-196's real-top-end ruling):** Long shot From = its real
-  lower cut, To = that + "+" (`3.75` / `3.75+`); Underdogs All = Narrow underdog From / that + "+" (`1.88` / `1.88+`);
-  Favourites All = Heavy favourite From / Narrow favourite To (`1.01` / `1.97`). Cut-points follow the active filter
-  (`DB_DOG_OPEN_TOP=true`).
+  lower cut, To = that + "+" (`3.75` / `3.75+`). Cut-points follow the active filter (`DB_DOG_OPEN_TOP=true`).
+- **Test (founder TEN-401 r1 fix 1, 2026-10-08, both sides, Tour and Tournament):** an All row spans its side — From =
+  the lowest band's From, To = the **top band's To exactly as that row prints it**. Underdogs All = Narrow underdog From /
+  Long shot To (`1.88` / `3.75+`; Hangzhou Open `2.04` / `3.05+`, Wimbledon `1.95` / `5.57+`); Favourites All = Heavy
+  favourite From / Narrow favourite To (`1.01` / `1.97`; Hangzhou `1.20` / `1.85`, Wimbledon `1.01` / `1.95`). Never the
+  side's lowest price + "+" (the old Underdogs "1.88+"). `test-ten399-database-frame.mjs` bands, `test-ten401-b.mjs` r1.1.
 - **Test (card 52bf5cc5 "allcount" = figures):** both All rows count every priced match (40,972; exact-price ties
   excluded) and each carries its own median and yield — never one shared row.
-- Sample gates as built (soft 100 grey / hard 30 no yield). A hard-gated band or All cell prints `—` and the panel
+- Sample gates as built (soft 100 grey / hard 30 no yield). **An All row keeps its sign colour under the soft gate**
+  (founder TEN-401 carry-over, 2026-10-08: it rendered grey; bands still go grey). **Test:** `test-ten401-b.mjs` — Hangzhou
+  Open (50 matches) All rows read `--pos` / `--neg` over grey bands. A hard-gated band or All cell prints `—` and the panel
   carries one note under the table (founder card ff586600 "hardnote" = ok) ("— fewer than 30 matches: too few for a yield."); the Player book split gates each
   book the same way ("N matches priced on … (too few for a yield)").
 - No "Back the shorter price" / "Back the longer price" copy anywhere. Column heads Hanken 10.5 caps on a 10% rule;
-  All row on a 14% 2px rule. Chart plot 340px, title 19/800, legend swatches `--viz-lead` (Favourites) · white 45%
-  (Underdogs).
+  All row on a 14% 2px rule. Chart plot 340px, title 19/800, legend swatches `--viz-lead` (Favourites) ·
+  `--viz-white-lead` (Underdogs).
 
 ## Tournament
 - **Test:** same Favourites | Underdogs layout; each row's tour comparison sits in the same row as the event figure;
@@ -80,7 +87,8 @@ take styling from it, structure from the rules below.
 
 ## Charts (all Database charts)
 - **Test:** horizontal guides only, `--viz-guide` dotted `2 6`; no vertical tick line, no loss wash, no area fill;
-  break-even `--viz-rule` 1.25px; lead `--viz-lead` 2.4px, second white 45% 2px; end dots match their line; axis and
+  break-even `--viz-rule` 1.25px; Favourites `--viz-lead` 2.4px, **Underdogs white `--viz-white-lead` 2px** (founder
+  TEN-401 r1 fix 3, as the reference draws it — was white 45%; `COL_DOG`); end dots and legend swatches match their line; axis and
   tick labels mono `--text-label`. Smoothing (`SMOOTH_MODE='guarded'`), the y-axis algorithm, shared scales, the
   late-start rule and "nothing interactive" are unchanged.
 

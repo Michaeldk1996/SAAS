@@ -105,7 +105,7 @@ await check('Tournament Report renders: no NaN on the report page', async () => 
   await ev(`(function(){var b=document.querySelector('[data-tab="tournaments"]'); if(b) b.click(); return true;})()`); await new Promise((r) => setTimeout(r, 1500));
   await ev(`(function(){tourxOpenReport(${JSON.stringify(tn)});return true;})()`); await new Promise((r) => setTimeout(r, 2500));
   const t = await ev(`document.body.innerText`);
-  must(/Serve Rating/.test(t), 'no "Serve Rating" on the report page');
+  must(/Serve rating/i.test(t), 'no "Serve rating" on the report page');
   must(!/NaN/.test(t), 'NaN on the page');
   return tn;
 });
