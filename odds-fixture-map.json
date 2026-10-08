@@ -3467,14 +3467,14 @@
     },
     "12168286": {
       "fixtureId": "id1200308575314378",
-      "mappedAt": "2026-10-06T23:18:29Z",
-      "missHeldH": 40.54,
+      "mappedAt": "2026-10-08T11:32:29Z",
+      "missHeldH": 76.77,
       "missRuns": 2,
       "missSince": "2026-10-05T06:46:21Z",
       "orient": "same",
       "p1": "V. Kopriva",
       "p2": "Z. Bergs",
-      "startTime": "2026-10-08T04:00:00.000Z",
+      "startTime": "2026-10-08T11:20:00.000Z",
       "tournamentId": 3085
     },
     "12168287": {
@@ -3539,8 +3539,8 @@
     },
     "12168292": {
       "fixtureId": "id1200308575314384",
-      "mappedAt": "2026-10-06T23:18:29Z",
-      "missHeldH": 40.54,
+      "mappedAt": "2026-10-08T11:32:29Z",
+      "missHeldH": 76.77,
       "missRuns": 2,
       "missSince": "2026-10-05T06:46:21Z",
       "orient": "same",
@@ -3599,14 +3599,14 @@
     },
     "12168297": {
       "fixtureId": "id1200308575314390",
-      "mappedAt": "2026-10-06T23:18:29Z",
-      "missHeldH": 40.54,
+      "mappedAt": "2026-10-08T11:32:29Z",
+      "missHeldH": 76.77,
       "missRuns": 2,
       "missSince": "2026-10-05T06:46:21Z",
       "orient": "same",
       "p1": "L. van Assche",
       "p2": "Y. Bu",
-      "startTime": "2026-10-08T04:00:00.000Z",
+      "startTime": "2026-10-08T10:00:00.000Z",
       "tournamentId": 3085
     },
     "12168298": {
@@ -4025,22 +4025,11 @@
       "projectedTtlUnitsPerDay": 4.1,
       "runs": 400,
       "spentRuns": 210,
-      "ttlBitRuns": 77,
-      "ttlBitShare": 0.193,
+      "ttlBitRuns": 76,
+      "ttlBitShare": 0.19,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-19T19:17:55Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 9,
-        "openMisses": 9,
-        "stale": 9,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 73
-      },
       {
         "at": "2026-09-19T20:17:40Z",
         "fixturesUnitsSpent": 0,
@@ -8429,9 +8418,20 @@
         "ttlBit": false,
         "unmapped": 3,
         "upcoming": 33
+      },
+      {
+        "at": "2026-10-08T11:32:29Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 3,
+        "missExpired": 0,
+        "openMisses": 4,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 31
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-08T10:32:38Z"
+  "updatedAt": "2026-10-08T11:32:29Z"
 }
