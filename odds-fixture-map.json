@@ -3893,6 +3893,17 @@
       "p2": "D. Altmaier",
       "startTime": "2026-10-09T04:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12169478": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-08T06:31:46Z",
+      "missRuns": 1,
+      "missSince": "2026-10-08T06:31:46Z",
+      "orient": null,
+      "p1": "L. Darderi",
+      "p2": "S. Tsitsipas",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -3905,23 +3916,12 @@
       "observedSpanDays": 18.65,
       "projectedTtlUnitsPerDay": 4.3,
       "runs": 400,
-      "spentRuns": 208,
+      "spentRuns": 209,
       "ttlBitRuns": 80,
       "ttlBitShare": 0.2,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-19T13:53:03Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 14,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 82
-      },
       {
         "at": "2026-09-19T14:48:38Z",
         "fixturesUnitsSpent": 1,
@@ -8310,9 +8310,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 34
+      },
+      {
+        "at": "2026-10-08T06:31:46Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 31
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-08T03:48:26Z"
+  "updatedAt": "2026-10-08T06:31:46Z"
 }
