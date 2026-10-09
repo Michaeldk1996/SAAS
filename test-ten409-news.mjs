@@ -33,7 +33,7 @@ function load(opts = {}) {
     createElement: () => { let t = ''; return { set textContent(v) { t = v; }, get innerHTML() { return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); } }; } };
   const store = { 'stennisfy.tz': 'UTC' };
   const ls = { getItem: k => (k in store ? store[k] : null), setItem: (k, v) => { store[k] = String(v); } };
-  const f = new Function('document', 'localStorage', 'fetch', 'opts', `
+  const f = new Function('document', 'localStorage', 'fetch', 'opts', 'TP', `
     let _intelNotes = opts.intel || [], _intelEditingId = null; const INTEL_MAX = 5;
     const playerProfiles = opts.profiles || {}; const playerIndex = [];
     function isBspAdmin(){ return !!opts.admin; }
@@ -45,6 +45,8 @@ function load(opts = {}) {
     function tourxEventName(k){ return SF_EVENT_NAMES[k] || k; }
     function tourxConditionRegistry(){ return [{ name: 'Shanghai' }, { name: 'Wimbledon' }, { name: 'Beijing' }]; }
     function psOpenProfile(){} const tourxState = {}; let asapSignals = {};
+    const tournamentProfiles = opts.tp || TP();
+    const setInterval = () => 0, clearInterval = () => {};
     function newsRenderComposer(){}   // the composer lives in the intel section (founder only)
     function escapeHtml(s){ return String(s); }
     function newsPlayerFor(){ throw new Error('the News page read a headline for a name'); }
@@ -54,20 +56,32 @@ function load(opts = {}) {
       renderNews, newsToggleCat, newsSetView, newsWiden, newsToggleRow, newsWireItems, newsPageIntelItems, get hoursNow() { return _newsRangeHours; },
       get cats() { return _newsCats; } };
   `);
-  const api = f(doc, ls, () => Promise.reject(new Error('offline')), opts);
+  const api = f(doc, ls, () => Promise.reject(new Error('offline')), opts, TP);
   return { api, get: id => get(id).innerHTML, els, store };
 }
 const H = 3600e3;
+// tournament-profiles.json stand-in: one dated edition per event. Shanghai is on now, Beijing / Tokyo ended within the last
+// fortnight, Wimbledon / the Australian Open / Montreal + Toronto / Roland Garros are months away (R2 14-day window).
+const iso = d => new Date(Date.now() + d * 864e5).toISOString().slice(0, 10);
+const Y = new Date().getUTCFullYear();
+const ed = (season, s, e) => ({ season: String(season), matches: [{ date: s }, { date: e }] });
+const TP = () => ({
+  Shanghai: { allEditionMatches: [ed(Y, iso(-5), iso(5))] }, Beijing: { allEditionMatches: [ed(Y, iso(-12), iso(-6))] },
+  Tokyo: { allEditionMatches: [ed(Y, iso(-13), iso(-7))] }, Wimbledon: { allEditionMatches: [ed(Y, iso(-100), iso(-87))] },
+  'Australian Open': { allEditionMatches: [ed(Y, iso(-260), iso(-246))] }, 'Roland Garros': { allEditionMatches: [ed(Y, iso(-130), iso(-116))] },
+  Montreal: { allEditionMatches: [ed(Y, iso(-60), iso(-54))] }, Toronto: { allEditionMatches: [ed(Y, iso(-60), iso(-54))] },
+});
 const ts = hAgo => new Date(Date.now() - hAgo * H).toISOString().replace('T', ' ').replace('Z', '');
 const GEN = new Date(Date.now() - 3 * H); GEN.setUTCSeconds(7);
 const art = (k, key, hAgo, title, o = {}) => Object.assign({ news_key: String(k), player_key: key, player_name: key ? 'P. ' + key : null, published_at: ts(hAgo), title,
   content: 'One.\n\nTwo.', sources: ['ubitennis'], tournament_name: 'Shanghai' }, o);
+const card = (h, id) => { const i = h.indexOf(`data-id="${id}"`); return h.slice(i, h.indexOf('</article>', i)); };
 // tournament_name is deliberately wrong on every row: the page must never read it (R1 tournament rule).
 const FEED = () => ({ generatedAt: GEN.toISOString(), articles: [
   art(1, '2382', 2, 'Alcaraz eases through in straight sets in Shanghai', { tournament_name: 'Wimbledon' }),
   art(2, '2072', 5, 'Sinner withdraws with a knee injury', { tournament_name: 'US Open', content: 'He was due to play his opener in Beijing on Tuesday.\n\nTwo.' }),
   art(3, null, 1, 'Djokovic wins the title in Beijing'),                                   // tournament / headline only — never shown
-  art(4, '1905', 100, 'Djokovic draw released for Wimbledon', { tournament_name: 'Halle', content: 'Body mentions Monaco.' }),
+  art(4, '1905', 100, 'Djokovic draw released for Beijing', { tournament_name: 'Halle', content: 'Body mentions Monaco.' }),
 ] });
 const text = h => h.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 function page(opts = {}, set = {}) {
@@ -122,8 +136,8 @@ test('Empty state: names the filter, widens only when a wider window has results
   const X = page({}, { hours: 6, cats: ['Match Reports'] });             // "eases through" is Tour News, nothing anywhere
   assert.ok(!/wider/.test(X.get('newsList')) && !/Clear search/.test(X.get('newsList')));
   assert.equal(text(X.get('newsList')), 'No articles match these filters. No Match Reports articles in the last 6 hours.');
-  const T = page({}, { hours: 6, tour: 'wimbledon' });   // a kept selection outside the window (art 4, 100 h)
-  assert.equal(text(T.get('newsList')), 'No articles match these filters. No articles for Wimbledon in the last 6 hours. Try a wider date range.');
+  const T = page({}, { hours: 6, tour: 'china-open', cats: ['Draws & Schedules'] });   // a kept selection outside the window (art 4, 100 h)
+  assert.equal(text(T.get('newsList')), 'No articles match these filters. No Draws & Schedules articles for China Open in the last 6 hours. Try a wider date range.');
 });
 
 // keep-as-built — mutation: single-select categories; "All" not clearing.
@@ -175,7 +189,7 @@ test('Names: profile name + canonical event name; feed players link, an intel pl
   assert.match(h, /news-entlink"[^>]*newsOpenPlayer\('2382'\)[^>]*>C\. Alcaraz</);
   assert.match(h, /data-tour="Shanghai"[^>]*>Shanghai Masters</);
   assert.match(h, /<span class="news-cat">Stennisfy Intel<\/span><span class="news-cardsource">Stennisfy<\/span><span class="news-cardsep">·<\/span><span class="news-ent">J\. Sinner<\/span>/);
-  assert.match(h, /<h3 class="news-cardtitle">Practised fully<\/h3>/);
+  assert.match(h, /<h3 class="news-cardtitle"[^>]*>Practised fully<\/h3>/);
 });
 
 // What changes 8–10 — mutation: a raw colour, link blue on names, a blue ring / fill, green / red / amber on the page.
@@ -190,47 +204,79 @@ test('Colour check: tokens only, links --link, names white, no blue rings or fil
   const f = FEED(); f.articles[0].content = Array.from({ length: 6 }, (_, i) => 'Para ' + i).join('\n\n');
   const P = page({ feed: f });
   assert.equal((P.get('newsList').match(/class="news-link news-more"/g) || []).length, 1, 'Read more only past the 2-paragraph preview');
-  assert.ok(!/\[data-page="news"\][^{]*\.sf-dd-chev/.test(CSS), 'R1 fix 4: the page restyles the site chevron');
+  // R2 fix 1 — mutation: the menu's large ▼ shown (font-size back) or another glyph
+  assert.match(CSS, /\.sf-dd-trig \.sf-dd-chev\{ font-size:0; \}/);
+  assert.match(CSS, /\.sf-dd-trig \.sf-dd-chev::after\{ content:'\\25BE'; font-size:12\.5px; color:var\(--text\); font-family:'Hanken Grotesk', system-ui, sans-serif; \}/);
 });
 
-// R1 tournament rule (founder card 91aec78c) — mutation: read tournament_name; take a paragraph naming two events; fuzzy /
-// shared phrases.
-test('Tournament = the event the title names, else the one event the first paragraph names, else none', () => {
+// R1 + R2 tournament rule (founder cards 91aec78c / 28bd8fc2, review round 2) — mutations: read tournament_name; let a title
+// naming two events decide; accept a paragraph naming two; drop the 14-day window; drop NEWS_EVENT_SAME.
+test('Tournament: exactly one event named in the title (in play), else in the first paragraph (in play), else none', () => {
   const P = page();
   const h = P.get('newsList');
-  assert.match(h, /data-id="w1"[\s\S]*?data-tour="Shanghai"[^>]*>Shanghai Masters</, 'title event (the feed says Wimbledon)');
-  assert.match(h, /data-id="w2"[\s\S]*?data-tour="Beijing"[^>]*>China Open</, 'first-paragraph event (the feed says US Open)');
+  assert.match(card(h, 'w1'), /data-tour="Shanghai"[^>]*>Shanghai Masters</, 'title event (the feed says Wimbledon)');
+  assert.match(card(h, 'w2'), /data-tour="Beijing"[^>]*>China Open</, 'first-paragraph event (the feed says US Open)');
   assert.ok(!/Halle|US Open/.test(h), 'the feed field reached the page');
   const f = FEED();
-  f.articles[1].content = 'He skipped Tokyo and Beijing this month.\n\nShanghai is next.';      // two events in paragraph 1 → none
-  f.articles[0].title = 'Alcaraz picks Tokyo over Shanghai';                                    // two in the title → the first
-  f.articles[3].title = 'Djokovic eyes the Canadian Open';                                      // a shared official name → none
-  const Q = page({ feed: f }, { hours: 168 });
-  const q = Q.get('newsList');
-  assert.match(q, /data-id="w1"[\s\S]*?>Japan Open</);
-  const card2 = q.slice(q.indexOf('data-id="w2"'), q.indexOf('</article>', q.indexOf('data-id="w2"')));
-  assert.ok(!/data-tour|Japan Open|China Open|Shanghai Masters/.test(card2) && !/·<\/span><\/div>/.test(card2), 'no tournament and no placeholder');
-  const card4 = q.slice(q.indexOf('data-id="w4"'), q.indexOf('</article>', q.indexOf('data-id="w4"')));
-  assert.ok(!/data-tour/.test(card4));
-  assert.deepEqual([...Q.get('newsTourFilter').matchAll(/data-v="([^"]*)"><span>([^<]+)</g)].map(m => m[2]), ['All tournaments', 'Japan Open']);
-  // review fix — mutation: drop NEWS_EVENT_SAME (the catalog's two entries for one event make "Roland Garros" a shared phrase)
+  f.articles[0].title = 'Alcaraz picks Tokyo over Shanghai'; f.articles[0].content = 'He is in Shanghai this week.\n\nTwo.';   // two in the title → paragraph
+  f.articles[1].content = 'He skipped Tokyo and Beijing this month.\n\nShanghai is next.';                               // two in paragraph 1 → none
+  f.articles[3].title = 'Djokovic eyes the Canadian Open';                                                                 // a shared official name → none
+  const q = page({ feed: f }, { hours: 168 }).get('newsList');
+  assert.match(card(q, 'w1'), />Shanghai Masters</, 'a two-event title defers to the first paragraph');
+  assert.ok(!/Japan Open/.test(card(q, 'w1')));
+  assert.ok(!/data-tour|Japan Open|China Open|Shanghai Masters/.test(card(q, 'w2')) && !/·<\/span><\/div>/.test(card(q, 'w2')), 'no tournament and no placeholder');
+  assert.ok(!/data-tour/.test(card(q, 'w4')));
+  // the 14-day window: Melbourne / Wimbledon are months away → no tag; the paragraph's in-play event then decides
+  const w = FEED();
+  w.articles[0].title = 'Sinner confirmed for One Point Slam in Melbourne'; w.articles[0].content = 'One.\n\nTwo.';
+  w.articles[3].title = 'Djokovic recalls his Wimbledon win'; w.articles[3].content = 'He spoke in Beijing on Monday.\n\nTwo.';
+  const W = page({ feed: w }, { hours: 168 }).get('newsList');
+  assert.ok(!/Australian Open|data-tour/.test(card(W, 'w1')), 'Melbourne in October = no tag');
+  assert.match(card(W, 'w4'), />China Open</, 'an out-of-play title event lets the paragraph decide');
+  // card 78a3685b: out-of-play names are dropped first — one in-play + one out-of-play event in the title → the title decides
+  const c = FEED(); c.articles[3].title = 'Cobolli falls early in Beijing but Wimbledon hopes remain'; c.articles[3].content = 'He next plays in Shanghai.\n\nTwo.';
+  assert.match(card(page({ feed: c }, { hours: 168 }).get('newsList'), 'w4'), />China Open</, 'the out-of-play Wimbledon is dropped first');
+  const noWin = page({ feed: w, tp: Object.assign(TP(), { 'Australian Open': { allEditionMatches: [ed(Y, iso(-3), iso(3))] } }) }, { hours: 168 }).get('newsList');
+  assert.match(card(noWin, 'w1'), />Australian Open</, 'control: in play, Melbourne does tag');
+  // no event dates on record (the store has not loaded) → no tournament, never a guess
+  assert.ok(!/data-tour/.test(page({ tp: {} }).get('newsList')));
+  // review fix (R1): "Roland Garros" and "French Open" are one event
   const g = FEED(); g.articles[0].title = 'Alcaraz eyes Roland Garros title'; g.articles[3].title = 'Djokovic back at the French Open';
-  const G = page({ feed: g }, { hours: 168 }).get('newsList');
+  const G = page({ feed: g, tp: Object.assign(TP(), { 'Roland Garros': { allEditionMatches: [ed(Y, iso(-3), iso(3))] } }) }, { hours: 168 }).get('newsList');
   assert.equal((G.match(/>Roland Garros</g) || []).length, 2);
 });
 
+// R2 time ruling (card 28bd8fc2) + source names (fix 2) — mutations: an article time back; the hover dropped; raw source ids.
+test('No time on an article; the title hover reads "Added to feed DD Mon HH:MM"; sources print display names', () => {
+  const f = FEED(); f.articles[0].sources = ['espn-tennis', 'tennis365', 'newsfeed-x'];
+  const P = page({ feed: f, intel: [{ id: 'n1', text: 'Practised fully.', player: '', createdAtMs: Date.now() - H }] });
+  const h = P.get('newsList');
+  assert.ok(!/news-cardtime|news-rtime/.test(h + CSS), 'a per-article time came back');
+  const hm = new Date(Date.now() - 2 * H).toISOString().slice(11, 16);
+  assert.match(card(h, 'w1'), new RegExp(`<h3 class="news-cardtitle" data-news-tip="Added to feed \\d\\d [A-Z][a-z]{2} ${hm}">`));
+  assert.match(card(h, 'in1'), /data-news-tip="Posted /);
+  assert.match(card(h, 'w1'), /<span class="news-cardsource">ESPN, Tennis365, newsfeed-x<\/span>/, 'display names; an unknown id as sent');
+  assert.match(card(h, 'w2'), /<span class="news-cardsource">Ubitennis<\/span>/);
+  P.api.view = 'compact'; P.api.renderNews();
+  const rows = [...P.get('newsList').matchAll(/<div class="news-rowhead">([\s\S]*?)<\/div>/g)].map(m => m[1]);
+  const row = rows.find(r => /Added to feed/.test(r));
+  assert.ok(row && rows.length >= 3);
+  assert.match(row, /^<span class="news-rplayer">[\s\S]*<\/span><span class="news-rhead" data-news-tip="Added to feed [^"]+">[^<]+<\/span><span class="news-rcaret"[^>]*>▾<\/span>$/, 'Compact row = player · title · chevron');
+  assert.match(CSS, /\.news-rowhead\{ display:grid; grid-template-columns:104px minmax\(0,1fr\) 16px;/);
+});
+
 // R1 fixes 1, 2, 6 — mutation: a 4-paragraph preview; the open row drops the player column; a renamed source.
-test('2-paragraph preview, open Compact row keeps its columns, source verbatim', () => {
+test('2-paragraph preview, open Compact row keeps its columns', () => {
   const f = FEED(); f.articles[0].content = Array.from({ length: 4 }, (_, i) => 'Para ' + i).join('\n\n'); f.articles[0].sources = ['tennis365', 'ubitennis'];
   const P = page({ feed: f });
   const card = P.get('newsList').slice(0, P.get('newsList').indexOf('</article>'));
   assert.equal((card.match(/Para \d/g) || []).length, 2);
-  assert.match(card, /<span class="news-cardsource">tennis365, ubitennis<\/span>/);
+  assert.match(card, /<span class="news-cardsource">Tennis365, Ubitennis<\/span>/);
   P.api.view = 'compact'; P.api.newsToggleRow('w1');
   const open = P.get('newsList').match(/<div class="news-row open"[\s\S]*?<div class="news-rbody"/);
   assert.ok(open, 'row w1 opened');
-  assert.match(open[0], /<span class="news-rtime"[^>]*>[^<]+<\/span><span class="news-rplayer"><span[^>]*>P\. 2382<\/span><\/span><span class="news-rhead">/, 'the open row keeps time · player · title');
-  assert.match(CSS, /\.news-rbody\{[^}]*padding:8px 16px 4px 170px/, 'the body sits under the title column');
+  assert.match(open[0], /<div class="news-rowhead"><span class="news-rplayer"><span[^>]*>P\. 2382<\/span><\/span><span class="news-rhead"/, 'the open row keeps player · title');
+  assert.match(CSS, /\.news-rbody\{[^}]*padding:8px 16px 4px; padding-left:116px;/, 'the body sits under the title column');
   // founder R1 fix 1: the same 2-paragraph preview in an open Compact row, Read more / Show less
   assert.equal((open[0].match(/Para \d/g) || []).length, 0, 'control: the head holds no paragraph');
   const rowHtml = P.get('newsList').slice(P.get('newsList').indexOf('<div class="news-row open"'));

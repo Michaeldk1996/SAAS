@@ -4284,8 +4284,10 @@ window.EntryListsTab = (function(){
   .sf-dd-row.sel{ background:var(--selected); color:var(--text); font-weight:600; }
   .sf-dd-row .sf-dd-tick{ margin-left:auto; padding-left:12px; color:var(--text); visibility:hidden; }
   .sf-dd-row.sel .sf-dd-tick{ visibility:visible; }
-  /* The page's two drop-downs are the site's one menu (sfDd) with its own small chevron (R1 fix 4); only the trigger's
-     padding takes the reference's geometry (10px 15px, gap 8). */
+  /* The page's two drop-downs are the site's one menu (sfDd). The trigger takes the reference's geometry (10px 15px, gap 8)
+     and its small chevron (R2 fix 1: the reference's ▾ at the label's 12.5px, white; the menu's ▼ glyph is hidden). */
+  [data-page="news"] .sf-dd-trig .sf-dd-chev{ font-size:0; }
+  [data-page="news"] .sf-dd-trig .sf-dd-chev::after{ content:'\25BE'; font-size:12.5px; color:var(--text); font-family:'Hanken Grotesk', system-ui, sans-serif; }   /* the reference's stack: Hanken has no ▾, system-ui draws it 6px wide */
   [data-page="news"] .sf-dd-trig{ padding:10px 15px; gap:8px; line-height:normal; }
   [data-page="news"] #newsTourFilter .sf-dd-menu{ min-width:200px; }
   [data-page="news"] #newsRange .sf-dd-menu{ left:auto; right:0; min-width:150px; }
@@ -4336,11 +4338,12 @@ window.EntryListsTab = (function(){
   /* ---- Reading cards: card tone, no outline, radius 12, padding 18×22, column gap 9. ---- */
   [data-page="news"] .news-card{ display:flex; flex-direction:column; gap:9px; padding:18px 22px; border:1px solid transparent; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
   [data-page="news"] .news-cardmeta{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+  [data-page="news"] [data-news-tip]{ cursor:default; }
+  .news-tip{ position:fixed; z-index:400; pointer-events:none; opacity:0; padding:7px 10px; border-radius:8px; background:var(--card); border:1px solid var(--edge-10); box-shadow:var(--shadow-menu); white-space:nowrap; font-family:var(--font-words); font-size:12px; color:var(--text-soft); }
   [data-page="news"] .news-cardmeta-l{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; min-width:0; }
   [data-page="news"] .news-cat{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; line-height:normal; color:var(--text-label); background:var(--inner); border-radius:6px; padding:4px 9px; }
   [data-page="news"] .news-cardsource, [data-page="news"] .news-cardsep{ font-size:12px; color:var(--text-label); }
   [data-page="news"] .news-ent{ font-size:12px; font-weight:600; color:var(--text); }
-  [data-page="news"] .news-cardtime{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); white-space:nowrap; }
   [data-page="news"] .news-cardtitle{ margin:0; font-size:16px; font-weight:700; line-height:1.35; color:var(--text); text-wrap:pretty; }
   [data-page="news"] .news-para{ font-size:14px; line-height:1.7; color:var(--text-soft); text-wrap:pretty; max-width:68ch; }
   [data-page="news"] .news-acts{ display:flex; align-items:center; gap:14px; margin-top:4px; }
@@ -4361,16 +4364,15 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-row:last-child{ border-bottom:0; }
   [data-page="news"] .news-row:focus-visible{ outline:none; box-shadow:inset 0 0 0 1px var(--edge-16); }
   [data-page="news"] .news-row:hover, [data-page="news"] .news-row.open{ background:color-mix(in srgb, var(--text) 2%, transparent); }
-  [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:42px 104px minmax(0,1fr) 16px; gap:12px; align-items:center; }
+  [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:104px minmax(0,1fr) 16px; gap:12px; align-items:center; }   /* R2: no time column */
   [data-page="news"] .news-row.open .news-rowhead{ align-items:start; }
-  [data-page="news"] .news-rtime{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
-  [data-page="news"] .news-row.open .news-rtime, [data-page="news"] .news-row.open .news-rplayer{ padding-top:2px; }
+  [data-page="news"] .news-row.open .news-rplayer{ padding-top:2px; }
   [data-page="news"] .news-rplayer{ font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="news"] .news-rhead{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="news"] .news-row.open .news-rhead{ min-width:0; overflow:visible; white-space:normal; line-height:1.4; text-wrap:pretty; }
   [data-page="news"] .news-rcaret{ justify-self:end; font-size:11px; color:var(--text); }
   [data-page="news"] .news-row.open .news-rcaret{ transform:rotate(180deg); }
-  [data-page="news"] .news-rbody{ display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px 170px; cursor:auto; }   /* 42 + 12 + 104 + 12: the title column */
+  [data-page="news"] .news-rbody{ display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px; padding-left:116px; cursor:auto; }   /* left = 104 + 12: the title column */
 
   /* ---- Empty state (15 white title + 13 grey detail) and the foot line (12.5 grey). ---- */
   [data-page="news"] .news-empty{ display:flex; flex-direction:column; gap:6px; padding:10px 0; }
@@ -5590,13 +5592,64 @@ function newsEventsIn(text){
   for (const m of String(text).normalize('NFC').replace(/[\u2018\u2019\u02BC]/g, "'").matchAll(ix.re)) out.push(ix.keyOf(m[1]));
   return out;
 }
-// → { key, from: 'title' | 'para' } or null.
-function newsArticleEvent(title, content){
-  const t = newsEventsIn(title);
-  if (t.length) return { key: t[0], from: 'title' };
-  const first = newsSplitParas(content)[0] || '';
-  const p = [...new Set(newsEventsIn(first))];
-  return p.length === 1 ? { key: p[0], from: 'para' } : null;
+// R2 (founder card 28bd8fc2 + review round 2, 2026-10-09): a named event counts only if it is IN PLAY — played within
+// NEWS_EVENT_WINDOW_DAYS of the article's date (published_at). Its dates = this year's edition in tournament-profiles.json
+// (first → last match on record), else its latest edition moved to the article's year. An event with no dated edition never
+// counts. Rule (founder card 78a3685b): out-of-play names are dropped first; the title decides when exactly ONE in-play event
+// is left ("… ATP Finals Return After Dominant China Open Triumph" → China Open while the Finals are weeks away); a title with
+// two in-play events never decides; otherwise the first paragraph decides on the same test; else no tournament.
+const NEWS_EVENT_WINDOW_DAYS = 14;
+function newsEventSpans(key){
+  const tp = typeof tournamentProfiles !== 'undefined' ? tournamentProfiles : null;
+  if (!tp || !Object.keys(tp).length) return null;                 // the store has not loaded yet
+  const cache = newsEventSpans._c || (newsEventSpans._c = { src: null, m: {} });
+  if (cache.src !== tp){ cache.src = tp; cache.m = {}; }
+  if (cache.m[key]) return cache.m[key];
+  const names = [key].concat(Object.keys(NEWS_EVENT_SAME).filter(n => NEWS_EVENT_SAME[n] === key));
+  const bySeason = {};
+  names.forEach(n => ((tp[n] && tp[n].allEditionMatches) || []).forEach(ed => {
+    const ds = (ed.matches || []).map(m => m && m.date).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d || '')).sort();
+    if (!ds.length) return;
+    const y = Number(ed.season) || Number(ds[0].slice(0, 4)), cur = bySeason[y];
+    bySeason[y] = { s: cur && cur.s < ds[0] ? cur.s : ds[0], e: cur && cur.e > ds[ds.length - 1] ? cur.e : ds[ds.length - 1] };
+  }));
+  return (cache.m[key] = bySeason);
+}
+function newsEventInPlay(key, ts){
+  const spans = newsEventSpans(key);
+  if (!spans || !isFinite(ts)) return false;
+  const seasons = Object.keys(spans).map(Number); if (!seasons.length) return false;
+  const latest = Math.max(...seasons), W = NEWS_EVENT_WINDOW_DAYS * 864e5, Y = new Date(ts).getUTCFullYear();
+  const at = (iso, dy) => Date.UTC(Number(iso.slice(0, 4)) + dy, Number(iso.slice(5, 7)) - 1, Number(iso.slice(8, 10)));
+  for (const y of [Y - 1, Y, Y + 1]){
+    const sp = spans[y], dy = sp ? 0 : y - latest, src = sp || spans[latest];
+    const a = at(src.s, sp ? 0 : dy), b = at(src.e, sp ? 0 : dy) + 864e5 - 1;
+    if (ts >= a - W && ts <= b + W) return true;
+  }
+  return false;
+}
+// Tournament tags need tournament-profiles.json (6 MB, loaded app-wide by loadHeavyDatasets ~2.5 s after start). Until it lands
+// no article has a tournament (never a guess); the page re-renders once it does — polled (no second fetch) for up to 10 min,
+// once per page load.
+function newsAwaitEventDates(){
+  if (typeof tournamentProfiles !== 'undefined' && Object.keys(tournamentProfiles).length) return;
+  if (newsAwaitEventDates._t || newsAwaitEventDates._done) return;
+  let n = 0;
+  newsAwaitEventDates._t = setInterval(() => {
+    const ok = typeof tournamentProfiles !== 'undefined' && Object.keys(tournamentProfiles).length;
+    if (ok || ++n > 600){ clearInterval(newsAwaitEventDates._t); newsAwaitEventDates._t = null; newsAwaitEventDates._done = true; if (ok) renderNews(); }
+  }, 1000);
+}
+function newsDecides(text, ts){
+  const inPlay = [...new Set(newsEventsIn(text))].filter(k => newsEventInPlay(k, ts));   // out-of-play names are dropped first (card 78a3685b)
+  return inPlay.length === 1 ? inPlay[0] : null;
+}
+// → { key, from: 'title' | 'para' } or null. ts = the article's published_at.
+function newsArticleEvent(title, content, ts){
+  const t = newsDecides(title, ts);
+  if (t) return { key: t, from: 'title' };
+  const p = newsDecides(newsSplitParas(content)[0] || '', ts);
+  return p ? { key: p, from: 'para' } : null;
 }
 // The printed name = the Tournaments page's (tourxEventName: SF_EVENT_NAMES, "Canadian Open · Montreal").
 function newsEventLabel(key){
@@ -5618,7 +5671,17 @@ function newsOpenTournament(key){
   if (b) b.click();
   if (typeof renderTournamentsTab === 'function') renderTournamentsTab();
 }
-// R1 fix 6: the source is the feed's own text, verbatim (newsSourceLabel: "ubitennis", "tennis365, ubitennis").
+// R2 fix 2: the source prints the outlet's display name from ONE table, keyed by the feed's source id; an id the table lacks
+// prints as the feed sends it (newsSourceUnknown lists them for the report).
+const NEWS_SOURCE_NAMES = { 'tennis365': 'Tennis365', 'ubitennis': 'Ubitennis', 'tennis-majors': 'Tennis Majors', 'bbc-sport-tennis': 'BBC Sport',
+  'espn-tennis': 'ESPN', 'guardian-tennis': 'The Guardian', 'atp-tour': 'ATP Tour', 'reuters': 'Reuters' };
+function newsSourceName(id){ const k = String(id || '').trim(); return NEWS_SOURCE_NAMES[k.toLowerCase()] || k; }
+function newsSourceNames(src){ return (Array.isArray(src) ? src : (src ? [src] : [])).filter(Boolean).map(newsSourceName).join(', '); }
+function newsSourceUnknown(articles){
+  const out = new Set();
+  (articles || []).forEach(a => (Array.isArray(a && a.sources) ? a.sources : []).forEach(x => { if (x && !NEWS_SOURCE_NAMES[String(x).toLowerCase()]) out.add(String(x)); }));
+  return [...out].sort();
+}
 const newsKeyAttr = k => String(k).replace(/[^A-Za-z0-9_-]/g, '');
 // newsEscape leaves quotes alone (textContent → innerHTML); every attribute value goes through this.
 const newsAttr = v => newsEscape(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -5630,13 +5693,13 @@ function newsWireItems(){
   const all = Array.isArray(_newsData && _newsData.articles) ? _newsData.articles : [];
   return all.filter(a => a && a.player_key != null && String(a.player_key) !== '').map((a, i) => {
     const key = String(a.player_key), name = newsPlayerName(key, a.player_name);
-    const ev = newsArticleEvent(a.title, a.content);
+    const at = newsParseTs(a.published_at), ev = newsArticleEvent(a.title, a.content, at);
     return {
-      kind: 'wire', id: 'w' + (a.news_key != null ? a.news_key : i), ts: newsParseTs(a.published_at),
+      kind: 'wire', id: 'w' + (a.news_key != null ? a.news_key : i), ts: at,
       players: name ? [{ key, name }] : [],
       tour: ev ? newsEventLabel(ev.key) : '', tourKey: ev ? ev.key : '', tourFrom: ev ? ev.from : '',
       title: a.title || 'Untitled', bodyParas: newsSplitParas(a.content),
-      cat: newsClassify(a.title, a.content), source: newsSourceLabel(a.sources),
+      cat: newsClassify(a.title, a.content), source: newsSourceNames(a.sources),
     };
   }).filter(x => x.players.length);
 }
@@ -5756,7 +5819,9 @@ function renderNews(){
   renderNewsChips();
   newsRenderComposer();
   newsRenderStale();
+  newsTip.hide();   // a re-render never leaves a stale title tip
   const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsPageIntelItems());
+  newsAwaitEventDates();
   const inWin = all.filter(x => newsPasses(x, { hours: _newsRangeHours }));
   newsRenderTourDd(inWin, all);
   const q = _newsSearch.trim().toLowerCase();
@@ -5803,7 +5868,16 @@ function newsTourHtml(it){
   if (!k) return `<span class="news-ent">${n}</span>`;
   return `<span class="news-ent news-entlink" role="link" tabindex="0" data-tour="${newsAttr(k)}" onclick="event.stopPropagation();newsOpenTournament(this.dataset.tour)" onkeydown="if(event.key==='Enter'){event.stopPropagation();newsOpenTournament(this.dataset.tour)}" title="Open ${newsAttr(it.tour)} on Tournaments">${n}</span>`;
 }
-const newsTimeHtml = (ts, cls) => `<span class="${cls}" title="${newsAttr(newsFmtAbs(ts))}">${newsEscape(newsFmtTime(ts))}</span>`;
+// R2 (founder card 28bd8fc2): no time on an article — published_at is api-tennis's 4-hourly batch stamp, not the outlet's time,
+// and a wrong figure is not shown. Day groups and the newest-first sort still read it. The title's hover says what it is:
+// "Added to feed 09 Oct 18:02" (member zone); an intel note says "Posted …".
+function newsAddedLabel(it){
+  if (!isFinite(it.ts)) return '';
+  const o = { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false };
+  let t; try { t = new Date(it.ts).toLocaleString('en-GB', Object.assign({ timeZone: newsTz() }, o)); } catch (e) { t = new Date(it.ts).toLocaleString('en-GB', o); }
+  return (it.kind === 'intel' ? 'Posted ' : 'Added to feed ') + t.replace(',', '');
+}
+const newsTipAttr = it => { const t = newsAddedLabel(it); return t ? ` data-news-tip="${newsAttr(t)}"` : ''; };
 function newsIntelActsHtml(it){
   const s = String(it.intelId).replace(/[^A-Za-z0-9_-]/g, '');
   return `<div class="news-acts"><button type="button" class="news-act" onclick="event.stopPropagation();intelStartEdit('${s}')">Edit</button>`
@@ -5821,9 +5895,8 @@ function newsReadingCard(it, admin){
   return `<article class="news-card" data-id="${idA}">
       <div class="news-cardmeta">
         <div class="news-cardmeta-l">${it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : ''}${it.source ? `<span class="news-cardsource">${newsEscape(it.source)}</span>` : ''}${ents.map(e => `<span class="news-cardsep">·</span>${e}`).join('')}</div>
-        ${newsTimeHtml(it.ts, 'news-cardtime')}
       </div>
-      <h3 class="news-cardtitle">${newsEscape(it.title)}</h3>
+      <h3 class="news-cardtitle"${newsTipAttr(it)}>${newsEscape(it.title)}</h3>
       ${paras.map(p => `<div class="news-para">${newsEscape(p)}</div>`).join('')}
       ${hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : ''}
       ${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}
@@ -5836,7 +5909,7 @@ function newsToggleMore(id){ _newsMore[id] = !_newsMore[id]; renderNews(); }
 function newsCompactRow(it, admin){
   const open = _newsOpenId === it.id, p = it.players[0];
   const idA = newsAttr(it.id);
-  const head = `<div class="news-rowhead">${newsTimeHtml(it.ts, 'news-rtime')}<span class="news-rplayer">${p ? newsPlayerHtml(p, it.kind) : ''}</span><span class="news-rhead">${newsEscape(it.title)}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`;
+  const head = `<div class="news-rowhead"><span class="news-rplayer">${p ? newsPlayerHtml(p, it.kind) : ''}</span><span class="news-rhead"${newsTipAttr(it)}>${newsEscape(it.title)}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`;
   // the same 2-paragraph preview as Reading (founder R1 fix 1): "Read more" opens the rest, "Show less" collapses to 2
   const hasMore = it.bodyParas.length > NEWS_PREVIEW_PARAS, expanded = !!_newsMore[it.id];
   const paras = hasMore && !expanded ? it.bodyParas.slice(0, NEWS_PREVIEW_PARAS) : it.bodyParas;
@@ -5847,6 +5920,28 @@ function newsCompactRow(it, admin){
     : '';
   return `<div class="news-row${open ? ' open' : ''}" data-id="${idA}" role="button" tabindex="0" aria-expanded="${open}" onclick="newsToggleRow(this.dataset.id)" onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">${head}${body}</div>`;
 }
+// The title hover ("Added to feed …"): one floating tip, card + 10% edge + --shadow-menu, like the site's info popovers.
+const newsTip = { hide: () => {} };
+(function newsTipInit(){
+  if (typeof document === 'undefined' || !document.body && document.readyState === 'loading'){ if (typeof document !== 'undefined') document.addEventListener('DOMContentLoaded', newsTipInit); return; }
+  let tip = null;
+  const show = (t, e) => {
+    if (!tip){ tip = document.createElement('div'); tip.className = 'news-tip'; tip.setAttribute('role', 'tooltip'); document.body.appendChild(tip); }
+    tip.textContent = t; tip.style.opacity = '1';
+    let x = e.clientX + 14, y = e.clientY + 16;
+    if (x + tip.offsetWidth > window.innerWidth - 8) x = e.clientX - tip.offsetWidth - 14;
+    if (y + tip.offsetHeight > window.innerHeight - 8) y = e.clientY - tip.offsetHeight - 16;
+    tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+  };
+  document.addEventListener('mousemove', e => {
+    const el = e.target && e.target.closest ? e.target.closest('[data-news-tip]') : null;
+    if (el) show(el.getAttribute('data-news-tip'), e); else if (tip) tip.style.opacity = '0';
+  });
+  // a scroll, click or re-render under a still pointer never leaves a stale tip
+  const hide = () => { if (tip) tip.style.opacity = '0'; };
+  document.addEventListener('scroll', hide, true); document.addEventListener('click', hide, true);
+  newsTip.hide = hide;
+})();
 function newsToggleRow(id){ _newsOpenId = _newsOpenId === id ? '' : id; renderNews(); }
 
 
