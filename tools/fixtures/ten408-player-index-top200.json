@@ -1,0 +1,1205 @@
+{
+"_doc": "TEN-408 test fixture: the ATP top 200 from player-index.json (api-tennis get_standings), fetched 2026-10-09T06:33:48.565Z. Frozen so the Playing Styles counts test is deterministic.",
+"players": [
+{
+"key": "2072",
+"name": "Jannik Sinner",
+"rank": 1,
+"hasProfile": true
+},
+{
+"key": "1980",
+"name": "Alexander Zverev",
+"rank": 2,
+"hasProfile": true
+},
+{
+"key": "2382",
+"name": "Carlos Alcaraz",
+"rank": 3,
+"hasProfile": true
+},
+{
+"key": "2973",
+"name": "Ben Shelton",
+"rank": 4,
+"hasProfile": true
+},
+{
+"key": "1093",
+"name": "Daniil Medvedev",
+"rank": 5,
+"hasProfile": true
+},
+{
+"key": "2073",
+"name": "Felix Auger-Aliassime",
+"rank": 6,
+"hasProfile": true
+},
+{
+"key": "372",
+"name": "Flavio Cobolli",
+"rank": 7,
+"hasProfile": true
+},
+{
+"key": "2846",
+"name": "Frances Tiafoe",
+"rank": 8,
+"hasProfile": true
+},
+{
+"key": "1106",
+"name": "Alex De Minaur",
+"rank": 9,
+"hasProfile": true
+},
+{
+"key": "1759",
+"name": "Arthur Fils",
+"rank": 10,
+"hasProfile": true
+},
+{
+"key": "1905",
+"name": "Novak Djokovic",
+"rank": 11,
+"hasProfile": true
+},
+{
+"key": "2832",
+"name": "Taylor Fritz",
+"rank": 12,
+"hasProfile": true
+},
+{
+"key": "50323",
+"name": "Rafael Jodar",
+"rank": 13,
+"hasProfile": true
+},
+{
+"key": "1852",
+"name": "Valentin Vacherot",
+"rank": 14,
+"hasProfile": true
+},
+{
+"key": "902",
+"name": "Jakub Mensik",
+"rank": 15,
+"hasProfile": true
+},
+{
+"key": "10520",
+"name": "Learner Tien",
+"rank": 16,
+"hasProfile": true
+},
+{
+"key": "1894",
+"name": "Tommy Paul",
+"rank": 17,
+"hasProfile": true
+},
+{
+"key": "2838",
+"name": "Brandon Nakashima",
+"rank": 18,
+"hasProfile": true
+},
+{
+"key": "2959",
+"name": "Jiri Lehecka",
+"rank": 19,
+"hasProfile": true
+},
+{
+"key": "1104",
+"name": "Francisco Cerundolo",
+"rank": 20,
+"hasProfile": true
+},
+{
+"key": "8781",
+"name": "Luciano Darderi",
+"rank": 21,
+"hasProfile": true
+},
+{
+"key": "1895",
+"name": "Alexander Bublik",
+"rank": 22,
+"hasProfile": true
+},
+{
+"key": "2847",
+"name": "Andrey Rublev",
+"rank": 23,
+"hasProfile": true
+},
+{
+"key": "430",
+"name": "Casper Ruud",
+"rank": 24,
+"hasProfile": true
+},
+{
+"key": "2849",
+"name": "Lorenzo Musetti",
+"rank": 25,
+"hasProfile": true
+},
+{
+"key": "2842",
+"name": "Alejandro Davidovich Fokina",
+"rank": 26,
+"hasProfile": true
+},
+{
+"key": "435",
+"name": "Karen Khachanov",
+"rank": 27,
+"hasProfile": true
+},
+{
+"key": "39913",
+"name": "Alexander Blockx",
+"rank": 28,
+"hasProfile": true
+},
+{
+"key": "40058",
+"name": "Joao Fonseca",
+"rank": 29,
+"hasProfile": true
+},
+{
+"key": "2982",
+"name": "Alejandro Tabilo",
+"rank": 30,
+"hasProfile": true
+},
+{
+"key": "1777",
+"name": "Martin Etcheverry Tomas",
+"rank": 31,
+"hasProfile": true
+},
+{
+"key": "1105",
+"name": "Ugo Humbert",
+"rank": 32,
+"hasProfile": true
+},
+{
+"key": "1902",
+"name": "Arthur Rinderknech",
+"rank": 33,
+"hasProfile": true
+},
+{
+"key": "2841",
+"name": "Hubert Hurkacz",
+"rank": 34,
+"hasProfile": true
+},
+{
+"key": "10884",
+"name": "Alex Michelsen",
+"rank": 35,
+"hasProfile": true
+},
+{
+"key": "9514",
+"name": "Ignacio Buse",
+"rank": 36,
+"hasProfile": true
+},
+{
+"key": "8174",
+"name": "Arthur Fery",
+"rank": 37,
+"hasProfile": true
+},
+{
+"key": "1192",
+"name": "Matteo Arnaldi",
+"rank": 38,
+"hasProfile": true
+},
+{
+"key": "1064",
+"name": "Zizou Bergs",
+"rank": 39,
+"hasProfile": true
+},
+{
+"key": "1103",
+"name": "Cameron Norrie",
+"rank": 40,
+"hasProfile": true
+},
+{
+"key": "2972",
+"name": "Botic Van De Zandschulp",
+"rank": 41,
+"hasProfile": true
+},
+{
+"key": "431",
+"name": "Denis Shapovalov",
+"rank": 42,
+"hasProfile": true
+},
+{
+"key": "1906",
+"name": "Stefanos Tsitsipas",
+"rank": 43,
+"hasProfile": true
+},
+{
+"key": "978",
+"name": "Daniel Merida Aguilar",
+"rank": 44,
+"hasProfile": true
+},
+{
+"key": "1066",
+"name": "Luca van Assche",
+"rank": 45,
+"hasProfile": true
+},
+{
+"key": "2844",
+"name": "Matteo Berrettini",
+"rank": 46,
+"hasProfile": true
+},
+{
+"key": "949",
+"name": "Mariano Navone",
+"rank": 47,
+"hasProfile": true
+},
+{
+"key": "1925",
+"name": "Quentin Halys",
+"rank": 48,
+"hasProfile": true
+},
+{
+"key": "2083",
+"name": "Jaume Munar",
+"rank": 49,
+"hasProfile": true
+},
+{
+"key": "825",
+"name": "Raphael Collignon",
+"rank": 50,
+"hasProfile": true
+},
+{
+"key": "358",
+"name": "Nuno Borges",
+"rank": 51,
+"hasProfile": true
+},
+{
+"key": "9217",
+"name": "Daniel Vallejo Adolfo",
+"rank": 52,
+"hasProfile": true
+},
+{
+"key": "1101",
+"name": "Sebastian Baez",
+"rank": 53,
+"hasProfile": true
+},
+{
+"key": "366",
+"name": "Agustin Tirante Thiago",
+"rank": 54,
+"hasProfile": true
+},
+{
+"key": "388",
+"name": "Manuel Cerundolo Juan",
+"rank": 55,
+"hasProfile": true
+},
+{
+"key": "9210",
+"name": "Arthur Gea",
+"rank": 56,
+"hasProfile": true
+},
+{
+"key": "1764",
+"name": "Yannick Hanfmann",
+"rank": 57,
+"hasProfile": true
+},
+{
+"key": "427",
+"name": "Tallon Griekspoor",
+"rank": 58,
+"hasProfile": true
+},
+{
+"key": "2831",
+"name": "Jan-Lennard Struff",
+"rank": 59,
+"hasProfile": true
+},
+{
+"key": "824",
+"name": "Jaime Faria",
+"rank": 60,
+"hasProfile": true
+},
+{
+"key": "2848",
+"name": "Miomir Kecmanovic",
+"rank": 61,
+"hasProfile": true
+},
+{
+"key": "9596",
+"name": "Andres Burruchaga Roman",
+"rank": 62,
+"hasProfile": true
+},
+{
+"key": "10148",
+"name": "Fabian Marozsan",
+"rank": 63,
+"hasProfile": true
+},
+{
+"key": "1900",
+"name": "James Duckworth",
+"rank": 64,
+"hasProfile": true
+},
+{
+"key": "434",
+"name": "Pablo Carreno-Busta",
+"rank": 65,
+"hasProfile": true
+},
+{
+"key": "9225",
+"name": "Ethan Quinn",
+"rank": 66,
+"hasProfile": true
+},
+{
+"key": "1099",
+"name": "Daniel Altmaier",
+"rank": 67,
+"hasProfile": true
+},
+{
+"key": "1083",
+"name": "Vit Kopriva",
+"rank": 68,
+"hasProfile": true
+},
+{
+"key": "2002",
+"name": "Facundo Diaz Acosta",
+"rank": 69,
+"hasProfile": true
+},
+{
+"key": "1096",
+"name": "Kamil Majchrzak",
+"rank": 70,
+"hasProfile": true
+},
+{
+"key": "2674",
+"name": "Corentin Moutet",
+"rank": 71,
+"hasProfile": true
+},
+{
+"key": "8926",
+"name": "Titouan Droguet",
+"rank": 72,
+"hasProfile": true
+},
+{
+"key": "39864",
+"name": "Martin Landaluce",
+"rank": 73,
+"hasProfile": true
+},
+{
+"key": "2840",
+"name": "Sebastian Korda",
+"rank": 74,
+"hasProfile": true
+},
+{
+"key": "2981",
+"name": "Tomas Machac",
+"rank": 75,
+"hasProfile": true
+},
+{
+"key": "1335",
+"name": "Kyrian Jacquet",
+"rank": 76,
+"hasProfile": true
+},
+{
+"key": "401",
+"name": "Camilo Ugo Carabelli",
+"rank": 77,
+"hasProfile": true
+},
+{
+"key": "2677",
+"name": "Hamad Medjedovic",
+"rank": 78,
+"hasProfile": true
+},
+{
+"key": "1057",
+"name": "Roman Safiullin",
+"rank": 79,
+"hasProfile": true
+},
+{
+"key": "2167",
+"name": "Marin Cilic",
+"rank": 80,
+"hasProfile": true
+},
+{
+"key": "2978",
+"name": "Aleksandar Kovacevic",
+"rank": 81,
+"hasProfile": true
+},
+{
+"key": "2986",
+"name": "Zachary Svajda",
+"rank": 82,
+"hasProfile": true
+},
+{
+"key": "438",
+"name": "Adrian Mannarino",
+"rank": 83,
+"hasProfile": true
+},
+{
+"key": "436",
+"name": "Alex Molcan",
+"rank": 84,
+"hasProfile": true
+},
+{
+"key": "3317",
+"name": "Rinky Hijikata",
+"rank": 85,
+"hasProfile": true
+},
+{
+"key": "2112",
+"name": "Mattia Bellucci",
+"rank": 86,
+"hasProfile": true
+},
+{
+"key": "2843",
+"name": "Lorenzo Sonego",
+"rank": 87,
+"hasProfile": true
+},
+{
+"key": "1766",
+"name": "Marcos Giron",
+"rank": 88,
+"hasProfile": true
+},
+{
+"key": "1102",
+"name": "Hugo Gaston",
+"rank": 89,
+"hasProfile": true
+},
+{
+"key": "395",
+"name": "Marco Trungelliti",
+"rank": 90,
+"hasProfile": true
+},
+{
+"key": "5979",
+"name": "Jan Choinski",
+"rank": 91,
+"hasProfile": true
+},
+{
+"key": "1771",
+"name": "Benjamin Bonzi",
+"rank": 92,
+"hasProfile": true
+},
+{
+"key": "796",
+"name": "Yunchaokete Bu",
+"rank": 93,
+"hasProfile": true
+},
+{
+"key": "9515",
+"name": "Michael Zheng",
+"rank": 94,
+"hasProfile": true
+},
+{
+"key": "412",
+"name": "Jesper De Jong",
+"rank": 95,
+"hasProfile": true
+},
+{
+"key": "12951",
+"name": "Jacob Fearnley",
+"rank": 96,
+"hasProfile": true
+},
+{
+"key": "10869",
+"name": "Dino Prizmic",
+"rank": 97,
+"hasProfile": true
+},
+{
+"key": "10070",
+"name": "Adam Walton",
+"rank": 98,
+"hasProfile": true
+},
+{
+"key": "13091",
+"name": "Terence Atmane",
+"rank": 99,
+"hasProfile": true
+},
+{
+"key": "15184",
+"name": "Toby Samuel",
+"rank": 100,
+"hasProfile": true
+},
+{
+"key": "2227",
+"name": "Coleman Wong Chak Lam",
+"rank": 101,
+"hasProfile": true
+},
+{
+"key": "2169",
+"name": "Jenson Brooksby",
+"rank": 102,
+"hasProfile": true
+},
+{
+"key": "1079",
+"name": "Damir Dzumhur",
+"rank": 103,
+"hasProfile": true
+},
+{
+"key": "1317",
+"name": "Martin Damm",
+"rank": 104,
+"hasProfile": true
+},
+{
+"key": "954",
+"name": "Valentin Royer",
+"rank": 105,
+"hasProfile": true
+},
+{
+"key": "827",
+"name": "Henrique Rocha",
+"rank": 106,
+"hasProfile": true
+},
+{
+"key": "767",
+"name": "Otto Virtanen",
+"rank": 107,
+"hasProfile": true
+},
+{
+"key": "9222",
+"name": "Giovanni Mpetshi Perricard",
+"rank": 108,
+"hasProfile": true
+},
+{
+"key": "9608",
+"name": "Sho Shimabukuro",
+"rank": 109,
+"hasProfile": true
+},
+{
+"key": "2834",
+"name": "Lloyd Harris",
+"rank": 110,
+"hasProfile": true
+},
+{
+"key": "566",
+"name": "Alexander Shevchenko",
+"rank": 111,
+"hasProfile": true
+},
+{
+"key": "1308",
+"name": "Dane Sweeny",
+"rank": 112,
+"hasProfile": true
+},
+{
+"key": "1849",
+"name": "Yibing Wu",
+"rank": 113,
+"hasProfile": true
+},
+{
+"key": "367",
+"name": "Zsombor Piros",
+"rank": 114,
+"hasProfile": true
+},
+{
+"key": "360",
+"name": "Aleksandar Vukic",
+"rank": 115,
+"hasProfile": true
+},
+{
+"key": "2410",
+"name": "Gustavo Heide",
+"rank": 116,
+"hasProfile": true
+},
+{
+"key": "421",
+"name": "Christopher O'Connell",
+"rank": 117,
+"hasProfile": true
+},
+{
+"key": "8130",
+"name": "Patrick Kypson",
+"rank": 118,
+"hasProfile": true
+},
+{
+"key": "7641",
+"name": "Nicolas Mejia",
+"rank": 119,
+"hasProfile": true
+},
+{
+"key": "359",
+"name": "Sebastian Ofner",
+"rank": 120,
+"hasProfile": true
+},
+{
+"key": "9909",
+"name": "Gabriel Diallo",
+"rank": 121,
+"hasProfile": true
+},
+{
+"key": "567",
+"name": "Emilio Nava",
+"rank": 122,
+"hasProfile": true
+},
+{
+"key": "1880",
+"name": "Shintaro Mochizuki",
+"rank": 123,
+"hasProfile": true
+},
+{
+"key": "424",
+"name": "Nikoloz Basilashvili",
+"rank": 124,
+"hasProfile": true
+},
+{
+"key": "2084",
+"name": "Francisco Comesana",
+"rank": 125,
+"hasProfile": true
+},
+{
+"key": "1754",
+"name": "Dalibor Svrcina",
+"rank": 126,
+"hasProfile": true
+},
+{
+"key": "2384",
+"name": "Grigor Dimitrov",
+"rank": 127,
+"hasProfile": true
+},
+{
+"key": "2980",
+"name": "Hugo Dellien",
+"rank": 128,
+"hasProfile": true
+},
+{
+"key": "1926",
+"name": "Alexei Popyrin",
+"rank": 129,
+"hasProfile": true
+},
+{
+"key": "1775",
+"name": "Pedro Martinez",
+"rank": 130,
+"hasProfile": true
+},
+{
+"key": "2071",
+"name": "Cristian Garin",
+"rank": 131,
+"hasProfile": true
+},
+{
+"key": "396",
+"name": "Tomas Barrios Vera",
+"rank": 132,
+"hasProfile": true
+},
+{
+"key": "374",
+"name": "Alexandre Muller",
+"rank": 133,
+"hasProfile": true
+},
+{
+"key": "2833",
+"name": "Marton Fucsovics",
+"rank": 134,
+"hasProfile": true
+},
+{
+"key": "742",
+"name": "Stefanos Sakellaridis",
+"rank": 135,
+"hasProfile": true
+},
+{
+"key": "1086",
+"name": "Thiago Seyboth Wild",
+"rank": 136,
+"hasProfile": true
+},
+{
+"key": "37897",
+"name": "Rei Sakamoto",
+"rank": 137,
+"hasProfile": true
+},
+{
+"key": "678",
+"name": "Max Alcala Gurri",
+"rank": 138,
+"hasProfile": true
+},
+{
+"key": "15270",
+"name": "Nishesh Basavareddy",
+"rank": 139,
+"hasProfile": true
+},
+{
+"key": "416",
+"name": "Jurij Rodionov",
+"rank": 140,
+"hasProfile": true
+},
+{
+"key": "9385",
+"name": "Vilius Gaubas",
+"rank": 141,
+"hasProfile": true
+},
+{
+"key": "2168",
+"name": "Stan Wawrinka",
+"rank": 142,
+"hasProfile": true
+},
+{
+"key": "2983",
+"name": "Eliot Spizzirri",
+"rank": 143,
+"hasProfile": true
+},
+{
+"key": "987",
+"name": "Pablo Llamas Ruiz",
+"rank": 144,
+"hasProfile": true
+},
+{
+"key": "2001",
+"name": "Andrea Pellegrino",
+"rank": 145,
+"hasProfile": true
+},
+{
+"key": "7102",
+"name": "Clement Chidekh",
+"rank": 146,
+"hasProfile": true
+},
+{
+"key": "38264",
+"name": "Federico Cina",
+"rank": 147,
+"hasProfile": true
+},
+{
+"key": "2675",
+"name": "Dusan Lajovic",
+"rank": 148,
+"hasProfile": true
+},
+{
+"key": "731",
+"name": "Mark Lajal",
+"rank": 149,
+"hasProfile": true
+},
+{
+"key": "377",
+"name": "Borna Gojo",
+"rank": 150,
+"hasProfile": true
+},
+{
+"key": "439",
+"name": "Michael Mmoh",
+"rank": 151,
+"hasProfile": true
+},
+{
+"key": "55163",
+"name": "Nicolai Budkov Kjaer",
+"rank": 152,
+"hasProfile": true
+},
+{
+"key": "5980",
+"name": "Chris Rodesch",
+"rank": 153,
+"hasProfile": true
+},
+{
+"key": "1238",
+"name": "Ilia Simakin",
+"rank": 154,
+"hasProfile": true
+},
+{
+"key": "1183",
+"name": "Tristan Schoolkate",
+"rank": 155,
+"hasProfile": true
+},
+{
+"key": "422",
+"name": "Reilly Opelka",
+"rank": 156,
+"hasProfile": true
+},
+{
+"key": "591",
+"name": "Nikolas Sanchez Izquierdo",
+"rank": 157,
+"hasProfile": true
+},
+{
+"key": "7011",
+"name": "Jack Draper",
+"rank": 158,
+"hasProfile": true
+},
+{
+"key": "17463",
+"name": "Darwin Blanch",
+"rank": 159,
+"hasProfile": true
+},
+{
+"key": "1762",
+"name": "Clement Tabur",
+"rank": 160,
+"hasProfile": true
+},
+{
+"key": "1098",
+"name": "Soonwoo Kwon",
+"rank": 161,
+"hasProfile": true
+},
+{
+"key": "21704",
+"name": "Carlos Prado Angelo Juan",
+"rank": 162,
+"hasProfile": true
+},
+{
+"key": "1095",
+"name": "Marco Cecchinato",
+"rank": 163,
+"hasProfile": true
+},
+{
+"key": "2501",
+"name": "Tom Gentzsch",
+"rank": 164,
+"hasProfile": true
+},
+{
+"key": "853",
+"name": "Andrea Guerrieri",
+"rank": 165,
+"hasProfile": true
+},
+{
+"key": "590",
+"name": "Zhizhen Zhang",
+"rank": 166,
+"hasProfile": true
+},
+{
+"key": "938",
+"name": "Luka Mikrut",
+"rank": 167,
+"hasProfile": true
+},
+{
+"key": "818",
+"name": "Gauthier Onclin",
+"rank": 168,
+"hasProfile": true
+},
+{
+"key": "2839",
+"name": "Mackenzie McDonald",
+"rank": 169,
+"hasProfile": true
+},
+{
+"key": "3319",
+"name": "Alex Bolt",
+"rank": 170,
+"hasProfile": true
+},
+{
+"key": "1180",
+"name": "Francesco Maestrelli",
+"rank": 171,
+"hasProfile": true
+},
+{
+"key": "1899",
+"name": "Vitaliy Sachko",
+"rank": 172,
+"hasProfile": true
+},
+{
+"key": "2672",
+"name": "Stefano Travaglia",
+"rank": 173,
+"hasProfile": true
+},
+{
+"key": "28615",
+"name": "Matej Dodig",
+"rank": 174,
+"hasProfile": true
+},
+{
+"key": "10232",
+"name": "Inaki Montes-De La Torre",
+"rank": 175,
+"hasProfile": true
+},
+{
+"key": "32558",
+"name": "Josef Schwaerzler Joel",
+"rank": 176,
+"hasProfile": true
+},
+{
+"key": "2406",
+"name": "Taro Daniel",
+"rank": 177,
+"hasProfile": true
+},
+{
+"key": "780",
+"name": "Daniil Glinka",
+"rank": 178,
+"hasProfile": true
+},
+{
+"key": "2386",
+"name": "Laslo Djere",
+"rank": 179,
+"hasProfile": true
+},
+{
+"key": "2022",
+"name": "Lukas Neumayer",
+"rank": 180,
+"hasProfile": true
+},
+{
+"key": "39675",
+"name": "Elmer Moller",
+"rank": 181,
+"hasProfile": true
+},
+{
+"key": "7009",
+"name": "Harry Wendelken",
+"rank": 182,
+"hasProfile": true
+},
+{
+"key": "9209",
+"name": "Gonzalo Bueno",
+"rank": 183,
+"hasProfile": true
+},
+{
+"key": "557",
+"name": "Alexis Galarneau",
+"rank": 184,
+"hasProfile": true
+},
+{
+"key": "3145",
+"name": "Bernard Tomic",
+"rank": 185,
+"hasProfile": true
+},
+{
+"key": "1189",
+"name": "Harold Mayot",
+"rank": 186,
+"hasProfile": true
+},
+{
+"key": "415",
+"name": "Pavel Kotov",
+"rank": 187,
+"hasProfile": true
+},
+{
+"key": "7249",
+"name": "Ivan Justo Guido",
+"rank": 188,
+"hasProfile": true
+},
+{
+"key": "1742",
+"name": "Sascha Gueymard Wayenburg",
+"rank": 189,
+"hasProfile": true
+},
+{
+"key": "55858",
+"name": "Diego Dedura",
+"rank": 190,
+"hasProfile": true
+},
+{
+"key": "38839",
+"name": "Jan Kumstat",
+"rank": 191,
+"hasProfile": true
+},
+{
+"key": "1082",
+"name": "Elias Ymer",
+"rank": 192,
+"hasProfile": true
+},
+{
+"key": "2019",
+"name": "David Jorda Sanchis",
+"rank": 193,
+"hasProfile": true
+},
+{
+"key": "37936",
+"name": "Andre Ilagan",
+"rank": 194,
+"hasProfile": true
+},
+{
+"key": "437",
+"name": "Holger Rune",
+"rank": 195,
+"hasProfile": true
+},
+{
+"key": "384",
+"name": "Zdenek Kolar",
+"rank": 196,
+"hasProfile": true
+},
+{
+"key": "378",
+"name": "Facundo Mena",
+"rank": 197,
+"hasProfile": true
+},
+{
+"key": "52682",
+"name": "Felix Balshaw",
+"rank": 198,
+"hasProfile": true
+},
+{
+"key": "9362",
+"name": "Edas Butvilas",
+"rank": 199,
+"hasProfile": true
+},
+{
+"key": "391",
+"name": "Pablo Varillas Juan",
+"rank": 200,
+"hasProfile": true
+}
+]
+}

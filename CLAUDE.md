@@ -281,6 +281,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Tournaments page (TEN-401) — data sources, header, darker-track controls, Overview, overlays, Entry list | `.claude/rules/tournaments.md` |
 | Tournaments → Reports — controls, Ring-blue bars, match-stats sheet, every player in a round, W/L outcome letter | `.claude/rules/tournament-reports.md` |
 | Head to Head page (TEN-402) — page order, header, darker-track rows, white bars (override), data joins, loader guard, sheet; night only | `.claude/rules/h2h.md` |
+| Playing Styles page (TEN-408) — shell header, matchup grid (Form rule, < 30 = —, hover), archetype cards, tug bars, top-200 counts, small sample, examples by Elo; night only | `.claude/rules/playing-styles.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |
 | Database page (TEN-399) — one price join, header, control bar, Tour / Tournament / Player layout, compare events, charts | `.claude/rules/database.md` |

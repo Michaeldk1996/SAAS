@@ -86,16 +86,18 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
 22×26, sub 13.5/1.55, stats gap 34, mono 17) and every caps line above a page title.
 
 - **One component, `.sfh`, on every page header card:** Today's Matches / Results, Live, Trading Report, Dropping Odds,
-  Series, Players, Head to Head (`.sfh--ctl`, below), Tournaments, Database (page + both overlay mounts), News. Pages
+  Series, Players, Head to Head (`.sfh--ctl`, below), Tournaments, Database (page + both overlay mounts), News, Playing Styles
+  (TEN-408). Pages
   keep their root class as a hook (`mx-titlerow`, `pgh-card`, `h2h-head`, `tourx-head`, `db-headcard`, `tr-hdr`,
-  `sr-head`, `do-head`, `news-head`) but own **no rule that restyles the header** (H2H owns only its sticky shadow). Stennisfy Model and Playing Styles have no page header card yet (their page steps add one);
+  `sr-head`, `do-head`, `news-head`, `ps-head`) but own **no rule that restyles the header** (H2H owns only its sticky shadow). Stennisfy Model has no page header card yet (its page step adds one);
   Player Profile has a player hero, not a page header.
 - **Card:** `--card`, `--top-light`, no outline, radius 12, padding 18×26, one row `align-items:center;
   justify-content:space-between; gap:28px`.
 - **Left** (`.sfh__text`, column, gap 5): title `.sfh__title` Hanken 24/800, −0.015em, line-height 1.1, `--text`; under it
   ONE line `.sfh__sub` 13px `--text-soft`, `nowrap` + ellipsis, optionally ending in a `--text-label` tail
   (`.sfh__tail`, e.g. "· Settled · 8 Oct 2026", the Drops / News status line). Header copy is one line: at most 120
-  characters (a longer sentence is trimmed, never reworded). **No caps label line above the title.**
+  characters (a longer sentence is trimmed, never reworded; *exception:* Playing Styles keeps the reference's full
+  128-character line, founder TEN-408). **No caps label line above the title.**
 - **Right** (`.sfh__stats`, gap 30, `align-items:flex-end`): columns `.sfh__stat` (gap 4, right-aligned) of a caps label
   `.sfh__l` (Hanken 10.5/700/0.10em `--text-label`) over a value `.sfh__v` (Plex Mono 15/700 `--text`; clocks
   `.sfh__v--soft` = `--text-soft`; an unsourced value is a grey `—`, `.sfh__v--none`). A page with no stats draws none.

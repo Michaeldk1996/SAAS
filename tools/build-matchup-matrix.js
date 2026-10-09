@@ -63,6 +63,11 @@ const SUPP_DEDUP_TOL_DAYS = 1;   // TML tourney_date vs api event_date drift by 
 
 const FROM_YEAR = 2000, TO_YEAR = 2026;   // must match classify-styles.js window
 const MATRIX_MIN_N = 20;                   // off-diagonal cell needs this many real matches
+// TEN-408 (founder step 9, 2026-10-09): the style-vs-style win rates apply the Form rule — Laver Cup and the
+// exhibitions are out of every matrix cell (matrix + matrixBySurface); Davis Cup and United Cup stay. The per-player
+// records (byPlayer + style-meetings shards) keep every match, like the H2H page. Same list as bsp-pipeline.js
+// FORM_NOT_ATP_RECORD and the dashboard's FH_FORM_NOT_ATP_RECORD (tools/test-ten408-styles.mjs asserts all three equal).
+const FORM_NOT_ATP_RECORD = /laver cup|hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
 
 // Stable primary order for the emitted grid (serve family first, then baseline
 // families, then the elite/defensive tail). Any label present in the data but
@@ -375,8 +380,9 @@ function main() {
   for (const A of PRIMARIES) { wins[A] = {}; for (const B of PRIMARIES) wins[A][B] = 0; }
   for (const s of SURFACES) { winsSurf[s] = {}; for (const A of PRIMARIES) { winsSurf[s][A] = {}; for (const B of PRIMARIES) winsSurf[s][A][B] = 0; } }
 
-  let tmlTotal = 0, counted = 0, tmlWalkover = 0;
+  let tmlTotal = 0, counted = 0, tmlWalkover = 0, formOut = 0, from = null, through = null;
   const surfaceCounted = { hard: 0, clay: 0, grass: 0 };
+  const seenThrough = d => { if (!d) return; if (!through || d > through) through = d; if (!from || d < from) from = d; };
   for (let y = FROM_YEAR; y <= TO_YEAR; y++) {
     const f = path.join(TML_CACHE, `${y}.csv`);
     if (!fs.existsSync(f)) { console.log(`  TML ${y}: missing`); continue; }
@@ -404,7 +410,8 @@ function main() {
       }
       const wl = lookup(wn), ll = lookup(ln);
       if (!wl || !ll) continue;                 // at least one endpoint outside the deployed pool
-      wins[wl][ll]++; counted++;
+      const formMatch = !FORM_NOT_ATP_RECORD.test(c[ix.tourney_name] || '');   // TEN-408: Laver Cup / exhibitions = records only
+      if (formMatch) { wins[wl][ll]++; counted++; seenThrough(isoDate(c[ix.tourney_date])); } else formOut++;
       // Same pool, split per player: the winner beat an `ll`-archetype opponent;
       // the loser lost to a `wl`-archetype opponent. All surfaces pooled.
       const surf = surfaceOf(c[ix.surface]);
@@ -419,7 +426,7 @@ function main() {
       meta.wodds = _od.w; meta.lodds = _od.l;
       bump(wn, ll, true,  { ...meta, opponent: ln });
       bump(ln, wl, false, { ...meta, opponent: wn });
-      if (winsSurf[surf]) { winsSurf[surf][wl][ll]++; surfaceCounted[surf]++; }
+      if (formMatch && winsSurf[surf]) { winsSurf[surf][wl][ll]++; surfaceCounted[surf]++; }
       // Record this meeting's pair+date so the api supplement can dedup against it.
       const pk = pairKey(wn, ln); if (pk && meta.date) { (tmlPairDates.get(pk) || tmlPairDates.set(pk, []).get(pk)).push(meta.date); }
     }
@@ -475,7 +482,8 @@ function main() {
       // 2026-08-27: a matrix that stops mid-January describes a field that has
       // moved on). Same pool rule as TML — both endpoints already resolved to a
       // labelled primary above. Surface tally only when the fixture is surfaced.
-      wins[winLabel][loseLabel]++; supp.matrix++;
+      if (FORM_NOT_ATP_RECORD.test(r.tournament || '')) { formOut++; supp.added++; continue; }   // TEN-408: records only
+      wins[winLabel][loseLabel]++; supp.matrix++; seenThrough(r.date);
       if (surf && winsSurf[surf]) { winsSurf[surf][winLabel][loseLabel]++; surfaceCounted[surf]++; }
       supp.added++;
     }
@@ -488,7 +496,8 @@ function main() {
   const cell = (W, A, B) => {
     if (A === B) return { pct: 50, n: W[A][B], note: 'same archetype — coin flip on style' };
     const aw = W[A][B], bw = W[B][A], nAB = aw + bw;
-    return { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB };
+    // TEN-408: `w` = the row style's wins, so a page can rank on the unrounded rate (two cells at the same rounded pct).
+    return { pct: nAB >= MATRIX_MIN_N ? +(aw / nAB * 100).toFixed(0) : null, n: nAB, w: aw };
   };
   const build = W => {
     const m = {};
@@ -518,6 +527,9 @@ function main() {
     supplementMatchesInMatrix: supp.matrix,
     matchesInWindow: tmlTotal,
     tmlWalkoverExcluded: tmlWalkover,   // N2: TML "W/O" rows, never counted (TEN-340)
+    formRuleExcluded: formOut,          // TEN-408: Laver Cup + exhibition matches between labelled players, out of every cell
+    from,                               // TEN-408: date of the earliest match counted in the cells
+    through,                            // TEN-408: date of the latest match counted in the cells (the Playing Styles note line)
     retentionPct: retention,
     archetypes: Object.fromEntries(PRIMARIES.map(k => [k, { en: k }])),
     matrix,

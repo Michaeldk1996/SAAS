@@ -2787,141 +2787,101 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   #tourxReports .tourx-ppgrid{ grid-template-columns:1fr !important; row-gap:34px !important; }
 }
 
-/* ---------- PLAYING STYLES ---------- */
-[data-page="styles"] .ps-matrixwrap{ overflow-x:auto; border:1px solid var(--edge-6); border-radius:var(--radius); background:var(--card); padding:12px; }
-[data-page="styles"] .ps-grid{ display:grid; gap:3px; min-width:760px; }
-[data-page="styles"] .ps-corner{font-family:var(--font-words); font-size:10.5px; color:var(--text-label); text-transform:uppercase; font-weight:700; letter-spacing:0.10em; display:flex; align-items:flex-end; padding:4px 6px; }
-[data-page="styles"] .ps-colhead, [data-page="styles"] .ps-rowhead{ font-size:11px; font-weight:600; color:var(--text-label); display:flex; align-items:center; justify-content:center; text-align:center; padding:4px; cursor:default; }
-[data-page="styles"] .ps-rowhead{ justify-content:flex-start; padding-left:8px; }
-[data-page="styles"] .ps-cell{ aspect-ratio:1/1; min-height:46px; display:flex; align-items:center; justify-content:center; border-radius:6px; font-size:13px; font-weight:600; color:var(--text); font-family:var(--font-nums); }
-[data-page="styles"] .ps-diag{ background:repeating-linear-gradient(135deg, var(--wash-4), var(--wash-4) 5px, transparent 5px, transparent 10px); border-radius:6px; }
-[data-page="styles"] .ps-cell.ps-cell-na{ background:var(--inner); color:var(--text-label); font-weight:500; }
-[data-page="styles"] .ps-mrow-na .ps-mname, [data-page="styles"] .ps-mrow-na .ps-mpct{ color:var(--text-label); }
-[data-page="styles"] .ps-mrow-na .ps-track{ background:transparent; }
-[data-page="styles"] .ps-legend{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:11px; color:var(--text-label); }
-[data-page="styles"] .ps-legendbar{ display:flex; height:10px; border-radius:3px; overflow:hidden; }
-[data-page="styles"] .ps-legendbar span{ width:22px; height:100%; }
-[data-page="styles"] .ps-sectionhead{ display:flex; align-items:baseline; gap:12px; margin:30px 0 16px; }
-[data-page="styles"] .ps-sectionhead h2{ margin:0; font-size:20px; font-weight:800; letter-spacing:-0.02em; color:var(--text); }
-[data-page="styles"] .ps-sectionmeta{ font-size:12px; color:var(--text-label); font-family:var(--font-nums); }
-[data-page="styles"] .ps-cardgrid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(340px,1fr)); gap:16px; }
-[data-page="styles"] .ps-card{ background:var(--card); border:1px solid var(--edge-6); border-radius:var(--radius); padding:18px; }
-[data-page="styles"] .ps-cardhead{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-[data-page="styles"] .ps-cardname{ margin:0; font-size:16px; font-weight:700; color:var(--text); }
-[data-page="styles"] .ps-count{ font-size:11.5px; color:var(--text-label); font-family:var(--font-nums); white-space:nowrap; }
-[data-page="styles"] .ps-desc{ margin:8px 0 14px; font-size:12.5px; line-height:1.5; color:var(--text-label); }
-[data-page="styles"] .ps-badges{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; }
-[data-page="styles"] .ps-badge{ font-size:11.5px; padding:5px 9px; border-radius:6px; display:flex; align-items:center; gap:6px; }
-[data-page="styles"] .ps-badge.strong{ background:color-mix(in srgb, var(--pos) 12%, transparent); color:var(--pos); }
-[data-page="styles"] .ps-badge.weak{ background:color-mix(in srgb, var(--neg) 12%, transparent); color:var(--neg); }
-[data-page="styles"] .ps-badgekey{font-family:var(--font-words); font-size:10.5px; text-transform:uppercase; font-weight:700; letter-spacing:0.10em; opacity:0.7; }
-[data-page="styles"] .ps-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:14px; }
-[data-page="styles"] .ps-chip{ display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:4px 8px; border:1px solid var(--edge-6); border-radius:6px; color:var(--text); }
-[data-page="styles"] .ps-chip .ps-rank{ font-size:10.5px; color:var(--text-label); font-family:var(--font-nums); }
-[data-page="styles"] .ps-more{ font-size:11.5px; color:var(--text-label); align-self:center; }
-[data-page="styles"] .ps-pending{ font-size:12px; color:var(--text-label); font-style:italic; margin-bottom:14px; }
-[data-page="styles"] .ps-matchups{ border-top:1px solid var(--line); padding-top:12px; }
-[data-page="styles"] .ps-matchupstitle{font-family:var(--font-words); font-size:10.5px; text-transform:uppercase; font-weight:700; letter-spacing:0.10em; color:var(--text-label); margin-bottom:10px; }
-[data-page="styles"] .ps-mrow{ display:grid; grid-template-columns:118px 1fr 34px 40px; align-items:center; gap:8px; margin-bottom:5px; }
-[data-page="styles"] .ps-mname{ font-size:11.5px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-[data-page="styles"] .ps-track{ height:7px; background:var(--inner); border-radius:4px; overflow:hidden; }
-[data-page="styles"] .ps-fill{ height:100%; border-radius:4px; }
-[data-page="styles"] .ps-mpct{ font-size:11.5px; text-align:right; color:var(--text); font-family:var(--font-nums); }
-[data-page="styles"] .ps-mn{ font-size:11px; text-align:right; color:var(--text-label); font-family:var(--font-nums); }
-@media (max-width:720px){
-  [data-page="styles"] .ps-cardgrid{ grid-template-columns:1fr; }
-}
-/* ===== Playing Styles redesign — export-beside-build (playing-styles.html __bundler/template) ===== */
-[data-page="styles"] .ps-block{ margin-bottom:66px; }
-[data-page="styles"] .ps-block:last-child{ margin-bottom:0; }
-[data-page="styles"] .ps-eyebrow{ display:block; font-family:var(--font-words);  font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin-bottom:0; }
-[data-page="styles"] .ps-blocktitle{ margin:14px 0 0; font-size:40px; font-weight:800; letter-spacing:-0.022em; color:var(--text); font-family:'Hanken Grotesk',sans-serif; }
-[data-page="styles"] .ps-blocklead{ margin:16px 0 0; max-width:660px; font-size:15px; line-height:1.62; color:var(--text-label); }
-[data-page="styles"] .ps-gnote{ margin:10px 0 0; font-size:11px; line-height:1.6; color:var(--text-label); }
-[data-page="styles"] .ps-key{ display:flex; gap:26px; margin:28px 0 20px; font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--text-label); }
-[data-page="styles"] .ps-keyitem{ display:inline-flex; align-items:center; gap:9px; }
-[data-page="styles"] .ps-kdash{ width:22px; height:3px; border-radius:2px; display:inline-block; }
-
-/* ---- hero: signed-edge matchup grid ---- */
-[data-page="styles"] .ps-gridwrap{ border:1px solid transparent; box-shadow:var(--top-light); border-radius:16px; overflow:hidden; background:var(--card); }
-[data-page="styles"] .ps-ghead{ display:grid; grid-template-columns:200px repeat(var(--ps-n,8),minmax(0,1fr)); }
-[data-page="styles"] .ps-gcorner{ display:flex; align-items:center; padding:18px; font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-[data-page="styles"] .ps-gcol{ padding:16px 8px; text-align:center; border-left:1px solid var(--line); transition:opacity .12s ease; cursor:default; }
-[data-page="styles"] .ps-gcol-code{ display:block; font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:800; letter-spacing:0.02em; color:var(--text); }
-[data-page="styles"] .ps-gcol-name{ display:block; font-size:10px; color:var(--text-label); line-height:1.25; margin-top:5px; }
-[data-page="styles"] .ps-grow{ display:grid; grid-template-columns:200px repeat(var(--ps-n,8),minmax(0,1fr)); border-top:1px solid var(--line); }
-[data-page="styles"] .ps-grow-h{ padding:16px 18px; transition:opacity .12s ease; cursor:default; }
-[data-page="styles"] .ps-grow-name{ display:block; font-size:15px; font-weight:700; color:var(--text); white-space:nowrap; }
-[data-page="styles"] .ps-grow-code{ display:block; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin-top:4px; }
-[data-page="styles"] .ps-cell2{ padding:14px 8px; text-align:center; border-left:1px solid var(--line); transition:opacity .12s ease; }
-[data-page="styles"] .ps-edge{ display:block; font-family:'IBM Plex Mono',monospace; font-size:19px; font-weight:800; line-height:1; }
+/* ---------- PLAYING STYLES (TEN-408 step 9, night; reference OFFICIAL VERSION 1 → Playing Styles at 1512) ----------
+   Page = the shared 35b header (.sfh, no page-owned header rule) · the matchup grid card · "Eight archetypes" + the
+   eight cards. Rules: .claude/rules/playing-styles.md. */
+[data-page="styles"] .pagewrap{ padding:30px 40px 70px; display:flex; flex-direction:column; gap:28px; line-height:normal; }
+[data-page="styles"] .ps-caps{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+/* ---- matchup grid card: card tone, no outline, radius 12 ---- */
+[data-page="styles"] .ps-gridcard{ background:var(--card); box-shadow:var(--top-light); border:1px solid transparent; border-radius:12px; padding:18px 20px 16px; }
+[data-page="styles"] .ps-ghead, [data-page="styles"] .ps-grow{ display:grid; grid-template-columns:212px repeat(var(--ps-n,8),minmax(0,1fr)); column-gap:4px; }   /* TEN-408 fix 1: 212 fits "Big Server + Complete Baseliner" 13/600 (189.4) + 12 padding, 10px spare */
+[data-page="styles"] .ps-ghead{ align-items:end; padding-bottom:8px; border-bottom:1px solid var(--edge-10); }
+[data-page="styles"] .ps-grow{ align-items:center; }
+[data-page="styles"] .ps-grow{ border-top:1px solid var(--line); }
+[data-page="styles"] .ps-gcorner{ padding:4px 8px 6px 4px; }
+[data-page="styles"] .ps-gcol{ padding:4px 2px; border-radius:6px; text-align:center; cursor:default; }
+[data-page="styles"] .ps-gcol-code{ display:block; font-family:var(--font-nums); font-size:12px; font-weight:700; color:var(--text); }
+[data-page="styles"] .ps-gcol-name{ display:block; margin-top:2px; font-size:10px; line-height:12px; color:var(--text-label); }   /* fix 1: wraps to 2 lines, centred; the code line stays one line */
+[data-page="styles"] .ps-grow-h{ padding:8px 8px 8px 4px; border-radius:6px; cursor:default; min-width:0; }
+[data-page="styles"] .ps-grow-name{ display:block; font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-page="styles"] .ps-grow-code{ display:block; margin-top:2px; font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
+[data-page="styles"] .ps-cell2{ padding:9px 2px; border-radius:6px; text-align:center; transition:opacity .12s; }
+[data-page="styles"] .ps-edge{ display:block; font-family:var(--font-nums); font-size:15px; font-weight:700; }
 [data-page="styles"] .ps-edge-g{ color:var(--pos); }
 [data-page="styles"] .ps-edge-r{ color:var(--neg); }
 [data-page="styles"] .ps-edge-n{ color:var(--text-label); }
-[data-page="styles"] .ps-edge-d{ color:var(--text-label); }
-[data-page="styles"] .ps-wr{ display:block; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-label); margin-top:4px; }
-[data-page="styles"] .ps-n{ display:block; font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-label); margin-top:2px; }
-[data-page="styles"] .ps-gridwrap.ps-iso .ps-cell2, [data-page="styles"] .ps-gridwrap.ps-iso .ps-gcol, [data-page="styles"] .ps-gridwrap.ps-iso .ps-grow-h{ opacity:0.2; }
-[data-page="styles"] .ps-gridwrap.ps-iso .ps-lit{ opacity:1; }
-
-/* ---- eight archetype cards ---- */
-[data-page="styles"] .ps-rows{ display:flex; flex-direction:column; gap:12px; }
-[data-page="styles"] .ps-arow{ border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; background:var(--card); padding:16px 20px; }
-[data-page="styles"] .ps-arow.open{ border-color:var(--open-card); }
-[data-page="styles"] .ps-arow-head{ display:grid; grid-template-columns:26px minmax(0,1fr) minmax(280px,330px) 18px; align-items:start; gap:18px; cursor:pointer; }
-[data-page="styles"] .ps-arow-idx{ font-family:'IBM Plex Mono',monospace; font-size:14px; color:var(--text-label); align-self:start; line-height:1; margin-top:7px; }
+[data-page="styles"] .ps-edge-d{ color:color-mix(in srgb, var(--text-label) 55%, transparent); }
+[data-page="styles"] .ps-wr{ display:block; margin-top:2px; font-family:var(--font-nums); font-size:10px; color:var(--text-label); }
+/* hover isolation: the crossed cell = selected tone, the rest of its row / column (heads included) = inner tone, every
+   other cell at 25% */
+[data-page="styles"] .ps-gridcard.ps-iso .ps-cell2{ opacity:0.25; }
+[data-page="styles"] .ps-gridcard.ps-iso .ps-lit{ opacity:1; background:var(--inner); }
+[data-page="styles"] .ps-gridcard.ps-iso .ps-lit.ps-x{ background:var(--selected); box-shadow:inset 0 0 0 1px var(--edge-10); }   /* fix 3: night --selected is 4 levels over --inner; selection = tone + edge (foundation) */
+[data-page="styles"] .ps-note{ margin:12px 0 0; padding-top:10px; border-top:1px solid var(--edge-6); font-size:11.5px; line-height:18.4px; color:var(--text-label); }
+/* ---- "Eight archetypes" + the cards ---- */
+[data-page="styles"] .ps-list{ display:flex; flex-direction:column; gap:10px; }
+[data-page="styles"] .ps-listhead{ display:flex; align-items:baseline; justify-content:space-between; }
+[data-page="styles"] .ps-listhint{ font-size:12px; color:var(--text-label); }
+[data-page="styles"] .ps-arow{ background:var(--card); box-shadow:var(--top-light); border:1px solid transparent; border-radius:12px; padding:16px 20px; }
+[data-page="styles"] .ps-arow.open{ border-color:var(--edge-10); }
+[data-page="styles"] .ps-arow-head{ display:grid; grid-template-columns:28px minmax(0,1fr) 338px 16px; gap:18px; align-items:start; cursor:pointer; }
+[data-page="styles"] .ps-arow-idx{ margin-top:5px; font-family:var(--font-nums); font-size:12px; color:var(--text-label); }
 [data-page="styles"] .ps-arow-txt{ min-width:0; }
-[data-page="styles"] .ps-arow-title{ display:flex; align-items:baseline; gap:12px; white-space:nowrap; }
-[data-page="styles"] .ps-arow-name{ font-size:22px; font-weight:800; color:var(--text); }
-[data-page="styles"] .ps-arow-count{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-label); }
-[data-page="styles"] .ps-arow-desc{ margin:6px 0 0; font-size:13.5px; color:var(--text-label); line-height:1.5; max-width:660px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-[data-page="styles"] .ps-arow.open .ps-arow-desc{ display:block; -webkit-line-clamp:unset; overflow:visible; }
-[data-page="styles"] .ps-arow-bars{ display:flex; flex-direction:column; gap:9px; }
-[data-page="styles"] .ps-bar{ display:grid; grid-template-columns:1fr 92px 40px; align-items:center; gap:12px; }
+[data-page="styles"] .ps-arow-title{ display:flex; align-items:baseline; gap:10px; min-width:0; }
+[data-page="styles"] .ps-arow-name{ font-size:18px; font-weight:800; letter-spacing:-0.01em; color:var(--text); white-space:nowrap; }
+[data-page="styles"] .ps-arow-meta{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); white-space:nowrap; }
+[data-page="styles"] .ps-arow-desc{ margin-top:6px; max-width:620px; font-size:13px; line-height:1.55; color:var(--text-label); }
+[data-page="styles"] .ps-arow-bars{ display:flex; flex-direction:column; gap:7px; }
+[data-page="styles"] .ps-bar{ display:grid; grid-template-columns:190px 84px 44px; gap:10px; align-items:center; }   /* fix 1: 190 fits the longest name at 12.5/600 (182.2) */
 [data-page="styles"] .ps-barlabel{ min-width:0; }
-[data-page="styles"] .ps-barkey{ display:block; font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; }
-[data-page="styles"] .ps-barkey-dom{ color:var(--pos); }
-[data-page="styles"] .ps-barkey-weak{ color:var(--neg); }
-[data-page="styles"] .ps-barkey-even{ color:var(--text-label); }
-[data-page="styles"] .ps-baropp{ font-size:13px; font-weight:700; color:var(--text); margin-top:3px; }
-[data-page="styles"] .ps-bartrack{ height:6px; border-radius:3px; background:var(--track); overflow:hidden; position:relative; display:block; }
-[data-page="styles"] .ps-barfill{ display:block; height:100%; border-radius:3px; }
-[data-page="styles"] .ps-barpct{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:var(--text); text-align:right; }
-[data-page="styles"] .ps-arow-chev{ display:inline-flex; justify-content:center; color:var(--text-label); transition:transform .16s ease; }
+[data-page="styles"] .ps-barkey{ display:block; }
+[data-page="styles"] .ps-baropp{ display:block; font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+/* the signed tug bar (Playing-styles exception: green wins / red losses, 35% white within ±2) from the 50% tick */
+[data-page="styles"] .ps-tug{ position:relative; display:block; height:6px; border-radius:3px; background:var(--track); }
+[data-page="styles"] .ps-tug-fill{ position:absolute; top:0; bottom:0; border-radius:3px; }
+[data-page="styles"] .ps-tug-tick{ position:absolute; top:-3px; bottom:-3px; left:50%; width:1px; background:color-mix(in srgb, var(--text) 40%, transparent); }
+[data-page="styles"] .ps-tug-g{ background:var(--pos); }
+[data-page="styles"] .ps-tug-r{ background:var(--neg); }
+[data-page="styles"] .ps-tug-n{ background:color-mix(in srgb, var(--text) 35%, transparent); }
+[data-page="styles"] .ps-barpct{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; text-align:right; }
+[data-page="styles"] .ps-arow-chev{ display:flex; justify-content:center; margin-top:4px; color:var(--text-label); transition:transform .16s; }
 [data-page="styles"] .ps-arow.open .ps-arow-chev{ transform:rotate(180deg); }
-
-/* ---- expanded matchup analyzer ---- */
+/* ---- open: Style matchup summary + Vs style · best → worst ---- */
 [data-page="styles"] .ps-arow-panel{ display:none; }
-[data-page="styles"] .ps-arow.open .ps-arow-panel{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:52px; margin-top:36px; padding-left:60px; }
-[data-page="styles"] .ps-plabel{ font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin:0; }
-[data-page="styles"] .ps-plabel-top{ border-top:1px solid var(--line); padding-top:18px; }
-[data-page="styles"] .ps-adv{ font-size:24px; font-weight:800; margin:13px 0 20px; }
-[data-page="styles"] .ps-gauge{ position:relative; height:8px; border-radius:5px; background:var(--inner); }
-[data-page="styles"] .ps-gauge-fill{ position:absolute; top:0; height:100%; border-radius:5px; }
-[data-page="styles"] .ps-gauge-dot{ position:absolute; top:50%; width:18px; height:18px; border-radius:50%; background:var(--text); border:3px solid var(--card); transform:translate(-50%,-50%); z-index:1; }
-[data-page="styles"] .ps-gauge-scale{ display:flex; justify-content:space-between; margin-top:9px; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--text-label); }
-[data-page="styles"] .ps-avgnote{ font-size:14px; color:var(--text-label); line-height:1.55; margin-top:18px; }
-[data-page="styles"] .ps-avgnote b{ color:var(--text); font-family:'IBM Plex Mono',monospace; font-weight:700; }
-[data-page="styles"] .ps-bwgrid{ display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:16px; }
-[data-page="styles"] .ps-bwcol{ display:flex; flex-direction:column; }
-[data-page="styles"] .ps-bwhead{ font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; margin-bottom:8px; }
-[data-page="styles"] .ps-bwhead-s{ color:var(--pos); }
-[data-page="styles"] .ps-bwhead-w{ color:var(--neg); }
-[data-page="styles"] .ps-bwrow{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }
-[data-page="styles"] .ps-bwname{ font-size:13.5px; color:var(--text); }
-[data-page="styles"] .ps-bwedge{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; }
-[data-page="styles"] .ps-tags{ display:flex; flex-wrap:wrap; gap:10px; }
-[data-page="styles"] .ps-tag{ display:inline-flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; padding:9px 13px; }
-[data-page="styles"] .ps-tag--link{ cursor:pointer; }
-[data-page="styles"] .ps-tag--link:hover{ border-color:var(--edge-10); }
-[data-page="styles"] .ps-tagname{ font-size:13px; font-weight:700; color:var(--text); }
-[data-page="styles"] .ps-tagelo{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-label); }
-[data-page="styles"] .ps-rempty{ font-size:12px; color:var(--text-label); }
+[data-page="styles"] .ps-arow.open .ps-arow-panel{ display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:32px; margin-top:20px; padding:18px 0 4px 46px; border-top:1px solid var(--line); }
+[data-page="styles"] .ps-sum{ display:flex; flex-direction:column; gap:12px; min-width:0; }
+[data-page="styles"] .ps-avgrow{ display:flex; align-items:baseline; gap:10px; }
+[data-page="styles"] .ps-avg{ font-family:var(--font-nums); font-size:26px; font-weight:700; line-height:26px; color:var(--text); }
+[data-page="styles"] .ps-avg.ps-edge-g{ color:var(--pos); }
+[data-page="styles"] .ps-avg.ps-edge-r{ color:var(--neg); }
+[data-page="styles"] .ps-verdict{ font-size:14px; font-weight:700; color:var(--text); }
+[data-page="styles"] .ps-sum .ps-tug-tick{ top:-4px; bottom:-4px; background:color-mix(in srgb, var(--text) 18%, transparent); }
+[data-page="styles"] .ps-axis{ display:flex; justify-content:space-between; font-family:var(--font-nums); font-size:10px; color:var(--text-label); }
+[data-page="styles"] .ps-avgline{ font-size:12.5px; color:var(--text-label); }
+[data-page="styles"] .ps-smallline{ font-size:11.5px; color:var(--text-label); margin-top:-6px; }
+[data-page="styles"] .ps-excaps{ margin-top:8px; }
+[data-page="styles"] .ps-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+[data-page="styles"] .ps-chip{ display:flex; align-items:center; gap:8px; padding:7px 11px; background:var(--inner); border:1px solid var(--line); border-radius:8px; }
+[data-page="styles"] .ps-plink{ font-size:12.5px; font-weight:700; color:var(--text); text-decoration:none; }
+[data-page="styles"] a.ps-plink{ cursor:pointer; }
+[data-page="styles"] a.ps-plink:hover{ text-decoration:underline; }
+[data-page="styles"] .ps-chipelo{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
+[data-page="styles"] .ps-none{ font-size:12.5px; color:var(--text-label); }
+[data-page="styles"] .ps-vs{ display:flex; flex-direction:column; min-width:0; }
+[data-page="styles"] .ps-vshead, [data-page="styles"] .ps-vsrow{ display:grid; grid-template-columns:minmax(0,1fr) 56px 64px; column-gap:12px; }
+[data-page="styles"] .ps-vshead{ padding-bottom:8px; border-bottom:1px solid var(--edge-10); }
+[data-page="styles"] .ps-vshead .ps-caps:not(:first-child){ text-align:right; }
+[data-page="styles"] .ps-vsrow{ align-items:center; padding:8px 0; }
+[data-page="styles"] .ps-vsrow{ border-top:1px solid var(--line); }
+[data-page="styles"] .ps-vsname{ font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+[data-page="styles"] .ps-vswr{ font-family:var(--font-nums); font-size:12px; color:var(--text-label); text-align:right; }
+[data-page="styles"] .ps-vsedge{ font-family:var(--font-nums); font-size:13px; font-weight:700; text-align:right; }
 @media (max-width:900px){
-  [data-page="styles"] .ps-gridwrap{ overflow-x:auto; }
+  [data-page="styles"] .pagewrap{ padding:22px 16px 48px; }
+  [data-page="styles"] .ps-gridcard{ overflow-x:auto; }
   [data-page="styles"] .ps-ghead, [data-page="styles"] .ps-grow{ min-width:820px; }
-  [data-page="styles"] .ps-arow-head{ grid-template-columns:26px 1fr 18px; }
-  [data-page="styles"] .ps-arow-bars{ grid-column:1 / -1; margin-top:12px; }
+  [data-page="styles"] .ps-arow-head{ grid-template-columns:28px minmax(0,1fr) 16px; }
+  [data-page="styles"] .ps-arow-bars{ grid-column:1 / -1; }
   [data-page="styles"] .ps-arow.open .ps-arow-panel{ grid-template-columns:1fr; gap:22px; padding-left:0; }
 }
 </style>
@@ -4206,27 +4166,23 @@ window.EntryListsTab = (function(){
   <div id="h2hRoot"></div>
 </div>
 
-<!-- PLAYING STYLES TAB -->
+<!-- PLAYING STYLES TAB (TEN-408 step 9): the 35b header · the matchup grid card · the eight archetype cards -->
 <div class="tabpage" data-page="styles">
   <div class="pagewrap">
-    <!-- HERO: MATCHUP GRID -->
-    <div class="ps-block">
-      <span class="ps-eyebrow">Style vs style</span>
-      <h2 class="ps-blocktitle">Matchup grid</h2>
-      <p class="ps-blocklead">Read row beats column. The big figure is the edge — how far above or below an even 50% split the row style wins; the raw win rate sits beneath. Green is a strong matchup, red is weak. Hover to isolate a row and column.</p>
-      <div class="ps-key">
-        <span class="ps-keyitem"><i class="ps-kdash" style="background:var(--pos);"></i>Strong</span>
-        <span class="ps-keyitem"><i class="ps-kdash" style="background:var(--text-label);"></i>~ Even</span>
-        <span class="ps-keyitem"><i class="ps-kdash" style="background:var(--neg);"></i>Weak</span>
+    <div class="sfh ps-head">
+      <div class="sfh__text">
+        <h1 class="sfh__title">Matchup grid</h1>
+        <p class="sfh__sub">Row beats column: the figure is the edge vs an even 50% split, the raw win rate sits beneath. Hover to isolate a row and column.</p>
       </div>
-      <div id="psMatrix" class="ps-gridwrap"></div>
-      <p id="psMatrixNote" class="ps-gnote" style="display:none;"></p>
-      <p class="ps-gnote">Solid Baseliner is the residual bucket — players who don't fit a sharper style land here. Its lower win rate reflects who falls into the group as much as how the style itself performs, so read that row as a floor, not a verdict.</p>
+      <div class="sfh__stats" id="psHeadStats" aria-label="Playing styles summary"></div>
     </div>
-    <!-- SEVEN ARCHETYPES -->
-    <div class="ps-block">
-      <span class="ps-eyebrow">Nine archetypes</span>
-      <div id="psCards" class="ps-rows" style="margin-top:18px;"></div>
+    <div class="ps-gridcard" id="psGridCard">
+      <div id="psMatrix"></div>
+      <p id="psMatrixNote" class="ps-note"></p>
+    </div>
+    <div class="ps-list">
+      <div class="ps-listhead"><span class="ps-caps">Eight archetypes</span><span class="ps-listhint">Click a style for its matchups and players</span></div>
+      <div id="psCards" class="ps-list"></div>
     </div>
   </div>
 </div>
@@ -6183,36 +6139,34 @@ async function intelPruneToMax(db){
 
 
 /* ---------- PLAYING STYLES ---------- */
-// Zip-25 design: SEVEN archetypes. classify-styles.js still classifies eight —
-// All-Court Elite is detected separately — but the page merges Elite into
-// All-Court Player, per the handoff. The merge is display-only: playing-styles.json
-// and matchup-matrix.json keep the 8-way split, so the profile radar and every
-// other surface that reads `primary` are untouched. `ids` lists the source labels
-// each displayed archetype absorbs; order sets the grid axes.
+// The eight archetypes of the ONE classification (playing-styles.json archetype_label), in the matrix's order; the
+// Playing Styles page and the Match analysis Playing style tab both read this list. `ids` lists the source labels each
+// displayed archetype absorbs (one each today). Descriptions = the reference's texts (TEN-408); Big Server + First
+// Strike has no reference counterpart (the reference draws an All-Court Player instead) and keeps its own.
 const PS_ARCHETYPES = [
   { id:'big_server', ids:['Big Server'], code:'SRV', name:'Big Server',
-    description:'The serve is the weapon. Wins points in the first two shots through aces, unreturned serves and serve-plus-one winners.',
+    description:'The serve is the weapon. Wins points in the first two shots through aces, unreturned serves and cheap holds — but has little to fall back on once the rally is on.',
     count:null, players:[] },
   { id:'big_server_first_strike', ids:['Big Server + First Strike'], code:'SFS', name:'Big Server + First Strike',
     description:'Heavy serve combined with an aggressive first-ball attack — ends points quickly in two shots after a free-point serve.',
     count:null, players:[] },
   { id:'big_server_complete', ids:['Big Server + Complete Baseliner'], code:'SCB', name:'Big Server + Complete Baseliner',
-    description:'A dominant serve backed by a full, reliable baseline game — holds with ease, then grinds out the rest.',
+    description:'A heavy serve backed by a dependable baseline game — holds with ease, then grinds out the return games with steady, low-error ball-striking.',
     count:null, players:[] },
   { id:'attacking_baseliner', ids:['Attacking Baseliner'], code:'ATB', name:'Attacking Baseliner',
-    description:'Dictates play aggressively from the baseline. Short rallies, high winner rate, looks to end points early.',
+    description:'Dictates play aggressively from the baseline. Short rallies, a high winner rate and constant pressure — always looking to end the point first.',
     count:null, players:[] },
   { id:'solid_baseliner', ids:['Solid Baseliner'], code:'SLB', name:'Solid Baseliner',
-    description:'Consistent and reliable from the back. High hold rate, low double faults, wins through steady dominance.',
+    description:'Consistent and reliable from the back of the court. High hold rate, low double faults, wins through steady margin play and few unforced errors.',
     count:null, players:[] },
   { id:'counterpuncher', ids:['Counterpuncher'], code:'CTR', name:'Counterpuncher',
-    description:'Returns everything and turns defence into attack. Thrives on long exchanges and neutralises opponents.',
+    description:'Returns everything and turns defence into attack. Thrives on long exchanges, absorbs pace and neutralises raw aggression from the baseline.',
     count:null, players:[] },
   { id:'solid_defender', ids:['Solid Defender'], code:'SLD', name:'Solid Defender',
-    description:'Extreme defensive specialist. Wins almost entirely through opponent errors — absorbs everything, waits for the miss.',
+    description:'Extreme defensive specialist. Wins almost entirely through opponent errors — absorbs everything thrown at it but rarely dictates a point on its own terms.',
     count:null, players:[] },
   { id:'all_court_elite', ids:['All Court Elite'], code:'ACE', name:'All Court Elite',
-    description:'The complete, generational players. Elite serving, returning and at the net — no exploitable weakness anywhere.',
+    description:'The complete, generational players. Elite serving, returning and movement with no exploitable weakness anywhere on the court.',
     count:null, players:[] },
 ];
 // Badge pills on the player tags (classify-styles.js emits these four keys).
@@ -6298,7 +6252,6 @@ function psSurfaceCellFor(surfaceKey, i, j){
   return { pct: Math.round(wins / ratedN * 100), n: rawN };
 }
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-let psRendered = false;
 function psShortName(name){ return String(name || '').replace(/^[A-Z]\.\s*/, '').trim(); }
 // Surname-only label for the paired panels INSIDE the match-analysis modal. Full
 // names live in the modal header (there's room); the side-by-side panels (Playing
@@ -6323,275 +6276,262 @@ function psEloFor(elo, name){
   if (elo.bySurname && elo.bySurname[tok] != null) return elo.bySurname[tok];
   return null;
 }
-// Example players per archetype. Not the full roster — the row header already
-// carries the true member count. All-Court Elite is deliberately smaller: it is a
-// three-man tier, so five would mean padding it with players who are not in it.
-const PS_EXAMPLES_N = 5, PS_EXAMPLES_ELITE = 3;
-// "Most representative" = the best combination of Elo standing and archetype fit,
-// scored as the average of the two within-archetype ranks so neither dimension can
-// dominate on its own scale (Elo is ~1400-2350, fit is 0-100). A player with no Elo
-// rating is not eligible as an example, because the tag has to show one; if that
-// leaves fewer than n, the unrated players backfill by fit so a row is never empty.
-function psPickExamples(list, n){
-  const rated = list.filter(p => p.elo != null);
-  const rank = (arr, key) => {
-    const order = arr.slice().sort((x, y) => (y[key] == null ? -Infinity : y[key]) - (x[key] == null ? -Infinity : x[key]));
-    const m = new Map(); order.forEach((p, i) => m.set(p, i)); return m;
-  };
-  const byElo = rank(rated, 'elo'), byFit = rank(rated, 'fit');
-  const picked = rated.slice()
-    .sort((x, y) => ((byElo.get(x) + byFit.get(x)) - (byElo.get(y) + byFit.get(y))) || (y.elo - x.elo))
-    .slice(0, n);
-  if (picked.length < n){
-    picked.push(...list.filter(p => p.elo == null)
-      .sort((x, y) => (y.fit == null ? -1 : y.fit) - (x.fit == null ? -1 : x.fit))
-      .slice(0, n - picked.length));
-  }
-  return picked.sort((x, y) => (y.elo == null ? -1 : y.elo) - (x.elo == null ? -1 : x.elo));
+// ---- TEN-408 step 9 · the Playing Styles page (night; rules: .claude/rules/playing-styles.md) ----
+// The page reads four stores and nothing else: matchup-matrix.json (the style-vs-style cells — the SAME cells the
+// Match analysis Playing style tab reads, Form rule applied by tools/build-matchup-matrix.js), playing-styles.json
+// (the ONE archetype classification every page reads), player-index.json (this week's ATP standings) and
+// elo-ratings.json (the weekly Elo Database → Ratings shows). psStylesModel is pure so the test runs it on the stores.
+const PS_PAGE_MIN_N = 30;      // a cell under 30 matches is "—" (the Database rule; the modal keeps the matrix floor)
+const PS_SMALL_N = 10;         // a style with fewer than 10 ranked players is a small sample
+const PS_TOP_RANK = 200;       // "N players" = classified players in the ATP top 200 this week
+const PS_EXAMPLES = 5;
+const PS_NUMWORD = ['no', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight'];
+function psFmtEdge(e){ return e > 0 ? ('+' + e) : (e < 0 ? ('−' + Math.abs(e)) : '0'); }
+// Sign band: an edge inside ±2 (win 48–52%) is even — grey figure, 35% white bar, "Even vs".
+function psBand(e){ return e > 2 ? 'g' : (e < -2 ? 'r' : 'n'); }
+function psVerdict(avg){
+  return avg >= 25 ? 'Strong advantage' : avg >= 6 ? 'Slight edge' : avg >= -5 ? 'Even matchups' : avg >= -15 ? 'Slight disadvantage' : 'Struggles broadly';
 }
+// This week's top 200 → their classified style. First the site's own key join (styleKey, as ppStyleFor reads it);
+// then, for a ranked row the key misses, the api-tennis standings' scrambled multi-part names ("Martin Etcheverry
+// Tomas" = T. M. Etcheverry): a classified player whose surname tokens sit in the row's name, with his first initial
+// on another of its tokens, joins only when the pairing is unique BOTH ways. Returns [{ row, player }].
+function psRankedMembers(stylesPlayers, indexPlayers, cap){
+  const lab = (stylesPlayers || []).filter(p => p && p.name && p.archetype_label);
+  const byKey = new Map();
+  lab.forEach(p => { const k = styleKey(p.name); if (k) (byKey.get(k) || byKey.set(k, []).get(k)).push(p); });
+  const top = (indexPlayers || []).filter(r => r && r.name && Number(r.rank) >= 1 && Number(r.rank) <= cap);
+  const out = [], used = new Set(), left = [];
+  // A full given name on both sides must agree (psGivenClash): "Darwin Blanch" (ranked 159) is not the classified
+  // "Dali Blanch", though both key to blanch|d. Two classified players left on one key = no join (never a guess).
+  top.forEach(r => {
+    const c = (byKey.get(styleKey(r.name)) || []).filter(p => !psGivenClash(p.name, r.name));
+    const p = c.length === 1 ? c[0] : null;
+    if (p && !used.has(p)){ used.add(p); out.push({ row: r, player: p }); } else left.push(r);
+  });
+  const toks = n => psEloNorm(n).split(' ').filter(Boolean);
+  const fits = (p, r) => {
+    const t = toks(p.name), ini = t.filter(x => x.length === 1), sur = t.filter(x => x.length > 1), rt = toks(r.name);
+    if (!ini.length || !sur.length) return false;
+    for (let i = 0; i + sur.length <= rt.length; i++){
+      if (sur.every((s, j) => rt[i + j] === s)){
+        const rest = rt.slice(0, i).concat(rt.slice(i + sur.length));
+        if (rest.some(x => x[0] === ini[0])) return true;
+      }
+    }
+    return false;
+  };
+  const free = lab.filter(p => !used.has(p));
+  const pairs = [];
+  left.forEach(r => free.forEach(p => { if (fits(p, r)) pairs.push({ r, p }); }));
+  pairs.forEach(x => {
+    if (pairs.filter(y => y.r === x.r).length === 1 && pairs.filter(y => y.p === x.p).length === 1) out.push({ row: x.r, player: x.p });
+  });
+  return out;
+}
+// The whole page as data. stores = { matrix, styles, index, elo }; index / elo may be null (a failed load) → the
+// counts, the small-sample tags and the example players are "—", never a zero.
+function psStylesModel(stores){
+  const A = PS_ARCHETYPES, n = A.length, M = stores.matrix;
+  const haveM = !!(M && M.matrix);
+  const cells = A.map((_, i) => A.map((__, j) => {
+    if (i === j) return { diag: true };
+    if (!haveM) return { n: null, wr: null, edge: null };
+    const c = psCellFor(i, j);
+    const nn = c ? c.n : 0;
+    if (!c || c.pct == null || nn < PS_PAGE_MIN_N) return { n: nn, wr: null, edge: null };
+    // fix 8 (founder, TEN-408): ties on the rounded edge break on the unrounded edge (the row's wins `w` over n), then on
+    // the larger match count. A store without `w` (older builds) ranks on the rounded edge.
+    let w = 0, wn = 0;
+    A[i].ids.forEach(a => A[j].ids.forEach(b => { const x = M.matrix[a] && M.matrix[a][b]; if (x && x.n){ wn += x.n; w = (w == null || x.w == null) ? null : w + x.w; } }));
+    return { n: nn, wr: c.pct, edge: c.pct - 50, exact: (w != null && wn) ? w / wn * 100 - 50 : c.pct - 50 };
+  }));
+  const stylesOk = !!(stores.styles && Array.isArray(stores.styles.players) && stores.styles.players.length);
+  const ranked = (stores.index && stylesOk) ? psRankedMembers(stores.styles.players, stores.index, PS_TOP_RANK) : null;
+  // fix 7 (founder, TEN-408): a chip prints the Player Profile display name — the profile spelling playing-styles.json
+  // carries ("R. Jodar", "D. Merida Aguilar"), the same string the profile header shows. The ATP entry lists spell
+  // "Jódar" / "Mérida"; adopting those accents is the founder's call (asked on TEN-408), not this lookup's.
+  const arch = A.map((a, i) => {
+    const members = ranked ? ranked.filter(m => a.ids.includes(m.player.archetype_label)) : null;
+    const count = members ? members.length : null;
+    const examples = members ? members
+      .map(m => ({ name: m.player.name, key: m.row.key != null ? String(m.row.key) : null,
+        hasProfile: !!m.row.hasProfile, elo: stores.elo ? (psEloFor(stores.elo, m.player.name) ?? psEloFor(stores.elo, m.row.name)) : null }))
+      .filter(x => x.elo != null).sort((x, y) => y.elo - x.elo).slice(0, PS_EXAMPLES) : null;
+    return { i, code: a.code, name: a.name, description: a.description, count, small: count != null && count < PS_SMALL_N, examples };
+  });
+  arch.forEach(a => {
+    const opp = arch.filter(b => b.i !== a.i);
+    // Best → worst on the unrounded edge, a tie to the larger match count (fix 8); the weakest picks are the worst on
+    // the same rule read from the bottom (lowest edge first, a tie to the larger match count).
+    const C = b => cells[a.i][b.i];
+    const best = (x, y) => (C(y).exact - C(x).exact) || (C(y).n - C(x).n);
+    const worst = (x, y) => (C(x).exact - C(y).exact) || (C(y).n - C(x).n);
+    const rated = opp.filter(b => C(b).edge != null).sort(best);
+    // Strongest / weakest pick: the two best and two worst rated opponents, small-sample styles left out.
+    const pickable = rated.filter(b => !b.small);
+    const top2 = pickable.slice(0, 2);   // the weakest two never repeat a strongest pick (possible only on a 3-way exact tie)
+    a.picks = (pickable.length <= 4 ? pickable : top2.concat(pickable.slice().sort(worst).filter(b => !top2.includes(b)).slice(0, 2))).map(b => b.i);
+    a.vs = rated.map(b => b.i).concat(opp.filter(b => cells[a.i][b.i].edge == null).map(b => b.i));
+    a.rated = rated.length;
+    a.avg = rated.length ? Math.round(rated.reduce((s, b) => s + cells[a.i][b.i].edge, 0) / rated.length) : null;
+  });
+  const players = ranked ? ranked.filter(m => A.some(a => a.ids.includes(m.player.archetype_label))).length : null;
+  // Note line: the source and window, the under-30 cells, the small-sample styles. Full stops between sentences.
+  const notes = [];
+  const fmtDay = iso => { const d = new Date(String(iso) + 'T00:00:00Z'); return isNaN(d) ? null : d.getUTCDate() + ' ' + d.toLocaleString('en-GB', { month: 'short', timeZone: 'UTC' }) + ' ' + d.getUTCFullYear(); };
+  const through = M && M.through ? fmtDay(M.through) : null;
+  const win = M && M.window ? String(M.window).split('-') : null;
+  // Founder copy (TEN-408 fix 6): "Win rates from N completed ATP main-draw matches between classified players, 2000 – 8 Oct
+  // 2026. Laver Cup and exhibitions out. A cell under 30 matches shows —: X vs Y (14 matches). X and Y (3 players each)
+  // are below the 10-player threshold. Their edges are indicative only and left out of every strongest / weakest pick."
+  // The residual-bucket sentence is NOT printed: the founder asked for it only if the classifier still drops misfits into
+  // Solid Baseliner, and it does not (every label is a hand-finalized board label; unlisted players stay unclassified).
+  if (M && M.matchesCounted != null)
+    notes.push('Win rates from ' + Number(M.matchesCounted).toLocaleString('en-US') + ' completed ATP main-draw matches between classified players, ' +
+      (win && through ? win[0] + ' – ' + through : (M.window || '').replace('-', ' – ')) + '. Styles are each player\'s current label. Laver Cup and exhibitions out.');
+  const thin = [];
+  arch.forEach(a => arch.forEach(b => { if (haveM && a.i < b.i && cells[a.i][b.i].edge == null) thin.push(a.name + ' vs ' + b.name + ' (' + Number(cells[a.i][b.i].n).toLocaleString('en-US') + ' match' + (cells[a.i][b.i].n === 1 ? '' : 'es') + ')'); }));
+  if (thin.length) notes.push((thin.length === 1 ? 'A cell under ' + PS_PAGE_MIN_N + ' matches shows' : 'Cells under ' + PS_PAGE_MIN_N + ' matches show') + ' —: ' + thin.join(', ') + '.');
+  const small = arch.filter(a => a.small);
+  if (small.length){
+    const pl = c => c + ' player' + (c === 1 ? '' : 's');
+    const same = small.every(a => a.count === small[0].count);
+    const names = small.map(a => a.name), join = names.length === 1 ? names[0] : names.slice(0, -1).join(', ') + ' and ' + names[names.length - 1];
+    notes.push(small.length === 1 ? names[0] + ' (' + pl(small[0].count) + ') is below the ' + PS_SMALL_N + '-player threshold. Its edges are indicative only and left out of every strongest / weakest pick.'
+      : (same ? join + ' (' + pl(small[0].count) + ' each)' : small.map(a => a.name + ' (' + pl(a.count) + ')').slice(0, -1).join(', ') + ' and ' + small[small.length - 1].name + ' (' + pl(small[small.length - 1].count) + ')') +
+        ' are below the ' + PS_SMALL_N + '-player threshold. Their edges are indicative only and left out of every strongest / weakest pick.');
+  }
+  return { n, cells, arch, players, styles: n, matchups: n * (n - 1) / 2, note: notes.join(' ') };
+}
+let psRendered = false;
 async function renderPlayingStyles(){
   if (psRendered) return;
   psRendered = true;
-  // Live Elo ratings (fetch-elo.js output, refreshed weekly from Tennis Abstract).
-  let eloData = null;
-  try { const er = await fetch('./elo-ratings.json', { cache:'no-cache' }); if (er.ok) eloData = await er.json(); }
-  catch(err){ console.warn('elo-ratings.json load failed:', err.message); }
-  // Computed matchup matrix (archetype-vs-archetype win% from real match results).
-  try { const mr = await fetch('./matchup-matrix.json', { cache:'no-cache' }); if (mr.ok) psMatrixData = await mr.json(); }
-  catch(err){ console.warn('matchup-matrix.json load failed:', err.message); }
-  // Live rosters from playing-styles.json (classify-styles.js output). Descriptions
-  // stay built-in; only rosters/counts refresh.
-  try {
-    const res = await fetch('./playing-styles.json', { cache:'no-cache' });
-    if (res.ok){
-      const data = await res.json();
-      const byArch = {};
-      (data.players || []).forEach(p => { if (!p.archetype_label) return; (byArch[p.archetype_label] = byArch[p.archetype_label] || []).push(p); });
-      // Dropping the initial collides real players once a full roster is shown
-      // (B./L. Harris, E./M. Ymer), so a surname claimed by more than one player
-      // keeps its initial. Scanned across every archetype, not within one row.
-      const shortSeen = {};
-      (data.players || []).forEach(p => {
-        if (!p.archetype_label) return;
-        const s = psShortName(p.name);
-        (shortSeen[s] = shortSeen[s] || new Set()).add(p.name);
-      });
-      const displayName = p => { const s = psShortName(p.name); return shortSeen[s] && shortSeen[s].size > 1 ? p.name : s; };
-      PS_ARCHETYPES.forEach(a => {
-        const list = a.ids.reduce((acc, id) => acc.concat(byArch[id] || []), []);
-        if (list.length){
-          a.count = list.length;
-          a.players = psPickExamples(
-            list.map(p => ({
-              name: displayName(p),
-              full: p.name,
-              elo: psEloFor(eloData, p.name),
-              fit: null,
-              badges: p.badges || [],
-            })),
-            a.id === 'all_court_elite' ? PS_EXAMPLES_ELITE : PS_EXAMPLES_N
-          );
-        }
-      });
-    }
-  } catch(err){ console.warn('playing-styles.json load failed:', err.message); }
-  psRenderMatrixAndCards();
+  const get = u => fetch(u, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  const [elo, matrix, styles, idx] = await Promise.all([get('./elo-ratings.json'), get('./matchup-matrix.json'), get('./playing-styles.json'),
+    (Array.isArray(playerIndex) && playerIndex.length) ? Promise.resolve({ players: playerIndex }) : get('./player-index.json')]);
+  if (matrix) psMatrixData = matrix;
+  else psRendered = false;          // a failed matrix load renders "—" cells and retries on the next visit
+  const index = idx && Array.isArray(idx.players) && idx.players.length ? idx.players : null;
+  psRenderPage(psStylesModel({ matrix: psMatrixData, styles, index, elo }));
 }
-const PS_NUMWORD = ['zero','one','two','three','four','five','six','seven','eight'];
-function psFmtEdge(e){ return e > 0 ? ('+' + e) : (e < 0 ? ('−' + Math.abs(e)) : '0'); }
-// Export band: an edge inside ±2 (win 48–52%) reads as neutral "even", not a
-// win or a loss — matches the export's bandColor/bandTag threshold exactly.
-function psEdgeClass(e){ return e > 2 ? 'ps-edge-g' : (e < -2 ? 'ps-edge-r' : 'ps-edge-n'); }
-function psEdgeColor(e){ return e > 2 ? 'var(--pos)' : (e < -2 ? 'var(--neg)' : 'var(--text-label)'); }
-function psRenderMatrixAndCards(){
-  const A = PS_ARCHETYPES, n = A.length;
-  // Resolve the pooled grid once — both the grid and the rows read from it.
-  const W = A.map((_, i) => A.map((__, j) => { const c = psCellFor(i, j); return (c && c.pct != null) ? c.pct : null; }));
-  const N = A.map((_, i) => A.map((__, j) => { const c = psCellFor(i, j); return c ? c.n : 0; }));
-  const E = W.map(row => row.map(v => v == null ? null : v - 50));
+function psTugHtml(e, half){
+  const w = Math.min(Math.abs(e), half) / half * 50, b = psBand(e);
+  return '<span class="ps-tug"><span class="ps-tug-fill ps-tug-' + b + '" style="left:' + (e < 0 ? 50 - w : 50) + '%;width:' + w + '%;"></span><span class="ps-tug-tick"></span></span>';
+}
+function psRenderPage(P){
+  const A = P.arch, C = P.cells;
+  const stat = (l, v) => '<div class="sfh__stat"><span class="sfh__l">' + l + '</span><span class="sfh__v' + (v == null ? ' sfh__v--none' : '') + '">' + (v == null ? '—' : Number(v).toLocaleString('en-US')) + '</span></div>';
+  const hs = document.getElementById('psHeadStats');
+  if (hs) hs.innerHTML = stat('Styles', P.styles) + stat('Players', P.players) + stat('Matchups', P.matchups);
 
-  // ---------- hero: signed-edge matchup grid ----------
-  let g = '<div class="ps-ghead"><div class="ps-gcorner">Row beats col ▸</div>';
-  A.forEach((a, j) => {
-    g += '<div class="ps-gcol" data-c="' + j + '"><span class="ps-gcol-code">' + psEsc(a.code) + '</span>' +
-      '<span class="ps-gcol-name">' + psEsc(a.name) + '</span></div>';
-  });
+  // ---------- matchup grid: row beats column ----------
+  let g = '<div class="ps-ghead"><span class="ps-gcorner ps-caps">Row beats column</span>';
+  A.forEach(a => { g += '<span class="ps-gcol" data-c="' + a.i + '"><span class="ps-gcol-code">' + psEsc(a.code) + '</span><span class="ps-gcol-name">' + psEsc(a.name) + '</span></span>'; });
   g += '</div>';
-  A.forEach((rowA, i) => {
-    g += '<div class="ps-grow"><div class="ps-grow-h" data-r="' + i + '">' +
-      '<span class="ps-grow-name">' + psEsc(rowA.name) + '</span>' +
-      '<span class="ps-grow-code">' + psEsc(rowA.code) + '</span></div>';
-    A.forEach((colA, j) => {
-      if (i === j){ g += '<div class="ps-cell2" data-r="' + i + '" data-c="' + j + '"><span class="ps-edge ps-edge-d">—</span></div>'; return; }
-      if (E[i][j] == null){
-        const tip = N[i][j] ? (rowA.name + ' vs ' + colA.name + ': ' + N[i][j] + ' matches — too few to rate') : 'No matches recorded';
-        g += '<div class="ps-cell2" data-r="' + i + '" data-c="' + j + '" title="' + psEsc(tip) + '"><span class="ps-edge ps-edge-d">—</span>' +
-          (N[i][j] ? '<span class="ps-n">n=' + N[i][j] + '</span>' : '') + '</div>';
+  A.forEach(r => {
+    g += '<div class="ps-grow"><span class="ps-grow-h" data-r="' + r.i + '"><span class="ps-grow-name">' + psEsc(r.name) + '</span><span class="ps-grow-code">' + psEsc(r.code) + '</span></span>';
+    A.forEach(c => {
+      const x = C[r.i][c.i], at = ' data-r="' + r.i + '" data-c="' + c.i + '"';
+      if (x.diag){ g += '<span class="ps-cell2"' + at + '><span class="ps-edge ps-edge-d">—</span><span class="ps-wr"></span></span>'; return; }
+      if (x.edge == null){
+        g += '<span class="ps-cell2"' + at + (x.n == null ? '' : ' title="' + psEsc(r.name + ' vs ' + c.name + ': ' + x.n + ' matches, under ' + PS_PAGE_MIN_N) + '"') + '><span class="ps-edge ps-edge-d">—</span><span class="ps-wr"></span></span>';
         return;
       }
-      const tip = rowA.name + ' beats ' + colA.name + ': ' + W[i][j] + '% (' + N[i][j] + ' matches)';
-      g += '<div class="ps-cell2" data-r="' + i + '" data-c="' + j + '" title="' + psEsc(tip) + '">' +
-        '<span class="ps-edge ' + psEdgeClass(E[i][j]) + '">' + psFmtEdge(E[i][j]) + '</span>' +
-        '<span class="ps-wr">' + W[i][j] + '%</span>' +
-        '<span class="ps-n">n=' + N[i][j].toLocaleString() + '</span></div>';
+      g += '<span class="ps-cell2"' + at + ' title="' + psEsc(r.name + ' beats ' + c.name + ' ' + x.wr + '% of ' + x.n.toLocaleString('en-US') + ' matches') + '">' +
+        '<span class="ps-edge ps-edge-' + psBand(x.edge) + '">' + psFmtEdge(x.edge) + '</span><span class="ps-wr">' + x.wr + '%</span></span>';
     });
     g += '</div>';
   });
   const mx = document.getElementById('psMatrix');
-  // Column count drives the CSS grid so adding an archetype can never silently
-  // clip the last column the way a hardcoded repeat(7,1fr) did.
-  mx.style.setProperty('--ps-n', n);
+  mx.style.setProperty('--ps-n', P.n);
   mx.innerHTML = g;
-  psWireGridHover(mx);
+  psWireGridHover(document.getElementById('psGridCard'));
+  const note = document.getElementById('psMatrixNote');
+  if (note){ note.textContent = P.note; note.style.display = P.note ? '' : 'none'; }
 
-  // Sub-threshold footnote — archetypes below the 10-player floor read as indicative
-  // only, matching the design export. Counts come from the live roster, not a mock.
-  const noteEl = document.getElementById('psMatrixNote');
-  if (noteEl){
-    const subs = A.map(a => ({ name: a.name, c: (a.count != null ? a.count : a.players.length) }))
-      .filter(x => x.c != null && x.c < 10);
-    if (subs.length){
-      const parts = subs.map(x => x.name + ' (' + x.c + ' player' + (x.c === 1 ? '' : 's') + ')');
-      const list = parts.length === 1 ? parts[0] : parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1];
-      const verb = subs.length === 1 ? 'is' : 'are';
-      const poss = subs.length === 1 ? 'its' : 'their';
-      noteEl.textContent = list + ' ' + verb + ' below the 10-player threshold — ' + poss + ' edges are indicative only.';
-      noteEl.style.display = '';
-    } else { noteEl.style.display = 'none'; }
-  }
-
-  // ---------- expandable archetype rows, one per PS_ARCHETYPES entry ----------
+  // ---------- the eight archetype cards ----------
   let html = '';
-  A.forEach((a, i) => {
-    // Opponents ranked by edge, best first. Pairings without a rated sample drop out
-    // rather than being guessed at, so a style can show fewer than six matchups.
-    const idxs = A.map((_, j) => j).filter(j => j !== i && E[i][j] != null).sort((x, y) => E[i][y] - E[i][x]);
-    const m = idxs.length;
-    const cnt = a.count != null ? a.count : a.players.length;
-
-    // Bar colour + label key off the edge BAND, not rank: >+2 → green "Dom vs",
-    // <−2 → red "Weak vs", within ±2 → neutral "Even vs". Blue is nav/identity
-    // only, never a performance value — a dominance bar is a performance value.
-    const psBandTag = e => e > 2 ? 'Dom vs' : (e < -2 ? 'Weak vs' : 'Even vs');
-    const psBandCls = e => e > 2 ? 'dom' : (e < -2 ? 'weak' : 'even');
-    const bar = (j) => {
-      if (j == null) return '';
-      const win = W[i][j], ed = E[i][j];
-      return '<div class="ps-bar"><span class="ps-barlabel">' +
-        '<span class="ps-barkey ps-barkey-' + psBandCls(ed) + '">' + psBandTag(ed) + '</span>' +
-        '<div class="ps-baropp">' + psEsc(A[j].name) + '</div></span>' +
-        '<span class="ps-bartrack"><span class="ps-barfill" style="width:' + win + '%; background:' + psEdgeColor(ed) + ';"></span></span>' +
-        '<span class="ps-barpct">' + win + '%</span></div>';
+  A.forEach(a => {
+    const bar = j => {
+      const e = C[a.i][j].edge, b = psBand(e);
+      return '<div class="ps-bar"><span class="ps-barlabel"><span class="ps-barkey ps-caps">' + (b === 'g' ? 'Strong vs' : b === 'r' ? 'Weak vs' : 'Even vs') + '</span>' +
+        '<span class="ps-baropp">' + psEsc(A[j].name) + '</span></span>' + psTugHtml(e, 50) +
+        '<span class="ps-barpct ps-edge-' + b + '">' + psFmtEdge(e) + '</span></div>';
     };
-    // Two strongest + two weakest matchups by win rate for EVERY archetype, per the
-    // export (top-2 + bottom-2). idxs is already ordered by edge (== win%) desc, so
-    // the ends are the two best and two worst. With ≤4 rated opponents just show all.
-    const barIdx = m <= 4 ? idxs.slice() : idxs.slice(0, 2).concat(idxs.slice(-2).reverse());
-    const bars = barIdx.map(bar).join('');
-
-    html += '<div class="ps-arow" id="psArow' + i + '">';
-    html += '<div class="ps-arow-head" onclick="psToggleRow(' + i + ')">';
-    html += '<span class="ps-arow-idx">' + String(i + 1).padStart(2, '0') + '</span>';
-    html += '<div class="ps-arow-txt"><div class="ps-arow-title"><span class="ps-arow-name">' + psEsc(a.name) + '</span>' +
-      '<span class="ps-arow-count">' + cnt + ' player' + (cnt === 1 ? '' : 's') + '</span></div>' +
-      '<div class="ps-arow-desc">' + psEsc(a.description) + '</div>' +
-      '</div>';
-    html += '<div class="ps-arow-bars">' + bars + '</div>';
-    html += '<span class="ps-arow-chev">' + PS_CHEV + '</span></div>';
-
-    // ----- expanded: matchup analyzer -----
-    const edges = idxs.map(j => E[i][j]);
-    const avg = edges.length ? Math.round(edges.reduce((s, v) => s + v, 0) / edges.length) : 0;
-    // Verdict ladder — the numeric cutoffs (≥25 / ≥6 / ≥−5 / ≥−15) are READ verbatim
-    // from the export's verdict ladder; the WORDS are export values. The band COLOUR is
-    // a DECISION, not an export value (the export paints these bands BLUE var(--bar), which
-    // is forbidden on a performance value — see README scoped exception). Colour is keyed
-    // off the SAME band as the word so the two can never disagree: advantage green
-    // var(--pos), disadvantage red var(--neg), even neutral var(--text). No band where the label
-    // says one thing and the colour says another. The single colour carrier is the TRACK
-    // FILL; the verdict label and the `Average edge +N` figure stay var(--text), and the
-    // handle carries POSITION only.
-    const band =
-        avg >= 25  ? { word: 'Strong advantage',   fill: 'var(--pos)' }
-      : avg >= 6   ? { word: 'Slight edge',         fill: 'var(--pos)' }
-      : avg >= -5  ? { word: 'Even matchups',       fill: 'var(--text)' }
-      : avg >= -15 ? { word: 'Slight disadvantage', fill: 'var(--neg)' }
-      :              { word: 'Struggles broadly',   fill: 'var(--neg)' };
-    const advWord = band.word;
-    const fillColor = band.fill;
-    const gaugePos = Math.max(3, Math.min(97, (avg + 40) / 80 * 100));
-    // Fill spans between the centre (0 = 50%) and the handle; it never starts at the
-    // left edge, which would read a positive edge as nearly full-width.
-    const fillLeft = Math.min(50, gaugePos);
-    const fillWidth = Math.abs(gaugePos - 50);
-    const bwRow = j => '<div class="ps-bwrow"><span class="ps-bwname">' + psEsc(A[j].name) + '</span>' +
-      '<span class="ps-bwedge" style="color:' + psEdgeColor(E[i][j]) + ';">' + psFmtEdge(E[i][j]) + '</span></div>';
-    const strongList = idxs.slice(0, 3).map(bwRow).join('');
-    const weakList = [idxs[m - 1], idxs[m - 2], idxs[m - 3]].filter(j => j != null).map(bwRow).join('');
-
-    // Left column: summary · slider · avg edge · example players. Right column:
-    // best & worst. Two equal columns, matching the export's expanded region.
-    let examplesHtml = '<div class="ps-plabel" style="margin:30px 0 14px;">Example players &middot; by Elo</div><div class="ps-tags">';
-    if (a.players.length){
-      a.players.forEach(p => {
-        // Whole chip links to the player's profile when one exists. intelMatchPlayer
-        // is deliberately conservative (a wrong link is worse than none), and
-        // profileLinkAttrs returns '' for anyone off-roster, so those chips stay inert.
-        const pk = (typeof intelMatchPlayer === 'function' ? (intelMatchPlayer(p.full || p.name) || {}).key : null);
-        const linkAttrs = profileLinkAttrs(pk, p.name);
-        examplesHtml += '<span class="ps-tag' + (linkAttrs ? ' ps-tag--link' : '') + '"' + linkAttrs + '>' +
-          '<span class="ps-tagname">' + psEsc(p.name) + '</span>' +
-          '<span class="ps-tagelo">' + (p.elo != null ? p.elo : '—') + '</span></span>';
-      });
-    } else examplesHtml += '<div class="ps-rempty">No qualified players.</div>';
-    examplesHtml += '</div>';
-
-    html += '<div class="ps-arow-panel">';
-    html += '<div><div class="ps-plabel ps-plabel-top">Style matchup summary</div>';
-    if (m){
-      html += '<div class="ps-adv" style="color:var(--text);">' + advWord + '</div>' +
-        '<div class="ps-gauge">' +
-        '<div class="ps-gauge-fill" style="left:' + fillLeft + '%; width:' + fillWidth + '%; background:' + fillColor + ';"></div>' +
-        '<div class="ps-gauge-dot" style="left:' + gaugePos + '%;"></div></div>' +
-        '<div class="ps-gauge-scale"><span>−40</span><span>0</span><span>+40</span></div>' +
-        '<div class="ps-avgnote">Average edge <b>' + (avg > 0 ? '+' : '') + avg + '</b> across its ' +
-        (PS_NUMWORD[edges.length] || edges.length) + ' style matchup' + (edges.length === 1 ? '' : 's') + '.</div>';
-    } else html += '<div class="ps-rempty">No rated matchups yet.</div>';
-    html += examplesHtml + '</div>';
-    html += '<div><div class="ps-plabel">Best &amp; worst matchups</div><div class="ps-bwgrid">' +
-      '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-s">Strong against</div>' + strongList + '</div>' +
-      '<div class="ps-bwcol"><div class="ps-bwhead ps-bwhead-w">Weak against</div>' + weakList + '</div>' +
-      '</div></div>';
-    html += '</div></div>';
+    html += '<div class="ps-arow" id="psArow' + a.i + '"><div class="ps-arow-head" onclick="psToggleRow(' + a.i + ')">' +
+      '<span class="ps-arow-idx">' + String(a.i + 1).padStart(2, '0') + '</span>' +
+      '<div class="ps-arow-txt"><div class="ps-arow-title"><span class="ps-arow-name">' + psEsc(a.name) + '</span>' +
+      '<span class="ps-arow-meta">' + psEsc(a.code) + ' · ' + (a.count == null ? '—' : a.count.toLocaleString('en-US')) + ' player' + (a.count === 1 ? '' : 's') + '</span>' +
+      (a.small ? '<span class="ps-caps">small sample</span>' : '') + '</div>' +
+      '<div class="ps-arow-desc">' + psEsc(a.description) + '</div></div>' +
+      '<div class="ps-arow-bars">' + a.picks.map(bar).join('') + '</div>' +
+      '<span class="ps-arow-chev">' + PS_CHEV + '</span></div>';
+    // ----- open: Style matchup summary · Vs style, best → worst -----
+    let sum = '<div class="ps-sum"><span class="ps-caps">Style matchup summary</span>';
+    if (a.avg != null){
+      sum += '<span class="ps-avgrow"><span class="ps-avg' + (psBand(a.avg) === 'n' ? '' : ' ps-edge-' + psBand(a.avg)) + '">' + psFmtEdge(a.avg) + '</span>' +
+        '<span class="ps-verdict">' + psVerdict(a.avg) + '</span></span>' + psTugHtml(a.avg, 40) +
+        '<span class="ps-axis"><span>−40</span><span>0</span><span>+40</span></span>' +
+        '<span class="ps-avgline">Average edge across its ' + (PS_NUMWORD[a.rated] || a.rated) + ' style matchup' + (a.rated === 1 ? '' : 's') + '.</span>' +
+        (a.small ? '<span class="ps-smallline">' + a.count + ' player' + (a.count === 1 ? '' : 's') + ', below the ' + PS_SMALL_N + '-player threshold. Edges are indicative only.</span>' : '');
+    } else sum += '<span class="ps-avgrow"><span class="ps-avg ps-edge-d">—</span></span><span class="ps-avgline">No style matchup has 30 matches yet.</span>';
+    sum += '<span class="ps-caps ps-excaps">Example players · by Elo</span>';
+    if (a.examples && a.examples.length){
+      sum += '<div class="ps-chips">' + a.examples.map(p => '<span class="ps-chip">' +
+        (p.key && p.hasProfile ? '<a class="ps-plink" href="#" onclick="event.preventDefault();event.stopPropagation();psOpenProfile(\'' + psEsc(p.key) + '\')">' + psEsc(p.name) + '</a>'
+          : '<span class="ps-plink">' + psEsc(p.name) + '</span>') +
+        '<span class="ps-chipelo">' + p.elo + '</span></span>').join('') + '</div>';
+    } else sum += '<span class="ps-none">' + (a.examples ? 'No rated player this week.' : '—') + '</span>';
+    sum += '</div>';
+    let vs = '<div class="ps-vs"><div class="ps-vshead"><span class="ps-caps">Vs style · best → worst</span><span class="ps-caps">Win %</span><span class="ps-caps">Edge</span></div>';
+    a.vs.forEach(j => {
+      const x = C[a.i][j];
+      vs += '<div class="ps-vsrow"><span class="ps-vsname">' + psEsc(A[j].name) + '</span>' +
+        '<span class="ps-vswr">' + (x.edge == null ? '—' : x.wr + '%') + '</span>' +
+        '<span class="ps-vsedge ps-edge-' + (x.edge == null ? 'd' : psBand(x.edge)) + '">' + (x.edge == null ? '—' : psFmtEdge(x.edge)) + '</span></div>';
+    });
+    vs += '</div>';
+    html += '<div class="ps-arow-panel">' + sum + vs + '</div></div>';
   });
   document.getElementById('psCards').innerHTML = html;
 }
-const PS_CHEV = '<svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+async function psOpenProfile(key){
+  if (typeof ensurePlayerProfile === 'function' && !(await ensurePlayerProfile(key))) return;
+  document.querySelector('#mainNav button[data-tab="players"]').click();
+  showPlayerProfile(key);
+}
+const PS_CHEV = '<svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M5 8l5 5 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
 function psToggleRow(i){
-  // One row open at a time, matching the design's single `open` index.
+  // One card open at a time.
   const el = document.getElementById('psArow' + i);
   if (!el) return;
   const wasOpen = el.classList.contains('open');
   document.querySelectorAll('[data-page="styles"] .ps-arow.open').forEach(e => e.classList.remove('open'));
   if (!wasOpen) el.classList.add('open');
 }
-// Hover isolation: a cell lights its full row AND column, a header lights its own
-// line, everything else drops to 0.22.
-function psWireGridHover(grid){
-  if (!grid) return;
-  grid.addEventListener('mouseover', e => {
-    const t = e.target.closest('[data-r],[data-c]'); if (!t) return;
+// Hover isolation: a cell lights its row and column (inner tone) and itself (selected tone); a head lights its own
+// line; every other cell drops to 25%.
+function psWireGridHover(card){
+  if (!card || card._psHover) return;
+  card._psHover = true;
+  card.addEventListener('mouseover', e => {
+    const t = e.target.closest('[data-r],[data-c]');
+    if (!t && e.target.closest('#psMatrix')) return;     // the 4px gap between cells: keep the current isolation
+    card.querySelectorAll('.ps-lit').forEach(el => el.classList.remove('ps-lit', 'ps-x'));
+    if (!t){ card.classList.remove('ps-iso'); return; }
     const r = t.getAttribute('data-r'), c = t.getAttribute('data-c');
-    grid.classList.add('ps-iso');
-    grid.querySelectorAll('.ps-lit').forEach(el => el.classList.remove('ps-lit'));
-    grid.querySelectorAll('[data-r],[data-c]').forEach(el => {
+    card.classList.add('ps-iso');
+    card.querySelectorAll('[data-r],[data-c]').forEach(el => {
       const er = el.getAttribute('data-r'), ec = el.getAttribute('data-c');
       if ((r != null && er === r) || (c != null && ec === c)) el.classList.add('ps-lit');
+      if (r != null && c != null && er === r && ec === c) el.classList.add('ps-x');
     });
   });
-  grid.addEventListener('mouseleave', () => {
-    grid.classList.remove('ps-iso');
-    grid.querySelectorAll('.ps-lit').forEach(el => el.classList.remove('ps-lit'));
+  card.addEventListener('mouseleave', () => {
+    card.classList.remove('ps-iso');
+    card.querySelectorAll('.ps-lit').forEach(el => el.classList.remove('ps-lit', 'ps-x'));
   });
 }
 
@@ -14730,7 +14670,7 @@ function fhNoMeetingCards(m){
   const ref = fhRefDay(m);
   const side = (idx) => {
     const name = idx ? m.p2 : m.p1, other = idx ? m.p1 : m.p2;
-    const os = ppStyleFor(other), arch = os && psArchFor(os.archetype_label);
+    const os = ppStyleFor(other, idx ? m.p1Key : m.p2Key), arch = os && psArchFor(os.archetype_label);
     const color = idx ? FH_BC : FH_AC;
     if (!arch) return { who: fhSurname(name), vs: 'vs ' + fhSurname(other) + "'s style", rec: FH_DASHC, meta: 'playing style not classified', color, dash: true };
     const rows = m._styleMeetLoaded ? styleMeetRowsFor(m, idx ? 'p2' : 'p1', os.archetype_label, name) : null;
@@ -19207,7 +19147,7 @@ function ps2Edge(s1, s2){
 // avg = the matrix cell in this player's direction (a mirror = 50%, the diagonal's "coin flip on style").
 function ps2Record(m, side){
   const name = side ? m.p2 : m.p1, other = side ? m.p1 : m.p2;
-  const own = ppStyleFor(name), opp = ppStyleFor(other);
+  const own = ppStyleFor(name, side ? m.p2Key : m.p1Key), opp = ppStyleFor(other, side ? m.p1Key : m.p2Key);
   const ownLab = own && own.archetype_label, oppLab = opp && opp.archetype_label;
   // the meetings are tracked only between classified players: either side unclassified → "not classified", never "no meetings"
   if (!oppLab || !ownLab) return { state: 'unclassified', name, other, oppLab: oppLab || null, self: !ownLab };
@@ -19486,7 +19426,7 @@ function buildStyleSection(m){
   // DESIGN GAP G17: the file draws no loading state — the tabs' one-line loading pattern (Form, News G8, Progression)
   // until the archetypes are in memory (a failed load then reads as "not yet classified", never as loading forever).
   if (!m._ps2Loaded && !Object.keys((playerStyles && playerStyles.byKey) || {}).length) return `<div class="acomingsoon">Loading playing styles…</div>`;
-  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const s1 = ppStyleFor(m.p1, m.p1Key), s2 = ppStyleFor(m.p2, m.p2Key);
   const RR = [ps2Record(m, 0), ps2Record(m, 1)];
   initAOddsTips();
   // TEN-380: the reference's order — DNA, then the personal records with each player's career meetings under them,
@@ -20120,10 +20060,10 @@ async function loadPlayerCardLookups(){
     ]);
     if (psRes.ok){
       const ps = await psRes.json();
-      pgArchByKey = new Map();
+      pgArchByKey = new Map();   // key → the labelled rows on it (TEN-408: a given-name clash is another player)
       (ps.players || []).forEach(p => {
         const k = pgJoinKey(p.name);
-        if (k && p.archetype_label && !pgArchByKey.has(k)) pgArchByKey.set(k, p.archetype_label);
+        if (k && p.archetype_label) (pgArchByKey.get(k) || pgArchByKey.set(k, []).get(k)).push(p);
       });
     }
     if (elRes.ok) pgEloData = await elRes.json();
@@ -20132,7 +20072,11 @@ async function loadPlayerCardLookups(){
   // Re-render the grid now that archetype/Elo are available.
   if (document.getElementById('playerGroups')) renderPlayers();
 }
-function pgArchetypeFor(name){ const k = pgJoinKey(name); return (k && pgArchByKey && pgArchByKey.get(k)) || null; }
+function pgArchetypeFor(name, key){
+  const k = pgJoinKey(name), rows = (k && pgArchByKey && pgArchByKey.get(k)) || [], full = psIndexNameOf(key);
+  const p = rows.find(r => !psGivenClash(r.name, name) && !psKeyNameClash(r.name, full));
+  return p ? p.archetype_label : null;
+}
 function pgEloFor(name){ return psEloFor(pgEloData, name); }
 // External-link glyph taken from the export source (viewBox 0 0 20 20, the exact
 // path), not picked by name from the imported icon set.
@@ -20226,7 +20170,7 @@ function renderPlayers(filter){
     // others still render an identical card — "View profile" is always present so
     // every card is the same height — but aren't wired to a broken route.
     const hasProfile = p.key != null && playerProfiles[String(p.key)];
-    const arch = pgArchetypeFor(p.name);
+    const arch = pgArchetypeFor(p.name, p.key);
     const elo = pgEloFor(p.name);
     const initial = pesc(pgInitials(p.name));
     const eloVal = elo != null ? elo : '—';
@@ -20582,8 +20526,38 @@ let eloRatings = { ratings: {} };
 let surfaceRatings = { players: [] };
 let playerStyles = { byKey: {} };
 function styleKey(name){ const p = (typeof psEloNorm === 'function' ? psEloNorm(name) : String(name || '').toLowerCase()).split(' ').filter(Boolean); return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0]; }
-function ppStyleFor(name){ const k = styleKey(name); return k ? (playerStyles.byKey || {})[k] : null; }
-async function loadPlayerStyles(){ try { const res = await fetch('./playing-styles.json', { cache: 'no-cache' }); if (res.ok){ const d = await res.json(); const byKey = {}; (d.players || []).forEach(pl => { const k = styleKey(pl.name); if (k) byKey[k] = pl; }); playerStyles = { data: d, byKey }; } } catch (e) { /* additive */ } }
+// TEN-408 (founder, card 369e281c): a surname|initial key is shared by different people ("Darwin Blanch", ranked 159, and his
+// brother "Dali Blanch" are both blanch|d). Two names whose full given names disagree are two players: "Dar." vs "Dali"
+// clash, "Alex" vs "Alexander" do not (one abbreviates the other), and an initial ("D.", "J-L.") never clashes.
+function psGivenOf(name){ const g = psEloNorm(String(name || '').trim().split(/\s+/)[0] || ''); return (g.length < 2 || / /.test(g)) ? null : g; }
+function psGivenClash(a, b){ const x = psGivenOf(a), y = psGivenOf(b); return !!(x && y && !x.startsWith(y) && !y.startsWith(x)); }
+// The player key → his full name: this week's standings (player-index.json), else his profile name until the standings
+// load (a failed load included). An initial-only name ("D. Blanch" on Darwin's key 17463) cannot clash, so a caller
+// holding the key also checks the name the key stands for.
+function psIndexNameOf(key){
+  if (key == null) return null;
+  const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : [];
+  if (psIndexNameOf._src !== idx){ psIndexNameOf._src = idx; psIndexNameOf._m = new Map(idx.map(r => [String(r.key), r.name])); }
+  const prof = (typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[String(key)] : null;
+  return psIndexNameOf._m.get(String(key)) || (prof && prof.name) || null;
+}
+// A styles row against the key's name: the standings scramble multi-part names ("Daniel Vallejo Adolfo" is Adolfo Daniel
+// Vallejo), so the row's given name only has to match ONE word of that name; no word matching = another player.
+function psKeyNameClash(rowName, keyName){
+  const g = psGivenOf(rowName); if (!g || !keyName) return false;
+  return !psEloNorm(keyName).split(' ').filter(Boolean).some(t => g.startsWith(t) || t.startsWith(g));
+}
+// One style lookup for Match analysis, Head to Head and the legacy profile: the styles rows on the name's key, minus
+// any whose given name clashes with the name, or with the player key's full name when the caller has the key; of the
+// rest the last row wins (the order this lookup always used).
+function ppStyleFor(name, key){
+  const k = styleKey(name); if (!k) return null;
+  const all = playerStyles.byKeyAll ? (playerStyles.byKeyAll[k] || []) : [(playerStyles.byKey || {})[k]].filter(Boolean);
+  const full = psIndexNameOf(key);
+  const ok = all.filter(p => !psGivenClash(p.name, name) && !psKeyNameClash(p.name, full));
+  return ok.length ? ok[ok.length - 1] : null;
+}
+async function loadPlayerStyles(){ try { const res = await fetch('./playing-styles.json', { cache: 'no-cache' }); if (res.ok){ const d = await res.json(); const byKey = {}, byKeyAll = {}; (d.players || []).forEach(pl => { const k = styleKey(pl.name); if (k){ byKey[k] = pl; (byKeyAll[k] = byKeyAll[k] || []).push(pl); } }); playerStyles = { data: d, byKey, byKeyAll }; } } catch (e) { /* additive */ } }
 // ==== Dynamic Key Insights engine (TEN-8) ====
 // Derived live from career-splits.json + playing-styles.json, both already
 // loaded above. Falls back to the pipeline's p.insights when a player has
@@ -22287,7 +22261,7 @@ function ppStyleRadarSvg(scores, partial){
   return `<svg viewBox="0 0 264 246" style="width:100%;height:auto;overflow:visible;">${s}</svg>`;
 }
 function ppStyleCard(p){
-  const st = ppStyleFor(p && p.name);
+  const st = ppStyleFor(p && p.name, p && p.key);
   if (!st) return '';
   const PP_BADGE = { pressure_player:['Pressure Player'], clay_specialist:['Clay Specialist'], grass_specialist:['Grass Specialist'], high_risk_high_reward:['High Risk / High Reward'] };
   const badges = (st.badges || []).map(b => {
@@ -24051,7 +24025,7 @@ function buildPlayerProfileHtml(p){
   // yet — passing null makes the engine use its measured INS_TOUR_FALLBACK medians, and
   // it upgrades automatically the day the index starts carrying one.
   const ppInsights = ppDynamicInsights(
-    p.key, p.name, ppInsightsSplits(p.key), ppStyleFor(p.name), p.insights,
+    p.key, p.name, ppInsightsSplits(p.key), ppStyleFor(p.name, p.key), p.insights,
     _oddsPerfShards[String(p.key)] || null,
     oddsPerfMeta.tourBaseline || null,
     (playerStyles.data || {}).tourAverage,
@@ -24109,7 +24083,7 @@ function buildPlayerProfileHtml(p){
   // shows a single archetype such as "Counter Puncher / Solid Defender" with no
   // surface-specialist tag appended). Rendered in primary text — brand blue is
   // reserved for navigation/identity and must not colour body copy.
-  const _ppStyle = ppStyleFor(p.name);
+  const _ppStyle = ppStyleFor(p.name, p.key);
   // Board taxonomy (TEN-12): the header carries ONLY the board archetype_label.
   // The old `p.archetype` pipeline field is retired taxonomy — never fall back to
   // it. An unclassified player shows no header style line (the "Playing style" card
@@ -25117,7 +25091,7 @@ function buildMatchProgressionSection(m){
     const oc = fav === false ? 'var(--text-label)' : 'var(--text)', pc = fav === false ? 'var(--text)' : 'var(--text-label)';
     return `<span style="white-space:nowrap;"><span style="color:${own == null ? 'var(--text-label)' : oc}; font-weight:${fav === false ? 500 : fav ? 700 : 500};">${o}</span> <span style="color:var(--text-label);">v</span> <span style="color:${opp == null ? 'var(--text-label)' : pc}; font-weight:${fav === false ? 700 : 500};">${p}</span></span>`;
   };
-  const styleOf = name => { const s = ppStyleFor(name); return s && s.archetype_label ? s.archetype_label : null; };
+  const styleOf = (name, key) => { const s = ppStyleFor(name, key); return s && s.archetype_label ? s.archetype_label : null; };
   const scoreOf = r => (r.wo ? 'w/o' : r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') + (r.ret ? ' ret.' : '') : FH_DASHC);
   const shell = (inner, c) => `<div class="seg pg-cell${c.tile ? ' pg-tile' : ''}"${c.click || ''}${c.tip ? ` title="${fhEsc(c.tip)}"` : ''} style="flex:1; min-width:0; background:${c.cbg}; border:1px solid ${c.bd}; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; opacity:${c.op};${c.click ? '' : ' cursor:default;'}">${inner}</div>`;
   const cardBody = (opp, style, styleTitle, mid, foot, meta, midStyle) => `<div style="flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
@@ -25136,7 +25110,7 @@ function buildMatchProgressionSection(m){
     if (c.missing){ c.tip = c.rd + ' · no match on record for ' + p.name + ' in this round'; return shell(`<div style="padding:10px 12px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:12.5px; font-weight:700; color:var(--text-label);">—</span><span style="${M} font-size:11px; color:var(--text-label);">—</span><span style="${M} font-size:9.5px; color:var(--text-label);">no record of this round</span></div>`,
       { cbg, bd, op: op(i), tip: c.tip, click: ` onclick="pgHi(${i})"`, tile: true }); }
     const r = c.r, dr = r.pg && r.pg.dominance && r.pg.dominance.v != null ? r.pg.dominance.v.toFixed(2) : FH_DASHC;
-    const sty = styleOf(r.opp);
+    const sty = styleOf(r.opp, r.oppKey);
     const verb = r.wo ? 'walkover v' : r.won ? 'beat' : 'lost to';
     c.tip = c.rd + ' · ' + verb + ' ' + r.opp + (r.wo ? '' : ' ' + scoreOf(r)) + ' · click for match stats';
     c.click = maRowOnclick({ key: p.key, name: p.name, opp: r.opp, ek: r.ek, date: r.date, round: c.rd,
@@ -25146,7 +25120,7 @@ function buildMatchProgressionSection(m){
       { cbg, bd, op: op(i), tile: true, tip: c.tip + (r.wo ? '' : (r.price == null ? ' · ' + fhSrcTitle(r) : '')), click: c.click });
   };
   const nowHtml = k => {
-    const opp = k ? m.p1 : m.p2, sty = styleOf(opp);
+    const opp = k ? m.p1 : m.p2, sty = styleOf(opp, k ? m.p1Key : m.p2Key);
     const own = Number(k ? aHead.p2 : aHead.p1), oth = Number(k ? aHead.p1 : aHead.p2);
     const ok = v => Number.isFinite(v) && v >= 1.01;
     // "not played" is the file's word for an unplayed match; a live or finished one says nothing there (DESIGN GAP G14).
@@ -29243,7 +29217,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const mk = { p1: a.full, p2: b.full, p1Key: a.key, p2Key: b.key, _styleMeetLoaded: !!(a._styleMeetLoaded && b._styleMeetLoaded),
       p1StyleMeetings: a.styleMeetings, p2StyleMeetings: b.styleMeetings, _styleMeetWarn_p1: 1, _styleMeetWarn_p2: 1 };
     const RR = [0, 1].map(i => (typeof ps2Record === 'function' ? ps2Record(mk, i) : { state: 'unclassified', name: i ? b.full : a.full, other: i ? a.full : b.full, oppLab: null }));
-    const lab = p => { const st = typeof ppStyleFor === 'function' ? ppStyleFor(p.full) : null; return st && st.archetype_label ? st.archetype_label : null; };
+    const lab = p => { const st = typeof ppStyleFor === 'function' ? ppStyleFor(p.full, p.key) : null; return st && st.archetype_label ? st.archetype_label : null; };
     const sides = [a, b].map((p, i) => {
       const R = RR[i], open = i ? S.styleOpenB !== false : S.styleOpenA !== false, all = i ? !!S.styleBAll : !!S.styleAAll;
       return { p, R, open, all, sur: (typeof fhSurname === 'function' ? fhSurname(p.full) : p.short),
@@ -29985,7 +29959,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function shortOf(name) {
     const s = String(name || '').trim(); if (!s) return '';
     const p = s.split(/\s+/); if (p.length < 2) return s;
-    if (/^[A-Z][.．]$/.test(p[0])) return s;               // already "C. Alcaraz"
+    // already abbreviated: "C. Alcaraz", and (TEN-408, founder) "Dar. Blanch" / "J-L. Struff" — any given-name token that
+    // ends in a full stop is the profile's own short form; re-cutting it to one letter made Darwin "D. Blanch", his
+    // brother's spelling, on the Tournament card while the picker said "Dar. Blanch".
+    if (/^[A-Z][A-Za-z-]*[.．]$/.test(p[0])) return s;
     return p[0][0].toUpperCase() + '. ' + p.slice(1).join(' ');
   }
   // Avatar initials = the first initial + the FIRST letter of the surname (founder r1 fix 7, 2026-10-09): the surname is

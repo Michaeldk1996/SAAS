@@ -34,6 +34,11 @@ no day work, checks or screenshots on this page until the founder reopens it.
   ~6 rows then scroll, `--inner` hover, white tick on the current pick *(override: reference r12 / padding 6)*.
 - **Toggle words** (Breakdown ▾, Show all lines (N), Meetings ↓, Show / Hide career meetings) are white.
 
+- **One short name per player (founder, TEN-408 card 78054b1c):** `shortOf` keeps a given name that is already
+  abbreviated ("C. Alcaraz", "Dar. Blanch", "J-L. Struff"), so the picker, the Tournament card, the DNA line and every
+  sentence print the same name; re-cutting "Dar." to "D." printed Darwin under his brother Dali's spelling.
+  **Test:** `test-ten408-styles.mjs` "founder R2".
+
 ## Bars and charts *(override — the one page exempt from Ring blue)*
 - **Every data bar is white:** lead `--viz-white-lead` solid, second 70% of it, on `--viz-track`. The tone follows who
   LEADS, never the side (`h2hTug`: B 3–1 up on clay draws B's bar solid). Hot-lines dots stay

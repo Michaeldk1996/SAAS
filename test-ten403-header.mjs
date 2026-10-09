@@ -70,6 +70,7 @@ const STATIC = [   // [page, the header markup's opening, the title]
   ['tournaments', '<div class="sfh tourx-head">', 'Tournaments'],
   ['database', '<div class="sfh db-headcard" data-db="head">\n', 'Database'],   // the page mount (the two overlay mounts are one line)
   ['news', '<div class="sfh news-head">', 'Tennis News'],
+  ['styles', '<div class="sfh ps-head">', 'Matchup grid'],   // TEN-408 step 9
   ['live', '<div class="sfh">\n    <div class="sfh__text">\n      <h1 class="sfh__title">Live</h1>', 'Live'],
 ];
 function checkPages(dash, js, css) {
@@ -132,7 +133,10 @@ function checkOneSentence(dash, js) {
   const drops = (/<span class="do-subtitle">Lines flagged in the last ' \+ esc\(st\.windowH \|\| 24\) \+ '(h[^<]+)<\/span>/.exec(js.drops) || [])[1];
   const all = subs.concat([series, trading, drops]);
   if (all.some(s => !s)) return 'a header sentence could not be read: ' + JSON.stringify(all);
-  for (const s of all) if (s.length > 120 || (s.match(/[.!?](\s|$)/g) || []).length > 2) return 'header copy is longer than one line: ' + s;
+  // Exception (founder, TEN-408 fix 4, 2026-10-09): Playing Styles carries the reference's full two-sentence line (128
+  // characters; it fits one line at 1512).
+  const LONG_OK = ['Row beats column: the figure is the edge vs an even 50% split, the raw win rate sits beneath. Hover to isolate a row and column.'];
+  for (const s of all) if ((s.length > 120 && !LONG_OK.includes(s)) || (s.match(/[.!?](\s|$)/g) || []).length > 2) return 'header copy is longer than one line: ' + s;
   return null;
 }
 

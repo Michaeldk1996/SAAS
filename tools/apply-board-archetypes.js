@@ -56,6 +56,12 @@ const initialOf = ft => { const f = fold(ft); return f ? f[0] : null; };
 const skey = st => fold(st.join(''));                 // full surname (all tokens after the first)
 const lastkey = st => (st.length ? fold(st[st.length - 1]) : '');
 
+// TEN-408 (founder, 2026-10-09): a surname + initial match is not a player match when both names carry a full given name
+// that disagrees — board "Dar. Blanch" (Darwin) must never label the "Dali Blanch" row. "Dar." abbreviates "Darwin",
+// so a clash needs neither given name to start with the other; an initial ("D.", "J-L.") never clashes.
+function givenOf(name) { const t = parts(name)[0]; if (!t || /-/.test(t)) return null; const g = fold(t); return g.length < 2 ? null : g; }
+function givenClash(a, b) { const x = givenOf(a), y = givenOf(b); return !!(x && y && !x.startsWith(y) && !y.startsWith(x)); }
+
 function buildIndexes(players) {
   const surnInit = new Map(), lastInit = new Map(), surn = new Map();
   const push = (m, k, p) => { const a = m.get(k) || []; a.push(p); m.set(k, a); };
@@ -76,13 +82,14 @@ function main() {
 
   const match = (name) => {
     const [ft, st] = parts(name); const i = initialOf(ft);
-    let h = idx.surnInit.get(skey(st) + '|' + i) || [];
+    const same = list => (list || []).filter(p => !givenClash(name, p.name));   // TEN-408 given-name guard
+    let h = same(idx.surnInit.get(skey(st) + '|' + i));
     if (h.length === 1) return h[0];
     if (h.length > 1) return null;                    // ambiguous surname+initial
-    h = idx.lastInit.get(lastkey(st) + '|' + i) || [];
+    h = same(idx.lastInit.get(lastkey(st) + '|' + i));
     if (h.length === 1) return h[0];
     if (h.length > 1) return null;
-    h = idx.surn.get(skey(st)) || [];
+    h = same(idx.surn.get(skey(st)));
     if (h.length === 1) return h[0];
     return null;                                      // absent or collision
   };
