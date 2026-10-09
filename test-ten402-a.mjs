@@ -239,26 +239,26 @@ test('item 4: h2hSeg renders the site darker track — selected --inner + --edge
 });
 
 // ── items 1, 2, 3, 9, 10, 11: surfaces and type (CSS, the rule someone applies) ───────────────────────────────────
-test('item 1: the header card — card, radius 12, padding 22×26, sticky with a shadow, title 29/800, sub 13.5 --text-soft', () => {
+// TEN-403 (founder shell refresh) overrides step 8 item 1's header values (29 / 22×26 / caps line): the card is the
+// shared 35b header, controls variant — its values are locked in test-ten403-header.mjs; this page keeps sticky + shadow.
+test('item 1 (TEN-403): the header card is the 35b .sfh--ctl card, sticky with its shadow; pickers under the row', () => {
   assert.match(rule('#h2hRoot .h2h-stick'), /position:sticky; top:30px; z-index:30;/);
   const head = rule('#h2hRoot .h2h-head');
-  assert.match(head, /padding:22px 26px; border-radius:12px; background:var\(--card\);/);
   assert.match(head, /box-shadow:var\(--top-light\), 0 12px 28px /);
-  assert.match(rule('#h2hRoot .h2h-title'), /font-size:29px; font-weight:800;/);
-  assert.match(rule('#h2hRoot .h2h-sub'), /font-size:13\.5px; line-height:1\.55; color:var\(--text-soft\);/);
+  assert.doesNotMatch(head, /padding|font-size|border-radius|background/, 'the page restyles the 35b card');
+  const bar = slice('selectorBar');
+  assert.match(bar, /<div class="sfh sfh--ctl h2h-head">\s*<div class="sfh__row"><div class="sfh__text">\s*<h1 class="sfh__title">Head to Head<\/h1>/);
+  assert.ok(bar.indexOf('class="h2h-pick"') > bar.indexOf('</div></div>'), 'the pickers sit under the row');
   // pickers: search control = --inner, no edge; a picked player = panel (--card + 1px --edge-6); "Change" grey → white on hover
   assert.match(rule('#h2hRoot .h2hin.h2h-search'), /background:var\(--inner\); border:1px solid transparent;/);
   assert.match(rule('#h2hRoot .h2h-pcard'), /background:var\(--card\); border:1px solid var\(--edge-6\);/);
   assert.match(rule('#h2hRoot .h2h-change'), /font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase;[\s\S]*color:var\(--text-label\)/);
   assert.match(CSS, /#h2hRoot \.h2h-change:hover, #h2hRoot \.h2h-change:focus-visible\{ color:var\(--text\);/);
 });
-test('item 1: the header\'s small caps label line sits above the title (site caps label, 9px under it)', () => {
-  const eyebrow = new Function('E', sliceConst('H2H_EYEBROW') + '\nreturn H2H_EYEBROW;')(E);
-  assert.ok(eyebrow.length > 0, 'H2H_EYEBROW is empty — the caps label line is not drawn');
+test('item 1 (TEN-403): no caps label line above the title (the 35b header drops it)', () => {
+  assert.doesNotMatch(html, /H2H_EYEBROW|h2h-eyebrow/);
   const bar = slice('selectorBar');
-  const at = bar.indexOf('h2h-cap h2h-eyebrow'), title = bar.indexOf('<h1 class="h2h-title">');
-  assert.ok(at > 0 && title > at, 'the caps label line must precede the title');
-  assert.match(rule('#h2hRoot .h2h-eyebrow'), /margin:0 0 9px;/);
+  assert.doesNotMatch(bar.slice(0, bar.indexOf('<h1 class="sfh__title">')), /h2h-cap/);
 });
 test('item 2: section cards are card tone with no outline; section titles = caps grey on a 6% hairline (sectionHead)', () => {
   assert.match(rule('#h2hRoot .h2h-card'), /background:var\(--card\); border:1px solid transparent; box-shadow:var\(--top-light\);/);

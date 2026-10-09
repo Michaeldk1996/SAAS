@@ -1,6 +1,6 @@
 // TEN-403 part 1 (founder shell refresh, 2026-10-08) — the "35b" page header, ONE component (.sfh) on every page
 // header card: Today's Matches / Results, Live, Trading Report, Dropping Odds, Series, Players, Tournaments, Database,
-// News (Head to Head takes the .sfh--ctl variant in its own commit). Values = the COMPUTED 35b header of the
+// News, and Head to Head on the .sfh--ctl variant (pickers + context strip under the row, sticky with its shadow). Values = the COMPUTED 35b header of the
 // 2026-10-08 reference export at 1512 night (card 18x26, centred row, gap 28, radius 12; title Hanken 24/800 -0.015em
 // lh 1.1; ONE 13px --text-soft sentence nowrap+ellipsis with an optional --text-label tail; NO caps line; stats gap 30,
 // caps 10.5/700/0.10em over Plex Mono 15/700; clocks --text-soft; Today's Matches' first column = live dot + clock).
@@ -100,6 +100,28 @@ function checkPages(dash, js, css) {
   return null;
 }
 
+// ── 2b. Head to Head: the controls variant (.sfh.sfh--ctl) rendered by H2HPage's selectorBar — the row (title, one
+//      line with the coverage tail, no caps line, no stats), then the pickers + context strip under it in the same card;
+//      the page owns only the sticky shadow (no 29px title / 22x26 padding / caps line / sub rules). ──────────────────
+function checkH2H(dash) {
+  const bar = slice(dash, 'selectorBar');
+  const m = /^function selectorBar\(v\) \{\s*return `<div class="h2h-stick"><div class="sfh sfh--ctl h2h-head">\s*<div class="sfh__row"><div class="sfh__text">\s*<h1 class="sfh__title">Head to Head<\/h1>\s*<p class="sfh__sub">([^<$]+)<span class="sfh__tail">· \$\{E\(v\.coverageLine\)\}<\/span><\/p>\s*<\/div><\/div>\s*<div class="h2h-pick">/.exec(bar);
+  if (!m) return 'h2h: header is not .sfh.sfh--ctl with the row (title + one sentence + tail) first and the pickers under it';
+  if (m[1].trim().length > 120) return 'h2h: header copy is longer than one line';
+  // TEN-403 R1 nit (founder 2026-10-09): the tail reads "· a dash means not covered" (was "· Data honesty · em dash …")
+  const cov = /coverageLine: '([^']*)'/.exec(dash);
+  if (!cov || cov[1] !== 'a dash means not covered') return 'h2h: the coverage tail reads ' + JSON.stringify(cov && cov[1]);
+  if (/h2h-cap h2h-eyebrow|H2H_EYEBROW/.test(dash)) return 'h2h: a caps line above the title came back';
+  if (!/<div class="h2h-ctx">/.test(bar.slice(bar.indexOf('<div class="h2h-pick">')))) return 'h2h: the context strip left the card';
+  const head = rule(dash, '#h2hRoot .h2h-head');
+  if (!head || !/position:sticky/.test(rule(dash, '#h2hRoot .h2h-stick') || '')) return 'h2h: header not sticky';
+  if (!/box-shadow:var\(--top-light\), 0 12px 28px/.test(head)) return 'h2h: the sticky shadow is gone';
+  if (/padding|font-size|border-radius|background|display/.test(head)) return 'h2h: the page restyles the 35b card';
+  for (const sel of ['#h2hRoot .h2h-title', '#h2hRoot .h2h-headrow', '#h2hRoot .h2h-sub', '#h2hRoot .h2h-subs', '#h2hRoot .h2h-eyebrow', '#h2hRoot .h2h-honesty'])
+    if (rule(dash, sel) != null) return 'h2h: a page-owned header rule is back: ' + sel;
+  return null;
+}
+
 // ── 3. ONE line per header: the reference's own Today's Matches line is two short sentences on one line, so the rule is
 //      the line, not the full stop — every header's copy stays at or under 120 characters (Trading's 119 is the
 //      longest; Series' TEN-194 paragraph and Drops' "Biggest drops first." were trimmed to get there). ──────────
@@ -142,6 +164,7 @@ function checkLive(src) {
 
 test('the 35b component: card, title, one-line sentence, stats, live dot, controls-under variant', () => assert.equal(checkComponent(DASH), null));
 test('every page header card is the component; no caps line; no page-owned header rule left', () => assert.equal(checkPages(DASH, JS, CSS), null));
+test('Head to Head: the .sfh--ctl card, pickers under the row, no caps line, only the sticky shadow page-owned', () => assert.equal(checkH2H(DASH), null));
 test('one line per header (trimmed copy, at most 120 characters)', () => assert.equal(checkOneSentence(DASH, JS), null));
 test("Today's Matches: live column first (dot + soft mono clock), Completed puts Settled in the tail", () => assert.equal(checkLive(DASH), null));
 
@@ -161,6 +184,12 @@ test('CONTROL: each check goes red on its mutant', () => {
   assert.ok(red(() => checkPages(DASH, { ...JS, series: m(JS.series, "'<div class=\"sfh sr-head\">'", "'<div class=\"sr-head\">'") }, CSS)), 'series off the component');
   assert.ok(red(() => checkPages(m(DASH, '#tourListView .tourx-head{ margin-bottom:16px; }', '#tourListView .tourx-head h1{ font-size:29px; }'), JS, CSS)), 'page-owned title rule');
   assert.ok(red(() => checkPages(DASH, JS, { ...CSS, drops: CSS.drops + '\n[data-page="drops"] .do-head { padding: 22px 26px; }' })), 'drops restyles its header');
+  // head to head
+  assert.ok(red(() => checkH2H(m(DASH, '<div class="sfh sfh--ctl h2h-head">', '<div class="h2h-head">'))), 'h2h off the component');
+  assert.ok(red(() => checkH2H(m(DASH, "coverageLine: 'a dash means not covered'", "coverageLine: 'Data honesty · em dash means not covered'"))), 'h2h old coverage tail back');
+  assert.ok(red(() => checkH2H(m(DASH, '        <h1 class="sfh__title">Head to Head</h1>', '        <div class="h2h-cap h2h-eyebrow">ATP tour · all-level head to head</div><h1 class="sfh__title">Head to Head</h1>'))), 'h2h caps line back');
+  assert.ok(red(() => checkH2H(m(DASH, '  #h2hRoot .h2h-head{ min-width:0; box-shadow:', '  #h2hRoot .h2h-title{ font-size:29px; }\n  #h2hRoot .h2h-head{ min-width:0; padding:22px 26px; box-shadow:'))), 'h2h 29px / 22x26 back');
+  assert.ok(red(() => checkH2H(m(DASH, '  #h2hRoot .h2h-head{ min-width:0; box-shadow:var(--top-light), 0 12px 28px color-mix', '  #h2hRoot .h2h-head{ min-width:0; box-shadow:var(--top-light); --x:color-mix'))), 'h2h shadow gone');
   // one sentence
   assert.ok(red(() => checkOneSentence(DASH, { ...JS, series: m(JS.series, "'Current streaks for players scheduled today and tomorrow.'", "'Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions.'") })), 'the old paragraph');
   // live column

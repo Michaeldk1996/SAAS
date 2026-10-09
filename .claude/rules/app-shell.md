@@ -86,9 +86,9 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
 22×26, sub 13.5/1.55, stats gap 34, mono 17) and every caps line above a page title.
 
 - **One component, `.sfh`, on every page header card:** Today's Matches / Results, Live, Trading Report, Dropping Odds,
-  Series, Players, Tournaments, Database (page + both overlay mounts), News. Pages keep their root class as a hook
-  (`mx-titlerow`, `pgh-card`, `tourx-head`, `db-headcard`, `tr-hdr`, `sr-head`, `do-head`, `news-head`) but own **no rule
-  that restyles the header**. Stennisfy Model and Playing Styles have no page header card yet (their page steps add one);
+  Series, Players, Head to Head (`.sfh--ctl`, below), Tournaments, Database (page + both overlay mounts), News. Pages
+  keep their root class as a hook (`mx-titlerow`, `pgh-card`, `h2h-head`, `tourx-head`, `db-headcard`, `tr-hdr`,
+  `sr-head`, `do-head`, `news-head`) but own **no rule that restyles the header** (H2H owns only its sticky shadow). Stennisfy Model and Playing Styles have no page header card yet (their page steps add one);
   Player Profile has a player hero, not a page header.
 - **Card:** `--card`, `--top-light`, no outline, radius 12, padding 18×26, one row `align-items:center;
   justify-content:space-between; gap:28px`.
@@ -102,7 +102,8 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
 - **Today's Matches live column** (first, Upcoming only): label over `.sfh__live` = 7px `--pos` dot `.sfh__dot` + the
   clock in mono 15/700 `--text-soft` (`mxHeaderStatusHtml`, ruling A words). The only status dot besides the serve ball.
 - **Controls under the row** (Head to Head pickers): `.sfh.sfh--ctl` (block, padding 18×26×22) wrapping `.sfh__row`
-  (the row above, margin-bottom 16) then the controls; H2H stays sticky with its shadow.
+  (the row above, margin-bottom 16) then the controls (pickers, swap, Surface / Format strip); H2H stays sticky with its
+  shadow and its line ends in the grey coverage tail.
 - **Mobile (<900px):** the row and the stats wrap.
 - **Test:** `test-ten403-header.mjs` (component values, every page on `.sfh`, no caps line, no page-owned header rule,
   one line ≤ 120 chars, the live column executed from the shipped `mxHeaderStatusHtml`; each check red on its mutant).

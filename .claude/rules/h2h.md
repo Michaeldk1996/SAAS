@@ -11,9 +11,13 @@ no day work, checks or screenshots on this page until the founder reopens it.
   Head-to-head record · Playing styles · Tournament · Market edge · Latest news. The older Serve / Return / Under
   pressure / Holds & breaks cards are off — founder-ruled 2026-10-08, card 01102d24 (`H2H_SHOW_STAT_CARDS = false`; code
   kept). **Test:** `test-ten402-c.mjs` "flag and block order".
-- **Header card** = Today's Matches pattern: card, r12, padding 22×26, caps label line (`H2H_EYEBROW`), title 29/800,
-  sub 13.5 `--text-soft`; sticky with a shadow. Search box `--inner`, no edge; avatars = initials; "Change" Hanken 10.5
-  caps `--text-label`, white on hover. **Test:** `test-ten402-a.mjs`.
+- **Header card** = the shared 35b header, controls variant (TEN-403, overrides step 8 item 1's 29 / 22×26 / caps
+  line): `.sfh.sfh--ctl` (18×26×22) → `.sfh__row` (margin-bottom 16: title 24/800, ONE line "Two players, mirrored
+  across every metric." + the coverage line as the grey `.sfh__tail`, reading "· a dash means not covered" (founder R1
+  nit 2026-10-09, replaces "· Data honesty · em dash means not covered"); no caps line, no stats) → pickers → Surface /
+  Format strip, all in the one card. Sticky with its shadow; the page owns only that shadow (`#h2hRoot .h2h-head`), no
+  header type/padding rule. Search box `--inner`, no edge; avatars = initials; "Change" Hanken 10.5 caps
+  `--text-label`, white on hover. **Test:** `test-ten403-header.mjs` (H2H check + mutants), `test-ten402-a.mjs`.
 - **Cards:** every section card `--card` + `--top-light`, no outline; titles via `sectionHead` (caps 10.5 on a 6%
   hairline). Boxes inside a card (Model boxes, Tournament info box, player panels, stat tiles, price-sensitivity panel,
   every ledger) = `--card` + 1px `--edge-6`; ledger heads panel tone, no edge; rows on 6% hairlines, `--inner` hover.
