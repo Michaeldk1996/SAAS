@@ -3896,14 +3896,14 @@
     },
     "12169478": {
       "fixtureId": "id1200308575151600",
-      "mappedAt": "2026-10-08T07:31:46Z",
-      "missHeldH": 1.0,
+      "mappedAt": "2026-10-09T19:47:00Z",
+      "missHeldH": 37.25,
       "missRuns": 1,
       "missSince": "2026-10-08T06:31:46Z",
       "orient": "same",
       "p1": "L. Darderi",
       "p2": "S. Tsitsipas",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-10T07:30:00.000Z",
       "tournamentId": 3085
     },
     "12169482": {
@@ -3917,20 +3917,20 @@
     },
     "12169483": {
       "fixtureId": "id1200308575151628",
-      "mappedAt": "2026-10-08T07:31:46Z",
+      "mappedAt": "2026-10-09T19:47:00Z",
       "orient": "same",
       "p1": "A. Fils",
       "p2": "P. Kotov",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-10T06:20:00.000Z",
       "tournamentId": 3085
     },
     "12169484": {
       "fixtureId": "id1200308575151648",
-      "mappedAt": "2026-10-08T07:31:46Z",
+      "mappedAt": "2026-10-09T19:47:00Z",
       "orient": "same",
       "p1": "J. Lehecka",
       "p2": "N. Borges",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-10T04:00:00.000Z",
       "tournamentId": 3085
     },
     "12169487": {
@@ -4166,17 +4166,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-20T23:45:14Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 2,
-        "missExpired": 2,
-        "openMisses": 2,
-        "stale": 4,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 45
-      },
       {
         "at": "2026-09-21T00:45:01Z",
         "fixturesUnitsSpent": 0,
@@ -8565,9 +8554,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 25
+      },
+      {
+        "at": "2026-10-09T19:47:00Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 3,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 25
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-09T16:42:43Z"
+  "updatedAt": "2026-10-09T19:47:00Z"
 }
