@@ -3878,11 +3878,11 @@
     },
     "12169275": {
       "fixtureId": "id1200308575391166",
-      "mappedAt": "2026-10-07T14:53:21Z",
+      "mappedAt": "2026-10-09T03:03:01Z",
       "orient": "same",
       "p1": "K. Khachanov",
       "p2": "A. Fery",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T06:20:00.000Z",
       "tournamentId": 3085
     },
     "12169329": {
@@ -4088,17 +4088,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-20T10:02:17Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 2,
-        "missExpired": 2,
-        "openMisses": 2,
-        "stale": 4,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 49
-      },
       {
         "at": "2026-09-20T11:03:49Z",
         "fixturesUnitsSpent": 1,
@@ -8487,9 +8476,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 33
+      },
+      {
+        "at": "2026-10-09T03:03:01Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 33
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-09T02:03:01Z"
+  "updatedAt": "2026-10-09T03:03:01Z"
 }
