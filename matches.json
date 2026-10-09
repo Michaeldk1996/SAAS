@@ -9389,11 +9389,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "30 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1104_f-cerundolo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1057_r-safiullin.jpg",
     "oddsMovement": {
@@ -10646,7 +10652,10 @@
       "edgeVsPinnacleP1": 0.0558,
       "edgeVsPinnacleP2": -0.0558,
       "ts": "2026-10-08T11:52:58.155Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12169254",
@@ -73752,7 +73761,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 0-1",
+      "display": "7-6(3), 0-1",
       "sets": [
         {
           "p1": 7,
@@ -245017,11 +245026,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "30 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8174_a-fery.jpg",
     "oddsMovement": {
@@ -246389,7 +246404,10 @@
         "seenAt": "2026-10-09T08:34:37.150Z",
         "since": "2026-10-09T08:34:37.150Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12169482",
@@ -248466,11 +248484,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 1
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "40 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2842_a-davidovich-fokina.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2169_j-brooksby.jpg",
     "oddsMovement": {
@@ -249250,7 +249279,10 @@
         "seenAt": "2026-10-09T07:52:45.970Z",
         "since": "2026-10-08T16:49:43.082Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12168292",
