@@ -3770,25 +3770,25 @@
     },
     "12169121": {
       "fixtureId": "id1200308575151634",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "M. Kecmanovic",
       "p2": "J. Mensik",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T07:30:00.000Z",
       "tournamentId": 3085
     },
     "12169126": {
       "fixtureId": "id1200308575151680",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "M. Berrettini",
       "p2": "B. Nakashima",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169127": {
       "fixtureId": "id1200308575151630",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "A. Gea",
       "p2": "U. Humbert",
@@ -3797,7 +3797,7 @@
     },
     "12169128": {
       "fixtureId": "id1200308575151672",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "A. Mannarino",
       "p2": "F. Cobolli",
@@ -3806,7 +3806,7 @@
     },
     "12169133": {
       "fixtureId": "id1200308575151668",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "R. Sakamoto",
       "p2": "A. Rublev",
@@ -3815,65 +3815,65 @@
     },
     "12169134": {
       "fixtureId": "id1200308575151682",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "A. De Minaur",
       "p2": "A. Molcan",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T06:20:00.000Z",
       "tournamentId": 3085
     },
     "12169135": {
       "fixtureId": "id1200308575151678",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "A. Bublik",
       "p2": "T. Machac",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T07:30:00.000Z",
       "tournamentId": 3085
     },
     "12169185": {
       "fixtureId": "id1200308575151632",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "F. Cerundolo",
       "p2": "R. Safiullin",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T07:30:00.000Z",
       "tournamentId": 3085
     },
     "12169186": {
       "fixtureId": "id1200308575151626",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "Y. Hanfmann",
       "p2": "F. Tiafoe",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169210": {
       "fixtureId": "id1200308575151676",
-      "mappedAt": "2026-10-07T12:53:46Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "Q. Halys",
       "p2": "A. Blockx",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169238": {
       "fixtureId": "id1200308575151658",
-      "mappedAt": "2026-10-07T13:53:41Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "A. Zverev",
       "p2": "Y. Wu",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169254": {
       "fixtureId": "id1200308575391018",
-      "mappedAt": "2026-10-07T13:53:41Z",
+      "mappedAt": "2026-10-09T02:03:01Z",
       "orient": "same",
       "p1": "Y. Zhou",
       "p2": "L. Musetti",
-      "startTime": "2026-10-09T04:00:00.000Z",
+      "startTime": "2026-10-09T11:10:00.000Z",
       "tournamentId": 3085
     },
     "12169275": {
@@ -4074,31 +4074,20 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 21.5,
+      "measuredRunsPerDay": 21.4,
       "missResolutionHoursMax": 156.78,
       "missResolutionHoursP50": 37.86,
       "missResolutionsMeasured": 167,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.63,
-      "projectedTtlUnitsPerDay": 4.0,
+      "observedSpanDays": 18.67,
+      "projectedTtlUnitsPerDay": 3.9,
       "runs": 400,
       "spentRuns": 206,
-      "ttlBitRuns": 74,
-      "ttlBitShare": 0.185,
+      "ttlBitRuns": 73,
+      "ttlBitShare": 0.182,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-20T09:01:59Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 3,
-        "openMisses": 3,
-        "stale": 3,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 49
-      },
       {
         "at": "2026-09-20T10:02:17Z",
         "fixturesUnitsSpent": 1,
@@ -8487,9 +8476,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 33
+      },
+      {
+        "at": "2026-10-09T02:03:01Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 12,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 12,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 33
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-08T17:06:43Z"
+  "updatedAt": "2026-10-09T02:03:01Z"
 }
