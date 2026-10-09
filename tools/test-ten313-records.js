@@ -328,11 +328,12 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     });
   }
 
-  // ── N2 · the dashboard H2H built from tournament history skips a walkover (source) ──
-  // Mutation: delete `if (mt.walkover) return;` in the dashboard → red.
-  check('N2 dashboard H2H (tournament-history path): a walkover is not a meeting (source)', () => {
+  // ── N2 · the Head to Head page's meetings skip a walkover (source) ──
+  // TEN-402: the page's meetings now come from both players' career-history shards (the tournament-history path is gone);
+  // the walkover rule is one filter there, executed by test-ten402-b.mjs. Mutation: delete the filter → red.
+  check('N2 dashboard H2H (career-history path): a walkover is not a meeting (source)', () => {
     const h = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
-    assert.ok(/if \(mt\.res !== 'W' && mt\.res !== 'L'\) return;\s*\n\s*if \(mt\.walkover\) return;/.test(h));
+    assert.ok(/S\.woN = S\.rows\.filter\(r => r\.wo\)\.length;[^\n]*\n\s*S\.rows = S\.rows\.filter\(r => !r\.wo\);/.test(h));
   });
 
   // ── N3 · the modal's "ATP" badge, sliced from the shipped dashboard and EXECUTED ──

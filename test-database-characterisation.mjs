@@ -275,7 +275,7 @@ test('the Database module still exposes init(), whatever else it gains', () => {
   assert.match(DASH, /window\.DatabaseTab = \(function\(\)\{/);
   // TEN-401 r1: the old pattern (no extra members) matched window.EntryListsTab's `return { init: init };`, not the
   // Database module's — it went vacuous once the Database module gained instanceCount. Pinned to the Database line now.
-  assert.match(DASH, /return \{ (mount: mount, )?init: init(, instanceCount: function\(\)\{ return INSTANCES\.length; \})? \};/);
+  assert.match(DASH, /return \{ (mount: mount, )?init: init(, instanceCount: function\(\)\{ return INSTANCES\.length; \})?(, priceRows: priceRows)? \};/);   // TEN-402: + the price-join reader
   assert.match(DASH, /if \(tab === 'database'\) \{ if \(window\.DatabaseTab\) window\.DatabaseTab\.init\(\); \}/,
     'the standalone nav call site must keep working exactly as today');
 });

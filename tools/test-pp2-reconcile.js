@@ -3898,13 +3898,14 @@ check('the all-stores table covers every data store the module reads', () => {
   // host defined them, so each is asserted to be typeof-guarded at its call
   // site. Simply widening NOT_STORES would have let any future window.* through
   // the gate by being named plausibly.
-  // trProfileBacking (founder Q8, TEN-368): the page's Tournament-tab row join for the per-event Backing — logic, not data.
+  // trProfileBacking (founder Q8, TEN-368): the page's per-event Backing — logic, not data. trProfilePriceOf (TEN-402,
+  // founder 2026-10-08): the same model's per-row H / A on the Database join — logic over the page's loaded stores.
   // TEN-384: the §8.1 sheet's onPp2SheetOpen is gone with the sheet; the hand-off to the step-3 stats sheet
   // (pp2OpenMatchSheet / pp2CloseMatchSheet), the header's Elo (pp2EloFor, the Players card's pgEloFor), its
   // Next match (pp2NextMatchFor, today's fixture feed) and the avatar photo chain (photoCandidatesFor) are host
   // logic, not data stores. TEN-384 fx4: pp2LiveRank is the host's live-standings read (pp2LiveRankOf over
   // player-index.json) — the SAME function the Players card ranks with, so the header and the card agree.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking',
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
     'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank',
     // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
     'pp2ClosesOf', 'pp2CareerClose']);

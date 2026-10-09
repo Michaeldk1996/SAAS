@@ -5082,6 +5082,10 @@
       var esf = tournEditionSurface(t.name, e.year);
       var ms = (e.matches || []).map(function (m, i) {
         var x = j.enrich[ekey(e.year, t.name, m.opp)] || {};
+        // TEN-402 (founder 2026-10-08, one price join across the site): H / A = the page's per-event model row
+        // (trProfilePriceOf → trProfileModel: the Database join, Pinnacle closing else Bet365 closing, retirements
+        // settled on the ATP result) — the rows the Backing column and tile sum. Never the market shard's price.
+        var jp = typeof window.trProfilePriceOf === 'function' ? window.trProfilePriceOf(p.key, p.name, t, m) : null;
         var nm = normaliseEdition(m);
         var code = qualifyingCode(m.round) || roundOfN(m.round) || String(m.round || '');
         return {
@@ -5094,9 +5098,9 @@
           qualifying: !!qualifyingCode(m.round),
           date: x.date || null, surface: esf || x.surface || null,
           setScores: x.setScores || null,
-          price: x.price != null ? x.price : null,
-          oppPrice: x.oppPrice != null ? x.oppPrice : null,
-          book: x.book || null, sheetId: x.sheetId || null,
+          price: jp && jp.price != null ? jp.price : null,
+          oppPrice: jp && jp.price != null ? jp.oppPrice : null,
+          book: jp && jp.price != null ? jp.book : null, sheetId: x.sheetId || null,
           retired: !!x.retired, walkover: !!(m.walkover || x.walkover)
         };
       });
@@ -5145,12 +5149,13 @@
         Object.keys(votes).forEach(function (s) { if (votes[s] > best) { best = votes[s]; surf = s; } });
       }
       var bestYears = (t.bestYears || []).slice().sort(function (a, c) { return c - a; });
-      // BACKING (founder Q8, 2026-09-30): the Tournament tab's row-level join —
-      // each edition's matches joined to career-history and the closes shard, R8
-      // book order (Pinnacle, then Bet365), retirements settled at the close —
-      // computed by the page (trProfileBacking → trModelOf), so the profile and
-      // the tab print the same units and "vs market" for the same event. null =
-      // the stores have not answered yet (the column dashes, the tile says so).
+      // BACKING (founder ruling 2026-10-08, TEN-402 — supersedes Q8's closes join):
+      // each edition's main-draw matches joined to career-history and priced on the
+      // DATABASE join (Pinnacle closing, else Bet365 closing, per match; retirements
+      // settled on the official ATP result), flat 1u — computed by the page
+      // (trProfileBacking → trProfileModel), the same model the Head to Head
+      // Tournament card prints, so the two show one figure. null = the stores have
+      // not answered yet (the column dashes, the tile says so).
       var bk = typeof window.trProfileBacking === 'function' ? window.trProfileBacking(p.key, p.name, t) : null;
       return {
         name: t.name,

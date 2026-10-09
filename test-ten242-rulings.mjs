@@ -619,13 +619,18 @@ test('RULING: retirements are VOIDED, not settled, and the footnote says so', ()
   assert.ok(!/Retired/.test(m[1]),
     `RESULT_STANDS still settles retirements (${m[1].trim()}) — a book voids that market, so settling it prices a bet the reader could never have had`);
   assert.match(b, /const RETIRED = new Set\(\['Retired', 'Rrtired'\]\)/);
-  assert.match(b, /if \(RETIRED\.has\(comment\)\) \{ bucket\.retired\+\+; continue; \}/,
-    'retirements must be counted into their own bucket and skipped');
+  // TEN-402 (founder 2026-10-08): a retirement is still counted into its own bucket and kept OUT of the Database rows; the
+  // priced ones ride behind a flag (retRows) for the site's price join only, and leave the loop before rows.push.
+  assert.match(b, /const isRet = RETIRED\.has\(comment\);\n\s*if \(isRet\) bucket\.retired\+\+;/,
+    'retirements must be counted into their own bucket');
+  const retPath = b.slice(b.indexOf('    if (isRet) {'), b.indexOf('rows.push(['));
+  assert.match(retPath, /retRaw\.push\([\s\S]*?continue;\n    \}/, 'a retirement leaves the loop before it can reach rows.push (never a Database row)');
 
   // The store must actually carry the count, or the footnote has nothing to print.
   const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
   assert.ok(y.meta.exclusions.retired > 0,
     'meta.exclusions.retired is absent or zero — rebuild database-yield.json');
+  assert.equal(y.rows.length, y.meta.used, 'rows = the used (completed) rows only — the flagged retirements live in retRows');
   assert.ok(!/Retired/.test(JSON.stringify(y.meta.books || [])), 'sanity');
 
   // The footnote named walkovers and stayed silent on retirements, which reads

@@ -220,7 +220,10 @@ test('"Meetings ↓" scrolls to the list and keeps the filter (DF onOverall)', (
 test('no sample, no review switcher, no seeded data in the H2H block', () => {
   const h = build(nMeet(3, () => true));
   assert.ok(!/sample data/i.test(text(h)), 'no SAMPLE DATA chip or "Sample data." footnote');
-  assert.ok(!/h2State|h2RecBar|h2Pal|Paris Masters/.test(block()), 'no design review state or demo meeting in the page');
+  // TEN-402 r1 fix 2: the one-name table (SF_EVENT_NAMES) legitimately prints "Paris Masters" for the registry's Paris — it is
+  // the site's event name, not the design's demo meeting; the guard reads the block without that table.
+  const noNames = block().replace(/\nconst SF_EVENT_NAMES = \{[\s\S]*?\n\};/, '');
+  assert.ok(!/h2State|h2RecBar|h2Pal|Paris Masters/.test(noNames), 'no design review state or demo meeting in the page');
 });
 
 // Founder Q4 (2026-09-30): no meeting → "{A} and {B} have no meeting on record." plus what was searched; the design's

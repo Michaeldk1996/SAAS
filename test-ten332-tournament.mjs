@@ -46,6 +46,7 @@ const S = new Function('window', `
   function openPlayerProfileFromMatch(){} function aGoTab(){}
   let _aM = null; const _aBuilt = new Set(); function aBuilt(){ return false; } function aPaint(){}
   const _careerHistoryShards = {};
+  const _tourHistShards = {};
   let tourxMarketData = null; function tourxFetchMarket(){ return Promise.resolve(tourxMarketData); }
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
   ${PS_TOUR_META_SRC}
@@ -56,8 +57,10 @@ const S = new Function('window', `
      'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
   return { buildTournamentSection, trModelFor, trStateFor, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
-    chShards: _careerHistoryShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
-    get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED };
+    chShards: _careerHistoryShards, thShards: _tourHistShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
+    get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED,
+    // TEN-402 (founder 2026-10-08): the page-wide Database join rows (sfDbJoinLoad's state), set by the tests
+    set dbJoin(v){ _sfDbJoin = v; _sfDbJoinSt = v ? 'ready' : null; _sfDbJoinP = null; }, set dbJoinSt(v){ _sfDbJoinSt = v; } };
 `)(globalThis);
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
@@ -276,23 +279,49 @@ test('DoD 8: maMatchRowsHtml rows, every row registered in the one sheet map and
   assert.ok(!/\.atourn-/.test(html), 'the tab\'s own CSS is deleted');
 });
 
-// Founder Q8 (2026-09-30): the player-profile per-event Backing (column + "Backing him here" tile) is THIS tab's row-level
-// join — the editions' main-draw matches joined to career-history and the closes shard, R8, retirements at the close —
-// through the page's trProfileBacking, never the market-edge shard's own attribution. The profile module runs for real
-// (player-profile-v2.js, TEN332_PP2) against the page's real join. Mutation 'Q8: the profile reads the market-edge shard'.
+// TEN-402 · founder ruling 2026-10-08 (card 01102d24; supersedes Q8's closes join for the profile): the player-profile
+// per-event Backing (column + "Backing him here" tile) and its rows' H / A are the DATABASE join — database-yield.json rows
+// plus the retirements behind its flag, Pinnacle closing, else Bet365 closing, per match, through the Head to Head page's
+// own h2hPriceJoin (H2HPage.priceJoin, sliced and executed here), a retirement settled on the official ATP result — never
+// the closes shard (the Match analysis tab keeps those) and never the market-edge shard. The profile module runs for real
+// (player-profile-v2.js, TEN332_PP2) against the page's real model. Mutations: 'Q8: the profile reads the market-edge
+// shard', 'TEN-402: the profile back on the closes join', 'TEN-402: the flagged retirements dropped'.
 const PPW = { FEATURE_PP2: true, playerProfiles: { players: {} }, marketEdge: {}, careerHistory: {}, MarketEdgeCore: globalThis.MarketEdgeCore,
-  get trProfileBacking(){ return globalThis.trProfileBacking; } };
+  get trProfileBacking(){ return globalThis.trProfileBacking; }, get trProfilePriceOf(){ return globalThis.trProfilePriceOf; } };
 new Function('window', pp2)(PPW);
-test('Q8: the profile prints the tab\'s Backing — the same units and "vs market" from the same rows, never the market-edge shard', () => {
+// THE join, sliced from the Head to Head page (as test-ten402-b runs it) and published where the page publishes it
+const JOIN_CONSTS = ['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK']
+  .map(n => { const x = new RegExp(`^\\s*const ${n} = [^\\n]*$`, 'm').exec(html); assert.ok(x, n); return x[0].replace(/\/\/[^'\n]*$/, ''); }).join('\n');
+globalThis.H2HPage = { priceJoin: new Function(`const FH_DASHC = '—';\n${JOIN_CONSTS}\n${['fhDayNum', 'fhIsInitial', 'fhNameKey', 'psRoundAbbr', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin'].map(slice).join('\n')}\nreturn h2hPriceJoin;`)() };
+const dbPriceJoinRows = new Function(`${slice('dbPriceJoinRows')}\nreturn dbPriceJoinRows;`)();
+// The Database store for one fixture: games → [date, lvl, surf, rnd, tour, fav, dog, favWon, book] + archive names
+// ("Surname I."), each at the price given (px: [own, opp], book 0 = Pinnacle / 1 = Bet365); ret → the flagged retRows.
+const TD_RD = { 'Final': 'The Final', 'Semi-finals': 'Semifinals', 'Quarter-finals': 'Quarterfinals', '1/8-finals': '3rd Round', '1/16-finals': '2nd Round', '1/32-finals': '1st Round' };
+function dbStore(games, priceOf) {
+  const rounds = [...new Set(Object.values(TD_RD))], base = { meta: { rounds, tournaments: ['Washington'] }, rows: [], retRows: [] }, nm = { names: [], retNames: [] };
+  const arch = n => { const [i, ...sur] = String(n).split(' '); return sur.join(' ') + ' ' + i; };
+  games.forEach(g => { const q = priceOf(g); if (!q) return;
+    const own = q.px[0], opp = q.px[1], favWon = (g[3] ? own : opp) < (g[3] ? opp : own) ? 1 : 0;
+    const row = [+g[0].replace(/-/g, ''), 0, 0, rounds.indexOf(TD_RD[g[2]]), 0, Math.min(own, opp), Math.max(own, opp), favWon, q.book || 0];
+    const names = g[3] ? ['Sinner J.', arch(g[1])] : [arch(g[1]), 'Sinner J.'];
+    if (q.ret) { base.retRows.push(row); nm.retNames.push(names); } else { base.rows.push(row); nm.names.push(names); } });
+  return { base, nm };
+}
+test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Database join (retirements settled on the ATP result) — never the closes shard, never the market-edge shard', () => {
   const games = [['2024-07-21', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }], ['2024-07-20', 'C. D', 'Semi-finals', false, L2, { p: [2.0, 1.85] }],
     ['2024-07-19', 'E. F', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }], ['2024-07-18', 'G. H', '1/8-finals', true, W2, { b: [1.4, 2.9] }],
     ['2024-07-17', 'I. J', '1/16-finals', true, W2, { p: [1.3, 3.5] }], ['2024-07-16', 'K. L', '1/32-finals', true, W2, { p: [2.5, 1.55] }]];
   const m = fixture([ed(2024, games)]);
   const d = S.tr.data[0];
   S.chShards['1'] = d.ch; S.fhCl['1'] = d.cl;
+  // the Match analysis tab is unchanged: its own closes join (+2.5u)
   const tb = tile(S.buildTournamentSection(m), 'Backing');
-  const tabU = /class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], tabVm = />([+−]\d+\.\dpt vs market)</.exec(tb)[1];
-  assert.equal(tabU, '+2.5u');
+  assert.equal(/class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], '+2.5u', 'the tab keeps the closes shard');
+  // the Database prices differ from the closes: F 1.60, QF 1.90, R16 1.50 (Bet365), R32 1.30 a RETIREMENT (flagged), R64 2.40
+  const DBPX = { 'A. B': { px: [1.6, 2.4] }, 'C. D': { px: [2.1, 1.75] }, 'E. F': { px: [1.9, 1.95] }, 'G. H': { px: [1.5, 2.7], book: 1 },
+    'I. J': { px: [1.3, 3.5], ret: true }, 'K. L': { px: [2.4, 1.6] } };
+  const st = dbStore(games, g => DBPX[g[1]]);
+  S.dbJoin = dbPriceJoinRows(st.base, st.nm);
   // the profile's own store: draw order, a qualifying round and a walkover the tab's history never carries (N7, N2)
   const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32', '1/32-finals': 'R64' };
   const matches = games.slice().reverse().map(g => ({ res: g[3] ? 'W' : 'L', round: R[g[2]], opp: g[1], oppKey: null, score: g[3] ? '2 - 0' : '0 - 2' }));
@@ -301,29 +330,43 @@ test('Q8: the profile prints the tab\'s Backing — the same units and "vs marke
       { res: 'W', round: 'R128', opp: 'W. Over', oppKey: null, score: '0 - 0', walkover: true }].concat(matches) }] }] };
   PPW.playerProfiles.players['1'] = prof;
   // the market-edge shard attributes other P&L to the same matches (+5u each) — the retired source must not reach the tile
-  PPW.marketEdge['1'] = { matches: games.map(g => ({ date: g[0], opp: g[1], event: 'Washington', inBasis: true, pl: 5, book: 'pinnacle', surface: 'hard' })) };
+  PPW.marketEdge['1'] = { matches: games.map(g => ({ date: g[0], opp: g[1], event: 'Washington', inBasis: true, pl: 5, price: 9.99, oppPrice: 1.01, book: 'pinnacle', surface: 'hard' })) };
   const I = PPW.PlayerProfileV2._internals;
   const v = I.tournViews(prof).find(x => x.name === 'Washington');
-  assert.equal(v.pinN, 6, 'the six priced main-draw rows — the qualifier and the walkover are not rows');
-  assert.equal(v.pinTxt, tabU); assert.equal(v.vmTxt, tabVm);
+  // flat 1u: +0.60 −1 +0.90 +0.50 +0.30 (the retirement, won → settled at 1.30) +1.40 = +2.70u over 6 priced
+  assert.equal(v.pinN, 6, 'the six main-draw rows, the flagged retirement included — the qualifier and the walkover are not rows');
+  assert.equal(v.pinTxt, '+2.7u');
   const det = text(I.renderTournDetail(prof, v));
-  assert.ok(det.includes('Backing him here ' + tabU + ' ' + tabVm), det.slice(det.indexOf('Backing him here'), det.indexOf('Backing him here') + 60));
-  assert.ok(text(I.renderTournModal(prof)).includes(tabU), 'the Record per tournament column prints the same units');
-  // before the closes answer: a dash and "loading prices" — never the market shard's +30.0u
-  delete S.fhCl['1'];
+  assert.ok(det.includes('Backing him here +2.7u'), det.slice(det.indexOf('Backing him here'), det.indexOf('Backing him here') + 60));
+  assert.ok(text(I.renderTournModal(prof)).includes('+2.7u'), 'the Record per tournament column prints the same units');
+  // the rows' H / A are the same join: the final at 1.60 / 2.40, the retirement 1.30 / 3.50, R16 the Bet365 1.50 / 2.70
+  const hx = (h, o) => { const x = new RegExp(o.replace('.', '\\.') + ' (?:F|SF|QF|R16|R32|R64) \\d - \\d — (\\d+\\.\\d\\d) (\\d+\\.\\d\\d)').exec(h); return x ? x[1] + ' / ' + x[2] : '—'; };
+  assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L', 'Q. Qual'].map(o => hx(det, o)), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70', '2.40 / 1.60', '—'],
+    'the detail rows\' H / A = the Database join (the retirement too); the qualifier has none');
+  // control: the Database rows alone (the retirement voided) → 5 priced, +2.4u; the flag is what settles it
+  S.dbJoin = dbPriceJoinRows(Object.assign({}, st.base, { retRows: [] }), Object.assign({}, st.nm, { retNames: [] }));
+  const c = I.tournViews(prof).find(x => x.name === 'Washington');
+  assert.deepEqual([c.pinN, c.pinTxt], [5, '+2.4u']);
+  // before the Database rows answer: a dash and "loading prices" — never the closes' +2.5u nor the market shard's +30.0u
+  const savedTab = globalThis.DatabaseTab;
+  globalThis.DatabaseTab = { priceRows: () => new Promise(() => {}) };
+  S.dbJoin = null;
   const w = I.tournViews(prof).find(x => x.name === 'Washington');
   assert.equal(w.pinPl, null); assert.ok(w.backingPending);
   assert.ok(text(I.renderTournDetail(prof, w)).includes('Backing him here — loading prices'));
+  const wd = text(I.renderTournDetail(prof, w));
+  assert.ok(!/9\.99|1\.50 2\.60|2\.40 1\.60/.test(wd), 'no closes / shard price while pending');
   // a failed load: the tab's words, "prices unavailable" — never "loading" forever
-  S.profileFail.add('1');
+  S.dbJoinSt = 'failed';
   assert.ok(text(I.renderTournDetail(prof, I.tournViews(prof).find(x => x.name === 'Washington'))).includes('Backing him here — prices unavailable'));
-  S.profileFail.delete('1');
-  delete S.chShards['1'];
+  globalThis.DatabaseTab = savedTab;
+  S.dbJoin = null;
+  delete S.chShards['1']; delete S.fhCl['1'];
 });
 
 // Q8, the edges a join without event keys meets (review of TEN-368): the profile's edition rows carry no event key and no
-// date, so each is resolved to its career-history row first. Mutations 'Q8: two meetings in one edition left unresolved',
-// 'Q8: the voted event-name aliases dropped'.
+// date, so each is resolved to its career-history row first, then priced on the Database join. Mutations 'Q8: two
+// meetings in one edition left unresolved', 'Q8: the voted event-name aliases dropped'.
 test('Q8: two meetings with one opponent in an edition resolve by round; a profile event name the store spells differently joins by vote', () => {
   const games = [['2024-11-17', 'A. B', 'Final', true, W2, { p: [2.5, 1.55] }], ['2024-11-15', 'C. D', 'Semi-finals', true, W2, { p: [1.5, 2.6] }],
     ['2024-11-12', 'A. B', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }], ['2024-11-10', 'E. F', '1/8-finals', false, L2, { p: [1.3, 3.5] }],
@@ -331,17 +374,26 @@ test('Q8: two meetings with one opponent in an edition resolve by round; a profi
   const m = fixture([ed(2024, games)]);
   const d = S.tr.data[0];
   S.chShards['1'] = d.ch; S.fhCl['1'] = d.cl;
+  // the Database carries the same closes here, so the profile prints the tab's figure: 1.5 + 0.5 + 0.8 − 1 + 0.4
+  const st = dbStore(games, g => (g[5].p ? { px: g[5].p } : { px: g[5].b, book: 1 }));
+  S.dbJoin = dbPriceJoinRows(st.base, st.nm);
   const tb = tile(S.buildTournamentSection(m), 'Backing');
-  const tabU = /class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], tabVm = />([+−]\d+\.\dpt vs market)</.exec(tb)[1];
+  const tabU = /class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1];
   assert.equal(tabU, '+2.2u', 'A. B twice (QF and F): both priced by the tab, by event key (1.5 + 0.5 + 0.8 − 1 + 0.4)');
   const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32' };
   const row = g => ({ res: g[3] ? 'W' : 'L', round: R[g[2]], opp: g[1], oppKey: null, score: g[3] ? '2 - 0' : '0 - 2' });
   // the profile's store names the event "Citi DC Open"; career-history says "Washington" — the unambiguous rows vote the alias
   const prof = { key: '1', name: 'J. Sinner', tournamentHistory: [{ name: 'Citi DC Open', won: 4, lost: 1, editions: [{ year: 2024, matches: games.slice().reverse().map(row) }] }] };
-  PPW.playerProfiles.players['1'] = prof; S.profiles['1'] = prof; PPW.marketEdge['1'] = { matches: [] };
+  // TEN-402: the Head to Head page holds the list in the tournament-history shard cache, not on the profile record —
+  // the vote reads it there too (Zverev, Roland Garros 2016–2021 resolved on the profile but not on the H2H card)
+  PPW.playerProfiles.players['1'] = prof; S.thShards['1'] = prof.tournamentHistory; PPW.marketEdge['1'] = { matches: [] };
+  const v0 = PPW.PlayerProfileV2._internals.tournViews(prof)[0];
+  assert.equal(v0.pinN, 5, 'the shard cache alone: the renamed event still joins by the voted alias');
+  delete S.thShards['1']; S.profiles['1'] = prof;
   const v = PPW.PlayerProfileV2._internals.tournViews(prof)[0];
   assert.equal(v.pinN, 5, 'every row resolved: the two A. B meetings by round, the renamed event by the voted alias');
-  assert.equal(v.pinTxt, tabU); assert.equal(v.vmTxt, tabVm);
+  assert.equal(v.pinTxt, tabU);
+  S.dbJoin = null;
   delete S.chShards['1']; delete S.fhCl['1']; delete S.profiles['1'];
 });
 

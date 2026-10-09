@@ -89,6 +89,36 @@
 //
 // Guard: window.FEATURE_TRADING_REPORT must be truthy.
 
+// Country full name → IOC 3-letter code (ESP, ITA, MON, NED), shared by the Trading report's mono country line and the
+// Head to Head page's country tags (TEN-402 r1 fix 4). It sits OUTSIDE the report's feature-flag guard so the H2H page
+// has it with the report off. Covers every country on the player-profile roster plus the wider tennis set; an unmapped
+// name (e.g. "World", a neutral athlete) has no code — callers print the em dash, never a guess.
+window.SfCountryIoc = (function () {
+  var NAME2IOC = {
+    'Argentina':'ARG','Australia':'AUS','Austria':'AUT','Belarus':'BLR','Belgium':'BEL',
+    'Bolivia':'BOL','Bosnia and Herzegovina':'BIH','Brazil':'BRA','Bulgaria':'BUL',
+    'Canada':'CAN','Chile':'CHI','China':'CHN','Chinese Taipei':'TPE','Colombia':'COL',
+    'Croatia':'CRO','Cyprus':'CYP','Czechia':'CZE','Czech Republic':'CZE','Denmark':'DEN',
+    'Dominican Republic':'DOM','Ecuador':'ECU','Egypt':'EGY','Estonia':'EST','Finland':'FIN',
+    'France':'FRA','Georgia':'GEO','Germany':'GER','Great Britain':'GBR','United Kingdom':'GBR',
+    'Greece':'GRE','Hong Kong':'HKG','Hungary':'HUN','Iceland':'ISL','India':'IND','Indonesia':'INA',
+    'Iran':'IRI','Ireland':'IRL','Israel':'ISR','Italy':'ITA','Japan':'JPN','Jordan':'JOR',
+    'Kazakhstan':'KAZ','Korea':'KOR','South Korea':'KOR','Kosovo':'KOS','Kuwait':'KUW',
+    'Latvia':'LAT','Lebanon':'LBN','Lithuania':'LTU','Luxembourg':'LUX','Mexico':'MEX',
+    'Moldova':'MDA','Monaco':'MON','Montenegro':'MNE','Morocco':'MAR','Netherlands':'NED',
+    'New Zealand':'NZL','North Macedonia':'MKD','Norway':'NOR','Paraguay':'PAR','Peru':'PER',
+    'Philippines':'PHI','Poland':'POL','Portugal':'POR','Qatar':'QAT','Romania':'ROU',
+    'Russia':'RUS','Saudi Arabia':'KSA','Serbia':'SRB','Slovakia':'SVK','Slovenia':'SLO',
+    'South Africa':'RSA','Spain':'ESP','Sweden':'SWE','Switzerland':'SUI','Taiwan':'TPE',
+    'Thailand':'THA','Tunisia':'TUN','Turkey':'TUR','Türkiye':'TUR','Ukraine':'UKR',
+    'United States':'USA','USA':'USA','Uruguay':'URU','Uzbekistan':'UZB','Venezuela':'VEN',
+    'Zimbabwe':'ZIM',
+    // TEN-402 r1: the remaining countries on the player-profile roster (Head to Head country tags)
+    'Barbados':'BAR','El Salvador':'ESA','Namibia':'NAM','Pakistan':'PAK','United Arab Emirates':'UAE',
+  };
+  return { NAME2IOC: NAME2IOC, of: function (country) { return (country && NAME2IOC[country]) || null; } };
+})();
+
 (function () {
   'use strict';
 
@@ -203,29 +233,9 @@
   var INVERTED = { oph: 1, bfsg: 1, babb: 1, bbk: 1 };
   function isInv(mk) { return !!INVERTED[mk]; }
 
-  // Country full name → IOC 3-letter code, for the export's mono country line.
-  // Covers every country present in the index `meta` plus the wider tennis set. An
-  // unmapped country renders the em dash rather than a wrong code (never guess).
-  var NAME2IOC = {
-    'Argentina':'ARG','Australia':'AUS','Austria':'AUT','Belarus':'BLR','Belgium':'BEL',
-    'Bolivia':'BOL','Bosnia and Herzegovina':'BIH','Brazil':'BRA','Bulgaria':'BUL',
-    'Canada':'CAN','Chile':'CHI','China':'CHN','Chinese Taipei':'TPE','Colombia':'COL',
-    'Croatia':'CRO','Cyprus':'CYP','Czechia':'CZE','Czech Republic':'CZE','Denmark':'DEN',
-    'Dominican Republic':'DOM','Ecuador':'ECU','Egypt':'EGY','Estonia':'EST','Finland':'FIN',
-    'France':'FRA','Georgia':'GEO','Germany':'GER','Great Britain':'GBR','United Kingdom':'GBR',
-    'Greece':'GRE','Hong Kong':'HKG','Hungary':'HUN','Iceland':'ISL','India':'IND','Indonesia':'INA',
-    'Iran':'IRI','Ireland':'IRL','Israel':'ISR','Italy':'ITA','Japan':'JPN','Jordan':'JOR',
-    'Kazakhstan':'KAZ','Korea':'KOR','South Korea':'KOR','Kosovo':'KOS','Kuwait':'KUW',
-    'Latvia':'LAT','Lebanon':'LBN','Lithuania':'LTU','Luxembourg':'LUX','Mexico':'MEX',
-    'Moldova':'MDA','Monaco':'MON','Montenegro':'MNE','Morocco':'MAR','Netherlands':'NED',
-    'New Zealand':'NZL','North Macedonia':'MKD','Norway':'NOR','Paraguay':'PAR','Peru':'PER',
-    'Philippines':'PHI','Poland':'POL','Portugal':'POR','Qatar':'QAT','Romania':'ROU',
-    'Russia':'RUS','Saudi Arabia':'KSA','Serbia':'SRB','Slovakia':'SVK','Slovenia':'SLO',
-    'South Africa':'RSA','Spain':'ESP','Sweden':'SWE','Switzerland':'SUI','Taiwan':'TPE',
-    'Thailand':'THA','Tunisia':'TUN','Turkey':'TUR','Türkiye':'TUR','Ukraine':'UKR',
-    'United States':'USA','USA':'USA','Uruguay':'URU','Uzbekistan':'UZB','Venezuela':'VEN',
-    'Zimbabwe':'ZIM',
-  };
+  // Country full name → IOC 3-letter code, for the export's mono country line: the shared table (window.SfCountryIoc,
+  // above the feature-flag guard). An unmapped country renders the em dash rather than a wrong code (never guess).
+  var NAME2IOC = window.SfCountryIoc.NAME2IOC;
   function iocOf(country) { return (country && NAME2IOC[country]) || null; }
 
   // ─── state (README §"State") ────────────────────────────────────────────────

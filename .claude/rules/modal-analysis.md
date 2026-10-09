@@ -186,8 +186,8 @@ this file wins.
 ## Defaults and scope (N1, N5, N7, N8, N9, N10)
 - **N1:** H2H opens on **All** surfaces; Form opens on **today's surface**.
 - **N5:** Tournament **Backing** uses the R8 order (Pinnacle, then Bet365; `FH_BOOK_ORDER`). The player-profile
-  per-event Backing reads the same rows (founder Q8, see Tournament tab). **Test:** the two show the same units and
-  "vs market" for the same player and event.
+  per-event Backing no longer reads these rows: it is on the Database join since the founder ruling of 2026-10-08 (see
+  "One row source for Backing" below).
 - **N6:** Tournament / profile edition lists show **only editions the player actually entered**. No edition header is
   synthesised from a gap year (the old `withdrew` fill in `bsp-pipeline.js` minted "Withdrawal" for editions never
   held). **Test:** a player with editions 2019 and 2022 shows no 2020/2021 header.
@@ -230,17 +230,15 @@ this file wins.
 - **Seven-season trend:** the axis is 2020–2026 as drawn; only seasons the sheet holds (2023–25) get a dot and a value, the
   rest a dash; a hole breaks the line; the delta states the real span. Roland Garros speed and altitude dash with the
   TEN-321 note until its key lands.
-- **One row source for Backing (founder Q8, 2026-09-30):** the player-profile per-event Backing (the Record per
-  tournament column and the "Backing him here" tile, units and "vs market") is the tab's row-level join — each
-  edition's main-draw matches (walkovers out) joined to career-history and the closes shard, R8, retirements settled at
-  the close — computed by the page's `trProfileBacking` → `trModelOf`, never the market-edge shard's attribution.
-  The profile's edition rows carry no event key or date, so each is first resolved to its one career-history row (season +
-  opponent + result + this event's names, the archive names and the names this player's unambiguous rows vote for it; the
-  round breaks a tie) and then joined by that row's key, as the tab joins. A row with no single match stays unpriced, never
-  guessed (known limit: the tab can still price a row career-history lacks, by its date; the profile store has none). A
-  failed load reads "prices unavailable", as on the tab.
-  **Test:** `test-ten332-tournament.mjs` "Q8" (the profile prints the tab's units and "vs market"; mutation: the
-  profile reads the market-edge shard's attribution) + `tools/test-ten332-mutants.js`.
+- **Per-event Backing on the player profile = the Database join, not this tab (founder ruling 2026-10-08, TEN-402 card
+  01102d24; supersedes Q8, 2026-09-30).** The Record per tournament column, the "Backing him here" tile and the edition
+  rows' H / A price each main-draw match (walkovers and qualifying out) on the one site-wide join — `database-yield.json`
+  rows plus its flagged retirements, Pinnacle closing else Bet365 closing, retirements settled on the official ATP result
+  (`trProfileModel` → `trDbJoinPx` → `H2HPage.priceJoin`), the same model the Head to Head Tournament card prints. The
+  profile's edition rows are still resolved to career-history first (season + opponent + result + this event's names, the
+  archive names and voted aliases; the round breaks a tie); a row with no single match stays unpriced. This tab keeps its
+  own R8 closes join (`trModelFor`), so the profile and this tab may differ for an event — not re-ruled.
+  **Test:** `test-ten332-tournament.mjs` "ruling 2026-10-08" + "Q8: two meetings …", `tools/test-ten332-mutants.js`.
 
 ## Retirements in price figures (founder 2026-09-28, TEN-312 option A)
 - **An in-match retirement settles at the listed closing price, everywhere**: Form (flat 1u, v market, medians), H2H

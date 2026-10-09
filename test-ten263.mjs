@@ -781,23 +781,33 @@ test('pipeline H2H: a finished board match never appears in its own H2H record',
 test('H2H page: meetings are keyed and won by player key, never short name (ruling 2026-09-24)', () => {
   assert.match(html, /H2H2\[ka \+ '\|' \+ kb\] = \{/, 'today\'s meetings keyed by the two player keys');
   assert.match(html, /mt\.p1Won \? ka : kb,/, 'fixture meeting winner stored as a key');
-  assert.match(html, /String\(aWon \? a\.key : b\.key\),/, 'history meeting winner stored as a key');
-  assert.match(html, /const key = \[a\.key, b\.key\]\.join\('\|'\), rkey = \[b\.key, a\.key\]\.join\('\|'\);/, 'lookup by key pair');
-  assert.match(html, /if \(r\[5\] === aK\) aw\+\+; else if \(r\[5\] === bK\) bw\+\+;/, 'record counted by key');
+  // TEN-402: the page's record reads both players' career-history files (one per PLAYER KEY), joined in h2hJoinMeetings;
+  // each row is oriented to player A by key and the record counts the rows A won (executed in test-ten402-b.mjs).
+  assert.match(html, /const k = a\.key \+ '\|' \+ b\.key;/, 'the pair is held by key');
+  assert.match(html, /Promise\.all\(\[ch\(a\.key\), ch\(b\.key\)\]\)/, 'each side read from its own key file');
+  assert.match(html, /const F = h\.F, n = F\.length, aw = F\.filter\(r => r\.won\)\.length, bw = n - aw;/, 'record counted on the A-oriented rows');
   assert.doesNotMatch(html, /r\[5\] === a\.short|m\[5\] === a\.short|H2H2\[sa \+/, 'control: no short-name winner or key remains');
 });
 // Fix 1 (TEN-263 follow-up): the H2H page roster is keyed by PLAYER KEY. Two profiles
 // sharing a short name ("Z. Zhang" = Zhizhen 590 and Ze Zhang) are both listed, both
 // selectable, told apart in the list, and each shows only its own meetings. Executed.
+// TEN-402 r1 fix 4: the page's country tags read the site's one name → IOC table (window.SfCountryIoc), evaluated from
+// trading-report.js itself (the block above the report's feature-flag guard), never a copy.
+const SF_COUNTRY_IOC = (() => {
+  const tr = readFileSync(new URL('./trading-report.js', import.meta.url), 'utf8');
+  const a = tr.indexOf('window.SfCountryIoc = (function () {'), b = tr.indexOf('})();', a);
+  assert.ok(a > 0 && b > a, 'window.SfCountryIoc not found in trading-report.js');
+  const w = {}; new Function('window', tr.slice(a, b + 5))(w); return w.SfCountryIoc;
+})();
 function h2hPageModule(profiles, board) {
-  return new Function('profiles', 'board', `
+  return new Function('profiles', 'board', 'window', `
     let P = {}, ROSTER = [], NK_COUNT = {};
     const DV = n => n === 'playerProfiles' ? profiles : n === 'matches' ? board : null;
     const fn = () => null; const H2H_ROUND = {};
-    ${['shortOf', 'monoOf', 'h2hNameKey', 'buildH2HData', 'results', 'pickerTag', 'h2hFromHist'].map(slice).join('\n')}
+    ${['shortOf', 'monoOf', 'h2hIoc', 'h2hNameKey', 'buildH2HData', 'results', 'pickerTag'].map(slice).join('\n')}
     const d = buildH2HData(); P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {};
-    return { P, ROSTER, H2H: d.H2H, results, pickerTag, h2hFromHist };
-  `)(profiles, board);
+    return { P, ROSTER, H2H: d.H2H, NK: NK_COUNT, results, pickerTag };
+  `)(profiles, board, { SfCountryIoc: SF_COUNTRY_IOC });
 }
 test('H2H page: two players with the same short name are both on the roster, selectable, distinct, each with his own meetings', () => {
   const profiles = {
@@ -818,7 +828,7 @@ test('H2H page: two players with the same short name are both on the roster, sel
   assert.deepEqual(M.results('Z. Zhang', '590'), ['36963'], 'the other side can pick the second Zhang');
   const tags = hits.map(M.pickerTag);
   assert.notEqual(tags[0], tags[1], 'the two list rows are told apart');
-  assert.match(M.pickerTag('590'), /age 29/); assert.equal(M.pickerTag('7'), 'Spain · #2', 'control: a unique name adds nothing');
+  assert.match(M.pickerTag('590'), /age 29/); assert.equal(M.pickerTag('7'), 'ESP · #2', 'control: a unique name adds nothing (country as its IOC code, TEN-402 r1)');
   // each Zhang's own meetings with Alcaraz, by key pair (renderVals looks up key|key both ways)
   const own = (a, b) => (M.H2H[a + '|' + b] || M.H2H[b + '|' + a] || { meetings: [] }).meetings.flatMap(y => y[1]).map(r => r[6]).sort();
   assert.deepEqual(own('590', '7'), [111]);
@@ -826,37 +836,14 @@ test('H2H page: two players with the same short name are both on the roster, sel
   // winners stored as keys
   assert.deepEqual(M.H2H['36963|7'].meetings.flatMap(y => y[1]).map(r => r[5]), ['36963', '7']);
 });
-test('H2H page: the pre-2021 surname+initial fallback never credits a meeting when two roster players share the name', () => {
-  const hist = [{ name: 'Old Open', editions: [{ year: 2019, matches: [{ oppKey: '', opp: 'Zhizhen Zhang', res: 'W', round: 'R32', score: '2 - 0' }] }] }];
+// TEN-402: the page's meetings come from both players' career-history files (h2hJoinMeetings), not tournamentHistory.
+// The two rulings these tests carried — a namesake is never credited from one side, and a finished board match between
+// the pair never counts — are executed on the new join in test-ten402-b.mjs ("a namesake is never credited", "own board
+// match out"). The roster still counts namesakes for it:
+test('H2H page: the roster counts each surname + initial, so the join can refuse a one-sided namesake', () => {
   const two = h2hPageModule({ 590: { name: 'Z. Zhang' }, 36963: { name: 'Z. Zhang' }, 7: { name: 'C. Alcaraz' } }, []);
-  const a = Object.assign({}, two.P['7'], { tourHist: hist });
-  assert.equal(two.h2hFromHist(a, Object.assign({}, two.P['36963'], { tourHist: [] })), null, 'ambiguous name: no meeting credited to Ze Zhang');
-  assert.equal(two.h2hFromHist(a, Object.assign({}, two.P['590'], { tourHist: [] })), null, '… nor to Zhizhen');
-  const one = h2hPageModule({ 590: { name: 'Z. Zhang' }, 7: { name: 'C. Alcaraz' } }, []);
-  const r = one.h2hFromHist(Object.assign({}, one.P['7'], { tourHist: hist }), Object.assign({}, one.P['590'], { tourHist: [] }));
-  assert.equal(r && r.a, 1, 'control: a unique name still recovers the pre-2021 meeting');
-});
-test('H2H page: the career-history blend drops a finished board match between the pair (never in its own H2H), executed', () => {
-  const src = slice('h2hNameKey') + '\n' + slice('h2hFromHist');
-  const run = (board, histA) => new Function('DV', 'H2H_ROUND', src + '\nreturn h2hFromHist;')(k => (k === 'matches' ? board : null), {})(
-    { key: '1', short: 'A. One', full: 'Al One', tourHist: histA }, { key: '2', short: 'B. Two', full: 'Bo Two', tourHist: [] });
-  const ed = (name, year, round, res) => ({ name, editions: [{ year, matches: [{ oppKey: '2', opp: 'B. Two', res, round, score: '2 - 0' }] }] });
-  const hist = [ed('Chengdu', 2026, 'R32', 'W'), ed('Davis Cup WG2 R1: THA vs DEN', 2026, 'RR', 'L'), ed('Belgrade', 2021, 'R16', 'W'), ed('Chengdu', 2024, 'QF', 'L')];
-  const fin = (tour, date, p1Key = 1, p2Key = 2) => ({ id: 'past-9', finalScore: '6-4 6-4', p1Key, p2Key, tour, date });
-  // Nothing finished on the board: all four history meetings count.
-  assert.equal(run([], hist).meetings.flatMap(y => y[1]).length, 4);
-  // Today's finished Chengdu match (either orientation) is dropped; the 2024 Chengdu meeting survives.
-  for (const b of [[fin('ATP Chengdu', '2026-09-23')], [fin('ATP Chengdu', '2026-09-23', 2, 1)]]) {
-    const r = run(b, hist); const rows = r.meetings.flatMap(y => y[1]);
-    assert.equal(rows.length, 3); assert.ok(!r.meetings.some(y => y[0] === '2026' && y[1].some(x => x[1] === 'Chengdu')), 'today\'s Chengdu row gone');
-    assert.ok(r.meetings.some(y => y[0] === '2024'), 'the earlier Chengdu meeting survives');
-  }
-  // A Davis Cup tie: board and history name the stage differently.
-  assert.equal(run([fin('ATP ATP Davis Cup - World Group II', '2026-09-20')], hist).meetings.flatMap(y => y[1]).length, 3, 'Davis Cup tie dropped');
-  // Controls: a finished match between OTHER keys, an unfinished board match, and "Belgrade 2" v a Belgrade meeting drop nothing.
-  assert.equal(run([fin('ATP Chengdu', '2026-09-23', 1, 3)], hist).meetings.flatMap(y => y[1]).length, 4, 'other pair');
-  assert.equal(run([Object.assign(fin('ATP Chengdu', '2026-09-23'), { finalScore: null })], hist).meetings.flatMap(y => y[1]).length, 4, 'not finished');
-  assert.equal(run([fin('ATP Belgrade 2', '2021-05-25')], hist).meetings.flatMap(y => y[1]).length, 4, 'Belgrade 2 is not Belgrade');
+  assert.equal(two.NK['zhang|z'], 2);
+  assert.equal(h2hPageModule({ 590: { name: 'Z. Zhang' }, 7: { name: 'C. Alcaraz' } }, []).NK['zhang|z'], 1, 'control: a unique name');
 });
 test('card / Key factors: a record with Challenger or ITF meetings says so; an all-ATP record says nothing', () => {
   const H = new Function(`${slice('h2hLevelMix')}\nreturn h2hLevelMix;`)();
@@ -866,9 +853,8 @@ test('card / Key factors: a record with Challenger or ITF meetings says so; an a
   assert.match(html, /· H2H \$\{m\.h2h\.record\}\$\{h2hLevelMix\(m\.h2h\)\}/, 'the match card shows the mix');
 });
 // The Key factors H2H card's level mix is checked in test-ten341-key-factors.mjs (TEN-341: the H2H tab's meetings).
-test('H2H page: the record lines carry the level mix; each meeting row keeps its level', () => {
-  assert.match(html, /meetingsLine: tot \+ ' meetings on record' \+ lvMix,/);
-  assert.match(html, /Math\.min\(aw, bw\)\) \+ lvMix,/);
+test('H2H page: the record counts ATP main-draw meetings only (TEN-402 Data 1), so it carries no level mix; fixture rows keep their level', () => {
+  assert.match(html, /const H2H_PAGE_LEVELS = \['atp'\];/);
   assert.match(html, /mt\.level \|\| 'ATP',\n\s*\]\);/);
 });
 test('model H2H layer: the detail text names the level mix; the math is unchanged', () => {

@@ -280,6 +280,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Today's Matches (TEN-377) — header stats, Upcoming / Completed card rulings, odds pop-up pointer | `.claude/rules/todays-matches.md` |
 | Tournaments page (TEN-401) — data sources, header, darker-track controls, Overview, overlays, Entry list | `.claude/rules/tournaments.md` |
 | Tournaments → Reports — controls, Ring-blue bars, match-stats sheet, every player in a round, W/L outcome letter | `.claude/rules/tournament-reports.md` |
+| Head to Head page (TEN-402) — page order, header, darker-track rows, white bars (override), data joins, loader guard, sheet; night only | `.claude/rules/h2h.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |
 | Database page (TEN-399) — one price join, header, control bar, Tour / Tournament / Player layout, compare events, charts | `.claude/rules/database.md` |

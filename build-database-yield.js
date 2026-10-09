@@ -17,8 +17,15 @@
  *              every later row; there is no season seam. Each row carries the book used.
  *              This supersedes TEN-146/TEN-262 "one book per season, never fill a
  *              missing Pinnacle price from another book".
- *   Results:   retirements included (result stands, 'Rrtired' typo folded in);
+ *   Results:   completed matches only; retirements VOIDED on the Database (2026-09-20, below);
  *              walkovers excluded; edge non-results (Awarded/Disqualified/Sched) excluded.
+ *   Retired:   TEN-402 founder ruling (2026-10-08): the same join prices retirements for the
+ *              Head to Head page and the Player Profile per-event Backing, settled on the
+ *              official ATP result (the archive's winner column). They ride BEHIND A FLAG:
+ *              `retRows` / `retNames`, outside `rows` / `names`, priced and filtered exactly
+ *              as a used row (book, tie, overround, window, level). The Database page never
+ *              reads them, so every Database figure (and tour-baselines.json,
+ *              tournament-market.json) is unchanged; `exclusions.retired` still counts them.
  *   Ties:      exact resolving-price ties excluded. No ranking/positional fallback.
  *   Overround: 1/pw + 1/pl > 1.15 excluded (corrupt-market hygiene).
  *   Fav/dog:   shorter price is the favourite.
@@ -113,6 +120,12 @@ const BOOKS = ['Pinnacle', 'Bet365']; // idx 0,1
 
 const rows = [];      // [dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, dogPrice, favWon, bookIdx]
 const names = [];     // [winnerName, loserName] parallel to rows
+// TEN-402 (2026-10-08): retirements priced on the same join, settled on the ATP result (favWon = the
+// archive's winner held the shorter price). Same row shape as `rows`; never in `rows`. Dictionary
+// indices are assigned AFTER the main loop so a retired row can never reorder meta.surfaces / rounds /
+// tournaments for the Database rows (an entry only a retirement uses is appended at the end).
+const retRaw = [];    // [dateInt, lvlIdx, surface, round, tournament, favPrice, dogPrice, favWon, bookIdx, winner, loser]
+const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, edge: 0 };
 
 // reconciliation buckets (disjoint, first failing reason wins)
 // `retired` is its own bucket, not folded into `edge`: the footnote has to be
@@ -142,29 +155,42 @@ for (const f of files) {
 
     const comment = (c[col.comment] || '').trim();
     if (WALKOVER.has(comment)) { bucket.walkover++; continue; }
-    if (RETIRED.has(comment)) { bucket.retired++; continue; }     // voided, per the 2026-09-20 ruling
-    if (!RESULT_STANDS.has(comment)) { bucket.edge++; continue; } // Awarded/Disqualified/Sched
+    const isRet = RETIRED.has(comment);
+    if (isRet) bucket.retired++;                                  // voided on the Database, per the 2026-09-20 ruling
+    else if (!RESULT_STANDS.has(comment)) { bucket.edge++; continue; } // Awarded/Disqualified/Sched
 
     // resolving book, per row (TEN-384 option "me" = build-market-edge.js pickBook): Pinnacle
     // when both of its prices are valid, else Bet365 when both of its are; neither = dropped.
     const P = [num(c[col.psw]), num(c[col.psl])], B365 = [num(c[col.b365w]), num(c[col.b365l])];
     const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? 0 : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
-    if (bookIdx < 0) { bucket.noPrice++; continue; }
+    // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
+    // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
+    const B_ = isRet ? retBucket : bucket;
+    if (bookIdx < 0) { B_.noPrice++; continue; }
     const [pw, pl] = bookIdx === 0 ? P : B365;
 
-    if (pw === pl) { bucket.tie++; continue; }                    // exact tie
-    if ((1 / pw) + (1 / pl) > 1.15) { bucket.overround++; continue; } // corrupt market
+    if (pw === pl) { B_.tie++; continue; }                        // exact tie
+    if ((1 / pw) + (1 / pl) > 1.15) { B_.overround++; continue; } // corrupt market
 
     // pre-window regime cut: 2004-2008 is a materially different sport (founder ruling,
     // Option A, 2026-09-04). Placed AFTER the exclusion checks so those buckets keep their
     // full-archive counts and preWindow captures only otherwise-usable pre-2010 rows.
     // (2009 carries no Pinnacle and no Bet365 pair -> falls out via noPrice, not here.)
-    if (season < WINDOW_START) { bucket.preWindow++; continue; }
+    if (season < WINDOW_START) { B_.preWindow++; continue; }
 
     // ---- usable row ----
     const dateStr = (c[col.date] || '').trim();
     const dateInt = parseInt(dateStr.replace(/-/g, ''), 10);
-    if (!Number.isFinite(dateInt)) { bucket.edge++; continue; }   // unparseable date (none expected)
+    if (!Number.isFinite(dateInt)) { B_.edge++; continue; }       // unparseable date (none expected)
+    if (isRet) {
+      const canonR = LEVEL_MAP[(c[col.series] || '').trim()];
+      if (!canonR) { retBucket.edge++; continue; }
+      retRaw.push([dateInt, levels.indexOf(canonR), (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
+        (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
+        (c[col.winner] || '').trim(), (c[col.loser] || '').trim()]);
+      retBucket.priced++;
+      continue;
+    }
     if (dateStr < dateMin) dateMin = dateStr;
     if (dateStr > dateMax) dateMax = dateStr;
 
@@ -185,6 +211,13 @@ for (const f of files) {
     bucket.used++;
     bookCount[bookIdx]++;
   }
+}
+
+// TEN-402: the retired rows' dictionary indices, assigned after every Database row has claimed its own.
+const retRows = [], retNames = [];
+for (const x of retRaw) {
+  retRows.push([x[0], x[1], idxOf(surfaces, x[2]), idxOf(rounds, x[3]), idxOf(tournaments, x[4]), x[5], x[6], x[7], x[8]]);
+  retNames.push([x[9], x[10]]);
 }
 
 // --- overall yields (for the verify report + a page cross-check) ------------
@@ -252,14 +285,25 @@ const meta = {
   // change where the source's Pinnacle prices stop — the latest archive date with a valid
   // Pinnacle pair, read before any exclusion; every used row after it is Bet365-priced.
   pinnacleLastPriced: pinnacleLastPriced || null,
+  // TEN-402 (founder 2026-10-08): retirements behind a flag — `retRows` (this file) / `retNames` (the names
+  // shard), parallel, same shape as rows / names. NOT Database rows: the Database voids them (exclusions.retired).
+  // Read only by the price join of the Head to Head page and the Player Profile per-event Backing
+  // (DatabaseTab.priceRows), which settle them on the official ATP result (the archive's winner).
+  retired: {
+    rule: 'Retirements priced on the same join (Pinnacle closing, else Bet365 closing; ties, overround > 1.15 and pre-' +
+      WINDOW_START + ' out), settled on the official ATP result. Not Database rows.',
+    priced: retBucket.priced,
+    dropped: { noResolvingBookPrice: retBucket.noPrice, exactTie: retBucket.tie, overroundGt115: retBucket.overround,
+      preWindow: retBucket.preWindow, edge: retBucket.edge },
+  },
   levels, surfaces, rounds, tournaments,
   yieldOverall: {
     all: yAll, Pinnacle: yPS, Bet365: yB365,
   },
 };
 
-fs.writeFileSync(OUT_BASE, JSON.stringify({ meta, rows }));
-fs.writeFileSync(OUT_NAMES, JSON.stringify({ names }));
+fs.writeFileSync(OUT_BASE, JSON.stringify({ meta, rows, retRows }));
+fs.writeFileSync(OUT_NAMES, JSON.stringify({ names, retNames }));
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).
 const B = TB;
 fs.writeFileSync(OUT_BASELINES, JSON.stringify({
@@ -293,6 +337,10 @@ console.log(`  - exact tie       : ${bucket.tie}`);
 console.log(`  - overround>1.15  : ${bucket.overround}`);
 console.log(`  - pre-${WINDOW_START} regime  : ${bucket.preWindow}  (otherwise-usable rows dropped by the window)`);
 console.log(`RECONCILE used+excl : ${recon}  ${recon === bucket.archive ? 'OK == archive' : 'MISMATCH!'}`);
+const retSum = retBucket.priced + retBucket.noPrice + retBucket.tie + retBucket.overround + retBucket.preWindow + retBucket.edge;
+console.log(`retired, flagged    : ${retBucket.priced} priced (retRows) of ${bucket.retired}  ` +
+  `[no price ${retBucket.noPrice}, tie ${retBucket.tie}, overround ${retBucket.overround}, pre-${WINDOW_START} ${retBucket.preWindow}, edge ${retBucket.edge}]  ` +
+  `${retSum === bucket.retired ? 'OK' : 'MISMATCH!'}`);
 console.log(`date range          : ${dateMin} .. ${dateMax}`);
 console.log(`book split (used)   : Pinnacle ${bookCount[0]}  Bet365 ${bookCount[1]}`);
 console.log(`yield ALL           : fav ${pct(yAll.fav)}  dog ${pct(yAll.dog)}  n=${yAll.n}`);

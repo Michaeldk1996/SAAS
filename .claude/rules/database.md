@@ -11,6 +11,15 @@ take styling from it, structure from the rules below.
 - **Test:** every row of `database-yield.json` is priced Pinnacle closing, else Bet365 closing, per match
   (`build-database-yield.js`, the same `pickBook` as Market edge). Tour = Favourites −1.78% · Underdogs −6.96% on
   40,972 matches (All −4.37% = the tour-baselines figure), measured 2026-10-07.
+- **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
+  (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
+  in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of
+  1,850 on 8 Oct 2026), read ONLY by the site's one price join (`DatabaseTab.priceRows()` → `dbPriceJoinRows`: the Head
+  to Head ledgers and the Player Profile per-event Backing), which settles them on the official ATP result. No Database
+  figure, `tour-baselines.json` or `tournament-market.json` reads them: before = after on Tour All (40,972; Favourites
+  −1.78% · Underdogs −6.96%). Size: +44 KB raw / +10 KB gz (`database-yield.json`), +37 KB / +8 KB (names shard).
+  **Test:** `test-ten402-b.mjs` "the store keeps retirements BEHIND A FLAG" (rows = used, parallel arrays, each flagged
+  row a Retired archive match, each Database row a Completed one); the Database suites below run unchanged.
 - **Test:** no chart draws a seam line, a Bet365 pill or a "book artefact" footnote; `renderCurveCard` takes no seam.
   The per-book split paragraph is on the **Player tab only** and opens with the join (founder, card 52bf5cc5
   "split" = player-only, 2026-10-08). **Test:** a Tour or Tournament band panel paints no `db-split` line
