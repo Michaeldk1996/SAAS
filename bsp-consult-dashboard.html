@@ -4235,50 +4235,36 @@ window.EntryListsTab = (function(){
 </div>
 
 <!-- ============================================================= -->
-<!-- NEWS PAGE (TEN-8)                                               -->
-<!-- Unfiltered tennis news pulled from api-tennis get_news, stored  -->
-<!-- verbatim in news-feed.json by build-news-feed.js. This page     -->
-<!-- shows the last 48-72h as a scrollable list; each item expands   -->
-<!-- to the full article body on click. No filtering / tagging.      -->
+<!-- NEWS PAGE (TEN-8 → TEN-409 step 10, night)                      -->
+<!-- api-tennis get_news → news-feed.json (build-news-feed.js), the  -->
+<!-- same feed as Match analysis → News. Player-attributed articles  -->
+<!-- only (player_key, never a headline match on this page), plus    -->
+<!-- the founder's Post intel notes (Firestore intel_notes).         -->
 <!-- ============================================================= -->
 <style>
   /* ============================================================
-     NEWS PAGE — export-beside-build (TEN-8). Every value below is
-     read from design-export/ (__bundler/template). Two feed modes:
-     Reading (restyled cards, default) and Compact (dense wire rows),
-     switched by the Reading/Compact toggle. Colours are the export's
-     literal tokens, not the dashboard --accent system.
+     NEWS PAGE — TEN-409 step 10 (founder, 2026-10-09), reference = OFFICIAL VERSION 1 → News, 1512 night; values are
+     the reference's computed ones, colours the foundation tokens (rules: .claude/rules/news.md). Header = the shared
+     35b .sfh (no page rule restyles it). Two feed views: Reading (cards, max 820) and Compact (one card of rows).
      ============================================================ */
-  [data-page="news"] .news-wrap{ max-width:1360px; margin:0; padding:30px 40px 70px; }
-  /* Density changes the FEED column width only — never the page. Header + both
-     control rows are anchored to the wrap's fixed left inset and do not move when
-     the toggle flips (export parity: main is fixed, only the feed div reflows). */
-  [data-page="news"] #newsList{ max-width:820px; }
-  [data-page="news"] .news-wrap.compact #newsList{ max-width:none; }
-  /* Header = the shared 35b page header (.sfh, TEN-403); only the space under it stays page-owned. The feed line is
-     the sentence's grey tail (Hanken, not the old 12px mono line). */
-  [data-page="news"] .news-head{ margin-bottom:18px; }
-  [data-page="news"] .news-live{ color:var(--text-label); }
-  [data-page="news"] .news-clock{ color:var(--text-label); }
-  /* Status lines are text only (founder S3, TEN-376): no dot, no colour. A stale feed drops the "Live" claim
-     (news-feed.json's generatedAt older than NEWS_STALE_HOURS) and steps up to --text-soft so the age stands out. */
-  [data-page="news"] .news-live.news-stale{ color:var(--text-soft); }
-  [data-page="news"] .news-stalebanner{ border:1px solid var(--edge-10); background:var(--inner); border-radius:10px; padding:11px 14px; margin:0 0 16px; font-size:12.5px; line-height:1.5; color:var(--text-soft); }
+  [data-page="news"] .news-wrap{ max-width:1360px; box-sizing:content-box; margin:0; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; }
+  [data-page="news"] .news-stalebanner{ background:var(--inner); border-radius:10px; padding:11px 14px; max-width:820px; box-sizing:border-box; font-size:12.5px; line-height:1.5; color:var(--text-soft); }
 
-  /* ---- Control rows. Row 1: All-tournaments dropdown then 4 category
-     chips. Row 2: search (360px) then Post-intel / Reading / Compact /
-     window on the right. Three segmented treatments, per the export. ---- */
-  [data-page="news"] .news-row1{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
-  [data-page="news"] .news-row2{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
-  [data-page="news"] .news-row2 .news-r2right{ margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  /* ---- Row 1: tournament drop-down, then the category segmented control. Row 2: search, then Post intel · Reading /
+     Compact · time window on the right. ---- */
+  [data-page="news"] .news-row1{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  [data-page="news"] .news-row2{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  [data-page="news"] .news-r2right{ display:inline-flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
-  /* Category chips (Row 1) + All-tournaments dropdown share the same base. */
-  [data-page="news"] .news-chip{ font-size:12.5px; font-weight:600; color:var(--text-label); background:var(--inner); border:1px solid transparent; border-radius:10px; padding:9px 14px; cursor:pointer; transition:border-color .12s, color .12s, background .12s; }
-  [data-page="news"] .news-chip:hover{ color:var(--text); }
-  [data-page="news"] .news-chip.active{ color:var(--text); background:var(--inner); border-color:var(--edge-10); }
-  [data-page="news"] .news-chips{ display:contents; }
+  /* Segmented controls (categories, Reading / Compact) = the site's darker track, as the reference draws it: track
+     --card + 1px --edge-6 (inset), padding 3, radius 10, gap 3; item 7px 14px radius 8, 12.5; selected --inner + 1px
+     --edge-10, white 700; idle --text-label 600. */
+  [data-page="news"] .news-seg{ display:inline-flex; align-items:center; gap:3px; flex-wrap:wrap; padding:3px; border-radius:10px; background:var(--card); box-shadow:inset 0 0 0 1px var(--edge-6); }
+  [data-page="news"] .news-segi{ font-family:var(--font-words); font-size:12.5px; font-weight:600; line-height:normal; color:var(--text-label); background:transparent; border:1px solid transparent; border-radius:8px; padding:7px 14px; cursor:pointer; white-space:nowrap; }
+  [data-page="news"] .news-segi:hover{ color:var(--text); }
+  [data-page="news"] .news-segi.on{ color:var(--text); font-weight:700; background:var(--inner); border-color:var(--edge-10); }
+  [data-page="news"] .news-segi:focus-visible{ outline:none; border-color:var(--edge-16); }
 
-  /* Dropdowns (All tournaments / time window): white-tint fill. */
   /* TEN-376 README §5.5 — the one dropdown (sfDd). Trigger: --inner, no edge, ▼ in --text-label; focus 16% edge.
      Menu: --card, 1px --edge-10, radius 10, padding 4, --shadow-menu, ~6 rows then scroll; rows 12.5px, 6px 9px,
      hover --inner, selected --selected + white ✓. No native <select> anywhere (the OS list must never appear). */
@@ -4298,147 +4284,140 @@ window.EntryListsTab = (function(){
   .sf-dd-row.sel{ background:var(--selected); color:var(--text); font-weight:600; }
   .sf-dd-row .sf-dd-tick{ margin-left:auto; padding-left:12px; color:var(--text); visibility:hidden; }
   .sf-dd-row.sel .sf-dd-tick{ visibility:visible; }
-  [data-page="news"] #newsFilterWrap{ display:flex; }
+  /* The page's two drop-downs are the site's one menu (sfDd); only the trigger takes the reference's geometry:
+     padding 10px 15px, gap 8, a white chevron (the menu's own ▼ glyph and size). */
+  [data-page="news"] .sf-dd-trig{ padding:10px 15px; gap:8px; line-height:normal; }
+  [data-page="news"] .sf-dd-trig .sf-dd-chev{ color:var(--text); }
+  [data-page="news"] #newsTourFilter .sf-dd-menu{ min-width:200px; }
+  [data-page="news"] #newsRange .sf-dd-menu{ left:auto; right:0; min-width:150px; }
 
-  /* Search (Row 2, fixed 360px). */
-  [data-page="news"] .news-searchwrap{ position:relative; width:360px; max-width:100%; }
-  [data-page="news"] .news-searchicon{ position:absolute; left:12px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:var(--text-label); pointer-events:none; }
-  [data-page="news"] .news-search{ width:100%; box-sizing:border-box; padding:10px 14px 10px 34px; font-size:12.5px; color:var(--text); background:var(--inner); border:1px solid var(--edge-6); border-radius:10px; }
-  [data-page="news"] .news-search:focus{ outline:none; border-color:var(--edge-10); }
-  [data-page="news"] .news-search::placeholder{ color:var(--text-label); }
+  /* Search (row 2, 360px): --inner, no edge, radius 10; 16% edge on focus, never a blue ring. */
+  [data-page="news"] .news-searchwrap{ width:360px; max-width:100%; box-sizing:border-box; display:flex; align-items:center; gap:9px; padding:10px 14px; background:var(--inner); border:1px solid transparent; border-radius:10px; }
+  [data-page="news"] .news-searchwrap:focus-within{ border-color:var(--edge-16); }
+  [data-page="news"] .news-searchicon{ flex:none; width:14px; height:14px; color:var(--text-label); }
+  [data-page="news"] .news-search{ flex:1 1 0; min-width:0; padding:1px 2px; background:transparent; border:0; outline:none; font-family:var(--font-words); font-size:13px; color:var(--text); }
+  [data-page="news"] .news-search::placeholder{ color:var(--text-label); opacity:1; }
 
-  /* Reading / Compact tab pair (the one control on the quoted standard). */
-  [data-page="news"] .news-tabs{ display:inline-flex; gap:2px; padding:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; }
-  [data-page="news"] .news-tab{ font-size:12.5px; font-weight:600; color:var(--text-label); background:transparent; border:1px solid transparent; border-radius:8px; padding:6px 13px; cursor:pointer; transition:color .12s, background .12s, border-color .12s; }
-  [data-page="news"] .news-tab:hover{ color:var(--text); }
-  [data-page="news"] .news-tab.active{ color:var(--text); font-weight:700; background:var(--inner); border-color:var(--edge-10); }
+  /* Post intel (founder only): a trigger button — --inner, no edge; 16% edge while the composer is open. */
+  [data-page="news"] .news-postintel{ display:inline-flex; align-items:center; gap:8px; padding:10px 15px; border-radius:10px; background:var(--inner); border:1px solid transparent; font-family:var(--font-words); font-size:12.5px; font-weight:700; line-height:normal; color:var(--text); white-space:nowrap; cursor:pointer; }
+  [data-page="news"] .news-postintel.active, [data-page="news"] .news-postintel:focus-visible{ outline:none; border-color:var(--edge-16); }
+  [data-page="news"] .news-picount{ font-family:var(--font-nums); font-size:11px; font-weight:700; color:var(--text-label); }
 
-  /* Post intel — outline control (no solid fill; only Login/Verify are solid). */
-  /* Action label, not a filter chip: transparent fill, blue border only — no fill
-     at rest, on hover, or when the composer is open (export parity). */
-  [data-page="news"] .news-postintel{ font-size:12.5px; font-weight:700; color:var(--text); background:transparent; border:1px solid var(--edge-10); border-radius:10px; padding:10px 15px; cursor:pointer; white-space:nowrap; transition:border-color .12s; }
-  [data-page="news"] .news-postintel:hover{ border-color:var(--edge-10); }
-  [data-page="news"] .news-postintel.active{ border-color:var(--edge-10); }
-  [data-page="news"] .news-postintel .news-picount{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:400; color:var(--text-label); margin-left:2px; }
+  /* ---- Composer (opens under the search row, max 820): card tone, no outline, radius 12, padding 18×22, gap 14. ---- */
+  [data-page="news"] .news-composer{ max-width:820px; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; padding:18px 22px; border:1px solid transparent; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
+  [data-page="news"] .cmp-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+  [data-page="news"] .cmp-title{ font-size:15px; font-weight:800; color:var(--text); }
+  [data-page="news"] .cmp-count{ font-size:12px; color:var(--text-label); }
+  [data-page="news"] .cmp-count b{ font-family:var(--font-nums); font-weight:400; }
+  [data-page="news"] .cmp-field{ display:flex; flex-direction:column; gap:7px; }
+  [data-page="news"] .cmp-label{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  [data-page="news"] .news-composer textarea, [data-page="news"] .news-composer input{ box-sizing:border-box; width:100%; background:var(--inner); border:1px solid transparent; border-radius:10px; outline:none; font-family:var(--font-words); font-size:13.5px; color:var(--text); }
+  [data-page="news"] .news-composer textarea{ resize:vertical; padding:11px 13px; line-height:1.5; }
+  [data-page="news"] .news-composer input{ padding:10px 13px; }
+  [data-page="news"] .news-composer textarea:focus, [data-page="news"] .news-composer input:focus{ border-color:var(--edge-16); }
+  [data-page="news"] .news-composer textarea::placeholder, [data-page="news"] .news-composer input::placeholder{ color:var(--text-label); opacity:1; }
+  [data-page="news"] .cmp-foot{ display:flex; align-items:center; justify-content:flex-end; gap:10px; padding-top:2px; }
+  [data-page="news"] .cmp-msg{ margin-right:auto; font-size:12px; color:var(--text-label); }
+  [data-page="news"] .cmp-cancel{ padding:9px 16px; border-radius:10px; background:transparent; border:1px solid transparent; font-family:var(--font-words); font-size:12.5px; font-weight:600; color:var(--text-label); cursor:pointer; }
+  [data-page="news"] .cmp-cancel:hover{ color:var(--text); }
+  [data-page="news"] .cmp-pub{ padding:9px 18px; border-radius:10px; background:var(--inner); border:1px solid var(--edge-10); font-family:var(--font-words); font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer; }
+  [data-page="news"] .cmp-pub:disabled{ color:var(--text-label); cursor:default; }
+  [data-page="news"] .cmp-cancel:focus-visible, [data-page="news"] .cmp-pub:focus-visible{ outline:none; border-color:var(--edge-16); }
 
-  /* ---- Composer: inline expansion panel below the controls (founder only). ---- */
-  [data-page="news"] .news-composer{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:16px 18px; margin-bottom:18px; }
-  [data-page="news"] .news-composer .cmp-label{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin-bottom:10px; }
-  [data-page="news"] .news-composer textarea, [data-page="news"] .news-composer input{
-    width:100%; box-sizing:border-box; background:var(--inner); border:1px solid var(--edge-6);
-    border-radius:8px; color:var(--text); font-size:13.5px; padding:10px 12px; font-family:inherit; }
-  [data-page="news"] .news-composer textarea{ min-height:70px; resize:vertical; line-height:1.5; }
-  [data-page="news"] .news-composer input{ margin-top:10px; }
-  [data-page="news"] .news-composer textarea::placeholder, [data-page="news"] .news-composer input::placeholder{ color:var(--text-label); }
-  [data-page="news"] .cmp-match{ font-size:11px; margin-top:6px; min-height:14px; font-family:'IBM Plex Mono',ui-monospace,monospace; color:var(--text-label); }
-  [data-page="news"] .cmp-match.ok{ color:var(--text); }
-  [data-page="news"] .cmp-match.none{ color:var(--text-label); }
-  [data-page="news"] .cmp-foot{ display:flex; align-items:center; gap:12px; margin-top:12px; }
-  [data-page="news"] .cmp-count{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:var(--text-label); }
-  [data-page="news"] .cmp-pub{ margin-left:auto; background:transparent; border:1px solid var(--edge-10); color:var(--text); border-radius:8px; padding:8px 18px; font-size:13px; font-weight:650; cursor:pointer; }
-  [data-page="news"] .cmp-pub:hover{ background:var(--tile-hover); }
-  [data-page="news"] .cmp-pub:disabled{ opacity:0.5; cursor:not-allowed; }
-  [data-page="news"] .cmp-pub.secondary{ color:var(--text-label); border-color:var(--edge-6); }
-  [data-page="news"] .cmp-msg{ font-size:12px; color:var(--text-label); min-height:16px; margin-top:6px; }
+  [data-page="news"] #newsComposer:empty, [data-page="news"] #newsStale:empty, [data-page="news"] #newsPostIntelHost:empty{ display:none; }
 
-  /* ---- Date group header: date-only, uppercase mono, rule to the edge. ---- */
-  [data-page="news"] .news-daterow{ display:flex; align-items:center; gap:12px; margin:22px 0 12px; }
-  [data-page="news"] .news-daterow:first-child{ margin-top:2px; }
+  /* ---- Feed: day groups (caps date + 6% hairline), max 820 in Reading, full width in Compact. ---- */
+  [data-page="news"] #newsList{ display:flex; flex-direction:column; gap:10px; width:100%; max-width:820px; }
+  [data-page="news"] .news-wrap.compact #newsList{ max-width:none; }
+  [data-page="news"] #newsList:empty{ display:none; }
+  [data-page="news"] .news-daterow{ display:flex; align-items:center; gap:12px; margin-top:6px; }
   [data-page="news"] .news-datelabel{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap; }
-  [data-page="news"] .news-daterule{ flex:1; height:1px; background:var(--line); }
+  [data-page="news"] .news-daterule{ flex:1 1 0; height:1px; background:var(--edge-6); }
 
-  /* ---- Compact wire rows. ---- */
-  [data-page="news"] .news-rows{ display:block; }
-  [data-page="news"] .news-row{ border-bottom:1px solid var(--line); }
-  [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:42px 104px minmax(0,1fr) 16px; gap:12px; align-items:center; padding:10px 6px; cursor:pointer; border:1px solid transparent; border-radius:7px; transition:background .12s, border-color .12s; }
-  [data-page="news"] .news-rowhead:hover{ background:var(--tile-hover); border-color:var(--edge-10); }
-  [data-page="news"] .news-rowhead:hover .news-rcaret{ color:var(--text); }
-  [data-page="news"] .news-rtime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:var(--text-label); }
+  /* ---- Reading cards: card tone, no outline, radius 12, padding 18×22, column gap 9. ---- */
+  [data-page="news"] .news-card{ display:flex; flex-direction:column; gap:9px; padding:18px 22px; border:1px solid transparent; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
+  [data-page="news"] .news-cardmeta{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
+  [data-page="news"] .news-cardmeta-l{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; min-width:0; }
+  [data-page="news"] .news-cat{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; line-height:normal; color:var(--text-label); background:var(--inner); border-radius:6px; padding:4px 9px; }
+  [data-page="news"] .news-cardsource, [data-page="news"] .news-cardsep{ font-size:12px; color:var(--text-label); }
+  [data-page="news"] .news-ent{ font-size:12px; font-weight:600; color:var(--text); }
+  [data-page="news"] .news-cardtime{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); white-space:nowrap; }
+  [data-page="news"] .news-cardtitle{ margin:0; font-size:16px; font-weight:700; line-height:1.35; color:var(--text); text-wrap:pretty; }
+  [data-page="news"] .news-para{ font-size:14px; line-height:1.7; color:var(--text-soft); text-wrap:pretty; max-width:68ch; }
+  [data-page="news"] .news-acts{ display:flex; align-items:center; gap:14px; margin-top:4px; }
+  [data-page="news"] .news-act{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:11.5px; color:var(--text-label); cursor:pointer; }
+  [data-page="news"] .news-act:hover, [data-page="news"] .news-act:focus-visible{ outline:none; color:var(--text); }
+
+  /* Player / tournament names in the meta line: white 600, underline on hover (never link blue). */
+  [data-page="news"] .news-entlink{ cursor:pointer; text-decoration:none; }
+  [data-page="news"] .news-entlink:hover, [data-page="news"] .news-entlink:focus-visible{ outline:none; text-decoration:underline; }
+  /* Real links (Read more / Show less, Try a wider date range., Clear search) = --link, underline on hover. */
+  [data-page="news"] .news-link{ padding:0; background:none; border:0; font-family:var(--font-words); font-size:inherit; font-weight:inherit; color:var(--link); cursor:pointer; }
+  [data-page="news"] .news-link:hover, [data-page="news"] .news-link:focus-visible{ outline:none; text-decoration:underline; }
+  [data-page="news"] .news-more{ align-self:flex-start; font-size:13px; font-weight:600; }
+
+  /* ---- Compact: one card (padding 4×16) of rows on 5% hairlines; closed row = time · player · title · ▾. ---- */
+  [data-page="news"] .news-rows{ display:flex; flex-direction:column; padding:4px 16px; border-radius:12px; background:var(--card); box-shadow:var(--top-light); }
+  [data-page="news"] .news-row{ display:flex; flex-direction:column; padding:9px 6px; border-bottom:1px solid var(--line); cursor:pointer; }
+  [data-page="news"] .news-row:last-child{ border-bottom:0; }
+  [data-page="news"] .news-row:focus-visible{ outline:none; box-shadow:inset 0 0 0 1px var(--edge-16); }
+  [data-page="news"] .news-row:hover, [data-page="news"] .news-row.open{ background:color-mix(in srgb, var(--text) 2%, transparent); }
+  [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:42px 104px minmax(0,1fr) 16px; gap:12px; align-items:center; }
+  [data-page="news"] .news-row.open .news-rowhead{ grid-template-columns:42px minmax(0,1fr) 16px; align-items:start; }
+  [data-page="news"] .news-rtime{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
+  [data-page="news"] .news-row.open .news-rtime{ padding-top:2px; }
   [data-page="news"] .news-rplayer{ font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="news"] .news-rhead{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  [data-page="news"] .news-rcaret{ color:var(--text-label); font-size:11px; text-align:center; transition:transform .15s; }
-  [data-page="news"] .news-row.open .news-rowhead{ white-space:normal; }
-  [data-page="news"] .news-row.open .news-rhead{ white-space:normal; overflow:visible; }
-  [data-page="news"] .news-row.open .news-rcaret{ transform:rotate(180deg); color:var(--text); }
-  [data-page="news"] .news-rbody{ display:none; padding:8px 16px 4px 54px; }
-  [data-page="news"] .news-row.open .news-rbody{ display:block; }
-  [data-page="news"] .news-rbody p{ margin:0 0 12px; font-size:14px; line-height:1.7; color:var(--text-label); max-width:68ch; white-space:pre-wrap; }
-  [data-page="news"] .news-rbody p:last-child{ margin-bottom:0; }
-  [data-page="news"] .news-rattr{ font-size:11.5px; color:var(--text-label); }
-  [data-page="news"] .news-rsrc{ margin-top:12px; font-size:11.5px; color:var(--text-label); }
-  [data-page="news"] .news-racts{ margin-top:12px; display:flex; gap:14px; }
+  [data-page="news"] .news-row.open .news-rhead{ min-width:0; overflow:visible; white-space:normal; line-height:1.4; text-wrap:pretty; }
+  [data-page="news"] .news-rwho{ font-size:11.5px; font-weight:400; color:var(--text-label); white-space:nowrap; }
+  [data-page="news"] .news-rcaret{ justify-self:end; font-size:11px; color:var(--text); }
+  [data-page="news"] .news-row.open .news-rcaret{ transform:rotate(180deg); }
+  [data-page="news"] .news-rbody{ display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px 54px; cursor:auto; }
 
-  /* ---- Reading cards. ---- */
-  [data-page="news"] .news-list{ display:flex; flex-direction:column; gap:10px; }
-  [data-page="news"] .news-card{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:16px 20px; transition:border-color .12s; }
-  [data-page="news"] .news-card:hover{ border-color:var(--edge-10); }
-  /* Reading header line: [ badge · source · player ]  …  [ time, right-aligned ]. */
-  [data-page="news"] .news-cardmeta{ display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:9px; }
-  [data-page="news"] .news-cardmeta-l{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; min-width:0; }
-  [data-page="news"] .news-cardsource{ font-size:12px; color:var(--text-label); }
-  [data-page="news"] .news-cardsep{ font-size:12px; color:var(--text-label); }
-  [data-page="news"] .news-cat{font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); border-radius:6px; padding:3px 9px; white-space:nowrap; }
-  [data-page="news"] .news-cardtime{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:var(--text-label); flex:none; white-space:nowrap; }
-  [data-page="news"] .news-cardplayer{ font-size:12px; color:var(--text); }
-  [data-page="news"] .news-cardtitle{ font-size:16px; font-weight:700; line-height:1.35; color:var(--text); margin:0 0 9px; }
-  [data-page="news"] .news-cardbody p{ margin:0 0 12px; font-size:14px; line-height:1.7; color:var(--text-label); white-space:pre-wrap; max-width:68ch; }
-  [data-page="news"] .news-cardbody p:last-child{ margin-bottom:0; }
-  [data-page="news"] .news-cardbody.clamped p:nth-child(n+6){ display:none; }
-  [data-page="news"] .news-more{ margin-top:10px; font-size:12.5px; font-weight:600; color:var(--text); background:none; border:none; padding:0; cursor:pointer; }
-  [data-page="news"] .news-cardsrc{ margin-top:12px; font-size:11.5px; color:var(--text-label); }
-  [data-page="news"] .news-cardacts{ margin-top:12px; display:flex; gap:14px; }
-
-  /* Player attribution — no resting blue; underline on hover only. */
-  [data-page="news"] .news-entlink{ color:var(--text); cursor:pointer; text-decoration:none; }
-  [data-page="news"] .news-entlink:hover{ text-decoration:underline; }
-  [data-page="news"] .news-act{ font-size:11.5px; font-weight:600; color:var(--text-label); cursor:pointer; background:none; border:none; padding:0; }
-  [data-page="news"] .news-act:hover{ color:var(--text); }
-  [data-page="news"] .news-act.del:hover{ color:var(--neg); }
-
-  [data-page="news"] .news-empty{ border:1px dashed var(--edge-6); border-radius:12px; padding:40px 24px; text-align:center; color:var(--text-label); font-size:13.5px; }
-  [data-page="news"] .news-footnote{ margin-top:26px; font-size:13px; line-height:1.55; color:var(--text-label); }
+  /* ---- Empty state (15 white title + 13 grey detail) and the foot line (12.5 grey). ---- */
+  [data-page="news"] .news-empty{ display:flex; flex-direction:column; gap:6px; padding:10px 0; }
+  [data-page="news"] .news-empty-t{ font-size:15px; color:var(--text); }
+  [data-page="news"] .news-empty-d{ font-size:13px; line-height:1.6; color:var(--text-label); }
+  [data-page="news"] .news-empty-d b{ font-family:var(--font-nums); font-weight:400; }
+  [data-page="news"] .news-foot{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding-bottom:6px; font-size:12.5px; color:var(--text-label); }
 </style>
 <div class="tabpage" data-page="news">
   <div class="news-wrap" id="newsWrap">
-    <!-- TEN-403: the shared 35b page header (.sfh). The feed line is the sentence's grey tail. Its freshness reflects
-         news-feed.json's OWN generatedAt (last successful fetch), NOT a wall clock. See newsRenderFreshness(). -->
+    <!-- The shared 35b page header (.sfh, TEN-403): title, one sentence + grey tail, stats Articles · Players · Updated
+         (newsRenderHeaderStats). Updated = news-feed.json's own generatedAt, never the clock. -->
     <div class="sfh news-head">
       <div class="sfh__text">
         <h1 class="sfh__title">Tennis News</h1>
-        <p class="sfh__sub"><span class="news-sub">Latest market and tour information</span> <span class="sfh__tail">· <span class="news-live" id="newsLive"><span>Loading feed…</span></span></span></p>
+        <p class="sfh__sub">Fitness, practice, schedule and tour updates on the players you trade. <span class="sfh__tail">· ATP tour · players in this week’s draws</span></p>
       </div>
+      <div class="sfh__stats" id="newsHeaderStats" aria-label="News summary"></div>
     </div>
-    <!-- Row 1: All-tournaments dropdown first, then the 4 derived category chips.
-         Category is derived client-side (keyword classifier); no category field
-         exists in news-feed.json — the data layer is untouched. -->
+    <!-- Row 1: tournament drop-down (tournaments with articles in the window), then the category segmented control. -->
     <div class="news-row1">
-      <span id="newsFilterWrap">
-        <span id="newsTourFilter" class="sf-dd"></span>
-      </span>
-      <span class="news-chips" id="newsChips"></span>
+      <span id="newsTourFilter" class="sf-dd"></span>
+      <span class="news-seg" id="newsChips" role="group" aria-label="Categories"></span>
     </div>
-    <!-- Row 2: search (left, 360px), then Post-intel / Reading-Compact toggle /
-         time window on the right. -->
+    <!-- Row 2: search (360px) left; Post intel · Reading / Compact · time window right. -->
     <div class="news-row2">
-      <div class="news-searchwrap">
-        <svg class="news-searchicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"/><path d="M14 14l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <input id="newsSearch" class="news-search" type="text" autocomplete="off" placeholder="Search headlines, players, tournaments" oninput="newsOnSearch(this.value)">
-      </div>
+      <label class="news-searchwrap">
+        <svg class="news-searchicon" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5" stroke="currentColor" stroke-width="1.5"/><path d="M13.2 13.2 L17 17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input id="newsSearch" class="news-search" type="text" autocomplete="off" placeholder="Search headlines, players, tournaments" aria-label="Search headlines, players, tournaments" oninput="newsOnSearch(this.value)">
+      </label>
       <div class="news-r2right">
         <span id="newsPostIntelHost"></span>
-        <span class="news-tabs" role="tablist" aria-label="Feed density">
-          <button class="news-tab" id="newsTabReading" onclick="newsSetView('reading')">Reading</button>
-          <button class="news-tab" id="newsTabCompact" onclick="newsSetView('compact')">Compact</button>
+        <span class="news-seg" role="tablist" aria-label="Feed view">
+          <button class="news-segi" id="newsTabReading" role="tab" onclick="newsSetView('reading')">Reading</button>
+          <button class="news-segi" id="newsTabCompact" role="tab" onclick="newsSetView('compact')">Compact</button>
         </span>
         <span id="newsRange" class="sf-dd"></span>
       </div>
     </div>
-    <!-- Composer: inline expansion panel below the controls, opened by Post intel.
-         Founder-only (rendered empty for members). -->
+    <!-- Post intel composer (founder only), under the search row. -->
     <div id="newsComposer"></div>
-    <!-- Unified feed host: renderNews() writes Reading cards or Compact rows here. -->
+    <div id="newsStale"></div>
+    <!-- Feed host: day groups of Reading cards or Compact rows, or the empty state. -->
     <div id="newsList"></div>
-    <div class="news-footnote" id="newsFootnote"></div>
+    <div class="news-foot"><span>Reporting via ATP Tour, Reuters, Tennis Majors, Ubitennis and other cited outlets</span><span>·</span><span>For informational purposes only</span></div>
   </div>
 </div>
 
@@ -5120,26 +5099,25 @@ document.addEventListener('DOMContentLoaded', function () {
    Best-effort: a missing/partial file leaves an honest empty state and never
    throws. The feed stores every article unfiltered; the ONLY narrowing here is
    the 72h display window the page is meant to show. */
-const NEWS_WINDOW_HOURS = 72;
+// TEN-409 step 10 (founder 2026-10-09): one feed (news-feed.json, the Match analysis → News feed), player-attributed
+// articles only (player_key), filters that combine (tournament AND categories AND window AND search), Reading / Compact.
+// Rules: .claude/rules/news.md.
+const NEWS_WINDOWS = [[6, 'Last 6h'], [24, 'Last 24h'], [48, 'Last 48h'], [168, 'Last 7 days']];
 let _newsData = null;
-let _tourEntries = null;   // tournament-entries.json (fixtures-derived rosters)
-let _newsTourKey = '';     // selected tournament_key, '' = all
-let _tourMatchRe = null;   // cached surname regex for the selected tournament
+let _newsState = 'load';   // 'load' | 'ok' | 'unavailable' — the page's own fetch of news-feed.json
+let _newsTourKey = '';     // selected event ('' = all tournaments) = newsTourKey(its printed name)
 
-// Rebuilt-to-export controls (TEN-8). Time-range window, free-text search and a
-// derived category filter. Category + player are NOT feed fields — both are derived
-// client-side at render time; news-feed.json is untouched.
+// Categories are OUR mapping (newsClassify, title keywords): the feed carries no category field. Tour News is the
+// fallback bucket, so every article lands in exactly one of the four.
 const NEWS_CATEGORIES = ['Match Reports', 'Withdrawals & Injuries', 'Tour News', 'Draws & Schedules'];
-let _newsRangeHours = 168;  // default matches the export's "Last 7 days"
-let _newsSearch = '';
-let _newsCat = '';          // '' = all; else one of NEWS_CATEGORIES
-let _eloRoster = null;      // surname(lower) -> { label:"I. Surname", elo }
-// View mode (TEN-8 export rebuild). The export is a Reading/Compact toggle, both
-// fully built — Reading = restyled cards (export default), Compact = dense wire
-// rows. Persisted to localStorage['stennisfy.newsView']. Composer opens inline.
+let _newsRangeHours = 168;  // Last 7 days (the reference's default)
+let _newsSearch = '';       // the query as typed; matched trimmed + lower case
+let _newsCats = [];         // multi-select; [] = All
+// Reading / Compact, persisted to localStorage['stennisfy.newsView'].
 let _newsView = 'reading';
 let _composerOpen = false;
-let _newsOpenRows = {};     // id -> true, so a re-render keeps expanded rows open
+let _newsOpenId = '';       // Compact: the one open row
+let _newsMore = {};         // Reading: article id -> true after "Read more"
 
 // Keyword classifier → one of the four export categories. Most specific first
 // (injuries), then draws/schedules, then match reports, else general tour news.
@@ -5211,29 +5189,6 @@ function newsPlayerFor(title){
   const keys = r.surnameToKeys.get(sl);
   if (!keys || keys.size !== 1) return '';
   return r.keyToName.get([...keys][0]) || '';
-}
-
-// Load the Elo roster once and build surname -> "I. Surname" (highest-Elo wins on
-// surname collisions). Fire-and-forget; never blocks the article feed.
-async function loadNewsRoster(){
-  if (_eloRoster) return;
-  try {
-    const res = await fetch('./elo-ratings.json', { cache: 'no-cache' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const d = JSON.parse(await res.text());
-    const map = {};
-    const eloOf = k => (d.elo && d.elo[k] && d.elo[k].all && d.elo[k].all.rating) || 0;
-    for (const key of Object.keys(d.ratings || {})){
-      const parts = String(key).split('|');
-      const sur = parts[0]; const ini = parts[1];
-      if (!sur) continue;
-      const label = (ini ? ini.toUpperCase() + '. ' : '') + sur.charAt(0).toUpperCase() + sur.slice(1);
-      const elo = eloOf(key);
-      if (!map[sur] || elo > map[sur].elo) map[sur] = { label, elo };
-    }
-    _eloRoster = map;
-    if (_newsData) renderNews();
-  } catch (err) { /* best-effort: player line simply omitted */ }
 }
 
 // Timezone preference (TEN-8). Row timestamps + the header clock are ABSOLUTE
@@ -5418,23 +5373,40 @@ function newsFreshness(){
   const ageH = (Date.now() - g) / 3600000;
   return { known:true, ts:g, ageH, stale: ageH > NEWS_STALE_HOURS };
 }
-// Rewrite the header freshness line from the feed's real generatedAt.
-function newsRenderFreshness(){
-  const box = document.getElementById('newsLive'); if (!box) return;
+// Full date + time with seconds — the hover title of every News time (and of the header's Updated).
+function newsFmtAbs(ts){
+  if (!isFinite(ts)) return '—';
+  const o = { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
+  try { return new Date(ts).toLocaleString('en-GB', Object.assign({ timeZone:newsTz() }, o)); }
+  catch (e) { return new Date(ts).toLocaleString('en-GB', o); }
+}
+function newsFmtHMS(ts){
+  if (!isFinite(ts)) return '—';
+  const o = { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false };
+  try { return new Date(ts).toLocaleTimeString('en-GB', Object.assign({ timeZone:newsTz() }, o)); }
+  catch (e) { return new Date(ts).toLocaleTimeString('en-GB', o); }
+}
+// Header stats (TEN-409 Data 6): Articles = the list after every filter; Players = distinct players across it; Updated =
+// news-feed.json's own generatedAt (HH:MM, member zone), never the clock. Unsourced → a grey "—", never 0.
+function newsRenderHeaderStats(list){
+  const el = document.getElementById('newsHeaderStats'); if (!el) return;
   const f = newsFreshness();
-  if (!f.known){
-    box.className = 'news-live';
-    box.innerHTML = `<span>Feed status unavailable</span>`;
-    return;
-  }
-  const when = newsEscape(newsFmtDateTime(f.ts));
-  if (f.stale){
-    box.className = 'news-live news-stale';
-    box.innerHTML = `<span>Feed not live · last updated ${when}</span>`;
-  } else {
-    box.className = 'news-live';
-    box.innerHTML = `<span>Live feed · updated ${when}</span>`;
-  }
+  const ok = _newsState === 'ok' && Array.isArray(list);
+  const who = new Set();
+  if (ok) list.forEach(x => x.players.forEach(p => who.add(p.key != null ? 'k' + p.key : 'n' + p.name.toLowerCase())));
+  const stat = (l, v, cls, title) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${v === '—' ? ' sfh__v--none' : cls}"${title ? ` title="${newsAttr(title)}"` : ''}>${v}</span></div>`;
+  el.innerHTML = stat('Articles', ok ? String(list.length) : '—', '')
+    + stat('Players', ok ? String(who.size) : '—', '')
+    + stat('Updated', f.known ? newsEscape(newsFmtTime(f.ts)) : '—', ' sfh__v--soft', f.known ? 'Feed refreshed ' + newsFmtAbs(f.ts) : '');
+}
+// A stale feed (generatedAt older than NEWS_STALE_HOURS) says so above the list — the Updated stat alone would read
+// as fresh. Text only (S3), no colour.
+function newsRenderStale(){
+  const el = document.getElementById('newsStale'); if (!el) return;
+  const f = newsFreshness();
+  el.innerHTML = (f.known && f.stale)
+    ? `<div class="news-stalebanner">No new articles since ${newsEscape(newsFmtAbs(f.ts))}. The news source has returned nothing new for ${Math.floor(f.ageH / 24)} day${Math.floor(f.ageH / 24) === 1 ? '' : 's'}; the articles below are the last retrieved.</div>`
+    : '';
 }
 
 // Reading / Compact toggle. Persists to localStorage['stennisfy.newsView'].
@@ -5443,11 +5415,12 @@ function newsSetView(v){
   try { localStorage.setItem('stennisfy.newsView', _newsView); } catch (e) {}
   renderNews();
 }
-// Post intel → open/close the inline composer panel (founder only).
+// Post intel → open / close the composer under the search row (founder only).
 function newsToggleComposer(){ _composerOpen = !_composerOpen; if (!_composerOpen) _intelEditingId = null; newsRenderComposer(); }
+function newsCancelComposer(){ _composerOpen = false; _intelEditingId = null; newsRenderComposer(); }
 
-function newsOnSearch(v){ _newsSearch = String(v || '').trim().toLowerCase(); renderNews(); }
-function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 24; renderNews(); }
+function newsOnSearch(v){ _newsSearch = String(v || ''); renderNews(); }
+function newsOnRange(v){ _newsRangeHours = parseInt(v, 10) || 168; renderNews(); }
 // TEN-376 README §5.5 — sfDd: the site's one dropdown. sfDdRender(hostId, { options:[{value,label}], value, onChange, ariaLabel }).
 // The host keeps the old <select>'s id, so callers and tests find it where they always did; host.value mirrors the choice.
 function sfDdRender(id, cfg){
@@ -5484,15 +5457,21 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Enter' && i >= 0){ ev.preventDefault(); sfDdPick(d, rows[i].getAttribute('data-v')); }
 });
 function newsRangeDd(){ sfDdRender('newsRange', { ariaLabel: 'Time window', value: _newsRangeHours, onChange: newsOnRange,
-  options: [{ value: 6, label: 'Last 6h' }, { value: 24, label: 'Last 24h' }, { value: 48, label: 'Last 48h' }, { value: 168, label: 'Last 7 days' }] }); }
+  options: NEWS_WINDOWS.map(([value, label]) => ({ value, label })) }); }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', newsRangeDd); else newsRangeDd();
-function newsToggleCat(cat){ _newsCat = (_newsCat === cat) ? '' : cat; renderNewsChips(); renderNews(); }
+// Categories are multi-select; "All" clears them (the reference's segmented control).
+function newsToggleCat(cat){
+  if (!cat) _newsCats = [];
+  else _newsCats = _newsCats.indexOf(cat) >= 0 ? _newsCats.filter(c => c !== cat) : _newsCats.concat([cat]);
+  renderNews();
+}
 function renderNewsChips(){
   const wrap = document.getElementById('newsChips');
   if (!wrap) return;
-  wrap.innerHTML = NEWS_CATEGORIES.map(c =>
-    `<button class="news-chip${_newsCat === c ? ' active' : ''}" onclick="newsToggleCat('${c.replace(/'/g, "\\'")}')">${newsEscape(c)}</button>`
-  ).join('');
+  wrap.innerHTML = [''].concat(NEWS_CATEGORIES).map(c => {
+    const on = c ? _newsCats.indexOf(c) >= 0 : !_newsCats.length;
+    return `<button type="button" class="news-segi${on ? ' on' : ''}" aria-pressed="${on}" onclick="newsToggleCat('${c.replace(/'/g, "\\'")}')">${newsEscape(c || 'All')}</button>`;
+  }).join('');
 }
 
 function newsParseTs(s){
@@ -5521,77 +5500,36 @@ function newsAgo(ts){
 
 async function loadNews(){
   try { const v = localStorage.getItem('stennisfy.newsView'); if (v === 'compact' || v === 'reading') _newsView = v; } catch (e) {}
-  newsSyncViewUI(); // reflect saved view before data lands
-  newsRenderFreshness();  // header freshness from feed's own generatedAt (updates again after load)
-  renderNewsChips(); // category filter chips
-  newsRenderComposer(); // post-intel control (founder only)
-  loadNewsRoster();  // Elo surname map for player attribution — never blocks articles
-  loadTourEntries(); // All-tournaments filter — best-effort, never blocks articles
-  loadIntel(); // BSP Consult Intel folds into the feed; loads independently
-  loadAsapForNews(); // ASAP quote rows load independently — never block articles
-  const listEl = document.getElementById('newsList');
-  const metaEl = document.getElementById('newsMeta');
+  renderNews();      // controls, header dashes and the loading line before the feed lands
+  loadIntel();       // the founder's Post intel notes fold into the feed; they load independently
   try {
     const res = await fetch('./news-feed.json', { cache: 'no-cache' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    _newsData = JSON.parse(await res.text()); // manual parse: catch mid-write reads
+    const d = JSON.parse(await res.text()); // manual parse: catch mid-write reads
+    if (!d || !Array.isArray(d.articles)) throw new Error('news-feed.json carries no articles array');
+    _newsData = d; _newsState = 'ok';
   } catch (err) {
-    if (!_newsData) {
-      if (metaEl) metaEl.textContent = '';
-      if (listEl) listEl.innerHTML =
-        `<div class="news-empty">News feed isn't available yet. It's rebuilt on every pipeline run — check back after the next update.</div>`;
-      console.warn('news-feed.json fetch failed:', err.message);
-      return;
-    }
-    // keep last-good data on a transient failure
+    console.warn('news-feed.json fetch failed:', err.message);
+    if (!(_newsData && Array.isArray(_newsData.articles))) _newsState = 'unavailable';   // keep last-good data on a transient failure
+    else _newsState = 'ok';
   }
   renderNews();
 }
 
-/* Tournament filter (TEN-8). Fetches tournament-entries.json — for each current
-   ATP draw, the roster of players in it (fixtures-derived; api-tennis has no
-   entry-list/seed endpoint). Populates the dropdown so a member can narrow the
-   feed to one tournament. Best-effort: if the file is missing the filter simply
-   stays hidden and the full feed still shows. */
-async function loadTourEntries(){
-  const wrap = document.getElementById('newsFilterWrap');
-  const sel = document.getElementById('newsTourFilter');
-  try {
-    const res = await fetch('./tournament-entries.json', { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    _tourEntries = JSON.parse(await res.text());
-  } catch (err) {
-    console.warn('tournament-entries.json unavailable:', err.message);
-    return; // filter stays hidden — full feed unaffected
-  }
-  const tours = Array.isArray(_tourEntries.tournaments) ? _tourEntries.tournaments : [];
-  if (!sel || !wrap || !tours.length) return;
-  // Rebuild options (All + one per tournament, keeping any current selection).
-  const prev = _newsTourKey;
-  const keep = prev && tours.some(t => String(t.tournamentKey) === prev) ? prev : '';
-  sfDdRender('newsTourFilter', { ariaLabel: 'Tournament filter', value: keep,
-    options: [{ value: '', label: 'All tournaments' }].concat(tours.map(t => ({ value: String(t.tournamentKey),
-      label: `${t.name}${t.surface ? ' · ' + t.surface : ''} (${t.playerCount})` }))),
-    onChange: v => { _newsTourKey = v; _tourMatchRe = null; renderNews(); } });
-  wrap.style.display = 'flex';
-}
-
-// Word-boundary surname regex for the selected tournament's roster (cached).
-// Matches on each player's last-name token(s) of length >= 4, so an article
-// naming any player in that draw is kept.
-function tourMatchRegex(){
-  if (_tourMatchRe !== null) return _tourMatchRe; // may be a RegExp or false
-  if (!_newsTourKey || !_tourEntries) return (_tourMatchRe = false);
-  const t = (_tourEntries.tournaments || []).find(x => String(x.tournamentKey) === _newsTourKey);
-  if (!t || !Array.isArray(t.players)) return (_tourMatchRe = false);
-  const toks = new Set();
-  for (const p of t.players){
-    String(p.surname || '').split(/\s+/).forEach(tok => { if (tok.length >= 4) toks.add(tok); });
-  }
-  if (!toks.size) return (_tourMatchRe = false);
-  const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  _tourMatchRe = new RegExp('\\b(' + [...toks].map(esc).join('|') + ')\\b', 'i');
-  return _tourMatchRe;
+// Event key for the tournament filter: the printed (canonical) name, slugged.
+function newsTourKey(name){ return String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+// The tournament drop-down lists only the events with articles in the current window (a kept selection outside it
+// still names itself, so the trigger never reads "All tournaments" while a filter is on).
+function newsRenderTourDd(inWin, all){
+  const names = {};
+  inWin.forEach(x => { const k = newsTourKey(x.tour); if (k) names[k] = x.tour; });
+  if (_newsTourKey && !names[_newsTourKey]){ const hit = all.find(x => newsTourKey(x.tour) === _newsTourKey); if (hit) names[_newsTourKey] = hit.tour; }
+  const opts = [{ value: '', label: 'All tournaments' }].concat(Object.keys(names).sort((a, b) => names[a].localeCompare(names[b])).map(k => ({ value: k, label: names[k] })));
+  const host = document.getElementById('newsTourFilter');
+  const sig = JSON.stringify([opts, _newsTourKey]);
+  if (!host || (host._newsSig === sig && host.querySelector('.sf-dd-trig'))) return;   // an open menu stays open across re-renders
+  host._newsSig = sig;
+  sfDdRender(host, { ariaLabel: 'Tournament filter', value: _newsTourKey, options: opts, onChange: v => { _newsTourKey = v; renderNews(); } });
 }
 
 // Split an article/note body into paragraphs on blank lines (single \n kept via
@@ -5601,66 +5539,84 @@ function newsSplitParas(text){
   return String(text).split(/\r?\n\s*\r?\n/).map(s => s.trim()).filter(Boolean);
 }
 
-// Player attribution node. Non-intel players link to the profile; intel players
-// render plain. Either way the colour is plain primary text with underline-on-hover
-// only (never resting blue) via .news-entlink.
-function newsPlayerNode(it){
-  const name = newsEscape(it.player || '');
-  if (!name) return '';
-  if (it.kind !== 'intel' && it.playerKey != null){
-    return `<span class="news-entlink" onclick="event.stopPropagation();openPlayerProfileFromMatch('${String(it.playerKey).replace(/'/g,"\\'")}')" title="View ${name} profile">${name}</span>`;
-  }
-  return `<span class="news-entlink">${name}</span>`;
+// TEN-409 Data 4: a player reads as on Player Profile, Head to Head and Match analysis — the profile name of his key (the
+// api-tennis spelling, "C. Alcaraz"), else the feed's player_name (the builder writes the same roster name).
+function newsPlayerName(key, fallback){
+  const p = (key != null && typeof playerProfiles !== 'undefined' && playerProfiles) ? playerProfiles[String(key)] : null;
+  return (p && p.name) || (fallback != null ? String(fallback) : '');
 }
-
-// Source / attribution line for the expanded (Compact) or in-card (Reading) state.
-// Attribution lives ONLY in the expanded/card body, never in the compact row head.
-function newsSrcLine(it, cls){
-  let inner = '';
-  if (it.kind === 'asap'){ inner = it.src; }                               // it.src is safe pre-built HTML
-  else if (it.kind === 'intel'){ inner = 'BSP Consult Intel' + (isFinite(it.ts) ? ' · ' + newsEscape(newsFmtDateTime(it.ts)) : ''); }
-  else if (it.srcRaw){ inner = 'Source: ' + newsEscape(it.srcRaw); }
-  const note = it.note ? `<div class="${cls}">${newsEscape(it.note)}</div>` : '';
-  return (inner ? `<div class="${cls}">${inner}</div>` : '') + note;
+// A name links only when the player has a profile (loaded, or flagged in this week's standings; before the standings
+// load the link is offered and psOpenProfile checks the shard).
+function newsHasProfile(key){
+  if (key == null) return false;
+  if (typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]) return true;
+  const idx = (typeof playerIndex !== 'undefined' && Array.isArray(playerIndex)) ? playerIndex : null;
+  if (!idx || !idx.length) return true;
+  const row = idx.find(r => String(r.key) === String(key));
+  return !!(row && row.hasProfile);
 }
-
-// Edit / Delete for founder-posted intel — expanded state only.
-function newsIntelActs(intelId, cls){
-  const s = String(intelId).replace(/'/g, "\\'");
-  return `<div class="${cls}">`
-    + `<button class="news-act" onclick="event.stopPropagation();intelStartEdit('${s}')">Edit</button>`
-    + `<button class="news-act del" onclick="event.stopPropagation();intelDelete('${s}')">Delete</button></div>`;
+function newsOpenPlayer(key){ if (typeof psOpenProfile === 'function') psOpenProfile(String(key)); }
+// TEN-409 Data 4: the canonical event name (sfEventName: "Shanghai" → "Shanghai Masters", "Beijing" → "China Open").
+function newsEventName(raw){
+  const s = raw == null ? '' : String(raw).trim();
+  if (!s || s === 'None' || s === 'null') return '';
+  return typeof sfEventName === 'function' ? sfEventName(s) : s;
 }
+// A tournament name opens it on the Tournaments page when the page holds the event (its court-speed registry);
+// any other name is plain text.
+function newsTourRegistryKey(raw){
+  const k = raw && typeof sfEventKey === 'function' ? sfEventKey(raw) : null;
+  if (!k || typeof tourxConditionRegistry !== 'function') return null;
+  if (!newsTourRegistryKey._set) { try { newsTourRegistryKey._set = new Set(tourxConditionRegistry().map(t => t.name)); } catch (e) { return null; } }
+  return newsTourRegistryKey._set.has(k) ? k : null;
+}
+function newsOpenTournament(key){
+  if (typeof tourxState === 'undefined') return;
+  tourxState.section = 'overview'; tourxState.tsSel = key; tourxState.tsQ = ''; tourxState.tsOpen = false;
+  const b = document.querySelector('#mainNav button[data-tab="tournaments"]');
+  if (b) b.click();
+  if (typeof renderTournamentsTab === 'function') renderTournamentsTab();
+}
+// Source slugs as the feed writes them → the outlet's name.
+const NEWS_SOURCE_NAMES = { 'tennis365': 'Tennis365', 'ubitennis': 'Ubitennis', 'tennis-majors': 'Tennis Majors', 'bbc-sport-tennis': 'BBC Sport',
+  'espn-tennis': 'ESPN', 'guardian-tennis': 'The Guardian', 'atp-tour': 'ATP Tour', 'reuters': 'Reuters' };
+function newsSourceNames(src){
+  const arr = Array.isArray(src) ? src : (src ? [src] : []);
+  return arr.filter(Boolean).map(x => NEWS_SOURCE_NAMES[String(x).toLowerCase()] || String(x)).join(', ');
+}
+const newsKeyAttr = k => String(k).replace(/[^A-Za-z0-9_-]/g, '');
+// newsEscape leaves quotes alone (textContent → innerHTML); every attribute value goes through this.
+const newsAttr = v => newsEscape(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
-// ---- Feed item builders. Each returns a uniform item {id,kind,ts,player,
-// playerKey,title,bodyParas,cat,src,srcRaw,note}. The data layer is untouched;
-// category + player are still derived client-side. ----
-function newsWireItems(hours){
+// ---- Feed items {kind, id, ts, players:[{key,name}], tour, title, bodyParas, cat, source}. ----
+// Data 2 (standing ruling, founder): an article shows only if the builder's resolver attached a player (player_key).
+// This page never reads a headline for a name, and tournament-only articles do not come back as a "bug fix".
+function newsWireItems(){
   const all = Array.isArray(_newsData && _newsData.articles) ? _newsData.articles : [];
-  const cutoff = Date.now() - hours * 3600 * 1000;
-  const re = tourMatchRegex();   // false, or the selected tournament's surname regex
-  return all
-    .map(a => ({ a, ts: newsParseTs(a.published_at) }))
-    .filter(x => !isFinite(x.ts) || x.ts >= cutoff)     // keep undated items rather than drop them
-    .map(x => {
-      const a = x.a;
-      const player = (a.player_key != null && a.player_name)
-        ? String(a.player_name)                          // populated at source (fail-closed)
-        : newsPlayerFor(a.title);                        // interim fallback for pre-field feeds
-      const src = newsSourceLabel(a.sources);
-      return {
-        kind: 'wire', ts: x.ts,
-        player, playerKey: (a.player_key != null ? a.player_key : null),
-        title: a.title || 'Untitled',
-        bodyParas: a.content ? newsSplitParas(a.content) : [],
-        cat: newsClassify(a.title, a.content),
-        src: '', srcRaw: src,
-        _text: (String(a.title || '') + ' ' + String(a.content || '')),
-      };
-    })
-    .filter(x => x.player)                                // README invariant: player-attributed articles only
-    .filter(x => !re || re.test(x._text + ' ' + x.player));
+  return all.filter(a => a && a.player_key != null && String(a.player_key) !== '').map((a, i) => {
+    const key = String(a.player_key), name = newsPlayerName(key, a.player_name);
+    return {
+      kind: 'wire', id: 'w' + (a.news_key != null ? a.news_key : i), ts: newsParseTs(a.published_at),
+      players: name ? [{ key, name }] : [],
+      tour: newsEventName(a.tournament_name), tourRaw: a.tournament_name,
+      title: a.title || 'Untitled', bodyParas: newsSplitParas(a.content),
+      cat: newsClassify(a.title, a.content), source: newsSourceNames(a.sources),
+    };
+  }).filter(x => x.players.length);
 }
+// The founder's Post intel notes on this page: title = the first sentence (≤ 90 characters), body = the note, tag
+// "Stennisfy Intel", source "Stennisfy"; the player is plain text (never a link). A note without a player still shows.
+function newsPageIntelItems(){
+  return newsIntelItems().map(it => {
+    const text = (it.bodyParas || []).join('\n\n');
+    const first = text.split(/[.!?]/)[0].trim().slice(0, 90);
+    const named = it.player && it.player !== 'BSP Intel';
+    return { kind: 'intel', id: 'i' + it.intelId, intelId: it.intelId, ts: it.ts,
+      players: named ? [{ key: it.playerKey != null ? String(it.playerKey) : null, name: String(it.player) }] : [],
+      tour: '', tourRaw: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: 'Stennisfy Intel', source: 'Stennisfy' };
+  });
+}
+
 function newsIntelItems(){
   return (_intelNotes || []).map(n => {
     const pr = intelResolveNote(n);
@@ -5700,173 +5656,158 @@ function newsAsapItems(){
     }).filter(Boolean);
 }
 
-// Sync the view toggle UI (wrap width + active tab) — safe to call before data loads.
+// Sync the view toggle (feed width + selected segment) — safe before data loads.
 function newsSyncViewUI(){
   const wrapEl = document.getElementById('newsWrap');
   if (wrapEl) wrapEl.classList.toggle('compact', _newsView === 'compact');
   const rt = document.getElementById('newsTabReading'), ct = document.getElementById('newsTabCompact');
-  if (rt) rt.classList.toggle('active', _newsView === 'reading');
-  if (ct) ct.classList.toggle('active', _newsView === 'compact');
+  if (rt){ rt.classList.toggle('on', _newsView === 'reading'); rt.setAttribute('aria-selected', String(_newsView === 'reading')); }
+  if (ct){ ct.classList.toggle('on', _newsView === 'compact'); ct.setAttribute('aria-selected', String(_newsView === 'compact')); }
 }
+
+// Search covers the title, the players, the tournament and the body.
+function newsHay(x){ return (x.title + ' ' + x.players.map(p => p.name).join(' ') + ' ' + x.tour + ' ' + x.bodyParas.join(' ')).toLowerCase(); }
+// One test for every filter; a key left out of `o` is not applied. Undated items pass the window (kept, as built).
+function newsPasses(x, o){
+  if (o.hours != null && isFinite(x.ts) && x.ts < Date.now() - o.hours * 3600e3) return false;
+  if (o.tour && newsTourKey(x.tour) !== o.tour) return false;
+  if (o.cats && o.cats.length && o.cats.indexOf(x.cat) < 0) return false;
+  if (o.q && newsHay(x).indexOf(o.q) < 0) return false;
+  return true;
+}
+// Empty state (the reference's diagnosis): name the constraint responsible; offer "Try a wider date range." only when a
+// wider window has results and "Clear search" only when a search is set — never an action that changes nothing.
+function newsEmptyState(all){
+  const q = _newsSearch.trim().toLowerCase(), cats = _newsCats, tour = _newsTourKey, win = _newsRangeHours;
+  const winWord = { 6: '6 hours', 24: '24 hours', 48: '48 hours', 168: '7 days' }[win] || '7 days';
+  const noFilters = !q && !cats.length && !tour && win >= 168;
+  const canWiden = win < 168 && all.some(x => newsPasses(x, { hours: 168, tour, cats, q }));
+  let title, detail = '', widen = false, clear = false;
+  if (noFilters){
+    const f = newsFreshness();
+    title = 'No articles available.';
+    detail = 'Last updated ' + (f.known ? `<b>${newsEscape(newsFmtHMS(f.ts))}</b>` : '—') + '.';
+  } else {
+    title = 'No articles match these filters.';
+    const catPart = cats.length ? newsEscape(cats.join(' / ')) + ' articles' : 'articles';
+    if (q){ detail = 'No results for “' + newsEscape(_newsSearch.trim()) + '”' + (canWiden ? ' in the last ' + winWord : '') + '.'; clear = true; widen = canWiden; }
+    else if (tour){
+      const hit = all.find(x => newsTourKey(x.tour) === tour), tName = newsEscape(hit ? hit.tour : 'this tournament');
+      if (!hit) detail = 'No articles for ' + tName + '.';
+      else { detail = 'No ' + catPart + ' for ' + tName + ' in the last ' + winWord + '.'; widen = canWiden; }
+    } else if (cats.length){ detail = 'No ' + catPart + ' in the last ' + winWord + '.'; widen = canWiden; }
+    else { detail = 'No articles in the last ' + winWord + '.'; widen = canWiden; }
+  }
+  return `<div class="news-empty"><span class="news-empty-t">${title}</span><span class="news-empty-d">${detail}`
+    + (widen ? `${detail ? ' ' : ''}<button type="button" class="news-link" onclick="newsWiden()">Try a wider date range.</button>` : '')
+    + (clear ? ` <button type="button" class="news-link" onclick="newsClearSearch()">Clear search</button>` : '')
+    + `</span></div>`;
+}
+// Widen to the first wider window that has results (so the click always changes the list).
+function newsWiden(){
+  const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsPageIntelItems());
+  const o = { tour: _newsTourKey, cats: _newsCats, q: _newsSearch.trim().toLowerCase() };
+  const ws = NEWS_WINDOWS.map(w => w[0]).filter(h => h > _newsRangeHours);
+  _newsRangeHours = ws.find(h => all.some(x => newsPasses(x, Object.assign({ hours: h }, o)))) || ws[ws.length - 1] || _newsRangeHours;
+  newsRangeDd(); renderNews();
+}
+function newsClearSearch(){ _newsSearch = ''; const i = document.getElementById('newsSearch'); if (i) i.value = ''; renderNews(); }
 
 function renderNews(){
   const listEl = document.getElementById('newsList');
-  const footEl = document.getElementById('newsFootnote');
-  if (!listEl || !_newsData) return;
-
+  if (!listEl) return;
   newsSyncViewUI();
-  newsRenderFreshness();   // header freshness from feed's own generatedAt
-  renderNewsChips();       // category chips (row 1)
-  newsRenderComposer();    // post-intel button + inline panel (founder only)
+  renderNewsChips();
+  newsRenderComposer();
+  newsRenderStale();
+  const all = (_newsState === 'ok' ? newsWireItems() : []).concat(newsPageIntelItems());
+  const inWin = all.filter(x => newsPasses(x, { hours: _newsRangeHours }));
+  newsRenderTourDd(inWin, all);
+  const q = _newsSearch.trim().toLowerCase();
+  const list = inWin.filter(x => newsPasses(x, { tour: _newsTourKey, cats: _newsCats, q }))
+    .sort((a, b) => (isFinite(b.ts) ? b.ts : -Infinity) - (isFinite(a.ts) ? a.ts : -Infinity));
+  newsRenderHeaderStats(list);
 
-  // Honesty banner (TEN-8): when the feed's generatedAt is stale, say so above
-  // the list rather than presenting old articles under a live label. No backfill.
-  const _fresh = newsFreshness();
-  const staleBanner = (_fresh.known && _fresh.stale)
-    ? `<div class="news-stalebanner">No new articles since ${newsEscape(newsFmtDateTime(_fresh.ts))}. `
-      + `The news source has returned nothing new for ${Math.floor(_fresh.ageH / 24)} day(s) — the items below are the last retrieved, not fresh.</div>`
-    : '';
-
-  // Build the unified feed for a given window. Wire articles always; intel + ASAP
-  // fold in as ordinary rows, but only when no category filter is active (they
-  // carry no derived category, so a category filter keeps the result set clean).
-  const build = (hours) => {
-    let items = newsWireItems(hours);
-    if (!_newsCat) items = items.concat(newsIntelItems()).concat(newsAsapItems());
-    if (_newsCat) items = items.filter(x => x.cat === _newsCat);
-    if (_newsSearch){
-      items = items.filter(x =>
-        ((x.title || '') + ' ' + (x.bodyParas || []).join(' ') + ' ' + (x.player || '') + ' ' + (x.srcRaw || ''))
-          .toLowerCase().includes(_newsSearch));
+  if (!list.length){
+    if (_newsState === 'load'){ listEl.innerHTML = `<div class="news-empty"><span class="news-empty-d">Loading news…</span></div>`; return; }
+    if (_newsState === 'unavailable' && !all.length){
+      listEl.innerHTML = `<div class="news-empty"><span class="news-empty-t">News feed unavailable.</span><span class="news-empty-d">Last checked <b>${newsEscape(newsFmtHMS(Date.now()))}</b>.</span></div>`;
+      return;
     }
-    return items.sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  };
-
-  let items = build(_newsRangeHours);
-
-  // Auto-widen fallback (TEN-8, 2026-07-30): rather than open blank, widen an empty
-  // unfiltered window to the next tier that has items. The range selector is untouched.
-  let widenedTo = 0;
-  if (!items.length && !_newsCat && !_newsSearch){
-    for (const h of [24, 48, 72, 168]){
-      if (h <= _newsRangeHours) continue;
-      const wider = build(h);
-      if (wider.length){ items = wider; widenedTo = h; break; }
-    }
-  }
-
-  if (footEl){
-    footEl.textContent = 'Reporting via ATP Tour, api-tennis and other cited outlets. '
-      + 'Category and player labels are derived automatically; BSP Consult Intel notes are our own. '
-      + 'For informational purposes only.';
-  }
-
-  if (!items.length){
-    listEl.innerHTML = staleBanner + `<div class="news-empty">`
-      + (_newsSearch ? `No items match “${newsEscape(_newsSearch)}”.`
-         : _newsCat ? `No ${newsEscape(_newsCat)} items in the last ${_newsRangeHours >= 168 ? '7 days' : _newsRangeHours + ' hours'}.`
-         : `No items published in the last ${_newsRangeHours >= 168 ? '7 days' : _newsRangeHours + ' hours'}.`)
-      + `</div>`;
+    listEl.innerHTML = newsEmptyState(all);
     return;
   }
 
-  const widenNote = widenedTo
-    ? `<div class="news-footnote" style="margin:0 0 14px;">No items in the last ${_newsRangeHours >= 168 ? '7 days' : _newsRangeHours + ' hours'} — showing the last ${widenedTo >= 168 ? '7 days' : widenedTo + ' hours'} instead.</div>`
-    : '';
-
-  // Group by date-only key (tz-bound); undated items last, under no header.
+  // Day groups (member zone), newest first; undated items last, under no label.
   const groups = []; const idx = {};
-  for (const it of items){
-    const key = isFinite(it.ts) ? newsFmtDateKey(it.ts) : '__nodate__';
-    if (idx[key] == null){ idx[key] = groups.length; groups.push({ key, items: [] }); }
+  for (const it of list){
+    const key = isFinite(it.ts) ? localDayKey(it.ts) : '__nodate__';
+    if (idx[key] == null){ idx[key] = groups.length; groups.push({ key, label: isFinite(it.ts) ? newsFmtDateKey(it.ts) : '', items: [] }); }
     groups[idx[key]].items.push(it);
   }
-
   const admin = isBspAdmin();
-  const renderGroup = _newsView === 'compact' ? newsRenderCompactGroup : newsRenderReadingGroup;
-  listEl.innerHTML = staleBanner + widenNote + groups.map(g => {
-    const header = g.key === '__nodate__' ? ''
-      : `<div class="news-daterow"><span class="news-datelabel">${newsEscape(g.key)}</span><span class="news-daterule"></span></div>`;
-    return header + renderGroup(g.items, admin);
+  listEl.innerHTML = groups.map(g => {
+    const header = g.label ? `<div class="news-daterow"><span class="news-datelabel">${newsEscape(g.label)}</span><span class="news-daterule"></span></div>` : '';
+    return header + (_newsView === 'compact'
+      ? `<div class="news-rows">${g.items.map(it => newsCompactRow(it, admin)).join('')}</div>`
+      : g.items.map(it => newsReadingCard(it, admin)).join(''));
   }).join('');
 }
 
-// Compact: dense wire rows [time | player | headline | caret], expand in place.
-function newsRenderCompactGroup(items, admin){
-  return `<div class="news-rows">` + items.map(it => {
-    const bodyParas = it.bodyParas.length
-      ? it.bodyParas.map(p => `<p>${newsEscape(p)}</p>`).join('')
-      : `<p><em>No further detail provided.</em></p>`;
-    const acts = (it.kind === 'intel' && admin) ? newsIntelActs(it.intelId, 'news-racts') : '';
-    return `<div class="news-row">
-      <div class="news-rowhead" onclick="this.closest('.news-row').classList.toggle('open')">
-        <span class="news-rtime">${newsEscape(newsFmtTime(it.ts))}</span>
-        <span class="news-rplayer">${newsPlayerNode(it)}</span>
-        <span class="news-rhead">${newsEscape(it.title)}</span>
-        <span class="news-rcaret">▾</span>
-      </div>
-      <div class="news-rbody">
-        ${bodyParas}
-        ${newsSrcLine(it, 'news-rsrc')}
-        ${acts}
-      </div>
-    </div>`;
-  }).join('') + `</div>`;
+// Meta-line names: white 600, underline on hover; a feed player → Player Profile, an event → Tournaments; an intel
+// player is plain text.
+function newsPlayerHtml(p, kind){
+  const n = newsEscape(p.name);
+  if (kind !== 'intel' && p.key != null && newsHasProfile(p.key))
+    return `<span class="news-ent news-entlink" role="link" tabindex="0" onclick="event.stopPropagation();newsOpenPlayer('${newsKeyAttr(p.key)}')" onkeydown="if(event.key==='Enter'){event.stopPropagation();newsOpenPlayer('${newsKeyAttr(p.key)}')}" title="Open ${newsAttr(p.name)} on Player Profile">${n}</span>`;
+  return `<span class="news-ent">${n}</span>`;
+}
+function newsTourHtml(it){
+  const n = newsEscape(it.tour), k = newsTourRegistryKey(it.tourRaw) || newsTourRegistryKey(it.tour);
+  if (!k) return `<span class="news-ent">${n}</span>`;
+  return `<span class="news-ent news-entlink" role="link" tabindex="0" data-tour="${newsAttr(k)}" onclick="event.stopPropagation();newsOpenTournament(this.dataset.tour)" onkeydown="if(event.key==='Enter'){event.stopPropagation();newsOpenTournament(this.dataset.tour)}" title="Open ${newsAttr(it.tour)} on Tournaments">${n}</span>`;
+}
+const newsTimeHtml = (ts, cls) => `<span class="${cls}" title="${newsAttr(newsFmtAbs(ts))}">${newsEscape(newsFmtTime(ts))}</span>`;
+function newsIntelActsHtml(it){
+  const s = String(it.intelId).replace(/[^A-Za-z0-9_-]/g, '');
+  return `<div class="news-acts"><button type="button" class="news-act" onclick="event.stopPropagation();intelStartEdit('${s}')">Edit</button>`
+    + `<button type="button" class="news-act" onclick="event.stopPropagation();intelDelete('${s}')">Delete</button></div>`;
 }
 
-// Reading: restyled article cards, body visible, "Read more" past 5 paragraphs.
-function newsRenderReadingGroup(items, admin){
-  return `<div class="news-list">` + items.map(it => {
-    const clamp = it.bodyParas.length > 5 ? ' clamped' : '';
-    const body = it.bodyParas.length
-      ? it.bodyParas.map(p => `<p>${newsEscape(p)}</p>`).join('')
-      : `<p><em>No further detail provided.</em></p>`;
-    const more = it.bodyParas.length > 5 ? `<button class="news-more" onclick="newsToggleMore(this)">Read more</button>` : '';
-    const catBadge = it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : '';
-    const acts = (it.kind === 'intel' && admin) ? newsIntelActs(it.intelId, 'news-cardacts') : '';
-    // Header line (export parity): [ badge · source · player ] … [ time, right ].
-    // Source moves into the header for wire items, so the bottom attribution line
-    // is only kept for ASAP/intel (which carry richer prebuilt attribution).
-    const hasLead = !!(catBadge || it.srcRaw);
-    const srcNode = it.srcRaw ? `<span class="news-cardsource">${newsEscape(it.srcRaw)}</span>` : '';
-    const playerNode = it.player
-      ? `${hasLead ? '<span class="news-cardsep">·</span>' : ''}<span class="news-cardplayer">${newsPlayerNode(it)}</span>`
-      : '';
-    const timeAbs = isFinite(it.ts) ? newsEscape(newsFmtDateTime(it.ts)) : '';
-    const srcLine = (it.kind === 'asap' || it.kind === 'intel') ? newsSrcLine(it, 'news-cardsrc') : '';
-    return `<article class="news-card">
+// Reading: one card per article — meta line (tag · source · players · tournament, time right), title, body; "Read more"
+// only past 5 paragraphs (the first 4 show until it is pressed, as the reference does).
+function newsReadingCard(it, admin){
+  const hasMore = it.bodyParas.length > 5, expanded = !!_newsMore[it.id];
+  const paras = hasMore && !expanded ? it.bodyParas.slice(0, 4) : it.bodyParas;
+  const ents = it.players.map(p => newsPlayerHtml(p, it.kind)).concat(it.tour ? [newsTourHtml(it)] : []);
+  const idA = newsAttr(it.id);
+  return `<article class="news-card" data-id="${idA}">
       <div class="news-cardmeta">
-        <div class="news-cardmeta-l">
-          ${catBadge}
-          ${srcNode}
-          ${playerNode}
-        </div>
-        <span class="news-cardtime" title="${timeAbs}">${newsEscape(newsFmtTime(it.ts))}</span>
+        <div class="news-cardmeta-l">${it.cat ? `<span class="news-cat">${newsEscape(it.cat)}</span>` : ''}${it.source ? `<span class="news-cardsource">${newsEscape(it.source)}</span>` : ''}${ents.map(e => `<span class="news-cardsep">·</span>${e}`).join('')}</div>
+        ${newsTimeHtml(it.ts, 'news-cardtime')}
       </div>
       <h3 class="news-cardtitle">${newsEscape(it.title)}</h3>
-      <div class="news-cardbody${clamp}">${body}</div>
-      ${more}
-      ${srcLine}
-      ${acts}
+      ${paras.map(p => `<div class="news-para">${newsEscape(p)}</div>`).join('')}
+      ${hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : ''}
+      ${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}
     </article>`;
-  }).join('') + `</div>`;
 }
+function newsToggleMore(id){ _newsMore[id] = !_newsMore[id]; renderNews(); }
 
-// Reading-card Read more / Show less: lift the 5-paragraph clamp in place.
-function newsToggleMore(btn){
-  const body = btn.previousElementSibling;
-  if (!body) return;
-  const clamped = body.classList.toggle('clamped');
-  btn.textContent = clamped ? 'Read more' : 'Show less';
+// Compact: closed row = time · player · title (one line) · ▾; a click opens it in place (title wraps, body under it,
+// caret turned). One row open at a time.
+function newsCompactRow(it, admin){
+  const open = _newsOpenId === it.id, p = it.players[0];
+  const idA = newsAttr(it.id);
+  const head = open
+    ? `<div class="news-rowhead">${newsTimeHtml(it.ts, 'news-rtime')}<span class="news-rhead">${newsEscape(it.title)}${p ? ` <span class="news-rwho">· ${newsEscape(p.name)}</span>` : ''}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`
+    : `<div class="news-rowhead">${newsTimeHtml(it.ts, 'news-rtime')}<span class="news-rplayer">${p ? newsPlayerHtml(p, it.kind) : ''}</span><span class="news-rhead">${newsEscape(it.title)}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`;
+  const body = open
+    ? `<div class="news-rbody" onclick="event.stopPropagation()">${it.bodyParas.map(x => `<div class="news-para">${newsEscape(x)}</div>`).join('')}${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`
+    : '';
+  return `<div class="news-row${open ? ' open' : ''}" data-id="${idA}" role="button" tabindex="0" aria-expanded="${open}" onclick="newsToggleRow(this.dataset.id)" onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">${head}${body}</div>`;
 }
-
-// Load the ASAP signal for the News page, then re-render so the quote cards appear.
-// Fire-and-forget from loadNews() — like Intel and the tournament filter, it must
-// never block or delay the article feed.
-async function loadAsapForNews(){
-  await loadAsapSignals();
-  if (_newsData) renderNews();
-}
+function newsToggleRow(id){ _newsOpenId = _newsOpenId === id ? '' : id; renderNews(); }
 
 
 /* ---------- BSP CONSULT INTEL (manual injury / insider notes, TEN-8) ----------
@@ -6017,54 +5958,54 @@ async function loadIntel(){
 }
 // Intel folds into the one feed now, so an intel load re-renders the feed AND the
 // composer (its count + list membership both changed).
-function newsAfterIntel(){ if (_newsData) renderNews(); newsRenderComposer(); }
+function newsAfterIntel(){ renderNews(); }
 
-// Composer: the Post-intel control (row 2) + the inline expansion panel below the
-// controls. Founder-only — rendered empty for members. Opening is toggled by
-// newsToggleComposer(); editing an existing note opens it in edit mode.
+// Composer: the Post intel button (row 2) + the panel under the search row. Founder only — members get neither, and
+// read the notes in the feed. The panel is rebuilt only when it opens, closes, switches note or the count moves, so a
+// filter change never wipes what is being typed.
+let _composerSig = '';
 function newsRenderComposer(){
   const host  = document.getElementById('newsPostIntelHost');
   const panel = document.getElementById('newsComposer');
-  const admin = isBspAdmin();
+  const admin = isBspAdmin(), n = (_intelNotes || []).length;
   if (host){
     host.innerHTML = admin
-      ? `<button class="news-postintel${_composerOpen ? ' active' : ''}" onclick="newsToggleComposer()">Post intel <span class="news-picount">${(_intelNotes || []).length}/${INTEL_MAX}</span></button>`
+      ? `<button type="button" class="news-postintel${_composerOpen ? ' active' : ''}" aria-expanded="${_composerOpen}" onclick="newsToggleComposer()">Post intel <span class="news-picount">${n}/${INTEL_MAX}</span></button>`
       : '';
   }
   if (!panel) return;
-  if (!admin || !_composerOpen){ panel.innerHTML = ''; return; }
-  const editing = _intelEditingId ? ((_intelNotes || []).find(n => n.id === _intelEditingId) || null) : null;
+  if (!admin || !_composerOpen){ panel.innerHTML = ''; _composerSig = ''; return; }
+  const sig = 'open|' + (_intelEditingId || '');
+  if (sig === _composerSig && panel.firstChild){
+    const c = panel.querySelector('.cmp-count b'); if (c) c.textContent = n + '/' + INTEL_MAX;
+    intelSyncPublish(); return;
+  }
+  _composerSig = sig;
+  const editing = _intelEditingId ? ((_intelNotes || []).find(x => x.id === _intelEditingId) || null) : null;
   panel.innerHTML = `
     <div class="news-composer">
-      <div class="cmp-label">${editing ? 'Edit intel note' : 'Post intel'}</div>
-      <textarea id="intelText" placeholder="Injury update, insider info, practice observation…">${editing ? newsEscape(editing.text || '') : ''}</textarea>
-      <input id="intelPlayer" type="text" placeholder="Player name (optional — auto-links, e.g. Sinner)" value="${editing ? newsEscape(editing.player || '') : ''}" oninput="intelUpdateMatchHint()" />
-      <div class="cmp-match" id="intelMatchHint"></div>
+      <div class="cmp-head"><span class="cmp-title">${editing ? 'Edit intel' : 'Post intel'}</span><span class="cmp-count"><b>${n}/${INTEL_MAX}</b> active</span></div>
+      <label class="cmp-field"><span class="cmp-label">Update</span>
+        <textarea id="intelText" rows="3" placeholder="Injury update, insider info, practice observation…" oninput="intelSyncPublish()">${editing ? newsEscape(editing.text || '') : ''}</textarea></label>
+      <label class="cmp-field"><span class="cmp-label">Player · optional</span>
+        <input id="intelPlayer" type="text" autocomplete="off" placeholder="e.g. Jannik Sinner" value="${editing ? newsAttr(editing.player || '') : ''}"></label>
       <div class="cmp-foot">
-        <span class="cmp-count">${(_intelNotes || []).length}/${INTEL_MAX} active${editing ? '' : ((_intelNotes || []).length >= INTEL_MAX ? ' — oldest will drop off' : '')}</span>
-        ${editing ? `<button class="cmp-pub secondary" onclick="intelCancelEdit()">Cancel</button>` : ''}
-        <button class="cmp-pub" id="intelPublishBtn" onclick="intelPublish()">${editing ? 'Save changes' : 'Publish'}</button>
+        <span class="cmp-msg" id="intelMsg"></span>
+        <button type="button" class="cmp-cancel" onclick="newsCancelComposer()">Cancel</button>
+        <button type="button" class="cmp-pub" id="intelPublishBtn" onclick="intelPublish()" disabled>${editing ? 'Save' : 'Publish'}</button>
       </div>
-      <div class="cmp-msg" id="intelMsg"></div>
     </div>`;
-  intelUpdateMatchHint();
+  intelSyncPublish();
 }
-
-// Live feedback under the free-text player field: shows which profile the note
-// will link to (or that it will publish unlinked). No dropdown — just confirmation.
-function intelUpdateMatchHint(){
-  const hint = document.getElementById('intelMatchHint');
-  const inp = document.getElementById('intelPlayer');
-  if (!hint || !inp) return;
-  const raw = (inp.value || '').trim();
-  if (!raw){ hint.textContent = ''; hint.className = 'cmp-match'; return; }
-  const m = intelMatchPlayer(raw);
-  if (m){ hint.textContent = '→ links to ' + m.name; hint.className = 'cmp-match ok'; }
-  else { hint.textContent = 'No player match — will publish without a link'; hint.className = 'cmp-match none'; }
+// Publish is white and clickable only with text in the Update field and (for a new note) fewer than 5 active notes.
+function intelCanPublish(){
+  const t = ((document.getElementById('intelText') || {}).value || '').trim();
+  return !!t && (!!_intelEditingId || (_intelNotes || []).length < INTEL_MAX);
 }
+function intelSyncPublish(){ const b = document.getElementById('intelPublishBtn'); if (b) b.disabled = !intelCanPublish(); }
 
 function intelStartEdit(id){ _intelEditingId = id; _composerOpen = true; newsRenderComposer(); }
-function intelCancelEdit(){ _intelEditingId = null; newsRenderComposer(); }
+function intelCancelEdit(){ newsCancelComposer(); }
 
 async function intelPublish(){
   const msgEl = document.getElementById('intelMsg');
@@ -6074,6 +6015,7 @@ async function intelPublish(){
   const text = (document.getElementById('intelText') || {}).value || '';
   const rawPlayer = ((document.getElementById('intelPlayer') || {}).value || '').trim();
   if (!text.trim()){ setMsg('Note text is required.'); return; }
+  if (!_intelEditingId && (_intelNotes || []).length >= INTEL_MAX){ setMsg('5 of 5 notes are active. Delete one first.'); return; }
   // Fuzzy-resolve the typed name to a roster player. A confident match stores the
   // canonical name + numeric key (so the tag links to the profile); no match stores
   // the raw text with a null key and the note still publishes, unlinked.
@@ -6101,14 +6043,14 @@ async function intelPublish(){
       });
     }
     await intelPruneToMax(db);
+    _composerOpen = false; _composerSig = '';
     await loadIntel();
-    setMsg('');
   } catch (err) {
     console.warn('intel: publish failed:', err && err.message);
     setMsg('Save failed: ' + (err && err.message ? err.message : 'unknown error') +
       ' (has the updated firestore.rules been published?)');
   } finally {
-    if (btn) btn.disabled = false;
+    intelSyncPublish();
   }
 }
 
@@ -20459,8 +20401,8 @@ async function loadAsapSignals(){
   // TEN-8 lazy-race fix: if a profile is already open when the signal resolves, repaint
   // it so the ASAP card fills in place. Without this the card renders nothing on first
   // paint (self-hides when asapSignals is empty) and never corrects itself — visually
-  // identical to a real data gap. Same idiom as loadOddsPerfShardThenRerender; the News
-  // surface already repaints via loadAsapForNews().
+  // identical to a real data gap. Same idiom as loadOddsPerfShardThenRerender. (The News
+  // page shows no ASAP rows since TEN-409: one feed, news-feed.json.)
   const _ppView = document.getElementById('playerProfileView');
   if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
       && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
