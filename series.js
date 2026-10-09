@@ -1089,10 +1089,9 @@
   // The four stats are live and recount on every filter change: STREAKS is the card
   // count in view, PLAYERS the distinct players inside it, LONGEST RUN the max count
   // (a dash when the view is empty, never 0), UPDATED the clock off generatedAt.
-  var SUBTITLE = 'Current streaks for players scheduled today and tomorrow — runs of wins or ' +
-    'losses against a playing style, on a surface, straight across all competitions, or on the ' +
-    'opening set. Every streak carries the pool it was drawn from and the date of its most ' +
-    'recent match. A streak that can’t show both isn’t here.';
+  // TEN-403: the 35b header carries ONE sentence on one line — trimmed from the TEN-194 paragraph (the pool /
+  // date-of-last-match promise still holds on every card; only the header stopped restating it).
+  var SUBTITLE = 'Current streaks for players scheduled today and tomorrow.';
   // The title half renders from the FIRST paint, before any data exists. The shell no
   // longer carries a static <h1>, so gating the whole header behind `_data` would leave
   // the loading and fetch-failure states as one unlabelled sentence floating in the tab
@@ -1106,19 +1105,20 @@
       view.forEach(function (c) { players[c.player.key || c.player.name] = 1; });
       var longest = view.length ? view.reduce(function (m, c) { return Math.max(m, c.streak.count); }, 0) : null;
       var upd = fmtUpdated(_data && _data.generatedAt);
+      // TEN-403: the shared 35b stat columns (.sfh__stat); the clock reads --text-soft, a dash grey (.sr-dash).
       var stat = function (k, v, cls) {
-        return '<div class="sr-stat"><span class="sr-stat-k">' + k + '</span>' +
-               '<span class="sr-stat-v' + (cls ? ' ' + cls : '') + '">' + v + '</span></div>';
+        return '<div class="sfh__stat"><span class="sfh__l sr-stat-k">' + k + '</span>' +
+               '<span class="sfh__v' + (cls ? ' ' + cls : '') + '">' + v + '</span></div>';
       };
-      stats = '<div class="sr-stats">' +
+      stats = '<div class="sfh__stats">' +
         stat('Streaks', esc(String(view.length))) +
         stat('Players', esc(String(Object.keys(players).length))) +
-        stat('Longest run', longest != null ? esc(String(longest)) : dash, 'sr-accent') +
-        stat('Updated', upd ? esc(upd) : dash, 'sr-soft') +
+        stat('Longest run', longest != null ? esc(String(longest)) : dash) +
+        stat('Updated', upd ? esc(upd) : dash, upd ? 'sfh__v--soft' : '') +
       '</div>';
     }
-    return '<div class="sr-head">' +
-      '<div><h1 class="sr-h1">Series</h1><p class="sr-subtitle">' + SUBTITLE + '</p></div>' +
+    return '<div class="sfh sr-head">' +
+      '<div class="sfh__text"><h1 class="sfh__title">Series</h1><p class="sfh__sub">' + SUBTITLE + '</p></div>' +
       stats +
     '</div>';
   }

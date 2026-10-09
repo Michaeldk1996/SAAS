@@ -150,15 +150,19 @@ console.log('\n  — it must not silently substitute the load time when it has n
         !/10:00/.test(html));
 }
 
-console.log('\n  — the card-state observation clock counts too, not just matches.json');
+console.log('\n  — TEN-403: the Updated stat (mxOddsUpdatedAt) reads the SHOWN prices, the same set and clock as the oldest bound');
 {
+  // TEN-403 review: it used to scan bet365Now + every card-state key, so an off-board sighting set "Updated" while the
+  // stream prices the cards show were ignored. Now: newest of _mcNowPair(m).obs over getFiltered().
   const api = build({
-    matches: [{ id: 'a', bet365Now: { observedAt: '2026-09-18T20:00:00Z', src: 'live' } }],
-    OCS: { byKey: { k: { sides: { p: { nowObs: '2026-09-18T22:30:00Z' } } } } },
+    matches: [{ id: 'a', _pair: { p1: 2.0, p2: 1.9, book: 'Bet105', at: '2026-09-18T21:00:00Z', obs: '2026-09-18T21:10:00Z', src: 't' }, bet365Now: { observedAt: '2026-09-18T23:55:00Z' } },
+              { id: 'b', _pair: { p1: 1.5, p2: 2.6, book: 'Bet105', at: '2026-09-18T19:00:00Z', obs: '2026-09-18T20:00:00Z', src: 't' } }],
+    OCS: { byKey: { k: { sides: { p: { nowObs: '2026-09-18T23:59:00Z' } } } } },
     dataLoadedAt: LOADED, tz: 'UTC' });
-  check('mxOddsUpdatedAt (the newest reading, still used elsewhere) prefers the '
-      + 'fresher OCS nowObs over a staler bet365Now.observedAt',
-        api.mxOddsUpdatedAt() === Date.parse('2026-09-18T22:30:00Z'));
+  check('mxOddsUpdatedAt = the newest SHOWN observation (21:10), not an off-board card-state or bet365Now clock',
+        api.mxOddsUpdatedAt() === Date.parse('2026-09-18T21:10:00Z'), String(api.mxOddsUpdatedAt()));
+  check('...so Updated is never older than the oldest bound',
+        api.mxOddsUpdatedAt() >= api.mxOddsAgeBound().oldest);
 }
 
 console.log('\nTEN-225 item 0d — the tooltip clock renders in the MEMBER zone');

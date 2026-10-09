@@ -42,10 +42,10 @@ historical backfill only.
   rows before and after, added, changed, latest date.
 - **"Archive through" comes from the data.** It is `database-yield.json`
   `meta.dateRange[1]`, the latest match in the CSVs. When that is more than 14 days
-  before today (UTC days; exactly 14 is not stale), the same line reads
-  "Archive through [date]. Updates pending."
+  before today (UTC days; exactly 14 is not stale), the archive is behind: the Database
+  header's grey tail adds "· updates pending" (TEN-403 R1; the date itself is the Updated stat).
   **The clock is the latest MATCH, not the last refresh (founder ruling, 2026-09-23).** So
-  "Updates pending" also shows in the off-season (from about early December to early January;
+  "· updates pending" also shows in the off-season (from about early December to early January;
   the last matches of 2022–2025 fell on 16–20 Nov), when no ATP matches are played. That is
   intended; do not switch it to a refresh clock.
 

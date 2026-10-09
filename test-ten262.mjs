@@ -351,30 +351,44 @@ function checkRetiredFile(j = JSON.parse(readFileSync(RETIRED_FILE, 'utf8'))) {
   return null;
 }
 
-// 2 + 3 · the app shell, read off BOTH published pages: sidebar 252px (and the body
-// offset that makes room for it), and the design's star as the Stennisfy Model icon.
-// 252px is founder ruling TEN-286 (2026-09-26, the 12a design's aside), which
-// SUPERSEDES TEN-262 #2's 250px — 250 is now a mutant below, not an accepted value.
+// 2 + 3 · the app shell, read off BOTH published pages: the TEN-403 rail (founder shell package 2026-10-08, PROMPT_SHELL
+// part 2 — SUPERSEDES TEN-286's 252px sidebar and TEN-262 #2's 250px). Closed = aside 92px; hover / keyboard focus opens it
+// to 248px and PUSHES the page: --sf-side (92 → 248) drives body padding-left and every overlay's left edge. The rail CSS
+// is one block, byte-identical on both pages; and the design's star stays the Stennisfy Model icon (TEN-262 #3).
 const STAR = 'M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z';
+const railBlock = h => { const a = h.indexOf('/* sf-rail:start'), b = h.indexOf('/* sf-rail:end */'); return a >= 0 && b > a ? h.slice(a, b) : null; };
 function checkShell(pages) {
+  const blocks = [];
   for (const [file, html] of Object.entries(pages)) {
-    const side = /\.sf-sidebar\{\s*position:fixed;[^}]*?width:(\d+)px/.exec(html);
-    const body = /body\{[^}]*?padding-left:(\d+)px/.exec(html);
-    if (!side || side[1] !== '252') return `${file}: sidebar width ${side && side[1]}px`;
-    if (!body || body[1] !== '252') return `${file}: body offset ${body && body[1]}px`;
-    const item = /<(?:a|button)[^>]*(?:#edge|data-tab="edge")[^>]*>([\s\S]*?)Stennisfy Model<\/(?:a|button)>/.exec(html);
+    const rail = railBlock(html);
+    if (!rail) return `${file}: no sf-rail block`;
+    blocks.push(rail);
+    const side = /\.sf-sidebar\{\s*position:fixed;[^}]*?width:(\d+)px/.exec(rail);
+    if (!side || side[1] !== '92') return `${file}: closed rail width ${side && side[1]}px`;
+    const root = /:root\{ --sf-side:(\d+)px; \}/.exec(rail);
+    if (!root || root[1] !== '92') return `${file}: --sf-side ${root && root[1]}px`;
+    if (!/\bbody\{ padding-left:var\(--sf-side\);/.test(rail)) return `${file}: body offset does not follow --sf-side`;
+    const fixed = /\bbody\{[^}]*?padding-left:(\d+)px/.exec(html.replace(/@media[^{]*\{[\s\S]*?\}\s*\}/g, ''));
+    if (fixed) return `${file}: body offset pinned to ${fixed[1]}px`;
+    const push = /html:has\(\.sf-sidebar:hover\), html:has\(\.sf-sidebar :focus-visible\)\{ --sf-side:(\d+)px; \}/.exec(rail);
+    const open = /\.sf-sidebar:hover, \.sf-sidebar:has\(:focus-visible\)\{ width:(\d+)px; \}/.exec(rail);
+    if (!push || push[1] !== '248') return `${file}: the open rail does not push the page to 248px (${push && push[1]})`;
+    if (!open || open[1] !== '248') return `${file}: open rail width ${open && open[1]}px`;
+    const item = /<(?:a|button)[^>]*(?:#edge|data-tab="edge")[^>]*>([\s\S]*?)Stennisfy Model<\/span><\/(?:a|button)>/.exec(html);
     if (!item) return file + ': no Stennisfy Model nav item';
     const d = [...item[1].matchAll(/<path d="([^"]+)"/g)].map(m => m[1]);
     if (d.length !== 1 || d[0] !== STAR) return `${file}: Stennisfy Model icon paths ${JSON.stringify(d)}`;
   }
+  if (blocks.some(b => b !== blocks[0])) return 'the sf-rail CSS differs between the two pages';
   return null;
 }
 const SHELL = { 'bsp-consult-dashboard.html': SRC, 'account.html': readFileSync(join(HERE, 'account.html'), 'utf8') };
-test('TEN-262/TEN-286 app shell · sidebar 252px + star icon on both pages', () => { assert.equal(checkShell(SHELL), null); });
+test('TEN-403 app shell · 92px rail that opens to 248 and pushes the page, one CSS block on both pages, star icon', () => { assert.equal(checkShell(SHELL), null); });
 
 // 6 · the archive date. TEN-399 D3 folds the old "Archive through … Updates pending." line
-// into the header's Updated stat: the value is meta.dateRange[1] (the store's latest match),
-// and past 14 days the stat carries the note "Updates pending". Painted by the real
+// into the header's Updated stat: the value is meta.dateRange[1] (the store's latest match).
+// TEN-403 R1 item 7: one value per stat — past 14 days the note is "· updates pending" in the
+// sentence's grey tail (.sfh__tail), never a line under Updated. Painted by the real
 // renderChrome (+ dbHeadStats) with a fixed clock. The Database tab's fmtDate is its own
 // one-liner (the page defines fmtDate twice), so that exact one is sliced.
 function paintChrome(src, latest, todayIso, books = ['Pinnacle', 'Bet365'], first = '2010-01-04') {
@@ -390,20 +404,31 @@ function paintChrome(src, latest, todayIso, books = ['Pinnacle', 'Bet365'], firs
   new Function('q', 'M', 'esc', 'state', 'MON', 'Date', 'DATA', 'presentYears', code + '\nrenderChrome();')(
     k => els[k] || null, M, x => String(x), { view: 'tour' },
     ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FixedDate, { rows: [0] }, () => years);
-  const stats = [...els.fresh.innerHTML.matchAll(/<div class="db-hstat"><span class="db-hstat__l">([^<]*)<\/span><span class="db-hstat__v">([^<]*)<\/span>(?:<span class="db-hstat__n">([^<]*)<\/span>)?<\/div>/g)]
-    .map(m => ({ l: m[1], v: m[2], n: m[3] || null }));
-  return { sub: els.subtitle.innerHTML.replace(/<[^>]*>/g, ''), stats, cls: els.fresh.className };
+  // n = anything a stat carries after its value (must be nothing: one value per stat)
+  const stats = [...els.fresh.innerHTML.matchAll(/<div class="sfh__stat"><span class="sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)<\/span>([\s\S]*?)<\/div>/g)]
+    .map(m => ({ l: m[1], v: m[2], n: m[3].replace(/<[^>]*>/g, '') || null }));
+  const html = els.subtitle.innerHTML, tl = /<span class="sfh__tail">([^<]*)<\/span>$/.exec(html);
+  const main = tl ? html.slice(0, tl.index).replace(/ $/, '') : html;
+  return { sub: main.replace(/<[^>]*>/g, ''), subHtml: main, tail: tl ? tl[1] : null, stats, cls: els.fresh.className };
 }
 const updated = (src, latest, today) => paintChrome(src, latest, today).stats.find(s => s.l === 'Updated') || null;
 const STALE = {
   fresh(src) {
-    const u = updated(src, '2026-09-13', '2026-09-23');
-    return u && u.v === '13 Sep 2026' && u.n === null ? null : 'at 10 days: ' + JSON.stringify(u);
+    const p = paintChrome(src, '2026-09-13', '2026-09-23'), u = p.stats.find(s => s.l === 'Updated');
+    return u && u.v === '13 Sep 2026' && u.n === null && p.tail === null ? null : 'at 10 days: ' + JSON.stringify([u, p.tail]);
   },
   boundary(src) {
-    const u14 = updated(src, '2026-09-13', '2026-09-27'), u15 = updated(src, '2026-09-13', '2026-09-28');
-    if (!u14 || u14.v !== '13 Sep 2026' || u14.n !== null) return 'at exactly 14 days: ' + JSON.stringify(u14);
-    if (!u15 || u15.v !== '13 Sep 2026' || u15.n !== 'Updates pending') return 'at 15 days: ' + JSON.stringify(u15);
+    const p14 = paintChrome(src, '2026-09-13', '2026-09-27'), p15 = paintChrome(src, '2026-09-13', '2026-09-28');
+    const u14 = p14.stats.find(s => s.l === 'Updated'), u15 = p15.stats.find(s => s.l === 'Updated');
+    if (!u14 || u14.v !== '13 Sep 2026' || u14.n !== null || p14.tail !== null) return 'at exactly 14 days: ' + JSON.stringify([u14, p14.tail]);
+    if (p15.tail !== '· updates pending') return 'at 15 days the grey tail: ' + JSON.stringify(p15.tail);
+    return null;
+  },
+  // TEN-403 R1 item 7: one value per stat — "Updates pending" never sits under the Updated date.
+  oneValue(src) {
+    const p = paintChrome(src, '2026-09-13', '2026-09-28');
+    const extra = p.stats.filter(s => s.n !== null);
+    if (p.stats.length !== 3 || extra.length) return 'a stat carries more than its value: ' + JSON.stringify(p.stats);
     return null;
   },
   fromData(src) {
@@ -415,7 +440,7 @@ const STALE = {
 // Matches = meta.used (the one join, unfiltered), Seasons = the seasons the rows hold.
 STALE.stats = function (src) {
   const p = paintChrome(src, '2026-09-13', '2026-09-23');
-  if (p.cls !== 'db-hstats') return 'stats container class: ' + p.cls;
+  if (p.cls !== 'sfh__stats') return 'stats container class: ' + p.cls;   // TEN-403: the 35b header stat row
   const got = p.stats.map(s => s.l + '=' + s.v).join(' · ');
   if (got !== 'Matches=40,972 · Seasons=17 · Updated=13 Sep 2026') return 'header stats: ' + got;
   const p27 = paintChrome(src, '2027-03-01', '2027-03-05');
@@ -427,6 +452,9 @@ STALE.header = function (src) {
   const want = 'Historical yield by odds band from our own ATP closing-line archive — Pinnacle closing, else Bet365, per match, 2010–2026.';
   const t = paintChrome(src, '2026-09-13', '2026-09-23').sub;
   if (t !== want) return 'header: ' + JSON.stringify(t);
+  // TEN-403 R1 item 7: plain 13px --text-soft — no bold / white run in the sentence
+  const h = paintChrome(src, '2026-09-13', '2026-09-23').subHtml;
+  if (/<(strong|b|em|span)\b/.test(h)) return 'the sentence carries a styled run: ' + JSON.stringify(h);
   if (/stop on|marked on the curves|seam|2026 uses|one book|settled/.test(t)) return 'header still carries a seam / superseded sentence: ' + JSON.stringify(t);
   // The years and the book names follow the data, none is typed.
   const s27 = paintChrome(src, '2027-03-01', '2027-03-05', ['BookA', 'BookB']).sub;
@@ -512,14 +540,18 @@ STALE.split = function (src) {
   return null;
 };
 STALE.splitGate = STALE.split;   // the gate mutant is judged by the split check, not by a missing key
+STALE.headerBold = STALE.headerHyphen = STALE.header;   // a bold run back / a hyphen in the years: judged by the header check
 const STALE_MUTANTS = {
   footnote2: s => s.replace("+' prices stop on '+fmtDate(M.pinnacleLastPriced)+')'", "+' prices stop on 13 Jan 2026)'"),
   split: s => s.replace("// Tour and Tournament band panels carry none.\n    return panel;", "// Tour and Tournament band panels carry none.\n    panel.appendChild(el('div','db-split','Split by book: x'));\n    return panel;"),
   splitGate: s => s.replace("if(s.n<HARD_GATE) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '", "if(false) return fmtInt(s.n)+' '+dbMatchWord(s.n)+' priced on '"),
   footnote: s => s.replace("fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '", "fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '"),
   header: s => s.replace("' closing, else '+esc(M.books[1])+', per match, '", "' closing, else Bet365, per match, '"),
-  stats: s => s.replace("['Seasons', fmtInt(seasons), null]", "['Seasons', fmtInt(17), null]"),
-  fresh: s => s.replace("stale ? 'Updates pending' : null", "'Updates pending'"),
+  stats: s => s.replace("['Seasons', fmtInt(seasons)]", "['Seasons', fmtInt(17)]"),
+  fresh: s => s.replace("(stale ? ' <span class=\"sfh__tail\">· updates pending</span>' : '')", "' <span class=\"sfh__tail\">· updates pending</span>'"),
+  oneValue: s => s.replace("['Updated', fmtDate(M.dateRange[1])]];", "['Updated', fmtDate(M.dateRange[1]), 'Updates pending']];").replace("esc(s[1])+'</span></div>';", "esc(s[1])+'</span>'+(s[2] ? '<span class=\"db-hstat__n\">'+s[2]+'</span>' : '')+'</div>';"),
+  headerBold: s => s.replace("archive — '+\n        esc(M.books[0])", "archive — <strong>'+\n        esc(M.books[0])").replace("+y0+'\\u2013'+y1+'.'+", "+y0+'\\u2013'+y1+'</strong>.'+"),
+  headerHyphen: s => s.replace("+y0+'\\u2013'+y1+'.'+", "+y0+'-'+y1+'.'+"),
   boundary: s => s.replace('return (today-t)/864e5 > 14;', 'return (today-t)/864e5 >= 14;'),
   fromData: s => s.replace("['Updated', fmtDate(M.dateRange[1])", "['Updated', fmtDate('2026-09-13')"),
 };
@@ -573,10 +605,12 @@ test('CONTROL: every TEN-262 mutant is caught', { skip: !HAVE && 'published stor
   };
   for (const [name, v] of Object.entries(variants)) if (checkRetiredFile(v) === null) survived.push('retired:' + name);
   const shellMutants = {
-    width236: { ...SHELL, 'account.html': SHELL['account.html'].replace('width:252px;', 'width:236px;') },
-    width250superseded: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('width:252px;', 'width:250px;') },
+    sidebar252back: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('bottom:0; width:92px;', 'bottom:0; width:252px;') },
+    sfSide252: { ...SHELL, 'account.html': SHELL['account.html'].replace(':root{ --sf-side:92px; }', ':root{ --sf-side:252px; }') },
+    overlayNoPush: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('html:has(.sf-sidebar:hover), html:has(.sf-sidebar :focus-visible){ --sf-side:248px; }', '') },
+    bodyPinned: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('</style>', '  body{ padding-left:92px; }\n</style>') },
+    acctDrift: { ...SHELL, 'account.html': SHELL['account.html'].replace('border-radius:38px;', 'border-radius:22px;') },
     lineChartIcon: { ...SHELL, 'account.html': SHELL['account.html'].replace(STAR, 'M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5') },
-    bodyOffset: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('padding-left:252px;', 'padding-left:250px;') },
   };
   for (const [name, v] of Object.entries(shellMutants)) if (checkShell(v) === null) survived.push('shell:' + name);
   assert.deepEqual(survived, [], 'mutants survived: ' + survived.join(', '));

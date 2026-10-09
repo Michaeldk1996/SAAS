@@ -62,16 +62,14 @@ function headerApi(src, env) {
     env.document, env.reg, env.week, env.prog, env.mkt, () => 'UTC', win);
 }
 function checkHeader(src) {
-  const head = /<div class="tourx-head">([\s\S]*?)<div class="tourx-sectiontabs"/.exec(src);
-  if (!head) return 'header card markup is gone';
-  if (!/<div class="tourx-headcap">[^<]+<\/div>\s*<h1>Tournaments<\/h1>/.test(head[1])) return 'no caps label line above the title';
-  if (!/id="tourxHeadStats"/.test(head[1])) return 'no stats block';
-  const card = cssRule(src, '#tourListView .tourx-head');
-  if (!/background:var\(--card\); border:1px solid transparent; box-shadow:var\(--top-light\); border-radius:12px; padding:22px 26px/.test(card)) return 'header is not the Today\'s Matches card';
-  if (!/font-size:29px; font-weight:800/.test(cssRule(src, '#tourListView .tourx-head h1'))) return 'title is not 29/800';
-  if (!/font-size:13\.5px;[^}]*color:var\(--text-soft\)/.test(cssRule(src, '#tourListView .tourx-head p'))) return 'sub is not 13.5 --text-soft';
-  if (!/font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\)/.test(cssRule(src, '#tourListView .tourx-headcap'))) return 'caps line is not the site caps label';
-  if (!/font-family:var\(--font-nums\); font-size:17px; font-weight:700; color:var\(--text\)/.test(cssRule(src, '#tourListView .tourx-hstat__v'))) return 'stat value is not mono 17/700 white';
+  // TEN-403 (founder shell refresh, 2026-10-08): the card is the shared 35b page header (.sfh — values locked in
+  // test-ten403-header.mjs) and the "ATP tour · Season calendar" caps line is DROPPED (supersedes TEN-401's kept line).
+  const head = /<div class="sfh tourx-head">([\s\S]*?)<div class="tourx-sectiontabs"/.exec(src);
+  if (!head) return 'header card markup is gone (or not the 35b .sfh header)';
+  if (/tourx-headcap|Season calendar/.test(src)) return 'the caps line above the title came back';
+  if (!/<div class="sfh__text">\s*<h1 class="sfh__title">Tournaments<\/h1>\s*<p class="sfh__sub">[^<]+<\/p>/.test(head[1])) return 'title + one sentence are not the 35b header';
+  if (!/<div class="sfh__stats" id="tourxHeadStats"/.test(head[1])) return 'no stats block';
+  if (/#tourListView \.tourx-head(?: h1| p)?\{[^}]*(?:padding|font-size)/.test(src)) return 'a page-owned header rule overrides the shared 35b header';
 
   const host = { innerHTML: 'stale' };
   const document = { getElementById: () => host };
@@ -79,7 +77,7 @@ function checkHeader(src) {
   const week = () => new Set(['Shanghai', 'Somewhere off-registry']);
   const live = headerApi(src, { document, reg, week, prog: { fetchedAt: '2026-10-08T01:05:00Z' }, mkt: { builtAt: '2026-10-08T03:30:00Z' } });
   live.tourxRenderHeadStats();
-  const stats = [...host.innerHTML.matchAll(/tourx-hstat__l">([^<]*)<\/span><span class="tourx-hstat__v">([^<]*)</g)].map(m => m[1] + '=' + m[2]);
+  const stats = [...host.innerHTML.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(m => m[1] + '=' + m[2]);
   if (stats.length !== 3 || stats[0] !== 'Events=3' || stats[1] !== 'This week=1') return 'live stats wrong: ' + stats.join(', ');
   const v = live.tourxHeadStatValues();
   // Updated = the progression feed's fetchedAt, never the market file's rebuild time (lead review fix).
@@ -275,7 +273,7 @@ function thisWeekFigures(src, clockIso, inPlay, tourns) {
   hdr(); el.renderHead();
   const e = /> ?(\d+) events? · (\d+) lists? loaded</.exec(hostE.innerHTML) || [];
   const cur = el.fmtKey(el.isoMonday(new D()));
-  return { header: +((/This week<\/span><span class="tourx-hstat__v">(\d+)</.exec(hostH.innerHTML) || [])[1]),
+  return { header: +((/This week<\/span><span class="sfh__v[^"]*">(\d+)</.exec(hostH.innerHTML) || [])[1]),
     events: +e[1], lists: +e[2], chip: el.weekEventCount(cur), set: shared() };
 }
 function checkThisWeek(src) {
@@ -382,7 +380,7 @@ function checkEmptyCopy(src) {
   return null;
 }
 
-test('header card: Today\'s Matches pattern, stats only when all three are live (L4)', () => assert.equal(checkHeader(SRC), null));
+test('header card: the 35b page header (TEN-403), no caps line, stats only when all three are live (L4)', () => assert.equal(checkHeader(SRC), null));
 test('darker track: one helper, card + 6% track, inner + 10% selected, no blue; tabs + week chips use it', () => assert.equal(checkSeg(SRC), null));
 test('Entry list: hairlines, chips, caret, panel, tier heads, card table / empty state, names', () => assert.equal(checkEntry(SRC), null));
 test('Database: in a table with gated cells the All-row yield keeps its sign colour (Hangzhou Open)', () => assert.equal(checkAllRow(SRC), null));
@@ -397,7 +395,8 @@ test('r1.8 en dash week ranges; empty state "…21 events in the week of 2–8 N
 test('CONTROL: each ruling goes red on its mutant', () => {
   const m = (a, b) => { assert.ok(SRC.split(a).length === 2, 'mutant anchor not found exactly once: ' + a.slice(0, 60)); return SRC.replace(a, b); };
   const red = (check, src) => { try { return check(src) !== null; } catch (e) { return true; } };   // a throw is red too
-  assert.ok(red(checkHeader, m('<div class="tourx-headcap">ATP tour · Season calendar</div>', '')), 'caps line removed');
+  assert.ok(red(checkHeader, m('          <h1 class="sfh__title">Tournaments</h1>', '          <div class="tourx-headcap">ATP tour · Season calendar</div>\n          <h1 class="sfh__title">Tournaments</h1>')), 'caps line back');
+  assert.ok(red(checkHeader, m('#tourListView .tourx-head{ margin-bottom:16px; }', '#tourListView .tourx-head{ margin-bottom:16px; padding:22px 26px; }')), 'old padding override');
   assert.ok(red(checkHeader, m("if (!stamps.length) return null;", '')), 'stats without a live stamp');
   assert.ok(red(checkSeg, m('.sf-seg__opt.on{ background:var(--inner); border-color:var(--edge-10);', '.sf-seg__opt.on{ background:var(--bar); border-color:var(--edge-10);')), 'blue selected');
   assert.notEqual(checkSeg(m("tabs.innerHTML = sfSegHtml(", "tabs.innerHTML = String(")), null, 'tabs off the helper');

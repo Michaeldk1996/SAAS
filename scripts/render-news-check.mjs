@@ -104,7 +104,7 @@ const READING = await evaluate(`(function(){
   return {
     hasPill: !!q('[data-page="news"] .news-tourpill'),
     h1: (q('[data-page="news"] .news-head h1')||{}).textContent||'',
-    subtitle: (q('[data-page="news"] .news-head p')||{}).textContent||'',
+    subtitle: (q('[data-page="news"] .news-head .news-sub')||{}).textContent||'',   // TEN-403: the feed line is now the sentence's tail
     live: (q('[data-page="news"] .news-live')||{}).textContent||'',
     tourDD: !!q('#newsTourFilter'), tourFirstOpt: (q('#newsTourFilter option')||{}).textContent||'',
     chips: qa('#newsChips .news-chip').map(function(b){return b.textContent;}),

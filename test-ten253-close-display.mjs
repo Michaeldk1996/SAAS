@@ -34,14 +34,13 @@ function build(src = html) {
   const s = n => slice(n, src);
   return new Function(`
     const MX_J_LEVELS = /challenger/i;
-    ${/const MX_3DP_BELOW = [^;]+;/.exec(src)[0]}
     const _ocsOf = m => m.__ocs || null;
     const mxIsSuspendedPair = () => false;
     const _openDerivedOf = (m, who) => (m.__open ? m.__open[who] : null);
     const ocsBookOf = m => (m.__ocs ? m.__ocs.book : null);
     const _openAnchorOf = (m, who) => (m.__open ? m.__open[who] : null);
     const _openPinIsVendor = () => false;
-    ${s('mxOddsTxt')} ${s('mcTitleAttr')} ${s('oddsPctDelta')}
+    ${s('mxOddsTxt')} ${s('mcTitleAttr')} ${s('oddsPctDelta')} ${s('mxMovePct')}
     ${s('mxJLevel')} ${s('mxJClose')} ${s('_mcCloseOf')} ${s('mxCloseIsJ')}
     ${s('_mcCloseW60')} ${s('_mcCloseDerivedOf')} ${s('mxCloseIsOlder')}
     ${s('mxCloseAgeMin')} ${s('mxAgeText')}
@@ -81,10 +80,10 @@ test('an OLDER close is DISPLAYED — ruling 2: show the last real price', () =>
   assert.equal(A.mxCloseIsOlder(OLDER, 'p1'), true);
 });
 
-test('...and an OLDER close feeds NO number: move, upset, market-wrong, closing sort (ruling 2 = stats only)', () => {
+test('...and an OLDER close feeds NO number except the printed Move (founder TEN-403 414de0fe: the move tile + sort rank every close the cards show): upset, market-wrong, closing sort (ruling 2)', () => {
   assert.equal(A._mcCardCloseDerivedOf(OLDER, 'p1'), null);
   assert.equal(A._mcCardCloseOf(OLDER, 'p1'), 1.30, 'still displayed');
-  assert.equal(A.moveScore(OLDER), 0, 'price movement');
+  assert.ok(A.moveScore(OLDER) > 0, 'price movement: the card prints this Move, so the Biggest-move sort ranks it (TEN-403)');
   assert.equal(A.upsetScore(OLDER), -1, 'upset');
   assert.equal(A.marketWrongScore(OLDER), -1, 'market got it wrong');
   assert.equal(A.closingScore(OLDER), Infinity, 'closing favourite sort');
@@ -110,10 +109,10 @@ test("the card book's close is the Close — never Pinnacle's, never the J close
   assert.equal(A._mcCardCloseOf(noOcs, 'p1'), 1.9, 'same book (any casing) -> shown');
 });
 
-test('one older leg disqualifies the pair for numbers — a move needs both legs within 60', () => {
+test('one older leg disqualifies the pair for close-derived stats; the Move (shown on the card) still ranks (TEN-403)', () => {
   const mixed = card(1.30, 3.70, true, false);
   assert.equal(A._mcCardCloseDerivedOf(mixed, 'p1'), null);
-  assert.equal(A.moveScore(mixed), 0);
+  assert.ok(A.moveScore(mixed) > 0);
 });
 
 test('review 2026-09-27: Pinnacle age runs to ageRefTs (the LATEST schedule), and 60 min is exact (pop-up line + Odds tab)', () => {
@@ -139,7 +138,7 @@ test('hover age: minutes under an hour, "Xh Ym" over it', () => {
 test('TEN-377: the card face shows an older close WHITE with its Move; no muted style, no journey bar', () => {
   const html1 = A.mcJourney(1.256, 1.30, false, {});
   assert.match(html1, /mc-px__close">1\.30</);
-  assert.match(html1, /mc-px__move pos">\+4%/);
+  assert.match(html1, /mc-px__move pos">\+3\.2%/);
   assert.doesNotMatch(html1, /mx-close-older|journey__bar|linear-gradient/);
   const slot = html.slice(html.indexOf('const playersHtml = isCompleted'), html.indexOf("const playersHtml = isCompleted") + 2500);
   assert.match(slot, /mcJourney\(p1Open, p1Close, openAnchorOnly, \{ openTitle: _openTitle\('p1'\), closeTitle: _closeTitle\('p1'\) \}\)/);

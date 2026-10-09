@@ -96,17 +96,17 @@
     return out;
   }
 
-  // Row 2's "now": the newest real price — the card face's price, unless the recorded history
-  // holds a later tick (the card face can lag the recorder), in which case that tick.
+  // Row 2's "now": the card face's price — founder TEN-403 R1 item 1 (2026-10-09): the tile, the card, the
+  // pop-up summary and the sort use ONE figure, so a later recorded tick shows only as the ledger's top
+  // row (R1 review: Molcan card 3.48 −13.9% vs pop-up 3.50 −13.4%). No card price → the newest tick.
   function nowOf(card, ch) {
     const last = ch.length ? ch[ch.length - 1] : null;
     // Completed: EXACTLY the card's Close (founder TEN-377 review item 3 — the pop-up's open → close
     // equals the card's Open → Close for the book in its header); no close on the card = dash.
     if (card.completed) return card.bookClose != null ? card.bookClose : null;
     const face = card.now;
-    const faceAt = ms(card.nowAt);
-    if (last && (face == null || faceAt == null || last.at > faceAt)) return last.price;
-    return face != null ? face : null;
+    if (face != null) return face;
+    return last ? last.price : null;
   }
   // The box model. `card` = { book, open:{price, at}, close:{price, at}|null,
   // completed, live, updatedAt }; `rows` = this side's recorded rows (asc).
@@ -169,22 +169,9 @@
                          .formatToParts(d)) parts[p.type] = p.value;
     return `${parts.day}.${parts.month}. ${parts.hour === '24' ? '00' : parts.hour}:${parts.minute}`;
   }
-  function fmtParts(t, o) {
-    const parts = {};
-    for (const p of new Intl.DateTimeFormat('en-GB', Object.assign({ timeZone: tzOf() }, o)).formatToParts(new Date(t))) parts[p.type] = p.value;
-    return parts;
-  }
-  function fmtHM(t) {
-    if (t == null) return '—';
-    const p = fmtParts(t, { hour: '2-digit', minute: '2-digit', hour12: false });
-    return `${p.hour === '24' ? '00' : p.hour}:${p.minute}`;
-  }
   function fmtAge(min) { const h = Math.floor(min / 60), mm = min % 60; return h ? (mm ? `${h} h ${mm} min` : `${h} h`) : `${mm} min`; }
-  function fmtDay(t) {
-    if (t == null) return '—';
-    const p = fmtParts(t, { day: '2-digit', month: 'numeric' });   // "02 Oct" (en-GB would print "Sept")
-    return `${p.day} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][Number(p.month) - 1]}`;
-  }
+  // TEN-403 R1 (founder 2026-10-09, item 2): every price at 2 dp — the page's mxOddsTxt, which no longer
+  // prints a third decimal below 1.10. Tick deltas (fmtDelta) stay at 3 dp.
   function fmtPrice(p) {
     if (p == null || !isFinite(p)) return '—';
     return (typeof mxOddsTxt === 'function') ? mxOddsTxt(p) : Number(p).toFixed(2);
@@ -195,11 +182,17 @@
     if (d === 0) return '±0.000';
     return (d > 0 ? '+' : '−') + Math.abs(d).toFixed(3);
   }
-  // Open → now as a signed percentage, one decimal (README §6.1 "change %").
+  // Open → now as a signed percentage, one decimal (README §6.1 "change %"). TEN-403: the page's
+  // mxMovePct is THE move formula (tile, move view, this box); this copy only serves a page without it.
   function fmtPct(open, now) {
-    if (open == null || now == null || !(open > 0)) return null;
-    const v = Math.round((now / open - 1) * 1000) / 10;
-    return { text: (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1) + '%', dir: v > 0 ? 'pos' : v < 0 ? 'neg' : '' };
+    if (typeof mxMovePct === 'function') return mxMovePct(open, now);
+    if (open == null || now == null || !(open > 0) || !(now > 0)) return null;
+    // TEN-403 R1: on the prices as shown (2 dp), exactly as mxMovePct.
+    const o2 = Math.round(Number(Number(open).toFixed(2)) * 100), n2 = Math.round(Number(Number(now).toFixed(2)) * 100);
+    if (!(o2 > 0) || !(n2 > 0)) return null;
+    const r = (n2 - o2) * 1000 / o2, v = Math.sign(r) * Math.round(Math.abs(r)) / 10;
+    if (v === 0) return { v: 0, dir: '', text: '±0.0%' };
+    return { v, dir: v > 0 ? 'pos' : 'neg', text: (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' };
   }
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -223,15 +216,12 @@
     // TEN-295 / founder Q2: Completed carries Pinnacle's close as one mono line (dash when none).
     if (mdl.completed) h += `<div class="phb-pin">Pinnacle close <b>${esc(fmtPrice(mdl.close ? mdl.close.price : null))}</b></div>`;
     const notes = [];
-    // Founder TEN-377 rev2 item 2 — short, one line, no cadence wording:
-    //   Upcoming / recent close: "Updated 13:22 · Bet105 · from 02 Oct"
-    //   Completed, close older than 60 min: "Close seen 2 h 22 min before start · Bet105"
+    // TEN-403 R1 (founder nit, 2026-10-09) replaces TEN-377 rev2 item 2's Upcoming line: no
+    // "Updated 05:44 · Bet105 · from 07 Oct" — the head already names the book and the foot carries
+    // the opening time. The one note left is the TEN-253 older-close disclosure on a Completed card:
+    //   "Close seen 2 h 22 min before start · Bet105"
     if (mdl.completed && mdl.closeAgeMin != null) {
       notes.push(`Close seen ${mono(fmtAge(mdl.closeAgeMin))} before start`, esc(mdl.book || '—'));
-    } else {
-      if (mdl.updatedAt != null && ms(mdl.updatedAt) != null) notes.push(`Updated ${mono(fmtHM(ms(mdl.updatedAt)))}`);
-      notes.push(esc(mdl.book || '—'));
-      if (mdl.recordedFrom != null) notes.push(`from ${mono(fmtDay(mdl.recordedFrom))}`);
     }
     if (notes.length) h += `<div class="phb-src">${notes.join(' · ')}</div>`;
     h += `</div><div class="phb-list">`;
@@ -355,7 +345,11 @@
     const vendorOpen = typeof _openPinIsVendor === 'function' && _openPinIsVendor(m);
     const crossBook = !completed && pair && pair.book && bk && String(pair.book).toLowerCase() !== bk;
     // An older close no longer withholds the % — the card shows its Move (founder TEN-377).
-    const pctOk = !(vendorOpen || crossBook);
+    // TEN-403: on an Upcoming card the % needs the SAME measurable same-book pair the card's Move
+    // column, the move-view order and the Biggest-market-move tile read (_mcOpenNowPair), so the
+    // pop-up never shows a move the card dashes (e.g. a single Kibl sighting read twice).
+    const pairOk = completed || typeof _mcOpenNowPair !== 'function' || !!_mcOpenNowPair(m);
+    const pctOk = !(vendorOpen || crossBook) && pairOk;
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt, now, nowAt: (pair && pair.at) || null, bookClose, pctOk, closeAgeMin: ageMin,
              closeAt: completed && side ? side.closeTs || null : null,
              startAt: (o && o.startTs) || null,

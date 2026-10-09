@@ -44,8 +44,11 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 - **An unsourced metric is `—`, never 0.**
 
 ## Header + tabs
-- Header card = the Today's Matches pattern: caps line, "Tournaments" 29/800, sub 13.5 `--text-soft`; mono stats
-  Events · This week · Updated (= `tournament-progression.json` fetchedAt) **only when all three compute from live data**, otherwise none (`TOURX_HEAD_STATS`).
+- Header card = the shared 35b page header (founder shell refresh TEN-403, 2026-10-08: **no caps line** — "ATP tour ·
+  Season calendar" is dropped, superseding TEN-401's kept line; values in `app-shell.md` "Page header (35b, TEN-403)"):
+  "Tournaments", one sentence; stats Events · This week · Updated (= `tournament-progression.json` fetchedAt) **only when
+  all three compute from live data**, otherwise none (`TOURX_HEAD_STATS`). **Test:** `test-ten401-b.mjs` header,
+  `test-ten403-header.mjs`.
 - **"This week" is one set of events** (founder TEN-401 r1 fix 4 + review): `tourxThisWeekEvents()` = every Entry-list
   shard row (ATP tour, all levels) in the current ISO week ∪ the registry's in-play events (the rail's This-week group:
   on the match feed, dropped 24h after their final), de-duplicated on city. The header stat, the Entry list eyebrow's

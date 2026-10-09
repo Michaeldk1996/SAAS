@@ -45,6 +45,7 @@
   --pos:         #5CCB84;                  /* signed good values, winner pill, W square */
   --neg:         #E06266;                  /* signed bad values, L square, break outlines */
   --amber:       #E8A84E;                  /* ONLY Stennisfy Model value layers + Trading Report field tiers */
+  --nav-locked:  #5B6880;                  /* ONLY the icon of a Pro-locked page on the navigation rail (TEN-403 shell package) */
   --serve-ball:  #EAF928;                  /* ONLY the live serving dot */
   --hot-dot:     #007AFF;                  /* Hot lines dots (label text = --link) */
   --white-bar:   #E7E9EE;                  /* white bars where a page is exempt from blue (see README §6) */
@@ -89,6 +90,10 @@
   --shadow-pop:  inset 0 0 0 1px rgba(255,255,255,0.10), 0 18px 48px rgba(0,0,0,0.55);
   --shadow-menu: 0 12px 28px rgba(0, 0, 0, 0.45);
   --shadow-modal: 0 40px 120px rgba(9, 11, 18, 0.54);   /* centred modals / sheets only (U5; value measured on OFFICIAL VERSION 1) */
+  /* TEN-403 shell package (founder, 2026-10-08 — PROMPT_SHELL part 2, values computed on its reference export): the
+     floating rail pill's drop (with --top-light) and the avatar menu beside it. Nowhere else. */
+  --shadow-rail:   0 18px 40px rgba(0, 0, 0, 0.35);
+  --shadow-avatar: 0 18px 40px rgba(0, 0, 0, 0.45);
   --backdrop:    rgba(9, 11, 18, 0.65);                /* overlay dim, night + day; + blur(3px) (U5; measured on OFFICIAL VERSION 1) */
 
   /* Type */

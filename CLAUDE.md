@@ -131,7 +131,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Font weight.** Valid iff one of **{400, 500, 600, 700, 800}**. **Test:** any other weight is wrong. Heavy 600/700/800 use is the design — do not tone it down.
 
-- **Gradients, shadows, blur.** The only colour gradient is the page glow `--page-bg` (`--glow`), on `<html>` only — never a card, modal or the sidebar panel (founder TEN-376 S6). Functional masks (overflow fades) and greyscale small-sample hatches (white ≤ 12%) are not decoration and are allowed (T2). Shadows are `--shadow-menu` / `--shadow-pop` / `--shadow-modal`, overlays `--backdrop` + `blur(3px)` (founder TEN-376 U5). **Test:** the colour lint passes and every `box-shadow` on a floating layer is one of the three tokens.
+- **Gradients, shadows, blur.** The only colour gradient is the page glow `--page-bg` (`--glow`), on `<html>` only — never a card, modal or the sidebar panel (founder TEN-376 S6). Functional masks (overflow fades) and greyscale small-sample hatches (white ≤ 12%) are not decoration and are allowed (T2). Shadows are `--shadow-menu` / `--shadow-pop` / `--shadow-modal`, overlays `--backdrop` + `blur(3px)` (founder TEN-376 U5). **Test:** the colour lint passes and every `box-shadow` on a floating layer is one of the three tokens (the navigation rail's own `--shadow-rail` / `--shadow-avatar` excepted, TEN-403).
 
 - **Em dash vs zero.** Absent value renders **"—"**, never `0`. Genuinely-zero value renders **`0`**, never an em dash. **Test:** absent, or really zero? Never interchangeable.
 
@@ -276,7 +276,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Deploy lane — ready gate, first-come-first-served queue, deploy-batch as the one land path, confirm-live release, 40-min pipeline-aware hold, cutover, waiter reports | `.claude/rules/deploy-lane.md` |
-| App shell — 252px sidebar + floating panel, no user-row chevron, nav glyphs | `.claude/rules/app-shell.md` |
+| App shell — 92px rail that opens on hover (248, pushes the page), groups, selected glow, badges, avatar menu, nav glyphs (TEN-403) | `.claude/rules/app-shell.md` |
 | Today's Matches (TEN-377) — header stats, Upcoming / Completed card rulings, odds pop-up pointer | `.claude/rules/todays-matches.md` |
 | Tournaments page (TEN-401) — data sources, header, darker-track controls, Overview, overlays, Entry list | `.claude/rules/tournaments.md` |
 | Tournaments → Reports — controls, Ring-blue bars, match-stats sheet, every player in a round, W/L outcome letter | `.claude/rules/tournament-reports.md` |

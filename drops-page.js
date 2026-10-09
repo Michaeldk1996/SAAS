@@ -584,13 +584,18 @@
     } else {
       status = '<span class="do-status' + (fs === 'amber' ? ' aging' : '') + '"><span class="do-status-t">Live · updated ' + esc(ago(a * 1000)) + '</span></span>';
     }
-    return '<div class="do-head"><div class="do-head-l">' +
-      '<h1 class="do-h1">Dropping Odds</h1>' +
-      '<div class="do-head-sub"><div class="do-subtitle">Lines flagged in the last ' + esc(st.windowH || 24) + 'h whose price has shortened since the market opened, across every bookmaker we track. Biggest drops first.</div>' + status + '</div></div>' +
-      '<div class="do-stats">' +
-      '<div class="do-stat"><span class="do-stat-k">Drops</span><span class="do-stat-v' + (withDrop === '—' ? ' none' : '') + '" data-k="drops">' + withDrop + '</span></div>' +
-      '<div class="do-stat"><span class="do-stat-k">Biggest</span><span class="do-stat-v' + (biggest === '—' ? ' none' : '') + '" data-k="biggest">' + biggest + '</span></div>' +
-      '<div class="do-stat"><span class="do-stat-k">Window</span><span class="do-stat-v" data-k="window">' + esc(lab(WINDOWS, st.S.win)) + '</span></div>' +
+    // TEN-403: the shared 35b page header (.sfh). One line: the sentence (trimmed of "Biggest drops first.") with the status line as its grey tail
+    // (an aging feed still steps up to --text-soft, founder S3); stats = the 35b columns, a dash grey.
+    var v = function (k, val, cls) {
+      return '<div class="sfh__stat"><span class="sfh__l">' + k + '</span><span class="sfh__v' + (val === '—' ? ' sfh__v--none' : '') + '" data-k="' + cls + '">' + val + '</span></div>';
+    };
+    return '<div class="sfh do-head"><div class="sfh__text">' +
+      '<h1 class="sfh__title">Dropping Odds</h1>' +
+      '<p class="sfh__sub"><span class="do-subtitle">Lines flagged in the last ' + esc(st.windowH || 24) + 'h whose price has shortened since the market opened, across every bookmaker we track.</span> <span class="sfh__tail">· ' + status + '</span></p></div>' +
+      '<div class="sfh__stats">' +
+      v('Drops', withDrop, 'drops') +
+      v('Biggest', biggest, 'biggest') +
+      v('Window', esc(lab(WINDOWS, st.S.win)), 'window') +
       '</div></div>';
   }
 
@@ -801,8 +806,7 @@
     var keepScroll = ov && st.modalRow === st.drawer && ov.querySelector('.do-ov-scroll') ? ov.querySelector('.do-ov-scroll').scrollTop : 0;
     st.modalRow = st.drawer;
     if (!ov) { ov = document.createElement('div'); ov.id = 'doOverlay'; ov.className = 'do-ov'; document.body.appendChild(ov); }
-    var shell = document.querySelector('.sf-sidebar');
-    ov.style.setProperty('--do-shell-left', shell ? shell.getBoundingClientRect().width + 'px' : '0px');
+    // the overlay starts at the rail's edge through --sf-side (drops-page.css), so it follows the rail open / closed (TEN-403)
 
     var mb = modalBooks(r, { rows: st.rows, line: (st.lines || {})[lineKey(r)], chart: chart, cardSide: hit && hit.cardSide, now: now, cutAt: r.cutAt });
     var ownB = mb.books.filter(function (b) { return b.own; })[0];

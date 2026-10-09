@@ -46,7 +46,8 @@ function slice(name) {
 // The shipped text of the three functions under test, over stubbed resolvers.
 // Every stub reads a field the fixture literal sets, so a test can withhold
 // exactly one input and see which guard was load-bearing.
-const shipped = ['_openPinIsVendor', '_mcHasAnyPrice', 'moveNowScore'].map(slice).join('\n');
+// TEN-403 R1: moveNowScore ranks on mxMovePct (the move on the 2-dp prices as shown), so it is sliced too.
+const shipped = ['_openPinIsVendor', '_mcHasAnyPrice', 'mxMovePct', 'moveNowScore'].map(slice).join('\n');
 const { _openPinIsVendor, moveNowScore, MOVE_NONE, MOVE_UNPRICED } = new Function(`
   const MOVE_NONE = -1, MOVE_UNPRICED = -2;
   const _ocsOf        = m => m.__ocs || null;
@@ -127,8 +128,8 @@ test('with no OCS row the matches.json marker alone decides', () => {
 });
 
 // ── the five tiers ───────────────────────────────────────────────────────────
-const moved   = { __pair: { o1: 6.5, o2: 1.091, n1: 9, n2: 1.061 } };   // +38.46%
-const smaller = { __pair: { o1: 2.34, o2: 1.599, n1: 2.53, n2: 1.535 } }; // +8.12%
+const moved   = { __pair: { o1: 6.5, o2: 1.091, n1: 9, n2: 1.061 } };   // +38.5% (score in %, one decimal, TEN-403 R1)
+const smaller = { __pair: { o1: 2.34, o2: 1.599, n1: 2.53, n2: 1.535 } }; // +8.1%
 const flat    = { __pair: { o1: 5.5, o2: 1.1, n1: 5.5, n2: 1.1 } };      // 0%
 const noMove  = { __now: { p1: 1.24, p2: null } };                       // priced, unpairable
 const unprice = {};                                                      // dash / dash
@@ -152,8 +153,8 @@ test('THE BUG THIS FIXES: unpriced and unpairable no longer tie', () => {
   const sorted = [unprice, noMove, flat, moved, smaller]
     .map(m => ({ m, sc: moveNowScore(m) }))
     .sort((a, b) => b.sc - a.sc);
-  assert.deepEqual(sorted.map(x => x.sc.toFixed(4)),
-                   ['0.3846', '0.0812', '0.0000', '-1.0000', '-2.0000']);
+  assert.deepEqual(sorted.map(x => x.sc.toFixed(1)),
+                   ['38.5', '8.1', '0.0', '-1.0', '-2.0']);
 });
 
 test('a card priced on EITHER leg stays above a fully unpriced one', () => {

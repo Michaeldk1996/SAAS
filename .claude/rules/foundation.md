@@ -5,10 +5,10 @@ The whole site — every page, the Match analysis modal, pop-ups, sheets — is 
 the modal's Night 24b / Day 26f and every older handoff palette are superseded; their layouts, sizes and behaviour
 stay valid. Reference build: `OFFICIAL VERSION 1.html` — **the reference wins every conflict** with the README or a
 written ruling (founder R1); measure its **computed** value in a browser (its source carries old hex the portal converts
-at runtime). *Known exception (R3):* the reference draws a dot before the Today's Matches header "Live · updated 11:41";
-ours has none.
-- **Status lines are text only (S3), site-wide:** "Live · updated …", the News feed line, the Dropping Odds header — no
-  dot, no colour. `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
+at runtime). *R3 is superseded* (founder shell refresh TEN-403, 2026-10-08; kept on card 783f355e): the Today's Matches 35b header's first stat
+column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page header (35b, TEN-403)").
+- **Status lines are text only (S3), site-wide:** "Live · updated …" text lines, the News feed line, the Dropping Odds
+  header tail — no dot, no colour (the one exception: the Today's Matches header live column above). `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
   not live", Drops past its amber tier). The age is carried by the words ("updated 12 min ago"). The only *status* dot on
   the site is the lime serve dot (data marks — chart end dots, the date strip's Today marker — are not status).
 
@@ -23,27 +23,28 @@ ours has none.
 - **Theme = one attribute.** `theme.js` (loaded first in `<head>`) sets `data-theme="night" | "day"` on `<html>` before
   first paint from the one key `stennisfy-theme` (`night` | `day` | `auto`); Auto follows `prefers-color-scheme` live.
   Night is the default. **Only surfaces change** between themes (`--page --card --inner --selected --tile-hover
-  --sidebar --glow`); text, meaning colours, edges, shadows, type, radii are identical. The sidebar carries the Night · Day · Auto
-  darker-track switch above the user row (README §5.14).
+  --sidebar --glow`); text, meaning colours, edges, shadows, type, radii are identical. The Night · Day · Auto darker-track switch
+  (README §5.14) lives in the rail's avatar menu (TEN-403, `.claude/rules/app-shell.md`).
 - **Layer rule:** page < card < inner < selected. No element's background is darker than its nearest painted
   ancestor. A card-tone element inside an inner box takes the inner tone.
 - **Surfaces by role (README §1):** top-level card = `--card` + `--top-light` inset, **no outline**; open card =
   1px `--open-card` (the only coloured outline); nested card / panel / stat box = `--card` + 1px `--edge-6`; clickable
   tile = `--card` + 1px `--edge-7`, hover `--tile-hover` + `--edge-16`, selected `--card` + `--edge-24`; control
   (search, chip, dropdown trigger, input) = `--inner`, no edge, focus `--edge-16`; pop-up sheet / modal = `--card` +
-  1px `--edge-10`. All edges 1px solid (no 0.33px, no 1.25px). The floating sidebar panel is `--sidebar` (#121520 night /
-  #1A1D28 day, R2), no edge, no top-light.
-- **Sidebar (R1, measured on the reference):** idle nav item = `--text-soft` words, `--text-label` icon; hover
-  `--tile-hover`; active = `--selected` + 1px `--edge-6`, white words + white icon. Night · Day · Auto: track `--card` +
-  `--edge-6`; idle option `--text-soft`; selected `--inner` + `--edge-10`, white.
+  1px `--edge-10`. All edges 1px solid (no 0.33px, no 1.25px). The floating rail pill is `--sidebar` (#121520 night /
+  #1A1D28 day, R2), no edge, `--top-light` + `--shadow-rail` (TEN-403).
+- **Navigation rail (TEN-403 shell package, SUPERSEDES R1's sidebar colours):** idle item = `--text-label` icon and words;
+  hover `--inner`; active = white icon + words on a white radial glow (no tile, no outline); a Pro-locked icon
+  `--nav-locked`. Night · Day · Auto (avatar menu): track `--card` + `--edge-6`; idle option `--text-label`; selected
+  `--inner` + `--edge-10`, white. Full rules: `.claude/rules/app-shell.md`.
 - **Text = three greys** (founder Q2.1): `--text` #FFF (titles, names, odds, key figures, selected tab, toggle words),
   `--text-soft` #DDE0EA (anything you *read*: header-card subtitles, article / card body, the second player's line
   value in pop-up headers, the losing player's name on Completed cards), `--text-label` #A3AABE (anything that
   *labels*: caps labels, column heads, meta, support lines, idle tabs inside pages, placeholders, mono meta, the header
-  "Live · updated" line). No other grey. (Sidebar nav is the one place idle items are `--text-soft` — R1.)
+  "Live · updated" line). No other grey.
   `#F2F3F7` measured for text or an icon on the reference is a 15a leftover → `--text` (S5); `--pro-text` is only the
   text on a `--pro` button (Upgrade, auth / verify primary).
-- **Blue `#007AFF` is a fill, never text.** Bars, the Live player-A series, the one primary-tier fill. Blue text is
+- **Blue `#007AFF` is a fill, never text.** Bars, the Live player-A series, the one primary-tier fill, the rail's Live count badge (the only blue on navigation). Blue text is
   `--link` #6A9AF8 on real links only ("View all news →", "Compare all →", Back, ledger links, the "Most covered"
   label). **Names are white everywhere** (favourite, winner, player A — Q2.3). **Selection is lift (tone + edge),
   never blue**: tabs / segmented / chip rows are the darker track (track `--card` + `--edge-6`, selected `--inner` +
@@ -86,18 +87,20 @@ ours has none.
   new hue: series 1 `--viz-lead` 2.4px, 2 `--viz-white-lead`, 3 `--viz-tick`, 4 `--viz-white-lead` dashed `6 5`;
   at most 4 lines at once; identity from the legend / end plates. Icons are white; category colours do not exist.
 - **Shadows** (U5): `--shadow-menu` (drop-downs, type-ahead, info popovers, slider marker), `--shadow-pop` (floating
-  pop-ups anchored to an element), `--shadow-modal` (centred modals / sheets). Overlays dim with `--backdrop`
+  pop-ups anchored to an element), `--shadow-modal` (centred modals / sheets); the navigation rail's own two (TEN-403; founder kept them with `--nav-locked`, card 783f355e, 2026-10-08):
+  `--shadow-rail` (the pill) and `--shadow-avatar` (the avatar menu). Overlays dim with `--backdrop`
   rgba(9,11,18,0.65) + `backdrop-filter: blur(3px)`, night and day; `--shadow-modal` is `0 40px 120px rgba(9,11,18,0.54)` and
   `--open-card` `rgba(106,154,248,0.30)` (all three measured on OFFICIAL VERSION 1, which outranks the README).
   **The only colour gradient is the page glow** `--page-bg` (S6) — the rule is about colour gradients used as
   decoration (T2). *Allowed:* functional masks (an overflow fade to transparent, e.g. profile chips) and greyscale
-  patterns that mark small-sample / missing data (white ≤ 12% on the surface, no hue, e.g. the Playing Styles hatch).
+  patterns that mark small-sample / missing data (white ≤ 12% on the surface, no hue, e.g. the Playing Styles hatch);
+  the rail's selected-page white glow (white 13% → 0, TEN-403).
   The court-speed scales are flat (no gradient): Tournaments → Overview hero = 8px `--track` + a white knob with a 3px
   `--card` ring (TEN-401 override, `test-ten242-rulings.mjs`); the Match analysis Tournament tab and Key factors bars
   are flat white. The price-journey bar on match cards is removed (TEN-377). The glow: on `<html>` only — behind sidebar + content, scrolling with
   the page, same geometry at every width — never on a card, modal or the sidebar panel (`body` is transparent). Geometry
   is the reference's (1500×640 at 720px −120px; pixel-identical night + day).
-  **The backdrop covers the content area only (R6.5):** every scrim starts at `--sf-side` (the sidebar's 252px) and is
+  **The backdrop covers the content area only (R6.5):** every scrim starts at `--sf-side` (the rail's width: 92px closed, 248px open — TEN-403) and is
   `clip-path: inset(0)` (not in print) so a sheet's shadow cannot reach the sidebar; the sidebar is never dimmed and stays
   clickable. A fixed layer opened *inside* a blurred scrim takes `--sf-side: 0`, and a tooltip positioned from viewport
   coordinates subtracts its containing block's origin (the scrim is its containing block). At ≤900px the sidebar is

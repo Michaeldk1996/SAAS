@@ -36,12 +36,11 @@ function sliceObj(name, src = html) {
 }
 const MX_BOOK_LABELS_SRC = sliceObj('MX_BOOK_LABELS');
 const A = new Function(`
-  ${/const MX_3DP_BELOW = [^;]+;/.exec(html)[0]}
   ${MX_BOOK_LABELS_SRC}
   const _mcNowPair = m => m.__pair || null;
   const _ocsOf = m => m.__ocs || null;
   const _mcCardCloseDerivedOf = (m, who) => (m.__pin ? m.__pin[who] : null);
-  ${slice('mxOddsTxt')} ${slice('mcTitleAttr')} ${slice('oddsPctDelta')} ${slice('mxBookLabel')}
+  ${slice('mxOddsTxt')} ${slice('mcTitleAttr')} ${slice('oddsPctDelta')} ${slice('mxMovePct')} ${slice('mxBookLabel')}
   ${slice('mcTiebreaks')} ${slice('mcSetIsWon')} ${slice('mcSetCluster')} ${slice('mcTermCell')} ${slice('mcJourney')}
   ${slice('mcUpsetRows')} ${slice('mcBoardBooks')}
   return { mcSetCluster, mcTermCell, mcJourney, mcUpsetRows, mcBoardBooks };
@@ -67,12 +66,12 @@ test('score: a walkover has no cells; a retirement recounts the sets', () => {
 });
 
 // ── README §7: Open → Close · Move; the price-journey bar is removed ──
-test('prices: Open → Close · Move on one grid; signed %, true minus; no journey bar', () => {
+test('prices: Open → Close · Move on one grid; signed % on the 2-dp prices, one decimal (TEN-403 card 9b1c3aa1), true minus; no journey bar', () => {
   const h = A.mcJourney(1.52, 1.38, false, {});
   assert.equal(h, '<span class="mc-px"><span class="mc-px__open">1.52</span><span class="mc-px__arr">→</span>'
-    + '<span class="mc-px__close">1.38</span><span class="mc-px__move neg">−9%</span></span>');
-  assert.match(A.mcJourney(2.60, 3.30, false, {}), /mc-px__move pos">\+27%/);
-  assert.match(A.mcJourney(2.0, 2.0, false, {}), /mc-px__move">0%</, 'a genuine 0% move reads 0, never blank');
+    + '<span class="mc-px__close">1.38</span><span class="mc-px__move neg">−9.2%</span></span>');
+  assert.match(A.mcJourney(2.60, 3.30, false, {}), /mc-px__move pos">\+26\.9%/);
+  assert.match(A.mcJourney(2.0, 2.0, false, {}), /mc-px__move">±0\.0%</, 'a genuine zero reads ±0.0% grey (TEN-403 card 9b1c3aa1: the one move formula), never blank');
 });
 
 test('prices: no open -> "—" and no Move; vendor-pinned open -> no Move; older close -> white with Move', () => {
@@ -81,7 +80,7 @@ test('prices: no open -> "—" and no Move; vendor-pinned open -> no Move; older
   assert.match(noOpen, /mc-px__move"><\/span>/);
   assert.match(A.mcJourney(null, null, false, {}), /mc-px__close mc-px__nodata">—/, 'missing close is a dash, never blank');
   assert.match(A.mcJourney(1.5, 1.6, true, {}), /mc-px__move"><\/span>/, 'TEN-198 anchorOnly');
-  assert.match(A.mcJourney(1.5, 1.6, false, { closeOlder: true }), /mc-px__close">1\.60<\/span><span class="mc-px__move pos">\+7%/, 'TEN-377: an older close shows white with its Move');
+  assert.match(A.mcJourney(1.5, 1.6, false, { closeOlder: true }), /mc-px__close">1\.60<\/span><span class="mc-px__move pos">\+6\.7%/, 'TEN-377: an older close shows white with its Move');
 });
 
 // ── README §2: header stats ──
@@ -134,11 +133,11 @@ test('removed: the price-journey bar, its gradient and the "Showing … settled"
   assert.ok(!/id="mcContextBar"|renderContextBar|See the full tournament breakdown/.test(html), 'no context bar left');
 });
 
-test('header card: four stats, Hanken 10.5 caps labels (override), Plex Mono 17/700 values', () => {
-  assert.match(html, /<div class="mx-hstats" id="mxHeaderStats"/);
-  assert.match(lastRule(`${M} .mx-hstat__l`), /font-family:var\(--font-words\); font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\)/);
-  assert.match(lastRule(`${M} .mx-hstat__v`), /font-family:var\(--font-nums\); font-size:17px; font-weight:700; color:var\(--text\)/);
-  assert.match(lastRule(`${M} .mx-hstats`), /gap:34px/);
+// TEN-403 (founder shell refresh): the header card is the shared 35b page header — values locked in
+// test-ten403-header.mjs; here only that the board's stats sit in its stat row, after the live column.
+test('header card: the 35b header; live column first, then the four stats in the same .sfh__stats row', () => {
+  assert.match(html, /<div class="sfh__stats">\s*<div class="sfh__stat mx-datastatus" id="dataStatus">[\s\S]*?<\/div>\s*<div class="mx-hstats" id="mxHeaderStats"/);
+  assert.match(lastRule(`${M} .mx-hstats`), /display:contents/);
 });
 
 test('odds pop-up surface: 312px, --card, radius 12, --shadow-pop, ledger max 236px, latest row --wash-5', () => {
@@ -186,7 +185,7 @@ test('header stats render: Upcoming and Completed labels, counts, Updated HH:MM,
     ${MX_BOOK_LABELS_SRC}
     ${slice('mxBookLabel')} ${slice('mcUpsetRows')} ${slice('mcBoardBooks')} ${slice('mcRenderHeaderStats')}
     mcRenderHeaderStats(list); return el.innerHTML;`)(list, view, up, tz);
-  const vals = h => [...h.matchAll(/mx-hstat__l">([^<]*)<\/span><span class="mx-hstat__v">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
+  const vals = h => [...h.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
   const up = [{ tour: 'ATP Tokyo', bookNow: { Pncl: {} } }, { tour: 'ATP Beijing', bookOpens: { Pinnacle: {}, Betano: {} } }];
   assert.deepEqual(vals(run('upcoming', up, Date.parse('2026-10-03T02:10:05Z'))), ['Matches=2', 'Tournaments=2', 'Books=2', 'Updated=10:10']);
   const done = [{ tour: 'ATP Tokyo', p1: 'A', p2: 'B', finalScore: { winner: 'p1' }, __pin: { p1: 3.9, p2: 1.3 } }, { tour: 'ATP Tokyo' }];
@@ -228,11 +227,13 @@ test('review 6/7/9: grid start; white caret in the reference font stack; one chi
 });
 
 // ── founder card 0b990217 (review 1–3): stats read only within-60 card-book closes ──
-test('stats paths read _mcCardCloseDerivedOf (within-60), never the display close', () => {
+test('stats paths read _mcCardCloseDerivedOf (within-60), never the display close — EXCEPT the Move (TEN-403 founder 414de0fe: tile + Biggest-move sort rank every close the cards show)', () => {
   const body = slice('renderMatches');
-  assert.match(body, /const moveCloseOf = \(m, who\) => \(m\.finalScore \? _mcCardCloseDerivedOf\(m, who\) : null\);/, 'Completed Biggest market move tile');
+  assert.match(body, /const bmv = mxCompletedBiggestMove\(filtered\);/, 'Completed Biggest market move tile');
+  assert.match(slice('mxCompletedBiggestMove'), /const o = _openDerivedOf\(m, who\), c = _mcCardCloseOf\(m, who\);/, 'tile = the card\'s close');
+  assert.match(slice('moveScore'), /const c1 = _mcCardCloseOf\(m, 'p1'\), c2 = _mcCardCloseOf\(m, 'p2'\);/, 'Biggest-move sort = the card\'s close');
   assert.match(slice('_mcOddsLanded'), /_mcCardCloseDerivedOf\(m, 'p1'\) != null \|\| _mcCardCloseDerivedOf\(m, 'p2'\) != null/);
-  assert.match(slice('syncSortDropdown'), /const moveLanded = [\s\S]*?_mcCardCloseDerivedOf\(m, 'p1'\) != null \|\| _mcCardCloseDerivedOf\(m, 'p2'\) != null/);
-  for (const fn of ['upsetScore', 'closingScore', 'moveScore', 'marketWrongScore', 'mcUpsetRows', '_mcOddsLanded'])
+  assert.match(slice('syncSortDropdown'), /const moveLanded = [\s\S]*?_mcCardCloseOf\(m, 'p1'\) != null \|\| _mcCardCloseOf\(m, 'p2'\) != null/);
+  for (const fn of ['upsetScore', 'closingScore', 'marketWrongScore', 'mcUpsetRows', '_mcOddsLanded'])
     assert.doesNotMatch(slice(fn), /_mcCardCloseOf\(|_mcCloseOf\(|_mcPinClose/, `${fn} never reads a display close`);
 });

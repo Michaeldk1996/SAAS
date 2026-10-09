@@ -73,20 +73,19 @@ const M = (p1, k1, r1, p2, k2, r2, tour, category, extra = {}) => Object.assign(
   bestOdds: { p1: { price: 1.11, bookmaker: 'Pncl' }, p2: { price: 6.7, bookmaker: 'bet365' } },
 }, extra);
 
-test('header card: caps eyebrow, title, colon sub and the three stats; no helper line', () => {
-  assert.match(html, /<div class="pgh-eyebrow">ATP tour · this week's draws<\/div>/);
-  assert.match(html, /<h1 class="pgh-title">Players<\/h1>/);
-  assert.match(html, /<p class="pgh-sub">Full profiles, ratings and form: the context behind every price\.<\/p>/);
+// TEN-403: the header card is the shared 35b page header (.sfh; values locked in test-ten403-header.mjs). The caps
+// eyebrow is dropped (founder shell refresh: "no caps label line above the title").
+test('header card: 35b header — title, colon sub, the three stats; no caps line, no helper line', () => {
+  assert.ok(!/pgh-eyebrow|ATP tour · this week's draws/.test(html), 'the caps line is gone (markup and CSS)');
+  assert.match(html, /<div class="sfh pgh-card">\s*<div class="sfh__text">\s*<h1 class="sfh__title">Players<\/h1>/);
+  assert.match(html, /<p class="sfh__sub">Full profiles, ratings and form: the context behind every price\.<\/p>/);
   assert.ok(!/pgsearch-helper/.test(html), 'the search helper line is gone (markup and CSS)');
-  assert.match(cssRule('.pgh-eyebrow'), /font-size:10\.5px; font-weight:700; letter-spacing:0\.10em; text-transform:uppercase; color:var\(--text-label\)/);
-  assert.match(cssRule('.pgh-title'), /font-size:29px; font-weight:800/);
-  assert.match(cssRule('.pgh-card'), /background:var\(--card\); border:1px solid transparent; box-shadow:var\(--top-light\)/);
-  assert.match(cssRule('.pgh-stat-v'), /font-family:var\(--font-nums\); font-size:17px; font-weight:700; color:var\(--text\)/);
+  assert.match(html, /<div class="sfh__stats" id="pgHeaderStats"/);
   const { pgHeaderStats } = runLanding([
     M('C. Alcaraz', 2382, 3, 'J. Munar', 1, 64, 'ATP Tokyo', 'ATP 500'),
     M('A. De Minaur', 1106, 10, 'H. Hurkacz', 2, 41, 'ATP Beijing', 'ATP 500'),
   ], {});
-  const stats = [...pgHeaderStats.innerHTML.matchAll(/pgh-stat-l">([^<]*)<\/span><span class="pgh-stat-v">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
+  const stats = [...pgHeaderStats.innerHTML.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
   assert.deepEqual(stats, ['Players=4', 'Tournaments=2', 'Updated=—'], 'no odds clock reads "—", never a made-up time');
 });
 
@@ -165,7 +164,7 @@ test('ruling Q9: whole draw per event, losers kept, ordered by rank, header = wh
   assert.equal(groups[0].meta, 'Hard · 500 · 4 players');
   assert.deepEqual(groups[1].players, ['A. Zverev', 'N. Djokovic', 'N. Borges'], 'unranked last');
   assert.ok(!/X\. Old/.test(g.innerHTML), 'an event no longer on the board is not this week');
-  const stats = [...h.innerHTML.matchAll(/pgh-stat-l">([^<]*)<\/span><span class="pgh-stat-v">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
+  const stats = [...h.innerHTML.matchAll(/sfh__l">([^<]*)<\/span><span class="sfh__v[^"]*">([^<]*)</g)].map(x => x[1] + '=' + x[2]);
   assert.deepEqual(stats.slice(0, 2), ['Players=7', 'Tournaments=2']);
   // Best odds = the pending pre-match price only; finished, live and out players read "—" with no book and no arrow.
   const card = n => g.innerHTML.split('class="playercard"').find(c => c.includes(`class="name">${n}<`));

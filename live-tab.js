@@ -1021,6 +1021,13 @@
     },
     isUnderway,
     isAtpSingles,
+    // TEN-403 rail badge: the Live page's own count (ATP singles, underway) from a one-shot snapshot read, for when the
+    // Live tab is closed and its poll is stopped (snapshot measured 8.3 KB, 1.3 KB gzipped). Renders nothing.
+    async liveCount() {
+      const row = await fetchSnapshot();
+      const all = Array.isArray(row?.board?.matches) ? row.board.matches : [];
+      return all.filter(isAtpSingles).filter(isUnderway).length;
+    },
     indexStats: Detail.indexStats,
     stat: Detail.stat,
     serveRating: Detail.serveRating,

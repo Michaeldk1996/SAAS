@@ -66,20 +66,45 @@ function effective(html, sel, prop) {
 // ── the design's computed values (portal-12a.html, DPR-independent authored values) ─────
 const M = '[data-page="matches"]';
 const SPEC = [
-  // app shell (both pages carry it; the dashboard uses buttons, account.html anchors)
-  ['.sf-sidebar', 'width', '252px'], ['.sf-sidebar', 'padding', '18px 0 18px 18px'], ['.sf-sidebar', 'line-height', 'normal'],
-  ['.sf-panel', 'padding', '20px 12px 14px'], ['.sf-panel', 'border-radius', '22px'], ['.sf-panel', 'background', 'var(--sidebar)'],   // founder R2: the sidebar's own surface
- 
-  ['.sf-panel', 'border', '1px solid transparent'], ['.sf-panel', 'box-shadow', 'none'],   // OFFICIAL VERSION 1: sidebar panel, no outline, no top-light ['.sf-brand', 'margin', '0 8px 26px'], ['.sf-logo', 'height', '26px'],
-  ['.sf-nav', 'gap', '3px'], ['.sf-foot', 'padding-top', '24px'], ['.sf-foot', 'gap', '10px'],
-  ['.sf-userchip', 'padding', '6px 8px'], ['.sf-userchip', 'gap', '10px'], ['.sf-userav', 'width', '30px'], ['.sf-userav', 'font-size', '11px'],
-  ['.sf-username', 'font-size', '12px'], ['.sf-userplan', 'font-size', '10.5px'],
-  ['.sf-upgrade', 'background', 'var(--pro)'], ['.sf-upgrade', 'color', 'var(--pro-text)'], ['.sf-upgrade', 'border-radius', '10px'],
+  // app shell — the TEN-403 rail + avatar menu (founder shell package 2026-10-08, PROMPT_SHELL part 2; values computed on
+  // its reference export, artboard 40a, 1512px). SUPERSEDES the TEN-286 252px sidebar values. Both pages carry the same block.
+  ['.sf-sidebar', 'width', '92px'], ['.sf-sidebar', 'padding', '30px 0 30px 16px'], ['.sf-sidebar', 'line-height', 'normal'],
+  ['.sf-sidebar', 'transition', 'width .18s ease'],
+  ['.sf-panel', 'padding', '16px 12px 14px'], ['.sf-panel', 'border-radius', '38px'], ['.sf-panel', 'background', 'var(--sidebar)'],   // founder R2: the sidebar's own surface
+  ['.sf-panel', 'box-shadow', 'var(--top-light), var(--shadow-rail)'], ['.sf-panel', 'transition', 'border-radius .18s ease'],
+  ['.sf-logo', 'width', '34px'], ['.sf-logo', 'height', '34px'], ['.sf-logo', 'margin', '0 0 14px 9px'],
+  ['.sf-nav', 'gap', '14px'], ['.sf-group', 'gap', '4px'],
+  ['.sf-glabel', 'font-size', '10.5px'], ['.sf-glabel', 'font-weight', '700'], ['.sf-glabel', 'letter-spacing', '0.10em'], ['.sf-glabel', 'padding', '0 14px 2px'],
+  ['.sf-glabel', 'color', 'var(--text-label)'], ['.sf-glabel', 'display', 'none'],
+  ['.sf-item', 'height', '48px'], ['.sf-item', 'padding', '0 13px'], ['.sf-item', 'border-radius', '14px'], ['.sf-item', 'gap', '13px'],
+  ['.sf-item', 'font-size', '13.5px'], ['.sf-item', 'font-weight', '600'], ['.sf-item', 'color', 'var(--text-label)'], ['.sf-item.active', 'color', 'var(--text)'],
+  ['.sf-item.active', 'background', null], ['.sf-item.active', 'border-color', null],   // selected = the glow only: no tile, no outline
+  ['.sf-item:not(.active):hover', 'background-color', 'var(--inner)'],
+  ['.sf-item::before', 'background', 'radial-gradient(ellipse 76px 40px at 26px 50%, color-mix(in srgb, var(--text) 13%, transparent) 0%, transparent 100%)'],
+  ['.sf-item::before', 'opacity', '0'], ['.sf-item::before', 'transition', 'opacity .25s ease'], ['.sf-item.active::before', 'opacity', '1'],
+  ['.sf-ico > svg', 'width', '20px'], ['.sf-ico > svg', 'stroke-width', '1.6'], ['.sf-item.is-locked .sf-ico > svg', 'stroke', 'var(--nav-locked)'],
+  ['.sf-lbl', 'display', 'none'],
+  ['.sf-count', 'background', 'var(--bar)'], ['.sf-count', 'min-width', '18px'], ['.sf-count', 'height', '18px'], ['.sf-count', 'font-size', '10px'],
+  ['.sf-count', 'font-family', 'var(--font-nums)'], ['.sf-count', 'box-shadow', '0 0 0 2px var(--sidebar)'], ['.sf-count', 'top', '-9px'], ['.sf-count', 'left', '12px'],
+  ['.sf-lock', 'width', '16px'], ['.sf-lock', 'background', 'var(--inner)'], ['.sf-lock', 'box-shadow', '0 0 0 2px var(--sidebar)'],
+  ['.sf-foot', 'padding-top', '8px'], ['.sf-foot', 'margin-top', 'auto'],
+  ['.sf-userchip', 'height', '48px'], ['.sf-userchip', 'padding', '0 8px'], ['.sf-userchip', 'gap', '11px'], ['.sf-userchip', 'border-radius', '14px'],
+  ['.sf-userav', 'width', '36px'], ['.sf-userav', 'background', 'var(--inner)'], ['.sf-userav', 'font-size', '10.5px'], ['.sf-userav', 'font-family', 'var(--font-nums)'],
+  ['.sf-userinfo', 'display', 'none'], ['.sf-username', 'font-size', '12.5px'], ['.sf-userplan', 'font-size', '10.5px'], ['.sf-chev', 'transform', 'rotate(-90deg)'],
+  ['.sf-menu', 'width', '232px'], ['.sf-menu', 'left', 'calc(100% + 14px)'], ['.sf-menu', 'bottom', '0'], ['.sf-menu', 'padding', '14px'], ['.sf-menu', 'gap', '12px'],
+  ['.sf-menu', 'border-radius', '14px'], ['.sf-menu', 'background', 'var(--card)'], ['.sf-menu', 'border', '1px solid var(--edge-10)'], ['.sf-menu', 'box-shadow', 'var(--shadow-avatar)'],
+  ['.sf-theme-seg', 'background', 'var(--card)'], ['.sf-theme-seg', 'border', '1px solid var(--edge-6)'], ['.sf-theme-opt', 'height', '30px'], ['.sf-theme-opt', 'color', 'var(--text-label)'],
+  ['.sf-theme-opt.on', 'background', 'var(--inner)'], ['.sf-theme-opt.on', 'border-color', 'var(--edge-10)'], ['.sf-theme-opt.on', 'color', 'var(--text)'],
+  ['.sf-upgrade', 'background', 'var(--pro)'], ['.sf-upgrade', 'color', 'var(--pro-text)'], ['.sf-upgrade', 'border-radius', '10px'], ['.sf-upgrade', 'height', '36px'],
+  ['.sf-menu-links', 'border-top', '1px solid color-mix(in srgb, var(--text) 8%, transparent)'], ['.sf-menu-links', 'margin', '0 -8px -8px'],
+  ['.sf-menu-row', 'height', '36px'], ['.sf-menu-row', 'color', 'var(--text)'], ['.sf-menu-row:hover', 'background', 'var(--inner)'],
+  ['.sf-menu-out', 'color', 'var(--text-label)'], ['.sf-menu-out:hover', 'color', 'var(--text)'],
   // board
   [`${M}.tabpage.active`, 'padding', '30px 40px 70px'], [`${M}.tabpage.active`, 'gap', '22px'], [`${M}.tabpage.active`, 'line-height', 'normal'],
-  [`${M} .mx-titlerow`, 'padding', '22px 26px'], [`${M} .mx-titlerow`, 'border-radius', '12px'], [`${M} .mx-titlerow`, 'gap', '28px'],
-  [`${M} .mx-h1`, 'font-size', '29px'], [`${M} .mx-h1`, 'font-weight', '800'], [`${M} .mx-h1`, 'letter-spacing', '-0.015em'],
-  [`${M} .mx-subtitle`, 'font-size', '13.5px'], [`${M} .mx-subtitle`, 'line-height', '1.55'], [`${M} .mx-subtitle`, 'max-width', '520px'],   // TEN-377 README §2 + OFFICIAL VERSION 1: subtitle max 520
+  // TEN-403: the board's header card is the shared 35b page header (.sfh) — locked in test-ten403-header.mjs.
+  ['.sfh', 'padding', '18px 26px'], ['.sfh', 'border-radius', '12px'], ['.sfh', 'gap', '28px'],
+  ['.sfh__title', 'font-size', '24px'], ['.sfh__title', 'font-weight', '800'], ['.sfh__title', 'letter-spacing', '-0.015em'],
+  ['.sfh__sub', 'font-size', '13px'], ['.sfh__sub', 'white-space', 'nowrap'],
   [`${M} .mx-daytabsrow`, 'gap', '12px'], [`${M} .mx-viewseg button`, 'padding', '7px 14px'],
   [`${M} .mx-daytabschevron`, 'width', '30px'], [`${M} .mx-daytabschevron`, 'font-size', '14px'], [`${M} .mx-daytabschevron`, 'background', 'var(--inner)'],   // TEN-377 README §3
   [`${M} .mx-daytabs`, 'gap', '4px'], [`${M} .mx-daytabs button`, 'padding', '8px 12px 9px'], [`${M} .mx-daytabs button`, 'font-weight', '600'],   // TEN-377 README §3: idle 600, selected 700 [`${M} .mx-daytabs button`, 'gap', '6px'],
@@ -104,10 +129,7 @@ const SPEC = [
   ['.mc-promo', 'padding', '13px 20px'], ['.mc-promo', 'gap', '16px'], ['.mc-promo__lead', 'gap', '12px'],
   ['.mc-promo__icon', 'background', 'var(--inner)'], ['.mc-promo__icon', 'color', 'var(--text)'], ['.mc-promo__badge', 'background', 'transparent'],   // OFFICIAL VERSION 1: PRO = outlined link pill
 ];
-const ACCT_SPEC = SPEC.filter(([s]) => s.startsWith('.sf-') && !s.startsWith('.sf-nav button'))
-  .concat([['.sf-nav a', 'padding', '10px 12px'], ['.sf-nav a', 'border-radius', '12px'], ['.sf-nav a', 'font-size', '13.5px'], ['.sf-nav a', 'color', 'var(--text-soft)']]);
-const DASH_NAV = [['.sf-nav button', 'padding', '10px 12px'], ['.sf-nav button', 'border-radius', '12px'], ['.sf-nav button', 'font-size', '13.5px'],
-  ['.sf-nav button', 'font-weight', '600'], ['.sf-nav button', 'color', 'var(--text-soft)']];   // OFFICIAL VERSION 1: sidebar items r12 (README §8 said 8; reference wins), idle = --text-soft (founder R1, measured)
+const ACCT_SPEC = SPEC.filter(([s]) => s.startsWith('.sf-'));   // TEN-403: one rail block on both pages
 
 function specProblems(html, spec) {
   const p = [];
@@ -116,39 +138,75 @@ function specProblems(html, spec) {
 }
 
 test('the dashboard carries the 12a layout values + foundation colours (shell + board)', () => {
-  assert.deepEqual(specProblems(DASH, SPEC.concat(DASH_NAV)), []);
+  assert.deepEqual(specProblems(DASH, SPEC), []);
 });
 test('account.html carries the same shell (12a layout, foundation colours)', () => {
   assert.deepEqual(specProblems(ACCT, ACCT_SPEC), []);
 });
 test('spec lock kills its mutants', () => {
   const mut = {
-    sidebar250: DASH.replace('width:252px; box-sizing:border-box; display:flex;', 'width:250px; box-sizing:border-box; display:flex;'),
+    sidebar252: DASH.replace('bottom:0; width:92px; box-sizing:border-box; display:flex;', 'bottom:0; width:252px; box-sizing:border-box; display:flex;'),
+    tileBack: DASH.replace('</body>', '<style>.sf-item.active{ background:var(--selected); }</style></body>'),
+    blueGlow: DASH.replace('color-mix(in srgb, var(--text) 13%, transparent) 0%', 'color-mix(in srgb, var(--bar) 13%, transparent) 0%'),
     rowGrid: DASH.replace('grid-template-columns:minmax(0,1fr) 1px 104px 96px;', 'grid-template-columns:minmax(0,1fr) 104px 96px;'),
     formBarLong: DASH.replace('.mc-form__track{ width:52px;', '.mc-form__track{ width:78px;'),
     laterOverride: DASH.replace('</body>', `<style>${M} .match-card .mc-foot{ padding:14px 20px; }</style></body>`),
     upgradeHollow: DASH.replace('</body>', '<style>.sf-upgrade{ background:none; }</style></body>'),
   };
-  for (const [name, html] of Object.entries(mut)) assert.notDeepEqual(specProblems(html, SPEC.concat(DASH_NAV)), [], `mutant survived: ${name}`);
+  for (const [name, html] of Object.entries(mut)) assert.notDeepEqual(specProblems(html, SPEC), [], `mutant survived: ${name}`);
 });
 
-// ── rulings: 252 on both pages, no ANALYSE label, no chevron, user row → account.html ───
+// ── rulings (TEN-403, SUPERSEDE TEN-286's "no ANALYSE label" and "no menu"): three groups Analyse / Research / Insights,
+//    in that order, each with its caps name; the foot is the avatar only and it opens the avatar menu, which holds the
+//    theme switch, Upgrade to Pro, Account settings (→ account.html) and Sign out (#acctSignout) — nothing else sits at the foot.
 function shellRulings(html) {
   const p = [];
-  if (/class="sf-navlabel"/.test(html)) p.push('ANALYSE label present');
-  if (/sf-chev/.test(html)) p.push('user-row chevron present');
-  const row = /<a class="sf-userchip"[^>]*href="([^"]+)"/.exec(html);
-  if (!row || row[1] !== 'account.html') p.push(`user row href ${row && row[1]}`);
+  const groups = [...html.matchAll(/<div class="sf-group" role="group" aria-label="([^"]+)">\s*<div class="sf-glabel">([^<]+)<\/div>/g)].map(m => m[2]);
+  if (JSON.stringify(groups) !== JSON.stringify(['Analyse', 'Research', 'Insights'])) p.push(`groups ${JSON.stringify(groups)}`);
+  if (/sf-navlabel|<hr|sf-sep/.test(html.slice(html.indexOf('<nav class="sf-nav"'), html.indexOf('</nav>')))) p.push('a hairline / separator between groups');
+  const row = /<a class="sf-userchip" id="acctMain" href="([^"]+)"[^>]*aria-haspopup="menu"[^>]*aria-controls="sfMenu"/.exec(html);
+  if (!row || row[1] !== 'account.html') p.push(`avatar row ${row && row[1]}`);
+  const foot = html.slice(html.indexOf('<div class="sf-foot">'), html.indexOf('</aside>'));
+  const menu = foot.slice(foot.indexOf('<div class="sf-menu" id="sfMenu"'));
+  const beforeMenu = foot.slice(0, foot.indexOf('<div class="sf-menu" id="sfMenu"'));
+  if (!menu.includes('data-sf-theme-switch')) p.push('no theme switch in the menu');
+  if (/data-sf-theme-switch|sf-upgrade/.test(beforeMenu)) p.push('theme switch / Upgrade back at the foot');
+  if (!/<a class="sf-upgrade" href="account.html"/.test(menu)) p.push('no Upgrade to Pro in the menu');
+  if (!/<a class="sf-menu-row" href="account.html"[^>]*>[\s\S]*?Account settings<\/a>/.test(menu)) p.push('no Account settings → account.html');
+  if (!/<button type="button" class="sf-menu-row sf-menu-out" id="acctSignout"[^>]*>[\s\S]*?Sign out<\/button>/.test(menu)) p.push('no Sign out (#acctSignout)');
+  if ((html.match(/<div data-sf-theme-switch>/g) || []).length !== 1) p.push('the theme switch is mounted more than once');
   return p;
 }
-test('rulings: no ANALYSE label, no chevron, the user row links to account.html (both pages)', () => {
+test('rulings: Analyse / Research / Insights groups; the avatar opens the menu (theme, Upgrade, Account settings, Sign out) — both pages', () => {
   assert.deepEqual(shellRulings(DASH), []); assert.deepEqual(shellRulings(ACCT), []);
   const mut = {
-    chevronBack: DASH.replace('</span>\n    </a>\n    <a class="sf-upgrade"', '</span>\n      <span class="sf-chev" aria-hidden="true">›</span>\n    </a>\n    <a class="sf-upgrade"'),
-    labelBack: DASH.replace('<nav class="sf-nav" id="mainNav">', '<div class="sf-navlabel">Analyse</div>\n  <nav class="sf-nav" id="mainNav">'),
-    rowToMenu: ACCT.replace('<a class="sf-userchip" href="account.html">', '<a class="sf-userchip" href="#menu">'),
+    groupLost: DASH.replace('<div class="sf-glabel">Research</div>', ''),
+    switchBackAtFoot: DASH.replace('<div class="sf-foot">', '<div class="sf-foot">\n    <div data-sf-theme-switch></div>'),
+    rowToAuth: ACCT.replace('<a class="sf-userchip" id="acctMain" href="account.html"', '<a class="sf-userchip" id="acctMain" href="auth.html"'),
+    noSignout: ACCT.replace('id="acctSignout"', 'id="acctSignoutX"'),
+    noMenu: DASH.replace(' aria-haspopup="menu"', ''),
   };
-  for (const [name, html] of Object.entries(mut)) assert.notDeepEqual(shellRulings(html), [], `mutant survived: ${name}`);
+  for (const [name, html] of Object.entries(mut)) { assert.notEqual(html, name.startsWith('rowTo') || name === 'noSignout' ? ACCT : DASH, `mutant ${name} must apply`); assert.notDeepEqual(shellRulings(html), [], `mutant survived: ${name}`); }
+});
+
+// open state (desktop @media min-width:901px; hover or keyboard focus): rows 42, groups 10 apart, pill radius 26, caps group
+// names + labels + the avatar's name · plan shown. Mutants: rows stay 48 open, labels never shown.
+function openProblems(html) {
+  const rail = html.slice(html.indexOf('/* sf-rail:start'), html.indexOf('/* sf-rail:end */'));
+  const m = /@media \(min-width:901px\)\{([\s\S]*?)\n  \}/.exec(rail);
+  if (!m) return ['no open-state block'];
+  const want = [/\.sf-sidebar:hover \.sf-panel, \.sf-sidebar:has\(:focus-visible\) \.sf-panel\{ border-radius:26px; \}/,
+    /\.sf-sidebar:hover \.sf-nav, \.sf-sidebar:has\(:focus-visible\) \.sf-nav\{ gap:10px; \}/,
+    /\.sf-sidebar:hover \.sf-item, \.sf-sidebar:has\(:focus-visible\) \.sf-item\{ height:42px; \}/,
+    /\.sf-sidebar:hover \.sf-glabel, [^{]*\.sf-sidebar:hover \.sf-lbl, [^{]*\{ display:block; \}/,
+    /\.sf-sidebar:hover \.sf-userinfo, \.sf-sidebar:has\(:focus-visible\) \.sf-userinfo\{ display:flex; \}/];
+  return want.filter(re => !re.test(m[1])).map(String);
+}
+test('open rail: rows 42, groups 10 apart, radius 26, names + labels shown (both pages)', () => {
+  assert.deepEqual(openProblems(DASH), []); assert.deepEqual(openProblems(ACCT), []);
+  for (const [name, html] of Object.entries({ rows48: DASH.replace('.sf-item{ height:42px; }\n    .sf-sidebar:hover .sf-glabel', '.sf-item{ height:48px; }\n    .sf-sidebar:hover .sf-glabel'),
+    noLabels: DASH.replace('.sf-sidebar:hover .sf-lbl, ', '') }))
+    { assert.notEqual(html, DASH, `mutant ${name} must apply`); assert.notDeepEqual(openProblems(html), [], `mutant survived: ${name}`); }
 });
 
 // ── C · nav glyphs, element for element (frozen from the design's rendered SVGs) ───────
@@ -170,7 +228,7 @@ const GLYPHS = {
 function glyphProblems(html) {
   const nav = html.slice(html.indexOf('<nav class="sf-nav" id="mainNav">'), html.indexOf('</nav>', html.indexOf('<nav class="sf-nav" id="mainNav">')));
   const got = {}; const p = [];
-  for (const m of nav.matchAll(/<button[^>]*data-tab="[^"]+"[^>]*>(<svg[\s\S]*?<\/svg>)([^<]+)<\/button>/g)) {
+  for (const m of nav.matchAll(/<button[^>]*data-tab="[^"]+"[^>]*><span class="sf-ico">(<svg[\s\S]*?<\/svg>)[\s\S]*?<span class="sf-lbl">([^<]+)<\/span><\/button>/g)) {
     const els = [...m[1].matchAll(/<(path|circle|ellipse|line|rect|polyline)\b([^>]*?)\/?>/g)].map(e => [e[1], (/\bd="([^"]*)"/.exec(e[2]) || /cx="[^"]*"/.exec(e[2]) || [''])[1] || e[2].trim()]);
     if (!/viewBox="0 0 20 20"/.test(m[1])) p.push(`${m[2].trim()}: viewBox`);
     got[m[2].trim()] = els;
@@ -331,9 +389,77 @@ test('S1: a trusted sidebar click runs every registered overlay closer; each ove
     assert.ok(own.includes(c), `the dashboard closer covers ${c}`);
 });
 
-// TEN-376 S3 (founder): status lines are text only — no dot anywhere ("Live · updated", News feed line, Drops header).
-test('S3: no status-line dot on any page', () => {
+// TEN-376 S3 (founder): status lines are text only — no dot ("Live · updated" text lines, News feed line, Drops header).
+// TEN-403 (founder shell refresh, 2026-10-08) carves ONE exception: the Today's Matches 35b header's first stat column
+// draws the live dot (.sfh__dot, mxHeaderStatusHtml). Locked in test-ten403-header.mjs; nothing else may draw one.
+test('S3: no status-line dot on any page (the 35b Today\'s Matches live column excepted)', () => {
   const all = ['bsp-consult-dashboard.html', 'drops-page.js', 'drops-page.css', 'account.html', 'series.js', 'series.css', 'live-tab.js', 'trading-report.js']
     .map(f => readFileSync(new URL('./' + f, import.meta.url), 'utf8')).join('\n');
   assert.ok(!/news-livedot|do-dot|lt-dot|class="dot"><\/span>|mx-datastatus[^{\n]*\.dot/.test(all), 'a status dot came back');
+});
+
+// ── Pro lock (TEN-403 R1 item 3, founder 2026-10-09; SUPERSEDES "no page is Pro-locked today"): on the Free plan (plan
+//    free or missing) or signed out, Trading Report + Stennisfy Model wear the locked state (icon --nav-locked + the 16px
+//    --inner lock badge); Edge or Pro unlocks both. Driven by the REAL sfNavLock / sfPlanLocks (the shared sf-menu block)
+//    against each page's own nav rows, through the real paint paths (paintAcct / paintChip). Visual only: no click gate.
+function lockApi(html) {
+  const blk = html.slice(html.indexOf('/* sf-menu:start'), html.indexOf('/* sf-menu:end */'));
+  const code = blk.slice(blk.indexOf('window.sfNavLock = function'));
+  const nav = html.slice(html.indexOf('<nav class="sf-nav"'), html.indexOf('</nav>', html.indexOf('<nav class="sf-nav"')));
+  const rows = [...nav.matchAll(/<(a|button) class="sf-item"([^>]*)>/g)].map(m => {
+    const tab = (/data-tab="([^"]+)"/.exec(m[2]) || [])[1] || null, href = (/href="([^"]+)"/.exec(m[2]) || [])[1] || '';
+    const row = { tag: m[1], tab, href, cls: new Set(['sf-item']), lock: false };
+    row.classList = { toggle: (c, on) => on ? row.cls.add(c) : row.cls.delete(c) };
+    const ico = { querySelector: () => row.lock ? { remove: () => { row.lock = false; } } : null,
+      insertAdjacentHTML: (_, h) => { if (/class="sf-lock"/.test(h)) row.lock = true; } };
+    row.querySelector = s => s === '.sf-ico' ? ico : null;
+    return row;
+  });
+  const document = { querySelector: sel => {
+    for (const alt of sel.split(/,\s*/)) {
+      let m = /^\.sf-nav \[data-tab="([^"]+)"\]$/.exec(alt);
+      if (m) { const r = rows.find(x => x.tab === m[1]); if (r) return r; continue; }
+      m = /^\.sf-nav a\.sf-item\[href\$="#([^"]+)"\]$/.exec(alt);
+      if (m) { const r = rows.find(x => x.tag === 'a' && x.href.endsWith('#' + m[1])); if (r) return r; continue; }
+      throw new Error('unexpected selector ' + alt);
+    }
+    return null;
+  } };
+  const window = {};
+  new Function('window', 'document', code)(window, document);
+  const locked = () => rows.filter(r => r.lock || r.cls.has('is-locked')).map(r => r.tab || r.href.split('#')[1]).sort();
+  for (const r of rows) if (r.lock !== r.cls.has('is-locked')) throw new Error('badge and icon state disagree');
+  return { window, rows, locked };
+}
+function lockProblems(html, page) {
+  const p = [];
+  let L; try { L = lockApi(html); } catch (e) { return ['threw ' + e.message]; }
+  const want = page === 'dash' ? ['edge', 'trading'] : ['edge'];   // account.html's rail carries no Trading Report
+  const cases = [[null, want], [{ plan: 'free' }, want], [{}, want], [{ plan: 'edge' }, []], [{ plan: 'pro' }, []], [null, want]];
+  for (const [u, exp] of cases) {
+    L.window.sfPlanLocks(u);
+    if (JSON.stringify(L.locked()) !== JSON.stringify(exp)) p.push(`${JSON.stringify(u)} → ${JSON.stringify(L.locked())}`);
+  }
+  // the paint path wires it, so it follows sign-in / sign-out live
+  if (page === 'dash' && !/function paintAcct\(u\)\{\n    if \(window\.sfPlanLocks\) window\.sfPlanLocks\(u\);/.test(html)) p.push('paintAcct does not paint the locks');
+  if (page === 'acct' && !/function paintChip\(\)\{\n    if \(window\.sfPlanLocks\) window\.sfPlanLocks\(user\);/.test(html)) p.push('paintChip does not paint the locks');
+  // navigation is NOT gated: the lock never blocks a click (no is-locked / sf-lock check in a click path)
+  if (/is-locked'\)\)\s*(return|e\.preventDefault)|classList\.contains\('is-locked'\)/.test(html)) p.push('a locked row gates navigation');
+  return p;
+}
+test('Pro lock: Free / signed out lock Trading Report + Model, Edge / Pro unlock; wired from the paint path; never gates a click', () => {
+  assert.deepEqual(lockProblems(DASH, 'dash'), []); assert.deepEqual(lockProblems(ACCT, 'acct'), []);
+  const mut = {
+    proOnly: [DASH.replace("var open = !!u && (u.plan === 'edge' || u.plan === 'pro');", "var open = !!u && u.plan === 'pro';"), 'dash'],
+    modelFree: [DASH.replace("['trading', 'edge'].forEach", "['trading'].forEach"), 'dash'],
+    signedOutOpen: [DASH.replace("var open = !!u && (u.plan === 'edge'", "var open = !u || (u.plan === 'edge'"), 'dash'],
+    notWired: [DASH.replace('    if (window.sfPlanLocks) window.sfPlanLocks(u);', ''), 'dash'],
+    acctNotWired: [ACCT.replace('    if (window.sfPlanLocks) window.sfPlanLocks(user);', ''), 'acct'],
+    acctLookup: [ACCT.replace(`, .sf-nav a.sf-item[href$="#' + tab + '"]'`, `'`), 'acct'],
+    gated: [DASH.replace("window.sfAcctMenu = set;", "window.sfAcctMenu = set; document.addEventListener('click', function (e) { if (e.target.closest('.sf-item').classList.contains('is-locked')) e.preventDefault(); });"), 'dash'],
+  };
+  for (const [name, [html, page]] of Object.entries(mut)) {
+    assert.notEqual(html, page === 'dash' ? DASH : ACCT, `mutant ${name} must apply`);
+    assert.notDeepEqual(lockProblems(html, page), [], `mutant survived: ${name}`);
+  }
 });

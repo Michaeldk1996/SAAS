@@ -36,14 +36,17 @@
     osIsLight: function () { return !!(mq && mq.matches); } };
   apply();
 
-  // README §5.14 — the sidebar Night · Day · Auto switch (darker track). Markup: <div data-sf-theme-switch></div>.
+  // README §5.14 — the Night · Day · Auto switch (darker track), in the rail's avatar menu (TEN-403). Markup: <div data-sf-theme-switch></div>.
   // Under it, only while Auto is on, a 10.5px --text-label note "Auto · following the OS (light|dark)".
-  var LABELS = [['night', 'Night'], ['day', 'Day'], ['auto', 'Auto']];
+  // Each option = 14px glyph + word (TEN-403 avatar menu, the shell package's reference: moon / sun / half disc).
+  var LABELS = [['night', 'Night', 'M16.2 12.3A6.5 6.5 0 017.7 3.8a6.5 6.5 0 108.5 8.5z'],
+    ['day', 'Day', 'M10 6.5a3.5 3.5 0 100 7 3.5 3.5 0 000-7M10 2.5v1.6M10 15.9v1.6M2.5 10h1.6M15.9 10h1.6M4.7 4.7l1.1 1.1M14.2 14.2l1.1 1.1M4.7 15.3l1.1-1.1M14.2 5.8l1.1-1.1'],
+    ['auto', 'Auto', 'M10 3a7 7 0 100 14 7 7 0 000-14zM10 3v14']];
   function renderSwitch(host) {
     var m = mode();
     host.innerHTML = '<div class="sf-theme-seg" role="radiogroup" aria-label="Theme">' + LABELS.map(function (o) {
       var on = o[0] === m;
-      return '<button type="button" role="radio" aria-checked="' + on + '" data-mode="' + o[0] + '" class="sf-theme-opt' + (on ? ' on' : '') + '">' + o[1] + '</button>';
+      return '<button type="button" role="radio" aria-checked="' + on + '" data-mode="' + o[0] + '" class="sf-theme-opt' + (on ? ' on' : '') + '"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + o[2] + '"/></svg>' + o[1] + '</button>';
     }).join('') + '</div>' + (m === 'auto' ? '<div class="sf-theme-note">Auto · following the OS (' + (mq && mq.matches ? 'light' : 'dark') + ')</div>' : '');
   }
   function mountAll() {

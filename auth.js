@@ -13,7 +13,7 @@
  *
  * Firestore user document: users/{uid}
  *   fullName, email, plan ('free'), oddsFormat ('decimal'),
- *   favouriteBookmakers [], timezone,
+ *   favouriteBookmakers [], favouriteMatches [] (TEN-403: starred match keys), timezone,
  *   notifications { favouritePlayers, valuePicks, openingOdds, sharpMoney } (all false),
  *   createdAt (server timestamp)
  */
@@ -179,7 +179,10 @@
             notifyAuth(u);
           };
           if (fbUser) {
-            loadProfile(fbUser).then(done).catch(function () { done(publicUser(fbUser, {})); });
+            loadProfile(fbUser).then(done).catch(function () {
+              // TEN-403: flag the empty fallback so nothing treats it as the stored profile (favourites would be overwritten)
+              var pu = publicUser(fbUser, {}); pu.profileLoadFailed = true; done(pu);
+            });
           } else {
             done(null);
           }
@@ -209,6 +212,18 @@
     });
   }
 
+  // TEN-403: favourite match keys (the dashboard's eventKeyOfMatch) — non-empty strings up to 64
+  // chars, no repeats, at most 500 kept (the newest), so a bad write can never bloat the doc.
+  function cleanMatchKeys(list) {
+    var out = [];
+    if (!Array.isArray(list)) return out;
+    for (var i = 0; i < list.length; i++) {
+      var k = list[i];
+      if (typeof k === 'string' && k && k.length <= 64 && out.indexOf(k) < 0) out.push(k);
+    }
+    return out.length > 500 ? out.slice(out.length - 500) : out;
+  }
+
   function publicUser(fbUser, data) {
     data = data || {};
     var notif = Object.assign(defaultNotif(), data.notifications || {});
@@ -231,6 +246,7 @@
       timezone: tzMode === 'manual' ? tzId : '',
       timezoneMode: tzMode,
       favouriteBookmakers: Array.isArray(data.favouriteBookmakers) ? data.favouriteBookmakers : [],
+      favouriteMatches: cleanMatchKeys(data.favouriteMatches),
       notifications: notif,
       createdAt: data.createdAt || null
     };
@@ -431,7 +447,7 @@
 
     // updateProfile(patch) -> Promise<publicUser>
     // patch may include name, email, plan, timezone, oddsFormat,
-    // favouriteBookmakers, notifications.
+    // favouriteBookmakers, favouriteMatches, notifications.
     updateProfile: function (patch) {
       patch = patch || {};
       return ensureInit().then(function () {
@@ -463,6 +479,8 @@
           updates.oddsFormat = patch.oddsFormat;
         }
         if (Array.isArray(patch.favouriteBookmakers)) updates.favouriteBookmakers = patch.favouriteBookmakers;
+        // TEN-403: the Today's Matches favourites (match keys), deduped, strings only, capped.
+        if (Array.isArray(patch.favouriteMatches)) updates.favouriteMatches = cleanMatchKeys(patch.favouriteMatches);
         if (patch.notifications && typeof patch.notifications === 'object') {
           var merged = Object.assign({}, (_cachedUser && _cachedUser.notifications) || defaultNotif());
           NOTIF_KEYS.forEach(function (k) {

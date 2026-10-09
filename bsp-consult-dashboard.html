@@ -204,11 +204,7 @@
     --mc-track: var(--inner);
   }
 
-  [data-page="matches"] .mx-titlerow{ justify-content:space-between; flex-wrap:wrap; }
-  [data-page="matches"] .mx-h1{ font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-subtitle{ font-family:var(--mx-font-ui); }
-  [data-page="matches"] .mx-datastatus{ margin-top:6px; font-family:var(--mx-font-mono); display:flex; align-items:center; }
-  [data-page="matches"] .mx-datastatus.error{ color:var(--neg); }
+  [data-page="matches"] .mx-datastatus.error{ display:block; max-width:260px; font-size:12px; line-height:1.4; text-align:right; color:var(--neg); }
 
   [data-page="matches"] .mx-stats{ padding:20px 24px 0; }
   [data-page="matches"] .mx-stats-strip{ border:1px solid var(--mx-hairline); border-radius:var(--mx-radius-card); display:grid; grid-template-columns:repeat(4,1fr); overflow:hidden; background:var(--mx-bg-table); }
@@ -358,6 +354,9 @@
   [data-page="matches"] #matchlist > .mx-daydivider,
   [data-page="matches"] #matchlist > .mc-promo,
   [data-page="matches"] #matchlist > .mx-empty{ grid-column:1 / -1; }
+  /* TEN-403: the rail gives the grid 3 columns closed / 2 open, so the promo takes row 2 — after the first full row at
+     any column count — instead of leaving a hole after its DOM slot (card 2). */
+  [data-page="matches"] #matchlist > .mc-promo{ grid-row:2; }
   [data-page="matches"] .mx-empty{ padding:48px 18px; text-align:center; font-family:var(--mx-font-ui); }
 
   /* TEN-179 item 2 — the Upcoming card takes the Completed card's box model, which is
@@ -548,14 +547,9 @@
   [data-page="matches"] .mc-story__ctx{ font-family:var(--mx-font-ui); }
   /* TEN-179 item 1/3 — Upcoming summary boxes. BIGGEST MARKET MOVE is clickable and sets
      the sort to Drift; it takes the card's own hover border so it reads as actionable. */
-  [data-page="matches"] .mc-story--click{ cursor:pointer; transition:border-color 120ms ease, background 120ms ease; }
-  [data-page="matches"] .mc-story--click:hover{ border-color:var(--edge-10); }
-  [data-page="matches"] .mc-story--click:focus-visible{ outline:2px solid var(--edge-10); outline-offset:2px; }
-  /* TEN-179 item 3 (founder task 2026-09-11) — the tile is a toggle, so it needs a selected
-     state. Same brand blue as the card's own hover/active cues, at the weight the other
-     selected controls on this page use; the border alone is too quiet to read as "on". */
-  [data-page="matches"] .mc-story--click.is-on{ border-color:var(--edge-10); background:var(--tile-hover); }
-  [data-page="matches"] .mc-story--click.is-on .mc-story__lbl{ color:var(--text); }
+  [data-page="matches"] .mc-story--click{ cursor:pointer; transition:border-color 120ms ease; }
+  [data-page="matches"] .mc-story--click:focus-visible{ outline:2px solid var(--edge-16); outline-offset:2px; }
+  /* TEN-403: its edge states (on 24%, hover 16%) live with the 39b tile rules in layout-12a. */
   [data-page="matches"] .mc-story__name{ font-family:var(--mx-font-ui); font-size:13px; font-weight:700; color:var(--mc-text); }
   [data-page="matches"] .mc-story__tight{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
   [data-page="matches"] .mc-story__pair{ display:flex; flex-direction:column; gap:7px; }
@@ -615,38 +609,26 @@
   /* odds + implied (upcoming) */
   [data-page="matches"] .mc-oddswrap{ display:flex; align-items:baseline; gap:8px; justify-content:flex-end; }
 
-  /* TEN-179 item 3 — Upcoming DRIFT view. The card's right-hand block reads directly off
-     state.sort, so it can never fall out of sync with the sort control. Track widths and
-     type are TOKENS.md literals: 44/56/44/48 at gap 4, padding-left 8; open 16px/400,
-     now 19px/800, delta 15px/700, arrow glyph 9px, bar 2px high at 50% opacity with
-     length max(10, min(30, |pct|*0.9)). The block spans the two existing right-hand
-     columns rather than re-gridding the row — the Time view's grid is untouched. */
-  [data-page="matches"] .mc-drifted{ grid-column:2 / 4; justify-self:end; box-sizing:border-box; padding-left:8px;
-    display:grid; grid-template-columns:44px 56px 44px 48px; gap:0 4px; align-items:center; }
-  [data-page="matches"] .mc-drifted__open{ font-family:var(--mx-font-mono); font-size:16px; font-weight:400; color:var(--mc-text); text-align:center; }
-  /* No opening price on file — em dash in the dimmest token, exactly as the completed
-     card's missing-open path already does. Never derived from the current price. */
-  [data-page="matches"] .mc-drifted__open.nodata{ color:var(--mc-muted-2); }
-  /* TEN-225: the NOW dash needs the same muted no-data token as the OPEN dash.
-     The class was added without a rule, so a missing Now rendered BRIGHT beside a
-     muted missing Open — two different "we have nothing" states on one cell. */
-  [data-page="matches"] .mc-drifted__now.nodata{ color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-drifted__lane{ display:flex; align-items:center; justify-content:center; }
-  [data-page="matches"] .mc-drifted__bar{ height:2px; border-radius:2px; opacity:.5; }
-  [data-page="matches"] .mc-drifted__arrow{ font-size:9px; line-height:1; margin-left:1px; }
-  /* Nothing to draw (no open) — a short neutral rule holds the lane so NOW stays under
-     its header instead of sliding left into an empty track. */
-  [data-page="matches"] .mc-drifted__flat{ width:24px; height:1px; background:var(--mx-hairline); }
-  [data-page="matches"] .mc-drifted__now{ font-family:var(--mx-font-mono); font-size:19px; font-weight:800; text-align:center; }
-  [data-page="matches"] .mc-drifted__pct{ font-family:var(--mx-font-mono); font-size:15px; font-weight:700; color:var(--mc-muted-2); text-align:right; }
+  /* TEN-403 (founder Shell refresh, part 3; reference 39b, computed) — the MOVE VIEW. Head and
+     rows read Open · → · Now · Move on 56px 14px 60px 48px at gap 10, right-aligned; the row is
+     name · 1px divider · that block (gap 10). Open mono 13/500 grey, arrow Hanken 12 grey, Now
+     mono 19/800 white, Move mono 12/700 signed (grey ± for zero, grey — when not measurable). */
+  [data-page="matches"] .mc-players.up.mv .mc-row{ grid-template-columns:minmax(0,1fr) 1px 208px; gap:0 10px; }
+  [data-page="matches"] .mc-drifted{ grid-column:3; grid-row:1; display:grid; grid-template-columns:56px 14px 60px 48px; gap:0 10px; align-items:center; }
+  [data-page="matches"] .mc-drifted__open{ font-family:var(--font-nums); font-size:13px; font-weight:500; color:var(--text-label); text-align:right; }
+  [data-page="matches"] .mc-drifted__arr{ font-family:var(--font-words); font-size:12px; color:var(--text-label); text-align:center; }
+  [data-page="matches"] .mc-drifted__now{ font-family:var(--font-nums); font-size:19px; font-weight:800; color:var(--text); text-align:right; }
+  [data-page="matches"] .mc-drifted__now.nodata{ color:var(--text-label); }
+  [data-page="matches"] .mc-drifted__pct{ font-family:var(--font-nums); font-size:12px; font-weight:700; color:var(--text-label); text-align:right; }
   [data-page="matches"] .mc-drifted__pct.pos{ color:var(--pos); }
   [data-page="matches"] .mc-drifted__pct.neg{ color:var(--neg); }
-  /* Drift-view header eyebrow: OPEN and NOW centred over their own tracks. Mirrors the
-     row's trailing tracks exactly so the labels sit over the figures. */
-  [data-page="matches"] .mc-colhead-drift{ margin-left:auto; margin-right:10px; box-sizing:border-box; padding-left:8px;
-    display:grid; grid-template-columns:44px 56px 44px 48px; gap:0 4px;
-    font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--mc-muted-2); }
-  [data-page="matches"] .mc-colhead-drift span{ text-align:center; }
+  /* the open / now cells open the odds pop-up too: the price block takes --inner, radius 7 */
+  [data-page="matches"] .mc-drifted__open, [data-page="matches"] .mc-drifted__now{ border-radius:7px; padding:2px 6px; margin:-2px -6px; transition:background .12s; }
+  [data-page="matches"] .mc-drifted__open:hover, [data-page="matches"] .mc-drifted__now:hover,
+  [data-page="matches"] .mc-drifted__open.phb-on, [data-page="matches"] .mc-drifted__now.phb-on{ background:var(--inner); }
+  [data-page="matches"] .mc-colhead-drift{ margin-left:auto; display:grid; grid-template-columns:56px 14px 60px 48px; gap:0 10px;
+    font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  [data-page="matches"] .mc-colhead-drift span{ text-align:right; }
   [data-page="matches"] .mc-odds{ font-family:var(--mx-font-mono); font-weight:700; font-size:16px; color:var(--mc-text); }
   [data-page="matches"] .mc-implied{ font-family:var(--mx-font-mono); font-size:12px; font-weight:600; color:var(--mc-muted-2); }
 
@@ -866,19 +848,35 @@
      difference is added on the list view only. */
   #playerListView{ display:flex; flex-direction:column; gap:24px; padding:8px 16px 22px; max-width:1352px; line-height:normal; }
 
-  /* Players header card: the Today's Matches header pattern (.mx-titlerow), own class names. */
-  .pgh-card{ display:flex; align-items:flex-end; justify-content:space-between; gap:28px; padding:22px 26px; border-radius:12px;
-    background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); }
-  .pgh-text{ flex:1; min-width:0; }
-  /* Ruling Q4.1: the eyebrow is the site caps label. */
-  .pgh-eyebrow{ margin:0 0 9px; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; }
-  .pgh-title{ margin:0; font-family:var(--font-words); font-size:29px; font-weight:800; line-height:1.1; letter-spacing:-0.015em; color:var(--text); }
-  .pgh-sub{ margin:8px 0 0; max-width:520px; font-family:var(--font-words); font-size:13.5px; font-weight:400; line-height:1.55; color:var(--text-soft); }
-  .pgh-stats{ display:flex; flex:none; gap:34px; }
-  .pgh-stats:empty{ display:none; }
-  .pgh-stat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
-  .pgh-stat-l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; }
-  .pgh-stat-v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); line-height:normal; font-variant-numeric:tabular-nums; }
+  /* ── TEN-403 part 1: the "35b" page header — ONE component for every page header card ──────────────────────────
+     (Today's Matches/Results, Live, Trading Report, Dropping Odds, Series, Players, Tournaments, Database, News;
+     Head to Head uses the .sfh--ctl variant). Values = the computed 35b header of the 2026-10-08 reference export at
+     1512 night. Card tone, no outline, radius 12, padding 18x26, one row centred, gap 28. Left column gap 5: title
+     Hanken 24/800 -0.015em lh 1.1; ONE sentence 13px --text-soft on a single line (nowrap + ellipsis) with an optional
+     --text-label tail. No caps line above the title. Right: stat columns gap 30, caps label 10.5/700/0.10em over
+     Plex Mono 15/700 (white; clocks --text-soft). Rules: .claude/rules/app-shell.md "Page header (35b, TEN-403)". */
+  .sfh{ display:flex; align-items:center; justify-content:space-between; gap:28px; padding:18px 26px; margin:0; border:0; border-radius:12px;
+    background:var(--card); box-shadow:var(--top-light); box-sizing:border-box; line-height:normal; font-family:var(--font-words); color:var(--text); }
+  .sfh__text{ flex:1 1 0; min-width:0; display:flex; flex-direction:column; gap:5px; }
+  .sfh__title{ margin:0; font-family:var(--font-words); font-size:24px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; color:var(--text); }
+  .sfh__sub{ margin:0; max-width:none; font-family:var(--font-words); font-size:13px; font-weight:400; line-height:normal; color:var(--text-soft);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sfh__tail{ color:var(--text-label); }
+  .sfh__tail:empty{ display:none; }
+  .sfh__stats{ display:flex; align-items:flex-end; gap:30px; flex:0 0 auto; }
+  .sfh__stats:empty{ display:none; }
+  .sfh__stat{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .sfh__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; white-space:nowrap; }
+  .sfh__v{ font-family:var(--font-nums); font-size:15px; font-weight:700; color:var(--text); line-height:normal; white-space:nowrap; }
+  .sfh__v--soft{ color:var(--text-soft); }
+  .sfh__v--none{ color:var(--text-label); }
+  .sfh__live{ display:flex; align-items:center; gap:7px; }
+  .sfh__dot{ display:block; width:7px; height:7px; border-radius:50%; background:var(--pos); flex:none; }
+  /* Controls under the row (Head to Head pickers): same card, padding 18x26x22, the row is .sfh__row with margin-bottom 16. */
+  .sfh.sfh--ctl{ display:block; padding:18px 26px 22px; }
+  .sfh--ctl > .sfh__row{ display:flex; align-items:center; justify-content:space-between; gap:28px; margin:0 0 16px; }
+  @media (max-width:899px){ .sfh, .sfh--ctl > .sfh__row{ flex-wrap:wrap; row-gap:14px; }
+    .sfh__stats{ flex:1 1 100%; flex-wrap:wrap; row-gap:12px; gap:12px 24px; } .sfh__stat{ align-items:flex-start; } }
 
   /* Players — tournament groups (column, 30px apart) */
   #playerGroups{ display:flex; flex-direction:column; gap:30px; }
@@ -1895,17 +1893,11 @@
   }
   /* the one gradient: --page-bg (tokens.css, founder S6) on the root, so it scrolls behind sidebar + content */
   html{ background:var(--page-bg); }
-  body{ background:transparent; padding-left:252px; }
+  body{ background:transparent; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
 
-  /* 12a app shell — measured against design/reference/portal-12a.html (TEN-286):
-     aside 252px (founder ruling TEN-286, supersedes TEN-262's 250px; see
-     .claude/rules/app-shell.md) with an 18px inset floating nav-panel; logo 26px;
-     nav 3px gap, items 10px 12px / r12 / 13.5px 600 (active 700) with a 6px dot;
-     user row 6px 8px; Upgrade = periwinkle fill. One definition — no later overrides. */
-  /* --sf-side: the sidebar's width. Overlays start there, so the sidebar is never dimmed (founder R6.5, OFFICIAL VERSION 1:
-     the backdrop covers the content area only). */
-  :root{ --sf-side:252px; }
+  /* --sf-side: the rail's current width (92 closed, 248 open, 0 on mobile). Overlays start there, so the rail is never
+     dimmed (founder R6.5, OFFICIAL VERSION 1: the backdrop covers the content area only). Defined in the sf-rail block. */
   /* A blurred scrim is the containing block for any fixed layer opened inside it (a pop-up over the Match analysis
      sheet): that layer is already clear of the sidebar, so it takes no second offset. */
   .modal-overlay > *, .ltm-overlay > *, .ma-pop-overlay > *, .sr-ov-back > *, [style*="backdrop-filter"] > *{ --sf-side:0px; }
@@ -1913,41 +1905,123 @@
      keeps its exact --sidebar tone with the modal open). */
   .modal-overlay, .ltm-overlay, .ma-pop-overlay, .sr-ov-back, #ppSplitDrawer, .do-ov, [style*="var(--backdrop)"]{ clip-path:inset(0); }
   @media print{ .modal-overlay, .ltm-overlay, .ma-pop-overlay, .sr-ov-back, #ppSplitDrawer, .do-ov, [style*="var(--backdrop)"]{ clip-path:none !important; } }
-  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:252px; box-sizing:border-box; display:flex;
-    padding:18px 0 18px 18px; z-index:60; font-family:var(--sf-font-ui); line-height:normal; }
-  .sf-panel{ flex:1; min-height:0; display:flex; flex-direction:column; box-sizing:border-box; padding:20px 12px 14px;
-    background:var(--sidebar); border:1px solid transparent; box-shadow:none; border-radius:22px; overflow-y:auto; }
-  .sf-brand{ display:block; margin:0 8px 26px; }
-  .sf-logo{ display:block; height:26px; width:auto; }
-  .sf-nav{ display:flex; flex-direction:column; gap:3px; }
-  .sf-nav button{ display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box; text-align:left; background:none;
-    border:1px solid transparent; border-radius:12px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
-    font-weight:600; color:var(--text-soft); cursor:pointer; }
-  /* founder R1 (TEN-376): idle item = --text-soft words, --text-label icon (measured on OFFICIAL VERSION 1); active = white both */
-  .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; color:var(--text-label); }
-  .sf-nav button::after{ content:''; flex:none; width:6px; height:6px; border-radius:50%; margin-left:auto; background:transparent; }
-  .sf-nav button:hover{ background:var(--tile-hover); }
-  .sf-nav button.active, .sf-nav button.active:hover{ background:var(--selected); border-color:var(--edge-6); color:var(--text); font-weight:700; }
-  .sf-nav button.active svg{ color:var(--text); }
-  .sf-nav button.active::after{ display:none; }
-  .sf-foot{ margin-top:auto; padding-top:24px; display:flex; flex-direction:column; gap:10px; }
-  /* README §5.14 theme switch (option 2a): darker-track segmented Night · Day · Auto above the user row, 11.5/700 */
+  /* sf-rail:start — TEN-403 shell refresh: the 38a navigation rail + the 40a avatar menu (.claude/rules/app-shell.md).
+     This block is byte-identical on bsp-consult-dashboard.html and account.html (test-ten262.mjs compares them).
+     Values = the shell package's reference export (OFFICIAL VERSION 1 2026-10-08, artboard 40a), computed at 1512px.
+     Closed: aside 92 (padding 30/0/30/16) holding a 76px pill. Hover / keyboard focus opens it to 248 (pill 232) and
+     PUSHES the page: --sf-side follows the aside, and body padding-left + every overlay that starts at --sf-side read it. */
+  :root{ --sf-side:92px; }
+  body{ padding-left:var(--sf-side); transition:padding-left .18s ease; }
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:92px; box-sizing:border-box; display:flex;
+    padding:30px 0 30px 16px; z-index:60; font-family:var(--font-words); line-height:normal; transition:width .18s ease; }
+  .sf-panel{ flex:1; min-width:0; min-height:0; display:flex; flex-direction:column; box-sizing:border-box; padding:16px 12px 14px;
+    background:var(--sidebar); border-radius:38px; box-shadow:var(--top-light), var(--shadow-rail); transition:border-radius .18s ease; }
+  .sf-brand{ display:block; flex:none; align-self:flex-start; }
+  .sf-logo{ display:block; width:34px; height:34px; margin:0 0 14px 9px; }
+  /* groups are separated by spacing only (no hairline): 14px closed, 10px open; caps group names only when open */
+  .sf-nav{ display:flex; flex-direction:column; gap:14px; min-height:0; overflow-x:hidden; overflow-y:auto; scrollbar-width:none; }
+  .sf-group{ display:flex; flex-direction:column; gap:4px; }
+  .sf-glabel{ display:none; padding:0 14px 2px; font-family:var(--font-words); font-size:10.5px; font-weight:700; line-height:1.2;
+    letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); white-space:nowrap; }
+  /* rows 48 closed / 42 open; icon 20 / stroke 1.6: active white, idle --text-label, locked (Pro) --nav-locked */
+  .sf-item{ position:relative; display:flex; align-items:center; gap:13px; width:100%; height:48px; flex:none; box-sizing:border-box;
+    padding:0 13px; border:1.5px solid transparent; border-radius:14px; background:none; text-align:left; text-decoration:none;
+    font-family:var(--font-words); font-size:13.5px; font-weight:600; color:var(--text-label); cursor:pointer; }
+  /* the selected page = a white radial glow, no tile and no outline, faded in .25s when the selection changes */
+  .sf-item::before{ content:''; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0; transition:opacity .25s ease;
+    background:radial-gradient(ellipse 76px 40px at 26px 50%, color-mix(in srgb, var(--text) 13%, transparent) 0%, transparent 100%); }
+  .sf-item:not(.active):hover{ background-color:var(--inner); }
+  .sf-item.active{ color:var(--text); }
+  .sf-item.active::before{ opacity:1; }
+  .sf-ico{ position:relative; display:flex; flex:none; }
+  .sf-ico > svg{ width:20px; height:20px; stroke:currentColor; stroke-width:1.6; }
+  .sf-item.is-locked .sf-ico > svg{ stroke:var(--nav-locked); }
+  .sf-item.active.is-locked .sf-ico > svg{ stroke:var(--text); }   /* the page you are on keeps the active white icon; the badge still says Pro */
+  .sf-lbl{ display:none; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* badges, top-right of the icon on a 2px sidebar-tone ring: the Live count (the ONLY blue on navigation) and the Pro lock */
+  .sf-count{ position:absolute; top:-9px; left:12px; min-width:18px; height:18px; box-sizing:border-box; padding:0 5px; border-radius:9px;
+    display:flex; align-items:center; justify-content:center; background:var(--bar); box-shadow:0 0 0 2px var(--sidebar);
+    font-family:var(--font-nums); font-size:10px; font-weight:700; color:var(--text); }
+  .sf-count[hidden]{ display:none; }
+  .sf-lock{ position:absolute; top:-8px; left:12px; width:16px; height:16px; box-sizing:border-box; border-radius:8px;
+    display:flex; align-items:center; justify-content:center; background:var(--inner); box-shadow:0 0 0 2px var(--sidebar); }
+  .sf-lock svg{ width:9px; height:9px; stroke:var(--text-label); stroke-width:2; }
+  /* foot = the avatar only (36px --inner circle, white mono initials); open adds name · plan · › */
+  .sf-foot{ margin-top:auto; position:relative; flex:none; display:flex; flex-direction:column; padding-top:8px; }
+  .sf-userchip{ display:flex; align-items:center; gap:11px; height:48px; box-sizing:border-box; padding:0 8px; border-radius:14px;
+    color:inherit; text-decoration:none; cursor:pointer; }
+  .sf-userchip:hover, .sf-userchip[aria-expanded="true"]{ background:var(--inner); }
+  .sf-userav{ width:36px; height:36px; box-sizing:border-box; border-radius:50%; flex:none; display:flex; align-items:center;
+    justify-content:center; background:var(--inner); color:var(--text); font-family:var(--font-nums); font-size:10.5px; font-weight:700; }
+  /* signed out there is no account: no initials, no plan, a person glyph that links to sign-in (app-shell.md) */
+  .sf-userglyph{ width:36px; height:36px; box-sizing:border-box; border-radius:50%; flex:none; display:none; align-items:center;
+    justify-content:center; background:var(--inner); }
+  .sf-userchip.sf-out .sf-userglyph{ display:flex; }
+  .sf-userglyph svg{ width:15px; height:15px; stroke:var(--text-label); stroke-width:1.5; }
+  .sf-userinfo{ display:none; flex:1; min-width:0; flex-direction:column; gap:1px; }
+  .sf-username{ font-family:var(--font-words); font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sf-userplan{ font-family:var(--font-words); font-size:10.5px; font-weight:400; color:var(--text-label); white-space:nowrap; }
+  .sf-chev{ display:none; flex:none; font-family:var(--font-words); font-size:13px; color:var(--text-label); transform:rotate(-90deg); }
+  .sf-userchip.sf-out .sf-chev{ visibility:hidden; }
+  /* the avatar menu: beside the rail, bottom-aligned with the foot */
+  .sf-menu{ position:absolute; left:calc(100% + 14px); bottom:0; z-index:1; width:232px; box-sizing:border-box; display:none;
+    flex-direction:column; gap:12px; padding:14px; border-radius:14px; background:var(--card); border:1px solid var(--edge-10);
+    box-shadow:var(--shadow-avatar); font-family:var(--font-words); line-height:normal; }
+  .sf-menu.open{ display:flex; }
+  /* hover bridge over the gap to the rail: crossing it keeps the rail open (review: it flickered between 92 and 248) */
+  .sf-menu::before{ content:''; position:absolute; top:0; bottom:0; right:100%; width:16px; }
+  /* an open menu sits above any scrim (the Match analysis scrim is z 80; the rail never overlaps a scrim, which starts at --sf-side) */
+  .sf-sidebar:has(.sf-menu.open){ z-index:9500; }
+  .sf-item:focus-visible, .sf-userchip:focus-visible, .sf-menu a:focus-visible, .sf-menu button:focus-visible{ outline:2px solid var(--edge-16); outline-offset:-2px; }
+  .sf-menu-who{ display:flex; align-items:center; gap:11px; }
+  .sf-menu-who .sf-userinfo{ display:flex; }
+  .sf-menu-theme{ display:flex; flex-direction:column; gap:6px; }
+  .sf-menu-cap{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  /* Night · Day · Auto = the darker track (theme.js renders it into [data-sf-theme-switch]) */
   .sf-theme-seg{ display:flex; gap:2px; padding:3px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; }
-  .sf-theme-opt{ flex:1; padding:6px 0; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-soft);
+  .sf-theme-opt{ flex:1; height:30px; box-sizing:border-box; display:flex; align-items:center; justify-content:center; gap:6px; padding:0;
+    border:1px solid transparent; border-radius:8px; background:transparent; color:var(--text-label);
     font-family:var(--font-words); font-size:11.5px; font-weight:700; cursor:pointer; }
+  .sf-theme-opt svg{ width:14px; height:14px; flex:none; stroke:currentColor; stroke-width:1.6; }
   .sf-theme-opt:hover{ color:var(--text); }
   .sf-theme-opt.on{ background:var(--inner); border-color:var(--edge-10); color:var(--text); }
   .sf-theme-note{ margin:6px 2px 0; font-family:var(--font-words); font-size:10.5px; color:var(--text-label); }
-  /* the user row is a plain link to account.html (no chevron, no menu — founder ruling TEN-286 item 6) */
-  .sf-userchip{ display:flex; align-items:center; gap:10px; padding:6px 8px; cursor:pointer; text-decoration:none; color:inherit; }
-  .sf-userav{ width:30px; height:30px; box-sizing:border-box; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
-    background:var(--inner); border:none; color:var(--text); font-family:var(--sf-font-mono); font-weight:700; font-size:11px; }
-  .sf-userinfo{ min-width:0; flex:1; display:flex; flex-direction:column; }
-  .sf-username{ font-family:var(--sf-font-ui); font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sf-userplan{ font-family:var(--sf-font-ui); font-size:10.5px; color:var(--text-label); }
-  .sf-upgrade, .sf-upgrade:hover{ display:block; width:100%; box-sizing:border-box; padding:10px; text-align:center;
-    border:none; border-radius:10px; background:var(--pro); color:var(--pro-text);
-    font-family:var(--sf-font-ui); font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
+  .sf-upgrade, .sf-upgrade:hover{ display:flex; align-items:center; justify-content:center; height:36px; border-radius:10px;
+    background:var(--pro); color:var(--pro-text); font-family:var(--font-words); font-size:12.5px; font-weight:700;
+    white-space:nowrap; text-decoration:none; cursor:pointer; }
+  .sf-menu-links{ display:flex; flex-direction:column; gap:2px; margin:0 -8px -8px; padding-top:8px;
+    border-top:1px solid color-mix(in srgb, var(--text) 8%, transparent); }
+  .sf-menu-row{ display:flex; align-items:center; gap:10px; width:100%; height:36px; box-sizing:border-box; padding:0 10px; border:none;
+    border-radius:9px; background:none; font-family:var(--font-words); font-size:12.5px; font-weight:600; color:var(--text);
+    text-align:left; text-decoration:none; cursor:pointer; }
+  .sf-menu-row svg{ width:15px; height:15px; flex:none; stroke:currentColor; stroke-width:1.5; }
+  .sf-menu-row:hover{ background:var(--inner); }
+  .sf-menu-out{ color:var(--text-label); }
+  .sf-menu-out:hover{ color:var(--text); }
+  /* open state (desktop): hover, or keyboard focus inside the rail */
+  @media (min-width:901px){
+    html:has(.sf-sidebar:hover), html:has(.sf-sidebar :focus-visible){ --sf-side:248px; }
+    .sf-sidebar:hover, .sf-sidebar:has(:focus-visible){ width:248px; }
+    .sf-sidebar:hover .sf-panel, .sf-sidebar:has(:focus-visible) .sf-panel{ border-radius:26px; }
+    .sf-sidebar:hover .sf-nav, .sf-sidebar:has(:focus-visible) .sf-nav{ gap:10px; }
+    .sf-sidebar:hover .sf-item, .sf-sidebar:has(:focus-visible) .sf-item{ height:42px; }
+    .sf-sidebar:hover .sf-glabel, .sf-sidebar:has(:focus-visible) .sf-glabel,
+    .sf-sidebar:hover .sf-lbl, .sf-sidebar:has(:focus-visible) .sf-lbl,
+    .sf-sidebar:hover .sf-chev, .sf-sidebar:has(:focus-visible) .sf-chev{ display:block; }
+    .sf-sidebar:hover .sf-userinfo, .sf-sidebar:has(:focus-visible) .sf-userinfo{ display:flex; }
+  }
+  /* mobile: the rail is a static block above the page, laid out open; overlays cover the full width */
+  @media (max-width:900px){
+    :root{ --sf-side:0px; }
+    .sf-sidebar{ position:static; width:auto; padding:0; }
+    .sf-panel{ border-radius:26px; }
+    .sf-nav{ gap:10px; overflow:visible; }
+    .sf-item{ height:42px; }
+    .sf-glabel, .sf-lbl, .sf-chev{ display:block; }
+    .sf-userinfo{ display:flex; }
+    .sf-menu{ left:0; bottom:calc(100% + 8px); }
+  }
+  /* sf-rail:end */
 
   /* item 7 / review-item 4 — content column left-aligned beside the sidebar (export
      is flex:1 left-aligned, NOT centred: centring + a 280px rail was pushing everything
@@ -1957,15 +2031,8 @@
   [data-page="matches"] .mx-controls{ padding:20px 40px 0; }
   [data-page="matches"] .mx-tablewrap{ padding:16px 40px 40px; }   /* TEN-179: see above — horizontal padding comes from .mx-controls */
 
-  /* item 5 — header: title block + Upcoming/Completed segmented control (12a layout: see layout-12a) */
-  /* Header: title var(--text); the whole status line ("Live · updated 11:41", "Settled · …") var(--text-label)
-     with NO dot (founder R3, TEN-376 — a known exception where OFFICIAL VERSION 1 draws a dot and is wrong). */
-  [data-page="matches"] .mx-h1{ color:var(--text); }
-  [data-page="matches"] .mx-datastatus{ color:var(--text-label) !important; }
-  [data-page="matches"] .mx-datastatus .mx-live-txt{ color:var(--text-label); font-family:var(--sf-font-ui); }
-  [data-page="matches"] .mx-datastatus .mx-clock{ color:var(--text-label); font-family:var(--sf-font-mono); }
-  /* §2 — Completed status line: muted 'Settled · <date>', no green, no glow. */
-  [data-page="matches"] .mx-datastatus.settled .mx-settled-txt{ color:var(--text-label); font-family:var(--sf-font-ui); }
+  /* Header = the shared 35b page header (.sfh, TEN-403). The live clock is the FIRST stat column (dot + time,
+     supersedes founder R3's "no dot"); "Settled · <date>" is the grey sentence tail in Completed. */
   /* §4 — date-tab focus ring is keyboard-only and subtle; the active-tab underline stays
      the selected-state marker, never a full rectangular outline box. */
   [data-page="matches"] .mx-daytabs button:focus{ outline:none; }
@@ -2011,12 +2078,6 @@
   .mc-promo__cta{ font-family:var(--sf-font-ui); white-space:nowrap; text-decoration:none; }
   .mc-promo__cta:hover{ color:var(--link); }
 
-  @media (max-width:900px){
-    :root{ --sf-side:0px; }   /* the sidebar is static here: overlays cover the full width */
-    body{ padding-left:0; }
-    .sf-sidebar{ position:static; width:auto; flex-direction:column; padding:0; }
-  }
-
   /* TEN-107 Slice 3 — live overlay (flag-gated, overlay-only, no first-paint cost) */
   .live-overlay{ padding:6px 18px 4px; border-top:1px solid var(--line); }
   .lo-row{ display:flex; align-items:center; gap:10px; font-family:var(--mx-font-ui,monospace); font-size:12px; }
@@ -2043,13 +2104,7 @@
   /* eyebrow spec, used throughout: mono 9.5 / 600 / 0.16em / uppercase */
   [data-page="trading"] .tr-eyebrow{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
 
-  /* §1 page header card */
-  [data-page="trading"] .tr-hdr{ background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; padding:22px 26px; display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; }
-  [data-page="trading"] .tr-hdr-title{ font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; }
-  [data-page="trading"] .tr-hdr-sub{ font-size:13.5px; color:var(--text-soft); margin:8px 0 0; max-width:640px; line-height:1.55; }
-  [data-page="trading"] .tr-hdr-stats{ display:flex; gap:34px; }
-  [data-page="trading"] .tr-pair{ display:flex; flex-direction:column; gap:5px; align-items:flex-end; }
-  [data-page="trading"] .tr-pairval{ font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:700; color:var(--text); }
+  /* §1 page header card = the shared 35b page header (.sfh, TEN-403) */
 
   /* §2 control bar — one outer box, two stacked strips */
   [data-page="trading"] .tr-ctl{ display:flex; flex-direction:column; border:1px solid var(--edge-6); border-radius:12px; }
@@ -2254,77 +2309,158 @@
 </head>
 <body>
 
-<!-- STENNISFY APP SHELL — left sidebar (TEN-8: replaces the old BSP top bar).
-     #mainNav + button[data-tab] kept so the existing tab-switch handler is untouched.
-     Account IDs (#acctMain/#acctLabel/#acctAvatar/#acctSignout) kept so the Firebase
-     paintAcct() wiring still resolves — the "Free plan" sub-line is static design copy. -->
+<!-- STENNISFY APP SHELL — the 38a navigation rail + 40a avatar menu (TEN-403; .claude/rules/app-shell.md).
+     #mainNav + button[data-tab] (+ #liveTabBtn / #tradingTabBtn / #dropsTabBtn / #seriesTabBtn / #databaseTabBtn, hidden by
+     default and revealed by their flag guards) are kept so the tab handler and the flags work unchanged. Groups are
+     spacing only; their caps names show when the rail is open. Account IDs (#acctMain/#acctLabel/#acctAvatar/#acctSignout)
+     are kept so paintAcct() still resolves. Glyphs = the design's paths (viewBox 0 0 20 20). -->
 <aside class="sf-sidebar">
   <div class="sf-panel">
   <div class="sf-brand">
-    <!-- TEN-285: the 12a logo (HANDOFF §2) replaces the old gradient-T mark + wordmark. -->
-    <img class="sf-logo" src="assets/logo-dark-transparent.png" alt="Stennisfy" height="26">
+    <img class="sf-logo" src="assets/ring-transparent.png" alt="Stennisfy" width="34" height="34">
   </div>
   <nav class="sf-nav" id="mainNav">
-    <!-- Sidebar glyphs are the export's exact path set (zip 32 nav array), not icon-library substitutes: viewBox 0 0 20 20. -->
-    <button class="active" data-tab="matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</button>
-    <!-- TEN-107 Slice 4: standalone Live tab. Hidden by default (display:none) so a
-         flag-OFF build shows no dead tab; live-tab.js reveals it only after the
-         FEATURE_LIVE_PROXY + Supabase-creds guards pass. New tab, Matches untouched. -->
-    <button data-tab="live" id="liveTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8"/></svg>Live</button>
-    <!-- TEN-151 Trading Report tab: live in-play board, one row per player, with
-         24-month situational splits. Hidden by default (display:none); the
-         FEATURE_TRADING_REPORT + Supabase-creds + LiveTab-gate guards in
-         trading-report.js reveal it. Deploying with the flag OFF changes nothing
-         live. Reuses the Live tab's gate — the Live tab + Matches board are untouched. -->
-    <button data-tab="trading" id="tradingTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7"/></svg>Trading Report</button>
-    <!-- TEN-294 Dropping Odds: hidden by default; drops-page.js reveals it when FEATURE_DROPS is on.
-         Glyph = the export sidebar's path (App Sidebar 12a.dc.html). -->
-    <button data-tab="drops" id="dropsTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4"/></svg>Dropping Odds</button>
-    <!-- TEN-168 Series tab: current-streak cards for today/tomorrow's slate.
-         Hidden by default (display:none); series.js reveals it when FEATURE_SERIES
-         is on. Sits alongside the Trading Report (shared foundations) so a later
-         merge is wiring, not a rewrite. Deploying with the flag OFF changes nothing. -->
-    <button data-tab="series" id="seriesTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5c2.5 0 3.2-3.4 5-3.4s2.3 2.2 4 2.2 2.6-4.8 5-4.8"/></svg>Series</button>
-    <!-- TEN-179 (design handoff, item 5): the Results sidebar item is REMOVED. Every
-         settled match is reached through the Upcoming|Completed mode toggle on the merged
-         Matches page, and Matches stays highlighted in both modes. `#Results` is retained
-         as a deep link into Completed (mxApplyHash) so existing links keep working. This
-         is the ONLY sidebar change in scope — no item is added, reordered or renamed. -->
-    <button data-tab="players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</button>
-    <button data-tab="h2h"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3"/></svg>Head to Head</button>
-    <button data-tab="tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</button>
-    <!-- TEN-146 Database tab: yield by odds band from the ATP closing-line archive.
-         Hidden by default (display:none); the FEATURE_DATABASE_TAB guard near the end
-         of <body> reveals it. Deploying this code with the flag OFF changes nothing
-         live until the founder's confirm-before-live gate. New tab + new precomputed
-         artefact only — no existing nav/page/panel or pipeline job is touched. -->
-    <button data-tab="database" id="databaseTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.4c3 0 5.4.8 5.4 1.9v9.4c0 1.1-2.4 1.9-5.4 1.9s-5.4-.8-5.4-1.9V5.3c0-1.1 2.4-1.9 5.4-1.9ZM4.6 5.3c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9M4.6 10c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9"/></svg>Database</button>
-    <!-- TEN-242 item 1.1: the Entry Lists sidebar item is REMOVED. Entry lists are
-         now the middle tab of Tournaments (Overview · Entry list · Reports), matching
-         App Sidebar.dc.html's 11-item nav exactly. There was never a URL route for the
-         page - no hash, no query param, and the app has no router - so removing the
-         button cannot orphan a link. `data-tab="entry-lists"` is still ACCEPTED by the
-         nav handler below and lands on Tournaments -> Entry list, the same defensive
-         alias TEN-179 kept for `data-tab="results"`. -->
-    <!-- Stennisfy Model icon = the App Sidebar.dc.html star path. Founder ruling TEN-262 #3
-         (2026-09-23) - it REPLACES the earlier line-chart glyph. Do not revert: .claude/rules/app-shell.md. -->
-    <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg>Stennisfy Model</button>
-    <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
-    <button data-tab="news"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg>News</button>
+    <div class="sf-group" role="group" aria-label="Analyse">
+      <div class="sf-glabel">Analyse</div>
+      <!-- Live (TEN-107), Trading Report (TEN-151), Dropping Odds (TEN-294) and Series (TEN-168) are hidden by default
+           (display:none): live-tab.js / trading-report.js / drops-page.js / series.js reveal each one only after its
+           feature flag + guards pass, so a flag-OFF build shows no dead item. The Live badge = the Live page's own count
+           (LiveFeed payload.live, ATP singles underway); hidden at 0. -->
+      <button class="sf-item active" data-tab="matches" aria-label="Matches"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg></span><span class="sf-lbl">Matches</span></button>
+      <button class="sf-item" data-tab="live" id="liveTabBtn" style="display:none" aria-label="Live"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8"/></svg><span class="sf-count" id="sfLiveCount" hidden></span></span><span class="sf-lbl">Live</span></button>
+      <button class="sf-item" data-tab="trading" id="tradingTabBtn" style="display:none" aria-label="Trading Report"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7"/></svg></span><span class="sf-lbl">Trading Report</span></button>
+      <button class="sf-item" data-tab="drops" id="dropsTabBtn" style="display:none" aria-label="Dropping Odds"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4"/></svg></span><span class="sf-lbl">Dropping Odds</span></button>
+      <button class="sf-item" data-tab="series" id="seriesTabBtn" style="display:none" aria-label="Series"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14.5c2.5 0 3.2-3.4 5-3.4s2.3 2.2 4 2.2 2.6-4.8 5-4.8"/></svg></span><span class="sf-lbl">Series</span></button>
+    </div>
+    <div class="sf-group" role="group" aria-label="Research">
+      <div class="sf-glabel">Research</div>
+      <!-- TEN-179: no Results item (Matches → Completed; #Results deep-links there). TEN-242: no Entry Lists item
+           (Tournaments → Entry list; data-tab="entry-lists" is still accepted by the handler). Database (TEN-146) is
+           hidden until the FEATURE_DATABASE_TAB guard reveals it. -->
+      <button class="sf-item" data-tab="players" aria-label="Players"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg></span><span class="sf-lbl">Players</span></button>
+      <button class="sf-item" data-tab="h2h" aria-label="Head to Head"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3"/></svg></span><span class="sf-lbl">Head to Head</span></button>
+      <button class="sf-item" data-tab="tournaments" aria-label="Tournaments"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg></span><span class="sf-lbl">Tournaments</span></button>
+      <button class="sf-item" data-tab="database" id="databaseTabBtn" style="display:none" aria-label="Database"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.4c3 0 5.4.8 5.4 1.9v9.4c0 1.1-2.4 1.9-5.4 1.9s-5.4-.8-5.4-1.9V5.3c0-1.1 2.4-1.9 5.4-1.9ZM4.6 5.3c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9M4.6 10c0 1.1 2.4 1.9 5.4 1.9s5.4-.8 5.4-1.9"/></svg></span><span class="sf-lbl">Database</span></button>
+    </div>
+    <div class="sf-group" role="group" aria-label="Insights">
+      <div class="sf-glabel">Insights</div>
+      <!-- Stennisfy Model = the star (founder ruling TEN-262 #3; the line-chart glyph stays retired). -->
+      <button class="sf-item" data-tab="edge" aria-label="Stennisfy Model"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg></span><span class="sf-lbl">Stennisfy Model</span></button>
+      <button class="sf-item" data-tab="styles" aria-label="Playing Styles"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></span><span class="sf-lbl">Playing Styles</span></button>
+      <button class="sf-item" data-tab="news" aria-label="News"><span class="sf-ico"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg></span><span class="sf-lbl">News</span></button>
+    </div>
   </nav>
   <div class="sf-foot">
-    <div data-sf-theme-switch></div>
-    <a class="sf-userchip" id="acctMain" href="account.html">
+    <a class="sf-userchip" id="acctMain" href="account.html" role="button" aria-haspopup="menu" aria-expanded="false" aria-controls="sfMenu">
       <span class="sf-userav" id="acctAvatar">AM</span>
+      <span class="sf-userglyph" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3.5 17.5c.9-2.9 3.4-4.5 6.5-4.5s5.6 1.6 6.5 4.5"/></svg></span>
       <span class="sf-userinfo">
         <span class="sf-username" id="acctLabel">alex.morgan</span>
         <span class="sf-userplan">Free plan</span>
       </span>
+      <span class="sf-chev" aria-hidden="true">›</span>
     </a>
-    <a class="sf-upgrade" href="account.html">Upgrade to Pro</a>
+    <div class="sf-menu" id="sfMenu" role="menu" aria-label="Account">
+      <div class="sf-menu-who"><span class="sf-userav" data-sf-acct="initials"></span><span class="sf-userinfo"><span class="sf-username" data-sf-acct="name"></span><span class="sf-userplan" data-sf-acct="plan"></span></span></div>
+      <div class="sf-menu-theme"><span class="sf-menu-cap">Theme</span><div data-sf-theme-switch></div></div>
+      <a class="sf-upgrade" href="account.html" role="menuitem">Upgrade to Pro</a>
+      <div class="sf-menu-links">
+        <a class="sf-menu-row" href="account.html" role="menuitem"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 11.5a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM3.5 17.5c.9-2.9 3.4-4.5 6.5-4.5s5.6 1.6 6.5 4.5"/></svg>Account settings</a>
+        <button type="button" class="sf-menu-row sf-menu-out" id="acctSignout" role="menuitem"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12.5 6V4.5A1.5 1.5 0 0 0 11 3H5.5A1.5 1.5 0 0 0 4 4.5v11A1.5 1.5 0 0 0 5.5 17H11a1.5 1.5 0 0 0 1.5-1.5V14M8 10h9m0 0-2.5-2.5M17 10l-2.5 2.5"/></svg>Sign out</button>
+      </div>
+    </div>
   </div>
   </div>
 </aside>
+<script>
+/* sf-menu:start — TEN-403 avatar menu (identical on bsp-consult-dashboard.html and account.html). The avatar row toggles
+   the menu; a click outside it or Escape closes it. Signed out (.sf-out) the row is a plain link to sign-in and there
+   is no menu. The menu's name · plan · initials are read from the row paintAcct / paintChip already painted.
+   Sign out = BSP.signOut(), then the sign-in page (the account page's own sign-out path). */
+(function () {
+  var chip = document.getElementById('acctMain'), menu = document.getElementById('sfMenu');
+  if (!chip || !menu) return;
+  function txt(sel) { var e = chip.querySelector(sel); return e ? e.textContent : ''; }
+  function set(open) {
+    if (open) {
+      menu.querySelector('[data-sf-acct="initials"]').textContent = txt('.sf-userav');
+      menu.querySelector('[data-sf-acct="name"]').textContent = txt('.sf-username');
+      menu.querySelector('[data-sf-acct="plan"]').textContent = txt('.sf-userplan');
+      // a Pro account has nothing to upgrade to
+      menu.querySelector('.sf-upgrade').style.display = /^Pro\b/.test(txt('.sf-userplan')) ? 'none' : '';
+    }
+    menu.classList.toggle('open', !!open);
+    chip.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  var kbOpen = false;   // opened from the keyboard (click detail 0): only then does Escape hand focus back to the row
+  chip.addEventListener('click', function (e) {
+    if (chip.classList.contains('sf-out')) return;
+    e.preventDefault();
+    kbOpen = e.detail === 0;
+    set(!menu.classList.contains('open'));
+  });
+  // capture phase: the theme switch re-renders its own buttons on click, so a bubbling check would see a detached target
+  document.addEventListener('click', function (e) {
+    if (menu.classList.contains('open') && !menu.contains(e.target) && !chip.contains(e.target)) set(false);
+  }, true);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && menu.classList.contains('open')) {
+      set(false);
+      // a refocus after a mouse open would match :focus-visible and hold the rail open (review)
+      if (kbOpen) chip.focus(); else if (menu.contains(document.activeElement) || chip.contains(document.activeElement)) document.activeElement.blur();
+    }
+  });
+  var out = document.getElementById('acctSignout');
+  if (out) out.addEventListener('click', function () {
+    if (window.BSP && BSP.signOut) BSP.signOut().then(function () { location.href = 'auth.html'; });
+  });
+  window.sfAcctMenu = set;
+})();
+// Pro lock (founder R1 item 3): Trading Report and Stennisfy Model are Edge/Pro pages. On the Free plan (plan free or
+// missing) or signed out their rail rows show the locked state: icon --nav-locked + the 16px --inner lock badge. Edge or
+// Pro unlocks both. The paint paths call sfPlanLocks(u) on every auth change. Visual only: navigation is NOT gated —
+// clicking a locked row still opens the page. A row is found by data-tab (dashboard) or its #tab link (account.html).
+window.sfNavLock = function (tab, on) {
+  var b = document.querySelector('.sf-nav [data-tab="' + tab + '"], .sf-nav a.sf-item[href$="#' + tab + '"]'); if (!b) return;
+  var ico = b.querySelector('.sf-ico'), lock = ico.querySelector('.sf-lock');
+  b.classList.toggle('is-locked', !!on);
+  if (on && !lock) ico.insertAdjacentHTML('beforeend', '<span class="sf-lock" aria-label="Pro"><svg viewBox="0 0 20 20" fill="none" stroke-linejoin="round"><path d="M5 9h10v8H5zM7 9V6a3 3 0 016 0v3"/></svg></span>');
+  if (!on && lock) lock.remove();
+};
+window.sfPlanLocks = function (u) {
+  if (u && u.profileLoadFailed) return;   // a failed profile read is not the plan: keep the current state
+  var open = !!u && (u.plan === 'edge' || u.plan === 'pro');
+  ['trading', 'edge'].forEach(function (t) { window.sfNavLock(t, !open); });
+};
+window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlocked flash before sign-in resolves
+/* sf-menu:end */
+</script>
+<script>
+// TEN-403 rail badges. Live count = the number the Live page itself shows: the LiveFeed payload's `live` list (ATP
+// singles, underway — live-tab.js render()). Subscribed the way the #lvTab renderer subscribes (this inline script runs
+// before the deferred module, which drains __LV_SUBS). No feed / 0 underway = no badge.
+(function () {
+  var lastFeed = 0;
+  function paint(n) {
+    var b = document.getElementById('sfLiveCount'); if (!b) return;
+    b.textContent = String(n); b.hidden = !(n > 0);
+  }
+  (window.__LV_SUBS = window.__LV_SUBS || []).push(function (p) {
+    if (p && p.ready) lastFeed = Date.now();
+    paint(p && Array.isArray(p.live) ? p.live.length : 0);
+  });
+  // The feed polls only while the Live tab is open, so off that tab the badge reads the count itself once a minute
+  // (review: it froze at the last number). Skipped while hidden, while the feed is live, or when Live is flagged off.
+  function peek() {
+    var btn = document.getElementById('liveTabBtn');
+    if (document.hidden || !btn || btn.style.display === 'none' || Date.now() - lastFeed < 45000) return;
+    if (!window.LiveFeed || typeof LiveFeed.liveCount !== 'function') return;
+    LiveFeed.liveCount().then(paint, function () {});
+  }
+  setTimeout(peek, 4000);   // first read once live-tab.js has loaded and revealed the Live tab
+  setInterval(peek, 60000);
+})();
+</script>
 <script src="./auth.js"></script>
 <!-- admin allowlist (ADMIN_UIDS / ADMIN_EMAILS) — also used by the News page's
      BSP Consult Intel composer to decide whether to show the admin controls. -->
@@ -2336,12 +2472,14 @@
 // on refresh), and onAuthChange keeps the account chip in sync.
 (function(){
   function paintAcct(u){
+    if (window.sfPlanLocks) window.sfPlanLocks(u);   // Free / signed out: Trading Report + Model locked (visual only)
     try{
       var label = document.getElementById('acctLabel');
       var avatar = document.getElementById('acctAvatar');
       var signout = document.getElementById('acctSignout');
       var main = document.getElementById('acctMain');
       var plan = main ? main.querySelector('.sf-userplan') : null;
+      if (main) main.classList.toggle('sf-out', !u);
       if (u){
         // Show a display name, never the raw email (review item 1): prefer the
         // account name; otherwise take the local part of the email ("alex.morgan").
@@ -2349,8 +2487,10 @@
         var initials = display.trim().split(/[\s._-]+/).map(function(s){return s[0];}).slice(0,2).join('').toUpperCase();
         if (avatar){ avatar.textContent = initials || 'A'; avatar.style.display = ''; }
         if (plan) plan.style.display = '';
+        // the plan line reads the account's own plan (auth.js: free | edge | pro), never a fixed "Free plan"
+        if (plan) plan.textContent = ({ free:'Free plan', edge:'Edge plan', pro:'Pro plan' })[u.plan] || 'Free plan';
         if (label) label.textContent = display;
-        if (signout) signout.style.display = 'none';
+        if (signout) signout.style.display = '';
         if (main) main.href = 'account.html';
       } else {
         if (label) label.textContent = 'Sign in';
@@ -2359,9 +2499,11 @@
         if (plan) plan.style.display = 'none';
         if (main) main.href = 'auth.html?mode=signin';
         if (signout) signout.style.display = 'none';
+        if (window.sfAcctMenu) window.sfAcctMenu(false);
       }
     }catch(e){}
   }
+  window.sfPaintAcct = paintAcct;   // the shell tests drive the real painter (signed in / signed out)
   if (window.BSP && BSP.onAuthChange){
     BSP.onAuthChange(paintAcct);
     // Protected route: redirect to sign-in if there is no session, or to the
@@ -2377,15 +2519,19 @@
 
 <!-- MATCHES TAB -->
 <div class="tabpage active" data-page="matches">
-  <div class="mx-titlerow">
-    <div>
-      <h1 class="mx-h1">Today's Matches</h1>
-      <p class="mx-subtitle">Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.</p>
-      <p class="mx-datastatus" id="dataStatus">Loading…</p>
-      <p class="mx-tzline" id="tzLine"></p>
+  <div class="sfh mx-titlerow">
+    <div class="sfh__text">
+      <h1 class="sfh__title mx-h1">Today's Matches</h1>
+      <!-- TEN-403: ONE sentence on one line; the grey tail carries the member's zone (Upcoming) or
+           "Settled · <date>" + zone (Completed), set by updateMatchesHeaderChrome. -->
+      <p class="sfh__sub"><span class="mx-subtitle">Live odds across bookmakers for every ATP match today. Analyst value picks updated daily.</span> <span class="sfh__tail" id="tzLine"></span></p>
     </div>
-    <!-- TEN-377 README §2: four stats, right-aligned (label above value). Filled by mcRenderHeaderStats. -->
-    <div class="mx-hstats" id="mxHeaderStats" aria-label="Board summary"></div>
+    <!-- TEN-403: first stat column = the live clock (dot + time, mxHeaderStatusHtml, Upcoming only), then the
+         TEN-377 README §2 four stats (mcRenderHeaderStats; .mx-hstats is display:contents inside .sfh__stats). -->
+    <div class="sfh__stats">
+      <div class="sfh__stat mx-datastatus" id="dataStatus"><span class="sfh__l">Loading…</span></div>
+      <div class="mx-hstats" id="mxHeaderStats" aria-label="Board summary"></div>
+    </div>
     <!-- Upcoming/Completed segmented control removed (TEN-8, founder ruling
          2026-08-08): Completed is now the sidebar "Results" tab. Upcoming vs
          completed is driven by which sidebar tab is active (state.view), set in
@@ -2442,6 +2588,9 @@
         <div class="mx-sortmenu" id="sortMenu" role="listbox"></div>
       </div>
     </div>
+    <!-- TEN-403 (founder Shell refresh, part 5) — the Favourites strip: above the match grid while
+         at least one starred match is still to be played; empty (and not drawn) otherwise. -->
+    <div class="mx-favstrip" id="mxFavStrip"></div>
   </div>
 
   <div class="mx-tablewrap">
@@ -2499,15 +2648,14 @@
 <div class="tabpage" data-page="players">
   <div class="pagewrap">
     <div id="playerListView">
-      <!-- TEN-384: header card on the Today's Matches pattern (.mx-titlerow):
-           caps eyebrow, title, sub, mono stats right. Stats filled by pgRenderHeaderStats. -->
-      <div class="pgh-card">
-        <div class="pgh-text">
-          <div class="pgh-eyebrow">ATP tour · this week's draws</div>
-          <h1 class="pgh-title">Players</h1>
-          <p class="pgh-sub">Full profiles, ratings and form: the context behind every price.</p>
+      <!-- TEN-403: the 35b page header (.sfh): title, one sentence, mono stats right. No caps line.
+           Stats filled by pgRenderHeaderStats. -->
+      <div class="sfh pgh-card">
+        <div class="sfh__text">
+          <h1 class="sfh__title">Players</h1>
+          <p class="sfh__sub">Full profiles, ratings and form: the context behind every price.</p>
         </div>
-        <div class="pgh-stats" id="pgHeaderStats" aria-label="Players summary"></div>
+        <div class="sfh__stats" id="pgHeaderStats" aria-label="Players summary"></div>
       </div>
       <div class="playersearchwrap" style="position:relative;">
         <div class="pgsearchbar">
@@ -2534,19 +2682,9 @@
 /* TEN-401 item 1: page frame = the reference's section padding (30 40 70 at 1512 → content 292–1462, 1170 wide);
    .pagewrap (22 24 48) also frames the profile view, so the difference is added on the list view only (as Players). */
 #tourListView{ padding:8px 16px 22px; max-width:1352px; }
-/* TEN-401 item 1: header card = the Today's Matches pattern (.mx-titlerow): top-level card (--card + --top-light, no
-   outline, radius 12, 22 26), caps line, title 29/800, sub 13.5 --text-soft, mono stats right (Hanken caps label over
-   Plex 17/700). Stats render only when all three are live (tourxRenderHeadStats); otherwise the block is empty. */
-#tourListView .tourx-head{ background:var(--card); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; padding:22px 26px; display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; margin-bottom:16px; line-height:normal; }
-#tourListView .tourx-head > div:first-child{ flex:1; min-width:0; }
-#tourListView .tourx-headcap{ margin:0 0 9px; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-#tourListView .tourx-head h1{ margin:0; font-family:var(--font-words); font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; color:var(--text); }
-#tourListView .tourx-head p{ margin:8px 0 0; font-family:var(--font-words); font-size:13.5px; font-weight:400; color:var(--text-soft); max-width:640px; line-height:1.55; text-wrap:pretty; }
-#tourListView .tourx-hstats{ display:flex; gap:34px; flex:none; }
-#tourListView .tourx-hstats:empty{ display:none; }
-#tourListView .tourx-hstat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
-#tourListView .tourx-hstat__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-#tourListView .tourx-hstat__v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
+/* TEN-403: the header card is the shared 35b page header (.sfh); only the space under it stays page-owned. The
+   stats render only when all three are live (tourxRenderHeadStats); otherwise the block is empty. */
+#tourListView .tourx-head{ margin-bottom:16px; }
 #tourListView .tourx-sectiontabs{ display:flex; margin-bottom:16px; }
 /* TEN-401 item 2: the darker-track segmented control — ONE site helper (sfSegHtml) for the page tabs, the Entry list
    week chips and the Reports toggles / pickers / chips. Track --card + 1px --edge-6 (radius 10, padding 3, gap 3);
@@ -2791,13 +2929,12 @@
 <div class="tabpage" data-page="tournaments">
   <div class="pagewrap">
     <div id="tourListView">
-      <div class="tourx-head">
-        <div>
-          <div class="tourx-headcap">ATP tour · Season calendar</div>
-          <h1>Tournaments</h1>
-          <p>Court speed, conditions and market yields for every event on the calendar.</p>
+      <div class="sfh tourx-head">
+        <div class="sfh__text">
+          <h1 class="sfh__title">Tournaments</h1>
+          <p class="sfh__sub">Court speed, conditions and market yields for every event on the calendar.</p>
         </div>
-        <div class="tourx-hstats" id="tourxHeadStats" aria-label="Tournaments summary"></div>
+        <div class="sfh__stats" id="tourxHeadStats" aria-label="Tournaments summary"></div>
       </div>
       <div class="tourx-sectiontabs" id="tourxSectionTabs"></div>
       <div id="tourxOverlayRoot"></div>
@@ -2842,21 +2979,8 @@
   [data-page="database"] .db-pos{ color:var(--db-pos); }
   [data-page="database"] .db-neg{ color:var(--db-neg); }
 
-  /* 1 - header card */
-  .db-headcard{ background:var(--db-surface); border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; padding:22px 26px;
-    display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; }
-  .db-headcard h1{ font-family:var(--db-ui); font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; color:var(--db-txt); }
-  .db-headcard p{ font-family:var(--db-ui); margin:8px 0 0; font-size:13.5px; line-height:1.55; color:var(--text-soft); max-width:640px; text-wrap:pretty; }
-  .db-headcard p strong{ color:var(--text); font-weight:700; }
-  .db-fresh{ font-family:var(--font-words);  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--db-mute); white-space:nowrap; }
-  /* TEN-399 item 2: caps line over the title + the Today's Matches header stats (label Hanken 10.5 caps, value Plex 17/700). */
-  .db-headcap{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin:0 0 8px; line-height:normal; }
-  .db-hstats{ display:flex; gap:34px; flex:none; line-height:normal; }
-  .db-hstats:empty{ display:none; }
-  .db-hstat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
-  .db-hstat__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-  .db-hstat__v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; white-space:nowrap; }
-  .db-hstat__n{ font-family:var(--font-words); font-size:11.5px; color:var(--text-label); white-space:nowrap; }
+  /* 1 - header card = the shared 35b page header (.sfh, TEN-403): a plain 13px --text-soft sentence (no bold run), one
+     value per stat; a behind archive appends "· updates pending" to the grey tail (renderChrome, founder R1 item 7). */
 
   /* 2 - control bar. TEN-399 item 3 + foundation surfaces: the bar is a top-level card (--card +
      --top-light, no outline); every pill group and the tab row are the darker track (track --card
@@ -3377,14 +3501,13 @@
        ROI overlay mounts a second one. Nodes are addressed by data-db inside a
        root, never by document id, so two mounts cannot fight over one DOM. -->
   <div class="pagewrap" data-db-root="standalone">
-    <div class="db-headcard" data-db="head">
-      <div>
-        <div class="db-headcap">ATP tour · closing-line archive</div>
-        <h1>Database</h1>
-        <p id="dbSubtitle" data-db="subtitle">Historical yield by odds band from our own ATP closing-line archive.</p>
+    <div class="sfh db-headcard" data-db="head">
+      <div class="sfh__text">
+        <h1 class="sfh__title">Database</h1>
+        <p class="sfh__sub" id="dbSubtitle" data-db="subtitle">Historical yield by odds band from our own ATP closing-line archive.</p>
       </div>
-      <!-- TEN-399 item 2: mono stats right (Matches · Seasons · Updated), the Today's Matches pattern. Filled by renderChrome. -->
-      <div class="db-hstats" id="dbFresh" data-db="fresh" aria-label="Archive summary"></div>
+      <!-- TEN-399 item 2 / TEN-403: mono stats right (Matches · Seasons · Updated), the 35b header. Filled by renderChrome. -->
+      <div class="sfh__stats" id="dbFresh" data-db="fresh" aria-label="Archive summary"></div>
     </div>
     <div class="db-ctl" id="dbCtl" data-db="ctl">
       <div class="db-ctltop">
@@ -4166,10 +4289,10 @@ window.EntryListsTab = (function(){
      the toggle flips (export parity: main is fixed, only the feed div reflows). */
   [data-page="news"] #newsList{ max-width:820px; }
   [data-page="news"] .news-wrap.compact #newsList{ max-width:none; }
+  /* Header = the shared 35b page header (.sfh, TEN-403); only the space under it stays page-owned. The feed line is
+     the sentence's grey tail (Hanken, not the old 12px mono line). */
   [data-page="news"] .news-head{ margin-bottom:18px; }
-  [data-page="news"] .news-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:var(--text); }
-  [data-page="news"] .news-head p{ margin:0; color:var(--text-soft); font-size:13.5px; }
-  [data-page="news"] .news-live{ margin-top:9px; font-size:12px; color:var(--text-label); font-family:'IBM Plex Mono',ui-monospace,monospace; display:flex; align-items:center; gap:7px; }
+  [data-page="news"] .news-live{ color:var(--text-label); }
   [data-page="news"] .news-clock{ color:var(--text-label); }
   /* Status lines are text only (founder S3, TEN-376): no dot, no colour. A stale feed drops the "Live" claim
      (news-feed.json's generatedAt older than NEWS_STALE_HOURS) and steps up to --text-soft so the age stands out. */
@@ -4311,12 +4434,13 @@ window.EntryListsTab = (function(){
 </style>
 <div class="tabpage" data-page="news">
   <div class="news-wrap" id="newsWrap">
-    <div class="news-head">
-      <h1>Tennis News</h1>
-      <p>Latest market and tour information</p>
-      <!-- Freshness reflects news-feed.json's OWN generatedAt (last successful
-           fetch), NOT a wall clock. See newsRenderFreshness(). -->
-      <div class="news-live" id="newsLive"><span>Loading feed…</span></div>
+    <!-- TEN-403: the shared 35b page header (.sfh). The feed line is the sentence's grey tail. Its freshness reflects
+         news-feed.json's OWN generatedAt (last successful fetch), NOT a wall clock. See newsRenderFreshness(). -->
+    <div class="sfh news-head">
+      <div class="sfh__text">
+        <h1 class="sfh__title">Tennis News</h1>
+        <p class="sfh__sub"><span class="news-sub">Latest market and tour information</span> <span class="sfh__tail">· <span class="news-live" id="newsLive"><span>Loading feed…</span></span></span></p>
+      </div>
     </div>
     <!-- Row 1: All-tournaments dropdown first, then the 4 derived category chips.
          Category is derived client-side (keyword classifier); no category field
@@ -7060,33 +7184,27 @@ function mxOddsAgeBound(){
   return { oldest, dated, undated, shown };
 }
 
-// Kept as the newest-observation reading, because the two answer different
-// questions and a later surface may want either. Nothing on the header uses it
-// now; ruling A moved the header to the oldest.
+// The NEWEST odds observation on the board: the header's Updated stat (TEN-377). The live column is ruling A's
+// OLDEST bound (mxOddsAgeBound; TEN-403 R2 restored it, R1's "Live · updated" withdrawn).
+// SAME SET AND CLOCK as mxOddsAgeBound — the prices getFiltered() paints, each read through
+// _mcNowPair(m).obs — so "updated" can never read older than "oldest" (R1 review: it scanned
+// bet365Now + every card-state key instead, missed the stream prices the cards show, and read
+// 03:42 while the oldest bound said 08:00). null when no shown price carries a clock.
 function mxOddsUpdatedAt(){
-  let best = null;
-  const take = v => {
-    if (!v) return;
-    const t = Date.parse(v);
+  let best = null, list;
+  try { list = (typeof getFiltered === 'function') ? getFiltered() : []; }
+  catch (e) { list = []; }
+  (Array.isArray(list) ? list : []).forEach(m => {
+    let pair = null;
+    try { pair = (typeof _mcNowPair === 'function') ? _mcNowPair(m) : null; } catch (e) {}
+    const t = pair ? Date.parse(pair.obs || '') : NaN;
     if (Number.isFinite(t) && (best === null || t > best)) best = t;
-  };
-  try {
-    (Array.isArray(matches) ? matches : []).forEach(m => {
-      if (m && m.bet365Now) take(m.bet365Now.observedAt);
-    });
-  } catch (e) {}
-  try {
-    const by = (typeof OCS === 'object' && OCS && OCS.byKey) || {};
-    Object.keys(by).forEach(k => {
-      const sides = (by[k] && by[k].sides) || {};
-      Object.keys(sides).forEach(s => { take(sides[s] && sides[s].nowObs); });
-    });
-  } catch (e) {}
+  });
   return best;
 }
 
 function mxHeaderStatusHtml(){
-  // RULING A — the header states the age of the OLDEST price on the board, so it
+  // RULING A (founder; TEN-403 R2 2026-10-09 withdrew R1's "Live · updated") — the header states the age of the OLDEST price on the board, so it
   // is a floor a member can rely on rather than a best case. Three shapes, and
   // the differences are the whole point:
   //
@@ -7109,16 +7227,17 @@ function mxHeaderStatusHtml(){
   if (b.oldest !== null) {
     const label = b.undated ? 'Live · odds from' : 'Live · oldest odds';
     const tail  = b.undated ? ' or older' : '';
-    return `<span class="mx-live-txt" title="${escapeHtml(detail)}">${label}</span>`
-         + ` <span class="mx-clock" title="${escapeHtml(detail)}">${headerClockFmt(new Date(b.oldest))}${tail}</span>`;
+    // TEN-403: the 35b header's first stat column — caps label over a live dot + the clock (mono 15/700 soft).
+    return `<span class="sfh__l mx-live-txt" title="${escapeHtml(detail)}">${label}</span>`
+         + `<span class="sfh__v sfh__v--soft sfh__live"><span class="sfh__dot" aria-hidden="true"></span><span class="mx-clock" title="${escapeHtml(detail)}">${headerClockFmt(new Date(b.oldest))}${tail}</span></span>`;
   }
   const d = dataLoadedAt || new Date();
   const noneDetail = b.shown
     ? `${b.shown} price${b.shown === 1 ? '' : 's'} shown, none carrying an observation clock — `
       + `this is when the page loaded, not when the odds were read`
     : 'no prices on this board — this is when the page loaded';
-  return `<span class="mx-live-txt" title="${escapeHtml(noneDetail)}">Live · loaded</span>`
-       + ` <span class="mx-clock" title="${escapeHtml(noneDetail)}">${headerClockFmt(d)}</span>`;
+  return `<span class="sfh__l mx-live-txt" title="${escapeHtml(noneDetail)}">Live · loaded</span>`
+       + `<span class="sfh__v sfh__v--soft sfh__live"><span class="sfh__dot" aria-hidden="true"></span><span class="mx-clock" title="${escapeHtml(noneDetail)}">${headerClockFmt(d)}</span></span>`;
 }
 // The one provenance string every surface shows: "bet365 · Sep 17, 09:14".
 // Book name AND Open timestamp, always together (founder, 2026-09-18) — they
@@ -7224,49 +7343,24 @@ function mxBookLabel(book){
   const k = String(book).toLowerCase().replace(/[^a-z0-9]/g, '');
   return MX_BOOK_LABELS[k] || book;
 }
-// ───────────────────────── TEN-225 item 3 — HOW A PRICE IS PRINTED ────────
-// Founder 2026-09-19: "keep [the 1.01 floor] where it is, fix the DISPLAY.
-// Show 3 decimals below 1.10 (1.012, not \"1.01\")."
-//
-// WHY. Two decimals is fine across the range a member actually reads, and it is
-// what every card has always used — but under 1.10 the second decimal is the
-// whole price. bet365 quotes Dougaz v Murtaza at 1.004 and the card printed
-// "1.00", which is not a rounding of that price so much as a different claim:
-// 1.00 returns nothing, 1.004 returns 0.4%. That mis-print is what made the
-// pair look impossible when only the leg was extreme.
-//
-// MEASURED on the deployed board 2026-09-19, n=62 fixtures / 760 priced legs:
-// 115 legs sit below 1.10, and 26 of them LOSE a digit at two decimals —
-// 1.004 (x6), 1.052 (x6), 1.091 (x4), 1.025 (x4), 1.068 (x2), 1.012 (x2),
-// 1.001, 1.008. Everything at or above 1.10 is untouched.
+// ───────────────────────── HOW A PRICE IS PRINTED (TEN-403 R1) ────────────
+// Founder TEN-403 R1 (2026-10-09, item 2): "Every price at 2 dp, open included"
+// ("1.092" must read "1.09"). This SUPERSEDES the TEN-225 rule (founder
+// 2026-09-19 / 2026-09-21) that printed three decimals below 1.10 when the third
+// was non-zero (the old MX_3DP_BELOW cut): every book price on the matches board
+// and in the odds pop-up now reads two decimals, whatever its size.
 //
 // THE CUT IS ON THE VALUE, NOT THE CELL, so one price reads the same in the
-// card face, the drift arrow, the completed journey and the hover. A per-site
-// rule is how the same number comes to be printed two ways on one screen.
+// card face, the move view, the tile, the completed journey and the hover.
+// mxMovePct computes the move off these same two-decimal digits (`toFixed(2)`),
+// so a move always matches the prices printed beside it.
 //
 // ⚠️ SCOPE: book prices on the matches board. Model-derived numbers
-// (edgeOdds, the implied-probability inverses, court speed) keep two decimals —
-// they are not quotes, and widening them would be a change nobody asked for.
-const MX_3DP_BELOW = 1.10;
+// (edgeOdds, the implied-probability inverses, court speed) are not quotes and
+// are not printed through here.
 function mxOddsTxt(v){
   if (!(typeof v === 'number' && isFinite(v) && v > 0)) return '';
-  if (v >= MX_3DP_BELOW) return v.toFixed(2);
-  // FOUNDER 2026-09-21: "1.020 and 1.090 should read 1.02 and 1.09. The
-  // 3-decimals-below-1.10 rule stands, but only where the third decimal is
-  // non-zero: 1.012 keeps three, 1.020 drops to two, 1.004 keeps three."
-  //
-  // The third decimal earns its place by carrying information. On 1.012 it is
-  // the whole difference from 1.01; on 1.020 it is a zero that says nothing and
-  // makes a perfectly ordinary price look like a different KIND of number than
-  // the 1.02 on the card beside it.
-  //
-  // SLICED, not re-rounded. `v.toFixed(2)` would round the ORIGINAL value a
-  // second time, independently — so the two-decimal render would no longer be
-  // provably the three-decimal render with its last digit removed. They agree
-  // on every value either can receive, but "the same digits, minus a trailing
-  // zero" is a rule you can check by eye, and a second rounding is not.
-  const three = v.toFixed(3);
-  return three.endsWith('0') ? three.slice(0, -1) : three;
+  return v.toFixed(2);
 }
 function mcPriceTitle(pair, px){
   if (!pair || !pair.book) return '';
@@ -8084,33 +8178,9 @@ function _mcOpenNowPair(m){
 // above a priced one. MOVE_UNPRICED separates them.
 const MOVE_NONE     = -1;  // priced, but no same-book open→now pair to measure
 const MOVE_UNPRICED = -2;  // the card shows no price at all: no open, no now, either side
-// ───────────────────── TEN-225 item 5 — FILTER, DON'T SORT TO THE BOTTOM ──
-// Founder 2026-09-19: "When I click the tile, show ONLY fixtures that actually
-// moved. Drop every 0% card, every card with no computable move, and every
-// unpriced card out of the view entirely — the tile exists to make the real
-// moves easy to see, and a wall of 0% cards defeats it."
-//
-// This SUPERSEDES his 2026-09-18 ruling ("fixtures without both legs from one
-// book go to the bottom, not hidden"), which is why the five-tier score below
-// is kept rather than deleted: the ordering of what survives is unchanged, and
-// MOVE_NONE / MOVE_UNPRICED still separate correctly for the count. Only the
-// membership of the view changed.
-//
-// A fixture MOVED when its same-book open→now pair exists and is not flat.
-// `moveNowScore` already returns exactly that as a positive number, so the
-// filter is one comparison and cannot drift away from the sort's definition —
-// the tile, the order and the filter read one resolver.
-function mxMoved(m){
-  const p = _mcOpenNowPair(m);
-  if (!p || !(p.o1 > 0) || !(p.o2 > 0) || !(p.n1 > 0) || !(p.n2 > 0)) return false;
-  // ROUNDED THE WAY THE CELL ROUNDS. oddsPctDelta is `Math.round((now/open-1)*100)`,
-  // so a 0.3% move is a positive score AND a painted "0%". The first cut of this
-  // filter used `moveNowScore(m) > 0` and 3 of 12 survivors on the live board
-  // printed 0% on both legs — the wall of 0% cards the founder asked to be rid
-  // of, just shorter. Sharing oddsPctDelta is what makes the filter and the cell
-  // agree by construction rather than by coincidence.
-  return oddsPctDelta(p.o1, p.n1).pct !== 0 || oddsPctDelta(p.o2, p.n2).pct !== 0;
-}
+// TEN-225 item 5 (founder 2026-09-19) made the tile a FILTER (movers only); TEN-403 (founder
+// Shell refresh, 2026-10-08, part 3) supersedes it: the move view re-orders every card and drops
+// none — "`—` sorts last". The five tiers above are that order; `mxMoved` is gone with the filter.
 // "Fully unpriced" is defined by what the CARD PAINTS, not by what some store
 // holds — these are the same three resolvers the card face reads, so the bottom
 // tier is exactly the set of cards a member sees as dash/dash.
@@ -8127,7 +8197,12 @@ function moveNowScore(m){
   // sort. Zero is not a price; see _ocsSanePx.
   if (!p || !(p.o1 > 0) || !(p.o2 > 0) || !(p.n1 > 0) || !(p.n2 > 0))
     return _mcHasAnyPrice(m) ? MOVE_NONE : MOVE_UNPRICED;
-  return Math.max(Math.abs(p.n1 / p.o1 - 1), Math.abs(p.n2 / p.o2 - 1));
+  // TEN-403 R1 (founder 2026-10-09, item 1): ranked on the figure the card PRINTS — mxMovePct on
+  // the two-decimal prices, in percent at one decimal — not the unrounded |n/o − 1|, which could
+  // put a card reading +4.4% above one reading +4.7%. Equal figures fall to the start-time tie-break.
+  const a = mxMovePct(p.o1, p.n1), b = mxMovePct(p.o2, p.n2);
+  if (!a || !b) return _mcHasAnyPrice(m) ? MOVE_NONE : MOVE_UNPRICED;
+  return Math.max(Math.abs(a.v), Math.abs(b.v));
 }
 // TEN-179 item 3 (founder standing rule 2026-09-10): "Thin coverage flagged with the
 // count, not filled." Opening prices arrive per fixture — bet365 posts a market a median
@@ -8158,11 +8233,13 @@ function closingScore(m){ // strongest closing favourite first (lowest favourite
 function moveScore(m){
   // TEN-198: vendor pin excluded — this is a signed % move, the "never to drift" leg.
   const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
-  // TEN-377: one book at both ends — the card book's open and its within-60 close.
-  const c1 = _mcCardCloseDerivedOf(m, 'p1'), c2 = _mcCardCloseDerivedOf(m, 'p2');
-  const p1 = (o1 != null && c1 != null && o1 > 0) ? Math.abs(c1 / o1 - 1) : 0;
-  const p2 = (o2 != null && c2 != null && o2 > 0) ? Math.abs(c2 / o2 - 1) : 0;
-  return Math.max(p1, p2);
+  // TEN-377: one book at both ends. Founder TEN-403 (comment 414de0fe): the close the CARD shows (any age), so the
+  // sort, the tile and the cards rank one set.
+  const c1 = _mcCardCloseOf(m, 'p1'), c2 = _mcCardCloseOf(m, 'p2');
+  // TEN-403 card 9b1c3aa1: ranked on THE move the card prints (mxMovePct: 2-dp prices as shown, one decimal), as a
+  // fraction — never the unrounded quotes, which could put a +5.0% card above a +5.5% one.
+  const mv = (o, c) => { const d = (o != null && c != null) ? mxMovePct(o, c) : null; return d ? Math.abs(d.v) / 100 : 0; };
+  return Math.max(mv(o1, c1), mv(o2, c2));
 }
 // Batch B — "Market got it wrong": the closing FAVOURITE lost. Ranked by how strong a
 // favourite the market made them (implied prob at close), so the most confident market
@@ -8195,8 +8272,9 @@ function syncSortDropdown(completed){
   const oddsLanded = _mcOddsLanded();
   // A move needs the card book's open beside its within-60 close (TEN-377); while no card has
   // one the sort stays dimmed instead of ranking every card at 0.
+  // TEN-403 (founder 414de0fe): "Biggest move" ranks the closes the cards show, so it lands on a displayed close too.
   const moveLanded = oddsLanded && matches.some(m => m.finalScore && !_openPinIsVendor(m)
-    && (_mcCardCloseDerivedOf(m, 'p1') != null || _mcCardCloseDerivedOf(m, 'p2') != null));
+    && (_mcCardCloseOf(m, 'p1') != null || _mcCardCloseOf(m, 'p2') != null));
   const opts = completed
     ? [['time','Finish time',false],['move','Biggest move',!moveLanded],['upset','Biggest upset',false],['marketwrong','Market got it wrong',!oddsLanded]]
     // TEN-179 item 3 (design handoff) — Upcoming offers exactly Time | Drift. This
@@ -8209,7 +8287,9 @@ function syncSortDropdown(completed){
     // 32 cards at 0; it now reads moveNowScore() (open→NOW). Still not disabled by
     // _mcOddsLanded(), for the reason above: the card-block switch is correct with no
     // opens at all, and an unpairable fixture sorts to the bottom rather than vanishing.
-    : [['time','Time',false],['drift','Drift',false]];
+    // TEN-403 R1 (founder nit, 2026-10-09): the option reads "Move" (label "Sort: Move" while the move
+    // view is on, "Sort: Time" when it is off); the internal key stays `drift`.
+    : [['time','Time',false],['drift','Move',false]];
   // If the active sort isn't valid for this view — or is disabled — fall back to Time.
   if (!opts.some(o => o[0] === state.sort && !o[2])) state.sort = 'time';
   const cur = opts.find(o => o[0] === state.sort) || ['time','Time'];
@@ -8283,23 +8363,10 @@ function getFiltered(){
     }
     return true;
   });
-  // TEN-225 item 5. The filter lives HERE, beside the other view predicates,
-  // rather than in the renderer — Prev/Next, the keyboard walk, the empty-state
-  // message and the per-day counter all read getFiltered(), so filtering in the
-  // renderer would leave every one of them counting a board nobody can see.
-  //
-  // GATED ON mxDriftView(), NOT on `state.sort` alone. `state.sort` survives a
-  // switch to Results, where the drift ordering is never applied — filtering the
-  // Results tab down to movers would hide finished matches on a view that has
-  // no drift in it. mxDriftView() is the same predicate the drift CELL uses, so
-  // the filter and the rendering cannot disagree about which view this is.
-  //
-  // Clicking the tile again sets state.sort back to 'time', which restores the
-  // full board by construction: this branch only exists while drift is on.
-  // (The tile's "N of M matches moved" line is gone: founder TEN-377 review item 8.)
-  if (mxDriftView()){
-    out = out.filter(mxMoved);
-  }
+  // TEN-403 (founder Shell refresh, part 3 — supersedes TEN-225 item 5's filter): the move
+  // view RE-ORDERS the board and drops nothing. "The list re-orders by biggest |move| first
+  // … If a player has no opening price, the move is `—` and the card sorts last." Every
+  // card stays; see the 'drift' branch below.
   const surfaceOrder = { clay:0, hard:1, grass:2 };
   if (crossDate) out.sort((a,b) => state.view === 'completed'
     ? cardStartMs(b) - cardStartMs(a)   // Results search: most recent first
@@ -8318,8 +8385,10 @@ function getFiltered(){
   // one edit away from false. Precomputing makes the comparator's consistency
   // structural instead of conditional.
   else if (state.sort === 'drift'){
+    // TEN-403: equal scores (the `—` tiers above all) keep time order, so the bottom of the
+    // move view reads like the time view instead of whatever order the filter produced.
     const sc = new Map(out.map(m => [m, moveNowScore(m)]));
-    out.sort((a,b) => sc.get(b) - sc.get(a));
+    out.sort((a,b) => (sc.get(b) - sc.get(a)) || (cardStartMs(a) - cardStartMs(b)) || (a.time || '').localeCompare(b.time || ''));
   }
   else if (state.sort === 'closing') out.sort((a,b) => closingScore(a) - closingScore(b));
   else out.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
@@ -8818,33 +8887,29 @@ function oddsPctDelta(open, close){
   const sign = pct > 0 ? '+' : pct < 0 ? '−' : '';
   return { pct, dir, sign, text: `${sign}${Math.abs(pct)}%` };
 }
-// TEN-179 item 3 — the Upcoming DRIFT cell: OPEN · bar · NOW · signed delta.
-// `open` is the real captured opening price or null. It is NEVER derived from `now`:
-// with no opening price on file the OPEN cell renders an em dash in the dimmest token
-// (var(--text-label) via --mc-muted-2), the lane renders a neutral rule, and the delta is blank.
-// That is the path every upcoming match takes today — see the TEN-179 findings comment.
-// When real opens land this function needs no layout change; the values simply fill in.
-// TEN-198 — `anchorOnly` (a vendor-sourced OPEN, see _openPinIsVendor) renders the OPEN
-// price but NO bar and NO delta. The founder scoped the fallback to the OPEN anchor and
-// excluded drift explicitly; a signed % computed between a truncated, up-to-14.6h-stale
-// api-tennis price and a live oddspapi NOW is a number about the two vendors, not about
-// the market. Blanking the whole cell instead would have been the other way to honour
-// the ruling — and it would put the em dash back on precisely the fixture this issue was
-// opened about. So: the value shows, the derived number does not.
-// TEN-225 rulings 2 + 4c (founder, 2026-09-18).
-//
-// `title` — ruling 2. The book that quoted the RIGHT-HAND price, on hover. Not on
-// the card face; see mcPriceTitle for why it is the Now's book and not the Open's.
-//
-// `started` — ruling 4c. "A started fixture correctly withholds Now — keep that.
-// But on a started fixture the card should show Open and Close, not Open and a
-// dash where Now would be." So once the fixture has started this cell's right-hand
-// value is the CLOSE, and the caller relabels the column header to match: a Close
-// rendered under a header reading "Now" would be a false label, and the whole
-// reason a Now is withheld after the off is that a settled price is not a current
-// one. Where no close is on file either, the cell dashes as before — a dash is
-// still the honest answer, and this ruling does not manufacture a price to avoid
-// one.
+// TEN-403 (founder Shell refresh, part 3) — THE move formula, shared by the Biggest-market-move
+// tile and its ranking, the move-view sort (moveNowScore), the move view's Move column and the
+// odds-movement pop-up (price-history-box.js reads it when the page defines it):
+// (now₂ / open₂ − 1) × 100, ONE decimal, explicit sign, true minus; zero is "±0.0%" with no
+// direction. null when either leg is not a price.
+// TEN-403 R1 (founder 2026-10-09, item 1): x₂ is the price AS SHOWN — the two-decimal digits
+// mxOddsTxt prints (`toFixed(2)`) — so a card reading 1.28 → 1.34 says +4.7%, never the +4.6% of
+// the unrounded quotes behind it. The rounding lives HERE so no caller can skip it. Integer
+// hundredths keep the division exact; a half rounds away from zero (−2.25 → −2.3, like +2.3).
+function mxMovePct(open, now){
+  if (!(open > 0) || !(now > 0)) return null;
+  const o2 = Math.round(Number(Number(open).toFixed(2)) * 100), n2 = Math.round(Number(Number(now).toFixed(2)) * 100);
+  if (!(o2 > 0) || !(n2 > 0)) return null;
+  const r = (n2 - o2) * 1000 / o2;   // tenths of a percent, exact on the shown digits
+  const v = Math.sign(r) * Math.round(Math.abs(r)) / 10;
+  if (v === 0) return { v: 0, dir: '', text: '±0.0%' };
+  return { v, dir: v > 0 ? 'pos' : 'neg', text: (v > 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' };
+}
+// TEN-179 item 3 — the Upcoming DRIFT (move-view) cell. `open` is the real captured opening price
+// or null — NEVER derived from `now`; a missing leg is an em dash in --text-label.
+// TEN-198 — `anchorOnly` (a vendor-sourced OPEN, see _openPinIsVendor) renders the OPEN price but
+// no Move: the founder scoped that fallback to the OPEN anchor and excluded drift explicitly.
+// TEN-225 ruling 2 — `openTitle` / `nowTitle` name the book of each leg on hover (mcPriceTitle).
 function mcDriftCell(open, now, anchorOnly, opts){
   const o = opts || {};
   // PER-LEG titles, never a wrapper title. The wrapper spans both values, so one
@@ -8852,53 +8917,17 @@ function mcDriftCell(open, now, anchorOnly, opts){
   // which is the "book name beside a price we are not showing" ruling 2 forbids.
   const ot = open != null ? mcTitleAttr(o.openTitle) : '';
   const nt = now  != null ? mcTitleAttr(o.nowTitle)  : '';
-  const nowTxt = (now != null) ? mxOddsTxt(now) : '—';
-  if (open != null && anchorOnly){
-    return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
-      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}${o.nowOlder && now != null ? ' mx-close-older' : ''}"${nt}>${nowTxt}</span>`
-      + `<span class="mc-drifted__pct"></span></span>`;
-  }
-  if (open == null){
-    return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open nodata">—</span>`
-      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}${o.nowOlder && now != null ? ' mx-close-older' : ''}"${nt}>${nowTxt}</span>`
-      + `<span class="mc-drifted__pct"></span></span>`;
-  }
-  if (now == null){
-    // A real open with nothing on the right. Both the started-with-no-close case
-    // and the plain no-current-price case land here; the cell keeps its column and
-    // dashes in it rather than collapsing, so OPEN stays under its header.
-    return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
-      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now nodata">—</span>`
-      + `<span class="mc-drifted__pct"></span></span>`;
-  }
-  // BOTH legs present — but a signed % is only meaningful when they are the SAME
-  // book. `o.paired` is the caller's answer to that (it is `_mcOpenNowPair`, the
-  // one resolver the sort and the tile also read); without it the two values still
-  // render, each titled with its own book, and the bar + delta are suppressed. A
-  // drift figure between two books is a number about the books, not the market.
-  if (!o.paired){
-    return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
-      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now${o.nowOlder ? ' mx-close-older' : ''}"${nt}>${nowTxt}</span>`
-      + `<span class="mc-drifted__pct"></span></span>`;
-  }
-  const d = oddsPctDelta(open, now);
-  // TOKENS.md: bar length = max(10, min(30, |pct| * 0.9))px.
-  const barW = Math.max(10, Math.min(30, Math.round(Math.abs(d.pct) * 0.9)));
-  const col = d.dir === 'pos' ? 'var(--pos)' : d.dir === 'neg' ? 'var(--neg)' : 'var(--mc-muted)';
+  // TEN-403 (founder Shell refresh, part 3): Open · → · Now · Move on a 56/14/60/48 grid. Open mono
+  // 13/500 grey, a grey arrow, Now mono 19/800 white, Move mono 12/700 signed (grey ± for zero).
+  // The Move is the one formula, mxMovePct, and it is drawn only for a measurable same-book pair
+  // (`o.paired`, i.e. _mcOpenNowPair — the resolver the sort and the tile read): a vendor-pinned
+  // open (TEN-198), a missing leg or an older close (TEN-253) is `—`. No bar, no coloured arrow.
+  const mv = (open != null && now != null && !anchorOnly && o.paired && !o.nowOlder) ? mxMovePct(open, now) : null;
   return `<span class="mc-drifted">`
-    + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
-    + `<span class="mc-drifted__lane"><span class="mc-drifted__bar" style="width:${barW}px;background:${col}"></span>`
-    + `<span class="mc-drifted__arrow" style="color:${col}">▸</span></span>`
-    + `<span class="mc-drifted__now"${nt}>${nowTxt}</span>`
-    + `<span class="mc-drifted__pct ${d.dir}">${d.text}</span></span>`;
+    + `<span class="mc-drifted__open${open == null ? ' nodata' : ''}"${ot}>${open != null ? mxOddsTxt(open) : '—'}</span>`
+    + `<span class="mc-drifted__arr">→</span>`
+    + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}${o.nowOlder && now != null ? ' mx-close-older' : ''}"${nt}>${now != null ? mxOddsTxt(now) : '—'}</span>`
+    + `<span class="mc-drifted__pct${mv && mv.dir ? ' ' + mv.dir : ''}">${mv ? mv.text : '—'}</span></span>`;
 }
 // Completed odds journey for one player: open → gradient track → close, plus the
 // signed-percentage delta (direction-coloured). Any value never recorded is omitted.
@@ -8930,15 +8959,16 @@ function mcJourney(open, close, anchorOnly, opts){
   // Open (mono 13, --text-label) · "→" · Close (mono 15/700, --text) · Move (signed %). Kept from
   // the journey: a dash, never a blank, for a missing leg; per-leg titles (a dash carries none);
   // NO Move for a vendor-pinned open (TEN-198 anchorOnly) or a missing leg. An older close shows
-  // white with its Move (founder TEN-377: ruling 2 binds stats only). A genuine 0% move reads "0%".
+  // white with its Move (founder TEN-377: ruling 2 binds stats only). The Move is THE move formula, mxMovePct (TEN-403
+  // card 9b1c3aa1: 2-dp prices as shown, one decimal, true minus; a genuine zero reads "±0.0%" grey).
   const o = opts || {};
   const ot = open  != null ? mcTitleAttr(typeof o.openTitle  === 'function' ? o.openTitle()  : o.openTitle)  : '';
   const ct = close != null ? mcTitleAttr(typeof o.closeTitle === 'function' ? o.closeTitle() : o.closeTitle) : '';
   const leg = (cls, v, t) => v != null ? `<span class="${cls}"${t}>${mxOddsTxt(v)}</span>` : `<span class="${cls} mc-px__nodata">—</span>`;
   let move = `<span class="mc-px__move"></span>`;
   if (open != null && close != null && !anchorOnly) {
-    const d = oddsPctDelta(open, close);
-    move = `<span class="mc-px__move${d.dir ? ' ' + d.dir : ''}">${d.text || '0%'}</span>`;
+    const d = mxMovePct(open, close);
+    if (d) move = `<span class="mc-px__move${d.dir ? ' ' + d.dir : ''}">${d.text}</span>`;
   }
   return `<span class="mc-px">${leg('mc-px__open', open, ot)}<span class="mc-px__arr">→</span>${leg('mc-px__close', close, ct)}${move}</span>`;
 }
@@ -8999,9 +9029,15 @@ function updateMatchesHeaderChrome(){
   const h1  = document.querySelector('[data-page="matches"] .mx-h1');
   const sub = document.querySelector('[data-page="matches"] .mx-subtitle');
   const ds  = document.getElementById('dataStatus');
-  // TEN-8: member timezone, shown once beneath the status line (empty if unresolvable).
+  // TEN-8: member timezone, shown once in the header. TEN-403: it is the grey tail of the one-line sentence
+  // ("· Times in …"); Completed puts "Settled · <date>" in front of it (the old status line). Empty zone → no zone part.
   const tzEl = document.getElementById('tzLine');
-  if (tzEl) tzEl.textContent = memberTzLabel();
+  if (tzEl){
+    const tz = memberTzLabel();
+    // TEN-403 R2 (founder 2026-10-09): the tail ends at the zone; ruling A's bound is the live column itself.
+    const parts = (completed ? [`Settled · ${settledDateLabel()}`] : []).concat(tz ? [tz] : []);
+    tzEl.textContent = parts.length ? `· ${parts.join(' · ')}` : '';
+  }
   // §12 — sort options depend on the view. Completed offers result-oriented keys
   // (Time · Biggest upset · Largest drift · Closing value); Upcoming keeps its
   // existing keys. If the active sort isn't valid for the view, fall back to 'time'.
@@ -9131,9 +9167,9 @@ function updateMatchesHeaderChrome(){
   // design and flagged in the TEN-179 report rather than silently kept either way.
   if (ds && !ds.classList.contains('error')){
     if (completed){
-      ds.style.display = '';
+      // TEN-403: no live column in Completed (reference); "Settled · <date>" rides in the sentence tail above.
+      ds.style.display = 'none';
       ds.classList.add('settled');
-      ds.innerHTML = `<span class="mx-settled-txt">Settled ·</span> <span class="mx-clock">${settledDateLabel()}</span>`;
     } else {
       ds.style.display = '';
       ds.classList.remove('settled');
@@ -9246,6 +9282,112 @@ function mxLandOnNearestDay(){
   return true;
 }
 
+// ───────────────────────── TEN-403 (founder Shell refresh, part 5) — favourites ──
+// A star on every Upcoming card; a "Favourites · N" strip of mini cards above the grid while at
+// least one starred match is still to be played; nothing starred by default; the list never
+// re-orders for it.
+// KEY: eventKeyOfMatch(m) — the fixture id without its "upcoming-"/"past-" prefix, so a star
+// survives a matches.json refresh AND the card turning into a result (the settle-clear needs
+// exactly that: it finds the settled card under the same key).
+// STORE: signed in (a uid) → the account, Firestore users/{uid}.favouriteMatches via
+// BSP.updateProfile; signed out → localStorage `stennisfy.favourites`. Signing in merges the
+// local list into the account (account order first, then any local-only keys) and, once the
+// account write succeeds, empties the local list.
+// SETTLE-CLEAR: a starred match that has settled (finished, retired or walkover, not live)
+// leaves the list on the next render and the store is rewritten.
+const MX_FAV_LS = 'stennisfy.favourites';
+const mxFav = { keys: mxFavReadLocal(), uid: null };   // signed-out list until auth resolves
+const MX_FAV_STAR_PATH = 'M10 2.8l2.2 4.6 5 .7-3.6 3.5.9 5L10 14.2l-4.5 2.4.9-5L2.8 8.1l5-.7z';
+function mxFavKey(m){ return m ? String(eventKeyOfMatch(m) || '') : ''; }
+function mxFavClean(list){
+  const out = [];
+  for (const k of (Array.isArray(list) ? list : [])) if (typeof k === 'string' && k && k.length <= 64 && !out.includes(k)) out.push(k);
+  return out;
+}
+function mxFavReadLocal(){
+  try { return mxFavClean(JSON.parse(localStorage.getItem(MX_FAV_LS) || '[]')); } catch (e) { return []; }
+}
+function mxFavWriteLocal(keys){
+  try { if (keys.length) localStorage.setItem(MX_FAV_LS, JSON.stringify(keys)); else localStorage.removeItem(MX_FAV_LS); } catch (e) {}
+}
+function mxFavMerge(account, local){ return mxFavClean([...(account || []), ...(local || [])]); }
+function mxFavSettled(m){ return !!m && !m.live && !!(m.finalScore || m.retired || m.walkover); }
+// The keys whose match is on the board as settled are dropped; a key the board does not hold
+// (yet, or any more) is kept — it is never shown, and an absent card is not proof of a result.
+function mxFavPrune(keys, list){
+  const settled = new Set((list || []).filter(mxFavSettled).map(mxFavKey));
+  return (keys || []).filter(k => !settled.has(k));
+}
+function mxFavHas(m){ return mxFav.keys.includes(mxFavKey(m)); }
+function mxFavPersist(){
+  const keys = mxFav.keys.slice();
+  if (mxFav.uid && window.BSP && typeof window.BSP.updateProfile === 'function')
+    return Promise.resolve(window.BSP.updateProfile({ favouriteMatches: keys })).catch(() => null);
+  mxFavWriteLocal(keys);
+  return Promise.resolve(null);
+}
+function mxFavToggle(key){
+  if (!key) return;
+  mxFav.keys = mxFav.keys.includes(key) ? mxFav.keys.filter(k => k !== key) : [...mxFav.keys, key];
+  mxFavPersist();
+}
+// Auth state → the list. Signed out: the local list. Signed in: the account's list merged with
+// the local one; the merge is written back only when the local list added something.
+function mxFavOnAuth(u){
+  const uid = u && u.uid ? u.uid : null;
+  const local = mxFavReadLocal();
+  // A failed profile read (auth.js profileLoadFailed) is NOT the account's list: stay on the local store, never write
+  // the account from it (review: an empty fallback overwrote the stored favourites).
+  if (!uid || u.profileLoadFailed){ mxFav.uid = null; mxFav.keys = local; return Promise.resolve(mxFav.keys); }
+  const account = mxFavClean(u.favouriteMatches);
+  const merged = mxFavMerge(account, local);
+  mxFav.uid = uid; mxFav.keys = merged;
+  if (!local.length) return Promise.resolve(merged);
+  const write = (merged.length !== account.length && window.BSP && typeof window.BSP.updateProfile === 'function')
+    ? Promise.resolve(window.BSP.updateProfile({ favouriteMatches: merged })) : Promise.resolve(null);
+  return write.then(() => { mxFavWriteLocal([]); return merged; }).catch(() => merged);
+}
+// Settle-clear against the loaded board; rewrites the store only when something left.
+function mxFavSettleClear(list){
+  if (!Array.isArray(list) || !list.length) return false;
+  const kept = mxFavPrune(mxFav.keys, list);
+  if (kept.length === mxFav.keys.length) return false;
+  mxFav.keys = kept; mxFavPersist();
+  return true;
+}
+function mxFavStarSvg(size){
+  return `<svg width="${size}" height="${size}" viewBox="0 0 20 20" aria-hidden="true"><path d="${MX_FAV_STAR_PATH}"/></svg>`;
+}
+function mxFavStarHtml(m){
+  const on = mxFavHas(m), t = on ? 'Remove from favourites' : 'Add to favourites';
+  return `<button type="button" class="mc-star${on ? ' is-on' : ''}" data-fav="${psEsc(mxFavKey(m))}" title="${t}" aria-label="${t}" aria-pressed="${on}">${mxFavStarSvg(14)}</button>`;
+}
+// The strip: one 272px mini card per starred match still to be played, in start-time order,
+// whatever day or filter the board shows. '' when there is none — no empty state.
+function mxFavStripHtml(list){
+  const byKey = new Map();
+  for (const m of (list || [])) if (!mxFavSettled(m) && mxFav.keys.includes(mxFavKey(m))) byKey.set(mxFavKey(m), m);
+  const fav = [...byKey.values()].sort((a, b) => (cardStartMs(a) - cardStartMs(b)) || 0);
+  if (!fav.length) return '';
+  const px = v => (v != null ? mxOddsTxt(v) : '—');
+  const cards = fav.map(m => {
+    const pr = _mcNowPair(m);
+    const meta = [m.tour || '', roundBadgeText(m.tournamentRound) || '', cardFmtStart(m, matchDayBucket(m) !== state.day) || ''].filter(Boolean).join(' · ');
+    return `<div class="mx-favcard" data-id="${psEsc(m.id)}">`
+      + `<div class="mx-favcard__meta"><span class="mx-favcard__where">${meta}</span>`
+      + `<button type="button" class="mx-favcard__star" data-fav="${psEsc(mxFavKey(m))}" title="Remove from favourites" aria-label="Remove from favourites">${mxFavStarSvg(13)}</button></div>`
+      + `<div class="mx-favcard__row a"><span class="mx-favcard__name">${m.p1}</span><span class="mx-favcard__px">${px(pr ? pr.p1 : null)}</span></div>`
+      + `<div class="mx-favcard__row b"><span class="mx-favcard__name">${m.p2}</span><span class="mx-favcard__px">${px(pr ? pr.p2 : null)}</span></div>`
+      + `</div>`;
+  });
+  return `<span class="mx-favstrip__lbl">Favourites · ${fav.length}</span><div class="mx-favstrip__row">${cards.join('')}</div>`;
+}
+function mxFavRenderStrip(){
+  const el = document.getElementById('mxFavStrip');
+  if (!el) return;
+  el.innerHTML = state.view === 'completed' ? '' : mxFavStripHtml(matches);
+}
+
 // TEN-179 item 3 (founder task 2026-09-11) — BIGGEST MARKET MOVE is a TOGGLE, not a one-way
 // trip. A second click returns the board to its default sort, and that IS the way back to
 // the form bars: the card's right-hand block reads directly off state.sort (item 3 of the
@@ -9306,7 +9448,31 @@ function mcRenderHeaderStats(list){
   const stats = completed
     ? [['Settled', shown.length], ['Tournaments', tours], ['Upsets', mcUpsetRows(shown).length], ['Updated', hhmm]]
     : [['Matches', shown.length], ['Tournaments', tours], ['Books', mcBoardBooks(shown)], ['Updated', hhmm]];
-  el.innerHTML = stats.map(([l, v]) => `<div class="mx-hstat"><span class="mx-hstat__l">${l}</span><span class="mx-hstat__v">${v}</span></div>`).join('');
+  // TEN-403: the 35b header stat columns; the Updated clock reads --text-soft (reference), a dash reads grey.
+  el.innerHTML = stats.map(([l, v]) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${v === '—' ? ' sfh__v--none' : l === 'Updated' ? ' sfh__v--soft' : ''}">${v}</span></div>`).join('');
+}
+// Completed "Biggest market move" tile (founder TEN-403, comment 414de0fe, 2026-10-09): ONE figure from ONE set — the
+// largest |printed Move| among the Completed cards shown, with that card's player. Same rows as the cards: the open the
+// card prints (_openDerivedOf: a vendor-pinned open draws no Move, TEN-198) and the card's own Close at any age
+// (_mcCardCloseOf; the 60-minute rule, TEN-253 ruling 2, does not filter it), through THE move formula mxMovePct
+// (2-dp prices as shown, one decimal — card 9b1c3aa1). The "Biggest move" sort (moveScore) ranks the same figure.
+// First card wins a tie (the list order). null when no card prints a non-zero Move.
+function mxCompletedBiggestMove(list){
+  let bmv = null;
+  (Array.isArray(list) ? list : []).forEach(m => {
+    if (!m || !m.finalScore) return;
+    ['p1', 'p2'].forEach(who => {
+      const o = _openDerivedOf(m, who), c = _mcCardCloseOf(m, who);
+      if (o == null || c == null || o <= 0) return;
+      const d = mxMovePct(o, c);
+      if (!d || d.v === 0) return;
+      if (!bmv || Math.abs(d.v) > Math.abs(bmv.d.v)) {
+        bmv = { o, c, d, who, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
+                tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
+      }
+    });
+  });
+  return bmv;
 }
 function renderMatches(){
   updateMatchesHeaderChrome();
@@ -9319,6 +9485,10 @@ function renderMatches(){
   // inside the card list. Clear it every render; the completed branch below refills.
   const summarySlot = document.getElementById('mcSummaryStrip');
   if (summarySlot) summarySlot.innerHTML = '';
+  // TEN-403 part 5: settled favourites leave the list, then the strip (Upcoming only) is drawn —
+  // before the empty-board return, so a starred match on another day still shows.
+  mxFavSettleClear(matches);
+  mxFavRenderStrip();
   const filtered = getFiltered();
   mcRenderHeaderStats(filtered);
   if (filtered.length === 0){
@@ -9782,7 +9952,7 @@ function renderMatches(){
         // pre-match price and the hover carries that qualifier (see _nowTitleFor).
         // CLOSE now appears only on the completed branch above, which is the only
         // state in which a close exists at all.
-        ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>Now</span><span></span></span>`
+        ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>Now</span><span>Move</span></span>`
         : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
     // TEN-179 item 5 — tournament tier. The field EXISTS: m.venue.category, a curated
     // static fact from bsp-pipeline.js TOURNAMENT_VENUE_HINTS ('Grand Slam' | 'ATP 1000' |
@@ -9794,8 +9964,11 @@ function renderMatches(){
     // rather than dashed, because " · —" reads as a tier literally named "—".
     const tierSuffix = (isCompleted && m.venue && m.venue.category)
       ? ` · ${m.venue.category}` : '';
+    // TEN-403 (founder Shell refresh, part 5): the favourites star is the first item in every
+    // UPCOMING card header (the reference's Completed cards carry none).
     const headHtml = `
       <div class="mc-head">
+        ${isCompleted ? '' : mxFavStarHtml(m)}
         <span class="mc-surface ${m.surface}">${surfCap}</span>
         <span class="mc-tourn">${m.tour}${tierSuffix}</span>
         ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
@@ -9818,7 +9991,7 @@ function renderMatches(){
             ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2') })}
           </div>
         </div>`
-      : `<div class="mc-players up">
+      : `<div class="mc-players up${mxDriftView() ? ' mv' : ''}">
           <div class="mc-row a">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${mxDriftView()
@@ -9861,26 +10034,8 @@ function renderMatches(){
   //     graded-pick log that doesn't exist yet (matches.json is a ~3-day window), so it is
   //     honestly deferred — never fabricated from partial data (README §5.3 data-defensive).
   if (state.view === 'completed') {
-    const openOf  = (m, who) => (m.finalScore ? _openDerivedOf(m, who) : null); // TEN-198: vendor pin excluded — this feeds the signed-% 'Biggest market move' panel.
-    // TEN-377: the card book's close, within-60 only (TEN-253 ruling 2 binds stats), against
-    // the same book's open.
-    const moveCloseOf = (m, who) => (m.finalScore ? _mcCardCloseDerivedOf(m, who) : null);   // TEN-377
-
-    // 1. Biggest market move — per (match, player) with both legs recorded.
-    let bmv = null;
-    filtered.forEach(m => {
-      if (!m.finalScore) return;
-      ['p1', 'p2'].forEach(who => {
-        const o = openOf(m, who), c = moveCloseOf(m, who);
-        if (o == null || c == null || o <= 0) return;
-        const d = oddsPctDelta(o, c);
-        if (d.pct === 0) return;
-        if (!bmv || Math.abs(d.pct) > Math.abs(bmv.d.pct)) {
-          bmv = { o, c, d, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
-                  tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
-        }
-      });
-    });
+    // 1. Biggest market move — mxCompletedBiggestMove (founder TEN-403 414de0fe: the cards' own rows and printed move).
+    const bmv = mxCompletedBiggestMove(filtered);
 
     // 2. Upsets — winner closed longer than the loser (was the underdog). One rule, shared with
     // the header's Upsets count (mcUpsetRows; TEN-377).
@@ -9908,7 +10063,7 @@ function renderMatches(){
     panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
-            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
           : empty('No market moves')) + `</div>`);
     panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>`
       + (upsetRows.length
@@ -9945,28 +10100,28 @@ function renderMatches(){
     // it still binds here without being restated. MEASURED 2026-09-18: the population
     // is byte-identical on today's board (6 pairable fixtures, 2 with a non-zero move),
     // so this is a de-duplication, not a behaviour change.
-    let bmv = null;
+    let bmv = null, bmvPairs = 0;
     daySlate.forEach(m => {
       const p = _mcOpenNowPair(m);
       if (!p) return;
-      [['p1', p.o1, p.n1], ['p2', p.o2, p.n2]].forEach(([who, o, c]) => {
-        // Same two-sided price guard as moveNowScore; `c == null` alone would let a
-        // published zero headline this tile as "1.52 -> 0.00  -100%".
-        if (!(o > 0) || !(c > 0)) return;
-        const d = oddsPctDelta(o, c);
-        if (d.pct === 0) return;
-        // RANKED ON THE UNROUNDED MOVE, compared against the unrounded incumbent.
-        // oddsPctDelta rounds to whole percent, so ranking on d.pct made 13.6% and
-        // 14.4% tie at 14 — the tile then kept whichever came first in daySlate
-        // order while moveNowScore ranks unrounded, so the tile could name one
-        // fixture and the sort it triggers put a different one on top. Same
-        // figure, one basis.
-        const mag = Math.abs(c / o - 1);
-        if (!bmv || mag > bmv.mag) {
-          bmv = { o, c, d, mag, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
-                  tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
-        }
-      });
+      bmvPairs++;
+      // TEN-403 R1 (founder 2026-10-09, item 1): the tile ranks on EXACTLY what the move-view sort
+      // ranks on — moveNowScore, i.e. mxMovePct on the two-decimal prices as shown — with the
+      // sort's own tie-break (earlier start, then time string), so the tile names a leg of the
+      // match the sort puts first. A card the sort scores as `—` (a zero / missing leg on either
+      // side, the published-zero guard) can never headline the tile, and a 0.0% board says
+      // "No market moves".
+      const s = moveNowScore(m);
+      if (!(s > 0)) return;
+      if (bmv && !(s > bmv.mag || (s === bmv.mag
+            && ((cardStartMs(m) - cardStartMs(bmv.m)) || (m.time || '').localeCompare(bmv.m.time || '')) < 0))) return;
+      // The leg that carries the score; the first player on an exact tie.
+      const d1 = mxMovePct(p.o1, p.n1), d2 = mxMovePct(p.o2, p.n2);
+      const who = Math.abs(d2.v) > Math.abs(d1.v) ? 'p2' : 'p1';
+      const d = who === 'p1' ? d1 : d2;
+      bmv = { o: who === 'p1' ? p.o1 : p.o2, c: who === 'p1' ? p.n1 : p.n2, d, mag: s,
+              name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
+              tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
     });
     // TEN-377 review item 8 (founder 2026-10-03) supersedes the TEN-179 / TEN-225 provenance and
     // coverage line under the figure: the tiles carry label · figure · context only.
@@ -9974,12 +10129,16 @@ function renderMatches(){
     // so it reads as a toggle rather than a link that did something invisible. The state is
     // read straight off state.sort — there is no second flag to fall out of step with it.
     const driftOn = state.sort === 'drift';
-    panels.push(`<div class="mc-story mc-story--click${driftOn ? ' is-on' : ''}" data-mxsummary="drift" role="button" tabindex="0" aria-pressed="${driftOn ? 'true' : 'false'}" title="${driftOn ? 'Back to the default view' : 'Sort by drift'}">`
-      + `<div class="mc-story__lbl">Biggest market move</div>`
+    // TEN-403 (founder Shell refresh, part 3 — the "39b" tile): caps title left, a hint right that
+    // says what a click does ("Show open → now", grey) or is doing ("Showing open → now · biggest
+    // first", white); open mono 22/700 grey → now mono 22/800 white, the move mono 13/700 signed;
+    // one grey line naming the player. The edge goes to 24% white while the move view is on.
+    panels.push(`<div class="mc-story mc-story--click${driftOn ? ' is-on' : ''}" data-mxsummary="drift" role="button" tabindex="0" aria-pressed="${driftOn ? 'true' : 'false'}">`
+      + `<div class="mc-story__top"><span class="mc-story__lbl">Biggest market move</span><span class="mc-story__hint">${driftOn ? 'Showing open → now · biggest first' : 'Show open → now'}</span></div>`
       + (bmv
-          ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
-            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
-          : `<div class="mc-story__empty">No opening prices on file</div>`)   /* TEN-377 item 8: no provenance line */
+          ? `<div class="mc-story__move"><span class="mc-story__open">${mxOddsTxt(bmv.o)}</span><span class="mc-story__arr">→</span><span class="mc-story__now">${mxOddsTxt(bmv.c)}</span><span class="mc-story__pct ${bmv.d.dir}">${bmv.d.text}</span></div>`
+            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+          : `<div class="mc-story__empty">${bmvPairs ? 'No market moves' : 'No opening prices on file'}</div>`)   /* TEN-377 item 8: no provenance line */
       + `</div>`);
 
     // TEN-225 ruling B (founder 2026-09-18) — the two boxes below describe the
@@ -10018,7 +10177,7 @@ function renderMatches(){
     });
     if (sp) {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div>`
-        + `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(sp.price)}</span><span class="mc-story__name">${sp.name}</span></div>`
+        + `<div class="mc-story__move"><span class="mc-story__now">${mxOddsTxt(sp.price)}</span><span class="mc-story__name">${sp.name}</span></div>`
         + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}</div></div>`);
     } else {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div><div class="mc-story__empty">No prices yet</div></div>`);
@@ -10044,16 +10203,17 @@ function renderMatches(){
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div>`
         + `<div class="mc-story__pair"><div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${mxOddsTxt(a1)}</span></div>`
         + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${mxOddsTxt(b1)}</span></div></div>`
-        + `<div class="mc-story__ctx">${[m.tour || '', roundBadgeText(m.tournamentRound) || '', cardFmtStart(m, false) || ''].filter(Boolean).join(' · ')}</div></div>`);   /* README §4: "Estoril · R32 · 13:15"; no book (TEN-377 item 8) */
+        + `<div class="mc-story__ctx">${[[m.tour || '', roundBadgeText(m.tournamentRound) || ''].filter(Boolean).join(' '), cardFmtStart(m, false) || ''].filter(Boolean).join(' · ')}</div></div>`);   /* TEN-403 reference (39b): "ATP Estoril R32 · 13:15"; no book (TEN-377 item 8) */
     } else {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div><div class="mc-story__empty">No prices yet</div></div>`);
     }
 
-    const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';
+    const stripHtml = panels.length ? `<div class="mc-story-strip mc-story-strip--up">${panels.join('')}</div>` : '';
     if (summarySlot) summarySlot.innerHTML = stripHtml;
   }
   // Pro promo card, inserted after the second match card (export item 10). Only on
   // the Upcoming view and only when there are enough cards for it to sit mid-list.
+  // On screen it takes grid row 2 (CSS, TEN-403), so it follows the first full row at any column count.
   if (state.view !== 'completed' && cards.length > 2) {
     // Review item 6: export layout is icon-tile · "3 Bets Today" (one heading) + subtext,
     // then PRO badge + CTA right-aligned — not a large separate numeral. The trend glyph
@@ -16629,7 +16789,7 @@ function trRenderRoi(){
           <span class="seg ma-pop-x" role="button" onclick="trSet({roi:false})" style="margin-left:auto; font-size:12.5px; font-weight:700; color:var(--text-soft); background:var(--line); border:1px solid var(--edge-10); border-radius:8px; padding:8px 14px; cursor:pointer;">Close</span>
         </div>
         <div data-db-root="tr-roi" data-page="database" class="pagewrap" style="max-width:none; padding:18px 20px 22px;">
-          <div class="db-headcard" data-db="head"><div><h1>Database</h1><p data-db="subtitle"></p></div><div class="db-fresh" data-db="fresh"></div></div>
+          <div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database</h1><p class="sfh__sub" data-db="subtitle"></p></div><div class="sfh__stats" data-db="fresh"></div></div>
           <div class="db-ctl" data-db="ctl"><div class="db-ctltop"><div class="db-seg" data-db="viewtabs"><button data-dbview="tour">Tour</button><button class="active" data-dbview="tournaments">Tournaments</button><button data-dbview="players">Players</button></div></div><div class="db-ctlbot" data-db="filters"></div></div>
           <div data-db="body"><div class="db-loading">Loading archive…</div></div>
         </div>
@@ -19606,6 +19766,24 @@ document.getElementById('mcSummaryStrip').addEventListener('keydown', e => {
   mxToggleDriftSort(true);   // keyboard path — put focus back on the rebuilt tile
 });
 
+// TEN-403 part 5 — a star (on a card or on a mini card) toggles that match's favourite. The cards
+// are updated in place (an open Market Signal drawer stays open) and the strip is redrawn.
+document.querySelector('[data-page="matches"]').addEventListener('click', e => {
+  const b = e.target.closest('[data-fav]'); if (!b) return;
+  e.preventDefault(); e.stopPropagation();
+  const key = b.getAttribute('data-fav');
+  mxFavToggle(key);
+  const on = mxFav.keys.includes(key), t = on ? 'Remove from favourites' : 'Add to favourites';
+  document.querySelectorAll('.mc-star[data-fav]').forEach(el => {
+    if (el.getAttribute('data-fav') !== key) return;
+    el.classList.toggle('is-on', on); el.title = t; el.setAttribute('aria-label', t); el.setAttribute('aria-pressed', String(on));
+  });
+  mxFavRenderStrip();
+});
+if (window.BSP && BSP.onAuthChange){
+  BSP.onAuthChange(u => { mxFavOnAuth(u).then(() => { if (matchesLoadedOnce) renderMatches(); }); });
+}
+
 document.getElementById('mxModeToggle').addEventListener('click', e => {
   const btn = e.target.closest('button[data-view]'); if (!btn) return;
   if (btn.dataset.view === state.view) return;   // already there — no re-render churn
@@ -19948,8 +20126,9 @@ function pgRenderHeaderStats(players, tournaments){
     try { hhmm = fmt((typeof newsTz === 'function' && newsTz()) || undefined); } catch (e) { hhmm = fmt(undefined); }
   }
   const n = v => Number(v).toLocaleString('en-US');
+  // TEN-403: 35b header stats (.sfh__stat); the clock reads --text-soft, a missing value is a grey dash.
   el.innerHTML = [['Players', n(players)], ['Tournaments', n(tournaments)], ['Updated', hhmm]]
-    .map(([l, v]) => `<div class="pgh-stat"><span class="pgh-stat-l">${l}</span><span class="pgh-stat-v">${v}</span></div>`).join('');
+    .map(([l, v]) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${v === '—' ? ' sfh__v--none' : l === 'Updated' ? ' sfh__v--soft' : ''}">${v}</span></div>`).join('');
 }
 
 function renderPlayers(filter){
@@ -25539,7 +25718,7 @@ function tourxRenderHeadStats(){
   if (!v){ el.innerHTML = ''; return; }
   const n = x => Number(x).toLocaleString('en-US');
   el.innerHTML = [['Events', n(v.events)], ['This week', n(v.week)], ['Updated', tourxHeadStamp(v.updated)]]
-    .map(([l, x]) => `<div class="tourx-hstat"><span class="tourx-hstat__l">${l}</span><span class="tourx-hstat__v">${x}</span></div>`).join('');
+    .map(([l, x]) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${l === 'Updated' ? ' sfh__v--soft' : ''}">${x}</span></div>`).join('');   // TEN-403: 35b stats
 }
 
 
@@ -25619,7 +25798,7 @@ function tourxRoiPanelHtml(){
            with initial backgrounds, borders and fonts. Same pattern the
            entry-list embed uses. -->
       <div data-db-root="roi" data-page="database" class="pagewrap" style="max-width:none;padding:30px 40px 70px;">
-        <div class="db-headcard" data-db="head"><div><h1>Database</h1><p data-db="subtitle"></p></div><div class="db-fresh" data-db="fresh"></div></div>
+        <div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database</h1><p class="sfh__sub" data-db="subtitle"></p></div><div class="sfh__stats" data-db="fresh"></div></div>
         <div class="db-ctl" data-db="ctl">
           <div class="db-ctltop">
             <div class="db-seg" data-db="viewtabs">
@@ -28504,8 +28683,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
   // TEN-402 item 1: the header card (Today's Matches pattern) — card, radius 12, padding 22×26, title 29/800, sub 13.5
   // --text-soft, sticky with a shadow; the Surface / Format context strip stays inside it (the reference).
-  // The ticket's "small caps label line" above the title (the reference draws none; the site's .pgh-eyebrow, as on
-  // Players): L-default H2H_EYEBROW — '' removes the line.
+  // The ticket's "small caps label line" above the title (the reference draws none; the old Players caps line):
+  // L-default H2H_EYEBROW — '' removes the line. (TEN-403's next commit replaces this header with the 35b component.)
   const H2H_EYEBROW = 'ATP tour · all-level head to head';
   function selectorBar(v) {
     return `<div class="h2h-stick"><div class="h2h-head">
@@ -32877,14 +33056,12 @@ window.DatabaseTab = (function(){
   }
   // TEN-399 D3 (lead default): the header stats. Matches = the archive total on the one join
   // (meta.used, unfiltered); Seasons = how many seasons the archive holds (counted from the rows);
-  // Updated = the archive's latest match (meta.dateRange[1]) - never typed. The old
-  // "Archive through ... Updates pending." line folds into Updated: past 14 days old the
-  // stat carries the same quiet note (the archive refresh is a manual drop-in, not a cron).
+  // Updated = the archive's latest match (meta.dateRange[1]) - never typed. One value per stat
+  // (TEN-403 R1 item 7): past 14 days old the note is the grey tail's "· updates pending"
+  // (renderChrome), never a second line under Updated (the archive refresh is a manual drop-in).
   function dbHeadStats(){
     var seasons = DATA && DATA.rows ? presentYears().length : null;
-    var stale = dbArchiveStale(M.dateRange[1], Date.now());
-    return [['Matches', fmtInt(M.used), null], ['Seasons', fmtInt(seasons), null],
-            ['Updated', fmtDate(M.dateRange[1]), stale ? 'Updates pending' : null]];
+    return [['Matches', fmtInt(M.used)], ['Seasons', fmtInt(seasons)], ['Updated', fmtDate(M.dateRange[1])]];
   }
   function renderChrome(){
     var sub=q('subtitle'), fr=q('fresh');
@@ -32894,14 +33071,17 @@ window.DatabaseTab = (function(){
       // The 2026 book seam is gone from the page, so the header carries no seam sentence
       // (no "prices stop on", no "marked on the curves"). Book names and years read from the store.
       // TEN-262 founder ruling (option A, 2026-09-23): never "settled on" (reads as bet settlement).
-      sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
-        esc(M.books[0])+' closing, else '+esc(M.books[1])+', per match, '+y0+'–'+y1+'</strong>.';
+      // TEN-403 R1 item 7: one plain sentence (no bold run), years with an en dash; a behind archive
+      // (dbArchiveStale) appends "· updates pending" to the grey tail.
+      var stale = dbArchiveStale(M.dateRange[1], Date.now());
+      sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — '+
+        esc(M.books[0])+' closing, else '+esc(M.books[1])+', per match, '+y0+'\u2013'+y1+'.'+
+        (stale ? ' <span class="sfh__tail">· updates pending</span>' : '');
     }
     if(fr){
-      fr.className='db-hstats';
+      fr.className='sfh__stats';   // TEN-403: the 35b header stats
       fr.innerHTML=dbHeadStats().map(function(s){
-        return '<div class="db-hstat"><span class="db-hstat__l">'+s[0]+'</span><span class="db-hstat__v">'+esc(s[1])+'</span>'+
-          (s[2] ? '<span class="db-hstat__n">'+s[2]+'</span>' : '')+'</div>';
+        return '<div class="sfh__stat"><span class="sfh__l">'+s[0]+'</span><span class="sfh__v'+(s[0]==='Updated'?' sfh__v--soft':'')+'">'+esc(s[1])+'</span></div>';
       }).join('');
     }
     var tabs=q('viewtabs');
@@ -35348,28 +35528,18 @@ ${ratingCardHtml}
   // ── page ──
   tab.innerHTML=`
 <div style="display:flex;flex-direction:column;gap:22px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;padding:0 16px;">
-  <div style="background:var(--card);border:1px solid transparent;box-shadow:var(--top-light);border-radius:12px;padding:22px 26px;display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;">
-    <div>
-      <div style="font-size:29px;font-weight:800;letter-spacing:-0.015em;line-height:1.1;">Live</div>
-      <div style="font-size:13.5px;color:var(--text-soft);margin-top:8px;max-width:640px;line-height:1.55;">Singles matches in play right now, point by point.</div>
+  <!-- TEN-403: the shared 35b page header (.sfh). Values white, the clock --text-soft, a dash grey (Interrupted keeps its
+       zero-is-grey tone). -->
+  <div class="sfh">
+    <div class="sfh__text">
+      <h1 class="sfh__title">Live</h1>
+      <p class="sfh__sub">Singles matches in play right now, point by point.</p>
     </div>
-    <div style="display:flex;gap:34px;">
-      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-        <span style="display:inline-flex;align-items:center;gap:6px;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text);">In play</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:var(--pos);">${d.inPlayCount}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-        <span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Interrupted</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:${d.interruptedColor};">${d.interruptedCount}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-        <span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Events</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:var(--text);">${d.eventCount}</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-        <span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Updated</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:700;color:${d.isStale?'var(--text-label)':'var(--text-label)'};">${e(d.updatedLabel)}</span>
-      </div>
+    <div class="sfh__stats">
+      <div class="sfh__stat"><span class="sfh__l">In play</span><span class="sfh__v${d.inPlayCount==='—'?' sfh__v--none':''}">${d.inPlayCount}</span></div>
+      <div class="sfh__stat"><span class="sfh__l">Interrupted</span><span class="sfh__v" style="color:${d.interruptedColor};">${d.interruptedCount}</span></div>
+      <div class="sfh__stat"><span class="sfh__l">Events</span><span class="sfh__v${d.eventCount==='—'?' sfh__v--none':''}">${d.eventCount}</span></div>
+      <div class="sfh__stat"><span class="sfh__l">Updated</span><span class="sfh__v ${d.updatedLabel==='—'?'sfh__v--none':'sfh__v--soft'}">${e(d.updatedLabel)}</span></div>
     </div>
   </div>
   ${emptyHtml}
@@ -35510,21 +35680,12 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   /* ================================================================= */
   /* main: padding 30px 40px 70px, column, gap 22px */
   [data-page="matches"].tabpage.active{ display:flex; flex-direction:column; gap:22px; max-width:none; padding:30px 40px 70px; box-sizing:border-box; line-height:normal; }
-  [data-page="matches"] .mx-titlerow, [data-page="matches"] .mx-controls, [data-page="matches"] .mx-tablewrap{ padding:0; margin:0; }
+  [data-page="matches"] .mx-controls, [data-page="matches"] .mx-tablewrap{ padding:0; margin:0; }
   [data-page="matches"] .mx-controls{ display:flex; flex-direction:column; gap:22px; }
   [data-page="matches"] .mc-summary-slot:not(:empty){ padding:0; }
   [data-page="matches"] .mx-table{ padding:0; margin:0; }
 
-  /* header box */
-  [data-page="matches"] .mx-titlerow{ display:flex; align-items:flex-end; gap:28px; padding:22px 26px; background:var(--card);
-    border:1px solid transparent; box-shadow:var(--top-light); border-radius:12px; }
-  [data-page="matches"] .mx-h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; margin:0; }
-  [data-page="matches"] .mx-subtitle{ margin:8px 0 0; font-size:13.5px; font-weight:400; line-height:1.55; max-width:520px; color:var(--text-soft); }
-  [data-page="matches"] .mx-datastatus{ margin:9px 0 0; gap:0; font-size:12px; line-height:normal; width:fit-content; }
-  [data-page="matches"] .mx-datastatus .mx-live-txt::after{ content:' '; white-space:pre; }
-  [data-page="matches"] .mx-datastatus .mx-live-txt, [data-page="matches"] .mx-datastatus .mx-clock,
-  [data-page="matches"] .mx-datastatus.settled .mx-settled-txt{ font-size:12px; color:var(--text-label); }
-  [data-page="matches"] .mx-tzline{ margin:6px 0 0; font-family:var(--sf-font-ui); font-size:12px; line-height:normal; color:var(--text-label); }
+  /* header box = the shared 35b page header (.sfh, TEN-403) */
 
   /* tab + date row */
   [data-page="matches"] .mx-daytabsrow{ gap:12px; }
@@ -35550,12 +35711,66 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-story-strip{ display:flex; align-items:stretch; gap:12px; }
   [data-page="matches"] .mc-story-strip > .mc-story{ flex:1 1 0; min-width:0; }
   [data-page="matches"] .mc-story{ padding:15px 19px; gap:8px; border-radius:12px; border:1px solid transparent; box-shadow:var(--top-light); }   /* reference OV1: top-level card */
-  [data-page="matches"] .mc-story.mc-story--click:hover{ background:var(--tile-hover); }
   [data-page="matches"] .mc-story__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
   [data-page="matches"] .mc-story__od{ font-family:var(--sf-font-mono); font-size:20px; font-weight:700; letter-spacing:normal; }
   [data-page="matches"] .mc-story .mc-drift{ font-family:var(--sf-font-mono); font-size:12px; font-weight:700; }
   [data-page="matches"] .mc-story__ctx{ font-size:12.5px; color:var(--text-label); opacity:1; line-height:normal; }
   [data-page="matches"] .mc-story__ctx strong{ color:var(--text-soft); font-weight:600; }
+  /* TEN-403 (founder Shell refresh, part 3) — the Upcoming insight tiles, reference "39b" computed
+     at 1512 night: clickable-tile surface (card + 1px 7% edge, radius 12, top light), padding
+     14/18/15, column gap 8, three equal columns at gap 12. Completed keeps the tiles above. */
+  [data-page="matches"] .mc-story-strip--up > .mc-story{ padding:14px 18px 15px; border:1px solid var(--edge-7); }
+  /* the tile is a toggle: on = edge 24% white; hover = edge 16% (over an on tile too); the surface stays card tone */
+  [data-page="matches"] .mc-story-strip--up > .mc-story--click.is-on{ border-color:var(--edge-24); }
+  [data-page="matches"] .mc-story-strip--up > .mc-story--click:hover{ border-color:var(--edge-16); }
+  [data-page="matches"] .mc-story__top{ display:flex; align-items:center; justify-content:space-between; gap:10px; min-width:0; }
+  [data-page="matches"] .mc-story__hint{ font-family:var(--font-words); font-size:11px; font-weight:600; color:var(--text-label); white-space:nowrap; }
+  [data-page="matches"] .mc-story--click.is-on .mc-story__hint{ color:var(--text); }
+  [data-page="matches"] .mc-story__open{ font-family:var(--font-nums); font-size:22px; font-weight:700; color:var(--text-label); }
+  [data-page="matches"] .mc-story__arr{ font-family:var(--font-words); font-size:14px; font-weight:400; color:var(--text-label); }
+  [data-page="matches"] .mc-story__now{ font-family:var(--font-nums); font-size:22px; font-weight:800; color:var(--text); }
+  [data-page="matches"] .mc-story__pct{ font-family:var(--font-nums); font-size:13px; font-weight:700; color:var(--text-label); }
+  [data-page="matches"] .mc-story__pct.pos{ color:var(--pos); }
+  [data-page="matches"] .mc-story__pct.neg{ color:var(--neg); }
+  [data-page="matches"] .mc-story-strip--up .mc-story__name{ font-size:14px; font-weight:700; color:var(--text); }
+  [data-page="matches"] .mc-story-strip--up .mc-story__ctx{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mc-story-strip--up .mc-story__ctx strong{ color:var(--text); font-weight:700; }
+  [data-page="matches"] .mc-story-strip--up .mc-story__pair{ gap:3px; }
+  [data-page="matches"] .mc-story-strip--up .mc-story__tight{ gap:10px; }
+  [data-page="matches"] .mc-story-strip--up .mc-story__tname{ font-size:14px; font-weight:700; color:var(--text); }
+  [data-page="matches"] .mc-story-strip--up .mc-story__tod{ font-size:15px; }
+  [data-page="matches"] .mc-story-strip--up .mc-story__pair + .mc-story__ctx{ font-size:12.5px; margin-top:0; }
+
+  /* TEN-403 (founder Shell refresh, part 5; reference 39b computed) — favourites. Card star: 14px
+     star in a 24px hit area, radius 7, --inner on hover; idle = no fill, --text-label stroke;
+     starred = white fill + white stroke. */
+  [data-page="matches"] .match-card .mc-star{ flex:0 0 auto; width:24px; height:24px; margin:-4px 0 -4px -6px; padding:0; border:0; border-radius:7px;
+    background:transparent; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-label); }
+  [data-page="matches"] .match-card .mc-star:hover{ background:var(--inner); }
+  [data-page="matches"] .match-card .mc-star.is-on{ color:var(--text); }
+  [data-page="matches"] .mc-star svg, [data-page="matches"] .mx-favcard__star svg{ display:block; fill:none; }
+  [data-page="matches"] .mc-star path, [data-page="matches"] .mx-favcard__star path{ stroke:currentColor; stroke-width:1.5; stroke-linejoin:round; }
+  [data-page="matches"] .mc-star.is-on path, [data-page="matches"] .mx-favcard__star path{ fill:currentColor; }
+  [data-page="matches"] .mc-star:focus-visible, [data-page="matches"] .mx-favcard__star:focus-visible{ outline:2px solid var(--edge-16); outline-offset:1px; }
+  /* The strip: caps "Favourites · N" over a sideways-scrolling row (gap 10) of 272px mini cards
+     (card tone, radius 12, top light, padding 10/14/11, column gap 7). Hidden while empty. */
+  [data-page="matches"] .mx-favstrip{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+  [data-page="matches"] .mx-favstrip:empty{ display:none; }
+  [data-page="matches"] .mx-favstrip__lbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  [data-page="matches"] .mx-favstrip__row{ display:flex; gap:10px; padding:0 0 2px; overflow-x:auto; }
+  [data-page="matches"] .mx-favcard{ flex:0 0 auto; width:272px; box-sizing:border-box; display:flex; flex-direction:column; gap:7px; padding:10px 14px 11px;
+    background:var(--card); border-radius:12px; box-shadow:var(--top-light); }
+  [data-page="matches"] .mx-favcard__meta{ display:flex; align-items:center; gap:8px; }
+  [data-page="matches"] .mx-favcard__where{ flex:1 1 0; min-width:0; font-family:var(--font-words); font-size:11px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mx-favcard__star{ flex:0 0 auto; display:flex; padding:2px 4px; margin:-2px -4px -2px 0; border:0; border-radius:5px; background:transparent; color:var(--text); cursor:pointer; }
+  [data-page="matches"] .mx-favcard__star:hover{ background:var(--inner); }
+  [data-page="matches"] .mx-favcard__row{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mx-favcard__name{ min-width:0; font-family:var(--font-words); font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  [data-page="matches"] .mx-favcard__px{ flex:0 0 auto; font-family:var(--font-nums); font-size:14px; font-weight:800; }
+  [data-page="matches"] .mx-favcard__row.a .mx-favcard__name{ font-weight:700; color:var(--text); }
+  [data-page="matches"] .mx-favcard__row.a .mx-favcard__px{ color:var(--text); }
+  [data-page="matches"] .mx-favcard__row.b .mx-favcard__name{ font-weight:600; color:var(--text-soft); }
+  [data-page="matches"] .mx-favcard__row.b .mx-favcard__px{ color:var(--text-soft); }
 
   /* filter row */
   [data-page="matches"] .mx-filterbar{ gap:12px; padding:0; }
@@ -35630,13 +35845,9 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mc-story__empty{ font-family:var(--font-words); font-size:12.5px; font-weight:400; color:var(--text-label); }
   [data-page="matches"] .match-card .mc-sig-empty{ font-family:var(--font-words); font-size:11px; color:var(--text-label); text-align:center; }
 
-  /* ── TEN-377 README §2: header stats (label above value, right) ── */
-  [data-page="matches"] .mx-titlerow > div:first-child{ flex:1; min-width:0; }
-  [data-page="matches"] .mx-hstats{ display:flex; gap:34px; flex:none; }
-  [data-page="matches"] .mx-hstats:empty{ display:none; }
-  [data-page="matches"] .mx-hstat{ display:flex; flex-direction:column; align-items:flex-end; gap:5px; }
-  [data-page="matches"] .mx-hstat__l{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); line-height:normal; }   /* (override): Hanken caps, not the reference's mono 9.5 */
-  [data-page="matches"] .mx-hstat__v{ font-family:var(--font-nums); font-size:17px; font-weight:700; color:var(--text); line-height:normal; font-variant-numeric:tabular-nums; }
+  /* ── TEN-377 README §2 / TEN-403: header stats = the 35b .sfh__stat columns; the four stats sit in the same row as
+     the live clock column, so their wrapper is display:contents. ── */
+  [data-page="matches"] .mx-hstats{ display:contents; }
 
   /* ── TEN-377 README §7: Completed card ("2b Inset tile" rows, "7a" score, Open → Close · Move) ── */
   [data-page="matches"] .match-card.cmpl:hover{ border-color:var(--edge-16); }

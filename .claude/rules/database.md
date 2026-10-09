@@ -26,9 +26,13 @@ take styling from it, structure from the rules below.
   (`test-ten262.mjs` STALE.split).
 
 ## Header card
-- Ruled as proposed (card 52bf5cc5 "header" = ok). **Test:** caps line "ATP tour · closing-line archive", title "Database" 29/800, sub 13.5 `--text-soft` with no seam
-  sentence, mono stats right: Matches (whole archive on the join, ignores filters) · Seasons · Updated (the archive's
-  last date; "Updates pending" under it once it is more than 14 days old). `dbHeadStats()`.
+- The shared 35b page header (founder shell refresh TEN-403, 2026-10-08; supersedes card 52bf5cc5's caps line and 29/800
+  title — values in `app-shell.md` "Page header (35b, TEN-403)"). **Test:** no caps line, title "Database", ONE plain line
+  13px `--text-soft` (no bold / white run; founder R1 item 7) with no seam sentence, years with an en dash ("2010–2026"),
+  mono stats right, ONE value each: Matches (whole archive on the join, ignores filters) · Seasons · Updated (the
+  archive's last date). Once that date is more than 14 days old the sentence's grey tail (`.sfh__tail`) adds
+  "· updates pending" — nothing sits under the Updated date (R1 item 7 SUPERSEDES the note under Updated). Both mounts
+  (standalone + ROI overlay) paint through the same `renderChrome()` / `dbHeadStats()` (`test-ten262.mjs` archive stamp).
 
 ## Control bar
 - **Test:** no native `<select>` in the page DOM with any menu open, year range included (`test-ten399-database-frame.mjs`).

@@ -28,24 +28,11 @@
 [data-page="drops"] input::placeholder { color: var(--text-label); }
 [data-page="drops"] .do-hs::-webkit-scrollbar { display: none; }
 
-/* ── 1 · header card ── */
-[data-page="drops"] .do-head {
-  background: var(--card); border: 1px solid color-mix(in srgb, var(--text) 5%, transparent); border-radius: 12px; padding: 22px 26px;
-  display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; flex-wrap: wrap;
-}
-[data-page="drops"] .do-head-l { flex: 1; min-width: 0; }
-[data-page="drops"] .do-h1 { margin: 0; font-size: 29px; font-weight: 800; letter-spacing: -0.015em; line-height: 1.1; color: var(--text); }
-[data-page="drops"] .do-head-sub { display: flex; flex-direction: column; align-items: flex-start; gap: 9px; margin-top: 8px; }
-[data-page="drops"] .do-subtitle { font-size: 13.5px; color: var(--text-label); max-width: 520px; line-height: 1.55; text-wrap: pretty; }
-[data-page="drops"] .do-status { display: inline-flex; align-items: center; gap: 8px; }
-[data-page="drops"] .do-status-t { font-size: 12px; color: var(--text-label); }
-/* status lines are text only (founder S3, TEN-376): no dot; an aging feed (amber tier, or past the 5-min line) steps up to --text-soft */
+/* ── 1 · header card = the shared 35b page header (.sfh in the dashboard stylesheet, TEN-403). The status line is
+   the sentence's grey tail: text only, no dot (founder S3); an aging feed (amber tier, or past the 5-min line) steps up
+   to --text-soft. ── */
+[data-page="drops"] .do-status-t { color: var(--text-label); }
 [data-page="drops"] .do-status.aging .do-status-t { color: var(--text-soft); }
-[data-page="drops"] .do-stats { display: flex; gap: 34px; flex: none; }
-[data-page="drops"] .do-stat { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
-[data-page="drops"] .do-stat-k { font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
-[data-page="drops"] .do-stat-v { font-family: 'IBM Plex Mono', monospace; font-size: 17px; font-weight: 700; color: var(--text); white-space: nowrap; }
-[data-page="drops"] .do-stat-v.none { color: var(--text-label); }
 
 /* ── 2 · feed-disconnected banner: --neg caps text on a white 4% banner, no red fill (founder R4, TEN-376) ── */
 [data-page="drops"] .do-banner {
@@ -224,7 +211,7 @@
 /* ── 10 · the price-move box (LOCKED `handoff/Price Move Box/`, founder comment 8585095a, 2026-09-27) ──
    Colours: foundation tokens only (TEN-376). Drops are signed: a drop of 10% or more is --neg, a smaller
    drop --neg at 75%; the line is --neg with no fill under it (README §5.8); muted text --text-label. */
-.do-ov { position: fixed; top: 0; bottom: 0; right: 0; left: var(--do-shell-left, 252px); z-index: 1000; font-family: 'Hanken Grotesk', sans-serif; color: var(--text); font-size: 16px; line-height: normal; }
+.do-ov { position: fixed; top: 0; bottom: 0; right: 0; left: var(--sf-side, 0px); z-index: 1000; font-family: 'Hanken Grotesk', sans-serif; color: var(--text); font-size: 16px; line-height: normal; }
 .do-ov-scrim { position: absolute; inset: 0; z-index: 40; background: var(--backdrop); backdrop-filter: blur(3px); }
 .do-ov-box {
   box-sizing: content-box; position: absolute; z-index: 41; left: 50%; top: 50%; transform: translate(-50%,-50%);

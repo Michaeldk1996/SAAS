@@ -777,20 +777,22 @@ window.SfCountryIoc = (function () {
     // Tomorrow can have nothing in play by definition (README §1).
     if (S.day === 'tomorrow') liveCount = 0;
     var updated = _updatedAt ? fmtClock(new Date(_updatedAt).toISOString()) : (_matchesAt ? fmtClock(new Date(_matchesAt).toISOString()) : '—');
-    function pair(label, value, color) {
-      return '<div class="tr-pair"><span class="tr-eyebrow">' + esc(label) + '</span>' +
-             '<span class="tr-pairval"' + (color ? ' style="color:' + color + '"' : '') + '>' + esc(value) + '</span></div>';
+    // TEN-403: the shared 35b page header (.sfh in the dashboard stylesheet). Values white, the clock
+    // --text-soft (mod 'soft'), a dash grey; Live keeps its own tone on Tomorrow (DASH colour).
+    function pair(label, value, color, mod) {
+      return '<div class="sfh__stat"><span class="sfh__l">' + esc(label) + '</span>' +
+             '<span class="sfh__v' + (value === '—' ? ' sfh__v--none' : mod ? ' sfh__v--' + mod : '') + '"' + (color ? ' style="color:' + color + '"' : '') + '>' + esc(value) + '</span></div>';
     }
-    return '<div class="tr-hdr">' +
-             '<div>' +
-               '<h1 class="tr-hdr-title">Trading report</h1>' +
-               '<p class="tr-hdr-sub">One row per player on today’s ATP singles, with situational splits for the live read. Rows flip to LIVE as play starts.</p>' +
+    return '<div class="sfh tr-hdr">' +
+             '<div class="sfh__text">' +
+               '<h1 class="sfh__title">Trading report</h1>' +
+               '<p class="sfh__sub">One row per player on today’s ATP singles, with situational splits for the live read. Rows flip to LIVE as play starts.</p>' +
              '</div>' +
-             '<div class="tr-hdr-stats">' +
+             '<div class="sfh__stats">' +
                pair(S.day === 'tomorrow' ? 'Tomorrow' : 'Today', String(slateCount), null) +
-               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : 'var(--text)') +
+               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : null) +
                pair('Window', S.win === '52w' ? '52w' : '24m', null) +
-               pair('Updated', updated, 'var(--text-label)') +
+               pair('Updated', updated, null, 'soft') +
              '</div>' +
            '</div>';
   }

@@ -156,7 +156,6 @@ const { mcPriceTitle } = new Function(`
   const mxBookLabel = b => b;
   const ocsFmtClock = t => t ? String(t).slice(11, 16) : '';
   // Sliced, not stubbed — see the note in test-ten225-both-clocks.mjs.
-  const MX_3DP_BELOW = ${Number(/const MX_3DP_BELOW = ([0-9.]+);/.exec(html)?.[1])};
   ${slice('mxOddsTxt')}
   ${titleSrc}
   return { mcPriceTitle };

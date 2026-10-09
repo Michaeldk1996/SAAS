@@ -2,7 +2,8 @@
 //
 // FOUNDER, 2026-09-19:
 //   item 3: "keep [the 1.01 floor] where it is, fix the DISPLAY. Show 3
-//            decimals below 1.10 (1.012, not '1.01')."
+//            decimals below 1.10 (1.012, not '1.01')."  — SUPERSEDED by TEN-403 R1
+//            (2026-10-09): every price at 2 dp.
 //   item 5: "When I click the tile, show ONLY fixtures that actually moved.
 //            Drop every 0% card, every card with no computable move, and every
 //            unpriced card out of the view entirely ... Show the count in the
@@ -36,22 +37,19 @@ function slice(name) {
 }
 
 // ── ITEM 3 — the formatter, over the shipped text ─────────────────────────
-const CUT = Number(/const MX_3DP_BELOW = ([0-9.]+);/.exec(html)?.[1]);
-const { mxOddsTxt } = new Function(
-  `const MX_3DP_BELOW = ${CUT};\n${slice('mxOddsTxt')}\nreturn { mxOddsTxt };`)();
+// SUPERSEDED by TEN-403 R1 (founder 2026-10-09, item 2): "Every price at 2 dp, open included"
+// ("1.092" must read "1.09"). The TEN-225 three-decimals-below-1.10 rule (2026-09-19 / 09-21,
+// MX_3DP_BELOW) is gone; every book price prints two decimals.
+const { mxOddsTxt } = new Function(`${slice('mxOddsTxt')}\nreturn { mxOddsTxt };`)();
 
-test('the cut is the ruled 1.10, in absolute units', () => {
-  // Pinned as a literal so a widened constant cannot pass by being read out of
-  // the file it widened.
-  assert.equal(CUT, 1.10);
+test('TEN-403 R1: no three-decimal cut is left in the page', () => {
+  assert.doesNotMatch(html, /const MX_3DP_BELOW = /);
 });
 
-test('below 1.10 prints three decimals — the founder\'s own example', () => {
-  assert.equal(mxOddsTxt(1.012), '1.012');
-  assert.equal(mxOddsTxt(1.004), '1.004');
-  assert.equal(mxOddsTxt(1.001), '1.001');
-  assert.equal(mxOddsTxt(1.052), '1.052');
-  assert.equal(mxOddsTxt(1.091), '1.091');
+test('TEN-403 R1: below 1.10 prints TWO decimals — the founder\'s own example 1.092 → 1.09', () => {
+  for (const [v, want] of [[1.092, '1.09'], [1.012, '1.01'], [1.004, '1.00'], [1.001, '1.00'],
+                           [1.052, '1.05'], [1.091, '1.09'], [1.099, '1.10'], [1.020, '1.02']])
+    assert.equal(mxOddsTxt(v), want, `${v}`);
 });
 
 test('at and above 1.10 nothing changes — the rest of the board is untouched', () => {
@@ -60,46 +58,16 @@ test('at and above 1.10 nothing changes — the rest of the board is untouched',
     assert.equal(mxOddsTxt(v), want, `${v}`);
 });
 
-test('the boundary, from both sides', () => {
-  assert.equal(mxOddsTxt(1.099), '1.099');
-  assert.equal(mxOddsTxt(1.1), '1.10');
+test('every value is its own toFixed(2), across the old three-decimal band and above', () => {
+  for (let i = 1001; i < 3000; i++) { const v = i / 1000; assert.equal(mxOddsTxt(v), v.toFixed(2), `${v}`); }
 });
 
-test('a TRAILING ZERO in the third decimal is dropped', () => {
-  // FOUNDER 2026-09-21, the examples verbatim: "1.012 keeps three, 1.020 drops
-  // to two, 1.004 keeps three."
-  assert.equal(mxOddsTxt(1.020), '1.02');
-  assert.equal(mxOddsTxt(1.090), '1.09');
-  assert.equal(mxOddsTxt(1.012), '1.012');
-  assert.equal(mxOddsTxt(1.004), '1.004');
-  // The rest of the band a live board actually carried on 2026-09-19.
-  for (const [v, want] of [[1.030, '1.03'], [1.050, '1.05'], [1.080, '1.08'],
-                           [1.025, '1.025'], [1.052, '1.052'], [1.068, '1.068'],
-                           [1.091, '1.091'], [1.001, '1.001'], [1.008, '1.008'],
-                           [1.010, '1.01']])
-    assert.equal(mxOddsTxt(v), want, `${v}`);
-});
-
-test('the two-decimal render is the three-decimal one MINUS the zero', () => {
-  // Not a second, independent rounding of the original value. They agree on
-  // every input either can receive — but a rule you can check by eye ("same
-  // digits, one fewer") is worth more than two roundings that happen to match.
-  for (let i = 1010; i < 1100; i++) {
-    const v = i / 1000, out = mxOddsTxt(v), three = v.toFixed(3);
-    assert.equal(out, three.endsWith('0') ? three.slice(0, -1) : three, `${v}`);
-  }
-});
-
-test('CONTROL: the PRE-change formatter disagrees on exactly the zero cases', () => {
-  // Without this, every assertion above would also pass on a formatter that
-  // had never been changed.
-  const pre = v => v < 1.10 ? v.toFixed(3) : v.toFixed(2);
-  assert.equal(pre(1.020), '1.020');                       // the defect, reproduced
-  assert.notEqual(pre(1.020), mxOddsTxt(1.020));
-  assert.notEqual(pre(1.090), mxOddsTxt(1.090));
-  // ...and agrees everywhere the ruling did not reach, so the change is narrow.
-  for (const v of [1.012, 1.004, 1.052, 1.22, 2.5, 17])
-    assert.equal(pre(v), mxOddsTxt(v), `${v} should be untouched`);
+test('CONTROL: the PRE-change (TEN-225) formatter disagrees exactly where the third decimal was non-zero below 1.10', () => {
+  // Without this, every assertion above would also pass on a formatter that had never been changed.
+  const pre = v => { if (v >= 1.10) return v.toFixed(2); const t = v.toFixed(3); return t.endsWith('0') ? t.slice(0, -1) : t; };
+  assert.equal(pre(1.092), '1.092');                       // the founder's "1.092", reproduced
+  assert.notEqual(pre(1.092), mxOddsTxt(1.092));
+  for (const v of [1.020, 1.22, 2.5, 17]) assert.equal(pre(v), mxOddsTxt(v), `${v} unchanged`);
 });
 
 test('a non-price is still empty, not "0.000"', () => {
@@ -107,74 +75,36 @@ test('a non-price is still empty, not "0.000"', () => {
     assert.equal(mxOddsTxt(v), '', String(v));
 });
 
-test('EVERY odds template on the board goes through it — no cell left at 2dp', () => {
-  // The defect this guards is a PARTIAL rollout: one renderer printing 1.004
-  // and another printing 1.00 for the same fixture on the same screen.
+test('EVERY odds template on the board goes through it — no cell formats on its own', () => {
+  // The defect this guards is a PARTIAL rollout: one renderer printing a price its own way
+  // and another printing it differently for the same fixture on the same screen.
   const stragglers = html.match(
     /\$\{(open|close|bmv\.[oc]|sp\.price|a1|b1|u\.price|now|nowPair\.p[12])\.toFixed\(2\)\}/g) || [];
   assert.deepEqual(stragglers, [], `still formatting at 2dp: ${stragglers.join(', ')}`);
   // ...and the formatter is actually reached from many sites, so the zero above
   // cannot come from a page that stopped rendering prices at all.
-  assert.ok((html.match(/mxOddsTxt\(/g) || []).length >= 20);
+  // (TEN-403 folded the move-view cell's five per-branch templates into one: 21 sites → 19.)
+  assert.ok((html.match(/mxOddsTxt\(/g) || []).length >= 18);
 });
 
-// ── ITEM 5 — the filter ───────────────────────────────────────────────────
-const filterSrc = ['mxDriftView', 'mxMoved'].map(slice).join('\n');
-
-test('mxMoved rounds the way the CELL rounds — a painted 0% is not a move', () => {
-  // SUPERSEDED, rewritten rather than deleted. This asserted
-  // `moveNowScore(m) > 0`, which is a positive score and a painted "0%" for any
-  // move under 0.5% — measured on the live board, 3 of 12 survivors printed 0%
-  // on both legs. The founder's rule is about what he sees, so the filter shares
-  // oddsPctDelta with the cell.
-  assert.match(slice('mxMoved'), /oddsPctDelta\(p\.o1, p\.n1\)\.pct !== 0/);
-  assert.match(slice('mxMoved'), /oddsPctDelta\(p\.o2, p\.n2\)\.pct !== 0/);
-  assert.match(slice('mxMoved'), /_mcOpenNowPair\(m\)/);   // still ONE resolver
-});
-
-test('the filter runs on mxDriftView(), not on state.sort alone', () => {
-  // state.sort survives a switch to Results, where drift is never applied.
-  // Filtering the Results tab down to movers would hide finished matches on a
-  // view that has no drift in it.
-  const gf = /function getFiltered\(\)\{([\s\S]*?)\n\}/.exec(html)?.[1] || html;
-  assert.match(gf, /if \(mxDriftView\(\)\)\{/);
-  assert.ok(!/if \(state\.sort === 'drift'\) out = out\.filter/.test(gf),
-    'the filter is gated on the raw sort flag');
-});
-
-test('it FILTERS the array — it does not merely reorder it', () => {
+// ── ITEM 5 — SUPERSEDED by TEN-403 (founder Shell refresh, 2026-10-08, part 3) ─────────
+// "The list re-orders by biggest |move| first … If a player has no opening price, the move is
+// `—` and the card sorts last." The move view no longer drops a card; the ordering, the `—`
+// tier and the one-decimal move are locked in test-ten403-matches.mjs.
+test('TEN-403 supersedes item 5: the move view re-orders, it never filters', () => {
   const gf = /function getFiltered\(\)\{([\s\S]*?)\n\}/.exec(html)?.[1] || '';
-  assert.match(gf, /out = out\.filter\(mxMoved\)/);
+  assert.ok(gf.length > 500, 'getFiltered not found — this check would be vacuous');
+  assert.doesNotMatch(gf, /out = out\.filter\(mxMoved\)/);
+  assert.doesNotMatch(html, /function mxMoved\(/, 'the filter predicate is gone with the filter');
+  assert.match(gf, /else if \(state\.sort === 'drift'\)\{/);
 });
 
 test('TEN-377 review item 8 (supersedes TEN-225 item 5): the tile carries no "N of M matches moved" line', () => {
   assert.doesNotMatch(html, /matches moved · the rest are filtered out|MX_DRIFT_FILTER/);
 });
 
-test('the predicate itself, over manufactured fixtures', () => {
-  const { mxMoved } = new Function(`
-    const state = { view: 'upcoming', sort: 'drift' };
-    const _mcOpenNowPair = m => m.__pair;
-    ${slice('oddsPctDelta')}
-    ${filterSrc}
-    return { mxMoved };`)();
-  const pair = (o1, n1, o2 = 2.0, n2 = 2.0) => ({ __pair: { o1, n1, o2, n2 } });
-  assert.equal(mxMoved(pair(6.50, 9.00)), true, 'a real move survives');
-  assert.equal(mxMoved(pair(1.22, 1.22)), false, 'a flat card is dropped');
-  assert.equal(mxMoved(pair(1.000, 1.004)), false,
-    'a 0.4% move PAINTS as 0% and must be dropped — the live-board defect');
-  assert.equal(mxMoved(pair(1.00, 1.01)), true, 'a 1% move is a move');
-  assert.equal(mxMoved(pair(2.00, 2.00, 1.50, 1.60)), true,
-    'a move on EITHER leg keeps the card');
-  assert.equal(mxMoved({ __pair: null }), false, 'no computable move is dropped');
-  for (const bad of [{ o1: 0, n1: 1, o2: 2, n2: 2 }, { o1: 1, n1: 0, o2: 2, n2: 2 }])
-    assert.equal(mxMoved({ __pair: bad }), false, 'a non-price is not a move');
-});
-
-test('clicking again restores the full board', () => {
-  // The toggle sets state.sort back to 'time'; mxDriftView() is then false and
-  // the filter branch is not entered. Asserted on the toggle, because "the
-  // filter clears" is a property of the toggle and not of the filter.
+test('clicking again restores the time view', () => {
+  // The toggle sets state.sort back to 'time'; mxDriftView() is then false.
   assert.match(html, /state\.sort = \(state\.sort === 'drift'\) \? 'time' : 'drift'/);
   const { mxDriftView } = new Function(`
     const state = { view: 'upcoming', sort: 'time' };
@@ -186,10 +116,10 @@ test('clicking again restores the full board', () => {
 test('CONTROL: the assertions above fail on the pre-change source', () => {
   // Without this, every check could also be what a checker that had stopped
   // reading the file returns.
-  const pre = html
-    .replace(/if \(mxDriftView\(\)\)\{[\s\S]*?\n  \}\n/, '')
-    .replace(/\$\{mxOddsTxt\(open\)\}/g, '${open.toFixed(2)}');
+  const pre = html.replace(/\$\{mxOddsTxt\(open\)\}/g, '${open.toFixed(2)}');
   assert.notEqual(pre, html, 'the mutation anchors are gone — this control is vacuous');
-  assert.ok(!/out = out\.filter\(mxMoved\)/.test(pre));
   assert.ok((pre.match(/\$\{open\.toFixed\(2\)\}/g) || []).length > 0);
+  const filtered = html.replace("else if (state.sort === 'drift'){", "if (mxDriftView()){ out = out.filter(mxMoved); }\n  else if (state.sort === 'drift'){");
+  const gf = /function getFiltered\(\)\{([\s\S]*?)\n\}/.exec(filtered)?.[1] || '';
+  assert.match(gf, /out = out\.filter\(mxMoved\)/, 'MUTANT: a re-introduced filter is caught by the check above');
 });

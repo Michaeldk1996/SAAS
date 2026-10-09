@@ -66,8 +66,7 @@ const { mcPriceTitle, _measurablePair, _obsMs } = new Function(`
   const mxBookLabel = b => b;
   // mxOddsTxt is SLICED, not stubbed: it decides how many decimals a price
   // prints, and a stub would let this file keep passing while the page changed
-  // what a member reads. See MX_3DP_BELOW in the dashboard.
-  const MX_3DP_BELOW = ${Number(/const MX_3DP_BELOW = ([0-9.]+);/.exec(html)?.[1])};
+  // what a member reads (two decimals since TEN-403 R1).
   ${slice('mxOddsTxt')}
   ${shipped}
   return { mcPriceTitle, _measurablePair, _obsMs };
