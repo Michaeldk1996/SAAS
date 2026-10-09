@@ -4284,10 +4284,9 @@ window.EntryListsTab = (function(){
   .sf-dd-row.sel{ background:var(--selected); color:var(--text); font-weight:600; }
   .sf-dd-row .sf-dd-tick{ margin-left:auto; padding-left:12px; color:var(--text); visibility:hidden; }
   .sf-dd-row.sel .sf-dd-tick{ visibility:visible; }
-  /* The page's two drop-downs are the site's one menu (sfDd); only the trigger takes the reference's geometry:
-     padding 10px 15px, gap 8, a white chevron (the menu's own ▼ glyph and size). */
+  /* The page's two drop-downs are the site's one menu (sfDd) with its own small chevron (R1 fix 4); only the trigger's
+     padding takes the reference's geometry (10px 15px, gap 8). */
   [data-page="news"] .sf-dd-trig{ padding:10px 15px; gap:8px; line-height:normal; }
-  [data-page="news"] .sf-dd-trig .sf-dd-chev{ color:var(--text); }
   [data-page="news"] #newsTourFilter .sf-dd-menu{ min-width:200px; }
   [data-page="news"] #newsRange .sf-dd-menu{ left:auto; right:0; min-width:150px; }
 
@@ -4363,16 +4362,15 @@ window.EntryListsTab = (function(){
   [data-page="news"] .news-row:focus-visible{ outline:none; box-shadow:inset 0 0 0 1px var(--edge-16); }
   [data-page="news"] .news-row:hover, [data-page="news"] .news-row.open{ background:color-mix(in srgb, var(--text) 2%, transparent); }
   [data-page="news"] .news-rowhead{ display:grid; grid-template-columns:42px 104px minmax(0,1fr) 16px; gap:12px; align-items:center; }
-  [data-page="news"] .news-row.open .news-rowhead{ grid-template-columns:42px minmax(0,1fr) 16px; align-items:start; }
+  [data-page="news"] .news-row.open .news-rowhead{ align-items:start; }
   [data-page="news"] .news-rtime{ font-family:var(--font-nums); font-size:11.5px; color:var(--text-label); }
-  [data-page="news"] .news-row.open .news-rtime{ padding-top:2px; }
+  [data-page="news"] .news-row.open .news-rtime, [data-page="news"] .news-row.open .news-rplayer{ padding-top:2px; }
   [data-page="news"] .news-rplayer{ font-size:12px; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="news"] .news-rhead{ font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   [data-page="news"] .news-row.open .news-rhead{ min-width:0; overflow:visible; white-space:normal; line-height:1.4; text-wrap:pretty; }
-  [data-page="news"] .news-rwho{ font-size:11.5px; font-weight:400; color:var(--text-label); white-space:nowrap; }
   [data-page="news"] .news-rcaret{ justify-self:end; font-size:11px; color:var(--text); }
   [data-page="news"] .news-row.open .news-rcaret{ transform:rotate(180deg); }
-  [data-page="news"] .news-rbody{ display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px 54px; cursor:auto; }
+  [data-page="news"] .news-rbody{ display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px 170px; cursor:auto; }   /* 42 + 12 + 104 + 12: the title column */
 
   /* ---- Empty state (15 white title + 13 grey detail) and the foot line (12.5 grey). ---- */
   [data-page="news"] .news-empty{ display:flex; flex-direction:column; gap:6px; padding:10px 0; }
@@ -5556,16 +5554,59 @@ function newsHasProfile(key){
   return !!(row && row.hasProfile);
 }
 function newsOpenPlayer(key){ if (typeof psOpenProfile === 'function') psOpenProfile(String(key)); }
-// TEN-409 Data 4: the canonical event name (sfEventName: "Shanghai" → "Shanghai Masters", "Beijing" → "China Open").
-function newsEventName(raw){
-  const s = raw == null ? '' : String(raw).trim();
-  if (!s || s === 'None' || s === 'null') return '';
-  return typeof sfEventName === 'function' ? sfEventName(s) : s;
+// TEN-409 R1 (founder card 91aec78c, 2026-10-09): an article's tournament comes from its OWN text, never the feed's
+// tournament_name (api-tennis tags an event the article merely mentions: a Beijing title story arrives as Wimbledon; the
+// field stays in the data, unread). Rule: the event the TITLE names (the first one, by position); else the event the
+// FIRST PARAGRAPH names, only if it names exactly one; else none (no tag, no drop-down entry, no link). Names = the
+// canonical event table (TOURNAMENT_CATALOG cities / slam names + SF_EVENT_NAMES official names) plus the short names
+// below; exact, case-sensitive, whole-word matches only (no fuzzy matching). A phrase two events share ("Canadian Open")
+// names neither.
+const NEWS_EVENT_SHORT = { 'Melbourne': 'Australian Open', 'Roland-Garros': 'Roland Garros', 'Flushing Meadows': 'US Open',
+  'Monte-Carlo': 'Monte Carlo', "Queen's": 'London', "Queen's Club": 'London', 'ATP Finals': 'Turin', 'Nitto ATP Finals': 'Turin',
+  'Bercy': 'Paris', 'Kitzbühel': 'Kitzbuhel', "'s-Hertogenbosch": 'Hertogenbosch', 'Montréal': 'Montreal' };
+// Two catalog entries for ONE event (tournaments.md: a lookup alias) read as one key, so "Roland Garros" is not a shared phrase.
+const NEWS_EVENT_SAME = { 'French Open': 'Roland Garros' };
+function newsEventIndex(){
+  if (newsEventIndex._ix) return newsEventIndex._ix;
+  const byPhrase = new Map();
+  const add = (phrase, key) => { if (!phrase || !key) return; key = NEWS_EVENT_SAME[key] || key; const set = byPhrase.get(phrase) || new Set(); set.add(key); byPhrase.set(phrase, set); };
+  const cat = typeof TOURNAMENT_CATALOG !== 'undefined' ? TOURNAMENT_CATALOG : [];
+  cat.forEach(t => {
+    const key = (typeof sfEventKey === 'function' && sfEventKey(t.name)) || t.name;
+    add(t.name, key);
+    if (typeof SF_EVENT_NAMES !== 'undefined' && SF_EVENT_NAMES[key]) add(SF_EVENT_NAMES[key], key);
+  });
+  Object.keys(NEWS_EVENT_SHORT).forEach(ph => { const k = (typeof sfEventKey === 'function' && sfEventKey(NEWS_EVENT_SHORT[ph])) || NEWS_EVENT_SHORT[ph]; add(ph, k); });
+  const esc = x => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const phrases = [...byPhrase.keys()].filter(ph => byPhrase.get(ph).size === 1).sort((a, b) => b.length - a.length);
+  if (!phrases.length) return null;   // the catalog has not loaded: no tournament rather than a guess
+  newsEventIndex._ix = { re: new RegExp('(?<![\\p{L}\\p{N}])(' + phrases.map(esc).join('|') + ')(?![\\p{L}\\p{N}])', 'gu'), keyOf: ph => [...byPhrase.get(ph)][0] };
+  return newsEventIndex._ix;
+}
+// The registry keys a text names, in order of position (longest phrase wins at each spot).
+function newsEventsIn(text){
+  const ix = newsEventIndex(); if (!ix || !text) return [];
+  const out = []; ix.re.lastIndex = 0;
+  for (const m of String(text).normalize('NFC').replace(/[\u2018\u2019\u02BC]/g, "'").matchAll(ix.re)) out.push(ix.keyOf(m[1]));
+  return out;
+}
+// → { key, from: 'title' | 'para' } or null.
+function newsArticleEvent(title, content){
+  const t = newsEventsIn(title);
+  if (t.length) return { key: t[0], from: 'title' };
+  const first = newsSplitParas(content)[0] || '';
+  const p = [...new Set(newsEventsIn(first))];
+  return p.length === 1 ? { key: p[0], from: 'para' } : null;
+}
+// The printed name = the Tournaments page's (tourxEventName: SF_EVENT_NAMES, "Canadian Open · Montreal").
+function newsEventLabel(key){
+  if (!key) return '';
+  if (typeof tourxEventName === 'function') return tourxEventName(key);
+  return (typeof SF_EVENT_NAMES !== 'undefined' && SF_EVENT_NAMES[key]) || key;
 }
 // A tournament name opens it on the Tournaments page when the page holds the event (its court-speed registry);
 // any other name is plain text.
-function newsTourRegistryKey(raw){
-  const k = raw && typeof sfEventKey === 'function' ? sfEventKey(raw) : null;
+function newsTourRegistryKey(k){
   if (!k || typeof tourxConditionRegistry !== 'function') return null;
   if (!newsTourRegistryKey._set) { try { newsTourRegistryKey._set = new Set(tourxConditionRegistry().map(t => t.name)); } catch (e) { return null; } }
   return newsTourRegistryKey._set.has(k) ? k : null;
@@ -5577,13 +5618,7 @@ function newsOpenTournament(key){
   if (b) b.click();
   if (typeof renderTournamentsTab === 'function') renderTournamentsTab();
 }
-// Source slugs as the feed writes them → the outlet's name.
-const NEWS_SOURCE_NAMES = { 'tennis365': 'Tennis365', 'ubitennis': 'Ubitennis', 'tennis-majors': 'Tennis Majors', 'bbc-sport-tennis': 'BBC Sport',
-  'espn-tennis': 'ESPN', 'guardian-tennis': 'The Guardian', 'atp-tour': 'ATP Tour', 'reuters': 'Reuters' };
-function newsSourceNames(src){
-  const arr = Array.isArray(src) ? src : (src ? [src] : []);
-  return arr.filter(Boolean).map(x => NEWS_SOURCE_NAMES[String(x).toLowerCase()] || String(x)).join(', ');
-}
+// R1 fix 6: the source is the feed's own text, verbatim (newsSourceLabel: "ubitennis", "tennis365, ubitennis").
 const newsKeyAttr = k => String(k).replace(/[^A-Za-z0-9_-]/g, '');
 // newsEscape leaves quotes alone (textContent → innerHTML); every attribute value goes through this.
 const newsAttr = v => newsEscape(v).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
@@ -5595,12 +5630,13 @@ function newsWireItems(){
   const all = Array.isArray(_newsData && _newsData.articles) ? _newsData.articles : [];
   return all.filter(a => a && a.player_key != null && String(a.player_key) !== '').map((a, i) => {
     const key = String(a.player_key), name = newsPlayerName(key, a.player_name);
+    const ev = newsArticleEvent(a.title, a.content);
     return {
       kind: 'wire', id: 'w' + (a.news_key != null ? a.news_key : i), ts: newsParseTs(a.published_at),
       players: name ? [{ key, name }] : [],
-      tour: newsEventName(a.tournament_name), tourRaw: a.tournament_name,
+      tour: ev ? newsEventLabel(ev.key) : '', tourKey: ev ? ev.key : '', tourFrom: ev ? ev.from : '',
       title: a.title || 'Untitled', bodyParas: newsSplitParas(a.content),
-      cat: newsClassify(a.title, a.content), source: newsSourceNames(a.sources),
+      cat: newsClassify(a.title, a.content), source: newsSourceLabel(a.sources),
     };
   }).filter(x => x.players.length);
 }
@@ -5613,7 +5649,7 @@ function newsPageIntelItems(){
     const named = it.player && it.player !== 'BSP Intel';
     return { kind: 'intel', id: 'i' + it.intelId, intelId: it.intelId, ts: it.ts,
       players: named ? [{ key: it.playerKey != null ? String(it.playerKey) : null, name: String(it.player) }] : [],
-      tour: '', tourRaw: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: 'Stennisfy Intel', source: 'Stennisfy' };
+      tour: '', tourKey: '', tourFrom: '', title: first || it.title, bodyParas: it.bodyParas || [], cat: 'Stennisfy Intel', source: 'Stennisfy' };
   });
 }
 
@@ -5763,7 +5799,7 @@ function newsPlayerHtml(p, kind){
   return `<span class="news-ent">${n}</span>`;
 }
 function newsTourHtml(it){
-  const n = newsEscape(it.tour), k = newsTourRegistryKey(it.tourRaw) || newsTourRegistryKey(it.tour);
+  const n = newsEscape(it.tour), k = newsTourRegistryKey(it.tourKey);
   if (!k) return `<span class="news-ent">${n}</span>`;
   return `<span class="news-ent news-entlink" role="link" tabindex="0" data-tour="${newsAttr(k)}" onclick="event.stopPropagation();newsOpenTournament(this.dataset.tour)" onkeydown="if(event.key==='Enter'){event.stopPropagation();newsOpenTournament(this.dataset.tour)}" title="Open ${newsAttr(it.tour)} on Tournaments">${n}</span>`;
 }
@@ -5774,11 +5810,12 @@ function newsIntelActsHtml(it){
     + `<button type="button" class="news-act" onclick="event.stopPropagation();intelDelete('${s}')">Delete</button></div>`;
 }
 
-// Reading: one card per article — meta line (tag · source · players · tournament, time right), title, body; "Read more"
-// only past 5 paragraphs (the first 4 show until it is pressed, as the reference does).
+// Reading: one card per article — meta line (tag · source · players · tournament, time right), title, body. R1 fix 1:
+// a 2-paragraph preview (the reference's card); "Read more" opens the rest in place, "Show less" closes it.
+const NEWS_PREVIEW_PARAS = 2;
 function newsReadingCard(it, admin){
-  const hasMore = it.bodyParas.length > 5, expanded = !!_newsMore[it.id];
-  const paras = hasMore && !expanded ? it.bodyParas.slice(0, 4) : it.bodyParas;
+  const hasMore = it.bodyParas.length > NEWS_PREVIEW_PARAS, expanded = !!_newsMore[it.id];
+  const paras = hasMore && !expanded ? it.bodyParas.slice(0, NEWS_PREVIEW_PARAS) : it.bodyParas;
   const ents = it.players.map(p => newsPlayerHtml(p, it.kind)).concat(it.tour ? [newsTourHtml(it)] : []);
   const idA = newsAttr(it.id);
   return `<article class="news-card" data-id="${idA}">
@@ -5794,16 +5831,19 @@ function newsReadingCard(it, admin){
 }
 function newsToggleMore(id){ _newsMore[id] = !_newsMore[id]; renderNews(); }
 
-// Compact: closed row = time · player · title (one line) · ▾; a click opens it in place (title wraps, body under it,
-// caret turned). One row open at a time.
+// Compact: row = time · player · title · ▾ on one grid. A click opens it in place: same columns (R1 fix 2), the title
+// wraps, the body sits under the title column, the caret turns. One row open at a time.
 function newsCompactRow(it, admin){
   const open = _newsOpenId === it.id, p = it.players[0];
   const idA = newsAttr(it.id);
-  const head = open
-    ? `<div class="news-rowhead">${newsTimeHtml(it.ts, 'news-rtime')}<span class="news-rhead">${newsEscape(it.title)}${p ? ` <span class="news-rwho">· ${newsEscape(p.name)}</span>` : ''}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`
-    : `<div class="news-rowhead">${newsTimeHtml(it.ts, 'news-rtime')}<span class="news-rplayer">${p ? newsPlayerHtml(p, it.kind) : ''}</span><span class="news-rhead">${newsEscape(it.title)}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`;
+  const head = `<div class="news-rowhead">${newsTimeHtml(it.ts, 'news-rtime')}<span class="news-rplayer">${p ? newsPlayerHtml(p, it.kind) : ''}</span><span class="news-rhead">${newsEscape(it.title)}</span><span class="news-rcaret" aria-hidden="true">▾</span></div>`;
+  // the same 2-paragraph preview as Reading (founder R1 fix 1): "Read more" opens the rest, "Show less" collapses to 2
+  const hasMore = it.bodyParas.length > NEWS_PREVIEW_PARAS, expanded = !!_newsMore[it.id];
+  const paras = hasMore && !expanded ? it.bodyParas.slice(0, NEWS_PREVIEW_PARAS) : it.bodyParas;
   const body = open
-    ? `<div class="news-rbody" onclick="event.stopPropagation()">${it.bodyParas.map(x => `<div class="news-para">${newsEscape(x)}</div>`).join('')}${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`
+    ? `<div class="news-rbody" onclick="event.stopPropagation()">${paras.map(x => `<div class="news-para">${newsEscape(x)}</div>`).join('')}`
+      + (hasMore ? `<button type="button" class="news-link news-more" data-id="${idA}" onclick="event.stopPropagation();newsToggleMore(this.dataset.id)">${expanded ? 'Show less' : 'Read more'}</button>` : '')
+      + `${it.kind === 'intel' && admin ? newsIntelActsHtml(it) : ''}</div>`
     : '';
   return `<div class="news-row${open ? ' open' : ''}" data-id="${idA}" role="button" tabindex="0" aria-expanded="${open}" onclick="newsToggleRow(this.dataset.id)" onkeydown="if(event.key==='Enter'&&event.target===this)newsToggleRow(this.dataset.id)">${head}${body}</div>`;
 }
