@@ -41,6 +41,18 @@ function speedSchemeFrom(file) {
 }
 const DASH_SPEED = speedSchemeFrom('bsp-consult-dashboard.html');
 
+/** TEN-402 r3 · the page's ONE event name (window.sfEventName), evaluated from the shipped dashboard source — the
+ *  registry (TOURNAMENT_CATALOG), the name tables and the functions, with the real TournamentIdentity. */
+function oneNameFromSource(src) {
+  const fn = name => { const a = src.indexOf('\nfunction ' + name + '('); if (a < 0) throw new Error(name + ' not found');
+    let d = 0, i = src.indexOf('{', a); for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}' && --d === 0) break; } return src.slice(a, i + 1); };
+  const cst = name => { const a = src.indexOf('\nconst ' + name + ' = '); if (a < 0) throw new Error(name + ' not found'); return src.slice(a, src.indexOf(';\n', a) + 1); };
+  // eslint-disable-next-line no-new-func
+  return new Function('window', ['TOURNAMENT_CATALOG', 'SF_EVENT_NAMES', 'SF_EVENT_ALIAS', 'SF_EVENT_LITERAL'].map(cst).join('\n') + '\nlet _sfEventIx = null;\n' +
+    ['ppCleanTournamentName', 'fhTournClean', 'sfEventKey', 'sfEventName'].map(fn).join('\n') + '\nreturn sfEventName;')({ TournamentIdentity: require('../tournament-identity.js') });
+}
+const ONE_NAME = oneNameFromSource(fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8'));
+
 // ─── load the module under test into a window shim ──────────────────────────
 function loadModule(profiles, extra) {
   const sandbox = Object.assign(
@@ -299,7 +311,8 @@ const M = loadModule(PLAYERS, {
   careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
   holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
   matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST,
-  dnaRatings: DNA, situational: SITUATIONAL
+  dnaRatings: DNA, situational: SITUATIONAL,
+  sfEventName: ONE_NAME   // TEN-402 r3: on the page the list prints the dashboard's one event name
 });
 const I = M._internals;
 // loadModule() REASSIGNS global.window, and §5.5 builds extra module instances
@@ -3908,7 +3921,15 @@ check('the all-stores table covers every data store the module reads', () => {
   const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
     'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank',
     // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
-    'pp2ClosesOf', 'pp2CareerClose']);
+    'pp2ClosesOf', 'pp2CareerClose',
+    // TEN-402 R2 (founder card 7bc622d5): the host's "Record per tournament was opened — request the Database join now"
+    // hook (pp2DbJoinNeed: one fetch per session, test-ten402-r2l.mjs) — a trigger, not a data store
+    'pp2DbJoinNeed',
+    // TEN-402 R3 fix 3: the host's "this row is after the Database archive's last match" reason (trPxAfterOf over the
+    // join's meta.dateRange the page already loaded; test-ten402-r2l.mjs "R3 fix 3") — logic, not a data store
+    'trPxAfterOf',
+    // TEN-402 r3: the page's one event name (sfEventName — Record per tournament prints it) — a display function, no rows
+    'sfEventName']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -5902,15 +5923,26 @@ mustFail('[neg] the win% check would catch the shipped 81.8%', () => {
   assert.strictEqual(((100 * 9) / 11).toFixed(1) + '%', '82%', 'the row win% is not whole');
 });
 
-check('§5.3 item 10 · display names map in ONE place and fall through to the feed name', () => {
+// TEN-402 r3 (founder 2026-10-09, "one tournament name per event, site-wide") supersedes item 10's "{city} {tier}":
+// the row prints the page's ONE event name (window.sfEventName); the tier is the row's meta, never part of the name.
+check('§5.3 item 10 → TEN-402 r3 · display names are the page\'s ONE event name; the tier is the row\'s meta', () => {
   assert.strictEqual(I.tournDisplayName('French Open', 'Grand Slam'), 'Roland Garros');
   assert.strictEqual(I.tournDisplayName('Australian Open', 'Grand Slam'), 'Australian Open');
-  assert.strictEqual(I.tournDisplayName('Cincinnati', 'Masters 1000'), 'Cincinnati Masters 1000');
-  assert.strictEqual(I.tournDisplayName('Estoril', 'ATP 250'), 'Estoril ATP 250');
-  // unknown -> feed name, and recorded
+  assert.strictEqual(I.tournDisplayName('Cincinnati', 'Masters 1000'), 'Cincinnati Open');
+  assert.strictEqual(I.tournDisplayName('Tour Finals', 'Tour Finals'), 'ATP Finals');
+  assert.strictEqual(I.tournDisplayName('Canada Masters', 'Masters 1000'), 'Canadian Open');
+  assert.strictEqual(I.tournDisplayName('Cup', null), 'ATP Cup');
+  assert.strictEqual(I.tournDisplayName('Estoril', 'ATP 250'), 'Estoril', 'an ATP 250 keeps its city');
+  assert.strictEqual(I.tournLevelMeta('Masters 1000'), 'Masters 1000');
+  assert.strictEqual(I.tournLevelMeta('Grand Slam'), '');
+  // unknown -> its own (cleaned) name
   assert.strictEqual(I.tournDisplayName('Nowhere Cup', null), 'Nowhere Cup');
-  assert(I.EVENT_DISPLAY_UNKNOWN['Nowhere Cup'], 'an unmapped name is not recorded');
-  // a Slam never takes a tier suffix
+  // off the page (no sfEventName) the module's own map is the fallback, and an unmapped name is recorded
+  const gw = global.window, bare = loadModule(PLAYERS)._internals; global.window = gw;   // loadModule reassigns global.window
+  assert.strictEqual(bare.tournDisplayName('French Open', 'Grand Slam'), 'Roland Garros');
+  assert.strictEqual(bare.tournDisplayName('Nowhere Cup', null), 'Nowhere Cup');
+  assert(bare.EVENT_DISPLAY_UNKNOWN['Nowhere Cup'], 'an unmapped name is not recorded');
+  // a Slam never takes a tier
   assert.strictEqual(I.tournDisplayName('Wimbledon', 'Grand Slam'), 'Wimbledon');
   assert(T_HTML.indexOf('Roland Garros') > 0, 'the modal still shows the feed name "French Open"');
   assert(T_HTML.indexOf('>French Open<') < 0, 'the feed name still reaches the row');
@@ -6137,7 +6169,7 @@ check('§5.3 items 21-22 · rows open the sheet and the row hook toggles', () =>
     'no match row carries a sheet hook');
   assert(/data-pp2="tourn-row" data-t="/.test(open), 'the row toggle hook is missing');
   // the handler must toggle on the SAME value and switch on a different one
-  assert(/kind === 'tourn-row'\) state\.tournOpen = toggleVal\(state\.tournOpen,/.test(PP2_SRC),
+  assert(/kind === 'tourn-row'\) \{? ?state\.tournOpen = toggleVal\(state\.tournOpen,/.test(PP2_SRC),
     'the row handler does not toggle');
 });
 mustFail('[neg] the sheet-hook check would catch a detail with no clickable row', () => {

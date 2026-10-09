@@ -18,8 +18,9 @@ const MUTANTS = [
     '          if (!h2hTdSame(m.k, c.k)) return;\n', ''],
   ['fix 2: a full-name opponent ("Carlos Alcaraz") no longer joins',
     "    if (!t && toks.length > 1) return { s: fhNameKey(toks.slice(1).join(' ')), i: toks[0].replace(/[^A-Za-z]/g, '').charAt(0).toLowerCase(), loose: true, w: words(toks.slice(1).join(' ')) };\n", ''],
-  ['fix 3: the one-line set-score rule dropped',
-    '  #h2hRoot .h2hc-led .ma-row-score{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }\n', ''],
+  ['r4 fix 2 (reverses R1 fix 3): the score cell back on one ellipsised line',
+    '  #h2hRoot .h2hc-led .ma-row-score{ min-width:0; white-space:normal; overflow:visible; }',
+    '  #h2hRoot .h2hc-led .ma-row-score{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }'],
   ['fix 4: the profit chart back on the shared date axis',
     'cChartModel(core, ser[0], ser[1], scope) : null,', 'core.chartModel(ser[0], ser[1], scope) : null,'],
   ['fix 4: the lines start under the Break even label again',
@@ -41,9 +42,9 @@ const MUTANTS = [
   ['R1 review: the memo compares the fresh market object again', 'mm.mkKey === mkKey && mm.md === tourxMarketData', 'mm.mk === mk'],
   ['R1 review: the info box loses the sfEventKey fallback', "|| (key ? cat.find(t => t.name === key) : null) || null;", '|| null;'],
   ['R1 review: the season finals read the knockout-only dates again', 'if (rr) dates = null;', ''],
-  ['R1 review: the styles ledger retirement back to "0 - 0" / hyphen', "sets: m.ret ? '—' : m.sets,", 'sets: m.sets,'],
+  ['R1 review: the styles ledger retirement back to "0–0" (no dash)', "sets: m.ret ? '—' : m.pS + m.oS ? m.pS + '–' + m.oS : m.sets,", "sets: m.pS + m.oS ? m.pS + '–' + m.oS : m.sets,"],
   // ---- founder answer 3 (card 01102d24): retirement row display
-  ['answer 3: a retirement row keeps its "0 - 0" sets', "sets: r.pS == null || r.ret ? '—' : r.pS + ' - ' + r.oS,", "sets: r.pS == null ? '—' : r.pS + ' - ' + r.oS,"],
+  ['answer 3: a retirement row keeps its "0–0" sets', "sets: r.pS == null || r.ret ? '—' : r.pS + '–' + r.oS,", "sets: r.pS == null ? '—' : r.pS + '–' + r.oS,"],
   // ---- review 3 (lead, 2026-10-08)
   ['review 3: a start-dated row ranks the week before by unsigned distance again (Rio takes Buenos Aires)',
     'ad: dm >= 0 ? dm : H2H_PAGE_BEFORE_RANK - dm', 'ad: Math.abs(dm)'],

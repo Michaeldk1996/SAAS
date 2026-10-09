@@ -35,11 +35,42 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   retirement settled on the official ATP result**. Never the closes shard (`match-closes/`), never the market-edge
   shard's attribution or price. A row the join lacks (an exact price tie, no career-history row, no archive row) is `—`.
   The Head to Head page's Tournament card reads the same model, so both print the identical figure (Alcaraz, US Open
-  +7.1u / 32 priced on 8 Oct 2026). The Match analysis Tournament tab (`trModelFor`) still prices on the closes shard —
-  the two no longer share a join (not re-ruled; open question). Apply: on a profile event, sum flat 1u over the detail
+  +7.1u / 32 priced on 8 Oct 2026). The Match analysis Tournament tab (`trModelFor`) prices on the same join since the
+  founder ruling of 2026-10-09 (card 7bc622d5; `modal-analysis.md` "Tournament tab → Prices"): for an event whose match
+  lists agree, its Backing equals this column (Alcaraz, US Open +7.1u / 32 on all three surfaces, 9 Oct 2026). Apply: on a profile event, sum flat 1u over the detail
   rows that show an H price; it must equal the tile and the column. **Test:** `test-ten332-tournament.mjs` "ruling
   2026-10-08" (Database prices ≠ closes ≠ market shard; the flagged retirement in; the Database-rows-only control;
   pending / failed words), `tools/test-ten332-mutants.js` (TEN-402 mutants).
+- **The Database join loads AFTER the profile shows (founder ruling 2026-10-09, TEN-402 card 7bc622d5; supersedes the
+  2026-10-08 click-time load).** `database-yield.json` + `database-yield-players.json` (~410 KB gz) are requested by
+  exactly two profile triggers, never by the profile open or by a render: (1) the first idle moment after the profile's
+  first paint (`pp2MountNow` → `pp2DbJoinAfterPaint`: two animation frames, then `requestIdleCallback`, timeout 1 s) —
+  chosen because the Record per tournament tile is on screen by default and must fill without a click; (2) opening
+  Record per tournament or one of its events (the module calls `window.pp2DbJoinNeed`), so a click before idle, or after
+  a failed load, asks at once. Reading the model (`trProfileModel`) never starts the fetch: not asked yet = pending.
+  Until the join lands every Backing figure — the box tile, the column, the "Backing him here" tile and each edition
+  row's H / A — is a **neutral loading state** (a blank box, `data-pp2-pending="backing"`; the tile keeps "loading
+  prices"), never `0`, never `—` and never a closes / market-shard price. A failed load prints `—` ("prices
+  unavailable", `BACKING_FAIL_TXT`) in the column, the "Backing him here" tile **and the Record per tournament box**
+  (R3 fix 2: the box never falls back to another metric such as "82% · all events · 305–68" — that W–L fallback is the
+  answer only when the join answered and no event clears ten priced); the next open (profile or Record per tournament)
+  retries, and a retry that lands paints the Backing figure. **One fetch per session**: `sfDbJoinLoad` keeps its
+  promise and the Database tab's `loadBase` / `loadNames` keep theirs, so the profile, the Head to Head page
+  (`h2hEnsureDb`, which keeps no state of its own — R3 fix 1) and the Database page share the same rows.
+  **Apply (the rule is the load ORDER, not a speed figure):** open a profile on a cold tab with the network panel open —
+  (a) no `database-yield*.json` request starts before the profile header and boxes are painted (the two files are
+  requested after first paint); (b) the Record per tournament tile then fills (Alcaraz: +7.1u US Open · 32 priced);
+  (c) opening Head to Head or Database afterwards requests neither file again (one fetch each per session). First-paint
+  time is NOT the test: measured 9 Oct 2026 (Alcaraz, cold cache) the medians moved ~643 → ~360 ms at 20 Mbps with large
+  run-to-run variance, and 176 → 174 ms unthrottled — within noise; an independent re-measurement found no gain beyond
+  it. Only the order is proven. **Test:** `test-ten402-r2l.mjs` (the real loaders and module: no request before paint /
+  until asked, pending ≠ 0 ≠ "—", one fetch per session, failed → retry, the box on a failed join, the H2H page on the
+  shared state), `tools/test-ten402-r2l-mutants.js`.
+- **Live-edition rows (R3 fix 3).** A Record per tournament row dated after the Database archive's last match
+  (`database-yield.json` `meta.dateRange[1]`, 13 Sep 2026 on 9 Oct; e.g. Alcaraz Tokyo 2026) has no closing price on
+  record yet: its H / A print `—` and the whole cell carries the Match analysis Tournament tab's hover, "After the
+  Database archive's last match (13 Sep 2026): no closing price on record yet" — ONE string (`trPxAfterTitle`), read
+  through `window.trPxAfterOf(date)`; never copied. **Test:** `test-ten402-r2l.mjs` "R3 fix 3".
 
 - **One match sheet: the step-3 stats sheet (founder TEN-384, 2026-10-05).** Ribbon chips, ribbon and ledger strip cells,
   ledger rows (incl. their W/L square) and every drill row with a sheet hook open the Match analysis stats sheet
@@ -78,7 +109,7 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   - **Q6 · no Back/Fade and no surface controls.** The heatmap pop-up renders Hold | Break only (`HB_SHOW_SURF = false`). Market edge Match winner is the backing side over all surfaces (`MKT_SHOW_FILTERS = false`). The state paths behind both stay wired.
   - **Q7 · Draw record Opponent stops at vs Top 10.** There is no vs Top 50 row, dash or note: the career-splits files hold no Top-50 split. *Early rounds* is a render-only By round row. It is recomposed from the Round of 16/32/64/128 **counts**. Its Service rates print "—" because the store keeps those as rates, without their counts.
   - **Q8 · Market edge tour baselines = the Database Tour aggregates** (checked: they are real computed data, from `database-yield.json`). As favourite = Favourites All, As underdog = Underdogs All, All = both sides pooled. The arithmetic is the Database's own.
-    - **Baselines file (founder ruling, 2026-10-05).** `tour-baselines.json` (~1 KB, ≤ 10 KB) is written by `build-database-yield.js` in the same run as `database-yield.json` (drop-in job; published by `pipeline.yml`, in the assert list). The host loads it WITH the profile data (`loadTourBaselines` inside `loadPlayerProfiles` / `ensurePlayerProfile`) and bridges it as `window.tourBaselines`. **The Market edge box never loads `database-yield.json`**; the module names no such URL. *TEN-402 (2026-10-08):* the per-event Backing's one join is read by the HOST through `DatabaseTab.priceRows()` (`loadPp2Closes` → `sfDbJoinLoad`, once per session, shared with the Database and Head to Head pages: ~215 KB + ~196 KB gz) — the letter of "the profile never loads it" no longer holds for that box; flagged to the founder, not re-ruled.
+    - **Baselines file (founder ruling, 2026-10-05).** `tour-baselines.json` (~1 KB, ≤ 10 KB) is written by `build-database-yield.js` in the same run as `database-yield.json` (drop-in job; published by `pipeline.yml`, in the assert list). The host loads it WITH the profile data (`loadTourBaselines` inside `loadPlayerProfiles` / `ensurePlayerProfile`) and bridges it as `window.tourBaselines`. **The Market edge box never loads `database-yield.json`**; the module names no such URL. *TEN-402:* the per-event Backing's one join is read by the HOST through `DatabaseTab.priceRows()` (`sfDbJoinLoad`, once per session, shared with the Database and Head to Head pages: ~215 KB + ~196 KB gz) — accepted by the founder (2026-10-09, card 7bc622d5) on condition it loads only after the profile shows; see "The Database join loads AFTER the profile shows" above.
     - **First paint is complete:** `showPlayerProfileV2` waits for the player's market-edge shard (cached after the first open, capped at `PP2_FIRST_PAINT_WAIT_MS`) before it mounts, so the Market edge box never paints "no priced matches on record" / "tour —" and then fills.
       - **fx2 · every other per-profile load starts at CLICK time** (`pp2StartLoads`), in parallel with the shard, not after the wait.
       - **fx2 · past the cap, loading claims nothing:** the host marks the shard in flight (`window.marketEdgePending[key]`), and the box paints a neutral pending figure + support line (same boxes, `&nbsp;`, `data-pp2-pending`) until it lands, then paints once; the Market edge modal says "Loading the priced matches." A settled empty shard still says "no priced matches on record".
@@ -107,6 +138,7 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   - **Record per tournament tile fallback (founder ruling 2026-10-07):** per-event Backing is on the Database join (2026-10-08, above), which can differ from the Market edge rows (captured closes first, R8), so the tile never sums units: no event clears ten priced → the rate and W–L over every event ("all events · W–L"), never a summed-units figure. Per-event Backing unchanged. `TOURN_TILE_SUMMED_UNITS = true` restores the fx3 summed fallback. **Test:** `tools/test-ten384-fx4.js` item 5.
   - **Minor:** Court speed fallback names the true reason ("none at 10+ matches" when no band reaches ten, else "no band above it"); hyphenated initials ("J-L. Struff" → "Struff J-L." on the ledger / ribbon) and `mkOppName` = `initialSurname` ("J.J. Wolf" → "J. J. Wolf"); Career hero 5–9: the mark sits under the rate; Database "1 match" (`dbMatchWord`).
   - **13 · An event is named by one rule everywhere** (`eventName(m, p)`): the per-player vote onto Record per tournament's name, else `calEventClean` (no "ATP " prefix).
+  - **TEN-402 r3 (founder 2026-10-09, "one tournament name per event, site-wide") — Record per tournament prints the site's ONE event name**, superseding item 10's "{city} {tier}" ("Cincinnati Masters 1000", "Beijing ATP 500", "Tour Finals", "Canada Masters"): `tournDisplayName(name)` = the page's `window.sfEventName(name)` (Cincinnati Open, China Open, Monte-Carlo Masters, Italian Open, Canadian Open, ATP Finals, Roland Garros; an ATP 250 keeps its city; off the page the module's own map is the fallback). **The tier is the row's meta, never part of the name** (`tournLevelMeta(level)`: "Masters 1000" / "ATP 500" / "ATP 250" beside the name, 11.5 / 500 `--text-label`; none on a Slam, the ATP Finals or a row with no level). The detail header ("Cincinnati Open 2024"), the career caps and the box's "best event" ("ATP Finals · best event · 13–11 · 24 priced") read the same name. **"Cup" is the ATP Cup** (2020–2022 editions, 3 Jan 2020 / 2 Feb 2021 / 2 Jan 2022; Zverev 3–6): the feed's "ATP Cup" loses its "ATP " to the name cleaner — it prints "ATP Cup". Search matches the printed name, the data name and the tier ("masters 1000"). **Display only:** `t.name` stays the key (`data-t`, `state.tournOpen`, every join); the pinned order's last tie-break (display name ASC) now reads the new name, so two rows tied on matches and last year can swap (Zverev: Italian Open now above Madrid Open — 37 played each, same last year; ATP Finals above Hamburg Open, Canadian Open above China Open). Every W–L, Backing and priced n is unchanged (measured 9 Oct, Zverev 63 rows / Alcaraz 42). **Apply:** every row's words = `sfEventName(t.name)`, no tier inside a name, the tier beside it. **Test:** `test-ten402-r2n.mjs` r3.2 (+ PP2 mutants in `tools/test-ten402-r2n-mutants.js`), `tools/test-pp2-reconcile.js` "TEN-402 r3".
   **Test:** `tools/test-pp2-reconcile.js` "fix 7"–"fix 13", `tools/test-tournament-identity.js` "fix item 12", `tools/test-match-panel.js` box 8, `tools/test-ten384-fx2.js` (items 2, 3, 5, 6).
   **Figures-agree gate (fx2):** `tools/test-ten384-figures-agree.js` runs on the PINNED fixture `tools/fixtures/ten384-figures/player-2840.json` (one real player's complete record, module clock pinned to its `asOf`; refresh only deliberately with `extract.js` beside it) and on the deployed stores for Alcaraz / Thompson, which SKIP out loud without `career-history/`. The roster-wide sweeps are `tools/probe-ten384-figures-roster.js` — run by hand, NOT in `npm test`.
 - **TEN-384 fx7 (independent review of the r2 list, 2026-10-07).**

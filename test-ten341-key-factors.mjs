@@ -69,7 +69,7 @@ const S = new Function('CORE', `
   ${ODDS_CONSTS.map(n => constSrc(n, html)).join('\n')}
   ${['escapeHtml', 'psShortName', 'psCellFor', 'psMirrorN', 'psSurfaceCellFor', 'psArchIndex', 'psArchFor', 'psFmtMeetDate', 'psRoundAbbr', 'psNormTour', 'psTourMeta',
      'psGroupMeetings', 'styleMeetRowsFor', 'ppCleanTournamentName', 'surnameFirstName', 'formIni', 'eventKeyOfMatch',
-     'apiStartMs', 'h2hRoundLabel', 'maRoundName', 'trEditionsOf', 'trRoundWords', 'trClean', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
+     'apiStartMs', 'h2hRoundLabel', 'maRoundName', 'trEditionsOf', 'trRoundWords', 'trClean', 'trName', 'trIsRG', 'trSpeedNote', 'trHoldOf', 'trHoldTip', 'trHoldHtml',
      'trHeaderHtml', 'trKeyOf', 'trMarketFor', 'trArchiveNames', 'trSameEvent', 'trRowOf', 'trModelOf', 'newsParseTs', 'aNewsFeedOk', 'aNewsArticlesFor', 'aNewsStoryKey',
      'progressionByesCredible', 'mxBookLabel'].map(slice).join('\n')}
   ${['TR_RG_NOTE', 'TR_NO_SPEED', 'TR_RESULT', 'TR_MONO', 'TR_BEST_RANK'].map(n => constSrc(n, html)).join('\n')}
@@ -209,9 +209,9 @@ test('Tournament: "City · TIER", the round as meta, the record here from the To
     courtSpeed: { abstractSpeed: 1.4, speed: 98, altitude: 260, category: 'Fast' } }));
   assert.match(head(h), /^Tournament Round of 32 ›$/);
   const t = vis(h);
-  assert.match(t, /Basel · ATP 500 Hard · hold —/);
+  assert.match(t, /Swiss Indoors · ATP 500 Hard · hold —/);   // TEN-402 r3: the one event name; the tier from the catalog's data name
   assert.match(t, /Sinner Record here Alcaraz 5–1 W–L first appearance Won 2025 Best —/, 'N6: the withdrawal is no edition');
-  assert.match(h, /data-aotip="[^"]*5–1 in 6 main-draw matches over 2 editions at Basel, walkovers excluded/);
+  assert.match(h, /data-aotip="[^"]*5–1 in 6 main-draw matches over 2 editions at Swiss Indoors, walkovers excluded/);
   assert.doesNotMatch(t, /no record on file/);
   const u = vis(S.kfTourCard(match({ tour: 'ATP Nowhere', courtSpeed: null })));
   assert.match(u, /^Tournament › Nowhere Hard · hold — — Court speed —/, 'an unknown event: the name alone; no court row: dashes');
@@ -247,7 +247,7 @@ test('Q9: Key factors\' hold rate is the Tournament tab\'s cell — our box scor
   const kf = S.kfTourCard(m), tab = S.trHeaderHtml(m);
   assert.match(vis(kf), /Hard · hold 80%/, '1,600 / 2,012 = 79.5% → 80%');
   assert.equal(holdCell(kf, 'kf-hold'), holdCell(tab, 'tr-hold'), 'the same cell on both tabs');
-  assert.match(text(holdCell(kf, 'kf-hold')), /Service hold at Basel: 1,600 of 2,012 service games held \(n = 2,012\)/);
+  assert.match(text(holdCell(kf, 'kf-hold')), /Service hold at Swiss Indoors: 1,600 of 2,012 service games held \(n = 2,012\)/);   // TEN-402 r3: printed by the one name, read by the data name
   assert.doesNotMatch(kf, /n not published|82%/);
   assert.match(S.kfTourCard(match({ tour: 'ATP Nowhere' })), /No box score on file for Nowhere, so no hold rate is shown\./);
   S.hold = null; assert.match(S.kfTourCard(m), /The event hold rate did not load/);

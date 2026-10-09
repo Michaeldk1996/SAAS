@@ -176,7 +176,7 @@ test('sheet header: surface capitalised, a dash where the round is missing (four
     finalScore: { sets: [{ p1: 7, p2: 6 }, { p1: 6, p2: 3 }], p1Sets: 2, p2Sets: 0, winner: 'p1' } });
   assert.equal(E.r.surface, 'Hard');
   const meta = text(S.fhSheetHeadHtml(E.e, E.r, { inline: true })).split(' A. Zverev')[0];
-  assert.equal(meta, 'ATP Laver Cup · Hard · — · Sep 27, 2026');
+  assert.equal(meta, 'Laver Cup · Hard · — · Sep 27, 2026');
 });
 
 // Mutation: a tab-local stat sheet (buildMatchStatsSheet) or row / tooltip renderer back in the tab.

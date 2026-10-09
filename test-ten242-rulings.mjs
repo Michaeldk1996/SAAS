@@ -266,7 +266,7 @@ test('item 6.1: the per-week absence fires on "nothing loaded", not "no events"'
   // with nothing loaded was rendering two per-EVENT "not loaded" rows instead.
   assert.match(DASH, /if\(!tourns\.length \|\| !tourns\.some\(hasList\)\)\{/,
     'the week-level empty state must also fire when no event that week carries a list');
-  assert.match(DASH, /No lists loaded for this week/);
+  assert.match(DASH, /No lists loaded for ' \+ weekRangeHtml\(activeWeek\) \+ '/);   // TEN-402 r4 fix 5: the selected week
   assert.match(DASH, /Acceptance list not loaded for this event yet\./);
   assert.match(DASH, /Advance entry lists could not be updated/);
 });

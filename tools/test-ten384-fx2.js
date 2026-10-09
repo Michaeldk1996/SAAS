@@ -81,6 +81,8 @@ function mountHarness() {
       Promise.resolve().then(() => { env.careerSplits[k] = null; return null; }))),
     loadPp2Bet365: stub('bet365'), loadPp2CareerHistory: stub('careerHistory'), loadPp2TourHist: stub('tourHist'),
     loadPp2Closes: stub('closes'), loadPp2SpeedMap: stub('speedMap'), loadPp2Dna: stub('dna'),
+    // TEN-402 R2: the Database join is requested after the mount's paint (test-ten402-r2l.mjs drives the real one)
+    pp2DbJoinAfterPaint: stub('dbJoinAfterPaint'),
     pp2RepaintIfOpen() {}, closePpSplitDrawer() {}, pp2FlagOn: () => true,
     loadPointsAtRisk() {}, buildPlayerProfileHtml: () => 'legacy', ppSyncCareerHeight() {}, ppUpgradeFormRows() {}
   };

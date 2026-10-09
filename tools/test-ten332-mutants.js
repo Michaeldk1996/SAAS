@@ -38,11 +38,22 @@ const MUTANTS = [
   ['TEN-402: the flagged retirements dropped from the join', '    return { rows: base.rows.concat(rr), names: nm.names.concat(rn), meta: base.meta, nDb: base.rows.length };', '    return { rows: base.rows, names: nm.names, meta: base.meta, nDb: base.rows.length };'],
   ["TEN-402: the profile rows' H / A back on the market shard", '          price: jp && jp.price != null ? jp.price : null,', '          price: x.price != null ? x.price : null,', 'pp2'],
   ['TEN-402: the model never waits for the Database rows', "  if (!(k in _careerHistoryShards) || _sfDbJoinSt !== 'ready') return null;", '  if (!(k in _careerHistoryShards)) return null;'],
-  ['Q8: a failed load reads "loading prices" forever', "        : t.backingFailed\n          ? 'prices unavailable'\n          : t.vmTxt", "        : t.vmTxt", 'pp2'],
+  ['Q8: a failed load reads "loading prices" forever', "        : t.backingFailed\n          ? BACKING_FAIL_TXT\n          : t.vmTxt", "        : t.vmTxt", 'pp2'],
   ['Q9 (tab): the hold cell dropped from the header', "['Altitude', altCell], ['Hold rate', trHoldHtml(m, 'tr-hold')], ['Round',", "['Altitude', altCell], ['Round',"],
   ['Q9 (tab): the tooltip loses n', "(n = ${fmt(H.n)}), both players,", "both players,"],
   ['Q11: an empty block reserving the paragraph\'s space', "      ${trHeaderHtml(m)}${toggle}", "      ${trHeaderHtml(m)}<div class=\"tr-reading\" style=\"min-height:48px;\"></div>${toggle}"],
 ];
+// TEN-402 r2 (founder card 7bc622d5, 2026-10-09): the Match analysis Tournament tab on the ONE Database join
+MUTANTS.push(
+  ['TEN-402 r2: the tab off the Database join', "  const P = trModelOf(hist, Object.assign({}, d, { ch: (d && d.ch) || null, cl: null, px: trDbJoinPx(name, ch) })", "  const P = trModelOf(hist, Object.assign({}, d, { ch: (d && d.ch) || null, px: null })"],
+  ['TEN-402 r2: the tab waits on nothing (state ignores the Database rows)', "_sfDbJoinSt === 'ready' ? 'ready' : _sfDbJoinSt === 'failed' ? 'failed' : 'loading';", "'ready';"],
+  ['TEN-402 r2: a failed Database load reads "loading prices" forever', "_sfDbJoinSt === 'failed' ? 'failed' : 'loading';", "'loading';"],
+  ['TEN-402 r2: pending price cells print a dash', "    h: r.pxPend ? '' : r.price == null ? FH_DASHC", "    h: r.price == null ? FH_DASHC"],
+  ['TEN-402 r2: the after-archive reason dropped', "  if (r.pxAfter) return trPxAfterTitle();", "  if (false) return trPxAfterTitle();"],
+  ['TEN-402 r2: the tab never loads the Database rows', "  if (_sfDbJoinSt !== 'ready') loads.push(sfDbJoinLoad().catch(() => null).then(paint));\n", ''],
+  ['TEN-402 r2: the tab fetches the closes shard again', "    loads.push(Promise.resolve(loadCareerHistory(key)).then(ch => {", "    loads.push(Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch]) => {"],
+  ["TEN-402 r2: a joined row meets the join on the history's match day", "date: r.chDate || r.date, won: r.won,", "date: r.date, won: r.won,"],
+);
 MUTANTS.push(
   ['Q2: the court-speed gradient back', 'background:var(--white-bar); margin-top:18px;', 'background:linear-gradient(90deg,var(--inner),var(--text-label),var(--bar)); margin-top:18px;'],
   ['Q2: an area fill under the trend', '${guides}${poly}</svg>', '${guides}<path d="M0 0 L1 1 Z" fill="url(#f)"></path>${poly}</svg>'],

@@ -1055,8 +1055,9 @@
   #h2hRoot .h2hc-led .ma-rows-head{ position:static !important; }
   #h2hRoot .h2hc-led .ma-row{ cursor:default !important; }
   #h2hRoot .h2hc-led .ma-row:hover{ background:var(--inner) !important; }
-  /* set scores stay on one line, cut with an ellipsis (the reference); the full score is the cell's hover. This page only. */
-  #h2hRoot .h2hc-led .ma-row-score{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* TEN-402 r4 fix 2 (founder, reverses R1's one-line ellipsis): set scores are never cut — the cell wraps between sets
+     (each set is its own nowrap span in maMatchRowsHtml) and the row grows. This page only. */
+  #h2hRoot .h2hc-led .ma-row-score{ min-width:0; white-space:normal; overflow:visible; }
   #h2hRoot .h2hc-band:hover{ background:var(--inner) !important; }
   #h2hRoot .h2hc-opt:hover{ background:var(--inner) !important; }
   #h2hRoot .h2hc-more:hover, #h2hRoot .h2hc-tile:hover .h2hc-toggle{ text-decoration:underline; text-underline-offset:3px; }
@@ -1071,6 +1072,9 @@
      darker-track segmented control h2hSeg() (the site helper sfSegHtml + the .h2h-seg size classes below). Values are
      the computed night values of OFFICIAL VERSION 1 → Head to Head at 1512 unless a ticket item overrides them. */
   #h2hRoot .h2h-page{ min-height:100vh; box-sizing:border-box; padding:30px 40px 70px; color:var(--text); font-family:var(--font-words); line-height:normal; }
+  /* TEN-402 r4 fix 1: the 30px strip above the sticky header is page tone at every scroll position (it used to show the
+     cards scrolling under it). A sticky page-wide band in the page's own top padding, under the header (z 29 < 30). */
+  #h2hRoot .h2h-page::before{ content:''; display:block; position:sticky; top:0; z-index:29; height:30px; margin:-30px -40px 0; background:var(--page); }
   #h2hRoot .h2h-sec{ max-width:1360px; display:flex; flex-direction:column; min-width:0; }
   #h2hRoot .h2h-stick{ position:sticky; top:30px; z-index:30; padding:0 40px 18px; }
   /* TEN-403: the header card is the shared 35b header, controls variant (.sfh.sfh--ctl: 18x26x22, row margin-bottom 16);
@@ -3792,7 +3796,7 @@ window.EntryListsTab = (function(){
   //                         above the tier groups carries the age and the failed
   //                         attempt. A stale list never renders as "not loaded",
   //                         and never renders silently as if it were current.
-  //   week empty         -> "No lists loaded for this week" (see render()).
+  //   week empty         -> "No lists loaded for {selected week's range}" (see render()).
   function tierCode(tier){
     if(!tier) return '—';
     var t = (''+tier).toLowerCase();
@@ -3821,6 +3825,15 @@ window.EntryListsTab = (function(){
   function renderTournament(t, idx){
     var id = 'el-card-'+idx;
     var name = t.name || (t.city || 'Tournament '+t.tournamentId);
+    // TEN-402 r2 (founder card 7bc622d5): an ATP-tour row (Grand Slam / ATP 1000 / 500 / 250 / Finals) prints the
+    // Tournaments registry's event name — sfEventKey(name, else city) → tourxEventName ("Basel" → Swiss Indoors, "Paris" →
+    // Paris Masters, "AITO Hangzhou Open" → Hangzhou). A Challenger / ITF row ("Rome (CH 75)") or a name the registry does
+    // not hold (Brussels) keeps the shard's own words. Display only: cityKey / mergeShards / the week sets read t.name.
+    if(/^(atp|grand slam)/i.test(''+(t.tier||'')) && !/challenger/i.test(''+t.tier) && typeof sfEventKey === 'function' && typeof tourxEventName === 'function'){
+      // r3 fix 4: the row's city breaks a shared name ("Canadian Open" in a Toronto year → Canadian Open · Toronto)
+      var rk = sfEventKey(t.name, t.city) || (t.city ? sfEventKey(t.city) : null);
+      if(rk) name = tourxEventName(rk);
+    }
     var loaded = hasList(t);
     var md = (t.counts && t.counts.MD != null) ? t.counts.MD : null;
     var q  = (t.counts && t.counts.Q  != null) ? t.counts.Q  : null;
@@ -4012,8 +4025,10 @@ window.EntryListsTab = (function(){
       // one number, so the card and the head cannot disagree.
       var nAll = weekEventCount(activeWeek);
       // TEN-401 item 8: the empty state is a card (nested: --card + 1px --edge-6, radius 12).
+      // TEN-402 r4 fix 5: the title names the SELECTED week by its chip's range ("No lists loaded for 2–8 Nov") — the
+      // current week too (every chip is a range), never "this week" while another week is picked.
       body.innerHTML = banner + '<div class="el-empty">'
-        + '<div class="el-empty__t">No lists loaded for this week</div>'
+        + '<div class="el-empty__t">No lists loaded for ' + weekRangeHtml(activeWeek) + '</div>'
         + '<div class="el-empty__d">The ATP has ' + nAll + ' event' + (nAll===1?'':'s') + ' in the week of ' + weekRangeHtml(activeWeek) + '. Their acceptance lists are not in the build yet — once they are loaded they appear here, grouped by tier.</div>'
         + '</div>';
       renderFreshness();
@@ -5112,7 +5127,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'news') loadNews();
   if (tab === 'database') { if (window.DatabaseTab) window.DatabaseTab.init(); }
   if (tab === 'entry-lists') { showTournamentList(); tourxSetSection('entry'); }
-  if (tab === 'h2h') { if (window.H2HPage) window.H2HPage.ensureInit(); }
+  if (tab === 'h2h') { if (window.H2HPage) window.H2HPage.ensureInit(true); }   // a visit (TEN-402 R3 fix 1: retries a failed Database join)
   // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
   // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
   if (window.LiveTab) window.LiveTab.setActive(tab === 'live');
@@ -5371,7 +5386,9 @@ function apiStartMs(m){
 }
 function aContextLine(m, roundText){
   const t = isFinite(apiStartMs(m)) ? cardFmtStart(m, false) : '';
-  return [m.tour, roundText, t].filter(Boolean).join(' · ');
+  // TEN-402 r3 fix 1: the event's one name ("ATP Shanghai" → Shanghai Masters; an ATP 250 keeps its city: "Chengdu")
+  const ev = m.tour && typeof sfEventName === 'function' ? sfEventName(m.tour) : m.tour;
+  return [ev, roundText, t].filter(Boolean).join(' · ');
 }
 
 // TEN-8: the member's LOCAL calendar day of a real start instant, both as an
@@ -6752,7 +6769,7 @@ function buildTournamentFilters(){
         ? (isFinishedMatch(m) && matchDayBucket(m) === state.day)
         : (isUpcomingOrLive(m) && matchDayBucket(m) === state.day))
       .map(m => m.tour).filter(Boolean)
-  )].sort();
+  )].sort((a, b) => mxEventName(a).localeCompare(mxEventName(b)));   // TEN-402 r3: ordered by the printed name
   // Drop selections whose tournament isn't in the current day's set, else a stale name
   // would filter every card away with no chip left to clear it.
   for (const sel of state.tournaments) if (!tournaments.includes(sel)) state.tournaments.delete(sel);
@@ -6764,7 +6781,7 @@ function buildTournamentFilters(){
     const active = state.tournaments.has(t);
     // The × on a selected chip removes just that tournament; clicking anywhere
     // on the chip toggles it the same way. No selections at all = show every one.
-    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}" aria-pressed="${active}">${t}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
+    return `<button class="mx-chip${active ? ' active' : ''}" data-tournament="${t.replace(/"/g,'&quot;')}" aria-pressed="${active}">${mxEventName(t)}${active ? ' <span class="mx-chip-x" aria-hidden="true">×</span>' : ''}</button>`;
   }).join('');
 }
 
@@ -9367,7 +9384,7 @@ function mxFavStripHtml(list){
   const px = v => (v != null ? mxOddsTxt(v) : '—');
   const cards = fav.map(m => {
     const pr = _mcNowPair(m);
-    const meta = [m.tour || '', roundBadgeText(m.tournamentRound) || '', cardFmtStart(m, matchDayBucket(m) !== state.day) || ''].filter(Boolean).join(' · ');
+    const meta = [mxEventName(m.tour), roundBadgeText(m.tournamentRound) || '', cardFmtStart(m, matchDayBucket(m) !== state.day) || ''].filter(Boolean).join(' · ');   // TEN-407: the one event name
     return `<div class="mx-favcard" data-id="${psEsc(m.id)}">`
       + `<div class="mx-favcard__meta"><span class="mx-favcard__where">${meta}</span>`
       + `<button type="button" class="mx-favcard__star" data-fav="${psEsc(mxFavKey(m))}" title="Remove from favourites" aria-label="Remove from favourites">${mxFavStarSvg(13)}</button></div>`
@@ -9469,6 +9486,11 @@ function mxCompletedBiggestMove(list){
   });
   return bmv;
 }
+// TEN-402 r3 fix 3 (founder 2026-10-09, "one tournament name per event, site-wide"): the board PRINTS the event's one name —
+// "ATP Shanghai" → Shanghai Masters, "ATP Beijing" → China Open; an ATP 250 keeps its city ("ATP Chengdu" → Chengdu); a name
+// outside the registry prints cleaned. Display only: m.tour stays the data key everywhere it is read — the tournament
+// filter (state.tournaments / data-tournament), the Tournaments count, the weather index, the edge rail, every join.
+function mxEventName(tour){ return tour && typeof sfEventName === 'function' ? sfEventName(tour) : (tour || ''); }
 function renderMatches(){
   updateMatchesHeaderChrome();
   // Rebuild the day-scoped tournament chips AFTER the chrome snap so they key off the
@@ -9949,23 +9971,17 @@ function renderMatches(){
         // state in which a close exists at all.
         ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>Now</span><span>Move</span></span>`
         : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
-    // TEN-179 item 5 — tournament tier. The field EXISTS: m.venue.category, a curated
-    // static fact from bsp-pipeline.js TOURNAMENT_VENUE_HINTS ('Grand Slam' | 'ATP 1000' |
-    // 'ATP 500' | 'ATP 250' | 'ATP Finals' | 'Next Gen Finals'). The stored string is
-    // rendered verbatim — the mockup reads "Masters 1000" where our record says
-    // "ATP 1000", and renaming a stored value to match a mockup is the founder's call,
-    // not a build decision. Completed only, matching the export (the Upcoming mockup
-    // carries no tier). An unmapped tournament has no category: the suffix is omitted
-    // rather than dashed, because " · —" reads as a tier literally named "—".
-    const tierSuffix = (isCompleted && m.venue && m.venue.category)
-      ? ` · ${m.venue.category}` : '';
+    // TEN-407 (founder, TEN-403 2026-10-09 05:40Z): the card head prints the one official event
+    // name only — "Shanghai Masters", never "ATP Shanghai · ATP 1000". The level is its own field
+    // (m.venue.category), so it is not appended to the name; this retires the TEN-179 item 5
+    // Completed-only tier suffix.
     // TEN-403 (founder Shell refresh, part 5): the favourites star is the first item in every
     // UPCOMING card header (the reference's Completed cards carry none).
     const headHtml = `
       <div class="mc-head">
         ${isCompleted ? '' : mxFavStarHtml(m)}
         <span class="mc-surface ${m.surface}">${surfCap}</span>
-        <span class="mc-tourn">${m.tour}${tierSuffix}</span>
+        <span class="mc-tourn">${mxEventName(m.tour)}</span>
         ${roundBadge ? `<span class="mc-round">${roundBadge}</span>` : ''}
         ${termChip}
         ${rightMeta}
@@ -10058,7 +10074,7 @@ function renderMatches(){
     panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
-            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + mxEventName(bmv.tour) : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
           : empty('No market moves')) + `</div>`);
     panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>`
       + (upsetRows.length
@@ -10132,7 +10148,7 @@ function renderMatches(){
       + `<div class="mc-story__top"><span class="mc-story__lbl">Biggest market move</span><span class="mc-story__hint">${driftOn ? 'Showing open → now · biggest first' : 'Show open → now'}</span></div>`
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__open">${mxOddsTxt(bmv.o)}</span><span class="mc-story__arr">→</span><span class="mc-story__now">${mxOddsTxt(bmv.c)}</span><span class="mc-story__pct ${bmv.d.dir}">${bmv.d.text}</span></div>`
-            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
+            + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.v > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + mxEventName(bmv.tour) : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
           : `<div class="mc-story__empty">${bmvPairs ? 'No market moves' : 'No opening prices on file'}</div>`)   /* TEN-377 item 8: no provenance line */
       + `</div>`);
 
@@ -10173,7 +10189,7 @@ function renderMatches(){
     if (sp) {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div>`
         + `<div class="mc-story__move"><span class="mc-story__now">${mxOddsTxt(sp.price)}</span><span class="mc-story__name">${sp.name}</span></div>`
-        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}</div></div>`);
+        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + mxEventName(sp.tour) : ''}${sp.round ? ' ' + sp.round : ''}</div></div>`);
     } else {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div><div class="mc-story__empty">No prices yet</div></div>`);
     }
@@ -10198,7 +10214,7 @@ function renderMatches(){
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div>`
         + `<div class="mc-story__pair"><div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${mxOddsTxt(a1)}</span></div>`
         + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${mxOddsTxt(b1)}</span></div></div>`
-        + `<div class="mc-story__ctx">${[[m.tour || '', roundBadgeText(m.tournamentRound) || ''].filter(Boolean).join(' '), cardFmtStart(m, false) || ''].filter(Boolean).join(' · ')}</div></div>`);   /* TEN-403 reference (39b): "ATP Estoril R32 · 13:15"; no book (TEN-377 item 8) */
+        + `<div class="mc-story__ctx">${[[mxEventName(m.tour), roundBadgeText(m.tournamentRound) || ''].filter(Boolean).join(' '), cardFmtStart(m, false) || ''].filter(Boolean).join(' · ')}</div></div>`);   /* TEN-403 reference (39b): "ATP Estoril R32 · 13:15"; no book (TEN-377 item 8) */
     } else {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div><div class="mc-story__empty">No prices yet</div></div>`);
     }
@@ -12693,7 +12709,7 @@ function wxModel(m, entry, file, nowMs, forced, arch){
     : shift === 'base' ? wxFmt(P.atBase, { speed: speedTxt, label: spdLabel ? ' (' + spdLabel + ')' : '' }) + (on('wind') ? P.windAdds : '')
     : wxFmt(P.shifted, { speed: speedTxt, label: spdLabel, cause: shift === 'slower' ? P.causeSlower : P.causeQuicker, dir: shift === 'slower' ? P.dirSlower : P.dirQuicker })
       + (on('wind') ? P.windAdds : '');
-  const tourName = String((m && m.tour) || '').replace(/^ATP\s+/, '') || '—';
+  const tourName = (m && m.tour && typeof sfEventName === 'function' ? sfEventName(m.tour) : String((m && m.tour) || '').replace(/^ATP\s+/, '')) || '—';   // TEN-402 r3: the one event name (display)
   const pace = { id: 'pace', name: CP.names.pace, value: (unavail || speedTxt == null) ? '—' : speedTxt,
     sevL: (speedTxt == null || shift == null) ? '' : shift === 'base' ? P.base : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
 
@@ -13710,8 +13726,15 @@ const SF_EVENT_NAMES = {
 // Spellings TournamentIdentity does not fold onto a registry key (keyed by TournamentIdentity.identityKey).
 const SF_EVENT_ALIAS = { 'tour finals': 'Turin', 'atp finals': 'Turin', 'nitto atp finals': 'Turin', 'canada masters': 'Montreal',
   'queen s club': 'London', 's hertogenbosch': 'Hertogenbosch', 'next gen finals': 'Jeddah' };
+// TEN-402 r3 fix 2: a name outside the registry that reads right only WITH its "ATP" word. The cleaner strips "ATP " from
+// every feed name, so the ATP Cup (2020–2022; Zverev's 3–6 profile row) printed "Cup". Keyed by the cleaned name, lower
+// case. Display only: the row's data name stays "Cup".
+const SF_EVENT_LITERAL = { 'cup': 'ATP Cup' };
 let _sfEventIx = null;
-function sfEventKey(raw){
+// city (optional, r3 fix 4): the row's own city. Every shared spelling of an event two registry entries carry ("Canadian
+// Open", "National Bank Open", "Rogers Cup", "Canada Masters") reads back to ONE of them (Montreal); when the name's event
+// shares its official name with the city's own registry event (Montreal / Toronto = "Canadian Open"), the city's wins.
+function sfEventKey(raw, city){
   const TI = typeof window !== 'undefined' ? window.TournamentIdentity : null;
   const idk = TI && TI.identityKey ? TI.identityKey : (s => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
   if (!_sfEventIx) {
@@ -13725,11 +13748,16 @@ function sfEventKey(raw){
   if (!s) return null;
   const cands = [s];
   if (TI && TI.canonicalTournament) cands.push(TI.canonicalTournament(s).display);
-  for (const c of cands) { const hit = _sfEventIx[idk(c)]; if (hit) return hit; }
-  return null;
+  let hit = null;
+  for (const c of cands) { hit = _sfEventIx[idk(c)]; if (hit) break; }
+  if (!hit) return null;
+  const ck = city ? _sfEventIx[idk(ppCleanTournamentName(city))] : null;
+  if (ck && ck !== hit && SF_EVENT_NAMES[hit] && SF_EVENT_NAMES[ck] === SF_EVENT_NAMES[hit]) return ck;   // r3 fix 4: the row's city
+  return hit;
 }
 function sfEventName(raw){
   const k = sfEventKey(raw);
+  if (!k && SF_EVENT_LITERAL[fhTournClean(raw).toLowerCase()]) return SF_EVENT_LITERAL[fhTournClean(raw).toLowerCase()];   // r3: "Cup" → ATP Cup
   return k ? (SF_EVENT_NAMES[k] || k) : fhTournClean(raw);
 }
 // Tournament code for the hot-line column headers (export TCODE / SHORT maps).
@@ -15068,7 +15096,7 @@ function fhSheetHeadHtml(e, r, opts){
   const yy = String(r.date || '').slice(2, 4);
   const longDate = d => { const t = new Date(String(d).slice(0, 10) + 'T12:00:00Z'); return isNaN(t) ? null : t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); };
   const dateTxt = !r.date ? null : o.inline ? longDate(r.date) : e.noYear ? fhDDMM(r.date) : fhDDMM(r.date) + (yy ? '.' + yy : '');
-  const meta = [r.tourn, r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt].filter(x => x != null && x !== '').join(' · ');   // DF L4859: four parts, a dash where one is missing
+  const meta = [r.tourn && (typeof sfEventName === 'function' ? sfEventName(r.tourn) : r.tourn), r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt].filter(x => x != null && x !== '').join(' · ');   // DF L4859: four parts, a dash where one is missing
   const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--inner); border:1px solid var(--edge-10); border-radius:8px; width:30px; height:30px; color:var(--text-soft); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
   return `<div style="display:flex; flex-direction:column; gap:18px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
@@ -16266,6 +16294,10 @@ function trRoundWords(m){
   return /^1\/\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;
 }
 function trClean(m){ return String((m && m.tour) || 'Tournament').replace(/^(ATP|WTA|Challenger)\s+/i, '').trim() || 'Tournament'; }
+// TEN-402 r3 fix 1 (founder 2026-10-09, "one tournament name per event, site-wide"): the PRINTED event name on the Tournament
+// tab and Key factors' Tournament card — sfEventName ("ATP Shanghai" → Shanghai Masters; an ATP 250 keeps its city). trClean
+// stays the DATA name: the hold-rate lookup (event-hold.json byName), the catalog match, the career-history join names.
+function trName(m){ const c = trClean(m); return c !== 'Tournament' && typeof sfEventName === 'function' ? sfEventName(c) : c; }
 // TEN-321 (founder 2026-09-29): Roland Garros's court-conditions key misses the feed's "French Open" — its speed cells are
 // dashed with a note until the key lands; every other event dashes only where the sheet holds no row.
 function trIsRG(m){ return /french open|roland garros/i.test(String((m && m.tour) || '')); }
@@ -16293,7 +16325,7 @@ function trHoldOf(m){
   return { state: 'ok', pct: 100 * e.held / e.games, held: e.held, n: e.games, matches: e.matches, years: e.years || [] };
 }
 function trHoldTip(m, H){
-  const ev = trClean(m);
+  const ev = trName(m);   // r3 fix 1: the printed name
   if (H.state === 'loading') return 'Loading the event hold rate…';
   if (H.state === 'failed') return 'The event hold rate did not load, so it is not shown.';
   if (H.state === 'none') return `No box score on file for ${ev}, so no hold rate is shown.`;
@@ -16310,23 +16342,27 @@ function trHoldHtml(m, cls){
     fhEsc(trHoldTip(m, H)), { wrap: 260, start: true });
 }
 
-// Lazy, per player, when the tab opens: career-history (set scores) + match-closes (prices). A failed load is not cached
-// and reads as unknown — never "0 priced".
+// Lazy, per player, when the tab opens: career-history (set scores, the join's match store). A failed load is not cached
+// and reads as unknown — never "0 priced". TEN-402 r2 (founder card 7bc622d5, 2026-10-09: "same join"): the prices are
+// the ONE Database join (sfDbJoinLoad — one load per session, shared with the player profile and the Head to Head page),
+// never the closes shard. Each load paints when it lands, so the rows show before the Database rows answer (the Backing
+// tile reads "loading prices" and the price cells stay empty until then).
 function trLoad(m){
   const E = trStateFor(m);
-  const loads = [];
+  const loads = [], paint = () => { if (_tr === E) trRender(); };
   [[m.p1Key, m.p1TournamentHistory, 0], [m.p2Key, m.p2TournamentHistory, 1]].forEach(([key, hist, i]) => {
     if (E.state[i] === 'ready' || E.state[i] === 'loading') return;
     if (key == null || !hist){ E.state[i] = 'ready'; E.data[i] = { ch: null, cl: null }; return; }   // nothing to join
     E.state[i] = 'loading';
-    loads.push(Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch, cl]) => {
+    loads.push(Promise.resolve(loadCareerHistory(key)).then(ch => {
       if (_tr !== E) return;
-      const ok = String(key) in _careerHistoryShards && String(key) in _fhCl;
-      E.state[i] = ok ? 'ready' : 'failed'; E.data[i] = ok ? { ch, cl } : null;
-    }).catch(() => { if (_tr === E){ E.state[i] = 'failed'; E.data[i] = null; } }));
+      const ok = String(key) in _careerHistoryShards;
+      E.state[i] = ok ? 'ready' : 'failed'; E.data[i] = ok ? { ch: ch || _careerHistoryShards[String(key)] || [], cl: null } : null;
+    }).catch(() => { if (_tr === E){ E.state[i] = 'failed'; E.data[i] = null; } }).then(paint));
   });
+  if (_sfDbJoinSt !== 'ready') loads.push(sfDbJoinLoad().catch(() => null).then(paint));
   loads.push(tourxFetchMarket(), trHoldLoad());
-  return Promise.all(loads).then(() => { if (_tr === E) trRender(); });
+  return Promise.all(loads).then(paint);
 }
 function trRender(){
   const E = _tr; if (!E || !aBuilt(E.m, 'tournament')) return;
@@ -16340,10 +16376,10 @@ function trSet(patch){ if (!_tr) return; Object.assign(_tr.S, patch); trRender()
 function trToggleMore(i){ if (!_tr) return; _tr.S.recMore[i] = !_tr.S.recMore[i]; trRender(); }
 
 // One pipeline history match → a normalised row. Joined to his career-history row by event key: set scores, retirement,
-// best-of — then priced through the Form/H2H rule (meRowFromCareer). Unjoined: the history's own fields, the closes
-// still tried on date + opponent, set scores a dash.
+// best-of (meRowFromCareer). Unjoined: the history's own fields, set scores a dash. Prices are never set here: the model's
+// caller prices every row on the one Database join (trModelOf's d.px = trDbJoinPx; TEN-402) — no closes shard.
 function trRowOf(x, season, d, key, name, idx, tourn, names){
-  const ch = (d && d.ch) || [], cl = d && d.cl;
+  const ch = (d && d.ch) || [], cl = null;
   let ci = x.eventKey != null ? ch.findIndex(c => c && c.eventKey != null && String(c.eventKey) === String(x.eventKey)) : -1;
   // Older editions reach the history with no event key and no date: joined on season + opponent + result, main draw, not a
   // team event — accepted only when exactly one career row qualifies (never a guess between two).
@@ -16358,19 +16394,18 @@ function trRowOf(x, season, d, key, name, idx, tourn, names){
     if (hits.length === 1) ci = hits[0];
   }
   let r;
-  if (ci >= 0) r = meRowFromCareer(ch[ci], cl, String(key), name, ci);
+  // the joined career row's own date is what the Database join meets (its step 2: the career match), not the history's
+  // match day — a start-dated career row (pre-2021) sits up to a week before it (TEN-402 r2: Zverev, Shanghai 2019 F/SF/QF)
+  if (ci >= 0){ r = meRowFromCareer(ch[ci], cl, String(key), name, ci); r.chDate = ch[ci].date || null; }
   else {
     r = { mid: fhSafeId('tr' + key + '_' + idx + '_' + (x.eventKey != null ? x.eventKey : x.date)), date: x.date, opp: x.opponent,
       oppKey: null, won: !!x.won, result: x.result, sets: null, ret: false, wo: false, round: fhRoundCode(x.round, false),
       ek: x.eventKey != null ? x.eventKey : null, selfKey: String(key), selfName: name, price: null, oppPrice: null, book: null, src: null };
     fhFinishRow(r);
-    const c = fhCloseFor(cl, r.date, r.opp, r.won, null, r.ek);
-    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
   }
   // The history carries no walkovers (buildTournamentHistory drops them, TEN-313): a row fhFinishRow read as one (no set,
-  // "0 - 0") is a match stopped in the first set — a retirement, a match played, settled at the close (TEN-325).
-  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true; r.complete = false; r.pS = r.pS || 0; r.oS = r.oS || 0;
-    if (r.price == null){ const c = fhCloseFor(cl, x.date || r.date, x.opponent, !!x.won, null, x.eventKey); if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; } } }
+  // "0 - 0") is a match stopped in the first set — a retirement, a match played, settled on the ATP result (TEN-325).
+  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true; r.complete = false; r.pS = r.pS || 0; r.oS = r.oS || 0; }
   r.round = fhRoundCode(x.round, false);   // the history's main-draw round (N7)
   if (tourn) r.tourn = (typeof sfEventName === 'function' ? sfEventName(tourn) : tourn) + ' ' + season;   // the sheet's meta line names the edition (DF L2609: "Washington 2025"; r1 fix 2: the one event name)
   r.won = !!x.won; r.date = x.date || r.date || null;
@@ -16378,16 +16413,30 @@ function trRowOf(x, season, d, key, name, idx, tourn, names){
   return r;
 }
 // One player's record at this event: editions newest first, each with its rows and result label, and the five tiles.
+// TEN-402 r2 (founder card 7bc622d5, 2026-10-09: "Match analysis → Tournament tab … same join"): every price on the tab —
+// the rows' H / A, the B marks, Backing units, "vs market" — is the ONE Database join the player profile and the Head to
+// Head Tournament card read (trDbJoinPx → H2HPage.priceJoin over DatabaseTab.priceRows(), retirements settled on the
+// official ATP result), over the tab's own population (the pipeline history of this event, the current edition included).
+// A match the archive does not hold (after its last date, 13 Sep 2026 at the ruling) is "—". The state: the career-history
+// state, then the Database rows' ('loading' until they answer, 'failed' → "prices unavailable").
 function trModelFor(m, i){
   const E = _tr, key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1;
   const hist = i ? m.p2TournamentHistory : m.p1TournamentHistory;
   const clean = trClean(m), mk = trMarketFor(trKeyOf(m));
-  return trModelOf(hist, E && E.data[i], key, name, clean, [clean].concat(trArchiveNames(mk)), String(m.date || '').slice(0, 4),
-    E ? E.state[i] : 'idle');
+  const d = E && E.data[i], ch = (d && d.ch) || (key != null && _careerHistoryShards[String(key)]) || [];
+  const st = !E ? 'idle' : E.state[i] !== 'ready' ? E.state[i] : _sfDbJoinSt === 'ready' ? 'ready' : _sfDbJoinSt === 'failed' ? 'failed' : 'loading';
+  const P = trModelOf(hist, Object.assign({}, d, { ch: (d && d.ch) || null, cl: null, px: trDbJoinPx(name, ch) }), key, name, clean, [clean].concat(trArchiveNames(mk)),
+    String(m.date || '').slice(0, 4), st);
+  // a price cell claims nothing while the Database rows load (empty, never "—"); an unpriced match after the archive's last
+  // date says so (the live edition: TEN-406 adds the captured closes after it to the archive, same rule)
+  const end = trDbEnd();
+  P.dbEnd = end;
+  P.all.forEach(r => { r.pxPend = st === 'loading' || st === 'idle'; r.pxAfter = !!(end && r.price == null && r.date && String(r.date).slice(0, 10) > end); });
+  return P;
 }
 // The model over any history in the pipeline's shape ({ years: [{ year, won, lost, roundReached, matches }] }), joined to one
-// player's career-history rows and closes (d = { ch, cl }). The Tournament tab and the player-profile per-event Backing
-// (trProfileBacking, founder Q8) both read it: one row source, one Backing.
+// player's career-history rows (d = { ch, px }; d.px prices the rows on the one Database join). The Tournament tab and the
+// player-profile per-event Backing (trProfileBacking) both read it: one row model, one join, one Backing.
 function trModelOf(hist, d, key, name, clean, names, mYear, state){
   // N6: only editions entered — a pre-TEN-320 store's synthesised gap year (`withdrew`) never shows
   const years = trEditionsOf(hist);
@@ -16417,8 +16466,8 @@ function trModelOf(hist, d, key, name, clean, names, mYear, state){
   eds.forEach(e => e.rows.forEach(r => { if (r.pS != null && !r.wo){ sW += r.pS; sT += r.pS + r.oS; } }));   // finished sets only (rule e)
   const played = eds.filter(e => e.rows.length);
   const all = eds.flatMap(e => e.rows);
-  // TEN-402 (founder 2026-10-08): a caller may price the rows on another join before the tiles are struck — the
-  // profile / Head to Head per-event model passes the Database join (trProfileModel); the Match analysis tab passes none.
+  // TEN-402 (founder 2026-10-08 + 2026-10-09): the caller prices the rows before the tiles are struck — the profile / Head
+  // to Head per-event model (trProfileModel) and the Match analysis tab (trModelFor) both pass the Database join (trDbJoinPx).
   if (d && typeof d.px === 'function') d.px(all);
   const core = window.MarketEdgeCore;
   const priced = core ? all.filter(core.inWinner) : [];
@@ -16440,15 +16489,15 @@ function trLastPlayed(P){
   return best ? { year: String(best.year), row: best.rows[0] } : null;
 }
 
-// The player-profile per-event Backing (founder Q8, 2026-09-30): the Tournament tab's row-level join — each edition's
-// matches joined to the career-history row and the closes shard, R8 book order, retirements settled at the close
-// (trModelOf) — instead of the market-edge shard's own attribution. `t` = one profile tournamentHistory entry (the
+// The player-profile per-event Backing (founder Q8, 2026-09-30; on the Database join since 2026-10-08): the Tournament
+// tab's row model — each edition's matches joined to the career-history row, priced on the one Database join, retirements
+// settled on the ATP result (trModelOf) — instead of the market-edge shard's own attribution. `t` = one profile tournamentHistory entry (the
 // tournament-history/{key}.json shape: no event key, no date); main draw only (N7) and walkovers out (N2), as the tab's
 // history is. Each profile row is first resolved to ITS career-history row — season + opponent + result + this event
 // (its names, the archive names, and the career-history names this player's unambiguous rows vote for it), a round
 // breaking a tie — and handed on with that row's event key and date, so trModelOf joins and prices it exactly as the tab
 // does. A row with no single career-history row stays unpriced, never guessed. Returns null until the player's
-// career-history and closes have answered ("loading prices"), { failed: true } after a failed load ("prices unavailable").
+// career-history and the Database rows have answered ("loading prices"), { failed: true } after a failed load ("prices unavailable").
 const _trProfileFail = new Set(), _trProfileMemo = new Map();
 function trProfileAliases(k, ch){
   // TEN-402 (2026-10-08): the player's event list from wherever it landed — the profile record, else the tournament-history
@@ -16487,12 +16536,25 @@ function sfDbJoinLoad(){
     .catch(e => { _sfDbJoinSt = 'failed'; _sfDbJoinP = null; throw e; });   // retried on the next open
   return _sfDbJoinP;
 }
+// TEN-402 R3 fix 3 · a match dated after the Database archive's last match (the live edition) has no closing price on
+// record yet: ONE reason, worded once (trPxAfterTitle), shown on hover by every surface that prints such a row's "—" —
+// the Match analysis Tournament tab and the player profile's Record per tournament rows (window.trPxAfterOf).
+// The Database archive's last match day (database-yield.json meta.dateRange[1], ISO), or null before the rows answer.
+function trDbEnd(){ const r = _sfDbJoin && _sfDbJoin.meta && _sfDbJoin.meta.dateRange; return Array.isArray(r) && r[1] ? String(r[1]).slice(0, 10) : null; }
+function trDayWords(iso){ const p = String(iso || '').split('-'); return p.length === 3 ? (+p[2]) + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+p[1] - 1] + ' ' + p[0] : ''; }
+function trPxAfterTitle(){ return 'After the Database archive’s last match (' + trDayWords(trDbEnd()) + '): no closing price on record yet'; }
+// A row's date (ISO) → the reason when the join has answered and the date is after its last match; else null.
+function trPxAfterOf(date){
+  const end = trDbEnd();   // null until the join has answered (_sfDbJoin)
+  return end && date && String(date).slice(0, 10) > end ? trPxAfterTitle() : null;
+}
+window.trPxAfterOf = trPxAfterOf;
 // Prices model rows in place on the Database join (A = the player, each row's own opponent, his career-history rows
 // for the nearest-first match step). A row the join does not hold is unpriced ("—"), never a closes price.
 function trDbJoinPx(name, ch){
   return all => {
     const J = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.priceJoin;
-    const js = all.map(r => ({ date: r.date, won: r.won, round: r.round, opp: r.opp }));
+    const js = all.map(r => ({ date: r.chDate || r.date, won: r.won, round: r.round, opp: r.opp }));   // a joined row: its career date
     if (typeof J === 'function' && _sfDbJoin) J(js, { full: name }, null, _sfDbJoin, null, ch);
     all.forEach((r, j) => { const x = js[j], ok = x.price != null;
       r.price = ok ? x.price : null; r.oppPrice = ok ? x.oppPrice : null; r.book = ok ? x.book : null; r.src = ok ? 'td' : null; });
@@ -16505,7 +16567,9 @@ function trProfileModel(key, name, t){
   const k = String(key == null ? '' : key);
   if (!k || !t) return null;
   if (_trProfileFail.has(k) || _sfDbJoinSt === 'failed') return { failed: true };
-  if (_sfDbJoinSt == null) sfDbJoinLoad().catch(() => {});
+  // TEN-402 R2 (founder card 7bc622d5): reading the model never STARTS the join's fetch — a render must not pull
+  // ~410 KB gz before the profile shows. The profile asks for it after its first paint / on opening Record per
+  // tournament (pp2DbJoinNeed); the Head to Head page through h2hEnsureDb. Not asked yet = pending (null), like loading.
   if (!(k in _careerHistoryShards) || _sfDbJoinSt !== 'ready') return null;
   const ch = _careerHistoryShards[k] || [];
   const clean = String(t.name || '');
@@ -16603,7 +16667,10 @@ function trTilesHtml(P){
     const sub = vmTxt ? `<span class="ma-rate" data-ma-gate="${g}"${g === 'small' ? ` title="${MA_SMALL_NOTE} · n=${np}"` : ''} style="${g === 'small' ? 'color:' + MA_GREY + ';' : ''}">${vmTxt}</span>`
       : (np ? np + ' priced' : 'none priced');
     const nb = P.priced.filter(r => r.book === 'B').length;
-    const tip = `<span style="${TR_MONO} font-size:11px; line-height:1.5;">${np} of ${P.all.length} matches priced${np ? ' · flat 1u at the closing price, Pinnacle' + (nb ? ', Bet365 where missing (' + nb + ')' : '') : ' (no Pinnacle or Bet365 close on record)'}.`
+    // TEN-402 r2: the one Database join (the profile's and Head to Head's); matches after the archive's last date say so
+    const nAfter = P.all.filter(r => r.pxAfter).length;
+    const tip = `<span style="${TR_MONO} font-size:11px; line-height:1.5;">${np} of ${P.all.length} matches priced${np ? ' · flat 1u at the closing price, Pinnacle' + (nb ? ', Bet365 where missing (' + nb + ')' : '') : ' (no Pinnacle or Bet365 close on record)'}, from the Database archive.`
+      + (nAfter ? ` ${nAfter} after its last match (${trDayWords(P.dbEnd)}) not priced yet.` : '')
       + (np >= TR_VS_MKT_MIN ? ' vs market = win rate minus the market’s de-vigged implied win rate.' : ' vs market needs 5 priced matches.')
       + ` <span data-ret-note="tournament">${fhEsc(core ? core.RET_SETTLE_NOTE : '')}</span></span>`;
     back = trTileHtml('Backing', np ? meSg(P.units, 1, 'u') : '—', uC, sub, { tip, attrs: ' data-tr="backing"' });
@@ -16617,18 +16684,26 @@ function trSrcLine(cardsHtml){
   const nb = (String(cardsHtml || '').match(/class="ma-row-mark"[^>]*>B</g) || []).length;
   return nb ? `<div class="tr-srcline" style="margin-top:14px; text-align:center; ${FH_MONO} font-size:10.5px; color:var(--text-label);">Closing odds · Pinnacle, Bet365 where missing (${nb}) · B = Bet365</div>` : '';
 }
+function trPxTitle(r){
+  if (r.pxPend) return 'Loading prices';
+  if (r.pxAfter) return trPxAfterTitle();   // the one wording (profile rows use it too)
+  return fhSrcTitle(r);
+}
 function trRowData(r){
   // the opponent as the history names him (DF L315: "A. Cazaux", initial first — not the H2H list's surname-first order)
+  // TEN-402 r4 fix 3: Sets = "pS–oS" (en dash, no spaces; the cell is nowrap) on every surface these rows feed — the
+  // Head to Head Tournament ledger and the Match analysis Tournament tab.
   return { date: fhDDMM(r.date) + '.', won: r.wo ? null : r.won, opp: r.opp || FH_DASHC, rd: r.round,
-    sets: r.wo || r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,
+    sets: r.wo || r.pS == null ? FH_DASHC : r.pS + '–' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,
     scores: fhH2hSetScores(r), scoresTitle: r.sets ? fhH2hSetScores(r) : 'No set scores on record for this match',
-    h: r.price == null ? FH_DASHC : fhOdd(r.price), a: r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
-    hTitle: fhSrcTitle(r), aTitle: fhSrcTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
+    // TEN-402 r2: the one Database join's price; empty while it loads (claims nothing), "—" when it holds none
+    h: r.pxPend ? '' : r.price == null ? FH_DASHC : fhOdd(r.price), a: r.pxPend ? '' : r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
+    hTitle: trPxTitle(r), aTitle: trPxTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
     cls: 'tr-row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
     selected: !!(_fh && _fh.sheet === r.mid) };
 }
 function trPlayerCardHtml(m, P, i){
-  const S = _tr.S, clean = trClean(m);
+  const S = _tr.S, clean = trName(m);   // r3 fix 1: edition headers + the empty line print the one name
   const F = fhStateFor(m);
   const all = !!S.recMore[i];
   const shown = all ? P.eds : P.eds.slice(0, TR_LIM);
@@ -16655,7 +16730,7 @@ function trPlayerCardHtml(m, P, i){
 // The header card (DF L217–232): tile + name + location + surface, the meta cells. The reading paragraph (DF L231) is
 // dropped (founder Q11): no node and no space for it.
 function trHeaderHtml(m){
-  const clean = trClean(m), cs = m.courtSpeed, surf = fhSurfName(m.surface) || 'Hard';
+  const clean = trName(m), cs = m.courtSpeed, surf = fhSurfName(m.surface) || 'Hard';   // r3 fix 1: title + tile = the one name; the location line stays the venue
   const location = m.venue ? [m.venue.city, m.venue.country].filter(Boolean).join(', ') : '';
   const round = trRoundWords(m);
   const t3 = 'var(--text-label)';
@@ -16775,7 +16850,7 @@ function trRenderRoi(){
   if (!E.S.roi || !mkt || !mkt.archiveNames || !mkt.archiveNames.length){ host.innerHTML = ''; return; }
   if (host.querySelector('[data-db-root="tr-roi"]') && host.dataset.side === E.S.roi) return;   // already mounted
   host.dataset.side = E.S.roi;
-  const clean = trClean(E.m);
+  const clean = trName(E.m);   // r3 fix 1
   host.innerHTML = `<div class="ma-pop-overlay ma-fade ma-theme" onclick="if(event.target===this){trSet({roi:false})}" style="position:fixed; inset:0 0 0 var(--sf-side, 0px); z-index:200; background:var(--backdrop); backdrop-filter:blur(3px); display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:34px 22px 60px;">
       <div role="dialog" aria-modal="true" aria-label="${fhEsc(clean)} · favourites and underdogs" style="width:100%; max-width:1180px; background:var(--page); border:1px solid var(--edge-10); border-radius:16px; overflow:hidden; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
         <div style="display:flex; align-items:baseline; gap:14px; padding:18px 22px; border-bottom:1px solid var(--line);">
@@ -16792,11 +16867,11 @@ function trRenderRoi(){
     </div>`;
   const root = host.querySelector('[data-db-root="tr-roi"]');
   if (root && window.DatabaseTab && window.DatabaseTab.mount)
-    window.DatabaseTab.mount(root, { hideHeader: true, lockSubject: true, initialTournamentNames: mkt.archiveNames, initialTournamentFilter: mkt.archiveFilter || null, initialTournamentLabel: key, side: E.S.roi });
+    window.DatabaseTab.mount(root, { hideHeader: true, lockSubject: true, initialTournamentNames: mkt.archiveNames, initialTournamentFilter: mkt.archiveFilter || null, initialTournamentLabel: typeof tourxEventName === 'function' ? tourxEventName(key) : key, side: E.S.roi });   // r3 fix 1: the chip's words; the join reads archiveNames
 }
 function buildTournamentSection(m){
   const E = trStateFor(m), S = E.S;
-  const clean = trClean(m);
+  const clean = trName(m);   // r3 fix 1: "Record at Shanghai Masters"
   const P = [trModelFor(m, 0), trModelFor(m, 1)];
   const t3 = 'var(--text-label)', t4 = 'var(--text-label)';
   const toggle = `<div style="display:flex; justify-content:center; margin-top:14px;"><span class="seg tr-more-toggle" onclick="trSet({more:${!S.more}})" style="display:inline-flex; align-items:center; gap:8px; padding:6px 4px; font-size:12.5px; font-weight:600; color:var(--text); cursor:pointer;">${S.more ? 'Hide court speed &amp; market' : 'Show court speed &amp; market'}<svg width="10" height="10" viewBox="0 0 10 10" style="transform:${S.more ? 'rotate(180deg)' : 'none'};"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg></span></div>`;
@@ -18350,7 +18425,7 @@ function kfTourCard(m){
     if (!hist) return `<span class="kf-tour-note">${words('first appearance')}</span>`;
     if (!t.n) return `<span class="kf-tour-note">${words('no main-draw match')}</span>`;
     const ed = t.eds.length;
-    return `<span class="kf-tour-rec" tabindex="0" data-aotip="${escapeHtml(fhEsc(`${t.W}–${t.L} in ${t.n} main-draw ${t.n === 1 ? 'match' : 'matches'} over ${ed} ${ed === 1 ? 'edition' : 'editions'} at ${clean}, walkovers excluded.`))}">${t.W}–${t.L}</span>`;
+    return `<span class="kf-tour-rec" tabindex="0" data-aotip="${escapeHtml(fhEsc(`${t.W}–${t.L} in ${t.n} main-draw ${t.n === 1 ? 'match' : 'matches'} over ${ed} ${ed === 1 ? 'edition' : 'editions'} at ${trName(m)}, walkovers excluded.`))}">${t.W}–${t.L}</span>`;
   };
   const best = (t, right) => {
     if (!t.best) return `<span style="color:${C.t3};">${FH_DASHC}</span>`;
@@ -18364,7 +18439,7 @@ function kfTourCard(m){
       ${recRow('W–L', wl(T[0], m.p1TournamentHistory), wl(T[1], m.p2TournamentHistory))}${recRow('Best', best(T[0], false), best(T[1], true))}${recRow('Sets', sets(T[0]), sets(T[1]), true)}
     </div>`;
   return kfCard('tournament', `${kfHead('Tournament', rd ? fhEsc(rd) : '')}
-    <div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="kf-tour-title" style="font-size:13.5px; font-weight:700; color:${C.text}; ${KF_ONE}">${fhEsc(tier ? `${clean} · ${tier}` : clean)}</span><span class="kf-tour-sub" style="font-size:11.5px; color:${C.t3};">${surf ? fhEsc(surf) + ' · ' : ''}hold ${trHoldHtml(m, 'kf-hold')}</span></div>
+    <div style="display:flex; flex-direction:column; gap:2px; min-width:0;"><span class="kf-tour-title" style="font-size:13.5px; font-weight:700; color:${C.text}; ${KF_ONE}">${fhEsc(tier ? `${trName(m)} · ${tier}` : trName(m))}</span><span class="kf-tour-sub" style="font-size:11.5px; color:${C.t3};">${surf ? fhEsc(surf) + ' · ' : ''}hold ${trHoldHtml(m, 'kf-hold')}</span></div>
     ${gauge}${tiles}${table}`);
 }
 
@@ -22461,7 +22536,7 @@ window.pp2NextMatchFor = function(key){
     else if (key0 === tomorrow) day = 'Tomorrow';
     else { const d = new Date(key0 + 'T12:00:00Z'); day = d.toLocaleDateString('en-GB', { weekday: 'short', timeZone: 'UTC' }) + ' ' + d.getUTCDate(); }
   }
-  const event = String(m.tour || '').replace(/^ATP\s+/, '').trim();
+  const event = (m.tour && typeof sfEventName === 'function' ? sfEventName(m.tour) : String(m.tour || '').replace(/^ATP\s+/, '')).trim();   // TEN-407: the one event name
   const rd = m.tournamentRound ? roundBadgeText(m.tournamentRound) : null;
   const where = [event, rd].filter(Boolean).join(' ');
   return { label: [day, where].filter(Boolean).join(' · ') || null, opponent: (best.side === 1 ? m.p2 : m.p1) || null,
@@ -22688,15 +22763,43 @@ function loadPp2SpeedMap(key){
 // (tourxFetchMarket) — besides career-history (loadPp2CareerHistory). Repaints when they land; until then the column dashes.
 // TEN-402 (founder 2026-10-08): the per-event Backing and its rows' prices are the Database join (sfDbJoinLoad), not the
 // closes shard; the closes still load for the other profile surfaces that read them (pp2CareerClose).
+// TEN-402 R2 (founder card 7bc622d5, 2026-10-09): the Database join is NOT one of these click-time loads — see
+// pp2DbJoinAfterPaint below.
 function loadPp2Closes(key){
   const k = String(key);
-  return Promise.all([loadCareerHistory(k), fhLoadCloses(k), tourxFetchMarket(), sfDbJoinLoad()].map(p => Promise.resolve(p).catch(() => null)))
+  return Promise.all([loadCareerHistory(k), fhLoadCloses(k), tourxFetchMarket()].map(p => Promise.resolve(p).catch(() => null)))
     .then(() => {
       // career-history answered → the join runs (the Database rows' own failure is sfDbJoinLoad's state); else
       // "prices unavailable" (retried on the next profile open)
       if (k in _careerHistoryShards) _trProfileFail.delete(k); else _trProfileFail.add(k);
       pp2RepaintIfOpen(k);
     });
+}
+// TEN-402 R2 · THE DATABASE JOIN LOADS AFTER THE PROFILE SHOWS (founder card 7bc622d5, 2026-10-09: "load it only when
+// Record per tournament / Backing is opened (or after first paint), not before the profile shows. Cache it for the
+// session."). database-yield.json + database-yield-players.json (~410 KB gz) are requested by exactly two profile
+// triggers: (1) the first idle moment after the profile's first paint (pp2MountNow → pp2DbJoinAfterPaint), because the
+// Record per tournament tile is on screen by default and must fill without a click; (2) opening Record per tournament
+// or one of its events (the module calls window.pp2DbJoinNeed), so a click before idle, or after a failed load,
+// asks at once. Until the join lands every Backing figure is pending (blank, "loading prices"), never 0 and never a
+// closes price; a failed load reads "—" / "prices unavailable" and the next open (profile or modal) retries.
+// One fetch per session: sfDbJoinLoad keeps its promise, and DatabaseTab's loadBase / loadNames keep theirs, so the
+// Database page and the Head to Head page (h2hEnsureDb) read the same rows.
+function pp2DbJoinNeed(key){
+  if (_sfDbJoinSt === 'ready' || _sfDbJoinSt === 'loading') return false;
+  const k = String(key == null ? ppState.key : key);
+  const p = sfDbJoinLoad();
+  pp2RepaintIfOpen(k);   // a failed join's "—" turns back to pending while the retry is in flight
+  p.then(() => pp2RepaintIfOpen(k), () => pp2RepaintIfOpen(k));
+  return true;
+}
+window.pp2DbJoinNeed = pp2DbJoinNeed;
+function pp2DbJoinAfterPaint(key){
+  const k = String(key);
+  const go = () => { if (ppState.key === k) pp2DbJoinNeed(k); };   // the reader left before idle → the next open asks
+  const idle = () => (typeof requestIdleCallback === 'function' ? requestIdleCallback(go, { timeout: 1000 }) : setTimeout(go, 0));
+  // two frames: the first paint has been presented before the fetch is issued
+  requestAnimationFrame(() => requestAnimationFrame(idle));
 }
 // TEN-384 fx6 item 6 (founder r2): the profile's display price for a career row its Market edge shard does not
 // price = the price every other surface reads for that match — the Match analysis join (meRowFromCareer over
@@ -22782,6 +22885,7 @@ function pp2MountNow(key){
   pp2Bridge();
   if (!window.PlayerProfileV2.mount(view, key)) return false;
   window.scrollTo(0, 0);
+  pp2DbJoinAfterPaint(key);   // TEN-402 R2: the Database join is requested only after this paint
   return true;
 }
 function showPlayerProfile(key){
@@ -24904,9 +25008,9 @@ function pgModel(m){
   const facing = fi >= 0 ? label(fi) : null, n = played.length;
   const base = { tourn, aS, bS, n, facing };
   if (!n) return Object.assign(base, { isEmpty: true,
-    sub: 'First round · neither player has a match at ' + tourn + ' yet',
+    sub: 'First round · neither player has a match at ' + (typeof sfEventName === 'function' ? sfEventName(tourn) : tourn) + ' yet',
     emptyTitle: 'No progression yet',
-    emptyBody: 'This is both players’ first match at ' + tourn + '. Round-by-round stats start once they have played a round here; the next match will show this one.' });
+    emptyBody: 'This is both players’ first match at ' + (typeof sfEventName === 'function' ? sfEventName(tourn) : tourn) + '. Round-by-round stats start once they have played a round here; the next match will show this one.' });
   const labels = played.map(label);
   const byeOk = !t || progressionByesCredible(t);
   // Road: one cell per played round. Both players reached this match, so a round with no row is a bye or a hole in our
@@ -24987,7 +25091,7 @@ function buildMatchProgressionSection(m){
   const P = pgModel(m);
   const head = `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:16px;">
       <div style="display:flex; flex-direction:column; gap:6px;">
-        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;"><span style="font-size:20px; font-weight:800; letter-spacing:-0.01em;">Tournament progression</span><span style="font-size:20px; font-weight:600; color:var(--text-label);">${fhEsc(P.tourn)}</span></div>
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;"><span style="font-size:20px; font-weight:800; letter-spacing:-0.01em;">Tournament progression</span><span style="font-size:20px; font-weight:600; color:var(--text-label);">${fhEsc(typeof sfEventName === 'function' ? sfEventName(P.tourn) : P.tourn)}</span></div>
         <span style="font-size:12.5px; color:var(--text-label);">${fhEsc(P.sub)}</span>
       </div>
     </div>`;
@@ -25120,7 +25224,7 @@ function buildMatchProgressionSection(m){
     };
     const fCell = (x, i) => {
       const F = pgDrawFig(x, mt);
-      const tip = mt.noDraw ? PG_DRAW_PRESSURE_TIP : !P.draw ? PG_NO_DRAW : x && x.n ? 'Mean of the ' + x.n + ' player' + (x.n === 1 ? '' : 's') + ' who played ' + P.labels[i] + ' at ' + P.tourn + (F.small ? ' · ' + MA_SMALL_NOTE : '') : 'No box scores for ' + P.labels[i] + ' at ' + P.tourn;
+      const tip = mt.noDraw ? PG_DRAW_PRESSURE_TIP : !P.draw ? PG_NO_DRAW : x && x.n ? 'Mean of the ' + x.n + ' player' + (x.n === 1 ? '' : 's') + ' who played ' + P.labels[i] + ' at ' + (typeof sfEventName === 'function' ? sfEventName(P.tourn) : P.tourn) + (F.small ? ' · ' + MA_SMALL_NOTE : '') : 'No box scores for ' + P.labels[i] + ' at ' + (typeof sfEventName === 'function' ? sfEventName(P.tourn) : P.tourn);
       if (F.small) anySmall = true;
       return `<span data-aotip="${fhEsc(tip)}" style="text-align:center; ${M} font-size:${DZ.field}px; color:${F.small ? MA_GREY : 'var(--text-label)'}; white-space:nowrap;">${fhEsc(F.t)}</span>`;
     };
@@ -25769,7 +25873,7 @@ function tourxRenderOverlays(){
         lockSubject: true,
         initialTournamentNames: names,
         initialTournamentFilter: mkt.archiveFilter || null,
-        initialTournamentLabel: c.name,
+        initialTournamentLabel: typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name,   // TEN-402 r2: the chip label only (the names / filter above are the join)
         side: tourxState.roiPanel,
       });
     }
@@ -25808,7 +25912,7 @@ function tourxRoiPanelHtml(){
       </div>
     </div>`;
   return tourxOverlayShell({ z: 85, pad: '34px 22px 60px', max: '1180px',
-    title: `${c.name} · favourites and underdogs`,
+    title: `${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name} · favourites and underdogs`,
     sub: 'flat 1u · yields by price band',   // the reference's sub line (the open side is the panel's own state)
     body });
 }
@@ -25854,7 +25958,7 @@ function tourxSpeedPanelHtml(){
       const on = t.name === tourxState.tsSel;
       const w = Math.max(4, (t.abstractSpeed - mn) / span * 100);
       return `<div class="tourx-cmprow${on ? ' on' : ''}" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;">
-          <span style="flex:1;min-width:0;font-size:12.5px;font-weight:${on ? 800 : 600};color:${on ? 'var(--text)' : 'var(--text-soft)'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
+          <span style="flex:1;min-width:0;font-size:12.5px;font-weight:${on ? 800 : 600};color:${on ? 'var(--text)' : 'var(--text-soft)'};white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;">${typeof tourxEventName === 'function' ? tourxEventName(t.name) : t.name}</span>
           <span style="width:48px;height:5px;border-radius:4px;background:var(--track);flex:none;overflow:hidden;"><span style="display:block;height:100%;width:${w}%;border-radius:4px;background:${on ? 'var(--bar)' : 'var(--bar-2)'};"></span></span>
           <span style="font-family:${MONO};font-size:12.5px;font-weight:700;color:var(--text);flex:none;">${t.abstractSpeed.toFixed(2)}</span>
         </div>`;
@@ -25883,6 +25987,36 @@ function tourxConditionRegistry(){
     // Indoor column needs no hand-maintained venue list (the export ships one).
     return { name: t.name, category: t.category, surface: t.surface, indoor: !!t.indoor, ...c, speedCat: cat };
   });
+}
+// ===== TEN-402 r2 · the Tournaments page prints the ONE event name (founder card 7bc622d5: "rename the Tournaments page
+// too") =====
+// Every name this page PRINTS for a registry event is sfEventName's: SF_EVENT_NAMES[key] (ATP Finals, Cincinnati Open, China
+// Open, Monte-Carlo Masters …), else the registry key itself (an ATP 250 — Antwerp, Chengdu — keeps it). Display only: the
+// key stays the identity everywhere it is DATA — tourxState.tsSel / .tour, onclick arguments, COURT_CONDITIONS,
+// tournament-market.json, tournament-quotes.json, tournament-progression.json, ROW_SPLIT / archiveFilter, quote rules.
+// Two registry events that share one official name (Montreal / Toronto = "Canadian Open") print "Canadian Open · Montreal"
+// so a list holding both never shows two identical rows (TOURX_EVENT_CITY_SUFFIX: the separator; '' = no suffix).
+const TOURX_EVENT_CITY_SUFFIX = ' · ';
+let tourxEventShared = null;
+function tourxEventOfficial(key){
+  return (typeof SF_EVENT_NAMES !== 'undefined' && SF_EVENT_NAMES[key]) || String(key == null ? '' : key);
+}
+function tourxEventName(key){
+  const off = tourxEventOfficial(key);
+  if (!TOURX_EVENT_CITY_SUFFIX) return off;
+  if (!tourxEventShared) {
+    const n = {};
+    tourxConditionRegistry().forEach(t => { const o = tourxEventOfficial(t.name); n[o] = (n[o] || 0) + 1; });
+    tourxEventShared = n;
+  }
+  return (tourxEventShared[off] || 0) > 1 && off !== key ? off + TOURX_EVENT_CITY_SUFFIX + key : off;
+}
+// The rail search: a registry event matches on its printed name, its official name, its key (the city) and every other
+// catalog spelling of the same event ("French Open" → Roland Garros) — "Cincinnati Open" and "Cincinnati" both find it.
+function tourxEventSearchText(key){
+  const off = tourxEventOfficial(key);
+  const also = (typeof TOURNAMENT_CATALOG !== 'undefined' ? TOURNAMENT_CATALOG : []).filter(t => t.name !== key && tourxEventOfficial(t.name) === off && !(typeof COURT_CONDITIONS !== 'undefined' && COURT_CONDITIONS[t.name])).map(t => t.name);
+  return [tourxEventName(key), off, key].concat(also).join(' | ').toLowerCase();
 }
 // Two-column Overview: persistent tournament rail (This week / Season) on the
 // left, an enriched conditions panel for the selected tournament on the right.
@@ -25939,8 +26073,9 @@ function tourxOverviewListHtml(){
   // has no scope toggle; both groups always render and search filters both.
   const reg = tourxConditionRegistry();
   const q = tourxState.tsQ.trim().toLowerCase();
-  // §1.1: "Search filters both groups by case-insensitive substring on the NAME".
-  const match = t => !q || t.name.toLowerCase().includes(q);
+  // §1.1: "Search filters both groups by case-insensitive substring on the NAME" — TEN-402 r2: the printed name, the
+  // official name, the city key or another catalog spelling (tourxEventSearchText).
+  const match = t => !q || (typeof tourxEventSearchText === 'function' ? tourxEventSearchText(t.name) : t.name.toLowerCase()).includes(q);
   const weekNames = tourxActiveWeekNames();
   const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
   const season = reg.filter(t => !weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
@@ -25949,6 +26084,8 @@ function tourxOverviewListHtml(){
     // TEN-401 ticket item 3: the selected row is the selected tile (.tourx-ovrow.on — --selected + inset 16% ring,
     // the reference's computed treatment); no surface-coloured wash. The name inversion (selected 600, idle 700) is
     // the reference's, verbatim.
+    // TEN-402 r2: the name is the one event name (tourxEventName) and may take two lines (line-clamp 2) — "Canadian Open ·
+    // Montreal" / "· Toronto" ellipsised on one line read as the same row; a short name keeps the one-line tile.
     // Tier chip (ticket item 3): inner tone, grey, no edge — selected or not. On a selected row it takes the row's
     // --selected tone (layer rule: never darker than its painted parent). A pure figure (1000 / 500 / 250) is IBM
     // Plex Mono; a letter code (GS, FNL) is a badge caps label, Hanken (foundation R5) — TOURX_TIER_CHIP_MONO_ALL flips it.
@@ -25958,7 +26095,7 @@ function tourxOverviewListHtml(){
     const chipFont = mono ? "font-family:'IBM Plex Mono',monospace;letter-spacing:0.04em;" : 'font-family:var(--font-words);letter-spacing:0.10em;text-transform:uppercase;';
     return `<div class="tourx-ovrow${seld ? ' on' : ''}" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;cursor:pointer;">
         <span style="min-width:42px;height:22px;padding:0 7px;border-radius:6px;background:${chipBg};border:none;color:var(--text-label);${chipFont}font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none;">${code}</span>
-        <span style="flex:1;min-width:0;font-size:13.5px;font-weight:${seld ? 600 : 700};color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
+        <span style="flex:1;min-width:0;font-size:13.5px;font-weight:${seld ? 600 : 700};color:var(--text);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;">${typeof tourxEventName === 'function' ? tourxEventName(t.name) : t.name}</span>
         <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;color:var(--text);flex:none;">${t.abstractSpeed.toFixed(2)}</span>
       </div>`;
   };
@@ -26004,7 +26141,7 @@ function tourxConditionsPanelHtml(){
     // radius 6, 22px tall — the transparent 1px keeps that height without drawing an edge).
     ? `<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);background:var(--inner);border:1px solid transparent;border-radius:6px;padding:3px 10px;">Completed</span>` : '';
   const title = `<div>
-      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;"><span style="font-size:29px;font-weight:800;letter-spacing:-0.015em;color:var(--text);">${c.name}</span>${badge}</div>
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;"><span style="font-size:29px;font-weight:800;letter-spacing:-0.015em;color:var(--text);">${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name}</span>${badge}</div>
       <div style="font-size:13px;color:var(--text-label);margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court</div>
     </div>`;
 
@@ -26206,7 +26343,7 @@ function tourxQuotesPanelHtml(){
       </div>`;
   }).join('');
   return tourxOverlayShell({ z: 90, pad: '40px 22px 60px', max: '720px',
-    title: `${c.name} · what players say`,
+    title: `${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name} · what players say`,
     sub: `${list.length} note${list.length === 1 ? '' : 's'}`,
     body: `<div style="padding:6px 22px 20px;">${rows}</div>` });
 }
@@ -26690,8 +26827,9 @@ function renderTourxReports(){
   // --- tournament picker: darker track (TEN-401 item 2). Monogram = inner tone with a 10% ring (reference). ---
   const yr = tourxReportYear();
   const tourChips = available.map(name => {
-    const label = `<span style="width:22px;height:22px;border-radius:6px;background:var(--inner);box-shadow:inset 0 0 0 1px var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:var(--text);font-family:var(--font-nums);">${tourxRpEsc(tournamentInitials(name))}</span>`
-      + `${tourxRpEsc(name)}${yr ? `<span style="color:inherit;font-family:var(--font-nums);font-size:12px;font-weight:600;">${yr}</span>` : ''}`;
+    const shown = typeof tourxEventName === 'function' ? tourxEventName(name) : name;   // TEN-402 r2: printed name + its monogram; `name` stays the key
+    const label = `<span style="width:22px;height:22px;border-radius:6px;background:var(--inner);box-shadow:inset 0 0 0 1px var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:800;color:var(--text);font-family:var(--font-nums);">${tourxRpEsc(tournamentInitials(shown))}</span>`
+      + `${tourxRpEsc(shown)}${yr ? `<span style="color:inherit;font-family:var(--font-nums);font-size:12px;font-weight:600;">${yr}</span>` : ''}`;
     return tourxSegItem(name === tourxState.tour, label, `tourxSelectTour('${tourxEsc(name)}')`, 'tour');
   }).join('');
 
@@ -27211,7 +27349,7 @@ function tourxRoundViewHtml(T){
     // R32 numbers). Tell the user those matches haven't been played yet.
     if (rIdx > frontierIdx){
       const latest = frontierIdx >= 0 ? (tourxActiveLabels[frontierIdx] || rounds[frontierIdx]) : null;
-      return filterBar + dnaCard(`<b style="color:var(--text-soft);">${roundLabel}</b> hasn't been played yet at ${T.name} — those matches haven't taken place, so there's no box-score data to show.${latest ? ` The latest completed round is <b style="color:var(--text-soft);">${latest}</b>.` : ''}`);
+      return filterBar + dnaCard(`<b style="color:var(--text-soft);">${roundLabel}</b> hasn't been played yet at ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name} — those matches haven't taken place, so there's no box-score data to show.${latest ? ` The latest completed round is <b style="color:var(--text-soft);">${latest}</b>.` : ''}`);
     }
     // TEN-386 (founder, 2026-10-05): a round shows EVERY player with a box score
     // in it, not just its winners — the QF losers belong in the QF comparison. The
@@ -27235,7 +27373,7 @@ function tourxRoundViewHtml(T){
     if (!entries.length){
       return filterBar + dnaCard(nAll
         ? `None of the selected players are among the ${nAll} ${roundLabel} player${nAll === 1 ? '' : 's'}. Clear the player filter or pick a different round.`
-        : `No ${roundLabel} box scores have been ingested for ${T.name} yet.`);
+        : `No ${roundLabel} box scores have been ingested for ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name} yet.`);
     }
     // Dashed line = field average across ALL players who played this round
     // (tournament-progression.json fieldAverage.metrics[key][rIdx]).
@@ -27259,7 +27397,7 @@ function tourxRoundViewHtml(T){
   // here means "the latest played round" (pick any specific round from the chips
   // above); selected players are filtered into that round's bars by renderRound.
   if (selIdx == null){
-    if (frontierIdx < 0) return filterBar + dnaCard(`No box scores have been ingested for ${T.name} yet — check back once the first round has been played.`);
+    if (frontierIdx < 0) return filterBar + dnaCard(`No box scores have been ingested for ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name} yet — check back once the first round has been played.`);
     return renderRound(frontierIdx);
   }
 
@@ -27505,8 +27643,8 @@ function tourxPlayerViewHtml(T){
     // yet (live event) vs. no player two rounds deep at all (event barely started).
     const roundLbl = rIdx != null ? (tourxActiveLabels[rIdx] || tourxActiveLabels[tourxActiveLabels.length - 1]) : null;
     const msg = roundLbl
-      ? `<div style="margin-top:16px;border:1px solid var(--edge-6);border-radius:12px;background:var(--card);padding:22px;color:var(--text-label);font-size:13.5px;line-height:1.6;">No player at <b style="color:var(--text-soft);">${T.name}</b> has reached <b style="color:var(--text-soft);">${roundLbl}</b> yet. Pick an earlier round above, or choose <b style="color:var(--text-soft);">All rounds</b> to see everyone two rounds into the draw.</div>`
-      : `<div style="margin-top:16px;border:1px solid var(--edge-6);border-radius:12px;background:var(--card);padding:22px;color:var(--text-label);font-size:13.5px;line-height:1.6;">Player progression is only available once players are <b style="color:var(--text-soft);">2 rounds</b> into the draw. No player at <b style="color:var(--text-soft);">${T.name}</b> has come through a second round yet — the tables appear here automatically from the second round onward. You can still add a player above once they have.</div>`;
+      ? `<div style="margin-top:16px;border:1px solid var(--edge-6);border-radius:12px;background:var(--card);padding:22px;color:var(--text-label);font-size:13.5px;line-height:1.6;">No player at <b style="color:var(--text-soft);">${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name}</b> has reached <b style="color:var(--text-soft);">${roundLbl}</b> yet. Pick an earlier round above, or choose <b style="color:var(--text-soft);">All rounds</b> to see everyone two rounds into the draw.</div>`
+      : `<div style="margin-top:16px;border:1px solid var(--edge-6);border-radius:12px;background:var(--card);padding:22px;color:var(--text-label);font-size:13.5px;line-height:1.6;">Player progression is only available once players are <b style="color:var(--text-soft);">2 rounds</b> into the draw. No player at <b style="color:var(--text-soft);">${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name}</b> has come through a second round yet — the tables appear here automatically from the second round onward. You can still add a player above once they have.</div>`;
     return controls + msg;
   }
   // [TEN-170 postscript, founder ruling 2026-09-08: "on all rounds + include
@@ -27749,7 +27887,7 @@ function tourxMatchSheetHtml(T, name, idx){
   let surface = '';
   try { const c = (typeof tourxConditionRegistry === 'function') ? tourxConditionRegistry().find(t => t.name === T.name) : null; surface = c && c.surface ? String(c.surface).toLowerCase() : ''; } catch (e) { surface = ''; }
   const yr = tourxReportYear();
-  const meta = [T.name + (yr ? ' ' + yr : ''), rl, surface, won == null ? '' : `${last(p.name)} ${won ? 'won' : 'lost'}${sc ? ' ' + sc : ''}`].filter(Boolean).join(' · ');
+  const meta = [(typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name) + (yr ? ' ' + yr : ''), rl, surface, won == null ? '' : `${last(p.name)} ${won ? 'won' : 'lost'}${sc ? ' ' + sc : ''}`].filter(Boolean).join(' · ');
   const MONO = "'IBM Plex Mono',monospace";
   const cols = 'grid-template-columns:minmax(0,1fr) 88px 88px;column-gap:12px;';
   const rows = TOURX_METRICS.map(m => {
@@ -28331,11 +28469,26 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   let _h2hDb = null, _h2hDbSt = null;
   // TEN-402 (founder 2026-10-08): the page-wide loader (sfDbJoinLoad) — the same rows object the profile's per-event
   // model reads (trProfileModel), retirements behind the store's flag included.
+  // TEN-402 R3 fix 1: _h2hDb / _h2hDbSt MIRROR the shared session state (_sfDbJoin / _sfDbJoinSt) on every read — no
+  // state of the page's own, so a join any surface loaded (the profile, the Tournament tile) prices this page at once. A
+  // failed load is asked again by the next visit's render (ensureInit(true) clears the throttle) or by a render
+  // ≥ H2H_DB_RETRY_MS after this page's last ask (the render that follows the failure must not loop on the fetch).
+  const H2H_DB_RETRY_MS = 15000;
+  let _h2hDbAskAt = 0, _h2hDbWait = null;
   function h2hEnsureDb() {
-    if (_h2hDbSt) return;
+    const st = typeof _sfDbJoinSt !== 'undefined' ? _sfDbJoinSt : null;
+    if (st === 'ready' && _sfDbJoin) { _h2hDb = _sfDbJoin; _h2hDbSt = 'ready'; return; }
+    _h2hDb = null;
+    let p = st === 'loading' ? _sfDbJoinP : null;   // another surface's load in flight: wait on it
+    if (!p) {
+      if (st === 'failed') { _h2hDbSt = 'failed'; if (Date.now() - _h2hDbAskAt < H2H_DB_RETRY_MS) return; }
+      _h2hDbAskAt = Date.now();
+      p = typeof sfDbJoinLoad === 'function' ? sfDbJoinLoad() : Promise.reject(new Error('sfDbJoinLoad missing'));
+    }
     _h2hDbSt = 'loading';
-    (typeof sfDbJoinLoad === 'function' ? sfDbJoinLoad() : Promise.reject(new Error('sfDbJoinLoad missing')))
-      .then(d => { _h2hDb = d; _h2hDbSt = 'ready'; render(); })
+    if (_h2hDbWait === p) return;   // one repaint per load
+    _h2hDbWait = p;
+    p.then(() => { h2hEnsureDb(); render(); })
       .catch(e => { console.warn('H2H: Database price join unavailable —', e && e.message); _h2hDbSt = 'failed'; render(); });
   }
   // The Playing styles and Tournament ledgers' prices (ticket Data 2): the SAME Database join as the Head-to-head ledger,
@@ -28442,7 +28595,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       emptyTitle: (!a && !b) ? 'Pick two players to compare' : 'Pick one more player',
       // TEN-402 Data 7 / L-default H5: real pairs from this week's draws (suggestionPairs), each chip names its event.
       suggestions: suggestionPairs().map(pr => ({
-        label: (P[pr[0]] ? P[pr[0]].short : pr[0]) + ' vs ' + (P[pr[1]] ? P[pr[1]].short : pr[1]), event: pr[2] || '',
+        // TEN-402 r2: the chip prints the event's ONE name (sfEventName: "Shanghai" → Shanghai Masters); pr[2] stays the board's word.
+        label: (P[pr[0]] ? P[pr[0]].short : pr[0]) + ' vs ' + (P[pr[1]] ? P[pr[1]].short : pr[1]), event: pr[2] ? (typeof sfEventName === 'function' ? sfEventName(pr[2]) : pr[2]) : '',
         hid: bindH(() => { enrich(pr[0]); enrich(pr[1]); setState({ aSel: pr[0], bSel: pr[1], aOpen: false, bOpen: false, aQuery: '', bQuery: '' }); load(); }),
       })),
       showEmpty: !both && !S.loading,
@@ -28938,9 +29092,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         rows: Y.rs.map(r => {
           // TEN-402 founder answer 3 (card 01102d24): a retirement counts as a meeting and reads as the Playing styles ledger
           // does — sets column —, score "5–0 ret." (en dash), result dot by the official winner (r.won).
+          // r4 fix 3: a completed meeting's Sets = "pS–oS" (en dash, no spaces, nowrap), as in the Tournament rows.
           const sc2 = r.ret ? fhH2hSetScores(r).replace(/-/g, '–') : fhH2hSetScores(r);
           return { date: fhDDMM(r.date) + '.', won: r.won, opp: r.tourn, oppTag: r.surface || '', rd: r.round,
-            sets: r.pS == null || r.ret ? '—' : r.pS + ' - ' + r.oS, setsColor: r.pS == null || r.ret ? 'var(--text-label)' : null, scores: sc2, scoresTitle: sc2,
+            sets: r.pS == null || r.ret ? '—' : r.pS + '–' + r.oS, setsColor: r.pS == null || r.ret ? 'var(--text-label)' : null, scores: sc2, scoresTitle: sc2,
             h: r.price == null ? '—' : fhOdd(r.price), a: r.oppPrice == null ? '—' : fhOdd(r.oppPrice),
             hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',
             oppTitle: r.tourn + ' ' + String(r.date).slice(0, 4) + ' · v ' + h.bFull, cls: 'h2hp-row', attrs: ` data-fh-mid="${E(r.mid)}"`,
@@ -29146,10 +29301,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const groups = psGroupMeetings(list).map(gp => {
       const meta = psTourMeta(gp.tournament), surf = gp.rows[0].surface;
       const sd = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '';
-      return { title: gp.tournament, meta: [sd, meta && meta.tier].filter(Boolean).join(' · '), rows: gp.rows.map(r => {
+      return { title: (typeof sfEventName === 'function' ? sfEventName(gp.tournament) : gp.tournament), meta: [sd, meta && meta.tier].filter(Boolean).join(' · '), rows: gp.rows.map(r => {
         const m = ps2Meeting(r), q = Object.assign({ ret: m.ret }, pxOf.get(r) || { price: null, oppPrice: null, book: null });
+        // r4 fix 3: Sets = "pS–oS" (en dash, no spaces) on this page; ps2Meeting's own " - " stays for its other hosts.
         return { date: psFmtMeetDate(r.date), won: !!r.won, opp: fhSurname(r.opponent), oppTitle: r.opponent, rd: psRoundAbbr(r.round) || '—',
-          sets: m.ret ? '—' : m.sets, scores: m.ret ? String(m.scores).replace(/-/g, '–') + ' ret.' : m.scores, scoresTitle: m.ret ? String(m.scores).replace(/-/g, '–') + ' ret.' : m.scores,
+          sets: m.ret ? '—' : m.pS + m.oS ? m.pS + '–' + m.oS : m.sets, scores: m.ret ? String(m.scores).replace(/-/g, '–') + ' ret.' : m.scores, scoresTitle: m.ret ? String(m.scores).replace(/-/g, '–') + ' ret.' : m.scores,
           h: q.price == null ? '—' : fhOdd(q.price), a: q.oppPrice == null ? '—' : fhOdd(q.oppPrice),
           hTitle: h2hPriceTitle(q), aTitle: h2hPriceTitle(q), hMark: '' };
       }) };
@@ -30188,8 +30344,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (!built) { P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {}; _ratings = null; built = true; }
     } catch (e) { console.error('H2H buildH2HData failed', e); if (!built) { P = {}; H2H = {}; ROSTER = []; } }
   }
-  function ensureInit() {
+  function ensureInit(visit) {
     bindDocClose();
+    if (visit) _h2hDbAskAt = 0;   // TEN-402 R3 fix 1: a visit's first render that needs the join asks a failed one again
     triggerLoads();
     ensureDna();
     if (dataReady()) { build(); render(); return; }

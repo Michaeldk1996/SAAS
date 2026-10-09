@@ -63,7 +63,7 @@ test('fix 1: both Last played tiles read trLastPlayed (Head to Head Tournament c
 });
 
 // ── fix 2 · ONE tournament name per event (sfEventKey / sfEventName) ─────────────────────────────────────────────────
-const NAMES = new Function('window', [arrSrc('TOURNAMENT_CATALOG'), objSrc('SF_EVENT_NAMES'), objSrc('SF_EVENT_ALIAS'),
+const NAMES = new Function('window', [arrSrc('TOURNAMENT_CATALOG'), objSrc('SF_EVENT_NAMES'), objSrc('SF_EVENT_ALIAS'), objSrc('SF_EVENT_LITERAL'),
   'let _sfEventIx = null;', fnSrc('ppCleanTournamentName'), fnSrc('fhTournClean'), fnSrc('sfEventKey'), fnSrc('sfEventName'),
   'return { sfEventKey, sfEventName, TOURNAMENT_CATALOG, SF_EVENT_NAMES };'].join('\n'))({ TournamentIdentity: TI });
 

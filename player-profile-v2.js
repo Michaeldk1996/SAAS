@@ -1910,10 +1910,23 @@
   /** fx4 item 4 · true while the page's per-event Backing join has not answered for some listed event.
    *  fx5 item 2 · or while the shard that LISTS the events is still loading: some() over an empty list is
    *  false, which painted "no matches on record" before the rows arrived. */
+  /** TEN-402 R2 (founder card 7bc622d5) · opening Record per tournament (or one of its events) asks the page for
+   *  its Database join now — before the after-first-paint idle request, or again after a failed load. The page
+   *  owns the fetch and its session cache (window.pp2DbJoinNeed); absent (harnesses) → nothing. */
+  function tournNeedJoin() {
+    if (typeof window.pp2DbJoinNeed === 'function') window.pp2DbJoinNeed(state.key);
+  }
   function tournBackingPending(p) {
     if (tournHistPending(p)) return true;
     if (typeof window.trProfileBacking !== 'function') return false;   // no join on this page (harnesses)
     return (tournViews(p) || []).some(function (t) { return t.backingPending; });
+  }
+  /** TEN-402 R3 fix 2 · the page's Database join FAILED (trProfileBacking → { failed: true }): the box's Backing figure is
+   *  unknown, so it reads "—" / "prices unavailable" like the column — never the W–L fallback, which is the answer only
+   *  when the join answered and no event clears ten priced. A retry that lands paints the Backing figure. */
+  function tournBackingFailed(p) {
+    if (typeof window.trProfileBacking !== 'function') return false;   // no join on this page (harnesses)
+    return (tournViews(p) || []).some(function (t) { return t.backingFailed; });
   }
   function tournOverall(p) {
     var pl = 0, pinN = 0, won = 0, lost = 0;
@@ -2113,6 +2126,7 @@
     // tile claims nothing — no "no event with 10+ priced matches", no fallback that the best event would
     // replace a moment later — and paints once when the join lands.
     v.tourn = tournBackingPending(p) ? { headline: null, support: null, pending: true }
+      : tournBackingFailed(p) ? { headline: null, support: BACKING_FAIL_TXT, failed: true }
       : be
       ? {
           headline: signed(be.pinPl, 1),
@@ -2756,6 +2770,12 @@
   // Calendar tiles stood 102px pending against 94px painted). The painted figure is text in the PARENT, so the
   // marker takes the parent's line height and the pending box is the painted box exactly.
   var PEND_HTML = '<span data-pp2-pending="figure" style="line-height:inherit;">&nbsp;</span>';
+  // TEN-402 R2 (founder card 7bc622d5): Record per tournament's Backing while the page's Database join has not
+  // landed (it is requested after the first paint) — a blank box, never "—" (that is a failed load), never 0.
+  var BACKING_PEND_HTML = '<span data-pp2-pending="backing" style="line-height:inherit;">&nbsp;</span>';
+  // TEN-402 R3 fix 2: a FAILED join's words — the "Backing him here" tile's sub and the Record per tournament box's
+  // support line read this one string; the figure itself is "—" (never another metric in its place).
+  var BACKING_FAIL_TXT = 'prices unavailable';
   // Biggest price band, by the SAME rule the founder ruled for biggest split.
   function biggestBand(key) {
     var mk = marketFor(key);
@@ -5043,14 +5063,22 @@
   var EVENT_DISPLAY_UNKNOWN = {};
   var SLAM_NAMES = { 'Australian Open': 1, 'French Open': 1, 'Roland Garros': 1,
                      'Wimbledon': 1, 'US Open': 1 };
+  // TEN-402 r3 fix 2 (founder 2026-10-09, "one tournament name per event, site-wide") supersedes item 10's
+  // "{city} {tier}" form: the row prints the page's ONE event name, window.sfEventName ("Cincinnati" → Cincinnati
+  // Open, "Beijing" → China Open, "Monte Carlo" → Monte-Carlo Masters, "Tour Finals" → ATP Finals, "Canada Masters" →
+  // Canadian Open, "Cup" → ATP Cup; an ATP 250 keeps its city). The tier is no longer part of the name: it is the
+  // row's own field (`level`), printed as the row's meta (tournLevelMeta). Display only: t.name stays the key
+  // (state.tournOpen, data-t, the joins). Off the page (no sfEventName) the old map is the fallback.
   function tournDisplayName(name, level) {
+    var one = typeof window.sfEventName === 'function' ? window.sfEventName(name) : null;
+    if (one) return one;
     var base = EVENT_DISPLAY[name];
     if (!base) { EVENT_DISPLAY_UNKNOWN[name] = true; base = String(name || ''); }
-    if (!level || level === 'Grand Slam') return base;
-    // "Rome Masters" already carries the tier word; appending "Masters 1000"
-    // would read as a stutter. The bare "Rome" row takes the suffix.
-    if (/\b(Masters|Finals)$/.test(base)) return base;
-    return base + ' ' + level;
+    return base;
+  }
+  // The level meta beside the name: none on a Slam, the year-end finals (the name says it) or a row with no level.
+  function tournLevelMeta(level) {
+    return !level || level === 'Grand Slam' || level === 'Tour Finals' ? '' : String(level);
   }
   function isSlamTourn(name, level) {
     return level === 'Grand Slam' || !!SLAM_NAMES[name];
@@ -5075,6 +5103,14 @@
   function tournEditionSurface(name, year) {
     var TI = window.TournamentIdentity;
     return TI && typeof TI.editionSurface === 'function' ? TI.editionSurface(name, year) : null;
+  }
+  /** TEN-402 R3 fix 3 · an unpriced row dated after the Database archive's last match (the live edition) prints its "—"
+   *  with the page's one reason on hover (window.trPxAfterOf — the Match analysis Tournament tab's words); anything
+   *  else (priced, earlier, the join not answered, no page) → null and the cell prints as before. */
+  function pxAfterHtml(m) {
+    if (!m || m.price != null) return null;
+    var why = typeof window.trPxAfterOf === 'function' ? window.trPxAfterOf(m.date) : null;
+    return why ? '<span data-pp2-px-after="1" title="' + esc(why) + '" style="display:block;">' + DASH + '</span>' : null;   // the whole cell hovers
   }
   function tournEditionRows(p, t) {
     var j = tournJoin(p);
@@ -5274,7 +5310,8 @@
     var q = String(state.tournQuery || '').toLowerCase();
     var shown = q
       ? views.filter(function (t) {
-          return t.display.toLowerCase().indexOf(q) >= 0 || t.name.toLowerCase().indexOf(q) >= 0;
+          return t.display.toLowerCase().indexOf(q) >= 0 || t.name.toLowerCase().indexOf(q) >= 0 ||
+            tournLevelMeta(t.level).toLowerCase().indexOf(q) >= 0;   // r3: "masters" still finds the Masters rows
         })
       : views;
 
@@ -5313,7 +5350,10 @@
           // line under the rate. No asterisk anywhere, no footnote line.
           '<span style="display:flex;align-items:baseline;gap:8px;min-width:0;">' +
           '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;' +
-            'text-overflow:ellipsis;min-width:0;">' + esc(t.display) + '</span></span>' +
+            'text-overflow:ellipsis;min-width:0;">' + esc(t.display) + '</span>' +
+          // TEN-402 r3 fix 2: the level is the row's meta, never part of the event name
+          (tournLevelMeta(t.level) ? '<span class="pp2-tlevel" style="flex:none;font-size:11.5px;font-weight:500;' +
+            'color:var(--text-label);white-space:nowrap;">' + esc(tournLevelMeta(t.level)) + '</span>' : '') + '</span>' +
           '<span style="font-size:12px;color:var(--text-label);white-space:nowrap;">' +
             (t.surface ? esc(t.surface) : DASH) + '</span>' +
           '<span style="display:flex;align-items:baseline;gap:6px;white-space:nowrap;overflow:hidden;">' +
@@ -5340,7 +5380,7 @@
             'white-space:nowrap;color:' + (pin == null ? DASH_COLOUR : pin >= 0 ? 'var(--pos)' : 'var(--neg)') + ';"' +
             (t.pricedImpossible ? ' title="Priced count (' + t.pricedClaimed + ') exceeds ' + t.n +
               ' matches played — withdrawn pending the odds-join fix"' : '') + '>' +
-            (pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) +
+            (t.backingPending ? BACKING_PEND_HTML : pin == null ? DASH : t.pinTxt || signed(pin, 1, 'u')) +
             (t.pricedImpossible
               ? '<span style="font-size:9px;color:var(--neg);margin-left:4px;">!</span>' : '') + '</span>' +
         '</div>' +
@@ -5407,7 +5447,7 @@
     // the file's is W-L record / Best result / Sets won / Last played / Backing
     // him here. README §Fidelity makes the file the authority, so the file wins
     // and the difference is in the report.
-    var pinTxt = t.pinN ? t.pinTxt || signed(t.pinPl, 1, 'u') : DASH;
+    var pinTxt = t.backingPending ? BACKING_PEND_HTML : t.pinN ? t.pinTxt || signed(t.pinPl, 1, 'u') : DASH;
     var pinColour = !t.pinN ? DASH_COLOUR : t.pinPl >= 0 ? 'var(--pos)' : 'var(--neg)';
     // The file's fifth-tile sub is "+3.4pt vs market". TEN-312 D6 gave it a
     // formula (win rate minus the de-vigged implied rate, n >= 5 priced) and
@@ -5426,7 +5466,7 @@
       : t.backingPending
         ? 'loading prices'
         : t.backingFailed
-          ? 'prices unavailable'
+          ? BACKING_FAIL_TXT
           : t.vmTxt
             ? t.vmTxt + (t.vmSmall ? ' ' + MIDDOT + ' ' + smallSampleText(t.pinN) : '')
             : t.pinN
@@ -5540,9 +5580,9 @@
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;' +
                'padding:5px 0;', m.setScores ? esc(m.setScores) : DASH) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-soft);text-align:right;' +
-               'padding:5px 0;', oddsText(m.price)) +
+               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.price)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);text-align:right;' +
-               'padding:5px 0;', oddsText(m.oppPrice));
+               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.oppPrice));
       }).join('');
     }).join('');
 
@@ -11114,7 +11154,7 @@
       if (v === 'all') state.surfaces = []; else toggleIn(state.surfaces, v);
     }
     else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
-    else if (kind === 'box') state.modal = el.getAttribute('data-box');
+    else if (kind === 'box') { state.modal = el.getAttribute('data-box'); if (state.modal === 'tourn') tournNeedJoin(); }
     else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; }
     else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
     else if (kind === 'career-tier') { state.careerTier = v; state.careerDrill = null; }
@@ -11159,7 +11199,7 @@
     else if (kind === 'market-band') state.marketBand = toggleVal(state.marketBand, el.getAttribute('data-band'));
     else if (kind === 'market-side') state.marketSide = el.getAttribute('data-side');
     else if (kind === 'market-surf') state.marketSurf = el.getAttribute('data-surf');
-    else if (kind === 'tourn-row') state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t'));
+    else if (kind === 'tourn-row') { state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t')); tournNeedJoin(); }
     else if (kind === 'cal-tab') { state.calTab = v; state.calCell = null; }
     else if (kind === 'cal26-month') state.cal26Month = toggleVal(state.cal26Month, v);
     else if (kind === 'cal-surface') { state.calSurface = v; state.calCell = null; }
@@ -11519,12 +11559,14 @@
       CAREER_ROWS: CAREER_ROWS,
       ENDASH: ENDASH,
       renderTournModal: renderTournModal,
+      onClick: onClick,   // TEN-402 R2: the tests drive the real click hook (Record per tournament asks for the join)
       // §5.3 rebuild — the harness asserts on the real join and the real view
       // model, not on a re-derivation of them.
       renderTournDetail: renderTournDetail,
       tournJoin: tournJoin,
       tournViews: tournViews,
       tournDisplayName: tournDisplayName,
+      tournLevelMeta: tournLevelMeta,
       over35Of: over35Of,
       winRateColour: winRateColour,
       oppKeyOf: oppKeyOf,
@@ -11587,6 +11629,7 @@
       splitsPending: splitsPending, splitsNotBuilt: splitsNotBuilt,
       marketPending: marketPending, shardPending: shardPending, tournRecordAll: tournRecordAll,
       tournBackingPending: tournBackingPending,
+      tournBackingFailed: tournBackingFailed,
       get TOURN_TILE_SUMMED_UNITS() { return TOURN_TILE_SUMMED_UNITS; },
       set TOURN_TILE_SUMMED_UNITS(v) { TOURN_TILE_SUMMED_UNITS = !!v; },
       state: state

@@ -285,6 +285,7 @@ function favApi({ ls = {}, bsp = null, src = html } = {}) {
     const cardStartMs = m => m.__t;
     const _mcNowPair = m => m.__pair || null;
     const roundBadgeText = r => r || '';
+    const mxEventName = t => (t === 'ATP Shanghai' ? 'Shanghai Masters' : (t || ''));   // TEN-407: the one event name
     const cardFmtStart = (m, withDate) => (withDate ? '9 Oct ' : '') + (m.__hm || '');
     const matchDayBucket = m => m.__day || 'today';
     ${slice('mxOddsTxt', src)}
@@ -334,7 +335,7 @@ test('strip: hidden when nothing is starred (no empty state), else "Favourites �
   const h = F.mxFavStripHtml(board);
   assert.match(h, /^<span class="mx-favstrip__lbl">Favourites · 2<\/span><div class="mx-favstrip__row">/);
   assert.ok(h.indexOf('C. Ugo Carabelli') < h.indexOf('J. Sinner'), 'start-time order, not star order');
-  assert.match(h, /<span class="mx-favcard__where">ATP Shanghai · QF · 18:00<\/span><button type="button" class="mx-favcard__star" data-fav="9" title="Remove from favourites"/);
+  assert.match(h, /<span class="mx-favcard__where">Shanghai Masters · QF · 18:00<\/span><button type="button" class="mx-favcard__star" data-fav="9" title="Remove from favourites"/);
   assert.match(h, /<div class="mx-favcard__row a"><span class="mx-favcard__name">J\. Sinner<\/span><span class="mx-favcard__px">1\.39<\/span><\/div>/);
   assert.match(h, /<div class="mx-favcard__row b"><span class="mx-favcard__name">F\. Cobolli<\/span><span class="mx-favcard__px">—<\/span><\/div>/, 'no price = —');
   assert.match(lastRule(`${M} .mx-favstrip:empty`), /display:none/);

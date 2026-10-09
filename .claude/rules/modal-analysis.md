@@ -185,9 +185,9 @@ this file wins.
 
 ## Defaults and scope (N1, N5, N7, N8, N9, N10)
 - **N1:** H2H opens on **All** surfaces; Form opens on **today's surface**.
-- **N5:** Tournament **Backing** uses the R8 order (Pinnacle, then Bet365; `FH_BOOK_ORDER`). The player-profile
-  per-event Backing no longer reads these rows: it is on the Database join since the founder ruling of 2026-10-08 (see
-  "One row source for Backing" below).
+- **N5:** Tournament **Backing** prices each match Pinnacle closing, else Bet365 closing — on the ONE Database join
+  since the founder rulings of 2026-10-08 (profile, Head to Head) and 2026-10-09 (this tab); see "Tournament tab → Prices"
+  below. The closes shard (`match-closes/`) and its R8 picker no longer price anything on this tab.
 - **N6:** Tournament / profile edition lists show **only editions the player actually entered**. No edition header is
   synthesised from a gap year (the old `withdrew` fill in `bsp-pipeline.js` minted "Withdrawal" for editions never
   held). **Test:** a player with editions 2019 and 2022 shows no 2020/2021 header.
@@ -205,6 +205,16 @@ this file wins.
   (`DatabaseTab.mount`, reused as built, mounted on `<body>` so the modal's `.modal button` rule cannot restyle it), and
   "Record at X": per player five tiles + the shared rows (`maMatchRowsHtml`), one group per edition
   ("X YYYY" + result · W–L), every row a registered sheet row (`fhOpenSheet`).
+- **The event is printed by its ONE name** (TEN-402 r3, founder 2026-10-09 "one tournament name per event, site-wide";
+  `h2h.md` "One tournament name"): `trName(m)` = `sfEventName` of the feed name — the header title and tile letter,
+  "Record at X", the edition headers "X YYYY", the empty line, the hold-rate tip and the ROI overlay title / chip; Key
+  factors' Tournament card title and record tip; the modal subtitle (`aContextLine`, "Shanghai Masters · R64 · 12:00");
+  Progression's header and lines; Weather's "Court speed · X" line. An ATP 250 keeps its city ("Chengdu"). The location
+  line stays the venue ("Shanghai, CN"). `trClean(m)` stays the DATA name: the hold-rate lookup, the catalog match, the
+  career-history join names, `trKeyOf`. **Apply:** on a Shanghai match every event word on every tab reads "Shanghai
+  Masters" except the location / weather city, and the tiles, rows and prices equal the same tab before the rename.
+  **Test:** `test-ten402-r2n.mjs` r3.1, `test-ten332-tournament.mjs` (Washington Open), `test-ten341-key-factors.mjs`
+  (Swiss Indoors), `test-ten304-weather-tab.mjs` (Chengdu).
 - **Display (founder step 3, TEN-380, measured on OFFICIAL VERSION 1):** header card `--card` + `--edge-6`; the surface is a
   chip ("Hard court", `--selected` + `--line`); meta values in IBM Plex Mono, the current cell (Round) on `--inner`; the
   "Show court speed & market" toggle is plain text with white words; ROI values are `--text` (a value's colour never follows
@@ -215,10 +225,10 @@ this file wins.
   fill, no vertical ticks. **Test:** `test-ten332-tournament.mjs` "TEN-380" + the Q2 mutants in `tools/test-ten332-mutants.js`.
 - **Data:** editions = `m.p?TournamentHistory` (pipeline; main draw only, N7; walkovers out, N2; only editions entered,
   N6). Set scores from `career-history/{key}.json` joined by event key, else season + opponent + result (exactly one row).
-  Prices from `match-closes/{key}.json` through the Form/H2H picker (R8, N5). Header / panel from `m.venue`, `m.courtSpeed`
+  Prices: the one Database join (see "Prices" below). Header / panel from `m.venue`, `m.courtSpeed`
   (N4 label = `courtSpeed.category`, never re-banded in the tab) and `tournament-market.json`.
-- **Backing** = flat 1u over the rows priced by the R8 picker; a retirement settles at the close (TEN-325, the note from
-  `MarketEdgeCore.RET_SETTLE_NOTE` in the tile's tooltip). **"vs market"** (D6) = win rate − mean de-vigged implied rate,
+- **Backing** = flat 1u over the rows the Database join prices; a retirement settles on the official ATP result at its
+  listed close (TEN-325, the note from `MarketEdgeCore.RET_SETTLE_NOTE` in the tile's tooltip). **"vs market"** (D6) = win rate − mean de-vigged implied rate,
   n ≥ 5 priced, 5–9 greyed. Units show at any priced n.
 - **Result label** per edition: "Won" (won the final) · the round lost in the feed's words ("Quarter-final", "Round of 16")
   · "In progress" (this event, this year, last match a win; DESIGN GAP G17) · "<round> · w/o" (reached unplayed).
@@ -230,15 +240,33 @@ this file wins.
 - **Seven-season trend:** the axis is 2020–2026 as drawn; only seasons the sheet holds (2023–25) get a dot and a value, the
   rest a dash; a hole breaks the line; the delta states the real span. Roland Garros speed and altitude dash with the
   TEN-321 note until its key lands.
-- **Per-event Backing on the player profile = the Database join, not this tab (founder ruling 2026-10-08, TEN-402 card
-  01102d24; supersedes Q8, 2026-09-30).** The Record per tournament column, the "Backing him here" tile and the edition
-  rows' H / A price each main-draw match (walkovers and qualifying out) on the one site-wide join — `database-yield.json`
-  rows plus its flagged retirements, Pinnacle closing else Bet365 closing, retirements settled on the official ATP result
-  (`trProfileModel` → `trDbJoinPx` → `H2HPage.priceJoin`), the same model the Head to Head Tournament card prints. The
-  profile's edition rows are still resolved to career-history first (season + opponent + result + this event's names, the
-  archive names and voted aliases; the round breaks a tie); a row with no single match stays unpriced. This tab keeps its
-  own R8 closes join (`trModelFor`), so the profile and this tab may differ for an event — not re-ruled.
-  **Test:** `test-ten332-tournament.mjs` "ruling 2026-10-08" + "Q8: two meetings …", `tools/test-ten332-mutants.js`.
+- **Prices — ONE join with the player profile and Head to Head (founder ruling 2026-10-09, TEN-402 card 7bc622d5,
+  "same join"; supersedes the 2026-10-08 "this tab keeps its own R8 closes join").** Every price the tab shows — each
+  row's H / A and its B mark, the "Closing odds · Pinnacle, Bet365 where missing (N)" line, the Backing tile's units,
+  "N priced" and "vs market" — comes from the Database join: `database-yield.json` rows plus the retirements behind its
+  flag (`DatabaseTab.priceRows()`), Pinnacle closing, else Bet365 closing, per match, through `H2HPage.priceJoin`
+  (`trModelFor` → `trModelOf` with `trDbJoinPx`, the function the profile's `trProfileModel` passes), a retirement
+  settled on the official ATP result. Never the closes shard: the tab does not fetch `match-closes/` and `trRowOf` sets
+  no price. A row joined to career-history meets the join on that career row's date (`r.chDate`; a pre-2021 row is dated
+  at the tournament start), exactly as the profile hands it on.
+  - **Population stays the tab's own** (by design): the pipeline history of this event (`m.p?TournamentHistory`, main
+    draw, walkovers out, the current edition included). Where it lists the same matches as the profile's
+    `tournament-history/{key}.json` entry, the tab's Backing = Player Profile → Record per tournament = the Head to Head
+    Tournament tile for that player and event (measured 9 Oct 2026: Alcaraz, US Open +7.1u / 32 priced on all three;
+    Zverev, US Open −2.2u / 45; Zverev, Shanghai +0.6u / 20). Where the two lists differ, the counts differ by those
+    rows only (Shelton, US Open: the pipeline lists two 2021 rows the profile does not; both "—", units equal).
+  - **After the archive's last match** (`meta.dateRange[1]`, 13 Sep 2026 at the ruling) a match has no price: "—" with
+    the hover "After the Database archive's last match (13 Sep 2026): no closing price on record yet", and the Backing
+    tooltip counts them ("N after its last match … not priced yet"). No closes fallback for the live edition (founder
+    card 7bc622d5, "recent": no profile-only fallback). TEN-406 adds the captured closes after that date to the archive,
+    same rule — the tab then prices them with no change here.
+  - **Loading:** the rows paint as soon as career-history answers; until the Database rows answer the Backing tile reads
+    "— loading prices" and the price cells are empty (hover "Loading prices"), never 0 or "—"; a failed load reads
+    "prices unavailable". One load per session, shared with the profile and Head to Head (`sfDbJoinLoad`).
+  - Apply: on the tab, sum flat 1u (win = H − 1, loss = −1) over the rows that show an H price; it equals the Backing
+    tile, and for an event whose lists agree, the profile's "Backing him here" and the Head to Head Tournament tile.
+  **Test:** `test-ten332-tournament.mjs` "ruling 2026-10-08" (the tab = the profile, row for row, on one model), "TEN-402
+  r2" (live edition, one session load, start-dated career row), `tools/test-ten332-mutants.js` (TEN-402 r2 mutants).
 
 ## Retirements in price figures (founder 2026-09-28, TEN-312 option A)
 - **An in-match retirement settles at the listed closing price, everywhere**: Form (flat 1u, v market, medians), H2H

@@ -26,10 +26,12 @@ export function constSrc(name, src = HTML) {
   assert.ok(start > 0, `const ${name} not found`);
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
-export const CONSTS = ['AODDS_C', 'WX_CONFIG', 'WX_COPY', 'WX_C'];
+// TEN-402 r3: the header + the court-speed line print the event's one name — the page's sfEventName over its registry.
+export const CONSTS = ['AODDS_C', 'WX_CONFIG', 'WX_COPY', 'WX_C', 'TOURNAMENT_CATALOG', 'SF_EVENT_NAMES', 'SF_EVENT_ALIAS', 'SF_EVENT_LITERAL'];
 export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'apiStartMs', 'cardFmtStart', 'aContextLine', 'escapeHtml', 'aOddsTipHtml',
   'wxForced', 'wxNum', 'wxFmt', 'wxSev', 'wxRank', 'wxLocalParts', 'wxAddDays', 'wxDayDiff', 'wxDow', 'wxMonDay', 'wxStamp',
-  'wxAgo', 'wxIconKind', 'wIcon', 'wxStarted', 'wxArchMatchRow', 'wxArchiveFile', 'wxFirstSlot', 'wxBoard', 'wxModel', 'buildWeatherSection'];
+  'wxAgo', 'wxIconKind', 'wIcon', 'wxStarted', 'wxArchMatchRow', 'wxArchiveFile', 'wxFirstSlot', 'wxBoard', 'wxModel', 'buildWeatherSection',
+  'ppCleanTournamentName', 'fhTournClean', 'sfEventKey', 'sfEventName'];
 
 // The page's renderer in a sandbox. `over` replaces a const's source (e.g. a config under test);
 // `viewerTz` is what newsTz() returns (undefined = the runtime's zone, as on the page with no preference);
@@ -40,6 +42,7 @@ export function build({ src = HTML, over = {}, viewerTz, search = '', board = []
     const location = { search: __search };
     const matches = __board;
     const newsTz = () => __viewerTz;
+    let _sfEventIx = null;
     ${CONSTS.map(c).join('\n')}
     ${FNS.map(n => slice(n, src)).join('\n')}
     return { buildWeatherSection, wxModel, aContextLine, cardStartMs, cardFmtStart, WX_CONFIG, WX_COPY, WX_C };

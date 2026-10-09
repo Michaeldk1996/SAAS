@@ -18,6 +18,12 @@ no day work, checks or screenshots on this page until the founder reopens it.
   Format strip, all in the one card. Sticky with its shadow; the page owns only that shadow (`#h2hRoot .h2h-head`), no
   header type/padding rule. Search box `--inner`, no edge; avatars = initials; "Change" Hanken 10.5 caps
   `--text-label`, white on hover. **Test:** `test-ten403-header.mjs` (H2H check + mutants), `test-ten402-a.mjs`.
+- **Nothing shows above the sticky header** (founder r4 fix 1, 2026-10-09): the window scrolls and the header sticks 30px
+  down; the strip above it is page tone at every scroll position — a sticky page-wide band in `.h2h-page`'s own top
+  padding (`.h2h-page::before`: top 0, height = the padding = the stick's `top`, `--page`, z under the header so its
+  shadow paints over it). Page-level, not inside the header card. **Apply:** scroll to any position;
+  `elementFromPoint` at y 1–29 across the content width never hits a card, and the strip's pixels are `--page` (plus the
+  card's shadow). **Test:** `test-ten402-r4n.mjs` fix 1, `tools/test-ten402-r4n-mutants.js`.
 - **Cards:** every section card `--card` + `--top-light`, no outline; titles via `sectionHead` (caps 10.5 on a 6%
   hairline). Boxes inside a card (Model boxes, Tournament info box, player panels, stat tiles, price-sensitivity panel,
   every ledger) = `--card` + 1px `--edge-6`; ledger heads panel tone, no edge; rows on 6% hairlines, `--inner` hover.
@@ -83,7 +89,9 @@ no day work, checks or screenshots on this page until the founder reopens it.
     and its footnote). One model draws both: `trProfileModel` prices every row on the Database join (`trDbJoinPx` →
     `H2HPage.priceJoin`) and the panel prints `P.all`'s prices and `P.priced` / `P.units` — so the tile's "N priced" IS the
     ledger's priced-row count, and the tile = Player Profile → Record per tournament for the event (`trProfileBacking`
-    reads the same model). There is no second Backing source (`H2H_BACKING_SOURCE` is deleted). Measured 8 Oct 2026:
+    reads the same model). There is no second Backing source (`H2H_BACKING_SOURCE` is deleted). The Match analysis
+    Tournament tab prices on the same join too (founder 2026-10-09, card 7bc622d5; `trModelFor` passes `trDbJoinPx`), so
+    for an event whose match lists agree the three surfaces print one figure (`modal-analysis.md` "Tournament tab → Prices"). Measured 8 Oct 2026:
     Alcaraz, US Open +7.1u / 32 priced (+7.13u; the three retirements in: 2021 QF v Auger-Aliassime −1, 2022 R128 v Baez
     +0.02, 2023 R128 v Koepfer +0.02); Zverev, Roland Garros +5.3u / 30 (the 2023 SF v Ruud is an exact tie at 1.95 → `—`;
     the 2016–2021 editions resolve to no career-history row → `—`). Apply: sum flat 1u (win = price − 1, loss = −1) over
@@ -106,7 +114,16 @@ no day work, checks or screenshots on this page until the founder reopens it.
   `tools/test-ten402-fix-mutants.js`.
 - **RD column:** a blank round at the season finals (ATP / Next Gen Finals) is the round robin → `RR`; a blank round
   anywhere else (Davis Cup, Laver Cup, ATP / United Cup) stays `—` (`h2hRoundOf`).
-- **Set scores** in the Playing styles and Tournament ledgers stay on one line with an ellipsis (`#h2hRoot` only).
+- **Set scores are never cut** (founder r4 fix 2, 2026-10-09; reverses R1's one-line ellipsis): in the Meetings,
+  Playing styles and Tournament ledgers the score cell wraps between sets (each set is one nowrap piece in
+  `maMatchRowsHtml`) and the row grows; no ellipsis, no clipping (`#h2hRoot .h2hc-led .ma-row-score` = `white-space:normal`).
+  **Apply:** Alcaraz v Sinner → Tournament US Open: Shelton 2026 QF reads "7-6(5), 1-6, 3-6, / 6-1, 6-7(7)" on two lines.
+  **Test:** `test-ten402-r4n.mjs` fix 2, `test-ten402-c.mjs` "r4 fix 2".
+- **Sets column = `pS–oS`** (founder r4 fix 3): en dash U+2013, no spaces, nowrap ("0–2") in the Meetings, Playing styles
+  and Tournament ledgers; a retirement reads `—` in Meetings / Playing styles, a walkover `—`. The Tournament rows are the
+  shared `trRowData`, so Match analysis → Tournament prints the same (intended). `ps2Meeting` keeps " - " for its other
+  hosts, and Match analysis Form / H2H (`fhFormRowData`, `fhH2hRowData`) still print "2 - 0" — outside this round.
+  **Apply:** every Sets cell on this page matches `^\d+–\d+$` or is `—`. **Test:** `test-ten402-r4n.mjs` fix 3.
 - **Model** = the Stennisfy Model page's `model-output.json` fair price behind the same display gate; otherwise one
   empty line, never a price of our own. **Elo** = the weekly Elo of Database → Ratings.
 - **Playing styles / DNA** = the Playing Styles page's archetypes and ratings. **Tournament** rows = Player Profile →
@@ -116,6 +133,13 @@ no day work, checks or screenshots on this page until the founder reopens it.
 - An unsourced metric is grey `—`, never 0.
 
 ## Behaviour
+- **The Database join is the ONE shared session state (R3 fix 1, 2026-10-09).** `h2hEnsureDb` mirrors
+  `_sfDbJoin` / `_sfDbJoinSt` (`sfDbJoinLoad`) on every read and keeps no state of its own: a join any surface loaded
+  (profile, Tournament tile, Database) prices every ledger here at once, and a failed load is asked again by the next
+  visit (`ensureInit(true)` from the nav clears the throttle) or a render ≥ `H2H_DB_RETRY_MS` (15 s) after this page's
+  last ask — never in a loop. Apply: block `database-yield*`, open Alcaraz v Sinner (ledger `—`), unblock, open the
+  Alcaraz profile, come back: all 17 meetings priced; without the profile, the next visit alone prices them.
+  **Test:** `test-ten402-r2l.mjs` "R3 fix 1", `tools/test-ten402-r2l-mutants.js`.
 - **The page never re-enters its own loaders:** `triggerLoads` runs at most once per `H2H_RELOAD_MS` (60 s).
   `loadMatches` ends by calling `H2HPage.ensureInit()`, which used to restart the loaders and repaint the pair ~17×/s.
   **Test:** `test-ten402-lead.mjs` (runs the page's own `triggerLoads`; its control removes the guard and goes red).
@@ -146,8 +170,35 @@ no day work, checks or screenshots on this page until the founder reopens it.
   1000 and ATP 500; an ATP 250 keeps the registry's name; a name outside the registry keeps its own). Printed by the shared
   normalised rows (`fhRowFromForm`, `meRowFromCareer`, the Match analysis H2H rows, Market edge rows → ledgers, hot-line
   tips and the match-stats sheet header), `psGroupMeetings` (Playing style group headers) and this page's Tournament picker
-  + info box. Display only — joins read the raw name. `psTourMeta` / `fhTournCode` read a printed name through its registry
-  key. **Test:** `test-ten402-r1x.mjs` fix 2.
+  + info box, the Suggested matchups chips ("… · Shanghai Masters", never "Shanghai") and — round 2, founder card
+  7bc622d5 — the whole Tournaments page (`tourxEventName`, `tournaments.md` "Event names"; Montreal / Toronto print
+  "Canadian Open · {city}" where both are listed). Display only — joins read the raw name; the chip's pair keeps the
+  board's word. `psTourMeta` / `fhTournCode` read a printed name through its registry key. **Apply:** an event name
+  anywhere on the site equals `sfEventName` of any of its spellings. **Test:** `test-ten402-r1x.mjs` fix 2,
+  `test-ten402-r2n.mjs` r2.6.
+- **Round 3 (TEN-402 follow-up review, 2026-10-09) — the rest of the site prints it too.** Match analysis: the modal
+  subtitle (`aContextLine`: "Shanghai Masters · R64 · 12:00", was "ATP Shanghai"), the Tournament tab (`trName`: title +
+  tile letter, "Record at Shanghai Masters", the edition headers "Shanghai Masters 2025", the empty line, the hold-rate
+  tip, the ROI overlay title and chip), Key factors' Tournament card ("Shanghai Masters · ATP 1000" + its record tip),
+  Progression (header, first-round lines, draw-average tip) and Weather's "Court speed · {event}" line. The location line
+  stays the venue ("Shanghai, CN"); Weather's city stays a city. The Matches board (`mxEventName`): card head, story strip
+  and the tournament chips (ordered by the printed name; `data-tournament` / `state.tournaments` keep `m.tour`). Player
+  Profile → Record per tournament (`tournDisplayName` → `window.sfEventName`): the row, the detail header, "best event";
+  **the tier is the row's meta** (`tournLevelMeta`: "Cincinnati Open  Masters 1000"; none on a Slam or the ATP Finals),
+  never part of the name. **ATP Cup:** the cleaner strips "ATP " from every feed name, so the ATP Cup (2020–22) read
+  "Cup" — `SF_EVENT_LITERAL` prints "ATP Cup" (display only). **Shared official name + a city:** `sfEventKey(name, city)`
+  — every shared spelling ("Canadian Open", "National Bank Open", "Rogers Cup", "Canada Masters") reads back to Montreal;
+  with the row's city the city's own registry event wins when it carries the same official name (the Entry list's Toronto
+  year prints "Canadian Open · Toronto"); a city never moves a row onto a different event. **Data never moves:** `trClean`
+  (hold-rate `byName`, the catalog match, the career join names), `m.tour` (filters, counts, weather index, edge rail),
+  the profile row's `t.name` (`data-t`, `state.tournOpen`, every join). Measured 9 Oct before → after: Zverev / Alcaraz
+  every per-event W–L, Backing units and priced n identical (Zverev Shanghai +0.6u, 20 priced, on both the profile and the
+  MA tab), the Matches board 16 cards / 1 chip either way. **Not yet renamed (outside this round):** the Players landing
+  group headers ("ATP Tokyo") and the profile's per-match event labels (`eventName`: Recent form, last match, ledger
+  meta). **Apply:** open any surface listed here; every event reads `sfEventName` of its data name, no tier inside a
+  name, and every figure equals the same surface before the rename. **Test:** `test-ten402-r2n.mjs` r3.1–r3.5 (+
+  `tools/test-ten402-r2n-mutants.js`), `test-ten332-tournament.mjs`, `test-ten341-key-factors.mjs`,
+  `test-ten304-weather-tab.mjs`, `tools/test-pp2-reconcile.js` "TEN-402 r3".
 - **Match-stats sheet BP rows / Return rating** come from the match-stats store row (`fhSheetInit` → the setstats shard),
   the same row Match analysis' Match Stats tab reads. A 2026-spring row at Indian Wells / Miami / Monte Carlo / Rome /
   Barcelona / Munich / Houston … holds `null` there (api-tennis sends those two stats only as `stat_value` "X/Y"; the

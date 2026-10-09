@@ -1,7 +1,8 @@
 # Tournaments page — header, Overview, overlays, Entry list (founder step 7, TEN-401, 2026-10-08)
 
 Applies to `renderTournamentsTab`, the Overview (`tourx*`) and `window.EntryListsTab` in `bsp-consult-dashboard.html`.
-Reports has its own file: `.claude/rules/tournament-reports.md`. Reference = `OFFICIAL VERSION 1.html` → Tournaments,
+Reports has its own file: `.claude/rules/tournament-reports.md`. Every event name the page prints follows "Event names"
+below. Reference = `OFFICIAL VERSION 1.html` → Tournaments,
 night, 1512px; the reference wins except where a rule below says *(override)*. The Sep handoff
 `design_handoff_tournaments/README.md` (TEN-242 zip, not committed) still holds structure, state and data shapes; its
 colours are superseded by `foundation.md`. Reviews are night only; day tokens stay wired.
@@ -42,6 +43,39 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
   `tournament-quotes.json` stay verbatim (audit copy of the sheet). Measured on 160 traceable notes: dateline 71 → 0,
   "said" 71 → 0, lead-in 58 → 0; 155 of 160 ship (16 events; Wimbledon 13). **Test:** `test-ten401-f1a.mjs` f1.1 (every note).
 - **An unsourced metric is `—`, never 0.**
+
+## Event names (founder card 7bc622d5, 2026-10-09: "rename the Tournaments page too")
+- **The page prints the site's ONE event name; the city is the data key.** Every place the page shows an event — rail
+  rows, hero title, Compare all rows, the What players say / ROI overlay titles and the ROI chip label, the Reports
+  picker chip and its monogram, the Reports empty-state lines, the match-stats sheet header, an ATP-tour Entry list row —
+  prints `tourxEventName(key)` = `SF_EVENT_NAMES[key]` (the table `sfEventName` prints on Head to Head, Match analysis and
+  every sheet), else the key itself. 24 of the 64 rated events change — every Masters 1000, ATP 500 and the Finals: Turin →
+  ATP Finals, Cincinnati → Cincinnati Open, Beijing → China Open, Monte Carlo → Monte-Carlo Masters, Shanghai → Shanghai
+  Masters, Tokyo → Japan Open, Basel → Swiss Indoors, London → Queen's Club Championships, Hamburg → Hamburg Open … The
+  four Slams already print their name; **every ATP 250 keeps its registry name** (Antwerp, Chengdu, Hangzhou; Doha is
+  filed ATP 250 in `TOURNAMENT_CATALOG`).
+- **Two registry events with one official name print the city after it:** "Canadian Open · Montreal" / "Canadian Open ·
+  Toronto" (`TOURX_EVENT_CITY_SUFFIX`; `''` turns it off and the two rows collide). No two rows on the page print alike.
+  A rail / Compare all name takes up to two lines (`-webkit-line-clamp:2`), so the city is never ellipsised away
+  ("Canadian Open · …" read the same on both rows); short names keep the one-line tile.
+- **Roland Garros / French Open** are two `TOURNAMENT_CATALOG` entries for ONE event (a lookup alias; identical
+  `tournament-market.json` rows, n 2,071). Only Roland Garros has a `COURT_CONDITIONS` row, so the page lists it once.
+- **Display only.** `tourxState.tsSel` / `.tour`, every `onclick` argument, `COURT_CONDITIONS`, `tournament-market.json`,
+  `tournament-quotes.json` (and the quote rules that read registry names), `tournament-progression.json`, `ROW_SPLIT` /
+  `archiveFilter` and the ROI panel's `initialTournamentNames` all keep the key. Measured before → after on 9 Oct: ROI
+  All rows Wimbledon 1,949 / +0.30%, Hamburg 565 / −4.75%, Antwerp 260 / −2.78%, Turin 73 / −11.27%, Montreal 460 /
+  −8.10%, Toronto 446 / −5.26%, Shanghai 799 / −1.17%; every Overview figure, quote and Reports number identical.
+- **Search** finds an event by its printed name, its official name, its city key or another catalog spelling of it
+  (`tourxEventSearchText`): "Cincinnati Open" and "Cincinnati" both find Cincinnati Open; "French" finds Roland Garros.
+- **Entry list:** only an ATP-tour row (Grand Slam / ATP …) is renamed (`sfEventKey(name, city)` on the shard's name, else
+  its city): Basel → Swiss Indoors, Vienna → Vienna Open, Paris → Paris Masters. **A shared official name takes the row's
+  city** (TEN-402 r3): "Canadian Open" / "National Bank Open" in a Toronto year → "Canadian Open · Toronto" (the name alone
+  reads back to Montreal); a city never moves a row onto a different event. **Test:** `test-ten402-r2n.mjs` r3.4. A Challenger / ITF row ("Rome (CH 75)") and a
+  name the registry lacks (Brussels) keep the shard's words. *Known limit:* rows inside a tier still sort by the shard
+  name, not the printed one.
+- **Apply:** pick any event on the page; its words must equal `sfEventName(key)` (+ " · city" for Montreal / Toronto),
+  and every number must equal the same event before the rename. **Test:** `test-ten402-r2n.mjs` (+
+  `tools/test-ten402-r2n-mutants.js`, 23 mutants).
 
 ## Header + tabs
 - Header card = the shared 35b page header (founder shell refresh TEN-403, 2026-10-08: **no caps line** — "ATP tour ·
@@ -98,8 +132,9 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
     surname first so the ellipsis is at the end. The name cell ellipsises at its end, on real overflow only.
   - **No "published {date}"** on an event row: neither shard holds the list's publication date (a draw's
     `sourcePublished` = the PDF's modDate, re-stamped per re-post; an advance list's = the aggregator page's update).
-  - En dash in week ranges ("2–8 Nov", "12–18 Oct", "26 Oct – 1 Nov"); empty state "The ATP has {n} events in the week
-    of {range}. …". Hanken draws its en dash 5.99px vs a 4.58px hyphen (it reads as a hyphen), so every rendered range
+  - En dash in week ranges ("2–8 Nov", "12–18 Oct", "26 Oct – 1 Nov"); empty state title "No lists loaded for {range}" —
+    the SELECTED week's range, the current week's too, never "this week" (TEN-402 r4 fix 5: "this week" showed while 2–8
+    Nov was picked) — then "The ATP has {n} events in the week of {range}. …". **Test:** `test-ten402-r4n.mjs` fix 5. Hanken draws its en dash 5.99px vs a 4.58px hyphen (it reads as a hyphen), so every rendered range
     (`weekRangeHtml`: chips + empty state) sets the dash in Plex (`.el-ndash`, `--font-nums`); the text stays U+2013.
     **Test:** `test-ten401-f1a.mjs` f1.3 (every weekStart in both shards + the computed chips).
   - **A missing country is a grey `—`** (`--text-label`), never blank — Medvedev, Rublev, Khachanov, Safiullin play under no

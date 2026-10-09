@@ -106,8 +106,8 @@ test('Chengdu match viewed with TZ=Asia/Shanghai vs TZ=UTC: badge (venue time) a
     out[tz] = JSON.parse(r.stdout.trim().split('\n').pop());
   }
   // header = viewer's clock; badge = Chengdu's clock (UTC+8) of the SAME instant, whoever views it
-  assert.equal(out['Asia/Shanghai'].header, 'ATP Chengdu · Quarter-finals · 16:00');
-  assert.equal(out['UTC'].header, 'ATP Chengdu · Quarter-finals · 08:00');
+  assert.equal(out['Asia/Shanghai'].header, 'Chengdu · Quarter-finals · 16:00');
+  assert.equal(out['UTC'].header, 'Chengdu · Quarter-finals · 08:00');
   for (const tz of ['Asia/Shanghai', 'UTC']) {
     assert.equal(out[tz].badge, 'MATCH · 16:00', tz);
     assert.equal(out[tz].athead, 'Sun Sep 27 · 16:00', tz);
@@ -124,7 +124,7 @@ test('the MATCH badge is the header\'s instant in venue time, for viewers in oth
   for (const [viewerTz, headerTime] of [['UTC', '08:00'], ['Asia/Shanghai', '16:00'], ['America/New_York', '04:00']]) {
     const R = build({ viewerTz });
     const header = R.aContextLine(M, 'Quarter-finals');
-    assert.equal(header, 'ATP Chengdu · Quarter-finals · ' + headerTime, viewerTz);
+    assert.equal(header, 'Chengdu · Quarter-finals · ' + headerTime, viewerTz);
     const html = R.buildWeatherSection(M, ENTRY, file(() => ({})), NOW);
     assert.equal(text(elements(html, 'wx-badge')[0]), 'MATCH · 16:00', viewerTz);    // same instant, Chengdu clock
     // header instant (viewer zone) and badge instant (venue zone) are the same moment
@@ -132,7 +132,7 @@ test('the MATCH badge is the header\'s instant in venue time, for viewers in oth
   }
   // after the DST change the same wall clock is one hour later in UTC (CET)
   const late = Object.assign({}, M, { date: '2026-10-26' });
-  assert.equal(build({ viewerTz: 'UTC' }).aContextLine(late, 'R1'), 'ATP Chengdu · R1 · 09:00');
+  assert.equal(build({ viewerTz: 'UTC' }).aContextLine(late, 'R1'), 'Chengdu · R1 · 09:00');
 });
 
 // Founder Q21 (2026-09-30): the heat flag is the file's words ("Heat — high", DF L2411) at the EXISTING feels-like
@@ -502,7 +502,7 @@ test('api-tennis 02:00Z placeholder = no time: "MATCH · TBC", "time TBC", no he
   const R = build({ viewerTz: 'UTC' });
   const view = m => { const h = R.buildWeatherSection(m, E, null, NOW); return { badge: text(elements(h, 'wx-badge')[0]), head: text(elements(h, 'wx-athead')[0]), header: R.aContextLine(m, 'Quarter-finals') }; };
   const cest = view(Object.assign({}, M, { time: '04:00' }));                 // 04:00 Berlin CEST = 02:00Z
-  assert.equal(cest.badge, 'MATCH · TBC'); assert.equal(cest.head, 'Sun Sep 27 · time TBC'); assert.equal(cest.header, 'ATP Chengdu · Quarter-finals');
+  assert.equal(cest.badge, 'MATCH · TBC'); assert.equal(cest.head, 'Sun Sep 27 · time TBC'); assert.equal(cest.header, 'Chengdu · Quarter-finals');
   const cet = view(Object.assign({}, M, { date: '2026-10-26', time: '03:00' })); // 03:00 Berlin CET = 02:00Z (after 25 Oct)
   assert.equal(cet.badge, 'MATCH · TBC');
   const real = view(Object.assign({}, M, { time: '04:05' }));                 // 02:05Z: a real time, 10:05 Chengdu

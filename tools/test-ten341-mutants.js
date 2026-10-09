@@ -91,7 +91,7 @@ const MUTANTS = [
   ['DoD 8: an old renderer back (hidden, not deleted)', 'function buildKeyFactorsSection(m){', 'function akOddsMoveSvg(m){ return \'\'; }\nfunction buildKeyFactorsSection(m){'],
   ['D1: a literal colour in a style constant', "const KF_PANEL = 'background:var(--card); border:1px solid var(--edge-6);';", "const KF_PANEL = 'background:#10131d; border:1px solid var(--edge-6);';"],
   ['D1: a literal colour in the tile surface', "  card: 'var(--card)', edge: 'var(--edge-7)',", "  card: '#10131d', edge: 'var(--edge-7)',"],
-  ['escaping: the tournament title unescaped', "${fhEsc(tier ? `${clean} · ${tier}` : clean)}", "${tier ? `${clean} · ${tier}` : clean}"],
+  ['escaping: the tournament title unescaped', "${fhEsc(tier ? `${trName(m)} · ${tier}` : trName(m))}", "${tier ? `${trName(m)} · ${tier}` : trName(m)}"],
   ['lazy: Key factors stops loading the H2H meetings', 'fhEnsureFormData(m), fhEnsureH2hData(m), ensureMatchDna(),', 'fhEnsureFormData(m), ensureMatchDna(),'],
   ['lazy: no final paint (Download report prints the loading lines)', '.then(() => { done = true; paint(); });', '.then(() => { done = true; });'],
 ];

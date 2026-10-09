@@ -53,7 +53,7 @@ test('CONTROL: without the guard the loop re-enters (the test would catch a reve
 // sets column "—", score "5–0 ret." (en dash), result dot by the official winner. Mutant: tools/test-ten402-fix-mutants.js.
 test('H2H ledger: a retirement row shows sets "—" and an en-dash score ("5–0 ret.")', () => {
   assert.ok(SRC.includes("const sc2 = r.ret ? fhH2hSetScores(r).replace(/-/g, '–') : fhH2hSetScores(r);"), 'retirement score is not en-dashed');
-  assert.ok(SRC.includes("sets: r.pS == null || r.ret ? '—' : r.pS + ' - ' + r.oS,"), 'retirement sets column is not a dash');
+  assert.ok(SRC.includes("sets: r.pS == null || r.ret ? '—' : r.pS + '–' + r.oS,"), 'retirement sets column is not a dash (r4 fix 3: completed = en dash)');
   // the score text itself, through the shared scorer: [[5,0]] + ret → "5–0 ret."
   const fn = SRC.slice(SRC.indexOf('function fhH2hSetScores('), SRC.indexOf('\n}\n', SRC.indexOf('function fhH2hSetScores(')) + 2);
   assert.ok(fn.length > 30, 'fhH2hSetScores not found');
@@ -72,5 +72,5 @@ test('R1 review: the season finals show the format\'s field (8) and no date rang
   assert.ok(SRC.includes('const H2H_FINALS_FIELD = 8;'));
 });
 test('R1 review: the Playing styles ledger shows a retirement as the meetings ledger does (sets —, "5–0 ret.")', () => {
-  assert.ok(SRC.includes("sets: m.ret ? '—' : m.sets, scores: m.ret ? String(m.scores).replace(/-/g, '–') + ' ret.' : m.scores,"));
+  assert.ok(SRC.includes("sets: m.ret ? '—' : m.pS + m.oS ? m.pS + '–' + m.oS : m.sets, scores: m.ret ? String(m.scores).replace(/-/g, '–') + ' ret.' : m.scores,"));
 });

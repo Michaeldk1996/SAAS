@@ -36,7 +36,7 @@ const MUTANTS = [
   ['MP: a Bo5 fifth-set tiebreak read as 7 points', " || (c.need === 3 && Number(st.set) === 5) || ", " || "],
   ['MP: the set winner read off T (a repeated point loses the set)', "  const won = lastTb ? (Math.max(lastTb.a, lastTb.b) >= 7 && Math.abs(lastTb.a - lastTb.b) >= 2 ?", "  const won = lastTb ? (tbDone ?"],
   ['header: raw surface', "      tourn: m.tour, surface: fhSurfName(m.surface), round:", "      tourn: m.tour, surface: m.surface, round:"],
-  ['header: a missing round dropped', "  const meta = [r.tourn, r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt]", "  const meta = [r.tourn, r.surface || FH_DASHC, r.round, dateTxt]"],
+  ['header: a missing round dropped', " r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt]", " r.surface || FH_DASHC, r.round, dateTxt]"],
   ['DoD 8: the old stat sheet back', "function maMsNotPlayedHtml(live){", "function buildMatchStatsSheet(m, setNo){ return ''; }\nfunction maMsNotPlayedHtml(live){"],
 ];
 MUTANTS.push(

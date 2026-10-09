@@ -46,7 +46,7 @@ function sandbox(db, careers, blk) {
     function psTourMeta() { return null; }
     function fhEsc(s) { return escapeHtml(s == null ? '' : String(s)); }
     ${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK', '_h2hLedPx', 'H2H_PX_NOTE'].map(innerConst).join('')}
-    ${['fhIsInitial', 'fhNameKey', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin', 'h2hCareerOf', 'h2hLedgerJoin', 'h2hPriceTitle', 'h2hPxNote', 'fhOdd', 'fhDDMM', 'fhSetTxt', 'fhH2hSetScores', 'fhSrcTitle', 'trRowData', 'trLastPlayed',
+    ${['fhIsInitial', 'fhNameKey', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin', 'h2hCareerOf', 'h2hLedgerJoin', 'h2hPriceTitle', 'h2hPxNote', 'fhOdd', 'fhDDMM', 'fhSetTxt', 'fhH2hSetScores', 'fhSrcTitle', 'trPxTitle', 'trDbEnd', 'trDayWords', 'trRowData', 'trLastPlayed',
       'psRoundAbbr', 'psGroupMeetings', 'psFmtMeetDate', 'ps2SetDone', 'ps2Meeting'].map(slice).join('\n')}
     const document = undefined;
     const state = {}; let handlers = [];
@@ -309,7 +309,7 @@ test('fix 2: the Playing styles ledger prices Sinner\'s meetings from the Databa
   const rows = STYLE_ROWS.map(r => Object.assign({}, r));
   const led = rowsOfLedger(S2.cStyleLedger({ p: { key: '2072', full: 'J. Sinner' }, R: { rows, oppLab: 'All Court Elite' }, all: true, sur: 'Sinner', i: 0, hMore: 1 }));
   const at = (d, sc) => led.find(t => t.startsWith(d) && t.includes(sc));
-  assert.match(at('24.08.', '2-6, 6-3, 1-6, 4-6'), /F 1 - 3 2-6, 6-3, 1-6, 4-6 1\.81 2\.12$/, 'US Open 2025 F = the archive (psw/psl 2.12 / 1.81), not the shard\'s 1.53 / 2.71');
+  assert.match(at('24.08.', '2-6, 6-3, 1-6, 4-6'), /F 1–3 2-6, 6-3, 1-6, 4-6 1\.81 2\.12$/, 'US Open 2025 F = the archive (psw/psl 2.12 / 1.81), not the shard\'s 1.53 / 2.71');
   assert.match(at('26.05.', '6-7(2)'), / 1\.88 2\.03$/, 'Roland Garros 2025 F = the archive, not Rome\'s 1.63 / 2.43');
   assert.match(at('05.05.', '6-7(5), 1-6'), / 1\.63 2\.43$/, 'Rome 2025 F keeps its own price');
   assert.match(at('07.08.', '0–5'), / 1\.53 2\.71$/, 'Cincinnati 2025 F: the retirement priced on the join (ruling 2026-10-08), settled on the ATP result');
@@ -385,11 +385,13 @@ test('ruling 2026-10-08: the Tournament panel draws ONE model — the ledger sho
   assert.match(back(sandbox(null).cTourPanel(Object.assign({}, c, { P: voided }), 0)), /−0\.5u flat 1u · 2 priced/);
 });
 
-// Fix 3 · set scores stay on one line with an ellipsis in this page's ledgers (page-scoped; other pages unchanged).
-test('fix 3: the Playing styles + Tournament ledgers keep set scores on one line, cut with an ellipsis — #h2hRoot only', () => {
-  assert.match(html, /\n  #h2hRoot \.h2hc-led \.ma-row-score\{ min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; \}/);
+// Fix 3 (R1) → r4 fix 2 (founder, 2026-10-09: "NEVER an ellipsis on scores"): this page's ledgers wrap set scores between
+// sets and the row grows — the R1 one-line ellipsis rule is reversed. Page-scoped; other pages unchanged.
+test('r4 fix 2: the Playing styles + Tournament ledgers never cut set scores — they wrap between sets (#h2hRoot only)', () => {
+  assert.match(html, /\n  #h2hRoot \.h2hc-led \.ma-row-score\{ min-width:0; white-space:normal; overflow:visible; \}/);
+  assert.ok(!/ma-row-score\{[^}]*(text-overflow:ellipsis|white-space:nowrap|overflow:hidden)/.test(html), 'no score cell is cut or held on one line');
   assert.ok(!/(^|[\s}])\.ma-row-score\s*\{/m.test(html.replace(/#h2hRoot \.h2hc-led \.ma-row-score/g, '')), 'no unscoped rule: Form / Tournaments / profile rows unchanged');
-  // both ledgers carry the class the rule targets; the full score stays the cell's hover
+  // both ledgers carry the class the rule targets
   assert.match(block, /<div class="h2hc-led" style="\$\{C_PANEL\} flex:1;/);
   assert.match(block, /<div class="h2hc-led h2hc-tled"/);
   assert.match(html, /<span class="ma-row-score"\$\{t\(r\.scoresTitle\)\}/);

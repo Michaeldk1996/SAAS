@@ -73,7 +73,9 @@ which slices and executes the real functions.
 - **Ties are judged on the printed value:** two figures that print the same (63.94 / 63.88 → 63.9%) mark neither side.
 - Pop-up sheet: `--card` + 1px `--edge-10`, radius 14, `--shadow-modal`, max 640, no blue outline; over `--backdrop` +
   blur(3px) from `--sf-side` with `clip-path: inset(0)`. Header "Name v Opponent" 17/800 (the `v` grey) + Plex 11 meta
-  "Event year · round · surface · Surname won/lost [score]". **Better value white 700, the other grey 500** (lower is better
+  "Event year · round · surface · Surname won/lost [score]" — Event = the one event name (`tourxEventName`: "Japan Open
+  2026 · F", never "Tokyo 2026"; `tournaments.md` "Event names"), as are the tournament picker chips and their monograms
+  (SM Shanghai Masters · JO Japan Open · CO China Open); the picker's click and state keep the key. **Better value white 700, the other grey 500** (lower is better
   for unforced errors; a tie marks neither). Close = inner-tone 32px button; Esc, a scrim click and a user's sidebar click
   (`window.sfOverlayClosers`) also close it.
 

@@ -4,7 +4,8 @@
 // (TEN332_HTML).
 //   · N6 only editions entered · N7 main draw (the history's own rows) · N2 walkovers in no count
 //   · D2 one gate on every rate (W–L %, sets won, vs market) — never "0%" · D6 "+Y.Ypt vs market" at n >= 5
-//   · N5 Backing at the R8 close (Pinnacle, then Bet365) · TEN-325 retirements settle at the close, note from the core
+//   · N5 Backing at the closing price (Pinnacle, then Bet365) on the ONE Database join (TEN-402 r2, founder 2026-10-09)
+//   · TEN-325 retirements settle on the ATP result, note from the core
 //   · N4 the court-speed label is the pipeline's 3-band (m.courtSpeed.category) · Roland Garros speed dashed (TEN-321)
 //   · the reading paragraph is not drawn · the seven-season trend dashes every season the sheet does not hold
 //   · DoD 8: maMatchRowsHtml rows, every row opens the shared sheet; the old renderers are deleted
@@ -56,13 +57,34 @@ const S = new Function('window', `
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName',
      'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
-  return { buildTournamentSection, trModelFor, trStateFor, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
+  return { buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
     chShards: _careerHistoryShards, thShards: _tourHistShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
     get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED,
     // TEN-402 (founder 2026-10-08): the page-wide Database join rows (sfDbJoinLoad's state), set by the tests
     set dbJoin(v){ _sfDbJoin = v; _sfDbJoinSt = v ? 'ready' : null; _sfDbJoinP = null; }, set dbJoinSt(v){ _sfDbJoinSt = v; } };
 `)(globalThis);
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+// TEN-402 r2 (founder card 7bc622d5, 2026-10-09): the tab prices on the ONE Database join too, so every fixture's prices
+// reach it as a Database store (dbStore below), never as a closes shard.
+// THE join, sliced from the Head to Head page (as test-ten402-b runs it) and published where the page publishes it
+const JOIN_CONSTS = ['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK']
+  .map(n => { const x = new RegExp(`^\\s*const ${n} = [^\\n]*$`, 'm').exec(html); assert.ok(x, n); return x[0].replace(/\/\/[^'\n]*$/, ''); }).join('\n');
+globalThis.H2HPage = { priceJoin: new Function(`const FH_DASHC = '—';\n${JOIN_CONSTS}\n${['fhDayNum', 'fhIsInitial', 'fhNameKey', 'psRoundAbbr', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin'].map(slice).join('\n')}\nreturn h2hPriceJoin;`)() };
+const dbPriceJoinRows = new Function(`${slice('dbPriceJoinRows')}\nreturn dbPriceJoinRows;`)();
+// The Database store for one fixture: games → [date, lvl, surf, rnd, tour, fav, dog, favWon, book] + archive names
+// ("Surname I."), each at the price given (px: [own, opp], book 0 = Pinnacle / 1 = Bet365); ret → the flagged retRows.
+const TD_RD = { 'Final': 'The Final', 'Semi-finals': 'Semifinals', 'Quarter-finals': 'Quarterfinals', '1/8-finals': '3rd Round', '1/16-finals': '2nd Round', '1/32-finals': '1st Round' };
+function dbStore(games, priceOf) {
+  const rounds = [...new Set(Object.values(TD_RD))], base = { meta: { rounds, tournaments: ['Washington'] }, rows: [], retRows: [] }, nm = { names: [], retNames: [] };
+  const arch = n => { const [i, ...sur] = String(n).split(' '); return sur.join(' ') + ' ' + i; };
+  games.forEach(g => { const q = priceOf(g); if (!q) return;
+    const own = q.px[0], opp = q.px[1], favWon = (g[3] ? own : opp) < (g[3] ? opp : own) ? 1 : 0;
+    const row = [+g[0].replace(/-/g, ''), 0, 0, rounds.indexOf(TD_RD[g[2]]), 0, Math.min(own, opp), Math.max(own, opp), favWon, q.book || 0];
+    const names = g[3] ? ['Sinner J.', arch(g[1])] : [arch(g[1]), 'Sinner J.'];
+    if (q.ret) { base.retRows.push(row); nm.retNames.push(names); } else { base.rows.push(row); nm.names.push(names); } });
+  return { base, nm };
+}
 
 // ---- fixtures: history editions (the pipeline's shape), career rows (set scores) and closes (prices) for p1 ----
 let EK = 90000;
@@ -92,6 +114,10 @@ function fixture(eds, o) {
     courtSpeed: { speed: 66, altitude: 20, abstractSpeed: 1.02, as2023: 0.98, as2024: 1.01, as2025: 1.02, category: 'Medium' } }, o.m || {});
   const E = S.trStateFor(m);
   E.data = [{ ch, cl: { rows, cap: [] } }, { ch: [], cl: { rows: [], cap: [] } }]; E.state = ['ready', 'ready'];
+  // the same prices as Database rows (Pinnacle p / Bet365 b; a priced retirement behind the store's flag)
+  const games = eds.flatMap(e => e.matches.map(x => [x.date, x.opponent, x.round, x.won, x._sets, x._o]));
+  const st = dbStore(games, g => (g[5].p ? { px: g[5].p, ret: !!g[5].ret } : g[5].b ? { px: g[5].b, book: 1 } : null));
+  S.dbJoin = o.noDb ? null : dbPriceJoinRows(st.base, st.nm);
   return m;
 }
 const W2 = [[6, 3], [6, 4]], L2 = [[3, 6], [4, 6]];
@@ -105,18 +131,18 @@ test('N6: only editions entered — a stale store\'s gap year never renders', ()
   const m = fixture([ed(2025, [['2025-07-22', 'A. B', 'Final', true, W2]]), ed(2021, [], { withdrew: true, roundReached: 'Withdrawal' }), ed(2019, [['2019-07-22', 'C. D', '1/8-finals', false, L2]])]);
   const h = S.buildTournamentSection(m);
   assert.ok(!/Withdrawal|2021/.test(text(card0(h))));
-  assert.deepEqual([...card0(h).matchAll(/>Washington (\d{4})</g)].map(x => x[1]), ['2025', '2019']);
+  assert.deepEqual([...card0(h).matchAll(/>Washington Open (\d{4})</g)].map(x => x[1]), ['2025', '2019']);
 });
 
 // Mutations 'result: won final not "Won"', 'result: in-progress edition labelled by its last round', 'rows: group meta loses W–L'
-test('edition headers: "Washington YYYY" + result · W–L — Won / the round lost / In progress (DESIGN GAP G17)', () => {
+test('edition headers: "Washington Open YYYY" (the one event name, TEN-402 r3) + result · W–L — Won / the round lost / In progress (DESIGN GAP G17)', () => {
   // this year's edition stays "In progress" whether or not the analysed match itself is finished (never "· w/o")
   const done = fixture([ed(2026, [['2026-07-18', 'E. F', '1/8-finals', true, W2]])], { m: { finalScore: { winner: 'p1' } } });
-  assert.ok(text(card0(S.buildTournamentSection(done))).includes('Washington 2026 In progress · 1–0'));
+  assert.ok(text(card0(S.buildTournamentSection(done))).includes('Washington Open 2026 In progress · 1–0'));
   const m = fixture([ed(2026, [['2026-07-18', 'E. F', '1/8-finals', true, W2]]), ed(2025, [['2025-07-20', 'A. B', 'Final', true, W2], ['2025-07-19', 'G. H', 'Semi-finals', true, W2]]),
     ed(2024, [['2024-07-19', 'C. D', 'Quarter-finals', false, L2], ['2024-07-17', 'I. J', '1/8-finals', true, W2]])]);
   const g = [...card0(S.buildTournamentSection(m)).matchAll(/<div class="ma-rows-group"[\s\S]*?<\/div>/g)].map(x => text(x[0]));
-  assert.deepEqual(g, ['Washington 2026 In progress · 1–0', 'Washington 2025 Won · 2–0', 'Washington 2024 Quarter-final · 1–1']);
+  assert.deepEqual(g, ['Washington Open 2026 In progress · 1–0', 'Washington Open 2025 Won · 2–0', 'Washington Open 2024 Quarter-final · 1–1']);
 });
 
 // Mutation 'gate: W–L % printed below n 5' / 'gate: n 0 prints 0%'
@@ -146,7 +172,7 @@ test('Best result: Won beats a final; an edition still being played is no result
 
 // Mutations 'backing: Pinnacle only (Bet365 fallback dropped)', 'backing: a retirement not settled', 'vm: shown below n 5',
 // 'vm: implied rate not de-vigged', 'backing: RET note spelled out / dropped'
-test('Backing (N5 + D6 + TEN-325): R8 closes, retirements settle at the close, vs market at n >= 5 de-vigged, note from the core', () => {
+test('Backing (N5 + D6 + TEN-325): the Database join\'s closes, retirements settled on the ATP result, vs market at n >= 5 de-vigged, note from the core', () => {
   // 6 matches: 4 Pinnacle, 1 Bet365 only, 1 a retirement win at the close
   const m = fixture([ed(2024, [
     ['2024-07-21', 'A. B', 'Final', true, [[6, 3], [2, 1]], { p: [1.5, 2.6], ret: true }],
@@ -229,7 +255,7 @@ test('Q9: the header carries the event hold rate with its n; a dash with the rea
   S.hold = { events: { 1532: { name: 'Washington', names: ['Washington'], held: 3252, games: 4034, matches: 178, years: ['2024', '2025', '2026'] } }, byName: { washington: '1532' } };
   const head = S.trHeaderHtml(fixture([nMatches(2, () => true)]));
   assert.match(head, /grid-template-columns:repeat\(5,1fr\)/);
-  assert.match(text(head), /Court speed 1\.02 · Medium Altitude 20 m Hold rate 81% Service hold at Washington: 3,252 of 4,034 service games held \(n = 4,034\)/);
+  assert.match(text(head), /Court speed 1\.02 · Medium Altitude 20 m Hold rate 81% Service hold at Washington Open: 3,252 of 4,034 service games held \(n = 4,034\)/);
   assert.match(text(head), /178 matches with a box score over 3 editions on file \(2024–2026\)/);
   const none = S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Nowhere' } }));
   assert.match(text(none), /Hold rate — No box score on file for Nowhere, so no hold rate is shown\./);
@@ -289,34 +315,14 @@ test('DoD 8: maMatchRowsHtml rows, every row registered in the one sheet map and
 const PPW = { FEATURE_PP2: true, playerProfiles: { players: {} }, marketEdge: {}, careerHistory: {}, MarketEdgeCore: globalThis.MarketEdgeCore,
   get trProfileBacking(){ return globalThis.trProfileBacking; }, get trProfilePriceOf(){ return globalThis.trProfilePriceOf; } };
 new Function('window', pp2)(PPW);
-// THE join, sliced from the Head to Head page (as test-ten402-b runs it) and published where the page publishes it
-const JOIN_CONSTS = ['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK']
-  .map(n => { const x = new RegExp(`^\\s*const ${n} = [^\\n]*$`, 'm').exec(html); assert.ok(x, n); return x[0].replace(/\/\/[^'\n]*$/, ''); }).join('\n');
-globalThis.H2HPage = { priceJoin: new Function(`const FH_DASHC = '—';\n${JOIN_CONSTS}\n${['fhDayNum', 'fhIsInitial', 'fhNameKey', 'psRoundAbbr', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin'].map(slice).join('\n')}\nreturn h2hPriceJoin;`)() };
-const dbPriceJoinRows = new Function(`${slice('dbPriceJoinRows')}\nreturn dbPriceJoinRows;`)();
-// The Database store for one fixture: games → [date, lvl, surf, rnd, tour, fav, dog, favWon, book] + archive names
-// ("Surname I."), each at the price given (px: [own, opp], book 0 = Pinnacle / 1 = Bet365); ret → the flagged retRows.
-const TD_RD = { 'Final': 'The Final', 'Semi-finals': 'Semifinals', 'Quarter-finals': 'Quarterfinals', '1/8-finals': '3rd Round', '1/16-finals': '2nd Round', '1/32-finals': '1st Round' };
-function dbStore(games, priceOf) {
-  const rounds = [...new Set(Object.values(TD_RD))], base = { meta: { rounds, tournaments: ['Washington'] }, rows: [], retRows: [] }, nm = { names: [], retNames: [] };
-  const arch = n => { const [i, ...sur] = String(n).split(' '); return sur.join(' ') + ' ' + i; };
-  games.forEach(g => { const q = priceOf(g); if (!q) return;
-    const own = q.px[0], opp = q.px[1], favWon = (g[3] ? own : opp) < (g[3] ? opp : own) ? 1 : 0;
-    const row = [+g[0].replace(/-/g, ''), 0, 0, rounds.indexOf(TD_RD[g[2]]), 0, Math.min(own, opp), Math.max(own, opp), favWon, q.book || 0];
-    const names = g[3] ? ['Sinner J.', arch(g[1])] : [arch(g[1]), 'Sinner J.'];
-    if (q.ret) { base.retRows.push(row); nm.retNames.push(names); } else { base.rows.push(row); nm.names.push(names); } });
-  return { base, nm };
-}
 test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Database join (retirements settled on the ATP result) — never the closes shard, never the market-edge shard', () => {
   const games = [['2024-07-21', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }], ['2024-07-20', 'C. D', 'Semi-finals', false, L2, { p: [2.0, 1.85] }],
     ['2024-07-19', 'E. F', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }], ['2024-07-18', 'G. H', '1/8-finals', true, W2, { b: [1.4, 2.9] }],
     ['2024-07-17', 'I. J', '1/16-finals', true, W2, { p: [1.3, 3.5] }], ['2024-07-16', 'K. L', '1/32-finals', true, W2, { p: [2.5, 1.55] }]];
-  const m = fixture([ed(2024, games)]);
+  // the closes shard (+2.5u) is loaded for the player — and read by nothing (TEN-402 r2: the tab left it too)
+  const m = fixture([ed(2024, games)], { noDb: true });
   const d = S.tr.data[0];
   S.chShards['1'] = d.ch; S.fhCl['1'] = d.cl;
-  // the Match analysis tab is unchanged: its own closes join (+2.5u)
-  const tb = tile(S.buildTournamentSection(m), 'Backing');
-  assert.equal(/class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], '+2.5u', 'the tab keeps the closes shard');
   // the Database prices differ from the closes: F 1.60, QF 1.90, R16 1.50 (Bet365), R32 1.30 a RETIREMENT (flagged), R64 2.40
   const DBPX = { 'A. B': { px: [1.6, 2.4] }, 'C. D': { px: [2.1, 1.75] }, 'E. F': { px: [1.9, 1.95] }, 'G. H': { px: [1.5, 2.7], book: 1 },
     'I. J': { px: [1.3, 3.5], ret: true }, 'K. L': { px: [2.4, 1.6] } };
@@ -343,22 +349,42 @@ test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Data
   const hx = (h, o) => { const x = new RegExp(o.replace('.', '\\.') + ' (?:F|SF|QF|R16|R32|R64) \\d - \\d — (\\d+\\.\\d\\d) (\\d+\\.\\d\\d)').exec(h); return x ? x[1] + ' / ' + x[2] : '—'; };
   assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L', 'Q. Qual'].map(o => hx(det, o)), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70', '2.40 / 1.60', '—'],
     'the detail rows\' H / A = the Database join (the retirement too); the qualifier has none');
+  // TEN-402 r2 (founder card 7bc622d5, 2026-10-09): the Match analysis Tournament tab prints the SAME figures — its tile, its
+  // rows' H / A and B mark — from the same join; never the closes' +2.5u
+  const tabH = S.buildTournamentSection(m), tb = tile(tabH, 'Backing');
+  assert.equal(/class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], '+2.7u', 'the tab = the profile (+2.7u), not the closes (+2.5u)');
+  assert.ok(text(tb).includes('6 of 6 matches priced') && text(tb).includes('Bet365 where missing (1)'), text(tb));
+  const tabPx = o => { const x = new RegExp('>' + o.replace('.', '\\.') + '<[^]*?ma-row-score[^]*?</span></span><span[^>]*>([^<]*)(?:<span class="ma-row-mark"[^>]*>(B)</span>)?</span><span[^>]*>([^<]*)</span>').exec(card0(tabH)); return x ? x[1] + ' / ' + x[3] + (x[2] ? ' B' : '') : null; };
+  assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L'].map(tabPx), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70 B', '2.40 / 1.60'], 'the tab rows = the profile rows');
+  // one model: row for row, the tab's prices are the profile model's (trProfileModel), and so are the units and n
+  const PT = S.trModelFor(m, 0), PP = S.trProfileModel('1', 'J. Sinner', prof.tournamentHistory[0]);
+  const px = P => P.all.map(r => [r.date, r.opp, r.won, r.price, r.oppPrice, r.book].join('|')).sort();
+  assert.deepEqual(px(PT), px(PP), 'the tab and the profile price every row identically');
+  assert.deepEqual([PT.priced.length, Math.round(PT.units * 100), PT.vm], [PP.priced.length, Math.round(PP.units * 100), PP.vm]);
   // control: the Database rows alone (the retirement voided) → 5 priced, +2.4u; the flag is what settles it
   S.dbJoin = dbPriceJoinRows(Object.assign({}, st.base, { retRows: [] }), Object.assign({}, st.nm, { retNames: [] }));
   const c = I.tournViews(prof).find(x => x.name === 'Washington');
   assert.deepEqual([c.pinN, c.pinTxt], [5, '+2.4u']);
-  // before the Database rows answer: a dash and "loading prices" — never the closes' +2.5u nor the market shard's +30.0u
+  // before the Database rows answer: a blank figure and "loading prices" (TEN-402 R2, founder card 7bc622d5: a neutral
+  // loading state, never 0 and never "—", which is a failed load) — never the closes' +2.5u nor the market shard's +30.0u
   const savedTab = globalThis.DatabaseTab;
   globalThis.DatabaseTab = { priceRows: () => new Promise(() => {}) };
   S.dbJoin = null;
   const w = I.tournViews(prof).find(x => x.name === 'Washington');
   assert.equal(w.pinPl, null); assert.ok(w.backingPending);
-  assert.ok(text(I.renderTournDetail(prof, w)).includes('Backing him here — loading prices'));
+  assert.ok(text(I.renderTournDetail(prof, w).replace(/&nbsp;/g, ' ')).includes('Backing him here loading prices'));
+  assert.ok(I.renderTournDetail(prof, w).includes('data-pp2-pending="backing"'));
   const wd = text(I.renderTournDetail(prof, w));
   assert.ok(!/9\.99|1\.50 2\.60|2\.40 1\.60/.test(wd), 'no closes / shard price while pending');
+  // the tab while the Database rows load: "loading prices", the price cells empty (claim nothing) — never a closes price
+  const pend = S.buildTournamentSection(m);
+  assert.ok(text(tile(pend, 'Backing')).includes('— loading prices'), text(tile(pend, 'Backing')));
+  assert.ok(!/1\.50|2\.60|1\.85/.test(text(card0(pend))), 'no closes price on the tab while pending');
+  assert.equal((card0(pend).match(/<span title="Loading prices" style="position:relative;[^"]*">(<\/span>|<span class="ma-row-mark")/g) || []).length, 6, 'six empty H cells');
   // a failed load: the tab's words, "prices unavailable" — never "loading" forever
   S.dbJoinSt = 'failed';
   assert.ok(text(I.renderTournDetail(prof, I.tournViews(prof).find(x => x.name === 'Washington'))).includes('Backing him here — prices unavailable'));
+  assert.ok(text(tile(S.buildTournamentSection(m), 'Backing')).includes('— prices unavailable'), 'the tab: the same words');
   globalThis.DatabaseTab = savedTab;
   S.dbJoin = null;
   delete S.chShards['1']; delete S.fhCl['1'];
@@ -444,4 +470,72 @@ test('review: a B price is explained under the records ("Closing odds · Pinnacl
   assert.match(f(mk('B') + mk('B') + '<div>1.20</div>'), />Closing odds · Pinnacle, Bet365 where missing \(2\) · B = Bet365</, 'counts the marks drawn');
   // review 2: only the rendered (unfolded) editions count — a B in a folded edition is not on the page
   assert.match(slice('buildTournamentSection'), /\$\{cards\}<\/div>\$\{trSrcLine\(cards\)\}/, 'the section counts the cards it prints');
+});
+
+// TEN-402 r2 (founder card 7bc622d5, 2026-10-09; card2 "recent": no fallback after the archive's last date): a match of the
+// live edition is after the Database archive's last match, so it has no price on the one join — its H / A are "—" with the
+// reason, never a closes price, and the Backing tooltip counts it. TEN-406 adds the captured closes after that date to the
+// archive (same rule). Mutations 'TEN-402 r2: the tab off the Database join', 'TEN-402 r2: the after-archive reason dropped'.
+test('TEN-402 r2: a live-edition match after the archive\'s last date is "—" with the reason — never the closes price', () => {
+  const m = fixture([ed(2026, [['2026-10-08', 'L. Live', '1/16-finals', true, W2, { p: [1.4, 3.0] }]]), ed(2025, [['2025-10-05', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])],
+    { m: { date: '2026-10-10' } });
+  // the archive ends 13 Sep 2026 (meta.dateRange): the 2026 row is not in it — drop it from the store, as the real one lacks it
+  const games = [['2025-10-05', 'A. B', 'Final', true]];
+  const st = dbStore(games, () => ({ px: [1.5, 2.6] }));
+  st.base.meta.dateRange = ['2010-01-04', '2026-09-13'];
+  S.dbJoin = dbPriceJoinRows(st.base, st.nm);
+  const h = S.buildTournamentSection(m), c = card0(h);
+  assert.match(c, /<span title="After the Database archive’s last match \(13 Sep 2026\): no closing price on record yet" style="position:relative;[^"]*">—</, 'the live row: "—" with the reason');
+  assert.ok(!/1\.40|3\.00/.test(text(c)), 'never the closes shard\'s price for the live match');
+  assert.ok(text(c).includes('1.50') && text(c).includes('2.60'), 'the archived edition keeps its Database price');
+  const tb = text(tile(h, 'Backing'));
+  assert.ok(tb.includes('+0.5u') && tb.includes('1 of 2 matches priced') && tb.includes('1 after its last match (13 Sep 2026) not priced yet'), tb);
+});
+
+// TEN-402 r2: the tab reads the Database rows through the ONE session loader (sfDbJoinLoad → DatabaseTab.priceRows), shared with
+// the profile and Head to Head: one load per session however often the tab opens; the closes shard is never fetched; the
+// rows paint before the prices land. Mutations 'TEN-402 r2: the tab never loads the Database rows', 'TEN-402 r2: the tab
+// waits on nothing (state ignores the Database rows)'.
+test('TEN-402 r2: the tab loads the Database rows once per session (the shared loader), never the closes shard', async () => {
+  const m = fixture([nMatches(2, () => true, () => [1.5, 2.6])], { noDb: true });
+  const E = S.tr; E.state = ['idle', 'idle']; E.data = [null, null];
+  S.chShards['1'] = [];
+  const games = m.p1TournamentHistory.years[0].matches.map(x => [x.date, x.opponent, x.round, x.won]);
+  const st = dbStore(games, () => ({ px: [1.5, 2.6] }));
+  let calls = 0, release;
+  const gate = new Promise(r => { release = r; });
+  const savedTab = globalThis.DatabaseTab, savedFetch = globalThis.fetch, fetched = [];
+  globalThis.DatabaseTab = { priceRows: () => { calls++; return gate.then(() => dbPriceJoinRows(st.base, st.nm)); } };
+  globalThis.fetch = u => { fetched.push(String(u)); return Promise.reject(new Error('offline')); };
+  try {
+    const done = S.trLoad(m);
+    await new Promise(r => setTimeout(r, 0));
+    // the rows are there, the prices pending: "loading prices", never 0 / "none priced"
+    const mid = tile(S.buildTournamentSection(m), 'Backing');
+    assert.ok(text(mid).includes('— loading prices') && !/none priced|0\.0u/.test(text(mid)), text(mid));
+    release();
+    await done;
+    assert.equal(calls, 1, 'one Database load');
+    assert.ok(text(tile(S.buildTournamentSection(m), 'Backing')).includes('+1.0u'));
+    E.state = ['idle', 'idle'];
+    await S.trLoad(m);
+    assert.equal(calls, 1, 'the tab opened again: the session cache, no second load');
+    assert.ok(!fetched.some(u => /match-closes/.test(u)), 'the closes shard is never fetched: ' + fetched.join(', '));
+  } finally { globalThis.DatabaseTab = savedTab; globalThis.fetch = savedFetch; S.dbJoin = null; delete S.chShards['1']; }
+});
+
+// TEN-402 r2: a pre-2021 career row is dated at the tournament START while the pipeline history carries the match day; the
+// join meets the joined career row on its own date (as the profile hands it on), so the tab prices what the profile prices
+// (live: Zverev, Shanghai 2019 F / SF / QF were "—" on the tab and priced on the profile until this). Mutation 'TEN-402 r2: a
+// joined row meets the join on the history's match day'.
+test('TEN-402 r2: a start-dated career row meets the Database join on its own date — the tab prices what the profile prices', () => {
+  const games = [['2019-10-13', 'D. Med', 'Final', false, L2, { p: [2.59, 1.58] }], ['2019-10-12', 'M. Ber', 'Semi-finals', true, W2, { p: [1.65, 2.43] }],
+    ['2019-10-11', 'R. Fed', 'Quarter-finals', true, W2, { p: [3.04, 1.45] }], ['2019-10-10', 'A. Rub', '1/8-finals', true, W2, { p: [1.58, 2.59] }],
+    ['2019-10-09', 'J. Cha', '1/16-finals', true, W2, { p: [1.27, 4.23] }]];
+  const m = fixture([ed(2019, games)]);
+  S.tr.data[0].ch.forEach(c => { c.date = '2019-10-07'; c.eventKey = null; c.src = 'archive'; });   // start-dated, no event key
+  const P = S.trModelFor(m, 0);
+  assert.deepEqual(P.all.map(r => r.price), [2.59, 1.65, 3.04, 1.58, 1.27], 'every row priced, the final included');
+  assert.equal(Math.round(P.units * 100), -100 + 65 + 204 + 58 + 27);
+  S.dbJoin = null;
 });
