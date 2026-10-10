@@ -4148,6 +4148,15 @@
       "p2": "Y. Zhou",
       "startTime": "2026-10-11T04:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12169816": {
+      "fixtureId": "id1200308575466698",
+      "mappedAt": "2026-10-10T07:46:25Z",
+      "orient": "same",
+      "p1": "J. Lehecka",
+      "p2": "R. Jodar",
+      "startTime": "2026-10-11T04:00:00.000Z",
+      "tournamentId": 3085
     }
   },
   "missAudit": {
@@ -4166,17 +4175,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-21T12:15:18Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 2,
-        "missExpired": 17,
-        "openMisses": 17,
-        "stale": 19,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 59
-      },
       {
         "at": "2026-09-21T13:21:07Z",
         "fixturesUnitsSpent": 1,
@@ -8565,9 +8563,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 22
+      },
+      {
+        "at": "2026-10-10T07:46:25Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 22
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-10T05:31:42Z"
+  "updatedAt": "2026-10-10T07:46:25Z"
 }
