@@ -3962,14 +3962,14 @@
     },
     "12169492": {
       "fixtureId": "id1200308575408704",
-      "mappedAt": "2026-10-08T14:39:30Z",
-      "missHeldH": 5.12,
+      "mappedAt": "2026-10-10T03:02:39Z",
+      "missHeldH": 41.5,
       "missRuns": 3,
       "missSince": "2026-10-08T09:32:32Z",
       "orient": "same",
       "p1": "T. Paul",
       "p2": "D. Vallejo",
-      "startTime": "2026-10-10T04:00:00.000Z",
+      "startTime": "2026-10-10T07:30:00.000Z",
       "tournamentId": 3085
     },
     "12169493": {
@@ -3983,38 +3983,38 @@
     },
     "12169495": {
       "fixtureId": "id1200308575408692",
-      "mappedAt": "2026-10-08T14:39:30Z",
-      "missHeldH": 4.11,
+      "mappedAt": "2026-10-10T03:02:39Z",
+      "missHeldH": 40.5,
       "missRuns": 2,
       "missSince": "2026-10-08T10:32:38Z",
       "orient": "same",
       "p1": "L. Tien",
       "p2": "Z. Svajda",
-      "startTime": "2026-10-10T04:00:00.000Z",
+      "startTime": "2026-10-10T06:20:00.000Z",
       "tournamentId": 3085
     },
     "12169503": {
       "fixtureId": "id1200308575151586",
-      "mappedAt": "2026-10-08T14:39:30Z",
-      "missHeldH": 4.11,
+      "mappedAt": "2026-10-10T03:02:39Z",
+      "missHeldH": 40.5,
       "missRuns": 2,
       "missSince": "2026-10-08T10:32:38Z",
       "orient": "same",
       "p1": "S. Baez",
       "p2": "V. Vacherot",
-      "startTime": "2026-10-10T04:00:00.000Z",
+      "startTime": "2026-10-10T11:10:00.000Z",
       "tournamentId": 3085
     },
     "12169504": {
       "fixtureId": "id1200308575151640",
-      "mappedAt": "2026-10-08T14:39:30Z",
-      "missHeldH": 4.11,
+      "mappedAt": "2026-10-10T03:02:39Z",
+      "missHeldH": 40.5,
       "missRuns": 2,
       "missSince": "2026-10-08T10:32:38Z",
       "orient": "same",
       "p1": "A. Tabilo",
       "p2": "P. Carreno-Busta",
-      "startTime": "2026-10-10T04:00:00.000Z",
+      "startTime": "2026-10-10T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169534": {
@@ -4154,29 +4154,18 @@
     "observed": {
       "measuredRunsPerDay": 21.3,
       "missResolutionHoursMax": 156.78,
-      "missResolutionHoursP50": 37.52,
+      "missResolutionHoursP50": 39.92,
       "missResolutionsMeasured": 169,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
       "observedSpanDays": 18.76,
-      "projectedTtlUnitsPerDay": 3.6,
+      "projectedTtlUnitsPerDay": 3.5,
       "runs": 400,
       "spentRuns": 203,
-      "ttlBitRuns": 67,
-      "ttlBitShare": 0.168,
+      "ttlBitRuns": 66,
+      "ttlBitShare": 0.165,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-21T07:45:08Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 1,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 43
-      },
       {
         "at": "2026-09-21T08:45:08Z",
         "fixturesUnitsSpent": 1,
@@ -8565,9 +8554,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 25
+      },
+      {
+        "at": "2026-10-10T03:02:39Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 4,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 4,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 25
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-10T02:02:40Z"
+  "updatedAt": "2026-10-10T03:02:39Z"
 }
