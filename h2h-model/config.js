@@ -459,7 +459,7 @@ module.exports = {
   // no-ops cleanly when the key or SDK is absent (R&D-safe: the engine runs
   // with or without it). No key is ever hard-coded here.
   summary: {
-    enabled: true,               // master switch (still requires a key at runtime)
+    enabled: false,              // OFF — founder TEN-418 card 7a80b6fe (2026-10-10): analysis off for now; no Claude calls
     model: 'claude-opus-4-6',    // default per platform guidance
     maxTokens: 1600,             // TEN-418: five paragraphs (~350 words) plus adaptive thinking; 700 cut them short
     thinking: 'adaptive',        // 'adaptive' | 'off' — adaptive for nuanced reads

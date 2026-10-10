@@ -4459,13 +4459,16 @@ window.EntryListsTab = (function(){
   .em-rail-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:0 4px; }
   .em-rail-n{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
   #edgeRailTour{ display:flex; width:100%; }
+  /* The small site chevron — the same trigger chevron as the News page (R1 fix 10). */
+  [data-page="edge"] .sf-dd-trig .sf-dd-chev{ font-size:0; }
+  [data-page="edge"] .sf-dd-trig .sf-dd-chev::after{ content:'\25BE'; font-size:12.5px; color:var(--text); font-family:'Hanken Grotesk', system-ui, sans-serif; }
   .em-rail-list{ display:flex; flex-direction:column; gap:10px; overflow-y:auto; min-height:0; scrollbar-width:thin; }
   .em-rail-grp{ display:flex; flex-direction:column; gap:3px; }
   .em-rail-gl{ padding:4px 10px 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .em-rail-row{ display:flex; flex-direction:column; gap:3px; min-width:0; padding:8px 10px; border-radius:8px; border:1px solid transparent; background:transparent; cursor:pointer; text-align:left; font-family:var(--font-words); }
   .em-rail-row:hover{ background:var(--tile-hover); }
   .em-rail-row.on{ background:var(--selected); border-color:var(--edge-16); }
-  .em-rail-nm{ font-size:12.5px; font-weight:600; color:var(--text-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .em-rail-nm{ font-size:12.5px; font-weight:600; color:var(--text-soft); overflow-wrap:anywhere; }   /* names never truncate (CLAUDE.md): a long pair wraps */
   .em-rail-row.on .em-rail-nm{ color:var(--text); }
   .em-rail-meta{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .em-rail-empty{ padding:6px 10px; font-size:12px; color:var(--text-label); }
@@ -4613,9 +4616,6 @@ window.EntryListsTab = (function(){
   .em-ai-paras{ display:flex; flex-direction:column; gap:16px; }
   .em-ai-para{ display:flex; flex-direction:column; gap:6px; }
   .em-ai-para p{ margin:0; font-size:14.5px; line-height:1.72; color:var(--text-soft); max-width:68ch; text-wrap:pretty; }
-  .em-ai-fade{ position:absolute; left:0; right:0; bottom:0; padding:40px 14px 12px; background:linear-gradient(180deg, transparent, var(--card) 60%); display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:9px; }
-  .em-ai-fade svg{ width:17px; height:17px; color:var(--text); }
-  .em-ai-fade span{ font-size:12px; color:var(--text-label); }
   .em-ai-foot{ padding-top:14px; border-top:1px solid var(--edge-6); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--text-label); }
   .em-ai-stamp{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
 
@@ -10096,9 +10096,16 @@ function edgeClock(iso, mode){
 // (its current price). The sharp tile = Pinnacle (api-tennis key "Pncl"), else Bet365 when Pinnacle is missing —
 // the order of the site's one price join (database.md). Best soft = the highest current price per player across
 // every other book on the record. A price below 1.01 is not a price.
-const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'bet365']];
+const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'Bet365']];
 function edgeQuote(src, k){ const q = src && src[k]; return (q && q.p1 >= 1.01 && q.p2 >= 1.01) ? q : null; }
-function edgeBookName(k){ return k === 'Pncl' ? 'Pinnacle' : ((typeof mxBookLabel === 'function') ? mxBookLabel(k) : k); }
+// Book names on this page (founder TEN-418 R1 fix 7): the Database / H2H join's spelling for its two books — "Pinnacle",
+// "Bet365" — and the site label (mxBookLabel) for every other book.
+function edgeBookName(k){
+  const l = String(k || '').toLowerCase();
+  if (l === 'pncl' || l === 'pinnacle') return 'Pinnacle';
+  if (l === 'bet365') return 'Bet365';
+  return (typeof mxBookLabel === 'function') ? mxBookLabel(k) : k;
+}
 function edgeSharp(m){
   const at = k => ({ key: k, name: EDGE_SHARP.find(x => x[0] === k)[1], now: edgeQuote(m && m.bookNow, k), open: edgeQuote(m && m.bookOpens, k) });
   const all = EDGE_SHARP.map(x => at(x[0]));
@@ -10129,7 +10136,9 @@ function edgeParseOdd(t){
   const v = Number(s);
   return (isFinite(v) && v > 1) ? v : null;
 }
-function edgeGapOf(prob, odd){ return (prob == null || odd == null) ? null : (prob - 1 / odd) * 100; }
+// Gap = the adjusted fair % AS PRINTED (one decimal) minus the book's implied %, so every gap reproduces from the page
+// (founder TEN-418 R1 fix 6: 30.2% − 1/3.00 = −3.1pp).
+function edgeGapOf(prob, odd){ return (prob == null || odd == null) ? null : Math.round(prob * 1000) / 10 - 100 / odd; }
 
 // ── Value layers (TEN-418 Data 5) ──────────────────────────────────────────
 // Weight = the layer's cap (maxMagnitude) bucketed into five classes at the engine's own distinct magnitudes.
@@ -10145,36 +10154,150 @@ function edgeWeightTag(mag){
 // Medium; no input for this match = Poor.
 function edgeCovState(a){
   if (a.applied) return (a.confidence === 'high' || a.confidence === 'med') ? 'full' : 'partial';
-  return a.gated ? 'partial' : 'missing';
+  if (edgeEven(a)) return 'full';
+  return (a.gated || edgeNotThisFormat(a)) ? 'partial' : 'missing';
 }
+// Inputs in for both players but too close to move the price (e.g. an even match load): Good, Favours "Even" (review).
+function edgeEven(a){ return !!(a && !a.applied && !a.gated && edgeFigures(a)); }
+// The format split on a best-of-three: the engine hides it; the page shows it as an inactive, gated row (R1 fix 1).
+function edgeNotThisFormat(a){ return !!(a && a.key === 'formatSplit' && a.hidden && /^Bo3\b/.test(String(a.detail || ''))); }
 function edgeQuality(a){ const s = edgeCovState(a); return s === 'full' ? 'Good' : (s === 'partial' ? 'Medium' : 'Poor'); }
-// Rule A (founder, 2026-07-25): the W/UE layer renders nothing for a match it has no data for, and a layer the engine
-// hides for this match (Format split on a best-of-3) is absent, so the count flexes to what applies to THIS match.
-const EDGE_SELF_HIDE_KEYS = new Set(['winnerUE']);
-function edgeVisibleAdjs(list){
-  return (list || []).filter(a => !a.hidden && (a.applied || !EDGE_SELF_HIDE_KEYS.has(a.key)));
+// Founder TEN-418 R1 fix 1 (2026-10-10): every engine layer is a row on every match — 14, one number everywhere. A layer
+// the engine hides or has no data for is an inactive row with its reason (supersedes Rule A's self-hiding on this page).
+function edgeVisibleAdjs(list){ return (list || []).slice(); }
+// One name per layer: the engine's, except "Subjective input", which is the reference's "Manual context" (R1 fix 4).
+const EDGE_LAYER_NAMES = { subjective: 'Manual context' };
+function edgeLayerName(a){ return EDGE_LAYER_NAMES[a.key] || a.name; }
+// The engine writes one fixed sentence template per layer (h2h-model/adjustments.js). The page reads that template's
+// figures and says them in plain words for THIS match (R1 fix 3); a sentence it can't read is shown cleaned, never dropped.
+function edgeSigned(v){ const n = Number(String(v).replace('−', '-')); return isFinite(n) ? (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(1) : String(v); }
+function edgeCourt(surf){ const s = String(surf || '').toLowerCase(); return s ? s + ' courts' : 'this surface'; }
+function edgeEventPart(t1, t2, A, B){
+  const w = t => { const m = /(\d+)r ([+-]?[\d.]+)/.exec(t || ''); return m ? edgeSigned(m[2]) + ' after ' + m[1] + ' round' + (m[1] === '1' ? '' : 's') : 'no match yet'; };
+  return ` At this event: ${A} ${w(t1)}, ${B} ${w(t2)}.`;
 }
-// Why = the engine's own sentence for this match (its inputs and figures), ticket numbers dropped.
-function edgeWhyText(a){ return String(a.detail || '').replace(/\s*\(TEN-\d+\)/g, '').trim(); }
-// Data quality = one fixed sentence per state and cause; the facts behind it are the engine's confidence grade and gate.
-function edgeDqText(a){
-  if (a.applied){
-    if (a.confidence === 'high') return 'Applied: the engine rates the sample behind this layer high for this match.';
-    if (a.confidence === 'med') return 'Applied: the engine rates the sample behind this layer medium for this match.';
-    return 'Applied, but the engine rates the sample behind it low for at least one player in this match.';
+function edgeWhyText(a, nm){
+  const d = String(a.detail || '').replace(/\s*\(TEN-\d+\)/g, '').trim();
+  const A = (nm && nm.p1) || 'Player A', B = (nm && nm.p2) || 'Player B';
+  let x;
+  switch (a.key){
+    case 'styleMatchup':
+      if (/^Neither player/.test(d)) return 'Neither player has a playing-style label the model reads.';
+      if ((x = /^(.+?) has no classified/.exec(d))) return `${x[1]} has no playing-style label the model reads.`;
+      if ((x = /^Mirror matchup — both play as (.+?),/.exec(d))) return `Both play as ${x[1]}: a mirror matchup with no style edge.`;
+      if ((x = /^(.+?) vs (.+?): n=(\d+) < floor (\d+)/.exec(d))) return `${x[1]} v ${x[2]}: ${x[3]} matches, under ${x[4]}.`;
+      break;
+    case 'subjective':
+      if (!a.applied) return 'No analyst note is attached to this match, so the layer stays neutral.';
+      break;
+    case 'h2h':
+      if (/^No prior meetings/.test(d)) return `${A} and ${B} have never met.`;
+      if ((x = /^H2H (\d+)-(\d+) \((\d+) meetings?(?:, incl\. ([^;]+))?; (\d+) on (\w+), (\d+) in last (\d+)y/.exec(d)))
+        return `Head-to-head ${A} ${x[1]}–${x[2]} ${B} in ${x[3]} meeting${x[3] === '1' ? '' : 's'}${x[4] ? ' (' + x[4] + ')' : ''}: ${x[5]} on ${edgeCourt(x[6])}, ${x[7]} in the last ${x[8]} years.`;
+      break;
+    case 'surface':
+      if ((x = /^(\w+) record (\d+)% vs (\d+)%/.exec(d))) return `${x[1]}-court record ${x[2]}% vs ${x[3]}% over career and the last 52 weeks, each against their own career baseline.`;
+      break;
+    case 'recentForm':
+      if ((x = /^Form (\d+)% vs (\d+)%/.exec(d))) return `Recent form ${x[1]}% vs ${x[2]}%: the last five matches weighted to the latest and by opponent quality, adjusted for surface.${/flagged/.test(d) ? ' A large form gap is flagged.' : ''}`;
+      break;
+    case 'qualityForm':
+      if ((x = /Career top(\d+) dev ([+-]?[\d.]+)pp\((\d+)m\) vs ([+-]?[\d.]+)pp\((\d+)m\); (\w+) top\d+ dev ([+-]?[\d.]+)pp\((\d+)m\) vs ([+-]?[\d.]+)pp\((\d+)m\)/.exec(d)))
+        return `Win rate against the top ${x[1]}, each against their own baseline: career ${edgeSigned(x[2])}pp (${x[3]} match${x[3] === '1' ? '' : 'es'}) vs ${edgeSigned(x[4])}pp (${x[5]}); on ${edgeCourt(x[6])} ${edgeSigned(x[7])}pp (${x[8]}) vs ${edgeSigned(x[9])}pp (${x[10]}).${/Thin/.test(d) ? ' The top-' + x[1] + ' sample is thin.' : ''}`;
+      break;
+    case 'winnerUE':
+      if ((x = /^W\/UE ([\d.]+) vs ([\d.]+) — rel-to-archetype ([\d.]+) vs ([\d.]+) \([^,]+, (\d+)\/(\d+) matches\)/.exec(d)))
+        return `Winners per unforced error ${x[1]} vs ${x[2]} (${x[3]} vs ${x[4]} against their playing style’s average), over each player’s last ${x[5]} and ${x[6]} match${x[6] === '1' ? '' : 'es'}.`;
+      break;
+    case 'serve':
+      if ((x = /^Serve rating ([\d.]+) vs ([\d.]+) \((\w+);(?:.*in-tourn (.+?) \/ (.+?)\))?/.exec(d))) return `Serve rating ${x[1]} vs ${x[2]} on ${edgeCourt(x[3])}.` + (x[4] ? edgeEventPart(x[4], x[5], A, B) : '');
+      break;
+    case 'returnPressure':
+      if ((x = /^Return rating ([\d.]+) vs ([\d.]+) \((\w+), career\+52wk;(?:.*in-tourn (.+?) \/ (.+?)\))?/.exec(d))) return `Return rating ${x[1]} vs ${x[2]} on ${edgeCourt(x[3])}, over career and the last 52 weeks.` + (x[4] ? edgeEventPart(x[4], x[5], A, B) : '');
+      break;
+    case 'fatigue':
+      if (/^No matches in last/.test(d)) return 'Neither player has a match in the window the layer reads.';
+      if ((x = /^(\d+)d load[^:]*: (\d+)s\/(\d+)m=([\d.]+)u(?: \[[^\]]*\])? vs (\d+)s\/(\d+)m=([\d.]+)u/.exec(d))) {
+        const ev = /gap [-\d.]+u </.test(d);   // the engine's printed cut-off is not its real band (config unitBands), so no number here
+        return `Match load over the last ${x[1]} days: ${A} ${x[2]} set${x[2] === '1' ? '' : 's'} in ${x[3]} match${x[3] === '1' ? '' : 'es'} (${x[4]} units), ${B} ${x[5]} set${x[5] === '1' ? '' : 's'} in ${x[6]} match${x[6] === '1' ? '' : 'es'} (${x[7]} units).${ev ? ' The loads are too close for the layer to move the price.' : ''}`;
+      }
+      break;
+    case 'weather':
+      if (a.gated) return 'Switched off for every match until the match-time fix and an indoor check are both in.';
+      break;
+    case 'formatSplit':
+      if (edgeNotThisFormat(a)) return 'Best of 3: this layer applies to best-of-five only.';
+      if ((x = /need (\d+)\+ Bo5/.exec(d))) return `Not enough best-of-five matches: the layer needs ${x[1]}+ for both players.`;
+      break;
+    case 'clutch':
+      if (d === 'No data.') return 'No under-pressure index for at least one player.';
+      if ((x = /index(?: on (\w+))? (\d+) vs (\d+)/.exec(d))) return `Under-pressure index ${x[2]} vs ${x[3]}${x[1] ? ' on ' + edgeCourt(x[1]) : ''} (break points and tiebreaks).`;
+      break;
+    case 'oddsMovement':
+      if (/no-line/.test(d)) return 'The model’s own Pinnacle series holds no pre-match line for this match, so there is no market move to read.';
+      if ((x = /Pinnacle move (\S+) < (\S+) threshold/.exec(d))) return `Pinnacle moved ${x[1]}, under the ${x[2]} the layer needs, so it reads as noise.`;
+      break;
   }
-  if (a.gated) return 'Switched off for every match by a model gate, not by this match’s data. It moves no price until the gate is lifted.';
-  return 'No usable input for this match, so the layer moves nothing in the price.';
+  return d;
+}
+// The two players' figures behind a layer, in the layer's own unit, read from the same engine sentence (R1 fix 2);
+// null when the sentence carries none (an inactive row then reads — / —).
+function edgeFigures(a){
+  const d = String(a.detail || ''); let x;
+  switch (a.key){
+    case 'h2h': x = /^H2H (\d+)-(\d+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'surface': x = /record (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
+    case 'recentForm': x = /^Form (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
+    case 'qualityForm': x = /Career top\d+ dev ([+-]?[\d.]+)pp\(\d+m\) vs ([+-]?[\d.]+)pp/.exec(d); return x ? [edgeSigned(x[1]), edgeSigned(x[2])] : null;
+    case 'winnerUE': x = /^W\/UE ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'serve': x = /^Serve rating ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'returnPressure': x = /^Return rating ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'fatigue': x = /=([\d.]+)u(?: \[[^\]]*\])? vs [^=]*=([\d.]+)u/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'clutch': x = /index(?: on \w+)? (\d+) vs (\d+)/.exec(d); return x ? [x[1], x[2]] : null;
+  }
+  return null;
+}
+// Data quality = one fixed sentence per state and cause — the same state the label shows (R1 fix 3).
+function edgeDqText(a){
+  const q = edgeQuality(a);
+  if (edgeEven(a)) return 'The inputs are in for both players; they are too close for the layer to move the price.';
+  if (q === 'Good') return 'The inputs behind this layer are complete for both players in this match.';
+  if (q === 'Medium' && a.applied) return 'The sample behind this layer is thin for at least one player in this match.';
+  if (edgeNotThisFormat(a)) return 'The layer does not apply to a best-of-three match.';
+  if (q === 'Medium') return 'The layer is switched off by a model rule for every match, not by missing data.';
+  return 'This match has no usable input for this layer.';
 }
 function edgeNumHtml(text){
   return String(text == null ? '' : text).split(/(\d[\d.,%/]*)/g)
     .map((seg, i) => (i % 2 === 1) ? `<span class="em-mono">${edgeEsc(seg)}</span>` : edgeEsc(seg)).join('');
 }
-function edgeLayerRows(e){
+function edgeLayerRows(e, names, keys){
   return edgeVisibleAdjs(e.stage2.adjustments).map(a => {
     const w = edgeWeightTag(a.maxMagnitude);
-    return { a, w, q: edgeQuality(a), mag: Math.abs(a.deltaP1 || 0) };
+    const off = !a.applied && a.key === 'styleMatchup' && names && edgeStylesKnown(names, keys);
+    return { a, w, q: off ? 'Medium' : edgeQuality(a), off, mag: Math.abs(a.deltaP1 || 0) };
   }).sort((x, y) => (x.w.rank - y.w.rank) || (y.mag - x.mag));
+}
+
+// Style matchup (R1 fix 4): both players' step-9 labels and the Playing Styles pair cell (the same cell, the same
+// under-30 rule). The model does not read styles yet (TEN-419), so the row stays inactive and says why with the count.
+let edgePsAsked = false;
+function edgeStyleArch(name, key){ try { const st = ppStyleFor(name, key); return st ? psArchFor(st.archetype_label) : null; } catch (err) { return null; } }
+// Both players carry a step-9 label: the row is "Off" (the model doesn't read styles yet, TEN-419), not "No data".
+function edgeStylesKnown(names, keys){ const a = edgeStyleArch(names.p1, keys.p1), b = edgeStyleArch(names.p2, keys.p2); return !!(a && b && a !== b); }
+function edgeStyleWhy(names, keys){
+  const arch = s => edgeStyleArch(names[s], keys[s]);
+  const a = arch('p1'), b = arch('p2');
+  if (!a && !b) return `Neither ${names.p1} nor ${names.p2} has a playing-style label.`;
+  if (!a || !b) return `${!a ? names.p1 : names.p2} has no playing-style label.`;
+  if (a === b) return `Both play as ${a.name}: a mirror matchup with no style edge.`;
+  if (typeof psMatrixData === 'undefined' || !psMatrixData){
+    if (!edgePsAsked && typeof ensurePsMatrix === 'function'){ edgePsAsked = true; ensurePsMatrix().then(d => { if (d && edgeCurrentId) renderEdgeModel(edgeCurrentId); else edgePsAsked = false; }); }
+    return `${a.name} v ${b.name}: the Playing Styles grid is not loaded.`;
+  }
+  const i = PS_ARCHETYPES.indexOf(a), j = PS_ARCHETYPES.indexOf(b), c = (i >= 0 && j >= 0) ? psCellFor(i, j) : null, n = c ? c.n : 0;
+  if (!c || c.pct == null || n < PS_PAGE_MIN_N) return `${a.name} v ${b.name}: ${Number(n).toLocaleString('en-US')} match${n === 1 ? '' : 'es'}, under ${PS_PAGE_MIN_N}.`;
+  return `${a.name} v ${b.name}: ${a.name} wins ${c.pct}% of ${Number(n).toLocaleString('en-US')} matches. The model does not read playing styles yet, so the layer is off.`;
 }
 
 // ── Pro gating (TEN-418 Data 8) ────────────────────────────────────────────
@@ -10205,7 +10328,7 @@ function edgeSetHeader(e){
   let act = '—', upd = null, updFull = null;
   if (e){
     const adjs = edgeVisibleAdjs(e.stage2.adjustments);
-    act = `${adjs.filter(a => a.applied).length}/${adjs.length}`;
+    act = `${adjs.filter(a => a.applied).length}/${adjs.length}`;   // all 14 layers (R1 fix 1)
     const at = e.generatedAt || (modelOutput && modelOutput.generatedAt);
     upd = edgeClock(at); updFull = edgeClock(at, 'full');
   }
@@ -10266,7 +10389,7 @@ function edgeMatchHeadHtml(m, e){
     const name = edgePlayerName(m, e, s), key = edgePlayerKey(m, e, s);
     const P = (e && e.players && e.players[s]) || {};
     const style = edgeStyleName(name, key);
-    const elo = P.eloAll != null ? `<span class="em-mono">ELO ${edgeEsc(P.eloAll)}</span>` : '';
+    const elo = P.eloAll != null ? `<span class="em-mono">Elo ${edgeEsc(P.eloAll)}</span>` : '';
     const sub = s === 'p1' ? [elo, style ? edgeEsc(style) : ''].filter(Boolean).join(' · ') : [style ? edgeEsc(style) : '', elo].filter(Boolean).join(' · ');
     const av = `<span class="em-av">${edgeEsc(playerInitials(name))}</span>`;
     const txt = `<span class="em-mh-txt"><span class="em-mh-nm">${edgeNameHtml(name, key)}</span><span class="em-mh-sub">${sub || '—'}</span></span>`;
@@ -10284,8 +10407,9 @@ function edgeMatchHeadHtml(m, e){
     </div>`;
 }
 function edgeSetMkView(v){ edgeMkView = v; renderEdgeModel(edgeCurrentId); }
-function edgeMarketHtml(m, e, names, keys){
-  const st1 = e.stage1 || {};
+function edgeMarketHtml(m, e, names, keys, noModel){
+  // noModel (R1 fix 14): no model price for this match — the book rows only; no Model base tile, edges read —.
+  const st1 = (!noModel && e && e.stage1) || {};
   const base = { p1: st1.baseP1, p2: st1.baseP2 };
   const sharp = edgeSharp(m);
   const pct = edgeMkView === 'pct';
@@ -10313,19 +10437,19 @@ function edgeMarketHtml(m, e, names, keys){
     return `<div class="em-mk-p ${s === 'p1' ? 'a' : 'b'}">
         <div class="em-mk-nm">${edgeNameHtml(names[s], keys[s])}</div>
         <div>${rows.join('')}</div>
-        <div class="em-mk-base"><span class="em-mk-base-l"><span class="em-caps">Model base</span><span class="em-mk-sub">${pct ? odd : p} · no margin</span></span><span class="em-mk-base-v">${pct ? p : odd}</span></div>
+        ${noModel ? '' : `<div class="em-mk-base"><span class="em-mk-base-l"><span class="em-caps">Model base</span><span class="em-mk-sub">${pct ? odd : p} · no margin</span></span><span class="em-mk-base-v">${pct ? p : odd}</span></div>`}
       </div>`;
   };
   const unit = pct ? 'No-vig implied probability · switch to Odds for decimal prices' : 'Decimal odds · switch to Implied % for no-vig probabilities';
   const softNote = [softA, softB].filter(Boolean).filter((b, i, a) => a.findIndex(x => x.key === b.key) === i)
-    .map(b => `<span class="em-mono">${edgeMargin(b.now)}</span> (${edgeEsc(b.name)})`).join(' / ');
+    .map(b => `<span class="em-mono">${edgeMargin(b.open)}</span> (${edgeEsc(b.name)})`).join(' / ');   // the Soft open rows' own margin (R1 fix 5)
   const opened = sharp && sharp.open ? edgeClock(sharp.open.seenAt, 'stamp') : null;
   const seg = (v, l) => `<button type="button" class="em-seg-b${edgeMkView === v ? ' on' : ''}" onclick="edgeSetMkView('${v}')">${l}</button>`;
   return `
     <div class="em-card em-mk">
       <div class="em-head"><span class="em-caps">Market context · match winner</span><div class="em-seg">${seg('odds', 'Odds')}${seg('pct', 'Implied %')}</div></div>
       <div class="em-mk-grid">${panel('p1')}${panel('p2')}</div>
-      <span class="em-note">${unit} · edge = model’s base probability minus the book’s no-vig probability, green = model has the player shorter than the book${sharp && sharp.now ? ` · ${edgeEsc(sharp.name)} margin <span class="em-mono">${edgeMargin(sharp.now)}</span>` : ''}${softNote ? `, soft ${softNote}` : ''}${opened ? ` · opened <span class="em-mono">${edgeEsc(opened)}</span>` : ''}</span>
+      <span class="em-note">${unit}${noModel ? '' : ' · edge = model’s base probability minus the book’s no-vig probability, green = model has the player shorter than the book'}${sharp && sharp.now ? ` · ${edgeEsc(sharp.name)} margin now <span class="em-mono">${edgeMargin(sharp.now)}</span>` : ''}${softNote ? `, soft at open ${softNote}` : ''}${opened ? ` · opened <span class="em-mono">${edgeEsc(opened)}</span>` : ''}</span>
     </div>`;
 }
 function edgeToggleLayers(){ edgeLayersOpen = !edgeLayersOpen; renderEdgeModel(edgeCurrentId); }
@@ -10347,12 +10471,12 @@ function edgeJumpLayer(key){
   clearTimeout(edgeFlashTimer);
   edgeFlashTimer = setTimeout(() => { edgeLayerFlash = null; const x = document.getElementById('emLayer-' + key); if (x) x.classList.remove('flash'); }, 1600);
 }
-function edgeLayersHtml(e, names){
-  const rows = edgeLayerRows(e);
+function edgeLayersHtml(e, names, keys){
+  const rows = edgeLayerRows(e, names, keys);
   const n = { Good: 0, Medium: 0, Poor: 0 }; rows.forEach(r => n[r.q]++);
   const active = rows.filter(r => r.a.applied).length;
   const qc = q => 'em-q-' + q.toLowerCase(), qt = q => 'em-qt-' + q.toLowerCase();
-  const strip = rows.map(r => `<span class="em-seg-q ${qc(r.q)}" onclick="edgeJumpLayer('${edgeJs(r.a.key)}')"><span class="tip">${edgeEsc(r.a.name)} · ${r.q}</span></span>`).join('');
+  const strip = rows.map(r => `<span class="em-seg-q ${qc(r.q)}" onclick="edgeJumpLayer('${edgeJs(r.a.key)}')"><span class="tip">${edgeEsc(edgeLayerName(r.a))} · ${r.q}</span></span>`).join('');
   let table = '';
   if (edgeLayersOpen){
     const body = rows.map(r => {
@@ -10360,25 +10484,25 @@ function edgeLayersHtml(e, names){
       const even = !applied || a.direction === 'neutral' || Math.abs(signal) < 0.02;
       const width = Math.min(50, Math.abs(signal) * 50);
       const fill = (!even && width > 0.2) ? `<span class="fill" style="left:${a.direction === 'p1' ? (50 - width).toFixed(1) : '50'}%; width:${width.toFixed(1)}%"></span>` : '';
-      const mag = Math.abs(signal).toFixed(2);
-      const sa = !applied ? '—' : ((!even && a.direction === 'p1') ? mag : '0.00');
-      const sb = !applied ? '—' : ((!even && a.direction === 'p2') ? mag : '0.00');
+      const fig = edgeFigures(a);   // the players' real figures in the layer's unit (R1 fix 2); the bar stays normalised
+      const sa = fig ? fig[0] : '—', sb = fig ? fig[1] : '—';
       const delta = Math.abs(a.deltaP1 || 0) * 100;
       let fav, shift;
-      if (!applied){ fav = `<span class="em-fav na">${a.gated ? 'Gated' : 'No data'}</span>`; shift = '<span class="em-shift em-zero">—</span>'; }
+      if (!applied && edgeEven(a)){ fav = '<span class="em-fav na">Even</span>'; shift = '<span class="em-shift em-zero">0.0pp</span>'; }
+      else if (!applied){ fav = `<span class="em-fav na">${r.off ? 'Off' : (a.gated || edgeNotThisFormat(a)) ? 'Gated' : 'No data'}</span>`; shift = '<span class="em-shift em-zero">—</span>'; }
       else if (even || delta < 0.05){ fav = '<span class="em-fav na">Even</span>'; shift = '<span class="em-shift em-zero">0.0pp</span>'; }
       else { fav = `<span class="em-fav">${edgeEsc(a.direction === 'p1' ? names.p1 : names.p2)}</span>`; const p = edgePP(delta); shift = `<span class="em-shift ${p.c}">${p.t}</span>`; }
       const open = edgeLayerOpen === a.key;
       const det = open ? `<div class="em-ldet">
-          <span class="col"><span class="em-caps">Why</span><span class="why">${edgeNumHtml(edgeWhyText(a)) || '—'}</span></span>
+          <span class="col"><span class="em-caps">Why</span><span class="why">${edgeNumHtml(a.key === 'styleMatchup' && !applied ? edgeStyleWhy(names, keys) : edgeWhyText(a, names)) || '—'}</span></span>
           <span class="div"></span>
-          <span class="col"><span class="dqh"><span class="em-caps">Data quality</span><i class="${qc(r.q)}"></i><span class="em-caps ${qt(r.q)}">${r.q}</span></span><span class="dq">${edgeEsc(edgeDqText(a))}</span></span>
+          <span class="col"><span class="dqh"><span class="em-caps">Data quality</span><i class="${qc(r.q)}"></i><span class="em-caps ${qt(r.q)}">${r.q}</span></span><span class="dq">${edgeEsc(r.off ? 'The model does not read playing styles yet, so this layer is off for every match (TEN-419).' : edgeDqText(a))}</span></span>
         </div>` : '';
       return `<div class="em-lrow${open ? ' open' : ''}${edgeLayerFlash === a.key ? ' flash' : ''}" id="emLayer-${edgeEsc(a.key)}">
           <div class="em-tr" onclick="edgeToggleLayer('${edgeJs(a.key)}')">
-            <span class="tw">▸</span><span class="em-lname">${edgeEsc(a.name)}</span><span class="em-chip">${r.w.word}</span>
+            <span class="tw">▸</span><span class="em-lname">${edgeEsc(edgeLayerName(a))}</span><span class="em-chip">${r.w.word}</span>
             <span class="em-qdot ${qc(r.q)}" title="${r.q}"></span>
-            <span class="em-sc${applied ? '' : ' na'}">${sa}</span><span class="em-sig"><span class="tick"></span>${fill}</span><span class="em-sc${applied ? '' : ' na'}">${sb}</span>
+            <span class="em-sc${fig && applied ? '' : ' na'}">${edgeEsc(sa)}</span><span class="em-sig"><span class="tick"></span>${fill}</span><span class="em-sc${fig && applied ? '' : ' na'}">${edgeEsc(sb)}</span>
             ${fav}${shift}
           </div>${det}
         </div>`;
@@ -10462,7 +10586,7 @@ function edgeMoversHtml(e, names, keys, free){
   const rows = movers.length ? movers.map((a, i) => {
     const s = a.direction === 'p1' ? 'p1' : 'p2', p = edgePP(Math.abs(a.deltaP1) * 100);
     const who = edgeHasProfile(keys[s]) ? `<a class="em-mv-who lk" onclick="openPlayerProfileFromMatch('${edgeJs(keys[s])}')">${edgeEsc(names[s])}</a>` : `<span class="em-mv-who">${edgeEsc(names[s])}</span>`;
-    return `<div class="em-mv-row"><span class="em-mv-rk">${i + 1}.</span><span class="em-mv-nm">${edgeEsc(a.name)}</span>${who}<span class="em-mv-d ${p.c}">${p.t}</span></div>`;
+    return `<div class="em-mv-row"><span class="em-mv-rk">${i + 1}.</span><span class="em-mv-nm">${edgeEsc(edgeLayerName(a))}</span>${who}<span class="em-mv-d ${p.c}">${p.t}</span></div>`;
   }).join('') : '<div class="em-mv-row"><span class="em-mv-nm" style="color:var(--text-label);">No layer moved the price.</span></div>';
   return `
     <div class="em-card em-mv">
@@ -10480,35 +10604,40 @@ function edgeGenerate(id){
     .then(r => r.ok ? r.json() : null)
     .then(d => { const x = d && d.matches && d.matches[id]; if (x && x.ok && x.summary && x.summary.ok && x.summary.text){ modelOutput = d; modelOutputLoaded = true; } })
     .catch(() => {})
-    .then(() => { edgeAiState[id] = 'shown'; if (edgeCurrentId === id) renderEdgeModel(id); });
+    .then(() => { const x = modelOutput.matches && modelOutput.matches[id]; edgeAiState[id] = (x && x.summary && x.summary.ok && x.summary.text) ? 'shown' : 'failed'; if (edgeCurrentId === id) renderEdgeModel(id); });
 }
+// The one on / off switch is h2h-model/config.js summary.enabled; the pipeline writes it into model-output.json as
+// `analysisOn`. Off (founder TEN-418 card 7a80b6fe) = no section at all, for everyone (R1 fix 13).
+function edgeAnalysisOn(){ return !!(modelOutput && modelOutput.analysisOn === true); }
 function edgeAnalysisHtml(m, e, id, free){
+  if (!edgeAnalysisOn()) return '';
   const sum = e.summary;
-  if (!(sum && sum.ok && sum.text)) return '';   // no analysis for this match → the section is hidden (Data 1)
+  const has = !!(sum && sum.ok && sum.text);
+  if (free && !has) return '';                   // Free can't generate: nothing to show until a Pro read exists
   const surf = edgeCap((m && m.surface) || (e.match && e.match.surface) || '');
   const tour = edgeEventName((m && m.tour) || (e.match && e.match.tour));
   const rnd = edgeRoundCode(m, e);
   const chips = [surf, tour, rnd].filter(Boolean).map(c => `<span class="em-chip">${edgeEsc(c)}</span>`).join('');
-  const st = edgeAiState[id];
+  const st = free ? (has ? 'shown' : null) : (has && edgeAiState[id] !== 'loading' ? 'shown' : edgeAiState[id]);
   let body;
   if (st === 'loading'){
     body = '<div class="em-ai-load"><div class="em-shim" style="width:96%"></div><div class="em-shim" style="width:99%"></div><div class="em-shim" style="width:74%;margin-bottom:8px"></div><div class="em-shim" style="width:92%"></div><div class="em-shim" style="width:66%"></div></div>';
   } else if (st === 'shown'){
     const paras = String(sum.text).split(/\n\s*\n/).map(t => t.trim()).filter(Boolean);
     const LABELS = ['Players', 'Matchup', 'Tournament', 'Keys', 'Verdict'];
-    const list = free ? paras.slice(0, 2) : paras;
-    body = `<div class="em-ai-body"><div class="em-ai-paras">${list.map((t, i) => `<div class="em-ai-para">${paras.length === LABELS.length ? `<span class="em-caps">${LABELS[i]}</span>` : ''}<p>${edgeEsc(t)}</p></div>`).join('')}</div>`
-      + (free ? '<div class="em-ai-fade"><svg viewBox="0 0 20 20" fill="none"><rect x="4.5" y="8.8" width="11" height="7.7" rx="2" stroke="currentColor" stroke-width="1.5"></rect><path d="M7.3 8.8V6.7a2.7 2.7 0 015.4 0v2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg><span>Upgrade to Pro to unlock the full analysis</span></div>' : '')
-      + '</div>';
+    const list = free ? paras.slice(0, 1) : paras;   // Free: the Players paragraph in full, then the shared Upgrade button
+    body = `<div class="em-ai-body"><div class="em-ai-paras">${list.map((t, i) => `<div class="em-ai-para">${paras.length === LABELS.length ? `<span class="em-caps">${LABELS[i]}</span>` : ''}<p>${edgeEsc(t)}</p></div>`).join('')}</div></div>`
+      + (free ? '<div class="em-mv-up"><a class="sf-upgrade em-btn" href="account.html">Upgrade to Pro to unlock the full analysis</a></div>' : '');
   } else {
-    body = `<div class="em-ai-empty"><span class="em-ai-lead">Generate a five-part analytical read across the players, the style matchup, the tournament context, the key statistical edges and the model’s verdict.</span><button type="button" class="sf-upgrade em-btn" onclick="edgeGenerate('${edgeJs(id)}')">Generate Stennisfy Analysis</button></div>`;
+    const failed = edgeAiState[id] === 'failed';
+    body = `<div class="em-ai-empty"><span class="em-ai-lead">Generate a five-part analytical read across the players, the style matchup, the tournament context, the key statistical edges and the model’s verdict.</span><button type="button" class="sf-upgrade em-btn" onclick="edgeGenerate('${edgeJs(id)}')">Generate Stennisfy Analysis</button>${failed ? '<span class="em-ai-lead">Couldn’t generate the analysis. Try again.</span>' : ''}</div>`;
   }
-  const stamp = st === 'shown' ? edgeClock(sum.generatedAt) : null;
+  const stamp = (st === 'shown' && !free) ? edgeClock(sum.generatedAt) : null;
   return `
     <div class="em-card em-ai">
       <div class="em-ai-head">
         <div class="em-ai-tl"><span class="em-ai-title">Stennisfy Analysis</span><div class="em-ai-chips">${chips}</div></div>
-        ${st === 'shown' ? `<a class="em-link em-ai-regen" onclick="edgeGenerate('${edgeJs(id)}')">↻ Regenerate</a>` : ''}
+        ${st === 'shown' && !free ? `<a class="em-link em-ai-regen" onclick="edgeGenerate('${edgeJs(id)}')">↻ Regenerate</a>` : ''}
       </div>
       ${body}
       <div class="em-ai-foot"><span>Stennisfy Analysis is generated by Stennisfy’s proprietary model and is for informational purposes only.</span><span class="em-ai-stamp">${stamp ? 'Generated ' + edgeEsc(stamp) : ''}</span></div>
@@ -10523,19 +10652,12 @@ function renderEdgeModel(id){
   edgeRenderRail();
   const e = modelOutput.matches && modelOutput.matches[id];
   const m = matches.find(x => x.id === id) || null;
-  if (!e){
-    edgeSetHeader(null);
-    const msg = !modelOutputLoaded
-      ? 'The Stennisfy Model isn’t available yet. The pipeline builds it every 15 minutes; once a run completes, every match’s model appears here.'
-      : 'The model hasn’t produced output for this match yet. It runs every 15 minutes in the pipeline.';
-    body.innerHTML = edgeMatchHeadHtml(m, null) + edgeEmptyCard(msg);
-    return;
-  }
-  if (!e.ok){
-    edgeSetHeader(null);
-    body.innerHTML = edgeMatchHeadHtml(m, null) + edgeEmptyCard(edgeReasonText(e));
-    return;
-  }
+  const names0 = { p1: edgePlayerName(m, e, 'p1'), p2: edgePlayerName(m, e, 'p2') };
+  const keys0 = { p1: edgePlayerKey(m, e, 'p1'), p2: edgePlayerKey(m, e, 'p2') };
+  // R1 fix 14: a match with no model price keeps its header and Market context (book rows only — never an Elo-only
+  // price as the model price), then one grey line in place of Value layers, Fair price and Biggest movers.
+  const noModel = () => { edgeSetHeader(null); body.innerHTML = edgeMatchHeadHtml(m, e && e.ok ? e : null) + (m ? edgeMarketHtml(m, null, names0, keys0, true) : '') + edgeEmptyCard('No model price for this match yet.'); };
+  if (!e || !e.ok){ noModel(); return; }
 
   // ── State-2-confirmed display gate (founder decision 2026-07-25) ──────────
   // The full model shows ONLY when the match is State-2 confirmed (a Pinnacle line exists, stage1.baseState.state === 2)
@@ -10546,12 +10668,12 @@ function renderEdgeModel(id){
   const hoursToStart = Number.isFinite(startMsGate) ? (startMsGate - Date.now()) / 3.6e6 : null;
   const stateConfirmed = gateState === 2 && hoursToStart != null && hoursToStart > 0 && hoursToStart <= 30;
   if (!stateConfirmed){
-    edgeSetHeader(null);
-    const reason = (hoursToStart != null && hoursToStart <= 0)
-      ? 'Match in play. The Stennisfy Model shows no price once a match has started.'
-      : 'Awaiting a confirmed market line. The model shows its price once its Pinnacle anchor is confirmed, inside 30 hours of the start.';
-    body.innerHTML = edgeMatchHeadHtml(m, e) + edgeEmptyCard(reason);
-    return;
+    if (hoursToStart != null && hoursToStart <= 0){
+      edgeSetHeader(null);
+      body.innerHTML = edgeMatchHeadHtml(m, e) + edgeEmptyCard('Match in play. The Stennisfy Model shows no price once a match has started.');
+      return;
+    }
+    noModel(); return;
   }
 
   edgeSetHeader(e);
@@ -10560,7 +10682,7 @@ function renderEdgeModel(id){
   const free = edgeIsFree();
   body.innerHTML = edgeMatchHeadHtml(m, e)
     + edgeMarketHtml(m, e, names, keys)
-    + edgeLayersHtml(e, names)
+    + edgeLayersHtml(e, names, keys)
     + edgeFairHtml(m, e, names, keys)
     + edgeMoversHtml(e, names, keys, free)
     + edgeAnalysisHtml(m, e, id, free);

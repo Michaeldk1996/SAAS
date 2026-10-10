@@ -56,10 +56,11 @@ function boot(opts = {}) {
     getComputedStyle: () => ({ overflowY: 'visible' }), MutationObserver: undefined, console,
     setTimeout: () => 0, clearTimeout() {}, fetch: () => Promise.resolve({ ok: false }),
     Date: class extends Date { constructor(...a) { super(...(a.length ? a : [NOW])); } static now() { return NOW; } },
-    matches: board.concat([{ id: 'past-12160000', p1: 'Z. Done', p2: 'Z. Over', tour: 'ATP Shanghai', date: '2026-10-09', time: '10:00' }]), modelOutput: { generatedAt: FIX.generatedAt, matches: { [M.id]: E, [M2.id]: FIX.e2 } }, modelOutputLoaded: true,
+    matches: board.concat([{ id: 'past-12160000', p1: 'Z. Done', p2: 'Z. Over', tour: 'ATP Shanghai', date: '2026-10-09', time: '10:00' }]), modelOutput: { generatedAt: FIX.generatedAt, matches: { [M.id]: E, [M2.id]: FIX.e2 }, analysisOn: opts.analysisOn === true }, modelOutputLoaded: true,
     getFiltered: () => board.slice(), playerProfiles: { 8781: { name: FIX.names.p1 }, 1906: { name: FIX.names.p2 } },
     ppStyleFor: (n, k) => (String(k) === '8781' ? { archetype_label: FIX.styles[0] } : String(k) === '1906' ? { archetype_label: FIX.styles[1] } : null),
-    psArchFor: id => (id ? { name: id } : null), sfEventName: raw => (raw === 'ATP Shanghai' ? 'Shanghai Masters' : raw),
+    psArchFor: id => { if (!id) return null; let a = ctx.PS_ARCHETYPES.find(x => x.name === id); if (!a) { a = { name: id }; ctx.PS_ARCHETYPES.push(a); } return a; }, sfEventName: raw => (raw === 'ATP Shanghai' ? 'Shanghai Masters' : raw),
+    PS_ARCHETYPES: [], PS_PAGE_MIN_N: 30, psMatrixData: { matrix: {} }, psCellFor: () => (opts.cell === undefined ? { pct: 38, n: 1259 } : opts.cell),
     roundBadgeText: r => (/1\/32-finals/.test(r || '') ? 'R64' : null), TR_RESULT: { R64: 'Round of 64' },
     sfDdRender: (id, cfg) => { calls.dd = cfg; }, cardStartMs: m => Date.parse(m.date + 'T08:30:00Z'), cardFmtStart: () => '08:30',
     matchDayBucket: () => 'today', aOddsStartMs: m => Date.parse(m.date + 'T08:30:00Z'), openPlayerProfileFromMatch: k => calls.profile.push(k),
@@ -79,7 +80,7 @@ test('header: title, layer sentence from the engine, Matches = the board list, L
   assert.match(PAGE, /<h1 class="sfh__title">Stennisfy Model<\/h1>/);
   assert.equal(els.edgeHeadSub.textContent, 'Fair prices from 14 weighted layers, against the market.');
   const t = text(els.edgeHeadStats.innerHTML);
-  assert.match(t, /^Matches 12 Layers active 9\/13 Updated 04:51$/, t);
+  assert.match(t, /^Matches 12 Layers active 9\/14 Updated 04:51$/, t);   // R1 fix 1: 14 everywhere
   assert.match(els.edgeHeadStats.innerHTML, /title="Model run 10 Oct, 04:51:34"/);
 });
 
@@ -97,7 +98,7 @@ test('rail: Today’s Matches list (same list, count, order), grouped under the 
 test('match header: initials, shared name, ELO · step-9 style (mirrored), Tournament · Surface · Round · Format', () => {
   const { api } = boot();
   const t = text(api.render());
-  assert.match(t, /^LD L\. Darderi ELO 1830 · Attacking Baseliner vs S\. Tsitsipas Big Server \+ Complete Baseliner · ELO 1884 ST Tournament Shanghai Masters Surface Hard Round Round of 64 Format Best of 3/);
+  assert.match(t, /^LD L\. Darderi Elo 1830 · Attacking Baseliner vs S\. Tsitsipas Big Server \+ Complete Baseliner · Elo 1884 ST Tournament Shanghai Masters Surface Hard Round Round of 64 Format Best of 3/);
 });
 
 test('prices: Pinnacle else bet365; best soft never Pinnacle; open → now · move is mxMovePct on the 2 dp prices', () => {
@@ -107,12 +108,14 @@ test('prices: Pinnacle else bet365; best soft never Pinnacle; open → now · mo
   assert.equal(api.edgeBestSoft(M, 'p1').key, 'bet365', 'Pinnacle 3.01 is the highest quote on Darderi, but it is not a soft book');
   assert.match(text(h), /Pinnacle −2\.8pp 2\.94 → 3\.03 · \+3\.1%/);
   const noPin = JSON.parse(JSON.stringify(M)); delete noPin.bookNow.Pncl; delete noPin.bookOpens.Pncl;
-  assert.equal(api.edgeSharp(noPin).name, 'bet365', 'no Pinnacle → bet365');
-  assert.ok(!['bet365'].includes(api.edgeBestSoft(noPin, 'p1').key), 'the sharp tile’s book is not also the best soft');
+  assert.equal(api.edgeSharp(noPin).name, 'Bet365', 'no Pinnacle → Bet365');
+  assert.ok(api.edgeBestSoft(noPin, 'p1').key !== 'bet365', 'the sharp tile’s book is not also the best soft');
   const pulled = JSON.parse(JSON.stringify(M)); delete pulled.bookNow.Pncl;
-  assert.equal(api.edgeSharp(pulled).name, 'bet365', 'Pinnacle with no price now falls to bet365');
-  assert.match(text(h), /best soft scans William Hill, bet365, Marathon, Betfair, BetVictor, SBOBET, 1xBet, Betano/);
-  assert.match(text(h), /Soft open bet365 · 4\.8% 3\.00 \+2\.7pp Pinnacle open 8 Oct · 11:22 · 3\.5% 2\.94 \+1\.6pp Pinnacle now −0\.8pp since open · 2\.9% 3\.03 \+2\.4pp Model base 34\.5% · no margin 2\.90/);
+  assert.equal(api.edgeSharp(pulled).name, 'Bet365', 'Pinnacle with no price now falls to Bet365');
+  assert.match(text(h), /best soft scans William Hill, Bet365, Marathon, Betfair, BetVictor, SBOBET, 1xBet, Betano/);
+  assert.match(text(h), /Pinnacle margin now 2\.9% , soft at open 4\.8% \(Bet365\) \/ 4\.9% \(Betano\)/, 'one margin source: the Soft open rows (R1 fix 5)');
+  assert.match(text(h), /Best soft −3\.1pp Bet365 Pinnacle −2\.8pp/, 'gaps from the fair % as printed (R1 fix 6)');
+  assert.match(text(h), /Soft open Bet365 · 4\.8% 3\.00 \+2\.7pp Pinnacle open 8 Oct · 11:22 · 3\.5% 2\.94 \+1\.6pp Pinnacle now −0\.8pp since open · 2\.9% 3\.03 \+2\.4pp Model base 34\.5% · no margin 2\.90/);
 });
 
 test('fair price: editing an odd re-computes its gap in place; empty, ≤ 1.00 and non-numbers read —, never NaN', () => {
@@ -120,7 +123,7 @@ test('fair price: editing an odd re-computes its gap in place; empty, ≤ 1.00 a
   api.render();
   const gap = { textContent: '', className: '' };
   els['emGap-soft-p1'] = gap;
-  for (const [v, want, cls] of [['3.40', '+0.8pp', 'em-pos'], ['3,00', '−3.2pp', 'em-neg'], ['', '—', 'em-zero'], ['1.00', '—', 'em-zero'], ['0.9', '—', 'em-zero'], ['abc', '—', 'em-zero'], ['2.5x', '—', 'em-zero']]) {
+  for (const [v, want, cls] of [['3.40', '+0.8pp', 'em-pos'], ['3,00', '−3.1pp', 'em-neg'], ['', '—', 'em-zero'], ['1.00', '—', 'em-zero'], ['0.9', '—', 'em-zero'], ['abc', '—', 'em-zero'], ['2.5x', '—', 'em-zero']]) {
     api.edgeOddInput({ value: v }, 'upcoming-12169478', 'soft', 'p1');
     assert.equal(gap.textContent, want, `typed "${v}"`);
     assert.equal(gap.className, 'em-gap ' + cls);
@@ -129,25 +132,43 @@ test('fair price: editing an odd re-computes its gap in place; empty, ≤ 1.00 a
   assert.match(api.render(), /value="2\.5x"/, 'the typed text survives a re-render');
 });
 
-test('value layers: ordered by weight then shift; quality states; strip click opens the row and scrolls the container (no scrollIntoView)', () => {
+test('value layers: 14 rows by weight then shift; real figures; plain Why that agrees with Data quality; strip click scrolls the container', () => {
   const { api, calls } = boot();
   const rows = JSON.parse(JSON.stringify(api.edgeLayerRows(boot().E).map(r => [r.a.key, r.w.word, r.q])));
   assert.deepEqual(rows.slice(0, 4), [['styleMatchup', 'Highest', 'Poor'], ['subjective', 'Highest', 'Poor'], ['surface', 'High', 'Good'], ['clutch', 'Medium-high', 'Medium']]);
-  assert.equal(rows.length, 13, 'format split is hidden on a best-of-three');
+  assert.equal(rows.length, 14, 'every engine layer is a row, the format split included (R1 fix 1)');
   let h = api.render();
-  assert.match(text(h), /Value layers Data quality behind each adjustment folded into the price 9 of 13 active 6 good 4 medium 3 poor/);
+  assert.match(text(h), /Value layers Data quality behind each adjustment folded into the price 9 of 14 active 6 good 6 medium 2 poor/);
+  assert.equal((h.match(/class="em-seg-q /g) || []).length, 14, 'the strip has 14 segments');
   assert.ok(!/em-lrow/.test(h), 'the breakdown opens on demand');
   api.edgeJumpLayer('surface');
   h = api.render();
   assert.equal(JSON.stringify(api.open), JSON.stringify([true, 'surface']));
   assert.equal(calls.scrollIntoView, 0); assert.equal(calls.scrollBy.length, 1);
-  assert.match(text(h), /Surface record High 0\.00 0\.40 S\. Tsitsipas \+1\.0pp Why Hard record 44 ?% vs 63 ?% \(career\+ ?52 ?wk\+form, vs own career baseline\)\. Data quality Good Applied: the engine rates the sample behind this layer medium for this match\./);
-  assert.match(h, /<span class="em-fav na">Gated<\/span><span class="em-shift em-zero">—<\/span>/, 'a gated layer says so');
+  // R1 fixes 2 + 3: the players' real figures; the Why in plain words; one state in the label and the sentence
+  assert.match(text(h), /Surface record High 44 ?% 63 ?% S\. Tsitsipas \+1\.0pp Why Hard-court record 44 ?% vs 63 ?% over career and the last 52 weeks, each against their own career baseline\. Data quality Good The inputs behind this layer are complete for both players in this match\./);
+  for (const [k, a, b] of [['clutch', '29', '74'], ['serve', '258.0', '303.5'], ['winnerUE', '0.89', '1.05'], ['fatigue', '4.0', '8.0'], ['qualityForm', '−22.0', '−8.0'], ['h2h', '0', '1']])
+    assert.match(h, new RegExp(`id="emLayer-${k}"[\\s\\S]*?<span class="em-sc">${a.replace('.', '\\.')}</span>[\\s\\S]*?<span class="em-sc">${b.replace('.', '\\.')}</span>`), k + ' figures');
+  assert.ok(!/career\+52wk|recency-wtd|Nₑₓ|rel-to-archetype/.test(h), 'no engine shorthand on the page');
+  api.edgeToggleLayer('formatSplit');
+  assert.match(text(api.render()), /Format split \(Bo5\) Medium-high — — Gated — Why Best of 3 ?: this layer applies to best-of-five only\. Data quality Medium The layer does not apply to a best-of-three match\./);
   api.edgeToggleLayer('weather');
-  assert.match(text(api.render()), /Weather \/ conditions Medium-high — — Gated — Why GATED — switched off until the match-time fix and an indoor check are both in Data quality Medium Switched off for every match by a model gate, not by this match’s data\./);
+  assert.match(text(api.render()), /Weather \/ conditions Medium-high — — Gated — Why Switched off for every match until the match-time fix and an indoor check are both in\. Data quality Medium The layer is switched off by a model rule for every match, not by missing data\./);
+  api.edgeToggleLayer('subjective');
+  assert.match(text(api.render()), /Manual context Highest — — No data — Why No analyst note is attached to this match, so the layer stays neutral\./, 'one name: Manual context');
+  api.edgeToggleLayer('styleMatchup');
+  assert.match(text(api.render()), /Why Attacking Baseliner v Big Server \+ Complete Baseliner: Attacking Baseliner wins 38% of 1,259 matches\. The model does not read playing styles yet, so the layer is off\./);
+  assert.match(text(api.render()), /Style matchup Highest — — Off — Why [^]*?Data quality Medium The model does not read playing styles yet, so this layer is off for every match \(TEN-419\)\./, 'labels known: Off, Medium, one story (review)');
+  // an even row (inputs in, no shift): Good + "Even", never "No data / Poor"
+  const ev = JSON.parse(JSON.stringify(FIX.e1)); const fa = ev.stage2.adjustments.find(x => x.key === 'fatigue');
+  Object.assign(fa, { applied: false, confidence: 'none', direction: 'neutral', signal: 0, deltaP1: 0, detail: '10d load even on Hard: 6s/3m=6.0u vs 7s/3m=7.0u (gap -1.0u < 2).' });
+  const evb = boot({ e: ev }); evb.api.render(); evb.api.edgeJumpLayer('fatigue');
+  assert.match(text(evb.api.render()), /Fatigue \(recent load\) Medium-high 6\.0 7\.0 Even 0\.0pp Why Match load over the last 10 days: L\. Darderi 6 sets in 3 matches \( ?6\.0 units\), S\. Tsitsipas 7 sets in 3 matches \( ?7\.0 units\)\. The loads are too close for the layer to move the price\. Data quality Good/);
+  const thin = boot({ cell: { pct: null, n: 12 } }); thin.api.render(); thin.api.edgeJumpLayer('styleMatchup');
+  assert.match(text(thin.api.render()), /Why Attacking Baseliner v Big Server \+ Complete Baseliner: 12 matches, under 30\./, 'the pair cell under 30, with its count');
 });
 
-test('biggest movers + Pro gating: the Upgrade line and the analysis fade are Free-only', () => {
+test('biggest movers + Pro gating: the Upgrade line is Free-only', () => {
   const pro = boot();
   let t = text(pro.api.render());
   assert.match(t, /Biggest movers The three factors that moved the price most 1\. Under pressure S\. Tsitsipas \+1\.4pp 2\. Serve strength S\. Tsitsipas \+1\.3pp 3\. Winner \/ unforced-error ratio S\. Tsitsipas \+1\.1pp/);
@@ -156,32 +177,39 @@ test('biggest movers + Pro gating: the Upgrade line and the analysis fade are Fr
   assert.match(free.api.render(), /<a class="sf-upgrade em-btn" href="account\.html">Upgrade to Pro to unlock all factors<\/a>/);
 });
 
-test('analysis: hidden when the run has none; Generate → five labelled paragraphs + "Generated HH:MM"; Free sees two and the fade', async () => {
-  const none = boot();
-  assert.ok(!/Stennisfy Analysis/.test(none.api.render()), 'no analysis → the section is hidden, no disclaimer');
+test('analysis: OFF = no section for anyone; when on: cached text for Pro with stamp, Free = Players + the shared Upgrade, failure keeps Generate', async () => {
   const P = ['One 1.53.', 'Two.', 'Three.', 'Four.', 'Five.'];
   const e = JSON.parse(JSON.stringify(FIX.e1)); e.summary = { ok: true, text: P.join('\n\n'), generatedAt: '2026-10-10T05:12:00Z' };
-  for (const free of [false, true]) {
-    const b = boot({ e, free });
-    assert.match(b.api.render(), /Generate Stennisfy Analysis/);
-    b.api.edgeAiState['upcoming-12169478'] = 'shown';
-    const t = text(b.api.render());
-    if (!free) assert.match(t, /Players One 1\.53\. Matchup Two\. Tournament Three\. Keys Four\. Verdict Five\. Stennisfy Analysis is generated by Stennisfy’s proprietary model and is for informational purposes only\. Generated 05:12/);
-    else assert.match(t, /Players One 1\.53\. Matchup Two\. Upgrade to Pro to unlock the full analysis/);
-    assert.match(t, /↻ Regenerate/);
-  }
-  const g = boot({ e });
-  g.ctx.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ generatedAt: 'x', matches: { 'upcoming-12169478': Object.assign({}, FIX.e1, { summary: { ok: false } }) } }) });
+  for (const free of [false, true]) assert.ok(!/Stennisfy Analysis/.test(boot({ e, free }).api.render()), 'switch off (founder 2026-10-10): no section, Pro or Free');
+  const none = boot({ analysisOn: true });
+  assert.match(none.api.render(), /Generate Stennisfy Analysis/, 'on, nothing cached: Pro gets the empty state + Generate');
+  assert.ok(!/Stennisfy Analysis/.test(boot({ analysisOn: true, free: true }).api.render()), 'Free cannot generate');
+  const pro = text(boot({ e, analysisOn: true }).api.render());
+  assert.match(pro, /Players One 1\.53\. Matchup Two\. Tournament Three\. Keys Four\. Verdict Five\. Stennisfy Analysis is generated by Stennisfy’s proprietary model and is for informational purposes only\. Generated 05:12/, 'cached text shown to Pro');
+  assert.match(pro, /↻ Regenerate/);
+  const fr = boot({ e, analysisOn: true, free: true }).api.render();
+  assert.match(text(fr), /Players One 1\.53\. Upgrade to Pro to unlock the full analysis/);
+  assert.ok(!/Matchup Two|↻ Regenerate|Generated 05:12|em-ai-fade/.test(fr), 'Free: no second paragraph, no Regenerate, no stamp, no fade');
+  assert.equal((fr.match(/class="sf-upgrade em-btn"/g) || []).length, 2, 'one button style: the shared Upgrade');
+  const g = boot({ analysisOn: true });
+  g.ctx.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ generatedAt: 'x', analysisOn: true, matches: { 'upcoming-12169478': Object.assign({}, FIX.e1, { summary: { ok: false } }) } }) });
   g.api.render(); g.api.edgeGenerate('upcoming-12169478');
-  await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r)); await new Promise(r => setImmediate(r));
-  assert.match(text(g.api.render()), /Players One 1\.53\./, 'Regenerate keeps the analysis when the newer run has none');
+  for (let i = 0; i < 4; i++) await new Promise(r => setImmediate(r));
+  const t = text(g.api.render());
+  assert.match(t, /Generate Stennisfy Analysis Couldn’t generate the analysis\. Try again\./, 'a failed generate keeps the section');
+  const r = boot({ e, analysisOn: true });
+  r.ctx.fetch = g.ctx.fetch;
+  r.api.render(); r.api.edgeGenerate('upcoming-12169478');
+  for (let i = 0; i < 4; i++) await new Promise(z => setImmediate(z));
+  assert.match(text(r.api.render()), /Players One 1\.53\./, 'Regenerate keeps the analysis when the newer run has none');
 });
 
-test('gate: no confirmed Pinnacle anchor → no price, no Updated; the empty card says why', () => {
+test('no model price (R1 fix 14): header + Market context book rows, no Model base, one grey line; never an Elo-only price', () => {
   const { api, els } = boot();
   const t = text(api.render('upcoming-12169534'));
-  assert.match(t, /Awaiting a confirmed market line/);
-  assert.ok(!/Market context|Fair price/.test(t));
+  assert.match(t, /Market context · match winner/);
+  assert.match(t, /No model price for this match yet\.$/);
+  assert.ok(!/Model base|Fair price|Value layers|Biggest movers|edge = model/.test(t));
   assert.match(text(els.edgeHeadStats.innerHTML), /Layers active — Updated —/);
 });
 
@@ -202,15 +230,16 @@ test('the analysis generator reads the page’s own rules, character for charact
   const src = readFileSync(join(HERE, 'h2h-model/summary.js'), 'utf8');
   const a = src.indexOf('// >>> page rules'), b = src.indexOf('// <<< page rules');
   const copy = src.slice(src.indexOf('\n', a) + 1, b);
-  for (const name of ['edgeQuote', 'edgeBookName', 'edgeSharp', 'edgeSoftBooks', 'edgeBestSoft', 'edgeNoVig', 'edgeWeightTag', 'edgeCovState', 'edgeQuality', 'edgeVisibleAdjs', 'edgeWhyText', 'mxBookLabel'])
+  for (const name of ['edgeQuote', 'edgeBookName', 'edgeSharp', 'edgeSoftBooks', 'edgeBestSoft', 'edgeNoVig', 'edgeGapOf', 'edgeWeightTag', 'edgeCovState', 'edgeEven', 'edgeFigures', 'edgeNotThisFormat', 'edgeQuality', 'edgeVisibleAdjs', 'edgeLayerName', 'edgeSigned', 'edgeCourt', 'edgeEventPart', 'edgeWhyText', 'mxBookLabel'])
     assert.ok(copy.includes(fn(name)), `${name}: summary.js copy differs from the page`);
   for (const c of ['MX_BOOK_LABELS']) assert.ok(copy.includes(block(c)), c);
-  for (const line of ["const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'bet365']];", "const EDGE_SELF_HIDE_KEYS = new Set(['winnerUE']);"]) {
+  for (const line of ["const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'Bet365']];", "const EDGE_LAYER_NAMES = { subjective: 'Manual context' };"]) {
     assert.ok(html.includes(line), 'page: ' + line); assert.ok(copy.includes(line), 'summary.js: ' + line);
   }
   const require = createRequire(import.meta.url);
+  assert.equal(require('./h2h-model/config.js').summary.enabled, false, 'founder 2026-10-10: Stennisfy Analysis is off (no Claude calls)');
   const facts = require('./h2h-model/summary.js').buildFacts(FIX.e1, FIX.m1);
-  assert.deepEqual(facts.market.bestSoft, { 'L. Darderi': { book: 'bet365', price: 3, gapPP: -3.2 }, 'S. Tsitsipas': { book: 'Betano', price: 1.44, gapPP: 0.4 } });
+  assert.deepEqual(facts.market.bestSoft, { 'L. Darderi': { book: 'Bet365', price: 3, gapPP: -3.1 }, 'S. Tsitsipas': { book: 'Betano', price: 1.44, gapPP: 0.4 } });
   assert.deepEqual(facts.market.sharpNowGapPP, { 'L. Darderi': -2.8, 'S. Tsitsipas': -0.1 }, 'the page’s own gaps, not the model’s guess');
   const pipe = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
   assert.match(pipe, /\} else if \(priorSum && priorSum\.ok\) \{\n[^}]*entry\.summary = Object\.assign\(\{\}, priorSum, \{ lastError: s\.reason \}\);/, 'a failed regeneration keeps the last good analysis');
@@ -218,4 +247,7 @@ test('the analysis generator reads the page’s own rules, character for charact
   assert.deepEqual(facts.biggestMovers.map(x => x.shiftPP), [1.4, 1.3, 1.1]);
   assert.equal(facts.match.round, 'Round of 64');
   assert.ok(!JSON.stringify(facts).includes('Shanghai'), 'no event name for the model to repeat');
+  assert.equal(facts.layersShown, 14, 'the analysis counts the same 14 layers');
+  assert.match(pipe, /analysisOn: !!require\('\.\/h2h-model\/config'\)\.summary\.enabled,/, 'the one switch reaches the page');
+  assert.match(pipe, /update\(JSON\.stringify\(\[m\.id, fr\.p1 && fr\.p1\.odds, fr\.p2 && fr\.p2\.odds\]\)\)/, 'cached per match until the shown fair price changes');
 });

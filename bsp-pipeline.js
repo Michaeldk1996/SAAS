@@ -7606,11 +7606,23 @@ async function buildModelOutput(matches) {
 
     // ---- Stage 4: pre-baked AI summary, hash-cached ----
     const facts = buildFacts(result, m);   // TEN-418: the page's figures, prices included
-    const factsHash = crypto.createHash('sha1').update(JSON.stringify(facts)).digest('hex');
+    // TEN-418 R1 fix 13: cached per match until a model run changes the shown fair price (no re-run on a price move).
+    const fr = (result.stage3 && result.stage3.fair) || {};
+    const factsHash = crypto.createHash('sha1').update(JSON.stringify([m.id, fr.p1 && fr.p1.odds, fr.p2 && fr.p2.odds])).digest('hex');
     const priorSum = prior[m.id] && prior[m.id].summary;
+    const shown = result.stage1 && result.stage1.baseState && result.stage1.baseState.state === 2;
     if (priorSum && priorSum.ok && priorSum.factsHash === factsHash) {
       entry.summary = priorSum;            // numbers unchanged → reuse cached text
       sumCached++;
+    } else if (priorSum && !priorSum.ok && priorSum.factsHash === factsHash) {
+      // TEN-418 review: a key that failed is not retried every run (the 10 Oct loop made 67 failed calls); it waits for a
+      // new fair price. The page offers Generate again on its own.
+      entry.summary = priorSum;
+      sumSkipped++;
+    } else if (!shown) {
+      // TEN-418: only matches the page prices (state 2) get an analysis; an Elo-only run never reaches the page.
+      entry.summary = { ok: false, reason: 'no model price shown for this match (state ' + (result.stage1 && result.stage1.baseState && result.stage1.baseState.state) + ')', factsHash };
+      sumSkipped++;
     } else if (haveKey) {
       const s = await generateSummary(result, { match: m });
       if (s.ok) {
@@ -7635,6 +7647,8 @@ async function buildModelOutput(matches) {
 
   writeJsonAtomic(MODEL_OUTPUT_PATH, {
     generatedAt: new Date().toISOString(),
+    // TEN-418: the page shows the Stennisfy Analysis only when this is true — the ONE switch is h2h-model/config.js.
+    analysisOn: !!require('./h2h-model/config').summary.enabled,
     count: Object.keys(out).length,
     matches: out,
   }, true);

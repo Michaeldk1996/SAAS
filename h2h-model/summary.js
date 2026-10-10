@@ -52,9 +52,14 @@ function mxBookLabel(book){
   const k = String(book).toLowerCase().replace(/[^a-z0-9]/g, '');
   return MX_BOOK_LABELS[k] || book;
 }
-const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'bet365']];
+const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'Bet365']];
 function edgeQuote(src, k){ const q = src && src[k]; return (q && q.p1 >= 1.01 && q.p2 >= 1.01) ? q : null; }
-function edgeBookName(k){ return k === 'Pncl' ? 'Pinnacle' : ((typeof mxBookLabel === 'function') ? mxBookLabel(k) : k); }
+function edgeBookName(k){
+  const l = String(k || '').toLowerCase();
+  if (l === 'pncl' || l === 'pinnacle') return 'Pinnacle';
+  if (l === 'bet365') return 'Bet365';
+  return (typeof mxBookLabel === 'function') ? mxBookLabel(k) : k;
+}
 function edgeSharp(m){
   const at = k => ({ key: k, name: EDGE_SHARP.find(x => x[0] === k)[1], now: edgeQuote(m && m.bookNow, k), open: edgeQuote(m && m.bookOpens, k) });
   const all = EDGE_SHARP.map(x => at(x[0]));
@@ -70,6 +75,7 @@ function edgeBestSoft(m, side){
   return best;
 }
 function edgeNoVig(q, side){ if (!q) return null; const a = 1 / q.p1, b = 1 / q.p2; return (side === 'p1' ? a : b) / (a + b); }
+function edgeGapOf(prob, odd){ return (prob == null || odd == null) ? null : Math.round(prob * 1000) / 10 - 100 / odd; }
 function edgeWeightTag(mag){
   const m = mag || 0;
   if (m >= 0.06)  return { label: 'HIGHEST',     rank: 0, word: 'Highest' };
@@ -80,14 +86,100 @@ function edgeWeightTag(mag){
 }
 function edgeCovState(a){
   if (a.applied) return (a.confidence === 'high' || a.confidence === 'med') ? 'full' : 'partial';
-  return a.gated ? 'partial' : 'missing';
+  if (edgeEven(a)) return 'full';
+  return (a.gated || edgeNotThisFormat(a)) ? 'partial' : 'missing';
 }
+function edgeEven(a){ return !!(a && !a.applied && !a.gated && edgeFigures(a)); }
+function edgeNotThisFormat(a){ return !!(a && a.key === 'formatSplit' && a.hidden && /^Bo3\b/.test(String(a.detail || ''))); }
 function edgeQuality(a){ const s = edgeCovState(a); return s === 'full' ? 'Good' : (s === 'partial' ? 'Medium' : 'Poor'); }
-const EDGE_SELF_HIDE_KEYS = new Set(['winnerUE']);
-function edgeVisibleAdjs(list){
-  return (list || []).filter(a => !a.hidden && (a.applied || !EDGE_SELF_HIDE_KEYS.has(a.key)));
+function edgeVisibleAdjs(list){ return (list || []).slice(); }
+const EDGE_LAYER_NAMES = { subjective: 'Manual context' };
+function edgeLayerName(a){ return EDGE_LAYER_NAMES[a.key] || a.name; }
+function edgeSigned(v){ const n = Number(String(v).replace('−', '-')); return isFinite(n) ? (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toFixed(1) : String(v); }
+function edgeCourt(surf){ const s = String(surf || '').toLowerCase(); return s ? s + ' courts' : 'this surface'; }
+function edgeEventPart(t1, t2, A, B){
+  const w = t => { const m = /(\d+)r ([+-]?[\d.]+)/.exec(t || ''); return m ? edgeSigned(m[2]) + ' after ' + m[1] + ' round' + (m[1] === '1' ? '' : 's') : 'no match yet'; };
+  return ` At this event: ${A} ${w(t1)}, ${B} ${w(t2)}.`;
 }
-function edgeWhyText(a){ return String(a.detail || '').replace(/\s*\(TEN-\d+\)/g, '').trim(); }
+function edgeWhyText(a, nm){
+  const d = String(a.detail || '').replace(/\s*\(TEN-\d+\)/g, '').trim();
+  const A = (nm && nm.p1) || 'Player A', B = (nm && nm.p2) || 'Player B';
+  let x;
+  switch (a.key){
+    case 'styleMatchup':
+      if (/^Neither player/.test(d)) return 'Neither player has a playing-style label the model reads.';
+      if ((x = /^(.+?) has no classified/.exec(d))) return `${x[1]} has no playing-style label the model reads.`;
+      if ((x = /^Mirror matchup — both play as (.+?),/.exec(d))) return `Both play as ${x[1]}: a mirror matchup with no style edge.`;
+      if ((x = /^(.+?) vs (.+?): n=(\d+) < floor (\d+)/.exec(d))) return `${x[1]} v ${x[2]}: ${x[3]} matches, under ${x[4]}.`;
+      break;
+    case 'subjective':
+      if (!a.applied) return 'No analyst note is attached to this match, so the layer stays neutral.';
+      break;
+    case 'h2h':
+      if (/^No prior meetings/.test(d)) return `${A} and ${B} have never met.`;
+      if ((x = /^H2H (\d+)-(\d+) \((\d+) meetings?(?:, incl\. ([^;]+))?; (\d+) on (\w+), (\d+) in last (\d+)y/.exec(d)))
+        return `Head-to-head ${A} ${x[1]}–${x[2]} ${B} in ${x[3]} meeting${x[3] === '1' ? '' : 's'}${x[4] ? ' (' + x[4] + ')' : ''}: ${x[5]} on ${edgeCourt(x[6])}, ${x[7]} in the last ${x[8]} years.`;
+      break;
+    case 'surface':
+      if ((x = /^(\w+) record (\d+)% vs (\d+)%/.exec(d))) return `${x[1]}-court record ${x[2]}% vs ${x[3]}% over career and the last 52 weeks, each against their own career baseline.`;
+      break;
+    case 'recentForm':
+      if ((x = /^Form (\d+)% vs (\d+)%/.exec(d))) return `Recent form ${x[1]}% vs ${x[2]}%: the last five matches weighted to the latest and by opponent quality, adjusted for surface.${/flagged/.test(d) ? ' A large form gap is flagged.' : ''}`;
+      break;
+    case 'qualityForm':
+      if ((x = /Career top(\d+) dev ([+-]?[\d.]+)pp\((\d+)m\) vs ([+-]?[\d.]+)pp\((\d+)m\); (\w+) top\d+ dev ([+-]?[\d.]+)pp\((\d+)m\) vs ([+-]?[\d.]+)pp\((\d+)m\)/.exec(d)))
+        return `Win rate against the top ${x[1]}, each against their own baseline: career ${edgeSigned(x[2])}pp (${x[3]} match${x[3] === '1' ? '' : 'es'}) vs ${edgeSigned(x[4])}pp (${x[5]}); on ${edgeCourt(x[6])} ${edgeSigned(x[7])}pp (${x[8]}) vs ${edgeSigned(x[9])}pp (${x[10]}).${/Thin/.test(d) ? ' The top-' + x[1] + ' sample is thin.' : ''}`;
+      break;
+    case 'winnerUE':
+      if ((x = /^W\/UE ([\d.]+) vs ([\d.]+) — rel-to-archetype ([\d.]+) vs ([\d.]+) \([^,]+, (\d+)\/(\d+) matches\)/.exec(d)))
+        return `Winners per unforced error ${x[1]} vs ${x[2]} (${x[3]} vs ${x[4]} against their playing style’s average), over each player’s last ${x[5]} and ${x[6]} match${x[6] === '1' ? '' : 'es'}.`;
+      break;
+    case 'serve':
+      if ((x = /^Serve rating ([\d.]+) vs ([\d.]+) \((\w+);(?:.*in-tourn (.+?) \/ (.+?)\))?/.exec(d))) return `Serve rating ${x[1]} vs ${x[2]} on ${edgeCourt(x[3])}.` + (x[4] ? edgeEventPart(x[4], x[5], A, B) : '');
+      break;
+    case 'returnPressure':
+      if ((x = /^Return rating ([\d.]+) vs ([\d.]+) \((\w+), career\+52wk;(?:.*in-tourn (.+?) \/ (.+?)\))?/.exec(d))) return `Return rating ${x[1]} vs ${x[2]} on ${edgeCourt(x[3])}, over career and the last 52 weeks.` + (x[4] ? edgeEventPart(x[4], x[5], A, B) : '');
+      break;
+    case 'fatigue':
+      if (/^No matches in last/.test(d)) return 'Neither player has a match in the window the layer reads.';
+      if ((x = /^(\d+)d load[^:]*: (\d+)s\/(\d+)m=([\d.]+)u(?: \[[^\]]*\])? vs (\d+)s\/(\d+)m=([\d.]+)u/.exec(d))) {
+        const ev = /gap [-\d.]+u </.test(d);   // the engine's printed cut-off is not its real band (config unitBands), so no number here
+        return `Match load over the last ${x[1]} days: ${A} ${x[2]} set${x[2] === '1' ? '' : 's'} in ${x[3]} match${x[3] === '1' ? '' : 'es'} (${x[4]} units), ${B} ${x[5]} set${x[5] === '1' ? '' : 's'} in ${x[6]} match${x[6] === '1' ? '' : 'es'} (${x[7]} units).${ev ? ' The loads are too close for the layer to move the price.' : ''}`;
+      }
+      break;
+    case 'weather':
+      if (a.gated) return 'Switched off for every match until the match-time fix and an indoor check are both in.';
+      break;
+    case 'formatSplit':
+      if (edgeNotThisFormat(a)) return 'Best of 3: this layer applies to best-of-five only.';
+      if ((x = /need (\d+)\+ Bo5/.exec(d))) return `Not enough best-of-five matches: the layer needs ${x[1]}+ for both players.`;
+      break;
+    case 'clutch':
+      if (d === 'No data.') return 'No under-pressure index for at least one player.';
+      if ((x = /index(?: on (\w+))? (\d+) vs (\d+)/.exec(d))) return `Under-pressure index ${x[2]} vs ${x[3]}${x[1] ? ' on ' + edgeCourt(x[1]) : ''} (break points and tiebreaks).`;
+      break;
+    case 'oddsMovement':
+      if (/no-line/.test(d)) return 'The model’s own Pinnacle series holds no pre-match line for this match, so there is no market move to read.';
+      if ((x = /Pinnacle move (\S+) < (\S+) threshold/.exec(d))) return `Pinnacle moved ${x[1]}, under the ${x[2]} the layer needs, so it reads as noise.`;
+      break;
+  }
+  return d;
+}
+function edgeFigures(a){
+  const d = String(a.detail || ''); let x;
+  switch (a.key){
+    case 'h2h': x = /^H2H (\d+)-(\d+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'surface': x = /record (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
+    case 'recentForm': x = /^Form (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
+    case 'qualityForm': x = /Career top\d+ dev ([+-]?[\d.]+)pp\(\d+m\) vs ([+-]?[\d.]+)pp/.exec(d); return x ? [edgeSigned(x[1]), edgeSigned(x[2])] : null;
+    case 'winnerUE': x = /^W\/UE ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'serve': x = /^Serve rating ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'returnPressure': x = /^Return rating ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'fatigue': x = /=([\d.]+)u(?: \[[^\]]*\])? vs [^=]*=([\d.]+)u/.exec(d); return x ? [x[1], x[2]] : null;
+    case 'clutch': x = /index(?: on \w+)? (\d+) vs (\d+)/.exec(d); return x ? [x[1], x[2]] : null;
+  }
+  return null;
+}
 // <<< page rules
 
 // The round as the page's header prints it ("ATP Shanghai - 1/32-finals" → "Round of 64"); the feed's event prefix is dropped.
@@ -117,20 +209,23 @@ function buildFacts(r, m) {
     const delta = Math.abs(a.deltaP1 || 0) * 100;
     const even = !a.applied || a.direction === 'neutral' || Math.abs(a.signal || 0) < 0.02 || delta < 0.05;
     return {
-      layer: a.name, weight: edgeWeightTag(a.maxMagnitude).word, quality: edgeQuality(a), active: !!a.applied,
+      layer: edgeLayerName(a), weight: edgeWeightTag(a.maxMagnitude).word, quality: edgeQuality(a), active: !!a.applied,
       favours: !a.applied ? null : (even ? 'even' : name(a.direction)),
-      shiftPP: !a.applied ? null : (even ? 0 : +delta.toFixed(1)), why: edgeWhyText(a),
+      shiftPP: !a.applied ? null : (even ? 0 : +delta.toFixed(1)),
+      // The page reads styles from the Playing Styles grid, which the pipeline doesn't hold: the analysis says only that
+      // the model does not read styles yet (TEN-419), never "no label".
+      why: a.key === 'styleMatchup' && !a.applied ? 'The model does not read playing styles yet, so this layer is off.' : edgeWhyText(a, { p1: mm.p1, p2: mm.p2 }),
     };
   });
   const movers = adjs.filter(a => a.applied && Math.abs(a.deltaP1 || 0) >= 0.0005)
     .sort((a, b) => Math.abs(b.deltaP1) - Math.abs(a.deltaP1)).slice(0, 3)
-    .map(a => ({ layer: a.name, favours: name(a.direction === 'p1' ? 'p1' : 'p2'), shiftPP: +(Math.abs(a.deltaP1) * 100).toFixed(1) }));
+    .map(a => ({ layer: edgeLayerName(a), favours: name(a.direction === 'p1' ? 'p1' : 'p2'), shiftPP: +(Math.abs(a.deltaP1) * 100).toFixed(1) }));
   const s3 = r.stage3 || {}, fair = s3.fair || {};
   const net = (r.stage2.totalDeltaP1 || 0) * 100;
   const sharp = m ? edgeSharp(m) : null;
   const fp = s => (fair[s] && fair[s].prob != null ? fair[s].prob : null);
   // The page's Gap: adjusted fair probability minus 1 / the price shown, in pp.
-  const gap = (s, price) => (fp(s) == null || !(price > 1) ? null : +((fp(s) - 1 / +price.toFixed(2)) * 100).toFixed(1));
+  const gap = (s, price) => (fp(s) == null || !(price > 1) ? null : +edgeGapOf(fp(s), +price.toFixed(2)).toFixed(1));
   const soft = s => { const b = m ? edgeBestSoft(m, s) : null; return b ? { book: b.name, price: +b.price.toFixed(2), gapPP: gap(s, b.price) } : null; };
   const two = q => (q ? { [mm.p1]: +q.p1.toFixed(2), [mm.p2]: +q.p2.toFixed(2) } : null);
   const sharpGap = sharp && sharp.now ? { [mm.p1]: gap('p1', sharp.now.p1), [mm.p2]: gap('p2', sharp.now.p2) } : null;
@@ -164,7 +259,9 @@ const SYSTEM_PROMPT = [
   '  model\'s verdict and lean.',
   '- Continuous prose, British English, sentence case, no headings, no bullet points, no emojis, no hype,',
   '  about 45-70 words each. Separate paragraphs with one blank line.',
-  '- Odds with two decimals, probabilities with one decimal and a % sign, gaps in pp, a true minus sign.',
+  '- Odds with two decimals, probabilities with one decimal and a % sign, gaps in pp, a true minus sign. Write "Elo".',
+  '- A positive gapPP means the price is longer than fair ("1.44 at Betano, 0.4pp longer than fair"); a negative one,',
+  '  shorter than fair. Say "N of M layers are active" with no "shown".',
   '- Probabilities are the model\'s, not certainties. Do not give financial advice or stake sizing.',
 ].join('\n');
 
