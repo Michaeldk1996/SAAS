@@ -1193,10 +1193,11 @@ test('untracked counts are missing, not 0, downstream: the Live modal bar and th
   const ts = /const twoSided=\(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key\)=>\{[\s\S]*?\n  \};/.exec(H)[0];
   const two = new Function('fhStatBarWidth', 'msBarFloor', 'msBarScale', 'DASH', 'MISS', 'INK', ts + '; return twoSided;')(
     (k, v, o, x) => v == null ? null : k === 'pct' ? v : v / Math.max(v, o || 0, x || 0) * 90, () => 15, () => 400, '—', '#333', '#eee');
+  // TEN-417 R1 fix 2 (founder): the Live bars are each player's share of the pair; a pair with one unknown draws nothing.
   const r = two('Break Points Saved', 50, null, '50%', '', '', '', 'pct');
-  assert.deepEqual([r.aW, r.bW, r.bVal], ['50.0%', '0%', '—'], 'a dash side never hands the other a full bar');
+  assert.deepEqual([r.aW, r.bW, r.bVal], ['0%', '0%', '—'], 'a dash side never hands the other a full bar');
   const c = two('Double Faults', 1, 0, '1', '0', '', '', 'count', 'Double Faults');
-  assert.equal(c.aW, '6.0%', '1 v 0 double faults stays short');
+  assert.deepEqual([c.aW, c.bW], ['100.0%', '0%'], '1 v 0 double faults: the whole half, a zero draws nothing');
 });
 test('review fixes: pbp never flips on a key that matches neither player; expanded rows orient too; Match Stats pressure = the popup\'s', () => {
   const src = ['fhPbpFlip', 'fhPbpAIsFirst', 'fhPbpForA', 'pbpSplitSet', 'pbpParseScore'].map(slice).join('\n');

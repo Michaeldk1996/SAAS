@@ -9,8 +9,10 @@ at runtime). *R3 is superseded* (founder shell refresh TEN-403, 2026-10-08; kept
 column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page header (35b, TEN-403)").
 - **Status lines are text only (S3), site-wide:** "Live · updated …" text lines, the News feed line, the Dropping Odds
   header tail — no dot, no colour (the one exception: the Today's Matches header live column above). `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
-  not live", Drops past its amber tier). The age is carried by the words ("updated 12 min ago"). The only *status* dot on
-  the site is the lime serve dot (data marks — chart end dots, the date strip's Today marker — are not status).
+  not live", Drops past its amber tier). The age is carried by the words ("updated 12 min ago"). The only *status* dots on
+  the site are the lime serve dot and the Live page's match status dots (founder TEN-417: card 5px — white pulsing for
+  Live, `--amber` for Interrupted; sheet head 6px, same colours; `.claude/rules/live.md`). Data marks — chart end dots,
+  the date strip's Today marker — are not status.
 
 ## Tests
 
@@ -56,10 +58,11 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   `--text`, otherwise `--text-soft`; lead factor box `--card` + `--edge-6`) (R4). *Kept by ruling (R4):* Database Lines ≥65% green; SHARP VALUE green / NO VALUE red; Drops FEED DISCONNECTED =
   `--neg` caps text on a white 4% banner, no red fill. *Exceptions (page variants, README §6):* Playing
   Styles matchup Strong `--pos` / Weak `--neg`; hold/break heatmap and form cells tinted `--viz-up` / `--viz-down`
-  (green from +3 pts vs the pair's all-sets rate, red from −3, neutral within ±3 — U3); Lost = `--neg` text, Won =
+  (Player Profile: green from +3 pts vs the pair's all-sets rate, red from −3 — U3; Live: neutral within ±3 inclusive, green from +4 / red from −4 — TEN-417 R1); Lost = `--neg` text, Won =
   `--pos` only as a result marker; Completed-card loser is grey, not red.
-- **Amber = two places only:** Stennisfy Model value-layer quality (medium) and Trading Report field tiers (within
-  3 pts). Nowhere else — not Weather severity, not News stale, not entry lists (U2, U3).
+- **Amber = three places only:** Stennisfy Model value-layer quality (medium), Trading Report field tiers (within
+  3 pts) and the Live page's **Interrupted** status (header count above 0, card status, sheet status — founder TEN-417).
+  Nowhere else — not Weather severity, not News stale, not entry lists (U2, U3).
 - **Lime = one element:** the live serving dot (`--serve-ball`). Not the nav, not the header, not a LIVE badge.
 - **Surfaces are neutral** (Q2.4): Hard / Clay / Grass / Indoor labels are `--text-soft`. *Exception:* the Swing band
   in the Calendar record modal (locked design, bundle `Stennisfy Website.html`, Player Stat Boxes — S4): `--viz-hard`

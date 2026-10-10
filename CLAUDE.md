@@ -127,7 +127,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Layout = the 12a design file (founder brief TEN-286, 2026-09-26).** The reference is `design/reference/portal-12a.html` (never published). It renders only with JavaScript: open it in headless Chrome, measure **computed styles** relative to the portal frame (the `<aside>`'s parent), and compare at the same DPR. **The design file's computed values beat any label text and any HANDOFF.md number** where they disagree (its label strip says "#10131F surfaces, 6% hairlines"; it computes `#0E1019` and 0.045 — computed wins). **Test:** the component comparator (review A) reports delta 0 or a listed data-driven exemption for every component; `test-ten286-layout.mjs` locks the values on the shipped source.
 
-- **Colour semantics.** Tone carries hierarchy (`--text` → `--text-soft` → `--text-label`); hue carries meaning. **Test:** if blue text is not a link, if green/red is not a signed value, if amber is outside the Stennisfy Model or Trading Report, or if lime is not the live serve dot, it is wrong (`.claude/rules/foundation.md`).
+- **Colour semantics.** Tone carries hierarchy (`--text` → `--text-soft` → `--text-label`); hue carries meaning. **Test:** if blue text is not a link, if green/red is not a signed value, if amber is outside the Stennisfy Model, the Trading Report or Live's Interrupted status, or if lime is not the live serve dot, it is wrong (`.claude/rules/foundation.md`).
 
 - **Font weight.** Valid iff one of **{400, 500, 600, 700, 800}**. **Test:** any other weight is wrong. Heavy 600/700/800 use is the design — do not tone it down.
 
@@ -150,7 +150,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 ## Non-negotiables
 
 - Never show a pipeline health banner or infrastructure warning to end users. *Exception:* the Dropping Odds page's "FEED DISCONNECTED" banner, worded exactly as its export draws it (founder, TEN-297 card 79e9db02 Q3) — see `.claude/rules/drops.md`.
-- Never highlight the better stat between two players with colour — neutral display only. **Test:** both players' figures and text are the same colour. *Exception (founder ruling 8, TEN-380, 2026-10-03):* two-player BARS split leader / trailer — the leader's bar solid, the trailer's at 45% (`--white-bar` / `--white-bar-2`, or `--bar` / `--bar-2`); the figures beside them stay white.
+- Never highlight the better stat between two players with colour — neutral display only. **Test:** both players' figures and text are the same colour. *Exception (founder ruling 8, TEN-380, 2026-10-03):* two-player BARS split leader / trailer — the leader's bar solid, the trailer's at 45% (`--white-bar` / `--white-bar-2`, or `--bar` / `--bar-2`); the figures beside them stay white. *Exception (founder TEN-417, 2026-10-10):* on the Live page's sheet (Ratings, Stats) the leading figure is white 700 and the trailing one `--text-soft` 500 — larger figure leads, a tie leads on both sides (`.claude/rules/live.md`).
 - Never show "went the distance (4+ sets)" for best-of-three tournaments
 - Recent form always includes Challenger and ITF — never ATP-only
 - Tournament records reflect full career history, not a truncated range
@@ -282,6 +282,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Tournaments → Reports — controls, Ring-blue bars, match-stats sheet, every player in a round, W/L outcome letter | `.claude/rules/tournament-reports.md` |
 | Head to Head page (TEN-402) — page order, header, darker-track rows, white bars (override), data joins, loader guard, sheet; night only | `.claude/rules/h2h.md` |
 | Playing Styles page (TEN-408) — shell header, matchup grid (Form rule, < 30 = —, hover), archetype cards, tug bars, top-200 counts, small sample, examples by Elo; night only | `.claude/rules/playing-styles.md` |
+| Live page (TEN-417) — feed (live_snapshot 10 s, Realtime), who is on the grid, Live / Interrupted / finished, header (Updated = feed refresh), names, ratings + stats sources, point-log quirks (7–6 tiebreak row, garbled points), SP / MP, Break/Hold window, no photos, colour; night only | `.claude/rules/live.md` |
 | News page (TEN-409) — one feed (news-feed.json), player-attributed only, no samples, header stats (Updated = feed refresh), filters, Reading / Compact, empty state, Post intel; night only | `.claude/rules/news.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |

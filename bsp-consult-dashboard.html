@@ -34873,30 +34873,22 @@ window.DatabaseTab = (function(){
 <style>
   /* TEN-190 D4 (founder ruling 2026-09-11: "Override box-sizing inside Live —
      match the export"). The dashboard sets a global `*{box-sizing:border-box}`
-     (L44). Live.dc.html declares box-sizing NOWHERE — not one rule, not one
-     inline, and it never uses support.js's .bbox helper — so every box in the
-     export is the CSS-initial `content-box`. Inheriting border-box was pulling
-     the modal to 1180px where the export renders 1182px, and shaving 1-2px off
-     every interior grid, the close glyph (32->30) and the info circle (20->18).
-     Scoped to #lvTab descendants ONLY: the handoff's values are Live-scoped and
-     must not reach the shell or any other page. */
+     (L44). Live.dc.html declares box-sizing NOWHERE, so every box in the export
+     is the CSS-initial `content-box`. Scoped to #lvTab descendants ONLY: the
+     handoff's values are Live-scoped and must not reach the shell or any other page. */
   #lvTab * { box-sizing: content-box; }
 
   .lvseg { cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  /* TEN-190 D1 (founder ruling 2026-09-11: "Revert to the export exactly — dead
-     hover, fidelity first"). These two lines are Live.dc.html L14-15 verbatim.
-     The :hover rule is INERT and that is the point: the card carries an inline
-     `border:1px solid color-mix(in srgb, var(--text) 9%, transparent)`, which outranks any selector, so
-     hovering changes nothing. The build had renamed the class to .lv-card and
-     added !important to make the hover fire — a correction the brief forbids.
-     Do not re-add !important and do not rename: the dead hover IS the export. */
-  .lvcard { cursor:pointer; transition:border-color 120ms ease; }
-  .lvcard:hover { border-color:var(--edge-10); }
+  /* TEN-417 step 11 (founder, 2026-10-10): the whole card is the click target and its hover is a 16% white edge. This
+     SUPERSEDES TEN-190 D1's dead hover: the card's 1px edge lives in this class (no inline border), so the hover fires. */
+  .lvcard { cursor:pointer; border:1px solid transparent; transition:border-color 120ms ease; }
+  .lvcard:hover { border-color:var(--edge-16); }
+  @keyframes lvpulse { 0%,100% { opacity:1; } 50% { opacity:0.35; } }
   .lvtip { position:relative; }
   .lvtip .lvtipbox { display:none; }
   .lvtip:hover .lvtipbox { display:block; }
-  .hbcell { transition:filter .14s ease, transform .14s ease, box-shadow .14s ease; cursor:default; }
-  .hbcell:hover { filter:brightness(1.35) saturate(1.15); transform:translateY(-1px); box-shadow:0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent); z-index:20; }
+  .hbcell { transition:transform .14s ease, box-shadow .14s ease; cursor:default; }
+  .hbcell:hover { transform:translateY(-1px); box-shadow:0 0 0 1px color-mix(in srgb, var(--text) 20%, transparent); z-index:20; }
   .hbcell .hbtip { display:none; }
   .hbcell:hover .hbtip { display:block; }
 </style>
@@ -34905,12 +34897,13 @@ window.DatabaseTab = (function(){
 (function(){
 'use strict';
 
-// ── feed adapter (TEN-190) ───────────────────────────────────────────────────
-// Every figure on this page comes from the live feed. live-tab.js owns the
-// transport (Supabase Realtime push, 30s PostgREST fallback) and the ATP-singles
-// + underway gate; this block is the renderer and does not generate a single
-// value. A figure the feed has not reported renders as an em dash — never a
-// zero, never a plausible default. A zero in a tennis score means zero points.
+// ── feed adapter (TEN-190, redesigned TEN-417 step 11) ───────────────────────
+// Every figure on this page comes from the live feed (live_snapshot + live_pbp) or
+// from our archive (holdbreak.json). live-tab.js owns the transport (Supabase
+// Realtime push, 25s re-sync, 30s PostgREST fallback) and the ATP-singles +
+// underway gate; this block is the renderer and does not generate a single value.
+// A figure the feed has not reported renders as an em dash — never a zero, never a
+// plausible default. A zero in a tennis score means zero points.
 const LF = () => window.LiveFeed || null;
 
 // Last payload from live-tab.js. ready=false means "no snapshot yet", which is
@@ -34918,19 +34911,14 @@ const LF = () => window.LiveFeed || null;
 let FEED = { ready:false, live:[], isStale:false, ageMs:0, updatedAt:null, connected:false };
 let LIVE = [];   // one view model per live match, rebuilt on every snapshot
 
-// BUCKETS / HB_SETS / band() / hbSum() / heatFor() moved to holdbreak-heatmap.js
-// (TEN-206 founder ruling 7, 2026-09-16: one hold/break engine, shared by this
-// tab and the Player Profile's Playing-profile modal). The move is proved
-// behaviour-identical over every player × metric × best-of by
-// tools/test-holdbreak-engine.js, which replays this file's pre-extraction
-// source out of git and deep-compares. Row and set labels travel inside the
-// returned model, so the renderer below is unchanged.
+// The hold/break engine lives in holdbreak-heatmap.js (TEN-206 founder ruling 7:
+// one engine, shared by this tab and the Player Profile's Playing-profile modal).
 const HBE = () => window.HoldBreakHeatmap || null;
 
 const SLAM_RE = /australian open|roland garros|french open|wimbledon|us open/i;
 const INTERRUPTED_RE = /interrupt|suspend/i;
 
-// "US Open - Semi-finals" → "Semi-finals". The round is prefixed with a
+// "ATP Shanghai - 1/64-finals" → "1/64-finals". The round is prefixed with a
 // tournament label that is not always an exact match of tournament_name, so
 // strip to the last " - " rather than to the name.
 function shortRound(fix){
@@ -34938,12 +34926,25 @@ function shortRound(fix){
   const i = r.lastIndexOf(' - ');
   return i >= 0 ? r.slice(i + 3) : r;
 }
+// TEN-417 Data 3: the event is the site's ONE event name (sfEventName: the canonical event table — official name, no
+// level suffix, "Shanghai" → Shanghai Masters) + the feed's round words, "Shanghai Masters · 1/64-finals".
+function lvEventLabel(fix){
+  const raw = String(fix.tournament_name || '');
+  const ev = (typeof sfEventName === 'function' ? sfEventName(raw) : raw) || raw;
+  const round = shortRound(fix);
+  return round ? ev + ' · ' + round : ev;
+}
+// TEN-417 Data 3: a player reads as on Player Profile, Head to Head, Match analysis and News — the shared formatter
+// (newsPlayerName: the profile name of his key, else the feed's own api-tennis spelling).
+function lvName(key, feedName){
+  return typeof newsPlayerName === 'function' ? newsPlayerName(key, feedName) : String(feedName || '');
+}
+// Initials avatar (TEN-417 override: no photos on Live) — the Match analysis monogram, first + last initial.
+function lvIni(name){ return typeof fhIni === 'function' ? fhIni(name) : String(name || '?').slice(0, 2).toUpperCase(); }
 
 // A completed tiebreak set arrives encoded "<games>.<tiebreakPoints>" per side —
 // 7-6(1) is score_first "7.7" / score_second "6.1" — NOT a decimal game count.
-// The handoff's set cell is a bare integer with no superscript slot, so the card
-// and the matchup strip print the GAMES won, which is what the cell means. The
-// tiebreak points are not dropped: the Points tab renders the tiebreak in full.
+// The set cell prints the GAMES won; the Points tab renders the tiebreak in full.
 function gamesOf(raw){
   if(raw == null) return null;
   const s = String(raw).trim();
@@ -34954,9 +34955,11 @@ function gamesOf(raw){
 }
 
 // The feed carries no best-of field. ATP main-draw Slams are best-of-5, every
-// other ATP singles event best-of-3. Used ONLY to dim sets that cannot exist in
-// the format (§7) — it never affects a printed figure.
-function bestOf(fix){ return SLAM_RE.test(String(fix.tournament_name || '')) ? 5 : 3; }
+// other ATP singles event best-of-3. Used to dim sets that cannot exist in the
+// format, to call a tiebreak set point a match point, and to size a final-set
+// tiebreak — never to print a figure.
+// Slam qualifying is best-of-three (review: event_qualification "True").
+function bestOf(fix){ return SLAM_RE.test(String(fix.tournament_name || '')) && String(fix.event_qualification).toLowerCase() !== 'true' ? 5 : 3; }
 
 function viewModel(fix){
   const scores = Array.isArray(fix.scores) ? fix.scores : [];
@@ -34964,59 +34967,60 @@ function viewModel(fix){
     .map(sc => [gamesOf(sc.score_first), gamesOf(sc.score_second)])
     .filter(p => p[0] !== null && p[1] !== null);
   const statusRaw = String(fix.event_status || '');
-  const interrupted = INTERRUPTED_RE.test(statusRaw);
+  // One predicate for the page header and the rail badge (TEN-417 R1 fix 1): live-tab.js isInterrupted.
+  const interrupted = (LF() && typeof LF().isInterrupted === 'function') ? LF().isInterrupted(fix) : INTERRUPTED_RE.test(statusRaw);
   const rawPt = String(fix.event_game_result || '').trim();
   const parts = (rawPt === '' || rawPt === '-') ? [] : rawPt.split('-').map(x => x.trim());
   const serveStr = String(fix.event_serve || '');
   const serving = /first/i.test(serveStr) ? 0 : (/second/i.test(serveStr) ? 1 : null);
-  const tour = String(fix.tournament_name || '');
-  const round = shortRound(fix);
-  const label = round ? tour + ' · ' + round : tour;
+  const event = lvEventLabel(fix);
   return {
     ek: String(fix.event_key || ''),
     fix,
-    event: label,
-    title: 'ATP · ' + label,
+    event,
+    title: 'ATP · ' + event,
     status: interrupted ? 'INTERRUPTED' : statusRaw.toUpperCase(),
     interrupted,
     bo: bestOf(fix),
+    slam: SLAM_RE.test(String(fix.tournament_name || '')),
     serving,
     sets,
     point: [parts[0] || '—', parts[1] || '—'],
-    names: [String(fix.event_first_player || ''), String(fix.event_second_player || '')],
-    avatars: [fix.event_first_player_logo || '', fix.event_second_player_logo || ''],
+    names: [lvName(fix.first_player_key, fix.event_first_player), lvName(fix.second_player_key, fix.event_second_player)],
     keys: [fix.first_player_key, fix.second_player_key],
   };
 }
 
-// No photo from the feed → a transparent pixel, so the avatar circle renders as
-// its own background rather than a broken-image glyph. We do not substitute a
-// generated face: the export's randomuser.me generator is gone.
-const BLANK_AV = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-const avOf = u => u || BLANK_AV;
-
 // ── state ─────────────────────────────────────────────────────────────────────
 // sel is an event_key, NOT a board index: the live board reorders and resizes
-// between ticks, so an index would silently repoint the open modal at a
-// different match the moment one started or finished.
-let ST = { sel:null, tab:'Stats', scope:'MATCH', pset:1, hb:'HOLD' };
+// between ticks, so an index would silently repoint the open sheet at a
+// different match the moment one started or finished. scope = 'MATCH' or a set number.
+let ST = { sel:null, tab:'Ratings', scope:'MATCH', pset:1, hb:'HOLD' };
 let lvInited = false;
 
 function setState(patch){ ST = Object.assign({}, ST, patch); render(); }
 
 // ── style helpers ─────────────────────────────────────────────────────────────
-function seg(on){ return { color: on?'var(--text)':'var(--text-label)', bg: on?'var(--inner)':'transparent', bd: on?'var(--edge-10)':'transparent' }; }
+// TEN-417 "What changes 3": every segmented control (tabs, scope, set, HOLD / BREAK) is the site Darker track as the
+// design file draws it — track --inner, padding 3; selected = --selected + a 16% white edge, white 700; idle grey 600.
+function seg(on){ return { color: on?'var(--text)':'var(--text-label)', bg: on?'var(--selected)':'transparent', bd: on?'var(--edge-16)':'transparent', wt: on?700:600 }; }
+const TRACK = 'display:inline-flex;gap:3px;background:var(--inner);border:1px solid transparent;border-radius:9px;padding:3px;';
+// A segment label: words are Hanken caps 10.5 / 0.10em (MATCH, HOLD, BREAK); a label with a digit (SET 1) is mono 10 /
+// 0.12em — the reference's computed type for the same control.
+function segLabelCss(label, on){
+  return /\d/.test(label)
+    ? `font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:${on?700:600};letter-spacing:0.12em;`
+    : `font-family:var(--font-words);font-size:10.5px;font-weight:${on?800:700};letter-spacing:0.10em;text-transform:uppercase;`;
+}
+function segHtml(attr, val, label, on){
+  const sg = seg(on);
+  return `<span class="lvseg" ${attr}="${val}" style="padding:5px 12px;border-radius:7px;${segLabelCss(label,on)}color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};white-space:nowrap;">${e(label)}</span>`;
+}
 
 // ── heatmap data ──────────────────────────────────────────────────────────────
-// Real source: holdbreak.json, the nightly 24-month rollup (build-holdbreak.js).
-// The engine itself now lives in holdbreak-heatmap.js so this tab and the Player
-// Profile share ONE implementation (founder ruling 7). This wrapper keeps the
-// call signature the renderer below already uses; the Live tab is always the
-// all-surfaces view, so no surface argument is passed.
-//
-// If the module has not loaded, this returns an empty model and the grid dashes
-// — it must never fall back to a locally-defined copy of the maths, which is
-// exactly how the two implementations drifted apart in the first place.
+// Real source: holdbreak.json, the nightly 24-month rollup (build-holdbreak.js),
+// all surfaces. If the engine has not loaded, this returns an empty model and the
+// grid dashes — never a locally-defined copy of the maths.
 function heatFor(pkey, metric, bo){
   const E = HBE();
   const HB = LF() ? LF().holdbreak() : null;
@@ -35024,86 +35028,65 @@ function heatFor(pkey, metric, bo){
   return E.heatFor(HB, pkey, metric, bo);
 }
 
-// ── momentum chart (SVG string) ───────────────────────────────────────────────
-// bands2 is now built from the real point log by momentumBands() below; the
-// drawing code beneath is the export's, unchanged.
-function momentumChart(bands2, aName, bName){
-  const W=700,H=196,pad=30,right=78;
-  const zY=100,topRail=30,botRail=172;
-  const smooth = pts => {
-    if(pts.length<2) return '';
-    let d='M'+pts[0][0].toFixed(1)+' '+pts[0][1].toFixed(1);
-    for(let i=0;i<pts.length-1;i++){
-      const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
-      const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6];
-      const c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
-      d+=' C'+c1[0].toFixed(1)+' '+c1[1].toFixed(1)+' '+c2[0].toFixed(1)+' '+c2[1].toFixed(1)+' '+p2[0].toFixed(1)+' '+p2[1].toFixed(1);
-    }
-    return d;
-  };
-  const all=bands2.reduce((a,b)=>a.concat(b.games),[]);
-  if(!all.length) return '';
-  const plotW=W-pad-right;
-  const x=i=>all.length<2?pad+plotW/2:pad+(i*plotW)/(all.length-1);
-  const amp=54,mx=4;
-  const thick=g=>(Math.abs(g.m)/mx)*amp;
-  const upPts=all.map((g,i)=>[x(i),zY-(g.m>0?thick(g):0)-1.5]);
-  const dnPts=all.map((g,i)=>[x(i),zY+(g.m<0?thick(g):0)+1.5]);
-  const close=d=>d+' L'+x(all.length-1).toFixed(1)+' '+zY+' L'+pad+' '+zY+' Z';
-  const mo = v=>`font: ${v} 'IBM Plex Mono',monospace`;
-
-  let kids='';
-  kids+=`<line x1="${pad}" x2="${W-right+4}" y1="${zY}" y2="${zY}" stroke="color-mix(in srgb, var(--text) 14%, transparent)" stroke-width="1"/>`;
-  let gi=0;
-  bands2.forEach((b,bi)=>{
-    const x0=pad+(gi*plotW)/Math.max(1,all.length-1);
-    if(bi>0) kids+=`<line x1="${x0}" x2="${x0}" y1="${topRail-12}" y2="${botRail+6}" stroke="var(--edge-7)" stroke-width="1"/>`;
-    kids+=`<text x="${x0+4}" y="${topRail-14}" fill="var(--text)" style="${mo('700 11px')}">${b.score}</text>`;
-    kids+=`<text x="${x0+4}" y="${topRail-3}" fill="var(--text-label)" style="${mo('9px')}">${b.label}</text>`;
-    gi+=b.games.length;
-  });
-  // S2 (founder, TEN-376): the ribbon is a BAR-type mark (its thickness is the data), not an area under a line, so it
-  // keeps its fill under the bar rules: player A --viz-lead, player B --viz-second (the lead blue at 45%), both from the
-  // centre line; break markers --neg. Names are white text (blue is a fill, never text).
-  kids+=`<path d="${close(smooth(upPts))}" fill="var(--viz-lead)"/>`;
-  kids+=`<path d="${close(smooth(dnPts))}" fill="var(--viz-second)"/>`;
-  all.forEach((g,i)=>{
-    if(!g.brk) return;
-    const up=g.m>0,cx=x(i),rail=up?topRail:botRail,col='var(--neg)';
-    const tip=up?zY-thick(g):zY+thick(g);
-    kids+=`<line x1="${cx}" x2="${cx}" y1="${rail+(up?5:-5)}" y2="${tip}" stroke="${col}" stroke-width="1" stroke-dasharray="1 4" opacity="0.4"/>`;
-    kids+=`<text x="${cx}" y="${rail+(up?0:4)}" fill="${col}" text-anchor="middle" style="${mo('700 8.5px')}">BRK</text>`;
-  });
-  kids+=`<text x="${W-right+12}" y="${topRail+4}" fill="var(--text)" style="${mo('10px')}">${aName}</text>`;
-  kids+=`<text x="${W-right+12}" y="${zY+4}" fill="var(--text-label)" style="${mo('10px')}">EVEN</text>`;
-  kids+=`<text x="${W-right+12}" y="${botRail+4}" fill="var(--text)" style="${mo('10px')}">${bName}</text>`;
-
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;">${kids}</svg>`;
+const setNoOf = gm => { const x=String(gm.set_number||'').match(/(\d+)/); return x?+x[1]:null; };
+const isTiebreakRow = gm => /tiebreak/i.test(String(gm.set_number||''));
+// The feed closes a tiebreak set with one more "Set N" game row: score "7 - 6" (or "6 - 7"), one blank point (" - ") and
+// serve_lost stamped on whoever lost the tiebreak. A set only reaches 7–6 through its tiebreak, so that row is the
+// tiebreak, never a game and never a break (measured: Zhou v Musetti, Shanghai, 9 Oct, set 1 game 13). It is not plotted
+// and never shows LOST SERVE; the tiebreak's own point rows tell it.
+const isTbGame = gm => /^\s*(7\s*-\s*6|6\s*-\s*7)\s*$/.test(String(gm.score||''));
+// A point entry with no score (" - ") is not a point.
+const ptScored = pt => /[0-9A]/i.test(String(pt && pt.score || ''));
+// The feed's point lists are garbled: after the real sequence it repeats a tail of it (40:15 → 30:15 → 40:15 …, A:40 →
+// 40:15). TEN-417 R1 fix 7: a chip shows only if the score is REACHABLE from the chip before it (one point to either
+// side: 0→15→30→40, 40:40 → A:40 / 40:A, an advantage back to 40:40; the game starts at 0:0). The kept list is the longest
+// reachable prefix; when that does not end on the WINNER's game point (he is on A, or on 40 with the other below 40), the
+// rest of the list is walked keeping only reachable chips until it does. Measured on 749 decided games (Shanghai 8–9
+// Oct): the prefix alone ends on the winner's game point in 731, the walk in 16 more, 2 never do (shown, nothing lifted).
+// winnerA: true / false for a decided game, null in progress (prefix only).
+const PT_V = { '0':0, '15':1, '30':2, '40':3, 'A':4, 'AD':4 };
+function ptState(pt){ const p=String(pt&&pt.score||'').split('-').map(x=>PT_V[x.trim().toUpperCase()]); return (p.length===2&&p[0]!=null&&p[1]!=null)?p:null; }
+function ptReach(a,b){
+  if(!a||!b) return false;
+  for(const s of [0,1]){
+    const me=a[s],op=a[1-s],n=[a[0],a[1]];
+    if(me<=2&&op<=3) n[s]=me+1; else if(me===3&&op===3) n[s]=4; else if(me===3&&op===4) n[1-s]=3; else continue;
+    if(n[0]===b[0]&&n[1]===b[1]) return true;
+  }
+  return false;
+}
+const ptGamePoint=(st,winnerA)=>{ if(!st) return false; const me=winnerA?st[0]:st[1],op=winnerA?st[1]:st[0]; return me===4||(me===3&&op<=2); };
+function lvDecodePoints(points, winnerA){
+  const pts=(Array.isArray(points)?points:[]).filter(ptScored);
+  const kept=[]; let prev=[0,0], i=0;
+  // A log that joins mid-game (its first score is not one point from 0:0) starts from that first readable score (review).
+  if(pts.length&&ptState(pts[0])&&!ptReach(prev,ptState(pts[0]))){ prev=ptState(pts[0]); kept.push(pts[0]); i=1; }
+  while(i<pts.length&&ptReach(prev,ptState(pts[i]))){ prev=ptState(pts[i]); kept.push(pts[i]); i++; }
+  if(winnerA==null||ptGamePoint(prev,winnerA)) return kept;
+  for(;i<pts.length&&!ptGamePoint(prev,winnerA);i++){ const st=ptState(pts[i]); if(ptReach(prev,st)){ prev=st; kept.push(pts[i]); } }
+  return kept;
 }
 
 // ── momentum from the point log ───────────────────────────────────────────────
-// One plotted game per game ACTUALLY PLAYED. Magnitude is the §6 ladder read off
-// the game's own last point — 40-0 → 4, 40-15 → 3, 40-30 → 2, deuce/AD → 1 —
-// signed by who really won the game (player_served + serve_lost). Break ticks
-// are the feed's serve_lost flag, not a hash.
+// TEN-417 Ratings: one column per set, sized by the games played; one bar per DECIDED game. Bar height = the game's
+// margin read off its last point (the score the game was won from) — 40-0 → 4, 40-15 → 3, 40-30 → 2, deuce/AD → 1;
+// up for player A, down for player B (who really won it: player_served + serve_lost); a break = the feed's serve_lost
+// flag, drawn as a red outline. The label is that score from the server's side ("40-15", a break "15-40", "AD").
 //
 // Tiebreak pseudo-sets carry one row per POINT rather than a game, and the
 // ladder has no defined rung for a tiebreak margin, so they are not plotted —
-// inventing one would put a fabricated swing next to real ones. The set divider
-// still prints the true set score, so a 7-6 set reads correctly.
+// inventing one would put a fabricated swing next to real ones.
 const MOM_RUNG = { '0':4, '15':3, '30':2, '40':1, 'A':1, 'AD':1 };
 // A game in progress arrives with EVERY field null — score, player_served,
 // serve_winner and serve_lost. It is a row, not a result. Only a DECIDED game
 // can be plotted: one of serve_winner / serve_lost is stamped the moment the
 // game ends. Without this gate an undecided game reads as a completed game won
-// by player B (server null ⇒ "not A", broken false ⇒ "held"), which puts an
-// invented swing on the chart.
+// by player B, which puts an invented swing on the chart.
 const momDecided = gm => gm.serve_winner != null || gm.serve_lost != null;
-function momentumBands(pbpGames, m){
-  const ord=['1st set','2nd set','3rd set'];
+function momentumSets(pbpGames, m){
   return m.sets.map((st,si)=>{
     const n=si+1;
-    const rows=pbpGames.filter(gm=>setNoOf(gm)===n && !isTiebreakRow(gm) && momDecided(gm))
+    const rows=pbpGames.filter(gm=>setNoOf(gm)===n && !isTiebreakRow(gm) && !isTbGame(gm) && momDecided(gm))
                        .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0));
     const games=rows.map(gm=>{
       // serve_winner / serve_lost both name the SERVER, so fall back to them
@@ -35111,30 +35094,42 @@ function momentumBands(pbpGames, m){
       const aServ=/first/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
       const lost=gm.serve_lost!=null;
       const aWon=aServ?!lost:lost;            // server lost ⇒ the returner won it
-      const pts=Array.isArray(gm.points)?gm.points:[];
+      const pts=lvDecodePoints(gm.points,aWon);
       const last=pts.length?String(pts[pts.length-1].score||''):'';
-      const p=last.split('-').map(x=>x.trim());
-      const loser=aWon?p[1]:p[0];
-      // Unreadable last point → plot at the smallest rung. The SIGN (who won) is
-      // still real; only the magnitude falls back.
-      const mag=MOM_RUNG[String(loser).toUpperCase()]||1;
-      return {m:mag*(aWon?1:-1),brk:lost};
+      const sp=x=>String(x&&x.score||'').split('-').map(y=>y.trim().toUpperCase());
+      const p=sp({score:last});
+      const winner=aWon?p[0]:p[1],loser=aWon?p[1]:p[0];
+      // The feed's point lists are garbled (scores repeat and step back; a long deuce game can end on "0 - 15"), so the
+      // last entry is read only when it shows the WINNER on 40 / AD. Otherwise it is unreadable: the smallest rung and no
+      // label — the SIGN (who won) is still real; only the magnitude falls back. A game that reached deuce is AD.
+      const readable=/^(40|A|AD)$/.test(winner);
+      const deuce=readable&&(/^A/.test(winner)||/^A/.test(loser)||loser==='40'||pts.some(pt=>{const q=sp(pt);return (q[0]==='40'&&q[1]==='40')||/^A/.test(q[0])||/^A/.test(q[1]);}));
+      const mag=readable&&!deuce?(MOM_RUNG[String(loser)]||1):1;
+      const sv=aServ?[p[0],p[1]]:[p[1],p[0]];
+      const label=!readable?'':(deuce?'AD':sv[0]+'-'+sv[1]);
+      return {m:mag*(aWon?1:-1),brk:lost,label};
     });
-    return {score:st[0]+'-'+st[1],label:si<3?ord[si]:(si+1)+'th set',games};
+    return {n,score:st[0]+'–'+st[1],games};
   }).filter(b=>b.games.length);
 }
 
-const setNoOf = gm => { const x=String(gm.set_number||'').match(/(\d+)/); return x?+x[1]:null; };
-const isTiebreakRow = gm => /tiebreak/i.test(String(gm.set_number||''));
+// ── tiebreak set / match points ───────────────────────────────────────────────
+// A tiebreak point row after which one player can win the set on the next point: he has at least target − 1 points and
+// leads. target = 10 in a Grand Slam's deciding set (its final-set tiebreak, qualifying included), else 7. SP becomes MP when that
+// set would win him the match (sets won before this one + 1 = sets needed).
+function tbTag(a, b, target, setsBefore, need){
+  const lead = (a >= target - 1 && a > b) ? 0 : ((b >= target - 1 && b > a) ? 1 : -1);
+  if(lead < 0) return ['', ''];
+  if(Math.max(a, b) >= target && Math.abs(a - b) >= 2) return ['', ''];   // the set is over
+  const tag = setsBefore[lead] + 1 >= need ? 'MP' : 'SP';
+  return lead === 0 ? [tag, ''] : ['', tag];
+}
 
-// How old the board is, in the header's "Updated" slot. Real age off the
-// snapshot's updated_at — never a hardcoded "now".
+// TEN-417 Data 4: Updated = the feed's last refresh — live_snapshot.updated_at, the poller's own write stamp — as
+// HH:MM:SS in the member's zone (stennisfy.tz, else the browser zone). Never "now", never the clock.
 function updatedLabel(){
   if(FEED.updatedAt==null) return '—';
-  const s=Math.max(0,Math.round((Date.now()-FEED.updatedAt)/1000));
-  if(s<10) return 'now';
-  if(s<90) return s+'s';
-  return Math.round(s/60)+'m';
+  return typeof newsFmtHMS==='function' ? newsFmtHMS(FEED.updatedAt) : '—';
 }
 
 // ── renderVals ────────────────────────────────────────────────────────────────
@@ -35142,45 +35137,45 @@ function renderVals(){
   const S=ST;
   const DASH='—',MISS='var(--text-label)',INK='var(--text)';
 
-  // ── header strip (§2.1) ──
+  // ── header strip ──
+  // In play = live now (not interrupted); Interrupted = suspended / rain / medical (amber above 0, grey at 0);
+  // Events = distinct events among the matches on the grid.
   const inPlay=LIVE.filter(m=>!m.interrupted).length;
   const itr=LIVE.filter(m=>m.interrupted).length;
   const evs=LIVE.map(m=>String(m.fix.tournament_name||'')).filter((e,i,a)=>a.indexOf(e)===i).length;
   // Before the first snapshot every figure is unknown, so every figure dashes.
   // "0 in play" is a claim about the world and we have not measured it yet.
   const hdr = FEED.ready
-    ? {inPlayCount:String(inPlay),interruptedCount:String(itr),interruptedColor:itr?'var(--text)':'var(--text-label)',eventCount:String(evs),updatedLabel:updatedLabel(),isStale:!!FEED.isStale}
-    : {inPlayCount:DASH,interruptedCount:DASH,interruptedColor:'var(--text-label)',eventCount:DASH,updatedLabel:DASH,isStale:false};
+    ? {inPlayCount:String(inPlay),interruptedCount:String(itr),interruptedColor:itr?'var(--amber)':'var(--text-label)',eventCount:String(evs),updatedLabel:updatedLabel(),updatedTitle:(typeof newsFmtAbs==='function'&&FEED.updatedAt!=null)?newsFmtAbs(FEED.updatedAt):''}
+    : {inPlayCount:DASH,interruptedCount:DASH,interruptedColor:'var(--text-label)',eventCount:DASH,updatedLabel:DASH,updatedTitle:''};
 
   const m = S.sel==null ? null : (LIVE.find(x=>x.ek===S.sel)||null);
   if(!m) return Object.assign({},hdr,{isEmpty:FEED.ready&&LIVE.length===0});
 
   const A=m.names[0],B=m.names[1];
   const nSets=Math.max(1,m.sets.length);
+  const liveM=!m.interrupted;
+  // Score tile (TEN-417 sheet 2): won set = 8% white fill, white 700 · lost = 2.5%, grey 500 · current = 5% + 18% ring.
   const scoreCells=side=>m.sets.map((st,i)=>{
     const done=i<m.sets.length-1,won=st[side]>st[1-side];
-    return {v:String(st[side]),weight:done?(won?700:500):700,color:done?(won?'var(--text)':'var(--text-label)'):'var(--text)'};
-  }).concat([{v:m.point[side],weight:700,color:'var(--pos)'}]);
+    const kind=!done?'cur':(won?'won':'lost');
+    return {v:String(st[side]),weight:kind==='lost'?500:700,color:kind==='lost'?MISS:INK,
+      bg:kind==='won'?'color-mix(in srgb, var(--text) 8%, transparent)':kind==='cur'?'color-mix(in srgb, var(--text) 5%, transparent)':'color-mix(in srgb, var(--text) 2.5%, transparent)',
+      bd:kind==='cur'?'color-mix(in srgb, var(--text) 18%, transparent)':'transparent'};
+  });
+  const setsWon=side=>m.sets.slice(0,m.sets.length-1).filter(st=>st[side]>st[1-side]).length;
+  const subOf=side=>{const n=setsWon(side);return n+(n===1?' set':' sets')+(m.serving===side&&liveM?' · serving':'');};
 
   // ── box score ──
   const lf=LF();
   const idx=(lf ? lf.indexStats(m.fix).idx : null) || Object.create(null);
   const pA=m.keys[0],pB=m.keys[1];
-  // MATCH / SET n scope (§4) reads the feed's own stat_period — the export's
-  // "scale countable figures to ~55%" device is gone; set figures are real.
-  const curSetPer='set'+nSets;
-  // Resolved further down, once we know which scopes the feed has rows for. It
-  // starts at 'match' so that a row builder called before the scope is settled
-  // reads a real period rather than throwing.
   let per='match';
 
   // api-tennis nulls stat_won/stat_total on some rows (break points at premier
   // events) and carries the pair only in stat_value as "X/Y". Number(null) is 0,
   // so reading the counts blindly turns a MISSING row into a zero — parse the
   // fraction out of stat_value instead, and keep null as null.
-  // `p` defaults to the selected scope. It is passed explicitly only by the
-  // fixture-wide absence test below, which has to look at every period the feed
-  // carries, not just the one on screen.
   function cell(pkey,name,p){
     const r=lf?lf.stat(idx,pkey,p||per,name):null;
     if(!r) return null;
@@ -35193,23 +35188,23 @@ function renderVals(){
     return {won:w==null?null:+w,total:t==null?null:+t,value:Number.isFinite(v)?v:null};
   }
 
-  // TEN-263 (ruling 2026-09-24): the match-detail bar rule (fhStatBarWidth) — rates absolute, counts
-  // over max(p1, p2, floor) and ratings over their scale, both capped at 90%; a missing side draws
-  // no bar and never hands the other side a full one. Ratio rows (no kind) keep share-of-total, and
-  // draw nothing when either side is missing.
+  // Bars (founder TEN-417 R1 fix 2, SUPERSEDES TEN-263's fhStatBarWidth on Live): every row — rates, counts, ratings,
+  // ratios — draws each player's SHARE of the pair, A ÷ (A + B) of the half-width, inward from the centre (76% v 66% →
+  // 53.5% / 46.5%; 3 v 2 aces → 60% / 40%). A zero draws no segment (0 v 1 → none / the whole half). A missing side
+  // draws no segment on either side: a pair with one unknown has no share.
+  // Lead (TEN-417): the larger figure leads — white 700 and the solid bar (--bar); the other is --text-soft 500 on the
+  // 45% bar (--bar-2); a tie leads on both sides. A missing figure is a grey dash.
   const twoSided=(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key)=>{
     const aNull=aV===null||aV===undefined,bNull=bV===null||bV===undefined;
-    let aW, bW;
-    if(kind){
-      const k=kind==='count'?msBarFloor(key||label):kind==='rating'?msBarScale(key||label):undefined;
-      const w=(v,o)=>{const x=fhStatBarWidth(kind,v,o,k);return x==null?'0%':x.toFixed(1)+'%';};
-      aW=w(aNull?null:aV,bNull?null:bV); bW=w(bNull?null:bV,aNull?null:aV);
-    } else {
-      const tot=(aNull||bNull)?0:aV+bV;
-      const share=v=>(tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
-      aW=share(aV); bW=share(bV);
-    }
-    return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,aColor:aNull?MISS:INK,bColor:bNull?MISS:INK,aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW,bW};
+    const tot=(aNull||bNull)?0:aV+bV;
+    const share=v=>(tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
+    const aW=share(aV), bW=share(bV);
+    const av=aNull?0:aV,bv=bNull?0:bV,tie=av===bv;
+    const aLead=!aNull&&(tie||av>bv),bLead=!bNull&&(tie||bv>av);
+    return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,
+      aColor:aNull?MISS:(aLead?INK:'var(--text-soft)'),bColor:bNull?MISS:(bLead?INK:'var(--text-soft)'),aWt:aLead?700:500,bWt:bLead?700:500,
+      aBar:aLead?'var(--bar)':'var(--bar-2)',bBar:bLead?'var(--bar)':'var(--bar-2)',
+      aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW,bW};
   };
 
   // A rate over zero attempts does not exist (0 break points faced is not a 0%
@@ -35220,10 +35215,17 @@ function renderVals(){
     return c.value;
   };
   const denOf=c=>(c&&c.won!=null&&c.total!=null&&c.total>0)?'('+c.won+'/'+c.total+')':'';
-  // R5: precision is not fixed — Number→String strips the trailing zero, so
-  // 71.7% and 40% sit in the same column exactly as the export has them.
+  // 1st serve percentage (TEN-417 R1 fix 6): the feed sends only the rate; its count is first serves in (the 1st-serve
+  // points played) over all service points played (1st + 2nd), from the same period's rows — so it prints "76% (19/25)"
+  // with one decimal like every rate row. Either total missing → the feed's own figure, no count.
+  const firstIn=(pk,p)=>{
+    const c=cell(pk,'1st serve percentage',p); if(c&&c.won!=null&&c.total!=null) return c;
+    const f=cell(pk,'1st serve points won',p),s=cell(pk,'2nd serve points won',p);
+    return (f&&s&&f.total!=null&&s.total!=null)?{won:f.total,total:f.total+s.total,value:null}:c;
+  };
   const pctRow=(label,name,p)=>{
-    const a=cell(pA,name,p),b=cell(pB,name,p),av=rateOf(a),bv=rateOf(b);
+    const one=/^1st serve percentage$/i.test(name);
+    const a=one?firstIn(pA,p):cell(pA,name,p),b=one?firstIn(pB,p):cell(pB,name,p),av=rateOf(a),bv=rateOf(b);
     return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b),'pct');
   };
   const cntOf=c=>(!c)?null:(c.value!=null?c.value:(c.won!=null?c.won:null));
@@ -35243,8 +35245,7 @@ function renderVals(){
   };
 
   // Ratings are the house Serve / Return ratings (house-ratings.js via live-tab.js, TEN-327) on
-  // this match's box score — the same helper as the Match stats sheet. No sample floor; a missing
-  // component dashes.
+  // this match's box score — the same helper as the Match stats sheet. A missing component dashes.
   const r0=v=>v==null?null:Math.round(v);
   const svRat=p=>[r0(lf?lf.serveRating(idx,pA,p||per).rating:null),r0(lf?lf.serveRating(idx,pB,p||per).rating:null)];
   const rtRat=p=>[r0(lf?lf.returnRating(idx,pA,p||per).rating:null),r0(lf?lf.returnRating(idx,pB,p||per).rating:null)];
@@ -35286,250 +35287,310 @@ function renderVals(){
       pctRow('Total points won','Total Points Won',p),
     ]},
   ];
-  // TEN-210 · Some tournaments publish no box score at all. Measured on the feed
-  // 2026-09-16 over three Davis Cup weeks: ZERO of 86 "ATP Davis Cup - World Group
-  // II" fixtures carry a statistics row, 2 of 79 in World Group I, against 56 of 82
-  // in the top-tier World Group. The panel rendered all 18 rows as em-dashes, which
-  // reads as a broken panel rather than an absent source. Founder ruling
-  // 2026-09-16: do not explain the absence in a card either — REMOVE the card.
-  //
-  // One rule, applied at both levels: a scope is offered only if the feed has rows
-  // for it, and the Stats tab exists only if some scope is offered. That also
-  // covers the case the scope-blind version got wrong — the feed emits stats once
-  // per set, so a live match early in a new set has match rows but no set-N rows.
-  // Keying the card off the selected scope alone would have shown a 36-dash ladder
-  // (or, before this, a note blaming Davis Cup) under the MATCH → SET n click.
-  //
-  // A row that dashes because a rate does not exist (0 break points faced) is NOT
-  // this case — that is one honest dash beside real numbers — so a scope drops only
-  // when EVERY row in EVERY section is empty for it.
+  // TEN-210 · Some tournaments publish no box score at all (Davis Cup World Group II: 0 of 86 fixtures). Founder ruling
+  // 2026-09-16: do not explain the absence in a card — REMOVE the card. One rule at both levels: a scope is offered only
+  // if the feed has rows for it, and the Stats tab exists only if some scope is offered. A row that dashes because a
+  // rate does not exist (0 break points faced) is NOT this case, so a scope drops only when EVERY row in EVERY section
+  // is empty for it.
   const scopeHasRows=p=>sectionsAt(p).some(sec=>sec.rows.some(r=>r.aVal!==DASH||r.bVal!==DASH));
-  const scopeOpts=[{id:'MATCH',per:'match',label:'MATCH'},{id:'SET',per:curSetPer,label:'SET '+nSets}]
+  // TEN-417 Stats: MATCH · SET 1 … SET n (the feed's own stat_period: match, set1, set2 …).
+  const scopeOpts=[{id:'MATCH',per:'match',label:'MATCH',name:'Match to date'}]
+    .concat(m.sets.map((_,i)=>({id:i+1,per:'set'+(i+1),label:'SET '+(i+1),name:'Set '+(i+1)})))
     .filter(o=>scopeHasRows(o.per));
   const statsAbsent=scopeOpts.length===0;
-  const effScope=scopeOpts.some(o=>o.id===S.scope)?S.scope:(scopeOpts.length?scopeOpts[0].id:'MATCH');
-  per=effScope==='MATCH'?'match':curSetPer;
+  const effOpt=scopeOpts.find(o=>o.id===S.scope)||scopeOpts[0]||{id:'MATCH',per:'match',name:'Match to date'};
+  per=effOpt.per;
 
   const statSections=sectionsAt(per);
 
-  // ── Points tab (§5) — the real point log ──
+  // ── Points tab — the real point log ──
   const entry=lf?lf.pbpGet(m.ek):null;
   const pbpGames=(entry&&Array.isArray(entry.games))?entry.games:[];
-  const pbpLoading=!!(entry&&entry.loading&&!entry.games);
+  // An open sheet has always asked for its log: no entry yet is loading, not "no games" (review).
+  const pbpLoading=!entry||!!(entry.loading&&!entry.games);
   const pbpError=!!(entry&&entry.error&&!entry.games);
 
   const setIdx=Math.min(Math.max(1,S.pset),nSets)-1;
   const setNum=setIdx+1;
   const scSet=m.sets[setIdx];
-  const setScoreLabel=scSet?('SET '+setNum+'  '+scSet[0]+'-'+scSet[1]):('SET '+setNum);
+  const setScoreLabel=scSet?('SET '+setNum+'  '+scSet[0]+'–'+scSet[1]):('SET '+setNum);
 
-  // The export's `Math.max(12, played)` floor is DELETED (founder ruling): it
-  // padded a 2-1 set out to twelve rows of tennis nobody played. A set renders
-  // exactly the games the feed has logged — a short set looks short.
+  // The export's `Math.max(12, played)` floor is DELETED (founder ruling): a set
+  // renders exactly the games the feed has logged — a short set looks short.
   // The feed opens a game row the moment a game starts, before anything has
   // happened in it: score, player_served, serve_winner and serve_lost all null
-  // and no points array. That is a placeholder, not a game — rendering it gives
-  // a blank row with a lone separator. A row shows once it carries a score or at
-  // least one point; the game in progress appears as soon as a point is played.
+  // and no points array. A row shows once it carries a score or at least one point.
   const hasSubstance = gm => String(gm.score||'').trim()!=='' ||
                              (Array.isArray(gm.points) && gm.points.length>0);
+  const tbLogged=pbpGames.some(gm=>setNoOf(gm)===setNum&&isTiebreakRow(gm));
   const games=pbpGames
-    .filter(gm=>setNoOf(gm)===setNum&&!isTiebreakRow(gm)&&hasSubstance(gm))
+    .filter(gm=>setNoOf(gm)===setNum&&!isTiebreakRow(gm)&&hasSubstance(gm)&&!(tbLogged&&isTbGame(gm)))
     .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0))
     .map(gm=>{
       const aServ=/first/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
       const bServ=/second/i.test(String(gm.player_served||gm.serve_winner||gm.serve_lost||''));
       const parts=String(gm.score||'').split('-').map(x=>x.trim());
-      const pts=Array.isArray(gm.points)?gm.points:[];
+      const decided=momDecided(gm);
+      // The game's winner (the server unless he lost serve) — the lifted chip must show him on 40 / AD (see momentum).
+      const aWonG=aServ?!gm.serve_lost:!!gm.serve_lost;
+      // A 7–6 row is the tiebreak: if its points are listed here (no "Set N TieBreak" rows), they are tiebreak scores —
+      // shown as sent, never decoded as a game (review).
+      const dec=isTbGame(gm)?(Array.isArray(gm.points)?gm.points.filter(ptScored):[]):lvDecodePoints(gm.points,decided?aWonG:null);
+      // TEN-417 R2 fix 4 (reference): every game's sequence opens on a 0:0 chip — not a tiebreak, not a log that joins
+      // mid-game (its first score is not one point from 0:0).
+      const pts=(!isTbGame(gm)&&dec.length&&ptReach([0,0],ptState(dec[0])))?[{score:'0 - 0'}].concat(dec):dec;
+      const winsFrom=pt=>{const q=String(pt&&pt.score||'').split('-').map(y=>y.trim().toUpperCase());return /^(40|A|AD)$/.test(aWonG?q[0]:q[1]);};
       return {
-        isGame:true,hasPoints:pts.length>0,divider:false,dividerLabel:'',
+        isGame:true,hasPoints:pts.length>0,divider:false,dividerLabel:'',spA:'',spB:'',
         servesA:aServ,servesB:bServ,
+        // Running games: the server's figure white, the receiver's grey.
         aGames:parts[0]||'',bGames:parts[1]||'',
-        aColor:aServ?'var(--bar)':'var(--text-label)',bColor:aServ?'var(--text-label)':'var(--text)',
-        lost:!!gm.serve_lost,
+        aColor:aServ?INK:MISS,bColor:bServ?INK:MISS,
+        lost:!!gm.serve_lost&&!isTbGame(gm),
         points:pts.map((pt,pi)=>({
           // "15 - 0" → "15:0": the export's typography, the feed's value.
           v:String(pt.score==null?'':pt.score).replace(/\s*-\s*/,':'),
-          // R3 answered by the feed: the BP chip is the vendor's own break_point
-          // flag on that point, not a point-index hash.
-          bp:pt.break_point!=null&&String(pt.break_point).trim()!=='',
+          // TEN-417 R2 fix 2: BP follows a score where the RECEIVER is one point from the game — on 40 with the server on
+          // 30 or less, or on advantage (0:40 / 15:40 / 30:40 / 40:A for him, mirrored). Never on 40:40. Read off the
+          // score and the server, not the feed's break_point flag (it lands on the deuce before the advantage).
+          bp:(()=>{ const st=ptState(pt); if(!st||!(aServ||bServ)) return false; const rc=aServ?st[1]:st[0], sv=aServ?st[0]:st[1]; return rc===4||(rc===3&&sv<=2); })(),
           sep:pi===pts.length-1?'':',',
-          color:pi===pts.length-1?'var(--text)':'var(--text-label)',
+          // 1b "Lifted last point": the score a DECIDED game was won from; a game in progress, or a garbled last entry,
+          // lifts nothing.
+          win:decided&&pi===pts.length-1&&winsFrom(pt),
         })),
       };
     });
 
-  // Tiebreak (§5): arrives as its own pseudo-set, "Set N TieBreak", one row per
-  // POINT carrying the running score and the server. Rows arrive out of order.
-  // A tiebreak row IS the point, so it is meaningless without its running score
-  // — an unscored row would otherwise repeat the previous score as if a point
-  // had been played and nobody had won it.
+  // Tiebreak: arrives as its own pseudo-set, "Set N TieBreak", one row per POINT
+  // carrying the running score and the server (the feed's player_served — the
+  // tiebreak serve rotation as played). Rows arrive out of order.
   const tbRows=pbpGames
     .filter(gm=>setNoOf(gm)===setNum&&isTiebreakRow(gm)&&String(gm.score||'').trim()!=='')
     .sort((a,b)=>(+a.number_game||0)-(+b.number_game||0));
   if(tbRows.length){
-    games.push({isGame:false,hasPoints:false,divider:true,servesA:false,servesB:false,dividerLabel:'Tiebreak · Set '+setNum,aGames:'',bGames:'',aColor:'var(--text-label)',bColor:'var(--text-label)',lost:false,points:[]});
+    games.push({isGame:false,hasPoints:false,divider:true,servesA:false,servesB:false,dividerLabel:'Tiebreak · Set '+setNum,aGames:'',bGames:'',aColor:MISS,bColor:MISS,lost:false,points:[],spA:'',spB:''});
+    const need=m.bo===5?3:2;
+    const setsBefore=[0,1].map(side=>m.sets.slice(0,setIdx).filter(st=>st[side]>st[1-side]).length);
+    const target=(m.slam&&setNum===m.bo)?10:7;
     let prev=[0,0];
     tbRows.forEach(gm=>{
       const p=String(gm.score||'').split('-').map(x=>parseInt(x.trim(),10));
       const a=Number.isFinite(p[0])?p[0]:prev[0],b=Number.isFinite(p[1])?p[1]:prev[1];
       const aServes=/first/i.test(String(gm.player_served||''));
       const bServes=/second/i.test(String(gm.player_served||''));
-      const aWon=a>prev[0];
-      games.push({isGame:true,hasPoints:false,divider:false,dividerLabel:'',servesA:aServes,servesB:bServes,aGames:String(a),bGames:String(b),aColor:aWon?'var(--text)':'var(--text-label)',bColor:aWon?'var(--text-label)':'var(--text)',lost:aServes?!aWon:aWon,points:[]});
+      // Who won the point: on a tiebreak row serve_lost names the server when he LOST it, so the row says it itself
+      // (a skipped row cannot flip it); a row without its server falls back to the running score.
+      const aWon=(aServes||bServes)?(aServes?gm.serve_lost==null:gm.serve_lost!=null):a>prev[0];
+      const tag=tbTag(a,b,target,setsBefore,need);
+      games.push({isGame:true,hasPoints:false,divider:false,dividerLabel:'',servesA:aServes,servesB:bServes,aGames:String(a),bGames:String(b),aColor:aWon?INK:MISS,bColor:aWon?MISS:INK,lost:aServes?!aWon:aWon,points:[],spA:tag[0],spB:tag[1]});
       prev=[a,b];
     });
   }
 
-  // ── Ratings tab (§6) ──
-  // R1 dissolves on real data: Dominance Ratio is computed as returnPtsWon% /
-  // (100 − servicePtsWon%), and the opponent's return-points-won% IS
-  // 100 − my service-points-won%. The printed note is therefore the formula.
+  // ── Ratings tab — always the match to date (the Stats scope does not reach it) ──
+  // Dominance Ratio = returnPtsWon% / (100 − servicePtsWon%), and the opponent's return-points-won% IS 100 − my
+  // service-points-won%, so the printed note is the formula.
   const ratingRows=[
-    Object.assign(drRow('Dominance ratio'),{scaleNote:'return points won ÷ opponent return points won'}),
-    Object.assign(svRow('Serve rating'),{scaleNote:'ATP composite · match to date'}),
-    Object.assign(rtRow('Return rating'),{scaleNote:'ATP composite · match to date'}),
+    Object.assign(drRow('Dominance ratio','match'),{scaleNote:'return points won ÷ opponent return points won'}),
+    Object.assign(svRow('Serve rating','match'),{scaleNote:'ATP composite · match to date'}),
+    Object.assign(rtRow('Return rating','match'),{scaleNote:'ATP composite · match to date'}),
   ];
-  const wnA=cntOf(cell(pA,'Winners')),wnB=cntOf(cell(pB,'Winners'));
-  const ueA=cntOf(cell(pA,'Unforced errors')),ueB=cntOf(cell(pB,'Unforced errors'));
-  const tpA=cell(pA,'Total Points Won'),tpB=cell(pB,'Total Points Won');
+  const wnA=cntOf(cell(pA,'Winners','match')),wnB=cntOf(cell(pB,'Winners','match'));
+  const ueA=cntOf(cell(pA,'Unforced errors','match')),ueB=cntOf(cell(pB,'Unforced errors','match'));
+  const tpA=cell(pA,'Total Points Won','match'),tpB=cell(pB,'Total Points Won','match');
   const totalPlayed=(tpA&&tpA.total!=null&&tpA.total>0)?tpA.total:((tpB&&tpB.total!=null&&tpB.total>0)?tpB.total:null);
-  const ratioOf=(w,u)=>(w!=null&&u!=null&&u>0)?+(w/u).toFixed(2):null;
+  const wueOff=wueUntracked('match');
+  const ratioOf=(w,u)=>(!wueOff&&w!=null&&u!=null&&u>0)?+(w/u).toFixed(2):null;
   const wue=[ratioOf(wnA,ueA),ratioOf(wnB,ueB)];
   const perPt=(n,d)=>(n!=null&&d!=null&&d>0)?(n/d).toFixed(2):null;
-  const wueDen=(w,u)=>{const wp=perPt(w,totalPlayed),up=perPt(u,totalPlayed);return(wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
+  const wueDen=(w,u)=>{const wp=perPt(w,totalPlayed),up=perPt(u,totalPlayed);return(!wueOff&&wp&&up)?'(W/P '+wp+' · UE/P '+up+')':'';};
   ratingRows.push(Object.assign(twoSided('Ratio W/UE',wue[0],wue[1],wue[0]===null?'':wue[0].toFixed(2),wue[1]===null?'':wue[1].toFixed(2),wueDen(wnA,ueA),wueDen(wnB,ueB)),{scaleNote:'winners ÷ unforced errors · above 1.00 is net-positive ball striking'}));
 
-  // A tab whose only card has been removed is not a tab. `S.tab` is set to 'Stats'
-  // every time a card is opened, so the selected tab has to be resolved against the
-  // tabs this fixture actually has or the modal body would render empty.
-  const tabs=['Stats','Points','Ratings','Break/Hold'].filter(t=>!(t==='Stats'&&statsAbsent));
+  // A tab whose only card has been removed is not a tab: no box score → no Stats tab.
+  const tabs=['Ratings','Stats','Points','Break/Hold'].filter(t=>!(t==='Stats'&&statsAbsent));
   const effTab=tabs.indexOf(S.tab)>=0?S.tab:tabs[0];
 
-  const momentumSvg=momentumChart(momentumBands(pbpGames,m),A,B);
+  const mom=momentumSets(pbpGames,m);
   const heatA=heatFor(m.keys[0],S.hb,m.bo),heatB=heatFor(m.keys[1],S.hb,m.bo);
-  const setCols=[1,2,3,4,5].map(n=>({label:'S'+n,color:n>(m.bo===3?3:5)?'var(--text-label)':'var(--text-label)'}));
+  const maxSet=m.bo===3?3:5;
+  const setCols=[1,2,3,4,5].map(n=>({label:'S'+n,dim:n>maxSet}));
 
   return Object.assign({},hdr,{
     isEmpty:false,
     modalOpen:true,
     modal:{
-      title:m.title,aName:A,bName:B,aAv:avOf(m.avatars[0]),bAv:avOf(m.avatars[1]),
-      aScore:scoreCells(0),bScore:scoreCells(1),
-      aDot:m.serving===0?'var(--serve-ball)':'transparent',bDot:m.serving===1?'var(--serve-ball)':'transparent',
+      title:m.title,aName:A,bName:B,aIni:lvIni(A),bIni:lvIni(B),
+      aScore:scoreCells(0),bScore:scoreCells(1),aPt:m.point[0],bPt:m.point[1],
+      setHead:m.sets.map((_,i)=>({t:'S'+(i+1),cur:i===m.sets.length-1})),nSets:m.sets.length,
+      aSub:subOf(0),bSub:subOf(1),
+      aServes:m.serving===0&&liveM,bServes:m.serving===1&&liveM,
+      status:(liveM?'Live · Set ':'Interrupted · Set ')+nSets,
+      stColor:liveM?INK:'var(--amber)',
     },
     tabs,tab:effTab,
-    scope:effScope,scopeOpts,nSets,
+    scope:effOpt.id,scopeName:effOpt.name,scopeOpts,nSets,
     statSections,statsAbsent,
     setTabs:m.sets.map((_,i)=>i+1),pset:setNum,
     setScoreLabel,games,pbpLoading,pbpError,
-    ratingRows,momentumSvg,
+    ratingRows,mom,curSet:m.sets.length,
     hb:S.hb,
     heatBaseline:S.hb==='HOLD'
-      ?'Cell colour is the hold rate itself: green at 85% and above, amber 70–84%, red below 70%. Hover a cell for the count and the gap to that bucket’s global.'
-      :'Cell colour is the break rate itself: green at 30% and above, amber 18–29%, red below 18%. Hover a cell for the count and the gap to that bucket’s global.',
+      ?'Cell colour is the gap to the player’s own global hold rate for that bucket: green above it, red below, neutral within ±3 points. The gap is printed under the rate; hover for the count.'
+      :'Cell colour is the gap to the player’s own global break rate for that bucket: green above it, red below, neutral within ±3 points. The gap is printed under the rate; hover for the count.',
     heatGates:'n≥10 full size · n 5–9 smaller and greyed · n<5 raw count only, no percentage · n=0 a dash.',
     heatPlayers:[
-      {name:A,avUrl:avOf(m.avatars[0]),nameColor:'var(--bar)',globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
-      {name:B,avUrl:avOf(m.avatars[1]),nameColor:'var(--text)',globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
+      {name:A,ini:lvIni(A),globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
+      {name:B,ini:lvIni(B),globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
     ],
   });
 }
 
 
 // ── HTML builders ─────────────────────────────────────────────────────────────
-function h(tag,attrs,inner){
-  const a=Object.entries(attrs||{}).map(([k,v])=>` ${k}="${v}"`).join('');
-  return `<${tag}${a}>${inner||''}</${tag}>`;
+function e(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const MONO="font-family:'IBM Plex Mono',monospace;";
+const CAPS='font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+
+// The two-sided bar: two 6% tracks 3px apart, each segment drawn inward from the centre.
+function barHtml(r, mt){
+  return `<span style="display:grid;grid-template-columns:1fr 1fr;gap:3px;height:6px;${mt?'margin-top:'+mt+'px;':''}">
+    <span style="display:flex;justify-content:flex-end;background:var(--track);border-radius:3px;overflow:hidden;"><span style="width:${r.aW};background:${r.aBar};border-radius:3px;"></span></span>
+    <span style="display:flex;justify-content:flex-start;background:var(--track);border-radius:3px;overflow:hidden;"><span style="width:${r.bW};background:${r.bBar};border-radius:3px;"></span></span>
+  </span>`;
 }
-function e(x){ return String(x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function statRowHtml(r){
   return `
 <div>
   <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:12px;">
-    <span style="display:flex;align-items:baseline;gap:7px;">
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:${r.aColor};">${e(r.aVal)}</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-label);">${e(r.aDen)}</span>
+    <span style="display:flex;align-items:baseline;gap:7px;min-width:0;">
+      <span style="${MONO}font-size:14px;font-weight:${r.aWt};color:${r.aColor};">${e(r.aVal)}</span>
+      <span style="${MONO}font-size:10.5px;color:var(--text-label);white-space:nowrap;">${e(r.aDen)}</span>
     </span>
-    <span style="font-size:13px;color:var(--text-label);white-space:nowrap;">${e(r.label)}</span>
-    <span style="display:flex;align-items:baseline;justify-content:flex-end;gap:7px;">
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text-label);">${e(r.bDen)}</span>
-      <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:700;color:${r.bColor};">${e(r.bVal)}</span>
+    <span style="font-size:12.5px;color:var(--text-soft);white-space:nowrap;">${e(r.label)}</span>
+    <span style="display:flex;align-items:baseline;justify-content:flex-end;gap:7px;min-width:0;">
+      <span style="${MONO}font-size:10.5px;color:var(--text-label);white-space:nowrap;">${e(r.bDen)}</span>
+      <span style="${MONO}font-size:14px;font-weight:${r.bWt};color:${r.bColor};">${e(r.bVal)}</span>
     </span>
   </div>
-  <span style="display:grid;grid-template-columns:1fr 1fr;gap:0;height:3px;margin-top:8px;background:var(--inner);border-radius:2px;overflow:hidden;">
-    <span style="display:flex;justify-content:flex-end;"><span style="width:${r.aW};background:var(--bar);border-radius:2px 0 0 2px;"></span></span>
-    <span style="display:flex;justify-content:flex-start;"><span style="width:${r.bW};background:var(--text);border-radius:0 2px 2px 0;"></span></span>
-  </span>
+  ${barHtml(r,7)}
 </div>`;
 }
 
-function ratingRowHtml(r){
+function ratingCardHtml(r){
   return `
-<div>
-  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:baseline;gap:12px;">
-    <span>
-      <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${r.aColor};">${e(r.aVal)}</span>
-      <span style="display:block;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-label);">${e(r.aDen)}</span>
+<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 18px;display:flex;flex-direction:column;gap:10px;min-width:0;">
+  <span style="${CAPS}text-align:center;">${e(r.label)}</span>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:end;gap:12px;">
+    <span style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+      <span style="${MONO}font-size:24px;line-height:1.1;font-weight:${r.aWt};color:${r.aColor};">${e(r.aVal)}</span>
+      <span style="${MONO}font-size:10px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(r.aDen)}</span>
     </span>
-    <span style="font-size:13px;color:var(--text-label);white-space:nowrap;">${e(r.label)}</span>
-    <span style="text-align:right;">
-      <span style="display:block;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${r.bColor};">${e(r.bVal)}</span>
-      <span style="display:block;margin-top:2px;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--text-label);">${e(r.bDen)}</span>
+    <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0;">
+      <span style="${MONO}font-size:24px;line-height:1.1;font-weight:${r.bWt};color:${r.bColor};">${e(r.bVal)}</span>
+      <span style="${MONO}font-size:10px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(r.bDen)}</span>
     </span>
   </div>
-  <span style="display:grid;grid-template-columns:1fr 1fr;gap:0;height:3px;margin-top:8px;background:var(--inner);border-radius:2px;overflow:hidden;">
-    <span style="display:flex;justify-content:flex-end;"><span style="width:${r.aW};background:var(--bar);border-radius:2px 0 0 2px;"></span></span>
-    <span style="display:flex;justify-content:flex-start;"><span style="width:${r.bW};background:var(--text);border-radius:0 2px 2px 0;"></span></span>
-  </span>
-  <div style="text-align:center;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:var(--text-label);margin-top:6px;">${e(r.scaleNote)}</div>
+  ${barHtml(r,0)}
+  <div style="text-align:center;font-size:11px;color:var(--text-label);line-height:1.45;text-wrap:pretty;">${e(r.scaleNote)}</div>
 </div>`;
 }
 
-function heatPlayerHtml(hp, hb){
-  const colsHtml=hp.setCols.map(sc=>`<span style="text-align:center;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${sc.color};">${sc.label}</span>`).join('');
+// Momentum (TEN-417): one column per set, its width the games plotted; bars from the centre line.
+function momentumHtml(d){
+  if(!d.mom.length) return `<div style="padding:40px 20px;text-align:center;font-size:13px;color:var(--text-label);">${d.pbpLoading?'Loading the point log…':d.pbpError?'Point log unavailable right now.':'No completed games to plot yet.'}</div>`;
+  const cols=d.mom.map(st=>st.games.length+'fr').join(' ');
+  const setsHtml=d.mom.map(st=>{
+    const bars=st.games.map(g=>{
+      const hp=Math.abs(g.m)/4*36, up=g.m>0;
+      const bottom=up?'50%':(50-hp)+'%';
+      const scoreTop=up?'calc('+(50-hp)+'% - 13px)':'calc('+(50+hp)+'% + 3px)';
+      return `<span style="flex:1;position:relative;height:100%;min-width:0;">
+        <span style="position:absolute;left:0;right:0;bottom:${bottom};height:${hp}%;background:${up?'var(--viz-lead)':'var(--viz-second)'};border-radius:2px;border:1px solid ${g.brk?'var(--neg)':'transparent'};box-sizing:border-box;"></span>
+        <span style="position:absolute;left:50%;top:${scoreTop};transform:translateX(-50%);${MONO}font-size:8.5px;color:${up?'var(--text)':'var(--text-label)'};white-space:nowrap;">${e(g.label)}</span>
+      </span>`;
+    }).join('');
+    return `<div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+      <div style="position:relative;display:flex;align-items:flex-end;gap:6px;height:104px;">
+        <span style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--viz-guide);"></span>
+        ${bars}
+      </div>
+      <span style="text-align:center;${MONO}font-size:10px;color:${st.n===d.curSet?'var(--text)':'var(--text-label)'};border-top:1px solid var(--line);padding-top:5px;white-space:nowrap;">Set ${st.n} · ${e(st.score)}</span>
+    </div>`;
+  }).join('');
+  return `<div style="display:grid;grid-template-columns:${cols};gap:12px;align-items:stretch;margin-top:14px;">${setsHtml}</div>`;
+}
+
+// Initials avatar (TEN-417 override: no photos anywhere on Live) — --inner, a 10% white edge, white 700.
+function avaHtml(ini, size, fs){
+  return `<span style="width:${size}px;height:${size}px;border-radius:50%;background:var(--inner);border:1px solid var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;letter-spacing:0.02em;color:var(--text);flex:none;">${e(ini)}</span>`;
+}
+
+function heatPlayerHtml(hp){
+  const head=t=>`text-align:center;${MONO}font-size:9px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:${t?'color-mix(in srgb, var(--text-label) 40%, transparent)':'var(--text-label)'};`;
+  const colsHtml=hp.setCols.map(sc=>`<span style="${head(sc.dim)}">${e(sc.label)}</span>`).join('');
   const rowsHtml=hp.rows.map(hr=>{
-    const cellsHtml=hr.cells.map((c,ci)=>`
+    const cellsHtml=hr.cells.map(c0=>{
+      let c=c0;
+      // TEN-417 Break/Hold: the signed gap to the bucket's global is printed under the rate ("+6 pts"), so the colour and
+      // the figure can never disagree; n<5 keeps "raw"; a dash cell prints nothing under it.
+      const sub=(c.gap!=null&&HBE())?HBE().gapText(c.gap):c.frac;
+      // TEN-417 R1 fixes 3–4 (founder): neutral WITHIN ±3 inclusive — the colour is taken from the same rounded gap that
+      // is printed, so a printed "−3 pts" is never red; the tooltip is the built wording against the player's own global
+      // for the bucket. (Player Profile shares the engine and keeps its own U3 boundary.)
+      if(c.gap!=null&&Math.abs(c.gap)<=3&&HBE()){ const small=c.size==='12px', n=HBE().gapBand(0,0,small); c=Object.assign({},c,{bg:n.bg,bd:n.bd,tag:'even',color:small?'var(--text-label)':n.color}); }
+      // TEN-417 R2 fix 3: the word follows the colour band — at global within ±3, above from +4, below from −4.
+      const tag=c.gap>3?'above global':c.gap<-3?'below global':'at global';
+      const note=(c.gap!=null&&HBE())?tag+' · '+HBE().gapText(c.gap)+' vs this bucket’s global '+hr.gPct+(c.size==='12px'?' · small sample':''):c.tipNote;
+      return `
 <span class="hbcell" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:${c.bg};border:1px solid ${c.bd};opacity:${c.opacity};">
-  <span style="font-family:'IBM Plex Mono',monospace;font-size:${c.size};font-weight:700;color:${c.color};line-height:1.2;">${e(c.pct)}</span>
-  <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-label);line-height:1.2;">${e(c.frac)}</span>
-  <span class="hbtip" style="position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);z-index:50;width:186px;padding:9px 11px;background:var(--card);border:1px solid var(--edge-6);border-radius:9px;text-align:left;pointer-events:none;">
-    <span style="display:block;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">${e(c.tipHead)}</span>
-    <span style="display:block;margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;color:${c.color};">${e(c.tipRate)}</span>
-    <span style="display:block;margin-top:3px;font-family:'Hanken Grotesk',sans-serif;font-size:11.5px;color:var(--text-label);line-height:1.5;">${e(c.tipNote)}</span>
+  <span style="${MONO}font-size:${c.size};font-weight:700;color:${c.color};line-height:1.2;">${e(c.pct)}</span>
+  <span style="${MONO}font-size:9px;color:var(--text-label);line-height:1.2;">${e(sub)}</span>
+  <span class="hbtip" style="position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);z-index:50;width:186px;padding:9px 11px;background:var(--card);border:1px solid var(--edge-10);border-radius:9px;box-shadow:var(--shadow-menu);text-align:left;pointer-events:none;">
+    <span style="display:block;${MONO}font-size:9.5px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-label);">${e(c.tipHead)}</span>
+    <span style="display:block;margin-top:4px;${MONO}font-size:12.5px;font-weight:700;color:${c.color};">${e(c.tipRate)}</span>
+    <span style="display:block;margin-top:3px;font-family:var(--font-words);font-size:11.5px;color:var(--text-label);line-height:1.5;">${e(note)}</span>
   </span>
-</span>`).join('');
+</span>`;
+    }).join('');
     return `
 <div style="display:grid;grid-template-columns:132px 66px 10px repeat(5,minmax(0,1fr));gap:4px;align-items:stretch;margin-top:4px;">
   <span style="display:flex;flex-direction:column;justify-content:center;gap:1px;">
-    <span style="font-size:11.5px;font-weight:600;color:var(--text-label);white-space:nowrap;">${e(hr.bucket)}</span>
+    <span style="font-size:11.5px;font-weight:600;color:var(--text-soft);white-space:nowrap;">${e(hr.bucket)}</span>
     <span style="font-size:9.5px;color:var(--text-label);white-space:nowrap;">${e(hr.sub)}</span>
   </span>
-  <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:var(--inner);border:1px solid var(--edge-6);">
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:var(--text);line-height:1.2;">${e(hr.gPct)}</span>
-    <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-label);line-height:1.2;">${e(hr.gFrac)}</span>
+  <span style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:var(--inner);border:1px solid transparent;">
+    <span style="${MONO}font-size:15px;font-weight:700;color:${hr.gColor};line-height:1.2;">${e(hr.gPct)}</span>
+    <span style="${MONO}font-size:9px;color:var(--text-label);line-height:1.2;">${e(hr.gFrac)}</span>
   </span>
-  <span style="align-self:stretch;display:flex;justify-content:center;"><span style="width:1px;background:var(--line);"></span></span>
+  <span style="align-self:stretch;display:flex;justify-content:center;"><span style="width:1px;background:var(--edge-7);"></span></span>
   ${cellsHtml}
 </div>`;
   }).join('');
   return `
 <div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    <img src="${hp.avUrl}" alt="" style="width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--card);border:1px solid var(--edge-6);flex:none;">
-    <span style="font-size:14px;font-weight:700;color:${hp.nameColor};">${e(hp.name)}</span>
-    <span style="margin-left:auto;font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:var(--text-label);background:var(--inner);border:1px solid var(--edge-6);border-radius:6px;padding:4px 9px;">${e(hp.globalLabel)}</span>
+    ${avaHtml(hp.ini,30,11)}
+    <span style="font-size:14px;font-weight:700;color:var(--text);">${e(hp.name)}</span>
+    <span style="margin-left:auto;${MONO}font-size:10.5px;font-weight:700;letter-spacing:0.1em;color:var(--text-soft);background:var(--inner);border:1px solid transparent;border-radius:6px;padding:4px 9px;white-space:nowrap;">${e(hp.globalLabel)}</span>
   </div>
   <div style="display:grid;grid-template-columns:132px 66px 10px repeat(5,minmax(0,1fr));gap:4px;align-items:end;">
     <span></span>
-    <span style="text-align:center;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Global</span>
+    <span style="text-align:center;${CAPS}">Global</span>
     <span></span>
     ${colsHtml}
   </div>
   ${rowsHtml}
 </div>`;
 }
+
+// The tennis-ball glyph that marks the server's side of a Points row.
+const BALL=`<span style="width:15px;height:15px;flex:none;border-radius:50%;border:1px solid var(--edge-10);background:color-mix(in srgb, var(--text) 6%, transparent);position:relative;overflow:hidden;"><span style="position:absolute;left:-3px;top:2px;width:19px;height:11px;border-radius:50%;border:1px solid var(--edge-10);border-top:none;border-bottom:none;"></span></span>`;
+// Chips are caps words, so they take the site caps label (Hanken 10.5 / 0.10em, 800 — the reference's computed type).
+const CHIP="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;border-radius:5px;padding:3px 7px;white-space:nowrap;";
+const LOST_CHIP=`<span style="${CHIP}color:var(--neg);background:color-mix(in srgb, var(--neg) 12%, transparent);border:1px solid color-mix(in srgb, var(--neg) 32%, transparent);">LOST SERVE</span>`;
+const spChip=t=>t?`<span style="${CHIP}color:var(--text);background:color-mix(in srgb, var(--text) 8%, transparent);border:1px solid color-mix(in srgb, var(--text) 18%, transparent);">${t}</span>`:'';
 
 // ── main render ───────────────────────────────────────────────────────────────
 function render(){
@@ -35539,105 +35600,138 @@ function render(){
   if(!tab) return;
 
   // ── CARDS ──
-  const cardsHtml=LIVE.map((m,mi)=>{
+  const cardsHtml=LIVE.map(m=>{
     const live=!m.interrupted;
-    const stColor=live?'var(--text)':'var(--text-label)';   // U2.1: LIVE = white caps text, no colour
-    const stBg='transparent';
-    const stBd='transparent';
-    const mkSets=(side)=>m.sets.map((st,i)=>{
-      const mine=st[side],theirs=st[1-side];
-      const done=i<m.sets.length-1;const won=mine>theirs;
-      return `<span style="width:24px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:${done?(won?700:500):700};color:${done?(won?'var(--text)':'var(--text-label)'):'var(--text)'};">${mine}</span>`;
+    // Status: Live = white with the 1.6s pulse; Interrupted = amber (TEN-417), no pulse.
+    const stColor=live?'var(--text)':'var(--amber)';
+    const heads=m.sets.map((_,i)=>`<span style="width:26px;text-align:center;${MONO}font-size:9px;font-weight:600;letter-spacing:0.1em;color:var(--text-label);">S${i+1}</span>`).join('');
+    const mkSets=side=>m.sets.map((st,i)=>{
+      const done=i<m.sets.length-1,won=st[side]>st[1-side];
+      return `<span style="width:26px;text-align:center;${MONO}font-size:15px;font-weight:${done?(won?700:500):700};color:${done?(won?'var(--text)':'var(--text-label)'):'var(--text)'};">${st[side]}</span>`;
     }).join('');
     const playersHtml=[0,1].map(side=>`
-<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 12px;padding:11px 16px;border-top:1px solid ${side===0?'transparent':'color-mix(in srgb, var(--text) 3%, transparent)'};">
-  <span style="display:flex;align-items:center;gap:11px;min-width:0;">
-    <img src="${avOf(m.avatars[side])}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;object-fit:cover;background:var(--card);border:1px solid var(--edge-6);flex:none;">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 12px;padding:9px 16px 11px;">
+  <span style="display:flex;align-items:center;gap:10px;min-width:0;">
+    ${avaHtml(lvIni(m.names[side]),30,11)}
     <span style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(m.names[side])}</span>
+    <span style="width:8px;height:8px;border-radius:50%;background:${m.serving===side&&live?'var(--serve-ball)':'transparent'};flex:none;"></span>
   </span>
-  <span style="display:flex;align-items:center;gap:12px;flex:none;">
-    <span style="width:7px;height:7px;border-radius:50%;background:${m.serving===side?'var(--pos)':'transparent'};flex:none;"></span>
-    <span style="display:flex;align-items:center;gap:0;">${mkSets(side)}</span>
-    <span style="width:34px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;color:${m.serving===side?'var(--pos)':'var(--text)'};">${m.point[side]}</span>
+  <span style="display:flex;align-items:center;gap:0;">
+    ${mkSets(side)}
+    <span style="width:40px;text-align:right;${MONO}font-size:15px;font-weight:700;color:var(--text);">${e(m.point[side])}</span>
   </span>
 </div>`).join('');
     return `
-<div class="lvcard" data-open="${e(m.ek)}" style="background:var(--card);border:1px solid var(--edge-6);border-radius:14px;overflow:hidden;">
-  <div style="display:flex;align-items:center;gap:9px;padding:11px 16px;border-bottom:1px solid var(--line);">
-    <span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;">${e(m.event)}</span>
-    <span style="margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none;font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:${stColor};background:${stBg};border:1px solid ${stBd};border-radius:5px;padding:3px 7px;"><span style="width:5px;height:5px;border-radius:50%;background:${stColor};"></span>${e(m.status)}</span>
+<div class="lvcard" data-open="${e(m.ek)}" style="background:var(--card);border-radius:14px;overflow:hidden;">
+  <div style="display:flex;align-items:center;gap:9px;padding:10px 16px;border-bottom:1px solid var(--line);">
+    <span style="font-size:11.5px;color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(m.event)}</span>
+    <span style="margin-left:auto;white-space:nowrap;display:inline-flex;align-items:center;gap:6px;flex:none;${live?MONO+'font-size:9.5px;font-weight:700;letter-spacing:0.12em;':'font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;'}color:${stColor};"><span style="width:5px;height:5px;border-radius:50%;background:${stColor};animation:${live?'lvpulse 1.6s ease-in-out infinite':'none'};"></span>${e(m.status)}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;padding:6px 16px 0;gap:0 12px;">
+    <span></span>
+    <span style="display:flex;align-items:center;gap:0;">${heads}<span style="width:40px;text-align:right;${CAPS}">PTS</span></span>
   </div>
   ${playersHtml}
 </div>`;
   }).join('');
 
+  // Empty state (TEN-417 Data 7): only once a snapshot has said "nothing underway".
   const emptyHtml=d.isEmpty?`
-<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:88px 20px;background:var(--card);border:1px solid var(--edge-6);border-radius:14px;">
-  <span style="width:9px;height:9px;border-radius:50%;background:var(--track);"></span>
-  <div style="font-size:15px;font-weight:700;">Nothing in play</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:88px 20px;background:var(--card);border:1px solid transparent;border-radius:14px;">
+  <span style="width:9px;height:9px;border-radius:50%;background:color-mix(in srgb, var(--text-label) 40%, transparent);"></span>
+  <div style="font-size:15px;font-weight:700;color:var(--text);">Nothing in play</div>
   <div style="font-size:13px;color:var(--text-label);max-width:380px;text-align:center;line-height:1.55;">Matches appear here the moment the first point is played.</div>
 </div>`:'';
 
-  // ── MODAL ──
+  // ── SHEET ──
   let modalHtml='';
   if(d.modalOpen){
     const mm=d.modal;
-    // score cells
-    const scoreLine=cells=>cells.map(s=>`<span style="width:20px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:${s.weight};color:${s.color};">${e(s.v)}</span>`).join('');
+    const cols='repeat('+Math.max(1,mm.nSets)+', 26px)';
+    const scoreTile=`
+<div style="display:flex;align-items:stretch;gap:0;padding:8px 4px;border-radius:12px;background:var(--inner);border:1px solid transparent;">
+  <div style="display:grid;grid-template-columns:${cols};row-gap:3px;padding:0 8px;">
+    ${mm.setHead.map(h=>`<span style="text-align:center;${MONO}font-size:9px;font-weight:${h.cur?700:600};letter-spacing:0.08em;color:${h.cur?'var(--text)':'var(--text-label)'};">${h.t}</span>`).join('')}
+    ${mm.aScore.map(s=>`<span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:${s.weight};color:${s.color};background:${s.bg};box-shadow:inset 0 0 0 1px ${s.bd};border-radius:5px;">${e(s.v)}</span>`).join('')}
+    ${mm.bScore.map(s=>`<span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:${s.weight};color:${s.color};background:${s.bg};box-shadow:inset 0 0 0 1px ${s.bd};border-radius:5px;">${e(s.v)}</span>`).join('')}
+  </div>
+  <div style="display:grid;grid-template-columns:44px;row-gap:3px;padding:0 6px;border-left:1px solid color-mix(in srgb, var(--text) 8%, transparent);">
+    <span style="text-align:center;${MONO}font-size:9px;font-weight:600;letter-spacing:0.08em;color:var(--text-label);">PTS</span>
+    <span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:700;color:var(--text);">${e(mm.aPt)}</span>
+    <span style="text-align:center;${MONO}font-size:16px;line-height:1.35;font-weight:700;color:var(--text);">${e(mm.bPt)}</span>
+  </div>
+</div>`;
+    const dot=`<span style="width:8px;height:8px;flex:none;border-radius:50%;background:var(--serve-ball);"></span>`;
+    const subCss=`font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);`;
 
-    // tabs
     const tabsHtml=d.tabs.map(t=>{
-      const on=d.tab===t;const sg=seg(on);
-      return `<span class="lvseg" data-tab="${t}" style="text-align:center;padding:11px 0;border-radius:10px;font-size:13.5px;font-weight:${on?700:600};color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${t}</span>`;
+      const sg=seg(d.tab===t);
+      return `<span class="lvseg" data-tab="${t}" style="text-align:center;padding:8px 0;border-radius:8px;font-size:13px;font-weight:${sg.wt};color:${sg.color};background:${sg.bg};border:1px solid ${sg.bd};">${t}</span>`;
     }).join('');
 
-    // ── Stats body ──
     let bodyHtml='';
+    // ── Ratings ──
+    if(d.tab==='Ratings'){
+      // Every rating is a function of the box score, so on a fixture with no box score the four cards would be four
+      // pairs of dashes — same ruling as Stats (TEN-210): the cards go. Momentum comes off the point log.
+      const cards=d.statsAbsent?'':`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:10px;">${d.ratingRows.map(ratingCardHtml).join('')}</div>`;
+      const legend=(bg,bd,label)=>`<span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-soft);"><span style="width:10px;height:10px;border-radius:2px;background:${bg};border:1px solid ${bd};box-sizing:border-box;"></span>${e(label)}</span>`;
+      bodyHtml=`
+${cards}
+<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:16px 20px 14px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+    <span style="${CAPS}">Momentum · margin per game</span>
+    <span style="display:inline-flex;align-items:center;gap:14px;">
+      ${legend('var(--viz-lead)','transparent',mm.aName)}${legend('var(--viz-second)','transparent',mm.bName)}${legend('transparent','var(--neg)','break')}
+    </span>
+  </div>
+  ${momentumHtml(d)}
+  <div style="margin-top:10px;font-size:11px;color:var(--text-label);">Bar height is the margin of the game: tall for a love game, short for deuce. Scores read from the server’s side; a red outline is a break.</div>
+</div>`;
+    }
+
+    // ── Stats ──
     if(d.tab==='Stats'){
-      // Only the scopes the feed actually has rows for (see renderVals).
-      const scopeTabsHtml=d.scopeOpts.map(o=>{
-        const on=d.scope===o.id;const sg=seg(on);
-        return `<span class="lvseg" data-scope="${o.id}" style="padding:7px 15px;border-radius:7px;font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:${sg.color};background:${sg.bg};">${e(o.label)}</span>`;
-      }).join('');
+      const scopeTabsHtml=d.scopeOpts.map(o=>segHtml('data-scope',o.id,o.label,d.scope===o.id)).join('');
       const sectionsHtml=d.statSections.map(sec=>`
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:18px 20px;">
-  <div style="text-align:center;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);margin-bottom:16px;">${e(sec.title)}</div>
-  <div style="display:flex;flex-direction:column;gap:16px;">${sec.rows.map(statRowHtml).join('')}</div>
+<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:14px 18px 16px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--edge-6);">
+    <span style="${CAPS}">${e(sec.title)}</span>
+    <span style="${CAPS}">${e(d.scopeName)}</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:13px;">${sec.rows.map(statRowHtml).join('')}</div>
 </div>`).join('');
       bodyHtml=`
-<div style="display:inline-flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:3px;align-self:flex-start;">${scopeTabsHtml}</div>
+<div style="${TRACK}align-self:center;">${scopeTabsHtml}</div>
 ${sectionsHtml}`;
     }
 
-    // ── Points body ──
+    // ── Points ──
     if(d.tab==='Points'){
-      const setTabsHtml=d.setTabs.map(n=>{
-        const on=d.pset===n;const sg=seg(on);
-        return `<span class="lvseg" data-pset="${n}" style="padding:7px 15px;border-radius:7px;font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:${sg.color};background:${sg.bg};">SET ${n}</span>`;
-      }).join('');
+      const setTabsHtml=d.setTabs.map(n=>segHtml('data-pset',n,'SET '+n,d.pset===n)).join('');
       const gamesHtml=d.games.map(g=>{
         if(g.divider) return `
-<div style="padding:14px 4px;border-top:1px solid var(--line);">
-  <div style="background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:9px 12px;text-align:center;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">${e(g.dividerLabel)}</div>
+<div style="padding:14px 4px;border-top:1px solid var(--edge-6);">
+  <div style="background:var(--inner);border:1px solid var(--edge-7);border-radius:9px;padding:9px 12px;text-align:center;${MONO}font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--text-label);">${e(g.dividerLabel)}</div>
 </div>`;
-        const lostChip=`<span style="font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:var(--neg);background:color-mix(in srgb, var(--neg) 12%, transparent);border:1px solid color-mix(in srgb, var(--neg) 32%, transparent);border-radius:5px;padding:3px 7px;white-space:nowrap;">LOST SERVE</span>`;
-        const ball=`<span style="width:15px;height:15px;flex:none;border-radius:50%;border:1px solid var(--edge-10);background:var(--inner);position:relative;overflow:hidden;"><span style="position:absolute;left:-3px;top:2px;width:19px;height:11px;border-radius:50%;border:1px solid var(--edge-10);border-top:none;border-bottom:none;"></span></span>`;
-        const aMarker=g.servesA?`<span style="display:inline-flex;align-items:center;gap:6px;">${g.lost?lostChip:''}${ball}</span>`:'';
-        const bMarker=g.servesB?`<span style="display:inline-flex;align-items:center;gap:6px;">${ball}${g.lost?lostChip:''}</span>`:'';
+        const aMarker=g.servesA?`<span style="display:inline-flex;align-items:center;gap:6px;">${g.lost?LOST_CHIP:''}${BALL}</span>`:'';
+        const bMarker=g.servesB?`<span style="display:inline-flex;align-items:center;gap:6px;">${BALL}${g.lost?LOST_CHIP:''}</span>`:'';
+        // Point chips: every score on a 3.5% white wash, --text-soft 500; the game-winning score lifted (--selected + a
+        // 16% white ring, white 700 — 1b); BP after a break-point score.
         const ptsHtml=g.hasPoints?`
 <div style="display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:4px 6px;margin-top:9px;">
-  ${g.points.map(pt=>`<span style="display:inline-flex;align-items:center;gap:4px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:${pt.color};white-space:nowrap;">${e(pt.v)}</span>${pt.bp?`<span style="font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:var(--neg);background:color-mix(in srgb, var(--neg) 12%, transparent);border:1px solid color-mix(in srgb, var(--neg) 30%, transparent);border-radius:4px;padding:1px 4px;">BP</span>`:''}${pt.sep?`<span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--text-label);">${pt.sep}</span>`:''}</span>`).join('')}
+  ${g.points.map(pt=>`<span style="display:inline-flex;align-items:center;gap:4px;"><span style="${MONO}font-size:12.5px;font-weight:${pt.win?700:500};color:${pt.win?'var(--text)':'var(--text-soft)'};white-space:nowrap;background:${pt.win?'var(--selected)':'color-mix(in srgb, var(--text) 3.5%, transparent)'};border:1px solid ${pt.win?'var(--edge-16)':'transparent'};border-radius:6px;padding:2px 7px;">${e(pt.v)}</span>${pt.bp?`<span style="font-family:var(--font-words);font-size:10.5px;font-weight:800;letter-spacing:0.10em;text-transform:uppercase;color:var(--neg);background:color-mix(in srgb, var(--neg) 12%, transparent);border:1px solid color-mix(in srgb, var(--neg) 30%, transparent);border-radius:4px;padding:1px 4px;">BP</span>`:''}${pt.sep?`<span style="${MONO}font-size:12.5px;color:var(--text-label);">${pt.sep}</span>`:''}</span>`).join('')}
 </div>`:'';
         return `
-<div style="padding:14px 4px;border-top:1px solid var(--line);">
+<div style="padding:14px 4px;border-top:1px solid var(--edge-6);">
   <div style="display:grid;grid-template-columns:minmax(0,1fr) 96px minmax(0,1fr);align-items:center;gap:10px;">
-    <span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">${aMarker}</span>
+    <span style="display:flex;align-items:center;justify-content:flex-end;gap:6px;">${spChip(g.spA)}${aMarker}</span>
     <span style="display:flex;align-items:center;justify-content:center;gap:10px;">
-      <span style="width:34px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:${g.aColor};">${e(g.aGames)}</span>
-      <span style="width:8px;text-align:center;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--text-label);">·</span>
-      <span style="width:34px;text-align:left;font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:700;color:${g.bColor};">${e(g.bGames)}</span>
+      <span style="width:34px;text-align:right;${MONO}font-size:20px;font-weight:700;color:${g.aColor};">${e(g.aGames)}</span>
+      <span style="width:8px;text-align:center;${MONO}font-size:13px;color:var(--text-label);">·</span>
+      <span style="width:34px;text-align:left;${MONO}font-size:20px;font-weight:700;color:${g.bColor};">${e(g.bGames)}</span>
     </span>
-    <span style="display:flex;align-items:center;justify-content:flex-start;gap:6px;">${bMarker}</span>
+    <span style="display:flex;align-items:center;justify-content:flex-start;gap:6px;">${bMarker}${spChip(g.spB)}</span>
   </div>
   ${ptsHtml}
 </div>`;
@@ -35650,89 +35744,69 @@ ${sectionsHtml}`;
         : d.pbpError   ? note('Point log unavailable right now.')
         : note('No points logged in this set yet.');
       bodyHtml=`
-<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-  <div style="display:inline-flex;gap:3px;background:var(--inner);border:1px solid var(--edge-6);border-radius:9px;padding:3px;">${setTabsHtml}</div>
-  <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;font-weight:700;color:var(--text-label);">${e(d.setScoreLabel)}</span>
+<div style="display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;">
+  <div style="${TRACK}">${setTabsHtml}</div>
+  <span style="${MONO}font-size:12.5px;font-weight:700;color:var(--text-soft);white-space:pre;">${e(d.setScoreLabel)}</span>
 </div>
 <div>${gamesBody}</div>`;
     }
 
-    // ── Ratings body ──
-    if(d.tab==='Ratings'){
-      // Every rating row is a function of the box score, so on a fixture with no box
-      // score this card is four more em-dashes. Same ruling, same treatment: the card
-      // goes. Momentum comes off the point log and survives on its own.
-      const ratingCardHtml=d.statsAbsent?'':`
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:16px;">
-  ${d.ratingRows.map(ratingRowHtml).join('')}
-</div>`;
-      bodyHtml=`
-${ratingCardHtml}
-<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:16px 20px 12px;">
-  <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-    <span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);">Momentum · point swing by game</span>
-    <span style="display:inline-flex;align-items:center;gap:14px;">
-      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);"><span style="width:10px;height:10px;border-radius:2px;background:var(--viz-lead);"></span>${e(d.modal.aName)}</span>
-      <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);"><span style="width:10px;height:10px;border-radius:2px;background:var(--viz-second);"></span>${e(d.modal.bName)}</span>
-    </span>
-  </div>
-  <div style="margin-top:12px;">${d.momentumSvg||`<div style="padding:40px 20px;text-align:center;font-size:13px;color:var(--text-label);">No completed games to plot yet.</div>`}</div>
-</div>`;
-    }
-
-    // ── Break/Hold body ──
+    // ── Break/Hold ──
     if(d.tab==='Break/Hold'){
-      const hbTabsHtml=['HOLD','BREAK'].map(l=>{
-        const on=S.hb===l;const sg=seg(on);
-        return `<span class="lvseg" data-hb="${l}" style="padding:7px 15px;border-radius:7px;font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em; text-transform:uppercase;color:${sg.color};background:${sg.bg};">${l}</span>`;
-      }).join('');
-      const playersHtml=d.heatPlayers.map(hp=>heatPlayerHtml(hp,S.hb)).join('');
+      const hbTabsHtml=['HOLD','BREAK'].map(l=>segHtml('data-hb',l,l,S.hb===l)).join('');
+      const playersHtml=d.heatPlayers.map(hp=>heatPlayerHtml(hp)).join('');
       bodyHtml=`
 <div style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:18px 20px;">
   <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
     <span style="display:inline-flex;align-items:center;gap:8px;">
-      <span style="font-size:15px;font-weight:700;">Hold/Break heatmap</span>
-      <span class="lvtip" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--inner);border:1px solid var(--edge-6);font-size:10px;font-weight:700;color:var(--text-label);cursor:default;">i<span class="lvtipbox" style="position:absolute;top:calc(100% + 8px);left:0;z-index:40;width:300px;padding:11px 13px;background:var(--card);border:1px solid var(--edge-6);border-radius:10px;font-family:'Hanken Grotesk',sans-serif;font-size:12px;font-weight:400;color:var(--text-label);line-height:1.55;text-align:left;">${e(d.heatBaseline)}<span style="display:block;margin-top:7px;color:var(--text-label);">${e(d.heatGates)}</span></span></span>
+      <span style="font-size:15px;font-weight:700;color:var(--text);">Hold/Break heatmap</span>
+      <span class="lvtip" style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb, var(--text) 6%, transparent);border:1px solid color-mix(in srgb, var(--text) 12%, transparent);font-size:10px;font-weight:700;color:var(--text-label);cursor:default;">i<span class="lvtipbox" style="position:absolute;top:calc(100% + 8px);left:0;z-index:40;width:300px;padding:11px 13px;background:var(--card);border:1px solid var(--edge-10);border-radius:10px;box-shadow:var(--shadow-menu);font-family:var(--font-words);font-size:12px;font-weight:400;color:var(--text-soft);line-height:1.55;text-align:left;">${e(d.heatBaseline)}<span style="display:block;margin-top:7px;color:var(--text-label);">${e(d.heatGates)}</span></span></span>
     </span>
-    <span style="display:inline-flex;gap:3px;background:var(--card);border:1px solid var(--edge-6);border-radius:9px;padding:3px;">${hbTabsHtml}</span>
+    <span style="${TRACK}">${hbTabsHtml}</span>
   </div>
-  <span style="display:inline-flex;white-space:nowrap;align-items:center;gap:8px;margin-top:12px;font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);background:var(--card);border:1px dashed var(--edge-6);border-radius:9px;padding:7px 12px;">All surfaces · last 24m</span>
+  <span style="display:inline-flex;white-space:nowrap;align-items:center;gap:8px;margin-top:12px;${CAPS}background:var(--inner);border:1px solid transparent;border-radius:8px;padding:6px 11px;">All surfaces · last 24m</span>
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(430px,1fr));gap:20px;margin-top:16px;">${playersHtml}</div>
 </div>`;
     }
 
     modalHtml=`
-<div id="lvOverlay" style="position:fixed; inset:0 0 0 var(--sf-side, 0px);z-index:90;background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;">
-  <div style="width:100%;max-width:1180px;max-height:88vh;background:var(--card);border:1px solid var(--edge-6);border-radius:20px;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:16px 24px;border-bottom:1px solid var(--line);background:var(--card);flex:none;position:relative;">
-      <span style="font-size:15px;font-weight:700;">${e(mm.title)}</span>
-      <span class="lvseg" id="lvClose" style="position:absolute;right:20px;top:50%;transform:translateY(-50%);width:30px;height:30px;border-radius:50%;background:var(--inner);border:1px solid var(--edge-6);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-label);cursor:pointer;">✕</span>
+<div id="lvOverlay" data-lvback="1" style="position:fixed; inset:0 0 0 var(--sf-side, 0px);z-index:90;background:var(--backdrop); backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:32px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;">
+  <div data-mssheet="1" style="width:100%;max-width:940px;max-height:88vh;background:var(--card);border:1px solid var(--edge-10);border-radius:16px;box-shadow:var(--shadow-modal);display:flex;flex-direction:column;overflow:hidden;">
+    <div style="position:relative;flex:none;height:0;">
+      <span class="lvseg" id="lvClose" style="position:absolute;right:14px;top:14px;z-index:2;width:28px;height:28px;border-radius:50%;background:color-mix(in srgb, var(--text) 6%, transparent);border:1px solid color-mix(in srgb, var(--text) 9%, transparent);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text-label);">✕</span>
     </div>
-    <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:20px;padding:18px 24px;flex:none;">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:16px 56px 0;flex:none;">
+      <span style="display:inline-flex;align-items:center;gap:7px;font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:${mm.stColor};"><span style="width:6px;height:6px;border-radius:50%;background:currentColor;"></span>${e(mm.status)}</span>
+      <span style="font-size:12px;color:var(--text-label);text-align:center;">${e(mm.title)}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:20px;padding:12px 22px 16px;flex:none;">
       <span style="display:flex;align-items:center;gap:12px;min-width:0;">
-        <img src="${mm.aAv}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--card);border:1px solid var(--edge-6);flex:none;">
-        <span style="font-size:17px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.aName)}</span>
+        ${avaHtml(mm.aIni,42,13)}
+        <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.aName)}</span>${mm.aServes?dot:''}</span>
+          <span style="${subCss}">${e(mm.aSub)}</span>
+        </span>
       </span>
-      <span style="display:flex;flex-direction:column;gap:4px;flex:none;">
-        <span style="display:flex;align-items:center;gap:10px;">${scoreLine(mm.aScore)}<span style="width:8px;height:8px;border-radius:50%;background:${mm.aDot};"></span></span>
-        <span style="display:flex;align-items:center;gap:10px;">${scoreLine(mm.bScore)}<span style="width:8px;height:8px;border-radius:50%;background:${mm.bDot};"></span></span>
-      </span>
+      ${scoreTile}
       <span style="display:flex;align-items:center;justify-content:flex-end;gap:12px;min-width:0;">
-        <span style="font-size:17px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.bName)}</span>
-        <img src="${mm.bAv}" alt="" style="width:44px;height:44px;border-radius:50%;object-fit:cover;background:var(--card);border:1px solid var(--edge-6);flex:none;">
+        <span style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;min-width:0;">
+          <span style="display:flex;align-items:center;gap:8px;min-width:0;">${mm.bServes?dot:''}<span style="font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.bName)}</span></span>
+          <span style="${subCss}">${e(mm.bSub)}</span>
+        </span>
+        ${avaHtml(mm.bIni,42,13)}
       </span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(${d.tabs.length},1fr);gap:8px;padding:0 24px 16px;flex:none;">${tabsHtml}</div>
-    <div style="flex:1;min-height:0;overflow-y:auto;padding:0 24px 24px;display:flex;flex-direction:column;gap:14px;">${bodyHtml}</div>
+    <div style="padding:0 22px 14px;flex:none;"><div style="display:grid;grid-template-columns:repeat(${d.tabs.length},1fr);gap:3px;padding:3px;border-radius:10px;background:var(--inner);">${tabsHtml}</div></div>
+    <div style="flex:1;min-height:0;overflow-y:auto;padding:0 22px 22px;display:flex;flex-direction:column;gap:10px;">${bodyHtml}</div>
   </div>
 </div>`;
   }
 
-  // ── page ──
+  // ── page ── (no footer: TEN-417 Data 2 — the data is real, the disclaimer is gone)
   tab.innerHTML=`
 <div style="display:flex;flex-direction:column;gap:22px;font-family:'Hanken Grotesk',sans-serif;color:var(--text);line-height:normal;padding:0 16px;">
-  <!-- TEN-403: the shared 35b page header (.sfh). Values white, the clock --text-soft, a dash grey (Interrupted keeps its
-       zero-is-grey tone). -->
+  <!-- TEN-403: the shared 35b page header (.sfh). Values white, the clock --text-soft, a dash grey; Interrupted is amber
+       above 0 and grey at 0 (TEN-417). -->
   <div class="sfh">
     <div class="sfh__text">
       <h1 class="sfh__title">Live</h1>
@@ -35742,12 +35816,11 @@ ${ratingCardHtml}
       <div class="sfh__stat"><span class="sfh__l">In play</span><span class="sfh__v${d.inPlayCount==='—'?' sfh__v--none':''}">${d.inPlayCount}</span></div>
       <div class="sfh__stat"><span class="sfh__l">Interrupted</span><span class="sfh__v" style="color:${d.interruptedColor};">${d.interruptedCount}</span></div>
       <div class="sfh__stat"><span class="sfh__l">Events</span><span class="sfh__v${d.eventCount==='—'?' sfh__v--none':''}">${d.eventCount}</span></div>
-      <div class="sfh__stat"><span class="sfh__l">Updated</span><span class="sfh__v ${d.updatedLabel==='—'?'sfh__v--none':'sfh__v--soft'}">${e(d.updatedLabel)}</span></div>
+      <div class="sfh__stat"><span class="sfh__l">Updated</span><span class="sfh__v ${d.updatedLabel==='—'?'sfh__v--none':'sfh__v--soft'}"${d.updatedTitle?` title="${e(d.updatedTitle)}"`:''}>${e(d.updatedLabel)}</span></div>
     </div>
   </div>
   ${emptyHtml}
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(430px,1fr));align-items:start;gap:12px;">${cardsHtml}</div>
-  <div style="font-size:11px;color:var(--text-label);line-height:1.6;">Live scores, point sequences and match stats come from the match feed and update on their own. Hold/break figures are a 24-month rollup, all surfaces. A dash means the feed has not reported that figure yet — never a zero.</div>
 </div>
 ${modalHtml}`;
 
@@ -35756,11 +35829,12 @@ ${modalHtml}`;
   if(overlay){
     overlay.addEventListener('click',ev=>{
       const t=ev.target;
-      if(t.id==='lvClose'||t.closest('#lvClose')) { setState({sel:null}); return; }
+      // The backdrop (outside the sheet) and ✕ close the sheet; Esc too (document handler below).
+      if(t===overlay||t.id==='lvClose'||t.closest('#lvClose')) { setState({sel:null}); return; }
       const tabEl=t.closest('[data-tab]');
       if(tabEl&&tabEl.dataset.tab&&['Stats','Points','Ratings','Break/Hold'].includes(tabEl.dataset.tab)){setState({tab:tabEl.dataset.tab});return;}
       const scopeEl=t.closest('[data-scope]');
-      if(scopeEl){setState({scope:scopeEl.dataset.scope});return;}
+      if(scopeEl){const v=scopeEl.dataset.scope;setState({scope:v==='MATCH'?'MATCH':parseInt(v,10)});return;}
       const psetEl=t.closest('[data-pset]');
       if(psetEl){setState({pset:parseInt(psetEl.dataset.pset,10)});return;}
       const hbEl=t.closest('[data-hb]');
@@ -35770,14 +35844,17 @@ ${modalHtml}`;
   tab.querySelectorAll('.lvcard[data-open]').forEach(card=>{
     card.addEventListener('click',()=>{
       const ek=card.dataset.open;
-      // §8: modal state resets on every open — Stats, MATCH, set 1, HOLD.
-      setState({sel:ek,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});
+      // Every open resets the sheet: Ratings · Match · Set 1 · Hold (TEN-417 keeps this as built).
+      setState({sel:ek,tab:'Ratings',scope:'MATCH',pset:1,hb:'HOLD'});
       // The point log is deliberately NOT on the pushed snapshot (it is ~43% of
-      // the row); fetch it only now that a modal is actually open.
+      // the row); fetch it only now that a sheet is actually open.
       if(LF()) LF().pbpLoad(ek,()=>{ if(ST.sel===ek) render(); });
     });
   });
 }
+
+// Esc closes the open sheet (TEN-417).
+document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&ST.sel!=null&&document.getElementById('lvOverlay')) setState({sel:null}); });
 
 // ── init ──────────────────────────────────────────────────────────────────────
 // This is an INLINE script, so it runs during parse — before the deferred
@@ -35786,27 +35863,17 @@ ${modalHtml}`;
 function onFeed(payload){
   FEED = payload || FEED;
   LIVE = (Array.isArray(FEED.live) ? FEED.live : []).map(viewModel);
-  // The open match may have finished or been suspended between ticks. Drop the
-  // selection rather than leaving a modal pinned to a match that is off the board.
+  // The open match may have finished between ticks: it leaves the grid, and the
+  // sheet pinned to it closes rather than staying on a match that is off the board.
   if(ST.sel!=null && !LIVE.some(m=>m.ek===ST.sel)) ST.sel=null;
-  // A modal that is open wants a fresh point log; the fetch self-throttles.
+  // An open sheet wants a fresh point log; the fetch self-throttles.
   if(ST.sel!=null && LF()) LF().pbpLoad(ST.sel,()=>{ if(ST.sel!=null) render(); });
   render();
 }
 (window.__LV_SUBS = window.__LV_SUBS || []).push(onFeed);
 
-// The "Updated" figure is an age, so it has to keep moving between snapshots.
-// One timer for the whole tab, and only while Live is actually the visible page.
-let lvClock=null;
-function lvClockOn(on){
-  if(on && !lvClock){ lvClock=setInterval(()=>{ if(!document.hidden) render(); },10000); }
-  else if(!on && lvClock){ clearInterval(lvClock); lvClock=null; }
-}
-
 // holdbreak.json is fetched lazily by loadHeavyDatasets(). If the Break/Hold tab
-// is opened before it lands, every cell is a dash — so repaint once it arrives
-// rather than leaving a correct-but-empty grid on screen (same lazy-race idiom
-// as the profile panels).
+// is opened before it lands, every cell is a dash — so repaint once it arrives.
 function lvAwaitHoldbreak(){
   let tries=0;
   const t=setInterval(()=>{
@@ -35828,19 +35895,9 @@ document.querySelector('[data-tab="live"]').addEventListener('click', function o
   this.removeEventListener('click', onFirst, true);
 }, true);
 
-// The age clock follows the tab, not the page: it starts when Live is shown and
-// stops when any other tab is. live-tab.js drops the socket on the same signal,
-// so an idle user costs nothing on either side.
-document.addEventListener('click', ev=>{
-  const b=ev.target.closest && ev.target.closest('#mainNav button[data-tab]');
-  if(!b) return;
-  lvClockOn(b.getAttribute('data-tab')==='live');
-});
-
 // also init if the tab is already active on load
 if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector('.tabpage[data-page="live"]').classList.contains('active')){
   lvInit();
-  lvClockOn(true);
 }
 
 })();
