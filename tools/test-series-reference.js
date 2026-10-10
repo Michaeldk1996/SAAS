@@ -41,125 +41,16 @@ const checks = [];
 const ok = (name) => checks.push(name);
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
-// ── lift 1 · the reference sub-line block (item 5) ───────────────────────────
-// series.js is a browser IIFE with no exports, so evaluate exactly those bytes.
-function liftRef(source) {
-  const start = source.indexOf('  function ordinal(n) {');
-  const endMarker = '\n  // Effective card FAMILY';
-  const end = source.indexOf(endMarker);
-  assert(start > 0 && end > start, 'series.js reference block not found — markers moved?');
-  const block = source.slice(start, end);
-  assert(/function referenceHtml\(/.test(block) && /function referenceSinceYear\(/.test(block),
-    'reference block no longer contains referenceHtml/referenceSinceYear');
-  // eslint-disable-next-line no-new-func
-  return new Function('_data', 'esc',
-    block + '\n return { referenceHtml: referenceHtml, ordinal: ordinal };');
-}
-const ARTIFACT = { rules: { referenceWindow: { sinceYear: 2021, years: 5, scope: 'in-tier' } } };
-const refApi = (data) => liftRef(src)(data === undefined ? ARTIFACT : data, esc);
-const { referenceHtml, ordinal } = refApi();
-
-// TEN-204 item 2.4 REWORDS this sub-line and RE-SOURCES its year. Both rulings below
-// survive in substance — the window is still NAMED, never called "career", and a lone run
-// still prints in full — but:
-//   · "longest since {y} {n} · {k}th time at {c}+"  becomes
-//     "Best since {y}: {n} · {k}th run of {c}+"   (a colon, so the number reads as the
-//     PLAYER'S record rather than as this run; "run" because occurrences counts runs).
-//   · {y} is now the streak's OWN reference.sinceYear — the year of that player's earliest
-//     in-tier record — instead of rules.referenceWindow.sinceYear, which was the year the
-//     build QUERIED (`getFullYear() - 5`) and over-claimed for anyone whose record starts
-//     later. The artifact field survives as a fallback only, for pre-2.4 artifacts.
-//   · a player whose in-tier history has a YEAR GAP dashes the whole line, because a run
-//     could have been cut by missing data rather than by a loss, which understates both
-//     halves ("never an understated 1st run").
-const FULL = (over) => Object.assign({ sinceYear: 2021, yearGaps: [] }, over);
-
-const zverev = referenceHtml({ count: 6, reference: FULL({ longest: 15, occurrences: 12 }) });
-assert(/Best since 2021: 15/.test(zverev),
-  'TEN-204 2.4: the sub-line must read "Best since {year}: {n}". Painted: ' + zverev);
-assert(/12th run of 6\+/.test(zverev), 'the occurrence half is wrong. Painted: ' + zverev);
-assert(!/career/i.test(zverev),
-  'ruling reference-label (a) REVERTED: "career" is back. Option (d) "career longest is close ' +
-  'enough" was rejected 2026-09-12 — the window is 5 years AND tier-scoped, so it is nobody\'s career.');
-ok('TEN-204 2.4: "Best since {year}: {n} · {k}th run of {c}+", and never "career"');
-
-// The year is the STREAK's own, and it beats the artifact's window. Pinned with the two
-// deliberately DIFFERENT: an implementation that still read the artifact would print 2021.
-const perStreak = refApi({ rules: { referenceWindow: { sinceYear: 2021 } } }).referenceHtml(
-  { count: 6, reference: FULL({ longest: 15, occurrences: 12, sinceYear: 2023 }) });
-assert(/Best since 2023: 15/.test(perStreak),
-  'TEN-204 2.4: the year must come from the STREAK\'s reference.sinceYear (the earliest year ' +
-  'in that player\'s data), not from the artifact\'s query window. Painted: ' + perStreak);
-ok('the year is the streak\'s own earliest data year, not the build\'s query window');
-
-// …and the artifact remains the fallback for a pre-2.4 artifact, so the first deploy after
-// this change does not dash every card while the pipeline catches up.
-const fallback = refApi({ rules: { referenceWindow: { sinceYear: 2019 } } }).referenceHtml(
-  { count: 6, reference: { longest: 15, occurrences: 12, yearGaps: [] } });
-assert(/Best since 2019: 15/.test(fallback),
-  'a pre-2.4 artifact with no per-streak sinceYear must fall back to the window year rather ' +
-  'than dashing the whole board. Painted: ' + fallback);
-ok('a pre-2.4 artifact falls back to the window year rather than dashing');
-
-// ── coverage gate (TEN-204 2.4): a year gap dashes the line ──────────────────
-[[2022], [2023, 2024], [2021]].forEach((gaps) => {
-  const out = referenceHtml({ count: 6, reference: FULL({ longest: 15, occurrences: 12, yearGaps: gaps }) });
-  assert(/sr-ref--none/.test(out) && !/Best since/.test(out),
-    'TEN-204 2.4: a player with a year gap in the in-tier window must DASH — a run cut by ' +
-    'missing data understates both halves. gaps=' + JSON.stringify(gaps) + ' painted: ' + out);
-});
-// …and "no yearGaps field at all" is unknown, not clean. Absence of evidence is not coverage.
-const noField = referenceHtml({ count: 6, reference: { sinceYear: 2021, longest: 15, occurrences: 12 } });
-assert(/sr-ref--none/.test(noField),
-  'an artifact that does not report yearGaps must dash rather than assume clean coverage. Painted: ' + noField);
-ok('a year gap — or an unknown coverage state — dashes the sub-line');
-
-// ── reference-lone (a): a first-ever run at this length prints as-is ─────────
-const simakin = referenceHtml({ count: 9, reference: FULL({ longest: 9, occurrences: 1 }) });
-assert(/Best since 2021: 9 · 1st run of 9\+/.test(simakin),
-  'ruling reference-lone (a): a lone run must print in full. Options (b) "his best run" and ' +
-  '(c) "first component only" were rejected. Painted: ' + simakin);
-ok('reference-lone (a): the only-ever run at this length prints "1st run of N+" in full');
-
-// ── item 5: both components required, else a dash — never half a sub-line ────
-const halves = [
-  ['no reference at all (a pre-item-5 artifact)', { count: 6 }],
-  ['reference present but longest missing', { count: 6, reference: { occurrences: 3 } }],
-  ['reference present but occurrences missing', { count: 6, reference: { longest: 9 } }],
-  ['longest is zero', { count: 6, reference: { longest: 0, occurrences: 3 } }],
-  ['occurrences is zero', { count: 6, reference: { longest: 9, occurrences: 0 } }],
-  ['a non-integer sneaks in', { count: 6, reference: { longest: 9.5, occurrences: 3 } }],
-  ['null, which isFinite() would not catch on its own', { count: 6, reference: { longest: null, occurrences: 3 } }],
-];
-halves.forEach(([why, st]) => {
-  const out = referenceHtml(st);
-  assert(/class="sr-ref sr-ref--none"/.test(out) && />—</.test(out),
-    'item 5: ' + why + ' must dash the WHOLE sub-line. Painted: ' + out);
-  assert(!/Best since|run of/.test(out), 'item 5: half a sub-line shipped for ' + why + '. Painted: ' + out);
-});
-ok('item 5: a missing half dashes the whole sub-line, never shows the other half');
-
-// An unnameable window is the same case: ruling (a) is to NAME the window, so a
-// reference we cannot label is a reference we cannot print. Never "longest since —".
-[{}, { rules: {} }, { rules: { referenceWindow: {} } }, { rules: { referenceWindow: { sinceYear: '2021' } } }]
-  .forEach((data) => {
-    const out = refApi(data).referenceHtml({ count: 6, reference: { longest: 9, occurrences: 3 } });
-    assert(/sr-ref--none/.test(out) && !/Best since/.test(out),
-      'an artifact with no usable window year must dash, not print an unlabelled or half label. Painted: ' + out);
-  });
-ok('an artifact that cannot name its window dashes rather than labelling it wrongly');
-
-// ── the ordinal itself, including the teens the naive rule gets wrong ────────
-[[1, '1st'], [2, '2nd'], [3, '3rd'], [4, '4th'], [11, '11th'], [12, '12th'], [13, '13th'],
- [21, '21st'], [22, '22nd'], [23, '23rd'], [101, '101st'], [111, '111th'], [112, '112th']]
-  .forEach(([n, want]) => assert.strictEqual(ordinal(n), want, 'ordinal(' + n + ')'));
-ok('the ordinal is correct through the 11–13 teens and the 101/111 wrap');
+// ── TEN-427 (founder step 14, 2026-10-10): the reference sub-line ("Best since 2021: 9 · 4th run of 6+") is OFF the
+// page — the design's card 2b and Count-tile pop-up have no slot for it, and the reference wins. The ENGINE still
+// computes streak.reference (asserted below), so the sub-line can return without a rebuild.
+assert(!/function referenceHtml\(/.test(src), 'the reference sub-line renderer is back on the page — card 2b has no slot for it');
 
 // ── handicap-bestof (a): the CARD drops it, the MODAL keeps it ───────────────
 // Executes the shipped claim builders rather than reading them.
 function liftClaim(source) {
   const start = source.indexOf('  var ARCH_LABEL = {};');
-  const end = source.indexOf('  function describe(st)');
+  const end = source.indexOf('  // ─── THE ONE ROW BUILDER');
   assert(start > 0 && end > start, 'series.js claim block not found — markers moved?');
   const block = source.slice(start, end);
   assert(/function claimOf\(/.test(block) && /function claimLong\(/.test(block), 'lifted the wrong block');
@@ -169,12 +60,14 @@ function liftClaim(source) {
 }
 const { claimOf, claimLong } = liftClaim(src);
 const hcap = { type: 'handicap', cover: true, line: 3.5, bestOf: 5, direction: 'win' };
-assert.strictEqual(claimOf(hcap), 'Covered −3.5 games',
-  'ruling handicap-bestof (a): the card must read "Covered −3.5 games" with no format qualifier');
+// TEN-427 round 2 (founder 20de43fe, fix 2) rewords the claim to the reference's template ("Won by more than 3.5 games —
+// covered −3.5"); the ruling stands: no "(best-of-N)" on the card, the pop-up keeps it.
+assert.strictEqual(claimOf(hcap), 'Won by more than 3.5 games — covered −3.5',
+  'ruling handicap-bestof (a): the card must read the reference wording with no format qualifier');
 assert(!/best-of/.test(claimOf(hcap)), 'the card kept "(best-of-N)" — ruling handicap-bestof (a) rejected option (b)');
 assert(!/best-of/.test(claimOf({ type: 'handicap', cover: false, line: 3.5, bestOf: 3, direction: 'loss' })),
   'the losing side of the handicap family still prints the format qualifier');
-assert.strictEqual(claimLong(hcap), 'Covered −3.5 games (best-of-5)',
+assert.strictEqual(claimLong(hcap), 'Won by more than 3.5 games — covered −3.5 (best-of-5)',
   'the History modal is out of scope ("does not change") and must keep the format qualifier');
 // …and the neighbouring family must NOT have been swept up: total games keeps its
 // qualifier, because only item 2 was ruled on.
@@ -187,10 +80,11 @@ ok('handicap-bestof (a): the card drops "(best-of-N)", the modal and the total f
 // measures the shipped filter and not a copy of its condition.
 function liftFlatten(source) {
   const start = source.indexOf('  var HANDICAP_DISPLAY_LINE =');
-  const end = source.indexOf('  function passesFilters(c)');
+  const end = source.indexOf('  function passesFilters(c');
   assert(start > 0 && end > start, 'series.js flatten block not found — markers moved?');
   const block = source.slice(start, end);
-  assert(/function flatten\(data\)/.test(block) && /suppressOutcomeDuplicates/.test(block), 'lifted the wrong block');
+  // TEN-427 round 2: the subset suppression moved from flatten() to reslot() (it runs on the as-of-start runs)
+  assert(/function flatten\(data\)/.test(block), 'lifted the wrong block');
   // eslint-disable-next-line no-new-func
   return new Function('suppressOutcomeDuplicates',
     block + '\n return flatten;')((cards) => cards);
@@ -234,103 +128,6 @@ assert.strictEqual(thin.filter((s) => s.type === 'handicap').length, 0,
   'ruling handicap-line (a): "family disappears on thin days" — a −1.5-only player shows no handicap card');
 assert.strictEqual(thin.length, 1, 'the rest of that player\'s board must survive');
 ok('handicap-line (a): a player with no −3.5 run shows no handicap card at all');
-
-// ── the sub-line's shipped styling ───────────────────────────────────────────
-// TEN-204 2.4 SUPERSEDES item 5's "same size as the STARTED / LAST values": "mono 11.5px,
-// #5b6880, directly under the player row — secondary to the claim and strip". At 14px it
-// matched .sr-cell-v exactly and the card read as having two equally weighted number rows.
-// Mono and #5b6880 are unchanged, and the SECONDARY relationship is what is pinned here:
-// the sub-line must be strictly smaller than the strip values it sits above, so a later
-// tweak to either one cannot quietly flatten the hierarchy again.
-const refCss = css.slice(css.indexOf('[data-page="series"] .sr-ref {'));
-assert(refCss.indexOf('[data-page="series"] .sr-ref {') === 0, '.sr-ref has no scoped rule — it will inherit card type');
-const refRule = refCss.slice(0, refCss.indexOf('}') + 1);
-assert(/IBM Plex Mono/.test(refRule), 'the sub-line must be mono');
-assert(/font-size: 11\.5px/.test(refRule), 'TEN-204 2.4: the sub-line must be 11.5px');
-// TEN-376 Foundation renamed the 12a --label token to --text-label (tokens.css).
-assert(/color: var\(--text-label\)/.test(refRule), 'the sub-line colour must be the foundation label token (--text-label)');
-const cellV = css.slice(css.indexOf('[data-page="series"] .sr-cell-v {'));
-const cellVRule = cellV.slice(0, cellV.indexOf('}'));
-const sizeOf = (rule) => Number((/font-size: ([\d.]+)px/.exec(rule) || [])[1]);
-assert(sizeOf(refRule) < sizeOf(cellVRule),
-  'TEN-204 2.4: the sub-line must read SECONDARY to the strip values — it is ' +
-  sizeOf(refRule) + 'px against the strip\'s ' + sizeOf(cellVRule) + 'px');
-assert(/\[data-page="series"\] \.sr-ref--none \{[^}]*color: var\(--text-label\)/.test(css),
-  'item 5: the unavailable state must be the foundation label token --text-label (TEN-285 collapsed #4b5672 into label; TEN-376 renamed it)');
-// The sub-line must WRAP, never elide. Measured at 320-360px: a nowrap sub-line makes
-// the card's min-content 370px inside a 288px grid track, so the card breaks out of its
-// column; the alternative escape (min-width:0) trades that for an ellipsis, i.e. a
-// truncated reference — the corrupted-value failure the year-bearing date strip was
-// relaxed to avoid. Both regressions reintroduce themselves through this one property.
-assert(!/white-space:\s*nowrap/.test(refRule),
-  'the sub-line is nowrap again — at 320px it pushes the card past its grid track');
-assert(/white-space:\s*normal/.test(refRule), 'the sub-line must be allowed to wrap');
-assert(!/text-overflow:\s*ellipsis/.test(refRule),
-  'an ellipsis on the sub-line would print a TRUNCATED reference — never a partial value');
-ok('the sub-line ships mono / 11.5px / label, secondary to the strip, dash state label');
-
-// …and nothing later in the file may quietly outrank those three declarations. The
-// review's point: a `[data-page="series"] .sr-card .sr-ref { font-size: 9px }` added
-// below would satisfy every assertion above while shipping the wrong type. So the FULL
-// set of rules mentioning .sr-ref is pinned, not just the first one. (The browser probe
-// measures getComputedStyle and is the real instrument — this is the offline guard.)
-const cssCode = css.replace(/\/\*[\s\S]*?\*\//g, '');
-const refSelectors = (cssCode.match(/[^{}();]*\.sr-ref[^{}]*\{/g) || []).map((s) => s.replace(/\s*\{$/, '').trim());
-assert.deepStrictEqual(refSelectors.sort(), [
-  '[data-page="series"] .sr-ref',
-  '[data-page="series"] .sr-ref--none',
-].sort(), 'a new rule targets .sr-ref — it may outrank the item-5 type spec: ' + JSON.stringify(refSelectors));
-ok('no later CSS rule can outrank the sub-line\'s ruled type, size or colour');
-
-// ── it is actually ON the card, in the ruled position — by EXECUTING cardHtml ──
-// The previous version of this block matched `var refLine = referenceHtml(st);` and the
-// assembly expression as TEXT. The clean-context review defeated it in one line —
-// appending `refLine = '';` after the assignment left item 5 rendering nothing anywhere
-// while the harness still printed a tick. cardHtml is now run for real and the markup it
-// returns is what gets asserted. A helper nothing calls is the exact shape of the
-// undelivered item this project has shipped before.
-function liftCard(source) {
-  const start = source.indexOf('  function cardHtml(c, idx) {');
-  const end = source.indexOf('  // ─── header card');
-  assert(start > 0 && end > start, 'series.js cardHtml block not found — markers moved?');
-  const block = source.slice(start, end);
-  assert(/referenceHtml\(/.test(block), 'lifted the wrong block');
-  // eslint-disable-next-line no-new-func
-  return new Function('esc', 'cap', 'avatarHtml', 'claimOf', 'runLabel', 'valence', 'DIR_LABEL',
-    'startedOf', 'fmtShort', 'crossesYear', 'priorYear', 'fmtTime', 'famOf', 'FAM_BADGE', 'referenceHtml',
-    'proofSummary', 'isMatchResultFam', '_data',
-    block + '\n return cardHtml;');
-}
-// TEN-204 2.3 added the strip's third cell, so cardHtml closes over proofSummary(); the
-// 2026-09-15 pixel pass added isMatchResultFam(), which picks between the AVG PRICE cell and
-// a line/set family's empty track. Stubbed to the match-result shape, which is what this
-// streak is — the empty-track branch is painted and asserted in tools/test-series-dates.js.
-const mkCard = (refHtmlFn) => liftCard(src)(
-  esc, (s) => String(s), () => '<span class="sr-av-wrap"></span>', () => 'Won', (n) => n + ' in a row',
-  () => 'win', { win: 'Winning run' }, (st) => st.lastDate, (d) => d, () => false, () => false,
-  (t) => t, () => 'all', { all: 'All comps' }, refHtmlFn,
-  () => ({ label: 'Avg price', value: null }), () => true, ARTIFACT);
-const CARD_ST = { type: 'all', direction: 'win', count: 6, lastDate: '2026-09-12',
-  matches: [{ date: '2026-09-01' }], reference: { sinceYear: 2021, yearGaps: [], longest: 9, occurrences: 4 } };
-const CARD_C = { player: { name: 'X', rank: 5, upcoming: { day: 'today', time: '11:00', opponentName: 'Y' } }, streak: CARD_ST };
-const html = mkCard(referenceHtml)(CARD_C, 0);
-assert(/Best since 2021: 9 · 4th run of 6\+/.test(html),
-  'item 5: cardHtml does not put the sub-line on the card. Painted: ' + html.slice(0, 400));
-// …and in the ruled POSITION: after the title block, before the player row.
-const iTop = html.indexOf('sr-cardtop'), iRef = html.indexOf('sr-ref'), iProw = html.indexOf('sr-prow');
-assert(iTop >= 0 && iRef > iTop && iProw > iRef,
-  `item 5: the sub-line must sit between the title and the player row — got cardtop@${iTop} ref@${iRef} prow@${iProw}`);
-// Nothing may sit between them.
-const between = html.slice(html.indexOf('</div>', html.indexOf('sr-tag-dir')) + 6, iProw - '<div class="'.length);
-assert(!/<(div|span|article)/.test(between.replace(/<div class="sr-ref[^]*?<\/div>/, '')),
-  'something was inserted between the title and the sub-line, or between the sub-line and the player row: ' + between);
-ok('cardHtml really paints the sub-line, between the title and the player row');
-
-// The dash state reaches the card too — not just the helper in isolation.
-const dashHtml = mkCard(referenceHtml)({ player: CARD_C.player, streak: Object.assign({}, CARD_ST, { reference: undefined }) }, 0);
-assert(/class="sr-ref sr-ref--none">—</.test(dashHtml), 'a reference-less streak must paint the dashed sub-line on the CARD');
-assert(!/Best since|run of/.test(dashHtml), 'half a sub-line reached the card');
-ok('a reference-less streak paints the dash on the card itself');
 
 // ── the ENGINE half of item 5, executed ──────────────────────────────────────
 // The clean-context review defeated an earlier version of this file by hard-coding

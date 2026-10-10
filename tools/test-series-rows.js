@@ -215,7 +215,7 @@ function unjudgeable(predicate) {
 {
   const src = fs.readFileSync(path.join(ROOT, 'series.js'), 'utf8');
   const start = src.indexOf('  var SET_RE = ');
-  const end = src.indexOf('\n  // ─── item 5 · the run reference sub-line');
+  const end = src.indexOf('\n  // ─── families ──');
   assert(start > 0 && end > start, 'series.js row-builder block not found — markers moved?');
   const block = src.slice(start, end);
   assert(/function streakRows\(/.test(block) && /function proofSummary\(/.test(block),
@@ -223,11 +223,22 @@ function unjudgeable(predicate) {
 
   // famOf lives further down the file; supply the same mapping so the lifted block runs.
   // eslint-disable-next-line no-new-func
-  const lift = new Function('famOf', block + '; return { streakRows, proofSummary, proofOf, setsOf, PROOF_SPEC, ledgerOf, avgPriceOf, isMatchResultFam };');
+  const lift = new Function('famOf', block + '; return { streakRows, proofSummary, proofOf, setsOf, PROOF_SPEC, ledgerOf, avgPriceOf, isMatchResultFam, PX };');
   const famOf = (st) => (st.type === 'pattern' ? 'setout'
     : st.type === 'setpat' ? (st.firstSet ? 'setgames' : 'setout')
     : (st.family || st.type));
   const B = lift(famOf);
+  // TEN-427: the page prices rows from the site's one Database join (series.js priceBoard → PX), never from the
+  // artifact. The builder must ignore any price an artifact row carries…
+  eachStreak((p, st) => (st.matches || []).forEach((m) => {
+    if (m.price != null) assert.strictEqual(B.streakRows({ type: st.type, family: st.family, matches: [m] })[0].price, null,
+      `TEN-427 — streakRows() read a price off the artifact row (${p.name}); prices come only from the page join.`);
+  }));
+  // …so to exercise the single-source arithmetic on real numbers, the join's answer is stood in by an older
+  // artifact's own prices (book Pinnacle → 'P', bet365 → 'B', the join's letters) when it carries them.
+  eachStreak((p, st) => (st.matches || []).forEach((m) => {
+    if (typeof m.price === 'number' && typeof m.oppPrice === 'number') B.PX.set(m, { price: m.price, oppPrice: m.oppPrice, book: m.book === 'Pinnacle' ? 'P' : 'B' });
+  }));
 
   let checked = 0, withProof = 0, withPrice = 0, withLedger = 0, sawPricedLine = 0;
   eachStreak((p, st) => {
@@ -389,7 +400,7 @@ function unjudgeable(predicate) {
         `feed or join failure, not a quiet day.`);
     }
   } else {
-    console.log('test-series-rows: artifact predates the Phase 3 odds pass — price checks not applicable.');
+    console.log('test-series-rows: artifact carries no prices (pre-Phase 3, or TEN-427: the page joins them) — price checks run in test-ten427-series.mjs.');
   }
   ok(`C · ${checked} streaks: card cell recomputed from the modal's own rows (${withProof} with a proof figure, ${withPrice} with AVG PRICE, ${withLedger} ledgers)`);
 }
@@ -424,54 +435,17 @@ function unjudgeable(predicate) {
   ok('E · money sums in exact cents, order-independent (witness: the 1.415 card)');
 }
 
-// ── D · NOTHING ON THIS PAGE MAY BE CALLED A CLOSING PRICE ──────────────────
-// Founder A4: "Label prices 'pre-match' everywhere, not 'closing', unless the row comes
-// from a source confirmed as a true close." No such source exists for this board —
-// api-tennis get_odds carries no time field of any kind, so every price here is a snapshot
-// of unknown age. The word is therefore banned from the page's user-visible strings, and
-// the artifact must keep saying it has no timestamps.
-//
-// Scanned against STRING LITERALS ONLY, so the explanatory comments (which must be free to
-// use the word to explain why it is wrong) cannot trip it and, more importantly, cannot
-// mask it: a comment mentioning "closing" is not what a reader sees.
+// ── D · the prices are the site's ONE closing-price join (TEN-427, SUPERSEDES TEN-204 A4's "never call it closing") ──
+// TEN-204 A4 banned the word "closing" because the old prices were api-tennis get_odds snapshots with no timestamp.
+// TEN-427 Data 5 replaces them with the Database join's closing prices (Pinnacle closing, else Bet365 closing —
+// database.md), so the page says "closing" and the generator no longer writes snapshot prices at all.
 {
   const src = fs.readFileSync(path.join(ROOT, 'series.js'), 'utf8');
-  const stripped = src
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .split('\n').map(l => l.replace(/(^|[^:'"])\/\/.*$/, '$1')).join('\n');
-  const literals = stripped.match(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g) || [];
-  // "Close" the verb is legitimate and everywhere — the modal's ✕ button, its aria-label
-  // and its class name. What is banned is the CLAIM: calling a price a close. So the
-  // pattern is "closing" in any form, plus "close" only when it sits next to a price word.
-  const CLOSE_CLAIM = /\bclosing\b|\bclos(e|ed)\s+(price|odds|line|quote)|\b(price|odds|line|quote)s?\s+at\s+close\b/i;
-  const offenders = literals.filter(s => CLOSE_CLAIM.test(s));
-  assert.deepStrictEqual(offenders, [],
-    `TEN-204 A4 — series.js ships a user-visible string calling a price a close: ${offenders.join(' | ')}. ` +
-    `No source timestamps these prices, so none of them is a closing price.`);
-
-  // NEGATIVE CONTROL. The filter above must actually be able to see a literal — if the
-  // comment-stripper or the literal regex silently matched nothing, the assertion would
-  // pass on any file at all.
-  assert(literals.length > 50,
-    `TEN-204 A4 — only ${literals.length} string literals extracted from series.js; the scanner ` +
-    `is not reading the file and the ban is vacuous.`);
-  const planted = ["'closing price'", "'the closing odds'", "'Closing'", "'closed price'"]
-    .filter(s => CLOSE_CLAIM.test(s));
-  assert.strictEqual(planted.length, 4, 'the close-claim detector no longer detects a close claim');
-  // …and must NOT fire on the legitimate verb, or the gate becomes noise and gets loosened.
-  const benign = ["'Close'", "'.sr-ov-close'", "'close the panel'"].filter(s => CLOSE_CLAIM.test(s));
-  assert.deepStrictEqual(benign, [], 'the close-claim detector is firing on the verb "close"');
-
-  // And the artifact must not quietly start claiming a timestamp it does not have.
-  if (doc.odds) {
-    assert(/^none\b/.test(String(doc.odds.timestamps || '')),
-      `TEN-204 A4 — series.json now claims odds timestamps ("${doc.odds.timestamps}"). If a real ` +
-      `timestamped source has been wired, this gate and the "pre-match" labels must be revisited ` +
-      `deliberately, not drift.`);
-    assert.strictEqual(doc.odds.label, 'pre-match',
-      `TEN-204 A4 — series.json labels its odds "${doc.odds.label}" rather than "pre-match".`);
-  }
-  ok(`D · no user-visible string calls a price a close (${literals.length} literals scanned)`);
+  assert(/trDbJoinPx\(/.test(src) && /sfDbJoinLoad\(/.test(src), 'TEN-427 — series.js no longer prices rows on the Database join');
+  assert(!/\bm\.price\b|\bm\.oppPrice\b/.test(src.replace(/\/\/.*$/gm, '')), 'TEN-427 — series.js reads a price off the artifact row');
+  const eng = fs.readFileSync(path.join(ROOT, 'build-series.js'), 'utf8');
+  assert(!/function attachOdds\(|method=get_odds/.test(eng), 'TEN-427 — build-series.js runs the get_odds snapshot pass again');
+  ok("D · prices are the page's Database join (closing); the artifact carries no snapshot prices");
 }
 
 // ── the proof figure's ROUNDING TIE-BREAK, pinned ───────────────────────────

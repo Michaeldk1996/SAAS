@@ -1,471 +1,207 @@
-/* series.css — TEN-168 Series page, presentation rebuilt from the Claude Design
- * export (TEN-194, founder rulings 2026-09-12).
- *
- * The export is authoritative for appearance: every colour, size, radius, gap and
- * grid track below is taken verbatim from `Series.dc.html` / its README, NOT from
- * the app's theme tokens. That is deliberate — this page is the first surface on
- * the export's palette, so the literal hex values are the spec, and harmonising
- * them back toward --panel/--border would silently undo the rebuild.
- *
- * The live pipeline stays authoritative for content: every value rendered here
- * comes from series.json. Nothing from the export's demo data ships.
- *
- * Scoped entirely under [data-page="series"] so it can never leak into another
- * surface (the modal is a body-level layer, so its rules are scoped by .sr-ov*).
- * A separate file (not inline) so JS/CSS-only changes deploy on push via the
- * pipeline allowlist.
- *
- * Founder rulings encoded here (TEN-194 gate c9971442, 2026-09-12):
- *   q1 → pool lives in the MODAL only; it is not a card cell.
- *   q2 → "follow the export": no green/red anywhere. Direction is a WORD in the
- *        tag row. The 3px valence bar, the coloured count and the swatch legend
- *        are gone; do not reintroduce a sign colour on this page.
- *   q3 → tier, opponent archetype, Grand-Slam marker and best-of badge are OFF
- *        the card (best-of stays inside the claim text, where the export keeps it).
- *   q4 → page frame widened to the export's max-width:1360px; padding:30px 40px 70px,
- *        grid track minmax(400px,1fr).
- *   q7 → the already-played Continued/Broken/Not-evaluable chip is kept, as a chip
- *        in the tag row, and the aggregate bar is kept.
+/* series.css — the Series page, founder step 14 (TEN-427, 2026-10-10, night). Rules: .claude/rules/series.md.
+ * Geometry = Series.dc.html (card 2b, filters 1c, pop-up header "Count tile") measured on OFFICIAL VERSION 1;
+ * colours = the step-1 tokens only (tokens.css; the file's legacy hexes are read through the legacy map).
+ * Header = the shared 35b .sfh (app-shell.md) — this file owns no header rule.
+ * Scoped under [data-page="series"]; the pop-up is a body-level layer scoped by .sr-ov*.
  */
 
-/* ── page frame (export §"Page frame") ── */
-/* Export page background is var(--page), two hex off the app's --bg. Scoped to
-   the tab so it reverts the moment another page is shown — the body is never touched. */
-[data-page="series"] { background: transparent; min-height: 100vh; }   /* transparent: the root's --page-bg (page + glow) shows through, as on OFFICIAL VERSION 1 (founder S6) */
+[data-page="series"] { background: transparent; min-height: 100vh; }
 [data-page="series"] .sr-wrap {
-  max-width: 1360px;
-  margin: 0 auto;
-  padding: 30px 40px 70px;
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
+  max-width: 1360px; margin: 0 auto; padding: 30px 40px 70px;
+  font-family: var(--font-words); color: var(--text);
 }
-/* The shell's static title block is superseded by the JS-rendered header card,
-   which carries the live STREAKS / PLAYERS / LONGEST RUN / UPDATED figures. */
-[data-page="series"] .sr-titlerow { display: none; }
 [data-page="series"] #seriesGrid { display: flex; flex-direction: column; gap: 22px; }
+[data-page="series"] .sr-dash { color: var(--text-label); }
+[data-page="series"] .sr-note { color: var(--text-label); font-size: 13px; margin: 0; }
 
-/* ── 1 · header card = the shared 35b page header (.sfh in the dashboard stylesheet, TEN-403) ── */
-
-/* ── 2 · filters ── */
-[data-page="series"] .sr-filters { display: flex; flex-direction: column; gap: 12px; }
-[data-page="series"] .sr-frow { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-[data-page="series"] .sr-fgroup { display: inline-flex; align-items: center; gap: 10px; }
-[data-page="series"] .sr-flabel {
-  font-family:var(--font-words);
-  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
+/* ── 2 · filters (1c) ── */
+[data-page="series"] .sr-filters, [data-page="series"] .sr-cards, [data-page="series"] .sr-empty { line-height: normal; }
+[data-page="series"] .sr-filters { display: flex; flex-direction: column; gap: 14px; }
+/* Type = the hairline-underlined tab row: active white 700 + a white 2px underline, counts mono grey */
+[data-page="series"] .sr-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+[data-page="series"] .sr-tab {
+  display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px 11px; margin-bottom: -1px;
+  font-family: var(--font-words); font-size: 13.5px; font-weight: 600; color: var(--text-label);
+  background: transparent; border: 0; border-bottom: 2px solid transparent; cursor: pointer;
+  transition: color .14s ease, border-color .14s ease;
 }
+[data-page="series"] .sr-tab:hover { color: var(--text); }
+[data-page="series"] .sr-tab.active { color: var(--text); font-weight: 700; border-bottom-color: var(--text); }
+[data-page="series"] .sr-tab-n { font-family: var(--font-nums); font-size: 11px; font-weight: 400; color: var(--text-label); }
+[data-page="series"] .sr-frow { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+[data-page="series"] .sr-fright { margin-left: auto; display: inline-flex; align-items: center; gap: 16px; flex: none; }
+/* Segmented controls = the site Darker track (inner, 3px padding, radius 10; selected = selected tone + 16% edge) */
 [data-page="series"] .sr-seg {
-  display: inline-flex; gap: 3px;
-  background: var(--card); border: 1px solid var(--edge-6); border-radius: 9px; padding: 2px;
+  display: inline-flex; gap: 3px; flex: none;
+  background: var(--inner); border-radius: 10px; padding: 3px;
 }
 [data-page="series"] .sr-segbtn {
-  padding: 7px 14px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
-  color: var(--text-label); background: transparent; border: 0; cursor: pointer;
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+  padding: 5px 10px; border-radius: 7px; font-family: var(--font-words); font-size: 12.5px; font-weight: 600;
+  color: var(--text-label); background: transparent; border: 1px solid transparent; cursor: pointer; white-space: nowrap;
   transition: background .14s ease, color .14s ease, border-color .14s ease;
 }
-[data-page="series"] .sr-segbtn:hover { color: var(--text-label); }
-[data-page="series"] .sr-segbtn.active { background: var(--inner); color: var(--text); font-weight: 700; }
-[data-page="series"] .sr-segbtn:focus-visible { outline: 2px solid var(--edge-16); outline-offset: 1px; }
-
-/* PIXEL PASS §3.5 · the design's "Show already-played" checkbox is RESTORED, and `Played`
-   comes back off the DAY control. This reverses TEN-194 item 8 (founder 2026-09-12), which
-   had folded the checkbox into DAY so that every control on the page was a segmented one —
-   the handoff is the spec and it wins the conflict. Only the CONTROL changes: the filter
-   still runs through the same isUnderway-backed predicate, which is on the DO-NOT-TOUCH
-   list, so the played view is reached by a different widget and by no different logic. */
+[data-page="series"] .sr-segbtn:hover { color: var(--text); }
+[data-page="series"] .sr-segbtn.active { background: var(--selected); border-color: var(--edge-16); color: var(--text); font-weight: 700; }
+[data-page="series"] .sr-segbtn:focus-visible, [data-page="series"] .sr-tab:focus-visible { outline: 1px solid var(--edge-16); outline-offset: 1px; }
+/* Checkbox: unchecked = 18% white edge; checked = white fill with a dark tick */
 [data-page="series"] .sr-toggle {
-  display: inline-flex; align-items: center; gap: 9px;
-  font-size: 12.5px; color: var(--text-label); cursor: pointer; user-select: none;
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+  display: inline-flex; align-items: center; gap: 9px; position: relative;
+  font-size: 12.5px; color: var(--text); cursor: pointer; user-select: none; white-space: nowrap;
 }
 [data-page="series"] .sr-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
 [data-page="series"] .sr-box {
-  width: 15px; height: 15px; flex: none; border-radius: 4px;
-  background: var(--inner); border: 1px solid transparent;
+  width: 15px; height: 15px; flex: none; border-radius: 4px; box-sizing: border-box;
+  background: transparent; border: 1px solid color-mix(in srgb, var(--text) 18%, transparent);
   display: inline-flex; align-items: center; justify-content: center;
   transition: background .14s ease, border-color .14s ease;
 }
 [data-page="series"] .sr-box::after {
   content: ''; width: 7px; height: 4px; margin-top: -2px;
-  border-left: 2px solid var(--text); border-bottom: 2px solid var(--text);
+  border-left: 2px solid var(--page); border-bottom: 2px solid var(--page);
   transform: rotate(-45deg); opacity: 0;
 }
-[data-page="series"] .sr-toggle input:checked + .sr-box {
-  background: var(--inner); border-color: var(--edge-10);
-}
+[data-page="series"] .sr-toggle input:checked + .sr-box { background: var(--text); border-color: var(--text); }
 [data-page="series"] .sr-toggle input:checked + .sr-box::after { opacity: 1; }
-[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 2px solid var(--edge-16); outline-offset: 2px; }
+[data-page="series"] .sr-toggle input:focus-visible + .sr-box { outline: 1px solid var(--edge-16); outline-offset: 2px; }
 
-/* ── already-played continued/broken aggregate (kept: ruling q7) ── */
-[data-page="series"] .sr-outsum {
-  font-size: 12.5px; color: var(--text-label);
-  background: var(--card); border: 1px solid var(--edge-6); border-radius: 9px;
-  padding: 10px 14px;
-}
-[data-page="series"] .sr-outsum-k {
-  font-family:var(--font-words);
-  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label); margin-right: 8px;
-}
-[data-page="series"] .sr-outsum b { color: var(--text); font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-weight: 700; }
-
-/* ── 3 · card grid ── */
+/* ── 3 · card grid (2b) — card tone, no outline, radius 16; hover = 16% white edge ── */
 [data-page="series"] .sr-cards {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  align-items: start; gap: 14px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); align-items: stretch; gap: 14px;
 }
 [data-page="series"] .sr-card {
-  background: var(--card); border: 1px solid transparent; box-shadow: var(--top-light); border-radius: 14px;
-  padding: 18px 20px; display: flex; flex-direction: column; gap: 12px;
-  transition: border-color 120ms ease, background 120ms ease;
+  background: var(--card); box-shadow: var(--top-light); border: 1px solid transparent; border-radius: 16px;
+  padding: 18px 20px 6px; display: flex; flex-direction: column; gap: 14px; min-width: 0;
+  transition: border-color 120ms ease;
 }
-[data-page="series"] .sr-card.sr-has-detail { cursor: pointer; border-color: var(--edge-7); box-shadow: none; }   /* clickable tile (README §5.10) */
-[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--edge-16); background: var(--tile-hover); }
-[data-page="series"] .sr-card.sr-has-detail:hover .sr-hist { color: var(--text); }
-[data-page="series"] .sr-card:focus-visible { outline: 2px solid var(--edge-16); outline-offset: 2px; }
-
-/* 3.1 title row — claim + run length left, direction word right (item 7).
-   NAMED .sr-cardtop, deliberately NOT .sr-titlerow: that class is already owned by the
-   shell's static heading block, which line 47 hides on purpose so a cached older shell
-   cannot double the page heading. A `display:flex` rule on the same class at the same
-   specificity, later in this file, would have silently un-hidden it — caught by the
-   clean-context review, measured going 0px -> 80px.
-   align-items:flex-start so a two-line claim keeps the tag pinned to the FIRST line,
-   opposite the title, rather than floating to the block's centre. No height change:
-   the tag is 11px/3px-padded inside an 18px/1.3 line box. */
-[data-page="series"] .sr-cardtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-[data-page="series"] .sr-claim { font-size: 18px; font-weight: 800; line-height: 1.3; text-wrap: pretty; color: var(--text); min-width: 0; }
-[data-page="series"] .sr-cardtop .sr-tag-dir { flex: none; margin-top: 2px; }
-[data-page="series"] .sr-run { color: var(--text); }
-
-/* 3.1b reference sub-line (item 5, founder 2026-09-12): "Mono, var(--text-label), same size as
-   the STARTED / LAST values" — i.e. .sr-cell-v's 14px. margin-top:-6px pulls it out of
-   the card's 12px flex gap to a 6px sit under the title, so it reads as a sub-line of
-   the claim rather than as a fourth block. It is the ONLY element between the title and
-   the player row, so nothing else shifts. The unavailable state is var(--text-label), the item's
-   own stated dash colour, and it is a full-width block either way so a dash can never
-   be mistaken for a truncated value.
-
-   IT WRAPS, IT DOES NOT ELIDE — and that is a measured decision, not a default. The
-   first build had `white-space: nowrap; text-overflow: ellipsis`, copying the date
-   strip. Measured at 320-360px: the card is a GRID ITEM, so its automatic minimum is
-   min-content, and a nowrap sub-line pushed the whole card to 370px inside a 288px
-   track — the card broke out of its column and took the page with it. (The deployed
-   build measures 288/328px at the same widths, so this was ours.) The two escapes are
-   `min-width: 0` on the card, which trades the overflow for an ELLIPSIS — a corrupted
-   reference, the exact failure the year-bearing date strip was relaxed to avoid — or
-   letting the line wrap, which costs one line of height on a phone and keeps every
-   digit. Wrapping wins: a reference the reader can't finish reading is worse than a
-   reference on two lines.
-
-   TEN-204 2.4 drops it from 14px to 11.5px. At 14px it matched .sr-cell-v exactly, which put
-   it at the same visual weight as the STARTED/LAST figures and made the card read as having
-   two equally important number rows. The brief's ask — "secondary to the claim and the strip"
-   — is what 11.5px buys. Colour and the wrapping decision above are unchanged. */
-[data-page="series"] .sr-ref {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 11.5px; color: var(--text-label); margin-top: -6px;
-  white-space: normal; overflow-wrap: break-word;
+[data-page="series"] .sr-card.sr-has-detail { cursor: pointer; }
+[data-page="series"] .sr-card.sr-has-detail:hover { border-color: var(--edge-16); }
+[data-page="series"] .sr-card:focus-visible { outline: none; border-color: var(--edge-16); }
+[data-page="series"] .sr-chead { display: flex; align-items: center; gap: 12px; min-width: 0; }
+/* initials avatar (override): inner tone, 1px 10% edge, white 700 */
+[data-page="series"] .sr-ava {
+  width: 44px; height: 44px; flex: none; border-radius: 50%; box-sizing: border-box;
+  background: var(--inner); border: 1px solid var(--edge-10);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-words); font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--text);
 }
-[data-page="series"] .sr-ref--none { color: var(--text-label); }
-
-/* 3.2 player row — 20px avatar, inline with the name on the same baseline (item 4).
-   The wrap carries overflow:hidden for the circular crop, which makes it a scroll
-   container — so per CSS Box Alignment its baseline is SYNTHESIZED from the border box,
-   not taken from the monogram inside it. (An earlier comment here claimed the opposite;
-   the clean-context review was right.) That synthesized baseline lands the 20px circle
-   flush with the name's line box — measured avatar-top == name-top to 0.1px in Chrome.
-   The probe measures the PAINTED geometry rather than trusting the mechanism, so an
-   engine that synthesizes differently fails assertion D5 instead of shipping crooked. */
-/* PIXEL PASS §2.2 (founder OVERRIDE of the design's 24px) — the avatar is 34px. Everything
-   else about the circle is the design's: object-fit cover, var(--card) fallback, 1px border.
-
-   Two knock-ons the override forces, both stated by §2.2 itself:
-   · align-items goes baseline -> CENTRE. The 20px circle sat flush with the name's line box
-     because overflow:hidden makes it a scroll container, so its baseline is SYNTHESIZED from
-     the bottom border edge — at 34px that same mechanism drops the circle 14px below the
-     name. Centre is what "name + rank stay vertically centred with the larger avatar" means,
-     and it is measured (|Δcentre| <= 1px) rather than eyeballed.
-   · the row gap scales with the circle: 7px at 20px -> 12px at 34px (same 0.35 ratio,
-     rounded to the card's 12px rhythm). */
-[data-page="series"] .sr-prow { display: flex; align-items: center; gap: 12px; min-width: 0; }
-[data-page="series"] .sr-av-wrap {
-  position: relative; width: 34px; height: 34px; flex: none; border-radius: 50%; overflow: hidden;
-  background: var(--card); border: 1px solid var(--edge-6);
-  display: inline-flex; align-items: center; justify-content: center;
+[data-page="series"] .sr-who { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+[data-page="series"] .sr-nameline { font-size: 16px; font-weight: 800; color: var(--text); }
+[data-page="series"] .sr-prank { font-family: var(--font-nums); font-size: 12px; font-weight: 400; color: var(--text-label); }
+/* "Next" line = the reference's: one line, Hanken 12.5 soft grey, the time in the same face (founder round 3 item 2);
+   the event is dropped whole by fitNextLines when the line overflows, never cut inside */
+[data-page="series"] .sr-next { display: block; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12.5px; color: var(--text-soft); }
+[data-page="series"] .sr-next-k { font-weight: 700; color: var(--text-label); }
+[data-page="series"] .sr-crow { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 14px; align-items: center; }
+/* Count tile = inner tone, mono count white, caps "in a row" grey */
+[data-page="series"] .sr-tile {
+  background: var(--inner); border: 1px solid var(--edge-6); border-radius: 10px; padding: 10px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
 }
-[data-page="series"] .sr-av { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-[data-page="series"] .sr-mono { font-size: 12px; font-weight: 700; color: var(--text-label); letter-spacing: 0.02em; }
-[data-page="series"] .sr-pid { display: flex; align-items: baseline; gap: 7px; min-width: 0; font-size: 12.5px; color: var(--text-label); }
-[data-page="series"] .sr-pname { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-/* .sr-flag is card-dead after item 3 but still styles the History modal's flag. */
-[data-page="series"] .sr-flag { margin-right: 5px; }
-[data-page="series"] .sr-prank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--text-label); flex: none; }
-
-/* 3.3 tag row — carries the DIRECTION WORD (ruling q2) and, in the already-played
-   view, the Continued / Broken / Not-evaluable chip (ruling q7). No sign colour:
-   the word does the work, per the export's "no green or red on this page". */
-[data-page="series"] .sr-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-[data-page="series"] .sr-tag {
-  font-size: 11px; font-weight: 600; letter-spacing: 0.01em; padding: 3px 9px; border-radius: 99px;
-  border: 1px solid var(--edge-6); background: transparent; color: var(--text-label);
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+[data-page="series"] .sr-tile-n { font-family: var(--font-nums); font-size: 30px; font-weight: 800; line-height: 1; color: var(--text); }
+[data-page="series"] .sr-tile-k { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="series"] .sr-claimbox { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+[data-page="series"] .sr-claim { font-size: 16px; font-weight: 700; line-height: 1.3; color: var(--text); text-wrap: pretty; }
+[data-page="series"] .sr-claimsub { font-size: 12px; color: var(--text-label); }
+/* three ruled rows — 6% white hairline */
+[data-page="series"] .sr-rows { display: flex; flex-direction: column; margin-top: auto; }   /* equal-height cards: rows sit at the foot */
+[data-page="series"] .sr-row {
+  display: flex; justify-content: space-between; align-items: baseline; padding: 9px 0; border-top: 1px solid var(--edge-6);
 }
-[data-page="series"] .sr-tag-dir { color: var(--text-label); background: var(--inner); border-color: var(--edge-6); }
-[data-page="series"] .sr-tag-oc { color: var(--text-label); background: var(--inner); border-color: var(--edge-6); }
-[data-page="series"] .sr-tag-oc-na { color: var(--text-label); background: transparent; border-color: var(--edge-6); }
-[data-page="series"] .sr-played-res { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; color: var(--text-label); }
+[data-page="series"] .sr-row-k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+[data-page="series"] .sr-row-v { font-family: var(--font-nums); font-size: 13px; color: var(--text); min-height: 1em; }
+[data-page="series"] .sr-row-v--b { font-weight: 700; }
 
-/* 3.4 FOUR-column strip (PIXEL PASS §2.3): STARTED · LAST · AVG PRICE | [empty] · TYPE.
-   Pool stays modal-only (ruling q1).
-
-   TRACKS ARE THE SPEC'S "1fr 1fr 1fr 1.2fr", restored. TEN-204 2.3 had shipped
-   1.2fr on the first track: at that time the 3-up grid gave 345.3px of track space and
-   STARTED wanted 92.4px, so the even ratio ellipsised "28 Jul 2026" to "28 Jul 20…" on 22
-   of 22 cards. §2.3 of the pixel pass re-states the even ratio, so the override is reverted
-   and the outcome re-measured rather than assumed:
-     · at the 1300px compare width of §4.1 the grid is 2-up, the strip is 443px, the even
-       ratio gives STARTED 98.3px against an intrinsic 84px — clears it by 14px, nothing
-       clips. The spec ratio is correct at the width the spec asks to be compared at.
-     · from a 1544px viewport the grid goes 3-up, the strip falls to 358-375px and STARTED
-       gets 78-82px against that same 84px. That is the residual, measured and reported,
-       NOT silently re-overridden. The founder re-specified this number after seeing the
-       override; reverting it back a second time would be deciding for him. */
-[data-page="series"] .sr-strip {
-  display: grid; grid-template-columns: 1fr 1fr 1fr 1.2fr; gap: 10px;
-  padding-top: 12px; border-top: 1px solid var(--line);
-}
-/* §2.3 · "AVG PRICE (700, only bold value)". The modifier is emitted ONLY on the AVG PRICE
-   cell — line/set families render an empty track there and so can never carry it. */
-[data-page="series"] .sr-cell-v.sr-cell-pv { font-weight: 700; }
-[data-page="series"] .sr-cell { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-[data-page="series"] .sr-cell-k {
-  font-family:var(--font-words);
-  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
-}
-[data-page="series"] .sr-cell-v {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-[data-page="series"] .sr-cell-v.sr-cell-type {
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); font-size: 13px;
-}
-
-/* 3.5 footer row: next match · History → */
-[data-page="series"] .sr-foot {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding-top: 12px; border-top: 1px solid var(--line);
-  font-size: 11.5px; color: var(--text-label);
-}
-[data-page="series"] .sr-next { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-[data-page="series"] .sr-hist { flex: none; font-weight: 600; color: var(--text); transition: color .14s ease; }
-
-[data-page="series"] .sr-dash { color: var(--text-label); }
-
-/* ── empty states ── */
+/* ── empty state (card) ── */
 [data-page="series"] .sr-empty {
-  color: var(--text-label); font-size: 13.5px; line-height: 1.6; max-width: 640px; padding: 30px 0; margin: 0;
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif);
+  background: var(--card); box-shadow: var(--top-light); border-radius: 16px; padding: 28px 24px;
+  display: flex; align-items: baseline; gap: 12px; font-size: 13.5px; color: var(--text-soft);
 }
-
-/* ── 4 · footnote block ── */
-[data-page="series"] .sr-footnote {
-  display: flex; flex-direction: column; gap: 10px;
-  padding-top: 18px; border-top: 1px solid var(--line);
+[data-page="series"] .sr-clear {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  font-family: var(--font-words); font-size: 13.5px; font-weight: 600; color: var(--link);
 }
-[data-page="series"] .sr-fn-dir { font-size: 12.5px; color: var(--text-label); line-height: 1.6; max-width: 1130px; margin: 0; }
-[data-page="series"] .sr-fn-dir b { color: var(--text-label); font-weight: inherit; }
-[data-page="series"] .sr-stamp {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 11.5px; color: var(--text-label); line-height: 1.7; margin: 0;
-}
+[data-page="series"] .sr-clear:hover { text-decoration: underline; }
 
-/* footer honesty note (founder-approved 2026-09-07, retained) */
-[data-page="series"] .sr-footer { max-width: 1130px; }
-[data-page="series"] .sr-footer h3 { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: var(--text); margin: 0 0 10px; }
-[data-page="series"] .sr-footer p { font-size: 12.5px; line-height: 1.6; color: var(--text-label); margin: 0 0 11px; }
-[data-page="series"] .sr-footer b { color: var(--text-label); font-weight: 700; }
+/* ── 4 · footnote = the reference's: sentence 12.5 grey (direction words soft), rules line mono 11.5 ── */
+[data-page="series"] .sr-footnote { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+[data-page="series"] .sr-footnote p { margin: 0; max-width: 1130px; font-size: 12.5px; line-height: 1.6; color: var(--text-label); }
+[data-page="series"] .sr-footnote .sr-fn-w { color: var(--text-soft); }
+[data-page="series"] .sr-footnote .sr-fn-rules { max-width: none; font-family: var(--font-nums); font-size: 11.5px; line-height: 1.7; }
 
-/* ── 5 · history modal (export §5) ── */
+/* ── 5 · history pop-up: card + 10% edge, radius 16, the ticket's shadow, navy 62% scrim ── */
 .sr-ov-back {
-  position: fixed; inset: 0 0 0 var(--sf-side, 0px); z-index: 90;
-  background: var(--backdrop); 
+  position: fixed; inset: 0 0 0 var(--sf-side, 0px); z-index: 90; clip-path: inset(0);
+  background: color-mix(in srgb, var(--page) 62%, transparent); backdrop-filter: blur(3px);
   display: flex; align-items: center; justify-content: center; padding: 32px;
-  font-family: 'Hanken Grotesk', var(--mx-font-ui, sans-serif); color: var(--text);
+  font-family: var(--font-words); color: var(--text);
 }
 .sr-ov-back[hidden] { display: none; }
 body.sr-ov-open { overflow: hidden; }
 .sr-ov {
   width: 100%; max-width: 880px; max-height: 86vh;
-  background: var(--card); border: 1px solid var(--edge-6); border-radius: 20px;
-  
-  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--card); border: 1px solid var(--edge-10); border-radius: 16px;
+  box-shadow: 0 30px 80px color-mix(in srgb, var(--page) 55%, transparent);
+  display: flex; flex-direction: column; overflow: hidden; line-height: normal;
 }
 .sr-ov:focus { outline: none; }
-.sr-ov-head { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px 16px; flex: none; }
-.sr-ov-headl { min-width: 0; flex: 1; }
-.sr-ov-title { display: flex; align-items: baseline; gap: 9px; min-width: 0; font-size: 17px; font-weight: 700; color: var(--text); }
-.sr-ov-rank { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 13px; font-weight: 400; color: var(--text-label); }
-.sr-ov-sub { display: block; font-size: 13px; color: var(--text-label); margin-top: 7px; line-height: 1.5; }
-.sr-ov-sep { color: var(--text-label); }
-.sr-ov-pool { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); color: var(--text-label); }
+.sr-ov-head { display: flex; align-items: center; gap: 16px; padding: 20px 24px 16px; flex: none; }
+.sr-ov-tile {
+  flex: none; width: 58px; height: 58px; border-radius: 12px; background: var(--inner);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.sr-ov-tile-n { font-family: var(--font-nums); font-size: 24px; font-weight: 700; line-height: 1; color: var(--text); }
+.sr-ov-tile-k { font-size: 9px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); margin-top: 4px; }
+.sr-ov-headl { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 6px; }
+.sr-ov-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.sr-ov-name { font-size: 18px; font-weight: 800; color: var(--text); flex: none; }
+.sr-ov-line { font-size: 18px; font-weight: 600; color: var(--text-soft); overflow: hidden; text-overflow: ellipsis; }
+.sr-ov-sub { font-family: var(--font-nums); font-size: 12px; color: var(--text-label); }
+/* the site close button (Match analysis): 34px, radius 9, 1px hairline, grey ✕ */
 .sr-ov-close {
-  flex: none; width: 30px; height: 30px; border-radius: 50%;
-  background: var(--inner); border: 1px solid var(--edge-6);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; color: var(--text-label); cursor: pointer; line-height: 1;
+  flex: none; width: 34px; height: 34px; border-radius: 9px; box-sizing: border-box;
+  background: transparent; border: 1px solid var(--line); color: var(--text-label); padding: 0;
+  display: flex; align-items: center; justify-content: center; font-family: var(--font-words); font-size: 17px; line-height: 1; cursor: pointer;
 }
-.sr-ov-close:hover { color: var(--text); }
-/* scrollbar-gutter keeps the column header aligned with the rows it labels: the header
-   sits OUTSIDE this scroll pane, so on a platform with classic space-taking scrollbars
-   (Windows/Linux) a long run would narrow the rows' content box and not the header's,
-   and the four columns would drift apart. Reserving the gutter always removes that. */
-/* 8px, not 24px: the total line now sits below this pane and owns the panel's bottom
-   padding, so the old 24px would have opened a gap between the last row and the rule. */
-.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 24px 8px; }
-
-/* Scoped under .sr-ov — these are generic enough names that a bare global selector
-   would be a collision waiting to happen on another surface. */
-/* PIXEL PASS §1.1 · ONE grid for everything. The column header, every row and the total
-   line share this single template and gap, so every date sits under DATE and every price
-   under its own header, with no column able to shift between rows.
-
-   This REPLACES the two-shape geometry (.sr-m--result / .sr-m--line) that TEN-204 2.7
-   shipped. That pair gave the line families a PROOF track and pushed the price columns one
-   track right, so the two modal shapes did not line up with each other — and §1.1 is
-   explicit that there is one grid. §1.4 removes PROOF outright; §1.7 keeps the P&L TRACK on
-   every family (blank cells on line/set) precisely so the eight columns stay identical.
-   EVENT keeps the larger share because on a Challenger it carries names like
-   "Phan Thiet 3 (Vietnam) - Qualification" — now clipped to one line (§1.5), never wrapped. */
+.sr-ov-close:hover { color: var(--text); border-color: var(--edge-16); }
 .sr-ov .sr-mhead, .sr-ov .sr-mrow {
-  display: grid;
-  grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) 118px 54px 54px 64px;
-  gap: 0 18px;
+  display: grid; grid-template-columns: 14px 92px minmax(0,1.2fr) minmax(0,1fr) var(--sr-score, 118px) 54px 54px 64px; gap: 0 18px;
 }
-.sr-ov .sr-mhead { padding: 0 24px 10px; flex: none; }
-.sr-ov .sr-mhead span {
-  font-family:var(--font-words);
-  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
-}
-/* §1.2 · HOME / AWAY / P&L are right-aligned. SCORE is NOT — §1.5 makes it left-aligned,
-   which is also what keeps a 3-set score reading as one block under its header. */
-.sr-ov .sr-mhead .sr-mp1,
-.sr-ov .sr-mhead .sr-mp2,
-.sr-ov .sr-mhead .sr-mpl { text-align: right; }
-/* §1.5 · align-items:center, not baseline. With eight cells at four different font sizes a
-   baseline row hangs the 11px result letter off the 12.5px opponent's baseline; centre is
-   what the spec asks for and what makes the W/L letter sit level with the name beside it. */
-.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 1px solid var(--line); }
-.sr-ov .sr-mdate { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
-/* SINGLE LINE, ellipsis, never wraps (§1.5). nowrap + overflow:hidden are BOTH required for
-   text-overflow to do anything — `text-wrap: pretty` previously let it wrap to two lines,
-   which is what made rows in the Phan Thiet streak twice the height of their neighbours. */
-.sr-ov .sr-mtour {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 11.5px; color: var(--text-label); line-height: 1.45;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sr-ov .sr-mopp {
-  font-size: 12.5px; color: var(--text); line-height: 1.45;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sr-ov .sr-mscore { text-align: left; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
-/* Result letter. Sign colour is used in exactly ONE place on this page — here and, when
-   Phase 3 lands, the P&L column. The export is explicit that the cards carry direction as a
-   WORD, never a colour; do not let these two greens leak upward. */
-.sr-ov .sr-mrow .sr-mres { font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11px; font-weight: 700; }
-.sr-ov .sr-mres.sr-w { color: var(--pos); }
-.sr-ov .sr-mres.sr-l { color: var(--neg); }
-/* §1.3 · HOME bold / AWAY dim is what marks which side is his — the header names the column,
-   the weight split does the reading. HOME is always the player the panel is about.
-   (This restores the export's own HOME/AWAY wording. TEN-204 2.7 had renamed them
-   PLAYER/OPP under the original brief's "never HOME/AWAY"; §1.2 of the pixel pass reverses
-   that explicitly and the handoff wins, so the rename is undone rather than kept.) */
-.sr-ov .sr-mp1 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; font-weight: 700; color: var(--text); }
-.sr-ov .sr-mp2 { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); }
-.sr-ov .sr-mpl { text-align: right; font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace); font-size: 11.5px; color: var(--text-label); }
-/* Total line — shares the rows' left and right edges, below the scroll pane. */
+/* ledger head: caps Hanken 10.5/700/0.10em grey on a 6% rule */
+.sr-ov .sr-mhead { margin: 0 24px; padding: 0 0 10px; border-bottom: 1px solid var(--edge-6); flex: none; scrollbar-gutter: stable; }
+.sr-ov .sr-mhead span { font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); }
+.sr-ov .sr-mhead .sr-mp1, .sr-ov .sr-mhead .sr-mp2, .sr-ov .sr-mhead .sr-mpl { text-align: right; }
+.sr-ov-body { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 24px 8px; }
+.sr-ov .sr-mrow { align-items: center; padding: 9px 0; border-top: 1px solid var(--edge-6); }
+.sr-ov .sr-mrow:first-child { border-top: 0; }
+.sr-ov .sr-mres { font-family: var(--font-nums); font-size: 11px; font-weight: 700; }
+.sr-ov .sr-mres.sr-w, .sr-ov .sr-mpl .sr-w { color: var(--pos); }
+.sr-ov .sr-mres.sr-l, .sr-ov .sr-mpl .sr-l { color: var(--neg); }
+.sr-ov .sr-mrow .sr-mdate { font-family: var(--font-nums); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
+.sr-ov .sr-mrow .sr-mtour { font-size: 11.5px; color: var(--text-label); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* a player name in a match list is never truncated (CLAUDE.md non-negotiable): it wraps */
+.sr-ov .sr-mrow .sr-mopp { font-size: 12.5px; color: var(--text); overflow-wrap: anywhere; }
+.sr-ov .sr-mrow .sr-mscore { font-family: var(--font-nums); font-size: 11.5px; color: var(--text-label); white-space: nowrap; }
+.sr-ov .sr-mrow .sr-mp1 { text-align: right; font-family: var(--font-nums); font-size: 11.5px; font-weight: 700; color: var(--text); }
+.sr-ov .sr-mrow .sr-mp2 { text-align: right; font-family: var(--font-nums); font-size: 11.5px; color: var(--text-label); }
+.sr-ov .sr-mrow .sr-mpl { text-align: right; font-family: var(--font-nums); font-size: 11.5px; }
+.sr-ov .sr-dash { color: var(--text-label); font-weight: 400; }
+/* total line — shares the rows' edges, below the scroll pane */
 .sr-ov-foot { flex: none; padding: 0 24px 20px; }
-.sr-ov-total { display: flex; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 1px solid var(--line); }
-.sr-ov-total-k {
-  font-family:var(--font-words);
-  font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform: uppercase; color: var(--text-label);
-}
-/* §1.7 · the total line's right-hand group: "{n} PRICED" eyebrow, then the unit total at
-   mono 15px/700 and the yield at mono 15px/400, both sign-coloured. The whole group is
-   absent on a line/set family — those carry no ledger at all (§1.7). The total wraps so
-   the caveat always gets its own line: it is a condition of the founder's ruling to keep a
-   circular P&L, so it must never be the thing that gets elided on a narrow panel. */
-.sr-ov-total { flex-wrap: wrap; }
-.sr-ov-total-r { display: flex; align-items: baseline; gap: 10px; margin-left: auto; }
-.sr-ov-total-v {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 15px; font-weight: 700;
-}
-.sr-ov-total-y {
-  font-family: 'IBM Plex Mono', var(--mx-font-mono, monospace);
-  font-size: 15px; font-weight: 400;
-}
+.sr-ov-total { display: flex; flex-wrap: wrap; align-items: baseline; gap: 14px; padding-top: 11px; border-top: 1px solid var(--line); }
+.sr-ov-total-k { font-size: 10.5px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-label); white-space: nowrap; }
+.sr-ov-total-r { display: flex; align-items: baseline; gap: 14px; margin-left: auto; }
+.sr-ov-total-v { font-family: var(--font-nums); font-size: 15px; font-weight: 700; white-space: nowrap; }
+.sr-ov-total-y { font-family: var(--font-nums); font-size: 15px; font-weight: 400; white-space: nowrap; }
 .sr-ov-total-v.sr-w, .sr-ov-total-y.sr-w { color: var(--pos); }
 .sr-ov-total-v.sr-l, .sr-ov-total-y.sr-l { color: var(--neg); }
-.sr-ov-total-v.sr-dash { color: var(--text-label); font-weight: 700; }
-.sr-ov-caveat {
-  flex-basis: 100%; margin-top: 9px; font-size: 11.5px; line-height: 1.5; color: var(--text-label); max-width: 62ch;
-}
-/* §1.2 removed the stacked "MATCH ODDS · PRE-MATCH" band outright — the .sr-mgroup /
-   .sr-mgrouplab rules that positioned it over the two price tracks are deleted with it,
-   rather than left to rot. §1.8 makes the total line the ONLY place "pre-match" appears.
-   §1.4 likewise deletes .sr-mproof. git has both if they are ever wanted back. */
-.sr-ov .sr-dash { color: var(--text-label); }
+.sr-ov-caveat { flex-basis: 100%; font-size: 11px; line-height: 1.5; color: var(--text-label); }
 
 @media (max-width: 640px) {
   [data-page="series"] .sr-wrap { padding: 20px 16px 50px; }
   [data-page="series"] .sr-cards { grid-template-columns: 1fr; }
-  /* TEN-194 `last-year` ruling: a cross-year card prints "25 Dec ’25" — 84px of
-     14px mono, which the 1.2fr LAST cell cannot hold below ~364px. Measured, it
-     elided to "12 Sep ’…": a corrupted date, worse than the year-less form it
-     replaced. Only YEAR-BEARING strips fall to two rows (STARTED · LAST above,
-     TYPE spanning beneath); every same-year card keeps the export's exact
-     three-column geometry. Scoped to match the base rule's specificity (0,3,0
-     vs 0,2,0) — under-scoping here is what nearly killed the mobile modal. */
-  /* TEN-204 2.3: STARTED now always carries a four-digit year, so EVERY card is a
-     year-bearing card and the strip is four cells wide. Four mono cells do not fit 320px,
-     so below 640px it becomes a 2x2 block — same cells, same order, no ellipsis and no
-     corrupted date. The --yr modifier is still emitted by series.js and is kept as the
-     hook, but it is now true of every card rather than of the rare cross-year one. */
-  [data-page="series"] .sr-strip,
-  [data-page="series"] .sr-strip.sr-strip--yr { grid-template-columns: 1fr 1fr; row-gap: 12px; }
-  [data-page="series"] .sr-strip.sr-strip--yr .sr-cell:nth-child(3) { grid-column: auto; }
+  [data-page="series"] .sr-fright { margin-left: 0; }
   .sr-ov-back { padding: 16px; }
-  /* must carry the same .sr-ov scope as the base rules above, or these lose on
-     specificity (0,1,0 vs 0,2,0) and the narrow layout silently never applies.
-     The price columns are the first thing to go on a phone — EVENT and SCORE are what make
-     a row readable — so the grid collapses to five tracks and the trailing cells are hidden
-     rather than squeezed to an ellipsis. Now ONE selector pair, matching §1.1's one grid. */
   .sr-ov .sr-mhead, .sr-ov .sr-mrow { grid-template-columns: 14px 72px minmax(0,1fr) 1fr auto; gap: 0 10px; }
-  .sr-ov .sr-mp1, .sr-ov .sr-mp2, .sr-ov .sr-mpl,
-  .sr-ov .sr-mhead .sr-mp1, .sr-ov .sr-mhead .sr-mp2,
-  .sr-ov .sr-mhead .sr-mpl { display: none; }
+  .sr-ov .sr-mp1, .sr-ov .sr-mp2, .sr-ov .sr-mpl { display: none; }
   .sr-ov-total-r { margin-left: 0; flex-basis: 100%; }
-  .sr-ov .sr-mhead { padding: 0 16px 10px; }
-  .sr-ov-body { padding: 0 16px 8px; }
-  .sr-ov-foot { padding: 0 16px 16px; }
-  .sr-ov-head { padding: 16px 16px 12px; }
 }
-
-/* PIXEL PASS §3.2 · "The live items are cramped — restore full padding."
-   TEN-204 2.6 had shaved horizontal padding and gaps from 1300px up (segbtn 7px 14px ->
-   7px 6px, seg gap 3px -> 2px, seg padding 2px -> 1px, fgroup gap 10px -> 6px, frow gap
-   14px -> 10px) so that row 2's sixteen segment buttons fitted on one line inside our
-   sidebar-reduced content column. Those two media queries are DELETED: §3.1-§3.3 state the
-   padding and gaps as absolutes, and §3.4 says the rows "wrap only below design width",
-   which makes wrapping the sanctioned behaviour rather than the thing to engineer around.
-
-   Measured consequence, reported not hidden: at the design's own canvas (a ~1294px content
-   column) row 2 holds on one line. Inside our shell the content column is
-   `viewport − sidebar − 80px`, so row 2 fits from roughly a 1373px viewport up and wraps
-   below it — including at the 1300px width §4.1 compares at. That is the design's stated
-   wrap, not a regression, and it is the price of the full padding §3.2 asks for. */

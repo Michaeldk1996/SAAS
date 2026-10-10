@@ -83,11 +83,7 @@ ALLOWED = {
     'build-series.js': {
         "time: String(fx.event_time || ''),",                               # displayed clock
     },
-    'series.js': {
-        # TEN-204 §1.4 note on the sort order. Explicitly says the offset is NOT
-        # applied, which is the opposite of using it as a start time.
-        "// TIMEZONE, measured not assumed (TEN-204 §1.4): api-tennis `event_time` is UTC+2 —",
-    },
+    # series.js: TEN-427 deleted its event_time sort note — Soonest sorts the board's start instant (cardStartMs).
     'bsp-consult-dashboard.html': {
         "// Records without a startTs carry `event_time` in the feed's ACCOUNT zone, which",
         "// (event_time is the match START only) — with nothing real to show it added no",

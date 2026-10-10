@@ -136,7 +136,10 @@ function checkOneSentence(dash, js) {
   if (all.some(s => !s)) return 'a header sentence could not be read: ' + JSON.stringify(all);
   // Exception (founder, TEN-408 fix 4, 2026-10-09): Playing Styles carries the reference's full two-sentence line (128
   // characters; it fits one line at 1512).
-  const LONG_OK = ['Row beats column: the figure is the edge vs an even 50% split, the raw win rate sits beneath. Hover to isolate a row and column.'];
+  // Exception (founder ticket TEN-427 step 14, 2026-10-10): Series carries the ticket's sentence verbatim (128
+  // characters; it fits one line at 1512 beside the four stats).
+  const LONG_OK = ['Row beats column: the figure is the edge vs an even 50% split, the raw win rate sits beneath. Hover to isolate a row and column.',
+    'Current streaks for players scheduled today and tomorrow, each with the pool it was drawn from and the date of its latest match.'];
   for (const s of all) if ((s.length > 120 && !LONG_OK.includes(s)) || (s.match(/[.!?](\s|$)/g) || []).length > 2) return 'header copy is longer than one line: ' + s;
   return null;
 }
@@ -196,7 +199,7 @@ test('CONTROL: each check goes red on its mutant', () => {
   assert.ok(red(() => checkH2H(m(DASH, '  #h2hRoot .h2h-head{ min-width:0; box-shadow:', '  #h2hRoot .h2h-title{ font-size:29px; }\n  #h2hRoot .h2h-head{ min-width:0; padding:22px 26px; box-shadow:'))), 'h2h 29px / 22x26 back');
   assert.ok(red(() => checkH2H(m(DASH, '  #h2hRoot .h2h-head{ min-width:0; box-shadow:var(--top-light), 0 12px 28px color-mix', '  #h2hRoot .h2h-head{ min-width:0; box-shadow:var(--top-light); --x:color-mix'))), 'h2h shadow gone');
   // one sentence
-  assert.ok(red(() => checkOneSentence(DASH, { ...JS, series: m(JS.series, "'Current streaks for players scheduled today and tomorrow.'", "'Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions.'") })), 'the old paragraph');
+  assert.ok(red(() => checkOneSentence(DASH, { ...JS, series: m(JS.series, "'Current streaks for players scheduled today and tomorrow, each with the pool it was drawn from and the date of its latest match.'", "'Current streaks for players scheduled today and tomorrow — runs of wins or losses against a playing style, on a surface, straight across all competitions.'") })), 'the old paragraph');
   // live column
   assert.ok(red(() => checkLive(m(DASH, '<span class="sfh__dot" aria-hidden="true"></span><span class="mx-clock" title="${escapeHtml(detail)}">', '<span class="mx-clock" title="${escapeHtml(detail)}">'))), 'no dot');
   assert.ok(red(() => checkLive(m(DASH, "      ds.style.display = 'none';\n      ds.classList.add('settled');", "      ds.style.display = '';\n      ds.classList.add('settled');"))), 'Completed live column');

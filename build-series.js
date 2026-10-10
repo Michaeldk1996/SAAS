@@ -24,7 +24,8 @@
  *             Slams").
  *   minPool = conditional types (style / surface / pattern) pool >= 8;
  *             all-competitions has NO extra floor (the run is its own pool).
- *   retire  = SKIP — a Retired / Walk Over result does not count and does not
+ *   retire  = (SUPERSEDED by TEN-427, 2026-10-10: retirements COUNT, walkovers do not — see recordFor)
+ *             was: SKIP — a Retired / Walk Over result does not count and does not
  *             break a streak: it is excluded from the sequence entirely.
  *   #1 vs-style scope = TOUR ONLY. Challenger is unavailable for this type
  *             (its taxonomy is a 2018-2024 archive that misses the live field).
@@ -134,8 +135,7 @@ const FIRST_SET_LINE = 9.5;
 // (was: one at a time + a fixed 150 ms sleep). Results land in slots and are
 // PROCESSED serially in the original player order, so series.json, the outcomes
 // ledger and the log lines are byte-identical to the serial build. Override with
-// SERIES_CONCURRENCY (1 = the old serial fetch order). The get_odds pass
-// (attachOdds) is NOT pooled — it stays serial and untouched.
+// SERIES_CONCURRENCY (1 = the old serial fetch order).
 const CONCURRENCY = Math.max(1, Math.floor(Number(process.env.SERIES_CONCURRENCY || 8)) || 8);
 const MAX_PLAYERS = process.env.SERIES_MAX_PLAYERS ? Number(process.env.SERIES_MAX_PLAYERS) : Infinity;
 
@@ -369,11 +369,17 @@ function scoreLineFor(fx, me) {
 }
 
 // One completed, countable, in-tier match reduced to a streak record. Returns
-// null when the match is not countable (wrong tier, not Finished, no winner, or
-// a Retired/Walk Over that must be SKIPPED per the ruling).
+// null when the match is not countable (wrong tier, not Finished / Retired, no winner, or
+// a Walk Over).
+//
+// TEN-427 (founder step 14, 2026-10-10) SUPERSEDES the TEN-168 "retire = SKIP" ruling: a match counts the way the ATP
+// rule of steps 8 and 13 counts it — RETIREMENTS COUNT (the player the feed credits with the win wins it), WALKOVERS
+// DO NOT. A Retired fixture counts only when it carries a played game (a score line); one stopped before a game is a
+// walkover in all but name. A retirement's unfinished set keeps it out of every games line and set shape (cleanGames /
+// setShapeOk below), so it enters the match-result families and the decided-set outcomes only.
 function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   if (tierOf(fx) !== tier) return null;
-  if (fx.event_status !== 'Finished') return null;   // Retired/Walk Over => skip
+  if (fx.event_status !== 'Finished' && fx.event_status !== 'Retired') return null;   // Walk Over (and anything unfinished) => skip
   const me = sideOf(fx, playerKey);
   if (!me) return null;
   const won = matchWinner(fx, me);
@@ -431,7 +437,11 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   // calibration, moving the published line for every genuine Bo5 match.
   // `bestOf = null` is what keeps it out of all three — cleanGames, the
   // per-format pools, and the format-relevance gate all key off it.
-  if (altFormat) bestOf = null;
+  // A retirement is never complete: the winner's set count says nothing about the format (a Slam "6-3 6-2 ret" is a
+  // best-of-5 with two sets played), so it carries no best-of and stays out of Total games, Handicap, every set
+  // shape and the line calibration (series.md). It still counts for won / lost and for a set that was completed.
+  const complete = fx.event_status !== 'Retired';
+  if (altFormat || !complete) bestOf = null;
   else if (winnerSets === 2 && totalDecided <= 3) bestOf = 3;
   else if (winnerSets === 3 && totalDecided <= 5) bestOf = 5;
 
@@ -459,6 +469,7 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   // it "7-6(5)". Played sets in order; the whole line dashes (null) when scores[]
   // carries no games — never a guess.
   const scoreLine = scoreLineFor(fx, me);
+  if (fx.event_status === 'Retired' && !scoreLine) return null;   // retired before a game: not a match played
 
   // Opponent name (always — the clickable detail panel needs it) and archetype
   // (Tour only; unmatched => null / unclassified).
@@ -471,10 +482,7 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   return {
     date: d,
     eventKey: String(fx.event_key || ''),
-    // TEN-204 Phase 3 · which side of api-tennis' Home/Away market this player is.
-    // get_odds keys its books under Home/Away, and Home is ALWAYS event_first_player,
-    // so the player's own price is unreadable without this. Carried on the row rather
-    // than re-derived later, because the fixture object is not in scope by then.
+    // Which side of api-tennis' Home/Away pair this player is (Home is ALWAYS event_first_player).
     side: me === 'first' ? 'Home' : 'Away',
     won,
     // TEN-244: emitted ONLY when set, so the row discloses WHY its games fields
@@ -493,6 +501,7 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
     straightResult,
     wentDistance,
     wonASet,
+    complete,
     oppArch,
     isSlam: isSlam(fx),
     tournament: String(fx.tournament_name || ''),
@@ -546,9 +555,13 @@ function tailStateRun(seq, stateFn, emitStates) {
   return { state: target, count, pool: dom.length, last: dom[dom.length - 1].r, members: dom.slice(dom.length - count).map(x => x.r) };
 }
 
+// The instant the 45-day recency cap is measured at: null = the build (NOW); the as-of-start pass (TEN-427 round 2
+// fix 1, asOfStartStreaks below) sets it to the next match's start for the length of one synchronous pass.
+let RECENCY_AT_MS = null;
 function ageDaysOf(dateStr) {
   const d = new Date(dateStr + 'T00:00:00Z');
-  return Math.floor((NOW.getTime() - d.getTime()) / DAY_MS);
+  const at = RECENCY_AT_MS != null ? RECENCY_AT_MS : NOW.getTime();
+  return Math.floor((at - d.getTime()) / DAY_MS);
 }
 
 // Apply the recency rule: age <= 45d, OR the most-recent match was a Grand Slam.
@@ -595,10 +608,8 @@ function mkStreak(base, run, pool, poolFloor, minLen) {
     surface: r.surface || null,
     score: r.score || null,
     won: r.won,
-    // TEN-204 Phase 3 · the join key and market side for the odds pass below. Prices are
-    // NOT attached here: attachOdds() runs once over the finished board so the whole run
-    // costs one get_odds call per distinct DATE (78 on a real board) instead of one per
-    // row (809). price / oppPrice / book are written in by that pass.
+    // The feed's event key (the page joins the board card by it) and the api-tennis Home/Away side. Prices are not
+    // attached here: the page reads the site's one Database join (TEN-427).
     eventKey: r.eventKey || null,
     side: r.side || null,
   }));
@@ -1018,112 +1029,6 @@ function streaksFor(recs, tier) {
 //   surface : only if the upcoming match is on that surface.
 //   style   : only if the upcoming opponent is classified as that EXACT archetype.
 //             Opponent unclassified (oppArch null) → the streak does not render.
-// ─── TEN-204 Phase 3 · MATCH-ODDS PASS ───────────────────────────────────────
-// Founder ruling 2026-09-15 (gate b64c7673, quoted): "Use Pinnacle for what's
-// possible and fill it with bet365 for what's missing."
-//
-// This SUPERSEDES the A2.2 rule "one bookmaker per ledger — never mix books inside
-// one streak's P&L", which was his own earlier instruction. Because it supersedes it
-// rather than satisfying it, the mixing is made VISIBLE rather than silent: every row
-// carries the `book` that priced it, the modal prints it, and a ledger drawn from two
-// books says so on its total line. Measured on the 809-row board of 2026-09-15:
-// Pinnacle alone prices 83.4%, bet365 alone 84.9%, the fill 88.9% (+44 rows), and
-// Pinnacle runs a systematic +2.99% richer than bet365 on the 643 rows both price —
-// so a filled row is a genuinely cheaper price, not a like-for-like substitute.
-//
-// SOURCE + HONESTY CONSTRAINTS:
-//   · api-tennis get_odds carries NO timestamps anywhere in the payload. These are
-//     therefore PRE-MATCH SNAPSHOTS and must never be labelled "closing" (founder A4).
-//   · Match winner only. No line market is priced here — a price under a games or
-//     handicap claim would be an invention, so line/set families get no odds at all.
-//   · A missing price is null => a dash. Never 0, never a nearby line, never implied.
-const ODDS_BOOK_ORDER = ['Pncl', 'bet365'];   // ruling order: Pinnacle first, bet365 fills
-const ODDS_BOOK_LABEL = { Pncl: 'Pinnacle', bet365: 'bet365' };
-
-async function fetchOddsForDate(date) {
-  const url = `${API_TENNIS_BASE}?method=get_odds&APIkey=${API_TENNIS_KEY}&date_start=${date}&date_stop=${date}`;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data && data.result && typeof data.result === 'object') return data.result;
-      return null;                       // a well-formed empty day is not an error
-    } catch (_) {
-      await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
-    }
-  }
-  return null;                           // transient failure -> rows dash, never guess
-}
-
-// Walks every emitted row, fetches one get_odds page per distinct date, and writes
-// price / oppPrice / book onto the row. Returns a census for meta.
-// A streak's family, using the SAME legacy mapping the front-end's famOf() applies, so
-// "which families may carry odds" cannot answer differently on the two sides.
-function oddsFamilyOf(st) {
-  if (st.type === 'pattern') return 'setout';
-  if (st.type === 'setpat') return st.firstSet ? 'setgames' : 'setout';
-  return st.family || st.type;
-}
-const ODDS_MATCH_RESULT_FAMS = new Set(['all', 'surface', 'style']);
-
-async function attachOdds(players) {
-  // EVERY family is priced, including line and set families. Founder A1, 2026-09-15:
-  // "All families: show PLAYER / OPP match odds per row. Column group header MATCH ODDS."
-  // That ruling is later than, and supersedes, item 2.7's "no price columns" for line
-  // families — 2.7 was written before he had seen the built modal.
-  //
-  // The rule it does NOT relax is the substitution ban, and the two are easy to confuse:
-  //   · A MATCH-WINNER price, labelled "MATCH ODDS", shown beside a total-games run is a
-  //     different market plainly named. That is what A1 asks for.
-  //   · A match-winner price presented AS the price of the games line is the invention he
-  //     banned. Nothing here does that: the price never reaches the line family's CARD
-  //     cell (founder B3), never feeds a P&L (founder A3), and sits under a header that
-  //     names the market it belongs to.
-  const rows = [];
-  for (const p of players) for (const st of p.streaks) for (const m of st.matches) rows.push(m);
-
-  const dates = [...new Set(rows.map(m => m.date).filter(Boolean))].sort();
-  const byEvent = new Map();
-  let calls = 0, failedDates = 0;
-  for (const d of dates) {
-    const result = await fetchOddsForDate(d);
-    calls++;
-    if (!result) { failedDates++; continue; }
-    for (const [ek, markets] of Object.entries(result)) byEvent.set(String(ek), markets);
-    await new Promise(r => setTimeout(r, 120));
-  }
-
-  // `rows` counts PRICEABLE rows (match-result families only), not the whole board —
-  // quoting a coverage % against every row on the board would understate it by counting
-  // rows we deliberately never price.
-  let boardRows = 0;
-  for (const p of players) for (const st of p.streaks) boardRows += st.matches.length;
-  const census = {
-    boardRows, priceableRows: rows.length, rows: rows.length,
-    priced: 0, byBook: {}, noEventKey: 0, noMarket: 0, calls, failedDates,
-  };
-  for (const m of rows) {
-    m.price = null; m.oppPrice = null; m.book = null;
-    if (!m.eventKey || !m.side) { census.noEventKey++; continue; }
-    const markets = byEvent.get(String(m.eventKey));
-    const ha = markets && markets['Home/Away'];
-    if (!ha || !ha.Home || !ha.Away) { census.noMarket++; continue; }
-    const mine = m.side;                          // 'Home' | 'Away'
-    const theirs = m.side === 'Home' ? 'Away' : 'Home';
-    for (const book of ODDS_BOOK_ORDER) {
-      const a = parseFloat(ha[mine] && ha[mine][book]);
-      const b = parseFloat(ha[theirs] && ha[theirs][book]);
-      // Both sides must come from the SAME book, or the pair is not a market.
-      if (!(a > 1) || !(b > 1)) continue;
-      m.price = a; m.oppPrice = b; m.book = ODDS_BOOK_LABEL[book] || book;
-      census.priced++;
-      census.byBook[m.book] = (census.byBook[m.book] || 0) + 1;
-      break;
-    }
-  }
-  return census;
-}
-
 function isRelevant(st, ctx) {
   switch (st.type) {
     case 'all':
@@ -1143,6 +1048,42 @@ function isRelevant(st, ctx) {
     default:
       return false;
   }
+}
+
+// ── AS OF THE NEXT MATCH'S START (TEN-427 round 2 fix 1, founder 2026-10-11) ─────────────────────────────────
+// "With Show already-played on, the card must show the streak as it stood at the start of that match." series.json is
+// rebuilt after a slate match is played, so the runs above already hold it: one it continued is a match too long, one
+// it BROKE has vanished. For a slate match that has started or finished the player's runs are therefore computed a
+// second time from his history cut strictly before that match — the fixture itself (event key) and everything that
+// started at or after it go; a same-day fixture stays only when both carry a start time and its start is earlier —
+// with every rule the live set uses (floors, pools, the 75-day break, families, relevance to that match, one card per
+// family, the run reference) and the 45-day recency measured at the match's start. Emitted as players[].asOfStart.
+function slateStartMs(ctx) { return berlinWallMs(String(ctx.date || ''), String(ctx.time || '')); }
+function startedAtBuild(ctx, nowMs) {
+  if (ctx.played) return true;
+  const s = slateStartMs(ctx);
+  return Number.isFinite(s) && s <= nowMs;
+}
+function beforeSlateStart(fx, ctx) {
+  if (ctx.eventKey && String(fx.event_key || '') === String(ctx.eventKey)) return false;   // the match itself
+  const d = String(fx.event_date || ''), day = String(ctx.date || '');
+  if (d !== day) return d < day;
+  const a = berlinWallMs(d, String(fx.event_time || '')), s = slateStartMs(ctx);
+  return Number.isFinite(a) && Number.isFinite(s) && a < s;
+}
+function asOfStartStreaks(fixtures, pk, tier, ctx, surfaceMap, styleMap) {
+  const s = slateStartMs(ctx);
+  const atMs = Number.isFinite(s) ? s : Date.parse(String(ctx.date || '') + 'T00:00:00Z');
+  if (!Number.isFinite(atMs)) return null;
+  const recs = orderedRecords((fixtures || []).filter(fx => beforeSlateStart(fx, ctx)), pk, tier, surfaceMap, styleMap, tier === 'tour');
+  if (!recs.length) return [];
+  let relevant;
+  const prev = RECENCY_AT_MS;
+  RECENCY_AT_MS = atMs;
+  try { relevant = streaksFor(recs, tier).filter(st => isRelevant(st, ctx)); } finally { RECENCY_AT_MS = prev; }
+  const out = collapseByFamily(relevant);
+  for (const st of out) st.reference = streakReference(st, recs);
+  return out.sort((a, b) => b.count - a.count);
 }
 
 async function main() {
@@ -1221,6 +1162,7 @@ async function main() {
   let players = [];
   let done = 0, failed = 0, playersWithStreak = 0, totalStreaks = 0;
   let refOk = 0, refDash = 0;   // item 5: streaks that carry a reference vs dash it
+  let asOfStartCards = 0;       // round 2 fix 1: cards in the as-of-start sets
   // reporting accumulators (founder 2026-09-07 "report after building"): per-type
   // and per-subtype card counts, plus the default-view count (view floor applied,
   // already-played hidden). The view floor is per-type: vs-style 3, everything
@@ -1279,7 +1221,11 @@ async function main() {
       const relevant = streaksFor(recs, tier).filter(st => isRelevant(st, ctx));
       if (dumpLines) for (const st of relevant) { rawSub[st.subtype || st.type] = (rawSub[st.subtype || st.type] || 0) + 1; }
       const streaks = collapseByFamily(relevant);
-      if (!streaks.length) continue;
+      // fix 1 (round 2): the as-of-start set for a started / finished slate match (a player whose run that match broke
+      // has no live streak left, so he ships on this set alone).
+      const pre = startedAtBuild(ctx, Date.now()) ? asOfStartStreaks(fixtures, pk, tier, ctx, surfaceMap, styleMap) : null;
+      if (pre) asOfStartCards += pre.length;
+      if (!streaks.length && !(pre && pre.length)) continue;
       // item 5 (founder 2026-09-12): give every surfaced run its reference — the
       // longest run of its own condition in this player's history window, and how
       // many runs reached the current length. Computed only for the cards that
@@ -1334,6 +1280,7 @@ async function main() {
         totalMatches: recs.length,          // in-tier countable pool behind streaks
         upcoming: ctx,
         streaks: streaks.sort((a, b) => b.count - a.count),
+        ...(pre ? { asOfStart: pre } : {}),
       });
       playersWithStreak++;
       totalStreaks += streaks.length;
@@ -1349,14 +1296,8 @@ async function main() {
     if (done % 25 === 0) console.error(`build-series: ${done}/${limit.length} players scanned, ${totalStreaks} streaks so far`);
   }
 
-  players.sort((a, b) => b.streaks[0].count - a.streaks[0].count);
-
-  // TEN-204 Phase 3 · attach match-winner prices (Pinnacle first, bet365 fill).
-  // Runs AFTER the board is final so it only prices rows that actually ship.
-  const oddsCensus = await attachOdds(players);
-  console.error(`build-series: odds ${oddsCensus.priced}/${oddsCensus.rows} rows priced ` +
-    `(${Object.entries(oddsCensus.byBook).map(([b, n]) => `${b} ${n}`).join(', ') || 'none'}) ` +
-    `via ${oddsCensus.calls} get_odds calls, ${oddsCensus.failedDates} date(s) failed`);
+  const topCount = p => (p.streaks[0] || (p.asOfStart || [])[0] || { count: 0 }).count;
+  players.sort((a, b) => topCount(b) - topCount(a));
 
   // fix #3: accumulated hit-rate per family from the whole ledger (all days). Excluded
   // (held=null) rows are counted separately and kept OUT of the continued/broken rate.
@@ -1393,7 +1334,7 @@ async function main() {
       minPoolConditional: MIN_POOL_CONDITIONAL,
       allCompetitionsPoolFloor: null,
       allCompetitionsPool: 'full-in-tier-history',   // not the run length
-      retirements: 'skip',
+      retirements: 'count (walkovers out) — TEN-427',
       styleScope: 'tour-only',
       neverBlendBestOf: true,
       lines: {
@@ -1451,24 +1392,18 @@ async function main() {
       matchScoped: ['surface', 'style'],
       upcomingBestOf: 'grand-slam main draw = 5, else 3 (challenger & slam-qualifying = 3)',
       carriesMatches: true,   // each streak lists its run matches for the detail panel
+      // TEN-427 round 2 fix 1. The page reads this key as "this build emits the as-of-start set" (else it trims).
+      asOfStart: 'players[].asOfStart (present when the slate match had started or finished at build time) = the runs from the history strictly before that match, every rule above applied, 45-day recency measured at its start; Show already-played shows these in place of players[].streaks',
     },
     slate: { window: { from: SLATE_START, to: SLATE_STOP }, today: TODAY_STR, tomorrow: TOMORROW_STR },
     // fix #3: accumulated CONTINUED/BROKEN hit-rate per family across the whole ledger.
     // The front-end renders TODAY's slice from the played cards in view; this carries the
     // running record for our own read of which patterns hold up over weeks.
     outcomes: { accumulated: accum, ledgerSize: ledgerRows.length, ledgerUpdatedAt: generatedAt },
-    // TEN-204 Phase 3 · what the odds pass actually found, so the page never has to
-    // guess and a coverage collapse is visible in the artifact rather than as silent
-    // dashes. `timestamps: none` is the reason nothing may be called a close.
-    odds: {
-      market: 'match winner (api-tennis get_odds, Home/Away)',
-      bookOrder: ODDS_BOOK_ORDER.map(b => ODDS_BOOK_LABEL[b] || b),
-      policy: 'founder ruling 2026-09-15: Pinnacle where available, bet365 fills the gaps. Rows carry the book that priced them; a ledger may therefore mix books and says so.',
-      label: 'pre-match',
-      timestamps: 'none — api-tennis get_odds carries no time field; these are snapshots, never closing prices',
-      lineMarkets: 'not priced: no source offers a timestamped close on a Challenger games/handicap/first-set line, so line and set families carry a PROOF figure and no odds',
-      census: oddsCensus,
-    },
+    // TEN-427 (founder step 14): ledger prices are the site's ONE price join, read on the page (series.js →
+    // trDbJoinPx: database-yield.json via DatabaseTab.priceRows() → H2HPage.priceJoin, Pinnacle closing, else Bet365
+    // closing). The api-tennis get_odds snapshot pass (TEN-204 Phase 3, one call per run date) is gone: nothing reads it.
+    prices: 'page join: Database rows (Pinnacle closing, else Bet365 closing), see .claude/rules/series.md',
     meta,
     players,
   };
@@ -1498,6 +1433,7 @@ async function main() {
     // refDash > 0 means the enumeration failed its self-check somewhere — worth a look,
     // never a fabricated number on the card.
     referenceOk: refOk, referenceDash: refDash,
+    asOfStartCards,
     // TEN-204 2.1: where each card's rank came from. `none` is the only honest dash.
     // A run where `profiles + standings` collapses toward 0 is the regression this
     // ticket fixed coming back, and it is visible here rather than only on the board.
@@ -1540,5 +1476,6 @@ if (require.main === module) {
     loadSurfaceMap, loadStyleMap, MAX_GAP_DAYS, MIN_LEN, VIEW_FLOOR_DEFAULT,
     streakReference, HISTORY_WINDOW_YEARS,
     slateDayOf,
+    asOfStartStreaks, beforeSlateStart, startedAtBuild, streaksFor,
   };
 }

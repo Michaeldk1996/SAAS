@@ -1,24 +1,23 @@
-// series.js — TEN-168 Series page front-end.
+// series.js — the Series page (TEN-168 engine, TEN-204 ledger; founder step 14 redesign TEN-427, 2026-10-10, night).
 //
-// Renders the current-streak cards for players scheduled today/tomorrow from
-// series.json (built offline by build-series.js). A streak is a backward-looking
-// artifact, so every card carries the two things the founder made non-negotiable:
-// the POOL the run was drawn from and the DATE + age of its most-recent match. A
-// streak that can't show both is never emitted by the engine and never rendered
-// here.
+// Renders the current-streak cards for players on the Today's Matches slate (Today + Tomorrow) from series.json
+// (built by build-series.js on every pipeline run). Rules: .claude/rules/series.md. Reference = OFFICIAL VERSION 1.html
+// → Series; design file Series.dc.html (card 2b, filters 1c, pop-up header "Count tile"); its raw hexes are legacy.
 //
-// This shares the Trading Report's foundations so a later merge is wiring, not a
-// rewrite: the SAME photo chain (page globals photoCandidatesFor ->
-// resolveProfilePhotoUrl -> avatarChainNext, ATP alias first), the SAME tier
-// separation (tour / chal, tier visible on every card, never blended), and the
-// SAME "missing data is a dash, never a zero" discipline.
+// SOURCES (all read-only; nothing on this page is generated or seeded):
+//   • streaks   ← series.json players[].streaks (every row, score and date is an api-tennis match); a started /
+//                 finished next match → players[].asOfStart (the runs as they stood at its start, fix 1).
+//   • slate     ← the Today's Matches day rule (matchDayBucket by date, the member's calendar day): a player's next
+//                 match is his Today's Matches card when the board carries it (matches.json, by event key), else the
+//                 series fixture itself (Challenger: the board carries ATP only). Today or Tomorrow, nothing else.
+//   • next line ← that card's time (cardFmtStart, stennisfy.tz) · canonical event (sfEventName, dropped whole
+//                 when the line does not fit) · "vs " + the opponent's shared display name (newsPlayerName).
+//   • prices    ← the site's ONE price join (Database / Head to Head / Player Profile): database-yield.json rows via
+//                 DatabaseTab.priceRows() → H2HPage.priceJoin (trDbJoinPx), Pinnacle closing, else Bet365 closing,
+//                 retirements settled on the official ATP result. A row the join does not hold is "—".
+//   • Updated   ← series.json generatedAt, HH:MM in stennisfy.tz (else the browser zone). Never the clock.
 //
-// Guard: window.FEATURE_SERIES must be truthy. Deploying with the flag OFF (or
-// ?series=0 / localStorage stennisfy.flags.series=0) changes nothing live.
-//
-// Detail panel score line: series.json carries the per-set games line (e.g.
-// "6-4 7-5 6-4"), player POV — the actual games behind a total/handicap cover,
-// not the set tally. Rendered verbatim; a dash when scores[] carried no games.
+// Guard: window.FEATURE_SERIES must be truthy.
 
 (function () {
   'use strict';
@@ -26,113 +25,78 @@
   if (!window.FEATURE_SERIES) return;
 
   var DATA_URL = './series.json';
+  var MATCHES_URL = './matches.json';
 
-  // ─── small local helpers (kept module-local, not page globals) ───────────────
+  // ─── small local helpers ─────────────────────────────────────────────────────
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
   function cap(s) { s = String(s || ''); return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+  var DASH = '<span class="sr-dash">—</span>';
 
-  // Country full-name -> ISO2 -> regional-indicator flag. Ported verbatim from
-  // trading-report.js so both surfaces read the identical flag from the identical
-  // source (player-profiles country string). An unmapped country -> no flag, never
-  // a wrong one.
-  var NAME2ISO = {
-    'Argentina':'AR','Australia':'AU','Austria':'AT','Belarus':'BY','Belgium':'BE',
-    'Bolivia':'BO','Bosnia and Herzegovina':'BA','Brazil':'BR','Bulgaria':'BG',
-    'Canada':'CA','Chile':'CL','China':'CN','Chinese Taipei':'TW','Colombia':'CO',
-    'Croatia':'HR','Cyprus':'CY','Czechia':'CZ','Czech Republic':'CZ','Denmark':'DK',
-    'Dominican Republic':'DO','Ecuador':'EC','Egypt':'EG','Estonia':'EE','Finland':'FI',
-    'France':'FR','Georgia':'GE','Germany':'DE','Great Britain':'GB','United Kingdom':'GB',
-    'Greece':'GR','Hong Kong':'HK','Hungary':'HU','Iceland':'IS','India':'IN','Indonesia':'ID',
-    'Iran':'IR','Ireland':'IE','Israel':'IL','Italy':'IT','Japan':'JP','Jordan':'JO',
-    'Kazakhstan':'KZ','Korea':'KR','South Korea':'KR','Kosovo':'XK','Kuwait':'KW',
-    'Latvia':'LV','Lebanon':'LB','Lithuania':'LT','Luxembourg':'LU','Mexico':'MX',
-    'Moldova':'MD','Monaco':'MC','Montenegro':'ME','Morocco':'MA','Netherlands':'NL',
-    'New Zealand':'NZ','North Macedonia':'MK','Norway':'NO','Paraguay':'PY','Peru':'PE',
-    'Philippines':'PH','Poland':'PL','Portugal':'PT','Qatar':'QA','Romania':'RO',
-    'Russia':'RU','Saudi Arabia':'SA','Serbia':'RS','Slovakia':'SK','Slovenia':'SI',
-    'South Africa':'ZA','Spain':'ES','Sweden':'SE','Switzerland':'CH','Taiwan':'TW',
-    'Thailand':'TH','Tunisia':'TN','Turkey':'TR','Türkiye':'TR','Ukraine':'UA',
-    'United States':'US','USA':'US','Uruguay':'UY','Uzbekistan':'UZ','Venezuela':'VE',
-    'Zimbabwe':'ZW',
-  };
-  function emojiFlag(country) {
-    var iso = country && NAME2ISO[country];
-    if (!iso || iso.length !== 2) return '';
-    return iso.toUpperCase().replace(/./g, function (c) {
-      return String.fromCodePoint(0x1F1E6 - 65 + c.charCodeAt(0));
-    });
+  // The shared display-name formatter (Player Profile / H2H / Live / Trading Report name of the key), else the feed's.
+  function displayName(key, fallback) {
+    if (typeof newsPlayerName === 'function') { try { return newsPlayerName(key, fallback) || fallback || ''; } catch (e) {} }
+    return fallback || '';
   }
-
-  function initials(name) {
-    if (typeof playerInitials === 'function') { try { return playerInitials(name); } catch (e) {} }
-    var s = String(name || '').trim();
-    if (!s) return '?';
-    var parts = s.replace(/[.,]/g, ' ').split(/\s+/).filter(Boolean);
-    if (!parts.length) return '?';
-    if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
-    return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+  // The canonical event-name table ("Shanghai Masters"), as Today's Matches prints it.
+  function eventLabel(raw) {
+    if (!raw) return '';
+    if (typeof sfEventName === 'function') { try { return sfEventName(raw) || String(raw); } catch (e) {} }
+    return String(raw);
   }
-
-  // The ONE photo chain, reused from the profile pages exactly as the Trading
-  // Report does: ATP official alias -> Wikimedia override -> api-tennis logo ->
-  // monogram. Guarded so a missing page global degrades to the monogram.
-  function avatarHtml(row) {
-    var mono = '<span class="sr-mono">' + esc(initials(row.name)) + '</span>';
-    var cands = [];
-    try {
-      var fb = (typeof resolveProfilePhotoUrl === 'function') ? resolveProfilePhotoUrl(row.key, row.name) : null;
-      if (typeof photoCandidatesFor === 'function') {
-        cands = photoCandidatesFor(row.key, fb);
-      } else {
-        if (typeof atpPhotoFor === 'function')      cands.push(atpPhotoFor(row.key));
-        if (typeof photoOverrideFor === 'function') cands.push(photoOverrideFor(row.key));
-        if (fb)                                     cands.push(fb);
-      }
-    } catch (e) { /* fall through to monogram */ }
-    cands = (cands || []).filter(Boolean);
-    if (!cands.length) return '<span class="sr-av-wrap">' + mono + '</span>';
-    var src = cands[0];
-    var rest = cands.slice(1).join('|');
-    return '<span class="sr-av-wrap">' + mono +
-           '<img class="sr-av" src="' + esc(src) + '" alt="" loading="lazy" referrerpolicy="no-referrer" ' +
-           'data-fb="' + esc(rest) + '" ' +
-           'onerror="if(!(typeof avatarChainNext===\'function\'&&avatarChainNext(this)))this.style.display=\'none\'"></span>';
+  // Initials avatars (override): the shared fhIni, as on Live, Model, Trading Report and the shell.
+  function initialsOf(name) {
+    if (typeof fhIni === 'function') { try { return fhIni(name); } catch (e) {} }
+    var w = String(name || '').replace(/\./g, ' ').trim().split(/\s+/).filter(Boolean);
+    if (!w.length) return '?';
+    if (w.length === 1) return w[0].slice(0, 2).toUpperCase();
+    return (w[0][0] + w[w.length - 1][0]).toUpperCase();
   }
+  // HH:MM in the member's zone (stennisfy.tz), else the browser zone.
+  function zoneClock(ms) {
+    if (ms == null || !isFinite(ms)) return null;
+    var tz = (typeof newsTz === 'function' && newsTz()) || undefined;
+    var f = function (z) {
+      return new Intl.DateTimeFormat('en-GB', { timeZone: z, hour: '2-digit', minute: '2-digit', hour12: false })
+        .format(new Date(ms)).replace(/^24/, '00');
+    };
+    try { return f(tz); } catch (e) { return f(undefined); }
+  }
+  // A start instant the way Today's Matches reads it (cardStartMs: startTs, else the api-tennis Berlin wall clock).
+  function startMsOf(m) {
+    if (!m) return NaN;
+    if (typeof cardStartMs === 'function') { try { return cardStartMs(m); } catch (e) {} }
+    return NaN;
+  }
+  function startClockOf(m) {
+    if (typeof cardFmtStart === 'function') { try { var t = cardFmtStart(m, false); if (t && t !== '—') return t; } catch (e) {} }
+    return null;
+  }
+  // Score line with en dashes ("6–4 7–6(5)"); the store writes hyphens.
+  function scoreTxt(s) { return String(s || '').replace(/(\d)-(\d)/g, '$1–$2'); }
 
   // ─── plain-English streak description ────────────────────────────────────────
-  // The export states the claim WITHOUT its length, then prints the length beside
-  // it in accent blue ("Under 23.5 total games (best-of-3)" + "12 in a row"). So
-  // the claim builder below is count-free and runLabel() supplies the blue half.
-  // The modal restores the long form as "{claim} — {n} matches running" (export §5).
-  var ARCH_LABEL = {}; // archetype labels ship already human-readable in the taxonomy
+  // The reference's claim templates (Series.dc.html, founder round 2 fix 2): the match-result families read
+  // "Won 8 straight" · "Won 6 straight on Clay" · "Lost 3 straight vs All Court Elite"; the line and set families
+  // keep their own sentence ("Under 23.5 total games (best-of-3)", "Won the opening set", "First set under 9.5 games",
+  // "Won by more than 1.5 games — covered −1.5", its "(best-of-3)" on the pop-up only — ruling handicap-bestof (a)).
+  // N = the card's count (the as-of-start count, fix 1).
+  var ARCH_LABEL = {}; // archetype labels ship already human-readable (playing-styles.json archetype_label)
   function streakVerb(dir) { return dir === 'win' ? 'Won' : 'Lost'; }
-  function running(n) { return n + ' matches running'; }
+  function straightOf(st) { return streakVerb(st.direction) + ' ' + esc(String(st.count)) + ' straight'; }
   function boTxt(st) { return st.bestOf ? ('best-of-' + esc(String(st.bestOf))) : ''; }
   function bo(st) { return st.bestOf ? (' (' + boTxt(st) + ')') : ''; }
-  function runLabel(n) { return n === 1 ? '1 match' : (n + ' in a row'); }
-  // Count-free claim. Every branch of the former describe() survives verbatim minus
-  // its embedded count, so no streak family loses its wording. Best-of stays inside
-  // the claim (never-blend rule) — ruling q3 dropped the separate best-of BADGE, not
-  // the format qualifier that makes a games line mean one thing.
-  //
-  // Item 6 (founder 2026-09-12): the all-competitions title drops "across all
-  // competitions" — the TYPE cell two rows down already reads "All comps", so the
-  // long form repeated it. "Won on Hard" keeps its surface (not in TYPE) and
-  // "Won vs {archetype}" keeps its styles (they ARE the information). The MODAL is
-  // explicitly out of scope for that ruling, so it keeps the long form via
-  // claimLong() below — the card shortens, the History header does not.
   function claimOf(st) {
     switch (st.type) {
       case 'all':
-        return streakVerb(st.direction);
+        return straightOf(st);
       case 'surface':
-        return streakVerb(st.direction) + ' on ' + esc(cap(st.subtype));
+        return straightOf(st) + ' on ' + esc(cap(st.subtype));
       case 'style':
-        return streakVerb(st.direction) + ' vs ' + esc(ARCH_LABEL[st.subtype] || st.subtype);
+        return straightOf(st) + ' vs ' + esc(ARCH_LABEL[st.subtype] || st.subtype);
       case 'pattern':
         if (st.subtype === 'lost-first-set') return 'Lost the opening set';
         if (st.subtype === 'won-first-set')  return 'Won the opening set';
@@ -140,16 +104,11 @@
       case 'total':
         return (st.over ? 'Over ' : 'Under ') + esc(String(st.line)) + ' total games' + bo(st);
       case 'handicap':
-        // Item 2 + ruling `handicap-bestof` (a), 2026-09-12: the CARD drops the
-        // "(best-of-N)" qualifier — "Covered −3.5 games". Format-locking is unchanged
-        // as a data guarantee (a bo3 run still never renders on a bo5 match, see
-        // isRelevant/formatLocked); it simply stops being printed here. The History
-        // modal keeps it via claimLong() below, because the founder scoped the modal
-        // out ("The History modal does not change; it is correct as built"), so the
-        // reader still has one place to see the format the run was built on.
+        // the reference's "Won by more than 1.5 games — covered −1.5 (best-of-3)"; the losing side mirrors it. The
+        // card drops "(best-of-N)" (standing founder ruling handicap-bestof (a), TEN-194); the pop-up keeps it.
         return st.cover
-          ? 'Covered −' + esc(String(st.line)) + ' games'
-          : 'Beaten by more than ' + esc(String(st.line)) + ' games';
+          ? 'Won by more than ' + esc(String(st.line)) + ' games — covered −' + esc(String(st.line))
+          : 'Lost by more than ' + esc(String(st.line)) + ' games — failed to cover +' + esc(String(st.line));
       case 'setpat':
         if (st.subtype === 'won-2nd-set')        return 'Won the 2nd set';
         if (st.subtype === 'lost-2nd-set')       return 'Lost the 2nd set';
@@ -163,33 +122,17 @@
         return streakVerb(st.direction);
     }
   }
-  // Long form, modal only. The History modal is out of item 6's scope ("does not
-  // change in any respect"), so it keeps the pre-shortening wording verbatim — and
-  // out of item 2's scope too, so the handicap claim keeps its "(best-of-N)" here.
+  // Long form (pop-up): the all-comps claim names its pool, the handicap claim keeps its format.
   function claimLong(st) {
-    if (st.type === 'all') return streakVerb(st.direction) + ' across all competitions';
+    if (st.type === 'all') return claimOf(st) + ' across all competitions';
     if (st.type === 'handicap') return claimOf(st) + bo(st);
     return claimOf(st);
   }
-  function describe(st) { return claimLong(st) + ' — ' + running(st.count); }
 
-  // ─── TEN-204 · THE ONE ROW BUILDER ───────────────────────────────────────────
-  // The export's rule, kept verbatim: "AVG PRICE must be computed from the same rows the
-  // modal lists. In the prototype both come from one builder (seriesRows(card)) so the card
-  // average and the modal's prices can never disagree; keep that single-source rule in
-  // production." This IS that builder. The card's fourth strip cell and the modal's rows are
-  // both derived from its output and from nothing else, and tools/test-series-rows.js fails
-  // the build if either grows a second source.
-  //
-  // Rows come back OLDEST FIRST — the order build-series.js writes matches[] in, which is the
-  // order startedOf() and streakReference()'s self-check both depend on. The modal reverses
-  // for display; the proof aggregate is order-independent.
-  //
-  // `proof` is the value the claim is JUDGED ON, parsed from the same score string the row
-  // renders. It is never a price: no source prices a Challenger games line with a timestamped
-  // close (TEN-204 Phase 1 §1.2e — 23%-38% exact-line coverage, bet365 0%-13%, no timestamps),
-  // so a price under a line claim would be an invention. Unparseable score -> proof null -> a
-  // dash, and a null is EXCLUDED from the average rather than counted as zero.
+  // ─── THE ONE ROW BUILDER (single source: the card's Avg price and the pop-up ledger) ─────────────────────────
+  // Rows come back OLDEST FIRST (series.json's order); the pop-up reverses for display. Prices are READ from the
+  // page's price join (PX, filled by priceBoard() from the site's one Database join) — never from series.json and
+  // never computed here, so the card cannot show a price the ledger does not list.
   var SET_RE = /^(\d+)-(\d+)(?:\(\d+\))?$/;
   function setsOf(score) {
     var toks = String(score == null ? '' : score).trim().split(/\s+/).filter(Boolean);
@@ -202,10 +145,8 @@
     }
     return out;
   }
-  // Which proof figure a family is judged on, and what the card's fourth cell calls it.
-  // Match-result families have no proof figure — the thing they are judged on IS the W/L the
-  // modal already prints — so their cell is the export's AVG PRICE over a dash until the
-  // founder rules on Phase 3.
+  // Which proof figure a line family is judged on (the run's own claim, read off the same score string the row
+  // prints). Not painted on the card; kept so the row-integrity gate (tools/test-series-rows.js) reads the builder.
   var PROOF_SPEC = {
     total:    { key: 'games',    label: 'Avg games',         dp: 1 },
     handicap: { key: 'margin',   label: 'Avg margin',        dp: 1, signed: true },
@@ -224,18 +165,22 @@
       return tot;
     }
     if (fam === 'handicap') {
-      // Player-POV signed game margin. series.json writes the score from the player's side
-      // (build-series.js), so s[i][0] is always his games — the same convention the total
-      // and first-set figures read, and the reason a handicap proof can be signed at all.
       for (i = 0; i < s.length; i++) { mine += s[i][0]; theirs += s[i][1]; }
       return mine - theirs;
     }
     if (fam === 'setgames') return s[0][0] + s[0][1];
     return null;
   }
+  // The price join's answer per match row object: { price, oppPrice, book } (book 'P' | 'B'), written by priceBoard().
+  var PX = (typeof WeakMap === 'function') ? new WeakMap() : null;
+  var BOOK_NAME = { P: 'Pinnacle', B: 'bet365' };   // house style (TEN-384: "Pinnacle", "bet365")
+  function pxOf(m) { return (PX && m && typeof m === 'object' && PX.get(m)) || null; }
   function streakRows(st) {
     var ms = Array.isArray(st.matches) ? st.matches : [];
     return ms.map(function (m) {
+      var px = pxOf(m);
+      var ok = !!(px && typeof px.price === 'number' && isFinite(px.price) && px.price > 1 &&
+        typeof px.oppPrice === 'number' && isFinite(px.oppPrice) && px.oppPrice > 1);
       return {
         date: m.date || null,
         event: m.tournament || null,
@@ -243,43 +188,20 @@
         score: m.score || null,
         won: (typeof m.won === 'boolean') ? m.won : null,
         proof: proofOf(st, m),
-        // TEN-204 Phase 3 · match-winner prices, attached by build-series.js's attachOdds().
-        // READ, never computed here: the page cannot mint a price the artifact doesn't carry,
-        // so an un-priced row is a dash and stays a dash. `book` is the book that actually
-        // priced THIS row — Pinnacle or bet365 under the founder's 2026-09-15 fill ruling —
-        // and is printed rather than hidden, because a two-book ledger that looks like a
-        // one-book ledger is the dishonest version of his instruction.
-        price: (typeof m.price === 'number' && isFinite(m.price) && m.price > 1) ? m.price : null,
-        oppPrice: (typeof m.oppPrice === 'number' && isFinite(m.oppPrice) && m.oppPrice > 1) ? m.oppPrice : null,
-        book: m.book || null,
+        price: ok ? px.price : null,
+        oppPrice: ok ? px.oppPrice : null,
+        book: ok ? (BOOK_NAME[px.book] || px.book || null) : null,
       };
     });
   }
-  // ─── TEN-204 Phase 3 · the flat-1u ledger (founder ruling A2 + `pnl`=keep) ───
-  // Match-result families only. Win = price − 1, loss = −1.00, EVERY ROW ROUNDED TO 2dp
-  // BEFORE summing, total = sum of the rounded rows, yield = total ÷ priced count. An
-  // un-priced row is excluded from both the total and the count — never counted as 0.
-  //
-  // CIRCULARITY, stated because the founder ruled to keep it anyway: a streak is DEFINED
-  // by its rows' outcomes, so a winning run is all wins and a losing run all losses by
-  // construction — measured 2026-09-15, 15 all-win / 26 all-loss / 0 mixed across the
-  // board's match-result streaks. The sign of every one of these ledgers is therefore
-  // fixed before a single price is read. The page carries a caveat saying so.
+  // ─── the flat-1u ledger (match-result families; founder ruling A2 + `pnl`=keep) ───
+  // Win = price − 1, loss = −1.00, each row ROUNDED TO 2dp before summing, total = the sum of the rounded rows,
+  // yield = total ÷ priced. An unpriced row is out of both the total and the count — never counted as 0.
   var MATCH_RESULT_FAMS = { all: 1, surface: 1, style: 1 };
   function isMatchResultFam(st) { return !!MATCH_RESULT_FAMS[famOf(st)]; }
-
-  // Money is summed in INTEGER HUNDREDTHS, never in floats.
-  //
-  // Not premature rigour — it was a real, painted defect. F. Diaz Acosta's ten Pinnacle
-  // prices sum to exactly 1.415 in the artifact's oldest-first order and print 1.42; summed
-  // in the order the MODAL displays them (newest first) the same ten values accumulate to
-  // 1.4149999999999998 and print 1.41. Float addition is not associative, so the card's
-  // average depended on which direction you added it — and the modal shows the rows in the
-  // opposite order to the one the card totals them in, so an auditor reading the panel
-  // top-to-bottom and an auditor reading the artifact would disagree by a cent and both be
-  // reading the code correctly. A price is exact to 2dp by construction, so hundredths make
-  // the arithmetic exact and ORDER-INDEPENDENT, and the disagreement cannot recur.
+  // Money is summed in INTEGER HUNDREDTHS: a price is exact to 2dp, so the sum is exact and order-independent.
   function cents(x) { return Math.round(x * 100); }
+  function halfAway(x) { return x < 0 ? -Math.round(-x) : Math.round(x); }
   function ledgerOf(st) {
     if (!isMatchResultFam(st)) return null;
     var rows = streakRows(st), totalC = 0, priced = 0, books = {};
@@ -287,7 +209,6 @@
       var r = rows[i];
       if (r.price == null || r.won == null) continue;
       priced++;
-      // win = price − 1 (rounded to the cent), loss = −1.00 flat. Integer cents throughout.
       totalC += r.won ? (cents(r.price) - 100) : -100;
       if (r.book) books[r.book] = (books[r.book] || 0) + 1;
     }
@@ -295,29 +216,27 @@
     var total = totalC / 100;
     return {
       priced: priced, of: rows.length, total: total,
-      // yield = total ÷ priced count, to one decimal. Computed off the exact cent total.
-      yield: Math.round(1000 * totalC / priced / 100) / 10,
+      yield: halfAway(10 * totalC / priced) / 10,   // tenths of a percent, half away from zero (−22.75 → −22.8)
       books: Object.keys(books).sort(),
     };
   }
-  // The card's AVG PRICE cell for match-result families — mean of the SAME rows the modal
-  // lists (the single-source rule), over priced rows only, in exact cents.
+  // The card's Avg price — the mean Home price of the SAME rows the pop-up lists, priced rows only, exact cents.
   function avgPriceOf(st) {
     var rows = streakRows(st), sumC = 0, n = 0;
     for (var i = 0; i < rows.length; i++) {
       if (rows[i].price != null) { sumC += cents(rows[i].price); n++; }
     }
     if (!n) return null;
-    // Half-away-from-zero on the exact cent sum — the same tie-break the proof figure was
-    // pinned to, so the two cells on one card never round by different conventions.
     var v = Math.round(sumC / n) / 100;
     return { value: v.toFixed(2), n: n, of: rows.length };
   }
-  // The card's fourth cell, computed from streakRows() and nothing else.
+  function pricedOf(st) {
+    var rows = streakRows(st), n = 0;
+    for (var i = 0; i < rows.length; i++) if (rows[i].price != null) n++;
+    return n;
+  }
   function proofSummary(st) {
     var spec = PROOF_SPEC[famOf(st)] || PROOF_SPEC.all;
-    // TEN-204 Phase 3 (founder B1): match-result families now carry a REAL AVG PRICE.
-    // setout has no proof figure and no price cell agreed, so it keeps its dash.
     if (isMatchResultFam(st)) {
       var ap = avgPriceOf(st);
       if (!ap) return { label: spec.label, value: null };
@@ -332,87 +251,11 @@
     var avg = sum / n;
     var txt = avg.toFixed(spec.dp);
     if (spec.signed && avg > 0) txt = '+' + txt;
-    // A partly-parseable run says so rather than averaging a subset silently.
     return { label: spec.label, value: txt, n: n, of: rows.length };
   }
 
-  // ─── item 5 · the run reference sub-line (founder 2026-09-12) ────────────────
-  // "A run length stated alone is the equivalent of a bare percentage — the reader
-  // can't tell whether six is remarkable for this player." Beneath the title:
-  //
-  //     longest since 2021 9 · 4th time at 6+
-  //
-  // Both halves come from build-series.js's streakReference(), which enumerates every
-  // run of THIS streak's own condition across the player's history window using the
-  // engine's own conditionHeld(). Nothing is computed here — the card cannot invent a
-  // reference the artifact doesn't carry.
-  //
-  // Ruling `reference-label` (a): NAME the window rather than call it "career". It is
-  // five calendar years AND tier-scoped, so "career" would be a false claim (Lajovic,
-  // ATP no. 167, has 78 in-tier matches in it because only his Challenger matches count).
-  // The year is read from rules.referenceWindow.sinceYear — the artifact's own record
-  // of the window it searched — never from the browser clock, so the label reads the
-  // same in Sydney and in Los Angeles and can never name a window we didn't query.
-  //
-  // Ruling `reference-lone` (a): a run that is the only one ever to reach its own
-  // length prints as-is — "longest 9 · 1st time at 9+" — rather than being reworded or
-  // truncated. 12 of 117 streaks read that way on the 2026-09-12 board.
-  //
-  // Item 5: "Both components required. If either is unavailable for a streak type, the
-  // sub-line renders — rather than showing half." A missing reference (a pre-item-5
-  // artifact, or an enumeration that failed its self-check) and an unnameable window
-  // both land there. Never half a sub-line, never a guessed year.
-  function ordinal(n) {
-    var t = n % 100, d = n % 10;
-    if (t >= 11 && t <= 13) return n + 'th';
-    return n + (d === 1 ? 'st' : (d === 2 ? 'nd' : (d === 3 ? 'rd' : 'th')));
-  }
-  // TEN-204 2.4 · the year now comes from THE STREAK, not from the artifact's query window.
-  //
-  // referenceSinceYear() read rules.referenceWindow.sinceYear, which build-series.js computes
-  // as `new Date().getFullYear() - 5`. That names the window the build QUERIED, not the window
-  // it has DATA for — measured 2026-09-15, I. Simakin has 3 in-tier records in 2021 against 96
-  // in 2024, so the card claimed a five-year record over a file that effectively starts in
-  // 2022. reference.sinceYear is that player's own earliest in-tier record year, so the label
-  // can only name a year the enumeration actually saw.
-  //
-  // The artifact field is still read as a FALLBACK, and only as one: an artifact built before
-  // this change carries no per-streak sinceYear, and dashing every card on the first deploy
-  // would look like an outage. The fallback is clearly worse (it is the old, over-claiming
-  // number), so it is used only when the better one is absent.
-  function referenceSinceYear(st) {
-    var y = st && st.reference && st.reference.sinceYear;
-    if (typeof y === 'number' && isFinite(y) && y > 1900 && y < 2200) return y;
-    var rw = _data && _data.rules && _data.rules.referenceWindow;
-    var f = rw && rw.sinceYear;
-    return (typeof f === 'number' && isFinite(f) && f > 1900 && f < 2200) ? f : null;
-  }
-  function posInt(v) { return typeof v === 'number' && isFinite(v) && v > 0 && v === Math.floor(v); }
-  function referenceHtml(st) {
-    var ref = st && st.reference, since = referenceSinceYear(st);
-    if (!ref || since == null || !posInt(ref.longest) || !posInt(ref.occurrences) || !posInt(st.count)) {
-      return '<div class="sr-ref sr-ref--none">—</div>';
-    }
-    // "If history coverage for that player's level is incomplete, show a dash instead of the
-    // line. Never an understated 1st run." A calendar year inside the window with ZERO in-tier
-    // records means a run could have been cut by MISSING DATA rather than by a loss, which
-    // would both shorten `longest` and undercount `occurrences` — the exact understatement the
-    // brief forbids. An artifact with no yearGaps field is treated as "unknown", not as "clean":
-    // absence of evidence is not coverage.
-    if (!Array.isArray(ref.yearGaps) || ref.yearGaps.length) {
-      return '<div class="sr-ref sr-ref--none">—</div>';
-    }
-    // Wording per the brief: a colon after the label so the number reads as the PLAYER'S
-    // record, not as this run, and "run" rather than "time" because occurrences counts runs.
-    // `occurrences` INCLUDES the current run — streakReference() self-checks that the last
-    // enumerated run IS the emitted one — so "1st run of 14+" is true of a run that is the
-    // only one ever to reach 14. Verified against build-series.js:streakReference.
-    return '<div class="sr-ref">Best since ' + esc(String(since)) + ': ' + esc(String(ref.longest)) +
-      ' · ' + esc(ordinal(ref.occurrences)) + ' run of ' + esc(String(st.count)) + '+</div>';
-  }
-  // Effective card FAMILY, computed from type+subtype so grouping/filtering/badges are
-  // correct regardless of the engine version that wrote series.json (fix #5). The former
-  // 'firstset'/'setpat' families map here to the split 'setout' / 'setgames'.
+  // ─── families ────────────────────────────────────────────────────────────────
+  // Effective card FAMILY from type+subtype, so grouping/filtering is right for any engine version (fix #5).
   function famOf(st) {
     if (st.type === 'pattern') return 'setout';                 // first-set outcome
     if (st.type === 'setpat')  return st.firstSet ? 'setgames' : 'setout';
@@ -423,14 +266,7 @@
     total: 'Total games', handicap: 'Handicap',
     setout: 'Set outcome', setgames: 'Set games',
   };
-  // Direction, as a WORD (founder ruling q2, 2026-09-12 — "follow the export").
-  // The export forbids green/red on this page: "direction is carried by a word, not
-  // a colour". The same three-way split the old colour bar encoded survives intact,
-  // it is just spelled out. Result runs have a genuine good/bad direction for the
-  // player; betting-LINE runs (total games, handicap) and volatility set-shapes
-  // (went the distance, first-set games line) have NO good/bad — over 21.5 isn't
-  // "better" than under 22.5, it's a different direction — so they read Neutral.
-  // Do NOT reintroduce a sign colour here.
+  // Direction is a WORD (founder q2): no green / red on the cards. Betting lines and set-shape volatility read Neutral.
   function valence(st) {
     if (st.type === 'total' || st.type === 'handicap') return 'neutral';
     if (st.type === 'setpat' && (st.firstSet || st.subtype === 'went-the-distance')) return 'neutral';
@@ -438,67 +274,35 @@
   }
   var DIR_LABEL = { win: 'Winning run', loss: 'Losing run', neutral: 'Neutral' };
 
-  // ─── date / age formatting ───────────────────────────────────────────────────
+  // ─── date formatting ─────────────────────────────────────────────────────────
   var YMD_RE = /^\d{4}-\d{2}-\d{2}$/;
   var MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   function fmtDate(ymd) {
     if (!ymd || !YMD_RE.test(ymd)) return null;
     var p = ymd.split('-');
     var mi = Number(p[1]);
-    // The regex admits month 00 and 13; MON[-1]/MON[12] would print the literal
-    // string "undefined" into a user-visible cell. Unrenderable → null → a dash.
+    // The regex admits month 00 and 13; MON[-1]/MON[12] would print "undefined". Unrenderable → null → a dash.
     if (!(mi >= 1 && mi <= 12)) return null;
     return Number(p[2]) + ' ' + MON[mi - 1] + ' ' + p[0];
   }
-  // fmtAge() lived here and rendered the card's "(2w ago)" alongside LAST. The export
-  // gives LAST a bare day+month cell, so the age has no slot and the helper became dead
-  // code — removed rather than left to rot. Recoverable from git if the age comes back.
   function fmtTime(t) {
     var s = String(t || '').trim();
     return /^\d{1,2}:\d{2}/.test(s) ? s.slice(0, 5) : '';
   }
-  // Card strip form: day + month, year stripped (export §3.3 "rendered short").
-  // Founder ruling `last-year` (2026-09-12, option a): the year comes back ONLY when
-  // the run itself crosses a year boundary — maxGapDays is 75 and Slams are exempt
-  // from the recency cap, so "Started 5 Dec / Last 12 Jan" is reachable and would
-  // otherwise read as one year. Same-year runs keep the export's bare day + month.
+  // Card form: STARTED carries its four-digit year ("5 Aug 2026"), LAST is day + month ("13 Sep") — TEN-204 2.3.
   function fmtShort(ymd, withYear) {
     if (!ymd || !YMD_RE.test(ymd)) return null;
     var p = ymd.split('-');
     var mi = Number(p[1]);
     if (!(mi >= 1 && mi <= 12)) return null;   // month 00/13 → a dash, never "5 undefined"
-    // TEN-204 2.3: the year is now the FULL four digits ("5 Aug 2026"), per the brief's
-    // worked example. The apostrophe-two-digit form ("5 Aug ’26") was chosen when the year
-    // was a rare conditional extra and column width was the binding constraint; STARTED now
-    // carries it on every card, where a bare "’26" reads as noise rather than as a date.
     return Number(p[2]) + ' ' + MON[mi - 1] + (withYear ? ' ' + p[0] : '');
   }
-  // True only when BOTH ends are RENDERABLE and their years differ. Gated on
-  // fmtShort rather than a looser regex of its own: if one end can't render it
-  // becomes a dash, and a lone "’27" beside a dash says nothing about a crossing.
+  // True only when BOTH ends are renderable and their years differ (kept for tools/test-series-dates.js).
   function crossesYear(startYmd, lastYmd) {
     if (!fmtShort(startYmd) || !fmtShort(lastYmd)) return false;
     return String(startYmd).slice(0, 4) !== String(lastYmd).slice(0, 4);
   }
-  // Founder ruling `prior-year` (ask 1c9de573, 2026-09-12, option a). `last-year` only
-  // fires on a CROSSING, which leaves the sibling case uncovered: the Slam recency
-  // exemption has no upper age bound, so a Sep-2026 US Open run can still be on the
-  // board in Jan 2027 reading a bare "Started 26 Aug / Last 13 Sep" — wholly in a past
-  // year, unmarked, and the card's old "(4mo ago)" has no slot in the export to judge
-  // it by. So the year ALSO appears whenever LAST is not in the snapshot's own year.
-  //
-  // The reference is generatedAt's year, NOT the client clock: the page must read the
-  // same in every timezone and must never disagree with the data it is painting — a
-  // reader in UTC+13 on 1 Jan would otherwise see years the artifact doesn't support.
-  // UTC to match the UPDATED clock. No usable generatedAt → no prior-year marking
-  // (crossesYear still applies); a year is never guessed.
-  // V8's legacy date parser INVENTS a year rather than failing: new Date('Sep 12') is
-  // 2001 and new Date('0') is 1999, either of which would silently year-stamp the whole
-  // board off a reference year that appears nowhere in the data. And a timestamp with no
-  // Z or offset is read in the BROWSER's zone, reintroducing the per-timezone divergence
-  // this helper exists to prevent. So accept only an unambiguous instant — a 4-digit-year
-  // ISO date, and where a time is present an explicit Z or offset — and fall to null
-  // otherwise. build-series.js writes new Date().toISOString(), which always qualifies.
+  // An unambiguous ISO instant only (V8's legacy parser invents years); else null.
   var ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2}))?$/;
   function yearOfIso(iso) {
     if (!ISO_INSTANT_RE.test(String(iso == null ? '' : iso))) return null;
@@ -506,131 +310,70 @@
     if (isNaN(d.getTime())) return null;
     return String(d.getUTCFullYear());
   }
-  // Gated on fmtShort for the same reason crossesYear is: an unrenderable LAST is a
-  // dash, and a dash must not drag a lone year onto the STARTED cell beside it.
-  //
-  // The reverse direction is ASYMMETRIC ON PURPOSE — founder ruling `lone-year`
-  // (ask fc48bac5, 2026-09-12, option a: "keep it — a lone year on LAST is true and
-  // useful; lock it with a test"). This rule is a property of LAST alone, so when
-  // STARTED is unrenderable the card paints "Started — / Last 12 Sep ’26": a year on
-  // one cell. That is kept. "Both cells or neither" was this file's own symmetry
-  // preference, never the ruling — suppressing the year here would delete the very
-  // signal prior-year exists to restore, on the card that already knows least.
-  // Unreachable from today's pipeline (build-series.js always emits a non-empty
-  // matches[], and 0 of 117 live streaks lack one), so tools/test-series-dates.js is
-  // the only thing holding it — see the `lone-year` block there.
   function priorYear(lastYmd, refIso) {
     var ry = yearOfIso(refIso);
     if (!ry || !fmtShort(lastYmd)) return false;
     return String(lastYmd).slice(0, 4) !== ry;
   }
-  // STARTED (founder ruling q5, 2026-09-12). series.json stores no startDate; the run's
-  // first match IS its start. matches[] is written oldest→newest by build-series.js and
-  // matches.length === count, so matches[0].date is the first match OF THE RUN — for a
-  // gap-cut streak that is the start of the cut run, not a pre-layoff origin. Derived,
-  // never guessed: no matches → a dash.
+  // STARTED = the run's first match (matches[] is oldest → newest and matches.length === count).
   function startedOf(st) {
     var ms = st.matches;
     return (Array.isArray(ms) && ms.length && ms[0] && ms[0].date) ? ms[0].date : null;
   }
-  // UPDATED (founder ruling q6): the clock off generatedAt, in UTC, so a reader can
-  // answer "is this today's slate?" at a glance. The export hardcoded "now".
+  // UPDATED = series.json generatedAt (the last rebuild of the streak data), HH:MM in stennisfy.tz. Never the clock.
   function fmtUpdated(iso) {
-    if (!iso) return null;
-    var d = new Date(iso);
-    if (isNaN(d.getTime())) return null;
-    var hh = String(d.getUTCHours()); if (hh.length < 2) hh = '0' + hh;
-    var mm = String(d.getUTCMinutes()); if (mm.length < 2) mm = '0' + mm;
-    return hh + ':' + mm + ' UTC';
+    if (!iso || !ISO_INSTANT_RE.test(String(iso))) return null;
+    var t = Date.parse(iso);
+    return isFinite(t) ? zoneClock(t) : null;
   }
 
   // ─── state ───────────────────────────────────────────────────────────────────
   var _data = null;       // parsed series.json
-  var _cards = null;      // flattened [{player, streak}] once
+  var _matches = null;    // Today's Matches board (matches.json)
+  var _cards = null;      // flattened [{player, streak, slot}] once per data load
   var _view = null;       // current filtered+sorted view (index space for card clicks)
   var _active = false;
   var _mounted = false;
+  var _pxState = 'idle';  // idle | loading | ready | failed — the Database join
+  var _pxFailAt = 0, _pxGen = 0;
+  var PX_RETRY_MS = 120000;          // a failed join is tried again on the next render after 2 min (step 13's shard retry)
+  var _loadedAt = 0, _fetching = false, _slotTimer = null;
+  var DATA_MAX_AGE_MS = 15 * 60000;  // a page show refetches series.json once the loaded copy is older than this
+  var SLOT_TICK_MS = 5 * 60000;      // while shown, the slots (day word, already-played, start) are recomputed this often
 
+  var DEFAULTS = { level: 'all', day: 'all', dir: 'all', type: 'all', minLen: 6, sort: 'longest', showPlayed: false };
   var _filters = {
-    level: 'all',         // all | tour | chal
-    // §3.5 (2026-09-15) · DAY is back to the design's three options and the
-    // Show-already-played CHECKBOX is restored, reversing TEN-194 item 8 which had folded
-    // the checkbox in as a fourth DAY option. The predicate is unchanged — see
-    // passesFilters(): showPlayed=false keeps DAY filtering not-yet-played fixtures exactly
-    // as before, showPlayed=true selects already-played ones, which is precisely what
-    // day==='played' did. Only the widget moved.
-    day: 'all',           // all | today | tomorrow
-    showPlayed: false,    // §3.5 checkbox — the old day==='played' state
+    level: 'all',         // all | tour | chal          — the step 13 tour tag (qualifying included)
+    day: 'all',           // all | today | tomorrow     — the scheduled date, Today's Matches day rule
     dir: 'all',           // all | win | loss
     type: 'all',          // all | all-comp | surface | style | total | handicap | setout | setgames
-    // Item 9 (founder 2026-09-12): the default min-length moves 5+ → 6+. "A five-match
-    // win run is unremarkable and fills the page with cards that don't earn one." The
-    // 3+/4+/5+ buttons stay, so nothing becomes unreachable — only the default view
-    // tightens. THIS literal is the default; load() no longer adopts the artifact's
-    // rules.viewFloorDefault (see the note there — a failed build serves a seed carrying
-    // 5 and would silently revert the ruling). build-series.js carries the same 6.
-    minLen: 6,
+    minLen: 6,            // item 9 (founder 2026-09-12): 6+ by default; 3+…8+ stay reachable
     sort: 'longest',      // longest | soonest
+    showPlayed: false,    // include streaks whose next match has started or finished
   };
   function styleFloor() { return (_data && _data.rules && _data.rules.viewFloorStyle) || 3; }
 
   // ─── item 1 · outcome-family de-duplication (founder 2026-09-12) ──────────────
-  // "A streak whose matches are a subset of a same-length streak in the same outcome
-  // family does not get a card." B. Shelton held `Won 6` (all comps) and `Won on Hard
-  // 6` over the IDENTICAL six matches — all six were on hard, so the surface run *is*
-  // the all-comps run counted twice.
-  //
-  // Scoped to the MATCH-OUTCOME family only — all comps, surface, vs style. Covering a
-  // handicap is a different event from winning a match, so a win streak and a handicap
-  // streak of the same length over the same matches are two findings, not one repeated.
-  // Handicap / set outcome / set games are never collapsed against these or each other.
-  //
-  // This is a SUPPRESSION PASS on detection's output, not a change to detection:
-  // build-series.js is untouched, every suppressed streak stays in series.json, and the
-  // run is still reachable from the surviving card's History modal and the player page.
-  //
-  // The founder stated a SECOND rule alongside the subset one — "a surface streak earns
-  // a card only when it is LONGER than that player's all-comps run" — and it is NOT
-  // implemented here. Only the subset rule is. The two are not equivalent, and the
-  // difference is a live founder question, reported rather than resolved:
-  //   · Subset keeps Shelton's `Won vs Big Server + Complete Baseliner 4`. It starts
-  //     12 Aug, a month before his all-comps 6 begins, so it is not a subset. The
-  //     longer-than-all-comps rule would delete it — and item 6 explicitly keeps that
-  //     card's title. (That sentence was written about SURFACE, not vs-style, so reading
-  //     it across to the style card is a stretch either way.)
-  //   · The reverse gap is real too: two DISJOINT runs, e.g. an all-comps losing run of 4
-  //     and a shorter clay losing run of 3 that ended earlier, are not in a subset
-  //     relation, so the shorter surface card survives here where the founder's sentence
-  //     would drop it. The clean-context review found exactly that shape (P. Brunclik) in
-  //     the committed seed artifact — 0 occurrences on today's live board, which is why
-  //     the earlier version of this comment wrongly said the two rules "agree everywhere
-  //     except one card". They agree on today's board; they are not the same rule.
-  // Implemented: subset only. Awaiting the founder's ruling on the second sentence.
+  // A match-outcome run (all comps / surface / vs style) whose matches are a subset of a same-or-longer run of a
+  // BROADER outcome family gets no card (Shelton's "Won 6" and "Won on Hard 6" over the same six matches).
   var OUTCOME_FAMILY = { all: 1, surface: 1, style: 1 };
-  // Breadth, for the tie-break when two runs cover the IDENTICAL match set: the broader
-  // claim survives. all-comps > surface > vs-style.
   var OUTCOME_BREADTH = { all: 3, surface: 2, style: 1 };
-  // A run member is identified by (date, opponent). series.json's matches[] carries no
-  // eventKey, and a player cannot play two opponents on one date in one tier. Measured on
-  // the live artifact of 2026-09-12: 0 collisions across 117 streaks / 472 run members.
-  // (An earlier draft of this comment said 1435 — that figure is the date count from the
-  // unrelated comment further down this file, measured on a different snapshot. Caught by
-  // the clean-context review; two numbers in one sentence cannot come from one artifact.)
   function memberKey(m) { return String(m && m.date) + '|' + String(m && m.opponent == null ? '' : m.opponent); }
   function memberSet(st) {
     var s = {};
     (Array.isArray(st.matches) ? st.matches : []).forEach(function (m) { s[memberKey(m)] = 1; });
     return s;
   }
-  function isSubset(a, b) {          // every key of a present in b
+  function isSubset(a, b) {
     for (var k in a) { if (Object.prototype.hasOwnProperty.call(a, k) && !b[k]) return false; }
     return true;
   }
+  // Runs on the as-of-start streaks (fix 1) on every reslot: it FLAGS (c.suppressed), passesFilters drops.
   function suppressOutcomeDuplicates(cards) {
     var byPlayer = {};
+    cards.forEach(function (c) { c.suppressed = null; });
     cards.forEach(function (c) {
-      if (!OUTCOME_FAMILY[c.streak.type]) return;
-      // A run with no member list can't be compared and is never suppressed.
+      if (!c.streak || !OUTCOME_FAMILY[c.streak.type]) return;
       if (!(Array.isArray(c.streak.matches) && c.streak.matches.length)) return;
       var k = String(c.player.key != null ? c.player.key : c.player.name) + '|' + c.player.tier;
       (byPlayer[k] || (byPlayer[k] = [])).push(c);
@@ -645,650 +388,455 @@
           var b = group[j];
           if (b.streak.count < a.streak.count) continue;
           if (!isSubset(sets[i], sets[j])) continue;
-          // Only the NARROWER claim is ever deleted. Without this the rule reads both
-          // ways round and can eat the all-comps card: a player who wins 8 straight on
-          // clay with one hard loss buried inside has an all-comps run of 6 whose six
-          // matches are all clay — a strict subset of the clay 8. "Won 6 in a row" and
-          // "Won on Clay 8 in a row" are two findings, and the founder's rule exists to
-          // delete the repeated one, not the broader one. Zero occurrences on today's
-          // board (all 27 suppressions are surface-inside-all-comps), so this changes
-          // nothing measurable now — it stops the rule misfiring on a slate we haven't
-          // seen yet.
-          if (OUTCOME_BREADTH[b.streak.type] <= OUTCOME_BREADTH[a.streak.type]) continue;
+          if (OUTCOME_BREADTH[b.streak.type] <= OUTCOME_BREADTH[a.streak.type]) continue;   // only the narrower goes
           a.suppressed = 'subset-of-' + b.streak.type;
           return;
         }
       });
     });
-    return cards.filter(function (c) { return !c.suppressed; });
+    return cards;
   }
   function memberSetOf(c) { return memberSet(c.streak); }
 
-  // ─── item 2 · the handicap card is −3.5 only (founder 2026-09-12) ─────────────
-  // Ruling `handicap-line` (a): "Drop the −1.5/−5.5 fallback — −3.5 only, family
-  // disappears on thin days."
-  //
-  // The engine already PREFERS 3.5 (fix #4, 2026-09-07: priority 3.5 > 5.5 > 1.5), so a
-  // card arriving here on any other line means that player has no qualifying −3.5 run.
-  // The ruling is therefore not a relabel — it removes the fallback, and on a thin day
-  // the family has nothing to say. Measured on the 2026-09-12 board: −1.5 is cleared by
-  // 94.6% of won matches and by 79 of 79 straight-sets bo3 wins, so a −1.5 cover run is
-  // a straight-sets winner's win streak restated; −3.5 is cleared by 79.8%.
-  //
-  // Enforced HERE rather than in the engine, exactly as item 1's dedup is: the −1.5 run
-  // stays in series.json and stays reachable, it just never gets a card. Reversible
-  // without a data rebuild.
+  // ─── item 2 · the handicap card is −3.5 only (founder ruling `handicap-line` (a), 2026-09-12) ─────────────────
   var HANDICAP_DISPLAY_LINE = 3.5;
   function handicapLineAllowed(st) {
     if (st.type !== 'handicap') return true;
     return Number(st.line) === HANDICAP_DISPLAY_LINE;
   }
 
+  // set 'now' = players[].streaks (the runs at the build); 'start' = players[].asOfStart (fix 1, the generator's runs
+  // as they stood at the start of a started / finished next match).
   function flatten(data) {
     var out = [];
     (data.players || []).forEach(function (p) {
-      (p.streaks || []).forEach(function (st) {
-        // Non-negotiable guard: pool AND recency must both be present, else drop.
-        if (st.pool == null || !st.lastDate || st.ageDays == null) return;
-        if (!handicapLineAllowed(st)) return;    // item 2
-        out.push({ player: p, streak: st });
+      [['now', p.streaks], ['start', p.asOfStart]].forEach(function (pair) {
+        (Array.isArray(pair[1]) ? pair[1] : []).forEach(function (st) {
+          // Non-negotiable guard: pool AND recency must both be present, else drop.
+          if (st.pool == null || !st.lastDate || st.ageDays == null) return;
+          if (!handicapLineAllowed(st)) return;    // item 2
+          out.push({ player: p, base: st, streak: st, set: pair[0] });
+        });
       });
     });
-    // Suppression runs ONCE over the whole emitted set, before any view filter, so the
-    // board can't resurrect a duplicate by narrowing the filters.
-    return suppressOutcomeDuplicates(out);
+    // Suppression runs over the whole as-of-start set, before any view filter (reslot).
+    return out;
   }
 
-  function passesFilters(c) {
-    var p = c.player, st = c.streak, f = _filters;
-    if (f.level !== 'all' && p.tier !== f.level) return false;
-    // §3.5 · the checkbox, not a DAY option. `showPlayed` selects already-played fixtures
-    // and hides the upcoming ones; unchecked keeps DAY filtering upcoming fixtures only.
-    // This is the SAME predicate item 8 ran under `f.day === 'played'` — the branch is
-    // keyed off a different flag and is otherwise byte-for-byte what it was, so the played
-    // view is still defined by p.upcoming.played (the isUnderway-backed field) alone.
-    var played = !!(p.upcoming && p.upcoming.played);
-    if (f.showPlayed) { if (!played) return false; }
-    else {
-      if (played) return false;
-      if (f.day !== 'all' && (p.upcoming && p.upcoming.day) !== f.day) return false;
+  // ─── fix 1 (founder round 2) · the streak AS IT STOOD AT THE START OF THE NEXT MATCH ─────────────────────────────
+  // At the source: for a next match that had started or finished when series.json was built, the generator emits the
+  // player's runs from his history strictly before that match (players[].asOfStart, every engine rule applied, recency
+  // measured at its start; rules.asOfStart marks a build that does this). Show already-played shows THAT set for a
+  // started / finished next match, in place of the post-match runs — so a run the match broke (J. Pinnington Jones
+  // won 6, 8, 9 Oct, lost 10 Oct) still has its card. A next match that had not started at the build cannot be inside
+  // the runs, so they show as built.
+  var DAY_MS = 86400000;
+  var SLAM_RE = /\b(australian open|french open|roland[\s-]?garros|wimbledon|us open)\b/i;   // the engine's isSlam
+  function shownStreak(c) {
+    var s = c.slot, p = c.player;
+    if (c.set === 'start') return (s && s.played) ? c.base : null;
+    if (!s || !s.played) return c.base;
+    if (Array.isArray(p.asOfStart)) return null;                          // the generator's as-of-start set replaces it
+    if (_data && _data.rules && _data.rules.asOfStart) return c.base;     // built before the match started
+    return asOfStart(c.base, p, s);                                       // fallback: series.json predates the field
+  }
+  // FALLBACK (a series.json without rules.asOfStart): trim the post-match run on the page. Every row on or after the
+  // next match's start goes: its own row (same event key) and everything after it; when the run does not carry that
+  // key, rows dated after its date and, once it has started, rows on its date — except one whose start (the board card
+  // with that event key) is known and earlier than the next match's. A run under its family's floor after the cut
+  // (min length rules.minLen, pool rules.minPoolConditional for every family but all comps) or whose last remaining
+  // row is older than rules.maxAgeDays at the match's start (Grand Slams exempt) is not shown — the engine would not
+  // have emitted it at that instant. A run the match broke cannot be rebuilt here (it is not in the file).
+  function boardStartOfKey(ek) {
+    ek = String(ek || '');
+    if (!ek || !Array.isArray(_matches)) return null;
+    for (var i = 0; i < _matches.length; i++) {
+      var m = _matches[i];
+      if (m && String(m.id || '').replace(/^\D+-/, '') === ek) { var t = startMsOf(m); return isFinite(t) ? t : null; }
     }
+    return null;
+  }
+  function asOfStart(st, p, slot) {
+    var ms = Array.isArray(st.matches) ? st.matches : [];
+    if (!ms.length || !slot) return st;
+    var u = p.upcoming || {};
+    var key = String(u.eventKey || ''), day = String(slot.date || u.date || '');
+    var cut = -1, i;
+    if (key) for (i = 0; i < ms.length; i++) { if (String(ms[i].eventKey || '') === key) { cut = i; break; } }
+    if (cut < 0 && YMD_RE.test(day)) {
+      for (i = 0; i < ms.length; i++) {
+        var d = String(ms[i].date || '');
+        if (d > day) { cut = i; break; }
+        if (slot.played && d === day) {
+          var rs = boardStartOfKey(ms[i].eventKey);
+          if (!(rs != null && slot.startMs != null && rs < slot.startMs)) { cut = i; break; }
+        }
+      }
+    }
+    if (cut < 0) return st;
+    var keep = ms.slice(0, cut), dropped = ms.length - cut;
+    var r = (_data && _data.rules) || {};
+    var minLen = (typeof r.minLen === 'number') ? r.minLen : 3;
+    var minPool = (typeof r.minPoolConditional === 'number') ? r.minPoolConditional : 8;
+    var maxAge = (typeof r.maxAgeDays === 'number') ? r.maxAgeDays : 45;
+    var pool = (typeof st.pool === 'number') ? st.pool - dropped : st.pool;
+    if (keep.length < minLen) return null;
+    if (famOf(st) !== 'all' && typeof pool === 'number' && pool < minPool) return null;
+    var last = keep[keep.length - 1];
+    var atMs = slot.startMs != null ? slot.startMs : Date.parse(day + 'T00:00:00Z');
+    var age = Math.floor((atMs - Date.parse(String(last.date) + 'T00:00:00Z')) / DAY_MS);
+    var slam = SLAM_RE.test(String(last.tournament || ''));
+    if (!(age <= maxAge) && !slam) return null;                           // recency at the start, not at the build
+    var out = {};
+    for (var k in st) if (Object.prototype.hasOwnProperty.call(st, k)) out[k] = st[k];
+    out.matches = keep;
+    out.count = keep.length;
+    out.pool = pool;
+    out.lastDate = last.date || null;
+    out.lastTournament = last.tournament || null;
+    out.ageDays = age;
+    out.slamExempt = slam && age > maxAge;
+    out.asOfStart = { droppedRows: dropped, fullCount: st.count };
+    return out;
+  }
+
+  // ─── the slate: Today's Matches day rule; the board's card when it carries the match ────────────────────────────
+  function boardMatchOf(p) {
+    var u = p.upcoming || {}, ek = String(u.eventKey || '');
+    if (!ek || !Array.isArray(_matches)) return null;
+    for (var i = 0; i < _matches.length; i++) {
+      var m = _matches[i];
+      if (m && String(m.id || '').replace(/^\D+-/, '') === ek) return m;
+    }
+    return null;
+  }
+  // The day a fixture date falls on in the member's calendar (matchDayBucket — Today's Matches' own function).
+  function dayBucketOf(date) {
+    if (!date) return null;
+    if (typeof matchDayBucket === 'function') { try { return matchDayBucket({ date: date }); } catch (e) {} }
+    return null;
+  }
+  // One slot per card: the next match as the page shows it. null = not on the Today / Tomorrow slate.
+  function slotOf(p) {
+    var u = p.upcoming || {};
+    var bm = boardMatchOf(p);
+    var src = bm || { date: u.date, time: u.time };
+    var day = dayBucketOf(src.date);
+    if (day !== 'today' && day !== 'tomorrow') return null;
+    var startMs = startMsOf(src);
+    var now = Date.now();
+    var isP1 = bm ? String(bm.p1Key) === String(p.key) : true;
+    var oppKey = bm ? (isP1 ? bm.p2Key : bm.p1Key) : u.opponentKey;
+    var oppFeed = bm ? (isP1 ? bm.p2 : bm.p1) : u.opponentName;
+    var finished = bm ? (typeof isFinishedMatch === 'function' ? isFinishedMatch(bm) : (!bm.live && !!bm.finalScore)) : !!u.played;
+    // Started: the board flags it live / interrupted; a match the board does not carry has started once its start
+    // instant has passed (the deployed matches.json leaves a match out while it is in play — trading-report.md).
+    var started = bm ? !!(bm.live || bm.interrupted) : (isFinite(startMs) && startMs <= now);
+    return {
+      day: day,
+      date: u.date || src.date || null,   // the feed's own date (the format of the streak rows' dates)
+      board: !!bm,
+      startMs: isFinite(startMs) ? startMs : null,
+      clock: startClockOf(src),
+      event: eventLabel(bm ? bm.tour : u.tournament),
+      opp: displayName(oppKey, oppFeed),
+      played: !!(finished || started || u.played),
+    };
+  }
+
+  function passesFilters(c, skipType) {
+    var p = c.player, st = c.streak, f = _filters, s = c.slot;
+    if (!s) return false;                                        // not on the Today / Tomorrow slate
+    if (!st || c.suppressed) return false;                       // under its floor as of the next start, or a subset run
+    if (p.tier !== 'tour' && p.tier !== 'chal') return false;    // Level is ATP / Challenger only (never ITF)
+    if (f.level !== 'all' && p.tier !== f.level) return false;   // tour = ATP main tour, chal = Challenger (qualifying in)
+    if (f.day !== 'all' && s.day !== f.day) return false;        // the scheduled date
+    if (!f.showPlayed && s.played) return false;                 // unchecked: next match not yet started
     if (f.dir !== 'all' && st.direction !== f.dir) return false;
-    // UI 'all' = every type; UI 'all-comp' = the engine's all-competitions type
-    // ('all'). Translate so the two 'all' meanings don't collide.
-    if (f.type !== 'all') {
+    if (!skipType && f.type !== 'all') {
       var wantFam = (f.type === 'all-comp') ? 'all' : f.type;
       if (famOf(st) !== wantFam) return false;
     }
-    // View floor: the min-length button governs every type EXCEPT vs-style, which
-    // the founder floored at 3 ("relevance already filters it"). Style therefore
-    // ignores a raised button and always shows from its own floor.
+    // View floor: the min-length control governs every type EXCEPT vs-style, floored at 3 by the founder.
     var floor = (st.type === 'style') ? styleFloor() : f.minLen;
     if (st.count < floor) return false;
     return true;
   }
 
-  // One sortable number per fixture. Built from the feed's own `date` + `time` with a fixed
-  // zone, NEVER from the browser clock, so the board reads in the same order everywhere.
-  // Unknown or unrenderable -> Infinity, which sorts last.
-  function kickoffOf(u) {
-    var d = u && u.date;
-    if (!d || !YMD_RE.test(d)) return Infinity;
-    var t = fmtTime(u.time);
-    var ms = Date.parse(d + 'T' + (t || '00:00') + ':00Z');
-    return isFinite(ms) ? ms : Infinity;
-  }
-
   function sortCards(arr) {
-    var f = _filters;
-    if (f.sort === 'soonest') {
-      // TEN-204 2.6 · sort the real kickoff instant, not two display strings.
-      //
-      // The old comparator compared `date` then `time` lexicographically. That is right on
-      // well-formed rows but wrong on the edges: a missing `time` sorted as '' — FIRST, ahead
-      // of an 08:00 fixture — so a card with no kickoff time jumped the queue on a board whose
-      // whole point is "what plays next". kickoffOf() folds both fields into one number and
-      // sends an unknown kickoff to the END, where an unknown belongs.
-      //
-      // TIMEZONE, measured not assumed (TEN-204 §1.4): api-tennis `event_time` is UTC+2 —
-      // 127 of 144 fixtures joined against the capture store's UTC start epoch sit at exactly
-      // +2.0h. So a card reading "Today 08:00" is 06:00 UTC. The ORDER is unaffected (one
-      // constant offset across every row), which is why this is a comment and not an
-      // adjustment — silently shifting the printed time would change what the feed said.
-      // The label gap is reported to the founder rather than patched here.
+    if (_filters.sort === 'soonest') {
+      // The real start instant (cardStartMs), not a display string; an unknown start sorts last.
       arr.sort(function (a, b) {
-        var ka = kickoffOf(a.player.upcoming), kb = kickoffOf(b.player.upcoming);
+        var ka = a.slot && a.slot.startMs != null ? a.slot.startMs : Infinity;
+        var kb = b.slot && b.slot.startMs != null ? b.slot.startMs : Infinity;
         if (ka !== kb) return ka - kb;
         return b.streak.count - a.streak.count;
       });
     } else {
       arr.sort(function (a, b) {
         if (b.streak.count !== a.streak.count) return b.streak.count - a.streak.count;
-        // tie-break: bigger pool is the sturdier run
-        return (b.streak.pool || 0) - (a.streak.pool || 0);
+        return (b.streak.pool || 0) - (a.streak.pool || 0);   // tie-break: the bigger pool is the sturdier run
       });
     }
     return arr;
   }
 
-  // ─── clickable detail: the matches behind the streak ─────────────────────────
-  // Founder (2026-09-07): a member should be able to click a card and see the
-  // matches that make the run — date, opponent, tournament, surface, and the score
-  // line that satisfied the condition. That is what turns a number into something a
-  // bettor can judge (18 running vs Challenger fields ≠ 18 vs the top 20). Rendered
-  // as an in-card expansion, never a separate page. Guarded: no matches → no panel
-  // (older series.json without the field simply shows no toggle, never a broken UI).
-  // The match table shown INSIDE the overlay (founder 2026-09-07 fix #1): FOUR columns
-  // — Date, Event, Opponent, Score — nothing truncated. The opponent is what tells a
-  // member whether a 12-match run came against qualifiers or seeds. The score is the
-  // set scores as played, tiebreaks included (e.g. "7-6(5) 6-4"), read straight from
-  // the engine's `score` field; a missing field is a dash, never a guess. Newest first.
-  // TEN-204 2.7 · the modal is now TWO shapes, chosen by family, on one shared grid.
-  //
-  //   MATCH-RESULT (all comps / surface / vs style) — eight tracks:
-  //     W-L · DATE · EVENT · OPPONENT · SCORE · PLAYER · OPP · P&L
-  //     The last three are the export's HOME / AWAY / P&L renamed. "HOME is always the
-  //     player this page is about" — so the honest header is his side, not a fixture role
-  //     that does not exist in tennis. The brief is explicit: never HOME/AWAY. PLAYER is
-  //     bold, OPP is dim, exactly as the export's weight split specifies.
-  //     Price and P&L render a dash until Phase 3 is authorised. No zeroes, no placeholders.
-  //
-  //   LINE / SET (total games / handicap / set outcome / set games) — six tracks:
-  //     W-L · DATE · EVENT · OPPONENT · SCORE · PROOF
-  //     No price and no P&L columns AT ALL — not dashed ones. A price column under a line
-  //     claim would imply a market we have no timestamped close for at this tier
-  //     (Phase 1 §1.2e). PROOF carries the value the claim is judged on.
-  //
-  // W/L is the MATCH RESULT and is labelled as such in the header, because on a line family
-  // the match result and the streak condition are different things — a player can lose a
-  // match inside an Under 23.5 run — and an unlabelled letter would read as the streak's own
-  // outcome. Result and score both come from the same row object, never from independent
-  // sources (export §5).
-  // §1.2 · the column header, rendered ONCE, on the same eight tracks as every row:
-  //   [empty cell] · DATE · EVENT · OPPONENT · SCORE · HOME · AWAY · P&L
-  // The "W/L" label is gone (the design leaves that cell empty). The stacked
-  // "MATCH ODDS · PRE-MATCH" band is gone entirely — §1.8 makes the total line the one
-  // place "pre-match" is said, so the band would have been the second.
-  //
-  // HOME / AWAY, not PLAYER / OPP. §1.3 defines HOME as the player this page is about and
-  // AWAY as the opponent; the original brief's "never HOME/AWAY" is explicitly reversed by
-  // the pixel pass, and the handoff wins every conflict.
-  //
-  // §1.7 · the P&L track exists on EVERY family, so the eight columns are identical panel to
-  // panel. On a line/set family the header cell and the row cells are BLANK — not a dash:
-  // a dash reads as "we looked and found nothing", and we never ran a ledger on a market we
-  // did not price at all. isMatchResultFam() is the same predicate the card and the ledger
-  // use, so the three can never disagree about which families carry a P&L.
-  function modalHeadHtml(st) {
-    return '<div class="sr-mhead">' +
-      '<span class="sr-mres"></span>' +
-      '<span class="sr-mdate">Date</span>' +
-      '<span class="sr-mtour">Event</span>' +
-      '<span class="sr-mopp">Opponent</span>' +
-      '<span class="sr-mscore">Score</span>' +
-      '<span class="sr-mp1">Home</span>' +
-      '<span class="sr-mp2">Away</span>' +
-      '<span class="sr-mpl">' + (isMatchResultFam(st) ? 'P&amp;L' : '') + '</span>' +
-    '</div>';
-  }
-  function detailTableHtml(st) {
-    // streakRows() is the ONE builder (see its block above). The modal reverses for display —
-    // newest first — which is a render choice and changes no value.
-    var rows = streakRows(st).slice().reverse();
-    if (!rows.length) return '';
-    var isResult = isMatchResultFam(st);
-    var dash = '<span class="sr-dash">—</span>';
-    return rows.map(function (r) {
-      // `|| r.date` used to sit in the middle here, printing the RAW string when fmtDate
-      // couldn't render it — so a malformed "2026-13-05" appeared verbatim in the modal while
-      // the card beside it showed a dash for the same value. Unrenderable is unknown, and
-      // unknown is a dash.
-      var d = fmtDate(r.date) ? esc(fmtDate(r.date)) : dash;
-      var res = (r.won === true) ? '<span class="sr-mres sr-w">W</span>'
-              : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
-              : '<span class="sr-mres sr-dash">—</span>';
-      var cells = res +
-        '<span class="sr-mdate">' + d + '</span>' +
-        '<span class="sr-mtour">' + (r.event ? esc(r.event) : dash) + '</span>' +
-        '<span class="sr-mopp">' + (r.opponent ? esc(r.opponent) : dash) + '</span>' +
-        '<span class="sr-mscore">' + (r.score ? esc(r.score) : dash) + '</span>';
-      // §1.3 · HOME / AWAY prices on every family. The row's own book is exposed via title=
-      // so a mixed ledger can be audited row by row rather than taken on trust (founder's
-      // fill ruling 2026-09-15). An unpriced row is a dash, never a zero.
-      var bookAttr = r.book ? ' title="' + esc(r.book) + ' · pre-match snapshot"' : '';
-      cells += '<span class="sr-mp1"' + bookAttr + '>' + (r.price == null ? dash : esc(r.price.toFixed(2))) + '</span>' +
-               '<span class="sr-mp2"' + bookAttr + '>' + (r.oppPrice == null ? dash : esc(r.oppPrice.toFixed(2))) + '</span>';
-      // §1.7 · the P&L cell. Match-result families carry the flat-1u figure; line/set
-      // families render the cell EMPTY so the track — and therefore every column to its
-      // left — stays exactly where it is, with no dash and no value inside it.
-      var plTxt = '';
-      if (isResult) {
-        plTxt = dash;
-        if (r.price != null && r.won != null) {
-          var u = r.won ? Number((r.price - 1).toFixed(2)) : -1.00;
-          plTxt = '<span class="' + (u >= 0 ? 'sr-w' : 'sr-l') + '">' +
-                  (u > 0 ? '+' : (u < 0 ? '−' : '')) + esc(Math.abs(u).toFixed(2)) + '</span>';
-        }
-      }
-      cells += '<span class="sr-mpl">' + plTxt + '</span>';
-      return '<div class="sr-mrow">' + cells + '</div>';
-    }).join('');
-  }
-  // Total line (export §5). TEN-204 Phase 3 · match-result families now carry the unit
-  // total, the yield and "X of N priced". Line/set families still state only the family
-  // and the row count — they have no ledger and must not grow one.
-  //
-  // The book disclosure is not decoration: under the founder's 2026-09-15 fill ruling a
-  // single ledger can be drawn from two books whose prices differ systematically
-  // (Pinnacle ran +2.99% richer than bet365 across the 643 rows both priced on the day
-  // the ruling was made), so a ledger that mixes them says which ones it mixed.
-  function modalTotalHtml(st) {
-    var rows = streakRows(st);
-    // §1.8 · the left side is "{FAMILY} · {N} MATCHES · PRE-MATCH ODDS" in the eyebrow
-    // style, and it is the ONLY place "pre-match" appears on the page now that §1.2 has
-    // removed the column band. The count is the row count, never the artifact's own claim.
-    var head = '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
-      esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') +
-      ' · pre-match odds</span>';
-    // §1.7 · line/set families get NO units and NO yield — the left eyebrow is the whole
-    // total line for them. ledgerOf() already returns null on those families (locked by the
-    // CI gate), so this is the same predicate, not a second opinion about it.
-    var L = ledgerOf(st);
-    if (!L) return '<div class="sr-ov-total">' + head + '</div>';
-    if (!L.priced) {
-      head += '<span class="sr-ov-total-r">' +
-        '<span class="sr-ov-total-k">0 of ' + esc(String(L.of)) + ' priced</span>' +
-        '<span class="sr-ov-total-v sr-dash">—</span></span>';
-      return '<div class="sr-ov-total">' + head + '</div>';
-    }
-    // §1.7 right group: "{n} PRICED" eyebrow, then units at mono 15px/700 and yield at
-    // mono 15px/400, both sign-coloured. The book stays in the eyebrow: under the founder's
-    // 2026-09-15 fill ruling one ledger can mix two books whose prices differ systematically
-    // (Pinnacle ran +2.99% richer than bet365 across the 643 rows both priced), so a ledger
-    // that mixes them has to say which ones it mixed.
-    var cls = L.total >= 0 ? 'sr-w' : 'sr-l';
-    var sign = L.total > 0 ? '+' : (L.total < 0 ? '−' : '');
-    head += '<span class="sr-ov-total-r">' +
-      '<span class="sr-ov-total-k">' + esc(String(L.priced)) + ' of ' + esc(String(L.of)) +
-        ' priced · ' + esc(L.books.join(' + ') || 'no book') + '</span>' +
-      '<span class="sr-ov-total-v ' + cls + '">' + sign + esc(Math.abs(L.total).toFixed(2)) + 'u</span>' +
-      '<span class="sr-ov-total-y ' + cls + '">' +
-        (L.yield > 0 ? '+' : (L.yield < 0 ? '−' : '')) + esc(Math.abs(L.yield).toFixed(1)) + '%</span>' +
-    '</span>';
-    return '<div class="sr-ov-total">' + head +
-      // The caveat is generated, not hardcoded, and it is not optional: the founder ruled
-      // to KEEP this P&L after being shown it is circular, on condition it carries the
-      // caveat on the page. A streak is selected FOR its rows' outcomes, so the sign of
-      // this total was fixed before any price was read.
-      // §1.8 makes the total line the ONE place the pre-match label appears, and this
-      // caveat sat directly beneath it saying "at the pre-match price" — the second
-      // occurrence. Reworded to point AT that line ("the price above") rather than repeat
-      // its label. The disclosure itself is unchanged and is not optional: the founder
-      // ruled to keep this P&L after being shown it is circular, on condition the caveat
-      // ships with it.
-      '<div class="sr-ov-caveat">Flat 1u at the price above. A run is selected for its ' +
-      'results, so this total’s direction is set by the run itself, not by the market — ' +
-      'read it as the price of the run, not as an edge.</div>' +
-    '</div>';
+  // ─── prices: the site's one Database join ───────────────────────────────────────────────────────────────────
+  // Every row of a player's streaks is priced in ONE call per player (each distinct match once, so two cards that
+  // share a match read the same price), through trDbJoinPx — the per-event model's own join (Database rows +
+  // retirements behind the store's flag; H2HPage.priceJoin; Pinnacle closing, else Bet365 closing).
+  function priceBoard() {
+    if (_pxState === 'loading' || _pxState === 'ready') return;
+    if (typeof sfDbJoinLoad !== 'function' || typeof trDbJoinPx !== 'function') { _pxState = 'failed'; _pxFailAt = Date.now(); render(); return; }
+    _pxState = 'loading';
+    var gen = ++_pxGen;   // a refetch of series.json starts a new generation; an older join's answer is dropped
+    var players = (_data && _data.players) || [];
+    var loadCh = function (p) {
+      // Challenger runs are Challenger matches, which the Database (ATP main tour) never holds: no career fetch.
+      if (p.tier !== 'tour' || typeof loadCareerHistory !== 'function') return Promise.resolve([]);
+      return Promise.resolve(loadCareerHistory(p.key)).then(function (ch) { return Array.isArray(ch) ? ch : []; }, function () { return []; });
+    };
+    Promise.resolve().then(function () { return sfDbJoinLoad(); }).then(function () {
+      return Promise.all(players.map(function (p) { return loadCh(p).then(function (ch) { return [p, ch]; }); }));
+    }).then(function (pairs) {
+      if (gen !== _pxGen) return;
+      pairs.forEach(function (pc) {
+        var p = pc[0], uniq = {}, list = [];
+        (p.streaks || []).forEach(function (st) {
+          (st.matches || []).forEach(function (m) {
+            if (typeof m.won !== 'boolean') return;
+            var k = String(m.date) + '|' + String(m.opponent || '') + '|' + (m.won ? 1 : 0);
+            if (!uniq[k]) { uniq[k] = { date: m.date, won: m.won, opp: m.opponent || '', round: null, _ms: [] }; list.push(uniq[k]); }
+            uniq[k]._ms.push(m);
+          });
+        });
+        if (!list.length) return;
+        trDbJoinPx(displayName(p.key, p.name), pc[1])(list);
+        list.forEach(function (r) {
+          var v = (r.price != null && r.oppPrice != null) ? { price: Number(r.price), oppPrice: Number(r.oppPrice), book: r.book } : null;
+          r._ms.forEach(function (m) { if (PX) { if (v) PX.set(m, v); else PX.delete(m); } });
+        });
+      });
+      _pxState = 'ready';
+      render();
+    }).catch(function (e) {
+      if (gen !== _pxGen) return;
+      console.warn('[series] price join failed:', e && e.message);
+      _pxState = 'failed';
+      _pxFailAt = Date.now();
+      render();
+    });
   }
 
-  // ─── card render ──────────────────────────────────────────────────────────────
-  // idx is the card's position in the current view — the whole card is the click
-  // target (founder 2026-09-07) and carries it as data-card-idx so the click
-  // handler can open the matches overlay for exactly this streak.
-  // Card structure is the export's, top to bottom (export §3):
-  //   claim + blue run length → reference sub-line (item 5) → player row → tag row →
-  //   STARTED/LAST/TYPE strip → next match · History →
-  // Removed by founder ruling on 2026-09-12: the big count column and its colour
-  // (q2), the 3px valence bar (q2), the POOL cell — modal only now (q1), and the
-  // tier / opponent-archetype / Grand-Slam / best-of-badge chips (q3). The tag row
-  // is the export's own data-model row, finally rendered (README open item #4).
+  // ─── card render (2b) ────────────────────────────────────────────────────────────────────────────────────────
+  // Player-first header (initials, name + mono rank, the Next line), count tile + claim with "type · direction" under
+  // it, three ruled rows Started / Last / Avg price. The whole card opens the pop-up (no History link).
+  function avgPriceHtml(st) {
+    if (_pxState === 'idle' || _pxState === 'loading') return '';          // a price claims nothing while it loads
+    if (_pxState === 'failed') return '<span class="sr-dash" title="Prices unavailable">—</span>';   // = the pop-up's line
+    var ap = avgPriceOf(st);
+    return ap ? esc(ap.value) : DASH;
+  }
+  function nextHtml(c) {
+    var s = c.slot || {};
+    var when = (s.day === 'today' ? 'Today' : s.day === 'tomorrow' ? 'Tomorrow' : '');
+    // One line (founder round 3 item 2): the event is shown whole or not at all — never cut to "R…". It carries its
+    // own " · " so fitNextLines can drop it whole when the line overflows, leaving "Next <day> <time> · vs <opponent>"
+    // (the reference's form). The full line is the title tooltip.
+    var full = [when + (s.clock ? ' ' + s.clock : '')];
+    var html = '<span class="sr-next-t">' + esc(full[0]) + '</span>';
+    if (s.event) { html += '<span class="sr-next-ev"> · ' + esc(s.event) + '</span>'; full.push(s.event); }
+    html += '<span class="sr-next-opp"> · vs ' + (s.opp ? esc(s.opp) : DASH) + '</span>';
+    full.push('vs ' + (s.opp || '—'));
+    return '<span class="sr-next" title="' + esc('Next ' + full.join(' · ')) + '"><span class="sr-next-k">Next </span>' + html + '</span>';
+  }
+  // Measured after paint: a Next line wider than its box drops its event span whole (never an ellipsis inside it).
+  function fitNextLines(root) {
+    var lines = (root && typeof root.querySelectorAll === 'function') ? root.querySelectorAll('.sr-next') : [];
+    for (var i = 0; i < lines.length; i++) {
+      var el = lines[i], ev = el.querySelector('.sr-next-ev');
+      if (ev && el.scrollWidth > el.clientWidth) ev.remove();
+    }
+  }
+  // The grid's width decides which events fit: a render while the page is hidden (width 0) or a resize repaints once
+  // the width settles. Width only — a repaint changes the height, never the width, so this cannot loop.
+  var _ro = null, _roW = -1;
+  function watchWidth(root) {
+    if (_ro || typeof ResizeObserver !== 'function') return;
+    _ro = new ResizeObserver(function (es) {
+      var w = Math.round(es[0].contentRect.width);
+      if (w === _roW) return;
+      _roW = w;
+      if (_active && _data && w > 0) render();
+    });
+    _ro.observe(root);
+    // a web font landing after the paint widens the text: re-fit then too
+    var fonts = document.fonts;
+    if (fonts && typeof fonts.addEventListener === 'function') {
+      fonts.addEventListener('loadingdone', function () { if (_active && _data) render(); });
+    }
+  }
   function cardHtml(c, idx) {
-    var p = c.player, st = c.streak, u = p.upcoming || {};
-    var dash = '<span class="sr-dash">—</span>';
-    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + esc(String(p.rank))) : dash;
-
-    // 1 · title row — claim + run length on the left, the direction WORD right-aligned
-    // opposite it (item 7, founder 2026-09-12). It previously sat under the player name,
-    // in the slot that reads as player metadata; direction is a property of the RUN, so
-    // it now sits on the run's own row. Still a word, never a colour (ruling q2).
-    var claim = '<div class="sr-cardtop">' +
-        '<div class="sr-claim">' + claimOf(st) +
-          ' <span class="sr-run">' + esc(runLabel(st.count)) + '</span></div>' +
-        '<span class="sr-tag sr-tag-dir">' + esc(DIR_LABEL[valence(st)]) + '</span>' +
-      '</div>';
-
-    // 1b · reference sub-line, directly beneath the title (item 5). The run length
-    // stays where it was, in the title; this says what that length is worth for this
-    // player. Tucked to the title by a negative margin so it reads as a sub-line
-    // rather than as a fourth block of the card.
-    var refLine = referenceHtml(st);
-
-    // 2 · player row — 20px avatar INLINE with the name on the same baseline (item 4),
-    // name, rank. The flag is gone (item 3): nationality changes no read on this page
-    // and was the card's only decorative element. emojiFlag survives for the History
-    // modal, which is explicitly out of scope.
-    var prow =
-      '<div class="sr-prow">' + avatarHtml(p) +
-        '<span class="sr-pid">' +
-          '<span class="sr-pname">' + esc(p.name || u.playerName || '—') + '</span>' +
-          '<span class="sr-prank">' + rankTxt + '</span>' +
-        '</span>' +
-      '</div>';
-
-    // 3 · tag row — already-played view only now that direction has moved up. Whether
-    // the streak's OWN condition held: Continued / Broken / Not evaluable is the
-    // condition, never the match result; "not evaluable" is excluded from the
-    // aggregate rather than guessed. No sign colour on any of them (ruling q2).
-    var tags = '';
-    if (u.played) {
-      var oc = st.outcome;
-      if (oc && oc.held === true)             tags += '<span class="sr-tag sr-tag-oc">Continued</span>';
-      else if (oc && oc.held === false)       tags += '<span class="sr-tag sr-tag-oc">Broken</span>';
-      else if (oc && oc.evaluable === false)  tags += '<span class="sr-tag sr-tag-oc-na" title="The played match could not be evaluated for this streak’s condition — excluded from the continued/broken count">Not evaluable</span>';
-      else                                    tags += '<span class="sr-tag sr-tag-oc-na">Played</span>';
-      if (u.result) tags += '<span class="sr-played-res">' + esc(u.result) + '</span>';
-    }
-    // Empty on an upcoming card now that direction has left this row — and an empty
-    // .sr-tags would still cost the card 12px of flex gap. "Do not increase card
-    // height": no chips, no row.
-    var tagRow = tags ? '<div class="sr-tags">' + tags + '</div>' : '';
-
-    // 4 · STARTED · LAST · PRICE CELL · TYPE  (TEN-204 2.3)
-    var startYmd = startedOf(st);
-    // Ruling `last-year` (a) OR ruling `prior-year` (a) — a run that straddles a year
-    // end, or one whose LAST sits outside the snapshot's own year. showYear is a single
-    // flag fed to both cells, so whenever both ends are renderable the year lands on
-    // both and they stay readable against each other. An end that CANNOT render is a
-    // dash and simply drops its year — which is how ruling `lone-year` (a) produces
-    // "Started — / Last 12 Sep ’26" rather than being special-cased.
-    //
-    // TEN-204 2.3 SUPERSEDES the conditional form above: "STARTED (with year, '5 Aug 2026') /
-    // LAST (short, '13 Sep')". The year is now UNCONDITIONAL on STARTED and ABSENT from LAST.
-    //
-    // This deliberately replaces three earlier founder rulings — `last-year` (a), `prior-year`
-    // (a) and `lone-year` (a), all 2026-09-12 — which put the year on BOTH cells, but only on
-    // a year-crossing or a prior-year run. The new rule is strictly stronger for the reader:
-    // every card now states the year its run began, so "Started 5 Dec 2025 / Last 12 Jan" is
-    // unambiguous without the conditional, and there is no longer a case where the card knows
-    // the year and does not say it. crossesYear()/priorYear() are kept and are still exercised
-    // by tools/test-series-dates.js, which now locks the new rule instead of the old one.
-    var startTxt = fmtShort(startYmd, true);       // "5 Aug 2026"
-    var lastTxt = fmtShort(st.lastDate, false);    // "13 Sep"
-    var showYear = true;
-    // A year-bearing strip is 84px of mono in the LAST cell, which does NOT fit the
-    // export's 1.2fr column below ~364px — measured eliding to "12 Jan ’…", a
-    // corrupted date and strictly worse than the bare day+month it replaces. The
-    // modifier lets series.css relax ONLY these cards on narrow viewports; same-year
-    // cards keep the export's three-column geometry untouched.
-    // The third cell (TEN-204 2.3). Match-result families read AVG PRICE over a dash —
-    // Phase 3 is not built and no price is invented. Line and set-games families read the
-    // family's own proof figure, computed by proofSummary() from streakRows() — the SAME
-    // builder the modal's rows come from, so the card average and the modal can never
-    // disagree. Set outcome has no agreed proof figure, so it reads PROOF over a dash.
-    // §2.3 · the third track. Match-result families read AVG PRICE over the mean of the
-    // SAME rows the modal lists — proofSummary() is the one builder, so the card figure and
-    // the modal can never disagree. Line and set families render an EMPTY track: no "PROOF"
-    // label, no "AVG GAMES", no "AVG 1ST-SET GAMES", no dash. The cell is still emitted so
-    // TYPE stays in the fourth column and the strip lines up with the cards beside it.
-    //
-    // This drops the proof FIGURE from the card. It is still computed — proofOf() is what
-    // the fail-closed CI gate uses to check that every row satisfies its claim (2.8), which
-    // is on the do-not-touch list — it is simply no longer painted.
-    var isResultFam = isMatchResultFam(st);
-    var ps = isResultFam ? proofSummary(st) : null;
-    var thirdCell = isResultFam
-      ? '<span class="sr-cell sr-cell-proof"><span class="sr-cell-k">' + esc(ps.label) + '</span>' +
-          '<span class="sr-cell-v sr-cell-pv">' + (ps.value == null ? dash : esc(ps.value)) + '</span></span>'
-      : '<span class="sr-cell sr-cell-blank"></span>';
-    var strip =
-      '<div class="sr-strip' + (showYear ? ' sr-strip--yr' : '') + '">' +
-        '<span class="sr-cell"><span class="sr-cell-k">Started</span>' +
-          '<span class="sr-cell-v">' + (startTxt ? esc(startTxt) : dash) + '</span></span>' +
-        '<span class="sr-cell"><span class="sr-cell-k">Last</span>' +
-          '<span class="sr-cell-v">' + (lastTxt ? esc(lastTxt) : dash) + '</span></span>' +
-        thirdCell +
-        '<span class="sr-cell"><span class="sr-cell-k">Type</span>' +
-          '<span class="sr-cell-v sr-cell-type">' + esc(FAM_BADGE[famOf(st)] || st.type) + '</span></span>' +
-      '</div>';
-
-    // Whole card is clickable when it has a match list to show. It opens the matches
-    // in an overlay (never an inline expand — that reflowed the board). Keyboard-
-    // reachable as a button.
+    var p = c.player, st = c.streak;
+    var name = displayName(p.key, p.name || (p.upcoming && p.upcoming.playerName) || '');
+    var rankTxt = (p.rank != null && p.rank !== '') ? esc('#' + p.rank) : '—';
+    var startTxt = fmtShort(startedOf(st), true);
+    var lastTxt = fmtShort(st.lastDate, false);
     var hasDetail = Array.isArray(st.matches) && st.matches.length > 0;
     var clickAttrs = hasDetail
-      ? ' role="button" tabindex="0" aria-haspopup="dialog"' +
-        ' aria-label="Show the ' + esc(String(st.count)) + ' matches in this run"' +
-        ' data-card-idx="' + esc(String(idx)) + '"'
+      ? ' role="button" tabindex="0" aria-haspopup="dialog" aria-label="Show the ' + esc(String(st.count)) +
+        ' matches in this run" data-card-idx="' + esc(String(idx)) + '"'
       : '';
-
-    // 5 · footer: next match (time · vs opponent — the export drops the tour
-    // segment; the tournament is still in the modal's Event column) and History →.
-    // The opponent slot dashes when the fixture has no opponent yet, rather than
-    // vanishing — otherwise "opponent unknown" is indistinguishable from "we don't
-    // print the opponent here" (standing rule: missing data is a dash).
-    // "History →" is gated on hasDetail: without a match list the card is not
-    // clickable, not focusable and opens nothing, so advertising it would be a dead
-    // affordance — the same guard the pre-rebuild card applied to its hint row.
-    var when = (u.day ? cap(u.day) : '') + (fmtTime(u.time) ? ' ' + fmtTime(u.time) : '');
-    var nextBits = [];
-    if (when) nextBits.push(esc(when));
-    nextBits.push(u.opponentName ? 'vs ' + esc(u.opponentName) : 'vs ' + dash);
-    var foot =
-      '<div class="sr-foot">' +
-        '<span class="sr-next">' + nextBits.join(' · ') + '</span>' +
-        (hasDetail ? '<span class="sr-hist">History →</span>' : '') +
-      '</div>';
-
+    var row = function (k, v, cls) {
+      return '<div class="sr-row"><span class="sr-row-k">' + k + '</span><span class="sr-row-v' + (cls || '') + '">' + v + '</span></div>';
+    };
     return '<article class="sr-card' + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
-      claim + refLine + prow + tagRow + strip + foot +
+      '<div class="sr-chead">' +
+        '<span class="sr-ava">' + esc(initialsOf(name)) + '</span>' +
+        '<span class="sr-who">' +
+          '<span class="sr-nameline"><span class="sr-pname">' + (name ? esc(name) : DASH) + '</span> ' +
+            '<span class="sr-prank">' + rankTxt + '</span></span>' +
+          nextHtml(c) +
+        '</span>' +
+      '</div>' +
+      '<div class="sr-crow">' +
+        '<span class="sr-tile"><span class="sr-tile-n">' + esc(String(st.count)) + '</span><span class="sr-tile-k">in a row</span></span>' +
+        '<span class="sr-claimbox"><span class="sr-claim">' + claimOf(st) + '</span>' +
+          '<span class="sr-claimsub">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' + esc(DIR_LABEL[valence(st)]) + '</span></span>' +
+      '</div>' +
+      '<div class="sr-rows">' +
+        row('Started', startTxt ? esc(startTxt) : DASH) +
+        row('Last', lastTxt ? esc(lastTxt) : DASH) +
+        row('Avg price', avgPriceHtml(st), ' sr-row-v--b') +
+      '</div>' +
     '</article>';
   }
 
-  // ─── header card (export §1) ───────────────────────────────────────────────────
-  // The four stats are live and recount on every filter change: STREAKS is the card
-  // count in view, PLAYERS the distinct players inside it, LONGEST RUN the max count
-  // (a dash when the view is empty, never 0), UPDATED the clock off generatedAt.
-  // TEN-403: the 35b header carries ONE sentence on one line — trimmed from the TEN-194 paragraph (the pool /
-  // date-of-last-match promise still holds on every card; only the header stopped restating it).
-  var SUBTITLE = 'Current streaks for players scheduled today and tomorrow.';
-  // The title half renders from the FIRST paint, before any data exists. The shell no
-  // longer carries a static <h1>, so gating the whole header behind `_data` would leave
-  // the loading and fetch-failure states as one unlabelled sentence floating in the tab
-  // — the only page in the shell whose document heading depends on a network response.
-  // `view` is null on those paints; the four live stats are simply omitted, never zeroed.
+  // ─── header (shared 35b .sfh) ────────────────────────────────────────────────────────────────────────────────
+  var SUBTITLE = 'Current streaks for players scheduled today and tomorrow, each with the pool it was drawn from and the date of its latest match.';
   function headerHtml(view) {
-    var dash = '<span class="sr-dash">—</span>';
     var stats = '';
     if (view) {
       var players = {};
-      view.forEach(function (c) { players[c.player.key || c.player.name] = 1; });
+      view.forEach(function (c) { players[String(c.player.key != null ? c.player.key : c.player.name)] = 1; });
       var longest = view.length ? view.reduce(function (m, c) { return Math.max(m, c.streak.count); }, 0) : null;
       var upd = fmtUpdated(_data && _data.generatedAt);
-      // TEN-403: the shared 35b stat columns (.sfh__stat); the clock reads --text-soft, a dash grey (.sr-dash).
       var stat = function (k, v, cls) {
-        return '<div class="sfh__stat"><span class="sfh__l sr-stat-k">' + k + '</span>' +
-               '<span class="sfh__v' + (cls ? ' ' + cls : '') + '">' + v + '</span></div>';
+        return '<div class="sfh__stat"><span class="sfh__l">' + k + '</span><span class="sfh__v' + (cls || '') + '">' + v + '</span></div>';
       };
       stats = '<div class="sfh__stats">' +
         stat('Streaks', esc(String(view.length))) +
         stat('Players', esc(String(Object.keys(players).length))) +
-        stat('Longest run', longest != null ? esc(String(longest)) : dash) +
-        stat('Updated', upd ? esc(upd) : dash, upd ? 'sfh__v--soft' : '') +
+        stat('Longest run', longest != null ? esc(String(longest)) : '—', longest != null ? '' : ' sfh__v--none') +
+        stat('Updated', upd ? esc(upd) : '—', upd ? ' sfh__v--soft' : ' sfh__v--none') +
       '</div>';
     }
     return '<div class="sfh sr-head">' +
-      '<div class="sfh__text"><h1 class="sfh__title">Series</h1><p class="sfh__sub">' + SUBTITLE + '</p></div>' +
+      '<div class="sfh__text"><h1 class="sfh__title">Series</h1><p class="sfh__sub">' + esc(SUBTITLE) + '</p></div>' +
       stats +
     '</div>';
   }
 
-  // ─── filter bar (export §2 — two segmented rows, labels inline; item 8 removed the
-  //     checkbox that used to sit on row 2) ────────────────────────────────────────
+  // ─── filters (1c): the Type tab row, then Level · Day · Direction · Min length | Show already-played + Sort ────
   function seg(name, opts, cur) {
     return '<div class="sr-seg" data-seg="' + name + '">' + opts.map(function (o) {
-      return '<button type="button" class="sr-segbtn' + (o[0] === cur ? ' active' : '') + '"' +
-        ' aria-pressed="' + (o[0] === cur ? 'true' : 'false') + '" data-val="' + o[0] + '">' + esc(o[1]) + '</button>';
+      var on = String(o[0]) === String(cur);
+      return '<button type="button" class="sr-segbtn' + (on ? ' active' : '') + '" aria-pressed="' + (on ? 'true' : 'false') +
+        '" data-val="' + o[0] + '">' + esc(o[1]) + '</button>';
     }).join('') + '</div>';
   }
-  function fgroup(label, name, opts, cur) {
-    return '<span class="sr-fgroup"><span class="sr-flabel">' + esc(label) + '</span>' + seg(name, opts, cur) + '</span>';
+  var TYPE_TABS = [['all', 'All'], ['all-comp', 'All comps'], ['surface', 'Surface'], ['style', 'Vs style'],
+    ['total', 'Total games'], ['handicap', 'Handicap'], ['setout', 'Set outcome'], ['setgames', 'Set games']];
+  // Counts follow every other filter and ignore the Type filter; "All" is the sum.
+  function typeCounts() {
+    var n = { total: 0 };
+    (_cards || []).forEach(function (c) {
+      if (!passesFilters(c, true)) return;
+      var fam = 'f-' + famOf(c.streak);
+      n[fam] = (n[fam] || 0) + 1;
+      n.total++;
+    });
+    return n;
   }
-  // §3.4 · two segmented rows — LEVEL · DAY · DIRECTION, then TYPE · MIN LENGTH · SORT —
-  // followed by §3.5's restored "Show already-played" checkbox.
-  //
-  // §3.5 reverses TEN-194 item 8, which had removed the checkbox and made `Played` a fourth
-  // DAY option so that every control was a segmented one. DAY is back to its three design
-  // options and the checkbox is back below the rows. ONLY the control changed: `showPlayed`
-  // drives the same isUnderway-backed predicate in passesFilters() that `day === 'played'`
-  // drove, so the played view is reached by a different widget and by no different logic.
   function filterBarHtml() {
-    var f = _filters;
-    return '<div class="sr-filters">' +
+    var f = _filters, n = typeCounts();
+    var tabs = '<div class="sr-tabs" role="tablist">' + TYPE_TABS.map(function (t) {
+      var fam = 'f-' + (t[0] === 'all-comp' ? 'all' : t[0]);
+      var cnt = t[0] === 'all' ? n.total : (n[fam] || 0);
+      var on = f.type === t[0];
+      return '<button type="button" class="sr-tab' + (on ? ' active' : '') + '" role="tab" aria-selected="' + (on ? 'true' : 'false') +
+        '" data-type="' + t[0] + '">' + esc(t[1]) + '<span class="sr-tab-n">' + esc(String(cnt)) + '</span></button>';
+    }).join('') + '</div>';
+    return '<div class="sr-filters">' + tabs +
       '<div class="sr-frow">' +
-        fgroup('Level', 'level', [['all','All'],['tour','ATP'],['chal','Challenger']], f.level) +
-        fgroup('Day', 'day', [['all','All'],['today','Today'],['tomorrow','Tomorrow']], f.day) +
-        fgroup('Direction', 'dir', [['all','All'],['win','Wins'],['loss','Losses']], f.dir) +
+        seg('level', [['all', 'All'], ['tour', 'ATP'], ['chal', 'Challenger']], f.level) +
+        seg('day', [['all', 'All'], ['today', 'Today'], ['tomorrow', 'Tomorrow']], f.day) +
+        seg('dir', [['all', 'All'], ['win', 'Wins'], ['loss', 'Losses']], f.dir) +
+        seg('minLen', [['3', '3+'], ['4', '4+'], ['5', '5+'], ['6', '6+'], ['7', '7+'], ['8', '8+']], String(f.minLen)) +
+        '<span class="sr-fright">' +
+          '<label class="sr-toggle"><input type="checkbox" data-toggle="showPlayed"' + (f.showPlayed ? ' checked' : '') + '>' +
+            '<span class="sr-box" aria-hidden="true"></span><span>Show already-played</span></label>' +
+          seg('sort', [['longest', 'Longest'], ['soonest', 'Soonest']], f.sort) +
+        '</span>' +
       '</div>' +
-      '<div class="sr-frow">' +
-        fgroup('Type', 'type', [['all','All'],['all-comp','All comps'],['surface','Surface'],['style','Vs style'],['total','Total games'],['handicap','Handicap'],['setout','Set outcome'],['setgames','Set games']], f.type) +
-        fgroup('Min length', 'minLen', [['3','3+'],['4','4+'],['5','5+'],['6','6+'],['7','7+'],['8','8+']], String(f.minLen)) +
-        fgroup('Sort', 'sort', [['longest','Longest'],['soonest','Soonest']], f.sort) +
-      '</div>' +
-      '<label class="sr-toggle">' +
-        '<input type="checkbox" data-toggle="showPlayed"' + (f.showPlayed ? ' checked' : '') + '>' +
-        '<span class="sr-box" aria-hidden="true"></span>' +
-        '<span>Show already-played</span>' +
-      '</label>' +
     '</div>';
   }
 
-  // ─── render ────────────────────────────────────────────────────────────────────
+  // ─── footnote + empty state ──────────────────────────────────────────────────────────────────────────────────
+  // The reference's form (founder round 3 item 1): the tag-row sentence, then ONE mono line of the engine's real values
+  // from series.json rules, `·` separated, ending "data <build date>" (series.json generatedAt, YYYY-MM-DD in
+  // stennisfy.tz) — never the filter state.
+  function dataDate(iso) {
+    var ms = iso ? Date.parse(iso) : NaN;
+    if (!isFinite(ms)) return '—';
+    var zone = (typeof newsTz === 'function' && newsTz()) || undefined;
+    var f = function (z) { return new Intl.DateTimeFormat('en-CA', { timeZone: z, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms)); };
+    try { return f(zone); } catch (e) { return f(undefined); }
+  }
+  function rulesLine() {
+    var r = (_data && _data.rules) || {};
+    var num = function (v) { return (typeof v === 'number' && isFinite(v)) ? String(v) : '—'; };
+    var parts = ['runs ' + num(r.minLen) + '+'];
+    if (r.onePerFamily) parts.push('one card per player per family');
+    parts.push('recency cap ' + num(r.maxAgeDays) + 'd' + (r.slamAgeExempt ? ' (Grand Slams exempt)' : ''));
+    parts.push('a gap over ' + num(r.maxGapDays) + 'd ends a run');
+    parts.push('pool floor ' + num(r.minPoolConditional) + ' for surface, style, set and line runs');
+    parts.push('data ' + dataDate(_data && _data.generatedAt));
+    return parts.join(' · ');
+  }
+  function footnoteHtml() {
+    return '<div class="sr-footnote">' +
+      '<p>Direction shows as a word in the tag row — <span class="sr-fn-w">Winning run</span>, <span class="sr-fn-w">Losing ' +
+      'run</span>, <span class="sr-fn-w">Neutral</span>. Betting lines (over/under, handicap) and set-shape volatility are a ' +
+      'direction, not good or bad.<br>Prices are closing prices, flat 1 unit per match.</p>' +
+      '<p class="sr-fn-rules">' + esc(rulesLine()) + '</p>' +
+    '</div>';
+  }
+  function emptyHtml() {
+    return '<div class="sr-empty"><span>No streaks match these filters.</span>' +
+      '<button type="button" class="sr-clear" data-clear="1">Clear</button></div>';
+  }
+
+  // ─── render ──────────────────────────────────────────────────────────────────────────────────────────────────
   function render() {
     var root = document.getElementById('seriesGrid');
     if (!root) return;
-    if (!_data) { root.innerHTML = headerHtml(null) + '<p class="sr-empty">Loading streaks…</p>'; return; }
-    if (!_cards) _cards = flatten(_data);
-
-    var view = sortCards(_cards.filter(passesFilters));
+    if (!_data) { root.innerHTML = headerHtml(null) + '<p class="sr-note">Loading streaks…</p>'; return; }
+    if (_pxState === 'failed' && Date.now() - _pxFailAt > PX_RETRY_MS) priceBoard();   // retry a failed join
+    if (!_cards) {
+      _cards = flatten(_data);
+      reslot();
+    }
+    var view = sortCards(_cards.filter(function (c) { return passesFilters(c, false); }));
     _view = view;  // card clicks index into this exact list
-    var meta = _data.rules || {};
-    var gen = _data.generatedAt ? new Date(_data.generatedAt) : null;
-
-    // TEN-204 2.7 · every value here is read from the LIVE config or counted from the live
-    // view. Two changes from the shipped line:
-    //   · the 75-day intra-streak gap rule is PRINTED. It is one of the engine's load-bearing
-    //     rules — it is what makes "12 in a row" mean twelve consecutive matches rather than
-    //     twelve spread over two seasons — and the footnote never mentioned it.
-    //   · `maxAgeDays` and `minPoolConditional` used to fall back to the literals '45' and '8'
-    //     when the artifact did not carry them. A hardcoded fallback in a methodology line is
-    //     the worst place for one: it states a rule the build may not have run under. They
-    //     dash now, like every other unknown on this page.
-    var num = function (v) { return (typeof v === 'number' && isFinite(v)) ? esc(String(v)) : '—'; };
-    var stamp = '<p class="sr-stamp">' +
-      esc(String(view.length)) + ' streak' + (view.length === 1 ? '' : 's') +
-      ' · min length ' + esc(String(_filters.minLen)) + '+ (vs-style ' + esc(String(styleFloor())) + '+)' +
-      ' · one card per player per family' +
-      ' · recency cap ' + num(meta.maxAgeDays) + 'd (Grand Slams exempt)' +
-      ' · runs cut by a gap over ' + num(meta.maxGapDays) + 'd' +
-      ' · pool floor ' + num(meta.minPoolConditional) + ' for conditional & line types' +
-      ' · best-of never blended (games lines locked to the match format)' +
-      ' · only streaks that bear on the scheduled match' +
-      (gen ? ' · data ' + esc(gen.toISOString().slice(0, 10)) : '') +
-    '</p>';
-
     var body = view.length
       ? '<div class="sr-cards">' + view.map(cardHtml).join('') + '</div>'
       : emptyHtml();
-
-    // Export order: header card → filter rows → card grid → footnote block. The
-    // already-played aggregate sits between the filters and the grid, where it reads
-    // as a summary OF the view DAY=Played just opened (it renders only then).
-    root.innerHTML = headerHtml(view) + filterBarHtml() + outcomesSummaryHtml(view) +
-                     body + footnoteHtml(stamp) + footerHtml();
+    root.innerHTML = headerHtml(view) + filterBarHtml() + body + footnoteHtml();
+    fitNextLines(root);
+    watchWidth(root);
     wireFilters(root);
-  }
-
-  // Footnote block (export §4): the direction sentence — which replaced the colour
-  // legend when the valence bar came off (ruling q2) — then the methodology line.
-  function footnoteHtml(stamp) {
-    return '<div class="sr-footnote">' +
-      // "in the tag row" was true until item 7 moved the direction word onto the title
-      // row, opposite the streak title. The footnote is on the DO-NOT-CHANGE list, so
-      // this is the smallest edit that keeps it from pointing at a row that no longer
-      // carries it — four words, reported to the founder rather than done quietly.
-      '<p class="sr-fn-dir">Direction shows as a word beside the run length — <b>Winning run</b>, ' +
-      '<b>Losing run</b>, <b>Neutral</b>. Betting lines (over/under, handicap) and set-shape ' +
-      'volatility are a direction, not good or bad.</p>' + stamp +
-    '</div>';
-  }
-
-  // HIDDEN by founder ruling 2026-09-15 (TEN-204 interaction d6a15334, tracker="hide").
-  // The figure it printed was circular: the engine graded a match that is already inside
-  // the streak's own row list, so a winning run could only ever report "continued" — the
-  // whole ledger read 993 continued · 1 broken · 47 not evaluable (99.9% held), six of
-  // seven families at exactly 100%. That is a property of how a streak is defined, not a
-  // measurement of anything. Ruling was hide now, fix properly later: grade the NEXT
-  // match, the one AFTER the run, which is a real out-of-sample test.
-  // The body below is left intact and unreferenced on purpose — the proper fix changes
-  // which match is graded, not this markup, so re-enabling is deleting the line below.
-  var OUTCOME_SUMMARY_HIDDEN = true;
-
-  // CONTINUED/BROKEN summary (fix #3), shown only in the already-played view. Counts
-  // over the played cards CURRENTLY in view whose condition could be evaluated; the
-  // "not evaluable" cards are reported separately and excluded from the percentage —
-  // never guessed (founder standing rule).
-  function outcomesSummaryHtml(view) {
-    if (OUTCOME_SUMMARY_HIDDEN) return '';      // founder ruling 2026-09-15 — see above
-    if (!_filters.showPlayed) return '';        // §3.5: DAY=Played became the checkbox again
-    var played = view.filter(function (c) {
-      return c.player.upcoming && c.player.upcoming.played && c.streak.outcome;
-    });
-    if (!played.length) return '';
-    var cont = 0, broke = 0, excl = 0;
-    played.forEach(function (c) {
-      var oc = c.streak.outcome;
-      if (oc.held === true) cont++;
-      else if (oc.held === false) broke++;
-      else excl++;
-    });
-    var evald = cont + broke;
-    var pct = evald ? Math.round(100 * cont / evald) : null;
-    return '<div class="sr-outsum">' +
-      '<span class="sr-outsum-k">Already-played conditions</span> ' +
-      '<b>' + cont + '</b> continued · <b>' + broke + '</b> broken' +
-      (evald ? ' · <b>' + pct + '%</b> held (' + evald + ' evaluated)' : '') +
-      (excl ? ' · ' + excl + ' excluded (not evaluable)' : '') +
-    '</div>';
-  }
-
-  // Two honest empty states. When the engine emitted nothing for the slate, the
-  // page is quiet by design — every streak now has to bear on a scheduled match,
-  // so an empty board means nothing lined up, not a data gap. When cards exist but
-  // the current filters exclude them all, say so and point back at the filters.
-  function emptyHtml() {
-    var quiet = !_cards || _cards.length === 0;
-    if (quiet) {
-      return '<p class="sr-empty">No live streaks bear on today or tomorrow’s matches. ' +
-        'A run only appears here when it actually applies to what a player plays next — a vs-style run only if tonight’s opponent plays that style, a surface run only if the match is on that surface. ' +
-        'Most days that is a short list, and an empty one means nothing is lined up right now — not missing data.</p>';
-    }
-    return '<p class="sr-empty">No streaks match these filters. ' +
-      'Everything shown here already bears on a scheduled match; widen the level, day, direction, type or min length above to see more.</p>';
-  }
-
-  function footerHtml() {
-    // Founder-approved (2026-09-07) honesty note. Rendered at the foot of the page.
-    // One sentence reworded 2026-09-12 on the founder's `footer-note` ruling (option a):
-    // ruling q1 moved POOL off the card into the modal, so "Every card shows both" had
-    // gone false. The guarantee behind it is unchanged — flatten still drops a streak
-    // with no pool — so only the claim about where you READ it moved.
-    return '<footer class="sr-footer">' +
-      '<h3>How to read the Series page</h3>' +
-      '<p>Every row here is a streak — a run of results that already happened. That is the whole of it. A streak describes the past; it does not forecast the next match. The player who has won five in a row is not owed a sixth.</p>' +
-      '<p>Read two numbers before you read anything else. <b>The pool:</b> how many matches the run was drawn from — five wins from eight is worth a look; five from two hundred is a coincidence you were always going to find. <b>The date:</b> when the most recent match in the run was played — form is a live thing, and a run whose last match was months ago is history, not a signal. Every streak carries both, and a streak that can’t show both doesn’t appear. The card gives you the dates; open it to see the pool its run was drawn from.</p>' +
-      '<p>Scan enough players across enough angles and long runs turn up by chance alone. That is exactly why the pool and the date are non-negotiable here, and why I would rather show you a short honest streak than a long manufactured one. Use this to find a situation worth a second look — then go and do the work. It is a place to start an argument, not to end one.</p>' +
-    '</footer>';
+    if (_ov && !_ov.hasAttribute('hidden') && _ovCard) paintOverlay(_ovCard);   // prices landed while it was open
   }
 
   function wireFilters(root) {
@@ -1302,19 +850,19 @@
         render();
       });
     });
-    // §3.5 · the restored checkbox. `change`, not `click`: the visible box is a sibling
-    // <span>, so a click lands on the label and the browser forwards it to the input —
-    // listening for click here would fire twice and toggle back to where it started.
+    root.querySelectorAll('.sr-tab').forEach(function (t) {
+      t.addEventListener('click', function () { _filters.type = t.getAttribute('data-type'); render(); });
+    });
+    // `change`, not `click`: the visible box is a sibling span, the label forwards the click to the input.
     root.querySelectorAll('.sr-toggle input[data-toggle]').forEach(function (box) {
       box.addEventListener('change', function () {
         _filters[box.getAttribute('data-toggle')] = !!box.checked;
         render();
       });
     });
-    // Clickable streak detail (founder 2026-09-07): the WHOLE card opens the matches
-    // in an overlay on top of the board — never an inline expand, which reflowed the
-    // grid. Delegated on the persistent grid, wired ONCE (render() replaces the grid's
-    // innerHTML each pass, but the grid element itself lives — re-adding would leak).
+    var clr = root.querySelector('.sr-clear');
+    if (clr) clr.addEventListener('click', clearFilters);
+    // The whole card opens the pop-up. Delegated on the persistent grid, wired ONCE.
     if (!root._srCardWired) {
       root._srCardWired = true;
       root.addEventListener('click', function (e) {
@@ -1331,120 +879,227 @@
       });
     }
   }
+  function clearFilters() {
+    Object.keys(DEFAULTS).forEach(function (k) { _filters[k] = DEFAULTS[k]; });
+    render();
+  }
 
-  // ─── matches overlay ────────────────────────────────────────────────────────────
-  // A single reusable dialog appended to <body>. Because it is position:fixed on top
-  // of a full-screen backdrop, the board underneath never reflows — closing it leaves
-  // the reader exactly where they were. Closes on click-outside, on the ✕, and on
-  // Escape. Focus is moved in on open and restored to the card on close.
-  var _ov = null, _ovReturnFocus = null;
+  // ─── history pop-up: Count tile header, ledger, total line ────────────────────────────────────────────────────
+  // One grid for the head and every row (eight tracks: result · date · event · opponent · score · Home · Away · P&L).
+  // Home = this player (bold), Away = the opponent (dim). P&L only on the match-result families (all comps, surface,
+  // vs style): a line or set family is judged on the score, not on a match-winner bet, so its P&L track is blank.
+  function modalHeadHtml() {
+    return '<div class="sr-mhead">' +
+      '<span class="sr-mres"></span><span class="sr-mdate">Date</span><span class="sr-mtour">Event</span>' +
+      '<span class="sr-mopp">Opponent</span><span class="sr-mscore">Score</span>' +
+      '<span class="sr-mp1">Home</span><span class="sr-mp2">Away</span><span class="sr-mpl">P&amp;L</span>' +
+    '</div>';
+  }
+  function signed(v, dp) {
+    return (v > 0 ? '+' : (v < 0 ? '−' : '')) + Math.abs(v).toFixed(dp);
+  }
+  function pxCell(cls, v, title) {
+    if (_pxState === 'idle' || _pxState === 'loading') return '<span class="' + cls + '"></span>';
+    return '<span class="' + cls + '"' + (title ? ' title="' + esc(title) + '"' : '') + '>' + (v == null ? DASH : esc(v.toFixed(2))) + '</span>';
+  }
+  function detailTableHtml(st) {
+    var rows = streakRows(st).slice().reverse();   // newest first — a render choice, no value changes
+    var isResult = isMatchResultFam(st);
+    return rows.map(function (r) {
+      var res = (r.won === true) ? '<span class="sr-mres sr-w">W</span>'
+              : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
+              : '<span class="sr-mres">' + DASH + '</span>';
+      var after = (r.price == null && typeof window.trPxAfterOf === 'function') ? window.trPxAfterOf(r.date) : null;
+      var title = r.book ? r.book + ' closing' : after;
+      var pl = '';
+      if (isResult && _pxState !== 'idle' && _pxState !== 'loading') {
+        pl = DASH;
+        if (r.price != null && r.won != null) {
+          var u = r.won ? (cents(r.price) - 100) / 100 : -1;
+          pl = '<span class="' + (u >= 0 ? 'sr-w' : 'sr-l') + '">' + esc(signed(u, 2)) + '</span>';
+        }
+      }
+      return '<div class="sr-mrow">' + res +
+        '<span class="sr-mdate">' + (fmtDate(r.date) ? esc(fmtDate(r.date)) : DASH) + '</span>' +
+        '<span class="sr-mtour">' + (r.event ? esc(eventLabel(r.event)) : DASH) + '</span>' +
+        '<span class="sr-mopp">' + (r.opponent ? esc(r.opponent) : DASH) + '</span>' +
+        '<span class="sr-mscore">' + (r.score ? esc(scoreTxt(r.score)) : DASH) + '</span>' +
+        pxCell('sr-mp1', r.price, title) + pxCell('sr-mp2', r.oppPrice, title) +
+        '<span class="sr-mpl">' + pl + '</span>' +
+      '</div>';
+    }).join('');
+  }
+  // Total line: "{Type} · {N} matches" left; "{n} priced", the unit total and the yield right (match-result families).
+  function modalTotalHtml(st) {
+    var rows = streakRows(st);
+    var head = '<span class="sr-ov-total-k">' + esc(FAM_BADGE[famOf(st)] || st.type) + ' · ' +
+      esc(String(rows.length)) + ' ' + (rows.length === 1 ? 'match' : 'matches') + '</span>';
+    if (_pxState === 'idle' || _pxState === 'loading') {
+      return '<div class="sr-ov-total">' + head + '<span class="sr-ov-total-r"><span class="sr-ov-total-k">Loading prices…</span></span></div>';
+    }
+    if (_pxState === 'failed') {
+      return '<div class="sr-ov-total">' + head + '<span class="sr-ov-total-r"><span class="sr-ov-total-k">Prices unavailable</span></span></div>';
+    }
+    var n = pricedOf(st);
+    var L = ledgerOf(st);
+    var right = '<span class="sr-ov-total-k">' + esc(String(n)) + ' priced</span>';
+    if (L && L.priced) {
+      var cls = L.total > 0 ? 'sr-w' : (L.total < 0 ? 'sr-l' : '');
+      right += '<span class="sr-ov-total-v ' + cls + '">' + esc(signed(L.total, 2)) + 'u</span>' +
+        '<span class="sr-ov-total-y ' + cls + '">' + esc(signed(L.yield, 1)) + '%</span>';
+    } else if (L) {
+      right += '<span class="sr-ov-total-v sr-dash">—</span>';
+    }
+    var caveat = (L && L.priced)
+      ? '<div class="sr-ov-caveat">A run is selected for its results, so this total’s sign is set by the run itself, not by the market.</div>'
+      : '';
+    return '<div class="sr-ov-total">' + head + '<span class="sr-ov-total-r">' + right + '</span>' + caveat + '</div>';
+  }
+  // The header: count tile · name + the claim · rank · "{count} of {pool} matches" (· best of N on a line family).
+  function modalHeadInfoHtml(c) {
+    var p = c.player, st = c.streak;
+    var name = displayName(p.key, p.name || '');
+    var line = claimLong(st).replace(/\s*\(best-of-\d\)/, '');
+    var fmt = st.bestOf ? ' · best of ' + st.bestOf : '';
+    var rankTxt = (p.rank != null && p.rank !== '') ? '#' + p.rank : '—';
+    return '<span class="sr-ov-tile"><span class="sr-ov-tile-n">' + esc(String(st.count)) + '</span><span class="sr-ov-tile-k">in a row</span></span>' +
+      '<span class="sr-ov-headl">' +
+        '<span class="sr-ov-title" id="srOvTitle"><span class="sr-ov-name">' + esc(name || '—') + '</span>' +
+          '<span class="sr-ov-line">' + line + '</span></span>' +
+        '<span class="sr-ov-sub">' + esc(rankTxt) + ' · ' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) + ' ' +
+          (st.pool === 1 ? 'match' : 'matches') + esc(fmt) + '</span>' +
+      '</span>';
+  }
+  function popupHtml(c) {
+    return '<div class="sr-ov-head">' + modalHeadInfoHtml(c) +
+        '<button class="sr-ov-close" type="button" aria-label="Close">✕</button></div>' +
+      modalHeadHtml() +
+      '<div class="sr-ov-body">' + detailTableHtml(c.streak) + '</div>' +
+      '<div class="sr-ov-foot">' + modalTotalHtml(c.streak) + '</div>';
+  }
+
+  var _ov = null, _ovReturnFocus = null, _ovCard = null;
   function ensureOverlay() {
     if (_ov) return _ov;
     var back = document.createElement('div');
     back.className = 'sr-ov-back';
     back.setAttribute('hidden', '');
-    // Export §5: header (name + rank, claim + pool beneath, ✕ right) → sticky column
-    // header → scrolling rows. The column header lives OUTSIDE the scroll pane so
-    // DATE/EVENT/OPPONENT/SCORE stay visible on a 12-row run.
-    back.innerHTML =
-      '<div class="sr-ov" role="dialog" aria-modal="true" aria-labelledby="srOvTitle" tabindex="-1">' +
-        '<div class="sr-ov-head">' +
-          '<span class="sr-ov-headl">' +
-            '<span class="sr-ov-title" id="srOvTitle"></span>' +
-            '<span class="sr-ov-sub"></span>' +
-          '</span>' +
-          '<button class="sr-ov-close" type="button" aria-label="Close">✕</button>' +
-        '</div>' +
-        // TEN-204 2.7: the column header is no longer a fixed four-cell block — its track
-        // count and its labels depend on the streak's family — so it is rendered per open
-        // by modalHeadHtml() into this slot, still OUTSIDE the scroll pane so it stays
-        // visible on a 14-row run. The total line sits below the pane, sharing its edges.
-        '<div class="sr-mhead-slot"></div>' +
-        '<div class="sr-ov-body"></div>' +
-        '<div class="sr-ov-foot"></div>' +
-      '</div>';
+    back.innerHTML = '<div class="sr-ov" role="dialog" aria-modal="true" aria-labelledby="srOvTitle" tabindex="-1"></div>';
     document.body.appendChild(back);
-    // Click-outside: a click landing on the backdrop (not the panel) closes.
-    back.addEventListener('click', function (e) { if (e.target === back) closeOverlay(); });
-    back.querySelector('.sr-ov-close').addEventListener('click', closeOverlay);
+    back.addEventListener('click', function (e) {
+      if (e.target === back) { closeOverlay(); return; }
+      if (e.target.closest && e.target.closest('.sr-ov-close')) closeOverlay();
+    });
     _ov = back;
     return back;
+  }
+  // The Score track holds the longest score in full (a best-of-5 line runs past the file's 118px): IBM Plex Mono
+  // 11.5px advances 0.6em = 6.9px a character. Head and rows share the one width, so the columns stay aligned.
+  function scoreTrackPx(st) {
+    var n = 0;
+    (st.matches || []).forEach(function (m) { n = Math.max(n, scoreTxt(m.score).length); });
+    return Math.max(118, Math.ceil(n * 6.9) + 2);
+  }
+  function paintOverlay(c) {
+    var panel = _ov && _ov.querySelector('.sr-ov');
+    if (!panel) return;
+    panel.style.setProperty('--sr-score', scoreTrackPx(c.streak) + 'px');
+    panel.innerHTML = popupHtml(c);
   }
   function onOvKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeOverlay(); } }
   function openOverlay(idxStr) {
     var idx = Number(idxStr);
-    if (!_view || !Number.isFinite(idx) || !_view[idx]) return;
-    var c = _view[idx], p = c.player, st = c.streak, u = p.upcoming || {};
-    if (!(Array.isArray(st.matches) && st.matches.length)) return;
+    if (!_view || !isFinite(idx) || !_view[idx]) return;
+    var c = _view[idx];
+    if (!(Array.isArray(c.streak.matches) && c.streak.matches.length)) return;
     var back = ensureOverlay();
-    var panel = back.querySelector('.sr-ov');
-    var flag = emojiFlag(p.country);
-    var rankTxt = (p.rank != null && p.rank !== '') ? ('#' + p.rank) : '';
-    back.querySelector('.sr-ov-title').innerHTML =
-      '<span>' + (flag ? '<span class="sr-flag">' + flag + '</span>' : '') +
-        esc(p.name || u.playerName || '—') + '</span>' +
-      '<span class="sr-ov-rank">' + (rankTxt ? esc(rankTxt) : '<span class="sr-dash">—</span>') + '</span>';
-    // POOL lives here and only here now (founder ruling q1, 2026-09-12): the card no
-    // longer carries it, so this line is the one place a reader sees what the run was
-    // drawn from. The engine still refuses to emit a streak without it.
-    back.querySelector('.sr-ov-sub').innerHTML = describe(st) +
-      ' <span class="sr-ov-sep">·</span> <span class="sr-ov-pool">' + esc(String(st.count)) + ' of ' + esc(String(st.pool)) +
-      ' ' + (st.pool === 1 ? 'match' : 'matches') + '</span>';
-    back.querySelector('.sr-mhead-slot').innerHTML = modalHeadHtml(st);
-    back.querySelector('.sr-ov-body').innerHTML = detailTableHtml(st);
-    back.querySelector('.sr-ov-foot').innerHTML = modalTotalHtml(st);
+    _ovCard = c;
+    paintOverlay(c);
     _ovReturnFocus = document.querySelector('.sr-card[data-card-idx="' + idxStr + '"]');
     back.removeAttribute('hidden');
     document.body.classList.add('sr-ov-open');
     document.addEventListener('keydown', onOvKey, true);
+    var panel = back.querySelector('.sr-ov');
     if (panel && panel.focus) panel.focus();
   }
-  // TEN-376 S1: a sidebar click closes this overlay before it navigates (closeOverlay is a no-op when closed)
+  // A sidebar click closes this overlay before it navigates (TEN-376 S1; a no-op when closed).
   (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () { closeOverlay(); });
   function closeOverlay() {
     if (!_ov || _ov.hasAttribute('hidden')) return;
     _ov.setAttribute('hidden', '');
+    _ovCard = null;
     document.body.classList.remove('sr-ov-open');
     document.removeEventListener('keydown', onOvKey, true);
     if (_ovReturnFocus && _ovReturnFocus.focus) _ovReturnFocus.focus();
     _ovReturnFocus = null;
   }
 
-  // ─── load / mount ────────────────────────────────────────────────────────────
-  function load() {
-    if (_mounted) { render(); return; }
-    _mounted = true;
-    render();  // shows "Loading…"
-    fetch(DATA_URL, { cache: 'no-cache' })
-      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-      .then(function (j) {
-        _data = j; _cards = null;
-        // The default min-length used to be ADOPTED from j.rules.viewFloorDefault here.
-        // That line is gone, and its removal is the whole of item 9 actually landing.
-        // The clean-context review measured the consequence: build-series.js now emits 6,
-        // but the artifact a reader is served is whatever the last successful pipeline run
-        // wrote — and pipeline.yml runs the Series build with `continue-on-error` + `|| true`,
-        // so ANY failed build falls back to the committed series.json seed, which carries
-        // viewFloorDefault: 5. Adopting from the artifact therefore silently reverts the
-        // founder's 6+ default to 5+ on every failed build, with no signal.
-        // The floor is a VIEW choice — item 9 is explicitly about the page — so the page
-        // owns it. build-series.js keeps VIEW_FLOOR_DEFAULT = 6 for its own reporting
-        // (`defaultViewCards`) and the two are kept in step by hand; the probe asserts the
-        // painted default is 6 against a literal, not against the artifact's own field.
+  // ─── load / mount ────────────────────────────────────────────────────────────────────────────────────────────
+  function getJSON(url) {
+    return fetch(url, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(url + ' ' + r.status); return r.json(); });
+  }
+  function boardMatches() {
+    try {
+      if (typeof matches !== 'undefined' && Array.isArray(matches) && matches.length) return Promise.resolve(matches);  // eslint-disable-line no-undef
+    } catch (e) { /* the board global is not in scope */ }
+    return getJSON(MATCHES_URL).then(function (j) { return Array.isArray(j) ? j : (j && Array.isArray(j.matches) ? j.matches : []); },
+      function () { return []; });
+  }
+  // The slot of every card (day word, already-played, start) against the clock and the board NOW.
+  function reslot() {
+    try {
+      if (typeof matches !== 'undefined' && Array.isArray(matches) && matches.length) _matches = matches;  // eslint-disable-line no-undef
+    } catch (e) { /* the board global is not in scope */ }
+    if (!_cards) return;
+    _cards.forEach(function (c) { c.slot = slotOf(c.player); c.streak = shownStreak(c); });
+    suppressOutcomeDuplicates(_cards);
+  }
+  function fetchData() {
+    _fetching = true;
+    Promise.all([getJSON(DATA_URL), boardMatches()])
+      .then(function (res) {
+        _fetching = false;
+        _data = res[0]; _matches = res[1]; _cards = null; _loadedAt = Date.now();
+        _pxState = 'idle'; _pxGen++;   // new match rows: price them afresh
         render();
+        priceBoard();
       })
       .catch(function (e) {
+        _fetching = false;
         console.warn('[series] load failed:', e.message);
+        if (_data) { reslot(); render(); return; }   // keep the last good copy; the next show tries again
+        _mounted = false;   // the next visit retries
         var root = document.getElementById('seriesGrid');
-        // Keep the heading here too — a bare sentence with no title reads as a broken
-        // page rather than a temporarily empty one.
-        if (root) root.innerHTML = headerHtml(null) + '<p class="sr-empty">Streak data is not available right now. It refreshes with the daily slate — check back shortly.</p>';
+        if (root) root.innerHTML = headerHtml(null) + '<p class="sr-note">Streak data is not available right now. It refreshes with the slate — check back shortly.</p>';
       });
+  }
+  function load() {
+    if (_mounted) {
+      reslot();
+      render();
+      if (_data && !_fetching && Date.now() - _loadedAt > DATA_MAX_AGE_MS) fetchData();
+      return;
+    }
+    _mounted = true;
+    render();  // "Loading…"
+    fetchData();
+  }
+  function slotTick() {
+    _slotTimer = null;
+    if (!_active) return;
+    reslot();
+    render();
+    _slotTimer = setTimeout(slotTick, SLOT_TICK_MS);
   }
 
   function setActive(isActive) {
-    if (isActive && !_active) { _active = true; load(); }
-    else if (!isActive) { _active = false; }
+    if (isActive && !_active) {
+      _active = true; load();
+      if (!_slotTimer) _slotTimer = setTimeout(slotTick, SLOT_TICK_MS);
+    } else if (!isActive) {
+      _active = false;
+      if (_slotTimer) { clearTimeout(_slotTimer); _slotTimer = null; }
+    }
   }
 
   (function revealNavTab() {
@@ -1456,5 +1111,11 @@
     else show();
   })();
 
-  window.SeriesPage = { setActive: setActive };
+  window.SeriesPage = {
+    setActive: setActive,
+    // read-only hooks for the test harness and the DoD probes (no behaviour)
+    _view: function () { return _view; },
+    _popupHtml: function (i) { return _view && _view[i] ? popupHtml(_view[i]) : null; },
+    _pxState: function () { return _pxState; },
+  };
 })();

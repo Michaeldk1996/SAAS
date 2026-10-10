@@ -364,7 +364,8 @@ for (const kind of ['trading', 'series']) {
     } else {
       const doc = JSON.parse(ref.files.series);
       assert.ok(doc.players.length >= 5, `only ${doc.players.length} series players`);
-      assert.ok(doc.odds.census.priced > 0, 'no priced rows — the odds pass is unexercised');
+      // TEN-427: the get_odds snapshot pass is gone (the page prices rows on the Database join); retirements count.
+      assert.ok(!doc.odds && /^count/.test(String(doc.rules.retirements)), 'the series artifact is not the TEN-427 shape (odds pass back, or retirements skipped)');
       assert.ok(Object.keys(JSON.parse(ref.files.outcomes).records).length > 1, 'ledger gained no records — the played-match path is unexercised');
       assert.ok(ref.stderr.includes(`fixture window failed for ${FAIL_KEY}`), 'the rejected fetch did not reach the per-player failure path');
     }
@@ -386,8 +387,15 @@ for (const kind of ['trading', 'series']) {
 
   check(`${kind}: pooled (c=8, random delays) is byte-identical to serial (c=1)`, () => assertSame(pooled, ref, kind));
 
-  const base = baselineOf(kind);
-  if (!base) {
+  // TEN-427 (founder step 14, 2026-10-10) changed WHAT build-series.js computes — retirements count, the get_odds
+  // snapshot pass is removed — so its artifact legitimately differs from the pre-pool original (ce99fcdb), whose stub
+  // run counts no retirement and prices rows. The pooling claim stands on the c=1 oracle and the completion-order
+  // control above and below; the series ORIGINAL-script leg is retired, out loud. Trading keeps it.
+  const base = kind === 'series' ? null : baselineOf(kind);
+  if (!base && kind === 'series') {
+    skips.push('series: ORIGINAL-script leg retired by TEN-427 (retirements count; get_odds pass removed) — the c=1 oracle holds the pooling claim');
+    console.log('  SKIP series: ORIGINAL-script leg RETIRED OUT LOUD — TEN-427 changed the artifact on purpose; the c=1 oracle above still ran.');
+  } else if (!base) {
     skips.push(`${kind}: ORIGINAL-script leg — git object ${BASELINE_SHA.slice(0, 8)} not in this clone`);
     console.log(`  SKIP ${kind}: ORIGINAL-script leg SKIPPED OUT LOUD — ${BASELINE_SHA.slice(0, 8)} is not in this clone (shallow?). The c=1 oracle above still ran.`);
   } else {
