@@ -54,10 +54,14 @@ function mxBookLabel(book){
 }
 const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'Bet365']];
 function edgeQuote(src, k){ const q = src && src[k]; return (q && q.p1 >= 1.01 && q.p2 >= 1.01) ? q : null; }
+// Book names on this page (founder TEN-418 R1 fix 7): the Database / H2H join's spelling for its two books — "Pinnacle",
+// "Bet365" — and the site label (mxBookLabel) for every other book. api-tennis "Betfair" is Betfair's sportsbook (odds.md
+// AODDS_BOOKS), named in full so it never reads as the exchange (founder R2 fix 4).
 function edgeBookName(k){
   const l = String(k || '').toLowerCase();
   if (l === 'pncl' || l === 'pinnacle') return 'Pinnacle';
   if (l === 'bet365') return 'Bet365';
+  if (l === 'betfair') return 'Betfair Sportsbook';
   return (typeof mxBookLabel === 'function') ? mxBookLabel(k) : k;
 }
 function edgeSharp(m){
@@ -65,9 +69,10 @@ function edgeSharp(m){
   const all = EDGE_SHARP.map(x => at(x[0]));
   return all.find(b => b.now) || all.find(b => b.open) || null;   // a current quote first: Pinnacle with no price now falls to bet365
 }
+// An exchange is never a soft book: one added to the feed stays out of "best soft" (founder R2 fix 4).
 function edgeSoftBooks(m){
   const sk = (edgeSharp(m) || {}).key;
-  return Object.keys((m && m.bookNow) || {}).filter(k => k !== 'Pncl' && k !== sk && edgeQuote(m.bookNow, k));
+  return Object.keys((m && m.bookNow) || {}).filter(k => k !== 'Pncl' && k !== sk && !/exchange|matchbook|smarkets|betdaq/i.test(k) && edgeQuote(m.bookNow, k));
 }
 function edgeBestSoft(m, side){
   let best = null;
@@ -101,6 +106,10 @@ function edgeEventPart(t1, t2, A, B){
   const w = t => { const m = /(\d+)r ([+-]?[\d.]+)/.exec(t || ''); return m ? edgeSigned(m[2]) + ' after ' + m[1] + ' round' + (m[1] === '1' ? '' : 's') : 'no match yet'; };
   return ` At this event: ${A} ${w(t1)}, ${B} ${w(t2)}.`;
 }
+// The engine reads a player's court figure only from 10 top-50 matches on that court (h2h-model/config.js qualityForm
+// surfaceFloorM); below it prints +0.0pp, which is not a measurement, so the page says so (review, R3).
+const EDGE_QF_SURF_FLOOR = 10;
+function edgeQfCourt(P, v, n, top, unit){ return Number(n) < EDGE_QF_SURF_FLOOR ? `${P} under ${EDGE_QF_SURF_FLOOR} top-${top} matches there (not counted)` : `${P} ${edgeSigned(v)}pp over ${n}` + (unit ? ` match${n === '1' ? '' : 'es'}` : ''); }
 function edgeWhyText(a, nm){
   const d = String(a.detail || '').replace(/\s*\(TEN-\d+\)/g, '').trim();
   const A = (nm && nm.p1) || 'Player A', B = (nm && nm.p2) || 'Player B';
@@ -128,7 +137,7 @@ function edgeWhyText(a, nm){
       break;
     case 'qualityForm':
       if ((x = /Career top(\d+) dev ([+-]?[\d.]+)pp\((\d+)m\) vs ([+-]?[\d.]+)pp\((\d+)m\); (\w+) top\d+ dev ([+-]?[\d.]+)pp\((\d+)m\) vs ([+-]?[\d.]+)pp\((\d+)m\)/.exec(d)))
-        return `Win rate against the top ${x[1]}, each against their own baseline: career ${edgeSigned(x[2])}pp (${x[3]} match${x[3] === '1' ? '' : 'es'}) vs ${edgeSigned(x[4])}pp (${x[5]}); on ${edgeCourt(x[6])} ${edgeSigned(x[7])}pp (${x[8]}) vs ${edgeSigned(x[9])}pp (${x[10]}).${/Thin/.test(d) ? ' The top-' + x[1] + ' sample is thin.' : ''}`;
+        return `Win rate against top-${x[1]} opponents minus the player’s overall win rate, in percentage points (recent matches weigh more): ${A} ${edgeSigned(x[2])}pp over ${x[3]} top-${x[1]} match${x[3] === '1' ? '' : 'es'}, ${B} ${edgeSigned(x[4])}pp over ${x[5]}. On ${edgeCourt(x[6])}, top-${x[1]} win rate there minus top-${x[1]} win rate overall: ${edgeQfCourt(A, x[7], x[8], x[1], true)}, ${edgeQfCourt(B, x[9], x[10], x[1])}.${/Thin/.test(d) ? ' The top-' + x[1] + ' sample is thin.' : ''}`;
       break;
     case 'winnerUE':
       if ((x = /^W\/UE ([\d.]+) vs ([\d.]+) — rel-to-archetype ([\d.]+) vs ([\d.]+) \([^,]+, (\d+)\/(\d+) matches\)/.exec(d)))
@@ -171,7 +180,7 @@ function edgeFigures(a){
     case 'h2h': x = /^H2H (\d+)-(\d+)/.exec(d); return x ? [x[1], x[2]] : null;
     case 'surface': x = /record (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
     case 'recentForm': x = /^Form (\d+)% vs (\d+)%/.exec(d); return x ? [x[1] + '%', x[2] + '%'] : null;
-    case 'qualityForm': x = /Career top\d+ dev ([+-]?[\d.]+)pp\(\d+m\) vs ([+-]?[\d.]+)pp/.exec(d); return x ? [edgeSigned(x[1]), edgeSigned(x[2])] : null;
+    case 'qualityForm': x = /Career top\d+ dev ([+-]?[\d.]+)pp\(\d+m\) vs ([+-]?[\d.]+)pp/.exec(d); return x ? [edgeSigned(x[1]) + 'pp', edgeSigned(x[2]) + 'pp'] : null;
     case 'winnerUE': x = /^W\/UE ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
     case 'serve': x = /^Serve rating ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
     case 'returnPressure': x = /^Return rating ([\d.]+) vs ([\d.]+)/.exec(d); return x ? [x[1], x[2]] : null;
@@ -214,7 +223,7 @@ function buildFacts(r, m) {
       shiftPP: !a.applied ? null : (even ? 0 : +delta.toFixed(1)),
       // The page reads styles from the Playing Styles grid, which the pipeline doesn't hold: the analysis says only that
       // the model does not read styles yet (TEN-419), never "no label".
-      why: a.key === 'styleMatchup' && !a.applied ? 'The model does not read playing styles yet, so this layer is off.' : edgeWhyText(a, { p1: mm.p1, p2: mm.p2 }),
+      why: a.key === 'styleMatchup' && !a.applied ? 'The model doesn’t read playing styles yet, so this layer doesn’t move the price.' : edgeWhyText(a, { p1: mm.p1, p2: mm.p2 }),
     };
   });
   const movers = adjs.filter(a => a.applied && Math.abs(a.deltaP1 || 0) >= 0.0005)

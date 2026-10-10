@@ -4,7 +4,7 @@ Reference: `OFFICIAL VERSION 1.html` → Stennisfy Model (`Stennisfy Model.dc.ht
 `tokens.json → legacyColourMap`). Night only. Header = the shared 35b `.sfh` (`app-shell.md`). The page owns no
 navigation: no sidebar, no sub-tabs, no "Back to dashboard" (the shell rail is the only navigation). Tests:
 `test-ten418-model.mjs` (runs the shipped renderer on a real frozen row) and `tools/test-ten418-mutants.js`.
-Founder rulings: TEN-418 card 7a80b6fe and R1 review (2026-10-10).
+Founder rulings: TEN-418 card 7a80b6fe, R1 review and R2 review 73f754f9 (2026-10-10).
 
 ## Data — every figure is the model run or the odds record
 - **Test:** no "sample data" anywhere on the page; a section with nothing to source is hidden, never a disclaimer.
@@ -26,28 +26,39 @@ Founder rulings: TEN-418 card 7a80b6fe and R1 review (2026-10-10).
   else the browser zone.
 - **Weight** = the layer's cap `maxMagnitude` → Highest ≥ 0.06 · High ≥ 0.035 · Medium-high ≥ 0.025 · Medium ≥ 0.016 ·
   Low. **Quality** = Good (applied, confidence high / med; or inputs in for both but too close to move — Favours "Even",
-  Shift 0.0pp) · Medium (applied at low confidence, gated, not this format, or Style matchup with both labels known —
-  Favours "Off", the model doesn't read styles yet, TEN-419) · Poor (no input for this match). Rows by weight, Highest →
+  Shift 0.0pp) · Medium (applied at low confidence, gated, not this format) · Poor (no input for this match — Style matchup included:
+  the model has no style input yet, TEN-419). **Favours** = a player · Even · Gated · No data, never another word (R2). Rows by weight, Highest →
   Low, then by |shift|. **Test:** the label, the Favours word, the Why and the Data quality sentence tell one story.
 - **Player columns** = the two players' real figures in the layer's unit, read from the engine's sentence (44% / 63%,
-  29 / 74, 258.0 / 303.5, 0.89 / 1.05, 4.0 / 8.0 load units, −22.0 / −8.0 top-50 pp, H2H wins); `—` when the sentence has
+  29 / 74, 258.0 / 303.5, 0.89 / 1.05, 4.0 / 8.0 load units, −22.0pp / −8.0pp = top-50 win rate minus overall win rate (founder R3:
+  the unit shows in the columns too; A / B columns are 60px so it fits); H2H wins); signed figures take a true minus (−), the sign inside the figure's mono span; `—` when the sentence has
   none. The signal bar stays normalised.
 - **Why** = this match's figures in plain words, from one template per engine sentence (`edgeWhyText`); no engine
-  shorthand ("career+52wk", "Nₑₓ", "rel-to-archetype"). Style matchup reads the Playing Styles pair cell: "X v Y: N
-  matches, under 30", or the cell's rate + "the model does not read playing styles yet" (TEN-419). **Data quality** = one
-  fixed sentence per state and cause, never naming a different state than its label.
+  shorthand ("career+52wk", "Nₑₓ", "rel-to-archetype"). Style matchup reads the Playing Styles pair cell (`psCellFor`, the
+  grid's own cell, same figure as its tooltip): "X v Y: N matches, under 30", or "On the Playing Styles grid, Xs win N% of
+  M matches against Ys. The model doesn't read playing styles yet, so this layer doesn't move the price." (founder R3
+  copy); the row stays No data / Poor, Data quality "The model doesn't read playing styles yet." Two-player figures name
+  each player ("L. Darderi −8.3pp over 21 matches, S. Tsitsipas −1.7pp over 228"), never "A vs B" unnamed; a court
+  figure under the engine's 10-match floor (`qualityForm.surfaceFloorM`) reads "under 10 top-50 matches there (not counted)",
+  never the engine's placeholder +0.0pp. Soft scan also skips exchange-named keys (Matchbook, Smarkets, Betdaq). **Data quality** = one
+  fixed sentence per state and cause, never naming a different state than its label. **Test:** no ticket number
+  ("TEN-…") anywhere in the page's text (founder R3).
 - **Prices** = the match's api-tennis odds record (`bookOpens` first sighting + `seenAt`, `bookNow`). Sharp tile =
   Pinnacle (`Pncl`), else Bet365 when Pinnacle has no current price. Best soft = the highest current price per player
-  across every other book on the record (the foot names them; Betfair = Betfair Sportsbook and SBOBET are soft per the
-  `odds.md` `AODDS_BOOKS` groups; kept by the founder, card 283aa920), never Pinnacle, never the sharp tile's book. Names: "Pinnacle", "Bet365" (the
-  Database / H2H join's spelling), other books `mxBookLabel`. Note line: Pinnacle margin now, soft margins at open — the
+  across every other book on the record (the foot names them; Betfair Sportsbook and SBOBET are soft per the
+  `odds.md` `AODDS_BOOKS` groups; kept by the founder, card 283aa920), never Pinnacle, never the sharp tile's book, **never
+  an exchange** (a key containing "exchange" is skipped — founder R2: an exchange feed, if added, stays out of best soft).
+  Names: "Pinnacle", "Bet365" (the Database / H2H join's spelling), api-tennis "Betfair" = "Betfair Sportsbook" (R2;
+  Database and News show no Betfair book), other books `mxBookLabel`. Note line: Pinnacle margin now, soft margins at open — the
   same quotes as the Soft open rows.
 - **Pinnacle tile open → now** = Pinnacle's own first recorded price → its current price, move = `mxMovePct` on the 2 dp
   prices. It is not the Today's Matches pop-up pair (that is the card's book, Bet105 by the card ladder in `odds.md`).
   The model's frozen anchor (`pinnacleOpen`) is never shown as a third price.
 - **Gap** = the adjusted fair % as printed (1 dp) − 100 / odd, in pp. An edited odd re-computes its own gap in place;
   empty, ≤ 1.00 or not a number reads `—`, never NaN.
-- **Names:** players `newsPlayerName(key, feed)` (the profile string; a long pair wraps, never truncates); events
+- **Names:** players `newsPlayerName(key, feed)` (the profile string, as Player Profile prints it — today "B. Van De
+  Zandschulp"; founder card bef6d3c2, 2026-10-10: this page keeps the shared string, and lower-case particles land
+  site-wide under TEN-410 — never a page-only rule. Test: the rail string = Player Profile's `pp2-name` for the same key; a long pair wraps, never truncates); events
   `sfEventName`; styles the step-9 labels; "Elo" in both the header and the analysis. Rail = `getFiltered()`.
 
 ## Stennisfy Analysis
@@ -70,7 +81,8 @@ Founder rulings: TEN-418 card 7a80b6fe and R1 review (2026-10-10).
 ## Look
 - Cards `--card` + `--top-light`, no outline, radius 16; panels and tiles `--inner`, radius 12–14, no edge; chips
   `--inner` radius 6, caps 10.5/700/0.10em grey; Market context view = the Darker track; rail drop-down = `sfDd` with the
-  News page's small chevron; the Layer breakdown toggle = `--selected` + 1px `--line`, white caps.
+  News page's small chevron; the Layer breakdown toggle = `--selected` + 1px `--line`, white caps; an
+  open layer row = `--selected`, so its `--inner` Weight chip stays visible (founder R3).
 - **Colour test:** green / red only on signed figures (edges, gaps, shifts, movers, move %), grey at 0.0; amber only
   on the quality strip, dot and label; the signal bar `--bar` on `--track` with the centre tick; links (`↻ Regenerate`)
   `--link`; player names white, underline on hover; odd inputs take a 16% edge on focus, never a blue ring.

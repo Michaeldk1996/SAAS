@@ -67,7 +67,7 @@ function boot(opts = {}) {
   };
   ctx.globalThis = ctx;
   vm.createContext(ctx);
-  vm.runInContext(HELPERS + '\n' + BLOCK + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
+  vm.runInContext(HELPERS + '\n' + BLOCK + '\nthis.API = { renderEdgeModel, openEdgeModel, edgeOddInput, edgeJumpLayer, edgeSharp, edgeBestSoft, edgeLayerRows, edgeParseOdd, edgeWhyText, edgeToggleLayers, edgeToggleLayer, edgeGenerate, edgeAiState, get open(){ return [edgeLayersOpen, edgeLayerOpen]; } };', ctx);
   const api = ctx.API;
   api.render = (id = M.id) => { api.openEdgeModel(id); return els.edgeBody.innerHTML; };
   return { api, els, calls, M, E, ctx };
@@ -112,7 +112,9 @@ test('prices: Pinnacle else bet365; best soft never Pinnacle; open → now · mo
   assert.ok(api.edgeBestSoft(noPin, 'p1').key !== 'bet365', 'the sharp tile’s book is not also the best soft');
   const pulled = JSON.parse(JSON.stringify(M)); delete pulled.bookNow.Pncl;
   assert.equal(api.edgeSharp(pulled).name, 'Bet365', 'Pinnacle with no price now falls to Bet365');
-  assert.match(text(h), /best soft scans William Hill, Bet365, Marathon, Betfair, BetVictor, SBOBET, 1xBet, Betano/);
+  assert.match(text(h), /best soft scans William Hill, Bet365, Marathon, Betfair Sportsbook, BetVictor, SBOBET, 1xBet, Betano/, 'api-tennis Betfair = the sportsbook, named in full (R2 fix 4)');
+  const ex = JSON.parse(JSON.stringify(M)); ex.bookNow['Betfair Exchange'] = { p1: 9.5, p2: 9.5 };
+  assert.equal(api.edgeBestSoft(ex, 'p1').key, 'bet365', 'an exchange never counts as a soft book (R2 fix 4)');
   assert.match(text(h), /Pinnacle margin now 2\.9% , soft at open 4\.8% \(Bet365\) \/ 4\.9% \(Betano\)/, 'one margin source: the Soft open rows (R1 fix 5)');
   assert.match(text(h), /Best soft −3\.1pp Bet365 Pinnacle −2\.8pp/, 'gaps from the fair % as printed (R1 fix 6)');
   assert.match(text(h), /Soft open Bet365 · 4\.8% 3\.00 \+2\.7pp Pinnacle open 8 Oct · 11:22 · 3\.5% 2\.94 \+1\.6pp Pinnacle now −0\.8pp since open · 2\.9% 3\.03 \+2\.4pp Model base 34\.5% · no margin 2\.90/);
@@ -138,7 +140,7 @@ test('value layers: 14 rows by weight then shift; real figures; plain Why that a
   assert.deepEqual(rows.slice(0, 4), [['styleMatchup', 'Highest', 'Poor'], ['subjective', 'Highest', 'Poor'], ['surface', 'High', 'Good'], ['clutch', 'Medium-high', 'Medium']]);
   assert.equal(rows.length, 14, 'every engine layer is a row, the format split included (R1 fix 1)');
   let h = api.render();
-  assert.match(text(h), /Value layers Data quality behind each adjustment folded into the price 9 of 14 active 6 good 6 medium 2 poor/);
+  assert.match(text(h), /Value layers Data quality behind each adjustment folded into the price 9 of 14 active 6 good 5 medium 3 poor/);
   assert.equal((h.match(/class="em-seg-q /g) || []).length, 14, 'the strip has 14 segments');
   assert.ok(!/em-lrow/.test(h), 'the breakdown opens on demand');
   api.edgeJumpLayer('surface');
@@ -147,9 +149,15 @@ test('value layers: 14 rows by weight then shift; real figures; plain Why that a
   assert.equal(calls.scrollIntoView, 0); assert.equal(calls.scrollBy.length, 1);
   // R1 fixes 2 + 3: the players' real figures; the Why in plain words; one state in the label and the sentence
   assert.match(text(h), /Surface record High 44 ?% 63 ?% S\. Tsitsipas \+1\.0pp Why Hard-court record 44 ?% vs 63 ?% over career and the last 52 weeks, each against their own career baseline\. Data quality Good The inputs behind this layer are complete for both players in this match\./);
-  for (const [k, a, b] of [['clutch', '29', '74'], ['serve', '258.0', '303.5'], ['winnerUE', '0.89', '1.05'], ['fatigue', '4.0', '8.0'], ['qualityForm', '−22.0', '−8.0'], ['h2h', '0', '1']])
+  for (const [k, a, b] of [['clutch', '29', '74'], ['serve', '258.0', '303.5'], ['winnerUE', '0.89', '1.05'], ['fatigue', '4.0', '8.0'], ['qualityForm', '−22.0pp', '−8.0pp'], ['h2h', '0', '1']])
     assert.match(h, new RegExp(`id="emLayer-${k}"[\\s\\S]*?<span class="em-sc">${a.replace('.', '\\.')}</span>[\\s\\S]*?<span class="em-sc">${b.replace('.', '\\.')}</span>`), k + ' figures');
   assert.ok(!/career\+52wk|recency-wtd|Nₑₓ|rel-to-archetype/.test(h), 'no engine shorthand on the page');
+  api.edgeToggleLayer('qualityForm');
+  assert.match(text(api.render()), /Why Win rate against top- ?50 opponents minus the player’s overall win rate, in percentage points \(recent matches weigh more\): L\. Darderi −22\.0 ?pp over \d+ top- ?50 matches, S\. Tsitsipas −8\.0 ?pp over \d+\. On hard courts, top- ?50 win rate there minus top- ?50 win rate overall: L\. Darderi −8\.3 ?pp over 21 matches, S\. Tsitsipas −1\.7 ?pp over 228\./, 'the number says what it is, who is who, true minus (R2 fix 3, R3 fix 3)');
+  assert.ok(!/(^|[ (])- ?\d+\.\d ?pp/.test(text(api.render())), 'no hyphen-minus on a signed figure');
+  const fl = { key: 'qualityForm', applied: true, detail: 'Career top50 dev -2.1pp(133m) vs -4.0pp(40m); Hard top50 dev -2.1pp(133m) vs +0.0pp(5m).' };
+  assert.match(api.edgeWhyText(fl, { p1: 'A. One', p2: 'B. Two' }), /A\. One −2\.1pp over 133 matches, B\. Two under 10 top-50 matches there \(not counted\)\./, 'a court figure under the engine floor is not shown as measured (review)');
+  assert.match(CSS, /\.em-lrow\{[^}]*min-width:742px;/, 'rows are as wide as their 742px grid (review)');
   api.edgeToggleLayer('formatSplit');
   assert.match(text(api.render()), /Format split \(Bo5\) Medium-high — — Gated — Why Best of 3 ?: this layer applies to best-of-five only\. Data quality Medium The layer does not apply to a best-of-three match\./);
   api.edgeToggleLayer('weather');
@@ -157,8 +165,9 @@ test('value layers: 14 rows by weight then shift; real figures; plain Why that a
   api.edgeToggleLayer('subjective');
   assert.match(text(api.render()), /Manual context Highest — — No data — Why No analyst note is attached to this match, so the layer stays neutral\./, 'one name: Manual context');
   api.edgeToggleLayer('styleMatchup');
-  assert.match(text(api.render()), /Why Attacking Baseliner v Big Server \+ Complete Baseliner: Attacking Baseliner wins 38% of 1,259 matches\. The model does not read playing styles yet, so the layer is off\./);
-  assert.match(text(api.render()), /Style matchup Highest — — Off — Why [^]*?Data quality Medium The model does not read playing styles yet, so this layer is off for every match \(TEN-419\)\./, 'labels known: Off, Medium, one story (review)');
+  assert.match(text(api.render()), /Style matchup Highest — — No data — Why On the Playing Styles grid, Attacking Baseliners win 38% of 1,259 matches against Big Server \+ Complete Baseliners\. The model doesn’t read playing styles yet, so this layer doesn’t move the price\. Data quality Poor The model doesn’t read playing styles yet\./, 'labels known: No data, Poor, the pair cell in the Why (R2 fix 2, R3 fix 1 copy)');
+  assert.ok(!/TEN-\d/.test(text(api.render())), 'no ticket numbers on the page (R3 fix 1)');
+  assert.ok(!/em-fav[^"]*">(?!No data|Gated|Even)[A-Z][a-z]+</.test(api.render().replace(/em-fav[^"]*"><a[^]*?<\/a>/g, '')), 'Favours = a player, Even, Gated or No data only (R2 fix 2)');
   // an even row (inputs in, no shift): Good + "Even", never "No data / Poor"
   const ev = JSON.parse(JSON.stringify(FIX.e1)); const fa = ev.stage2.adjustments.find(x => x.key === 'fatigue');
   Object.assign(fa, { applied: false, confidence: 'none', direction: 'neutral', signal: 0, deltaP1: 0, detail: '10d load even on Hard: 6s/3m=6.0u vs 7s/3m=7.0u (gap -1.0u < 2).' });
@@ -223,6 +232,7 @@ test('data: no sample data, no page sidebar, no Market Signal block; colour: lin
   assert.equal((CSS.match(/var\(--link\)/g) || []).length, 1, '--link on .em-link only');
   assert.equal((CSS.match(/var\(--amber\)/g) || []).length, 2, 'amber = the quality strip / dot and the quality label only');
   assert.ok(!/outline:[^;]*var\(--bar\)|box-shadow:[^;]*var\(--bar\)|border[^;]*var\(--bar\)/.test(CSS), 'no blue rings or outlines');
+  assert.match(CSS, /\.em-lrow\.open\{ background:var\(--selected\); \}/, 'an open row is the selected tone, so its inner-tone Weight chip stays visible (R3 fix 4)');
   assert.match(CSS, /\.em-odd:focus, \.em-odd:focus-visible\{ border-color:var\(--edge-16\); outline:none; box-shadow:none; \}/);
 });
 
