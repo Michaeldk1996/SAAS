@@ -365,6 +365,12 @@
   // Doubles ("A/ B" compound names, no per-player model context) are excluded
   // either way. To widen later (ATP+Challenger, or all singles), relax this one
   // predicate — nothing else in the render path is tour-specific.
+  // TEN-417: Interrupted = the vendor's own suspension words (api-tennis "Interrupted" / "Suspended"; there is no
+  // separate rain or medical status). ONE predicate for the Live header and the rail badge, which both count In play =
+  // underway and not interrupted.
+  function isInterrupted(fix) { return /interrupt|suspend/i.test(String(fix && fix.event_status || '')); }
+  const inPlayOf = (live) => live.filter(f => !isInterrupted(f)).length;
+
   function isAtpSingles(fix) {
     const t = String(fix.event_type_type || '');
     return /atp/i.test(t) && /single/i.test(t);
@@ -387,6 +393,7 @@
       ready: true,
       matches: all,
       live,
+      inPlay: inPlayOf(live),
       isStale,
       ageMs,
       updatedAt: _lastUpdatedAt,
@@ -1021,12 +1028,13 @@
     },
     isUnderway,
     isAtpSingles,
-    // TEN-403 rail badge: the Live page's own count (ATP singles, underway) from a one-shot snapshot read, for when the
+    isInterrupted,
+    // TEN-403 rail badge: the Live page header's In play (ATP singles underway, interrupted excluded — TEN-417) from a one-shot snapshot read, for when the
     // Live tab is closed and its poll is stopped (snapshot measured 8.3 KB, 1.3 KB gzipped). Renders nothing.
     async liveCount() {
       const row = await fetchSnapshot();
       const all = Array.isArray(row?.board?.matches) ? row.board.matches : [];
-      return all.filter(isAtpSingles).filter(isUnderway).length;
+      return inPlayOf(all.filter(isAtpSingles).filter(isUnderway));
     },
     indexStats: Detail.indexStats,
     stat: Detail.stat,

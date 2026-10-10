@@ -2435,9 +2435,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 /* sf-menu:end */
 </script>
 <script>
-// TEN-403 rail badges. Live count = the number the Live page itself shows: the LiveFeed payload's `live` list (ATP
-// singles, underway — live-tab.js render()). Subscribed the way the #lvTab renderer subscribes (this inline script runs
-// before the deferred module, which drains __LV_SUBS). No feed / 0 underway = no badge.
+// TEN-403 rail badges. Live count = the Live page header's In play (TEN-417 R1 fix 1): the LiveFeed payload's `inPlay`
+// (ATP singles underway, interrupted excluded — live-tab.js render(), the same isInterrupted the page uses). Subscribed the way the #lvTab renderer subscribes (this inline script runs
+// before the deferred module, which drains __LV_SUBS). No feed / 0 in play = no badge.
 (function () {
   var lastFeed = 0;
   function paint(n) {
@@ -2446,7 +2446,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   }
   (window.__LV_SUBS = window.__LV_SUBS || []).push(function (p) {
     if (p && p.ready) lastFeed = Date.now();
-    paint(p && Array.isArray(p.live) ? p.live.length : 0);
+    paint(p && typeof p.inPlay === 'number' ? p.inPlay : 0);
   });
   // The feed polls only while the Live tab is open, so off that tab the badge reads the count itself once a minute
   // (review: it froze at the last number). Skipped while hidden, while the feed is live, or when Live is flagged off.
