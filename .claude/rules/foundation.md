@@ -7,9 +7,9 @@ stay valid. Reference build: `OFFICIAL VERSION 1.html` — **the reference wins 
 written ruling (founder R1); measure its **computed** value in a browser (its source carries old hex the portal converts
 at runtime). *R3 is superseded* (founder shell refresh TEN-403, 2026-10-08; kept on card 783f355e): the Today's Matches 35b header's first stat
 column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page header (35b, TEN-403)").
-- **Status lines are text only (S3), site-wide:** "Live · updated …" text lines, the News feed line, the Dropping Odds
-  header tail — no dot, no colour (the one exception: the Today's Matches header live column above). `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
-  not live", Drops past its amber tier). The age is carried by the words ("updated 12 min ago"). The only *status* dots on
+- **Status lines are text only (S3), site-wide:** "Live · updated …" text lines, the News feed line (Dropping Odds has
+  none since TEN-427 r3: its Updated stat carries the read) — no dot, no colour (the one exception: the Today's Matches header live column above). `--text-label`; a stale / aging state may step up to `--text-soft` so the age stands out (News "Feed
+  not live"). The age is carried by the words ("updated 12 min ago"). The only *status* dots on
   the site are the lime serve dot and the Live page's match status dots (founder TEN-417: card 5px — white pulsing for
   Live, `--amber` for Interrupted; sheet head 6px, same colours; `.claude/rules/live.md`). Data marks — chart end dots,
   the date strip's Today marker — are not status.

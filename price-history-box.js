@@ -499,7 +499,8 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
   }
 
-  const api = { archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, fmtPct, placeAt, cardData, stats, PRICE_SEL, _open: open };
+  // fetchHistory: also read by the Dropping Odds price-move box (TEN-427 Data 4: one Bet105 source for both charts)
+  const api = { archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, fetchHistory, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, fmtPct, placeAt, cardData, stats, PRICE_SEL, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

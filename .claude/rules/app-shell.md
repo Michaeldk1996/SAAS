@@ -96,7 +96,7 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
   justify-content:space-between; gap:28px`.
 - **Left** (`.sfh__text`, column, gap 5): title `.sfh__title` Hanken 24/800, −0.015em, line-height 1.1, `--text`; under it
   ONE line `.sfh__sub` 13px `--text-soft`, `nowrap` + ellipsis, optionally ending in a `--text-label` tail
-  (`.sfh__tail`, e.g. "· Settled · 8 Oct 2026", the Drops / News status line). Header copy is one line: at most 120
+  (`.sfh__tail`, e.g. "· Settled · 8 Oct 2026", the News status line). Header copy is one line: at most 120
   characters (a longer sentence is trimmed, never reworded; *exception:* Playing Styles keeps the reference's full
   128-character line, founder TEN-408). **No caps label line above the title.**
 - **Right** (`.sfh__stats`, gap 30, `align-items:flex-end`): columns `.sfh__stat` (gap 4, right-aligned) of a caps label

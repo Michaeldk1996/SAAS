@@ -126,12 +126,12 @@ function checkH2H(dash) {
 
 // ── 3. ONE line per header: the reference's own Today's Matches line is two short sentences on one line, so the rule is
 //      the line, not the full stop — every header's copy stays at or under 120 characters (Trading's 119 is the
-//      longest; Series' TEN-194 paragraph and Drops' "Biggest drops first." were trimmed to get there). ──────────
+//      longest; Series' TEN-194 paragraph was trimmed to get there; Drops' TEN-427 sentence is 104 with "Biggest drops first."). ──
 function checkOneSentence(dash, js) {
   const subs = [...dash.matchAll(/<p class="sfh__sub"[^>]*>(?:<span class="[^"]*">)?([^<]+)</g)].map(m => m[1].trim());
   const series = (/var SUBTITLE = '([^']+)'/.exec(js.series) || [])[1];
   const trading = (/<p class="sfh__sub">([^<]+)(?:<span class="sfh__tail">[^<]*<\/span>)?<\/p>/.exec(js.trading) || [])[1];   // TEN-421: grey tail allowed
-  const drops = (/<span class="do-subtitle">Lines flagged in the last ' \+ esc\(st\.windowH \|\| 24\) \+ '(h[^<]+)<\/span>/.exec(js.drops) || [])[1];
+  const drops = (/<span class="do-subtitle">([^<']+)<\/span>/.exec(js.drops) || [])[1];   // TEN-427: the ticket's sentence, as written
   const all = subs.concat([series, trading, drops]);
   if (all.some(s => !s)) return 'a header sentence could not be read: ' + JSON.stringify(all);
   // Exception (founder, TEN-408 fix 4, 2026-10-09): Playing Styles carries the reference's full two-sentence line (128

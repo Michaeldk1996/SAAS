@@ -56,7 +56,7 @@ Wired as a **dash-filler only** — bet365 only, ATP and Challenger, never overr
   | Pinnacle +30s | Sharp | Oddspapi `/v4/historical-odds` (stored label; shown on the page as "Pinnacle +30s (Oddspapi)") | book tick |
   | Bet105 | Sharp | Kibl `chart_bet105_history(card_key)` — for EVERY board card: its selected Bet105 fixture, else its only Bet105 fixture (two or more → none), never one the orientation guard dashed; same rows and naming as the price-history box, pre-match only | Kibl insert |
   | Superbet | Soft | odds-api.io via `chart_book_series()` | vendor updatedAt |
-  | Betfair Exchange (recorded by us) | Soft | odds-api.io, back price, polled by us every 30 s | recorded by us |
+  | Betfair Exchange (recorded by us) | Sharp | odds-api.io, back price, polled by us every 30 s | recorded by us |
   | any other `config.books` entry | Soft | odds-api.io | vendor updatedAt, labelled "<book> (odds-api.io)" |
   | Pinnacle (api-tennis) | Sharp | api-tennis `Pncl`, via `chart_apitennis_series()` (Wave 2) | seen by us every 5 min |
   | Betano, 1xBet, BetVictor, Betfair Sportsbook (api-tennis), Marathon, bet365 (api-tennis), Sbobet, William Hill | Soft | api-tennis `Betano`, `1xBet`, `BetVictor` (alias `Victor Chandler`), `Betfair`, `Marathon`, `bet365`, `Sbo`, `WilliamHill` (Wave 2) | seen by us every 5 min |
