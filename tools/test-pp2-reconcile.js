@@ -605,7 +605,9 @@ console.log('\n5 · Ribbon rate = strip = last-N ledger rows');
 
 for (const p of SAMPLE) {
   check(`${p.name}: ribbon record matches its own strip`, () => {
-    const rows = I.ledgerMatches(p);
+    // The ribbon rates the renderer's OWN filtered rows (TEN-383: Laver Cup / exhibitions are records,
+    // not form). Re-deriving them from ledgerMatches put a Laver Cup row inside the window and red the gate.
+    const rows = I.build(p).filtered;
     const last18 = rows.slice(-18);
     const r = I.formRate(last18);
     const html = M.render(p);
@@ -621,7 +623,7 @@ for (const p of SAMPLE) {
 
 mustFail('ribbon check would catch a strip/caption mismatch', () => {
   const p = JSON.parse(JSON.stringify(SAMPLE[0]));
-  const before = I.ledgerMatches(p).slice(-18).length;
+  const before = I.build(p).filtered.slice(-18).length;
   p.recentForm.matches = p.recentForm.matches.slice(0, 3);   // shrink the window
   const html = M.render(p);
   assert(html.includes('last ' + before + ' ·'), 'caption followed the data');
