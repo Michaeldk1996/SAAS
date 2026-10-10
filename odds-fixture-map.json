@@ -3539,8 +3539,8 @@
     },
     "12168292": {
       "fixtureId": "id1200308575314384",
-      "mappedAt": "2026-10-08T11:32:29Z",
-      "missHeldH": 76.77,
+      "mappedAt": "2026-10-10T00:02:35Z",
+      "missHeldH": 113.27,
       "missRuns": 2,
       "missSince": "2026-10-05T06:46:21Z",
       "orient": "same",
@@ -4166,17 +4166,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-21T03:45:01Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 1,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 3,
-        "ttlBit": false,
-        "unmapped": 2,
-        "upcoming": 43
-      },
       {
         "at": "2026-09-21T04:45:07Z",
         "fixturesUnitsSpent": 1,
@@ -8565,9 +8554,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 25
+      },
+      {
+        "at": "2026-10-10T00:02:35Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 25
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-09T21:47:30Z"
+  "updatedAt": "2026-10-10T00:02:35Z"
 }
