@@ -41,8 +41,9 @@
 
   // ── The cell colour (founder TEN-376 U3, built in TEN-384) ──────────────────
   // A set cell is coloured by its GAP to the pair's own ALL-SETS rate, not by an
-  // absolute hold/break threshold: green from +3 pts, red from −3 pts, neutral
-  // within. The gap is taken on the two PRINTED integers (the cell's "77%" and the
+  // absolute hold/break threshold: neutral WITHIN ±3 inclusive, green from +4 pts, red from −4 (founder TEN-417,
+  // 2026-10-10: Profile follows Live; was ≥ ±3 under U3). The tooltip word follows the same band — "above global" /
+  // "at global" / "below global" · the gap · "vs this bucket’s global N%". The gap is taken on the two PRINTED integers (the cell's "77%" and the
   // all-sets "81%"), so the colour, the figure and the "−4 pts" sub can never
   // disagree. A cell whose pair has no all-sets rate cannot have a gap → neutral.
   // n 5–9 keeps its gap colour as a muted wash (8% fill, 16% edge); n ≥ 10 is the
@@ -53,10 +54,10 @@
   const GAP_PTS = 3;
   function gapBand(pctInt, gPctInt, small){
     const d = (gPctInt===null || gPctInt===undefined) ? null : (pctInt - gPctInt);
-    if(d!==null && d>=GAP_PTS) return small
+    if(d!==null && d>GAP_PTS) return small
       ? { bg:'color-mix(in srgb, var(--viz-up) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 16%, transparent)', color:'var(--viz-up)', tag:'up' }
       : { bg:'color-mix(in srgb, var(--viz-up) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 36%, transparent)', color:'var(--viz-up)', tag:'up' };
-    if(d!==null && d<=-GAP_PTS) return small
+    if(d!==null && d<-GAP_PTS) return small
       ? { bg:'color-mix(in srgb, var(--viz-down) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-down) 16%, transparent)', color:'var(--viz-down)', tag:'down' }
       : { bg:'color-mix(in srgb, var(--viz-down) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-down) 36%, transparent)', color:'var(--viz-down)', tag:'down' };
     return small
@@ -122,7 +123,7 @@
           size:small?'12px':'15px', opacity:small?0.72:1,
           tipHead:head,
           tipRate:pctInt+'%  ·  '+num+'/'+den,
-          tipNote:(dPts===null?'no all-sets rate for this pair':gapText(dPts)+' vs this pair’s all-sets '+gPctInt+'%')+(small?' · small sample · n='+den:''),
+          tipNote:(dPts===null?'no all-sets rate for this pair':(bd2.tag==='up'?'above global':bd2.tag==='down'?'below global':'at global')+' · '+gapText(dPts)+' vs this bucket’s global '+gPctInt+'%')+(small?' · small sample · n='+den:''),
         };
       });
       return {

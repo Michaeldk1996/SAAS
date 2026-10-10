@@ -58,7 +58,7 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   `--text`, otherwise `--text-soft`; lead factor box `--card` + `--edge-6`) (R4). *Kept by ruling (R4):* Database Lines ≥65% green; SHARP VALUE green / NO VALUE red; Drops FEED DISCONNECTED =
   `--neg` caps text on a white 4% banner, no red fill. *Exceptions (page variants, README §6):* Playing
   Styles matchup Strong `--pos` / Weak `--neg`; hold/break heatmap and form cells tinted `--viz-up` / `--viz-down`
-  (Player Profile: green from +3 pts vs the pair's all-sets rate, red from −3 — U3; Live: neutral within ±3 inclusive, green from +4 / red from −4 — TEN-417 R1); Lost = `--neg` text, Won =
+  (green from +4 pts vs the bucket's all-sets rate, red from −4, neutral within ±3 inclusive — founder TEN-417, Live and Player Profile alike); Lost = `--neg` text, Won =
   `--pos` only as a result marker; Completed-card loser is grey, not red.
 - **Amber = three places only:** Stennisfy Model value-layer quality (medium), Trading Report field tiers (within
   3 pts) and the Live page's **Interrupted** status (header count above 0, card status, sheet status — founder TEN-417).

@@ -10240,8 +10240,8 @@
   // for a muted cell, which is exactly the cell the export wants muted-but-tinted.
   // ── TEN-384 · the pop-up rebuilt to the reference (OFFICIAL VERSION 1) ─────
   // The engine decides each set cell's colour from its GAP to the pair's own
-  // all-sets rate (founder TEN-376 U3: green from +3 pts, red from −3, neutral
-  // within; holdbreak-heatmap.js `gapBand`). This renderer only maps the engine's
+  // all-sets rate (founder TEN-417: neutral within ±3 inclusive, green from +4 pts, red from −4;
+  // holdbreak-heatmap.js `gapBand`). This renderer only maps the engine's
   // `tag` ('up' | 'down' | 'even') and `gap` onto the reference's cell:
   //   full n ≥ 10   16% fill + 36% edge of the gap colour; figure Plex 14/700 in the
   //                 gap colour (white when even); sub "+7 pts" Plex 9.5 label

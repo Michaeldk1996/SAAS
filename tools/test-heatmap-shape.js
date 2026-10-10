@@ -105,7 +105,7 @@ function sheet(mod, opts) {
 //   · Q6 (2026-10-05): Hold | Break only, on a Darker track; NO surface control on
 //     screen (the path behind it is kept and still re-derives the grid).
 //   · TEN-376 U3: a set cell is coloured by its GAP to the pair's own all-sets rate
-//     (green from +3 pts, red from −3, neutral within), muted 8%/16% on n 5–9,
+//     (TEN-417: neutral within ±3 inclusive, green from +4, red from −4), muted 8%/16% on n 5–9,
 //     16%/36% on n ≥ 10; the all-sets cell is never tinted.
 // Every item keeps its old INTENT — one grid, a real toggle, the reference's tracks
 // and order, the sample tiers, no amber, real coverage counts — re-pinned to the

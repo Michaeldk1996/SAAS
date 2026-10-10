@@ -7,7 +7,7 @@ are legacy, read through `tokens.json → legacyColourMap`). Night only. Header 
 Where the reference's runtime colour conversion and the design file disagree, the design file + the founder's TEN-417
 text win (point chips, score-tile fills, the inner-tone tracks). **Test:** `test-ten417-live.mjs` executes the shipped
 renderer on the shipped `live-tab.js` with a real-feed fixture (`tools/fixtures/ten417-live.json`);
-`tools/test-ten417-mutants.js` (44 mutants, 0 may survive). `tools/test-live-tab-feed.js` keeps the TEN-190 source guards.
+`tools/test-ten417-mutants.js` (41 mutants, 0 may survive; the ±3 band and tooltip word are the engine's, locked by `tools/test-holdbreak-engine.js`). `tools/test-live-tab-feed.js` keeps the TEN-190 source guards.
 
 ## Data
 - **Feed:** `live_snapshot` (Supabase), written by the `live-poller` Edge Function from api-tennis `get_livescore` every
@@ -40,8 +40,8 @@ renderer on the shipped `live-tab.js` with a real-feed fixture (`tools/fixtures/
   inclusive** (founder TEN-417 R1: green from +4, red from −4), taken from the same rounded gap that is printed under the
   rate ("+4 pts", true minus), so colour and figure never disagree. Tooltip: "Game 1-2 · Set 1" / rate · count / "at
   global · −3 pts vs this bucket's global 84%" — the word follows the SAME band as the colour (founder R2): "at global"
-  within ±3, "above global" from +4, "below global" from −4; "· small sample" on n 5–9. n 5–9 smaller + greyed, n < 5 raw "a/b", n = 0 "—", unreachable sets "—" with the S head dimmed.
-  *Exception:* Player Profile shares the engine and keeps its own U3 boundary (±3 coloured) until the founder rules it.
+  within ±3, "above global" from +4, "below global" from −4; "· small sample · n=N" on n 5–9 (the engine's words). n 5–9 smaller + greyed, n < 5 raw "a/b", n = 0 "—", unreachable sets "—" with the S head dimmed.
+  The engine (`holdbreak-heatmap.js`) carries this rule, so Player Profile shows the same boundary and wording (founder TEN-417).
 - **1st serve percentage** has no count in the feed: its count is first serves in (the 1st-serve points played) over all
   service points (1st + 2nd), same period — "76% (19/25)", "65.5% (19/29)"; one decimal, whole only when exact.
 

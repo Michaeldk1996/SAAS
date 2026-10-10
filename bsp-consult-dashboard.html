@@ -35536,13 +35536,9 @@ function heatPlayerHtml(hp){
       // TEN-417 Break/Hold: the signed gap to the bucket's global is printed under the rate ("+6 pts"), so the colour and
       // the figure can never disagree; n<5 keeps "raw"; a dash cell prints nothing under it.
       const sub=(c.gap!=null&&HBE())?HBE().gapText(c.gap):c.frac;
-      // TEN-417 R1 fixes 3–4 (founder): neutral WITHIN ±3 inclusive — the colour is taken from the same rounded gap that
-      // is printed, so a printed "−3 pts" is never red; the tooltip is the built wording against the player's own global
-      // for the bucket. (Player Profile shares the engine and keeps its own U3 boundary.)
-      if(c.gap!=null&&Math.abs(c.gap)<=3&&HBE()){ const small=c.size==='12px', n=HBE().gapBand(0,0,small); c=Object.assign({},c,{bg:n.bg,bd:n.bd,tag:'even',color:small?'var(--text-label)':n.color}); }
-      // TEN-417 R2 fix 3: the word follows the colour band — at global within ±3, above from +4, below from −4.
-      const tag=c.gap>3?'above global':c.gap<-3?'below global':'at global';
-      const note=(c.gap!=null&&HBE())?tag+' · '+HBE().gapText(c.gap)+' vs this bucket’s global '+hr.gPct+(c.size==='12px'?' · small sample':''):c.tipNote;
+      // TEN-417: the colour band (neutral within ±3 inclusive) and the tooltip word ("at global · −3 pts vs this bucket’s
+      // global 81%") come from the shared engine, holdbreak-heatmap.js — the same rule as Player Profile.
+      const note=c.tipNote;
       return `
 <span class="hbcell" style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;padding:7px 0;border-radius:8px;background:${c.bg};border:1px solid ${c.bd};opacity:${c.opacity};">
   <span style="${MONO}font-size:${c.size};font-weight:700;color:${c.color};line-height:1.2;">${e(c.pct)}</span>

@@ -122,8 +122,8 @@ function sliceOriginal() {
   if (/rgba\(|#[0-9a-fA-F]{6}\b/.test(src))
     throw new Error('a raw colour literal survived the foundation map in the recovered original');
   // TEN-384 (founder TEN-376 U3): the CELL COLOUR RULE changed — a set cell is now
-  // coloured by its gap to the pair's all-sets rate (green from +3 pts, red from
-  // −3 pts, neutral within; n 5–9 a muted wash), and the all-sets cell is never
+  // coloured by its gap to the pair's all-sets rate (TEN-417: neutral within ±3 inclusive, green from +4, red from
+  // −4; n 5–9 a muted wash), and the all-sets cell is never
   // tinted. That is a deliberate behaviour change, so the original is brought to
   // the NEW rule by exact substitution, exactly as the foundation map above does
   // for colours. The rule itself is written out HERE, independently of the
@@ -134,7 +134,7 @@ function sliceOriginal() {
 const GAP_PTS = 3;
 function gapBand(pctInt, gPctInt, small){
   const d = (gPctInt===null || gPctInt===undefined) ? null : (pctInt - gPctInt);
-  const up = d!==null && d>=GAP_PTS, down = d!==null && d<=-GAP_PTS;
+  const up = d!==null && d>GAP_PTS, down = d!==null && d<-GAP_PTS;   // TEN-417: neutral within ±3 inclusive
   if (up) return small
     ? { bg:'color-mix(in srgb, var(--viz-up) 8%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 16%, transparent)', color:'var(--viz-up)', tag:'up' }
     : { bg:'color-mix(in srgb, var(--viz-up) 16%, transparent)', bd:'color-mix(in srgb, var(--viz-up) 36%, transparent)', color:'var(--viz-up)', tag:'up' };
@@ -152,7 +152,7 @@ function gapText(d){ return d===null ? '' : (d>0?'+':d<0?'\u2212':'')+Math.abs(d
     ["const bd2 = band(rate, metric);", "const bd2 = gapBand(pctInt, gPctInt, den<10);", 1],
     ["bg:bd2.bg, bd:bd2.bd, tag:bd2.tag,", "bg:bd2.bg, bd:bd2.bd, tag:bd2.tag, gap:dPts,", 1],
     ["tipNote:bd2.tag+' band'+(dPts===null?'':' · '+(dPts>0?'+':'')+dPts+' pts vs this bucket’s global '+gPctInt+'%')+(small?' · small sample':''),",
-     "tipNote:(dPts===null?'no all-sets rate for this pair':gapText(dPts)+' vs this pair’s all-sets '+gPctInt+'%')+(small?' · small sample · n='+den:''),", 1],
+     "tipNote:(dPts===null?'no all-sets rate for this pair':(bd2.tag==='up'?'above global':bd2.tag==='down'?'below global':'at global')+' · '+gapText(dPts)+' vs this bucket’s global '+gPctInt+'%')+(small?' · small sample · n='+den:''),", 1],
     ["gColor: gBand ? gBand.color : 'var(--text-label)',", "gColor: g.pct===null ? 'var(--text-label)' : 'var(--text)',", 1],
   ];
   for (const [from, to, want] of TEN384_MAP) {
@@ -384,7 +384,7 @@ function gapRuleSweep(threshold) {
         if (!/^\d+%$/.test(c.pct)) continue;
         const d = g === null ? null : parseInt(c.pct, 10) - g;
         assert.strictEqual(c.gap, d, `${key} ${c.tipHead}: gap ${c.gap} is not printed cell − printed all-sets (${d})`);
-        const want = d === null ? 'even' : d >= threshold ? 'up' : d <= -threshold ? 'down' : 'even';
+        const want = d === null ? 'even' : d > threshold ? 'up' : d < -threshold ? 'down' : 'even';
         assert.strictEqual(c.tag, want, `${key} ${c.tipHead}: gap ${d} tagged ${c.tag}, rule says ${want}`);
         if (Math.abs(d) === 3) boundary++;
         cells++;
@@ -393,7 +393,7 @@ function gapRuleSweep(threshold) {
   }
   return { cells, boundary };
 }
-check('every set cell is coloured by its gap to the pair’s all-sets rate (±3 pts)', () => {
+check('every set cell is coloured by its gap to the pair’s all-sets rate, neutral within ±3 inclusive (TEN-417)', () => {
   const { cells, boundary } = gapRuleSweep(3);
   assert(cells > 1000, `only ${cells} printed cells checked`);
   assert(boundary > 0, 'no cell sits exactly on ±3 — the boundary is untested');
@@ -401,7 +401,25 @@ check('every set cell is coloured by its gap to the pair’s all-sets rate (±3 
   assert.strictEqual(HBE.gapText(7), '+7 pts');
   console.log(`        ${cells} cells follow the gap rule, ${boundary} on the ±3 boundary`);
 });
-mustFail('the gap-rule sweep would catch a > 3 (not ≥ 3) boundary', () => gapRuleSweep(4));
+mustFail('the gap-rule sweep would catch a ≥ 3 (U3, coloured ±3) boundary', () => gapRuleSweep(2));
+mustFail('the gap-rule sweep would catch a ≥ 5 boundary', () => gapRuleSweep(4));
+// TEN-417 (founder): −3 / +3 neutral and "at global"; −4 red "below global"; +4 green "above global" — colour, word and
+// printed figure from the one rounded gap.
+check('TEN-417: −3 / +3 are neutral, −4 / +4 coloured; the tooltip word follows the band', () => {
+  const g = (p, gp) => HBE.gapBand(p, gp, false).tag;
+  assert.strictEqual(g(80, 83), 'even'); assert.strictEqual(g(86, 83), 'even');
+  assert.strictEqual(g(79, 83), 'down'); assert.strictEqual(g(87, 83), 'up');
+  assert.strictEqual(HBE.gapBand(80, 83, true).tag, 'even', 'a small sample follows the same band');
+  const H = { players: { '1': { serve: { all: { '1': { '1': { won: 80, n: 100 } }, '2': { '1': { won: 86, n: 100 } }, '3': { '1': { won: 79, n: 100 } }, '4': { '1': { won: 87, n: 100 } } } }, return: { all: {} } } } };
+  const row = HBE.heatFor(H, '1', 'HOLD', 5).rows[0];   // all-sets 332/400 = 83%
+  assert.strictEqual(row.gPct, '83%');
+  const [c1, c2, c3, c4] = row.cells;
+  assert.deepStrictEqual([c1.tag, c2.tag, c3.tag, c4.tag], ['even', 'even', 'down', 'up']);
+  assert.match(c1.tipNote, /^at global · \u22123 pts vs this bucket’s global 83%$/);
+  assert.match(c2.tipNote, /^at global · \+3 pts vs this bucket’s global 83%$/);
+  assert.match(c3.tipNote, /^below global · \u22124 pts vs this bucket’s global 83%$/);
+  assert.match(c4.tipNote, /^above global · \+4 pts vs this bucket’s global 83%$/);
+});
 
 // ════════════════════════════════════════════════════════════════════════════
 // 2 · The axis the engine reads is the axis the shard emits.
