@@ -4437,498 +4437,214 @@ window.EntryListsTab = (function(){
     font-family:'Hanken Grotesk', sans-serif;
     color:var(--text);
   }
-  .edge-shell{ min-height:100vh; padding:28px 24px 90px; display:flex; justify-content:center; }
-  .edge-wrap{ width:1160px; max-width:100%; display:flex; flex-direction:column; gap:14px; }
-  /* Nav row — design 28: plain text links, left aligned. Prev/Next are the
-     muted secondary pair; Back is the brand-blue link. */
-  .edge-topnav{ display:flex; align-items:center; justify-content:flex-start; gap:14px; }
-  .edge-nav-btn{
-    font-size:12px; font-weight:600; color:var(--text-label); cursor:pointer;
-    user-select:none; white-space:nowrap; transition:color .14s ease;
-  }
-  .edge-nav-btn:hover{ color:var(--text-label); }
-  .edge-nav-btn.back{ color:var(--link); }
-  .edge-nav-btn.back:hover{ color:var(--link); }
-  .edge-card{
-    background:var(--card); border:1px solid transparent; box-shadow:var(--top-light);
-    border-radius:16px; padding:20px 22px;
-  }
-  .edge-sectitle{
-    font-family:var(--font-words);  font-size:10.5px; font-weight:700;
-    letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin:0 0 14px;
-  }
-  .edge-head{ padding:6px 2px 2px; }
-  .edge-eyebrow{
-    font-family:var(--font-words);  font-size:10.5px; font-weight:700;
-    letter-spacing:0.10em; text-transform:uppercase; color:var(--text); margin-bottom:8px;
-  }
-  .edge-title{ font-size:22px; font-weight:800; letter-spacing:-0.01em; color:var(--text); }
-  .edge-sub{ font-size:13px; color:var(--text-label); margin-top:5px; }
-  /* Read-only match context chips (Section 1 — no interactive recompute). */
-  .edge-chips{ display:flex; flex-wrap:wrap; gap:8px; }
-  .edge-chip{
-    display:flex; flex-direction:column; gap:3px; min-width:96px;
-    background:var(--card); border:1px solid var(--edge-6);
-    border-radius:10px; padding:9px 12px;
-  }
-  .edge-chip .k{ font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .edge-chip .v{ font-size:13px; font-weight:500; color:var(--text-soft); }
-  /* Base-probability rows (Section 2). */
-  .edge-comp{ display:flex; align-items:center; gap:14px; padding:10px 0; border-top:1px solid var(--line); }
-  .edge-comp:first-of-type{ border-top:none; }
-  .edge-comp .lbl{ flex:1 1 auto; min-width:0; }
-  .edge-comp .lbl .n{ font-size:13px; color:var(--text-soft); }
-  .edge-comp .lbl .d{ font-size:11px; color:var(--text-label); margin-top:2px; }
-  .edge-comp .wt{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-label); flex:none; }
-  .edge-comp .pr{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text); flex:none; min-width:56px; text-align:right; }
-  /* Split proportion bar — position/width encodes share, single neutral fill. */
-  .edge-split{ margin-top:14px; }
-  .edge-split-lbls{ display:flex; justify-content:space-between; font-size:12px; color:var(--text-soft); margin-bottom:6px; }
-  .edge-split-lbls .mono{ font-family:'IBM Plex Mono', monospace; color:var(--text); }
-  .edge-splitbar{ height:10px; border-radius:6px; background:var(--inner); overflow:hidden; display:flex; }
-  .edge-splitbar > i{ display:block; height:100%; }
-  .edge-splitbar > i.a{ background:var(--bar); }
-  .edge-splitbar > i.b{ background:var(--viz-guide); }
-  /* Data coverage grid (Section 3). */
-  .edge-cov{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .edge-cov-col{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:14px 16px; }
-  .edge-cov-name{ font-size:14px; font-weight:600; color:var(--text); margin-bottom:2px; }
-  .edge-cov-meta{ font-size:11px; color:var(--text-label); margin-bottom:12px; font-family:'IBM Plex Mono', monospace; }
-  .edge-cov-src{ display:flex; align-items:center; justify-content:space-between; padding:5px 0; font-size:12.5px; color:var(--text-label); }
-  .edge-cov-src .on{ color:var(--pos); font-family:'IBM Plex Mono', monospace; font-size:11px; }
-  .edge-cov-src .off{ color:var(--text-label); font-family:'IBM Plex Mono', monospace; font-size:11px; }
-  /* Adjustment rows (Section 4). */
-  .edge-adjhead{ display:flex; justify-content:space-between; font-size:11px; color:var(--text-label); margin-bottom:10px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.04em; }
-  .edge-adj{ padding:12px 0; border-top:1px solid var(--line); }
-  .edge-adj:first-of-type{ border-top:none; }
-  .edge-adj.muted{ opacity:0.5; }
-  .edge-adj-top{ display:flex; align-items:center; gap:10px; margin-bottom:8px; }
-  .edge-adj-name{ font-size:13px; font-weight:500; color:var(--text); flex:1 1 auto; min-width:0; }
-  .edge-adj-delta{ font-family:var(--font-words); font-size:10.5px; color:var(--text-soft); flex:none; }
-  .edge-adj-delta.none{ color:var(--text-label); }
-  .edge-conf{
-    font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700;
-    padding:2px 6px; border-radius:5px; border:1px solid var(--edge-6); color:var(--text-label); flex:none;
-  }
-  .edge-conf.high{ color:var(--pos); border-color:color-mix(in srgb, var(--pos) 30%, transparent); }
-  .edge-conf.med{ color:var(--amber); border-color:color-mix(in srgb, var(--amber) 30%, transparent); }   /* Stennisfy Model: amber allowed (README §6) */
-  .edge-conf.gated{ color:var(--text-label); border-color:var(--edge-6); }
-  /* Diverging bar: center line fixed; fill sits left (p1) or right (p2). */
-  .edge-dbar{ position:relative; height:8px; background:var(--inner); border-radius:5px; margin-bottom:7px; }
-  .edge-dbar::before{ content:''; position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:var(--line); }
-  .edge-dbar > i{ position:absolute; top:0; height:100%; background:var(--bar); border-radius:5px; }
-  .edge-adj-detail{ font-size:11.5px; color:var(--text-label); line-height:1.45; }
-  /* Fair price & value (Section 5). */
-  .edge-fair{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
-  .edge-fair-cell{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:14px 16px; }
-  .edge-fair-cell .who{ font-size:13px; color:var(--text-soft); margin-bottom:8px; }
-  .edge-fair-cell .odds{ font-family:'IBM Plex Mono', monospace; font-size:26px; font-weight:600; color:var(--text); }
-  .edge-fair-cell .prob{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-label); margin-top:2px; }
-  .edge-mkt{ border-top:1px solid var(--line); padding-top:12px; margin-top:4px; }
-  .edge-mkt-row{ display:flex; align-items:center; justify-content:space-between; padding:6px 0; font-size:12.5px; color:var(--text-label); }
-  .edge-mkt-row .src{ color:var(--text-label); }
-  .edge-mkt-row .mono{ font-family:'IBM Plex Mono', monospace; color:var(--text-soft); }
-  .edge-flag{
-    display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:10px; margin-top:8px;
-    background:color-mix(in srgb, var(--pos) 8%, transparent); border:1px solid color-mix(in srgb, var(--pos) 28%, transparent);
-  }
-  .edge-flag .tag{ font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--pos); flex:none; }
-  .edge-flag .body{ font-size:12.5px; color:var(--text); flex:1 1 auto; }
-  .edge-flag .edgeval{ font-family:'IBM Plex Mono', monospace; font-size:14px; font-weight:600; color:var(--pos); flex:none; }
-  .edge-noflag{ font-size:12.5px; color:var(--text-label); margin-top:8px; }
-  /* AI summary (Section 6). */
-  .edge-ai{ background:var(--card); }
-  .edge-ai p{ font-size:14px; line-height:1.65; color:var(--text-soft); margin:0 0 12px; }
-  .edge-ai p:last-child{ margin-bottom:0; }
-  .edge-ai-empty{ font-size:13px; color:var(--text-label); line-height:1.6; }
-  .edge-foot{ font-size:11px; color:var(--text-label); text-align:center; padding:6px 0 0; }
-  /* Empty state (match model could not run / no output). */
-  .edge-empty{ text-align:center; padding:44px 24px; color:var(--text-label); }
-  .edge-empty .ic{ font-size:26px; margin-bottom:12px; }
-  .edge-empty .msg{ font-size:13.5px; line-height:1.6; max-width:460px; margin:0 auto; }
-  /* ══ Design handoff 28 (design_handoff_tennis_edge_model) ══════════════
-     Converged onto the hifi design. Tokens are taken verbatim from the
-     handoff README; the layout deviations that remain are data-driven and
-     are listed in the render function's header comment. */
-  /* Page header */
-  .edge-eyeb{ font-family:var(--font-words);  font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin-bottom:16px; }
+  /* ── TEN-418 step 12 — Stennisfy Model page (night). Reference: OFFICIAL VERSION 1 → Stennisfy Model
+     (Stennisfy Model.dc.html); legacy hexes read through the legacy map. Shell = shared .sfh header + the rail;
+     this page owns no header rule. Rules: .claude/rules/stennisfy-model.md. ── */
+  .em-page{ max-width:1360px; box-sizing:content-box; padding:30px 40px 70px; display:flex; flex-direction:column; gap:18px; line-height:normal; font-family:var(--font-words); color:var(--text); }
+  .em-cols{ display:flex; align-items:flex-start; gap:18px; }
+  .em-main{ flex:1; min-width:0; display:flex; flex-direction:column; gap:14px; }
+  .em-card{ background:var(--card); box-shadow:var(--top-light); border-radius:16px; }
+  .em-caps{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
+  .em-mono{ font-family:var(--font-nums); }
+  .em-note{ font-size:11.5px; color:var(--text-label); line-height:1.5; text-wrap:pretty; }
+  .em-pos{ color:var(--pos); } .em-neg{ color:var(--neg); } .em-zero{ color:var(--text-label); }
+  .em-plink{ color:var(--text); text-decoration:none; cursor:pointer; }
+  .em-plink:hover{ text-decoration:underline; }
+  .em-link{ color:var(--link); text-decoration:none; cursor:pointer; }
+  .em-link:hover{ text-decoration:underline; }
+  .em-chip{ display:inline-flex; align-items:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); background:var(--inner); border-radius:6px; padding:3px 8px; white-space:nowrap; }
 
-  /* Section 1 — matchup */
-  .edge-mtour{ display:flex; justify-content:center; align-items:center; gap:8px; flex-wrap:wrap; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-label); margin-bottom:18px; }
-  .edge-mtour .tour{ color:var(--text-soft); font-weight:600; }
-  .edge-mtour .dot{ color:var(--text-label); }
-  .edge-mtour .rnd{ color:var(--text-label); }
-  .edge-vsrow{ display:flex; align-items:center; justify-content:center; gap:34px; flex-wrap:wrap; }
-  .edge-pblk{ display:flex; flex-direction:column; gap:10px; min-width:0; align-items:flex-end; }
-  .edge-pblk.r{ align-items:flex-start; }
-  .edge-pname{ display:flex; align-items:center; gap:11px; }
-  .edge-pav{ width:32px; height:32px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; letter-spacing:0.02em; }
-  .edge-pav.a{ background:var(--inner); color:var(--text); }
-  .edge-pav.b{ background:var(--inner); color:var(--text); }
-  .edge-pblk .nm{ font-size:23px; font-weight:800; letter-spacing:-0.01em; }
-  .edge-pblk .nm.a{ color:var(--text); }
-  .edge-pblk .nm.b{ color:var(--text); }
-  .edge-badges{ display:flex; gap:7px; flex-wrap:wrap; }
-  .edge-pblk.r .edge-badges{ justify-content:flex-end; }
-  .edge-bdg{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600; color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); border-radius:6px; padding:4px 8px; }
-  .edge-bdg.elo{ color:var(--text-label); background:var(--inner); border-color:var(--edge-6); }
-  .edge-bdg.arch{ font-family:'Hanken Grotesk', sans-serif; color:var(--text-label); background:var(--inner); border-color:var(--edge-6); text-transform:capitalize; }
-  .edge-vs{ width:42px; height:42px; border-radius:50%; border:1px solid var(--edge-6); background:var(--card); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; color:var(--text-label); flex:none; }
-  .edge-mstrip{ display:flex; justify-content:center; align-items:stretch; margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
-  .edge-mcol{ display:flex; flex-direction:column; align-items:center; gap:5px; padding:0 26px; }
-  .edge-mcol:first-child{ padding-left:0; }
-  .edge-mcol:last-child{ padding-right:0; }
-  .edge-mcol + .edge-mcol{ border-left:1px solid var(--line); }
-  .edge-mcol .k{ font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .edge-mcol .v{ font-size:14.5px; font-weight:700; color:var(--text); }
-
-  /* Section 2 — base probability estimate cards */
-  .edge-estgrid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; }
-  .edge-est{ background:var(--card); border:1px solid var(--edge-6); border-radius:13px; padding:15px 17px; display:flex; flex-direction:column; gap:12px; }
-  .edge-est .lb{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .edge-est .rows{ display:flex; flex-direction:column; gap:8px; }
-  .edge-est .r{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
-  .edge-est .r .n{ font-size:12px; font-weight:600; color:var(--text-label); min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .edge-est .r.a .n{ color:var(--text); }
-  .edge-est .r .p{ font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:700; color:var(--text); flex:none; }
-  .edge-estbar{ position:relative; display:flex; height:5px; border-radius:3px; overflow:hidden; background:var(--inner); }
-  .edge-estbar > i{ display:block; height:100%; background:var(--bar); }
-  .edge-estbar > i.rest{ flex:1; background:color-mix(in srgb, var(--text) 14%, transparent); }
-  .edge-est .ft{ display:flex; justify-content:space-between; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-label); padding-top:2px; border-top:1px solid var(--line); }
-  .edge-est .na{ font-size:11px; color:var(--text-label); line-height:1.45; }
-  .edge-estacc{ background:var(--tile-hover); border:1px solid var(--edge-10); border-radius:13px; padding:15px 18px; display:flex; flex-direction:column; justify-content:center; gap:6px; }
-  .edge-estacc .lb{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text); }
-  .edge-estacc .pair{ display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:2px; }
-  .edge-estacc .who{ font-size:11px; color:var(--text-label); font-weight:600; margin-bottom:2px; }
-  .edge-estacc .a .who{ color:var(--text); }
-  .edge-estacc .od{ font-family:'IBM Plex Mono', monospace; font-size:31px; font-weight:700; line-height:0.9; color:var(--text); }
-  .edge-estacc .pc{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-label); margin-top:3px; }
-
-  /* Section 3 — 17-layer coverage */
-  .edge-covcard{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; padding:18px 22px; }
-  .edge-covleft{ display:flex; flex-direction:column; gap:8px; min-width:260px; flex:1; }
-  .edge-covhead{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
-  .edge-pill{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; border-radius:6px; padding:3px 9px; white-space:nowrap; }
-  .edge-pill.c-high{ color:var(--pos); background:color-mix(in srgb, var(--pos) 12%, transparent); border:1px solid color-mix(in srgb, var(--pos) 34%, transparent); }
-  .edge-pill.c-med{ color:var(--amber); background:color-mix(in srgb, var(--amber) 12%, transparent); border:1px solid color-mix(in srgb, var(--amber) 34%, transparent); }
-  .edge-pill.c-low{ color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); }
-  .edge-segbar{ display:flex; gap:3px; }
-  .edge-segbar > span{ flex:1; height:9px; border-radius:2px; }
-  .edge-hint{ font-size:10px; color:var(--text-label); }
-  .edge-covcounts{ display:flex; gap:24px; }
-  .edge-covn{ display:flex; flex-direction:column; gap:2px; }
-  .edge-covn .v{ font-family:'IBM Plex Mono', monospace; font-size:28px; font-weight:700; line-height:1; }
-  .edge-covn .k{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-
-  /* Section 4 — adjustment layers */
-  .edge-s4head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px; }
-  .edge-s4head .edge-eyeb{ margin-bottom:0; }
-  .edge-net{ font-size:11px; color:var(--text-label); }
-  .edge-net strong{ font-family:'IBM Plex Mono', monospace; color:var(--text); font-weight:700; }
-  /* Export §1–2: flat, scannable table — five columns, no per-row card. */
-  .edge-tablecols{ grid-template-columns:minmax(120px,1.1fr) 88px minmax(150px,210px) minmax(90px,120px) minmax(180px,2fr); gap:14px; }
-  .edge-adjhead2{ display:grid; grid-template-columns:minmax(120px,1.1fr) 88px minmax(150px,210px) minmax(90px,120px) minmax(180px,2fr); gap:14px; padding:0 4px 10px; font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .edge-adjhead2 .c{ text-align:center; }
-  .edge-adjhead2 .rt{ text-align:right; }
-  .edge-adjlist{ display:flex; flex-direction:column; }
-  .edge-row{ display:grid; grid-template-columns:minmax(120px,1.1fr) 88px minmax(150px,210px) minmax(90px,120px) minmax(180px,2fr); gap:14px; align-items:center; padding:13px 4px; border-bottom:1px solid var(--line); }
-  .edge-row:last-child{ border-bottom:none; }
-  .edge-row.dim{ opacity:0.55; }
-  .edge-wtc{ display:flex; align-items:center; gap:7px; min-width:0; }
-  .edge-wt.w-inactive{ color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); }
-  .edge-why{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; line-height:1.45; color:var(--text-label); min-width:0; }
-  .edge-why .edge-num{ font-family:'IBM Plex Mono', monospace; color:var(--text-label); font-size:11.5px; }
-  .edge-why-empty{ color:var(--text-label); }
-  .edge-vldiv{ height:1px; background:var(--line); margin:16px 0; }
-  .edge-row .lc{ display:flex; flex-direction:column; gap:6px; min-width:0; }
-  .edge-row .rname{ font-size:13px; font-weight:700; color:var(--text); }
-  .edge-row.gold .rname, .edge-row.blue .rname{ font-size:15px; }
-  .edge-tags{ display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
-  .edge-wt{ font-size:10.5px; font-family:var(--font-words);  font-weight:700; letter-spacing:0.10em; text-transform:uppercase; border-radius:5px; padding:2px 7px; white-space:nowrap; }
-  .edge-wt.w-highest{ color:var(--text); background:var(--inner); border:1px solid var(--edge-16); }
-  .edge-wt.w-high{ color:var(--text); background:var(--inner); border:1px solid var(--edge-10); }
-  .edge-wt.w-medhigh{ color:var(--text-soft); background:var(--inner); border:1px solid var(--edge-10); }
-  .edge-wt.w-med{ color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); }
-  .edge-wt.w-low{ color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); }
-  .edge-dot{ width:6px; height:6px; border-radius:50%; flex:none; }
-  .edge-mc{ display:flex; flex-direction:column; gap:6px; min-width:0; }
-  .edge-mcrow{ display:flex; align-items:center; gap:12px; }
-  .edge-sc{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; width:40px; flex:none; color:var(--text-label); }
-  .edge-sc.a{ text-align:right; }
-  .edge-sc.lead{ color:var(--text); }
-  .edge-row.gold .edge-sc, .edge-row.blue .edge-sc{ font-size:17px; }
-  .edge-dbar2{ position:relative; flex:1; height:7px; border-radius:5px; background:var(--inner); }
-  .edge-dbar2 .tick{ position:absolute; left:50%; top:-2px; bottom:-2px; width:1px; background:var(--line); }
-  .edge-dbar2 > i{ position:absolute; top:0; bottom:0; border-radius:5px; background:var(--bar); }
-  .edge-dbar2 > i.even{ background:var(--text-label); }
-  .edge-fav{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; text-align:right; min-width:0; }
-  .edge-fav .who{ font-size:12.5px; font-weight:700; color:var(--text-soft); }
-  .edge-fav .who.even{ color:var(--text-label); }
-  .edge-fav .dl{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-label); }
-  .edge-rdetail{ grid-column:1 / -1; font-size:11px; color:var(--text-label); line-height:1.45; padding-top:4px; }
-
-  /* Section 5 — fair price & value */
-  .edge-value{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; overflow:hidden; }
-  .edge-vhead{ padding:15px 22px; border-bottom:1px solid var(--line); background:var(--tile-hover); display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
-  .edge-ic{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex:none; background:var(--inner); border:1px solid var(--edge-10); }
-  .edge-ic.gold{ background:var(--inner); border-color:var(--edge-10); }
-  .edge-vhead .t{ font-size:16px; font-weight:800; color:var(--text); }
-  .edge-vhead .s{ font-size:11.5px; color:var(--text-label); margin-top:1px; }
-  .edge-vhead .net{ margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text); }
-  .edge-vcols{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); }
-  .edge-vcol{ padding:20px 22px; border-bottom:1px solid var(--line); display:flex; flex-direction:column; gap:14px; }
-  .edge-vcol.divider{ border-right:1px solid var(--line); }
-  .edge-vtop{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
-  .edge-vtop .nm{ font-size:13px; font-weight:700; color:var(--text); }
-  .edge-vtop .nm.a{ color:var(--text); }
-  .edge-vtop .nm.b{ color:var(--text); }
-  .edge-vtop .cap{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin-top:4px; }
-  .edge-vtop .od{ font-family:'IBM Plex Mono', monospace; font-size:48px; font-weight:700; line-height:0.82; color:var(--text); }
-  .edge-vflag{ align-self:flex-start; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:500; letter-spacing:0.05em; border-radius:8px; padding:8px 13px; white-space:nowrap; }
-  .edge-vflag.f-sharp{ color:var(--pos); background:color-mix(in srgb, var(--pos) 12%, transparent); border:1px solid color-mix(in srgb, var(--pos) 34%, transparent); }
-  .edge-vflag.f-soft{ color:var(--pos); background:color-mix(in srgb, var(--pos) 10%, transparent); border:1px solid color-mix(in srgb, var(--pos) 30%, transparent); }
-  .edge-vflag.f-none{ color:var(--neg); background:color-mix(in srgb, var(--neg) 10%, transparent); border:1px solid color-mix(in srgb, var(--neg) 28%, transparent); }
-  .edge-vnote{ font-size:11px; color:var(--text-label); line-height:1.5; margin-top:-6px; }
-  .edge-mkts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .edge-mkt2{ display:flex; flex-direction:column; gap:6px; }
-  .edge-mkt2 .cap{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .edge-mkt2 .px{ background:var(--card); border:1px solid var(--edge-6); border-radius:9px; padding:10px 12px; color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; text-align:center; }
-  .edge-mkt2 .px.na{ color:var(--text-label); }
-  .edge-mkt2 .sub{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-label); text-align:center; }
-  .edge-mkt2 .gap{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-align:center; }
-  .edge-mkt2 .gap.pos{ color:var(--pos); }
-  .edge-mkt2 .gap.neg{ color:var(--neg); }
-  .edge-mkt2 .gap.na{ color:var(--text-label); }
-  .edge-vfoot{ padding:16px 22px; display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
-  .edge-movers{ flex:1; min-width:260px; }
-  .edge-cap2{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin-bottom:10px; }
-  /* MARKET SIGNAL block (Section 5 sibling) — Sharp estimates read against Market money */
-  .edge-msig{ margin:16px 22px 4px; padding:14px 16px; background:var(--card); border:1px solid var(--edge-6); border-radius:12px; }
-  .msig-head{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin-bottom:12px; }
-  .msig-final{ color:var(--text); }
-  .msig-sect{ margin-bottom:12px; }
-  .msig-sect:last-of-type{ margin-bottom:0; }
-  .msig-lbl{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); margin-bottom:8px; }
-  .msig-secthead{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; }
-  .msig-secthead .msig-lbl{ margin-bottom:0; }
-  .msig-collbl{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .msig-rows{ display:flex; flex-direction:column; gap:9px; }
-  .msig-row{ display:grid; grid-template-columns:92px 38px 1fr 38px 60px; align-items:center; gap:10px; }
-  /* colours = the 12a design's Market Signal (same component): venue text-soft, favourite % periwinkle,
-     split bar blue-ring (favourite) on bar-dog (underdog), liquidity label */
-  .msig-venue{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--text-soft); }
-  .msig-p1, .msig-p2{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:600; }
-  .msig-p1{ text-align:right; color:var(--text); }
-  .msig-p2{ text-align:left; color:var(--text-label); }
-  .msig-p1.na, .msig-p2.na{ color:var(--text-label); font-weight:400; }
-  .msig-bar{ position:relative; height:6px; border-radius:4px; background:var(--bar-2); overflow:hidden; }
-  .msig-bar i{ position:absolute; left:0; top:0; bottom:0; background:var(--bar); border-radius:4px; }
-  .msig-bar.na{ background:var(--card); }
-  .msig-bar.na i{ background:var(--track); }
-  .msig-size{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--text-label); text-align:right; }
-  .msig-size.na{ color:var(--text-label); }
-  .msig-note{ margin-top:12px; font-size:10px; line-height:1.5; color:var(--text-label); }
-  .edge-mover{ display:flex; align-items:center; gap:10px; font-size:14px; padding:3px 0; }
-  .edge-mover .rk{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-label); width:14px; flex:none; }
-  .edge-mover .nm{ flex:1; color:var(--text-soft); min-width:0; }
-  .edge-mover .who{ font-weight:600; color:var(--text); }
-  .edge-mover .who.a{ color:var(--text); }
-  .edge-mover .who.b{ color:var(--text); }
-  .edge-mover .dl{ font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text); width:56px; text-align:right; flex:none; }
-  .edge-confbox{ display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
-  .edge-confbig{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; border-radius:8px; padding:8px 14px; }
-  .edge-confsub{ font-size:10.5px; color:var(--text-label); }
-  /* Inter-section spacing between rendered model sections (design export: 14px). */
-  #edgeBody{ display:flex; flex-direction:column; gap:14px; }
-  /* Biggest movers — own card (design export). */
-  .edge-movershead{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; margin-bottom:14px; }
-  .edge-movershead .l{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  .edge-movers-t{ font-size:15px; font-weight:800; color:var(--text); }
-  .edge-movers-sub{ font-size:11.5px; color:var(--text-label); }
-  .edge-moverslist{ display:flex; flex-direction:column; gap:2px; }
-  .edge-upgrade{ display:block; width:max-content; margin:16px auto 0; font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:600; color:var(--link); background:transparent; border:1px solid var(--edge-10); border-radius:8px; padding:8px 20px; cursor:pointer; text-decoration:none; }
-  .edge-upgrade:hover{ background:var(--tile-hover); }
-
-  /* Section 6 — written analysis */
-  .edge-ai2{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px; padding:26px 30px; }
-  .edge-aihead{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:16px; flex-wrap:wrap; }
-  .edge-aihead .l{ display:flex; align-items:center; gap:11px; }
-  .edge-aihead .t{ font-size:16px; font-weight:800; color:var(--text); }
-  .edge-aichips{ display:flex; gap:6px; margin-top:4px; flex-wrap:wrap; }
-  .edge-aichip{ font-size:9.5px; font-family:'IBM Plex Mono', monospace; color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); border-radius:5px; padding:2px 7px; }
-  .edge-copy{ font-size:11.5px; font-weight:600; color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); border-radius:8px; padding:7px 13px; cursor:pointer; user-select:none; white-space:nowrap; }
-  .edge-copy:hover{ color:var(--text-soft); border-color:var(--edge-10); }
-  .edge-plabel{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); margin-bottom:5px; }
-  .edge-ai2 p{ font-size:14.5px; line-height:1.72; color:var(--text); margin:0 0 14px; text-wrap:pretty; }
-  .edge-ai2 p:last-of-type{ margin-bottom:0; }
-  .edge-aifoot{ margin-top:20px; padding-top:14px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--text-label); }
-
-  /* ---- Edge sub-tabs (Match model | Player ratings) ---- */
-  .edge-subtabs-wrap{ display:flex; justify-content:flex-start; box-sizing:border-box; width:100%; padding:12px 16px; background:var(--card); border:1px solid var(--edge-6); border-radius:16px; }
-  .edge-subtabs{ display:inline-flex; gap:4px; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; padding:3px; width:max-content; max-width:100%; }
-  .edge-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:600; color:var(--text-label); background:none; border:1px solid transparent; padding:8px 16px; border-radius:8px; cursor:pointer; white-space:nowrap; transition:background .15s ease, color .15s ease; }
-  .edge-subtab:hover{ color:var(--text-soft); }
-  .edge-subtab.active{ color:var(--text); background:var(--inner); border-color:var(--edge-10); font-weight:700; }
-  .edge-pane{ display:none; }
-  .edge-pane.active{ display:block; }
-  /* ---- Player ratings leaderboard ---- */
-  .edge-rt-head{ padding:4px 2px 2px; margin-bottom:16px; }
-  .edge-rt-controls{ display:flex; flex-wrap:wrap; gap:10px 22px; align-items:center; margin-bottom:14px; }
-  .edge-rt-cg{ display:flex; flex-direction:column; gap:6px; }
-  .edge-rt-cglbl{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-  .edge-seg{ display:inline-flex; gap:3px; background:var(--inner); border:1px solid var(--edge-6); border-radius:10px; padding:4px; width:max-content; }
-  .edge-seg-btn{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; font-weight:600; color:var(--text-label); background:none; border:none; padding:6px 14px; border-radius:7px; cursor:pointer; white-space:nowrap; transition:background .14s ease, color .14s ease; }
-  .edge-seg-btn:hover{ color:var(--text-soft); }
-  .edge-seg-btn.active{ color:var(--text); background:var(--inner); box-shadow:inset 0 0 0 1px var(--edge-10); }
-  .edge-rt-tablewrap{ overflow-x:auto; }
-  .edge-rt-table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
-  .edge-rt-table th{ font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); text-align:right; padding:0 14px 10px; border-bottom:1px solid var(--line); white-space:nowrap; cursor:pointer; user-select:none; }
-  .edge-rt-table th.l{ text-align:left; }
-  .edge-rt-table th:hover{ color:var(--text-label); }
-  .edge-rt-table th .ar{ color:var(--text); margin-left:4px; }
-  .edge-rt-table td{ padding:11px 14px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap; }
-  .edge-rt-table td.l{ text-align:left; }
-  .edge-rt-table tr:hover td{ background:var(--tile-hover); }
-  .edge-rt-rk{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-label); width:34px; }
-  .edge-rt-nm{ color:var(--text); font-size:13.5px; font-weight:600; }
-  .edge-rt-atp{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--text-label); margin-left:7px; }
-  .edge-rt-elo{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-soft); }
-  .edge-rt-idx{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-soft); }
-  .edge-rt-na{ color:var(--text-label); }
-  .edge-rt-ch{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; color:var(--text-label); margin-left:2px; vertical-align:super; cursor:help; }
-  .edge-rt-table tr.lowc td{ opacity:0.5; }
-  .edge-rt-foot{ margin-top:14px; font-size:10.5px; color:var(--text-label); line-height:1.6; }
-
-  /* ── Left rail — tournament dropdown + scrollable match list (design export;
-     replaces the Prev/Back/Next stepper). ── */
-  .edge-shell.edge-2col{ display:flex; align-items:flex-start; gap:22px; }
-  .edge-rail{ width:280px; flex:none; position:sticky; top:14px; display:flex; flex-direction:column;
-    background:var(--card); border:0; border-right:1px solid var(--line); border-radius:0; overflow:hidden;
-    max-height:calc(100vh - 28px); }
-  .edge-rail-top{ display:block; padding:12px 14px 9px; font-size:11px; font-weight:400;
-    letter-spacing:0.02em; color:var(--text-label); }
-  .edge-rail-tourwrap{ padding:0 12px 10px; }
+  /* Match rail (236, sticky) */
+  .em-rail{ width:236px; flex:none; position:sticky; top:18px; box-sizing:border-box; padding:16px 12px 12px; display:flex; flex-direction:column; gap:12px; max-height:calc(100vh - 36px); }
+  .em-rail-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:0 4px; }
+  .em-rail-n{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
   #edgeRailTour{ display:flex; width:100%; }
-  .edge-rail-list{ flex:1; overflow-y:auto; padding:2px 10px 10px; display:flex; flex-direction:column; gap:5px; }
-  .edge-rail-row{ display:flex; align-items:center; gap:8px; width:100%;
-    background:var(--card); border:1px solid var(--edge-7); color:var(--text-soft);
-    border-radius:6px; padding:7px 10px; cursor:pointer; text-align:left; font-family:'Hanken Grotesk',sans-serif; }
-  .edge-rail-row:hover{ background:var(--tile-hover); border-color:var(--edge-16); }
-  .edge-rail-row.on{ background:var(--card); border-color:var(--edge-24); }   /* clickable tile selected = outline only (README §1) */
-  .edge-rail-nm{ flex:1; min-width:0; font-size:12px; font-weight:600; color:var(--text-soft);
-    overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .edge-rail-row.on .edge-rail-nm{ color:var(--text); }
-  .edge-rail-meta{ flex:none; font-size:9.5px; font-family:'IBM Plex Mono',monospace; color:var(--text-label);
-    text-align:right; white-space:nowrap; }
-  .edge-rail-back{ margin-top:auto; position:sticky; bottom:0; display:block; padding:11px 14px;
-    border-top:1px solid var(--line); background:var(--card); font-size:12px; color:var(--text-label); cursor:pointer; }
-  .edge-rail-back:hover{ color:var(--text); }
+  .em-rail-list{ display:flex; flex-direction:column; gap:10px; overflow-y:auto; min-height:0; scrollbar-width:thin; }
+  .em-rail-grp{ display:flex; flex-direction:column; gap:3px; }
+  .em-rail-gl{ padding:4px 10px 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-rail-row{ display:flex; flex-direction:column; gap:3px; min-width:0; padding:8px 10px; border-radius:8px; border:1px solid transparent; background:transparent; cursor:pointer; text-align:left; font-family:var(--font-words); }
+  .em-rail-row:hover{ background:var(--tile-hover); }
+  .em-rail-row.on{ background:var(--selected); border-color:var(--edge-16); }
+  .em-rail-nm{ font-size:12.5px; font-weight:600; color:var(--text-soft); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .em-rail-row.on .em-rail-nm{ color:var(--text); }
+  .em-rail-meta{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-rail-empty{ padding:6px 10px; font-size:12px; color:var(--text-label); }
+
+  /* Match header card */
+  .em-mh{ padding:22px 24px 18px; display:flex; flex-direction:column; gap:18px; }
+  .em-mh-row{ display:flex; align-items:center; justify-content:center; gap:14px 36px; flex-wrap:wrap; }
+  .em-mh-p{ display:flex; align-items:center; gap:13px; min-width:0; flex:0 1 auto; }
+  .em-av{ width:40px; height:40px; border-radius:50%; background:var(--inner); display:flex; align-items:center; justify-content:center; font-family:var(--font-nums); font-size:12px; font-weight:600; color:var(--text); flex:none; }
+  .em-mh-txt{ display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .em-mh-p.b .em-mh-txt{ align-items:flex-end; }
+  .em-mh-nm{ font-size:21px; font-weight:800; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-mh-sub{ font-size:12px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-mh-vs{ padding:0 6px; flex:none; }
+  .em-mh-stats{ display:grid; grid-template-columns:minmax(0,1.6fr) repeat(3,minmax(0,1fr)); gap:10px; padding-top:16px; border-top:1px solid var(--edge-6); }
+  .em-mh-stat{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .em-mh-v{ font-size:14px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  /* Market context */
+  .em-mk{ padding:20px 22px; display:flex; flex-direction:column; gap:14px; }
+  .em-head{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .em-seg{ display:inline-flex; gap:3px; background:var(--inner); border-radius:10px; padding:3px; }
+  .em-seg-b{ font-family:var(--font-words); font-size:12px; font-weight:600; color:var(--text-label); background:transparent; border:1px solid transparent; border-radius:7px; padding:5px 12px; cursor:pointer; }
+  .em-seg-b.on{ background:var(--selected); border-color:var(--edge-16); color:var(--text); font-weight:700; }
+  .em-mk-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
+  .em-mk-p{ background:var(--inner); border-radius:14px; padding:16px 18px; display:flex; flex-direction:column; gap:12px; }
+  .em-mk-nm{ display:flex; justify-content:center; padding:2px 0; font-size:15px; font-weight:800; }
+  .em-mk-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 0; border-top:1px solid var(--edge-6); }
+  .em-mk-p.b .em-mk-row, .em-mk-p.b .em-mk-base, .em-mk-p.b .em-mk-pv{ flex-direction:row-reverse; }
+  .em-mk-l{ display:flex; flex-direction:column; gap:1px; flex:1; min-width:0; }
+  .em-mk-p.b .em-mk-l{ align-items:flex-end; }
+  .em-mk-lb{ font-size:12.5px; font-weight:600; color:var(--text); }
+  .em-mk-sub{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+  .em-mk-pv{ display:flex; align-items:baseline; gap:9px; flex:none; }
+  .em-mk-v{ font-family:var(--font-nums); font-size:15px; font-weight:500; color:var(--text-label); }
+  .em-mk-v.now{ font-weight:700; color:var(--text); }
+  .em-mk-d{ font-family:var(--font-nums); font-size:11px; font-weight:700; min-width:48px; text-align:right; }
+  .em-mk-p.b .em-mk-d{ text-align:left; }
+  .em-mk-base{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--inner); border-radius:12px; padding:11px 13px; }
+  .em-mk-base-l{ display:flex; flex-direction:column; gap:2px; }
+  .em-mk-p.b .em-mk-base-l{ align-items:flex-end; }
+  .em-mk-base-v{ font-family:var(--font-nums); font-size:26px; font-weight:700; line-height:1; color:var(--text); }
+
+  /* Value layers */
+  .em-vl{ padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
+  .em-vl-t{ display:flex; align-items:baseline; gap:12px; }
+  .em-vl-n{ display:flex; align-items:baseline; gap:14px; font-size:11.5px; color:var(--text-label); white-space:nowrap; }
+  .em-vl-n b{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; color:var(--text); }
+  .em-vl-n .act{ font-family:var(--font-nums); font-weight:600; color:var(--text); }
+  .em-vl-n .sep{ width:1px; height:12px; background:var(--edge-16); align-self:center; }
+  .em-vl-n .q{ display:inline-flex; align-items:baseline; gap:5px; }
+  .em-strip{ display:flex; gap:3px; }
+  .em-seg-q{ position:relative; flex:1; height:6px; border-radius:3px; cursor:pointer; }
+  .em-seg-q .tip{ position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--edge-10); box-shadow:var(--shadow-pop); border-radius:9px; padding:7px 10px; font-size:12.5px; color:var(--text); white-space:nowrap; z-index:30; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .12s ease; }
+  .em-seg-q:hover .tip{ opacity:1; visibility:visible; }
+  .em-q-good{ background:var(--pos); } .em-q-medium{ background:var(--amber); } .em-q-poor{ background:var(--neg); }
+  .em-qt-good{ color:var(--pos); } .em-qt-medium{ color:var(--amber); } .em-qt-poor{ color:var(--neg); }
+  .em-tog{ display:flex; align-items:center; gap:12px; padding-top:6px; }
+  .em-tog .ln{ flex:1; height:1px; background:var(--edge-6); }
+  .em-tog-b{ display:inline-flex; align-items:center; gap:7px; background:var(--selected); border:1px solid var(--line); border-radius:7px; padding:5px 11px; white-space:nowrap; cursor:pointer; color:var(--text); }
+  .em-tog-b .chev{ display:inline-block; font-size:12.5px; line-height:1; color:var(--text); transition:transform .2s; font-family:'Hanken Grotesk', system-ui, sans-serif; }
+  .em-tbl{ display:flex; flex-direction:column; overflow-x:auto; }
+  .em-tr{ display:grid; grid-template-columns:16px minmax(130px,1fr) 96px 52px 48px 100px 48px 92px 56px; gap:10px; align-items:center; min-width:700px; }
+  .em-th{ padding:0 0 8px; border-bottom:1px solid var(--line-strong); align-items:end; }
+  .em-th > span{ text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-th > span:nth-child(2){ text-align:left; }
+  .em-lrow{ display:flex; flex-direction:column; border-bottom:1px solid var(--edge-6); margin:0 -10px; padding:0 10px; border-radius:8px; min-width:700px; transition:box-shadow .3s ease, background .2s ease; }
+  .em-lrow.open{ background:var(--wash-4); }
+  .em-lrow.flash{ box-shadow:inset 0 0 0 1px var(--edge-24); }
+  .em-lrow .em-tr{ padding:9px 0; cursor:pointer; min-width:0; }
+  .em-lrow .tw{ font-size:12.5px; line-height:1; color:var(--text-label); display:inline-block; transition:transform .16s; font-family:'Hanken Grotesk', system-ui, sans-serif; }
+  .em-lrow.open .tw{ transform:rotate(90deg); }
+  .em-lname{ font-size:13px; font-weight:600; color:var(--text); }
+  .em-lrow .em-chip{ justify-self:center; }
+  .em-qdot{ justify-self:center; width:8px; height:8px; border-radius:50%; }
+  .em-sc{ font-family:var(--font-nums); font-size:13.5px; font-weight:700; color:var(--text); text-align:center; }
+  .em-sc.na{ color:var(--text-label); font-weight:500; }
+  .em-sig{ position:relative; height:6px; background:var(--track); border-radius:3px; }
+  .em-sig .tick{ position:absolute; left:50%; top:-3px; width:1px; height:12px; background:var(--edge-24); }
+  .em-sig .fill{ position:absolute; top:0; height:6px; border-radius:3px; background:var(--bar); }
+  .em-fav{ font-size:12.5px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; text-align:center; }
+  .em-fav.na{ color:var(--text-label); }
+  .em-shift{ font-family:var(--font-nums); font-size:12px; font-weight:600; text-align:center; }
+  .em-ldet{ display:grid; grid-template-columns:minmax(0,1fr) 1px minmax(0,1fr); gap:18px; padding:4px 0 14px 26px; }
+  .em-ldet .col{ display:flex; flex-direction:column; gap:4px; }
+  .em-ldet .div{ background:var(--edge-10); align-self:stretch; }
+  .em-ldet .why{ font-size:12.5px; line-height:1.55; color:var(--text-soft); text-wrap:pretty; }
+  .em-ldet .dq{ font-size:12.5px; line-height:1.55; color:var(--text-label); text-wrap:pretty; }
+  .em-ldet .dqh{ display:flex; align-items:center; gap:6px; }
+  .em-ldet .dqh i{ width:6px; height:6px; border-radius:50%; }
+  .em-vl-foot{ font-size:11px; color:var(--text-label); padding-top:10px; }
+
+  /* Fair price & value */
+  .em-fp{ overflow:hidden; }
+  .em-fp-head{ padding:20px 22px 16px; border-bottom:1px solid var(--edge-6); display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .em-fp-t{ display:flex; flex-direction:column; gap:5px; }
+  .em-fp-title{ font-size:18px; font-weight:800; color:var(--text); }
+  .em-fp-net{ font-size:11.5px; color:var(--text-label); }
+  .em-fp-net b{ color:var(--text); font-weight:600; }
+  .em-fp-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
+  .em-fp-col{ padding:18px 22px 20px; display:flex; flex-direction:column; gap:14px; }
+  .em-fp-col.a{ border-right:1px solid var(--edge-6); }
+  .em-fp-top{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .em-fp-col.b .em-fp-top{ flex-direction:row-reverse; }
+  .em-fp-who{ display:flex; flex-direction:column; align-items:flex-start; gap:6px; }
+  .em-fp-col.b .em-fp-who{ align-items:flex-end; }
+  .em-fp-nm{ font-size:14.5px; font-weight:800; }
+  .em-fp-odd{ display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+  .em-fp-col.b .em-fp-odd{ align-items:flex-start; }
+  .em-fp-big{ font-family:var(--font-nums); font-size:40px; font-weight:700; line-height:0.9; color:var(--text); }
+  .em-fp-tiles{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .em-tile{ display:flex; flex-direction:column; gap:8px; background:var(--inner); border-radius:12px; padding:12px 13px; }
+  .em-tile-h{ display:flex; justify-content:space-between; align-items:baseline; gap:6px; min-height:16px; }
+  .em-gap{ font-family:var(--font-nums); font-size:12.5px; font-weight:700; }
+  .em-odd{ width:100%; box-sizing:border-box; background:var(--inner); border:1px solid transparent; border-radius:9px; padding:9px 12px; color:var(--text); font-family:var(--font-nums); font-size:16px; font-weight:600; text-align:center; outline:none; transition:border-color .14s ease; }
+  .em-odd:hover{ border-color:var(--edge-10); }
+  .em-odd:focus, .em-odd:focus-visible{ border-color:var(--edge-16); outline:none; box-shadow:none; }
+  .em-tile-f{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-fp-foot{ display:block; padding:10px 22px 14px; font-size:11px; color:var(--text-label); border-top:1px solid var(--edge-6); }
+
+  /* Biggest movers */
+  .em-mv{ padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
+  .em-mv-row{ display:flex; align-items:center; gap:14px; padding:12px 2px; border-top:1px solid var(--edge-6); }
+  .em-mv-rk{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); width:16px; }
+  .em-mv-nm{ flex:1; min-width:0; font-size:13.5px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .em-mv-who{ font-size:12.5px; font-weight:600; color:var(--text-label); text-decoration:none; }
+  .em-mv-who.lk{ cursor:pointer; } .em-mv-who.lk:hover{ text-decoration:underline; }
+  .em-mv-d{ font-family:var(--font-nums); font-size:14.5px; font-weight:700; width:66px; text-align:right; }
+  .em-mv-up{ padding-top:14px; border-top:1px solid var(--edge-6); display:flex; justify-content:center; }
+  .em-btn.sf-upgrade{ display:inline-flex; width:auto; padding:0 18px; }
+
+  /* Stennisfy Analysis */
+  .em-ai{ padding:22px 24px; display:flex; flex-direction:column; gap:16px; }
+  .em-ai-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .em-ai-tl{ display:flex; flex-direction:column; gap:7px; }
+  .em-ai-title{ font-size:16px; font-weight:800; color:var(--text); }
+  .em-ai-chips{ display:flex; gap:6px; flex-wrap:wrap; }
+  .em-ai-regen{ font-size:12.5px; font-weight:600; }
+  .em-ai-empty{ display:flex; flex-direction:column; align-items:center; gap:16px; padding:26px 0 22px; text-align:center; }
+  .em-ai-lead{ font-size:13.5px; color:var(--text-label); max-width:460px; line-height:1.6; text-wrap:pretty; }
+  .em-ai-load{ display:flex; flex-direction:column; gap:11px; padding:6px 0; }
+  @keyframes emShim{ 0%{ background-position:-400px 0; } 100%{ background-position:400px 0; } }
+  .em-shim{ height:14px; border-radius:6px; background:linear-gradient(90deg, var(--wash-4) 25%, var(--edge-10) 50%, var(--wash-4) 75%); background-size:800px 100%; animation:emShim 1.3s infinite linear; }
+  .em-ai-body{ position:relative; }
+  .em-ai-paras{ display:flex; flex-direction:column; gap:16px; }
+  .em-ai-para{ display:flex; flex-direction:column; gap:6px; }
+  .em-ai-para p{ margin:0; font-size:14.5px; line-height:1.72; color:var(--text-soft); max-width:68ch; text-wrap:pretty; }
+  .em-ai-fade{ position:absolute; left:0; right:0; bottom:0; padding:40px 14px 12px; background:linear-gradient(180deg, transparent, var(--card) 60%); display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:9px; }
+  .em-ai-fade svg{ width:17px; height:17px; color:var(--text); }
+  .em-ai-fade span{ font-size:12px; color:var(--text-label); }
+  .em-ai-foot{ padding-top:14px; border-top:1px solid var(--edge-6); display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:11px; color:var(--text-label); }
+  .em-ai-stamp{ font-family:var(--font-nums); font-size:10.5px; color:var(--text-label); }
+
+  /* Empty / gated states */
+  .em-empty{ padding:26px 24px; font-size:13px; color:var(--text-label); line-height:1.6; }
   @media (max-width:900px){
-    .edge-shell.edge-2col{ flex-direction:column; }
-    .edge-rail{ width:100%; position:static; max-height:none; }
-    .edge-rail-list{ max-height:300px; }
+    .em-page{ padding:18px 14px 60px; }
+    .em-cols{ flex-direction:column; }
+    .em-rail{ width:100%; position:static; max-height:none; }
+    .em-rail-list{ max-height:300px; }
   }
-
-  /* ── Market context (4 columns) — design export ── */
-  .edge-mctx{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
-  @media (max-width:1050px){ .edge-mctx{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-  @media (max-width:560px){ .edge-mctx{ grid-template-columns:1fr; } }
-  .edge-mcbox{ background:var(--card); border:1px solid var(--edge-6); border-radius:12px;
-    padding:16px 17px; display:flex; flex-direction:column; gap:14px; }
-  .edge-mcbox.base{ border-color:var(--edge-10); }
-  .edge-mclbl{ font-size:10.5px; font-family:var(--font-words);  letter-spacing:0.10em;
-    text-transform:uppercase; font-weight:700; color:var(--text-label); }
-  .edge-mcline{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-  .edge-mcline.sep{ padding-top:11px; border-top:1px solid var(--line); }
-  .edge-mcnm{ font-size:12px; font-weight:700; }
-  .edge-mcnm.a{ color:var(--text); } .edge-mcnm.b{ color:var(--text); }
-  .edge-mcval{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
-  .edge-mcodd{ font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:700; line-height:0.9; color:var(--text); }
-  .edge-mcodd.na{ color:var(--text-label); }
-  .edge-mcimp{ font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--text-label); }
-  .edge-mcfoot{ display:flex; flex-direction:column; gap:5px; }
-  .edge-mcfl{ font-size:11px; color:var(--text-label); font-family:var(--mx-font-ui);
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .edge-mcfl .who{ color:var(--text); font-weight:600; }
-  .edge-mcfl .who.a{ color:var(--text); }
-  .edge-mcfl .who.b{ color:var(--text); }
-  .edge-mcfl .up{ color:var(--pos); } .edge-mcfl .dn{ color:var(--neg); }
-
-  /* ── Value layers strip (N of 17) — design export ── */
-  .edge-vlbar{ display:flex; gap:4px; }
-  .edge-vlseg{ flex:1; height:6px; border-radius:3px; }
-  .edge-vllegend{ display:flex; align-items:center; gap:14px; margin-top:13px; flex-wrap:wrap;
-    font-size:11px; font-family:'Hanken Grotesk',sans-serif; color:var(--text-label); }
-  .edge-vlkey{ display:inline-flex; align-items:center; gap:6px; }
-  .edge-vlkey i{ width:6px; height:6px; border-radius:50%; display:inline-block; }
-  .edge-vlnote{ margin-left:4px; }
-  .edge-vlactive{ margin-left:auto; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-label); }
-
-  /* ── Generate button — Stennisfy Analysis (design export) ── */
-  .edge-genwrap{ display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center; }
-  .edge-genlead{ font-size:13.5px; color:var(--text-soft); line-height:1.6; max-width:460px; }
-  .edge-genbtn{ align-self:center; font-family:'Hanken Grotesk',sans-serif; font-size:13.5px;
-    font-weight:600; color:var(--text); background:transparent; border:1px solid var(--edge-10); border-radius:11px;
-    padding:12px 24px; cursor:pointer; }
-  .edge-genbtn:hover{ background:var(--tile-hover); }
-  .edge-regen{ font-size:11.5px; font-weight:600; color:var(--text-label); background:var(--inner);
-    border:1px solid var(--edge-6); border-radius:8px; padding:7px 13px; cursor:pointer;
-    user-select:none; white-space:nowrap; }
-  .edge-regen:hover{ color:var(--text-soft); border-color:var(--edge-10); }
 </style>
 <div class="tabpage" data-page="edge">
-  <div class="edge-shell edge-2col">
-    <aside class="edge-rail">
-      <span class="edge-rail-top">‹ Stennisfy Model</span>
-      <div class="edge-rail-tourwrap">
+  <div class="em-page">
+    <!-- TEN-418: the shared compact page header (.sfh, app-shell.md). Stats filled by renderEdgeModel. -->
+    <div class="sfh em-head-card">
+      <div class="sfh__text">
+        <h1 class="sfh__title">Stennisfy Model</h1>
+        <p class="sfh__sub" id="edgeHeadSub">Fair prices from weighted layers, against the market.</p>
+      </div>
+      <div class="sfh__stats" id="edgeHeadStats"></div>
+    </div>
+    <div class="em-cols">
+      <aside class="em-rail em-card">
+        <div class="em-rail-head"><span class="em-caps">Matches</span><span class="em-rail-n" id="edgeRailN"></span></div>
         <span class="sf-dd" id="edgeRailTour"></span>
-      </div>
-      <div class="edge-rail-list" id="edgeRailList"></div>
-      <span class="edge-rail-back" onclick="edgeBack()">‹ Back to dashboard</span>
-    </aside>
-    <div class="edge-wrap">
-      <div class="edge-subtabs-wrap">
-        <div class="edge-subtabs">
-          <button class="edge-subtab active" data-epane="model" onclick="switchEdgeTab(this,'model')">Match model</button>
-          <button class="edge-subtab" data-epane="ratings" onclick="switchEdgeTab(this,'ratings')">Player ratings</button>
-        </div>
-      </div>
-
-      <div class="edge-pane active" data-epane="model">
-        <div id="edgeBody"></div>
-      </div>
-
-      <div class="edge-pane" data-epane="ratings">
-        <div class="edge-rt-head">
-          <div class="edge-eyebrow">Ratings board</div>
-          <div class="edge-title">Player ratings by surface</div>
-          <div class="edge-sub">Self-computed surface Elo, plus serve, return and under-pressure ratings derived from the full ATP-level match archive. Serve, return and under-pressure are ATP-style ratings — the summed component percentages, scored the way the ATP leaderboards do (higher = better).</div>
-        </div>
-        <div class="edge-card">
-          <div class="edge-rt-controls">
-            <div class="edge-rt-cg">
-              <span class="edge-rt-cglbl">Surface</span>
-              <div class="edge-seg" id="edgeRateSurf">
-                <button class="edge-seg-btn active" data-surf="All"   onclick="edgeRateSetSurface(this,'All')">All</button>
-                <button class="edge-seg-btn"        data-surf="Hard"  onclick="edgeRateSetSurface(this,'Hard')">Hard</button>
-                <button class="edge-seg-btn"        data-surf="Clay"  onclick="edgeRateSetSurface(this,'Clay')">Clay</button>
-                <button class="edge-seg-btn"        data-surf="Grass" onclick="edgeRateSetSurface(this,'Grass')">Grass</button>
-              </div>
-            </div>
-            <div class="edge-rt-cg">
-              <span class="edge-rt-cglbl">Scope</span>
-              <div class="edge-seg" id="edgeRateScope">
-                <button class="edge-seg-btn active" data-scope="career" onclick="edgeRateSetScope(this,'career')">Career</button>
-                <button class="edge-seg-btn"        data-scope="last52" onclick="edgeRateSetScope(this,'last52')">Last 52 weeks</button>
-              </div>
-            </div>
-          </div>
-          <div class="edge-rt-tablewrap">
-            <table class="edge-rt-table" id="edgeRateTable"></table>
-          </div>
-          <div class="edge-rt-foot" id="edgeRateFoot"></div>
-        </div>
-      </div>
+        <div class="em-rail-list" id="edgeRailList"></div>
+      </aside>
+      <div class="em-main" id="edgeBody"></div>
     </div>
   </div>
 </div>
@@ -5058,7 +4774,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'players') showPlayerList();
   if (tab === 'tournaments') { showTournamentList(); renderTournamentsTab(); }
   if (tab === 'styles') renderPlayingStyles();
-  if (tab === 'edge') { edgeShowPane('model'); openEdgeModelTab(); }
+  if (tab === 'edge') openEdgeModelTab();
   if (tab === 'news') loadNews();
   if (tab === 'database') { if (window.DatabaseTab) window.DatabaseTab.init(); }
   if (tab === 'entry-lists') { showTournamentList(); tourxSetSection('entry'); }
@@ -10287,1082 +10003,567 @@ function toggleSig(btn){
 /* engine run failed (missing Elo etc.) get an honest empty state. */
 /* ============================================================= */
 let edgeCurrentId = null;
-// True once the user has *deliberately* chosen a match (a card link or Prev/Next),
+// True once the user has *deliberately* chosen a match (a card link or a rail row),
 // vs. the tab auto-landing on a default. Keeps a real choice sticky when the tab is
 // re-opened, while letting an auto-default get upgraded once model output loads.
 let edgeUserPicked = false;
-// The per-layer breakdown (Section 4) is a reveal-on-demand block, not shown
-// straight away (founder ruling 2026-08-06): it opens collapsed and expands when
-// the reader clicks its heading, matching the collapsible splits cards on the
-// Player Profile. Persists across matches like the other edge view prefs.
-let edgeLayersOpen = true;
-function toggleEdgeLayers(){
-  edgeLayersOpen = !edgeLayersOpen;
-  renderEdgeModel(edgeCurrentId);
-}
+// TEN-418 (reference): the layer breakdown opens on demand; one row at a time opens in place.
+let edgeLayersOpen = false;
+let edgeLayerOpen = null;
+let edgeLayerFlash = null;
+let edgeFlashTimer = null;
+let edgeMkView = 'odds';                 // Market context view: 'odds' | 'pct'
+let edgeRailTour = 'all';                // rail drop-down: 'all' | a feed tournament name
+const edgeOddEdits = {};                 // typed odds per match: { [id]: { 'soft:p1': '2.10', ... } }
+const edgeAiState = {};                  // Stennisfy Analysis per match: undefined (Generate) | 'loading' | 'shown'
 
 function edgeEsc(s){
   return String(s == null ? '' : s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-function edgePct(x, dp){ return (x == null || isNaN(x)) ? '—' : (x * 100).toFixed(dp == null ? 1 : dp) + '%'; }
-function edgeOdds(x){ return (x == null || isNaN(x)) ? '—' : Number(x).toFixed(2); }
 function edgeCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
-// Abbreviated player-name form (design export): "J. Sinner" (leading initial +
-// surname). Already-abbreviated feed names pass through unchanged; a full name
-// like "Adolfo Daniel Vallejo" collapses to "A. Vallejo". Applied everywhere a
-// player renders on the Stennisfy Model page (header, fair price, movers,
-// market-context footnotes) so long names never clip a one-line footnote.
-function edgeShortName(name){
-  const s = String(name || '').trim();
-  if (!s) return s;
-  if (/^[A-Za-z]\.\s*\S/.test(s)) return s;           // already "X. Surname"
-  const toks = s.split(/\s+/).filter(Boolean);
-  if (toks.length < 2) return s;
-  return toks[0].charAt(0).toUpperCase() + '. ' + toks[toks.length - 1];
-}
-// Avatar initials from a (possibly abbreviated) name: "S. Kwon" -> "SK".
-function edgeInitials(name){
-  const toks = String(name || '').replace(/\./g, ' ').split(/\s+/).filter(Boolean);
-  if (!toks.length) return '?';
-  if (toks.length === 1) return toks[0].slice(0, 2).toUpperCase();
-  return (toks[0].charAt(0) + toks[toks.length - 1].charAt(0)).toUpperCase();
-}
 
-// Open the Edge Model page for a specific match — reached from a match-card link
-// or Prev/Next. This is a deliberate choice, so it becomes the sticky selection.
+// Open the Model page for a specific match — reached from Match analysis (Key factors → Stennisfy Model) or a rail
+// row. This is a deliberate choice, so it becomes the sticky selection.
 function openEdgeModel(id){
   edgeCurrentId = id;
   edgeUserPicked = true;
-  // Edge Model is a top-level nav tab, so entering it from a match card link
-  // still lights up its nav button (not clears the whole bar).
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === 'edge'));
   document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === 'edge'));
   window.scrollTo(0, 0);
   renderEdgeModel(id);
 }
-
-// Open the Edge Model page and land on the Market Signal block. Used by the
-// compact card-footer indicator so the block is one click away, not three,
-// until the design pass moves it onto the card itself. The block hydrates its
-// venue rows from a lazy shard, so the scroll waits a beat for the repaint.
-function openEdgeModelAt(id){
-  openEdgeModel(id);
-  setTimeout(() => {
-    const el = document.getElementById('edgeMarketSize');
-    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, 120);
-}
-// Entry point when the Edge Model *nav tab* is clicked (no specific match chosen).
-// Lands on the match the user last looked at if it's still on the board, else the
-// first match in the current filtered order — mirroring Prev/Next (getFiltered).
+// Entry point when the rail's Stennisfy Model item is clicked (no specific match chosen). Lands on the match the user
+// last looked at if it is still on the board, else the first board match with model output, else the first match.
 function openEdgeModelTab(){
   const list = (typeof getFiltered === 'function') ? getFiltered() : matches;
   const ids = list.map(m => m.id);
   const hasOutput = mid => modelOutput.matches && modelOutput.matches[mid] && modelOutput.matches[mid].ok;
-  // Prefer a match the user deliberately chose earlier (if still on the board),
-  // then the first match with runnable output — so the tab opens on a real model
-  // rather than an empty state — then just the first match as a fallback. An
-  // auto-default is left non-sticky so it upgrades once model output loads.
   const id = (edgeUserPicked && edgeCurrentId && ids.indexOf(edgeCurrentId) !== -1) ? edgeCurrentId
            : (ids.find(hasOutput) || ids[0]);
   window.scrollTo(0, 0);
   if (!id){
-    // No matches on the board at all (e.g. between events, or a filter that
-    // excludes everything) — there's nothing to model yet.
     edgeRenderRail();
+    edgeSetHeader(null);
     const body = document.getElementById('edgeBody');
-    if (body) body.innerHTML = edgeEmptyState(null, 'No matches on the board right now. The Edge Model appears here for each match as soon as the board has fixtures to analyse.');
+    if (body) body.innerHTML = edgeEmptyCard('No matches on the board right now. The Stennisfy Model prices each match as soon as the board has fixtures.');
     return;
   }
   edgeCurrentId = id;
   renderEdgeModel(id);
 }
 
-// ---- Edge sub-tabs: Match model | Player ratings ----------------------------
-let edgeRateSurface = 'All';                 // All | Hard | Clay | Grass
-let edgeRateScope   = 'career';              // career | last52
-let edgeRateSort    = { col: 'elo', dir: -1 }; // dir -1 = descending
-
-function switchEdgeTab(el, which){
-  document.querySelectorAll('[data-page="edge"] .edge-subtab').forEach(b => b.classList.toggle('active', b === el));
-  document.querySelectorAll('[data-page="edge"] .edge-pane').forEach(p => p.classList.toggle('active', p.getAttribute('data-epane') === which));
-  if (which === 'ratings') renderEdgeRatings();
-  window.scrollTo(0, 0);
+// ── Shared names (TEN-418 Data 3) ──────────────────────────────────────────
+// Player = the Player Profile / H2H / Match analysis / News / Live string (newsPlayerName: the profile name of his
+// key, else the feed spelling). Event = the canonical event table (sfEventName). Style = the step-9 classifier
+// label the Playing Styles page prints (ppStyleFor → psArchFor(...).name); no second label set.
+function edgePlayerName(m, e, side){
+  const key = m ? m[side + 'Key'] : (e && e.players && e.players[side] && e.players[side].key);
+  const feed = m ? m[side] : (e && e.match ? e.match[side] : '');
+  return (typeof newsPlayerName === 'function') ? newsPlayerName(key, feed) : String(feed || '');
 }
-// Force a given sub-tab active without a click target (used on nav entry so the
-// Edge Model always opens on the match model, never a stale ratings view).
-function edgeShowPane(which){
-  document.querySelectorAll('[data-page="edge"] .edge-subtab').forEach(b => b.classList.toggle('active', b.getAttribute('data-epane') === which));
-  document.querySelectorAll('[data-page="edge"] .edge-pane').forEach(p => p.classList.toggle('active', p.getAttribute('data-epane') === which));
+function edgePlayerKey(m, e, side){ return m ? m[side + 'Key'] : (e && e.players && e.players[side] ? e.players[side].key : null); }
+function edgeStyleName(name, key){
+  try { const s = ppStyleFor(name, key); const a = s && psArchFor(s.archetype_label); return a ? a.name : null; } catch (err) { return null; }
 }
-function edgeRateSetSurface(el, s){
-  edgeRateSurface = s;
-  el.parentElement.querySelectorAll('.edge-seg-btn').forEach(b => b.classList.toggle('active', b === el));
-  renderEdgeRatings();
+function edgeEventName(raw){ return (typeof sfEventName === 'function' && raw) ? (sfEventName(raw) || raw) : (raw || ''); }
+function edgeRoundCode(m, e){ return roundBadgeText((m && m.tournamentRound) || (e && e.match && e.match.round)) || null; }
+function edgeRoundFull(code){ return code ? ((typeof TR_RESULT !== 'undefined' && TR_RESULT[code]) || code) : null; }
+// A player's name, linked to his profile when one exists (white, underline on hover — never link blue).
+function edgeHasProfile(key){ return key != null && !!(typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]); }
+// An id / key inside an onclick string: word characters only (ids are "upcoming-<n>", keys numeric), so no quote can
+// ever close the JS string after the browser decodes the attribute.
+function edgeJs(s){ return String(s == null ? '' : s).replace(/[^\w.:-]/g, ''); }
+function edgeNameHtml(name, key, cls){
+  return edgeHasProfile(key) ? `<a class="${cls || 'em-plink'}" onclick="openPlayerProfileFromMatch('${edgeJs(key)}')">${edgeEsc(name)}</a>`
+             : `<span>${edgeEsc(name)}</span>`;
 }
-function edgeRateSetScope(el, s){
-  edgeRateScope = s;
-  el.parentElement.querySelectorAll('.edge-seg-btn').forEach(b => b.classList.toggle('active', b === el));
-  renderEdgeRatings();
-}
-function edgeRateSortBy(col){
-  if (edgeRateSort.col === col) edgeRateSort.dir *= -1;
-  else edgeRateSort = { col, dir: (col === 'name' ? 1 : -1) };
-  renderEdgeRatings();
-}
-// Per-surface Elo lookup — same key logic as psEloFor (last surname token + first
-// initial), but reads elo.elo[key][surface].rating rather than the overall scalar.
-function edgeEloKey(name){
-  const p = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
-  if (p.length < 2) return null;
-  return p[p.length - 1] + '|' + p[0][0];
-}
-function edgeEloSurf(name, surfLower){
-  const k = edgeEloKey(name), e = eloRatings && eloRatings.elo;
-  if (!k || !e || !e[k] || !e[k][surfLower]) return null;
-  const r = e[k][surfLower].rating;
-  return (typeof r === 'number') ? r : null;
-}
-function renderEdgeRatings(){
-  const table = document.getElementById('edgeRateTable');
-  const foot  = document.getElementById('edgeRateFoot');
-  if (!table) return;
-  const players = (surfaceRatings && surfaceRatings.players) || [];
-  if (!players.length){ table.innerHTML = ''; if (foot) foot.textContent = 'Ratings are loading…'; return; }
-
-  const surf = edgeRateSurface, scope = edgeRateScope, surfLower = surf.toLowerCase();
-  const rows = players.map(p => {
-    const b = p.surfaces && p.surfaces[surf] && p.surfaces[surf][scope];
-    return {
-      name: p.name, atp: p.rank,
-      elo:   edgeEloSurf(p.name, surfLower),
-      serve: (b && b.serve)  ? b.serve.rating  : null,
-      ret:   (b && b.return) ? b.return.rating : null,
-      up:    (b && b.underPressure && b.underPressure.rating != null) ? b.underPressure.rating : null,
-      upChall: !!(b && b.underPressure && b.underPressure.inclChallenger),
-      conf:  b ? b.confidence : null
-    };
-  });
-
-  const col = edgeRateSort.col, dir = edgeRateSort.dir;
-  rows.sort((a, z) => {
-    let av = a[col], zv = z[col];
-    if (col === 'name'){ return String(av).localeCompare(String(zv)) * dir; }
-    const an = (av == null), zn = (zv == null);
-    if (an && zn) return 0;
-    if (an) return 1;            // players with no rating on this surface sink to the bottom
-    if (zn) return -1;
-    if (av === zv) return 0;
-    return (av < zv ? -1 : 1) * dir;
-  });
-
-  const fmtIdx = v => v == null ? '<span class="edge-rt-na">—</span>' : Math.round(v);
-  const fmtElo = v => v == null ? '<span class="edge-rt-na">—</span>' : Math.round(v);
-  const atpTag = r => (r.atp && r.atp < 9999) ? `<span class="edge-rt-atp">#${r.atp}</span>` : '';
-  const ar = c => edgeRateSort.col === c ? `<span class="ar">${edgeRateSort.dir < 0 ? '▾' : '▴'}</span>` : '';
-
-  let html = `<thead><tr>
-      <th class="l">#</th>
-      <th class="l" onclick="edgeRateSortBy('name')">Player${ar('name')}</th>
-      <th onclick="edgeRateSortBy('elo')">Elo${ar('elo')}</th>
-      <th onclick="edgeRateSortBy('serve')">Serve${ar('serve')}</th>
-      <th onclick="edgeRateSortBy('ret')">Return${ar('ret')}</th>
-      <th onclick="edgeRateSortBy('up')">Under pressure${ar('up')}</th>
-    </tr></thead><tbody>`;
-  rows.forEach((r, i) => {
-    html += `<tr class="${r.conf === 'low' ? 'lowc' : ''}">
-        <td class="l edge-rt-rk">${i + 1}</td>
-        <td class="l"><span class="edge-rt-nm">${escapeHtml(r.name)}</span>${atpTag(r)}</td>
-        <td class="edge-rt-elo">${fmtElo(r.elo)}</td>
-        <td class="edge-rt-idx">${fmtIdx(r.serve)}</td>
-        <td class="edge-rt-idx">${fmtIdx(r.ret)}</td>
-        <td class="edge-rt-idx">${fmtIdx(r.up)}${r.up != null && r.upChall ? '<sup class="edge-rt-ch" title="Includes Challenger / qualifying matches to reach a reliable sample">C</sup>' : ''}</td>
-      </tr>`;
-  });
-  html += '</tbody>';
-  table.innerHTML = html;
-
-  const rated = rows.filter(r => r.serve != null || r.ret != null || r.up != null).length;
-  const scopeLbl = scope === 'career' ? 'career' : 'last 52 weeks';
-  const surfLbl  = surf === 'All' ? 'all surfaces' : surf.toLowerCase();
-  if (foot) foot.innerHTML = `${rated} players rated on ${surfLbl} (${scopeLbl}). Serve, return and under-pressure are ATP-style ratings — the summed component percentages, the way the ATP leaderboards score them (higher = better); faded rows have a thin sample. A <sup class="edge-rt-ch">C</sup> on under-pressure means Challenger / qualifying matches were folded in to reach a reliable sample. Elo is BSP Consult\u2019s self-computed surface Elo — a dash means no rating on this surface yet.`;
-}
-// Return to the matches board via the real nav button so its render + highlight
-// run exactly as a normal tab switch would.
-function edgeBack(){
-  const btn = document.querySelector('#mainNav button[data-tab="matches"]');
-  if (btn) btn.click();
-  window.scrollTo(0, 0);
-}
-// Step through matches in the SAME order the board currently shows (getFiltered),
-// so Prev/Next matches what the user was just looking at. Wraps around the ends.
-function edgeNav(dir){
-  const list = (typeof getFiltered === 'function') ? getFiltered() : matches;
-  const ids = list.map(m => m.id);
-  let idx = ids.indexOf(edgeCurrentId);
-  if (idx === -1 || ids.length === 0) return;
-  idx = (idx + dir + ids.length) % ids.length;
-  openEdgeModel(ids[idx]);
+// Times read stennisfy.tz (Account settings), else the browser zone.
+function edgeClock(iso, mode){
+  const t = Date.parse(iso || ''); if (!isFinite(t)) return null;
+  const tz = (typeof newsTz === 'function') ? newsTz() : undefined;
+  const o = mode === 'full' ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }
+          : mode === 'stamp' ? { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }
+          : { hour: '2-digit', minute: '2-digit', hour12: false };
+  let s;
+  try { s = new Date(t).toLocaleString('en-GB', Object.assign({ timeZone: tz }, o)); } catch (err) { s = new Date(t).toLocaleString('en-GB', o); }
+  return mode === 'stamp' ? s.replace(/,?\s(\d\d:\d\d)$/, ' · $1') : s;
 }
 
-function edgeEmptyState(m, msg){
-  const title = m ? `${edgeEsc(m.p1)} vs ${edgeEsc(m.p2)}` : 'This match';
-  const sub = m ? `${edgeCap(m.surface || '')}${m.tournament ? ' · ' + edgeEsc(m.tournament) : ''}` : '';
-  return `
-    <div class="edge-head">
-      <div class="edge-eyebrow">Tennis Edge Model</div>
-      <div class="edge-title">${title}</div>
-      ${sub ? `<div class="edge-sub">${sub}</div>` : ''}
-    </div>
-    <div class="edge-card">
-      <div class="edge-empty">
-        <div class="ic">—</div>
-        <div class="msg">${edgeEsc(msg)}</div>
-      </div>
-    </div>`;
+// ── Prices (TEN-418 Data 4) ────────────────────────────────────────────────
+// Every price is the match's api-tennis odds record: bookOpens (each book's first sighting, seenAt) and bookNow
+// (its current price). The sharp tile = Pinnacle (api-tennis key "Pncl"), else Bet365 when Pinnacle is missing —
+// the order of the site's one price join (database.md). Best soft = the highest current price per player across
+// every other book on the record. A price below 1.01 is not a price.
+const EDGE_SHARP = [['Pncl', 'Pinnacle'], ['bet365', 'bet365']];
+function edgeQuote(src, k){ const q = src && src[k]; return (q && q.p1 >= 1.01 && q.p2 >= 1.01) ? q : null; }
+function edgeBookName(k){ return k === 'Pncl' ? 'Pinnacle' : ((typeof mxBookLabel === 'function') ? mxBookLabel(k) : k); }
+function edgeSharp(m){
+  const at = k => ({ key: k, name: EDGE_SHARP.find(x => x[0] === k)[1], now: edgeQuote(m && m.bookNow, k), open: edgeQuote(m && m.bookOpens, k) });
+  const all = EDGE_SHARP.map(x => at(x[0]));
+  return all.find(b => b.now) || all.find(b => b.open) || null;   // a current quote first: Pinnacle with no price now falls to bet365
 }
-// Turn a raw engine failure reason into a member-facing sentence. Never exposes
-// internal field names; always honest that the model simply couldn't run.
-function edgeReasonText(e){
-  const r = (e && e.reason) ? String(e.reason) : '';
-  if (/elo/i.test(r)) return 'Not enough data to run the model on this match — one of the players doesn\u2019t have an Elo rating on file yet (usually a lower-tier or first-time entrant). The model runs automatically as soon as the data exists.';
-  if (/engine error/i.test(r)) return 'The model could not be computed for this match. This is logged automatically and will retry on the next pipeline run.';
-  return 'The model could not be run for this match yet. It runs automatically every 15 minutes as new data arrives.';
+function edgeSoftBooks(m){
+  const sk = (edgeSharp(m) || {}).key;
+  return Object.keys((m && m.bookNow) || {}).filter(k => k !== 'Pncl' && k !== sk && edgeQuote(m.bookNow, k));
+}
+function edgeBestSoft(m, side){
+  let best = null;
+  edgeSoftBooks(m).forEach(k => { const q = m.bookNow[k]; if (!best || q[side] > best.price) best = { key: k, name: edgeBookName(k), price: q[side], now: q, open: edgeQuote(m.bookOpens, k) }; });
+  return best;
+}
+function edgeNoVig(q, side){ if (!q) return null; const a = 1 / q.p1, b = 1 / q.p2; return (side === 'p1' ? a : b) / (a + b); }
+function edgeMargin(q){ return q ? ((1 / q.p1 + 1 / q.p2 - 1) * 100).toFixed(1) + '%' : '—'; }
+// Signed percentage points: true minus, one decimal, grey at 0.0, green / red by sign.
+function edgePP(v){
+  if (v == null || !isFinite(v)) return { t: '—', c: 'em-zero' };
+  const r = Math.round(v * 10) / 10;
+  if (r === 0) return { t: '0.0pp', c: 'em-zero' };
+  return { t: (r > 0 ? '+' : '−') + Math.abs(r).toFixed(1) + 'pp', c: r > 0 ? 'em-pos' : 'em-neg' };
+}
+// An odd typed into a tile: a number above 1.00, else null (the gap reads —, never NaN).
+function edgeParseOdd(t){
+  const s = String(t == null ? '' : t).trim().replace(',', '.');
+  if (!/^\d+(\.\d+)?$/.test(s) && !/^\.\d+$/.test(s)) return null;
+  const v = Number(s);
+  return (isFinite(v) && v > 1) ? v : null;
+}
+function edgeGapOf(prob, odd){ return (prob == null || odd == null) ? null : (prob - 1 / odd) * 100; }
+
+// ── Value layers (TEN-418 Data 5) ──────────────────────────────────────────
+// Weight = the layer's cap (maxMagnitude) bucketed into five classes at the engine's own distinct magnitudes.
+function edgeWeightTag(mag){
+  const m = mag || 0;
+  if (m >= 0.06)  return { label: 'HIGHEST',     rank: 0, word: 'Highest' };
+  if (m >= 0.035) return { label: 'HIGH',        rank: 1, word: 'High' };
+  if (m >= 0.025) return { label: 'MEDIUM-HIGH', rank: 2, word: 'Medium-high' };
+  if (m >= 0.016) return { label: 'MEDIUM',      rank: 3, word: 'Medium' };
+  return { label: 'LOW', rank: 4, word: 'Low' };
+}
+// Quality: applied at high / medium confidence = Good; applied at low confidence, or held by a model-wide gate =
+// Medium; no input for this match = Poor.
+function edgeCovState(a){
+  if (a.applied) return (a.confidence === 'high' || a.confidence === 'med') ? 'full' : 'partial';
+  return a.gated ? 'partial' : 'missing';
+}
+function edgeQuality(a){ const s = edgeCovState(a); return s === 'full' ? 'Good' : (s === 'partial' ? 'Medium' : 'Poor'); }
+// Rule A (founder, 2026-07-25): the W/UE layer renders nothing for a match it has no data for, and a layer the engine
+// hides for this match (Format split on a best-of-3) is absent, so the count flexes to what applies to THIS match.
+const EDGE_SELF_HIDE_KEYS = new Set(['winnerUE']);
+function edgeVisibleAdjs(list){
+  return (list || []).filter(a => !a.hidden && (a.applied || !EDGE_SELF_HIDE_KEYS.has(a.key)));
+}
+// Why = the engine's own sentence for this match (its inputs and figures), ticket numbers dropped.
+function edgeWhyText(a){ return String(a.detail || '').replace(/\s*\(TEN-\d+\)/g, '').trim(); }
+// Data quality = one fixed sentence per state and cause; the facts behind it are the engine's confidence grade and gate.
+function edgeDqText(a){
+  if (a.applied){
+    if (a.confidence === 'high') return 'Applied: the engine rates the sample behind this layer high for this match.';
+    if (a.confidence === 'med') return 'Applied: the engine rates the sample behind this layer medium for this match.';
+    return 'Applied, but the engine rates the sample behind it low for at least one player in this match.';
+  }
+  if (a.gated) return 'Switched off for every match by a model gate, not by this match’s data. It moves no price until the gate is lifted.';
+  return 'No usable input for this match, so the layer moves nothing in the price.';
+}
+function edgeNumHtml(text){
+  return String(text == null ? '' : text).split(/(\d[\d.,%/]*)/g)
+    .map((seg, i) => (i % 2 === 1) ? `<span class="em-mono">${edgeEsc(seg)}</span>` : edgeEsc(seg)).join('');
+}
+function edgeLayerRows(e){
+  return edgeVisibleAdjs(e.stage2.adjustments).map(a => {
+    const w = edgeWeightTag(a.maxMagnitude);
+    return { a, w, q: edgeQuality(a), mag: Math.abs(a.deltaP1 || 0) };
+  }).sort((x, y) => (x.w.rank - y.w.rank) || (y.mag - x.mag));
 }
 
-// ── Left rail (design export): tournament dropdown "All tournaments (N)" + a
-// scrollable match list. Replaces the old Prev/Back/Next stepper CHROME; the
-// underlying selection (edgeCurrentId / openEdgeModel) is unchanged — a row
-// click drives the model body exactly as Prev/Next did. The list mirrors the
-// board's current filtered order (getFiltered), so it matches what the user was
-// last looking at. Round short-code + "Today/Tomorrow/<day> HH:MM" per row.
-let edgeRailTour = 'all';                      // 'all' | a tour name
-function edgeRailTourChange(v){ edgeRailTour = v; edgeRenderRail(); }
-function edgeRailPick(id){ edgeShowPane('model'); openEdgeModel(id); }
-// Row time label. Uses the board's own day bucket so "Today/Tomorrow" agree with
-// the Matches page; falls back to the weekday of the match date otherwise. Never
-// fabricates a time — an absent m.time simply drops that half of the label.
+// ── Pro gating (TEN-418 Data 8) ────────────────────────────────────────────
+// Free = the rail's own lock on this page (sfPlanLocks → .is-locked on the Stennisfy Model item). The page reads that
+// state and adds no rail code; a plan change re-renders the open page.
+function edgeIsFree(){ const b = document.querySelector('.sf-nav [data-tab="edge"]'); return !!(b && b.matches('.is-locked')); }
+(function edgeWatchPlan(){
+  const b = document.querySelector('.sf-nav [data-tab="edge"]');
+  if (!b || typeof MutationObserver !== 'function') return;
+  let was = edgeIsFree();
+  new MutationObserver(() => {
+    const now = edgeIsFree(); if (now === was) return; was = now;
+    const pg = document.querySelector('.tabpage[data-page="edge"]');
+    if (pg && pg.classList.contains('active') && edgeCurrentId) renderEdgeModel(edgeCurrentId);
+  }).observe(b, { attributes: true, attributeFilter: ['class'] });
+})();
+
+// ── Header (shared .sfh) ───────────────────────────────────────────────────
+// Matches = the rail's list (Today's Matches' own list); Layers active = the shown match's applied / visible layers;
+// Updated = the time of the model run behind the shown price (its generatedAt), never the clock; — when unsourced.
+function edgeSetHeader(e){
+  const sub = document.getElementById('edgeHeadSub'), st = document.getElementById('edgeHeadStats');
+  if (!sub || !st) return;
+  const all = (typeof getFiltered === 'function') ? getFiltered() : matches;
+  let total = (e && e.stage2 && e.stage2.adjustments) ? e.stage2.adjustments.length : 0;
+  if (!total) Object.values((modelOutput && modelOutput.matches) || {}).forEach(x => { if (x && x.ok && x.stage2) total = Math.max(total, (x.stage2.adjustments || []).length); });
+  sub.textContent = total ? `Fair prices from ${total} weighted layers, against the market.` : 'Fair prices from weighted layers, against the market.';
+  let act = '—', upd = null, updFull = null;
+  if (e){
+    const adjs = edgeVisibleAdjs(e.stage2.adjustments);
+    act = `${adjs.filter(a => a.applied).length}/${adjs.length}`;
+    const at = e.generatedAt || (modelOutput && modelOutput.generatedAt);
+    upd = edgeClock(at); updFull = edgeClock(at, 'full');
+  }
+  const stat = (l, v, cls, title) => `<div class="sfh__stat"><span class="sfh__l">${l}</span><span class="sfh__v${cls ? ' ' + cls : ''}"${title ? ` title="${edgeEsc(title)}"` : ''}>${edgeEsc(v)}</span></div>`;
+  st.innerHTML = stat('Matches', String(all.length))
+    + stat('Layers active', act, act === '—' ? 'sfh__v--none' : '')
+    + stat('Updated', upd || '—', upd ? 'sfh__v--soft' : 'sfh__v--none', updFull ? 'Model run ' + updFull : '');
+}
+
+// ── Match rail ─────────────────────────────────────────────────────────────
+// The same list as Today's Matches (getFiltered: same feed, same order, same count), grouped by tournament in the
+// order the board first shows each one; a row = "A v B" + "round · time".
+function edgeRailPick(id){ openEdgeModel(id); }
+// Row time label: the board's day bucket ("Today/Tomorrow") + the start in the member's zone; no time = no half.
 function edgeWhenLabel(m){
-  // Same tz fix as the match cards (TEN-8): render the start time in the member's
-  // resolved zone, not the baked UTC m.time. Empty (not a dash) when no instant, so
-  // the day/time label simply drops that half.
   const t = isFinite(cardStartMs(m)) ? cardFmtStart(m, false) : '';
   let day = '';
   const b = (typeof matchDayBucket === 'function') ? matchDayBucket(m) : null;
   if (b === 'today') day = 'Today';
   else if (b === 'tomorrow') day = 'Tomorrow';
-  else if (m && m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) day = d.toLocaleDateString('en-US', { weekday: 'short' }); }
+  else if (m && m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) day = d.toLocaleDateString('en-GB', { weekday: 'short' }); }
   return [day, t].filter(Boolean).join(' ');
 }
 function edgeRenderRail(){
-  const listEl = document.getElementById('edgeRailList');
-  const sel = document.getElementById('edgeRailTour');
+  const listEl = document.getElementById('edgeRailList'), nEl = document.getElementById('edgeRailN');
   if (!listEl) return;
   const all = (typeof getFiltered === 'function') ? getFiltered() : matches;
-  const tourCounts = {};
-  all.forEach(m => { const t = m.tour || '—'; tourCounts[t] = (tourCounts[t] || 0) + 1; });
-  const tours = Object.keys(tourCounts).sort();
-  if (edgeRailTour !== 'all' && !tourCounts[edgeRailTour]) edgeRailTour = 'all';
-  if (sel){
-    sfDdRender('edgeRailTour', { ariaLabel: 'Tournament', value: edgeRailTour, onChange: edgeRailTourChange,
-      options: [{ value: 'all', label: `All tournaments (${all.length})` }].concat(tours.map(t => ({ value: t, label: `${t} (${tourCounts[t]})` }))) });
-  }
-  const list = (edgeRailTour === 'all') ? all : all.filter(m => (m.tour || '—') === edgeRailTour);
-  listEl.innerHTML = list.length
-    ? list.map(m => {
-        const rc = roundBadgeText(m.tournamentRound);          // null → round slot stays empty (honesty rule)
-        const meta = [rc || '', edgeWhenLabel(m)].filter(Boolean).join(' · ');
-        const on = (m.id === edgeCurrentId) ? ' on' : '';
-        return `<button type="button" class="edge-rail-row${on}" onclick="edgeRailPick('${m.id}')">
-            <span class="edge-rail-nm">${edgeEsc(m.p1)} v ${edgeEsc(m.p2)}</span>
-            <span class="edge-rail-meta">${edgeEsc(meta)}</span></button>`;
-      }).join('')
-    : `<div style="padding:14px 10px; font-size:12px; color:var(--text-label);">No matches on the board right now.</div>`;
+  const order = [], by = {};
+  all.forEach(m => { const t = m.tour || '—'; if (!by[t]){ by[t] = []; order.push(t); } by[t].push(m); });
+  if (edgeRailTour !== 'all' && !by[edgeRailTour]) edgeRailTour = 'all';
+  sfDdRender('edgeRailTour', { ariaLabel: 'Tournament', value: edgeRailTour,
+    onChange: v => { edgeRailTour = v; edgeRenderRail(); },
+    options: [{ value: 'all', label: 'All tournaments' }].concat(order.map(t => ({ value: t, label: edgeEventName(t) }))) });
+  const shown = edgeRailTour === 'all' ? order : [edgeRailTour];
+  const shownN = shown.reduce((n, t) => n + by[t].length, 0);
+  if (nEl) nEl.textContent = `${shownN} of ${all.length}`;
+  listEl.innerHTML = all.length ? shown.map(t => `
+      <div class="em-rail-grp"><span class="em-caps em-rail-gl">${edgeEsc(edgeEventName(t))}</span>${by[t].map(m => {
+        const meta = [edgeRoundCode(m, null) || '', edgeWhenLabel(m)].filter(Boolean).join(' · ');
+        return `<button type="button" class="em-rail-row${m.id === edgeCurrentId ? ' on' : ''}" onclick="edgeRailPick('${edgeJs(m.id)}')">
+            <span class="em-rail-nm">${edgeEsc(edgePlayerName(m, null, 'p1'))} v ${edgeEsc(edgePlayerName(m, null, 'p2'))}</span>
+            <span class="em-rail-meta">${edgeEsc(meta)}</span></button>`; }).join('')}</div>`).join('')
+    : '<div class="em-rail-empty">No matches on the board right now.</div>';
 }
 
-// ── Market context (4 columns, design export): SOFT BOOK OPENING · PINNACLE
-// OPENING · STENNISFY BASE PRICE · PINNACLE NOW. Every price is real:
-//   • Soft/Pinnacle OPENING read from the first tick of m.oddsMovement.books[*]
-//     (.p1[0]/.p2[0]); an absent opening renders an em dash — never a zero and
-//     never the current price standing in for the opening (founder honesty rule).
-//   • Stennisfy base price = the model's base fair price (stage1.baseP1/P2) → odds.
-//   • Pinnacle now = the last tick of the Pinnacle series.
-function edgeMarketContextHtml(m, st1, p1short, p2short){
-  const books = (m && m.oddsMovement && m.oddsMovement.books) ? m.oddsMovement.books : null;
-  const fmt = v => (v == null || !isFinite(v)) ? '—' : Number(v).toFixed(2);
-  const impl = v => (v == null || !isFinite(v) || v <= 0) ? '' : Math.round(100 / v) + '%';
-  const first = (bk, side) => { const s = books && books[bk] && books[bk][side]; return (s && s.length) ? s[0][1] : null; };
-  const last  = (bk, side) => { const s = books && books[bk] && books[bk][side]; return (s && s.length) ? s[s.length - 1][1] : null; };
-
-  // Best (highest) soft-book OPENING per side, across every non-Pinnacle book.
-  let softOpenA = null, softOpenB = null, softNameA = null, softNameB = null;
-  if (books){
-    Object.keys(books).forEach(bk => {
-      if (bk === 'Pinnacle') return;
-      const oa = first(bk, 'p1'), ob = first(bk, 'p2');
-      if (oa != null && (softOpenA == null || oa > softOpenA)){ softOpenA = oa; softNameA = bk; }
-      if (ob != null && (softOpenB == null || ob > softOpenB)){ softOpenB = ob; softNameB = bk; }
-    });
-  }
-  // Pinnacle opening — prefer the movement series' first tick; fall back to the
-  // baked pinnacleOpen field (same opening line, captured by the pipeline).
-  let pinOpenA = first('Pinnacle', 'p1'), pinOpenB = first('Pinnacle', 'p2');
-  if (pinOpenA == null && m && m.pinnacleOpen && m.pinnacleOpen.p1 != null) pinOpenA = m.pinnacleOpen.p1;
-  if (pinOpenB == null && m && m.pinnacleOpen && m.pinnacleOpen.p2 != null) pinOpenB = m.pinnacleOpen.p2;
-  const pinNowA = last('Pinnacle', 'p1'), pinNowB = last('Pinnacle', 'p2');
-
-  const baseA = (st1 && st1.baseP1 != null) ? st1.baseP1 : null;
-  const baseB = (st1 && st1.baseP2 != null) ? st1.baseP2 : null;
-  const baseOddA = (baseA != null && baseA > 0) ? 1 / baseA : null;
-  const baseOddB = (baseB != null && baseB > 0) ? 1 / baseB : null;
-
-  // Base-vs-Pinnacle-open gap (only when a Pinnacle opening exists).
-  const gapNote = (prob, mktOdd) => {
-    if (prob == null || mktOdd == null || !isFinite(mktOdd) || mktOdd <= 0) return null;
-    const g = prob * 100 - 100 / mktOdd;
-    return { txt: (g >= 0 ? '+' : '−') + Math.abs(g).toFixed(1) + '% vs Pinnacle open', cls: g >= 0 ? 'up' : 'dn' };
+// ── Cards ──────────────────────────────────────────────────────────────────
+function edgeEmptyCard(msg){ return `<div class="em-card em-empty">${edgeEsc(msg)}</div>`; }
+// Turn a raw engine failure reason into a member-facing sentence (never an internal field name).
+function edgeReasonText(e){
+  const r = (e && e.reason) ? String(e.reason) : '';
+  if (/elo/i.test(r)) return 'Not enough data to run the model on this match: one of the players has no Elo rating on file yet (usually a lower-tier or first-time entrant). The model runs as soon as the data exists.';
+  if (/engine error/i.test(r)) return 'The model could not be computed for this match. It retries on the next pipeline run.';
+  return 'The model could not be run for this match yet. It runs every 15 minutes as new data arrives.';
+}
+function edgeMatchHeadHtml(m, e){
+  if (!m && !e) return '';
+  const side = s => {
+    const name = edgePlayerName(m, e, s), key = edgePlayerKey(m, e, s);
+    const P = (e && e.players && e.players[s]) || {};
+    const style = edgeStyleName(name, key);
+    const elo = P.eloAll != null ? `<span class="em-mono">ELO ${edgeEsc(P.eloAll)}</span>` : '';
+    const sub = s === 'p1' ? [elo, style ? edgeEsc(style) : ''].filter(Boolean).join(' · ') : [style ? edgeEsc(style) : '', elo].filter(Boolean).join(' · ');
+    const av = `<span class="em-av">${edgeEsc(playerInitials(name))}</span>`;
+    const txt = `<span class="em-mh-txt"><span class="em-mh-nm">${edgeNameHtml(name, key)}</span><span class="em-mh-sub">${sub || '—'}</span></span>`;
+    return `<div class="em-mh-p ${s === 'p1' ? 'a' : 'b'}">${s === 'p1' ? av + txt : txt + av}</div>`;
   };
-  // Movement arrow for Pinnacle now vs open (odds shortened = money in = green).
-  const move = (open, now) => {
-    if (open == null || now == null) return { arrow: '', cls: '' };
-    if (now < open) return { arrow: '↓', cls: 'up' };
-    if (now > open) return { arrow: '↑', cls: 'dn' };
-    return { arrow: '→', cls: '' };
-  };
-
-  const line = (who, name, odd) => `
-      <div class="edge-mcline${who === 'b' ? ' sep' : ''}">
-        <span class="edge-mcnm ${who}">${edgeEsc(name)}</span>
-        <span class="edge-mcval"><span class="edge-mcodd${odd == null ? ' na' : ''}">${fmt(odd)}</span><span class="edge-mcimp">${impl(odd)}</span></span>
-      </div>`;
-  const box = (label, cls, aOdd, bOdd, foot) => `
-      <div class="edge-mcbox${cls ? ' ' + cls : ''}">
-        <span class="edge-mclbl">${label}</span>
-        ${line('a', p1short, aOdd)}
-        ${line('b', p2short, bOdd)}
-        ${foot ? `<div class="edge-mcfoot">${foot}</div>` : ''}
-      </div>`;
-
-  const gA = gapNote(baseA, pinOpenA), gB = gapNote(baseB, pinOpenB);
-  const mvA = move(pinOpenA, pinNowA), mvB = move(pinOpenB, pinNowB);
-
-  const softFoot = (softNameA || softNameB)
-    ? `<div class="edge-mcfl">Best soft book · ${edgeEsc(softNameA || softNameB)}</div>` : '';
-  const pinOpenFoot = (pinOpenA != null || pinOpenB != null)
-    ? `<div class="edge-mcfl"><span class="who a">${edgeEsc(p1short)}</span> opened ${fmt(pinOpenA)}</div>`
-      + `<div class="edge-mcfl"><span class="who b">${edgeEsc(p2short)}</span> opened ${fmt(pinOpenB)}</div>` : '';
-  const baseFoot = (gA || gB)
-    ? `${gA ? `<div class="edge-mcfl"><span class="who a">${edgeEsc(p1short)}</span> <span class="${gA.cls}">${gA.txt}</span></div>` : ''}`
-      + `${gB ? `<div class="edge-mcfl"><span class="who b">${edgeEsc(p2short)}</span> <span class="${gB.cls}">${gB.txt}</span></div>` : ''}` : '';
-  const nowFoot = (pinNowA != null || pinNowB != null)
-    ? `<div class="edge-mcfl">Opened ${fmt(pinOpenA)} → Now <span class="${mvA.cls}">${fmt(pinNowA)} ${mvA.arrow}</span></div>`
-      + `<div class="edge-mcfl">Opened ${fmt(pinOpenB)} → Now <span class="${mvB.cls}">${fmt(pinNowB)} ${mvB.arrow}</span></div>` : '';
-
+  const tour = edgeEventName((m && m.tour) || (e && e.match && e.match.tour));
+  const surf = edgeCap((m && m.surface) || (e && e.match && e.match.surface) || '');
+  const rnd = edgeRoundFull(edgeRoundCode(m, e));
+  const bo = (e && e.match && e.match.bestOf) || (m && m.bestOf);
+  const stat = (l, v) => `<span class="em-mh-stat"><span class="em-caps">${l}</span><span class="em-mh-v">${edgeEsc(v || '—')}</span></span>`;
   return `
-    <div class="edge-card">
-      <div class="edge-eyeb">Market context</div>
-      <div class="edge-mctx">
-        ${box('Soft book opening', '', softOpenA, softOpenB, softFoot)}
-        ${box('Pinnacle opening', '', pinOpenA, pinOpenB, pinOpenFoot)}
-        ${box('Stennisfy base price', 'base', baseOddA, baseOddB, baseFoot)}
-        ${box('Pinnacle now', '', pinNowA, pinNowB, nowFoot)}
-      </div>
+    <div class="em-card em-mh">
+      <div class="em-mh-row">${side('p1')}<span class="em-caps em-mh-vs">vs</span>${side('p2')}</div>
+      <div class="em-mh-stats">${stat('Tournament', tour)}${stat('Surface', surf)}${stat('Round', rnd)}${stat('Format', bo ? 'Best of ' + bo : null)}</div>
     </div>`;
 }
-
-// ── Value-layers strip (design export): 14 fixed segments coloured Good/Medium/
-// Poor by each layer's data-coverage state, plus "N of 14 value layers active"
-// where N is the count of layers that actually applied to THIS match read.
-// TOTAL is the number of VISIBLE layers for this match (founder ruling
-// 2026-08-07 Q1: the old 17 was a stale spec hard-code that padded the bar with
-// three phantom "Not evaluated" segments corresponding to no real layer). It is
-// derived from the visible-adjustments list (`adjs`), not hard-coded, so a layer
-// that self-hides for THIS match — e.g. Format split (Bo5) on a best-of-3 —
-// drops one real segment instead of leaving a phantom grey one. This keeps the
-// strip in lock-step with the "N of X layers applied" table subtitle below.
-// Returns the strip INNER only (bar + legend); the merged Value-layers card
-// (below) wraps it, so the breakdown table sits in the same block per export §4.
-function edgeValueStripHtml(adjs){
-  const TOTAL = adjs.length;
-  const active = adjs.filter(a => a.applied).length;
-  const segs = [];
-  for (let i = 0; i < TOTAL; i++){
-    const a = adjs[i];
-    if (a){
-      const st = edgeCovState(a);
-      segs.push(`<span class="edge-vlseg" style="background:${edgeCovColor(st)}" title="${edgeEsc(a.name)} — ${st}"></span>`);
-    } else {
-      segs.push(`<span class="edge-vlseg" style="background:${edgeCovColor('missing')}" title="Not evaluated"></span>`);
+function edgeSetMkView(v){ edgeMkView = v; renderEdgeModel(edgeCurrentId); }
+function edgeMarketHtml(m, e, names, keys){
+  const st1 = e.stage1 || {};
+  const base = { p1: st1.baseP1, p2: st1.baseP2 };
+  const sharp = edgeSharp(m);
+  const pct = edgeMkView === 'pct';
+  const fmtV = (q, s) => !q ? '—' : (pct ? (edgeNoVig(q, s) * 100).toFixed(1) + '%' : mxOddsTxt(q[s]));
+  const softA = edgeBestSoft(m, 'p1'), softB = edgeBestSoft(m, 'p2');
+  const panel = s => {
+    const soft = s === 'p1' ? softA : softB;
+    const bp = base[s];
+    const rows = [];
+    const row = (label, sub, q, now) => {
+      const d = (q && bp != null) ? edgePP((bp - edgeNoVig(q, s)) * 100) : { t: '—', c: 'em-zero' };
+      return `<div class="em-mk-row"><span class="em-mk-l"><span class="em-mk-lb">${label}</span><span class="em-mk-sub">${sub}</span></span>`
+        + `<span class="em-mk-pv"><span class="em-mk-v${now ? ' now' : ''}">${fmtV(q, s)}</span><span class="em-mk-d ${d.c}">${d.t}</span></span></div>`;
+    };
+    rows.push(row('Soft open', soft ? `${edgeEsc(soft.name)} · ${edgeMargin(soft.open)}` : 'no soft book', soft ? soft.open : null));
+    const sn = sharp ? sharp.name : 'Pinnacle';
+    rows.push(row(`${sn} open`, sharp && sharp.open ? `${edgeEsc(edgeClock(sharp.open.seenAt, 'stamp') || '—')} · ${edgeMargin(sharp.open)}` : 'not quoted', sharp ? sharp.open : null));
+    let nowSub = 'not quoted';
+    if (sharp && sharp.now){
+      const mv = sharp.open ? edgePP((edgeNoVig(sharp.now, s) - edgeNoVig(sharp.open, s)) * 100).t + ' since open · ' : '';
+      nowSub = mv + edgeMargin(sharp.now);
     }
-  }
-  return `
-      <div class="edge-vlbar">${segs.join('')}</div>
-      <div class="edge-vllegend">
-        <span class="edge-vlkey"><i style="background:var(--pos)"></i>Good</span>
-        <span class="edge-vlkey"><i style="background:var(--amber)"></i>Medium</span>
-        <span class="edge-vlkey"><i style="background:var(--neg)"></i>Poor</span>
-        <span class="edge-vlnote">Data quality across this match read</span>
-        <span class="edge-vlactive">${active} of ${TOTAL} value layers active</span>
+    rows.push(row(`${sn} now`, nowSub, sharp ? sharp.now : null, true));
+    const odd = bp > 0 ? (1 / bp).toFixed(2) : '—', p = bp != null ? (bp * 100).toFixed(1) + '%' : '—';
+    return `<div class="em-mk-p ${s === 'p1' ? 'a' : 'b'}">
+        <div class="em-mk-nm">${edgeNameHtml(names[s], keys[s])}</div>
+        <div>${rows.join('')}</div>
+        <div class="em-mk-base"><span class="em-mk-base-l"><span class="em-caps">Model base</span><span class="em-mk-sub">${pct ? odd : p} · no margin</span></span><span class="em-mk-base-v">${pct ? p : odd}</span></div>
       </div>`;
-}
-
-// On-demand reveal of the written analysis (design export "Generate" affordance).
-// The prose itself is the pipeline's model summary — this only toggles its
-// visibility, so nothing is fabricated: an ungenerated match reveals the honest
-// "will appear once the pipeline generates it" placeholder.
-function edgeGenerateAnalysis(){
-  const intro = document.getElementById('edgeGenIntro');
-  const body  = document.getElementById('edgeGenBody');
-  const regen = document.getElementById('edgeRegenBtn');
-  if (intro) intro.style.display = 'none';
-  if (body)  body.style.display = '';
-  if (regen) regen.style.display = '';
-}
-
-// ---- Section 4 helper: one adjustment row ----
-// The engine emits { direction, signal, deltaP1, confidence, detail, applied,
-// gated }. The diverging bar's WIDTH is |signal|*50 (max half the track) and its
-// SIDE comes from `direction` (p1 left, p2 right). Colour is a single neutral
-// tone for both sides — per the design-system rule, we never use colour to say
-// which player is favoured; position alone encodes direction.
-// ── Section 4 helpers ────────────────────────────────────────────────────
-// Weight tag. The design names five classes (HIGHEST/HIGH/MEDIUM-HIGH/
-// MEDIUM/LOW); the engine expresses the same idea as `maxMagnitude`, the
-// largest probability shift a layer may apply. Bucket boundaries are set at
-// the engine's own distinct magnitudes (0.1 / 0.05 / 0.04 / 0.035 / 0.03 /
-// 0.02 / 0.016 / 0.015) so every layer lands in exactly one class.
-function edgeWeightTag(mag){
-  const m = mag || 0;
-  if (m >= 0.06)  return { label: 'HIGHEST',     cls: 'w-highest' };
-  if (m >= 0.035) return { label: 'HIGH',        cls: 'w-high' };
-  if (m >= 0.025) return { label: 'MEDIUM-HIGH', cls: 'w-medhigh' };
-  if (m >= 0.016) return { label: 'MEDIUM',      cls: 'w-med' };
-  return { label: 'LOW', cls: 'w-low' };
-}
-
-// Coverage state for one layer, in the design's three-state vocabulary.
-// `applied` with a real confidence grade is full data; a layer the engine
-// applied only weakly, or held back behind its min-sample gate, is partial;
-// a layer with no input at all is missing.
-function edgeCovState(a){
-  if (a.applied) return (a.confidence === 'high' || a.confidence === 'med') ? 'full' : 'partial';
-  return a.gated ? 'partial' : 'missing';
-}
-function edgeCovColor(state){
-  // Design export: every segment carries colour (no grey run). Good=green,
-  // Medium=amber, Poor/missing=rose-red.
-  return state === 'full' ? 'var(--pos)' : state === 'partial' ? 'var(--amber)' : 'var(--neg)';
-}
-
-// Model confidence pill.
-//
-// The design specifies HIGH >= 12 full layers, MEDIUM >= 8. Those thresholds
-// were written against the prototype's mock data. Measured against the real
-// engine output (26 priced matches on 2026-07-20) the full-layer count runs
-// min 2 / median 5 / max 8 — so the design's rule labels 25 of 26 matches
-// LOW and the pill carries no information. The bands below are set from that
-// measured distribution instead. This is a product judgement, not a
-// derivation — it is flagged for the founder rather than settled here.
-function edgeConfidence(full){
-  if (full >= 7) return { label: 'HIGH',   cls: 'c-high' };
-  if (full >= 4) return { label: 'MEDIUM', cls: 'c-med' };
-  return { label: 'LOW', cls: 'c-low' };
-}
-
-// Decimal odds from a probability.
-function edgeProbOdds(p){ return (p == null || !isFinite(p) || p <= 0) ? '—' : (1 / p).toFixed(2); }
-
-// Rule A (founder, 2026-07-25): the W/UE layer (#8) renders NOTHING for a match
-// it has no data for — no dimmed "GATED" placeholder row, just absent — so the
-// layer count, the coverage bar and the adjustment list all flex to what
-// actually applies to THIS match. `applied` is the real has-data flag (both the
-// hard gate and plain missing data leave it false), so this also holds post-B:
-// once the gate is removed, a #8 layer with no api-tennis W/UE stays absent.
-// Layered ON TOP of the existing `a.hidden` self-hide any layer can use (e.g.
-// H2H with zero prior meetings).
-const EDGE_SELF_HIDE_KEYS = new Set(['winnerUE']);
-function edgeVisibleAdjs(list){
-  return (list || []).filter(a => !a.hidden && (a.applied || !EDGE_SELF_HIDE_KEYS.has(a.key)));
-}
-
-// WHY column (design export §3): the explanation reads as prose in the body
-// font (Hanken Grotesk), with IBM Plex Mono reserved for the numerals only —
-// mono is for data values, not sentences. We split the raw detail on
-// number-ish tokens (counts, percentages, ratios, N/tier values) and escape
-// each segment, so the mono wrap never lands inside an HTML entity.
-function edgeWhyHtml(detail){
-  const parts = String(detail == null ? '' : detail).split(/(\d[\d.,%/-]*)/g);
-  return parts.map((seg, i) =>
-    (i % 2 === 1) ? `<span class="edge-num">${edgeEsc(seg)}</span>` : edgeEsc(seg)
-  ).join('');
-}
-
-// One adjustment row (design export §1–3): a flat five-column table row —
-// LAYER · WEIGHT · SIGNAL · FAVOURS·SHIFT · WHY — sitting directly on the
-// merged Value-layers card (no per-row card border/background). The WEIGHT
-// column carries the layer's weight pill plus the Good/Medium/Poor data-quality
-// dot (export §5: two different scales, kept visually separate). The pill is the
-// layer's POTENTIAL cap, so on a layer that did not fire it greys to "inactive"
-// (founder ruling 2026-08-07 Q2) — potential never reads as applied.
-function edgeAdjRow(a, p1short, p2short){
-  const applied = !!a.applied;
-  const w = edgeWeightTag(a.maxMagnitude);
-  const cov = edgeCovState(a);
-  const signal = a.signal || 0;
-  const even = !applied || a.direction === 'neutral' || Math.abs(signal) < 0.02;
-
-  // Diverging bar: fill grows from the 50% centre toward the favoured side.
-  const width = Math.min(50, Math.abs(signal) * 50);
-  let fill = '';
-  if (!even && width > 0.2){
-    fill = a.direction === 'p1'
-      ? `<i style="left:${(50 - width).toFixed(1)}%; width:${width.toFixed(1)}%"></i>`
-      : `<i style="left:50%; width:${width.toFixed(1)}%"></i>`;
-  }
-
-  // Per-side score: the engine emits one signed signal, so the favoured side
-  // carries the magnitude and the other side reads 0.00 — the design's two
-  // independent scores don't exist upstream.
-  // A layer the engine never applied has no score at all — printing "0.00"
-  // would read as a measured zero rather than an absent input.
-  const magTxt = Math.abs(signal).toFixed(2);
-  const aScore = !applied ? '—' : ((!even && a.direction === 'p1') ? magTxt : '0.00');
-  const bScore = !applied ? '—' : ((!even && a.direction === 'p2') ? magTxt : '0.00');
-
-  const delta = Math.abs(a.deltaP1 || 0) * 100;
-  let fav;
-  if (!applied){
-    fav = `<span class="who even">${a.gated ? 'Gated' : 'No data'}</span><span class="dl">—</span>`;
-  } else if (even || delta < 0.05){
-    fav = `<span class="who even">Even</span><span class="dl">—</span>`;
-  } else {
-    const who = a.direction === 'p1' ? p1short : p2short;
-    fav = `<span class="who">${edgeEsc(who)}</span><span class="dl">+${delta.toFixed(1)}pp</span>`;
-  }
-
-  const wtCls = applied ? w.cls : 'w-inactive';
-
+  };
+  const unit = pct ? 'No-vig implied probability · switch to Odds for decimal prices' : 'Decimal odds · switch to Implied % for no-vig probabilities';
+  const softNote = [softA, softB].filter(Boolean).filter((b, i, a) => a.findIndex(x => x.key === b.key) === i)
+    .map(b => `<span class="em-mono">${edgeMargin(b.now)}</span> (${edgeEsc(b.name)})`).join(' / ');
+  const opened = sharp && sharp.open ? edgeClock(sharp.open.seenAt, 'stamp') : null;
+  const seg = (v, l) => `<button type="button" class="em-seg-b${edgeMkView === v ? ' on' : ''}" onclick="edgeSetMkView('${v}')">${l}</button>`;
   return `
-    <div class="edge-row${applied ? '' : ' dim'}">
-      <div class="lc"><span class="rname">${edgeEsc(a.name)}</span></div>
-      <div class="edge-wtc">
-        <span class="edge-wt ${wtCls}" title="Weight — the layer's potential cap">${w.label}</span>
-        <span class="edge-dot" style="background:${edgeCovColor(cov)}" title="Data quality: ${cov}"></span>
+    <div class="em-card em-mk">
+      <div class="em-head"><span class="em-caps">Market context · match winner</span><div class="em-seg">${seg('odds', 'Odds')}${seg('pct', 'Implied %')}</div></div>
+      <div class="em-mk-grid">${panel('p1')}${panel('p2')}</div>
+      <span class="em-note">${unit} · edge = model’s base probability minus the book’s no-vig probability, green = model has the player shorter than the book${sharp && sharp.now ? ` · ${edgeEsc(sharp.name)} margin <span class="em-mono">${edgeMargin(sharp.now)}</span>` : ''}${softNote ? `, soft ${softNote}` : ''}${opened ? ` · opened <span class="em-mono">${edgeEsc(opened)}</span>` : ''}</span>
+    </div>`;
+}
+function edgeToggleLayers(){ edgeLayersOpen = !edgeLayersOpen; renderEdgeModel(edgeCurrentId); }
+function edgeToggleLayer(key){ edgeLayerOpen = edgeLayerOpen === key ? null : key; renderEdgeModel(edgeCurrentId); }
+// Strip click: open the breakdown, open that row, scroll its container (no scrollIntoView) and flash the row.
+function edgeScroller(el){
+  for (let p = el.parentElement; p && p !== document.body; p = p.parentElement){
+    const o = getComputedStyle(p).overflowY;
+    if ((o === 'auto' || o === 'scroll') && p.scrollHeight > p.clientHeight + 1) return p;
+  }
+  return window;
+}
+function edgeJumpLayer(key){
+  edgeLayersOpen = true; edgeLayerOpen = key; edgeLayerFlash = key;
+  renderEdgeModel(edgeCurrentId);
+  const el = document.getElementById('emLayer-' + key); if (!el) return;
+  const r = el.getBoundingClientRect(), top = r.top - window.innerHeight / 2 + r.height / 2, sc = edgeScroller(el);
+  (sc === window ? window : sc).scrollBy({ top, behavior: 'smooth' });
+  clearTimeout(edgeFlashTimer);
+  edgeFlashTimer = setTimeout(() => { edgeLayerFlash = null; const x = document.getElementById('emLayer-' + key); if (x) x.classList.remove('flash'); }, 1600);
+}
+function edgeLayersHtml(e, names){
+  const rows = edgeLayerRows(e);
+  const n = { Good: 0, Medium: 0, Poor: 0 }; rows.forEach(r => n[r.q]++);
+  const active = rows.filter(r => r.a.applied).length;
+  const qc = q => 'em-q-' + q.toLowerCase(), qt = q => 'em-qt-' + q.toLowerCase();
+  const strip = rows.map(r => `<span class="em-seg-q ${qc(r.q)}" onclick="edgeJumpLayer('${edgeJs(r.a.key)}')"><span class="tip">${edgeEsc(r.a.name)} · ${r.q}</span></span>`).join('');
+  let table = '';
+  if (edgeLayersOpen){
+    const body = rows.map(r => {
+      const a = r.a, applied = !!a.applied, signal = a.signal || 0;
+      const even = !applied || a.direction === 'neutral' || Math.abs(signal) < 0.02;
+      const width = Math.min(50, Math.abs(signal) * 50);
+      const fill = (!even && width > 0.2) ? `<span class="fill" style="left:${a.direction === 'p1' ? (50 - width).toFixed(1) : '50'}%; width:${width.toFixed(1)}%"></span>` : '';
+      const mag = Math.abs(signal).toFixed(2);
+      const sa = !applied ? '—' : ((!even && a.direction === 'p1') ? mag : '0.00');
+      const sb = !applied ? '—' : ((!even && a.direction === 'p2') ? mag : '0.00');
+      const delta = Math.abs(a.deltaP1 || 0) * 100;
+      let fav, shift;
+      if (!applied){ fav = `<span class="em-fav na">${a.gated ? 'Gated' : 'No data'}</span>`; shift = '<span class="em-shift em-zero">—</span>'; }
+      else if (even || delta < 0.05){ fav = '<span class="em-fav na">Even</span>'; shift = '<span class="em-shift em-zero">0.0pp</span>'; }
+      else { fav = `<span class="em-fav">${edgeEsc(a.direction === 'p1' ? names.p1 : names.p2)}</span>`; const p = edgePP(delta); shift = `<span class="em-shift ${p.c}">${p.t}</span>`; }
+      const open = edgeLayerOpen === a.key;
+      const det = open ? `<div class="em-ldet">
+          <span class="col"><span class="em-caps">Why</span><span class="why">${edgeNumHtml(edgeWhyText(a)) || '—'}</span></span>
+          <span class="div"></span>
+          <span class="col"><span class="dqh"><span class="em-caps">Data quality</span><i class="${qc(r.q)}"></i><span class="em-caps ${qt(r.q)}">${r.q}</span></span><span class="dq">${edgeEsc(edgeDqText(a))}</span></span>
+        </div>` : '';
+      return `<div class="em-lrow${open ? ' open' : ''}${edgeLayerFlash === a.key ? ' flash' : ''}" id="emLayer-${edgeEsc(a.key)}">
+          <div class="em-tr" onclick="edgeToggleLayer('${edgeJs(a.key)}')">
+            <span class="tw">▸</span><span class="em-lname">${edgeEsc(a.name)}</span><span class="em-chip">${r.w.word}</span>
+            <span class="em-qdot ${qc(r.q)}" title="${r.q}"></span>
+            <span class="em-sc${applied ? '' : ' na'}">${sa}</span><span class="em-sig"><span class="tick"></span>${fill}</span><span class="em-sc${applied ? '' : ' na'}">${sb}</span>
+            ${fav}${shift}
+          </div>${det}
+        </div>`;
+    }).join('');
+    table = `<div class="em-tbl">
+        <div class="em-tr em-th em-caps"><span></span><span>Layer</span><span>Weight</span><span>Quality</span><span>${edgeEsc(names.p1)}</span><span>Signal</span><span>${edgeEsc(names.p2)}</span><span>Favours</span><span>Shift</span></div>
+        ${body}
+        <span class="em-vl-foot">Rows ordered by weight, Highest → Low · click a strip segment to jump to its layer · signal bar grows from the centre toward the player it favours · shift = movement of the fair price in percentage points</span>
+      </div>`;
+  }
+  return `
+    <div class="em-card em-vl">
+      <div class="em-head">
+        <span class="em-vl-t"><span class="em-caps">Value layers</span><span class="em-note">Data quality behind each adjustment folded into the price</span></span>
+        <span class="em-vl-n"><span><span class="act">${active}</span> of <span class="em-mono">${rows.length}</span> active</span><span class="sep"></span>
+          <span class="q"><b>${n.Good}</b><span>good</span></span><span class="q"><b>${n.Medium}</b><span>medium</span></span><span class="q"><b>${n.Poor}</b><span>poor</span></span></span>
       </div>
-      <div class="edge-mc">
-        <div class="edge-mcrow">
-          <span class="edge-sc a${(!even && a.direction === 'p1') ? ' lead' : ''}">${aScore}</span>
-          <span class="edge-dbar2"><span class="tick"></span>${fill}</span>
-          <span class="edge-sc b${(!even && a.direction === 'p2') ? ' lead' : ''}">${bScore}</span>
+      <div class="em-strip">${strip}</div>
+      <div class="em-tog"><span class="ln"></span><button type="button" class="em-tog-b em-caps" aria-expanded="${edgeLayersOpen}" onclick="edgeToggleLayers()">Layer breakdown<span class="chev" style="transform:rotate(${edgeLayersOpen ? 180 : 0}deg)">▾</span></button><span class="ln"></span></div>
+      ${table}
+    </div>`;
+}
+// Editing an odd re-computes its own gap in place (no re-render, the caret stays); bad input reads —.
+function edgeOddInput(el, id, tile, side){
+  (edgeOddEdits[id] = edgeOddEdits[id] || {})[tile + ':' + side] = el.value;
+  const e = modelOutput.matches && modelOutput.matches[id];
+  const f = e && e.stage3 && e.stage3.fair && e.stage3.fair[side];
+  const g = edgePP(edgeGapOf(f ? f.prob : null, edgeParseOdd(el.value)));
+  const out = document.getElementById(`emGap-${tile}-${side}`);
+  if (out){ out.textContent = g.t; out.className = 'em-gap ' + g.c; }
+}
+function edgeFairHtml(m, e, names, keys){
+  const st3 = e.stage3 || {}, fair = st3.fair || {}, flags = st3.flags || [];
+  const sharp = edgeSharp(m);
+  const edits = edgeOddEdits[edgeCurrentId] || {};
+  const netPP = ((e.stage2 && e.stage2.totalDeltaP1) || 0) * 100;
+  const netWho = netPP >= 0 ? names.p1 : names.p2;
+  const col = s => {
+    const f = fair[s] || {}, prob = f.prob != null ? f.prob : null;
+    const flag = flags.find(x => x.side === s);
+    const soft = edgeBestSoft(m, s);
+    const tile = (kind, label, def, foot) => {
+      const raw = edits[kind + ':' + s] != null ? edits[kind + ':' + s] : (def != null ? mxOddsTxt(def) : '');
+      const g = edgePP(edgeGapOf(prob, edgeParseOdd(raw)));
+      return `<div class="em-tile"><span class="em-tile-h"><span class="em-caps">${label}</span><span class="em-gap ${g.c}" id="emGap-${kind}-${s}">${g.t}</span></span>`
+        + `<input type="text" inputmode="decimal" class="em-odd" aria-label="${edgeEsc(label)} odd for ${edgeEsc(names[s])}" value="${edgeEsc(raw)}" oninput="edgeOddInput(this,'${edgeJs(edgeCurrentId)}','${kind}','${s}')">`
+        + `<span class="em-tile-f">${foot}</span></div>`;
+    };
+    let pinFoot = '—';
+    if (sharp){
+      const o = sharp.open ? sharp.open[s] : null, n = sharp.now ? sharp.now[s] : null;
+      const mv = (typeof mxMovePct === 'function') ? mxMovePct(o, n) : null;
+      pinFoot = `${o != null ? mxOddsTxt(o) : '—'} → ${n != null ? mxOddsTxt(n) : '—'} · <span class="${mv ? (mv.dir === 'pos' ? 'em-pos' : mv.dir === 'neg' ? 'em-neg' : 'em-zero') : 'em-zero'}">${mv ? mv.text : '—'}</span>`;
+    }
+    return `<div class="em-fp-col ${s === 'p1' ? 'a' : 'b'}">
+        <div class="em-fp-top">
+          <span class="em-fp-who"><span class="em-fp-nm">${edgeNameHtml(names[s], keys[s])}</span><span class="em-chip">${edgeEsc(flag ? flag.type : 'No value')}</span></span>
+          <span class="em-fp-odd"><span class="em-fp-big">${f.odds != null ? Number(f.odds).toFixed(2) : '—'}</span><span class="em-caps">Adjusted fair odd · ${prob != null ? (prob * 100).toFixed(1) + '%' : '—'}</span></span>
         </div>
-      </div>
-      <div class="edge-fav">${fav}</div>
-      <div class="edge-why">${a.detail ? edgeWhyHtml(a.detail) : '<span class="edge-why-empty">—</span>'}</div>
-    </div>`;
-}
-
-// ── Section 6 helper: copy the written analysis ──────────────────────────
-let edgeSummaryText = '';
-function edgeCopySummary(el){
-  if (!edgeSummaryText) return;
-  const done = () => {
-    const prev = el.textContent;
-    el.textContent = 'Copied ✓';
-    setTimeout(() => { el.textContent = prev; }, 1600);
+        <div class="em-fp-tiles">
+          ${tile('soft', 'Best soft', soft ? soft.price : null, soft ? edgeEsc(soft.name) : 'no soft book')}
+          ${tile('pin', sharp ? sharp.name : 'Pinnacle', sharp && sharp.now ? sharp.now[s] : null, pinFoot)}
+        </div>
+      </div>`;
   };
-  if (navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(edgeSummaryText).then(done, () => {});
-  }
-}
-
-// ── MARKET SIZE display ────────────────────────────────────────────────────
-// Currency, thousands as K (no decimals) up to 999K, then M with at most 1
-// decimal. Round to nearest K; anything under 500 shows "<$1K". A rounded K that
-// reaches 1000 is promoted to M so we never print "$1000K".
-function fmtMarketSize(v){
-  if (v == null || !isFinite(v)) return '—';
-  if (v < 500) return '<$1K';
-  if (v < 1000000){
-    const k = Math.round(v / 1000);
-    if (k < 1000) return '$' + k + 'K';
-  }
-  let s = (v / 1000000).toFixed(1);
-  if (s.slice(-2) === '.0') s = s.slice(0, -2);
-  return '$' + s + 'M';
-}
-
-// ── MARKET SIGNAL block (Section 5 sibling) ─────────────────────────────────
-// Two stacked readings of the same match:
-//   • "Sharp estimates" — our Stennisfy fair price and Pinnacle's devigged line,
-//     FIXED order (Pinnacle then Stennisfy), never sorted. Both come straight
-//     from model output (stage3.fair / stage3.sharp) — display, not data.
-//   • "Market money" — the two prediction-market venues, deepest-first by 24h
-//     size, each carrying BOTH its implied split (which way the money points)
-//     and its MARKET SIZE figure (how much). MARKET SIZE is a column label only,
-//     never the block name.
-// A split with no data em-dashes both ends; a section with no data self-hides;
-// the whole block hides only when there is nothing at all to show. On a completed
-// match the header latches "· final" off the venues' settlement freeze.
-//
-// One split row: fixed "p1% [split bar] p2%" triple. p1 is a p1-oriented
-// probability in [0,1] or null (null → both ends em-dash, the bar greys out).
-function msigSplitRow(cls, label, p1, sizeHtml){
-  const has = p1 != null && isFinite(p1);
-  const w = has ? Math.max(0, Math.min(100, p1 * 100)) : 50;
-  const p1t = has ? Math.round(w) + '%' : '—';
-  const p2t = has ? Math.round(100 - w) + '%' : '—';
-  return `<div class="msig-row${cls ? ' ' + cls : ''}">` +
-    `<span class="msig-venue">${label}</span>` +
-    `<span class="msig-p1${has ? '' : ' na'}">${p1t}</span>` +
-    `<span class="msig-bar${has ? '' : ' na'}"><i style="width:${w.toFixed(1)}%"></i></span>` +
-    `<span class="msig-p2${has ? '' : ' na'}">${p2t}</span>` +
-    (sizeHtml || '<span class="msig-size"></span>') +
-    `</div>`;
-}
-
-function buildMarketSignalBlock(m, e, opts){
-  // Split gate (founder decision 2026-07-28). The two sections carry different
-  // trust guarantees, so the state-2 display gate applies to only one of them:
-  //   • Sharp estimates (Stennisfy fair price + Pinnacle devigged anchor) IS
-  //     model output read against a market anchor — the exact thing the state-2
-  //     gate protects. It renders ONLY when the match is state-2 confirmed.
-  //   • Market money (Kalshi / Polymarket) is a raw venue observation, valid
-  //     whether or not Pinnacle has posted a line. It renders whenever venue
-  //     data exists, gate or no gate.
-  // stateConfirmed defaults true so the confirmed render path is unchanged; the
-  // gated path passes it false to show Market money alone.
-  const stateConfirmed = !opts || opts.stateConfirmed !== false;
-  const st3 = (e && e.stage3) || {};
-  const fair = st3.fair || null;
-  const sharp = st3.sharp || null;
-
-  // ── Sharp estimates ──────────────────────────────────────────────────────
-  // Pinnacle: the model already publishes the devigged two-way line as
-  // sharp.vigFreeProb (p1-oriented, vig-free — the two sides sum to 1), the same
-  // field the Fair-price block reads. Use it directly; no client-side devig.
-  // (Fallback: if only a raw two-side impliedProb is ever emitted, normalise it.)
-  // Stennisfy: our adjusted fair probability, already vig-free (fair.p1.prob + fair.p2.prob = 1).
-  let pinnP1 = null;
-  if (sharp && sharp.vigFreeProb && sharp.vigFreeProb.p1 != null && isFinite(Number(sharp.vigFreeProb.p1))){
-    pinnP1 = Number(sharp.vigFreeProb.p1);
-  } else if (sharp && sharp.impliedProb && sharp.impliedProb.p1 != null && sharp.impliedProb.p2 != null){
-    const a = Number(sharp.impliedProb.p1), b = Number(sharp.impliedProb.p2);
-    if (isFinite(a) && isFinite(b) && (a + b) > 0) pinnP1 = a / (a + b);
-  }
-  const stenP1 = (fair && fair.p1 && fair.p1.prob != null && isFinite(fair.p1.prob)) ? Number(fair.p1.prob) : null;
-  const hasSharpSect = stateConfirmed && (pinnP1 != null || stenP1 != null);
-  const sharpRows = hasSharpSect
-    ? msigSplitRow('', 'Pinnacle', pinnP1, '') + msigSplitRow('', 'Stennisfy', stenP1, '')
-    : '';
-
-  // ── Market money ─────────────────────────────────────────────────────────
-  // Venues deepest-first by 24h size, each with its implied split + MARKET SIZE.
-  // The split reads v.impliedP1 (p1-oriented, written by the market-size fetch);
-  // absent until that shard field lands → the row shows size only, no bar.
-  const venues = m && m.marketSize;
-  let moneyRows = '', frozenVenue = false, hasMoneySect = false;
-  if (venues){
-    const rows = [['kalshi', 'Kalshi'], ['polymarket', 'Polymarket']].map(([key, label]) => {
-      const v = venues[key] || null;
-      const present = !!(v && v.present);
-      const hasVal = !!(v && v.present && v.matched && v.marketSize24h != null && isFinite(v.marketSize24h));
-      const split = (v && v.present && v.matched && v.impliedP1 != null && isFinite(v.impliedP1)) ? Number(v.impliedP1) : null;
-      return { label: label, present: present, value: hasVal ? Number(v.marketSize24h) : null, split: split, frozen: !!(v && v.frozenAt) };
-    });
-    if (rows.some(r => r.present)){
-      hasMoneySect = true;
-      frozenVenue = rows.some(r => r.frozen);
-      // Deepest-first by 24h size; a present venue always sorts above a missing one.
-      rows.sort((a, b) => {
-        if (a.present !== b.present) return a.present ? -1 : 1;
-        return (b.value == null ? -Infinity : b.value) - (a.value == null ? -Infinity : a.value);
-      });
-      moneyRows = rows.map(r => {
-        const na = r.value == null;
-        const sizeHtml = `<span class="msig-size${na ? ' na' : ''}">${na ? '—' : fmtMarketSize(r.value)}</span>`;
-        return msigSplitRow('money', r.label, r.split, sizeHtml);
-      }).join('');
-    }
-  }
-
-  if (!hasSharpSect && !hasMoneySect) return '';
-  const frozen = frozenVenue || !!(m && m.finalScore);
-  // Footnote only describes the sections actually shown — in the gated (money-only)
-  // render the Sharp-estimates sentence is dropped so it doesn't reference a section
-  // that isn't on screen.
-  const sharpNote = "Sharp estimates read our Stennisfy fair price against Pinnacle's devigged line. ";
-  const moneyNote = "Market money is each prediction-market venue's 24-hour traded size at $1 settlement value — the split shows which side the money is on, the MARKET SIZE column how much. Venues are shown independently and not treated as equivalent; on a completed match the figures are frozen at settlement.";
-  const note = (hasSharpSect ? sharpNote : '') + moneyNote;
+  const books = edgeSoftBooks(m).map(edgeBookName);
+  const surf = edgeCap((m && m.surface) || (e.match && e.match.surface) || '');
   return `
-    <div class="edge-msig">
-      <div class="msig-head">Market Signal${frozen ? '<span class="msig-final"> · final</span>' : ''}</div>
-      ${hasSharpSect ? `<div class="msig-sect">
-        <div class="msig-lbl">Sharp estimates</div>
-        <div class="msig-rows">${sharpRows}</div>
-      </div>` : ''}
-      ${hasMoneySect ? `<div class="msig-sect">
-        <div class="msig-secthead"><span class="msig-lbl">Market money</span><span class="msig-collbl">Market size</span></div>
-        <div class="msig-rows">${moneyRows}</div>
-      </div>` : ''}
-      <div class="msig-note" title="${note}">${note}</div>
+    <div class="em-card em-fp">
+      <div class="em-fp-head">
+        <span class="em-fp-t"><span class="em-caps">Adjusted model price vs the market${surf ? ' · ' + edgeEsc(surf) : ''}</span><span class="em-fp-title">Fair price &amp; value</span></span>
+        <span class="em-fp-net">Net adjustment <b class="em-mono">${Math.round(Math.abs(netPP) * 10) === 0 ? '0.0' : '+' + Math.abs(netPP).toFixed(1)}pp</b> toward <b>${edgeEsc(netWho)}</b></span>
+      </div>
+      <div class="em-fp-cols">${col('p1')}${col('p2')}</div>
+      <span class="em-fp-foot">Gap = adjusted fair probability minus the book’s implied probability · edit either odd to re-check${books.length ? ' · best soft scans ' + edgeEsc(books.join(', ')) : ''}</span>
+    </div>`;
+}
+function edgeMoversHtml(e, names, keys, free){
+  const movers = edgeVisibleAdjs(e.stage2.adjustments).filter(a => a.applied && Math.abs(a.deltaP1 || 0) >= 0.0005)
+    .sort((a, b) => Math.abs(b.deltaP1) - Math.abs(a.deltaP1)).slice(0, 3);
+  const rows = movers.length ? movers.map((a, i) => {
+    const s = a.direction === 'p1' ? 'p1' : 'p2', p = edgePP(Math.abs(a.deltaP1) * 100);
+    const who = edgeHasProfile(keys[s]) ? `<a class="em-mv-who lk" onclick="openPlayerProfileFromMatch('${edgeJs(keys[s])}')">${edgeEsc(names[s])}</a>` : `<span class="em-mv-who">${edgeEsc(names[s])}</span>`;
+    return `<div class="em-mv-row"><span class="em-mv-rk">${i + 1}.</span><span class="em-mv-nm">${edgeEsc(a.name)}</span>${who}<span class="em-mv-d ${p.c}">${p.t}</span></div>`;
+  }).join('') : '<div class="em-mv-row"><span class="em-mv-nm" style="color:var(--text-label);">No layer moved the price.</span></div>';
+  return `
+    <div class="em-card em-mv">
+      <div class="em-head"><span class="em-caps">Biggest movers</span><span class="em-note">The three factors that moved the price most</span></div>
+      <div>${rows}</div>
+      ${free ? '<div class="em-mv-up"><a class="sf-upgrade em-btn" href="account.html">Upgrade to Pro to unlock all factors</a></div>' : ''}
+    </div>`;
+}
+// Generate / Regenerate = read the newest pipeline run of model-output.json (the analysis is written pipeline-side,
+// cached per match by its facts); the shimmer covers that read.
+function edgeGenerate(id){
+  if (edgeAiState[id] === 'loading') return;
+  edgeAiState[id] = 'loading'; renderEdgeModel(edgeCurrentId);
+  fetch('./model-output.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { const x = d && d.matches && d.matches[id]; if (x && x.ok && x.summary && x.summary.ok && x.summary.text){ modelOutput = d; modelOutputLoaded = true; } })
+    .catch(() => {})
+    .then(() => { edgeAiState[id] = 'shown'; if (edgeCurrentId === id) renderEdgeModel(id); });
+}
+function edgeAnalysisHtml(m, e, id, free){
+  const sum = e.summary;
+  if (!(sum && sum.ok && sum.text)) return '';   // no analysis for this match → the section is hidden (Data 1)
+  const surf = edgeCap((m && m.surface) || (e.match && e.match.surface) || '');
+  const tour = edgeEventName((m && m.tour) || (e.match && e.match.tour));
+  const rnd = edgeRoundCode(m, e);
+  const chips = [surf, tour, rnd].filter(Boolean).map(c => `<span class="em-chip">${edgeEsc(c)}</span>`).join('');
+  const st = edgeAiState[id];
+  let body;
+  if (st === 'loading'){
+    body = '<div class="em-ai-load"><div class="em-shim" style="width:96%"></div><div class="em-shim" style="width:99%"></div><div class="em-shim" style="width:74%;margin-bottom:8px"></div><div class="em-shim" style="width:92%"></div><div class="em-shim" style="width:66%"></div></div>';
+  } else if (st === 'shown'){
+    const paras = String(sum.text).split(/\n\s*\n/).map(t => t.trim()).filter(Boolean);
+    const LABELS = ['Players', 'Matchup', 'Tournament', 'Keys', 'Verdict'];
+    const list = free ? paras.slice(0, 2) : paras;
+    body = `<div class="em-ai-body"><div class="em-ai-paras">${list.map((t, i) => `<div class="em-ai-para">${paras.length === LABELS.length ? `<span class="em-caps">${LABELS[i]}</span>` : ''}<p>${edgeEsc(t)}</p></div>`).join('')}</div>`
+      + (free ? '<div class="em-ai-fade"><svg viewBox="0 0 20 20" fill="none"><rect x="4.5" y="8.8" width="11" height="7.7" rx="2" stroke="currentColor" stroke-width="1.5"></rect><path d="M7.3 8.8V6.7a2.7 2.7 0 015.4 0v2.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path></svg><span>Upgrade to Pro to unlock the full analysis</span></div>' : '')
+      + '</div>';
+  } else {
+    body = `<div class="em-ai-empty"><span class="em-ai-lead">Generate a five-part analytical read across the players, the style matchup, the tournament context, the key statistical edges and the model’s verdict.</span><button type="button" class="sf-upgrade em-btn" onclick="edgeGenerate('${edgeJs(id)}')">Generate Stennisfy Analysis</button></div>`;
+  }
+  const stamp = st === 'shown' ? edgeClock(sum.generatedAt) : null;
+  return `
+    <div class="em-card em-ai">
+      <div class="em-ai-head">
+        <div class="em-ai-tl"><span class="em-ai-title">Stennisfy Analysis</span><div class="em-ai-chips">${chips}</div></div>
+        ${st === 'shown' ? `<a class="em-link em-ai-regen" onclick="edgeGenerate('${edgeJs(id)}')">↻ Regenerate</a>` : ''}
+      </div>
+      ${body}
+      <div class="em-ai-foot"><span>Stennisfy Analysis is generated by Stennisfy’s proprietary model and is for informational purposes only.</span><span class="em-ai-stamp">${stamp ? 'Generated ' + edgeEsc(stamp) : ''}</span></div>
     </div>`;
 }
 
-// ── Main render ──────────────────────────────────────────────────────────
-// Converged onto design handoff 28. Deviations from the design, all forced
-// by the difference between the prototype's mock model and the real engine:
-//
-//  • Section 1's surface/round/best-of segmented controls are rendered as
-//    read-only state, not interactive. The design recomputes client-side
-//    from a hardcoded roster; here the price is computed server-side by the
-//    pipeline for the actual scheduled match, so there is nothing to
-//    recompute in the browser and no honest "what-if" to offer.
-//  • The Manual context textarea is shown as the engine's `subjective`
-//    layer (same HIGHEST weight) but is not editable, for the same reason.
-//  • Pinnacle / best-soft are read-only real prices from the odds feed
-//    rather than editable inputs. Pinnacle is quoted on only 2 of 26
-//    matches, so that cell is usually an honest "not quoted".
-//  • The design's five labelled paragraphs (PLAYERS/MATCHUP/…) are applied
-//    only when the pipeline actually emits five; today it emits one or two,
-//    and labelling one paragraph with five headings would be fiction.
+// ── Main render ────────────────────────────────────────────────────────────
+// Every figure is the pipeline's model run (model-output.json) or the match's odds record; nothing is sampled.
 function renderEdgeModel(id){
   const body = document.getElementById('edgeBody');
   if (!body) return;
-  edgeRenderRail();                    // keep the left rail + its active highlight in sync
+  edgeRenderRail();
   const e = modelOutput.matches && modelOutput.matches[id];
   const m = matches.find(x => x.id === id) || null;
-
   if (!e){
+    edgeSetHeader(null);
     const msg = !modelOutputLoaded
-      ? 'The Edge Model isn’t available yet. It’s generated by the pipeline every 15 minutes — once the first run completes, every match’s model appears here automatically.'
-      : 'The model hasn’t produced output for this match yet. It runs every 15 minutes in the pipeline — check back shortly.';
-    body.innerHTML = edgeEmptyState(m, msg);
+      ? 'The Stennisfy Model isn’t available yet. The pipeline builds it every 15 minutes; once a run completes, every match’s model appears here.'
+      : 'The model hasn’t produced output for this match yet. It runs every 15 minutes in the pipeline.';
+    body.innerHTML = edgeMatchHeadHtml(m, null) + edgeEmptyCard(msg);
     return;
   }
   if (!e.ok){
-    body.innerHTML = edgeEmptyState(m, edgeReasonText(e));
+    edgeSetHeader(null);
+    body.innerHTML = edgeMatchHeadHtml(m, null) + edgeEmptyCard(edgeReasonText(e));
     return;
   }
 
   // ── State-2-confirmed display gate (founder decision 2026-07-25) ──────────
-  // Members see the full model (fair price, value flags, edge vs Pinnacle/soft,
-  // movers, Bet Confirmation Stack) ONLY when the match is State-2 confirmed =
-  // a Pinnacle line exists (stage1.baseState.state === 2) AND the match is
-  // inside the 0–30h pre-start window. The engine keeps computing in every
-  // state; this gates the DISPLAY only, evaluated at render time against the
-  // live client clock so the 30h boundary never goes stale between the 15-min
-  // pipeline runs. The window is measured from scheduled match START, not from
-  // when the Pinnacle line first appeared.
-  //   • state 2 AND 0 < hoursToStart ≤ 30   → full output (fall through below)
-  //   • not confirmed, match not yet started → one muted "awaiting" label
-  //   • match already started (≤ 0h)         → one muted "Match in play." label
+  // The full model shows ONLY when the match is State-2 confirmed (a Pinnacle line exists, stage1.baseState.state === 2)
+  // AND it starts within 0–30 h, evaluated against the live clock. Display only: the engine computes in every state.
+  // TEN-295 (founder 2026-09-26, card f8b311c9): the REAL start (aOddsStartMs), never date+time read as UTC.
   const gateState = e.stage1 && e.stage1.baseState && e.stage1.baseState.state;
-  // TEN-295 (founder 2026-09-26, card f8b311c9): the REAL start — the card state's actual start,
-  // else m.startTs, else the Oddspapi fixture start, else `date`+`time` in the account zone
-  // (aOddsStartMs). Reading `date`+`time` as UTC flipped "Match in play." ~2 h late. Display only:
-  // runModel's output is untouched.
   const startMsGate = m ? aOddsStartMs(m) : NaN;
   const hoursToStart = Number.isFinite(startMsGate) ? (startMsGate - Date.now()) / 3.6e6 : null;
   const stateConfirmed = gateState === 2 && hoursToStart != null && hoursToStart > 0 && hoursToStart <= 30;
   if (!stateConfirmed){
+    edgeSetHeader(null);
     const reason = (hoursToStart != null && hoursToStart <= 0)
-      ? 'Match in play.'                 // match started — muted label, no model output
-      : 'Awaiting confirmed market line.';
-    // Sharp estimates stay gated (they're model output vs a market anchor), but
-    // Market money is a raw venue observation valid without a confirmed line, so
-    // render the block money-only here. This is what keeps the feature visible
-    // when there are no upcoming state-2 matches on the board. buildMarketSignal
-    // Block self-hides (returns '') when there is no venue data, so the muted
-    // empty-state label is all that shows on matches without market money.
-    body.innerHTML = edgeEmptyState(m, reason) +
-      `<div id="edgeMarketSize">${buildMarketSignalBlock(m, e, { stateConfirmed: false })}</div>`;
-    if (m){
-      ensureMarketSize(m).then(() => {
-        if (edgeCurrentId !== id) return;
-        const msEl = document.getElementById('edgeMarketSize');
-        if (msEl) msEl.innerHTML = buildMarketSignalBlock(m, e, { stateConfirmed: false });
-      });
-    }
+      ? 'Match in play. The Stennisfy Model shows no price once a match has started.'
+      : 'Awaiting a confirmed market line. The model shows its price once its Pinnacle anchor is confirmed, inside 30 hours of the start.';
+    body.innerHTML = edgeMatchHeadHtml(m, e) + edgeEmptyCard(reason);
     return;
   }
 
-  const mm = e.match || {};
-  const st1 = e.stage1 || {};
-  const st2 = e.stage2 || {};
-  const st3 = e.stage3 || {};
-  const comp = st1.components || {};
-  const P1 = (e.players && e.players.p1) || {};
-  const P2 = (e.players && e.players.p2) || {};
-  const p1short = edgeShortName(mm.p1 || P1.name || 'Player 1');
-  const p2short = edgeShortName(mm.p2 || P2.name || 'Player 2');
-  const p1full = P1.name || p1short;
-  const p2full = P2.name || p2short;
-  const surfName = edgeCap(mm.surface || '') || '—';
-
-  // The round arrives as "{event} - {round}" (e.g. "ATP Washington - 1/16-finals"),
-  // where the prefix is the venue short-name — NOT mm.tour ("ATP Washington Open"),
-  // so an mm.tour-prefix strip never fires and the whole fixture string leaks into
-  // the ROUND slot. h2hRoundLabel splits on " - " and keeps the round segment alone
-  // ("1/16-finals"); it is idempotent on an already-clean round.
-  const cleanRound = h2hRoundLabel(mm.round) || '';
-
-  // ── Section 1: matchup ─────────────────────────────────────────────────
-  // (No page-header text block above the match card — the export has none; the
-  // Match model / Player ratings toggle sits directly above this card.)
-  // ELO + playing-style archetype chips (design export: no "ATP No." chip).
-  const badge = (elo, arch) => {
-    const el = (elo != null) ? `<span class="edge-bdg elo">ELO ${elo}</span>` : '';
-    const ar = arch ? `<span class="edge-bdg arch">${edgeEsc(String(arch).replace(/_/g, ' '))}</span>` : '';
-    return el + ar;
-  };
-  const boLabel = mm.bestOf ? 'Bo' + mm.bestOf : '—';
-  // Match header (design export): centred tournament line, a centred name row
-  // with initials avatars (Player A left of name, Player B right), ELO + style
-  // chips under each name, and a static SURFACE / ROUND / FORMAT meta strip.
-  // The surface/best-of controls were display-only (no filtering) and are
-  // replaced by the static strip.
-  const section1 = `
-    <div class="edge-card">
-      <div class="edge-mtour"><span class="tour">${edgeEsc(mm.tour || '')}</span><span class="dot">·</span><span class="rnd">${edgeEsc(cleanRound || '—')}</span></div>
-      <div class="edge-vsrow">
-        <div class="edge-pblk">
-          <div class="edge-pname">
-            <span class="edge-pav a">${edgeEsc(edgeInitials(p1short))}</span>
-            <span class="nm a">${edgeEsc(p1short)}</span>
-          </div>
-          <div class="edge-badges">${badge(P1.eloAll, P1.archetype)}</div>
-        </div>
-        <span class="edge-vs">VS</span>
-        <div class="edge-pblk r">
-          <div class="edge-pname">
-            <span class="nm b">${edgeEsc(p2short)}</span>
-            <span class="edge-pav b">${edgeEsc(edgeInitials(p2short))}</span>
-          </div>
-          <div class="edge-badges">${badge(P2.eloAll, P2.archetype)}</div>
-        </div>
-      </div>
-      <div class="edge-mstrip">
-        <div class="edge-mcol"><span class="k">Surface</span><span class="v">${edgeEsc(surfName)}</span></div>
-        <div class="edge-mcol"><span class="k">Round</span><span class="v">${edgeEsc(cleanRound || '—')}</span></div>
-        <div class="edge-mcol"><span class="k">Format</span><span class="v">${edgeEsc(boLabel)}</span></div>
-      </div>
-    </div>`;
-
-  // ── Section 2: market context (4 columns — design export) ──────────────
-  // Replaces the standalone base-probability card: the model's base fair price
-  // now rides the "Stennisfy base price" column alongside the real soft/Pinnacle
-  // opening and current lines. See edgeMarketContextHtml for the honesty rules.
-  const section2 = edgeMarketContextHtml(m, st1, p1short, p2short);
-
-  // ── Section 3: value layers (17-segment strip — design export) ─────────
-  // Self-hiding layers (see edgeVisibleAdjs) drop out entirely, so the active
-  // count flexes to the layers that actually apply to THIS match. `counts`/`conf`
-  // are still derived here for the model-confidence readout in Section 5.
-  const adjs = edgeVisibleAdjs(st2.adjustments);
-  const counts = { full: 0, partial: 0, missing: 0 };
-  adjs.forEach(a => { counts[edgeCovState(a)]++; });
-  const conf = edgeConfidence(counts.full);
-  const section3 = ''; // strip merged into the Value-layers card (section4) per export §4
-
-  // Net-shift readout (still used by the Section 5 value card header).
-  const netPP = (st2.totalDeltaP1 || 0) * 100;
-  const netWho = netPP >= 0 ? p1short : p2short;
-  const netTxt = (netPP >= 0 ? '+' : '−') + Math.abs(netPP).toFixed(1) + 'pp';
-
-  // ── Section 5: fair price & value ──────────────────────────────────────
-  const fair = st3.fair || {};
-  const sharp = st3.sharp || null;
-  const soft = st3.soft || null;
-  const flags = st3.flags || [];
-
-  const marketCell = (cap, price, sub, edgeVal) => {
-    const has = price != null && isFinite(price);
-    const gapCls = (edgeVal == null) ? 'na' : (edgeVal > 0 ? 'pos' : 'neg');
-    const gapTxt = (edgeVal == null) ? '—' : `● ${(edgeVal > 0 ? '+' : '−')}${Math.abs(edgeVal * 100).toFixed(1)}pp vs fair`;
-    return `
-      <div class="edge-mkt2">
-        <span class="cap">${cap}</span>
-        <div class="px${has ? '' : ' na'}">${has ? Number(price).toFixed(2) : '—'}</div>
-        <span class="sub">${edgeEsc(sub || (has ? '' : 'not quoted'))}</span>
-        <span class="gap ${gapCls}">${gapTxt}</span>
-      </div>`;
-  };
-  const valueCol = (side, name, f, first) => {
-    const flag = flags.find(x => x.side === side) || null;
-    const flagCls = !flag ? 'f-none' : (/sharp/i.test(flag.type) ? 'f-sharp' : 'f-soft');
-    const flagTxt = !flag ? 'NO VALUE' : String(flag.type).toUpperCase();
-    const note = flag
-      ? `Model price beats the ${flag.book ? edgeEsc(flag.book) + ' ' : ''}line by ${flag.edgePct != null ? flag.edgePct : '—'}pp.`
-      : 'No positive edge against the quoted prices.';
-    return `
-      <div class="edge-vcol${first ? ' divider' : ''}">
-        <div class="edge-vtop">
-          <div><div class="nm ${side === 'p1' ? 'a' : 'b'}">${edgeEsc(name)}</div><div class="cap">Adjusted fair odd</div></div>
-          <span class="od">${edgeOdds(f && f.odds)}</span>
-        </div>
-        <span class="edge-vflag ${flagCls}">${edgeEsc(flagTxt)}</span>
-        <span class="edge-vnote">${note}</span>
-        <div class="edge-mkts">
-          ${marketCell('Pinnacle', sharp && sharp.price && sharp.price[side],
-                       sharp ? (sharp.source || '') : 'not quoted',
-                       sharp && sharp.edge ? sharp.edge[side] : null)}
-          ${marketCell('Best soft book', soft && soft.price && soft.price[side],
-                       soft && soft.book ? soft.book[side] : '',
-                       soft && soft.edge ? soft.edge[side] : null)}
-        </div>
-      </div>`;
-  };
-  const movers = adjs.filter(a => a.applied && Math.abs(a.deltaP1 || 0) > 0)
-    .sort((a, b) => Math.abs(b.deltaP1) - Math.abs(a.deltaP1)).slice(0, 3);
-  const section5 = `
-    <div class="edge-value">
-      <div class="edge-vhead">
-        <span class="edge-ic"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M4 13 L8 9 L11 12 L16 6" stroke="var(--bar)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6 H16 V10" stroke="var(--bar)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
-        <div><div class="t">Fair price &amp; value</div><div class="s">Adjusted model price vs the market · ${edgeEsc(surfName)}</div></div>
-        <span class="net">Net shift ${netTxt} toward ${edgeEsc(netWho)} from base</span>
-      </div>
-      <div class="edge-vcols">
-        ${valueCol('p1', p1short, fair.p1, true)}
-        ${valueCol('p2', p2short, fair.p2, false)}
-      </div>
-      <div id="edgeMarketSize">${buildMarketSignalBlock(m, e, { stateConfirmed: true })}</div>
-    </div>`;
-
-  // ── Biggest movers (own card — design export) ──────────────────────────
-  // The three factors that moved the price most, with an Upgrade-to-Pro
-  // outline CTA. The MODEL CONFIDENCE readout is retained (it is a build
-  // addition not present in the export — flagged for the founder rather than
-  // removed here).
-  const section4b = `
-    <div class="edge-card">
-      <div class="edge-movershead">
-        <div class="l"><span class="edge-movers-t">Biggest movers</span><span class="edge-movers-sub">The three factors that moved the price most</span></div>
-        <div class="edge-confbox">
-          <span class="edge-confbig edge-pill ${conf.cls}">${conf.label}</span>
-          <span class="edge-confsub">${counts.full}/${adjs.length} full · ${counts.partial} partial · ${counts.missing} missing</span>
-        </div>
-      </div>
-      <div class="edge-moverslist">
-        ${movers.length ? movers.map((a, i) => `
-          <div class="edge-mover">
-            <span class="rk">${i + 1}</span>
-            <span class="nm">${edgeEsc(a.name)}</span>
-            <span class="who ${a.direction === 'p1' ? 'a' : 'b'}">${edgeEsc(a.direction === 'p1' ? p1short : p2short)}</span>
-            <span class="dl">+${(Math.abs(a.deltaP1) * 100).toFixed(1)}pp</span>
-          </div>`).join('')
-          : `<div class="edge-mover"><span class="nm" style="color:var(--text-label);">No layer moved the price.</span></div>`}
-      </div>
-      <a class="edge-upgrade" href="account.html">Upgrade to Pro to unlock all factors</a>
-    </div>`;
-
-  // ── Section 6: written analysis ────────────────────────────────────────
-  const sum = e.summary || null;
-  const hasText = !!(sum && sum.ok && sum.text);
-  edgeSummaryText = hasText ? String(sum.text) : '';
-  const paras = hasText ? edgeSummaryText.split(/\n{2,}/).map(t => t.trim()).filter(Boolean) : [];
-  // The design labels exactly five paragraphs. Apply the labels only when the
-  // pipeline emits five; otherwise render the prose unlabelled.
-  const LABELS = ['Players', 'Matchup', 'Tournament', 'Keys', 'Verdict'];
-  const bodyHtml = hasText
-    ? paras.map((t, i) => (paras.length === LABELS.length
-        ? `<div class="edge-plabel">${LABELS[i]}</div><p>${edgeEsc(t)}</p>`
-        : `<p>${edgeEsc(t)}</p>`)).join('')
-    : `<p style="color:var(--text-label); font-size:13px;">The written model summary will appear here once the pipeline generates it. Every number above is already live — the summary is added on the run after the figures settle.</p>`;
-  // On-demand Generate affordance (design export): the written read stays folded
-  // behind a "Generate Tennis Edge Analysis" button until the member asks for it;
-  // once revealed a "↻ Regenerate" chip appears. The prose is the pipeline's own
-  // model summary — Generate only toggles visibility, never fabricates text.
-  const section6 = `
-    <div class="edge-ai2">
-      <div class="edge-aihead">
-        <div class="l">
-          <span class="edge-ic gold"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l1.9 4.2 4.6.5-3.5 3 1 4.5L10 12.4 5.9 14.7l1-4.5-3.5-3 4.6-.5z" stroke="var(--bar)" stroke-width="1.4" stroke-linejoin="round"/></svg></span>
-          <div>
-            <div class="t">Stennisfy Analysis</div>
-            <div class="edge-aichips">
-              <span class="edge-aichip">${edgeEsc(surfName)}</span>
-              <span class="edge-aichip">${edgeEsc(mm.tour || '—')}</span>
-              <span class="edge-aichip">${edgeEsc(cleanRound || '—')}</span>
-            </div>
-          </div>
-        </div>
-        <span id="edgeRegenBtn" class="edge-regen" style="display:none;" onclick="edgeGenerateAnalysis()">↻ Regenerate</span>
-      </div>
-      <div id="edgeGenIntro" class="edge-genwrap">
-        <div class="edge-genlead">Generate a five-part analytical read across the players, the style matchup, the tournament context, the key statistical edges and the model's verdict.</div>
-        <button class="edge-genbtn" onclick="edgeGenerateAnalysis()">Generate Tennis Edge Analysis</button>
-      </div>
-      <div id="edgeGenBody" style="display:none;">
-        ${hasText ? `<div style="display:flex; justify-content:flex-end; margin-bottom:10px;"><span class="edge-copy" onclick="edgeCopySummary(this)">Copy</span></div>` : ''}
-        ${bodyHtml}
-      </div>
-      <div class="edge-aifoot">
-        <span>Stennisfy Analysis is generated by Stennisfy's proprietary model and is for informational purposes only.</span>
-        <span>${mm.date ? 'Generated ' + edgeEsc(mm.date) : ''}</span>
-      </div>
-    </div>`;
-
-  // ── Section 4: per-layer breakdown (design export) ─────────────────────
-  // One row per visible layer — name + weight tag + coverage dot, the diverging
-  // signal bar, and the resulting probability shift with the favoured side.
-  // edgeVisibleAdjs already dropped self-hiding layers, so every row bears on
-  // THIS read; gated / no-data layers render dimmed with an honest tag rather
-  // than a fake 0.00. This is the "layer breakdown per value" that sits below
-  // the value-layers strip — previously the row builder existed but was never
-  // assembled into the page.
-  // Export §4: ONE merged card — value-layers bar on top, then the reveal
-  // toggle, then the breakdown table below. Default state open (founder ruling
-  // 2026-08-07 change #4). p1short/p2short label the SIGNAL column's two ends.
-  const appliedN = adjs.filter(a => a.applied).length;
-  const layersCaret = edgeLayersOpen ? 'rotate(0deg)' : 'rotate(-90deg)';
-  const toggleLabel = edgeLayersOpen ? 'Hide layer breakdown' : 'Show layer breakdown';
-  const section4 = `
-    <div class="edge-card">
-      <div class="edge-eyeb" style="margin-bottom:14px;">Value layers</div>
-      ${edgeValueStripHtml(adjs)}
-      <div class="edge-vldiv"></div>
-      <div class="edge-s4head" role="button" tabindex="0" aria-expanded="${edgeLayersOpen}"
-           onclick="toggleEdgeLayers()"
-           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleEdgeLayers()}"
-           style="cursor:pointer;">
-        <span style="display:flex; align-items:center; gap:10px;">
-          <span style="display:inline-flex; color:var(--text); transform:${layersCaret}; transition:transform .15s ease;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
-          <span class="edge-eyeb" style="margin-bottom:0;">${toggleLabel}</span>
-        </span>
-        <span class="edge-net"><strong>${appliedN}</strong> of ${adjs.length} layers applied</span>
-      </div>
-      ${edgeLayersOpen ? `
-      <div class="edge-adjhead2" style="margin-top:16px;">
-        <span>Layer</span>
-        <span class="wt">Weight</span>
-        <span class="c">${edgeEsc(p1short)} · signal · ${edgeEsc(p2short)}</span>
-        <span class="rt">Favours · shift</span>
-        <span class="why">Why</span>
-      </div>
-      <div class="edge-adjlist">
-        ${adjs.map(a => edgeAdjRow(a, p1short, p2short)).join('')}
-      </div>` : ''}
-    </div>`;
-
-  body.innerHTML = section1 + section2 + section3 + section4 + section5 + section4b + section6;
-
-  // The MARKET SIZE block rides a lazy per-match shard (same pattern as the Odds
-  // tab's movement chart): the container above paints empty from whatever is
-  // already on m, then this hydrates m.marketSize and repaints just that block.
-  // Guarded on edgeCurrentId so an in-flight fetch for a previously-open match
-  // can't overwrite a faster reopen of a different one. Memoised, so reopening
-  // the model costs no second fetch, and it degrades silently if the shard/index
-  // is absent (buildMarketSizeBlock returns '' → the container stays invisible).
-  if (m){
-    ensureMarketSize(m).then(() => {
-      if (edgeCurrentId !== id) return;
-      const msEl = document.getElementById('edgeMarketSize');
-      if (msEl) msEl.innerHTML = buildMarketSignalBlock(m, e, { stateConfirmed: true });
-    });
-  }
+  edgeSetHeader(e);
+  const names = { p1: edgePlayerName(m, e, 'p1'), p2: edgePlayerName(m, e, 'p2') };
+  const keys = { p1: edgePlayerKey(m, e, 'p1'), p2: edgePlayerKey(m, e, 'p2') };
+  const free = edgeIsFree();
+  body.innerHTML = edgeMatchHeadHtml(m, e)
+    + edgeMarketHtml(m, e, names, keys)
+    + edgeLayersHtml(e, names)
+    + edgeFairHtml(m, e, names, keys)
+    + edgeMoversHtml(e, names, keys, free)
+    + edgeAnalysisHtml(m, e, id, free);
 }
 
 // Form cell for the FORM column. Real value → green bar + %. When the

@@ -7605,18 +7605,23 @@ async function buildModelOutput(matches) {
     };
 
     // ---- Stage 4: pre-baked AI summary, hash-cached ----
-    const facts = buildFacts(result);
+    const facts = buildFacts(result, m);   // TEN-418: the page's figures, prices included
     const factsHash = crypto.createHash('sha1').update(JSON.stringify(facts)).digest('hex');
     const priorSum = prior[m.id] && prior[m.id].summary;
     if (priorSum && priorSum.ok && priorSum.factsHash === factsHash) {
       entry.summary = priorSum;            // numbers unchanged → reuse cached text
       sumCached++;
     } else if (haveKey) {
-      const s = await generateSummary(result);
+      const s = await generateSummary(result, { match: m });
       if (s.ok) {
         entry.summary = { ok: true, text: s.summary, model: s.model,
           factsHash, generatedAt: new Date().toISOString() };
         sumNew++;
+      } else if (priorSum && priorSum.ok) {
+        // TEN-418: a failed regeneration keeps the last good analysis (its stamp says when it was written) rather than
+        // blanking the page's section; the failure is recorded beside it.
+        entry.summary = Object.assign({}, priorSum, { lastError: s.reason });
+        sumSkipped++;
       } else {
         entry.summary = { ok: false, reason: s.reason, factsHash };
         sumSkipped++;

@@ -283,6 +283,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Head to Head page (TEN-402) — page order, header, darker-track rows, white bars (override), data joins, loader guard, sheet; night only | `.claude/rules/h2h.md` |
 | Playing Styles page (TEN-408) — shell header, matchup grid (Form rule, < 30 = —, hover), archetype cards, tug bars, top-200 counts, small sample, examples by Elo; night only | `.claude/rules/playing-styles.md` |
 | Live page (TEN-417) — feed (live_snapshot 10 s, Realtime), who is on the grid, Live / Interrupted / finished, header (Updated = feed refresh), names, ratings + stats sources, point-log quirks (7–6 tiebreak row, garbled points), SP / MP, Break/Hold window, no photos, colour; night only | `.claude/rules/live.md` |
+| Stennisfy Model page (TEN-418) — model run + odds record only, display gate, Updated = run time, layer weight / quality / Why, Pinnacle-else-bet365 + best soft, gap edits, analysis (pipeline, page figures only), Pro gating, colour; night only | `.claude/rules/stennisfy-model.md` |
 | News page (TEN-409) — one feed (news-feed.json), player-attributed only, no samples, header stats (Updated = feed refresh), filters, Reading / Compact, empty state, Post intel; night only | `.claude/rules/news.md` |
 | Foundation — colour tokens, theme switch, surfaces, text greys, meaning colours, badges, charts, shadows, type (TEN-376) | `.claude/rules/foundation.md` |
 | Layout 12a — layout reference, logo, brand pages | `.claude/rules/theme-12a.md` |

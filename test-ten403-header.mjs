@@ -72,6 +72,7 @@ const STATIC = [   // [page, the header markup's opening, the title]
   ['news', '<div class="sfh news-head">', 'Tennis News'],
   ['styles', '<div class="sfh ps-head">', 'Matchup grid'],   // TEN-408 step 9
   ['live', '<div class="sfh">\n    <div class="sfh__text">\n      <h1 class="sfh__title">Live</h1>', 'Live'],
+  ['edge', '<div class="sfh em-head-card">', 'Stennisfy Model'],   // TEN-418 step 12
 ];
 function checkPages(dash, js, css) {
   for (const [page, open, title] of STATIC) {

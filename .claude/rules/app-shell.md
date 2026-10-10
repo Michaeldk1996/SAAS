@@ -88,9 +88,9 @@ the 35b header of the 2026-10-08 reference export at 1512 night. Supersedes ever
 
 - **One component, `.sfh`, on every page header card:** Today's Matches / Results, Live, Trading Report, Dropping Odds,
   Series, Players, Head to Head (`.sfh--ctl`, below), Tournaments, Database (page + both overlay mounts), News, Playing Styles
-  (TEN-408). Pages
+  (TEN-408), Live (TEN-417), Stennisfy Model (TEN-418). Pages
   keep their root class as a hook (`mx-titlerow`, `pgh-card`, `h2h-head`, `tourx-head`, `db-headcard`, `tr-hdr`,
-  `sr-head`, `do-head`, `news-head`, `ps-head`) but own **no rule that restyles the header** (H2H owns only its sticky shadow). Stennisfy Model has no page header card yet (its page step adds one);
+  `sr-head`, `do-head`, `news-head`, `ps-head`, `em-head-card`) but own **no rule that restyles the header** (H2H owns only its sticky shadow).
   Player Profile has a player hero, not a page header.
 - **Card:** `--card`, `--top-light`, no outline, radius 12, padding 18×26, one row `align-items:center;
   justify-content:space-between; gap:28px`.
