@@ -20,7 +20,7 @@
 //      and BABB≡BBK copy-paste duplication must not be imported).
 //   6) The slate-level LOW-SAMPLE NOTICE is dropped — the per-cell ladder only.
 //   7) The FIELD-AVERAGE POOL narrows on Tournament as well as Surface.
-//   8) AVATARS keep the monogram fallback, not the export's bare circle.
+//   8) AVATARS — SUPERSEDED by TEN-421 (founder step 13, override): initials avatars only, no photos.
 //
 // TEN-192 (ask a0d8fcbe, answered 2026-09-12) — the two post-ship conflicts
 //  11) A SURFACELESS LIVE ROW resolves its surface from the fixture's tournament
@@ -41,10 +41,18 @@
 //      OUTRANKS the tournament map in the Trading Report. Not worth rewriting
 //      matches.json, which every page reads.
 //
-// Plus the two structural invariants the brief calls out as easy to get wrong:
-//   9) ONE grid template, header and every row: 62px 210px 64px 40px 1fr repeat(7, 84px).
-//  10) Column positions are identical across tabs, and the tab→column and
-//      highlight maps match the export's.
+// TEN-421 (founder step 13, 2026-10-10) — the redesign
+//  15) The tabs, their column groups and highlighted columns are the design file's TAB_GROUPS / HIGHLIGHT
+//      (Trading Report.dc.html). Its 'LOST SET 1 FB' / 'LOST SET 1 BF' are ls1b1s2 / ls1o1s2: set 2's first break by
+//      the player / the opponent over EVERY lost-set-1 match with set 2 played (founder R1, not a mirror pair);
+//      ls1o1s2 is the one added inversion (lower is better). Tier = the PRINTED gap (rounded % − rounded field),
+//      |gap| <= 3 amber, 4+ green / red (founder R1).
+//  16) Tooltips are one plain sentence each saying what the code counts and over what; no two alike.
+//
+// Plus the structural invariants:
+//   9) ONE grid for the head and every row: 52px 250px 56px 36px 8px repeat(var(--tr-n, 7), minmax(0,1fr)), the
+//      metric count per tab in --tr-n.
+//  10) The tab→column-group and highlight maps match the design file's.
 //
 // Run: node tools/test-trading-colour-directions.js
 const assert = require('assert');
@@ -85,12 +93,12 @@ function numberLiteral(varName) {
 const INVERTED = {};
 for (const pair of objectLiteral('INVERTED').matchAll(/([a-z0-9]+)\s*:\s*1\b/gi)) INVERTED[pair[1]] = 1;
 
-const INVERSIONS = ['oph', 'babb', 'bbk', 'bfsg'];
+const INVERSIONS = ['oph', 'babb', 'bbk', 'bfsg', 'ls1o1s2'];   // + ls1o1s2: TEN-421 ruling 15
 for (const k of INVERSIONS) {
   assert.strictEqual(INVERTED[k], 1, `expected ${k} to be a HIGH=BAD inversion`);
 }
 assert.deepStrictEqual(Object.keys(INVERTED).sort(), INVERSIONS.slice().sort(),
-  `only oph/babb/bbk/bfsg may be inversions, got: ${Object.keys(INVERTED).join(',')}`);
+  `only oph/babb/bbk/bfsg/ls1o1s2 may be inversions, got: ${Object.keys(INVERTED).join(',')}`);
 ok(`${INVERSIONS.length} inversions locked`);
 
 // The extra columns the founder confirmed stay HIGH=GOOD must appear in the
@@ -135,13 +143,15 @@ const tipsBlock = objectLiteral('METRIC_TIPS');
 const tips = {};
 for (const m of tipsBlock.matchAll(/^\s*([a-z0-9]+)\s*:\s*'((?:[^'\\]|\\.)*)'/gim)) tips[m[1]] = m[2];
 assert(Object.keys(tips).length >= 22, `parsed too few tooltips: ${Object.keys(tips).length}`);
-// The three the README gets wrong, pinned to the shipped meaning.
-assert(/fought back to WIN THE MATCH/i.test(tips.ls1fb),
-  'ls1fb must keep the shipped gloss (lost set 1 → fought back to win the MATCH)');
-assert(/Broke First in Set 2/i.test(tips.ls1bf),
-  'ls1bf must keep the shipped gloss (lost set 1 → BROKE first in set 2)');
-assert(/Broke Opponent/i.test(tips.bofs),
-  'bofs must keep the shipped gloss (BROKE the opponent\'s first service game)');
+// The ones the README gets wrong, pinned to the shipped meaning (TEN-421 ruling 16: one plain sentence each).
+assert(/^Matches won after losing set 1/.test(tips.ls1fb),
+  'ls1fb must keep the shipped meaning (lost set 1 → won the MATCH)');
+assert(/made the first break of set 2 after losing set 1/.test(tips.ls1bf),
+  'ls1bf must keep the shipped meaning (lost set 1 → BROKE first in set 2)');
+assert(/opponent made the first break of set 2, out of every match where the player lost set 1/.test(tips.ls1o1s2),
+  'ls1o1s2 = the opponent broke first in set 2, over every lost-set-1 match (the design file\'s LOST SET 1 BF, founder R1)');
+assert(/broke the opponent’s first service game/.test(tips.bofs),
+  'bofs must keep the shipped meaning (BROKE the opponent\'s first service game), unlike the README\'s BFSG copy');
 // The README duplicates two of its own tooltip texts; ours may not.
 const seen = new Map();
 for (const [k, v] of Object.entries(tips)) {
@@ -165,23 +175,24 @@ assert(/tourSel/.test(poolBlock[1]), 'TEN-192 ruling 5: the pool must narrow on 
 assert(!/S\.q|search/i.test(poolBlock[1]), 'the pool must be computed BEFORE the search box');
 ok('pool = slate after surface + tournament, before search');
 
-// ── Ruling 8 — the monogram fallback survives ──────────────────────────────
-assert(/tr-mono/.test(src) && /playerInitials/.test(src), 'the monogram avatar fallback must stay');
-assert(/photoCandidatesFor/.test(src), 'the shared photo resolver chain must stay');
-ok('monogram avatar fallback kept');
+// ── Ruling 8 — SUPERSEDED (TEN-421 override): initials avatars, no photos ─────
+assert(/tr-ava/.test(src) && /playerInitials/.test(src), 'the initials avatar must be drawn');
+assert(!/photoCandidatesFor|resolveProfilePhotoUrl|randomuser|<img/.test(srcCode), 'no photo on the Trading Report (TEN-421)');
+ok('initials avatars, no photos');
 
 // ── Invariant 9 — ONE grid template, header and every row ──────────────────
-const TRACKS = '62px 210px 64px 40px 1fr repeat(7, 84px)';
-const gridRule = htmlSrc.match(/\[data-page="trading"\] \.tr-head,\[data-page="trading"\] \.tr-row\{([^}]*)\}/);
-assert(gridRule, 'the shared .tr-head/.tr-row grid rule is missing from the dashboard');
+const TRACKS = '52px 250px 56px 36px 8px repeat(var(--tr-n, 7), minmax(0,1fr))';
+const gridRule = htmlSrc.match(/\[data-page="trading"\] \.tr-hgrid,\[data-page="trading"\] \.tr-row\{([^}]*)\}/);
+assert(gridRule, 'the shared .tr-hgrid/.tr-row grid rule is missing from the dashboard');
 assert(gridRule[1].includes('grid-template-columns:' + TRACKS),
   `the grid template must be exactly "${TRACKS}"`);
 // and nothing else may declare a competing template for these two
-const templates = [...htmlSrc.matchAll(/\[data-page="trading"\][^{]*\{[^}]*grid-template-columns:([^;]+);/g)]
-  .map(m => m[1].trim());
+const templates = [...htmlSrc.matchAll(/\[data-page="trading"\]([^{]*)\{[^}]*grid-template-columns:([^;]+);/g)]
+  .filter(m => /tr-row|tr-head|tr-hgrid/.test(m[1])).map(m => m[2].trim());
 assert.deepStrictEqual([...new Set(templates)], [TRACKS],
   `exactly one grid template may exist on this page, found: ${JSON.stringify([...new Set(templates)])}`);
-ok('one grid template, 7 metric slots');
+assert(/style="--tr-n:' \+ V\.codes\.length \+ '"/.test(src), 'the metric count per tab sets --tr-n');
+ok('one grid template, one fr per metric (--tr-n)');
 
 // ── Invariant 10 — tab→column and highlight maps match the export ──────────
 function parseMap(varName, re) {
@@ -192,20 +203,25 @@ function parseMap(varName, re) {
   }
   return out;
 }
-const COLUMN_SETS = parseMap('COLUMN_SETS', /(\w+):\s*\{[^}]*metrics:\s*\[([^\]]*)\]/g);
+// COLUMN_SETS carries the design file's groups: key: { label, groups: [[group, [metrics…]], …] }
+const COLUMN_GROUPS = {};
+for (const m of objectLiteral('COLUMN_SETS').matchAll(/(\w+):\s*\{[^\n]*groups:\s*(\[[^\n]*\])\s*\},/g)) {
+  COLUMN_GROUPS[m[1]] = JSON.parse(m[2].replace(/'/g, '"'));
+}
+const COLUMN_SETS = {};
+for (const [k, g] of Object.entries(COLUMN_GROUPS)) COLUMN_SETS[k] = g.reduce((a, x) => a.concat(x[1]), []);
 const HIGHLIGHT   = parseMap('HIGHLIGHT',   /(\w+):\s*\[([^\]]*)\]/g);
 
-// verbatim from README §"Tab → columns (and highlighted columns)", translated
-// through the shipped metric keys (the export's own codes for the three LOST
-// SET 1 metrics are L1·WS2 / L1·FB / L1·BF).
-const EXPORT_TABS = {
-  key:          ['sh', 'spw', 'rpw', 'bps', 'bpw', 'oph'],
-  laysetwinner: ['ls1ws2', 'ws1w2', 'ls1fb', 'ls1bf', 'bpw', 'ws1wm', 'bfs2aws1'],
-  scalping:     ['sh', 'spw', 'bps', 'htws', 'htss'],
-  laybreakup:   ['babb', 'bbk', 'bbkb', 'gfb', 'bfsg'],
-  settrading20: ['ws1w2', 'wfs', 'ws2', 'ls1ws2', 'gfb'],
-  layserve:     ['htws', 'bofs', 'htss', 'bps', 'bpw'],
-  laysetbreak:  ['ls1bf', 'ls1ws2', 'babb', 'ws1w2', 'bbk', 'bbkb'],
+// TEN-421 ruling 15: the design file's TAB_GROUPS, translated through the metric keys ('LOST SET 1 WS' = ls1ws2,
+// 'LOST SET 1 FB' = ls1bf, 'LOST SET 1 BF' = ls1bkf).
+const EXPORT_GROUPS = {
+  key:          [['serve', ['sh', 'spw', 'bps']], ['ret', ['rpw', 'bpw', 'oph']]],
+  laysetwinner: [['lost', ['ls1ws2', 'ls1b1s2', 'ls1o1s2']], ['won', ['ws1w2', 'ws1wm', 'ws1b1s2']], ['all', ['bpw']]],
+  scalping:     [['serve', ['sh', 'spw', 'bps']], ['press', ['htws', 'htss']]],
+  laybreakup:   [['afterBrk', ['babb', 'bbk']], ['afterBrkn', ['bbkb']], ['start', ['gfb', 'bfsg']]],
+  settrading20: [['all', ['wfs', 'ws2', 'gfb']], ['won', ['ws1w2']], ['lost', ['ls1ws2']]],
+  layserve:     [['press', ['htws', 'htss']], ['start', ['bofs']], ['bp', ['bps', 'bpw']]],
+  laysetbreak:  [['lost', ['ls1o1s2', 'ls1ws2']], ['won', ['ws1w2']], ['afterBrk', ['babb', 'bbk']], ['afterBrkn', ['bbkb']]],
 };
 const EXPORT_HL = {
   key:          [],
@@ -214,9 +230,9 @@ const EXPORT_HL = {
   laybreakup:   ['babb', 'bbk'],
   settrading20: ['ws1w2'],
   layserve:     ['htws', 'bofs'],
-  laysetbreak:  ['ls1bf', 'ls1ws2', 'babb', 'ws1w2'],
+  laysetbreak:  ['ls1o1s2', 'ls1ws2', 'babb', 'ws1w2'],
 };
-assert.deepStrictEqual(COLUMN_SETS, EXPORT_TABS, 'tab → column map drifted from the export');
+assert.deepStrictEqual(COLUMN_GROUPS, EXPORT_GROUPS, 'tab → column-group map drifted from the design file');
 assert.deepStrictEqual(HIGHLIGHT, EXPORT_HL, 'highlight map drifted from the export');
 // No tab may exceed the seven grid slots, and every highlighted column must exist
 // on its own tab.
@@ -294,6 +310,8 @@ const liveRowBlock = fnBlock('liveFixtureRow');
      'function slateMatchByKeys(){ return SLATE; }',
      'function pairKey(a,b){ return a+":"+b; }',
      'function oddsFor(){ return null; }',
+     'function displayName(k, f){ return f || "—"; } function eventLabel(r){ return r || ""; } function roundWords(){ return ""; }',
+     'function startClockOf(){ return "—"; } function isInterruptedFix(){ return false; }',
      fnBlock('surfaceFromTournament'),
      liveRowBlock,
      'return liveFixtureRow(arguments[2], 1);'].join('\n'))(slate, map, fixture);
@@ -335,11 +353,13 @@ assert(/var n = nOf\(row\);\s*\n\s*if \(n != null && n < MIN_TIER_DEN\) \{\s*\n\
 const tierBlock = stripComments(fnBlock('tierOf'));
 assert(/if \(!c \|\| c\[1\] < MIN_TIER_DEN\) return null;/.test(tierBlock),
   'tier membership must gate on the CELL\'S OWN denominator, per the README');
-assert(!/nOf\(row\)/.test(tierBlock),
-  'ruling 12 is AS WRITTEN: tierOf must NOT take the player\'s n into account — that would reconcile the two rules without a ruling');
+// TEN-421 R2 (founder) SUPERSEDES ruling 12's "as written": a greyed (n < 10) player is untiered too, so the filter
+// menu counts equal the cell colours.
+assert(/var pn = nOf\(row\);\s*\n\s*if \(pn != null && pn < MIN_TIER_DEN\) return null;/.test(tierBlock),
+  'TEN-421 R2: tierOf must leave a player under 10 matches untiered (counts = colours)');
 assert(!/c\[1\] < MIN_TIER_DEN/.test(cellBlock.split('var n = nOf(row);')[1] || ''),
   'ruling 12 is AS WRITTEN: the dim must NOT be re-expressed as the cell denominator');
-ok('dim (player n) and tier (cell denominator) kept on different numbers, as written');
+ok('dim and tier: a player under 10 is greyed AND untiered (TEN-421 R2)');
 
 // ── Ruling 13 — the field average has NO pool floor, and the under-10 cell ───
 //    still counts toward it. Both were put to the founder with the measurement
@@ -361,8 +381,9 @@ function fieldEngine() {
   assert(!/pool\.length/.test(body),
     'ruling 13 is LEAVE IT: the field average may not gate on how many rows the pool holds');
   // eslint-disable-next-line no-new-func
+  // TEN-421 R2: the field is pooled over fieldPool (the whole day); the engine is driven with the same rows for both.
   return new Function('codes', 'pool', 'cellOf', 'isInv', 'MIN_TIER_DEN', 'TIER_PTS',
-    body + '\nreturn { fieldAvg: fieldAvg, tierOf: tierOf };');
+    'var fieldPool = pool; function nOf(){ return null; }\n' + body + '\nreturn { fieldAvg: fieldAvg, tierOf: tierOf };');
 }
 {
   const engine = fieldEngine();
@@ -401,6 +422,15 @@ function fieldEngine() {
   // An empty pool has no bar, and nothing tiers off it.
   assert.strictEqual(run([]).fieldAvg.spw, null, 'an empty pool publishes no bar');
   assert.strictEqual(run([]).tierOf({ spw: [60, 100] }, 'spw'), null, 'and nothing tiers off a null bar');
+  // TEN-421 R1: the gap is read off the PRINTED figures. Etcheverry, Opponent holds 81% v field 78% (inverted): the
+  // raw gap is 3.45 pts, the printed gap 3 → amber, not red.
+  const runInv = (pool) => engine(['oph'], pool, cellOf, m => m === 'oph', MIN_TIER_DEN_N, TIER_PTS_N);
+  const eo = runInv([{ oph: [811, 1000] }, { oph: [742, 1000] }]);
+  assert.strictEqual(Math.round(eo.fieldAvg.oph * 100), 78);
+  assert.strictEqual(eo.tierOf({ oph: [811, 1000] }, 'oph'), 'within', 'printed 81 v 78 = 3 → amber (R1)');
+  const e4 = run([{ spw: [61, 100] }, { spw: [69, 100] }]);
+  assert.strictEqual(e4.tierOf({ spw: [69, 100] }, 'spw'), 'above', 'printed gap 4 → green');
+  assert.strictEqual(e4.tierOf({ spw: [61, 100] }, 'spw'), 'below', 'printed gap −4 → red');
 }
 for (const dead of ['MIN_POOL', 'POOL_FLOOR', 'MIN_FIELD_POOL', 'leaveOneOut']) {
   assert(!srcCode.includes(dead),

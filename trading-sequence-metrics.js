@@ -52,6 +52,12 @@
 const SEQ_KEYS = [
   // worked-out (game-sequence + set-1-conditioned) — see header block
   'htws', 'htss', 'bofs', 'bfsg', 'babb', 'bbk', 'bbkb', 'gfb', 'ls1fb', 'ls1bf', 'bfs2aws1',
+  // TEN-421 R1 (founder): set 2's first break over EVERY lost-set-1 match with set 2 played (pbp), so a set 2 with
+  // no break counts in neither and the pair does not add to 100: ls1b1s2 = the player broke first, ls1o1s2 = the
+  // opponent did.
+  'ls1b1s2', 'ls1o1s2',
+  // TEN-421 card bafab40e (founder): the after-winning-set-1 twin, same every-match denominator
+  'ws1b1s2',
   // named set-outcome (score-only)
   'wfs', 'ws2', 'ws1w2', 'ls1ws2', 'ws1wm',
 ];
@@ -264,6 +270,15 @@ function sequenceMetrics(fx, playerKey) {
     // set-2 first-break splits (need set 2 games with a break)
     const s2games = games[2] || [];
     const s2break = s2games.find((g) => g.broke);
+    // TEN-421 R1: over every lost-set-1 match whose set 2 was decided and is in the point-by-point log
+    if (!s1.won && s2 && s2.decided && s2games.length) {
+      set2('ls1b1s2', s2break && s2break.breaker === me ? 1 : 0, 1);    // lost s1, the player broke first in s2
+      set2('ls1o1s2', s2break && s2break.breaker !== me ? 1 : 0, 1);    // lost s1, the opponent broke first in s2
+    }
+    // TEN-421 (founder, card bafab40e): over every won-set-1 match whose set 2 was decided and is in the pbp log
+    if (s1.won && s2 && s2.decided && s2games.length) {
+      set2('ws1b1s2', s2break && s2break.breaker === me ? 1 : 0, 1);    // won s1, the player broke first in s2
+    }
     if (s2break) {
       const pBrokeFirstS2 = s2break.breaker === me ? 1 : 0;
       if (!s1.won) set2('ls1bf', pBrokeFirstS2, 1);       // lost s1, broke first in s2

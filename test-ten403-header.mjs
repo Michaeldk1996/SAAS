@@ -85,7 +85,7 @@ function checkPages(dash, js, css) {
   // the two embedded Database mounts (ROI overlays) carry the same header
   if ((dash.match(/<div class="sfh db-headcard" data-db="head"><div class="sfh__text"><h1 class="sfh__title">Database<\/h1><p class="sfh__sub" data-db="subtitle"><\/p><\/div><div class="sfh__stats" data-db="fresh"><\/div><\/div>/g) || []).length !== 2)
     return 'database: an embedded mount is not the 35b header';
-  const jsHeads = { trading: /'<div class="sfh tr-hdr">' \+\s*'<div class="sfh__text">' \+\s*'<h1 class="sfh__title">Trading report<\/h1>' \+\s*'<p class="sfh__sub">/,
+  const jsHeads = { trading: /'<div class="sfh tr-hdr">' \+\s*'<div class="sfh__text">' \+\s*'<h1 class="sfh__title">Trading Report<\/h1>' \+\s*'<p class="sfh__sub">/,
     series: /'<div class="sfh sr-head">' \+\s*'<div class="sfh__text"><h1 class="sfh__title">Series<\/h1><p class="sfh__sub">'/,
     drops: /'<div class="sfh do-head"><div class="sfh__text">' \+\s*'<h1 class="sfh__title">Dropping Odds<\/h1>' \+\s*'<p class="sfh__sub">/ };
   for (const [k, re] of Object.entries(jsHeads)) if (!re.test(js[k])) return `${k}: header is not the 35b .sfh card`;
@@ -130,7 +130,7 @@ function checkH2H(dash) {
 function checkOneSentence(dash, js) {
   const subs = [...dash.matchAll(/<p class="sfh__sub"[^>]*>(?:<span class="[^"]*">)?([^<]+)</g)].map(m => m[1].trim());
   const series = (/var SUBTITLE = '([^']+)'/.exec(js.series) || [])[1];
-  const trading = (/<p class="sfh__sub">([^<]+)<\/p>/.exec(js.trading) || [])[1];
+  const trading = (/<p class="sfh__sub">([^<]+)(?:<span class="sfh__tail">[^<]*<\/span>)?<\/p>/.exec(js.trading) || [])[1];   // TEN-421: grey tail allowed
   const drops = (/<span class="do-subtitle">Lines flagged in the last ' \+ esc\(st\.windowH \|\| 24\) \+ '(h[^<]+)<\/span>/.exec(js.drops) || [])[1];
   const all = subs.concat([series, trading, drops]);
   if (all.some(s => !s)) return 'a header sentence could not be read: ' + JSON.stringify(all);

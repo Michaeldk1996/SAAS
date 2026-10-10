@@ -63,9 +63,16 @@ ALLOWED = {
         # day/slot bookkeeping for the score patch, never a start instant
         "d, t = f.get('event_date'), f.get('event_time')",
     },
+    'test-ten421-trading.mjs': {
+        # TEN-421: stub live fixtures and the expected Live-view order (sort key); never a start instant
+        'fix.fixtures.push({ event_key: 99, event_date: m0.date, event_time: m0.time, event_first_player: m0.p1, event_second_player: m0.p2,',
+        'const grid = b.fix.fixtures.filter(LF.isAtpSingles).filter(LF.isUnderway).sort((x, y) => String(x.event_time).localeCompare(String(y.event_time)));',
+        "const fx = (m, ek, t) => ({ event_key: ek, event_date: '2026-10-10', event_time: t, event_first_player: m.p1, event_second_player: m.p2,",
+    },
     'trading-report.js': {
-        "startClock: f.event_time || '',",                                  # displayed clock
-        "startSort: (f.event_date || '') + ' ' + (f.event_time || ''),",    # sort key only
+        # TEN-421: the row's displayed clock (cardFmtStart, member zone) and the Live-view sort key; never a start instant
+        "startClock: slate ? startClockOf(slate) : startClockOf({ date: f.event_date, time: f.event_time }),",
+        "return (String(a.event_date || '') + ' ' + String(a.event_time || '')).localeCompare(String(b.event_date || '') + ' ' + String(b.event_time || ''));",
     },
     'bsp-pipeline.js': {
         "time: fixture.event_time || null,",                                # displayed clock
