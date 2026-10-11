@@ -243,7 +243,8 @@ function writeInputs(dir) {
   for (let k = 700000; k < 700400; k++) if (k % 4 < 2) styles.push({ name: 'O. Opp' + k, archetype_label: k % 4 ? 'Counterpuncher' : 'Aggressive Baseliner' });
   for (const k of [...ROSTER, ...EXTRA]) styles.push({ name: 'P. Player' + k, archetype_label: k % 2 ? 'Counterpuncher' : 'Aggressive Baseliner' });
   fs.writeFileSync(path.join(dir, 'playing-styles.json'), JSON.stringify({ players: styles }));
-  fs.writeFileSync(path.join(dir, 'series-outcomes.json'), JSON.stringify({ records: { 'seed|1|all': { date: '2026-09-01', held: true, family: 'all', type: 'all' } } }));
+  // TEN-427: an as-of-start (marked) ledger — an unmarked one is discarded for series-outcomes.rebuild.json, absent here
+  fs.writeFileSync(path.join(dir, 'series-outcomes.json'), JSON.stringify({ rule: 'as-of-start', records: { 'seed|1|all': { date: '2026-09-01', held: true, family: 'all', type: 'all' } } }));
 }
 
 const SB = tmpdir('sb');

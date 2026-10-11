@@ -7737,4 +7737,6 @@ module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMat
   _standingRows: () => atpStandingRows,
   _setStandingRowsForTest: (rows) => { atpStandingRows = rows; },
   // TEN-304 — weather hour at the real (Berlin wall clock) start, venue map
-  weatherStartIso, fetchMatchWeather, TOURNAMENT_VENUE_HINTS, computeDay, apiTennisCommence };
+  weatherStartIso, fetchMatchWeather, TOURNAMENT_VENUE_HINTS, computeDay, apiTennisCommence,
+  // TEN-427 step 14 — tools/rebuild-series-outcomes.js judges Surface runs on the same refreshed map as CI
+  loadTournamentSurfaceMap };

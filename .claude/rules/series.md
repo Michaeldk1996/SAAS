@@ -7,7 +7,7 @@ night, 1512px; design file `Series.dc.html` (card 2b, filters 1c, pop-up header 
 Night only. Header = the shared 35b `.sfh` (`app-shell.md`). **Test:** `test-ten427-series.mjs` executes the shipped page
 on the dashboard's own Today's Matches / name / time helpers, fed a frozen live capture (`tools/fixtures/ten427-series.json`,
 10 Oct 2026 14:52Z: series.json, the board, names, canonical events, and the real Database join's answer per row);
-`tools/test-ten427-series-mutants.js` (89 mutants, 0 may survive). Older locks that still stand: `tools/test-series-rows.js`
+`tools/test-ten427-series-mutants.js` (95 mutants, 0 may survive). Older locks that still stand: `tools/test-series-rows.js`
 (every row satisfies its claim — also a fail-closed pipeline gate after the build), `test-series-dates.js`,
 `test-series-reference.js`, `test-series-outcome-summary.js`.
 
@@ -148,7 +148,8 @@ match-winner closes (Home / Away) and no P&L.
 - **Claims = the reference's templates** (`Series.dc.html`, founder round 2 fix 2): "Won 8 straight" (all comps; the
   pop-up adds "across all competitions") · "Won 6 straight on Clay" · "Lost 4 straight vs Big Server + Complete
   Baseliner" · "Under 23.5 total games (best-of-3)" · "Won by more than 3.5 games — covered −3.5" (the losing side mirrors
-  it: "Lost by more than 3.5 games — failed to cover +3.5"; the file has no example; the file's "(best-of-3)" stays off the
+  it: "Lost by more than 3.5 games — failed to cover +3.5", APPROVED by the founder, card 011f0d2d, 11 Oct — the file has
+  no example; **Test:** "Fix 2" pins both sides; the file's "(best-of-3)" stays off the
   handicap card — standing ruling handicap-bestof (a), TEN-194 — and on the pop-up) · "Won the opening set" / "Won the
   2nd set" / … · "First set under 9.5 games". N = the card's (as-of-start) count.
 - Cards (2b): `--card` + `--top-light`, no outline, radius 16, hover 1px `--edge-16`; initials avatar 44px (`fhIni`,
@@ -169,6 +170,58 @@ match-winner closes (Home / Away) and no P&L.
   Villena 4–9 Oct, 19 sets, Jingshan 3–4 Oct, 2), so those rows print "7–6" — never invented (founder round 3 item 3).
 - **Colour:** green / red only on the pop-up's marks, P&L and total; `--link` only on Clear; no blue fills, rings or
   outlines; surfaces neutral.
+
+## Outcomes ledger (`series-outcomes.json`) — judged on the run as it stood at the start
+Founder ruling, card 011f0d2d, 11 Oct (SUPERSEDES TEN-168 fix #3's post-match judging): **each outcome is judged against
+the run before the next match was played, so a run that match broke is recorded as broken** — the same frozen-at-start
+rule as the cards and pop-up (round 2 fix 1), so all three read one rule.
+- **Which matches:** every FINISHED ATP / Challenger slate match (final status or a winner), both players — not only the
+  one each player's card is built on (the old selection skipped a winner whose next round was already on the slate:
+  1,849 of 3,440 player-matches judged, 7 Sep – 10 Oct).
+- **Which runs:** `asOfStartStreaks` for that match (history cut strictly before it, every engine rule, relevance to
+  that match, one per family) — `build-series.js judgeAtStart`. One row per (eventKey|player|family).
+- **held** = the run's own condition in that match (`conditionHeld`): `true` extended it, `false` broke it, `null` not
+  evaluable (walkover / awarded, set undecided, another surface / style / format) — null rows are out of the held / broken
+  counts. `streakCount` = the run as it stood (the judged match is not in it). Rows carry `won` and `opponent`.
+- **P&L (report only, the file holds no price):** the pop-up ledger's rule on the judged match — match-result families
+  (all comps, surface, vs style), flat 1u on the player at the Database join's closing price (Pinnacle, else bet365):
+  win = price − 1, loss −1.00; unpriced rows out of the total and the count. Line and set families have no P&L.
+- **File:** `{ rule: "as-of-start", records }`, atomic tmp + rename, committed back by `pipeline.yml` after each build
+  (only if changed), so the next build continues from it. Only the commit-back writes `series-outcomes.json`; the
+  rebuild ships as the committed SEED `series-outcomes.rebuild.json`. Rebuilt FROM SCRATCH for 7 Sep onward by
+  `tools/rebuild-series-outcomes.js` (the generator's own `judgeAtStart` on each player's real api-tennis history; one
+  get_fixtures per 7 days + one per player; refuses a plan over `--max-calls`, default 600, without `--yes`; refuses
+  to write if any player's history fails or any week's get_fixtures comes back empty / without `result` — an empty
+  answer is never cached; cache files written tmp + rename, an unparseable one is refetched; judges each player as his
+  history loads, ~850 full histories do not fit the heap together) — never patched from the day the rule changed.
+- **Surface map = the pipeline's:** the tool loads `tournament-surfaces.json` through `bsp-pipeline.js
+  loadTournamentSurfaceMap()` (refreshed from get_tournaments when over 30 days old, exactly as each CI build does — CI
+  never commits the refresh back, so the committed copy is a fossil), and refuses to write if the map's `fetchedAt` is
+  over 30 days old or any finished fixture's `tournament_key` is missing from it. Measured: on the committed 15 Jul map
+  379 of 1,332 Challenger fixtures had no surface and Surface counted 396 rows (193 / 198 / 5) instead of 547.
+- **Rebuild 11 Oct, 7 Sep – 10 Oct:** 853 calls (1 get_tournaments + 5 slates + 847 players), 1,720 finished
+  fixtures, 4,663 rows: 2,272 held, 2,249 broken, 142 not evaluable (the post-match ledger: 4,142 rows, 3,915 held,
+  1 broken, 226 not evaluable).
+- **Seed migration (`build-series.js loadLedger`):** a `series-outcomes.json` without `rule: "as-of-start"` (the old
+  post-match file — `{ records }` with no marker, an array, unreadable or missing) is discarded WHOLE and the seed
+  `series-outcomes.rebuild.json` is loaded instead (its rows, nothing merged from the old file); the build then adds its
+  finished slate matches by key (eventKey|player|family — same match = overwrite, never a double) and writes
+  `series-outcomes.json` with the marker, which the unchanged commit-back pushes. A file that carries the marker is kept
+  as-is and the seed is never read again. A missing or invalid seed (not marked) with an old-rule file THROWS — the build
+  never starts an empty or partial ledger. Why a seed: the pipeline appends old-rule rows to main's
+  `series-outcomes.json` every few ticks until this lands, so a commit writing that file never passes
+  `tools/clobber-check.sh` / deploy-batch. At landing (11 Oct) the old-rule rows on main for 11 Oct are dropped by the
+  migration; today's finished slate is re-judged under the new rule by the next build (the build judges the slate,
+  `SLATE_START` = today UTC — a day missing from both the seed and the slate is never filled). Re-running the tool
+  (default `--out` = the seed) is never needed to land.
+- **Test:** `test-ten427-series.mjs` "Outcomes ledger": three wins then a loss → the all-comps run of 3 reads broken (the
+  post-match rule wrote no row); seven straight-set wins then a 4–6 6–3 6–4 win → the same Set outcome / Handicap keys
+  that read held under the post-match rule read broken (opening-set run 7, −3.5 run 7), all comps held at 7; a walkover
+  → null. The committed seed carries `rule: "as-of-start"`, only rebuilt rows (`won` / `opponent`), 4,663 of them.
+  "Outcomes ledger migration": an old-rule file (no-marker `{ records }`, array, unreadable, missing) loads exactly the
+  seed's rows; a marked file keeps its rows with the seed present or missing; an old-rule file with a missing or
+  unmarked seed throws. The page still paints no
+  continued / broken summary (`test-series-outcome-summary.js`).
 
 ## Pro gating
 Series is not Pro-locked in the rail (`app-shell.md`: Trading Report and Stennisfy Model only) and navigation is not

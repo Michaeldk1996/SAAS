@@ -98,6 +98,20 @@ const MUTANTS = [
   ['eng', 'Fix 1 (generator): no relevance gate on the as-of-start set', 'try { relevant = streaksFor(recs, tier).filter(st => isRelevant(st, ctx)); }', 'try { relevant = streaksFor(recs, tier); }'],
   ['eng', 'Fix 1 (generator): more than one card per family', '  const out = collapseByFamily(relevant);\n  for (const st of out) st.reference', '  const out = relevant;\n  for (const st of out) st.reference'],
   ['eng', 'Fix 1 (generator): a match whose start has passed is not "started"', '  return Number.isFinite(s) && s <= nowMs;', '  return false;'],
+  // outcomes ledger = the run as it stood at the start (founder card 011f0d2d)
+  ['eng', 'Ledger: judged on the post-match runs (the match already inside them)', '  const runs = asOfStartStreaks(fixtures, pk, tier, ctx, surfaceMap, styleMap) || [];', "  const runs = collapseByFamily(streaksFor(orderedRecords(fixtures, pk, tier, surfaceMap, styleMap, tier === 'tour'), tier).filter(st => isRelevant(st, ctx)));"],
+  ['eng', 'Ledger: every evaluable run reads held', '      held: conditionHeld(st, pr), streakCount', '      held: pr ? true : null, streakCount'],
+  ['eng', 'Ledger: a walkover reads held', '      held: conditionHeld(st, pr), streakCount', '      held: pr ? conditionHeld(st, pr) : true, streakCount'],
+  ['eng', 'Ledger: the count includes the judged match', 'streakCount: st.count, pool: st.pool,', 'streakCount: st.count + 1, pool: st.pool,'],
+  ['eng', 'Ledger: the row loses the result the P&L is priced on', '      won: pr ? pr.won : null,\n', '\n'],
+  ['eng', 'Ledger: the rule marker is not the rebuilt file\'s', "const LEDGER_RULE = 'as-of-start';", "const LEDGER_RULE = 'post-match';"],
+  // seed migration: series-outcomes.json is the commit-back's; the rebuild ships as series-outcomes.rebuild.json
+  ['eng', 'Ledger migration: an old-rule ledger (no marker) is kept instead of the seed', "if (j && j.rule === LEDGER_RULE && j.records && typeof j.records === 'object'", "if (j && j.records && typeof j.records === 'object'"],
+  ['eng', 'Ledger migration: the old-rule ledger falls back to an empty one, not the seed', '  return { rule: LEDGER_RULE, records: s.records };', '  return { rule: LEDGER_RULE, records: {} };'],
+  ['eng', 'Ledger migration: a marked ledger is replaced by the seed', "if (j && j.rule === LEDGER_RULE && j.records && typeof j.records === 'object'", "if (j && j.rule === 'never' && j.records && typeof j.records === 'object'"],
+  ['eng', 'Ledger migration: the seed is merged into a marked ledger', '!Array.isArray(j.records)) return j;', '!Array.isArray(j.records)) { try { Object.assign(j.records, JSON.parse(fs.readFileSync(seed, \'utf8\')).records); } catch (_) {} return j; }'],
+  ['eng', 'Ledger migration: a missing seed starts an empty ledger', "try { s = JSON.parse(fs.readFileSync(seed, 'utf8')); } catch (e) {", "try { s = JSON.parse(fs.readFileSync(seed, 'utf8')); } catch (e) { return { rule: LEDGER_RULE, records: {} };"],
+  ['eng', 'Ledger migration: an old-rule seed is accepted', "if (!s || s.rule !== LEDGER_RULE || !s.records", "if (!s || !s.records"],
 ];
 const SUITES = ['test-ten427-series.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env), encoding: 'utf8', timeout: 120000 });

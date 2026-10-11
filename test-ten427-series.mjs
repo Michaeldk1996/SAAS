@@ -9,7 +9,8 @@
 process.env.TZ = 'Europe/Brussels';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -445,6 +446,101 @@ test('Generator (fix 1): asOfStartStreaks = the runs from the history strictly b
   assert.equal(E.startedAtBuild({ date: '2026-01-12', time: '15:00', played: false }, Date.parse('2026-01-12T14:30:00Z')), true);
   assert.equal(E.startedAtBuild({ date: '2026-01-12', time: '15:00', played: false }, Date.parse('2026-01-12T13:30:00Z')), false);
   assert.equal(E.startedAtBuild({ date: '2026-01-12', time: '15:00', played: true }, Date.parse('2026-01-11T00:00:00Z')), true);
+});
+
+// ── Series outcomes ledger (founder card 011f0d2d, 11 Oct): judged on the run AS IT STOOD AT THE START ─────────────
+// "A run that match broke is recorded as broken." The old rule judged series.json's post-match runs (the match already
+// inside them), reproduced below from the engine's own exported pieces exactly as the old main() composed them, so the
+// test shows the same ledger key flipping held → broken. Real case (rebuild sample, 11 Oct): D. Medvedev beat Struff
+// 4–6 6–3 6–4 on 10 Oct after 7 straight-set wins — Set outcome read "won the 2nd set 6, held", now "won the opening
+// set 7, broken"; J. Pinnington Jones (W 6, 8, 9 Oct, L 10 Oct) had no all-comps row, now "won 3, broken".
+test('Outcomes ledger (founder 011f0d2d): a run the next match breaks reads broken now, held (or absent) under the post-match rule', () => {
+  delete require.cache[require.resolve(ENGINE)];
+  const E = require(ENGINE);
+  const set = (n, a, b) => ({ score_set: String(n), score_first: String(a), score_second: String(b) });
+  let k = 500;
+  const fx = (date, sets, won) => ({ event_type_type: 'Atp Singles', event_status: 'Finished', first_player_key: '1', second_player_key: String(k + 1000),
+    event_first_player: 'A. One', event_second_player: 'Opp ' + k, event_winner: won ? 'First Player' : 'Second Player', event_date: date, event_time: '12:00',
+    event_key: String(k++), event_final_result: won ? '2 - 0' : '0 - 2', tournament_key: '7', tournament_name: 'Test Open', scores: sets.map((s, i) => set(i + 1, s[0], s[1])) });
+  const SURF = { 7: 'hard' }, NONE = new Map();
+  // dates count back from TODAY: the post-match rule ran right after the match, so its 45-day recency must hold too
+  // (a fixed date would age out of it and make the "held before" half vacuous)
+  const ago = n => new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+  const ctxOf = (f, side = 'first') => E.slateCtx(f, side, null, SURF, NONE);
+  const judge = (list, f, side = 'first') => E.judgeAtStart(list, side === 'first' ? '1' : f.second_player_key, 'tour', ctxOf(f, side),
+    E.recordFor(f, side === 'first' ? '1' : f.second_player_key, 'tour', SURF, NONE, true), SURF, NONE, null);
+  // the rule this ruling replaces: series.json's runs (built AFTER the match) judged on that match
+  const judgePost = (list, f) => {
+    const ctx = ctxOf(f), pr = E.recordFor(f, '1', 'tour', SURF, NONE, true), out = {};
+    for (const st of E.collapseByFamily(E.streaksFor(E.orderedRecords(list, '1', 'tour', SURF, NONE, true), 'tour').filter(s => E.isRelevant(s, ctx)))) {
+      out[ctx.eventKey + '|1|' + (st.family || st.type)] = { held: E.conditionHeld(st, pr), subtype: st.subtype, line: st.line, streakCount: st.count };
+    }
+    return out;
+  };
+  // A · W W W, then the next match LOST (eight matches: every pool floor met)
+  const lead = [40, 38, 36, 34, 32].map(n => fx(ago(n), [[3, 6], [4, 6]], false));
+  const www = [8, 6, 4].map(n => fx(ago(n), [[6, 3], [6, 4]], true));
+  const lost = fx(ago(2), [[3, 6], [4, 6]], false);
+  const a = judge([...lead, ...www, lost], lost), keyA = lost.event_key + '|1|all';
+  assert.ok(a[keyA], 'the 3-match winning run must be judged at the start of the match that broke it');
+  assert.deepEqual([a[keyA].held, a[keyA].direction, a[keyA].streakCount, a[keyA].won, a[keyA].opponent], [false, 'win', 3, false, lost.event_second_player], 'reads BROKEN, on the run of 3 as it stood');
+  assert.equal(judgePost([...lead, ...www, lost], lost)[keyA], undefined, 'under the post-match rule the broken run was never written');
+  assert.ok(Object.keys(a).every(x => x.startsWith(lost.event_key + '|1|')), 'rows are keyed (event|player|family)');
+  // B · the same KEY flips held → broken: 7 straight-set wins (won the opening set, by more than 3.5), then won 4–6 6–3 6–4
+  const seven = [20, 18, 16, 14, 12, 10, 8].map(n => fx(ago(n), [[6, 2], [6, 3]], true));
+  const struff = fx(ago(2), [[4, 6], [6, 3], [6, 4]], true);
+  const list = [...lead, ...seven, struff];
+  const now = judge(list, struff), was = judgePost(list, struff);
+  const kSet = struff.event_key + '|1|setout', kHc = struff.event_key + '|1|handicap', kAll = struff.event_key + '|1|all';
+  assert.deepEqual([now[kSet].held, now[kSet].subtype, now[kSet].streakCount], [false, 'won-first-set', 7], 'Set outcome: the opening-set run of 7 it broke');
+  assert.equal(was[kSet].held, true, 'the post-match rule read the same key HELD (a different, longer run that contains the match)');
+  assert.deepEqual([now[kHc].held, now[kHc].line, now[kHc].streakCount], [false, 3.5, 7], 'Handicap: won by 3 games breaks the −3.5 run of 7');
+  assert.equal(was[kHc].held, true, 'the post-match rule read Handicap HELD (on the −1.5 run that survived)');
+  assert.deepEqual([now[kAll].held, now[kAll].streakCount], [true, 7], 'All comps: a win extends the run of 7 — held, counted as it stood (7, not 8)');
+  // C · not evaluable stays null: an awarded / walkover match is no countable record
+  const wo = Object.assign(fx(ago(2), [], true), { event_status: 'Walk Over' });
+  const n = judge([...lead, ...seven, wo], wo);
+  assert.ok(Object.keys(n).length && Object.values(n).every(r => r.held === null && r.won === null), 'a walkover is judged null (not evaluable), never held / broken');
+});
+
+// The pipeline commit-back owns series-outcomes.json (it appends every few ticks), so the rebuild ships as a SEED file;
+// loadLedger migrates: an old-rule ledger is discarded whole for the seed, a marked ledger is kept and the seed ignored.
+const SEED = join(HERE, 'series-outcomes.rebuild.json');
+test('Outcomes ledger: the committed seed series-outcomes.rebuild.json is the as-of-start rebuild (not the post-match ledger patched)', () => {
+  delete require.cache[require.resolve(ENGINE)];
+  const E = require(ENGINE);
+  const j = JSON.parse(readFileSync(SEED, 'utf8'));
+  assert.equal(j.rule, E.LEDGER_RULE, 'the seed must carry the as-of-start rule marker the generator writes');
+  const rows = Object.values(j.records || {});
+  assert.equal(rows.length, 4663, 'the rebuild 7 Sep - 10 Oct is 4,663 rows');
+  assert.ok(rows.every(r => 'won' in r && 'opponent' in r), 'every row is a rebuilt one (old post-match rows carry no won / opponent)');
+  assert.ok(rows.filter(r => r.held === false).length > 100, 'broken runs are recorded');
+});
+
+test('Outcomes ledger migration: an old-rule series-outcomes.json is replaced whole by the seed; a marked one keeps its rows and ignores the seed; no seed throws', () => {
+  delete require.cache[require.resolve(ENGINE)];
+  const E = require(ENGINE);
+  const dir = mkdtempSync(join(tmpdir(), 'ten427-ledger-'));
+  try {
+    const seed = JSON.parse(readFileSync(SEED, 'utf8'));
+    const oldRow = { date: '2026-10-11', tier: 'tour', type: 'all', family: 'all', direction: 'win', held: true, streakCount: 4, player: 'B. Shelton' };
+    const put = (name, v) => { const f = join(dir, name); writeFileSync(f, typeof v === 'string' ? v : JSON.stringify(v)); return f; };
+    // (b) old rule: main's shape (records, no marker), an array, an unreadable file, a missing file -> exactly the seed's rows
+    for (const f of [put('old.json', { records: { '999|1|all': oldRow } }), put('arr.json', [oldRow]), put('bad.json', '{"records":'), join(dir, 'none.json')]) {
+      const l = E.loadLedger(f, SEED);
+      assert.equal(l.rule, E.LEDGER_RULE, f);
+      assert.deepEqual(l.records, seed.records, 'an old-rule ledger loads the seed whole: ' + f);
+      assert.equal(l.records['999|1|all'], undefined, 'no old-rule row survives the migration');
+    }
+    // (c) marked: the file's own rows, the seed never read (even a missing seed does not matter)
+    const mine = { '777|2|all': Object.assign({}, oldRow, { won: true, opponent: 'X. Y' }) };
+    const marked = put('marked.json', { rule: E.LEDGER_RULE, records: mine });
+    assert.deepEqual(E.loadLedger(marked, SEED).records, mine, 'a marked ledger keeps its rows and ignores the seed');
+    assert.deepEqual(E.loadLedger(marked, join(dir, 'no-seed.json')).records, mine);
+    // (d) old rule + missing / invalid seed -> throws, never an empty or partial ledger
+    assert.throws(() => E.loadLedger(join(dir, 'old.json'), join(dir, 'no-seed.json')), /seed/);
+    assert.throws(() => E.loadLedger(join(dir, 'old.json'), put('oldseed.json', { records: { '999|1|all': oldRow } })), /seed/);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
 // ── round 2 fix 2 · the reference's claim templates ("N straight") ───────────────────────────────────────────────

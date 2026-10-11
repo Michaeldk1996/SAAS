@@ -35,10 +35,11 @@
  * not emitted. Missing data is an omission, never a zero.
  *
  * SCOPE: ATP + Challenger men's singles only. Writes series.json AND the outcomes
- * ledger series-outcomes.json (TEN-168 fix batch, founder 2026-09-07 item #3): when a
- * streak's UPCOMING match has already been played, the engine evaluates whether the
- * streak's OWN condition held in that match (CONTINUED / BROKEN — not the result) and
- * appends it to the ledger, keyed idempotently by (eventKey|player|family). The ledger
+ * ledger series-outcomes.json (TEN-168 fix batch, founder 2026-09-07 item #3): for every
+ * FINISHED slate match the engine evaluates whether each run AS IT STOOD AT THAT MATCH'S
+ * START held its OWN condition in it (CONTINUED / BROKEN — not the result; TEN-427,
+ * founder card 011f0d2d — judgeAtStart) and writes it to the ledger, keyed idempotently
+ * by (eventKey|player|family). The ledger
  * accumulates across days (the pipeline commits it back, exactly like admin-log.json)
  * so a measured hit-rate per streak type builds up over weeks. A match whose condition
  * can't be evaluated (retired/walkover/no clean score) is recorded held=null and
@@ -70,6 +71,8 @@ const OUT_FILE = process.env.SERIES_OUT || path.join(ROOT, 'series.json');
 // record accumulates (the pipeline commits it back, like admin-log.json). Idempotent
 // by (eventKey|player|family) — re-running the same slate overwrites, never doubles.
 const OUTCOMES_FILE = process.env.SERIES_OUTCOMES || path.join(ROOT, 'series-outcomes.json');
+// TEN-427: the committed as-of-start rebuild, loaded only when OUTCOMES_FILE lacks the rule marker (see loadLedger)
+const SEED_FILE = process.env.SERIES_OUTCOMES_SEED || path.join(ROOT, 'series-outcomes.rebuild.json');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -995,14 +998,22 @@ function streakReference(st, recs) {
   };
 }
 
-// Load the outcomes ledger (fix #3). Returns { updatedAt, records:{} }. A missing or
-// unreadable file starts an empty ledger — never a hard fail.
-function loadLedger() {
-  try {
-    const j = JSON.parse(fs.readFileSync(OUTCOMES_FILE, 'utf8'));
-    if (j && typeof j === 'object' && j.records && typeof j.records === 'object') return j;
-  } catch (_) { /* seed a fresh ledger */ }
-  return { updatedAt: null, records: {} };
+// Load the outcomes ledger (fix #3). Returns { rule, records:{} }.
+// TEN-427 seed migration (founder card 011f0d2d): a ledger that does not carry the as-of-start marker (the old
+// post-match file the pipeline kept committing until this landed — or a missing / unreadable one) is DISCARDED whole
+// and the committed seed series-outcomes.rebuild.json (the from-scratch rebuild) is loaded instead; this build then
+// merges its rows by key and writes series-outcomes.json with the marker, so the commit-back carries the migration.
+// Once main's file carries the marker the seed is never read. All or nothing: a missing or invalid seed throws.
+function loadLedger(file = OUTCOMES_FILE, seed = SEED_FILE) {
+  let j = null;
+  try { j = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { j = null; }
+  if (j && j.rule === LEDGER_RULE && j.records && typeof j.records === 'object' && !Array.isArray(j.records)) return j;
+  let s;
+  try { s = JSON.parse(fs.readFileSync(seed, 'utf8')); } catch (e) { throw new Error('series outcomes: ' + file + ' is not an ' + LEDGER_RULE + ' ledger and the seed ' + seed + ' is unreadable (' + e.message + ')'); }
+  if (!s || s.rule !== LEDGER_RULE || !s.records || typeof s.records !== 'object' || Array.isArray(s.records)) {
+    throw new Error('series outcomes: the seed ' + seed + ' is not an ' + LEDGER_RULE + ' ledger');
+  }
+  return { rule: LEDGER_RULE, records: s.records };
 }
 
 function streaksFor(recs, tier) {
@@ -1071,6 +1082,64 @@ function beforeSlateStart(fx, ctx) {
   const a = berlinWallMs(d, String(fx.event_time || '')), s = slateStartMs(ctx);
   return Number.isFinite(a) && Number.isFinite(s) && a < s;
 }
+// One slate fixture seen from one side: the context its relevance gate, as-of-start cut and ledger row read.
+function slateCtx(fx, side, day, surfaceMap, styleMap) {
+  const selfName = side === 'first' ? fx.event_first_player : fx.event_second_player;
+  const oppName = side === 'first' ? fx.event_second_player : fx.event_first_player;
+  const oppKey = String(side === 'first' ? fx.second_player_key : fx.first_player_key);
+  const played = FINAL_STATUSES.includes(fx.event_status) || fx.event_winner != null;
+  return {
+    day,
+    playerName: String(selfName || ''),
+    date: String(fx.event_date || ''),
+    time: String(fx.event_time || ''),
+    tournament: String(fx.tournament_name || ''),
+    surface: surfaceMap[String(fx.tournament_key)] || null,
+    // Best-of of the upcoming match — drives the FORMAT-RELEVANCE gate for the
+    // games-line streaks (total / handicap). Slam main draw = 5, else 3.
+    bestOf: upcomingBestOf(fx),
+    opponentName: String(oppName || ''),
+    opponentKey: oppKey,
+    // Upcoming opponent's archetype (Tour taxonomy, name-joined). Drives the
+    // vs-style relevance gate and lets the card show WHY a vs-style run applies
+    // ("vs Darderi · Attacking Baseliner"). null when unclassified.
+    opponentArch: styleMap.get(normName(oppName)) || null,
+    eventKey: String(fx.event_key || ''),
+    played,
+    result: played ? String(fx.event_final_result || '') : '',
+  };
+}
+
+// ── OUTCOMES LEDGER = THE RUN AS IT STOOD AT THE START (TEN-427 step 14, founder card 011f0d2d, 11 Oct) ──────────
+// "Each outcome should be judged against the run before the next match was played, so a run that match broke is
+// recorded as broken. This is the same frozen-at-start rule the cards and pop-up already follow." The runs judged are
+// asOfStartStreaks for that finished match (history cut strictly before it, every engine rule, relevance to that
+// match, one per family); held = the run's own condition (conditionHeld) in that match: true = it extended the run,
+// false = it broke it, null = not evaluable (walkover, set undecided, another surface / style / format).
+// SUPERSEDES TEN-168 fix #3's post-match judging: series.json's runs already contain the match, so a run could only
+// ever read "held" and a run the match broke was never written (7 Sep – 10 Oct: 3,915 held, 1 broken, 226 not evaluable).
+// Keyed (eventKey|player|family), so a rebuild of the same match overwrites, never doubles. `won` / `opponent` let
+// the flat-1u P&L be priced on the site's one Database join (series.md: win = price − 1, loss −1.00).
+const LEDGER_RULE = 'as-of-start';
+function judgeAtStart(fixtures, pk, tier, ctx, pr, surfaceMap, styleMap, name) {
+  const out = {};
+  const runs = asOfStartStreaks(fixtures, pk, tier, ctx, surfaceMap, styleMap) || [];
+  for (const st of runs) {
+    const fam = st.family || st.type;
+    out[`${ctx.eventKey || 'nokey'}|${pk}|${fam}`] = {
+      date: ctx.date || null, tier, type: st.type, family: fam,
+      subtype: st.subtype || null, direction: st.direction,
+      line: (st.line != null ? st.line : null), bestOf: (st.bestOf != null ? st.bestOf : null),
+      held: conditionHeld(st, pr), streakCount: st.count, pool: st.pool,
+      playedResult: ctx.result || null,
+      player: name || ctx.playerName || null,
+      opponent: ctx.opponentName || null,
+      won: pr ? pr.won : null,
+    };
+  }
+  return out;
+}
+
 function asOfStartStreaks(fixtures, pk, tier, ctx, surfaceMap, styleMap) {
   const s = slateStartMs(ctx);
   const atMs = Number.isFinite(s) ? s : Date.parse(String(ctx.date || '') + 'T00:00:00Z');
@@ -1107,35 +1176,22 @@ async function main() {
   // slate match; keep the soonest not-yet-played one (fall back to soonest played).
   const scheduled = new Map();
   const keyFor = (pk, tier) => `${pk}|${tier}`;
+  // TEN-427 (founder card 011f0d2d): EVERY finished slate match of a player is judged for the outcomes ledger, not
+  // only the one kept as his upcoming match below — a winner whose next round is already on the slate had his
+  // finished match skipped (measured 7 Sep – 10 Oct: the ledger judged 1,849 of 3,440 player-matches).
+  const playedSlate = new Map();            // (pk|tier) -> [{ ctx, pr }], one per finished slate fixture
   for (const { fx, tier, day } of slate) {
     for (const side of ['first', 'second']) {
       const pk = String(side === 'first' ? fx.first_player_key : fx.second_player_key);
       if (!pk || pk === 'null' || pk === 'undefined') continue;
-      const selfName = side === 'first' ? fx.event_first_player : fx.event_second_player;
-      const oppName = side === 'first' ? fx.event_second_player : fx.event_first_player;
-      const oppKey = String(side === 'first' ? fx.second_player_key : fx.first_player_key);
-      const played = FINAL_STATUSES.includes(fx.event_status) || fx.event_winner != null;
-      const ctx = {
-        day,
-        playerName: String(selfName || ''),
-        date: String(fx.event_date || ''),
-        time: String(fx.event_time || ''),
-        tournament: String(fx.tournament_name || ''),
-        surface: surfaceMap[String(fx.tournament_key)] || null,
-        // Best-of of the upcoming match — drives the FORMAT-RELEVANCE gate for the
-        // games-line streaks (total / handicap). Slam main draw = 5, else 3.
-        bestOf: upcomingBestOf(fx),
-        opponentName: String(oppName || ''),
-        opponentKey: oppKey,
-        // Upcoming opponent's archetype (Tour taxonomy, name-joined). Drives the
-        // vs-style relevance gate and lets the card show WHY a vs-style run applies
-        // ("vs Darderi · Attacking Baseliner"). null when unclassified.
-        opponentArch: styleMap.get(normName(oppName)) || null,
-        eventKey: String(fx.event_key || ''),
-        played,
-        result: played ? String(fx.event_final_result || '') : '',
-      };
+      const ctx = slateCtx(fx, side, day, surfaceMap, styleMap);
+      const played = ctx.played;
       const k = keyFor(pk, tier);
+      if (played) {
+        const list = playedSlate.get(k) || [];
+        if (!list.some(x => x.ctx.eventKey === ctx.eventKey)) list.push({ ctx, pr: recordFor(fx, pk, tier, surfaceMap, styleMap, tier === 'tour') });
+        playedSlate.set(k, list);
+      }
       const prevEntry = scheduled.get(k);
       const prev = prevEntry && prevEntry.upcoming;
       // preference: not-played over played, then soonest date, then soonest time
@@ -1143,13 +1199,7 @@ async function main() {
       const better = !prev
         || (rank(ctx) < rank(prev))
         || (rank(ctx) === rank(prev) && (ctx.date < prev.date || (ctx.date === prev.date && ctx.time < prev.time)));
-      if (better) {
-        // fix #3: when the upcoming match is already played, keep the SAME fixture's
-        // countable record so the streak's condition can be evaluated against it.
-        // recordFor returns null for a retired/walkover/uncountable match => excluded.
-        const playedRec = played ? recordFor(fx, pk, tier, surfaceMap, styleMap, tier === 'tour') : null;
-        scheduled.set(k, { pk, tier, upcoming: ctx, playedRec });
-      }
+      if (better) scheduled.set(k, { pk, tier, upcoming: ctx });
     }
   }
 
@@ -1202,6 +1252,10 @@ async function main() {
 
     for (const tier of byPlayer.get(pk)) {
       const includeStyle = tier === 'tour';
+      // the outcomes ledger: every finished slate match judged on the runs as they stood at its start (judgeAtStart)
+      for (const { ctx: pc, pr } of (playedSlate.get(keyFor(pk, tier)) || [])) {
+        Object.assign(ledger.records, judgeAtStart(fixtures, pk, tier, pc, pr, surfaceMap, styleMap, (meta[pk] && meta[pk].name) || null));
+      }
       const recs = orderedRecords(fixtures, pk, tier, surfaceMap, styleMap, includeStyle);
       if (!recs.length) continue;
       // distribution accumulation for line-finalisation (tour bo5 comes from Slams)
@@ -1233,34 +1287,6 @@ async function main() {
       for (const st of streaks) {
         st.reference = streakReference(st, recs);
         if (st.reference) refOk++; else refDash++;
-      }
-      // fix #3: if the upcoming match has already been played, evaluate whether each
-      // surfaced streak's OWN condition held in it (CONTINUED / BROKEN / excluded) and
-      // append to the accumulating ledger, keyed idempotently by (eventKey|pk|family).
-      if (ctx.played) {
-        const pr = sched.playedRec;
-        for (const st of streaks) {
-          const held = conditionHeld(st, pr);   // true | false | null(excluded)
-          st.outcome = {
-            eventKey: ctx.eventKey || null,
-            date: ctx.date || null,
-            playedResult: ctx.result || null,
-            playedScore: pr ? (pr.score || null) : null,
-            opponent: pr ? (pr.opponent || null) : (ctx.opponentName || null),
-            evaluable: held !== null,
-            held: held,
-          };
-          const fam = st.family || st.type;
-          const lkey = `${ctx.eventKey || 'nokey'}|${pk}|${fam}`;
-          ledger.records[lkey] = {
-            date: ctx.date || null, tier, type: st.type, family: fam,
-            subtype: st.subtype || null, direction: st.direction,
-            line: (st.line != null ? st.line : null), bestOf: (st.bestOf != null ? st.bestOf : null),
-            held: held, streakCount: st.count, pool: st.pool,
-            playedResult: ctx.result || null,
-            player: (meta[pk] && meta[pk].name) || ctx.playerName || null,
-          };
-        }
       }
       const m = meta[pk] || {};
       // TEN-204 2.1 · profiles first, standings as the fill. `rankSource` records which
@@ -1419,7 +1445,7 @@ async function main() {
   // only-if-changed guard honest: an idle slate (no newly-resolved match) produces no
   // diff and therefore no commit. The generated-at time lives in series.json instead.
   const ltmp = OUTCOMES_FILE + '.tmp';
-  fs.writeFileSync(ltmp, JSON.stringify({ records: ledger.records || {} }, null, 0));
+  fs.writeFileSync(ltmp, JSON.stringify({ rule: LEDGER_RULE, records: ledger.records || {} }, null, 0));
   fs.renameSync(ltmp, OUTCOMES_FILE);
 
   console.error(JSON.stringify({
@@ -1477,5 +1503,7 @@ if (require.main === module) {
     streakReference, HISTORY_WINDOW_YEARS,
     slateDayOf,
     asOfStartStreaks, beforeSlateStart, startedAtBuild, streaksFor,
+    // TEN-427 outcomes ledger: the judge and the slate context, driven as-is by tools/rebuild-series-outcomes.js
+    judgeAtStart, slateCtx, LEDGER_RULE, FINAL_STATUSES, loadMeta, apiGet, loadLedger,
   };
 }
