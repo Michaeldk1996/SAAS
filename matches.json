@@ -5792,11 +5792,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9210_a-gea.jpg",
     "oddsMovement": {
@@ -6736,7 +6742,10 @@
       "edgeVsPinnacleP1": 0.0444,
       "edgeVsPinnacleP2": -0.0444,
       "ts": "2026-10-10T09:23:56.004Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12169697",
@@ -19342,11 +19351,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/438_a-mannarino.jpg",
     "oddsMovement": {
@@ -20643,7 +20658,10 @@
       "edgeVsPinnacleP1": 0.0171,
       "edgeVsPinnacleP2": -0.0171,
       "ts": "2026-10-10T09:47:15.836Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12169747",
