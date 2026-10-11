@@ -4133,20 +4133,20 @@
     },
     "12169747": {
       "fixtureId": "id1200308575445150",
-      "mappedAt": "2026-10-09T16:42:43Z",
+      "mappedAt": "2026-10-11T05:31:35Z",
       "orient": "same",
       "p1": "A. Bublik",
       "p2": "B. Nakashima",
-      "startTime": "2026-10-11T04:00:00.000Z",
+      "startTime": "2026-10-11T08:00:00.000Z",
       "tournamentId": 3085
     },
     "12169748": {
       "fixtureId": "id1200308575445194",
-      "mappedAt": "2026-10-09T16:42:43Z",
+      "mappedAt": "2026-10-11T05:31:35Z",
       "orient": "same",
       "p1": "H. Hurkacz",
       "p2": "Y. Zhou",
-      "startTime": "2026-10-11T04:00:00.000Z",
+      "startTime": "2026-10-11T05:40:00.000Z",
       "tournamentId": 3085
     },
     "12169816": {
@@ -4238,17 +4238,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-22T10:18:23Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 2,
-        "ttlBit": false,
-        "unmapped": 1,
-        "upcoming": 68
-      },
       {
         "at": "2026-09-22T11:20:21Z",
         "fixturesUnitsSpent": 1,
@@ -8637,9 +8626,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 16
+      },
+      {
+        "at": "2026-10-11T05:31:35Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 2,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 16
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-11T02:31:50Z"
+  "updatedAt": "2026-10-11T05:31:35Z"
 }
