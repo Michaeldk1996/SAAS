@@ -4223,8 +4223,8 @@
     },
     "12170076": {
       "fixtureId": null,
-      "mappedAt": "2026-10-11T21:01:00Z",
-      "missRuns": 8,
+      "mappedAt": "2026-10-11T23:01:00Z",
+      "missRuns": 9,
       "missSince": "2026-10-11T10:01:00Z",
       "orient": null,
       "p1": "A. De Minaur",
@@ -4234,8 +4234,8 @@
     },
     "12170088": {
       "fixtureId": null,
-      "mappedAt": "2026-10-11T21:01:00Z",
-      "missRuns": 7,
+      "mappedAt": "2026-10-11T23:01:00Z",
+      "missRuns": 8,
       "missSince": "2026-10-11T11:01:07Z",
       "orient": null,
       "p1": "A. Gea",
@@ -4254,23 +4254,12 @@
       "observedSpanDays": 18.76,
       "projectedTtlUnitsPerDay": 3.0,
       "runs": 400,
-      "spentRuns": 188,
-      "ttlBitRuns": 56,
-      "ttlBitShare": 0.14,
+      "spentRuns": 189,
+      "ttlBitRuns": 57,
+      "ttlBitShare": 0.142,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-23T03:46:36Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 39
-      },
       {
         "at": "2026-09-23T04:46:36Z",
         "fixturesUnitsSpent": 1,
@@ -8659,9 +8648,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 11
+      },
+      {
+        "at": "2026-10-11T23:01:00Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 2,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 11
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-11T21:01:00Z"
+  "updatedAt": "2026-10-11T23:01:00Z"
 }
