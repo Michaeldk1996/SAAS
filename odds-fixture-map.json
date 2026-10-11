@@ -4151,11 +4151,11 @@
     },
     "12169816": {
       "fixtureId": "id1200308575466698",
-      "mappedAt": "2026-10-10T07:46:25Z",
+      "mappedAt": "2026-10-11T20:00:53Z",
       "orient": "same",
       "p1": "J. Lehecka",
       "p2": "R. Jodar",
-      "startTime": "2026-10-11T04:00:00.000Z",
+      "startTime": "2026-10-12T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169842": {
@@ -4260,17 +4260,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-23T00:16:37Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 18,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 18,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 39
-      },
       {
         "at": "2026-09-23T01:16:39Z",
         "fixturesUnitsSpent": 1,
@@ -8659,9 +8648,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 11
+      },
+      {
+        "at": "2026-10-11T20:00:53Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 2,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 11
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-11T19:00:55Z"
+  "updatedAt": "2026-10-11T20:00:53Z"
 }
