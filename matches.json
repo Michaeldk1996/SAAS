@@ -6316,6 +6316,10 @@
               [
                 "2026-10-11T00:59:08.544Z",
                 1.714
+              ],
+              [
+                "2026-10-11T09:32:44.756Z",
+                1.724
               ]
             ],
             "p2": [
@@ -6326,6 +6330,10 @@
               [
                 "2026-10-11T00:59:08.544Z",
                 2.24
+              ],
+              [
+                "2026-10-11T09:32:44.756Z",
+                2.25
               ]
             ]
           }
@@ -6335,7 +6343,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T03:50:09.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
@@ -9764,7 +9772,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T11:15:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -13179,7 +13187,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T12:00:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -15773,7 +15781,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T12:00:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -19034,7 +19042,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T12:00:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -21786,7 +21794,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T12:00:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -24582,7 +24590,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T12:00:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -27054,7 +27062,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T12:00:01.000Z"
+            "checkedAt": "2026-10-11T12:03:32.000Z"
           }
         }
       }
@@ -31970,95 +31978,7 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9210_a-gea.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
-    "oddsMovement": {
-      "chart": {
-        "books": {},
-        "meta": {
-          "Pinnacle +30s": {
-            "source": "Oddspapi",
-            "group": "sharp",
-            "clock": "book tick",
-            "note": "no Oddspapi fixture matched",
-            "checkedAt": "2026-10-11T11:01:07.000Z"
-          },
-          "Betfair Exchange (recorded by us)": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "recorded by us",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-10-11T12:01:56.503Z"
-          },
-          "Superbet": {
-            "source": "odds-api.io",
-            "group": "soft",
-            "clock": "vendor updatedAt",
-            "note": "no recorded event matched",
-            "checkedAt": "2026-10-11T12:01:56.503Z"
-          },
-          "Bet105": {
-            "source": "Kibl",
-            "group": "sharp",
-            "clock": "Kibl insert",
-            "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-10-11T06:07:12.000Z"
-          },
-          "Pinnacle (api-tennis)": {
-            "source": "api-tennis",
-            "group": "sharp",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "Betano": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "1xBet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "BetVictor": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "Betfair Sportsbook (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "Marathon": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "bet365 (api-tennis)": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "Sbobet": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          },
-          "William Hill": {
-            "source": "api-tennis",
-            "group": "soft",
-            "clock": "seen by us every 5 min",
-            "checkedAt": null
-          }
-        }
-      }
-    }
+    "oddsMovement": null
   },
   {
     "id": "past-12168280",
@@ -259899,7 +259819,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T09:45:00.000Z"
+            "checkedAt": "2026-10-11T10:00:00.000Z"
           }
         }
       }
@@ -263625,6 +263545,30 @@
               [
                 "2026-10-11T07:12:37.216Z",
                 2.04
+              ],
+              [
+                "2026-10-11T08:25:44.914Z",
+                2.08
+              ],
+              [
+                "2026-10-11T08:48:18.061Z",
+                2.1
+              ],
+              [
+                "2026-10-11T08:48:35.721Z",
+                2.13
+              ],
+              [
+                "2026-10-11T08:49:20.288Z",
+                2.1
+              ],
+              [
+                "2026-10-11T08:49:20.597Z",
+                2.11
+              ],
+              [
+                "2026-10-11T08:57:41.328Z",
+                2.14
               ]
             ],
             "p2": [
@@ -263735,6 +263679,30 @@
               [
                 "2026-10-11T07:12:37.216Z",
                 1.869
+              ],
+              [
+                "2026-10-11T08:25:44.914Z",
+                1.84
+              ],
+              [
+                "2026-10-11T08:48:18.061Z",
+                1.826
+              ],
+              [
+                "2026-10-11T08:48:35.721Z",
+                1.8
+              ],
+              [
+                "2026-10-11T08:49:20.288Z",
+                1.819
+              ],
+              [
+                "2026-10-11T08:49:20.597Z",
+                1.813
+              ],
+              [
+                "2026-10-11T08:57:41.328Z",
+                1.8
               ]
             ]
           }
@@ -263825,7 +263793,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-11T07:45:01.000Z"
+            "checkedAt": "2026-10-11T09:55:00.000Z"
           }
         }
       }
