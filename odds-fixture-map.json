@@ -4223,12 +4223,23 @@
     },
     "12170076": {
       "fixtureId": null,
-      "mappedAt": "2026-10-11T10:01:00Z",
-      "missRuns": 1,
+      "mappedAt": "2026-10-11T11:01:07Z",
+      "missRuns": 2,
       "missSince": "2026-10-11T10:01:00Z",
       "orient": null,
       "p1": "A. De Minaur",
       "p2": "K. Khachanov",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12170088": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-11T11:01:07Z",
+      "missRuns": 1,
+      "missSince": "2026-10-11T11:01:07Z",
+      "orient": null,
+      "p1": "A. Gea",
+      "p2": "J. Mensik",
       "startTime": null,
       "tournamentId": null
     }
@@ -4249,17 +4260,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-22T15:46:49Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 1,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 2,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 59
-      },
       {
         "at": "2026-09-22T16:46:48Z",
         "fixturesUnitsSpent": 1,
@@ -8648,9 +8648,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 13
+      },
+      {
+        "at": "2026-10-11T11:01:07Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 13
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-11T10:01:00Z"
+  "updatedAt": "2026-10-11T11:01:07Z"
 }
