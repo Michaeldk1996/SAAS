@@ -4042,7 +4042,31 @@
       "edgeVsPinnacleP1": -0.0337,
       "edgeVsPinnacleP2": 0.0337,
       "ts": "2026-10-10T09:23:56.004Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(4), 4-6, 7-6(6)",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12169816",
@@ -37138,7 +37162,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-2",
+      "display": "7-6, 6-2",
       "sets": [
         {
           "p1": 7,
@@ -47932,7 +47956,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6(4)",
+      "display": "6-3, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -62255,7 +62279,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7(2)",
+      "display": "3-6, 6-7",
       "sets": [
         {
           "p1": 3,
@@ -82711,7 +82735,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(3), 3-6",
+      "display": "6-7, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -97815,7 +97839,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(4)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -117503,7 +117527,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 5-7",
+      "display": "6-7, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -136874,7 +136898,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(4)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -141574,7 +141598,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -149570,7 +149594,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6(9), 6-4",
+      "display": "4-6, 7-6, 6-4",
       "sets": [
         {
           "p1": 4,
@@ -154104,7 +154128,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6(4)",
+      "display": "6-4, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -157690,7 +157714,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(7), 3-6, 7-6(1)",
+      "display": "7-6, 3-6, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -161598,7 +161622,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(6), 6-7(5), 7-6(2)",
+      "display": "7-6, 6-7, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -165843,7 +165867,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6(6)",
+      "display": "6-3, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -193379,7 +193403,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(1), 5-7",
+      "display": "6-4, 6-7, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -208706,7 +208730,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7(5)",
+      "display": "4-6, 6-7",
       "sets": [
         {
           "p1": 4,
@@ -213813,7 +213837,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(2), 4-6",
+      "display": "6-4, 6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -218058,7 +218082,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 6-7(2)",
+      "display": "1-6, 6-7",
       "sets": [
         {
           "p1": 1,
