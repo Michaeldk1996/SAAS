@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-10T14:30:04.354Z",
+ "generatedAt": "2026-10-11T06:18:56.906Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "602ea3468d523577b94e675f49c1e16b09c74573",
-  "at": "2026-10-10T14:19:30Z"
+  "commit": "4fd6321b13a18ef7541fe26370df6824efd3c98a",
+  "at": "2026-10-11T06:01:30Z"
  },
- "commitsScanned": 4785,
+ "commitsScanned": 4853,
  "lastRun": {
-  "from": "2026-10-10T07:16:40Z",
-  "snapshots": 31,
-  "added": 8,
+  "from": "2026-10-10T14:19:30Z",
+  "snapshots": 69,
+  "added": 2,
   "replaced": 0,
-  "series": 72,
-  "kept": 58,
+  "series": 80,
+  "kept": 61,
   "bySource": {
-   "api-tennis-live": 58
+   "api-tennis-live": 61
   },
   "byBook": {
-   "Pinnacle +30s": 58
+   "Pinnacle +30s": 61
   },
   "dropped": {
-   "noStart": 14
+   "noStart": 19
   }
  },
  "stats": {
@@ -8540,6 +8540,34 @@
    "p2": 1.657,
    "at": "2026-10-10T02:19:54.432Z",
    "trueStart": "2026-10-10T05:32:00.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169690,
+   "date": "2026-10-11",
+   "p1Key": 1106,
+   "p2Key": 37897,
+   "p1Name": "A. De Minaur",
+   "p2Name": "R. Sakamoto",
+   "p1": 1.418,
+   "p2": 3.13,
+   "at": "2026-10-11T04:55:15.759Z",
+   "trueStart": "2026-10-11T05:47:57.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169731,
+   "date": "2026-10-11",
+   "p1Key": 435,
+   "p2Key": 438,
+   "p1Name": "K. Khachanov",
+   "p2Name": "A. Mannarino",
+   "p1": 1.281,
+   "p2": 4.09,
+   "at": "2026-10-11T03:41:10.588Z",
+   "trueStart": "2026-10-11T03:54:06.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
