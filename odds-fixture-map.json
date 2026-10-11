@@ -4115,11 +4115,11 @@
     },
     "12169722": {
       "fixtureId": "id1200308575442794",
-      "mappedAt": "2026-10-09T12:08:54Z",
+      "mappedAt": "2026-10-11T00:46:45Z",
       "orient": "same",
       "p1": "F. Cerundolo",
       "p2": "J. Mensik",
-      "startTime": "2026-10-11T04:00:00.000Z",
+      "startTime": "2026-10-11T06:20:00.000Z",
       "tournamentId": 3085
     },
     "12169731": {
@@ -4232,23 +4232,12 @@
       "observedSpanDays": 18.75,
       "projectedTtlUnitsPerDay": 3.0,
       "runs": 400,
-      "spentRuns": 193,
+      "spentRuns": 194,
       "ttlBitRuns": 57,
       "ttlBitShare": 0.142,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-22T05:47:17Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 73
-      },
       {
         "at": "2026-09-22T06:46:48Z",
         "fixturesUnitsSpent": 1,
@@ -8637,9 +8626,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 17
+      },
+      {
+        "at": "2026-10-11T00:46:45Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 16
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-10T23:46:46Z"
+  "updatedAt": "2026-10-11T00:46:45Z"
 }
