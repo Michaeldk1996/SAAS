@@ -4274,6 +4274,15 @@
       "p2": "F. Auger-Aliassime",
       "startTime": "2026-10-14T04:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12170285": {
+      "fixtureId": "id1200308575558184",
+      "mappedAt": "2026-10-12T12:32:35Z",
+      "orient": "same",
+      "p1": "D. Medvedev",
+      "p2": "S. Tsitsipas",
+      "startTime": "2026-10-14T04:00:00.000Z",
+      "tournamentId": 3085
     }
   },
   "missAudit": {
@@ -4286,23 +4295,12 @@
       "observedSpanDays": 18.78,
       "projectedTtlUnitsPerDay": 2.9,
       "runs": 400,
-      "spentRuns": 187,
+      "spentRuns": 188,
       "ttlBitRuns": 55,
       "ttlBitShare": 0.138,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-23T16:46:55Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 4,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 45
-      },
       {
         "at": "2026-09-23T17:46:55Z",
         "fixturesUnitsSpent": 1,
@@ -8691,9 +8689,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 8
+      },
+      {
+        "at": "2026-10-12T12:32:35Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 9
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-12T09:00:49Z"
+  "updatedAt": "2026-10-12T12:32:35Z"
 }
