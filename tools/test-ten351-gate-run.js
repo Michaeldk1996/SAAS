@@ -14,12 +14,12 @@
 //      and the repo's own working tree is untouched;
 //   D. a chain it cannot split safely (||) aborts before anything runs;
 //   E. the plan covers every command of the REAL package.json exactly once, for 1..8 shards.
-// Wiring cases (.github/workflows/pipeline.yml):
-//   W1. the gate starts before "Run pipeline" and runs tools/gate-run.mjs, writing its exit code;
-//   W2. "Pre-deploy gate result" sits after the start and before the upload, the deploy and every
-//       commit-back, and cannot be stepped over;
-//   W3. that step's script, run for real: rc 0 → exit 0; rc 1 → exit 1; no rc → exit 1;
-//   W4. nothing else runs `npm test` in the job (one gate, not two);
+// Wiring cases (code/data split, founder 2026-10-12: gate.yml tests CODE, pipeline.yml builds DATA, publish.yml deploys):
+//   W1. gate.yml runs tools/gate-run.mjs, one shard per machine, on every push to main; no step is soft;
+//   W2. only publish.yml deploys Pages, and only the code tools/publish-resolve.mjs picked (the newest GATED commit);
+//       pipeline.yml deploys nothing and starts no gate of its own;
+//   W3. gate.yml's result job, run for real: every shard passed → exit 0; failure / cancelled / skipped → exit 1;
+//   W4. nothing runs a serial `npm test` in pipeline.yml, gate.yml or publish.yml (one gate, not two);
 //   W5. "Seed tournament-history/" runs before the build and cannot be stepped over.
 // Seed cases (the REAL tools/seed-tournament-history.js + tools/deployed-store.js, copied into a throwaway
 // root, against a local fake site): the in-place gate used to leave the deployed shards in the checkout
@@ -37,7 +37,9 @@ const http = require('http');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = fs.readFileSync(path.join(__dirname, 'gate-run.mjs'), 'utf8');
-const YML = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
+const WF = (f) => fs.readFileSync(path.join(ROOT, '.github/workflows', f), 'utf8');
+const YML = WF('pipeline.yml');
+const WY = { yml: YML, gate: WF('gate.yml'), publish: WF('publish.yml') };
 
 // ── runner harness ──────────────────────────────────────────────────────────
 function repoWith(src, testScript, files) {
@@ -180,48 +182,40 @@ const stepsOf = (yml) => yml.split(/\n(?=      - name: )/).map((s) => ({
   name: (/^\s*- name: (.*)/m.exec(s) || [])[1] || '',
   body: s.replace(/\n\s*\n(\s*#[^\n]*\n?)*\s*$/, ''),
 }));
-function runWait(yml, rc) {
-  const steps = stepsOf(yml);
-  const w = steps.find((s) => /^Pre-deploy gate result/.test(s.name));
-  const script = w.body.split(/\n\s+run: \|\n/)[1].split('\n').map((l) => l.replace(/^ {10}/, '')).join('\n');
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten351-wait-'));
-  fs.mkdirSync(path.join(tmp, 'gate'));
-  fs.writeFileSync(path.join(tmp, 'gate', 'log'), 'gate log\n');
-  if (rc != null) fs.writeFileSync(path.join(tmp, 'gate', 'rc'), `${rc}\n`);
-  const r = spawnSync('bash', ['-e', '-c', script], { env: { ...process.env, RUNNER_TEMP: tmp, GATE_WAIT_SECONDS: '2' }, encoding: 'utf8' });
-  fs.rmSync(tmp, { recursive: true, force: true });
-  return r.status;
+function runResult(gate, shardResult) {
+  const job = gate.slice(gate.indexOf('\n  result:'));
+  const script = job.split(/\n\s+run: \|\n/)[1].split('\n').map((l) => l.replace(/^ {10}/, '')).join('\n')
+    .split('${{ needs.shard.result }}').join(shardResult);
+  return spawnSync('bash', ['-e', '-c', script], { encoding: 'utf8' }).status;
 }
 const WIRING = {
-  'W1. the gate starts before the build and records its exit code': (yml) => {
-    const steps = stepsOf(yml);
-    const at = (re) => steps.findIndex((s) => re.test(s.name));
-    const start = at(/^Start the pre-deploy gate/), build = at(/^Run pipeline/);
-    assert.ok(start > -1 && build > -1, 'anchor steps not found');
-    assert.ok(start < build, `the gate starts at #${start}, after the build (#${build})`);
-    assert.ok(/set \+e; node tools\/gate-run\.mjs[^\n]*> "\$RUNNER_TEMP\/gate\/log" 2>&1; echo \$\? > "\$RUNNER_TEMP\/gate\/rc" \) &/.test(steps[start].body), steps[start].body.slice(-300));
+  'W1. gate.yml runs one shard per machine on every push to main, never soft': (w) => {
+    assert.ok(/on:\n  push:\n    branches: \[main\]/.test(w.gate), 'gate.yml does not run on push to main');
+    const run = /\n\s+run: (node tools\/gate-run\.mjs[^\n]*)/.exec(w.gate);
+    assert.ok(run && /--shards "\$GATE_SHARDS" --shard \$\{\{ matrix\.shard \}\}/.test(run[1]), 'the shard step does not run gate-run.mjs --shard');
+    const n = Number(/GATE_SHARDS: (\d+)/.exec(w.gate)[1]);
+    assert.deepStrictEqual(/shard: \[([\d, ]+)\]/.exec(w.gate)[1].split(',').map(Number), Array.from({ length: n }, (_, i) => i + 1));
+    assert.ok(!/continue-on-error/.test(w.gate), 'a gate step is soft');
   },
-  'W2. the result step sits before the upload, the deploy and every commit-back, and cannot be stepped over': (yml) => {
-    const steps = stepsOf(yml);
-    const at = (re) => steps.findIndex((s) => re.test(s.name));
-    const start = at(/^Start the pre-deploy gate/), wait = at(/^Pre-deploy gate result/);
-    const guard = at(/^Deploy ancestor guard/), upload = at(/^Upload Pages artifact$/), deploy = at(/^Deploy to GitHub Pages$/);
-    const commitbacks = steps.map((s, i) => (/commitback-push\.sh/.test(s.body) ? i : -1)).filter((i) => i > -1);
-    assert.ok(wait > -1 && guard > -1 && upload > -1 && deploy > -1 && commitbacks.length, 'anchor steps not found');
-    assert.ok(wait > start, 'the result is read before the gate starts');
-    assert.ok(wait < guard && wait < upload && wait < deploy, `the result step #${wait} runs after a publish step`);
-    assert.ok(commitbacks.every((i) => i > wait), `a commit-back runs before the gate result: #${commitbacks.join(',')}`);
-    assert.ok(!/continue-on-error|^\s+if:|\|\|/m.test(steps[wait].body), 'the result step is soft');
+  'W2. only publish.yml deploys, only the gated code it resolved; pipeline.yml deploys nothing and runs no gate': (w) => {
+    const code = (y) => y.split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');   // comments may name the old wiring
+    assert.ok(!/upload-pages-artifact|deploy-pages|gate-run\.mjs/.test(code(w.yml)), 'pipeline.yml still deploys Pages or runs a gate');
+    assert.ok(/uses: actions\/deploy-pages@v4/.test(w.publish) && /uses: actions\/upload-pages-artifact@v3/.test(w.publish), 'publish.yml does not deploy');
+    assert.ok(/\n\s+node tools\/publish-resolve\.mjs\n/.test(w.publish), 'publish.yml does not resolve the gated code');
+    assert.ok(/git worktree add --detach "\$RUNNER_TEMP\/code" "\$\{\{ steps\.resolve\.outputs\.codeSha \}\}"/.test(w.publish), 'publish.yml does not check out the resolved gated commit');
+    assert.ok(/--code "\$RUNNER_TEMP\/code"/.test(w.publish), 'publish.yml lays down other code than the gated checkout');
+    assert.ok(/deploy:\n    needs: assemble\n    if: needs\.assemble\.outputs\.ready == 'true'/.test(w.publish), 'the deploy does not wait for a resolved, assembled site');
+    assert.ok(/PUBLISH_DEPLOY: 'true'/.test(w.publish), 'publish.yml is still in shadow: nothing would deploy the site');
   },
-  'W3. the result step passes only on rc 0': (yml) => {
-    assert.strictEqual(runWait(yml, 0), 0, 'rc 0');
-    assert.strictEqual(runWait(yml, 1), 1, 'rc 1');
-    assert.strictEqual(runWait(yml, null), 1, 'no rc');
+  'W3. the gate passes only when every shard passed': (w) => {
+    assert.strictEqual(runResult(w.gate, 'success'), 0, 'success');
+    for (const r of ['failure', 'cancelled', 'skipped']) assert.strictEqual(runResult(w.gate, r), 1, r);
   },
-  'W4. nothing else runs npm test in the job': (yml) => {
-    assert.ok(!/^\s+run: npm test\s*$/m.test(yml), 'a serial `npm test` step is still wired');
-  },  'W5. the tournament-history seed runs before the build and cannot be stepped over': (yml) => {
-    const steps = stepsOf(yml);
+  'W4. nothing else runs npm test in the job': (w) => {
+    for (const [f, y] of Object.entries(w)) assert.ok(!/^\s+run: npm test\s*$/m.test(y), `a serial \`npm test\` step is wired in ${f}`);
+  },
+  'W5. the tournament-history seed runs before the build and cannot be stepped over': (w) => {
+    const steps = stepsOf(w.yml);
     const at = (re) => steps.findIndex((s) => re.test(s.name));
     const sd = at(/^Seed tournament-history\/ from the deployed store$/), build = at(/^Run pipeline/);
     assert.ok(sd > -1 && build > -1, 'anchor steps not found');
@@ -250,28 +244,23 @@ const MUTANTS = [
   ['a command lands in two shards', 'E. the plan covers every command of the real package.json exactly once', 'src',
     "  const out = bins.map((b) => b.idx.sort((a, b2) => a - b2)).filter((b) => b.length);\n  // Every command in exactly one shard — or nothing runs.\n  const seen = out.flat().sort((a, b) => a - b);\n  if (seen.length !== cmds.length || seen.some((v, k) => v !== k)) throw new Error('shard plan does not cover every command exactly once');",
     "  const out = bins.map((b) => b.idx.sort((a, b2) => a - b2)).filter((b) => b.length);\n  if (out.length > 1) out[1] = [...new Set([...out[1], out[0][0]])].sort((a, b) => a - b);"],
-  ['the gate starts after the build', 'W1. the gate starts before the build and records its exit code', 'yml',
-    '      - name: Start the pre-deploy gate (runs beside the build)',
-    '      - name: Run pipeline (moved ahead of the gate)\n        run: node run-pipeline.js\n\n      - name: Start the pre-deploy gate (runs beside the build)'],
-  ['a publish step before the gate result', 'W2. the result step sits before the upload, the deploy and every commit-back, and cannot be stepped over', 'yml',
-    '      - name: Pre-deploy gate result (fail-closed; nothing publishes until it passes)\n',
-    '      - name: Upload Pages artifact\n        uses: actions/upload-pages-artifact@v3\n\n      - name: Pre-deploy gate result (fail-closed; nothing publishes until it passes)\n'],
+  ['the gate runs the whole plan on one machine', 'W1. gate.yml runs one shard per machine on every push to main, never soft', 'gate',
+    ' --shard ${{ matrix.shard }}', ''],
+  ['a gate step made soft', 'W1. gate.yml runs one shard per machine on every push to main, never soft', 'gate',
+    '      - name: Run this shard of every npm test command\n', '      - name: Run this shard of every npm test command\n        continue-on-error: true\n'],
+  ['pipeline.yml deploys Pages again', 'W2. only publish.yml deploys, only the gated code it resolved; pipeline.yml deploys nothing and runs no gate', 'yml',
+    '      - name: Upload the built site for publish.yml (site-data)\n', '      - name: Deploy to GitHub Pages\n        uses: actions/deploy-pages@v4\n\n      - name: Upload the built site for publish.yml (site-data)\n'],
+  ['publish lays down the tip, not the gated commit', 'W2. only publish.yml deploys, only the gated code it resolved; pipeline.yml deploys nothing and runs no gate', 'publish',
+    'node tools/publish-site.mjs --code "$RUNNER_TEMP/code"', 'node tools/publish-site.mjs --code "$PWD"'],
+  ['publish left in shadow', 'W2. only publish.yml deploys, only the gated code it resolved; pipeline.yml deploys nothing and runs no gate', 'publish',
+    "PUBLISH_DEPLOY: 'true'", "PUBLISH_DEPLOY: 'false'"],
   ['every shard runs in one shared directory', 'C. shards are isolated and the repo checkout is untouched', 'src',
     "spawn('sh', ['-c', cmds[i]], { cwd: dir,", "spawn('sh', ['-c', `cp -R ${JSON.stringify(dir)}/. ${JSON.stringify(tmpdir())}/ 2>/dev/null; cd ${JSON.stringify(tmpdir())} && ${cmds[i]}`], { cwd: dir,"],
-  ['the exit code is not recorded when the runner fails (bash -e subshell)', 'W1. the gate starts before the build and records its exit code', 'yml',
-    '( set +e; node tools/gate-run.mjs', '( node tools/gate-run.mjs'],
-  ['the result step made soft', 'W2. the result step sits before the upload, the deploy and every commit-back, and cannot be stepped over', 'yml',
-    '      - name: Pre-deploy gate result (fail-closed; nothing publishes until it passes)\n',
-    '      - name: Pre-deploy gate result (fail-closed; nothing publishes until it passes)\n        continue-on-error: true\n'],
-  ['a missing result passes', 'W3. the result step passes only on rc 0', 'yml',
-    '            echo "::error title=pre-deploy gate::no result after ${GATE_WAIT_SECONDS} s. Nothing publishes."\n            exit 1',
-    '            echo "::error title=pre-deploy gate::no result after ${GATE_WAIT_SECONDS} s. Nothing publishes."\n            exit 0'],
-  ['a red result passes', 'W3. the result step passes only on rc 0', 'yml',
-    '            echo "::error title=pre-deploy gate::failed (exit ${rc}). Nothing publishes."\n            exit 1',
-    '            echo "::error title=pre-deploy gate::failed (exit ${rc}). Nothing publishes."\n            exit 0'],
-  ['the serial npm test step left in as well', 'W4. nothing else runs npm test in the job', 'yml',
-    '      - name: Start the pre-deploy gate (runs beside the build)',
-    '      - name: Old gate\n        run: npm test\n\n      - name: Start the pre-deploy gate (runs beside the build)'],  ['the seed passes a failed hydrate', 'S2. an unreachable deployed index exits 1', 'seed',
+  ['a cancelled shard passes', 'W3. the gate passes only when every shard passed', 'gate',
+    '[ "${{ needs.shard.result }}" = "success" ] ||', '[ "${{ needs.shard.result }}" != "failure" ] ||'],
+  ['the serial npm test step left in as well', 'W4. nothing else runs npm test in the job', 'gate',
+    '      - name: Install dependencies\n        run: npm ci\n', '      - name: Install dependencies\n        run: npm ci\n\n      - name: Old gate\n        run: npm test\n'],
+  ['the seed passes a failed hydrate', 'S2. an unreachable deployed index exits 1', 'seed',
     "  console.error(`::error title=tournament-history seed::${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players`}`);\n  process.exit(1);",
     "  console.error(`::error title=tournament-history seed::${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players`}`);"],
   ['the seed hydrates nothing', 'S1. every indexed deployed shard lands in tournament-history/', 'seed',
@@ -288,16 +277,17 @@ const MUTANTS = [
   };
   console.log('\nTEN-351 · pre-deploy gate in parallel shards (tools/gate-run.mjs) + pipeline wiring\n');
   for (const [name, fn] of Object.entries(RUNNER)) await check(`real: ${name}`, () => fn(SRC));
-  for (const [name, fn] of Object.entries(WIRING)) await check(`real: ${name}`, () => fn(YML));
+  for (const [name, fn] of Object.entries(WIRING)) await check(`real: ${name}`, () => fn(WY));
   for (const [name, fn] of Object.entries(SEED)) await check(`real: ${name}`, () => fn(SEED_SRC));
   for (const [label, caseName, file, find, replace] of MUTANTS) {
     await check(`mutant bites — ${label} → "${caseName.split(' (')[0]}" fails`, async () => {
-      const base = file === 'src' ? SRC : file === 'seed' ? SEED_SRC : YML;
+      const base = file === 'src' ? SRC : file === 'seed' ? SEED_SRC : WY[file];
       assert.strictEqual(base.split(find).length - 1, 1, `anchor must occur exactly once: ${find.slice(0, 80)}`);
       const mutated = base.replace(find, () => replace);
       const fn = (RUNNER[caseName] || WIRING[caseName] || SEED[caseName]);
+      const arg = WIRING[caseName] ? { ...WY, [file]: mutated } : mutated;
       let failed = false;
-      try { await fn(mutated); } catch { failed = true; }
+      try { await fn(arg); } catch { failed = true; }
       assert.ok(failed, `"${caseName}" still passes with the mechanism cut out`);
     });
   }

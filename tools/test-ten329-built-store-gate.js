@@ -104,14 +104,16 @@ check('pipeline: the gate step runs the reconcile suite on _site/', () => {
 check('pipeline: the gate cannot be stepped over', () => {
   assert.ok(!/continue-on-error|^\s+if:|\|\|/m.test(steps[gate].body), 'the gate step is soft');
 });
-// Mutation: move the step below "Upload Pages artifact" (or above "Assemble site").
+// Mutation: move the step below "Upload the built site for publish.yml (site-data)" (or above "Assemble site").
+// Since the code/data split (founder 2026-10-12) the site-data upload IS this workflow's publish: publish.yml deploys
+// only that artifact, so the built-store gate must pass before it.
 check('pipeline: the gate sits after the site is assembled and before anything publishes or commits back', () => {
   const assemble = at(/^Assemble site$/), complete = at(/^Assert site completeness$/);
-  const upload = at(/^Upload Pages artifact$/), deploy = at(/^Deploy to GitHub Pages$/);
+  const upload = at(/^Upload the built site for publish\.yml \(site-data\)$/);
   const commitbacks = steps.map((s, i) => (/commitback-push\.sh/.test(s.body) ? i : -1)).filter((i) => i > -1);
-  assert.ok(assemble > -1 && complete > -1 && upload > -1 && deploy > -1 && commitbacks.length, 'anchor steps not found');
+  assert.ok(assemble > -1 && complete > -1 && upload > -1 && commitbacks.length, 'anchor steps not found');
   assert.ok(gate > assemble && gate > complete, `gate #${gate} runs before the site is assembled (#${assemble})`);
-  assert.ok(gate < upload && gate < deploy, `gate #${gate} runs after the upload (#${upload})`);
+  assert.ok(gate < upload, `gate #${gate} runs after the site-data upload (#${upload})`);
   assert.ok(commitbacks.every((i) => i > gate), `a commit-back runs before the gate: #${commitbacks.join(',')}`);
 });
 

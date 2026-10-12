@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  PUBLISH_DEPLOY: 'false'
+  PUBLISH_DEPLOY: 'true'
 
 jobs:
   assemble:

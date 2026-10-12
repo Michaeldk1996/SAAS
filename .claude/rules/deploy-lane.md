@@ -176,6 +176,27 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    report on your ticket: who holds the lane, since when, whether that run is alive,
    and your position. It repeats every 30 min while you wait.
 
+## Code / data split (founder 2026-10-12: "do not mix the data with it and wait so long; everything automatic")
+
+Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here needs it).
+- **Code:** `gate.yml` runs on every push to main (data-bot `[skip ci]` commits start none): every `npm test` command,
+  once, split by `tools/gate-run.mjs --shard K` over `GATE_SHARDS` (6) machines. TEN-351 holds — the gate runs once per
+  code commit (de-duplicated across the data rebuilds, which the ruling allows), never skipped, always before publishing.
+  A newer code push cancels an older gate still running.
+- **Data:** `pipeline.yml` builds and checks the data every ~10 min (site completeness, the TEN-329 reconcile on the
+  built store) and uploads `_site` as the `site-data` artifact. It deploys nothing and runs no code gate.
+- **Publish:** `publish.yml` runs after every successful gate or pipeline run (and on dispatch). `tools/publish-resolve.mjs`
+  picks, when the run STARTS, the newest commit on main whose gate passed and the newest `site-data`;
+  `tools/publish-site.mjs` lays that commit's code (`tools/site-code.sh`, the one code list pipeline.yml uses too) over
+  the data, injects the public Supabase config and stamps it. Concurrency `site-publish`, never cancelled: a publish
+  that waited always takes the newest of both, so the queue cannot lose a deploy (the TEN-178 failure).
+- **`build-info.json`:** `commit` = the CODE commit live (`check-live-build.sh` works unchanged); `data` = the pipeline
+  run, its commit and build time the site was published with; `publishedBy: "publish.yml"`.
+- **The lane:** "the owner's pipeline run" in the hold rules (ii)–(iv) is now the first `publish.yml` run
+  (`DEPLOY_WORKFLOW`); every number is unchanged. Push → live is ~8–10 min.
+- **Tests:** `tools/test-publish-split.js` (resolve, assemble, workflow wiring, lane), `tools/test-ten351-gate-run.js`
+  (`--shard`, W1–W4), `tools/test-ten329-built-store-gate.js` (the reconcile runs before the `site-data` upload).
+
 ## Pipeline stall guard (TEN-396, founder ruling 2026-10-07)
 
 A `pipeline.yml` run stuck in GitHub's `waiting` state holds the single `bsp-pipeline`
