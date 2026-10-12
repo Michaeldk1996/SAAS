@@ -4160,7 +4160,7 @@
     },
     "12169842": {
       "fixtureId": "id1200308575476904",
-      "mappedAt": "2026-10-10T13:03:27Z",
+      "mappedAt": "2026-10-12T01:31:00Z",
       "orient": "same",
       "p1": "P. Carreno-Busta",
       "p2": "F. Auger-Aliassime",
@@ -4169,16 +4169,16 @@
     },
     "12169843": {
       "fixtureId": "id1200308575473756",
-      "mappedAt": "2026-10-10T13:03:27Z",
+      "mappedAt": "2026-10-12T01:31:00Z",
       "orient": "same",
       "p1": "D. Medvedev",
       "p2": "D. Svrcina",
-      "startTime": "2026-10-12T04:00:00.000Z",
+      "startTime": "2026-10-12T06:20:00.000Z",
       "tournamentId": 3085
     },
     "12169844": {
       "fixtureId": "id1200308575477394",
-      "mappedAt": "2026-10-10T13:03:27Z",
+      "mappedAt": "2026-10-12T01:31:00Z",
       "orient": "same",
       "p1": "L. Tien",
       "p2": "C. Ruud",
@@ -4223,8 +4223,8 @@
     },
     "12170076": {
       "fixtureId": null,
-      "mappedAt": "2026-10-12T00:30:59Z",
-      "missRuns": 10,
+      "mappedAt": "2026-10-12T01:31:00Z",
+      "missRuns": 11,
       "missSince": "2026-10-11T10:01:00Z",
       "orient": null,
       "p1": "A. De Minaur",
@@ -4234,8 +4234,8 @@
     },
     "12170088": {
       "fixtureId": null,
-      "mappedAt": "2026-10-12T00:30:59Z",
-      "missRuns": 9,
+      "mappedAt": "2026-10-12T01:31:00Z",
+      "missRuns": 10,
       "missSince": "2026-10-11T11:01:07Z",
       "orient": null,
       "p1": "A. Gea",
@@ -4254,23 +4254,12 @@
       "observedSpanDays": 18.78,
       "projectedTtlUnitsPerDay": 3.0,
       "runs": 400,
-      "spentRuns": 189,
+      "spentRuns": 190,
       "ttlBitRuns": 57,
       "ttlBitShare": 0.142,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-23T05:46:30Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 39
-      },
       {
         "at": "2026-09-23T06:46:36Z",
         "fixturesUnitsSpent": 1,
@@ -8659,9 +8648,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 11
+      },
+      {
+        "at": "2026-10-12T01:31:00Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 3,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 5,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 11
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-12T00:30:59Z"
+  "updatedAt": "2026-10-12T01:31:00Z"
 }
