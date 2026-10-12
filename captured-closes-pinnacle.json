@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-11T06:18:56.906Z",
+ "generatedAt": "2026-10-12T03:00:44.143Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "4fd6321b13a18ef7541fe26370df6824efd3c98a",
-  "at": "2026-10-11T06:01:30Z"
+  "commit": "42706dddffe2db3d7ee1e7c84fe862bc7a2b5b10",
+  "at": "2026-10-12T02:46:00Z"
  },
- "commitsScanned": 4853,
+ "commitsScanned": 4944,
  "lastRun": {
-  "from": "2026-10-10T14:19:30Z",
-  "snapshots": 69,
-  "added": 2,
+  "from": "2026-10-11T06:01:30Z",
+  "snapshots": 91,
+  "added": 3,
   "replaced": 0,
-  "series": 80,
-  "kept": 61,
+  "series": 66,
+  "kept": 51,
   "bySource": {
-   "api-tennis-live": 61
+   "api-tennis-live": 51
   },
   "byBook": {
-   "Pinnacle +30s": 61
+   "Pinnacle +30s": 51
   },
   "dropped": {
-   "noStart": 19
+   "noStart": 15
   }
  },
  "stats": {
@@ -8558,6 +8558,34 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12169697,
+   "date": "2026-10-11",
+   "p1Key": 1980,
+   "p2Key": 1925,
+   "p1Name": "A. Zverev",
+   "p2Name": "Q. Halys",
+   "p1": 1.156,
+   "p2": 6.14,
+   "at": "2026-10-11T09:23:11.916Z",
+   "trueStart": "2026-10-11T09:51:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169719,
+   "date": "2026-10-11",
+   "p1Key": 2842,
+   "p2Key": 2846,
+   "p1Name": "A. Davidovich Fokina",
+   "p2Name": "F. Tiafoe",
+   "p1": 2.05,
+   "p2": 1.862,
+   "at": "2026-10-11T12:47:22.315Z",
+   "trueStart": "2026-10-11T12:47:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12169731,
    "date": "2026-10-11",
    "p1Key": 435,
@@ -8568,6 +8596,20 @@
    "p2": 4.09,
    "at": "2026-10-11T03:41:10.588Z",
    "trueStart": "2026-10-11T03:54:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169747,
+   "date": "2026-10-11",
+   "p1Key": 1895,
+   "p2Key": 2838,
+   "p1Name": "A. Bublik",
+   "p2Name": "B. Nakashima",
+   "p1": 2.14,
+   "p2": 1.8,
+   "at": "2026-10-11T08:57:41.328Z",
+   "trueStart": "2026-10-11T09:51:02.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
