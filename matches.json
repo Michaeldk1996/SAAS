@@ -16286,13 +16286,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.4,
+      "p2": 3.0,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.46,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 3.0,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Shanghai - 1/8-finals",
     "p1Key": 1093,
@@ -210613,11 +210619,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1852_v-vacherot.jpg",
     "oddsMovement": {
@@ -211686,6 +211698,9 @@
       "edgeVsPinnacleP1": 0.035,
       "edgeVsPinnacleP2": -0.035,
       "ts": "2026-10-11T00:20:20.688Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   }
 ]
