@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-12T03:00:44.143Z",
+ "generatedAt": "2026-10-12T06:48:15.704Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "42706dddffe2db3d7ee1e7c84fe862bc7a2b5b10",
-  "at": "2026-10-12T02:46:00Z"
+  "commit": "7e7d94fce68c3b51f3186a6d35c4b4fc5ebc6958",
+  "at": "2026-10-12T06:31:01Z"
  },
- "commitsScanned": 4944,
+ "commitsScanned": 4961,
  "lastRun": {
-  "from": "2026-10-11T06:01:30Z",
-  "snapshots": 91,
-  "added": 3,
+  "from": "2026-10-12T02:46:00Z",
+  "snapshots": 18,
+  "added": 4,
   "replaced": 0,
-  "series": 66,
-  "kept": 51,
+  "series": 70,
+  "kept": 55,
   "bySource": {
-   "api-tennis-live": 51
+   "api-tennis-live": 55
   },
   "byBook": {
-   "Pinnacle +30s": 51
+   "Pinnacle +30s": 55
   },
   "dropped": {
    "noStart": 15
@@ -8610,6 +8610,62 @@
    "p2": 1.8,
    "at": "2026-10-11T08:57:41.328Z",
    "trueStart": "2026-10-11T09:51:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169816,
+   "date": "2026-10-12",
+   "p1Key": 2959,
+   "p2Key": 50323,
+   "p1Name": "J. Lehecka",
+   "p2Name": "R. Jodar",
+   "p1": 1.617,
+   "p2": 2.46,
+   "at": "2026-10-12T04:18:14.981Z",
+   "trueStart": "2026-10-12T06:03:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169842,
+   "date": "2026-10-12",
+   "p1Key": 434,
+   "p2Key": 2073,
+   "p1Name": "P. Carreno-Busta",
+   "p2Name": "F. Auger-Aliassime",
+   "p1": 3.79,
+   "p2": 1.314,
+   "at": "2026-10-11T09:44:00.980Z",
+   "trueStart": "2026-10-12T03:53:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169844,
+   "date": "2026-10-12",
+   "p1Key": 10520,
+   "p2Key": 430,
+   "p1Name": "L. Tien",
+   "p2Name": "C. Ruud",
+   "p1": 1.671,
+   "p2": 2.35,
+   "at": "2026-10-12T03:04:49.454Z",
+   "trueStart": "2026-10-12T03:53:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12169853,
+   "date": "2026-10-12",
+   "p1Key": 1906,
+   "p2Key": 2832,
+   "p1Name": "S. Tsitsipas",
+   "p2Name": "T. Fritz",
+   "p1": 2.4,
+   "p2": 1.645,
+   "at": "2026-10-12T00:07:00.531Z",
+   "trueStart": "2026-10-12T06:18:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
