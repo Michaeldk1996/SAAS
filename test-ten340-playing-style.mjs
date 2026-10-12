@@ -58,6 +58,7 @@ const S = new Function(`
   ${MDNA}
   ${PS2}
   return { buildStyleSection, ps2Record, ps2Edge, ps2Meeting, ps2IsWalkover, ps2StateFor, _maRowReg, STY, ELO,
+    click(code){ return eval(code); },   // runs a rendered onclick inside the page block's own scope (_ps2, ps2Set)
     set matrix(v){ psMatrixData = v; }, set dna(v){ _mdna = v; }, set styles(v){ playerStyles = v; }, get tips(){ return tips; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#39;/g, "'").replace(/\s+/g, ' ').trim();
@@ -167,6 +168,43 @@ test('career meetings (DoD 8): the shared rows under each record, 6 shown + "Sho
   assert.ok(b && /Showing 2 of 2/.test(text(b[0])), 'B\'s meetings are listed too, no click needed');
   S.ps2StateFor(m).moreA = true;
   assert.match(text(S.buildStyleSection(m)), /Showing 12 of 12 .*Show fewer/);
+});
+
+// Mutations: the two cards share one expanded flag; the columns stretched again (align-items:stretch), the card flexed to
+// the column, or the control pinned to the card's bottom (margin-top:auto) — with the columns stretched, expanding one
+// player's list stretched the other card and its "Show N more" control sat far below its own rows, so its new rows
+// rendered off-screen and the click looked dead (T. Paul v V. Vacherot, Shanghai 2026 R32).
+test('career meetings: each card expands and collapses on its own; counters = rows; no stretched card', () => {
+  setup(); S.STY['T. Paul'] = { archetype_label: CP }; S.STY['V. Vacherot'] = { archetype_label: AB };
+  const m = match('T. Paul', 'V. Vacherot', { p1StyleMeetings: { [AB]: rows(30, 15) }, p2StyleMeetings: { [CP]: rows(12, 8) } });
+  const card = (h, sd) => new RegExp(`class="ps2-meet" data-ps2-side="${sd}"[\\s\\S]*?(?=class="ps2-meet" data-ps2-side="b"|class="ps2-card ps2-matchup")`).exec(h)[0];
+  const read = () => { const h = S.buildStyleSection(m); return ['a', 'b'].map(sd => { const c = card(h, sd), t = text(c);
+    return { showing: /Showing (\d+) of (\d+)/.exec(t).slice(1).map(Number), rows: (c.match(/data-ps2-row="/g) || []).length,
+      btn: (/<span class="seg ps2-more"[^>]*>([^<]*)</.exec(c) || [])[1] || null, onclick: (/class="seg ps2-more" onclick="([^"]*)"/.exec(c) || [])[1] }; }); };
+  const press = sd => { const st = read()[sd === 'a' ? 0 : 1]; assert.ok(st.onclick, 'card ' + sd + ' has its control'); S.click(st.onclick); };
+  const check = (a, b) => { const [A, B] = read();
+    assert.deepEqual(A.showing, [a, 45]); assert.equal(A.rows, a, 'A: the counter = the rows drawn');
+    assert.deepEqual(B.showing, [b, 20]); assert.equal(B.rows, b, 'B: the counter = the rows drawn');
+    assert.equal(A.btn, a === 45 ? 'Show fewer' : 'Show 39 more matches'); assert.equal(B.btn, b === 20 ? 'Show fewer' : 'Show 14 more matches'); };
+  check(6, 6);
+  press('a'); check(45, 6);       // A expands, B untouched
+  press('b'); check(45, 20);      // both expanded at once
+  press('a'); check(6, 20);       // collapsing A leaves B expanded
+  press('b'); check(6, 6);
+  press('b'); check(6, 20);       // B first (the right-hand card), A untouched
+  press('a'); check(45, 20);
+  // 6 or fewer meetings: every row, no control — on the left card and on the right one
+  for (const [w, l, sd] of [[4, 2, 'a'], [3, 2, 'b']]) {
+    const m2 = match('T. Paul', 'V. Vacherot', sd === 'a' ? { p1StyleMeetings: { [AB]: rows(w, l) }, p2StyleMeetings: { [CP]: rows(12, 8) } } : { p1StyleMeetings: { [AB]: rows(30, 15) }, p2StyleMeetings: { [CP]: rows(w, l) } });
+    const c = card(S.buildStyleSection(m2), sd);
+    assert.match(text(c), new RegExp(`Showing ${w + l} of ${w + l}`)); assert.equal((c.match(/data-ps2-row="/g) || []).length, w + l);
+    assert.doesNotMatch(c, /ps2-more/, 'no Show more control on ' + (w + l) + ' meetings');
+  }
+  // layout: each column as tall as its own content; the card never flexes to a stretched column, the control never pinned
+  const h = S.buildStyleSection(m);
+  assert.match(h, /class="ps2-personal-grid" style="[^"]*align-items:start;/, 'the two columns align to the top');
+  assert.doesNotMatch(/<div class="ps2-meet"[^>]*>/.exec(h)[0], /flex:1/, 'the meetings card does not stretch');
+  assert.doesNotMatch(/<span class="seg ps2-more"[^>]*>/.exec(h)[0], /margin-top:auto/, 'the control sits under its own rows');
 });
 
 // Mutation: a player with no style label reads "No career meetings on record" (the meetings are only tracked between

@@ -18680,11 +18680,15 @@ function ps2PersonalBox(m, side, R){
       <div style="display:flex; align-items:baseline; gap:8px; ${M} font-size:10.5px; color:${C.t3};"><span class="ps2-avg">Matrix avg ${ready && R.avg != null ? R.avg + '%' : FH_DASHC}</span><span class="ps2-delta" style="font-weight:700; color:${dC};">${dTxt}</span><span style="margin-left:auto;">All surfaces · career</span></div>
     </div>`;
 }
+// Each column (record box + its career meetings) is as tall as its own content (align-items:start): with the columns
+// stretched, expanding one player's list stretched the other card and pinned its "Show N more" control to the stretched
+// bottom, so that card's extra rows rendered far above the control, off-screen — its click looked dead. Each side's
+// expanded state is its own (moreA / moreB).
 function ps2PersonalCard(m, RR, S){
   const cols = [0, 1].map(i => `<div class="ps2-col" style="display:flex; flex-direction:column; gap:10px; min-width:0;">${ps2PersonalBox(m, i, RR[i])}${ps2MeetCard(m, i, RR[i], i ? S.moreB : S.moreA)}</div>`).join('');
   const smallNote = [0, 1].some(i => RR[i].state === 'ready' && maGate(RR[i].n).mode === 'small') ? `<span style="font-size:11px; color:${PS2_C.t4};">Grey = small sample (5–9 meetings).</span>` : '';
   return `<div class="ps2-card ps2-personal" style="${PS2_CARD}"><span style="${PS2_CAP}">Personal record vs this style</span>
-    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); gap:14px; align-items:stretch;">${cols}</div>${smallNote}</div>`;
+    <div class="ps2-personal-grid" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); gap:14px; align-items:start;">${cols}</div>${smallNote}</div>`;
 }
 
 // Career meetings vs this style (DF L578–617; TEN-380: under each player's record box, always shown): the player's rows,
@@ -18695,7 +18699,7 @@ const PS2_MEET_COLS = ['date', 'sq', 'opp', 'rd', 'sets', 'scores', 'h', 'oppPri
 const PS2_MEET_GRID = '42px 10px minmax(0,1fr) 34px 36px minmax(0,1.15fr) 36px 36px';
 function ps2MeetCard(m, side, R, more){
   const C = PS2_C, M = FH_MONO, key = side ? m.p2Key : m.p1Key;
-  const box = (right, inner) => `<div class="ps2-meet" data-ps2-side="${side ? 'b' : 'a'}" style="background:${C.card}; border:1px solid ${C.edge}; border-radius:11px; padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0; flex:1;">
+  const box = (right, inner) => `<div class="ps2-meet" data-ps2-side="${side ? 'b' : 'a'}" style="background:${C.card}; border:1px solid ${C.edge}; border-radius:11px; padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="${PS2_CAP}">Career meetings</span>${right}</div>${inner}</div>`;
   if (R.state !== 'ready' || !R.n){
     const sur = fhSurname(R.name);
@@ -18717,7 +18721,7 @@ function ps2MeetCard(m, side, R, more){
     }) };
   });
   const rest = all.length - PS2_ROWS_SHOWN;
-  const moreCtl = rest > 0 ? `<span class="seg ps2-more" onclick="ps2Set({${side ? 'moreB' : 'moreA'}: !_ps2.${side ? 'moreB' : 'moreA'}})" style="margin-top:auto; align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;">${more ? 'Show fewer' : `Show ${rest} more ${rest === 1 ? 'match' : 'matches'}`}</span>` : '';   // DESIGN GAP G18
+  const moreCtl = rest > 0 ? `<span class="seg ps2-more" onclick="ps2Set({${side ? 'moreB' : 'moreA'}: !_ps2.${side ? 'moreB' : 'moreA'}})" style="align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;">${more ? 'Show fewer' : `Show ${rest} more ${rest === 1 ? 'match' : 'matches'}`}</span>` : '';   // DESIGN GAP G18
   return box(`<span class="ps2-showing" style="${M} font-size:10px; color:${C.t3}; white-space:nowrap;">Showing ${list.length} of ${all.length}</span>`,
     `<div style="margin:0 -18px;">${maMatchRowsHtml(groups, { cols: PS2_MEET_COLS, grid: PS2_MEET_GRID, labels: ['Date', '', 'Opponent', 'Rd', 'Sets', 'Scores', 'H', 'A'],
         headPad: '7px 24px 6px', groupPad: '10px 24px 4px', rowPad: '0 18px', cellPad: '5px 6px', rowLine: false })}</div>${moreCtl}`);

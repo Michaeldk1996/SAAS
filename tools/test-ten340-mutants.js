@@ -42,6 +42,11 @@ const MUTANTS = [
   ['TEN-380: Show player profile back to --link', "font-size:12.5px; font-weight:600; color:${C.text}; cursor:pointer; padding:2px 8px;\">${S.prof ?", "font-size:12.5px; font-weight:600; color:${C.link}; cursor:pointer; padding:2px 8px;\">${S.prof ?"],
   ['TEN-380: Show N more matches back to --link', "font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;", "font-size:12px; font-weight:600; color:${C.link}; cursor:pointer; padding:4px 0 2px;"],
   ['TEN-380: cards back on the --line hairline', "const PS2_CARD = `background:${PS2_C.card}; border:1px solid ${PS2_C.edge};", "const PS2_CARD = `background:${PS2_C.card}; border:1px solid ${PS2_C.line};"],
+  // Show more per card (Paul v Vacherot): independent state, no stretched card
+  ['show more: both cards read one shared expanded flag', "${ps2MeetCard(m, i, RR[i], i ? S.moreB : S.moreA)}", "${ps2MeetCard(m, i, RR[i], S.moreA || S.moreB)}"],
+  ['show more: the columns stretched again', "gap:14px; align-items:start;\">${cols}</div>${smallNote}", "gap:14px; align-items:stretch;\">${cols}</div>${smallNote}"],
+  ['show more: the meetings card flexes to a stretched column', "padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0;\">", "padding:14px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0; flex:1;\">"],
+  ['show more: the control pinned to the card bottom', "style=\"align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;\"", "style=\"margin-top:auto; align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;\""],
   ['unclassified: the player\'s own box claims no meetings', "  if (!oppLab || !ownLab) return { state: 'unclassified'", "  if (!oppLab) return { state: 'unclassified'"],
   ['builder N2: a TML walkover no longer dedups its api copy', "        if (wpk && wd) (tmlPairDates.get(wpk) || tmlPairDates.set(wpk, []).get(wpk)).push(wd);\n", '', 'builder'],
   ['builder N2: a TML walkover counted in the matrix, the records and the shards', "      if (/\\bW\\/O\\b/i.test(c[ix.score] || '')) {\n        tmlWalkover++;", "      if (false) {\n        tmlWalkover++;", 'builder'],
