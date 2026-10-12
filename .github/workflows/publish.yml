@@ -97,8 +97,9 @@ jobs:
           fi
           node tools/publish-site.mjs --code "$RUNNER_TEMP/code" --site _site
 
-      - name: Upload the published site (shadow and live)
-        if: steps.resolve.outputs.ready == 'true'
+      # Shadow only: the assembled site for inspection (~90 s for 109k files). Live mode skips it; Pages gets the site.
+      - name: Upload the published site (shadow only)
+        if: steps.resolve.outputs.ready == 'true' && steps.mode.outputs.deploy != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: site-publish
