@@ -11,7 +11,7 @@ const read = (f) => fs.readFileSync(path.join(ROOT, f), 'utf8');
 
 const SOURCES = {
   resolve: read('tools/publish-resolve.mjs'), site: read('tools/publish-site.mjs'), code: read('tools/site-code.sh'),
-  gate: read('.github/workflows/gate.yml'), publish: read('.github/workflows/publish.yml'), pipeline: read('.github/workflows/pipeline.yml'),
+  gate: read('.github/workflows/gate.yml'), lane: read('tools/deploy-lane.mjs'), publish: read('.github/workflows/publish.yml'), pipeline: read('.github/workflows/pipeline.yml'),
 };
 
 async function load(src, name) {
@@ -91,13 +91,18 @@ const CASES = {
     assert.ok(fromPipe.length >= 15, `only ${fromPipe.length} code lines found in Assemble site`);
     assert.deepStrictEqual(fromScript, fromPipe);
   },
-  'pipeline.yml: uploads site-data after every data check': (S) => {
+  'deploy-lane.mjs: the hold rules watch the run that deploys (publish.yml), not pipeline.yml': (S) => {
+    assert.ok(/export const DEPLOY_WORKFLOW = 'publish\.yml';/.test(S.lane), 'DEPLOY_WORKFLOW is not publish.yml');
+    assert.ok(/pipelineRuns: githubPipelineRuns\(\{ repo: [^}]*workflow: DEPLOY_WORKFLOW \}\)/.test(S.lane), 'the real lane does not watch DEPLOY_WORKFLOW');
+  },
+  'pipeline.yml: uploads site-data after every data check; deploys nothing': (S) => {
     const st = steps(S.pipeline), at = (re) => st.findIndex((x) => re.test(x.name));
     const comp = at(/^Assert site completeness$/), rec = at(/^Reconcile suite on the freshly built store/);
     const stamp = at(/^Deploy ancestor guard/), up = at(/^Upload the built site for publish\.yml/);
     assert.ok(comp >= 0 && rec >= 0 && stamp >= 0 && up >= 0, 'all steps present');
     assert.ok(up > comp && up > rec && up > stamp, `site-data is uploaded after the data checks (${[comp, rec, stamp, up]})`);
     assert.ok(/name: site-data\n\s+path: _site/.test(st[up].body));
+    assert.ok(!st.some((x) => /upload-pages-artifact|deploy-pages/.test(x.body)), 'pipeline.yml deploys Pages: only publish.yml may');
   },
 };
 
@@ -109,6 +114,8 @@ const MUTANTS = [
   ['the data info dropped from the stamp', 'site', "data: { runId: env.DATA_RUN_ID || dataInfo.runId || null, commit: dataInfo.commit || null, builtAt: dataInfo.builtAt || null },", '', 'publish-site'],
   ['Supabase not injected', 'site', "if (env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY) {", "if (false) {", 'publish-site'],
   ['a shard missing from the matrix', 'gate', 'shard: [1, 2, 3, 4, 5, 6]', 'shard: [1, 2, 3, 4, 5]', 'gate.yml'],
+  ['the lane watches pipeline.yml again', 'lane', "workflow: DEPLOY_WORKFLOW })", "workflow: 'pipeline.yml' })", 'deploy-lane.mjs'],
+  ['pipeline.yml deploys Pages again', 'pipeline', null, 'PAGES', 'pipeline.yml'],
   ['publish deploys whatever the switch says', 'publish', "if: needs.assemble.outputs.ready == 'true' && needs.assemble.outputs.deploy == 'true'", "if: needs.assemble.outputs.ready == 'true'", 'publish.yml'],
   ['publish fires on a failed run', 'publish', "github.event.workflow_run.conclusion == 'success'", "github.event.workflow_run.conclusion != ''", 'publish.yml'],
   ['site-data uploaded before the data checks', 'pipeline', null, null, 'pipeline.yml'],
@@ -124,10 +131,12 @@ const MUTANTS = [
   for (const [label, file, find, repl, target] of MUTANTS) {
     n++;
     const S = { ...SOURCES };
-    if (file === 'pipeline' && repl === 'DROPCP') {
+    if (file === 'pipeline' && repl === 'PAGES') {
+      S.pipeline = S.pipeline.replace('      # Surface failures loudly', '      - name: Deploy to GitHub Pages\n        uses: actions/deploy-pages@v4\n\n      # Surface failures loudly');
+    } else if (file === 'pipeline' && repl === 'DROPCP') {
       S.pipeline = S.pipeline.replace('          cp tournament-identity.js _site/\n', '');
     } else if (file === 'pipeline') {   // move the upload above the reconcile step
-      const up = S.pipeline.indexOf('      # Founder 2026-10-12: code and data deploy'), pages = S.pipeline.indexOf('      - name: Upload Pages artifact');   // stage 1
+      const up = S.pipeline.indexOf('      # Founder 2026-10-12: code and data deploy'), pages = S.pipeline.indexOf('      # Surface failures loudly', up);
       const block = S.pipeline.slice(up, pages), rec = S.pipeline.indexOf('      - name: Reconcile suite on the freshly built store');
       S.pipeline = S.pipeline.slice(0, rec) + block + S.pipeline.slice(rec, up) + S.pipeline.slice(pages);
     } else {

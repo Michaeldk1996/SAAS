@@ -208,7 +208,7 @@ Each task is a self-contained brief specifying what to build, what not to touch,
 
 ## Deploying — one lane at a time
 
-Pushing to main does not deploy on its own. The deploy workflow is tick-only: your commit goes live on the next scheduled tick, after the pipeline runs and the CDN updates. Budget ~26 min median, ~35 min worst case from push to live. A measured run came in at 21.9 min. Do not plan around the fast case.
+**Code and data deploy separately (founder 2026-10-12, supersedes the tick-only deploy of TEN-178).** A code push to main starts the **Code gate** (`gate.yml`: every `npm test` command, sharded across 6 machines, ~5 min); when it passes, **`publish.yml`** lays that commit's code over the newest data and deploys Pages (~2 min). `pipeline.yml` builds and checks the **data** every ~10 min, uploads it as the `site-data` artifact and deploys nothing itself; each data run also triggers a publish (newest gated code + new data). A commit whose gate fails is never published; the site keeps the last gated code and the data keeps flowing. Budget ~8–10 min from push to live, plus up to 10 min for a browser that still holds the old page (Pages `max-age` 600). Rules and tests: `.claude/rules/deploy-lane.md` → "Code / data split".
 
 Before you claim the lane, get the commit fully ready (founder rulings TEN-273). The lane is first come, first served, and it covers deploying only:
 

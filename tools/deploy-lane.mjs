@@ -1013,6 +1013,10 @@ async function gh(pathname, { token, method = 'GET', body, apiBase = GH_API } = 
 // JOBS_CALLS_MAX runs: the recorded owner run if there is one, else the earliest
 // created at/after `since` − 10 min that are not queued (not-cancelled first).
 const JOBS_CALLS_MAX = 3;
+// The workflow whose run DEPLOYS a pushed commit — the "owner's pipeline run" of the hold rules (ii)–(iv). Since the
+// code/data split (founder 2026-10-12) that is publish.yml (the newest gated code over the newest data), no longer
+// pipeline.yml (which builds data and deploys nothing).
+export const DEPLOY_WORKFLOW = 'publish.yml';
 export function githubPipelineRuns({ repo = DEFAULT_REPO, token = () => githubToken(), workflow = 'pipeline.yml', apiBase = GH_API } = {}) {
   return async ({ since, ownerRunId } = {}) => {
     try {
@@ -1070,7 +1074,7 @@ export function realLane({ env = process.env, cwd = process.cwd() } = {}) {
     suiteReceipt: fileSuiteReceipts(),
     rebaseCheck: gitRebaseCheck({ cwd }),
     checkLive: checkLiveBuild({ cwd }),
-    pipelineRuns: githubPipelineRuns({ repo: env.GITHUB_REPOSITORY || DEFAULT_REPO }),
+    pipelineRuns: githubPipelineRuns({ repo: env.GITHUB_REPOSITORY || DEFAULT_REPO, workflow: DEPLOY_WORKFLOW }),
     alert: githubAlert({ repo: env.GITHUB_REPOSITORY || DEFAULT_REPO }),
   });
   return { lane, notify };

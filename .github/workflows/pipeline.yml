@@ -14,6 +14,11 @@ on:
     - cron: '*/15 * * * *'   # every 15 minutes (UTC). GitHub may delay under load.
   workflow_dispatch:          # manual "Run workflow", and the external */10 ping
   #
+  # ── Code / data split (founder 2026-10-12) ─────────────────────────────────
+  # This workflow builds and checks DATA and uploads it as the `site-data` artifact; it deploys nothing.
+  # Code is tested by gate.yml and the site is deployed by publish.yml (newest gated code + newest data).
+  # The history below explains why there is no push trigger; it still holds for this workflow.
+  #
   # ── TEN-178: the `push:` trigger was REMOVED, 2026-09-11 ───────────────────
   #
   # It used to auto-deploy an allowlist of frontend files so a dashboard change
@@ -62,16 +67,11 @@ concurrency:
 
 permissions:
   contents: write      # was: read — needed so the run can commit admin-log.json back
-  pages: write
-  id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -140,20 +140,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # TEN-174 fail-closed pre-deploy gate: every `npm test` command (the progression
-      # source-guard it started as, and every suite since). TEN-351 (founder ruling
-      # 2026-09-30, TEN-312 6c9a9e55): it runs on EVERY rebuild and before anything
-      # publishes, and may be parallelised but never skipped. It took 577 s median BEFORE
-      # the build (2026-09-29); it now starts here, runs BESIDE the build in parallel shards,
-      # each in its own clean worktree of HEAD (tools/gate-run.mjs), and "Pre-deploy gate
-      # result" below waits for it before the upload, the deploy and every commit-back.
-      # The subshell (set +e: the step shell is bash -e) writes the exit code even if the
-      # runner crashes; no code = red.
-      - name: Start the pre-deploy gate (runs beside the build)
-        run: |
-          mkdir -p "$RUNNER_TEMP/gate"
-          ( set +e; node tools/gate-run.mjs --shards 3 > "$RUNNER_TEMP/gate/log" 2>&1; echo $? > "$RUNNER_TEMP/gate/rc" ) &
-          echo "pre-deploy gate started: every npm test command, 3 shards"
+      # The Code gate (every `npm test` command, TEN-174 / TEN-351) is .github/workflows/gate.yml since the
+      # code/data split (founder 2026-10-12): it runs once per CODE commit, across machines, and publish.yml
+      # publishes only gated code. This workflow builds and checks DATA; it deploys nothing itself.
 
       # TEN-351: the in-place gate used to leave the DEPLOYED tournament-history/ shards in this
       # checkout, and "Assemble site" republishes every one the build does not rewrite. The gate
@@ -1193,30 +1182,6 @@ jobs:
       - name: Reconcile suite on the freshly built store (fail-closed pre-publish gate)
         run: PP2_BUILT_STORE=_site node tools/test-pp2-reconcile.js
 
-      # TEN-351: the pre-deploy gate started before the build must have PASSED before
-      # anything below runs — the upload, the deploy and every commit-back. No exit code
-      # after GATE_WAIT_SECONDS (the runner hung or never started; 900 s keeps this inside the job's
-      # 30 min timeout, so the reason is printed) is a failure, and so is
-      # any code but 0. Locked by tools/test-ten351-gate-run.js.
-      - name: Pre-deploy gate result (fail-closed; nothing publishes until it passes)
-        env:
-          GATE_WAIT_SECONDS: 900
-        run: |
-          G="$RUNNER_TEMP/gate"
-          waited=0
-          while [ ! -s "$G/rc" ] && [ "$waited" -lt "$GATE_WAIT_SECONDS" ]; do sleep 2; waited=$((waited + 2)); done
-          echo "waited ${waited} s for the pre-deploy gate"
-          if [ -f "$G/log" ]; then cat "$G/log"; fi
-          if [ ! -s "$G/rc" ]; then
-            echo "::error title=pre-deploy gate::no result after ${GATE_WAIT_SECONDS} s. Nothing publishes."
-            exit 1
-          fi
-          rc=$(cat "$G/rc")
-          if [ "$rc" != "0" ]; then
-            echo "::error title=pre-deploy gate::failed (exit ${rc}). Nothing publishes."
-            exit 1
-          fi
-
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
       # Two separate jobs, both of which have to be true before anything ships:
@@ -1375,15 +1340,6 @@ jobs:
           retention-days: 1
           compression-level: 1
           include-hidden-files: true
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
-
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v4
 
       # Surface failures loudly: if the pipeline could not produce a fresh
       # success, fail the job so GitHub emails/notifies (and the health file
