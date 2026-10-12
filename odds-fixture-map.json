@@ -4187,11 +4187,11 @@
     },
     "12169853": {
       "fixtureId": "id1200308575477656",
-      "mappedAt": "2026-10-10T15:46:24Z",
+      "mappedAt": "2026-10-12T04:30:47Z",
       "orient": "same",
       "p1": "S. Tsitsipas",
       "p2": "T. Fritz",
-      "startTime": "2026-10-12T04:00:00.000Z",
+      "startTime": "2026-10-12T05:10:00.000Z",
       "tournamentId": 3085
     },
     "12169897": {
@@ -4280,17 +4280,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-23T09:16:17Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 3,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 3,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 37
-      },
       {
         "at": "2026-09-23T10:18:41Z",
         "fixturesUnitsSpent": 1,
@@ -8679,9 +8668,20 @@
         "ttlBit": false,
         "unmapped": 2,
         "upcoming": 12
+      },
+      {
+        "at": "2026-10-12T04:30:47Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 12
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-12T03:30:58Z"
+  "updatedAt": "2026-10-12T04:30:47Z"
 }
