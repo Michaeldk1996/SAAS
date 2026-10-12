@@ -19,8 +19,11 @@
 // It tests HEAD, not uncommitted edits: pipeline.yml runs it on a clean checkout. tools/ci-suite.sh still
 // runs the same commands serially (`npm test`) before a push.
 //
-// Usage: node tools/gate-run.mjs [--shards N] [--plan]
-//   --plan  print the shard plan and exit (no tests run).
+// Usage: node tools/gate-run.mjs [--shards N] [--shard K] [--plan]
+//   --plan     print the shard plan and exit (no tests run).
+//   --shard K  run ONLY shard K (1-based) of the N-shard plan — one machine per shard (.github/workflows/gate.yml
+//              runs K = 1..N in a matrix and passes only when every K passed). The plan is deterministic, so the
+//              N machines together run every command exactly once. Exit 0 only when every command of shard K passed.
 
 import { readFileSync, mkdtempSync, rmSync, existsSync, cpSync, createWriteStream, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -126,11 +129,20 @@ async function main() {
   const nArg = argv.indexOf('--shards');
   const shards = nArg > -1 ? Number(argv[nArg + 1]) : 3;
   if (!Number.isInteger(shards) || shards < 1) throw new Error(`--shards must be a positive integer, got ${argv[nArg + 1]}`);
+  const kArg = argv.indexOf('--shard');
+  const only = kArg > -1 ? Number(argv[kArg + 1]) : null;
   const cmds = commandsOf(JSON.parse(readFileSync(path.join(ROOT, 'package.json'), 'utf8')).scripts?.test);
-  const shardPlan = plan(cmds, shards);
-  shardPlan.forEach((idx, k) => console.log(`shard ${k + 1}: ${idx.length} commands, ~${idx.reduce((a, i) => a + weightOf(cmds[i]), 0)} s planned`));
+  const fullPlan = plan(cmds, shards);
+  if (only != null && (!Number.isInteger(only) || only < 1 || only > fullPlan.length)) {
+    throw new Error(`--shard must be an integer from 1 to ${fullPlan.length} (the plan has ${fullPlan.length} shards), got ${argv[kArg + 1]}`);
+  }
+  // One shard of the plan, or all of it. Shard numbers below stay the plan's own (1-based).
+  const shardPlan = only != null ? [fullPlan[only - 1]] : fullPlan;
+  const label = (k) => (only != null ? only : k + 1);
+  const expected = shardPlan.flat().length;
+  shardPlan.forEach((idx, k) => console.log(`shard ${label(k)}: ${idx.length} commands, ~${idx.reduce((a, i) => a + weightOf(cmds[i]), 0)} s planned`));
   if (argv.includes('--plan')) {
-    shardPlan.forEach((idx, k) => idx.forEach((i) => console.log(`  ${k + 1}  #${i + 1}  ${cmds[i]}`)));
+    shardPlan.forEach((idx, k) => idx.forEach((i) => console.log(`  ${label(k)}  #${i + 1}  ${cmds[i]}`)));
     return 0;
   }
 
@@ -148,11 +160,11 @@ async function main() {
     });
     results = await Promise.all(shardPlan.map((idx, k) => {
       const { base, dir } = made[k];
-      return runShard(k, idx, cmds, dir, mkdtempSync(path.join(base, 'tmp-')), path.join(base, 'log'));
+      return runShard(label(k) - 1, idx, cmds, dir, mkdtempSync(path.join(base, 'tmp-')), path.join(base, 'log'));
     }));
     // Logs, one shard at a time, so each suite's output stays contiguous.
     made.forEach(({ base }, k) => {
-      console.log(`\n================ shard ${k + 1} ================`);
+      console.log(`\n================ shard ${label(k)} ================`);
       process.stdout.write(readFileSync(path.join(base, 'log'), 'utf8'));
     });
   } finally {
@@ -167,9 +179,10 @@ async function main() {
   console.log('\n================ pre-deploy gate ================');
   ran.sort((a, b) => b.s - a.s).slice(0, 12).forEach((r) => console.log(`${r.s.toFixed(1).padStart(7)} s  rc=${r.rc}  ${cmds[r.i].slice(0, 110)}`));
   for (const r of ran.filter((x) => x.rc !== 0)) console.log(`::error title=pre-deploy gate::FAILED (rc=${r.rc}): ${cmds[r.i]}`);
-  const notRun = cmds.length - ran.length;
-  console.log(`gate: ${passed.length}/${cmds.length} commands passed, ${notRun} not run, ${shardPlan.length} shards, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
-  return passed.length === cmds.length ? 0 : 1;
+  const notRun = expected - ran.length;
+  const scope = only != null ? `shard ${only} of ${fullPlan.length}` : `${shardPlan.length} shards`;
+  console.log(`gate: ${passed.length}/${expected} commands passed, ${notRun} not run, ${scope}, ${((Date.now() - t0) / 1000).toFixed(0)} s`);
+  return passed.length === expected ? 0 : 1;
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {

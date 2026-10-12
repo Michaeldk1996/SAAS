@@ -59,9 +59,9 @@ if(n==='fail')process.exit(1);
 if(n==='write')fs.writeFileSync('scratch.txt','x');
 if(n==='look'){const t=Date.now()+1500;while(Date.now()<t){}if(fs.existsSync('scratch.txt'))process.exit(3);}`;
 const tmpOf = (dir) => { const t = path.join(dir, 'tmp'); fs.mkdirSync(t, { recursive: true }); return t; };
-function gate(src, testScript, shards) {
+function gate(src, testScript, shards, only) {
   const r = repoWith(src, testScript, { 'step.js': STEP });
-  const out = spawnSync(process.execPath, [path.join(r.repo, 'tools', 'gate-run.mjs'), '--shards', String(shards)],
+  const out = spawnSync(process.execPath, [path.join(r.repo, 'tools', 'gate-run.mjs'), '--shards', String(shards), ...(only ? ['--shard', String(only)] : [])],
     { cwd: r.repo, env: { ...process.env, MARKS: r.marks, TMPDIR: tmpOf(r.dir) }, encoding: 'utf8' });
   const marks = fs.existsSync(r.marks) ? fs.readFileSync(r.marks, 'utf8').trim().split('\n').filter(Boolean) : [];
   const rootDirty = execFileSync('git', ['-C', r.repo, 'status', '--porcelain'], { encoding: 'utf8' }).trim();
@@ -96,6 +96,25 @@ const RUNNER = {
     const r = gate(src, 'node step.js a || node step.js b', 2);
     assert.strictEqual(r.status, 1);
     assert.deepStrictEqual(r.marks, []);
+  },
+  // gate.yml runs one shard per machine (--shard K of N): together the N machines run every command exactly once,
+  // each machine runs only its own shard, and a machine passes only when every command of ITS shard passed.
+  'F. --shard K runs only shard K; the N machines together run every command once': (src) => {
+    const all = [];
+    for (let k = 1; k <= 3; k++) {
+      const r = gate(src, chain('a', 'b', 'c', 'd', 'e', 'f', 'g'), 3, k);
+      assert.strictEqual(r.status, 0, r.stdout.slice(-400));
+      assert.ok(r.marks.length >= 1 && r.marks.length < 7, `shard ${k} ran ${r.marks.length} commands`);
+      all.push(...r.marks);
+    }
+    assert.deepStrictEqual(all.sort(), ['a', 'b', 'c', 'd', 'e', 'f', 'g'], 'every command exactly once across the shards');
+  },
+  'G. --shard K fails when a command of shard K fails, and rejects a K outside the plan': (src) => {
+    let failed = 0;
+    for (let k = 1; k <= 2; k++) { const r = gate(src, chain('a', 'fail', 'c', 'd'), 2, k); if (r.marks.includes('fail')) { assert.strictEqual(r.status, 1); failed++; } else assert.strictEqual(r.status, 0); }
+    assert.strictEqual(failed, 1, 'exactly one shard holds the failing command');
+    const bad = gate(src, chain('a', 'b'), 2, 3);
+    assert.strictEqual(bad.status, 1); assert.deepStrictEqual(bad.marks, [], 'nothing runs for a shard the plan does not have');
   },
   'E. the plan covers every command of the real package.json exactly once': async (src) => {
     const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten351-plan-')), 'gate-run.mjs');
@@ -219,7 +238,9 @@ const MUTANTS = [
     "  if (seen.length !== cmds.length || seen.some((v, k) => v !== k)) throw new Error('shard plan does not cover every command exactly once');\n  return out;",
     '  return out.map((s, k) => (k === 0 ? s.slice(1) : s));'],
   ['a failure is reported but the gate exits 0', 'B. a failure exits 1 and stops the rest of its shard', 'src',
-    'return passed.length === cmds.length ? 0 : 1;', 'return 0;'],
+    'return passed.length === expected ? 0 : 1;', 'return 0;'],
+  ['--shard ignored (every machine runs the whole plan)', 'F. --shard K runs only shard K; the N machines together run every command once', 'src', "const shardPlan = only != null ? [fullPlan[only - 1]] : fullPlan;", "const shardPlan = fullPlan;"],
+  ['--shard counts the whole plan as expected (a shard can never pass)', 'F. --shard K runs only shard K; the N machines together run every command once', 'src', "const expected = shardPlan.flat().length;", "const expected = cmds.length;"],
   ['a shard keeps going after a failure', 'B. a failure exits 1 and stops the rest of its shard', 'src',
     "if (rc !== 0) { log.end(() => resolve(results)); return; }", ''],
   ['every shard runs in the repo checkout', 'C. shards are isolated and the repo checkout is untouched', 'src',
