@@ -8050,6 +8050,11 @@ function syncSortDropdown(completed){
 // tournament filter and the surface filter all still apply. Reach is the loaded window only
 // (the retained ~4-6 day payload) — see the "loaded window" empty state in renderMatches.
 // (Supersedes the old Results-only resultsCrossDateSearch(); Results is view==='completed' + this.)
+// Founder 2026-10-12 (supersedes TEN-95's "the upcoming/completed split still applies"): a search
+// also drops the Upcoming / Completed split, so a player's completed AND upcoming matches show
+// together whichever view is active. The active view's group comes first: Upcoming → upcoming / live
+// (nearest first) then completed (most recent first); Completed → the reverse. The tournament and
+// surface filters still apply. Each card keeps its own layout (isFinishedMatch drives it).
 function crossDateSearch(){ return !!(state.search && state.search.trim()); }
 function getFiltered(){
   const crossDate = crossDateSearch();
@@ -8084,7 +8089,8 @@ function getFiltered(){
     // carried over from a past day keeps rendering as an upcoming card rather than
     // vanishing from both modes.
     const isPastDay = state.day === 'yesterday' || state.day === 'daymin2' || state.day === 'daymin3';
-    const effView = (state.view === 'completed' && (state.day === 'tomorrow' || state.day === 'day2' || state.day === 'day3'))
+    const effView = crossDate ? 'both'   // founder 2026-10-12: a search shows completed and upcoming together
+      : (state.view === 'completed' && (state.day === 'tomorrow' || state.day === 'day2' || state.day === 'day3'))
       ? 'upcoming'
       : (state.view === 'upcoming' && isPastDay && !m.live)
       ? 'completed' : state.view;
@@ -8105,9 +8111,19 @@ function getFiltered(){
   // … If a player has no opening price, the move is `—` and the card sorts last." Every
   // card stays; see the 'drift' branch below.
   const surfaceOrder = { clay:0, hard:1, grass:2 };
-  if (crossDate) out.sort((a,b) => state.view === 'completed'
-    ? cardStartMs(b) - cardStartMs(a)   // Results search: most recent first
-    : cardStartMs(a) - cardStartMs(b));  // Matches (upcoming) search: nearest upcoming first (TEN-95)
+  // Search: the active view's group first (founder 2026-10-12) — upcoming / live nearest first (TEN-95),
+  // completed most recent first; an unknown start sorts to the end of its group.
+  if (crossDate) {
+    const doneFirst = state.view === 'completed';
+    const t = m => { const v = cardStartMs(m); return isFinite(v) ? v : null; };
+    out.sort((a,b) => {
+      const fa = isFinishedMatch(a), fb = isFinishedMatch(b);
+      if (fa !== fb) return (fa === doneFirst) ? -1 : 1;
+      const ta = t(a), tb = t(b);
+      if (ta == null || tb == null) return ta == null ? (tb == null ? 0 : 1) : -1;
+      return fa ? tb - ta : ta - tb;
+    });
+  }
   else if (state.sort === 'oddsgap') out.sort((a,b) => oddsGap(b) - oddsGap(a));
   else if (state.sort === 'surface') out.sort((a,b) => surfaceOrder[a.surface] - surfaceOrder[b.surface]);
   else if (state.sort === 'upset') out.sort((a,b) => upsetScore(b) - upsetScore(a));

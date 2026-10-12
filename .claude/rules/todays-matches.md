@@ -77,5 +77,11 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Market Signal drawer (review):** no explainer paragraph; a source without data is not drawn (no "—" rows, no empty bars);
   a group with no rows is not drawn; nothing at all → one grey line `No market signal for this match yet`. Caret ▾ closed /
   ▴ open (180° turn), white, font stack `'Hanken Grotesk', sans-serif` (system-ui drew a dot).
+- **Search shows both views (founder 2026-10-12, supersedes TEN-95's "the upcoming/completed split still applies"):** a
+  typed player name drops the date (TEN-95) AND the Upcoming / Completed split, so the player's upcoming and completed
+  matches on the board show together in either view. The active view's group comes first: Upcoming → upcoming / live
+  (nearest first, no start last) then completed (most recent first); Completed → the reverse. Each card keeps its own
+  layout. The tournament and surface filters still apply; with no search, the day and the split apply as before.
+  **Test:** `test-matches-search.mjs` (the real `getFiltered`) + `tools/test-matches-search-mutants.js`.
 - **Tournament chips (review):** one row on both views — `All tournaments` first (clears the selection), then one chip per
   event of the selected day.
