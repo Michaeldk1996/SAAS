@@ -1,0 +1,130 @@
+# Publish — the newest GATED code over the newest DATA, deployed to GitHub Pages.
+#
+# Founder 2026-10-12 ("do not mix the data with it and wait so long; everything automatic"):
+#   - code: a code push runs the Code gate (gate.yml, every npm test command across machines, ~5 min);
+#     when it passes, this workflow publishes it within ~2 min — it no longer waits for a data rebuild;
+#   - data: every pipeline.yml run (every ~10 min) uploads the site it built as the `site-data` artifact after its
+#     data checks passed; when it finishes, this workflow republishes with that data and the newest gated code.
+# tools/publish-resolve.mjs picks both when the run STARTS (not when it was triggered), so a publish that waited
+# behind another, or replaced a pending one, always takes the newest of both: nothing is lost to the queue.
+# A code commit whose gate failed is never published; neither is data from a run whose checks failed.
+#
+# PUBLISH_DEPLOY is the switch. 'false' (shadow): the site is assembled, checked and uploaded as the `site-publish`
+# artifact, and pipeline.yml still deploys. 'true': this workflow is the ONLY Pages deployer and pipeline.yml
+# deploys nothing (stage 2 flips both together).
+name: Publish site
+
+on:
+  workflow_run:
+    workflows: ["Code gate", "BSP data pipeline"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# One publish at a time; a newer trigger replaces a pending one, which is safe (see above).
+concurrency:
+  group: site-publish
+  cancel-in-progress: false
+
+env:
+  PUBLISH_DEPLOY: 'false'
+
+jobs:
+  assemble:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      deploy: ${{ steps.mode.outputs.deploy }}
+      ready: ${{ steps.resolve.outputs.ready }}
+      code_sha: ${{ steps.resolve.outputs.codeSha }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 300
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - id: mode
+        run: echo "deploy=$PUBLISH_DEPLOY" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve the newest gated code and the newest data
+        id: resolve
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          node tools/publish-resolve.mjs
+          rc=$?
+          set -e
+          if [ "$rc" = "0" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"; elif [ "$rc" = "2" ]; then echo "ready=false" >> "$GITHUB_OUTPUT"; else exit "$rc"; fi
+
+      - name: Check out the gated code
+        if: steps.resolve.outputs.ready == 'true'
+        run: git worktree add --detach "$RUNNER_TEMP/code" "${{ steps.resolve.outputs.codeSha }}"
+
+      - name: Download the newest data
+        if: steps.resolve.outputs.ready == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: site-data
+          path: _site
+          run-id: ${{ steps.resolve.outputs.dataRunId }}
+          github-token: ${{ github.token }}
+
+      - name: Lay the gated code over the data and stamp it
+        if: steps.resolve.outputs.ready == 'true'
+        env:
+          CODE_SHA: ${{ steps.resolve.outputs.codeSha }}
+          DATA_RUN_ID: ${{ steps.resolve.outputs.dataRunId }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          TIP=$(git rev-parse origin/main)
+          export TIP
+          if git merge-base --is-ancestor "$CODE_SHA" "$TIP"; then
+            export ON_MAIN=true BEHIND=$(git rev-list --count "$CODE_SHA..$TIP")
+          else
+            echo "::error title=publish::$CODE_SHA is not on main ($TIP). Nothing is deployed."; exit 1
+          fi
+          node tools/publish-site.mjs --code "$RUNNER_TEMP/code" --site _site
+
+      - name: Upload the published site (shadow and live)
+        if: steps.resolve.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-publish
+          path: _site
+          retention-days: 1
+          compression-level: 1
+          include-hidden-files: true
+
+      - name: Upload Pages artifact
+        if: steps.resolve.outputs.ready == 'true' && steps.mode.outputs.deploy == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: assemble
+    if: needs.assemble.outputs.ready == 'true' && needs.assemble.outputs.deploy == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4

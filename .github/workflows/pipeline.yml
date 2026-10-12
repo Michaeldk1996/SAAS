@@ -1364,6 +1364,18 @@ jobs:
           echo "Stamped _site/build-info.json:"
           cat _site/build-info.json
 
+      # Founder 2026-10-12: code and data deploy on their own clocks. The data this run built (after every data
+      # check above) is handed to publish.yml as the `site-data` artifact; publish.yml lays the newest GATED code
+      # over it. include-hidden-files keeps the artifact byte-for-byte what Pages would get.
+      - name: Upload the built site for publish.yml (site-data)
+        uses: actions/upload-artifact@v4
+        with:
+          name: site-data
+          path: _site
+          retention-days: 1
+          compression-level: 1
+          include-hidden-files: true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

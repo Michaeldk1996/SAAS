@@ -1,0 +1,68 @@
+# Code gate — every `npm test` command, once per code commit on main, split across machines.
+#
+# Founder 2026-10-12 ("do not mix the data with it and wait so long"): code and data deploy on their own clocks.
+# This workflow tests CODE; publish.yml publishes only a commit whose gate passed here. Data-bot commits carry
+# [skip ci] and start no run, so a run here is always a code commit.
+#
+# TEN-351 holds: every command runs, exactly once per code commit (de-duplicated across the 10-minute data
+# rebuilds, which the ruling allows; never skipped, never after publishing). The shard plan is gate-run.mjs's own
+# (deterministic), so the GATE_SHARDS machines together run every command exactly once. The run passes only when
+# every shard passed.
+#
+# A newer code push cancels an older run still in progress: publish.yml publishes the newest gated commit, so the
+# older result could never be published anyway.
+name: Code gate
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: code-gate
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  GATE_SHARDS: 6
+
+jobs:
+  shard:
+    name: shard ${{ matrix.shard }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 100
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run this shard of every npm test command
+        run: node tools/gate-run.mjs --shards "$GATE_SHARDS" --shard ${{ matrix.shard }}
+
+  result:
+    name: all shards passed
+    needs: shard
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every shard passed, or the gate fails
+        run: |
+          echo "shards: ${{ needs.shard.result }}"
+          [ "${{ needs.shard.result }}" = "success" ] || { echo "::error title=Code gate::a shard failed or did not run. This commit is not published."; exit 1; }
