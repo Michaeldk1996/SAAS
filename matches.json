@@ -113461,7 +113461,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(1), 5-7",
+      "display": "6-4, 6-7, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -128788,7 +128788,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7(5)",
+      "display": "4-6, 6-7",
       "sets": [
         {
           "p1": 4,
@@ -133895,7 +133895,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(2), 4-6",
+      "display": "6-4, 6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -138140,7 +138140,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 6-7(2)",
+      "display": "1-6, 6-7",
       "sets": [
         {
           "p1": 1,
@@ -162264,7 +162264,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(6), 6-4",
+      "display": "7-6, 6-4",
       "sets": [
         {
           "p1": 7,
@@ -166387,7 +166387,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(5), 6-7(3)",
+      "display": "6-7, 6-7",
       "sets": [
         {
           "p1": 6,
@@ -170648,7 +170648,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(8), 6-3",
+      "display": "6-4, 6-7, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -174764,7 +174764,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(4), 4-6, 7-6(6)",
+      "display": "7-6, 4-6, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -187141,7 +187141,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(7), 6-3, 7-6(5)",
+      "display": "6-7, 6-3, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -195026,11 +195026,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "30 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/434_p-carreno-busta.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2073_f-auger-aliassime.jpg",
     "oddsMovement": {
@@ -196079,7 +196090,10 @@
       "edgeVsPinnacleP1": -0.0837,
       "edgeVsPinnacleP2": 0.0837,
       "ts": "2026-10-12T03:13:51.731Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12169844",
@@ -198125,11 +198139,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
     "oddsMovement": {
@@ -199229,6 +199254,9 @@
         "seenAt": "2026-10-12T03:48:02.395Z",
         "since": "2026-10-12T03:48:02.395Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   }
 ]
