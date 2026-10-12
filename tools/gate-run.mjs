@@ -49,6 +49,8 @@ export const WEIGHTS = {
   'node tools/test-ten340-mutants.js': 6,
   'node tools/test-ten255-build-stamp.js': 6,
   'node tools/test-commitback-push.js': 5,
+  'node tools/test-ten427-series-mutants.js': 260,   // 101 mutants, each a full node --test run (measured 2026-10-12)
+  'node tools/test-ten427-drops-mutants.js': 41,
 };
 const DEFAULT_WEIGHT = 2;
 const weightOf = (cmd) => {

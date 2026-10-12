@@ -15,6 +15,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
+import { isDeepStrictEqual } from 'node:util';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
@@ -529,14 +530,17 @@ test('Outcomes ledger migration: an old-rule series-outcomes.json is replaced wh
     for (const f of [put('old.json', { records: { '999|1|all': oldRow } }), put('arr.json', [oldRow]), put('bad.json', '{"records":'), join(dir, 'none.json')]) {
       const l = E.loadLedger(f, SEED);
       assert.equal(l.rule, E.LEDGER_RULE, f);
-      assert.deepEqual(l.records, seed.records, 'an old-rule ledger loads the seed whole: ' + f);
+      // isDeepStrictEqual, not assert.deepEqual: a failing deepEqual on the 4,663-row seed builds a diff of two huge
+      // objects (~1.7 GB, ~15 s per mutant), which ran the pipeline's gate runner out of memory (11 Oct freeze).
+      assert.ok(isDeepStrictEqual(l.records, seed.records), 'an old-rule ledger loads the seed whole: ' + f + ' (' + Object.keys(l.records || {}).length + ' rows)');
       assert.equal(l.records['999|1|all'], undefined, 'no old-rule row survives the migration');
     }
     // (c) marked: the file's own rows, the seed never read (even a missing seed does not matter)
     const mine = { '777|2|all': Object.assign({}, oldRow, { won: true, opponent: 'X. Y' }) };
     const marked = put('marked.json', { rule: E.LEDGER_RULE, records: mine });
-    assert.deepEqual(E.loadLedger(marked, SEED).records, mine, 'a marked ledger keeps its rows and ignores the seed');
-    assert.deepEqual(E.loadLedger(marked, join(dir, 'no-seed.json')).records, mine);
+    const kept = E.loadLedger(marked, SEED).records;
+    assert.ok(isDeepStrictEqual(kept, mine), 'a marked ledger keeps its rows and ignores the seed (' + Object.keys(kept || {}).length + ' rows)');
+    assert.ok(isDeepStrictEqual(E.loadLedger(marked, join(dir, 'no-seed.json')).records, mine), 'a marked ledger needs no seed');
     // (d) old rule + missing / invalid seed -> throws, never an empty or partial ledger
     assert.throws(() => E.loadLedger(join(dir, 'old.json'), join(dir, 'no-seed.json')), /seed/);
     assert.throws(() => E.loadLedger(join(dir, 'old.json'), put('oldseed.json', { records: { '999|1|all': oldRow } })), /seed/);
