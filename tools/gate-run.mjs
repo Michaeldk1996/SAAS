@@ -33,31 +33,52 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Seconds per command, measured serially on a clean worktree 2026-09-30 (TEN-351; 663 s in all).
-// Only used to balance the shards: a wrong or missing weight costs time, never a check. A key matches
-// every command that starts with it; unlisted commands weigh DEFAULT_WEIGHT.
+// Seconds per command, measured on GitHub's runners in the first Code gate run (gate.yml #1, 2026-10-12, one shard per
+// machine; 156 commands, 1,735 s in all). Only used to balance the shards: a wrong or missing weight costs time, never
+// a check. A key matches every command that starts with it (gate-run prints a command's first 100 characters, so long
+// commands are keyed by that prefix); unlisted commands — all measured under 3 s — weigh DEFAULT_WEIGHT.
 export const WEIGHTS = {
-  'node --test test-ten225-drift-order.mjs': 203,   // the ~45-file node --test batch
-  'node tools/test-ten304-mutants.js': 123,
-  'node tools/test-ten303-mutants.js': 80,
-  'python3 -B test-ten270-cardstate-egress.py': 78,
-  'node tools/test-ten314-mutants.js': 31,
-  'node tools/test-perset-games-carry.js': 20,
-  'node tools/test-pp2-reconcile.js': 16,
-  'node tools/test-ten341-mutants.js': 11,
-  'node tools/test-surface-ratings-no-autorun.js': 9,
-  'node tools/test-ten273-parallel-fetch.js': 8,
+  'node tools/test-ten421-mutants.js': 381,
+  'node tools/test-ten427-series-mutants.js': 296,
+  'node tools/test-ten417-mutants.js': 181,
+  'node tools/test-ten304-mutants.js': 148,
+  'python3 -B test-ten270-cardstate-egress.py': 102,
+  'node --test test-ten225-drift-order.mjs test-ten225-both-clocks.mjs test-ten225-card-states.mjs test': 72,
+  'node tools/test-ten427-drops-mutants.js': 70,
+  'node tools/test-ten303-mutants.js': 67,
+  'node tools/test-ten402-fix-mutants.js': 64,
+  'node tools/test-ten314-mutants.js': 49,
+  'node tools/test-ten255-build-stamp.js': 37,
+  'node tools/test-ten341-mutants.js': 22,
+  'node tools/test-ten402-r2n-mutants.js': 19,
+  'node tools/test-ten402-r2l-mutants.js': 18,
+  'node tools/test-ten336-mutants.js': 14,
+  'node tools/test-perset-games-carry.js': 14,
+  'node tools/test-pp2-reconcile.js': 13,
+  'node tools/test-ten340-mutants.js': 12,
+  'node tools/test-ten351-gate-run.js': 12,
+  'node --test test-ten350-elo-slot.mjs': 10,
+  'node tools/test-ten332-mutants.js': 10,
+  'node tools/test-ten418-mutants.js': 9,
   'node tools/test-ten304-build-weather.js': 8,
-  'node tools/test-ten350-mutants.js': 7,
-  'node tools/test-ten340-mutants.js': 6,
-  'node tools/test-ten255-build-stamp.js': 6,
-  'node tools/test-commitback-push.js': 5,
-  'node tools/test-ten427-series-mutants.js': 260,   // 101 mutants, each a full node --test run (measured 2026-10-12)
-  'node tools/test-ten427-drops-mutants.js': 41,
+  'node --test test-ten421-trading.mjs': 7,
+  'node tools/test-ten333-mutants.js': 7,
+  'node tools/test-ten331-mutants.js': 7,
+  'node tools/test-ten330-mutants.js': 7,
+  'node tools/test-ten338-mutants.js': 6,
+  'node tools/test-surface-ratings-no-autorun.js': 6,
+  'node tools/test-ten402-r1y-mutants.js': 5,
+  'node tools/test-ten350-mutants.js': 5,
+  'node --test test-ten408-styles.mjs test-ten409-news.mjs test-ten417-live.mjs': 4,
+  'node --test test-ten427-series.mjs': 4,
+  'python3 test-odds-archive-refresh.py': 3,
+  'node tools/test-ten339-mutants.js': 3,
+  'node tools/test-ten273-shard-retry.js': 3,
+  'node tools/test-ten273-parallel-fetch.js': 3,
 };
 const DEFAULT_WEIGHT = 2;
 const weightOf = (cmd) => {
-  const k = Object.keys(WEIGHTS).find((w) => cmd === w || cmd.startsWith(`${w} `));
+  const k = Object.keys(WEIGHTS).find((w) => cmd === w || cmd.startsWith(w));
   return k ? WEIGHTS[k] : DEFAULT_WEIGHT;
 };
 
