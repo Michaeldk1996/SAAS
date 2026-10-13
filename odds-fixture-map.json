@@ -4305,7 +4305,7 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 21.1,
+      "measuredRunsPerDay": 21.2,
       "missResolutionHoursMax": 156.78,
       "missResolutionHoursP50": 40.5,
       "missResolutionsMeasured": 172,
@@ -4313,23 +4313,12 @@
       "observedSpanDays": 18.91,
       "projectedTtlUnitsPerDay": 2.3,
       "runs": 400,
-      "spentRuns": 174,
+      "spentRuns": 173,
       "ttlBitRuns": 44,
       "ttlBitShare": 0.11,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-24T14:22:39Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 2,
-        "ttlBit": false,
-        "unmapped": 1,
-        "upcoming": 23
-      },
       {
         "at": "2026-09-24T15:31:38Z",
         "fixturesUnitsSpent": 1,
@@ -8718,6 +8707,17 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 6
+      },
+      {
+        "at": "2026-10-13T13:16:28Z",
+        "fixturesUnitsSpent": 0,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 0,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 5
       }
     ]
   },
