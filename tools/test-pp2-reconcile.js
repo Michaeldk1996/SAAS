@@ -3931,7 +3931,12 @@ check('the all-stores table covers every data store the module reads', () => {
     // join's meta.dateRange the page already loaded; test-ten402-r2l.mjs "R3 fix 3") — logic, not a data store
     'trPxAfterOf',
     // TEN-402 r3: the page's one event name (sfEventName — Record per tournament prints it) — a display function, no rows
-    'sfEventName']);
+    'sfEventName',
+    // Draw record drill-in (founder 2026-10-13): the host's lazy per-match file (pp2DrawNeed asks, pp2DrawMatches reads
+    // its state; the rows reconcile with careerSplits — tools/test-draw-record-drill.js A3, every player), the one
+    // price join over the page's already-loaded Database rows + career-history (pp2DrawJoin), and the opponent profile
+    // link (pp2HasProfile over the standings, pp2OpenProfile = psOpenProfile) — triggers and logic, no store of their own
+    'pp2DrawNeed', 'pp2DrawMatches', 'pp2DrawJoin', 'pp2HasProfile', 'pp2OpenProfile']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
