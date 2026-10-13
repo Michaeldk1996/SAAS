@@ -2931,6 +2931,14 @@
     '.pp2-tile:hover{background:var(--tile-hover)!important;border-color:var(--edge-16)!important;}' +
     '.pp2-tile.on:hover{background:var(--card)!important;border-color:var(--edge-24)!important;}' +
     '.pp2-orow:hover>*{background:var(--tile-hover);}' +
+    // Founder 2026-10-13 · a clickable Draw record row: the row's cells lift together; each cell's left
+    // shadow fills the 8px column gap before it, the first and last bleed 6px into the panel's padding.
+    '.pp2-drow{cursor:pointer;}.pp2-drow>*{cursor:pointer;}' +
+    '.pp2-drow:hover>*{background:var(--tile-hover);box-shadow:-8px 0 0 var(--tile-hover);}' +
+    '.pp2-drow:hover>*:first-child{box-shadow:-6px 0 0 var(--tile-hover);}' +
+    '.pp2-drow:hover>*:last-child{box-shadow:-8px 0 0 var(--tile-hover),6px 0 0 var(--tile-hover);}' +
+    '.pp2-dback:hover{background:var(--tile-hover)!important;border-color:var(--edge-16)!important;}' +
+    '.pp2-dopp{cursor:pointer;}.pp2-dopp:hover{text-decoration:underline;}' +
     '</style>';
   function modalShell(key, p, ctx, body) {
     var box = BOXES.filter(function (b) { return b.key === key; })[0] || {};
@@ -5652,7 +5660,9 @@
   // Founder Q7 (2026-10-05): Opponent runs through vs Top 10 only — no vs Top 50
   // row, dash or note (career-splits holds no Top-50 split).
   var SPLIT_TRACKS = {
-    results: '200px 56px 54px 58px',
+    // Founder 2026-10-13: a Results row opens its matches, so the tab gains a 12px chevron track; the name
+    // column gives up the 20px (12 + one 8px gap), the panel's width is unchanged.
+    results: '180px 56px 54px 58px 12px',
     sets: '138px 68px 48px 48px 58px',
     service: '144px 26px 42px 42px 48px 50px'
   };
@@ -5695,8 +5705,8 @@
   }
   /** The rows a Draw panel prints: the group's members, plus Early rounds under By round. */
   function drawRows(g, sc) {
-    var rows = g.members.map(function (m) { return { label: splitLabel(m), r: sc[m] || null }; });
-    if (g.id === 'round') rows.push({ label: EARLY_ROUNDS, r: earlyRoundsRow(sc) });
+    var rows = g.members.map(function (m) { return { key: m, label: splitLabel(m), r: sc[m] || null }; });
+    if (g.id === 'round') rows.push({ key: EARLY_ROUNDS, label: EARLY_ROUNDS, r: earlyRoundsRow(sc) });
     return rows;
   }
 
@@ -5790,6 +5800,7 @@
     var scope = state.splitScope === 'last52' ? 'last52' : 'career';
     var tab = SPLIT_TABS.filter(function (t) { return t.id === state.splitTab; })[0] || SPLIT_TABS[0];
     var sc = splitScope(p.key, scope);
+    if (sc && state.drawDrill && tab.id === 'results') return renderDrawDrill(p, sc, scope);
     if (!sc) {
       return '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:var(--text-label);">' +
@@ -5805,7 +5816,7 @@
     var setBase = setBaseline(sc);
     var gapClause = drawGapClause(sc);
     var tracks = SPLIT_TRACKS[tab.id];
-    var heads = tab.id === 'results' ? ['W' + ENDASH + 'L', 'Win %', 'Vs avg']
+    var heads = tab.id === 'results' ? ['W' + ENDASH + 'L', 'Win %', 'Vs avg', '']
       : tab.id === 'sets' ? ['Tiebreaks', 'Games', 'Sets', 'Vs avg']
       : ['M', 'Aces', 'DF', 'Holds', 'Breaks'];
 
@@ -5877,9 +5888,17 @@
           if (est) tip.push('the source stores these rates without their counts, so they cannot be combined across rounds');
         }
       }
-      return '<span data-pp2-split="' + esc(row.label) + '"' + (tip.length ? ' title="' + esc(tip.join(' ' + MIDDOT + ' ')) + '"' : '') +
+      var line = '<span data-pp2-split="' + esc(row.label) + '"' + (tip.length ? ' title="' + esc(tip.join(' ' + MIDDOT + ' ')) + '"' : '') +
         ' style="' + CELL + 'font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;' +
         'white-space:nowrap;color:' + (r && n ? 'var(--text)' : DASH_COLOUR) + ';">' + esc(row.label) + '</span>' + cells;
+      if (tab.id !== 'results') return line;
+      // Founder 2026-10-13: a Results row with matches opens them (renderDrawDrill). The row is one
+      // display:contents wrapper, so the whole line lifts on hover (.pp2-drow) and the grid keeps its tracks.
+      if (!(r && n)) return line + '<span style="' + CELL + '"></span>';
+      return '<span class="pp2-drow" data-pp2="draw-row" data-v="' + esc(row.key) + '" role="button" ' +
+        'aria-label="' + esc(row.label + ': the matches behind ' + recordText(r.W, r.L)) + '" style="display:contents;">' +
+        line + '<span style="' + CELL + 'display:flex;align-items:center;justify-content:flex-end;color:var(--text-label);">' +
+        DRAW_CHEVRON + '</span></span>';
     }
     function panel(g) {
       return '<div data-pp2-draw="' + g.id + '" style="background:var(--card);border:1px solid var(--edge-6);' +
@@ -5932,6 +5951,258 @@
       return 'Matches served ' + MIDDOT + ' aces and double faults as a share of service points ' + MIDDOT +
         ' holds and breaks as a share of games ' + MIDDOT + ' hover a row for the raw counts';
     }
+  }
+
+  // ══ Draw record drill-in (founder 2026-10-13) ═══════════════════════════════════════════════════════════════
+  // A Results row (Level · Format · By round · Opponent) opens the matches behind its W–L INSIDE the modal: the body
+  // is replaced by a back arrow + breadcrumb ("Draw record › Semi-finals"), the row's W–L and Win % big, a summary
+  // strip (record · win % · P&L with its priced count), All / Wins / Losses chips and the match-up record's table
+  // (mlRowHtml), newest first, 100 a page. Esc and the back arrow return to the summary; Career / Last 52 stays as set
+  // and the list follows it. Figures are never touched: the row's W–L is the Draw record's own (career-splits), and
+  // the list is the per-match file the SAME build wrote from the SAME rows (splits-matches/{key}.json), filtered by
+  // the builder's own predicates below — so the list counts its row exactly (all 545 players, 8,720 rows × 2 scopes,
+  // checked 13 Oct 2026). A list that ever disagrees says so in one line; it is never trimmed or padded to fit.
+  //
+  // Prices: the site's ONE join (founder 2026-10-13: "confirm") — the Database archive, Pinnacle closing, else Bet365
+  // closing, per match (H2HPage.priceJoin via window.pp2DrawJoin), a retirement settled on the official ATP result.
+  // P&L = 1u flat on this player at his price; a walkover is listed "w/o" and carries no price and no P&L. Every
+  // row opens the step-3 stats sheet (founder: required): on the dated match the join met in his career-history
+  // (event key → the full sheet), else on the row's own date, score and event (the sheet's "not available" state).
+  var DRAW_CHEVRON = '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">' +
+    '<path d="M3.5 1.5L7 5l-3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" ' +
+    'stroke-linejoin="round"/></svg>';
+  var DRAW_PAGE = 100;
+  // The builder's CATEGORIES (tools/build-career-splits.js), over the per-match file's fields — one predicate per
+  // row the modal draws. Early rounds = R16 + R32 + R64 + R128 (EARLY_ROUND_MEMBERS); never RR or BR.
+  var DRAW_PRED = {
+    'Grand Slams': function (m) { return m.lv === 'G'; },
+    'Masters': function (m) { return m.lv === 'M'; },
+    'Other Tours': function (m) { return m.lv === 'A'; },
+    'Best of 5': function (m) { return m.bo === 5; },
+    'Best of 3': function (m) { return m.bo === 3; },
+    'Finals': function (m) { return m.rd === 'F'; },
+    'Semi-finals': function (m) { return m.rd === 'SF'; },
+    'Quarter-finals': function (m) { return m.rd === 'QF'; },
+    'Round of 16': function (m) { return m.rd === 'R16'; },
+    'Round of 32': function (m) { return m.rd === 'R32'; },
+    'Round of 64': function (m) { return m.rd === 'R64'; },
+    'Round of 128': function (m) { return m.rd === 'R128'; },
+    'vs. Righties': function (m) { return m.oh === 'R'; },
+    'vs. Lefties': function (m) { return m.oh === 'L'; },
+    'vs. Top 10': function (m) { return m.orank != null && m.orank <= 10; }
+  };
+  DRAW_PRED[EARLY_ROUNDS] = function (m) { return ['R16', 'R32', 'R64', 'R128'].indexOf(m.rd) >= 0; };
+  function drawIso(d) { var s = String(d || ''); return /^\d{8}$/.test(s) ? s.slice(0, 4) + '-' + s.slice(4, 6) + '-' + s.slice(6, 8) : null; }
+  // The file's score is the WINNER's ("6-3 6-4" on a loss = he lost 3-6 4-6): turned to the player's side, set by
+  // set, tiebreak points kept; "RET" → a retirement, "W/O" → a walkover. sets = [{ p, o, pTb, oTb }] for the sheet.
+  function drawScore(m) {
+    var raw = String(m.sc || '').trim(), won = m.wl === 'W';
+    var out = { text: '', sets: [], wo: /^w\/?o$/i.test(raw), ret: /\bRET\b/i.test(raw), setsW: 0, setsL: 0 };
+    if (out.wo) return out;
+    var toks = raw.replace(/\bRET\b/ig, '').trim().split(/\s+/).filter(Boolean), txt = [];
+    toks.forEach(function (t) {
+      var a = /^(\d+)-(\d+)(?:\((\d+)\))?$/.exec(t), b = /^\[(\d+)-(\d+)\]$/.exec(t);
+      if (!a && !b) { txt.push(t); return; }
+      var x = +(a || b)[1], y = +(a || b)[2], p = won ? x : y, o = won ? y : x;
+      var tb = a && a[3] != null ? +a[3] : null;
+      txt.push(b ? '[' + p + '-' + o + ']' : p + '-' + o + (tb != null ? '(' + tb + ')' : ''));
+      var set = { p: p, o: o };
+      if (tb != null) { if (p < o) set.pTb = tb; else set.oTb = tb; }
+      out.sets.push(set);
+      if (completeSet(p, o) || b) { if (p > o) out.setsW++; else if (o > p) out.setsL++; }
+    });
+    out.text = txt.join(' ');
+    return out;
+  }
+  function completeSet(a, b) { var hi = Math.max(a, b), lo = Math.min(a, b); return (hi >= 6 && hi - lo >= 2) || (hi === 7 && lo >= 5); }
+  // The player's whole per-match file as drill rows, priced once the join answers. Memoised on the file object and
+  // the join's state, so a repaint while pending re-asks (cheap: the bridge returns before touching a row) and a
+  // ready join runs once.
+  var _drawRowsMemo = null;
+  function drawRowsFor(p, d) {
+    var mm = _drawRowsMemo;
+    if (mm && mm.key === p.key && mm.d === d && mm.st === 'ready') return mm;
+    var rows = mm && mm.key === p.key && mm.d === d ? mm.rows : d.matches.map(function (m, i) {
+      var sc = drawScore(m);
+      return { i: i, m: m, sc: sc, date: drawIso(m.d), won: m.wl === 'W', opp: m.o || null,
+        round: /^(R\d+|QF|SF|F|RR)$/.test(String(m.rd || '')) ? m.rd : null };
+    });
+    var st = typeof window.pp2DrawJoin === 'function' ? window.pp2DrawJoin(p.key, p.name, rows) : 'failed';
+    if (st === 'ready') rows.forEach(function (r) {
+      if (r.sc.wo) { r.price = null; r.oppPrice = null; r.book = null; }   // a walkover is not a priced match
+      r.cents = r.price != null ? (r.won ? Math.round(Number(r.price) * 100) - 100 : -100) : null;
+    });
+    _drawRowsMemo = { key: p.key, d: d, st: st, rows: rows };
+    return _drawRowsMemo;
+  }
+  /** The drill's model, read by the renderer and the tests. */
+  function drawDrillModel(p, sc, scope) {
+    var key = state.drawDrill;
+    var agg = key === EARLY_ROUNDS ? earlyRoundsRow(sc) : sc[key];
+    var label = splitLabel(key);
+    var out = { key: key, label: label, W: agg ? agg.W : 0, L: agg ? agg.L : 0, st: 'idle', rows: [], join: null };
+    var f = typeof window.pp2DrawMatches === 'function' ? window.pp2DrawMatches(p.key) : { st: 'none' };
+    out.st = f.st;
+    if (f.st !== 'ready' || !DRAW_PRED[key]) return out;
+    var all = drawRowsFor(p, f.d), pred = DRAW_PRED[key], cut = f.d.cutoff52;
+    out.join = all.st;
+    out.rows = all.rows.filter(function (r) {
+      return pred(r.m) && (scope !== 'last52' || String(r.m.d) >= String(cut));
+    }).sort(function (a, b) { return a.m.d < b.m.d ? 1 : a.m.d > b.m.d ? -1 : a.i - b.i; });   // newest first, file order within an event
+    out.w = out.rows.filter(function (r) { return r.won; }).length;
+    out.l = out.rows.length - out.w;
+    var priced = out.rows.filter(function (r) { return r.cents != null; });
+    out.priced = priced.length;
+    out.cents = priced.reduce(function (a, r) { return a + r.cents; }, 0);
+    return out;
+  }
+  function drawOppHtml(r) {
+    var c = r.careerMatch, name = initialSurname(c && c.opponent ? c.opponent : r.opp);
+    var k = c && c.opponentKey != null ? String(c.opponentKey) : null;
+    if (k && typeof window.pp2HasProfile === 'function' && window.pp2HasProfile(k) && k !== String(state.key)) {
+      return '<span class="pp2-dopp" data-pp2="draw-opp" data-v="' + esc(k) + '" title="Open ' + esc(name) + '’s profile">' + esc(name) + '</span>';
+    }
+    var shown = (r.opp || (c && c.opponent)) ? name : DASH;   // name = initialSurname(...) above
+    return esc(shown);
+  }
+  function renderDrawDrill(p, sc, scope) {
+    var M = drawDrillModel(p, sc, scope);
+    var n = M.W + M.L, gate = gateFor(n), rate = rateText(M.W, M.L);
+    var CAPS = 'font-family:var(--font-words);font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;' +
+      'color:var(--text-label);font-weight:700;';
+    var MONO = STYLE_MONO;
+    var back = '<button type="button" class="pp2-dback" data-pp2="draw-back" aria-label="Back to the Draw record" ' +
+      'style="width:32px;height:32px;flex:none;display:inline-flex;align-items:center;justify-content:center;' +
+      'border-radius:9px;background:var(--inner);border:1px solid var(--line);color:var(--text);cursor:pointer;padding:0;">' +
+      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M8.5 2.5L4 7l4.5 4.5" ' +
+      'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>';
+    var crumb = '<span style="display:flex;align-items:center;gap:8px;min-width:0;font-size:13px;">' +
+      '<span data-pp2="draw-back" style="color:var(--text-label);cursor:pointer;white-space:nowrap;">Draw record</span>' +
+      '<span style="color:var(--text-label);">›</span>' +
+      '<span data-pp2-draw-crumb="1" style="color:var(--text);font-weight:700;white-space:nowrap;">' + esc(M.label) + '</span>' +
+      '<span style="' + CAPS + 'margin-left:6px;">' + (scope === 'last52' ? 'Last 52' : 'Career') + '</span></span>';
+    var big = '<div style="display:flex;align-items:baseline;gap:22px;">' +
+      '<span data-pp2-draw-wl="1" style="' + MONO + 'font-size:28px;font-weight:800;color:var(--text);white-space:nowrap;">' +
+        recordText(M.W, M.L) + '</span>' +
+      '<span data-pp2-draw-rate="1" style="' + MONO + 'font-size:28px;font-weight:800;white-space:nowrap;color:' +
+        (gate === GATE.FULL ? 'var(--text)' : 'var(--text-label)') + ';">' + esc(rate) + '</span>' +
+      (gate === GATE.SMALL ? smallSampleHtml(n) : '') +
+      '<span style="' + MONO + 'font-size:12px;color:var(--text-label);">' + n + ' match' + (n === 1 ? '' : 'es') + '</span>' +
+      '</div>';
+    var head = '<div style="display:flex;flex-direction:column;gap:12px;">' +
+      '<div style="display:flex;align-items:center;gap:12px;">' + back + crumb + '</div>' + big + '</div>';
+
+    function wrap(inner) {
+      return '<div data-pp2-draw="drill" style="display:flex;flex-direction:column;gap:16px;min-width:0;">' + head + inner + '</div>';
+    }
+    function line(t) {
+      return '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:22px;text-align:center;' +
+        'font-size:13px;color:var(--text-label);">' + esc(t) + '</div>';
+    }
+    if (M.st === 'idle' || M.st === 'pending') return wrap(line('Loading the matches…'));
+    if (M.st === 'none') return wrap(line('No match list built for this player yet'));
+    if (M.st === 'failed') return wrap(line('The match list could not be loaded. Go back and open the row again to retry'));
+
+    var pend = M.join === 'pending', failed = M.join === 'failed';
+    var listN = M.rows.length;
+    // P&L with its denominator, always: "P&L +4.12u over 38 of 44 priced matches" (founder wording).
+    var pl = pend ? '<span data-pp2-pending="draw-pl">&nbsp;</span>'
+      : failed ? 'P&amp;L ' + DASH + ' ' + MIDDOT + ' prices unavailable'
+      : M.priced ? 'P&amp;L ' + signed(M.cents / 100, 2, 'u') + ' over ' + M.priced + ' of ' + listN + ' priced matches'
+      : 'P&amp;L ' + DASH + ' ' + MIDDOT + ' 0 of ' + listN + ' priced matches';
+    var plColour = !pend && !failed && M.priced ? (M.cents >= 0 ? 'var(--pos)' : 'var(--neg)') : 'var(--text-label)';
+    var dot = '<span style="color:var(--text-label);">' + MIDDOT + '</span>';
+    var strip = '<div data-pp2-draw="summary" style="display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 8px;' + MONO +
+      'font-size:12.5px;color:var(--text-label);">' +
+      '<span style="color:var(--text);font-weight:700;">' + recordText(M.w, M.l) + '</span>' + dot +
+      '<span style="color:var(--text);font-weight:700;">' + esc(rateText(M.w, M.l)) + '</span>' + dot +
+      '<span data-pp2-draw="pl" style="font-weight:700;color:' + plColour + ';">' + pl + '</span></div>';
+    // Never trimmed or padded to fit: a disagreement is stated (none on 13 Oct 2026).
+    var mismatch = listN !== n
+      ? '<div data-pp2-draw="mismatch" style="font-size:12px;color:var(--text-soft);">The match list holds ' + listN +
+        ' match' + (listN === 1 ? '' : 'es') + ' (' + recordText(M.w, M.l) + ') against this row&#39;s ' + recordText(M.W, M.L) + '.</div>'
+      : '';
+
+    var filt = state.drawFilter === 'W' || state.drawFilter === 'L' ? state.drawFilter : 'all';
+    var chips = drawSeg('draw-filter', 'data-v', [['all', 'All ' + listN], ['W', 'Wins ' + M.w], ['L', 'Losses ' + M.l]], filt);
+    var shown = M.rows.filter(function (r) { return filt === 'all' || (filt === 'W') === r.won; });
+    var pages = Math.max(1, Math.ceil(shown.length / DRAW_PAGE));
+    var pg = Math.min(Math.max(0, state.drawPage | 0), pages - 1);
+    var from = pg * DRAW_PAGE, to = Math.min(shown.length, from + DRAW_PAGE);
+    var body = shown.slice(from, to).map(function (r) {
+      var c = r.careerMatch, st = r.sc.wo ? 'wo' : r.sc.ret ? 'ret' : null;
+      return mlRowHtml({
+        hook: 'data-pp2="draw-sheet" data-v="' + r.i + '" ', won: r.won,
+        date: c && /^\d{4}-\d{2}-\d{2}/.test(String(c.date || '')) ? String(c.date).slice(0, 10) : r.date,
+        oppHtml: drawOppHtml(r),
+        event: tournDisplayName(r.m.t, null) || DASH, round: r.m.rd || DASH,
+        score: scoreWithStatus({ wo: st === 'wo', retired: st === 'ret' }, r.sc.text || null),
+        scoreOn: !!(r.sc.text || st), scoreWrap: true,
+        price: r.price != null ? Number(r.price) : null, oppPrice: r.oppPrice != null ? Number(r.oppPrice) : null,
+        cents: r.cents != null ? r.cents : null, pend: pend,
+        pxTitle: r.sc.wo ? 'Walkover: not a match played, no price'
+          : failed ? 'Prices unavailable'
+          : (typeof window.trPxAfterOf === 'function' && window.trPxAfterOf(r.date)) || 'No closing price on record for this match'
+      });
+    }).join('');
+    var pager = pages > 1
+      ? '<div data-pp2-draw="pager" style="display:flex;align-items:center;justify-content:flex-end;gap:10px;' + MONO +
+        'font-size:11.5px;color:var(--text-label);">' +
+        '<span>' + (from + 1) + ENDASH + to + ' of ' + shown.length + '</span>' +
+        drawPageBtn('prev', '‹ Prev', pg > 0) + drawPageBtn('next', 'Next ›', pg < pages - 1) + '</div>'
+      : '';
+    var foot = '<div data-pp2-draw="note" style="font-size:12px;line-height:19.2px;color:var(--text-label);">' +
+      'Price and Opp are closing prices, Pinnacle, else Bet365 (the Database archive) ' + MIDDOT +
+      ' P&amp;L is 1 unit flat on ' + esc(initialSurname(p.name)) + ' at his price ' + MIDDOT +
+      ' a dash means no closing price on record' +
+      (window.MarketEdgeCore && window.MarketEdgeCore.RET_SETTLE_NOTE ? ' ' + MIDDOT + ' <span data-ret-note="draw">' +
+        esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '</span>' : '') +
+      ' ' + MIDDOT + ' a walkover is listed (w/o) and carries no price ' + MIDDOT + ' a date is its tournament&#39;s month ' +
+      MIDDOT + ' click a match for its stats</div>';
+    return wrap(strip + mismatch +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' + chips + '</div>' +
+      (shown.length
+        ? '<div class="pp2-yscroll" style="max-height:calc(100vh - 460px);min-height:260px;overflow-y:auto;padding-right:12px;min-width:0;">' +
+            '<div data-pp2-draw="list" style="' + ML_GRID + '">' + mlHeadsHtml() + body + '</div></div>'
+        : line(filt === 'W' ? 'No wins in this row' : filt === 'L' ? 'No losses in this row' : 'No matches in this row')) +
+      pager + foot);
+  }
+  function drawPageBtn(dir, label, on) {
+    return '<button type="button" ' + (on ? 'data-pp2="draw-page" data-v="' + dir + '" ' : 'disabled ') +
+      'style="padding:5px 11px;border-radius:8px;border:1px solid var(--line);background:var(--inner);font-size:11.5px;' +
+      'font-weight:700;color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';opacity:' + (on ? 1 : 0.45) + ';' +
+      'cursor:' + (on ? 'pointer' : 'default') + ';">' + esc(label) + '</button>';
+  }
+  /** The step-3 sheet for one drill row: on its dated career-history match when the join met one, else its own. */
+  function drawSheetPayload(p, r) {
+    var c = r.careerMatch, bk = r.price != null && r.oppPrice != null && (r.book === 'P' || r.book === 'B') ? r.book : null;
+    var row;
+    if (c) {
+      var walkover = !!(c.walkover || c.wo);
+      row = { date: c.date, opponent: c.opponent || r.opp, opponentKey: c.opponentKey != null ? c.opponentKey : null,
+        tournament: c.tournament || r.m.t, round: c.round || r.m.rd, surface: c.surface || r.m.sf || null,
+        result: c.result || null, won: !!c.won, sets: c.sets || null, retired: !!c.retired, walkover: walkover,
+        eventKey: c.eventKey != null ? c.eventKey : null, qualifying: !!c.qualifying };
+    } else {
+      row = { date: r.date, opponent: r.opp, opponentKey: null, tournament: r.m.t, round: r.m.rd,
+        surface: r.m.sf || null, result: r.sc.wo || !(r.sc.setsW + r.sc.setsL) ? null : r.sc.setsW + ' - ' + r.sc.setsL,
+        won: r.won, sets: r.sc.sets.length ? r.sc.sets : null, retired: r.sc.ret, walkover: r.sc.wo, eventKey: null, qualifying: false };
+    }
+    return {
+      id: 'draw|' + r.m.d + '|' + (r.opp || '') + '|' + r.i,
+      subjectKey: String(p.key), subjectName: initialSurname(p.name), oppName: initialSurname(row.opponent),
+      row: row,
+      price: bk ? Number(r.price) : null, oppPrice: bk ? Number(r.oppPrice) : null, book: bk, src: bk ? 'td' : null,
+      scored: row.walkover || !!(row.sets && row.sets.length) || /^\s*\d+\s*-\s*\d+\s*$/.test(String(row.result || ''))
+    };
+  }
+  function openDrawSheet(i) {
+    var p = profileFor(state.key);
+    var memo = _drawRowsMemo;
+    if (!p || !memo || memo.key !== p.key) return false;
+    var r = memo.rows[+i];
+    if (!r || typeof window.pp2OpenMatchSheet !== 'function') return false;
+    return !!window.pp2OpenMatchSheet(drawSheetPayload(p, r));
   }
 
   // §5.8 Market edge — role cards, price bands, band drill, cumulative chart.
@@ -9037,6 +9308,62 @@
   function styleOppName(name) {
     return initialSurname(name);
   }
+  // ── ONE match-ledger table (the match-up record's): W/L square · Date · Opponent · Event · Rd · Score · Price ·
+  // Opp · P&L. The Versus playing styles drill and the Draw record drill (founder 2026-10-13: "reuse the match-up
+  // record table") both draw their rows here; a row arrives normalised (mlRowHtml), so the two cannot drift.
+  //   x = { hook, won, date (ISO), oppHtml (escaped), event, round, score, scoreOn, price, oppPrice, cents, pend,
+  //         pxTitle (hover on an unpriced Price cell, optional) }
+  var ML_GRID = 'display:grid;grid-template-columns:12px 64px minmax(0,1.25fr) minmax(0,1fr) 36px ' +
+    '128px 46px 46px 54px;gap:0 10px;align-items:center;';
+  function mlHeadsHtml() {
+    var headCell = 'position:sticky;top:0;z-index:1;background:var(--card);padding:0 0 7px;' +
+      'border-bottom:1px solid var(--line);' + STYLE_CAPS;
+    // The first head cell is EMPTY — the W/L square carries no label.
+    return '<span style="' + headCell + '"></span>' +
+      ['Date', 'Opponent', 'Event', 'Rd', 'Score'].map(function (h) {
+        return '<span style="' + headCell + '">' + h + '</span>';
+      }).join('') +
+      ['Price', 'Opp', 'P&amp;L'].map(function (h) {
+        return '<span style="' + headCell + 'text-align:right;">' + h + '</span>';
+      }).join('');
+  }
+  function mlRowHtml(x) {
+    var hook = x.hook || '';
+    var cur = hook ? sheetCursor() : '';
+    var cell = 'padding:6px 0;border-top:1px solid var(--line);';
+    var mono = STYLE_MONO;
+    var priced = x.price != null;
+    var pxt = !priced && !x.pend && x.pxTitle ? ' title="' + esc(x.pxTitle) + '"' : '';
+    return '' +
+      '<span ' + hook + 'style="' + cur + cell + 'display:flex;align-items:center;">' +
+        '<span title="' + (x.won ? 'Won' : 'Lost') + '" style="width:8px;height:8px;border-radius:2px;background:' +
+        (x.won ? 'var(--pos)' : 'var(--neg)') + ';"></span></span>' +
+      '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;color:var(--text-label);">' +
+        esc(styleMonthYear(x.date)) + '</span>' +
+      '<span ' + hook + 'style="' + cur + cell + 'font-size:12.5px;color:var(--text);overflow:hidden;' +
+        'text-overflow:ellipsis;white-space:nowrap;">' +
+        x.oppHtml + '</span>' +
+      '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:var(--text-label);overflow:hidden;' +
+        'text-overflow:ellipsis;white-space:nowrap;">' +
+        esc(x.event) + '</span>' +
+      '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:var(--text-label);">' +
+        esc(x.round) + '</span>' +
+      '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;white-space:' + (x.scoreWrap ? 'normal' : 'nowrap') + ';color:' +
+        (x.scoreOn ? 'var(--text-label)' : DASH_COLOUR) + ';">' +
+        // scoreWrap: a long score (a five-setter) wraps BETWEEN sets, each set kept whole — never cut, never over Price
+        (x.scoreWrap ? String(x.score).split(' ').map(function (t) { return '<span style="white-space:nowrap;">' + esc(t) + '</span>'; }).join(' ')
+          : esc(x.score)) + '</span>' +
+      '<span ' + hook + pxt + 'style="' + cur + cell + mono + 'font-size:11px;' +
+        'text-align:right;color:' + (priced ? 'var(--text-soft)' : DASH_COLOUR) + ';">' +
+        (priced ? x.price.toFixed(2) : x.pend ? '&nbsp;' : DASH) + '</span>' +
+      '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;text-align:right;color:var(--text-label);">' +
+        (x.oppPrice == null ? (x.pend ? '&nbsp;' : DASH) : x.oppPrice.toFixed(2)) + '</span>' +
+      // The P&L carries no "u": the unit is stated once, in the header.
+      '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11.5px;font-weight:700;' +
+        'text-align:right;color:' +
+        (x.cents == null ? DASH_COLOUR : (x.cents >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
+        (x.pend ? '&nbsp;' : x.cents == null ? DASH : signed(x.cents / 100, 2)) + '</span>';
+  }
   function renderStyleDetail(r) {
     var n = r.won + r.lost;
     var yield_ = r.priced ? (r.cents / 100) / r.priced * 100 : null;
@@ -9046,56 +9373,21 @@
       : DASH + ' ' + MIDDOT + ' 0 priced';
     var plColour = r.priced ? (r.cents >= 0 ? 'var(--pos)' : 'var(--neg)') : 'var(--text-label)';
 
-    var headCell = 'position:sticky;top:0;z-index:1;background:var(--card);padding:0 0 7px;' +
-      'border-bottom:1px solid var(--line);' + STYLE_CAPS;
-    // The first head cell is EMPTY — the W/L square carries no label.
-    var heads = '<span style="' + headCell + '"></span>' +
-      ['Date', 'Opponent', 'Event', 'Rd', 'Score'].map(function (h) {
-        return '<span style="' + headCell + '">' + h + '</span>';
-      }).join('') +
-      ['Price', 'Opp', 'P&amp;L'].map(function (h) {
-        return '<span style="' + headCell + 'text-align:right;">' + h + '</span>';
-      }).join('');
-
-    var cell = 'padding:6px 0;border-top:1px solid var(--line);';
-    var mono = STYLE_MONO;
     var body = r.rows.slice().sort(function (a, b) {
       return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
     }).map(function (m) {
-      var hook = sheetHook(m.sheetId || (m.date + '|' + m.opp));
-      var cur = sheetCursor();
       var s = perSetScore(m);
-      var priced = m.price != null;
-      return '' +
-        '<span ' + hook + 'style="' + cur + cell + 'display:flex;align-items:center;">' +
-          '<span title="' + (m.won ? 'Won' : 'Lost') + '" style="width:8px;height:8px;border-radius:2px;background:' +
-          (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span></span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;color:var(--text-label);">' +
-          esc(styleMonthYear(m.date)) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + 'font-size:12.5px;color:var(--text);overflow:hidden;' +
-          'text-overflow:ellipsis;white-space:nowrap;">' +
-          esc(m.opp ? styleOppName(m.opp) : DASH) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:var(--text-label);overflow:hidden;' +
-          'text-overflow:ellipsis;white-space:nowrap;">' +
-          esc(tournDisplayName(m.event, null) || DASH) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:var(--text-label);">' +
-          esc(m.round || DASH) + '</span>' +
+      return mlRowHtml({
+        hook: sheetHook(m.sheetId || (m.date + '|' + m.opp)), won: m.won, date: m.date,
+        oppHtml: esc(m.opp ? styleOppName(m.opp) : DASH),
+        event: tournDisplayName(m.event, null) || DASH, round: m.round || DASH,
         // Set scores where recentForm reaches, space-separated ("4-6 3-6"); the
         // retired/walkover marker either way; an honest dash outside that window.
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;white-space:nowrap;color:' +
-          ((s || matchStatus(m)) ? 'var(--text-label)' : DASH_COLOUR) + ';">' +
-          esc(scoreWithStatus(m, s ? s.replace(/,\s*/g, ' ') : s)) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;' +
-          'text-align:right;color:' + (priced ? 'var(--text-soft)' : DASH_COLOUR) + ';">' +
-          (priced ? m.price.toFixed(2) : STYLE_PEND ? '&nbsp;' : DASH) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;text-align:right;color:var(--text-label);">' +
-          (m.oppPrice == null ? (STYLE_PEND ? '&nbsp;' : DASH) : m.oppPrice.toFixed(2)) + '</span>' +
-        // The P&L carries no "u": the unit is stated once, in the header.
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11.5px;font-weight:700;' +
-          'text-align:right;color:' +
-          (m.cents == null ? DASH_COLOUR : (m.cents >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
-          (STYLE_PEND ? '&nbsp;' : m.cents == null ? DASH : signed(m.cents / 100, 2)) + '</span>';
+        score: scoreWithStatus(m, s ? s.replace(/,\s*/g, ' ') : s), scoreOn: !!(s || matchStatus(m)),
+        price: m.price, oppPrice: m.oppPrice, cents: m.cents, pend: STYLE_PEND
+      });
     }).join('');
+    var mono = STYLE_MONO;
 
     return '<div data-pp2-mu="drill" style="background:var(--card);border:1px solid var(--edge-6);border-radius:10px;' +
       'padding:14px 16px 12px;margin:8px 0 10px;min-width:0;">' +
@@ -9110,8 +9402,7 @@
           plColour + ';">' + plText + '</span>' +
       '</div>' +
       '<div class="pp2-yscroll" style="max-height:360px;overflow-y:auto;padding-right:12px;min-width:0;">' +
-        '<div style="display:grid;grid-template-columns:12px 64px minmax(0,1.25fr) minmax(0,1fr) 36px ' +
-          '128px 46px 46px 54px;gap:0 10px;align-items:center;">' + heads + body + '</div>' +
+        '<div style="' + ML_GRID + '">' + mlHeadsHtml() + body + '</div>' +
       '</div>' +
     '</div>';
   }
@@ -10982,6 +11273,9 @@
     // (Results / Sets & Games / Service) are independent axes of the same table —
     // changing scope must not reset the tab, so they are separate state.
     splitTab: 'results',
+    // Founder 2026-10-13 · the Draw record drill-in: the open row's store key (null = the summary), its
+    // All / Wins / Losses filter and its page. Career / Last 52 (splitScope) is shared with the summary.
+    drawDrill: null, drawFilter: 'all', drawPage: 0,
     tournQuery: '', tournOpen: null,
     // §5.4 Calendar record. calSurface 'all' is the default segment; calCell is
     // "YYYY-m" (month index, not 1-based). calTab is 'calendar' | '2026' (TEN-384 Q1: Streaks removed).
@@ -11086,6 +11380,7 @@
     state.surfaces = []; state.priceFilters = []; state.modal = null;
     state.careerScope = 'career'; state.careerDrill = null; state.careerTab = 'record'; state.careerTier = 'all';
     state.splitScope = 'career'; state.marketRole = 'all'; state.lcRole = 'all';
+    state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
     state.speedSurf = 'all'; state.speedBand = null;
@@ -11154,8 +11449,8 @@
       if (v === 'all') state.surfaces = []; else toggleIn(state.surfaces, v);
     }
     else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
-    else if (kind === 'box') { state.modal = el.getAttribute('data-box'); if (state.modal === 'tourn') tournNeedJoin(); }
-    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; }
+    else if (kind === 'box') { state.modal = el.getAttribute('data-box'); state.drawDrill = null; if (state.modal === 'tourn') tournNeedJoin(); }
+    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; }
     else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
     else if (kind === 'career-tier') { state.careerTier = v; state.careerDrill = null; }
     // The tab switch keeps the window (`careerScope`) — one control drives both
@@ -11187,8 +11482,19 @@
         cur.surf === want.surf) ? null : want;
     }
     else if (kind === 'career-drill-close') state.careerDrill = null;
-    else if (kind === 'split-scope') state.splitScope = el.getAttribute('data-scope');
+    else if (kind === 'split-scope') { state.splitScope = el.getAttribute('data-scope'); state.drawPage = 0; }
     else if (kind === 'split-tab') state.splitTab = el.getAttribute('data-tab');
+    // Founder 2026-10-13 · the Draw record drill-in. Opening a row asks the host for his match file (and the price
+    // join, career-history) — a failed load is asked again here.
+    else if (kind === 'draw-row') {
+      state.drawDrill = v; state.drawFilter = 'all'; state.drawPage = 0;
+      if (typeof window.pp2DrawNeed === 'function') window.pp2DrawNeed(state.key);
+    }
+    else if (kind === 'draw-back') { state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0; }
+    else if (kind === 'draw-filter') { state.drawFilter = v; state.drawPage = 0; }
+    else if (kind === 'draw-page') state.drawPage = (state.drawPage | 0) + (v === 'next' ? 1 : -1);
+    else if (kind === 'draw-sheet') { openDrawSheet(v); return; }
+    else if (kind === 'draw-opp') { if (typeof window.pp2OpenProfile === 'function') window.pp2OpenProfile(v); return; }
     else if (kind === 'market-role') {
       // Changing the role card re-filters the band groups, so a band opened under
       // the previous filter would be left open under a group that is no longer
@@ -11285,7 +11591,7 @@
   (window.sfOverlayClosers = window.sfOverlayClosers || []).push(function () {
     if (state.sheet != null && typeof window.pp2CloseMatchSheet === 'function') window.pp2CloseMatchSheet();
     if (!mounted || !(state.matchPage || state.sheet || state.heat || state.modal)) return;
-    state.matchPage = null; state.sheet = null; state.heat = false; state.modal = null; state.careerDrill = null;
+    state.matchPage = null; state.sheet = null; state.heat = false; state.modal = null; state.careerDrill = null; state.drawDrill = null;
     repaint();
   });
   function onKey(e) {
@@ -11294,7 +11600,9 @@
     // stopped), so this handler only ever sees the layers below it.
     if (state.matchPage) { state.matchPage = null; repaint(); return; }
     if (state.heat) { state.heat = false; repaint(); return; }
-    if (state.modal) { state.modal = null; repaint(); }
+    // Founder 2026-10-13 · Esc in the Draw record drill returns to the summary (Career / Last 52 kept).
+    if (state.modal === 'splits' && state.drawDrill) { state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0; repaint(); return; }
+    if (state.modal) { state.modal = null; state.drawDrill = null; repaint(); }
   }
 
   // Bound once per container. Re-opening a different player re-uses the same
@@ -11573,6 +11881,14 @@
       EVENT_DISPLAY: EVENT_DISPLAY,
       EVENT_DISPLAY_UNKNOWN: EVENT_DISPLAY_UNKNOWN,
       renderSplitsModal: renderSplitsModal,
+      renderDrawDrill: renderDrawDrill,
+      onKey: onKey,
+      drawDrillModel: drawDrillModel,
+      drawScore: drawScore,
+      drawSheetPayload: drawSheetPayload,
+      DRAW_PRED: DRAW_PRED,
+      DRAW_PAGE: DRAW_PAGE,
+      mlRowHtml: mlRowHtml,
       renderMarketModal: renderMarketModal,
       // §5.5 Court speed
       renderSpeedModal: renderSpeedModal,

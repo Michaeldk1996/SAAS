@@ -132,6 +132,36 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   - **fx3 · Calendar footnote / Backing tile wording (founder B8):** "closing price: Pinnacle, else Bet365". Calendar yields, Court speed units, Matchup Backing and Market edge all read the market-edge shard's join (Pinnacle, else Bet365) through `calSpine`; Record per tournament Backing is the Database join (`trProfileBacking` → `trProfileModel`; founder ruling 2026-10-08, see "Per-event Backing" above).
   - **fx3 · same-event alias:** "Melbourne (Great Ocean Road Open)" = "Great Ocean Road Open" (2021; listed twice with the same matches).
   - **fx4 · same-event aliases + the Olympics:** "Melbourne" = "Melbourne (Summer Set)" (2022 only; bare "Melbourne" occurs in no other season), "Melbourne (Murray River Open)" = "Murray River Open" (2021). **The Olympics are ONE identity, "Olympic Games"** ("Olympic Games", "Beijing / London / Rio / Tokyo / Paris Olympics"), one Record per tournament row across years. api-tennis files the Tokyo Games as season 2020; `EDITION_YEAR` re-years them to 2021 so they fold with the archive's "Tokyo Olympics" 2021. **Surface per edition comes from `EDITION_SURFACE`** (2008 hard · 2012 grass · 2016 hard · 2021 hard · 2024 clay), never the feed's single label (career-history writes "grass" on every "Olympic Games" row); a row spanning years takes the existing multi-surface rule (the surface holding most of its matches, ties to the newest). "London Olympics" stays apart from Queen's Club. **Test:** `tools/test-tournament-identity.js` "fx4", `tools/test-ten384-fx4.js` item 3.
+- **Draw record drill-in (founder 2026-10-13).** Every Results row of the Draw record (Level · Format · By round ·
+  Opponent) is clickable — pointer, whole-row hover (`.pp2-drow`), a chevron in a 12px track (the name column gave up the
+  20px; the panel width is unchanged) — and opens its matches INSIDE the modal: back arrow + "Draw record › {row}", the
+  row's own W–L and Win % big, a summary strip "W–L · win % · P&L ±x.xxu over N of M priced matches" (never a P&L total
+  without its priced count; blank while prices load, "— · prices unavailable" on a failed join), All / Wins / Losses chips
+  with counts, then the match-up record table (`mlRowHtml`, shared with Versus playing styles: square · Date · Opponent ·
+  Event · Rd · Score · Price · Opp · P&L), newest first, 100 a page. Esc and the back arrow return to the summary with
+  Career / Last 52 kept; the list follows the toggle. Sets & Games and Service stay summary-only.
+  - **Rows** = `splits-matches/{key}.json`, the per-match file `tools/build-career-splits.js` writes in the same run and
+    from the same Tennis Abstract rows as the figures, filtered by the builder's own predicates (`DRAW_PRED`); fetched when
+    a row is first opened (`pp2DrawNeed`), never at profile open. **No figure changes.** A list that disagreed with its row
+    would say so in one line, never trimmed or padded (measured 13 Oct 2026: 545 players, every row, 0 disagree).
+  - **Definitions (from the builder):** vs Top 10 = the opponent's rank AT THE MATCH (matchmx); Early rounds = R16 + R32 +
+    R64 + R128 (no RR / BR); Other Tours = the source's level A (ATP 250 / 500, plus Laver Cup, United Cup, ATP Cup, the
+    Olympics and the 2023 Tour Finals the source codes A).
+  - **Prices (founder: "confirm")** = the site's ONE join: the Database archive, Pinnacle closing, else Bet365 closing, per
+    match (`H2HPage.priceJoin` via `window.pp2DrawJoin`, with his career-history), a retirement settled on the official ATP
+    result (`RET_SETTLE_NOTE` in the footnote). P&L = 1u flat on him at his price. Missing price = "—", never 0.
+  - **Walkovers (founder: "yes")** are listed "w/o" with no price and no P&L; they stay in the W–L the Draw record already
+    shows. Whether the Draw record should count them at all (the site rule says a walkover is never a win or a loss) is
+    an OPEN founder question — figures untouched until ruled.
+  - **Date** = the tournament's month (the source dates every match at its event start; founder: "yes").
+  - **Every row opens the step-3 stats sheet (founder: required):** on the career-history match the join met for it
+    (`careerMatch`, event key → the full sheet), else on the row's own date, score and event (the sheet's "Match stats not
+    available" state). A loss's score is turned to his side ("6-3 6-4" on a loss reads "3-6 4-6").
+  - **An opponent links to his profile** only when the joined match carries his key and the standings say a profile exists
+    (`pp2HasProfile`); otherwise plain text.
+  **Test:** `tools/test-draw-record-drill.js` (every player in the committed store reconciles, the pinned Zverev fixture,
+  the drill, the sheet payloads, the host bridge through the real `h2hPriceJoin`) + `tools/test-draw-record-drill-mutants.js`
+  (17 mutants); `tools/test-ten384-r2-draw.js` (the chevron track, panel width unchanged).
 - **TEN-384 fx4 (independent review, 2026-10-07).**
   - **Header rank = the Players card's rank:** live standings (`player-index.json`, the host's `playerIndex`, read by ONE function `pp2LiveRankOf`, bridged as `window.pp2LiveRank`), else the frozen `profile.rank` (`headerRank`). The landing repaints an open profile when the standings land. **Test:** `tools/test-ten384-fx4.js` item 2.
   - **Loading claims nothing, on every surface that reads the market-edge shard** (`shardPending`): Calendar Career yield / Best / Worst tiles, the findings strip, Vs-others bars, Swing row, n / Yield / Vs others rows, the By-month head count, the footnote's priced sentences and the cell drill's prices; Court speed units and H / A; Matchup Backing (list, Career, summary, drill); the ledger's unpriced H / A cells. Each keeps its box with `&nbsp;` and paints once. Record per tournament's tile is pending while the page's Backing join (`trProfileBacking`: career-history + the Database join rows) has not answered (`tournBackingPending`). Key insights read no shard figure. **Test:** `tools/test-ten384-fx4.js` item 4.

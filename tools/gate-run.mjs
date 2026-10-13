@@ -50,6 +50,7 @@ export const WEIGHTS = {
   'node tools/test-ten314-mutants.js': 49,
   'node tools/test-ten255-build-stamp.js': 37,
   'node tools/test-ten341-mutants.js': 22,
+  'node tools/test-draw-record-drill-mutants.js': 22,
   'node tools/test-ten402-r2n-mutants.js': 19,
   'node tools/test-ten402-r2l-mutants.js': 18,
   'node tools/test-ten336-mutants.js': 14,
