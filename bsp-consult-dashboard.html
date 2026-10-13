@@ -22191,6 +22191,51 @@ function pp2DbJoinNeed(key){
   return true;
 }
 window.pp2DbJoinNeed = pp2DbJoinNeed;
+// ── Draw record drill-in (founder 2026-10-13) ────────────────────────────────────────────────────────────────
+// A Draw record row (Level / Format / By round / Opponent, Results tab) opens the matches behind its W–L. They are the
+// per-player match list built in the SAME run and from the SAME Tennis Abstract rows as the figures
+// (splits-matches/{key}.json, tools/build-career-splits.js), so a list always counts its row's W–L. Lazy: fetched when
+// a row is first opened (pp2DrawNeed), never at profile open. 404 = no list built for him ('none'); any other failure
+// = 'failed', asked again on the next open. Prices: the site's ONE price join (the Database archive, Pinnacle closing,
+// else Bet365 closing, per match; retirements settled on the official ATP result) through H2HPage.priceJoin with his
+// career-history rows, which also hands back the dated match each row met (careerMatch) for the stats sheet.
+const _pp2Draw = {};
+function pp2DrawNeed(key){
+  const k = String(key == null ? ppState.key : key);
+  const s = _pp2Draw[k];
+  if (s && s.st !== 'failed') return false;
+  _pp2Draw[k] = { st: 'pending' };
+  fetch(`./splits-matches/${encodeURIComponent(k)}.json`, { cache: 'no-cache' })
+    .then(r => (r.status === 404 ? null : r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+    .then(d => { _pp2Draw[k] = d && Array.isArray(d.matches) ? { st: 'ready', d } : { st: 'none' }; },
+          () => { _pp2Draw[k] = { st: 'failed' }; })
+    .then(() => pp2RepaintIfOpen(k));
+  pp2DbJoinNeed(k);
+  if (!(k in _careerHistoryShards)) loadPp2CareerHistory(k);
+  pp2RepaintIfOpen(k);
+  return true;
+}
+window.pp2DrawNeed = pp2DrawNeed;
+/** { st: 'pending' | 'ready' | 'none' | 'failed', d } — read only; never starts a fetch. */
+window.pp2DrawMatches = function(key){ return _pp2Draw[String(key)] || { st: 'idle' }; };
+// Prices rows [{ date (ISO), won, round, opp }] in place on the one join and sets each row's careerMatch. Returns
+// 'pending' (career-history or the Database rows not answered), 'failed' (either failed) or 'ready'.
+window.pp2DrawJoin = function(key, name, rows){
+  const k = String(key);
+  if (_trProfileFail.has(k) || _sfDbJoinSt === 'failed') return 'failed';
+  if (!(k in _careerHistoryShards) || _sfDbJoinSt !== 'ready' || !_sfDbJoin) return 'pending';
+  const J = window.H2HPage && window.H2HPage.priceJoin;
+  if (typeof J !== 'function') return 'failed';
+  J(rows, { full: name }, null, _sfDbJoin, null, _careerHistoryShards[k] || []);
+  return 'ready';
+};
+// An opponent's profile, when one exists (the standings say so); opened like every other profile link.
+window.pp2HasProfile = function(key){
+  if (key == null || key === '') return false;
+  const k = String(key);
+  return !!(playerProfiles[k] || (Array.isArray(playerIndex) && playerIndex.some(r => String(r.key) === k && r.hasProfile)));
+};
+window.pp2OpenProfile = function(key){ if (typeof psOpenProfile === 'function') psOpenProfile(key); };
 function pp2DbJoinAfterPaint(key){
   const k = String(key);
   const go = () => { if (ppState.key === k) pp2DbJoinNeed(k); };   // the reader left before idle → the next open asks
@@ -27834,7 +27879,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       const k = key(x.opponent), id = d + '|' + k.s + '|' + x.won + '|' + (x.round || '');
       if (mSeen.has(id)) return;                                     // one match listed twice is one match
       mSeen.add(id);
-      meet.push({ d, won: x.won, rd: code(fhRoundCode(x.round, x.qualifying)), k, ek: x.eventKey != null });
+      meet.push({ d, won: x.won, rd: code(fhRoundCode(x.round, x.qualifying)), k, ek: x.eventKey != null, x });
     });
     M = h2hNearest(dbPairs(meet));
     if (m1) m1.set(career, { full: a.full, meet, M });
@@ -27854,6 +27899,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     rows.forEach((r, ri) => {
       const j = R.map.get(ri), xi = ex.indexOf(ri);
       const i = j != null ? M.map.get(j) : xi >= 0 ? X.map.get(xi) : undefined;
+      // the career match this row met (step 2), priced or not: the profile's Draw record drill opens its sheet on it
+      if (j != null && meet[j]) Object.defineProperty(r, 'careerMatch', { value: meet[j].x, enumerable: false, configurable: true, writable: true });
       if (i == null) return;
       const row = db.rows[i], winP = row[7] ? row[5] : row[6], loseP = row[7] ? row[6] : row[5];
       r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = row[8] === 0 ? 'P' : 'B'; r.src = 'td';

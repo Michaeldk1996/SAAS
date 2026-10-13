@@ -75,9 +75,12 @@ function main() {
     const grid = /grid-template-columns:([0-9px ]+);gap:0 8px/.exec(html);
     assert(grid, 'no Draw panel grid');
     const tr = grid[1].trim().split(/\s+/).map(x => parseFloat(x));
-    assert.strictEqual(tr.length, 4, 'Results tab tracks ' + grid[1]);
+    // Founder 2026-10-13: the Results tab gains a 12px chevron track (a row opens its matches); the name column
+    // gave up 12px + one 8px gap, so the panel's content width stays 392px (tracks + 8px gaps).
+    assert.strictEqual(tr.length, 5, 'Results tab tracks ' + grid[1]);
     assert(tr[1] >= 8 * 0.6 * 11.5, 'W–L track ' + tr[1] + 'px < 8ch (55.2px)');
-    assert.strictEqual(tr[0] + tr[1], 256, 'name + W–L = ' + (tr[0] + tr[1]) + ', was 208 + 48 = 256');
+    assert.strictEqual(tr.reduce((a, x) => a + x, 0) + 8 * (tr.length - 1), 392, 'panel content width ' + grid[1]);
+    assert.strictEqual(tr[4], 12, 'chevron track ' + tr[4]);
     const cell = /<span style="([^"]*)">124–141<\/span>/.exec(html);
     assert(cell, 'no 124–141 cell');
     assert(/white-space:nowrap/.test(cell[1]), 'the W–L cell can wrap: ' + cell[1]);
