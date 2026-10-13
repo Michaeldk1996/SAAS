@@ -6062,7 +6062,8 @@
     if (k && typeof window.pp2HasProfile === 'function' && window.pp2HasProfile(k) && k !== String(state.key)) {
       return '<span class="pp2-dopp" data-pp2="draw-opp" data-v="' + esc(k) + '" title="Open ' + esc(name) + '’s profile">' + esc(name) + '</span>';
     }
-    return esc(r.opp || (c && c.opponent) ? name : DASH);
+    var shown = (r.opp || (c && c.opponent)) ? name : DASH;   // name = initialSurname(...) above
+    return esc(shown);
   }
   function renderDrawDrill(p, sc, scope) {
     var M = drawDrillModel(p, sc, scope);
