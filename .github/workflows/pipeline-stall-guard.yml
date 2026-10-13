@@ -32,7 +32,7 @@ name: BSP pipeline stall guard
 
 on:
   workflow_run:
-    workflows: ['BSP data pipeline', 'BSP oddspapi post-match archive']
+    workflows: ['BSP data pipeline', 'BSP oddspapi post-match archive', 'Publish site']
     types: [completed]
   workflow_dispatch:
     inputs:
@@ -64,7 +64,7 @@ jobs:
         with:
           sparse-checkout: tools/pipeline-stall-guard.mjs
           sparse-checkout-cone-mode: false
-      - name: Stalled pipeline run — alert at 60 min, cancel + one re-run at 120 min
+      - name: Stalled pipeline run (alert 60 / cancel 120 min), stuck publish (cancel 20 min), stale site (Telegram 40 min)
         env:
           GH_TOKEN: ${{ github.token }}
           LOG_TOKEN: ${{ secrets.WORKFLOW_PAT }}
@@ -72,6 +72,9 @@ jobs:
           STALL_GUARD_ISSUE: ${{ vars.STALL_GUARD_ISSUE }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # founder 2026-10-13: also cancel a publish.yml run stuck `waiting` > 20 min, and Telegram when the live
+          # site's build-info.json is > 40 min old (the watchdog's red run reaches nobody)
+          SITE_URL: https://michaeldk1996.github.io/SAAS
           # schedule + manual passes also check the log and the token's expiry when
           # nothing is waiting (a few times a day — not on every 10-min tick)
           STALL_GUARD_HEALTH: ${{ github.event_name != 'workflow_run' && '1' || '' }}

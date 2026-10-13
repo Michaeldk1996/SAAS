@@ -80,7 +80,8 @@ const CASES = {
     assert.ok(/name: site-data\n\s+path: _site\n\s+run-id:/.test(S.publish), 'downloads site-data from the resolved run');
     assert.ok(/github\.event\.workflow_run\.conclusion == 'success'/.test(S.publish), 'a failed gate or pipeline run publishes nothing');
     assert.ok(/needs\.assemble\.outputs\.deploy == 'true'/.test(S.publish) && /steps\.mode\.outputs\.deploy == 'true'/.test(S.publish), 'Pages only behind PUBLISH_DEPLOY');
-    assert.ok(/concurrency:\n\s+group: site-publish\n\s+cancel-in-progress: false/.test(S.publish));
+    // founder 2026-10-13: the newest publish cancels a stuck one (run 38253661020 held the group 17.5 h)
+    assert.ok(/concurrency:\n\s+group: site-publish\n\s+cancel-in-progress: true/.test(S.publish), 'a stuck publish must be replaced by the next one');
   },
   'site-code.sh = the code lines of pipeline.yml "Assemble site", line for line (no file in one list only)': (S) => {
     const asm = S.pipeline.slice(S.pipeline.indexOf('      - name: Assemble site'), S.pipeline.indexOf('      - name: Inject Supabase public config'));

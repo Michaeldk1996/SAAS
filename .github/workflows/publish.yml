@@ -21,10 +21,17 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# One publish at a time; a newer trigger replaces a pending one, which is safe (see above).
+# One publish at a time, and the NEWEST trigger always wins: it cancels a publish still running or waiting
+# (founder 2026-10-13, "we need to fix it"). Safe because every publish resolves the newest gated code and the
+# newest data when it starts, so a cancelled one loses nothing, and Pages keeps the last finished deployment.
+# Why: with cancel-in-progress false, run 38253661020 sat `waiting` on the github-pages environment from 12 Oct
+# 13:09Z to 13 Oct 06:39Z (a GitHub-side stall, as pipeline.yml had on 6-7 Oct) and held the group, so ~110
+# later publishes were cancelled behind it and nothing reached the site for 17.5 h. Now the next trigger (a
+# data run, every ~10 min) cancels a stuck one. Backstop: pipeline-stall-guard.yml cancels a publish waiting
+# > 20 min and Telegrams when the live site's build-info.json is > 40 min old.
 concurrency:
   group: site-publish
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   PUBLISH_DEPLOY: 'true'
