@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-12T22:59:34.319Z",
+ "generatedAt": "2026-10-13T10:44:57.457Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "49a6d41f5cea6539f8acfb42db5edeef52448efc",
-  "at": "2026-10-12T21:48:37Z"
+  "commit": "979f52f646e961f26b1eb9bcd91085cdda0d4f6c",
+  "at": "2026-10-13T10:04:30Z"
  },
- "commitsScanned": 4981,
+ "commitsScanned": 5007,
  "lastRun": {
-  "from": "2026-10-12T06:31:01Z",
-  "snapshots": 21,
-  "added": 4,
+  "from": "2026-10-12T21:48:37Z",
+  "snapshots": 27,
+  "added": 3,
   "replaced": 0,
-  "series": 54,
-  "kept": 43,
+  "series": 56,
+  "kept": 46,
   "bySource": {
-   "api-tennis-live": 43
+   "api-tennis-live": 46
   },
   "byBook": {
-   "Pinnacle +30s": 43
+   "Pinnacle +30s": 46
   },
   "dropped": {
-   "noStart": 11
+   "noStart": 10
   }
  },
  "stats": {
@@ -8722,6 +8722,48 @@
    "p2": 2.45,
    "at": "2026-10-12T11:47:32.283Z",
    "trueStart": "2026-10-12T12:24:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12170076,
+   "date": "2026-10-13",
+   "p1Key": 1106,
+   "p2Key": 435,
+   "p1Name": "A. De Minaur",
+   "p2Name": "K. Khachanov",
+   "p1": 1.8,
+   "p2": 2.13,
+   "at": "2026-10-13T03:06:49.674Z",
+   "trueStart": "2026-10-13T03:50:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12170088,
+   "date": "2026-10-13",
+   "p1Key": 9210,
+   "p2Key": 902,
+   "p1Name": "A. Gea",
+   "p2Name": "J. Mensik",
+   "p1": 2.46,
+   "p2": 1.606,
+   "at": "2026-10-13T03:27:10.223Z",
+   "trueStart": "2026-10-13T05:45:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12170167,
+   "date": "2026-10-13",
+   "p1Key": 1980,
+   "p2Key": 1895,
+   "p1Name": "A. Zverev",
+   "p2Name": "A. Bublik",
+   "p1": 1.357,
+   "p2": 3.48,
+   "at": "2026-10-13T08:39:22.342Z",
+   "trueStart": "2026-10-13T09:48:02.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
