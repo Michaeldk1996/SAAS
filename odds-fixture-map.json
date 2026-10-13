@@ -4301,6 +4301,17 @@
       "p2": "R. Jodar",
       "startTime": "2026-10-14T04:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12170795": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-13T15:16:08Z",
+      "missRuns": 1,
+      "missSince": "2026-10-13T15:16:08Z",
+      "orient": null,
+      "p1": "A. Zverev",
+      "p2": "A. De Minaur",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -4319,17 +4330,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-24T17:31:44Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 2,
-        "openMisses": 2,
-        "stale": 3,
-        "ttlBit": false,
-        "unmapped": 1,
-        "upcoming": 23
-      },
       {
         "at": "2026-09-24T18:31:49Z",
         "fixturesUnitsSpent": 1,
@@ -8718,9 +8718,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 6
+      },
+      {
+        "at": "2026-10-13T15:16:08Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 6
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-13T07:45:19Z"
+  "updatedAt": "2026-10-13T15:16:08Z"
 }
