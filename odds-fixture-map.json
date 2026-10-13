@@ -4304,8 +4304,8 @@
     },
     "12170795": {
       "fixtureId": null,
-      "mappedAt": "2026-10-13T19:36:42Z",
-      "missRuns": 3,
+      "mappedAt": "2026-10-13T20:45:34Z",
+      "missRuns": 4,
       "missSince": "2026-10-13T15:16:08Z",
       "orient": null,
       "p1": "A. Zverev",
@@ -4315,8 +4315,8 @@
     },
     "12170856": {
       "fixtureId": null,
-      "mappedAt": "2026-10-13T19:36:42Z",
-      "missRuns": 2,
+      "mappedAt": "2026-10-13T20:45:34Z",
+      "missRuns": 3,
       "missSince": "2026-10-13T16:16:19Z",
       "orient": null,
       "p1": "A. Gea",
@@ -4341,17 +4341,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-24T21:31:48Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 2,
-        "openMisses": 2,
-        "stale": 2,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 23
-      },
       {
         "at": "2026-09-24T22:46:49Z",
         "fixturesUnitsSpent": 1,
@@ -8740,9 +8729,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 6
+      },
+      {
+        "at": "2026-10-13T20:45:34Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 2,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 6
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-13T19:36:42Z"
+  "updatedAt": "2026-10-13T20:45:34Z"
 }
