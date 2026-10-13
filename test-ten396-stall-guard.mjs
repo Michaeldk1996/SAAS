@@ -14,6 +14,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   ALERT_AFTER_MIN, CANCEL_AFTER_MIN, decide, waitingMinutes, readMarkers, marker,
+  PUBLISH_CANCEL_AFTER_MIN, SITE_STALE_AFTER_MIN, decidePublish, siteState,
 } from './tools/pipeline-stall-guard.mjs';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
@@ -24,8 +25,8 @@ const MIN = 60000;
 const ago = (m) => new Date(Date.now() - m * MIN).toISOString();
 
 // A waiting run whose only job reached the environment gate `m` minutes ago.
-function waitingRun(id, m, { jobStatus = 'waiting', steps = [], runStatus = 'waiting' } = {}) {
-  return {
+function waitingRun(id, m, { jobStatus = 'waiting', steps = [], runStatus = 'waiting', wf = 'pipeline.yml' } = {}) {
+  return { wf,
     run: { id, run_number: id % 10000, status: runStatus, created_at: ago(m + 7), run_started_at: ago(m + 7),
       html_url: `https://github.com/${REPO}/actions/runs/${id}` },
     jobs: [{ id: id * 10, status: jobStatus, started_at: ago(m), created_at: ago(m), steps }],
@@ -33,8 +34,8 @@ function waitingRun(id, m, { jobStatus = 'waiting', steps = [], runStatus = 'wai
 }
 
 // ── fake GitHub + Telegram ───────────────────────────────────────────────────
-function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false, commentsStatus = 200, commentPostStatus = 201, ignoreStatusFilter = false, logStatus = 0, tokenExpiry = null } = {}) {
-  const w = { runs: new Map(runs.map((r) => [String(r.run.id), r])), issues, comments, cancels: [], dispatches: [],
+function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false, commentsStatus = 200, commentPostStatus = 201, ignoreStatusFilter = false, logStatus = 0, tokenExpiry = null, buildInfo = null } = {}) {
+  const w = { runs: new Map(runs.map((r) => [String(r.run.id), r])), issues, comments, cancels: [], dispatches: [], pubDispatches: [], buildInfo,
     posted: [], telegrams: [], created: [], publicIssueCalls: [], logAuth: new Set(), stickyCancel, commentsStatus, commentPostStatus, ignoreStatusFilter };
   const srv = http.createServer((req, res) => {
     let body = '';
@@ -50,6 +51,7 @@ function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false
       };
       let m;
       if (req.method === 'POST' && (m = /^\/botTOKEN\/sendMessage$/.exec(p))) { w.telegrams.push(JSON.parse(body)); return send(200, { ok: true }); }
+      if (req.method === 'GET' && p === '/site/build-info.json') return w.buildInfo == null ? send(404, {}) : send(200, w.buildInfo);
       if (p.startsWith(`/repos/${REPO}/issues`)) { w.publicIssueCalls.push(`${req.method} ${p}`); return send(403, {}); }
       if (isLog) {
         w.logAuth.add(req.headers.authorization);
@@ -60,9 +62,9 @@ function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false
       const q = p.slice(pre.length);
       if (!isLog && q.startsWith('/issues')) return send(404, {});
       if (isLog && q.startsWith('/actions')) return send(404, {});
-      if (req.method === 'GET' && q === '/actions/workflows/pipeline.yml/runs') {
+      if (req.method === 'GET' && (m = /^\/actions\/workflows\/(pipeline|publish)\.yml\/runs$/.exec(q))) {
         const st = u.searchParams.get('status');
-        const list = [...w.runs.values()].map((r) => r.run).filter((r) => w.ignoreStatusFilter || !st || r.status === st || r.conclusion === st)
+        const list = [...w.runs.values()].filter((r) => (r.wf || 'pipeline.yml') === m[1] + '.yml').map((r) => r.run).filter((r) => w.ignoreStatusFilter || !st || r.status === st || r.conclusion === st)
           .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
         return send(200, { total_count: list.length, workflow_runs: list });
       }
@@ -75,6 +77,7 @@ function fakeWorld({ runs = [], issues = [], comments = {}, stickyCancel = false
         return send(202, {});
       }
       if (req.method === 'POST' && q === '/actions/workflows/pipeline.yml/dispatches') { w.dispatches.push(JSON.parse(body)); return send(204); }
+      if (req.method === 'POST' && q === '/actions/workflows/publish.yml/dispatches') { w.pubDispatches.push(JSON.parse(body)); return send(204); }
       if (req.method === 'GET' && q === '/issues') return send(200, w.issues);
       if (req.method === 'POST' && q === '/issues') {
         const i = { number: 100 + w.issues.length, title: JSON.parse(body).title };
@@ -245,7 +248,7 @@ test('workflow: rides workflow_run on the two pg_cron-dispatched workflows by th
   const g = wf('pipeline-stall-guard.yml');
   const name = (f) => /^name:\s*(.+)$/m.exec(wf(f))[1].trim();
   assert.match(g, /^\s+workflow_run:\s*$/m);
-  for (const f of ['pipeline.yml', 'oddspapi-postmatch.yml']) assert.ok(g.includes(`'${name(f)}'`), `${f} is renamed — the guard's trigger no longer matches it`);
+  for (const f of ['pipeline.yml', 'oddspapi-postmatch.yml', 'publish.yml']) assert.ok(g.includes(`'${name(f)}'`), `${f} is renamed — the guard's trigger no longer matches it`);
   assert.match(g, /types: \[completed\]/);
   assert.match(g, /group: bsp-pipeline-stall-guard\n\s+cancel-in-progress: false/);
   assert.match(g, /actions: write/);
@@ -253,6 +256,7 @@ test('workflow: rides workflow_run on the two pg_cron-dispatched workflows by th
   assert.match(g, /LOG_TOKEN: \$\{\{ secrets\.WORKFLOW_PAT \}\}/);
   assert.match(g, /STALL_GUARD_LOG_REPO: \$\{\{ vars\.STALL_GUARD_LOG_REPO \|\| 'Michaeldk1996\/stennisfy-ops' \}\}/);
   assert.match(g, /run: node tools\/pipeline-stall-guard\.mjs/);
+  assert.match(g, /SITE_URL: https:\/\/michaeldk1996\.github\.io\/SAAS/, 'the stale-site alarm needs SITE_URL');
   assert.match(wf('oddspapi-postmatch.yml'), /workflow_dispatch/);
 });
 
@@ -396,5 +400,85 @@ test('dry run reads the log, prints scopes/expiry, writes nothing anywhere', asy
     assert.equal(r.code, 0, r.out);
     assert.match(r.out, /LOG_TOKEN expires: 2026-10-25 02:15:28 UTC/);
     assert.deepEqual([w.cancels.length, w.dispatches.length, w.posted.length, w.created.length, w.telegrams.length], [0, 0, 0, 0, 0]);
+  });
+});
+
+// ── founder 2026-10-13: stuck publish runs + a stale live site ───────────────
+// The incident: publish run 38253661020 sat `waiting` on github-pages 12 Oct 13:09Z → 13 Oct 06:39Z; this guard
+// watched only pipeline.yml and the watchdog's red run reached nobody.
+const pubRun = (id, m, o) => waitingRun(id, m, Object.assign({ wf: 'publish.yml' }, o || {}));
+const SITE = (base) => ({ SITE_URL: `${base}/site` });
+
+test('publish: the rule is 20 min waiting → cancel; stale site is 40 min', () => {
+  assert.equal(PUBLISH_CANCEL_AFTER_MIN, 20);
+  assert.equal(SITE_STALE_AFTER_MIN, 40);
+  const m = readMarkers([]);
+  const at = (x) => decidePublish({ ...pubRun(1, x), now: Date.now(), markers: m }).action;
+  assert.equal(at(19), 'none');
+  assert.equal(at(21), 'cancel');
+  const ex = pubRun(2, 300, { jobStatus: 'in_progress' });
+  assert.equal(decidePublish({ ...ex, now: Date.now(), markers: m }).action, 'none', 'an executing publish is never cancelled');
+  assert.equal(siteState({ builtAt: new Date(Date.now() - 39 * MIN).toISOString() }, Date.now()).state, 'fresh');
+  assert.equal(siteState({ builtAt: new Date(Date.now() - 41 * MIN).toISOString() }, Date.now()).state, 'stale');
+  assert.equal(siteState(null, Date.now()).state, 'unread');
+});
+
+test('publish stuck 25 min → state first, cancelled, ONE publish dispatched, Telegram; a later pass never re-dispatches', async () => {
+  await withWorld({ runs: [pubRun(21001, 25)] }, async (w, pass) => {
+    const r = await pass();
+    assert.equal(r.code, 0, r.out);
+    assert.deepEqual(w.cancels, ['21001']);
+    assert.equal(w.pubDispatches.length, 1);
+    assert.equal(w.dispatches.length, 0, 'a stuck publish never dispatches the data pipeline');
+    assert.match(w.posted[0].body, /^run publish 21001 · cancelled \+ re-dispatched · /);
+    assert.ok(w.posted[0].body.includes(marker('pubcancelled', 21001)));
+    assert.match(w.telegrams.at(-1).text, /publish 21001 · cancelled \+ re-dispatched/);
+    await pass();
+    assert.equal(w.pubDispatches.length, 1);
+  });
+});
+
+test('publish waiting 15 min or executing → untouched', async () => {
+  await withWorld({ runs: [pubRun(21101, 15), pubRun(21102, 300, { steps: [{ status: 'in_progress' }], jobStatus: 'waiting' })] }, async (w, pass) => {
+    await pass();
+    assert.deepEqual([w.cancels.length, w.pubDispatches.length, w.telegrams.length], [0, 0, 0]);
+  });
+});
+
+test('live site stale (build 55 min old) → ONE Telegram per stale build, red; fresh → silent', async () => {
+  const old = new Date(Date.now() - 55 * MIN).toISOString();
+  const { w, srv } = fakeWorld({ buildInfo: { builtAt: old } });
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  const url = `http://127.0.0.1:${srv.address().port}`;
+  const run = (extra) => new Promise((resolve) => {
+    const env = { PATH: process.env.PATH, GH_TOKEN: 'x', GITHUB_REPOSITORY: REPO, GITHUB_API_URL: url, LOG_TOKEN: 'PAT', STALL_GUARD_LOG_REPO: LOG_REPO,
+      TELEGRAM_API_URL: url, TELEGRAM_BOT_TOKEN: 'TOKEN', TELEGRAM_CHAT_ID: '42', ...SITE(url), ...extra };
+    const ch = spawn(process.execPath, [SCRIPT], { env }); let out = '';
+    ch.stdout.on('data', (d) => { out += d; }); ch.stderr.on('data', (d) => { out += d; });
+    ch.on('close', (code) => resolve({ code, out }));
+  });
+  try {
+    const r1 = await run();
+    assert.equal(r1.code, 1, 'a stale site turns the pass red');
+    assert.equal(w.telegrams.length, 1);
+    assert.match(w.telegrams[0].text, /site stale · last published .* \(55 min ago\)/);
+    await run();
+    assert.equal(w.telegrams.length, 1, 'the same stale build is reported once');
+    w.buildInfo = { builtAt: new Date(Date.now() - 5 * MIN).toISOString() };
+    const r3 = await run();
+    assert.equal(r3.code, 0, r3.out);
+    assert.equal(w.telegrams.length, 1, 'a fresh site is silent');
+    w.buildInfo = null;
+    await run();
+    assert.match(w.telegrams.at(-1).text, /build-info\.json unreadable/);
+  } finally { srv.closeAllConnections(); await new Promise((r) => srv.close(r)); }
+});
+
+test('no SITE_URL (and nothing waiting) → the site is not read and the log is not touched', async () => {
+  await withWorld({ buildInfo: { builtAt: new Date(0).toISOString() } }, async (w, pass) => {
+    const r = await pass();
+    assert.equal(r.code, 0, r.out);
+    assert.equal(w.telegrams.length, 0);
+    assert.equal(w.logAuth.size, 0);
   });
 });

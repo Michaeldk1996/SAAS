@@ -188,8 +188,22 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
 - **Publish:** `publish.yml` runs after every successful gate or pipeline run (and on dispatch). `tools/publish-resolve.mjs`
   picks, when the run STARTS, the newest commit on main whose gate passed and the newest `site-data`;
   `tools/publish-site.mjs` lays that commit's code (`tools/site-code.sh`, the one code list pipeline.yml uses too) over
-  the data, injects the public Supabase config and stamps it. Concurrency `site-publish`, never cancelled: a publish
-  that waited always takes the newest of both, so the queue cannot lose a deploy (the TEN-178 failure).
+  the data, injects the public Supabase config and stamps it. Concurrency `site-publish` with **`cancel-in-progress:
+  true`: the newest trigger always wins** (founder 2026-10-13, "it's not the first time this happens, we need to fix
+  it!"). Safe because every publish resolves the newest code and data when it starts and Pages keeps the last finished
+  deployment, so a cancelled publish loses nothing. Why: run 38253661020 sat `waiting` on the `github-pages`
+  environment 12 Oct 13:09Z → 13 Oct 06:39Z (the same GitHub-side stall pipeline.yml had on 6–7 Oct) and, with
+  cancel-in-progress false, held the group: ~110 later publishes were cancelled behind it and the site froze for
+  17.5 h. **Test:** `tools/test-publish-split.js` (cancel-in-progress true).
+- **Stall guard covers publishing and the live site** (same incident): `pipeline-stall-guard.yml` also rides
+  `Publish site` completions and (a) cancels a `publish.yml` run `waiting` > 20 min and dispatches ONE fresh publish
+  (state first; an executing run is never touched); (b) reads the live `build-info.json` every pass and sends ONE
+  Telegram per stale build when `builtAt` is > 40 min old (or the file is unreadable, once an hour) — whatever the
+  cause. The watchdog's red run (alarm b) reached nobody on 12–13 Oct; this one goes to the founder's chat.
+  **Test:** `test-ten396-stall-guard.mjs` (publish 25 min → cancel + 1 dispatch; 15 min / executing → untouched; stale
+  site → one Telegram per build, fresh → silent).
+- **`gate-run.mjs` exits with `process.exitCode`, never `process.exit()`:** the shard logs are one large write to a pipe,
+  and `process.exit()` dropped the failing command's own output on 13 Oct (the log stopped mid-line).
 - **`build-info.json`:** `commit` = the CODE commit live (`check-live-build.sh` works unchanged); `data` = the pipeline
   run, its commit and build time the site was published with; `publishedBy: "publish.yml"`.
 - **The lane:** "the owner's pipeline run" in the hold rules (ii)–(iv) is now the first `publish.yml` run

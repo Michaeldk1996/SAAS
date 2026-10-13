@@ -58,6 +58,21 @@
 //      nothing, print the token's scopes/expiry headers — the ship check),
 //      GITHUB_API_URL / TELEGRAM_API_URL (the test points them at a fake server).
 // Test: test-ten396-stall-guard.mjs (spawns THIS file against a fake GitHub API).
+//
+// PUBLISH + SITE (founder 2026-10-13: "it's not the first time this happens, we need to fix it!"). The code/data
+// split (12 Oct) moved the Pages deploy out of pipeline.yml into publish.yml, and this guard kept watching only
+// pipeline.yml: publish run 38253661020 sat `waiting` on the github-pages environment from 12 Oct 13:09Z to
+// 13 Oct 06:39Z (17.5 h), every later publish ended `cancelled` behind it, and nothing reached the site. Two
+// additions, each a test in test-ten396-stall-guard.mjs:
+//   5. a publish.yml run `waiting` > PUBLISH_CANCEL_AFTER_MIN (20) is cancelled and ONE fresh publish dispatched
+//      (state first, same rules as above: executing runs never touched, one re-dispatch per run). A publish run
+//      writes nothing until its deploy step runs, and the next publish takes the newest code and data, so a
+//      cancel loses nothing — which is why it does not wait the pipeline's 2 h.
+//   6. SITE_URL set: the deployed build-info.json is read every pass; `builtAt` older than SITE_STALE_AFTER_MIN
+//      (40; publishes land every ~10 min) → ONE Telegram per stale build (marker stale:<builtAt ms>), whatever
+//      the cause. A build-info that cannot be read or carries no builtAt is reported the same way (once per
+//      UTC hour, marker siteunread:<yyyymmddhh>). This is the alarm that reaches a person: the watchdog's red
+//      run (alarm b) notifies nobody.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import fs from 'node:fs';
@@ -69,6 +84,9 @@ export const PIPELINE_WORKFLOW = 'pipeline.yml';
 export const LOG_ISSUE_TITLE = 'Pipeline stall guard log (TEN-396)';
 export const DEFAULT_LOG_REPO = 'Michaeldk1996/stennisfy-ops';
 export const TOKEN_WARN_DAYS = 7;
+export const PUBLISH_WORKFLOW = 'publish.yml';
+export const PUBLISH_CANCEL_AFTER_MIN = 20;
+export const SITE_STALE_AFTER_MIN = 40;
 const MARK = 'pipeline-stall-guard';
 const MIN = 60000;
 
@@ -78,8 +96,9 @@ export const marker = (kind, runId) => `<!-- ${MARK}:${kind}:${runId} -->`;
 export function readMarkers(comments) {
   // redispatchedAt: when each re-run was recorded (comment created_at) — the
   // episode rule compares these with the last successful pipeline run.
-  const seen = { alerted: new Set(), cancelled: new Set(), redispatched: new Set(), tokenwarn: new Set(), redispatchedAt: [] };
-  const re = new RegExp(`<!-- ${MARK}:(alerted|cancelled|redispatched|tokenwarn):(\\d+) -->`, 'g');
+  const seen = { alerted: new Set(), cancelled: new Set(), redispatched: new Set(), tokenwarn: new Set(), redispatchedAt: [],
+    pubcancelled: new Set(), stale: new Set(), siteunread: new Set() };
+  const re = new RegExp(`<!-- ${MARK}:(alerted|cancelled|redispatched|tokenwarn|pubcancelled|stale|siteunread):(\\d+) -->`, 'g');
   for (const c of comments || []) {
     let m;
     while ((m = re.exec(String(c.body || '')))) {
@@ -142,6 +161,26 @@ export function decide({ run, jobs, now, markers }) {
     return { action: 'alert', mins, reason: `waiting ${mins.toFixed(1)} min > ${ALERT_AFTER_MIN}` };
   }
   return { action: 'none', mins, reason: `waiting ${mins.toFixed(1)} min ≤ ${ALERT_AFTER_MIN}` };
+}
+
+// Publish runs (addition 5). Returns { action: 'none' | 'cancel' | 'recancel', mins, reason }.
+export function decidePublish({ run, jobs, now, markers }) {
+  const id = String(run.id);
+  if (run.status !== 'waiting') return { action: 'none', reason: `status ${run.status}` };
+  if (isExecuting(run, jobs)) return { action: 'none', reason: 'a job is executing — never cancelled' };
+  const mins = waitingMinutes(run, jobs, now);
+  if (mins == null) return { action: 'none', reason: 'no job in waiting — age not measurable' };
+  if (mins <= PUBLISH_CANCEL_AFTER_MIN) return { action: 'none', mins, reason: `waiting ${mins.toFixed(1)} min ≤ ${PUBLISH_CANCEL_AFTER_MIN}` };
+  if (markers.pubcancelled.has(id)) return { action: 'recancel', mins, reason: 'already cancelled once, still waiting' };
+  return { action: 'cancel', mins, reason: `waiting ${mins.toFixed(1)} min > ${PUBLISH_CANCEL_AFTER_MIN}` };
+}
+
+// The live site (addition 6): { state: 'fresh' | 'stale' | 'unread', builtAt, mins }.
+export function siteState(info, now) {
+  const t = info && Date.parse(info.builtAt);
+  if (!Number.isFinite(t)) return { state: 'unread' };
+  const mins = (now - t) / MIN;
+  return { state: mins > SITE_STALE_AFTER_MIN ? 'stale' : 'fresh', builtAt: t, mins };
 }
 
 // The ONLY text the guard writes, to the log and to Telegram alike.
@@ -248,7 +287,23 @@ export async function runGuard(env = process.env, log = console.log) {
   if (lr.status !== 200) throw new Error(`listing waiting runs: HTTP ${lr.status}`);
   const runs = (lr.json && lr.json.workflow_runs) || [];
   log(`${runs.length} run(s) waiting`);
-  if (!runs.length && !health) return { red, actions: [] };
+  const pr = await gh('GET', `/actions/workflows/${PUBLISH_WORKFLOW}/runs?status=waiting&per_page=50`);
+  if (pr.status !== 200) throw new Error(`listing waiting publish runs: HTTP ${pr.status}`);
+  const pubRuns = (pr.json && pr.json.workflow_runs) || [];
+  log(`${pubRuns.length} publish run(s) waiting`);
+  // The live site's own stamp (addition 6). Only when SITE_URL is set (the workflow sets it).
+  let site = null;
+  if (env.SITE_URL) {
+    let info = null;
+    try {
+      const r = await fetch(`${env.SITE_URL.replace(/\/$/, '')}/build-info.json?cb=${now}`, { signal: AbortSignal.timeout(20000) });
+      if (r.ok) info = await r.json();
+    } catch { /* unreadable */ }
+    site = siteState(info, now);
+    log(`site: ${site.state}${site.mins != null ? ` (built ${site.mins.toFixed(0)} min ago)` : ''}`);
+  }
+  const siteNeedsLog = site && site.state !== 'fresh';
+  if (!runs.length && !pubRuns.length && !siteNeedsLog && !health) return { red, actions: [] };
 
   // State BEFORE any decision; unreachable log → no action at all.
   let state;
@@ -353,6 +408,69 @@ export async function runGuard(env = process.env, log = console.log) {
       else { red = true; state2 = 'cancelled, needs a human'; log(`::error::run ${run.id}: re-run dispatch failed`); await post(logLine(run.id, state2)); }
     }
     await notify(logLine(run.id, state2));
+  }
+
+  // ── 5 · publish runs stuck `waiting` ──────────────────────────────────────
+  for (const run of pubRuns) {
+    const jr = await gh('GET', `/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
+    if (jr.status !== 200) { log(`::warning::publish run ${run.id}: jobs unreadable — left alone`); continue; }
+    const d = decidePublish({ run, jobs: (jr.json && jr.json.jobs) || [], now, markers });
+    log(`publish run ${run.id}: ${d.action}`);
+    actions.push({ runId: run.id, workflow: PUBLISH_WORKFLOW, ...d });
+    if (d.action === 'none' || dry) continue;
+    const fresh = await gh('GET', `/actions/runs/${run.id}`);
+    const fj = await gh('GET', `/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
+    if (fresh.status !== 200 || fj.status !== 200) { red = true; log(`::error::publish run ${run.id}: re-read failed — not cancelled`); continue; }
+    const recheck = decidePublish({ run: fresh.json, jobs: (fj.json && fj.json.jobs) || [], now: Date.now(), markers });
+    if (recheck.action !== d.action) { log(`publish run ${run.id}: changed before acting — not cancelled`); continue; }
+    if (d.action === 'recancel') {
+      await gh('POST', `/actions/runs/${run.id}/cancel`);
+      red = true;
+      log(`::error::publish run ${run.id}: still waiting after an earlier cancel — cancel re-sent, no second re-dispatch`);
+      continue;
+    }
+    // State FIRST: the marker is written before the cancel and the dispatch, so a cancel that does not take
+    // is never re-dispatched on the next pass.
+    const cr = await post(`${logLine(`publish ${run.id}`, 'cancelled + re-dispatched')}\n\n${marker('pubcancelled', run.id)}`);
+    const stateOk = cr.status === 201;
+    if (!stateOk) { red = true; log(`::error::publish run ${run.id}: log comment not posted — no re-dispatch without recorded state`); }
+    markers.pubcancelled.add(String(run.id));
+    const cx = await gh('POST', `/actions/runs/${run.id}/cancel`);
+    if (cx.status !== 202) {
+      red = true; log(`::error::publish run ${run.id}: cancel refused`);
+      await notify(logLine(`publish ${run.id}`, 'needs a human'));
+      continue;
+    }
+    let st = 'cancelled, needs a human';
+    if (stateOk) {
+      const dr = await gh('POST', `/actions/workflows/${PUBLISH_WORKFLOW}/dispatches`, { ref: 'main' });
+      if (dr.status === 204) st = 'cancelled + re-dispatched';
+      else { red = true; log(`::error::publish run ${run.id}: re-dispatch failed`); }
+    }
+    await notify(logLine(`publish ${run.id}`, st));
+  }
+
+  // ── 6 · the live site is stale (whatever the cause) ───────────────────────
+  if (siteNeedsLog && !dry) {
+    if (site.state === 'stale') {
+      const id = String(site.builtAt);
+      if (!markers.stale.has(id)) {
+        const line = `site stale · last published ${utc(site.builtAt)} (${Math.round(site.mins)} min ago) · ${utc(now)}`;
+        const cr = await post(`${line}\n\n${marker('stale', id)}`);
+        if (cr.status === 201) markers.stale.add(id); else red = true;
+        await notify(line);
+      }
+      red = true;
+    } else {
+      const hour = utc(now).slice(0, 13).replace(/[-T]/g, '');
+      if (!markers.siteunread.has(hour)) {
+        const line = `site build-info.json unreadable · ${utc(now)}`;
+        const cr = await post(`${line}\n\n${marker('siteunread', hour)}`);
+        if (cr.status === 201) markers.siteunread.add(hour); else red = true;
+        await notify(line);
+      }
+      red = true;
+    }
   }
   return { red, actions };
 }

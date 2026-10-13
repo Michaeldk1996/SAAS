@@ -208,5 +208,8 @@ async function main() {
 }
 
 if (process.argv[1] && realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {
-  main().then((rc) => process.exit(rc), (e) => { console.error(`::error title=pre-deploy gate::${e.message}`); process.exit(1); });
+  // exitCode, never process.exit(): the shard logs are one large write to a PIPE on CI, and process.exit() drops
+  // whatever is still buffered — on 13 Oct the failing command's own output never reached the log (the dump was
+  // cut ~89 KB in, mid-line). Node exits by itself once stdout has drained.
+  main().then((rc) => { process.exitCode = rc; }, (e) => { console.error(`::error title=pre-deploy gate::${e.message}`); process.exitCode = 1; });
 }
