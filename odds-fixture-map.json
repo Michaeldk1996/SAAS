@@ -4325,6 +4325,15 @@
       "p2": "A. Davidovich Fokina",
       "startTime": "2026-10-15T06:30:00.000Z",
       "tournamentId": 3085
+    },
+    "12171133": {
+      "fixtureId": "id1200308575614834",
+      "mappedAt": "2026-10-14T09:46:50Z",
+      "orient": "same",
+      "p1": "R. Jodar",
+      "p2": "C. Ruud",
+      "startTime": "2026-10-16T04:00:00.000Z",
+      "tournamentId": 3085
     }
   },
   "missAudit": {
@@ -4343,17 +4352,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-25T10:47:14Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 2,
-        "ttlBit": false,
-        "unmapped": 1,
-        "upcoming": 16
-      },
       {
         "at": "2026-09-25T11:46:37Z",
         "fixturesUnitsSpent": 1,
@@ -8742,9 +8740,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 5
+      },
+      {
+        "at": "2026-10-14T09:46:50Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 5
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-14T07:30:20Z"
+  "updatedAt": "2026-10-14T09:46:50Z"
 }
