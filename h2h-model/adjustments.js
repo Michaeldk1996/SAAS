@@ -492,7 +492,7 @@ function setDominance(result, dcfg) {
 
 function h2h(ctx) {
   const c = config.adjustments.h2h;
-  const res = base(c.id, 'h2h', 'H2H record', c.maxMagnitude, 'matches.json:h2h.matches');
+  const res = base(c.id, 'h2h', 'H2H record', c.maxMagnitude, 'h2h-core.js:career-history (ATP rules)');   // TEN-437: the pipeline hands the screens' list in as h2h.matches
 
   const h = ctx.match.h2h;
   const meetings = (h && Array.isArray(h.matches)) ? h.matches : [];

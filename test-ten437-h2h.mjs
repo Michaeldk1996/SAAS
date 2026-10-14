@@ -255,9 +255,11 @@ test('single source: no shipped display code reads m.h2h\'s record or meetings; 
   const named = [...new Set((html.match(/function [A-Za-z0-9_]*[Mm]eet[A-Za-z0-9_]*\(/g) || []).map(s => s.slice(9, -1)))].sort();
   assert.deepEqual(named, ['_styleMeetSlug', 'ensureStyleMeetings', 'fhH2hMeetingRows', 'fhMeetings', 'fhNoMeetingCards', 'h2hOpenMeeting',
     'loadStyleMeetIndex', 'loadStyleMeetShard', 'ps2MeetCard', 'ps2Meeting', 'psFmtMeetDate', 'psGroupMeetings', 'styleMeetRowsFor']);
-  // the model is the one reader of m.h2h.matches, excluded by ruling (TEN-437): it must stay exactly that reader
-  const model = readFileSync(join(HERE, 'h2h-model/adjustments.js'), 'utf8');
-  assert.match(model, /const meetings = \(h && Array\.isArray\(h\.matches\)\) \? h\.matches : \[\];/, 'model input unchanged (excluded by ruling)');
+  // the model (founder ruling 2026-10-14, card edd72529): its H2H input is the SAME list — the pipeline hands
+  // modelH2hMatches (H2HCore over career-history) to runModel as h2h.matches; executed in "model" below
+  const pipe = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
+  assert.match(pipe, /h2h: Object\.assign\(\{\}, m\.h2h \|\| \{\}, \{ matches: modelH2hMatches\(m, h2hIn\) \}\) \}\) : m;\n\s*result = runModel\(mm\);/,
+    'the model runs on the screens\' H2H list');
 });
 test('population constants are ATP\'s (report B, 2026-10-14) and the excluded-event list is the pipeline\'s', () => {
   assert.deepEqual(H2HCore.H2H_LEVELS, ['atp']);
@@ -290,5 +292,24 @@ test('reconcile: a total below the previous run fails; an exact pair below ATP f
   const cut = k => (store[k] || []).filter(x => x.eventKey != null);
   const floor = reconcile({ golden, shard: cut, names, previous: null });
   assert.equal(floor.ok, false); assert.match(floor.errors.join(), /D\. Medvedev – S\. Tsitsipas: 7 meetings, below ATP's 15/);
+});
+
+// ── 7 · the model reads the screens' list (founder ruling 2026-10-14, card edd72529) ─────────────────────────────────────
+// Mutation: the model back on the api-tennis list. Age bands and tiers unchanged (config.js untouched by this ruling).
+test('model: its H2H layer runs on the ATP-rule list — Medvedev–Tsitsipas 10–5 over 15, the age bands and tiers unchanged', () => {
+  process.env.DOTENV_CONFIG_QUIET = 'true';
+  const P = require(join(HERE, 'bsp-pipeline.js'));
+  const p = G.pairs.find(x => x.a.short === 'D. Medvedev' && x.b.short === 'S. Tsitsipas');
+  const store = { [p.a.key]: p.chA, [p.b.key]: p.chB };
+  const m = { id: 'upcoming-12170285', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: p.a.key, p2Key: p.b.key, surface: 'hard', date: '2026-10-14' };
+  const rows = P.modelH2hMatches(m, { readShard: k => store[k] || null, names: ['D. Medvedev', 'S. Tsitsipas'], finishedBoard: [] });
+  assert.equal(rows.length, 15); assert.equal(rows.filter(r => r.p1Won).length, 10);
+  assert.ok(rows.every(r => r.level === 'ATP' && typeof r.p1Won === 'boolean' && /^\d+ - \d+$/.test(r.result)), 'the row shape buildH2HMatchList writes');
+  const { h2h } = require(join(HERE, 'h2h-model/adjustments.js'));
+  const out = h2h({ match: Object.assign({}, m, { h2h: { matches: rows } }), surface: 'hard' });
+  assert.match(out.detail, /^H2H 10-5 \(15 meetings; 12 on Hard/);
+  const cfg = require(join(HERE, 'h2h-model/config.js')).adjustments.h2h;
+  assert.deepEqual([cfg.recencyYears, cfg.recencyWeight, cfg.tier1MinN, cfg.tier2MinN, cfg.tierMult],
+    [{ recent: 2, mid: 4 }, { recent: 1.0, mid: 0.6, old: 0.2 }, 8, 3, { t1: 1.0, t2: 0.45, t3: 0.10 }], 'age bands and tiers as ruled: unchanged');
 });
 

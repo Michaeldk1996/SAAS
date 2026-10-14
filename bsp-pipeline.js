@@ -7583,6 +7583,33 @@ async function runPipeline() {
 // match's numbers actually change (this pipeline runs every 15 min).
 const MODEL_OUTPUT_PATH = 'model-output.json';
 
+// TEN-437 founder ruling 2026-10-14 (card edd72529, "move the model to the full ATP-rule list, keep today's age bands and
+// tiers"; measured first on the 26-match board: median shift 0pp, max 0.23pp, no value flag flipped). The model's H2H
+// layer reads the SAME meeting list every screen shows — H2HCore.joinMeetings over both players' career-history shards
+// (written above, this run) — handed to it as h2h.matches in the row shape buildH2HMatchList writes. matches.json keeps
+// its own m.h2h (the api-tennis list); only the model's input copy changes. No store on disk (a broken run) → the
+// api-tennis list, said loudly, never an empty H2H. readShard / names are injectable for the test.
+function modelH2hMatches(m, { readShard, names, finishedBoard }) {
+  const H2HCore = require('./h2h-core.js');
+  const nk = H2HCore.nameCounts(names || []);
+  const ek = m => { const id = String((m && m.id) || ''); const i = id.indexOf('-'); return i >= 0 ? id.slice(i + 1) : id; };
+  const pair = [String(m.p1Key), String(m.p2Key)].sort().join('|');
+  const own = (finishedBoard || []).filter(x => x && x.finalScore && x.p1Key != null && x.p2Key != null
+    && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(ek).concat([ek(m)]).filter(Boolean);
+  const rows = H2HCore.played(H2HCore.joinMeetings({ full: m.p1Full || m.p1, short: m.p1 }, { full: m.p2Full || m.p2, short: m.p2 },
+    readShard(m.p1Key) || [], readShard(m.p2Key) || [], nk, own));
+  return rows.map(x => ({ date: x.date, tournament: x.tournament, round: x.round || null, surface: x.surface || null, p1Won: !!x.won,
+    result: x.result, qualifying: false, eventKey: x.eventKey != null ? x.eventKey : null, level: 'ATP' }));
+}
+function modelH2hInputs(matches) {
+  if (!fs.existsSync('career-history')) { console.warn('::warning::TEN-437: career-history/ is missing — the model keeps the api-tennis H2H list this run'); return null; }
+  let names = [];
+  try { names = Object.values(JSON.parse(fs.readFileSync('player-profiles.json', 'utf8')).players || {}).map(p => p && p.name).filter(Boolean); } catch (e) { /* no roster: every name counts as unique */ }
+  const cache = {};
+  const readShard = k => { const s = String(k == null ? '' : k); if (!s) return null; if (!(s in cache)) { try { cache[s] = JSON.parse(fs.readFileSync(`career-history/${s}.json`, 'utf8')).matches || []; } catch (e) { cache[s] = null; } } return cache[s]; };
+  return { readShard, names, finishedBoard: matches };
+}
+
 async function buildModelOutput(matches) {
   let runModel, generateSummary, buildFacts;
   try {
@@ -7610,11 +7637,14 @@ async function buildModelOutput(matches) {
 
   const out = {};
   let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0;
+  const h2hIn = modelH2hInputs(matches);   // TEN-437: the model's H2H = the screens' H2H
 
   for (const m of matches) {
     let result;
     try {
-      result = runModel(m);
+      const mm = h2hIn && m.p1Key != null && m.p2Key != null
+        ? Object.assign({}, m, { h2h: Object.assign({}, m.h2h || {}, { matches: modelH2hMatches(m, h2hIn) }) }) : m;
+      result = runModel(mm);
     } catch (e) {
       failed++;
       out[m.id] = { ok: false, reason: `engine error: ${e.message}` };
@@ -7757,7 +7787,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

@@ -13,10 +13,14 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   meetings with `H2HCore.joinMeetings` (`h2h-core.js`) over both players' career-history shards, fed by the same three
   helpers (`sfH2hNkCount`, `sfH2hSide`, `sfH2hOwnEks`). A keyless archive row (TML, pre-2022) is joined by date + opposite
   result + names, so it counts. **Test:** `test-ten437-h2h.mjs` "UI" + "golden pairs".
-- **Excluded by ruling — the model:** `h2h-model/adjustments.js` keeps reading `m.h2h.matches` (the api-tennis list)
-  until the founder rules on its recency weighting. Its "Why" text on the Stennisfy Model page prints the model's own
-  input ("H2H 5-3 (8 meetings…)") — the one screen where the short list still shows, by this exception.
-  **Test:** "single source" (the model's input line is pinned).
+- **The model reads the same list** (founder ruling 2026-10-14, card edd72529: "move the model to the full ATP-rule list,
+  keep today's age bands and tiers"). `buildModelOutput` (`bsp-pipeline.js`) hands `runModel` a copy of each match whose
+  `h2h.matches` is `modelH2hMatches` — `H2HCore.joinMeetings` over the career-history shards that run wrote, in the
+  `buildH2HMatchList` row shape; `matches.json`'s own `m.h2h` is unchanged. The layer's math, age bands (2 / 4 years,
+  weights 1.0 / 0.6 / 0.2) and tiers (Nₑₓ 8 / 3; ×1.0 / 0.45 / 0.10) are untouched; their review is a separate open
+  decision. Measured before the switch on the 26-match board (14 Oct): median shift 0pp, max 0.23pp, no value flag
+  flipped. So the Stennisfy Model page's "Why" text prints the screens' record too. **Test:** `test-ten437-h2h.mjs`
+  "model" (Medvedev–Tsitsipas "H2H 10-5 (15 meetings…", bands and tiers pinned) + "single source".
 - **Population = what atptour.com's H2H record counts** (read off ATP's own H2H data, report B, 2026-10-14): counted —
   tour-level main draw, Grand Slams, ATP Finals, Next Gen ATP Finals, Davis Cup (every stage), Olympics, ATP Cup, United
   Cup, Laver Cup (2017 on), retirements, defaults. Not counted — Challengers and ITF (career-history `chitf`), every
@@ -258,11 +262,12 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   "rebuilt …"; a stale index (builder crashed, committed floor shipped) is a run **warning**. Making it
   red is not ruled.
 
-## The model's H2H input (rulings 2026-09-24 / 2026-09-25 — the model only since TEN-437)
+## matches.json's api-tennis H2H list (rulings 2026-09-24 / 2026-09-25 — read by nothing on screen or in the model since TEN-437)
 - The pipeline's `m.h2h` (api-tennis `get_H2H` + the ATP-singles `get_fixtures` backfill) keeps **ATP, Challenger and
   ITF singles** (`H2H_EVENT_TYPES`); exhibitions, doubles, juniors, UTR and women's events stay out; Hopman Cup and
-  exhibitions are removed by `H2H_NOT_ATP_RECORD` (the same list as `h2h-core.js`). It feeds the edge model's H2H layer
-  only — no screen reads it (TEN-437). **Test:** the set holds exactly these three singles types; `test-ten273-team-events.mjs`.
+  exhibitions are removed by `H2H_NOT_ATP_RECORD` (the same list as `h2h-core.js`). It stays in matches.json (schema
+  unchanged) and feeds the box-score prefetch (`build-point-by-point.js`); no screen and not the model reads it.
+  **Test:** the set holds exactly these three singles types; `test-ten273-team-events.mjs`.
 - **A match never counts in its own H2H record** (ruling 2026-09-24), on every surface and in the model: the pipeline
   drops the fixture's own eventKey at every H2H build site (`h2hExcludeOwn`) and again before `matches.json` is written
   (`stripOwnFixtureFromH2H`); the screens pass the board's finished matches to the join (`sfH2hOwnEks`). **Test:** a

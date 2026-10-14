@@ -4,9 +4,8 @@
  * Every surface that shows an H2H record, a meeting count or anything computed over a pair's meetings (Match analysis →
  * H2H tab, Key factors' H2H box, the Head to Head page, the Download report that prints them) builds its meetings
  * here, from both players' career-history shards (career-history/{key}.json: the api-tennis fixture window plus the TML
- * archive). The only reader of a pair's meetings that does NOT come through here is the edge model's H2H layer
- * (h2h-model/adjustments.js, `m.h2h.matches`), excluded by the founder until he rules on its recency weighting
- * (TEN-437, 2026-10-14). The single-source guard in test-ten437-h2h.mjs fails CI on any other reader.
+ * archive). The edge model's H2H layer reads it too: the pipeline hands it in as h2h.matches (`modelH2hMatches`,
+ * founder ruling 2026-10-14). The single-source guard in test-ten437-h2h.mjs fails CI on any other reader.
  *
  * One pure module, loaded by the dashboard (<script src>, window.H2HCore) and required by Node (the golden-pair gate,
  * the pipeline reconciliation). No DOM, no fetch, no Date.now: the same rows give the same meetings everywhere.
