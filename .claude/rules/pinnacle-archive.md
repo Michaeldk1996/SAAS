@@ -54,9 +54,21 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
 - `restore-check` — rebuilds every row from the backups and compares with the live tables (no write).
 - **Post-start pull** — `oddspapi-postmatch.yml` job `pinnacle-history` (dispatched at :07 / :22 / :37 / :52 by the
   pg_cron pinger, after the post-match job so the two never call Oddspapi at once): every match our poller saw start in the
-  last 6 h without an archive close → its free `/v4/historical-odds` in the first key window (the :05–:14 window +
-  `loop_idle`), stored as a raw row, then the close derived at once. A match whose close is not derivable yet is pulled
-  again at most 4 times, 30 min apart. The captured close stays first on the page until the archive close supersedes it.
+  last 6 h without an archive close → its free `/v4/historical-odds` for `bookmakers=pinnacle+30`, stored as a raw row,
+  then the close derived at once. A match whose close is not derivable yet is pulled again at most 4 times, 30 min apart.
+  The captured close stays first on the page until the archive close supersedes it.
+  **Its own slot (founder 2026-10-14 item 2):** the pull never waits for the odds loop's key gate (`loop_idle` / the
+  :05–:14 window, `odds.md` "The loop wins the key"): the endpoint is free, so only Oddspapi's ~5 s cooldown applies
+  (`HIST_COOLDOWN_S` 5.5 s between calls; a 429 pauses 60 s and retries, at most 3 times). A long odds-loop run cannot
+  stop it (on 14 Oct a 390-minute loop run held the gate shut and two pulls waited ~590 s each for nothing). **Test:**
+  `tools/test-pinarch-close.py` (no gate in the pull path; cooldown + 429 retry; the book named).
+- **Backlog pull** — `pinnacle-archive.yml` mode `pull-backlog` (`pull --hours N`): the same pull over the last N days, for
+  every started match with no archive close and no Pinnacle +30 payload held.
+- **Every history pull names the book** (founder 2026-10-14 item 3): `bookmakers=pinnacle+30` in `tools/pinarch.py`
+  (`HIST_BOOK`) and in the daily archive / back-fill calls of `archive-oddspapi-raw.py` (`HIST_BOOKS`). Without it the
+  endpoint returns the account's entitled book of the day, so every payload pulled while the key was entitled to bet365
+  (before 26 Sep) came back bet365-only and was never pulled again (342 matches on 14 Oct). **Test:**
+  `test-oddspapi-postmatch.py` (both archive calls name the book).
 - **Export** — every pipeline run, `python3 tools/pinarch.py export pinnacle-closes.json` (read-only) writes the current
   close per match; `build-match-closes.js` builds the closing-prices shards from it.
 

@@ -29,7 +29,7 @@ Tests (`test-ten295-chart-books.py`):
 - **Same path as the daily raw archive** (`object_path()`), uploaded without overwrite; the daily `held_objects()` then skips it. A fixture the bucket holds — in ANY month folder — is never pulled again by either job. If the upload finds a copy already there, that held copy is the record and its ticks are the ones loaded.
 - **Trigger: the pg_cron dispatcher only** (founder 2026-09-25: "install the dispatcher and remove the GitHub schedule"). `oddspapi-postmatch-pinger.sql` dispatches `oddspapi-postmatch.yml` at :07/:22/:37/:52 with the Vault secret `gh_postmatch_dispatch_pat` (stored by the founder; the `schema` action of `ten270-stream-now.yml` writes it only when the `POSTMATCH_DISPATCH_PAT` repo secret exists and never deletes or overwrites it otherwise). The workflow has **no** `schedule:`. Any install failure is a WARNING, never a failed schema apply. Test: section 8e / 13 of `test-oddspapi-postmatch.py`.
 - **A failed dispatch is a visible alert, never a silent skip** (founder 2026-09-25T00:53Z). A checker job (:12/:27/:42/:57) reads `net._http_response` for the dispatcher's own recorded request ids and alerts on: a non-2xx dispatch in the last 45 min (401/403 = token expired or invalid), no 2xx dispatch in 45 min (once 45 min of history exists), or a pg_net timeout/error/no response after 10 min — at most once per condition per 6 h, plus a `RECOVERED` message. It sends to **the official ops alert route, the Superbet drop-bot chat** (Vault `ten287_telegram_bot_token` / `ten287_telegram_chat_id`, stored by the TEN-287 bot install; founder 2026-09-27, TEN-295 comment 054dc038 item 3 — the former `ops_telegram_*` pair never existed in Vault, so every alarm before 27 Sep was recorded `unsent`). The schema action never writes a Telegram secret. A send is `queued` until the next check resolves it from pg_net (`sent` on 2xx; `failed: HTTP n`, `failed: timeout/error`, `failed: no response` after 10 min). Without the Telegram secrets the alert is recorded as `unsent` and RAISE WARNING'd. `ten270-stream-now.yml` action=verify prints every alert not `sent` in 7 days and exits 1, and also exits 1 unless both cron jobs (`ten270-oddspapi-postmatch-ping`, `ten270-oddspapi-postmatch-check`) exist and are active, or when the alert log is unreadable. Hosts: `api.github.com` and `api.telegram.org` only. Test: section 13.
-- **The loop wins the key.** An oddspapi call starts only (a) inside :05–:14 of a quarter hour with 30 s to spare, and (b) when `loop_idle()` says the odds loop is not using the key: busy if an `odds-now.yml` run is queued/pending/waiting/requested with none iterating, if one completed under 2 min ago, if the iterating run is ≥ 314 min old (its last iteration and the post-step `/v4/account` read), or if its `chore(odds): capture tick` commit is not on main since both the quarter hour and that run's start. Checked before every call; anything unreadable or malformed counts as busy.
+- **The loop wins the key** — except the Pinnacle archive's post-start / backlog pull (founder 2026-10-14: its own slot, below and in `pinnacle-archive.md`). An oddspapi call starts only (a) inside :05–:14 of a quarter hour with 30 s to spare, and (b) when `loop_idle()` says the odds loop is not using the key: busy if an `odds-now.yml` run is queued/pending/waiting/requested with none iterating, if one completed under 2 min ago, if the iterating run is ≥ 314 min old (its last iteration and the post-step `/v4/account` read), or if its `chore(odds): capture tick` commit is not on main since both the quarter hour and that run's start. Checked before every call; anything unreadable or malformed counts as busy.
 - **429:** the first 429 stops the run with exit 0, no retry; the next run resumes. Every 429 is counted in the log and in `_meta/postmatch-last-run.json`.
 - **404:** recorded in `_meta/postmatch-state.json`; after 3 runs with a 404 the fixture is not asked for again. Only a not-found reads as "no state yet": any other failure reading that object stops the run without writing.
 - **Zero billable calls:** only `/v4/historical-odds` and `/v4/account`; `free_get()` raises on any other path, and the meter is read before and after the pulls.
@@ -195,12 +195,20 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   only where no Pinnacle close exists (13 Jan–Apr 2026: Oddspapi keeps no history that old, so the R8 Bet365 fallback
   prices those rows). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
   timestamps; measured 2 decimals) — a cross-check only.
-- **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before our live-flip start**
-  (`live_flip_log.last_not_live_seen_at`, the last poll where the match was not live), both sides required, never a
-  scheduled time, never an in-play entry. Every close stores its source, label, timestamp (`close_ts`, the later side),
-  start and gap to the start; the Oddspapi `trueStartTime` and the close at it are kept beside it (`detail.startCheck`).
-  Code: `tools/pinarch.py` `close_at` / `archive_close_row`; rules and jobs: `.claude/rules/pinnacle-archive.md`.
-  **Test:** `tools/test-pinarch-close.py`.
+- **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before the EARLIER of our live-flip
+  start and Oddspapi's `trueStartTime`** (founder ruling 2026-10-14, after the start-time check: api-tennis flagged a match
+  live after its real start on 131 of 644 closes, median 143 s, and an entry fell between the two on 53). Our live-flip =
+  `live_flip_log.last_not_live_seen_at` (the last poll where the match was not live). The trueStart first passes the ruled
+  sanity gate (`ten225-load-line-summary.py` `resolve_start`, gate only: end before start, a match over 6 h, or no end and
+  a start over 6 h before the schedule → rejected, the reason kept in `detail.startCheck.trueStartReject`); it can only
+  move the cut EARLIER, never later. Both sides required, never a scheduled time, never an in-play entry. Every close
+  stores its source, label, timestamp (`close_ts`, the later side), start (`start_ts`) and which signal set it
+  (`start_source`: `live-flip (last poll not live)` | `oddspapi trueStart (earlier than our live-flip)`), and the gap to
+  the start; `detail.startCheck` keeps the live-flip, the trueStart and the close at it. A close the new cut changes is a
+  NEW correction row superseding the old one (the archive is append-only). Code: `tools/pinarch.py` `effective_cut`,
+  `close_at`, `archive_close_row`; rules and jobs: `.claude/rules/pinnacle-archive.md`.
+  **Test:** `tools/test-pinarch-close.py` (the earlier cut wins; a later trueStart never moves it; the gate's rejects; the
+  in-play control; the correction row).
 - **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).
   Every pipeline run exports the current close per match (`pinnacle-closes.json`, an archive close over a captured one)
   and `build-match-closes.js` builds the closing-prices shards from it (fallback: the committed
