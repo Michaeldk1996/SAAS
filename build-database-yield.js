@@ -52,10 +52,19 @@ const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
 
-const ARCHIVE_DIR = path.join(__dirname, 'odds-archive');
-const OUT_BASE = path.join(__dirname, 'database-yield.json');
-const OUT_NAMES = path.join(__dirname, 'database-yield-players.json');
+const ARCHIVE_DIR = process.env.DB_YIELD_ARCHIVE_DIR || path.join(__dirname, 'odds-archive');
+const OUT_DIR = process.env.DB_YIELD_OUT_DIR || __dirname;
+const OUT_BASE = path.join(OUT_DIR, 'database-yield.json');
+const OUT_NAMES = path.join(OUT_DIR, 'database-yield-players.json');
 const OUT_BASELINES = path.join(__dirname, 'tour-baselines.json');
+const BASELINES_OUT = process.env.DB_YIELD_OUT_DIR ? path.join(OUT_DIR, 'tour-baselines.json') : OUT_BASELINES;   // tests write elsewhere
+// Founder brief 2026-10-14 (F3c): our Pinnacle closes are fed into this archive. The feed is a Tennis-Data-shaped CSV
+// written every pipeline run by `tools/pinarch.py td-feed` from the permanent Pinnacle archive (Supabase): `override`
+// rows give a Tennis-Data 2026 row with NO Pinnacle pair our archive's Pinnacle close (same date, tournament, winner,
+// loser — the row is otherwise untouched; a Tennis-Data Pinnacle price is never replaced); `add` rows are ATP main-draw
+// matches after the Tennis-Data file's last day, built from api-tennis's result and the event's previous Tennis-Data
+// edition, priced on our Pinnacle close. No feed file = the Tennis-Data archive alone (byte-identical to before).
+const FEED = process.env.DB_YIELD_FEED || path.join(__dirname, 'pinnacle-archive-td.csv');
 
 // --- TEN-384 · the price join (founder ruling 2026-10-07, option "me") --------
 // The profile's tour baselines ("the same price join as Market edge (Pinnacle, else Bet365)")
@@ -139,64 +148,80 @@ let dateMin = '99999999', dateMax = '00000000';
 // The Database header says where the source's Pinnacle prices stop; it is never typed.
 let pinnacleLastPriced = '';
 
-for (const f of files) {
-  const season = parseInt(f.slice(0, 4), 10);
-  const text = fs.readFileSync(path.join(ARCHIVE_DIR, f), 'utf8');
-  const lines = text.split(/\r?\n/);
-  const header = lines[0].split(',');
-  const col = {}; header.forEach((h, i) => col[h.trim()] = i);
-  for (let li = 1; li < lines.length; li++) {
-    const line = lines[li];
-    if (!line) continue;
-    const c = line.split(',');
-    if (c.length < header.length) continue;
+// --- the archive feed (optional) ---------------------------------------------
+const feed = { overrides: new Map(), adds: [], overridden: 0, tdHadPinnacle: 0, overrideUnmatched: 0, added: 0, addedRetired: 0, addedDropped: 0 };
+const FEED_COLS = ['kind', 'date', 'tournament', 'series', 'court', 'surface', 'round', 'bestof', 'winner', 'loser', 'comment', 'psw', 'psl', 'archiveId', 'label', 'eventKey'];
+const feedOn = fs.existsSync(FEED);
+if (feedOn) {
+  const lines = fs.readFileSync(FEED, 'utf8').split(/\r?\n/).filter(Boolean);
+  const head = lines[0].split(',');
+  if (head.join(',') !== FEED_COLS.join(',')) { console.error(`${FEED}: unexpected header ${lines[0]}`); process.exit(1); }
+  for (const l of lines.slice(1)) {
+    const c = l.split(','); const r = {}; FEED_COLS.forEach((k, i) => { r[k] = c[i]; });
+    if (r.kind === 'override') feed.overrides.set([r.date, r.tournament, r.winner, r.loser].join('|'), [num(r.psw), num(r.psl)]);
+    else if (r.kind === 'add') feed.adds.push(r);
+  }
+}
+const feedUsedKeys = new Set();
+
+function processLine(c, col, season, fromFeed) {
     bucket.archive++;
-    { const d = (c[col.date] || '').trim(); if (d > pinnacleLastPriced && validPrice(num(c[col.psw])) && validPrice(num(c[col.psl]))) pinnacleLastPriced = d; }
+    if (!fromFeed) { const d = (c[col.date] || '').trim(); if (d > pinnacleLastPriced && validPrice(num(c[col.psw])) && validPrice(num(c[col.psl]))) pinnacleLastPriced = d; }
 
     const comment = (c[col.comment] || '').trim();
-    if (WALKOVER.has(comment)) { bucket.walkover++; continue; }
+    if (WALKOVER.has(comment)) { bucket.walkover++; return; }
     const isRet = RETIRED.has(comment);
     if (isRet) bucket.retired++;                                  // voided on the Database, per the 2026-09-20 ruling
-    else if (!RESULT_STANDS.has(comment)) { bucket.edge++; continue; } // Awarded/Disqualified/Sched
+    else if (!RESULT_STANDS.has(comment)) { bucket.edge++; return; } // Awarded/Disqualified/Sched
 
     // resolving book, per row (TEN-384 option "me" = build-market-edge.js pickBook): Pinnacle
     // when both of its prices are valid, else Bet365 when both of its are; neither = dropped.
-    const P = [num(c[col.psw]), num(c[col.psl])], B365 = [num(c[col.b365w]), num(c[col.b365l])];
+    let P = [num(c[col.psw]), num(c[col.psl])];
+    const B365 = [num(c[col.b365w]), num(c[col.b365l])];
+    if (!fromFeed && feedOn) {
+      const fk = [(c[col.date] || '').trim(), (c[col.tournament] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()].join('|');
+      const ov = feed.overrides.get(fk);
+      if (ov) {
+        feedUsedKeys.add(fk);
+        if (validPrice(P[0]) && validPrice(P[1])) feed.tdHadPinnacle++;           // a Tennis-Data Pinnacle price is never replaced
+        else if (validPrice(ov[0]) && validPrice(ov[1])) { P = ov; feed.overridden++; }
+      }
+    }
     const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? 0 : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
     const B_ = isRet ? retBucket : bucket;
-    if (bookIdx < 0) { B_.noPrice++; continue; }
+    if (bookIdx < 0) { B_.noPrice++; return; }
     const [pw, pl] = bookIdx === 0 ? P : B365;
 
-    if (pw === pl) { B_.tie++; continue; }                        // exact tie
-    if ((1 / pw) + (1 / pl) > 1.15) { B_.overround++; continue; } // corrupt market
+    if (pw === pl) { B_.tie++; return; }                        // exact tie
+    if ((1 / pw) + (1 / pl) > 1.15) { B_.overround++; return; } // corrupt market
 
     // pre-window regime cut: 2004-2008 is a materially different sport (founder ruling,
     // Option A, 2026-09-04). Placed AFTER the exclusion checks so those buckets keep their
     // full-archive counts and preWindow captures only otherwise-usable pre-2010 rows.
     // (2009 carries no Pinnacle and no Bet365 pair -> falls out via noPrice, not here.)
-    if (season < WINDOW_START) { B_.preWindow++; continue; }
+    if (season < WINDOW_START) { B_.preWindow++; return; }
 
     // ---- usable row ----
     const dateStr = (c[col.date] || '').trim();
     const dateInt = parseInt(dateStr.replace(/-/g, ''), 10);
-    if (!Number.isFinite(dateInt)) { B_.edge++; continue; }       // unparseable date (none expected)
+    if (!Number.isFinite(dateInt)) { B_.edge++; return; }       // unparseable date (none expected)
     if (isRet) {
       const canonR = LEVEL_MAP[(c[col.series] || '').trim()];
-      if (!canonR) { retBucket.edge++; continue; }
+      if (!canonR) { retBucket.edge++; return; }
       retRaw.push([dateInt, levels.indexOf(canonR), (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
         (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
         (c[col.winner] || '').trim(), (c[col.loser] || '').trim()]);
       retBucket.priced++;
-      continue;
+      return;
     }
     if (dateStr < dateMin) dateMin = dateStr;
     if (dateStr > dateMax) dateMax = dateStr;
 
     const rawSeries = (c[col.series] || '').trim();
     const canon = LEVEL_MAP[rawSeries];
-    if (!canon) { bucket.edge++; continue; }                      // unknown level (none expected)
+    if (!canon) { bucket.edge++; return; }                      // unknown level (none expected)
     const lvlIdx = levels.indexOf(canon);
     const surfIdx = idxOf(surfaces, (c[col.surface] || '').trim());
     const rndIdx = idxOf(rounds, (c[col.round] || '').trim());
@@ -210,6 +235,32 @@ for (const f of files) {
     names.push([(c[col.winner] || '').trim(), (c[col.loser] || '').trim()]);
     bucket.used++;
     bookCount[bookIdx]++;
+}
+
+for (const f of files) {
+  const season = parseInt(f.slice(0, 4), 10);
+  const text = fs.readFileSync(path.join(ARCHIVE_DIR, f), 'utf8');
+  const lines = text.split(/\r?\n/);
+  const header = lines[0].split(',');
+  const col = {}; header.forEach((h, i) => col[h.trim()] = i);
+  for (let li = 1; li < lines.length; li++) {
+    const line = lines[li];
+    if (!line) continue;
+    const c = line.split(',');
+    if (c.length < header.length) continue;
+    processLine(c, col, season, false);
+  }
+}
+feed.overrideUnmatched = feedOn ? [...feed.overrides.keys()].filter(k => !feedUsedKeys.has(k)).length : 0;
+if (feedOn) {
+  const col = {}; FEED_COLS.forEach((h, i) => { col[h] = i; });
+  for (const r of feed.adds) {
+    const before = bucket.used + retBucket.priced;
+    processLine(FEED_COLS.map(k => r[k] == null ? '' : r[k]), col, parseInt(String(r.date).slice(0, 4), 10), true);
+    const got = bucket.used + retBucket.priced - before;
+    if (!got) feed.addedDropped++;
+    else if (RETIRED.has((r.comment || '').trim())) feed.addedRetired++;
+    else feed.added++;
   }
 }
 
@@ -296,17 +347,27 @@ const meta = {
     dropped: { noResolvingBookPrice: retBucket.noPrice, exactTie: retBucket.tie, overroundGt115: retBucket.overround,
       preWindow: retBucket.preWindow, edge: retBucket.edge },
   },
+  ...(feedOn ? { archiveFeed: {
+    file: path.basename(FEED),
+    rule: 'Our Pinnacle closes (the permanent Pinnacle archive, labelled captured / from Pinnacle history): a Tennis-Data 2026 row with no ' +
+      'Pinnacle pair takes our close; ATP main-draw matches after the Tennis-Data file\'s last day are added, priced on our close. ' +
+      'A Tennis-Data Pinnacle price is never replaced.',
+    overridden: feed.overridden, tdHadPinnacle: feed.tdHadPinnacle, overrideUnmatched: feed.overrideUnmatched,
+    added: feed.added, addedRetired: feed.addedRetired, addedDropped: feed.addedDropped,
+  } } : {}),
   levels, surfaces, rounds, tournaments,
   yieldOverall: {
     all: yAll, Pinnacle: yPS, Bet365: yB365,
   },
 };
 
-fs.writeFileSync(OUT_BASE, JSON.stringify({ meta, rows, retRows }));
-fs.writeFileSync(OUT_NAMES, JSON.stringify({ names, retNames }));
+// Atomic writes (CLAUDE.md rule 3): temp file + rename, never a half-written live JSON.
+function writeAtomic(p, text) { const tmp = p + '.tmp'; fs.writeFileSync(tmp, text); fs.renameSync(tmp, p); }
+writeAtomic(OUT_BASE, JSON.stringify({ meta, rows, retRows }));
+writeAtomic(OUT_NAMES, JSON.stringify({ names, retNames }));
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).
 const B = TB;
-fs.writeFileSync(OUT_BASELINES, JSON.stringify({
+writeAtomic(BASELINES_OUT, JSON.stringify({
   schema: 1,
   basis: 'market-edge',
   equalsDatabaseTour: true,   // one join (TEN-384 option "me"): the same rows as database-yield.json
@@ -351,5 +412,7 @@ console.log(`payload names shard : ${kb(fs.statSync(OUT_NAMES).size)} raw / ${kb
 console.log(`tour baselines      : all ${pct(TB.all.yield)}  fav ${pct(TB.favourite.yield)}  ` +
   `dog ${pct(TB.underdog.yield)}  n=${TB.all.matches} matches  (Pinnacle ${TB.bookCounts.Pinnacle} / Bet365 ${TB.bookCounts.Bet365})`);
 console.log(`pinnacle last priced: ${pinnacleLastPriced || '-'}`);
-console.log(`payload baselines   : ${fs.statSync(OUT_BASELINES).size} B raw  -> ${path.basename(OUT_BASELINES)}`);
+if (feedOn) console.log(`archive feed        : ${feed.overridden} Tennis-Data rows priced on our Pinnacle close (${feed.tdHadPinnacle} kept their Tennis-Data Pinnacle, ` +
+  `${feed.overrideUnmatched} unmatched); ${feed.added} matches added + ${feed.addedRetired} retirements (flagged), ${feed.addedDropped} dropped by the filters`);
+console.log(`payload baselines   : ${fs.statSync(BASELINES_OUT).size} B raw  -> ${path.basename(BASELINES_OUT)}`);
 console.log(`levels=${levels.length} surfaces=${surfaces.length} rounds=${rounds.length} tournaments=${tournaments.length}`);

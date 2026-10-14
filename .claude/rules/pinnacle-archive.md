@@ -69,8 +69,10 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   endpoint returns the account's entitled book of the day, so every payload pulled while the key was entitled to bet365
   (before 26 Sep) came back bet365-only and was never pulled again (342 matches on 14 Oct). **Test:**
   `test-oddspapi-postmatch.py` (both archive calls name the book).
-- **Export** — every pipeline run, `python3 tools/pinarch.py export pinnacle-closes.json` (read-only) writes the current
-  close per match; `build-match-closes.js` builds the closing-prices shards from it.
+- **Every pipeline run** — after `build-captured-pinnacle.js`, `import-captured` appends this run's captured closes
+  (insert-only), `export pinnacle-closes.json` writes the current close per match (an archive close over a captured one),
+  `td-feed` turns it into the Database feed and `build-database-yield.js` rebuilds the Database archive with it; then
+  `build-match-closes.js` builds the closing-prices shards from the export. Pages read these files; the archive is the source.
 
 ## Measured at the build (2026-10-14 03:29Z)
 Database 2.34 GB of an 8 GB disk (5.53 GB free; Pro plan, Micro compute). Bucket `oddspapi-raw` 6,137 fixtures, 181 MB
