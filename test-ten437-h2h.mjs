@@ -347,3 +347,18 @@ test('defaults: an "Awarded" fixture is a flagged history row, counted in the ye
   assert.equal(E.length, 1); assert.equal(E[0].wo, false, 'the tab counts it (fhFinishRow: a default is not "no set played")');
 });
 
+// ── 9 · the board: a default is decided (founder 2026-10-14, card e8999545: "treat Awarded as a finished match on the
+// board too") — never live, never upcoming, carded with its "Defaulted" chip; a career row reads "def.", not "ret." ──────
+// Mutations: "Awarded" out of any of the three board status checks; careerRowEnding's def. line removed.
+test('board: "Awarded" is a decided match everywhere the board sorts live / upcoming / completed; career rows say "def."', () => {
+  const pipe = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
+  assert.match(pipe, /match\.live = fixture\.event_live === '1'\n\s*&& !RECORD_STATUSES\.includes\(fixture\.event_status\);/, 'never rendered live');
+  assert.match(pipe, /if \(RECORD_STATUSES\.includes\(f\.event_status\)\) return false;   \/\/ TEN-437: "Awarded" is decided, never upcoming/, 'never an upcoming card');
+  assert.match(pipe, /\(RECORD_STATUSES\.includes\(f\.event_status\) \|\| isInterruptedFixture\(f\)\)/, 'carded as a completed match');
+  assert.match(pipe, /\.\.\.\(isAwarded\(fixture\) \? \{ defaulted: true \} : \{\}\),\n\s*matchStats:/, 'the card is told it was a default');
+  assert.match(html, /const termChip = isCompleted && \(m\.retired \|\| m\.walkover \|\| m\.defaulted\)\n\s*\? `<span class="mc-termchip">\$\{m\.defaulted \? 'Defaulted'/, 'the card header chip');
+  const ending = new Function(`${slice('careerRowEnding')}; return careerRowEnding;`)();
+  assert.equal(ending({ defaulted: true, won: true, result: '0 - 0' }), 'def.', 'Fils v M. Ymer, Lyon 2023: a default, not a retirement or a walkover');
+  assert.equal(ending({ won: true, result: '0 - 0' }), 'ret.', 'control: an unflagged 0 - 0 win still reads by its score');
+});
+

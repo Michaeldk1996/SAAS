@@ -2312,7 +2312,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // 'Walk Over') while event_live still reads '1' for a poll or two; never render
   // that as live, or the card strands on the board as a phantom LIVE match.
   match.live = fixture.event_live === '1'
-    && !['Finished', 'Retired', 'Walk Over'].includes(fixture.event_status);
+    && !RECORD_STATUSES.includes(fixture.event_status);   // TEN-437: a default ("Awarded") is decided too
   match.liveStatus = match.live ? fixture.event_status : null;
   match.liveScore = match.live && Array.isArray(fixture.scores)
     ? fixture.scores.map(s => ({
@@ -2881,7 +2881,7 @@ function isSlamQualifyingLeak(f) {
   const { display: cname } = canonicalTournament(f.tournament_name);
   if (!cname || !GRAND_SLAM_NAMES.has(cname)) return false;
   if (/1\/\d+\s*-?\s*finals?/i.test(f.tournament_round || '')) return false; // certified main draw
-  if (f.event_status === 'Retired' || f.event_status === 'Walk Over') return false;
+  if (f.event_status === 'Retired' || f.event_status === 'Walk Over' || isAwarded(f)) return false;
   const sc = String(f.event_final_result || '').split('-').map(s => parseInt(s.trim(), 10));
   const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
   return Number.isFinite(winnerSets) && winnerSets < 3;
@@ -3272,6 +3272,8 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     // scoreline at all, so this flag is what keeps it from rendering "Underway".
     retired: fixture.event_status === 'Retired',
     walkover: fixture.event_status === 'Walk Over',
+    // TEN-437 (founder 2026-10-14, card e8999545): a default — api-tennis "Awarded" — is decided; the card says so.
+    ...(isAwarded(fixture) ? { defaulted: true } : {}),
     matchStats: buildMatchStatsFromFixture(fixture, p1Key, p2Key),
     setStats: buildSetStatsFromFixture(fixture, p1Key, p2Key),
   };
@@ -6225,7 +6227,7 @@ async function runPipeline() {
   const oddsMatchKeys = new Set(matches.map(m => pairKey(m.p1, m.p2)));
   const seenUpcomingKeys = new Set();
   const upcomingFixtures = apiTennisFixtures.filter(f => {
-    if (['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) return false;
+    if (RECORD_STATUSES.includes(f.event_status)) return false;   // TEN-437: "Awarded" is decided, never upcoming
     if (isCancelledFixture(f)) return false;
     // An interrupted match is already in play — it's built by the completed-match
     // builder below (with its partial score + stats), so it must not also be
@@ -6270,7 +6272,7 @@ async function runPipeline() {
     console.log(`  not carded (Finished, no winner, no game won): ${f.event_first_player} v ${f.event_second_player} · event ${f.event_key} · ${f.event_date}`);
   }
   const finishedPastFixtures = pastFixtures.filter(f =>
-    (['Finished', 'Retired', 'Walk Over'].includes(f.event_status) || isInterruptedFixture(f))
+    (RECORD_STATUSES.includes(f.event_status) || isInterruptedFixture(f))
     && f.event_qualification !== 'True'
     && !isUnplayedFinishedFixture(f)
   );

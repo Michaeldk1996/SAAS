@@ -9065,7 +9065,7 @@ function mxFavWriteLocal(keys){
   try { if (keys.length) localStorage.setItem(MX_FAV_LS, JSON.stringify(keys)); else localStorage.removeItem(MX_FAV_LS); } catch (e) {}
 }
 function mxFavMerge(account, local){ return mxFavClean([...(account || []), ...(local || [])]); }
-function mxFavSettled(m){ return !!m && !m.live && !!(m.finalScore || m.retired || m.walkover); }
+function mxFavSettled(m){ return !!m && !m.live && !!(m.finalScore || m.retired || m.walkover || m.defaulted); }
 // The keys whose match is on the board as settled are dropped; a key the board does not hold
 // (yet, or any more) is kept — it is never shown, and an absent card is not proof of a result.
 function mxFavPrune(keys, list){
@@ -9355,11 +9355,11 @@ function renderMatches(){
     let scoreLineHtml = '';
     if (partialScore) {
       scoreLineHtml = `<div class="mc-scoreline"><span class="lbl">Score</span>${partialScore.display}<span class="note">at interruption · match suspended</span></div>`;
-    } else if (m.retired || m.walkover) {
+    } else if (m.retired || m.walkover || m.defaulted) {
       // TEN-8 — terminal but no final score (a walkover has none; a retirement so
       // early no set parsed). The match IS over, so it must never read "Underway":
       // show the truthful chip in the score slot regardless of day/feed-live flag.
-      const lbl = m.retired ? 'Retired' : 'Walkover';
+      const lbl = m.defaulted ? 'Defaulted' : m.retired ? 'Retired' : 'Walkover';   // TEN-437: a default
       scoreLineHtml = `<div class="mc-scoreline underway"><span class="mc-termchip">${lbl}</span></div>`;
     } else if (m.live) {
       scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
@@ -9678,8 +9678,8 @@ function renderMatches(){
     // pushed even a short name ("K. Khachanov") onto a second line. The header carries the
     // other state markers already (Underway, the round badge) and has the room. The chip
     // itself, its wording and its neutral state-not-event styling are unchanged.
-    const termChip = isCompleted && (m.retired || m.walkover)
-      ? `<span class="mc-termchip">${m.retired ? 'Retired' : 'Walkover'}</span>`
+    const termChip = isCompleted && (m.retired || m.walkover || m.defaulted)
+      ? `<span class="mc-termchip">${m.defaulted ? 'Defaulted' : m.retired ? 'Retired' : 'Walkover'}</span>`
       : '';
     // TEN-225 ruling 4c — a STARTED upcoming fixture shows Open and CLOSE, so its
     // drift column header says Close. The header is per-card (it lives inside
@@ -9718,13 +9718,13 @@ function renderMatches(){
       ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
-            ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
+            ${(m.retired || m.walkover || m.defaulted) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1') })}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
-            ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
+            ${(m.retired || m.walkover || m.defaulted) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2') })}
           </div>
@@ -12385,6 +12385,7 @@ const formPanelCtx = {};
 // that fall back to the score's shape, which is decisive on its own — a completed
 // match cannot be lost from level or ahead on sets, and cannot have a blank score.
 function careerRowEnding(m){
+  if (m.defaulted) return 'def.';   // TEN-437: a default (api-tennis "Awarded"; TML "DEF") — a played match ATP counts
   if (m.walkover) return 'w/o';
   if (m.retired) return 'ret.';
   const parts = String(m.result || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);

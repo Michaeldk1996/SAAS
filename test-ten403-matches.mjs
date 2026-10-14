@@ -398,7 +398,7 @@ test('MUTANT: a merge that drops the local list, or a prune that ignores settlin
   assert.notEqual(bad, html);
   const F = favApi({ ls: { [LS]: JSON.stringify(['a']) }, bsp: fakeBsp(), src: bad });
   assert.notDeepEqual(await F.mxFavOnAuth({ uid: 'u', favouriteMatches: ['b'] }), ['b', 'a']);
-  const bad2 = html.replace('return !!m && !m.live && !!(m.finalScore || m.retired || m.walkover);', 'return false;');
+  const bad2 = html.replace('return !!m && !m.live && !!(m.finalScore || m.retired || m.walkover || m.defaulted);', 'return false;');
   assert.notEqual(bad2, html);
   assert.deepEqual(favApi({ src: bad2 }).mxFavPrune(['7'], [{ id: 'past-7', finalScore: {} }]), ['7']);
 });
