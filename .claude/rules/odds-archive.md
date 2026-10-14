@@ -72,6 +72,21 @@ in 2010–2025 + early Jan 2026 today). Measured at the change (2026-10-07): 40,
 38,830 priced on Pinnacle and 2,142 on Bet365; All −4.37%, Favourites −1.78%, Underdogs
 −6.96% (was 40,791 · 38,761 / 2,030 · −4.33% / −1.79% / −6.88%).
 
+**Our Pinnacle closes are fed in (founder brief 2026-10-14, F3c).** Every pipeline run rebuilds `database-yield.json`,
+its names shard and `tour-baselines.json` from `odds-archive/*.csv` plus the archive feed `pinnacle-archive-td.csv`
+(`tools/pinarch.py td-feed`, from the permanent Pinnacle archive's export — `.claude/rules/pinnacle-archive.md`):
+- a Tennis-Data 2026 row with **no** Pinnacle pair takes our Pinnacle close (same date ±1, both surnames + initials; the row
+  is otherwise Tennis-Data's own); a Tennis-Data Pinnacle price is **never** replaced (`meta.archiveFeed.tdHadPinnacle`);
+- an ATP main-draw match after the Tennis-Data file's last day is added from an archive close ("from Pinnacle history")
+  that carries its api-tennis result: tournament, series, court, surface and best-of from the event's latest Tennis-Data
+  edition (`build-tournament-market.js` ALIAS), the round in Tennis-Data's words from that edition's numbered rounds; a
+  retirement goes behind the flag (`retRows`). Challenger, qualifying, walkovers, a captured-only close, an event with no
+  Tennis-Data edition and two candidate rows are counted in the td-feed report, never guessed;
+- `meta.pinnacleLastPriced` stays Tennis-Data's own last Pinnacle day; without the feed file the build is byte-identical
+  to the Tennis-Data archive alone. The committed copies stay the drop-in job's. **Test:** `tools/test-pinarch-tdfeed.py`.
+- *Open (founder):* the header sentence "(the source's Pinnacle prices stop on 13 Jan 2026)" is still literally true of
+  Tennis-Data, but the Database now also carries our Pinnacle closes after that day; the copy is unchanged until ruled.
+
 **The Database says so in plain words.** The header reads: "Pinnacle closing prices, else
 Bet365, 2010–2026 (the source's Pinnacle prices stop on 13 Jan 2026). The change is marked
 on the curves." The book line reads "Pinnacle closing, else Bet365 — both books in this

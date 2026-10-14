@@ -934,6 +934,191 @@ def cmd_pull(budget_s, cache_path, hours=6):
     return rep
 
 
+# ── the Tennis-Data feed (F3c: our Pinnacle closes into database-yield.json) ───────────────────────────────────────────
+FEED_COLS = ['kind', 'date', 'tournament', 'series', 'court', 'surface', 'round', 'bestof', 'winner', 'loser', 'comment', 'psw', 'psl',
+             'archiveId', 'label', 'eventKey']
+ROUND_SIZE = {'final': 2, 'semi-finals': 4, 'quarter-finals': 8, '1/8-finals': 16, '1/16-finals': 32, '1/32-finals': 64, '1/64-finals': 128}
+
+
+def _fold(x):
+    import unicodedata
+    return unicodedata.normalize('NFKD', str(x or '')).encode('ascii', 'ignore').decode().lower()
+
+
+def surname_tokens(name):
+    """'J. M. Cerundolo' / 'Cerundolo J.M.' / 'Mpetshi Perricard G.' -> ['cerundolo'] / ['mpetshi', 'perricard']: every
+    token that is not an initial (a token ending in '.' or a single letter), accents and hyphens folded."""
+    toks = [t for t in re.split(r'[\s\-]+', _fold(name).replace("'", '')) if t]
+    return [re.sub(r'[^a-z]', '', t) for t in toks if not (t.endswith('.') or len(re.sub(r'[^a-z]', '', t)) <= 1) and re.sub(r'[^a-z]', '', t)]
+
+
+def same_surname(a, b):
+    """Tennis-Data shortens compound surnames ('Mpetshi G.' = G. Mpetshi Perricard, 'Barrios M.' ...): the shorter list
+    must be the start or the end of the longer one."""
+    x, y = surname_tokens(a), surname_tokens(b)
+    if not x or not y:
+        return False
+    ia, ib = first_initial(a), first_initial(b)
+    if ia and ib and ia != ib:                                  # brothers: 'Zverev A.' is not M. Zverev
+        return False
+    s, l = (x, y) if len(x) <= len(y) else (y, x)
+    return l[:len(s)] == s or l[-len(s):] == s
+
+
+def first_initial(name):
+    m = re.search(r'\b([A-Za-z])\.', str(name or ''))
+    return _fold(m.group(1)) if m else None
+
+
+def td_name(api_name):
+    """api-tennis 'J. M. Cerundolo' -> Tennis-Data 'Cerundolo J.M.' (surname, then the initials joined)."""
+    toks = str(api_name or '').split()
+    ini = [t for t in toks if t.endswith('.') and len(t) <= 4]
+    sur = [t for t in toks if t not in ini]
+    return ' '.join(sur) + (' ' + ''.join(ini) if ini else '')
+
+
+def parse_alias(js_text):
+    """build-tournament-market.js ALIAS: registry key (city) -> its Tennis-Data tournament names."""
+    i = js_text.index('const ALIAS = {'); j = js_text.index('\n};', i)
+    out = {}
+    for k, v in re.findall(r"""^\s*['"]([^'"]+)['"]:\s*\[([^\]]*)\]""", js_text[i:j], re.M):
+        out[k] = [a or b for a, b in re.findall(r"""'([^']*)'|"([^"]*)\"""", v)]
+    return out
+
+
+def read_td(archive_dir):
+    rows = []
+    for f in sorted(glob.glob(os.path.join(archive_dir, '*.csv'))):
+        lines = open(f).read().splitlines()
+        head = lines[0].split(',')
+        for l in lines[1:]:
+            c = l.split(',')
+            if len(c) >= len(head):
+                rows.append(dict(zip(head, c)))
+    return rows
+
+
+def td_edition_meta(td_rows, alias, key):
+    """The event's latest Tennis-Data edition (by `alias[key]` names): name, series, court, surface, bestof, and K = its
+    highest numbered round ('4th Round' -> 4), so R16 = K, R32 = K-1 …"""
+    names = set(alias.get(key) or [])
+    ed = [r for r in td_rows if r.get('tournament') in names]
+    if not ed:
+        return None
+    yr = max(r['date'][:4] for r in ed)
+    last = [r for r in ed if r['date'][:4] == yr]
+    nums = [int(m.group(1)) for r in last for m in [re.match(r'(\d)(st|nd|rd|th) Round', r.get('round') or '')] if m]
+    r0 = last[-1]
+    return {'tournament': r0['tournament'], 'series': r0.get('series'), 'court': r0.get('court'), 'surface': r0.get('surface'),
+            'bestof': r0.get('bestof'), 'K': max(nums) if nums else 0, 'year': yr}
+
+
+def td_round(api_round, K):
+    r = _fold((api_round or '').split(' - ')[-1]).strip()
+    if 'qualif' in r:
+        return None
+    size = ROUND_SIZE.get(r)
+    if size == 2: return 'The Final'
+    if size == 4: return 'Semifinals'
+    if size == 8: return 'Quarterfinals'
+    if size and K:
+        n = K - {16: 0, 32: 1, 64: 2, 128: 3}[size]
+        if n >= 1:
+            return f'{n}{"st" if n == 1 else "nd" if n == 2 else "rd" if n == 3 else "th"} Round'
+    return None
+
+
+def td_feed_rows(export_rows, td_rows, alias, pin_stop):
+    """Feed rows + a report. `override`: a Tennis-Data row (same day ±1, both surnames) with no Pinnacle pair gets our
+    close (the row is named exactly as Tennis-Data wrote it). `add`: an ATP main-draw match after Tennis-Data's last day,
+    from an ARCHIVE close that carries its api-tennis result. Everything else is counted, never guessed."""
+    td_last = max(r['date'] for r in td_rows) if td_rows else ''
+    by_day = {}
+    for r in td_rows:
+        if r['date'] > pin_stop:
+            by_day.setdefault(r['date'], []).append(r)
+    out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
+                    'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
+                    'noTdEdition': 0, 'noResult': 0}
+    for e in export_rows:
+        rep['closes'] += 1
+        d = e['date']
+        if d <= pin_stop:
+            rep['beforePinnacleStop'] += 1; continue
+        day = dt.date.fromisoformat(d)
+        cands = [r for k in (day - dt.timedelta(days=1), day, day + dt.timedelta(days=1)) for r in by_day.get(k.isoformat(), [])
+                 if (same_surname(r['winner'], e['p1Name']) and same_surname(r['loser'], e['p2Name']))
+                 or (same_surname(r['winner'], e['p2Name']) and same_surname(r['loser'], e['p1Name']))]
+        if len(cands) > 1:
+            rep['twoTdRows'] += 1; continue
+        if cands:
+            r = cands[0]
+            if _vp(r.get('psw')) and _vp(r.get('psl')):
+                rep['tdHasPinnacle'] += 1; continue
+            w1 = same_surname(r['winner'], e['p1Name'])
+            out.append({'kind': 'override', 'date': r['date'], 'tournament': r['tournament'], 'series': r.get('series'), 'court': r.get('court'),
+                        'surface': r.get('surface'), 'round': r.get('round'), 'bestof': r.get('bestof'), 'winner': r['winner'], 'loser': r['loser'],
+                        'comment': r.get('comment'), 'psw': e['p1'] if w1 else e['p2'], 'psl': e['p2'] if w1 else e['p1'],
+                        'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+            rep['override'] += 1; continue
+        if d <= td_last:
+            rep['notInTdWindow'] += 1; continue       # inside Tennis-Data's window but not in it: not an ATP main-draw match
+        a = e.get('apiTennis') or {}
+        if e.get('label') != ARCHIVE_LABEL or not a:
+            rep['capturedOnlyAfterTd'] += 1; continue
+        if a.get('event_type_type') != 'Atp Singles':
+            rep['notAtpSingles'] += 1; continue
+        st = str(a.get('event_status') or '')
+        if 'walk' in st.lower():
+            rep['walkover'] += 1; continue
+        if a.get('event_winner') not in ('First Player', 'Second Player') or st not in ('Finished', 'Retired'):
+            rep['noResult'] += 1; continue
+        key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
+        meta = td_edition_meta(td_rows, alias, key)
+        if not meta:
+            rep['noTdEdition'] += 1; continue
+        rnd = td_round(a.get('tournament_round'), meta['K'])
+        if not rnd:
+            rep['qualifyingOrRound'] += 1; continue
+        first_won = a['event_winner'] == 'First Player'
+        w, l = (e['p1Name'], e['p2Name']) if first_won else (e['p2Name'], e['p1Name'])
+        out.append({'kind': 'add', 'date': d, 'tournament': meta['tournament'], 'series': meta['series'], 'court': meta['court'],
+                    'surface': meta['surface'], 'round': rnd, 'bestof': meta['bestof'], 'winner': td_name(w), 'loser': td_name(l),
+                    'comment': 'Retired' if st == 'Retired' else 'Completed', 'psw': e['p1'] if first_won else e['p2'],
+                    'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+        rep['addRetired' if st == 'Retired' else 'add'] += 1
+    rep['tdLastDay'] = td_last
+    return out, rep
+
+
+def _vp(x):
+    try:
+        return float(x) > 1.0
+    except (TypeError, ValueError):
+        return False
+
+
+def cmd_td_feed(export_path, out_csv):
+    exp = json.load(open(export_path))
+    td = read_td(os.path.join(ROOT_DIR, 'odds-archive'))
+    alias = parse_alias(open(os.path.join(ROOT_DIR, 'build-tournament-market.js')).read())
+    pin_stop = max((r['date'] for r in td if _vp(r.get('psw')) and _vp(r.get('psl'))), default='')
+    rows, rep = td_feed_rows(exp.get('rows') or [], td, alias, pin_stop)
+    for r in rows:
+        if any(',' in str(r.get(k) or '') for k in FEED_COLS):
+            die(f'a feed field holds a comma: {r}')
+    tmp = out_csv + '.tmp'
+    with open(tmp, 'w') as fh:
+        fh.write(','.join(FEED_COLS) + '\n')
+        for r in rows:
+            fh.write(','.join('' if r.get(k) is None else str(r[k]) for k in FEED_COLS) + '\n')
+    os.replace(tmp, out_csv)
+    rep['pinnacleStop'] = pin_stop
+    print('### td-feed', json.dumps(rep))
+    return rows, rep
+
+
 def cmd_counts(record=None):
     g = guard_state()
     print('### guard', json.dumps(g))
@@ -964,6 +1149,8 @@ if __name__ == '__main__':
                  int(a[a.index('--hours') + 1]) if '--hours' in a else 6)
     elif a[0] == 'export':
         cmd_export(a[1])
+    elif a[0] == 'td-feed':
+        cmd_td_feed(a[1], a[2])
     elif a[0] == 'restore':
         cmd_restore(a[1], a[a.index('--sql-out') + 1] if '--sql-out' in a else 'restore.sql', '--apply' in a, '--compare' in a)
     else:

@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Our Pinnacle closes into the Database archive (founder brief 2026-10-14, F3c / item 2). tools/pinarch.py td-feed turns
+the archive export into a Tennis-Data-shaped feed; build-database-yield.js reads it. Checks: a Tennis-Data 2026 row with
+no Pinnacle pair takes our close (named exactly as Tennis-Data wrote it, oriented by surname + initial); a Tennis-Data
+Pinnacle price is never replaced; an ATP main-draw match after Tennis-Data's last day is added from an ARCHIVE close with
+its api-tennis result (round in Tennis-Data's words from the event's last edition), never from a captured-only close;
+Challenger, qualifying, walkovers, an event with no Tennis-Data edition and two candidate rows are counted, never
+guessed; a retirement rides in retRows (behind the flag); without the feed the build is byte-identical (control)."""
+import csv, importlib.util, json, os, shutil, subprocess, sys, tempfile
+sys.dont_write_bytecode = True
+HERE = os.path.dirname(os.path.abspath(__file__)); ROOT = os.path.dirname(HERE)
+spec = importlib.util.spec_from_file_location('pinarch', os.path.join(HERE, 'pinarch.py'))
+P = importlib.util.module_from_spec(spec); spec.loader.exec_module(P)
+passed = failed = 0
+def check(name, ok, detail=''):
+    global passed, failed
+    if ok: passed += 1; print('  PASS ', name)
+    else: failed += 1; print('  FAIL ', name, '\n       ', str(detail)[-500:])
+check('names: "J. M. Cerundolo" → "Cerundolo J.M.", "B. Van De Zandschulp" → "Van De Zandschulp B."',
+      P.td_name('J. M. Cerundolo') == 'Cerundolo J.M.' and P.td_name('B. Van De Zandschulp') == 'Van De Zandschulp B.')
+check('surnames: Tennis-Data short compound forms join; brothers never do',
+      P.same_surname('Mpetshi G.', 'G. Mpetshi Perricard') and P.same_surname('Ramos-Vinolas A.', 'A. Ramos')
+      and not P.same_surname('Zverev A.', 'M. Zverev') and not P.same_surname('Cerundolo J.M.', 'F. Cerundolo'))
+check('rounds in Tennis-Data words: a 96-draw (K=4) R64 = "2nd Round", R128 = "1st Round"; a 28-draw (K=2) R32 = "1st Round"',
+      P.td_round('ATP Shanghai - 1/32-finals', 4) == '2nd Round' and P.td_round('ATP Shanghai - 1/64-finals', 4) == '1st Round'
+      and P.td_round('ATP Chengdu - 1/16-finals', 2) == '1st Round' and P.td_round('X - 1/8-finals', 2) == '2nd Round'
+      and P.td_round('X - Quarter-finals', 2) == 'Quarterfinals' and P.td_round('X - Final', 2) == 'The Final')
+check('qualifying and an unknown round have no Tennis-Data round', P.td_round('X - Qualification Final', 4) is None and P.td_round('X - Group A', 0) is None)
+H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl'
+TD25 = [
+    '2025-10-05,Shanghai Masters,Masters 1000,Outdoor,Hard,1st Round,3,Aaa A.,Bbb B.,1,2,Completed,1.5,2.6,1.52,2.7',
+    '2025-10-07,Shanghai Masters,Masters 1000,Outdoor,Hard,4th Round,3,Aaa A.,Ccc C.,1,2,Completed,1.5,2.6,1.52,2.7',
+]
+TD26 = [
+    '2026-01-05,Brisbane International,ATP250,Outdoor,Hard,1st Round,3,Pin P.,Ned N.,1,2,Completed,1.5,2.6,1.55,2.62',   # Pinnacle to 13 Jan
+    '2026-01-13,Brisbane International,ATP250,Outdoor,Hard,2nd Round,3,Pin P.,Odd O.,1,2,Completed,1.5,2.6,1.55,2.62',
+    '2026-06-12,Rosmalen Grass Court Championships,ATP250,Outdoor,Grass,2nd Round,3,Cilic M.,Borges N.,47,50,Completed,1.91,1.91,,',
+    '2026-07-21,Estoril Open,ATP250,Outdoor,Clay,1st Round,3,Skatov T.,De Jong J.,163,98,Completed,,,,',
+    '2026-08-02,Washington Open,ATP500,Outdoor,Hard,2nd Round,3,Keep K.,Have H.,1,2,Completed,1.8,2.0,1.81,2.05',
+    '2026-09-13,Davis Cup Final,ATP250,Outdoor,Hard,1st Round,3,Last L.,Day D.,1,2,Completed,1.8,2.0,,',
+]
+api = lambda **k: dict({'event_type_type': 'Atp Singles', 'event_status': 'Finished', 'event_winner': 'First Player',
+                        'tournament_name': 'ATP Shanghai', 'tournament_round': 'ATP Shanghai - 1/32-finals'}, **k)
+E = [
+    {'eventKey': 1, 'date': '2026-06-12', 'p1Name': 'N. Borges', 'p2Name': 'M. Cilic', 'p1': 2.12, 'p2': 1.79, 'label': 'captured', 'archiveId': 11},
+    {'eventKey': 2, 'date': '2026-07-21', 'p1Name': 'T. Skatov', 'p2Name': 'J. De Jong', 'p1': 5.9, 'p2': 1.15, 'label': 'from Pinnacle history', 'archiveId': 12},
+    {'eventKey': 3, 'date': '2026-08-02', 'p1Name': 'K. Keep', 'p2Name': 'H. Have', 'p1': 1.7, 'p2': 2.2, 'label': 'captured', 'archiveId': 13},
+    {'eventKey': 4, 'date': '2026-10-09', 'p1Name': 'L. Musetti', 'p2Name': 'Y. Zhou', 'p1': 1.229, 'p2': 4.64, 'label': 'from Pinnacle history', 'archiveId': 14,
+     'apiTennis': api(event_winner='Second Player')},
+    {'eventKey': 5, 'date': '2026-10-10', 'p1Name': 'A. Ret', 'p2Name': 'B. Win', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 15,
+     'apiTennis': api(event_status='Retired', event_winner='Second Player', tournament_round='ATP Shanghai - 1/16-finals')},
+    {'eventKey': 6, 'date': '2026-10-10', 'p1Name': 'C. Cap', 'p2Name': 'D. Only', 'p1': 1.6, 'p2': 2.4, 'label': 'captured', 'archiveId': 16},
+    {'eventKey': 7, 'date': '2026-10-10', 'p1Name': 'E. Chal', 'p2Name': 'F. Lenger', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 17,
+     'apiTennis': api(event_type_type='Challenger Men Singles')},
+    {'eventKey': 8, 'date': '2026-10-10', 'p1Name': 'G. Qual', 'p2Name': 'H. Ifier', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 18,
+     'apiTennis': api(tournament_round='ATP Shanghai - Qualification Final')},
+    {'eventKey': 9, 'date': '2026-10-10', 'p1Name': 'I. New', 'p2Name': 'J. Event', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 19,
+     'apiTennis': api(tournament_name='ATP Nowhere')},
+    {'eventKey': 10, 'date': '2026-10-10', 'p1Name': 'K. Walk', 'p2Name': 'L. Over', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 20,
+     'apiTennis': api(event_status='Walk Over')},
+    {'eventKey': 11, 'date': '2026-01-10', 'p1Name': 'P. Pin', 'p2Name': 'O. Odd', 'p1': 1.5, 'p2': 2.7, 'label': 'captured', 'archiveId': 21},
+]
+tmp = tempfile.mkdtemp(prefix='pinarch-td-')
+try:
+    arch = os.path.join(tmp, 'odds-archive'); os.makedirs(arch)
+    open(os.path.join(arch, '2025.csv'), 'w').write(H + '\n' + '\n'.join(TD25) + '\n')
+    open(os.path.join(arch, '2026.csv'), 'w').write(H + '\n' + '\n'.join(TD26) + '\n')
+    td = P.read_td(arch)
+    alias = {'Shanghai': ['Shanghai Masters']}
+    rows, rep = P.td_feed_rows(E, td, alias, '2026-01-13')
+    by = {r['eventKey']: r for r in rows}
+    check('override: a Tennis-Data row with no Pinnacle (Bet365 1.91/1.91) takes our close, oriented to its winner',
+          by.get(1, {}).get('kind') == 'override' and by[1]['winner'] == 'Cilic M.' and by[1]['psw'] == 1.79 and by[1]['psl'] == 2.12, by.get(1))
+    check('override: a Tennis-Data row with no price at all takes it too', by.get(2, {}).get('kind') == 'override' and by[2]['psw'] == 5.9)
+    check('a Tennis-Data Pinnacle price is never replaced', 3 not in by and rep['tdHasPinnacle'] == 1, rep)
+    check('before the Tennis-Data Pinnacle stop (13 Jan) nothing is fed', 11 not in by and rep['beforePinnacleStop'] == 1, rep)
+    a4 = by.get(4, {})
+    check('add: Musetti v Zhou after Tennis-Data\'s last day = Shanghai Masters 2026, 2nd Round, Zhou won, priced 4.64 / 1.229',
+          a4.get('kind') == 'add' and a4['tournament'] == 'Shanghai Masters' and a4['round'] == '2nd Round' and a4['winner'] == 'Zhou Y.'
+          and a4['loser'] == 'Musetti L.' and a4['psw'] == 4.64 and a4['psl'] == 1.229 and a4['series'] == 'Masters 1000' and a4['comment'] == 'Completed', a4)
+    check('add: a retirement is a "Retired" row (the Database voids it; the join settles it)', by.get(5, {}).get('comment') == 'Retired' and by[5]['round'] == '3rd Round', by.get(5))
+    check('a captured-only close after Tennis-Data is not added (no result on record yet)', 6 not in by and rep['capturedOnlyAfterTd'] == 1, rep)
+    check('Challenger, qualifying, an event with no Tennis-Data edition, a walkover: counted, never added',
+          not any(k in by for k in (7, 8, 9, 10)) and rep['notAtpSingles'] == 1 and rep['qualifyingOrRound'] == 1 and rep['noTdEdition'] == 1 and rep['walkover'] == 1, rep)
+    feed = os.path.join(tmp, 'feed.csv')
+    with open(feed, 'w') as fh:
+        fh.write(','.join(P.FEED_COLS) + '\n')
+        for r in rows:
+            fh.write(','.join('' if r.get(k) is None else str(r[k]) for k in P.FEED_COLS) + '\n')
+    def build(out, feed_path):
+        os.makedirs(out, exist_ok=True)
+        r = subprocess.run(['node', os.path.join(ROOT, 'build-database-yield.js')], capture_output=True, text=True,
+                           env=dict(os.environ, DB_YIELD_ARCHIVE_DIR=arch, DB_YIELD_OUT_DIR=out, DB_YIELD_FEED=feed_path))
+        if r.returncode:
+            return None, r.stderr
+        return (json.load(open(os.path.join(out, 'database-yield.json'))), json.load(open(os.path.join(out, 'database-yield-players.json')))), r.stdout
+    (base0, names0), log0 = build(os.path.join(tmp, 'o0'), '/nonexistent')
+    (base1, names1), log1 = build(os.path.join(tmp, 'o1'), feed)
+    m1 = base1['meta']
+    def row_of(base, names, w, l, ret=False):
+        rr, nn = (base['retRows'], names['retNames']) if ret else (base['rows'], names['names'])
+        return next((r for r, n in zip(rr, nn) if n == [w, l]), None)
+    r_bor0, r_bor1 = row_of(base0, names0, 'Cilic M.', 'Borges N.'), row_of(base1, names1, 'Cilic M.', 'Borges N.')
+    check('control: without the feed the 1.91/1.91 tie is excluded; with it the row is priced on Pinnacle (book 0)',
+          r_bor0 is None and r_bor1 is not None and r_bor1[8] == 0 and r_bor1[5] == 1.79 and r_bor1[6] == 2.12, (r_bor0, r_bor1))
+    r_sk1 = row_of(base1, names1, 'Skatov T.', 'De Jong J.')
+    check('the unpriced Tennis-Data row is priced on our close (favourite De Jong won? no: Skatov won at 5.90)', r_sk1 and r_sk1[7] == 0 and r_sk1[6] == 5.9, r_sk1)
+    r_mz = row_of(base1, names1, 'Zhou Y.', 'Musetti L.')
+    check('the added Shanghai match is a Database row (Zhou the underdog won), absent without the feed',
+          r_mz and r_mz[5] == 1.229 and r_mz[6] == 4.64 and r_mz[7] == 0 and row_of(base0, names0, 'Zhou Y.', 'Musetti L.') is None, r_mz)
+    check('the added retirement rides in retRows, never in rows', row_of(base1, names1, 'Win B.', 'Ret A.', ret=True) is not None
+          and row_of(base1, names1, 'Win B.', 'Ret A.') is None)
+    sem = lambda base, r: r and [r[0], base['meta']['tournaments'][r[4]], base['meta']['rounds'][r[3]], r[5], r[6], r[7], r[8]]
+    check('a Tennis-Data Pinnacle row is unchanged by the feed (date, event, round, prices, result, book)',
+          sem(base1, row_of(base1, names1, 'Keep K.', 'Have H.')) == sem(base0, row_of(base0, names0, 'Keep K.', 'Have H.')) is not None,
+          (sem(base1, row_of(base1, names1, 'Keep K.', 'Have H.')), sem(base0, row_of(base0, names0, 'Keep K.', 'Have H.'))))
+    check('meta: the feed never moves pinnacleLastPriced (Tennis-Data\'s own last Pinnacle day); archiveFeed counts every fed row',
+          m1['pinnacleLastPriced'] == base0['meta']['pinnacleLastPriced'] == '2026-08-02' and m1['archiveFeed']['overridden'] == 2 and m1['archiveFeed']['added'] == 1
+          and m1['archiveFeed']['addedRetired'] == 1 and m1['archiveFeed']['tdHadPinnacle'] == 0 and 'archiveFeed' not in base0['meta'], (m1['pinnacleLastPriced'], m1.get('archiveFeed')))
+    check('the reconciliation still closes with the feed (every archive row in one bucket)', 'OK == archive' in log1, log1[-600:])
+    check('dateRange runs to the newest added match', m1['dateRange'][1] == '2026-10-09', m1['dateRange'])
+finally:
+    shutil.rmtree(tmp, ignore_errors=True)
+print(f'\ntest-pinarch-tdfeed: {passed} passed, {failed} failed')
+sys.exit(1 if failed else 0)

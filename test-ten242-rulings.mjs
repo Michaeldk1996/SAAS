@@ -625,7 +625,8 @@ test('RULING: retirements are VOIDED, not settled, and the footnote says so', ()
   assert.match(b, /const isRet = RETIRED\.has\(comment\);\n\s*if \(isRet\) bucket\.retired\+\+;/,
     'retirements must be counted into their own bucket');
   const retPath = b.slice(b.indexOf('    if (isRet) {'), b.indexOf('rows.push(['));
-  assert.match(retPath, /retRaw\.push\([\s\S]*?continue;\n    \}/, 'a retirement leaves the loop before it can reach rows.push (never a Database row)');
+  // (founder brief 2026-10-14: the per-row body is a function shared with the archive feed, so it leaves by `return`)
+  assert.match(retPath, /retRaw\.push\([\s\S]*?(continue|return);\n    \}/, 'a retirement leaves the loop before it can reach rows.push (never a Database row)');
 
   // The store must actually carry the count, or the footnote has nothing to print.
   const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
