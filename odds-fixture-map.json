@@ -4334,6 +4334,15 @@
       "p2": "C. Ruud",
       "startTime": "2026-10-16T04:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12171245": {
+      "fixtureId": "id1200308575620252",
+      "mappedAt": "2026-10-14T16:00:29Z",
+      "orient": "same",
+      "p1": "D. Medvedev",
+      "p2": "T. Paul",
+      "startTime": "2026-10-16T04:00:00.000Z",
+      "tournamentId": 3085
     }
   },
   "missAudit": {
@@ -4344,25 +4353,14 @@
       "missResolutionsMeasured": 174,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
       "observedSpanDays": 18.86,
-      "projectedTtlUnitsPerDay": 2.1,
+      "projectedTtlUnitsPerDay": 2.0,
       "runs": 400,
       "spentRuns": 168,
-      "ttlBitRuns": 39,
-      "ttlBitShare": 0.098,
+      "ttlBitRuns": 38,
+      "ttlBitShare": 0.095,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-25T18:16:05Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 1,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 14
-      },
       {
         "at": "2026-09-25T19:16:06Z",
         "fixturesUnitsSpent": 1,
@@ -8751,9 +8749,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 3
+      },
+      {
+        "at": "2026-10-14T16:00:29Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 4
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-14T09:46:50Z"
+  "updatedAt": "2026-10-14T16:00:29Z"
 }
