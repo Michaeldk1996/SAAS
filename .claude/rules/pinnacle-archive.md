@@ -64,6 +64,29 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   `tools/test-pinarch-close.py` (no gate in the pull path; cooldown + 429 retry; the book named).
 - **Backlog pull** — `pinnacle-archive.yml` mode `pull-backlog` (`pull --hours N`): the same pull over the last N days, for
   every started match with no archive close and no Pinnacle +30 payload held.
+- **Back-fill** (founder brief 2026-10-15 item 4) — `.github/workflows/pinnacle-backfill.yml` (main only, every 6 h, ~5.4 h a
+  run, until nothing is left) runs `pinarch.py backfill`: every ATP / Challenger / Davis Cup singles fixture Oddspapi lists
+  from ~185 days back (its history window: on 15 Oct the 11–12 Apr fixtures already 404, 13 Apr on answer) to 17 Sep (from
+  there the live-flip pulls cover every start), **oldest first**, with no Pinnacle +30 payload in the archive and no bucket
+  object waiting for the daily import → its free `/v4/historical-odds` (`bookmakers=pinnacle+30`) as a raw row
+  (insert-only, `meta.trigger` `backfill`). **Below the post-start pull:** it never uses the odds loop's key gate, sits out
+  while an `oddspapi-postmatch.yml` run is queued or running (`postmatch_busy`; unreadable = busy), and calls once every
+  6.5 s (`BACKFILL_GAP_S`, wider than the pull's 5.5 s); a 429 pauses 60 s (hist_get). A fixture that answered 404 on two
+  runs is not asked again (state in the Actions cache). Each run prints every month's listed / pulled / failed / left and
+  the date its history expires (`month start + 180 days`). **Test:** `tools/test-pinarch-close.py` (oldest first, skips,
+  the yield, no key gate, insert-only).
+- **Fixture discovery includes Oddspapi's "Davis Cup" category** (item 1: api-tennis files Davis Cup World Group singles as
+  `Atp Singles`; all 24 failed ATP joins of 17 Sep – 14 Oct were Davis Cup), and a cache kept under the older list is asked
+  again once (`DISCOVERY_VERSION`). **Compound surnames:** when the strict join (`refresh-odds-history.orient`) finds no
+  fixture, `orient_compound` joins api-tennis's first-part surname to Oddspapi's full one ("I. Parisca" = "Parisca Romera,
+  Ignacio", "C. Bittoun" = "Bittoun Kouzmine, Constantin", "Wu Tung-Lin" = "Wu, Tung-Lin"): our shorter surname must START
+  theirs, initials must share one, both players, ±36 h, exactly one candidate — never a tail of theirs ("A. Martin" is not
+  "Lopez San Martin"). **Test:** `tools/test-pinarch-close.py` (with the strict-join control).
+- **The export is refreshed from the current api-tennis fixture every run** (items 3 and 5): every close's player keys
+  (`refresh_keys`: L. Xiao 31666 → 38140 on 12164753; a key that still agrees orients the other, else the names; an
+  unreadable or unorientable fixture keeps the stored keys, counted) and an archive close's api-tennis result (a close
+  derived mid-match stored "Set 1", so the Database feed could not add the match). The stored rows are never changed.
+  **Test:** `tools/test-pinarch-close.py` (keys, result, the feed control).
 - **Every history pull names the book** (founder 2026-10-14 item 3): `bookmakers=pinnacle+30` in `tools/pinarch.py`
   (`HIST_BOOK`) and in the daily archive / back-fill calls of `archive-oddspapi-raw.py` (`HIST_BOOKS`). Without it the
   endpoint returns the account's entitled book of the day, so every payload pulled while the key was entitled to bet365

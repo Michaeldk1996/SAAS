@@ -263,6 +263,7 @@ const ARCHIVE_NAME_ALIASES = {
   'Herbert P.H': '1748',             // P. Herbert, archive dropped the trailing dot
   'Meligeni Rodrigues F': '357',     // F. Meligeni Alves, other compound segment, no dot
   'Dedura-Palomero D.': '55858',     // D. Dedura, we truncate the compound
+  'Miguel L.': '67442',              // G. Miguel (Luis Augusto "Guto" Miguel): known by a later given name (Rio 2026, the archive's only row)
   // oddspapi (bet365-history) spellings — players known by a LATER given name; exact
   // strings, and no Tennis-Data name carries a comma, so they cannot collide.
   'Barrios Vera, Marcelo Tomas': '396', // T. Barrios Vera

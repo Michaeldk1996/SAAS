@@ -364,7 +364,23 @@ const meta = {
 // Atomic writes (CLAUDE.md rule 3): temp file + rename, never a half-written live JSON.
 function writeAtomic(p, text) { const tmp = p + '.tmp'; fs.writeFileSync(tmp, text); fs.renameSync(tmp, p); }
 writeAtomic(OUT_BASE, JSON.stringify({ meta, rows, retRows }));
-writeAtomic(OUT_NAMES, JSON.stringify({ names, retNames }));
+// Founder brief 2026-10-15 item 2: the site's ONE archive name table (build-odds-performance.js ARCHIVE_NAME_ALIASES /
+// ARCHIVE_NAME_BLOCK, hand-checked) reaches the page's price join too: `aliases` = a Tennis-Data name in this store ->
+// our profile spelling of the player it names ("Barrios M." -> "T. Barrios Vera", "Miguel L." -> "G. Miguel"); `blocked`
+// = names that would join the wrong player ("Zhang Z." is Ze Zhang, not Zhizhen) and join nobody. Only names the store
+// holds and keys the profiles name are listed; nothing else changes.
+const nameTable = (() => {
+  const { ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK } = require('./build-odds-performance.js');
+  let prof = {};
+  try { prof = (JSON.parse(fs.readFileSync(path.join(__dirname, 'player-profiles.json'), 'utf8')).players) || {}; } catch (e) { /* no table: page join as before */ }
+  const held = new Set(); for (const pr of names.concat(retNames)) for (const n of pr || []) held.add(n);
+  const aliases = {}, blocked = [];
+  for (const [n, k] of Object.entries(ARCHIVE_NAME_ALIASES)) if (!n.includes(',') && held.has(n) && prof[k] && prof[k].name) aliases[n] = prof[k].name;
+  for (const n of ARCHIVE_NAME_BLOCK) if (held.has(n)) blocked.push(n);
+  return { aliases, blocked: blocked.sort() };
+})();
+writeAtomic(OUT_NAMES, JSON.stringify({ names, retNames, aliases: nameTable.aliases, blocked: nameTable.blocked }));
+console.log(`name table (archive aliases → page join): ${JSON.stringify(nameTable)}`);
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).
 const B = TB;
 writeAtomic(BASELINES_OUT, JSON.stringify({

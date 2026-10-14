@@ -135,6 +135,29 @@ test('Data 2: a meeting with no matching Database row is a dash — wrong winner
   assert.equal(x.price ?? null, null, 'another initial (M. v J.) is another player');
 });
 
+test('archive name table (founder brief 2026-10-15 item 2): an aliased archive name meets its player, a blocked one meets nobody; control: without the table both miss / misjoin', () => {
+  const TB = { full: 'T. Barrios Vera' }, BER = { full: 'M. Berrettini' }, ZZ = { full: 'Z. Zhang' }, OP = { full: 'D. Rublev' };
+  const base = { meta: { rounds: ['1st Round'] }, rows: [[20260217, 0, 0, 0, 0, 1.30, 3.50, 1, 1], [20140301, 0, 0, 0, 0, 1.40, 2.80, 1, 0]],
+    retRows: [] };
+  const nm = { names: [['Berrettini M.', 'Barrios M.'], ['Zhang Z.', 'Rublev D.']], retNames: [], aliases: { 'Barrios M.': 'T. Barrios Vera' }, blocked: ['Zhang Z.'] };
+  const ledger = () => [{ date: '2026-02-17', won: false, round: null }];
+  const zz = () => [{ date: '2014-03-01', won: true, round: null }];
+  const db = dbPriceJoinRows(base, nm);
+  const a = ledger(); priceJoin(a, TB, BER, db);
+  assert.deepEqual([a[0].price, a[0].oppPrice], [3.50, 1.30], 'T. Barrios Vera meets "Barrios M." (Rio 2026, the loser at 3.50)');
+  const z = zz(); priceJoin(z, ZZ, OP, db);
+  assert.equal(z[0].price ?? null, null, '"Zhang Z." is Ze Zhang: Zhizhen never takes his price');
+  const ctl = dbPriceJoinRows(base, { names: nm.names, retNames: [] });
+  const c1 = ledger(); priceJoin(c1, TB, BER, ctl); const c2 = zz(); priceJoin(c2, ZZ, OP, ctl);
+  assert.equal(c1[0].price ?? null, null, 'control: no table, the initials differ and Barrios Vera misses');
+  assert.equal(c2[0].price, 1.40, 'control: no table, "Zhang Z." joins Z. Zhang (the wrong player)');
+  // the builder carries the one table: every alias it writes is an ARCHIVE_NAME_ALIASES entry, named as the profile names it
+  const OP_ = createRequire(import.meta.url)(join(HERE, 'build-odds-performance.js'));
+  assert.equal(OP_.ARCHIVE_NAME_ALIASES['Miguel L.'], '67442', 'the archive\'s "Miguel L." (Rio 2026) is G. Miguel');
+  assert.equal(OP_.ARCHIVE_NAME_ALIASES['Barrios M.'], '396');
+  assert.match(readFileSync(join(HERE, 'build-database-yield.js'), 'utf8'), /ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK \} = require\('\.\/build-odds-performance\.js'\)/);
+});
+
 test('Data 2 on the real stores: every Sinner–Alcaraz price equals the odds archive (Pinnacle, else Bet365) — a retirement too, on the ATP result (ruling 2026-10-08)', () => {
   const db = dbPriceJoinRows(...readStore());
   const csv = [];

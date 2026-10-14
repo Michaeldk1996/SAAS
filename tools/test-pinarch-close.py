@@ -170,5 +170,92 @@ P._last_hist[0] = 0.0
 P.hist_get('idY', 'k', {}, sleep=lambda x: None)
 P._load = real_load
 check('pull: every history call names bookmakers=pinnacle+30 (never the account default)', FA.seen == [('/v4/historical-odds', {'fixtureId': 'idY', 'bookmakers': 'pinnacle+30'})], FA.seen)
+# the back-fill (founder 2026-10-15 item 4): oldest first, own slot, below the post-start pull
+NOW = T('2026-10-15T00:00:00Z'); FRM, TO = T('2026-04-17T00:00:00Z'), T('2026-09-17T00:00:00Z')
+fx = [{'fixtureId': 'b3', 'categoryName': 'ATP', 'participant1Name': 'A, B', 'startTime': '2026-06-02T10:00:00Z'},
+      {'fixtureId': 'b1', 'categoryName': 'Challenger', 'participant1Name': 'C, D', 'trueStartTime': '2026-05-01T09:00:00Z', 'startTime': '2026-05-01T08:00:00Z'},
+      {'fixtureId': 'b2', 'categoryName': 'ATP', 'participant1Name': 'E, F', 'startTime': '2026-05-03T10:00:00Z'},
+      {'fixtureId': 'held', 'categoryName': 'ATP', 'participant1Name': 'G, H', 'startTime': '2026-05-02T10:00:00Z'},
+      {'fixtureId': 'bucket', 'categoryName': 'ATP', 'participant1Name': 'I, J', 'startTime': '2026-05-02T11:00:00Z'},
+      {'fixtureId': 'gone', 'categoryName': 'ATP', 'participant1Name': 'K, L', 'startTime': '2026-05-02T12:00:00Z'},
+      {'fixtureId': 'itf', 'categoryName': 'ITF Men', 'participant1Name': 'M, N', 'startTime': '2026-05-02T12:00:00Z'},
+      {'fixtureId': 'dbl', 'categoryName': 'ATP', 'participant1Name': 'O / P', 'startTime': '2026-05-02T12:00:00Z'},
+      {'fixtureId': 'old', 'categoryName': 'ATP', 'participant1Name': 'Q, R', 'startTime': '2026-04-10T12:00:00Z'},
+      {'fixtureId': 'late', 'categoryName': 'ATP', 'participant1Name': 'S, T', 'startTime': '2026-09-20T12:00:00Z'}]
+q = P.backfill_queue(fx, {'held'}, {'bucket'}, {'gone': {'n404': 2}}, NOW, FRM, TO)
+check('back-fill queue: oldest first; skips a held Pinnacle +30 payload, a bucket object awaiting import, two 404s, ITF, doubles, out of window',
+      [x[1] for x in q] == ['b1', 'b2', 'b3'], [x[1] for x in q])
+check('back-fill queue: a fixture with ONE 404 is asked again', [x[1] for x in P.backfill_queue(fx, set(), set(), {'b1': {'n404': 1}}, NOW, FRM, TO)][0] == 'b1')
+calls_gh, now2 = [], [0.0]
+def gh(path):
+    calls_gh.append(path); return ({'total_count': 1 if 'in_progress' in path else 0}, None)
+P._busy.update(at=-1e9, busy=False)
+check('back-fill yields while a post-start pull run is in progress', P.postmatch_busy(clock=lambda: now2[0], gh=gh) is True and any('oddspapi-postmatch.yml' in c for c in calls_gh), calls_gh)
+P._busy.update(at=-1e9, busy=False)
+check('back-fill: an unreadable runs list counts as busy (never runs over the pull)', P.postmatch_busy(clock=lambda: 0.0, gh=lambda p: (None, 'boom')) is True)
+P._busy.update(at=-1e9, busy=False)
+check('back-fill: nothing queued or running → its turn', P.postmatch_busy(clock=lambda: 0.0, gh=lambda p: ({'total_count': 0}, None)) is False)
+P._busy.update(at=-1e9, busy=False)
+src_bf = inspect.getsource(P.cmd_backfill)
+check('back-fill: no odds-loop key gate, the pull\'s hist_get (pinnacle+30), a gap wider than the pull\'s cooldown, insert-only',
+      not any(x in src_bf for x in ('wait_for_key', 'daily_hist_get', 'loop_idle', 'key_is_ours', 'sb_upload')) and 'hist_get(' in src_bf and 'postmatch_busy()' in src_bf
+      and P.BACKFILL_GAP_S > P.HIST_COOLDOWN_S and 'insert(RAW' in src_bf, src_bf[:120])
+# player keys from the current api-tennis fixture (founder 2026-10-15 item 5)
+rows_k = [{'eventKey': 12164753, 'p1Key': 1880, 'p2Key': 31666, 'p1Name': 'S. Mochizuki', 'p2Name': 'L. Xiao'},
+          {'eventKey': 2, 'p1Key': 10, 'p2Key': 20, 'p1Name': 'A. Alpha', 'p2Name': 'B. Beta'},
+          {'eventKey': 3, 'p1Key': 99, 'p2Key': 98, 'p1Name': 'C. Gamma', 'p2Name': 'D. Delta'},
+          {'eventKey': 4, 'p1Key': 7, 'p2Key': 8, 'p1Name': 'E. Eps', 'p2Name': 'F. Phi'},
+          {'eventKey': 5, 'p1Key': 50, 'p2Key': 51, 'p1Name': 'G. Ga', 'p2Name': 'H. Ha'}]
+cur_fx = {12164753: {'first_player_key': 1880, 'second_player_key': 38140, 'event_first_player': 'S. Mochizuki', 'event_second_player': 'L. Xiao'},
+          2: {'first_player_key': 20, 'second_player_key': 10},
+          3: {'first_player_key': 11, 'second_player_key': 12, 'event_first_player': 'D. Delta', 'event_second_player': 'C. Gamma'},
+          4: None,
+          5: {'first_player_key': 60, 'second_player_key': 61, 'event_first_player': 'X. Other', 'event_second_player': 'Y. Other'}}
+kr = P.refresh_keys(rows_k, cur_fx.get)
+check('keys: L. Xiao 31666 → 38140 from the current fixture (Mochizuki\'s key orients it)', rows_k[0]['p1Key'] == 1880 and rows_k[0]['p2Key'] == 38140, rows_k[0])
+check('keys: a swapped but equal key pair is unchanged', rows_k[1]['p1Key'] == 10 and rows_k[1]['p2Key'] == 20)
+check('keys: both keys changed → oriented by the names (C. Gamma = fixture second)', rows_k[2]['p1Key'] == 12 and rows_k[2]['p2Key'] == 11, rows_k[2])
+check('keys: unreadable fixture → stored keys stand, counted', rows_k[3]['p1Key'] == 7 and kr['unreadable'] == 1, kr)
+check('keys: names that do not orient → stored keys stand, counted (never a guess)', rows_k[4]['p1Key'] == 50 and kr['unoriented'] == 1 and kr['changed'] == 2, kr)
+# item 3: the archive close's api-tennis result is refreshed from the current fixture (the feed then adds the match)
+rr = [{'eventKey': 12170243, 'p1Key': 430, 'p2Key': 2073, 'p1Name': 'C. Ruud', 'p2Name': 'F. Auger-Aliassime', 'label': P.ARCHIVE_LABEL,
+       'apiTennis': {'event_status': 'Set 1', 'event_type_type': 'Atp Singles', 'tournament_name': 'ATP Shanghai', 'tournament_round': 'ATP Shanghai - 1/8-finals'}},
+      {'eventKey': 9, 'p1Key': 1, 'p2Key': 2, 'p1Name': 'A. A', 'p2Name': 'B. B', 'label': 'captured'}]
+fx3 = {12170243: {'first_player_key': 430, 'second_player_key': 2073, 'event_status': 'Finished', 'event_winner': 'First Player', 'event_type_type': 'Atp Singles',
+                  'tournament_name': 'ATP Shanghai', 'tournament_round': 'ATP Shanghai - 1/8-finals', 'event_first_player': 'C. Ruud', 'event_second_player': 'F. Auger-Aliassime'},
+       9: {'first_player_key': 1, 'second_player_key': 2, 'event_status': 'Finished', 'event_winner': 'First Player'}}
+k3 = P.refresh_keys(rr, fx3.get)
+check('result: an archive close derived mid-match ("Set 1") takes the current fixture\'s result (Finished, First Player)',
+      rr[0]['apiTennis']['event_status'] == 'Finished' and rr[0]['apiTennis']['event_winner'] == 'First Player' and k3['resultRefreshed'] == 1, rr[0])
+check('result: a captured row is left without an api-tennis result (its orientation is the card\'s)', 'apiTennis' not in rr[1], rr[1])
+alias_ = P.parse_alias(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'build-tournament-market.js')).read())
+td_ = [{'date': '2025-10-08', 'tournament': 'Shanghai Masters', 'series': 'Masters 1000', 'court': 'Outdoor', 'surface': 'Hard', 'round': '4th Round', 'bestof': '3', 'winner': 'X Y.', 'loser': 'Z W.', 'psw': '1.5', 'psl': '2.6', 'comment': 'Completed'},
+       {'date': '2025-10-05', 'tournament': 'Shanghai Masters', 'series': 'Masters 1000', 'court': 'Outdoor', 'surface': 'Hard', 'round': '3rd Round', 'bestof': '3', 'winner': 'X Y.', 'loser': 'Z W.', 'psw': '1.5', 'psl': '2.6', 'comment': 'Completed'}]
+ex3 = dict(rr[0], date='2026-10-14', p1=1.8, p2=2.05)
+f_before, rep_b = P.td_feed_rows([dict(ex3, apiTennis={'event_status': 'Set 1', 'event_type_type': 'Atp Singles', 'tournament_name': 'ATP Shanghai', 'tournament_round': 'ATP Shanghai - 1/8-finals'})], td_, alias_, '2026-01-13')
+f_after, rep_a = P.td_feed_rows([ex3], td_, alias_, '2026-01-13')
+check('feed: control — the stored mid-match result is "noResult"; with the refreshed result the match is added (R16 = 4th Round)',
+      rep_b['noResult'] == 1 and rep_a['add'] == 1 and f_after[0]['round'] == '4th Round' and f_after[0]['winner'] == 'Ruud C.', (rep_b, rep_a, f_after))
+# item 1: the failed fixture joins — Davis Cup is discovered, compound surnames join (and nothing looser)
+check('discovery keeps Oddspapi\'s Davis Cup category (api-tennis files those ties as Atp Singles); an older cache is asked again',
+      'Davis Cup' in P.DISCOVERY_CATEGORIES and 'ITF Men' not in P.DISCOVERY_CATEGORIES and 'cache.get(\'v\') != DISCOVERY_VERSION' in inspect.getsource(P.discovery))
+fl2 = [{'event_key': 11, 'first_player': 'P. Lagutin', 'second_player': 'I. Parisca', 'first_live_seen_at': '2026-10-11T14:40:00Z',
+        'last_not_live_seen_at': '2026-10-11T14:39:30Z', 'event_date': '2026-10-11', 'event_type_type': 'Challenger Men Singles'},
+       {'event_key': 12, 'first_player': 'Wu Tung-Lin', 'second_player': 'M. Dahlin', 'first_live_seen_at': '2026-09-20T07:05:00Z',
+        'last_not_live_seen_at': '2026-09-20T07:04:30Z', 'event_date': '2026-09-20', 'event_type_type': 'Atp Singles'},
+       {'event_key': 13, 'first_player': 'A. Martin', 'second_player': 'B. Cole', 'first_live_seen_at': '2026-10-11T10:00:00Z',
+        'last_not_live_seen_at': '2026-10-11T09:59:30Z', 'event_date': '2026-10-11', 'event_type_type': 'Challenger Men Singles'}]
+disc2 = [{'fixtureId': 'idLP', 'participant1Name': 'Lagutin, Pavel', 'participant2Name': 'Parisca Romera, Ignacio', 'startTime': '2026-10-11T14:25:00Z', 'categoryName': 'Challenger'},
+         {'fixtureId': 'idLO', 'participant1Name': 'Lagutin, Pavel', 'participant2Name': 'Ovcharenko, Oleksandr', 'startTime': '2026-10-12T11:20:00Z', 'categoryName': 'Challenger'},
+         {'fixtureId': 'idWD', 'participant1Name': 'Wu, Tung-Lin', 'participant2Name': 'Dahlin, Max', 'startTime': '2026-09-20T06:40:00Z', 'categoryName': 'Davis Cup'},
+         {'fixtureId': 'idLSM', 'participant1Name': 'Lopez San Martin, Alberto', 'participant2Name': 'Cole, Ben', 'startTime': '2026-10-11T09:50:00Z', 'categoryName': 'Challenger'}]
+evs2, miss2 = P.events_for(fl2, {}, disc2, {})
+by2 = {e['event_key']: e for e in evs2}
+check('join: "I. Parisca" = "Parisca Romera, Ignacio" (ours starts theirs), oriented', by2.get('11', {}).get('fixture_id') == 'idLP' and by2['11']['p1IsParticipant1'] is True, by2.get('11'))
+check('join: Davis Cup "Wu Tung-Lin" v "M. Dahlin" = "Wu, Tung-Lin" v "Dahlin, Max"', by2.get('12', {}).get('fixture_id') == 'idWD', by2.get('12'))
+check('join: "A. Martin" is never "Lopez San Martin" (a tail of theirs is not ours)', '13' not in by2, by2.get('13'))
+real_orient = P._load('roh', 'refresh-odds-history.py').orient
+check('control: the strict join alone finds neither Parisca Romera nor Wu, Tung-Lin', real_orient({'p1': 'P. Lagutin', 'p2': 'I. Parisca'}, 'Lagutin, Pavel', 'Parisca Romera, Ignacio') is None
+      and real_orient({'p1': 'Wu Tung-Lin', 'p2': 'M. Dahlin'}, 'Wu, Tung-Lin', 'Dahlin, Max') is None)
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
