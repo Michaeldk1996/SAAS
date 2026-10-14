@@ -115,6 +115,16 @@ jobs:
           compression-level: 1
           include-hidden-files: true
 
+      # Founder brief 2026-10-14 (item 1): the deploy fails if the permanent Pinnacle archive ever holds fewer rows than
+      # an archive job recorded, or has lost a protection (.claude/rules/pinnacle-archive.md). One read-only RPC with the
+      # publishable key; an unreachable database is a loud SKIP, never a block.
+      - name: Pinnacle archive guard (rows never go down)
+        if: steps.resolve.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: node tools/pinarch-guard.mjs
+
       - name: Upload Pages artifact
         if: steps.resolve.outputs.ready == 'true' && steps.mode.outputs.deploy == 'true'
         uses: actions/upload-pages-artifact@v3

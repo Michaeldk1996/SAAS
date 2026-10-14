@@ -1,9 +1,10 @@
 # Permanent Pinnacle archive (founder brief 2026-10-14, item 1). Rules: .claude/rules/pinnacle-archive.md.
 #   install  apply supabase/migrations/20261014120000_pinnacle_archive.sql (additive) and verify the guard
 #   import   captured-closes-pinnacle.json + the oddspapi-raw bucket -> the archive tables (rows are only ever added)
+#   derive   archive closes ('from Pinnacle history') for the matches our live poller saw start (--days)
 #   backup   today's dated copy into the private ops repo (Michaeldk1996/stennisfy-ops), never replacing a day
 #   restore-check  rebuild every row from the backups into restore SQL and compare its counts with the live tables
-#   daily    import + backup (the schedule). Runs from main only.
+#   daily    import + derive + backup (the schedule). Runs from main only.
 name: Pinnacle archive
 on:
   schedule:
@@ -11,9 +12,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | import | backup | restore-check | daily
+        description: install | import | derive | backup | restore-check | daily
         required: true
         default: daily
+      days:
+        description: derive — how many days of live-flipped matches to derive closes for (daily = 3)
+        required: false
+        default: '3'
 permissions:
   contents: read
 concurrency:
@@ -60,6 +65,17 @@ jobs:
           python3 tools/pinarch.py import-captured captured-closes-pinnacle.json
           python3 tools/pinarch.py import-bucket
           python3 tools/pinarch.py counts --record import
+      - name: derive — archive closes from the payloads it holds (our live-flip start)
+        if: env.MODE == 'derive' || env.MODE == 'daily'
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PINARCH_FIXTURES: .pinarch-fixtures.json
+        run: |
+          set -euo pipefail
+          python3 tools/pinarch.py derive --days "${{ github.event.inputs.days || '3' }}"
+          python3 tools/pinarch.py counts --record derive
       - name: backup — today's dated copy to the private ops repo
         if: env.MODE == 'backup' || env.MODE == 'daily'
         env:
