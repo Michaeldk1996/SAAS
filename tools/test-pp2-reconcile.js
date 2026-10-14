@@ -90,6 +90,15 @@ const BUILT = DEPLOYED.BUILT_DIR;
 const STORE_WORD = BUILT ? 'BUILT' : 'deployed';
 const STORE = DEPLOYED.playerProfiles();
 if (STORE.source !== (BUILT ? 'built' : 'deployed')) {
+  // The cloud sandbox cannot reach the deployed site (its proxy answers 403). There, and only there, this suite SKIPS
+  // OUT LOUD — exit 0 with a SKIP line that says it is not a pass (CLAUDE.md rule 8). Never in CI, never in built mode:
+  // the GitHub gate (CI=true) still aborts red on an unreachable site, exactly as before.
+  const sandbox = !!(process.env.STENNISFY_SANDBOX === '1' || process.env.CCR_AGENT_PROXY_ENABLED);
+  if (sandbox && !BUILT && !process.env.CI && !process.env.GITHUB_ACTIONS) {
+    console.log(`\n  SKIP  test-pp2-reconcile: the deployed site is unreachable from this sandbox (${STORE.drift.why}).`);
+    console.log('        NOT A PASS — nothing was checked. The GitHub code gate runs this suite against the live store.\n');
+    process.exit(0);
+  }
   console.error(`\n  ✗ COULD NOT READ THE ${STORE_WORD.toUpperCase()} player-profiles.json — ABORTING.`);
   console.error(`    ${STORE.drift.why}`);
   console.error(`    The committed copy is dated ${STORE.committedFetchedAt || 'unknown'} and is NOT a`);
