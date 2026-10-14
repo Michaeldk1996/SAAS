@@ -38,7 +38,7 @@ const S = new Function(`
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName',
-     'fhRecLevelMix', 'fhH2hRecCard', 'meBarHtml', 'meLeadFill', 'meBandsCol'].map(slice).join('\n')}
+     'fhH2hRecCard', 'meBarHtml', 'meLeadFill', 'meBandsCol'].map(slice).join('\n')}
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
   return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, fhH2hRecCard, meBandsCol,
     meRateBox, set psMatrix(v){ psMatrixData = v; } };

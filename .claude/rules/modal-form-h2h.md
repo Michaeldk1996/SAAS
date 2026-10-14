@@ -1,8 +1,49 @@
 # Match analysis — Form and H2H tabs: founder rulings
 
 Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), to
-`build-match-closes.js`, and to the H2H meeting list the pipeline builds (`fetchH2H`,
-`buildH2HMatchList` in `bsp-pipeline.js`). Tests: `test-ten263.mjs`.
+`build-match-closes.js` and to `h2h-core.js` (the ONE H2H meeting list, TEN-437). The api-tennis list the pipeline
+builds (`fetchH2H`, `buildH2HMatchList`, `m.h2h`) is the model's input only (see "One H2H record" below).
+Tests: `test-ten263.mjs`, `test-ten437-h2h.mjs`.
+
+## One H2H record, everywhere — ATP's official population (founder TEN-437, 2026-10-14)
+Replaces the 2026-09-24 "H2H covers all of men's singles" display rule, the 2026-09-25 team-events list as a display
+rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
+- **One function:** every surface that shows an H2H record, meeting count or anything computed over a pair's meetings
+  (Match analysis → H2H tab, Key factors' H2H box, the Head to Head page, the Download report that prints them) builds the
+  meetings with `H2HCore.joinMeetings` (`h2h-core.js`) over both players' career-history shards, fed by the same three
+  helpers (`sfH2hNkCount`, `sfH2hSide`, `sfH2hOwnEks`). A keyless archive row (TML, pre-2022) is joined by date + opposite
+  result + names, so it counts. **Test:** `test-ten437-h2h.mjs` "UI" + "golden pairs".
+- **Excluded by ruling — the model:** `h2h-model/adjustments.js` keeps reading `m.h2h.matches` (the api-tennis list)
+  until the founder rules on its recency weighting. Its "Why" text on the Stennisfy Model page prints the model's own
+  input ("H2H 5-3 (8 meetings…)") — the one screen where the short list still shows, by this exception.
+  **Test:** "single source" (the model's input line is pinned).
+- **Population = what atptour.com's H2H record counts** (read off ATP's own H2H data, report B, 2026-10-14): counted —
+  tour-level main draw, Grand Slams, ATP Finals, Next Gen ATP Finals, Davis Cup (every stage), Olympics, ATP Cup, United
+  Cup, Laver Cup (2017 on), retirements, defaults. Not counted — Challengers and ITF (career-history `chitf`), every
+  qualifying round, walkovers (listed "w/o", counted nowhere — N2), Hopman Cup and exhibitions (absent from ATP's list).
+  Constants: `H2H_LEVELS`, `H2H_NOT_COUNTED` (= the pipeline's `H2H_NOT_ATP_RECORD`), `inPopulation`, `isWalkover`.
+  No record carries a level mix (there is no lower level in it). **Test:** "population constants", `test-ten273-team-events.mjs`.
+- **One match is one meeting:** a keyless archive row (dated at the event's start) and a keyed feed row (match day)
+  for the same match are one meeting — same winner, same event (`TournamentIdentity`), the keyed row within
+  `H2H_DEDUPE_WINDOW` [-1, 16] days, rounds not contradicting; the keyed row is kept. **Test:** "dedupe" (Shanghai 2019 SF:
+  07.10 archive, 12.10 feed).
+- **Prices attach to meetings, never the reverse:** the book rule is unchanged (Pinnacle close, else Bet365 close, one
+  book per meeting); only the pairing changed — a keyless archive meeting (dated at its event's start) takes its close from
+  the `H2H_DEDUPE_WINDOW` after that date, same opponent and result, nearest first, each close used once (`fhCloseFor`
+  `win`/`used`); a keyed meeting keeps ±1 day. A meeting with no close prints a dash. "X of Y meetings priced": Y = every
+  meeting in the filter (the full H2H count), never the priced subset. Sets won, Tiebreaks, Deciding sets and the surface
+  counts read the same list, "N of M with set scores" with real counts. **Test:** "UI" ("0 of 15 meetings priced"), the
+  mutant "coverage line counts priced meetings only".
+- **Golden-pair gate:** `tools/fixtures/ten437/h2h-golden-pairs.json` (49 pairs, ATP's Record fields with the check date,
+  the live shard rows each join reads; rebuilt by `tools/ten437-golden-build.mjs`). CI fails on any pair that differs from
+  ATP. **Known gaps (reported, pinned so any change turns CI red):** Fils–M. Ymer (Lyon 2023) and Bublik–Rublev (Dubai
+  2024) — defaults ATP counts, api-tennis status "Awarded", dropped by `playerMatchHistory`. Mutations:
+  `tools/test-ten437-mutants.js` (the eventKey-only join back = 21 of 49 pairs red, 14 of the 18 scale-table pairs).
+- **Pipeline reconciliation:** `tools/h2h-reconcile.mjs` runs on the store each pipeline run builds; the run fails if the
+  golden pairs' total meetings fall below the previous published run's (`h2h-reconcile.json`) or any exact pair falls below
+  ATP's count. No `|| true`.
+- **A failed history load is a load error with a Retry, never "no meeting on record", and is never cached**
+  (`careerHistoryAnswered`; tab, Key factors and the Head to Head page). **Test:** "failed load".
 
 ## Prices (rulings 2026-09-23 and 2026-09-24)
 - **Order** (TEN-310 R8, founder 2026-09-28, supersedes the 2026-09-23 Pinnacle order). Every price on
@@ -193,7 +234,8 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - **Hot-line dots on H2H use fixed columns** (1/max(n, 9) of the grid, right-aligned), so 4 meetings sit
   where 9 would (founder Q3, 2026-09-30: over the design's stretched columns). Form keeps stretched columns.
 - **H2H with no meeting** (founder Q4, 2026-09-30): "{A} and {B} **have no meeting on record**." plus the line saying what
-  was searched (`fhH2hScopeNote`: levels and the years each covers). The design's "have not played" is a named exception:
+  was searched (`fhH2hScopeNote`, the Head to Head page's words: "Searched both players' match histories since {the
+  earliest ATP year either holds}."; a player with no history file is named: the meetings are read from the other side). The design's "have not played" is a named exception:
   our store can only say what it holds. **Test:** `test-ten331-h2h.mjs` "Q4" (mutation: "have not played").
 - **A player with no profile is plain text** on Form and H2H (founder Q27, 2026-09-30): `fhNameLink` links only when the
   key has a profile. **Test:** `test-ten330-form.mjs` "Q27" (no link without a profile key; mutation: always a link).
@@ -213,34 +255,19 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   "rebuilt …"; a stale index (builder crashed, committed floor shipped) is a run **warning**. Making it
   red is not ruled.
 
-## H2H covers all of men's singles (ruling 2026-09-24)
-- The pipeline keeps **ATP, Challenger and ITF singles** (`H2H_EVENT_TYPES`). Exhibitions,
-  doubles, juniors, UTR and women's events stay out. **Test:** the set holds exactly these three
-  singles types.
-- **H2H: team events count exactly as the ATP counts them in its official win-loss record** (ruling
-  2026-09-25, TEN-273: "do as the ATP"). **Exception — Form:** Laver Cup is not a Form row (founder TEN-380, 2026-10-04,
-  rule above); this H2H rule is unchanged. Davis Cup, ATP Cup, United Cup, Laver Cup, the Olympics
-  and the Next Gen Finals count. Hopman Cup (ITF-sanctioned, mixed) and exhibitions (UTS, Six Kings
-  Slam, Kooyong, Mubadala…) never do, even when api-tennis tags them "Atp Singles". One list,
-  applied in `fetchH2H` (`H2H_NOT_ATP_RECORD`) and in the career-history join
-  (`FH_H2H_NOT_ATP_RECORD`). **Test:** a Hopman Cup meeting never enters the list or the record;
-  a Laver Cup or United Cup meeting does; the two lists are identical.
-- **Every meeting row carries `level`** (ATP / CH / ITF). **A record that includes Challenger or
-  ITF meetings says so** wherever it is shown: the match card, the Key factors H2H panel and
-  block, the insight sentence ("· incl. 1 CH, 2 ITF"), and the Form/H2H tab's row tags.
-  **Test:** a 3–1 built on ITF meetings never renders without its level mix.
-- **A match never counts in its own H2H record** (ruling 2026-09-24), on the cards, in the
-  model or on the H2H page. The pipeline drops the fixture's own eventKey at every H2H build
-  site (`h2hExcludeOwn`) and again in a final pass over the board before `matches.json` is
-  written (`stripOwnFixtureFromH2H`; the model reads that file). **Test:** a finished board
-  match whose own eventKey is in `h2h.matches` fails, and the record is recomputed without it.
+## The model's H2H input (rulings 2026-09-24 / 2026-09-25 — the model only since TEN-437)
+- The pipeline's `m.h2h` (api-tennis `get_H2H` + the ATP-singles `get_fixtures` backfill) keeps **ATP, Challenger and
+  ITF singles** (`H2H_EVENT_TYPES`); exhibitions, doubles, juniors, UTR and women's events stay out; Hopman Cup and
+  exhibitions are removed by `H2H_NOT_ATP_RECORD` (the same list as `h2h-core.js`). It feeds the edge model's H2H layer
+  only — no screen reads it (TEN-437). **Test:** the set holds exactly these three singles types; `test-ten273-team-events.mjs`.
+- **A match never counts in its own H2H record** (ruling 2026-09-24), on every surface and in the model: the pipeline
+  drops the fixture's own eventKey at every H2H build site (`h2hExcludeOwn`) and again before `matches.json` is written
+  (`stripOwnFixtureFromH2H`); the screens pass the board's finished matches to the join (`sfH2hOwnEks`). **Test:** a
+  finished board match whose own eventKey is in `h2h.matches` fails, and the record is recomputed without it.
 - **Who won a meeting is decided by player key, never surname** (ruling 2026-09-24):
   `h2hP1WasFirst` compares `first_player_key` / `second_player_key` with p1's key; a row that
   carries neither is not counted. **Test:** two same-surname players (Zhizhen Zhang 590, Ze
   Zhang) orient by key, and `summarizeH2H` / `buildH2HMatchList` never call `lastName`.
-- The tab's meeting list = api-tennis H2H ∪ the career-history eventKey join. A shared
-  eventKey counts only when both rows carry the same date and opposite results. The levels
-  that count are one constant, `FH_H2H_LEVELS`.
 
 ## Market-edge is a pipeline output (ruling 2026-09-24)
 - `market-edge/` and `market-edge-index.json` are rebuilt by `build-market-edge.js` in

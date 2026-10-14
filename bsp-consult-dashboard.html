@@ -11,6 +11,8 @@
 <script src="./analytics.js"></script>
 <!-- TEN-327: the one Serve / Return rating helper, read by the sheet, Tournament Report, Live tab and Player Profile. -->
 <script src="./house-ratings.js"></script>
+<!-- TEN-437: the ONE head-to-head meeting list (window.H2HCore) — every H2H surface builds its meetings through it. -->
+<script src="./h2h-core.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <!-- TEN-168 Series page: separate stylesheet (not inline) so JS/CSS-only edits
@@ -386,7 +388,6 @@
   [data-page="matches"] .mc-dot{ color:var(--mc-muted-2); }
   [data-page="matches"] .mc-tourn{ color:var(--mc-muted); font-weight:600; }
   [data-page="matches"] .mc-round{ font-family:var(--mx-font-mono); font-size:11px; font-weight:600; color:var(--mc-muted); padding:2px 7px; border:1px solid var(--mc-border-subtle); border-radius:var(--mc-r-pill); }
-  [data-page="matches"] .mc-h2h{ color:var(--mc-muted-2); font-size:11px; font-family:var(--mx-font-mono); }
   [data-page="matches"] .mc-status{ font-family:var(--mx-font-mono); color:var(--mc-muted-2); font-size:11px; }
   [data-page="matches"] .mc-status.live{ color:var(--text); }
   [data-page="matches"] .mc-time{ font-family:var(--mx-font-mono); color:var(--mc-muted); }
@@ -9348,21 +9349,6 @@ function renderMatches(){
           ? (nowPair.book || 'unnamed book')
           : 'no book has posted a price for this match yet';
     const roundBadge = roundBadgeText(m.tournamentRound);
-    // Overall + surface-specific H2H — same summarized h2h object and the
-    // same surface-filter approach already used in buildH2HSection's tiles,
-    // just condensed into one inline line. Omitted entirely (not a
-    // placeholder) when there's no H2H data on file for this pairing.
-    let h2hInlineHtml = '';
-    if (m.h2h && (m.h2h.p1Wins + m.h2h.p2Wins) > 0) {
-      const surfaceMatches = (m.h2h.matches || []).filter(x => x.surface === m.surface);
-      let surfacePart = '';
-      if (surfaceMatches.length) {
-        const surfP1Wins = surfaceMatches.filter(x => x.p1Won).length;
-        const surfLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
-        surfacePart = ` · H2H ${surfLabel}: ${surfP1Wins}-${surfaceMatches.length - surfP1Wins}`;
-      }
-      h2hInlineHtml = `<span class="mc-h2h">· H2H ${m.h2h.record}${h2hLevelMix(m.h2h)}${surfacePart}</span>`;
-    }
     // Live / suspended / pending get a score line above the rows. Completed
     // matches show their result through the set-score cluster (mcSetCluster),
     // not this line, so the finalScore branch is intentionally omitted here.
@@ -10807,6 +10793,10 @@ function loadCareerHistoryIndex(){
 //
 // "Answered" means the index was readable AND either named no shard for this
 // player (a real "he has none") or served one. Anything else releases the memo.
+// TEN-437 (5): loadCareerHistory resolves [] both for "he has no history" (answered) and for a failed load (not
+// cached, retried on the next call). A reader that must tell them apart — a head-to-head that would otherwise print
+// "no meeting on record" off a failed fetch — asks this after the promise settles: true only for an answered shard.
+function careerHistoryAnswered(playerKey){ return String(playerKey || '') in _careerHistoryShards; }
 function loadCareerHistory(playerKey){
   const pk = String(playerKey || '');
   if (!pk) return Promise.resolve([]);
@@ -13276,17 +13266,25 @@ function fhLoadCloses(key){
 // whose opponent did not resolve fall back to the opponent surname. Exactly one
 // candidate, and the archive's result must agree with ours. Captured rows: see capFor.
 // Then the ruled picker chooses — never one side from one source and one from another.
-function fhCloseFor(cl, date, oppName, won, oppKey, ek){
+// win / used (TEN-437, H2H meetings only): a row dated at its event's start looks for its close in [win[0], win[1]] days
+// after that date instead of ±1 — same result, nearest first, a close already taken by an earlier meeting skipped.
+function fhCloseFor(cl, date, oppName, won, oppKey, ek, win, used){
   if (!cl) return null;
   const d0 = fhDayNum(date);
   if (d0 == null) return null;
-  const near = x => { const d = fhDayNum(x.date); return d != null && Math.abs(d - d0) <= 1; };
+  const W = win || [-1, 1];
+  const near = x => { const d = fhDayNum(x.date); return d != null && d - d0 >= W[0] && d - d0 <= W[1]; };
   const ok = String(oppKey == null ? '' : oppKey), nk = fhNameKey(oppName);
   let td = null;
   const byKey = ok ? (cl.rows || []).filter(x => x.oppKey === ok && near(x)) : [];
   const byName = !byKey.length && nk ? (cl.rows || []).filter(x => x.oppKey == null && near(x) && fhNameKey(x.opp) === nk) : [];
-  const tdHits = byKey.length ? byKey : byName;
-  if (tdHits.length === 1 && tdHits[0].won === !!won) td = tdHits[0];
+  let tdHits = byKey.length ? byKey : byName;
+  if (win){
+    tdHits = tdHits.filter(x => x.won === !!won && !(used && used.has(x)))
+      .sort((x, y) => Math.abs(fhDayNum(x.date) - d0) - Math.abs(fhDayNum(y.date) - d0));
+    if (tdHits.length > 1 && fhDayNum(tdHits[0].date) !== fhDayNum(tdHits[1].date)) tdHits = [tdHits[0]];
+  }
+  if (tdHits.length === 1 && tdHits[0].won === !!won){ td = tdHits[0]; if (used) used.add(td); }
   // Captures are one row per book (separate sources), so each book's row is found on its
   // own: by eventKey when both carry one, else by opponent key within ±1 day among rows
   // that do not name a DIFFERENT match.
@@ -13911,27 +13909,25 @@ function fhBuildForm(m){
 // =====================================================================
 // A finished set: 6+ games won by 2 (incl. a long final set), or a 7-6 tiebreak set.
 function fhSetDone(x){ const hi = Math.max(x[0], x[1]), lo = Math.min(x[0], x[1]); return (hi >= 6 && hi - lo >= 2) || (hi === 7 && lo === 6); }
-// Everything the H2H tab joins onto the api-tennis meeting list (m.h2h, keyed on
-// both player KEYS): per-set games + RET/W/O flags by eventKey from the players'
-// own shards, and closing prices from their priced archives.
+// TEN-437: the H2H tab's meetings are H2HCore.joinMeetings over both players' career-history shards (the ONE site-wide
+// list, the Head to Head page's too), plus what the rows carry: set scores and RET flags from the shards / form rows,
+// closing prices from the players' priced archives, the opponent's Elo. A shard that did not load is not "no meetings":
+// the tab shows a load error with a Retry and nothing is cached (m._fhH2hFailed; the next open or the Retry fetches).
 function fhEnsureH2hData(m){
   if (m._fhH2hData) return Promise.resolve(m);
   if (m._fhH2hP) return m._fhH2hP;
-  const ch = k => (k == null ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).then(r => Array.isArray(r) ? r : null).catch(() => null));
-  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory()])
-    .then(([, c1, c2, e1, e2, eh]) => { m._fhCh = [c1, c2]; m._fhCloses = [e1, e2]; m._fhElo = eh; m._fhH2hData = true; return m; });
+  const ch = k => (k == null ? Promise.resolve({ rows: [], ok: true }) : Promise.resolve().then(() => loadCareerHistory(k))
+    .then(r => ({ rows: Array.isArray(r) ? r : [], ok: Array.isArray(r) && careerHistoryAnswered(k) })).catch(() => ({ rows: [], ok: false })));
+  const prof = Object.keys(playerProfiles || {}).length ? null : Promise.resolve().then(() => loadPlayerProfiles()).catch(() => null);   // the roster's namesake count
+  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), prof])
+    .then(([, c1, c2, e1, e2, eh]) => {
+      if (!c1.ok || !c2.ok){ m._fhH2hP = null; m._fhH2hFailed = [c1.ok ? null : m.p1, c2.ok ? null : m.p2].filter(Boolean); return m; }
+      m._fhH2hFailed = null; m._fhCh = [c1.rows, c2.rows]; m._fhCloses = [e1, e2]; m._fhElo = eh; m._fhH2hData = true; return m;
+    });
   return m._fhH2hP;
 }
-// The api-tennis meeting list, minus the fixture itself: a finished board match
-// lists its OWN eventKey among the "previous" meetings (19 of 43 on 2026-09-23).
-function fhMeetingList(m){
-  const own = String(eventKeyOfMatch(m) || '');
-  const list = (m.h2h && Array.isArray(m.h2h.matches)) ? m.h2h.matches : [];
-  return list.filter(x => !(own && x.eventKey != null && String(x.eventKey) === own));
-}
-// Levels that count in the H2H tab (records, stats, prices, hot lines, list). One
-// constant, so a "tour level only" view is ['ATP'] — a one-line change.
-const FH_H2H_LEVELS = ['ATP', 'CH', 'ITF'];
+// Retry after a failed history load (the tab's and Key factors' "Retry").
+function fhH2hRetry(){ if (!_fh || !_fh.m) return; _fh.m._fhH2hFailed = null; fhH2h({}); if (aBuilt(_fh.m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(_fh.m)); }
 // Team events and exhibitions count exactly as in the ATP's official win-loss record
 // (ruling 2026-09-25, TEN-273: "do as the ATP"). Same list as the pipeline's
 // H2H_NOT_ATP_RECORD: Hopman Cup and exhibitions never enter the meeting list.
@@ -13955,43 +13951,34 @@ function fhLevelOf(level, tournament, tier){
   if (t === 'itf') return 'ITF';
   return 'CH';
 }
-// Meetings at EVERY level we hold, found by ID: api-tennis H2H (both player keys; ATP,
-// Challenger and ITF singles since the 2026-09-24 ruling) ∪ every match in p1's career-history (a player-key shard)
-// whose eventKey also appears in p2's career-history. De-duplicated by eventKey; the
-// fixture itself is never a previous meeting.
-function fhAllMeetingRows(m){
-  const own = String(eventKeyOfMatch(m) || '');
-  // The pipeline's list carries each meeting's level since the 2026-09-24 ruling (all of men's
-  // singles); a row without one predates it, when the list was ATP-only.
-  const out = fhMeetingList(m).map(x => Object.assign({}, x, { _level: ['ATP', 'CH', 'ITF'].includes(x.level) ? x.level : 'ATP', _src: 'h2h' }));
-  const seen = new Set(out.map(x => String(x.eventKey)));
-  const ch1 = (m._fhCh && m._fhCh[0]) || [], ch2 = (m._fhCh && m._fhCh[1]) || [];
-  const in2 = new Map(ch2.filter(x => x && x.eventKey != null).map(x => [String(x.eventKey), x]));
-  const tierOf = {};
-  [m.p1RecentFormMatches, m.p2RecentFormMatches].forEach(rows => (rows || []).forEach(x => { if (x && x.eventKey != null && x.tier) tierOf[String(x.eventKey)] = x.tier; }));
-  let dupes = 0, rejected = 0;
-  for (const x of ch1){
-    if (!x || x.eventKey == null) continue;
-    const ek = String(x.eventKey);
-    if (!in2.has(ek) || ek === own) continue;
-    if (FH_H2H_NOT_ATP_RECORD.test(String(x.tournament || ''))) continue;
-    // One match seen from both sides: same day, opposite results. (eventKey is api-tennis's
-    // per-MATCH key; proven 30/30 on the 2026-09-23 board against get_fixtures, both player
-    // keys.) A pair of rows that disagrees is not counted as a meeting.
-    const y = in2.get(ek);
-    if (y.date !== x.date || typeof x.won !== 'boolean' || typeof y.won !== 'boolean' || x.won === y.won){ rejected++; continue; }
-    if (seen.has(ek)){ dupes++; continue; }
-    seen.add(ek);
-    out.push({ date: x.date, tournament: x.tournament, round: x.round, surface: x.surface, p1Won: !!x.won, result: x.result,
-      qualifying: !!x.qualifying, eventKey: x.eventKey, _level: fhLevelOf(x.level, x.tournament, tierOf[ek]), _src: 'career-history' });
-  }
-  m._fhMeetDupes = dupes;
-  m._fhMeetRejected = rejected;
-  m._fhMeetUnclassified = out.filter(x => x._level == null).length;
-  return out.filter(x => FH_H2H_LEVELS.includes(x._level));
+// TEN-437 · the pair's meetings: H2HCore.joinMeetings (h2h-core.js) — ATP's official H2H population over both players'
+// career-history shards, the same call the Head to Head page makes. Never the api-tennis list (m.h2h), which holds
+// almost nothing before 2022. Finished board matches between the two never count (sfH2hOwnEks), nor the fixture itself.
+// The three inputs every H2H surface hands H2HCore.joinMeetings besides the two shards — one helper each, so the Match
+// analysis tab, Key factors and the Head to Head page can never feed the join differently:
+//   sfH2hNkCount — the roster's namesake counts (every profile's name; a one-sided row needs a unique surname + initial)
+//   sfH2hSide    — a player as the join reads him: the profile's full name when there is one, the board's short name
+//   sfH2hOwnEks  — finished board matches between the two (a match never counts in its own record, ruling 2026-09-24)
+let _sfNkSrc = null, _sfNk = {};
+function sfH2hNkCount(){
+  const pp = (typeof playerProfiles !== 'undefined' && playerProfiles) || {};
+  if (_sfNkSrc !== pp || !Object.keys(_sfNk).length) { _sfNkSrc = pp; _sfNk = H2HCore.nameCounts(Object.keys(pp).map(k => pp[k] && pp[k].name).filter(Boolean)); }
+  return _sfNk;
+}
+function sfH2hSide(key, name){ const p = key != null ? ((typeof playerProfiles !== 'undefined' && playerProfiles) || {})[String(key)] : null; return { full: (p && p.name) || name, short: name, key: key != null ? String(key) : null }; }
+function sfH2hOwnEks(aKey, bKey){
+  if (aKey == null || bKey == null) return [];
+  const pair = [String(aKey), String(bKey)].sort().join('|');
+  return (typeof matches !== 'undefined' && Array.isArray(matches) ? matches : []).filter(x => x && x.finalScore && x.p1Key != null && x.p2Key != null
+      && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(x => eventKeyOfMatch(x)).filter(x => x != null && x !== '');
+}
+function fhH2hMeetingRows(m){
+  const ch = m._fhCh || [[], []];
+  const own = sfH2hOwnEks(m.p1Key, m.p2Key).concat([eventKeyOfMatch(m)]).filter(x => x != null && x !== '');
+  return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own);
 }
 function fhMeetings(m){
-  const list = fhAllMeetingRows(m);
+  const list = fhH2hMeetingRows(m);
   const idx = rows => { const o = {}; (rows || []).forEach(x => { if (x && x.eventKey != null) (o[String(x.eventKey)] = o[String(x.eventKey)] || []).push(x); }); return o; };
   const srcs = [
     [idx(m.p1RecentFormMatches), false], [idx(m._fhCh && m._fhCh[0]), false],
@@ -14001,9 +13988,12 @@ function fhMeetings(m){
   const me = m._fhCloses || [];
   const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
     [m.p1RecentFormMatches || [], m.p2RecentFormMatches || []].flat().map(x => [x.opponent, x.opponentKey])));
+  // TEN-437 (4): a keyless archive row is dated at its EVENT's start, so its close (dated on the match day) is looked for
+  // in the H2HCore dedupe window after it, same opponent and result, each close used by one meeting only.
+  const used = [new Set(), new Set()];
   const out = list.map((x, i) => {
     const ek = x.eventKey != null ? String(x.eventKey) : null;
-    let sets = null, ret = null, wo = null, tier = null, qual = !!x.qualifying;
+    let sets = fhSetsFrom(x.sets), ret = typeof x.retired === 'boolean' ? x.retired : null, wo = typeof x.walkover === 'boolean' ? x.walkover : null, tier = null, qual = !!x.qualifying;
     if (ek) for (const [ix, flipped] of srcs){
       const hit = ix[ek]; if (!hit || hit.length !== 1) continue;
       const h = hit[0];
@@ -14014,12 +14004,13 @@ function fhMeetings(m){
     }
     const r = { mid: fhSafeId('h2h_' + i + '_' + (ek || x.date)), date: x.date, tourn: (typeof sfEventName === 'function' ? sfEventName : fhTournClean)(x.tournament), tournRaw: x.tournament,   // r1 fix 2
       surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
-      won: !!x.p1Won, result: x.result, sets, ret: !!ret, wo: !!wo, qualifying: qual, tier,
+      won: !!x.won, result: x.result, sets, ret: !!ret, wo: !!wo, qualifying: qual, tier: tier || x.level || null,
       ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null,
-      level: x._level || 'ATP', src0: x._src || 'h2h' };
+      level: 'ATP', src0: x._how || 'both' };
     fhFinishRow(r);
-    let c = fhCloseFor(me[0], r.date, m.p2, r.won, m.p2Key, r.ek);
-    if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won, m.p1Key, r.ek); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src }; }
+    const win = ek ? null : H2HCore.H2H_DEDUPE_WINDOW;
+    let c = fhCloseFor(me[0], r.date, m.p2, r.won, m.p2Key, r.ek, win, used[0]);
+    if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won, m.p1Key, r.ek, win, used[1]); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src }; }
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     r.oppElo = fhEloAt(m._fhElo, m.p2, r.date, eloOwners);   // H2H rows: same basis as Form (ruling 2026-09-24)
     return r;
@@ -14035,13 +14026,6 @@ function fhPriceAvg(PR, isA){
     return 1 / (isA ? pA : 1 - pA);
   }
   return 1 / (PR.reduce((s, r) => s + 1 / (isA ? r.price : r.oppPrice), 0) / PR.length);
-}
-// "· incl. 1 CH" when a record includes Challenger / ITF meetings (ruling 2026-09-24: a record built on
-// lower-level meetings never reads as a tour record). ATP-only records add nothing.
-function fhRecLevelMix(rows){
-  const c = lv => rows.filter(r => r.level === lv).length;
-  const parts = [c('CH') ? c('CH') + ' CH' : '', c('ITF') ? c('ITF') + ' ITF' : ''].filter(Boolean);
-  return parts.length ? ' · incl. ' + parts.join(', ') : '';
 }
 // TEN-331 · the H2H tab rebuilt on the TEN-312 design file (DF template L1153–1332, `h2hV2For` L4283–4510; the file wins
 // over the README). Colours are the design's own shades (fhS — founder 2026-09-29), the neutral D4 player pair (FH_AC /
@@ -14071,7 +14055,7 @@ function fhH2hRecCard(label, arr, onclick, aName, bName, aS, bS){
         <span style="font-size:14px; font-weight:700; color:var(--text); white-space:nowrap;">${fhEsc(bName)}</span>
       </div>
       <div class="fh-tug" data-tug-a="${tug('a')}" data-tug-b="${tug('b')}" style="display:flex; flex-direction:column; align-items:center; gap:6px;"><div style="position:relative; width:100%; height:8px; background:var(--line); border-radius:4px;"><span style="position:absolute; right:50%; top:0; bottom:0; width:${tug('a')}; background:var(--white-bar); border-radius:4px 0 0 4px;"></span><span style="position:absolute; left:50%; top:0; bottom:0; width:${tug('b')}; background:var(--white-bar); border-radius:0 4px 4px 0;"></span><span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; margin-left:-0.75px; background:var(--viz-tick);"></span></div><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${leadColor};">${fhEsc(tugTxt)}</span></div>
-      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:var(--text-label);">·</span><span style="color:var(--text-label);">${fhEsc(n + (n === 1 ? ' meeting' : ' meetings') + fhRecLevelMix(counted))}</span></div>
+      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:var(--text-label);">·</span><span style="color:var(--text-label);">${fhEsc(n + (n === 1 ? ' meeting' : ' meetings'))}</span></div>
     </div>`;
 }
 // Loading (DF L1167–1177), the file's own placeholder shades.
@@ -14112,25 +14096,22 @@ function fhNoMeetingCards(m){
   };
   return [side(0), side(1)];
 }
-// What "no meeting on record" covered: the later of the two players' earliest rows, per
-// level group, in the career histories the meeting search reads.
+// What "no meeting on record" covered (TEN-437: the same words as the Head to Head page): ATP's record population, from
+// the earliest ATP row either loaded history holds. A player with no history file is said so — his meetings can then be
+// read only from the other player's history.
+function fhH2hOneSided(m){ const ch = m._fhCh || []; return [0, 1].filter(i => !Array.isArray(ch[i]) || !ch[i].length).map(i => (i ? m.p2 : m.p1)); }
 function fhH2hScopeNote(m){
   const ch = m._fhCh || [];
-  const names = [m.p1, m.p2];
-  const missing = [0, 1].filter(i => !Array.isArray(ch[i]) || !ch[i].length).map(i => names[i]);
-  if (missing.length) return 'Match history unavailable for ' + missing.join(' and ') + ': only ATP meetings were searched.' + fhUnclassifiedNote(m);
-  const first = (rows, tour) => { const ys = rows.filter(x => (String(x.level || '').toLowerCase() === 'atp') === tour).map(x => +String(x.date || '').slice(0, 4)).filter(Boolean); return ys.length ? Math.min(...ys) : null; };
-  const since = tour => { const a = first(ch[0], tour), b = first(ch[1], tour); return a == null || b == null ? null : Math.max(a, b); };
-  const atp = since(true), low = since(false);
-  const parts = [atp ? 'ATP since ' + atp : null, low ? 'Challenger and ITF since ' + low : null].filter(Boolean);
-  return (parts.length ? 'Searched: ' + parts.join(', ') + ', in both players\' match histories.' : 'Searched both players\' match histories.') + fhUnclassifiedNote(m);
+  const yrs = [0, 1].map(i => (ch[i] || []).filter(x => x && String(x.level || '').toLowerCase() === 'atp').map(x => +String(x.date || '').slice(0, 4)).filter(Boolean))
+    .map(ys => (ys.length ? Math.min(...ys) : null)).filter(y => y != null);
+  const one = fhH2hOneSided(m);
+  return 'Searched both players\' match histories' + (yrs.length ? ' since ' + Math.min(...yrs) : '') + '.'
+    + (one.length ? ' No match history on file for ' + one.join(' and ') + ': meetings are read from the other player\'s history alone.' : '');
 }
-function fhUnclassifiedNote(m){ const n = m._fhMeetUnclassified || 0; return n ? ` ${n} meeting${n === 1 ? '' : 's'} at junior or unclassified events not counted.` : ''; }
 // Under a non-empty list: only what the reader would otherwise not know.
 function fhH2hGapNote(m){
-  const ch = m._fhCh || [], names = [m.p1, m.p2];
-  const missing = [0, 1].filter(i => !Array.isArray(ch[i]) || !ch[i].length).map(i => names[i]);
-  return (missing.length ? ' Match history unavailable for ' + missing.join(' and ') + ': Challenger and ITF meetings may be missing.' : '') + fhUnclassifiedNote(m);
+  const one = fhH2hOneSided(m);
+  return one.length ? ' No match history on file for ' + one.join(' and ') + ': meetings are read from the other player\'s history alone.' : '';
 }
 function fhBuildH2H(m){
   fhEnsureStyles();
@@ -14147,6 +14128,12 @@ function fhBuildH2H(m){
       ${right ? `<span style="${FH_MONO} font-size:11px; color:${t3}; white-space:nowrap;">${right}</span>` : ''}</div>`;
   // Meetings come from api-tennis AND both players' histories, so "none" is only known
   // once the histories have loaded — until then the loading skeleton shows.
+  // TEN-437 (5): a history that did not load is a load error with a Retry — never "no meetings on record", never cached.
+  if (m._fhH2hFailed) return wrap(`<div class="fh-h2fail" style="background:${card}; border:1px solid ${hair}; border-radius:16px; padding:26px 24px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
+        <span style="font-size:15px; font-weight:800;">Head-to-head could not load</span>
+        <span style="font-size:13px; color:${t2};">Match history for ${fhEsc(m._fhH2hFailed.join(' and '))} did not load, so the meetings are not known yet.</span>
+        <span class="seg fh-h2retry" onclick="fhH2hRetry()" style="font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer;">Retry</span>
+      </div>`);
   if (!m._fhH2hData){
     fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
     return wrap(fhH2hSkeleton());
@@ -17948,12 +17935,16 @@ function kfH2hTallies(F){
 function kfH2HCard(m){
   const C = KF_C, M = FH_MONO, A = fhSurname(m.p1), B = fhSurname(m.p2);
   const surf = fhSurfName(m.surface);
+  // TEN-437 (5): a history that did not load is never "No meeting on record".
+  if (m._fhH2hFailed) return kfCard('h2h', `${kfHead('Head to head', 'not loaded')}
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
+    ${kfNote('Head-to-head could not load: match history for ' + m._fhH2hFailed.join(' and ') + ' did not load.')}<span class="seg kf-h2h-retry" onclick="fhH2hRetry()" style="font-size:12px; font-weight:700; color:${C.text}; cursor:pointer;">Retry</span>`);
   if (!m._fhH2hData) return kfCard('h2h', `${kfHead('Head to head', 'loading')}
     <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">${kfName(m.p1)}${kfName(m.p2, 'text-align:right;')}</div>
     ${kfNote('Loading head-to-head…')}`);
   const counted = fhMeetings(m).filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));
   const a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
-  const meta = n ? `${n} ${n === 1 ? 'meeting' : 'meetings'}${fhRecLevelMix(counted)}` : 'No meeting on record';
+  const meta = n ? `${n} ${n === 1 ? 'meeting' : 'meetings'}` : 'No meeting on record';
   const tw = n && a !== b ? Math.abs(a - b) / n * 50 : 0;
   const tug = `<div style="position:relative; width:100%; height:6px; border-radius:3px; background:${C.track};"><span class="kf-h2h-tug" data-lead="${a > b ? 'a' : b > a ? 'b' : ''}" style="position:absolute; top:0; bottom:0; ${a > b ? 'right' : 'left'}:50%; width:${tw}%; border-radius:3px; background:${C.white};"></span><span style="position:absolute; left:50%; top:-3px; bottom:-3px; width:1px; background:${C.tick};"></span></div>`;
   const cap = !n ? 'No meeting on record' : a === b ? 'Level' : `+${Math.abs(a - b)} ${a > b ? A : B}`;
@@ -18209,17 +18200,6 @@ function buildKeyFactorsSection(m){
   initAOddsTips();
   return `<div class="kf-wrap" style="max-width:1100px; margin:0 auto; line-height:normal; font-family:'Hanken Grotesk',system-ui,sans-serif; font-size:16px; color:${KF_C.text};">
     <div class="kf-grid" style="display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:14px; align-items:stretch;">${kfStyleCard(m)}${kfFormCard(m)}${kfTourCard(m)}${kfOddsCard(m)}${kfDnaCard(m)}${kfH2HCard(m)}${kfProgCard(m)}${kfNewsCard(m)}${kfModelCard(m)}${kfMeCard(m)}${kfWeatherCard(m)}</div></div>`;
-}
-
-// TEN-263 (founder ruling 2026-09-24): an H2H record that includes Challenger or
-// ITF meetings says so, the same way the Form/H2H tab tags its rows — a 3-1 built
-// on ITF meetings must not read as an ATP record. Rows without a level predate
-// the ruling, when the list was ATP-only. '' for an all-ATP record.
-function h2hLevelMix(h){
-  const rows = (h && Array.isArray(h.matches)) ? h.matches : [];
-  const ch = rows.filter(r => r && r.level === 'CH').length, itf = rows.filter(r => r && r.level === 'ITF').length;
-  const parts = [ch ? ch + ' CH' : '', itf ? itf + ' ITF' : ''].filter(Boolean);
-  return parts.length ? ' · incl. ' + parts.join(', ') : '';
 }
 
 /* ---------- PLAYING STYLE TAB ---------- */
@@ -27475,9 +27455,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // TEN-263 (ruling 2026-09-24): keyed by PLAYER KEY, never short name — "Z. Zhang" is
   // both Zhizhen (590) and Ze Zhang; a short-name roster kept one and hid the other.
   let P = {};   // keyed by player key
-  let H2H = {}; // keyed by "A key|B key"
   let ROSTER = []; // ordered player-key list for search
-  let NK_COUNT = {}; // surname|initial -> how many roster players share it (h2hJoinMeetings: a one-sided row needs a unique name)
+  let NK_COUNT = {}; // surname|initial -> how many roster players share it (H2HCore.joinMeetings: a one-sided row needs a unique name)
   let built = false;
 
   const state = {
@@ -27686,12 +27665,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
 
   // ---- TEN-402 (step 8 · the Head-to-head record, founder ticket 2026-10-08) -------------------------------------------
-  // Data 1: the meetings are every completed ATP main-draw meeting in the match archive = both players' career-history
-  // shards (career-history/{key}.json, the dated match store). The files are per PLAYER KEY, so who won is decided by key,
-  // never by surname (TEN-263). "H2H counts all meetings, including Laver Cup and exhibitions": no event is dropped by
-  // name. Challenger / ITF rows, qualifying and walkovers are not ATP main-draw meetings. Each rule is one constant.
-  const H2H_PAGE_LEVELS = ['atp'];            // career-history `level`; ['atp', 'chitf'] would add Challenger / ITF
-  const H2H_PAGE_NOT_COUNTED = null;          // null = every ATP event counts (ticket); FH_H2H_NOT_ATP_RECORD = the 25 Sep list
+  // Data 1 (TEN-437, founder 2026-10-14, replaces TEN-402's "including exhibitions"): the meetings are ATP's official H2H
+  // population over both players' career-history shards, built by the ONE site-wide join, H2HCore.joinMeetings
+  // (h2h-core.js) — the same list the Match analysis H2H tab and Key factors read. Population and its constants live there.
   // Data 2: Home / Away = the Database's own price join (database-yield.json via DatabaseTab.priceRows(): Pinnacle closing,
   // else Bet365 closing, one book per match). A Tennis-Data row is a match when both names match (surname + initial), the
   // winner matches, the rounds do not contradict, and the archive date sits in a window from the career-history date
@@ -27716,49 +27692,6 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     return code === FH_DASHC && /\bFinals\b/i.test(String(tournament || '')) && !/Davis Cup/i.test(String(tournament || '')) ? 'RR' : code;
   }
 
-  // A-oriented career rows for the pair. A meeting = a row in A's file that names B (or carries an eventKey B's file
-  // holds), paired with B's row for the same match: the same eventKey, else the same date, opposite results and each row
-  // naming the other. A row only one side records counts only when the name it carries is unique on the roster (surname +
-  // initial; TEN-263: a namesake is never credited). Two rows that disagree (same eventKey, other date or the same result)
-  // count nowhere. ownEks: finished board matches between the two never count (ruling 2026-09-24).
-  function h2hJoinMeetings(a, b, chA, chB, nkCount, ownEks) {
-    const nk = h2hNameKey, nkA = nk(a.full), nkB = nk(b.full);
-    const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;
-    const A = Array.isArray(chA) ? chA : [], B = Array.isArray(chB) ? chB : [];
-    const bEk = new Map(B.filter(y => y && y.eventKey != null).map(y => [String(y.eventKey), y]));
-    const used = new Set(), bad = new Set(), seen = new Set(), out = [];
-    const flip = y => Object.assign({}, y, { won: !y.won, opponent: b.short,
-      result: String(y.result || '').replace(/^\s*(\d+)\s*-\s*(\d+)\s*$/, '$2 - $1'),
-      sets: Array.isArray(y.sets) ? y.sets.map(s => Object.assign({}, s, { p: s.o, o: s.p, pTb: s.oTb, oTb: s.pTb })) : y.sets });
-    const push = (x, how) => {
-      const k = x.eventKey != null ? 'e' + x.eventKey : 'd' + x.date + '|' + (x.round || '');
-      if (seen.has(k)) return;
-      seen.add(k); out.push(Object.assign({}, x, { _how: how }));
-    };
-    A.forEach(x => {
-      if (!x || typeof x.won !== 'boolean') return;
-      const ek = x.eventKey != null ? String(x.eventKey) : null, named = nk(x.opponent) === nkB;
-      if (!named && !(ek && bEk.has(ek))) return;
-      let y = ek ? bEk.get(ek) : null;
-      if (y && (y.date !== x.date || y.won === x.won)) { bad.add(y); return; }
-      if (!y) {
-        const ys = B.filter(z => z && !used.has(z) && z.date === x.date && typeof z.won === 'boolean' && z.won !== x.won && nk(z.opponent) === nkA);
-        if (ys.length === 1) y = ys[0];
-      }
-      if (y) { used.add(y); push(x, 'both'); }
-      else if (named && uniq(nkB)) push(x, 'a');
-    });
-    B.forEach(y => {
-      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean' || nk(y.opponent) !== nkA || !uniq(nkA)) return;
-      push(flip(y), 'b');
-    });
-    const own = new Set((ownEks || []).map(String));
-    return out.filter(x => H2H_PAGE_LEVELS.includes(String(x.level || '').toLowerCase())
-        && !x.qualifying && !/^qualif/i.test(String(x.round || ''))
-        && !(x.eventKey != null && own.has(String(x.eventKey)))
-        && !(H2H_PAGE_NOT_COUNTED && H2H_PAGE_NOT_COUNTED.test(String(x.tournament || ''))))
-      .sort((x, y) => String(x.date).localeCompare(String(y.date)));
-  }
   // Surname key + first initial of a name in either order ("J. Sinner" / "Sinner J." → sinner · j). A name with no
   // initial token ("Casper Ruud", the style-meetings shards) is given name first: the initial is its first letter and the
   // surname the rest. w = the surname's words (hyphens split), for the surname-tail rule in h2hTdSame.
@@ -27985,21 +27918,31 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }
     return v;
   }
+  // TEN-437 (5): Retry after a failed history load — drop the pair (and every other failed pair) so the next render fetches.
+  function h2hRetryPair() { Object.keys(_h2hPairs).forEach(k => { if (_h2hPairs[k] && _h2hPairs[k].st === 'failed') delete _h2hPairs[k]; }); render(); }
   function h2hPairFor(a, b) {
     const k = a.key + '|' + b.key;
     let S = _h2hPairs[k];
     if (!S) {
       S = _h2hPairs[k] = { st: 'loading', pm: { h2hPage: true, p1: a.short, p2: b.short, p1Key: a.key, p2Key: b.key }, rows: null, dbAt: null };
-      const lch = fn('loadCareerHistory');
-      const ch = key => (lch ? Promise.resolve().then(() => lch(key)).then(r => (Array.isArray(r) ? r : null)).catch(() => null) : Promise.resolve(null));
-      Promise.all([ch(a.key), ch(b.key)]).then(([ca, cb]) => { S.chA = ca; S.chB = cb; S.st = 'ready'; render(); });
+      // TEN-437 (5): a shard that did not load is a load error with a Retry, never "no meetings" — and never cached:
+      // the failed state stays only until the Retry (or the next visit) drops it and fetches again.
+      const lch = fn('loadCareerHistory'), answered = fn('careerHistoryAnswered');
+      const ch = key => (lch ? Promise.resolve().then(() => lch(key))
+          .then(r => ({ rows: Array.isArray(r) ? r : null, ok: Array.isArray(r) && (!answered || answered(key)) }))
+          .catch(() => ({ rows: null, ok: false })) : Promise.resolve({ rows: null, ok: false }));
+      Promise.all([ch(a.key), ch(b.key)]).then(([ra, rb]) => {
+        if (!ra.ok || !rb.ok) { S.st = 'failed'; S.failedNames = [ra.ok ? null : a.short, rb.ok ? null : b.short].filter(Boolean); render(); return; }
+        S.chA = ra.rows; S.chB = rb.rows; S.st = 'ready'; render();
+      });
     }
     h2hEnsureDb();
     if (S.st === 'ready' && (S.rows == null || S.dbAt !== _h2hDbSt)) {
-      const own = (DV('matches') || []).filter(m => m && m.finalScore && m.p1Key != null && m.p2Key != null
-        && [String(m.p1Key), String(m.p2Key)].sort().join('|') === [String(a.key), String(b.key)].sort().join('|'))
-        .map(m => (typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null)).filter(x => x != null);
-      const joined = h2hJoinMeetings(a, b, S.chA, S.chB, NK_COUNT, own);
+      // TEN-437: the same three inputs the Match analysis tab hands the join (sfH2hOwnEks / sfH2hNkCount), so the page and
+      // the modal can never count a pair differently.
+      const ownF = fn('sfH2hOwnEks'), nkF = fn('sfH2hNkCount');
+      const own = ownF ? ownF(a.key, b.key) : [];
+      const joined = H2HCore.joinMeetings(a, b, S.chA, S.chB, nkF ? nkF() : NK_COUNT, own);
       S.rows = joined.map((x, i) => {
         const r = fhRowFromForm(Object.assign({}, x, { tier: x.level }), a.key, a.short, i);
         r.mid = fhSafeId('h2hp_' + a.key + '_' + b.key + '_' + (x.eventKey != null ? x.eventKey : x.date + '_' + i));
@@ -28029,8 +27972,6 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   (window.sfOverlayClosers = window.sfOverlayClosers || []).push(() => { if (typeof _fh !== 'undefined' && _fh && _fh.m && _fh.m.h2hPage && _fh.sheet) fhCloseSheet(); });
 
   // ============================ VIEW COMPUTATION ============================
-  // Surname + first initial ("J. Sinner" → sinner|j): the roster's namesake count (NK_COUNT) and h2hJoinMeetings' name test.
-  function h2hNameKey(nm) { const t = String(nm || '').toLowerCase().replace(/['’.\-]/g, ' ').split(' ').filter(Boolean); return t.length >= 2 ? t[t.length - 1] + '|' + t[0][0] : null; }
   function renderVals() {
     const S = state;
     const a = P[S.aSel] || null, b = P[S.bSel] || null;
@@ -28085,7 +28026,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       ' partial coverage in the archive. Blocks below will show an em dash wherever a metric is genuinely missing rather than filling the gap with an estimate.';
 
     // TEN-402 (Data 1): the Head-to-head record reads h2hPairFor — both career-history shards joined by key (see
-    // h2hJoinMeetings) and priced by the Database join. view.h2h carries the rows; h2hCard draws the section.
+    // H2HCore.joinMeetings) and priced by the Database join. view.h2h carries the rows; h2hCard draws the section.
     view.h2h = h2hViewFor(a, b);
 
     // context strip + scope
@@ -28472,6 +28413,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // entries every row / dot opens.
   function h2hViewFor(a, b) {
     const S = h2hPairFor(a, b);
+    if (S.st === 'failed') return { failed: true, names: S.failedNames || [] };
     if (S.st !== 'ready') return { loading: true };
     const surf = ['all', 'Hard', 'Clay', 'Grass'].includes(state.h2hSurf) ? state.h2hSurf : 'all';
     S.rows.forEach(r => { _h2hSheet[r.mid] = { pm: S.pm, r, aName: a.short, aKey: a.key, bName: b.short, bKey: b.key }; });
@@ -28501,6 +28443,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const head = sectionHead('Head-to-head record', chips ? { html: chips } : '');
     const card = inner => `<div class="fh-h2wrap h2hp-card" style="background:var(--card); box-shadow:var(--top-light); border:1px solid transparent; border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:18px; line-height:normal;">${head}${inner}</div>`;
     if (h.loading) return card(`<div style="${panel} padding:28px; text-align:center; font-family:var(--font-nums); font-size:11px; color:var(--text-label);">Loading head-to-head…</div>`);
+    // TEN-437 (5): a failed history load says so and offers a retry — it never reads as "no meetings on record".
+    if (h.failed) return card(`<div class="h2hp-loadfail" style="${panel} padding:26px 24px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
+          <span style="font-size:14px; font-weight:700; color:var(--text);">Head-to-head could not load</span>
+          <span style="font-size:12.5px; color:var(--text-soft);">Match history for ${E(h.names.join(' and ') || 'one player')} did not load, so the meetings are not known yet.</span>
+          <span class="seg h2hp-retry" onclick="H2HPage._h2hRetry()" style="font-size:12px; font-weight:700; color:var(--text); cursor:pointer;">Retry</span>
+        </div>`);
     if (!played.length) {
       const yrs = (h.S.firstYear || []).filter(y => y != null && isFinite(y));
       // founder r1 fix 7 (2026-10-09): the search starts at the EARLIEST ATP record either loaded history holds (the page's
@@ -29669,11 +29617,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (Object.keys(surf).length) { e.surf = surf; e.season = { w, l }; }
     }
     // whole-career tournament history (item 4 — powers the tournament selector).
-    // TEN-207: this is now a lazy shard, and it is NOT enough to fetch it on
-    // profile open — h2hFromHist() reads e.tourHist and is the ONLY source of
-    // pre-2021 meetings, so without this kick a pair that has met 9 times would
-    // render "never met" on the H2H page. Mirrors the loadStyleMeetShard fetch
+    // TEN-207: this is a lazy shard, fetched here as well as on profile open, so the
+    // selector fills on a direct H2H visit. Mirrors the loadStyleMeetShard fetch
     // immediately below: fetch once per player, then re-render this pairing.
+    // (TEN-437: the meetings are NOT read from here — they are H2HCore.joinMeetings
+    // over the career-history shards, in h2hPairFor.)
     e.tourHist = (prof && Array.isArray(prof.tournamentHistory)) ? prof.tournamentHistory : null;
     // _tourHistShards is a main-script `const`, so it is NOT on window — it must
     // come through the __h2hEnv getter bridge, exactly like oddsPerfShards.
@@ -29758,40 +29706,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (ra == null && rb == null) return P2[a].full.localeCompare(P2[b].full) || a.localeCompare(b);
       if (ra == null) return 1; if (rb == null) return -1; return ra - rb || a.localeCompare(b);
     });
-    const NK2 = {};
-    ROSTER2.forEach(k => { const nk = h2hNameKey(P2[k].full); if (nk) NK2[nk] = (NK2[nk] || 0) + 1; });
+    const NK2 = H2HCore.nameCounts(ROSTER2.map(k => P2[k].full));
 
-    // H2H meetings from today's fixtures (only place client-side holds real meetings).
-    const H2H2 = {};
-    const ms = DV('matches') || [];
-    const roundLbl = fn('h2hRoundLabel');
-    ms.forEach(m => {
-      if (!m || !m.h2h || !m.p1 || !m.p2) return;
-      // Keyed by player key (TEN-263 ruling 2026-09-24); a card without keys has no ID join.
-      if (m.p1Key == null || m.p2Key == null) return;
-      const ka = String(m.p1Key), kb = String(m.p2Key);
-      const meetings = Array.isArray(m.h2h.matches) ? m.h2h.matches : [];
-      const byYear = {};
-      meetings.forEach(mt => {
-        const yr = (String(mt.date || '').match(/\d{4}/) || ['—'])[0];
-        (byYear[yr] = byYear[yr] || []).push([
-          String(mt.date || '').replace(/^\d{4}[-/]?/, '') || mt.date || '—',
-          mt.tournament || '—',
-          mt.surface || 'Hard',
-          roundLbl ? roundLbl(mt.round) : (mt.round || '—'),
-          mt.result || '—',
-          mt.p1Won ? ka : kb,
-          mt.eventKey != null ? mt.eventKey : null,
-          // TEN-263 (ruling 2026-09-24): the meeting's level ('ATP' | 'CH' | 'ITF'); a row
-          // without one predates the ruling, when the list was ATP-only.
-          mt.level || 'ATP',
-        ]);
-      });
-      const years = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
-      H2H2[ka + '|' + kb] = { a: m.h2h.p1Wins != null ? m.h2h.p1Wins : 0, b: m.h2h.p2Wins != null ? m.h2h.p2Wins : 0, meetings: years };
-    });
-
-    return { P: P2, H2H: H2H2, ROSTER: ROSTER2, NK: NK2 };
+    // TEN-437: no meeting list is built here — every H2H meeting comes from H2HCore.joinMeetings (the page reads it in
+    // h2hPairFor). The m.h2h-based map this used to build was read by nothing but _debug.
+    return { P: P2, ROSTER: ROSTER2, NK: NK2 };
   }
 
   // ============================ LIFECYCLE ============================
@@ -29814,13 +29733,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function build() {
     try {
       const d = buildH2HData();
-      H2H = d.H2H;                    // today's meetings always refreshed
       if (!built) { P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {}; _ratings = null; built = true; }
-    } catch (e) { console.error('H2H buildH2HData failed', e); if (!built) { P = {}; H2H = {}; ROSTER = []; } }
+    } catch (e) { console.error('H2H buildH2HData failed', e); if (!built) { P = {}; ROSTER = []; } }
   }
   function ensureInit(visit) {
     bindDocClose();
     if (visit) _h2hDbAskAt = 0;   // TEN-402 R3 fix 1: a visit's first render that needs the join asks a failed one again
+    if (visit) Object.keys(_h2hPairs).forEach(k => { if (_h2hPairs[k] && _h2hPairs[k].st === 'failed') delete _h2hPairs[k]; });   // TEN-437 (5)
     triggerLoads();
     ensureDna();
     if (dataReady()) { build(); render(); return; }
@@ -29834,7 +29753,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }, 300);
   }
 
-  window.H2HPage = { render, ensureInit, _debug: () => ({ P, H2H, ROSTER, state }),
+  window.H2HPage = { render, ensureInit, _h2hRetry: h2hRetryPair, _debug: () => ({ P, ROSTER, state }),
     // TEN-402 b: the Head-to-head record's handlers (inline onclick on shared-helper markup: the hot-lines table, rows)
     _open: h2hOpenMeeting,
     _h2hAllLines: () => setState(s2 => ({ h2hAllLines: !s2.h2hAllLines })),

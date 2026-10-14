@@ -17,6 +17,8 @@ import { spawn, spawnSync } from 'node:child_process';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN350_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
+// TEN-437: the H2H tab's meetings come from h2h-core.js (window.H2HCore in the page); loaded the same way here.
+const H2H_CORE_SRC = readFileSync(join(HERE, 'h2h-core.js'), 'utf8');
 function slice(name) {
   const start = html.indexOf(`function ${name}(`);
   assert.ok(start > 0, `${name} not found`);
@@ -40,6 +42,7 @@ const code = doc => `${doc}
   function ensurePsMatrix(){ return Promise.resolve(); } function ppStyleFor(){ return null; } function psArchFor(){ return null; }
   function styleMeetRowsFor(){ return []; } function openPlayerProfileFromMatch(){} function aGoTab(){}
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
+  const H2HCore = (function(){ const window = {}; ${H2H_CORE_SRC}; return window.H2HCore; })();
   ${PS_TOUR_META_SRC}
   ${HELPERS.map(slice).join('\n')}
   ${sliceBlock()}

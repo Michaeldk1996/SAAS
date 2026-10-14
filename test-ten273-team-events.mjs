@@ -55,18 +55,15 @@ test('fetchH2H: a Hopman Cup meeting from get_H2H or from the fixtures top-up ne
   } finally { globalThis.fetch = saved; }
 });
 
-test('dashboard career-history join: a shared Hopman Cup eventKey is not a meeting; a Laver Cup one is', () => {
-  const grab = (name) => {
-    const i = html.indexOf(`function ${name}(`);
-    assert.ok(i >= 0, `${name} not found in the dashboard`);
-    let depth = 0, j = html.indexOf('{', i);
-    for (; j < html.length; j++) { if (html[j] === '{') depth++; else if (html[j] === '}' && --depth === 0) break; }
-    return html.slice(i, j + 1);
-  };
-  const consts = html.split('\n').filter((l) => /^const (FH_H2H_LEVELS|FH_H2H_NOT_ATP_RECORD) =/.test(l)).join('\n');
-  const run = new Function('fhMeetingList', 'eventKeyOfMatch', `${consts}\n${grab('fhLevelOf')}\n${grab('fhAllMeetingRows')}\nreturn fhAllMeetingRows;`)(() => [], () => '999');
+// TEN-437: every H2H surface's meetings are H2HCore.joinMeetings (h2h-core.js) — run here on rows from both shards.
+const H2HCore = require('./h2h-core.js');
+test('the ONE H2H join (h2h-core.js): a shared Hopman Cup eventKey is not a meeting; a Laver Cup one is', () => {
   const row = (ek, t, won) => ({ eventKey: ek, date: '2025-01-03', won, tournament: t, level: 'atp' });
-  const m = { _fhCh: [[row(31, 'ATP Hopman Cup', true), row(32, 'ATP Laver Cup', true)], [row(31, 'ATP Hopman Cup', false), row(32, 'ATP Laver Cup', false)]] };
-  const out = run(m);
+  const out = H2HCore.joinMeetings({ full: 'A. One', short: 'A. One' }, { full: 'B. Two', short: 'B. Two' },
+    [row(31, 'ATP Hopman Cup', true), row(32, 'ATP Laver Cup', true)], [row(31, 'ATP Hopman Cup', false), row(32, 'ATP Laver Cup', false)], {}, []);
   assert.deepEqual(out.map((x) => x.eventKey), [32]);
+});
+test('h2h-core.js excludes the same events as the pipeline list (one list, three readers)', () => {
+  assert.equal(H2HCore.H2H_NOT_COUNTED.source, P.H2H_NOT_ATP_RECORD.source);
+  assert.equal(H2HCore.H2H_NOT_COUNTED.flags, P.H2H_NOT_ATP_RECORD.flags);
 });

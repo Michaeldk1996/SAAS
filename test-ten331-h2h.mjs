@@ -18,6 +18,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN331_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
 globalThis.MarketEdgeCore = createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
+// TEN-437: every H2H surface builds its meetings through h2h-core.js (window.H2HCore in the page).
+globalThis.H2HCore = createRequire(import.meta.url)(join(HERE, 'h2h-core.js'));
 function slice(name) {
   const start = html.indexOf(`function ${name}(`);
   assert.ok(start > 0, `${name} not found`);
@@ -49,7 +51,8 @@ const S = new Function(`
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
-// Fixture: J. Sinner v C. Alcaraz. meet(date, won, sets, extra) → one api-tennis H2H row + p1's form row (the set scores).
+// Fixture: J. Sinner v C. Alcaraz. meet(date, won, sets, extra) → one meeting in BOTH players' career-history rows (TEN-437:
+// the tab's meetings are H2HCore.joinMeetings over the two shards; m.h2h is not read) + p1's form row.
 let EK = 7000;
 function fixture(specs, extra) {
   const list = [], form = [];
@@ -65,7 +68,10 @@ function fixture(specs, extra) {
   }
   return Object.assign({ id: 'fx-h2h-' + String.fromCharCode(97 + (EK % 26)), p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-01',
     h2h: { matches: list }, p1RecentFormMatches: form, p2RecentFormMatches: [], _fhH2hData: true,
-    _fhCh: [[{ date: '2019-01-01', level: 'atp' }], [{ date: '2019-01-01', level: 'atp' }]], _fhCloses: [null, null] }, extra || {});
+    _fhCh: [form.map(x => Object.assign({}, x, { level: 'atp' })).concat([{ date: '2019-01-01', level: 'atp' }]),
+      form.map(x => Object.assign({}, x, { level: 'atp', opponent: 'J. Sinner', opponentKey: '1', won: !x.won,
+        result: String(x.result).replace(/^(\d+) - (\d+)$/, '$2 - $1'), sets: x.sets.map(t => ({ p: t.o, o: t.p, pTb: t.oTb, oTb: t.pTb })) }))
+        .concat([{ date: '2019-01-01', level: 'atp' }])], _fhCloses: [null, null] }, extra || {});
 }
 const W2 = [[6, 3], [6, 4]], L2 = [[3, 6], [4, 6]];
 const d = i => '2024-0' + (1 + (i % 9)) + '-1' + (i % 9);   // distinct dates
@@ -232,7 +238,8 @@ test('Q4: no meeting reads "have no meeting on record" with the searched scope �
   const h = build(fixture([]));
   const t = text(h);
   assert.ok(t.includes('No previous meetings on record J. Sinner and C. Alcaraz have no meeting on record.'), t.slice(0, 200));
-  assert.match(t, /have no meeting on record\. Closest guide: [^]*ATP since 2019/, 'the line names what was searched');
+  // TEN-437: the same words as the Head to Head page — both histories, from the earliest ATP row either holds
+  assert.match(t, /have no meeting on record\. Closest guide: [^]*Searched both players(?:'|&#39;|&#x27;) match histories since 2019\./, 'the line names what was searched');
   assert.ok(!/have not played/.test(t));
 });
 

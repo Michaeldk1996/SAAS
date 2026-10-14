@@ -21,6 +21,8 @@ const require = createRequire(import.meta.url);
 const html = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 // TEN-327: the sheet's Serve / Return ratings come from the shared helper the page loads by <script src>.
 const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
+// TEN-437: every H2H surface builds its meetings through h2h-core.js (window.H2HCore), loaded the same way.
+const H2H_CORE_SRC = readFileSync(join(HERE, 'h2h-core.js'), 'utf8');
 
 function slice(name) {
   const start = html.indexOf(`function ${name}(`);
@@ -63,20 +65,21 @@ function sandbox() {
     function openPlayerProfileFromMatch(){}
     function aGoTab(){}
     const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
+    const H2HCore = (function(){ const window = {}; ${H2H_CORE_SRC}; return window.H2HCore; })();
     ${PS_TOUR_META_SRC[0]}
     ${HELPERS.map(slice).join('\n')}
     ${sliceBlock()}
     function buildFormSection(m){ return fhBuildForm(m); }
     function buildH2HSection(m){ return fhBuildH2H(m); }
-    return { fhCloseFor, fhFinishRow, fhRowFromForm, fhBestOf, fhMeetingList, fhMeetings, fhScoreLines,
+    return { fhCloseFor, fhFinishRow, fhRowFromForm, fhBestOf, fhH2hMeetingRows, fhMeetings, fhScoreLines,
       fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowData, maMatchRowsHtml, fhH2hRowData, fhH2hSetScores, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
-      fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
-      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloText, fhPriceRangeSource, fhRecLevelMix,
+      fhSrcTitle, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
+      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloText, fhPriceRangeSource,
       fhStatBarWidth, fhSheetModel, fhSheetStatsHtml, fhSheetRowHtml, fhRateCell, fhSheetTabs, fhSheetSeg, fhSheetInlineStats,
       FH_BAR_FLOOR, FH_RATING_SCALE, FH_BAR_CAP,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
-        FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
+        FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF }, H2HCore };
   `)();
 }
 // TEN-330 (DoD item 8): a Form row is the shared helper's row, fed by fhFormRowData.
@@ -93,7 +96,7 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
   // (d) TEN-376 foundation Q2.4: surfaces are neutral everywhere — every surface reads --text-soft (was the 12a --court-grass).
   assert.deepEqual(S.consts.FH_SURF, { Hard: 'var(--text-soft)', Clay: 'var(--text-soft)', Grass: 'var(--text-soft)' });
   assert.equal(S.consts.FH_H2H_RET_COUNTS, true);         // (e)
-  assert.deepEqual(S.consts.FH_H2H_LEVELS, ['ATP', 'CH', 'ITF']);  // §3b: every level, one constant
+  assert.deepEqual(S.H2HCore.H2H_LEVELS, ['atp']);  // TEN-437: ATP's record — tour level only, one constant (h2h-core.js)
 });
 
 // ── data check 4 (TEN-380 Q5, founder 2026-10-03): no Elo in any match row; the reason text for the tooltip ──
@@ -186,10 +189,11 @@ test('qualifying rounds print as Q, never as the feed\'s "Final"', () => {
 });
 
 // ── H2H: the fixture itself is not a previous meeting ──
-test('fhMeetingList drops the fixture\'s own eventKey (control: other meetings stay)', () => {
-  const m = { id: 'past-777', h2h: { matches: [{ eventKey: 777, date: '2026-09-22' }, { eventKey: 12, date: '2024-01-01' }] } };
-  assert.deepEqual(S.fhMeetingList(m).map(x => x.eventKey), [12]);
-  assert.equal(S.fhMeetingList({ id: 'upcoming-5', h2h: m.h2h }).length, 2);
+test('the fixture\'s own eventKey is never a previous meeting (control: other meetings stay)', () => {
+  const r = (ek, date, won) => ({ eventKey: ek, date, won, level: 'atp', tournament: 'X', opponent: 'C. D' });
+  const ch = [[r(777, '2026-09-22', true), r(12, '2024-01-01', true)], [{ eventKey: 777, date: '2026-09-22', won: false }, { eventKey: 12, date: '2024-01-01', won: false }]];
+  assert.deepEqual(S.fhH2hMeetingRows({ id: 'past-777', p1: 'A. B', p2: 'C. D', p1Key: 1, p2Key: 2, _fhCh: ch }).map(x => x.eventKey), [12]);
+  assert.equal(S.fhH2hMeetingRows({ id: 'upcoming-5', p1: 'A. B', p2: 'C. D', p1Key: 1, p2Key: 2, _fhCh: ch }).length, 2);
 });
 
 // ── hot lines: Bo5 and RET not eligible for games/set lines; min 3 eligible ──
@@ -298,12 +302,12 @@ test('H2H states: loading skeleton until the histories land; none → "on record
   const e = S.fhBuildH2H({ id: 'upcoming-4', p1: 'A. B', p2: 'C. D', p1Key: 1, p2Key: 2, surface: 'hard', h2h: null, _styleMeetLoaded: true,
     _fhH2hData: true, _fhCh: ch, _fhCloses: [null, null], p1RecentFormMatches: [], p2RecentFormMatches: [] });
   assert.ok(e.includes('No previous meetings on record'));
-  assert.ok(e.includes('Searched: ATP since 2021, Challenger and ITF since 2018, in both players'), 'scope note: the later of the two players\' first year, per level group');
+  assert.ok(/Searched both players(&#39;|') match histories since 2019\./.test(e), 'scope note (TEN-437, the H2H page\'s words): the earliest ATP row either history holds');
   assert.ok(!e.includes('Price range'), 'sections below the empty state must be hidden');
-  assert.equal(S.fhH2hScopeNote({ p1: 'A. B', p2: 'C. D', _fhCh: [ch[0], null] }), 'Match history unavailable for C. D: only ATP meetings were searched.');
+  assert.equal(S.fhH2hScopeNote({ p1: 'A. B', p2: 'C. D', _fhCh: [ch[0], null] }), 'Searched both players\' match histories since 2019. No match history on file for C. D: meetings are read from the other player\'s history alone.');
 });
 
-// ── §3b H2H at every level: api-tennis (ATP) ∪ career-history eventKey intersection ──
+// ── TEN-437: the meetings are H2HCore.joinMeetings over both career histories — ATP's record population ──
 function allLevels0() {
   const mm = { eventKey: 10, date: '2025-06-01', p1Won: true, result: '2 - 0', surface: 'clay', tournament: 'ATP Lyon', round: 'ATP Lyon - Final', qualifying: false };
   return { id: 'upcoming-99', p1: 'J. Faria', p2: 'T. Atmane', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-09-23',
@@ -312,35 +316,38 @@ function allLevels0() {
       { eventKey: 10, date: '2025-06-01', level: 'atp', tournament: 'Lyon', round: 'Final', won: true, result: '2 - 0', surface: 'clay' },
       { eventKey: 20, date: '2026-03-09', level: 'chitf', tournament: 'Cap Cana', round: 'Qualifying', won: false, result: '1 - 2', surface: 'hard' },
       { eventKey: 30, date: '2022-07-14', level: 'chitf', tournament: 'M25 Idanha-a-Nova', round: '1/8-finals', won: false, result: '1 - 2', surface: 'hard' },
-      { eventKey: 40, date: '2023-01-01', level: 'chitf', tournament: 'Elsewhere', round: 'Final', won: true, result: '2 - 0', surface: 'hard' },
+      { eventKey: 40, date: '2023-01-01', level: 'atp', tournament: 'Elsewhere', round: 'Final', won: true, result: '2 - 0', surface: 'hard' },
       { eventKey: 99, date: '2026-09-23', level: 'atp', tournament: 'Hangzhou', round: '1/16-finals', won: true, result: '2 - 0', surface: 'hard' },
+      { eventKey: 50, date: '2024-06-24', level: 'atp', tournament: 'Wimbledon', round: 'Qualifying', won: true, result: '2 - 1', surface: 'grass' },
     ], []] };
 }
 // p2's own rows of the same matches: same day, opposite result.
 const mirror = (rows, eks) => rows.filter(x => eks.includes(x.eventKey)).map(x => ({ eventKey: x.eventKey, date: x.date, won: !x.won }));
-function allLevels() { const m = allLevels0(); m._fhCh[1] = mirror(m._fhCh[0], [10, 20, 30, 99]); return m; }
-test('H2H meetings: every level, de-duplicated by eventKey, never the fixture, each tagged', () => {
+function allLevels() { const m = allLevels0(); m._fhCh[1] = mirror(m._fhCh[0], [10, 20, 30, 99, 50]); return m; }
+// Mutations: Challenger / ITF back in (H2H_LEVELS), qualifying back in, the fixture counted, a one-sided row with no name
+// counted, m.h2h read again.
+test('H2H meetings (TEN-437): ATP\'s record only — Challenger, ITF and qualifying out, never the fixture, never m.h2h', () => {
   const m = allLevels();
-  const rows = S.fhAllMeetingRows(m);
-  assert.deepEqual(rows.map(x => [String(x.eventKey), x._level]), [['10', 'ATP'], ['20', 'CH'], ['30', 'ITF']],
-    'ek 40 is only in p1\'s history (not a meeting); ek 99 is the fixture itself');
-  assert.equal(m._fhMeetDupes, 1, 'the ATP meeting in both sources counts once');
+  const rows = S.fhH2hMeetingRows(m);
+  assert.deepEqual(rows.map(x => String(x.eventKey)), ['10'],
+    'ek 20 / 30 Challenger-ITF and ek 50 Wimbledon qualifying are listed by ATP and never counted; ek 40 is only in p1\'s history and names no one; ek 99 is the fixture');
   const ms = S.fhMeetings(m);
-  assert.deepEqual(ms.map(r => [String(r.ek), r.level, r.round]), [['30', 'ITF', 'R16'], ['10', 'ATP', 'F'], ['20', 'CH', 'Q']]);
+  assert.deepEqual(ms.map(r => [String(r.ek), r.level, r.round]), [['10', 'ATP', 'F']]);
   const h = S.fhBuildH2H(m);
-  // TEN-380 (meetings grouped by year, an Event column): the level sits in every row's event tag, after the surface
-  // (ruling 2026-09-24: a record built on lower levels never reads as a tour record), never a badge glued to the name.
-  assert.ok(/<span class="ma-row-tag" style="[^"]*">Hard · CH<\/span>/.test(h) && /<span class="ma-row-tag" style="[^"]*">Hard · ITF<\/span>/.test(h) && /<span class="ma-row-tag" style="[^"]*">Clay · ATP<\/span>/.test(h), 'level in every row\'s event tag, after the surface');
-  assert.ok(!/class="fh-opp"[^>]*>[^<]*<\/span><span[^>]*>(CH|ITF|ATP)</.test(h), 'no level badge glued to the name');
-  assert.ok(h.includes('0 of 3 meetings priced'));
+  assert.ok(/<span class="ma-row-tag" style="[^"]*">Clay · ATP<\/span>/.test(h), 'the level sits in the row\'s event tag');
+  assert.ok(h.includes('0 of 1 meetings priced'));
+  const noApi = allLevels(); noApi.h2h = { matches: [] };
+  assert.deepEqual(S.fhH2hMeetingRows(noApi).map(x => String(x.eventKey)), ['10'], 'the api-tennis list is not read');
 });
 test('a shared eventKey counts only when both rows are one match: same day, opposite results', () => {
   const m = allLevels();
-  m._fhCh[1] = m._fhCh[1].map(y => y.eventKey === 20 ? { ...y, won: false } : y.eventKey === 30 ? { ...y, date: '2022-07-15' } : y);
-  assert.deepEqual(S.fhAllMeetingRows(m).map(x => String(x.eventKey)), ['10'], 'same result on both sides, or a different day → not a meeting');
-  assert.equal(m._fhMeetRejected, 2);
-  const ok = allLevels(); S.fhAllMeetingRows(ok);
-  assert.equal(ok._fhMeetRejected, 0, 'control: mirrored rows are not rejected');
+  m._fhCh[0].push({ eventKey: 60, date: '2021-05-01', level: 'atp', tournament: 'A', round: 'F', won: true, result: '2 - 0' },
+                  { eventKey: 70, date: '2021-06-01', level: 'atp', tournament: 'B', round: 'F', won: true, result: '2 - 0' });
+  m._fhCh[1].push({ eventKey: 60, date: '2021-05-01', won: true }, { eventKey: 70, date: '2021-06-02', won: false });
+  assert.deepEqual(S.fhH2hMeetingRows(m).map(x => String(x.eventKey)), ['10'], 'same result on both sides, or a different day → not a meeting');
+  const ok = allLevels(); ok._fhCh[0].push({ eventKey: 60, date: '2021-05-01', level: 'atp', tournament: 'A', round: 'F', won: true, result: '2 - 0' });
+  ok._fhCh[1].push({ eventKey: 60, date: '2021-05-01', won: false });
+  assert.deepEqual(S.fhH2hMeetingRows(ok).map(x => String(x.eventKey)), ['60', '10'], 'control: mirrored rows are one meeting');
 });
 test('level of a meeting: form tier first; else ATP by level, ITF by name, juniors/Slam-below-tour unclassified, else CH', () => {
   assert.equal(S.fhLevelOf('atp', 'Lyon'), 'ATP');
@@ -358,23 +365,11 @@ test('level of a meeting: form tier first; else ATP by level, ITF by name, junio
   assert.equal(S.fhLevelOf('chitf', 'Bordeaux', 'challenger'), 'CH');
   assert.equal(S.fhLevelOf('chitf', 'US Open', 'challenger'), null, 'a bare Slam name below tour level is never CH');
 });
-test('unclassified meetings are left out and said so; a missing history is said under a non-empty list', () => {
-  const m = allLevels();
-  m._fhCh[0].push({ eventKey: 50, date: '2019-09-06', level: 'chitf', tournament: 'Boys US Open', round: '1/8-finals', won: true, result: '2 - 0', surface: 'hard' });
-  m._fhCh[1].push({ eventKey: 50, date: '2019-09-06', won: false });
-  m._fhCh[0].push({ eventKey: 60, date: '2024-06-24', level: 'chitf', tournament: 'Wimbledon', round: 'Qualifying', won: true, result: '2 - 1', surface: 'grass' });
-  m._fhCh[1].push({ eventKey: 60, date: '2024-06-24', won: false });
-  m.p2RecentFormMatches = [{ eventKey: 60, tier: 'atp', qualifying: true, date: '2024-06-24' }];
-  const rows = S.fhAllMeetingRows(m);
-  assert.deepEqual(rows.map(x => [String(x.eventKey), x._level]), [['10', 'ATP'], ['20', 'CH'], ['30', 'ITF'], ['60', 'ATP']],
-    'the Slam qualifying meeting is kept because a form shard types it; the junior one is not');
-  assert.equal(m._fhMeetUnclassified, 1);
-  assert.ok(S.fhH2hScopeNote(m).endsWith(' 1 meeting at junior or unclassified events not counted.'));
-  assert.ok(S.fhBuildH2H(m).includes('1 meeting at junior or unclassified events not counted.'));
-  const lone = Object.assign(allLevels(), { _fhCh: [allLevels()._fhCh[0], []] });
-  S.fhAllMeetingRows(lone);
-  assert.equal(S.fhH2hGapNote(lone), ' Match history unavailable for T. Atmane: Challenger and ITF meetings may be missing.');
-  assert.ok(S.fhBuildH2H(lone).includes('Challenger and ITF meetings may be missing'), 'the api-tennis meeting still shows, with the gap named');
+test('a missing history is said under a non-empty list (the meetings are read from the other side alone)', () => {
+  const lone = allLevels(); lone._fhCh[0] = lone._fhCh[0].map(x => Object.assign({ opponent: 'T. Atmane' }, x)); lone._fhCh[1] = [];
+  assert.deepEqual(S.fhH2hMeetingRows(lone).map(x => String(x.eventKey)), ['40', '10'], 'one-sided rows naming a unique opponent count');
+  assert.equal(S.fhH2hGapNote(lone), ' No match history on file for T. Atmane: meetings are read from the other player\'s history alone.');
+  assert.ok(/No match history on file for T\. Atmane/.test(S.fhBuildH2H(lone)));
   assert.equal(S.fhH2hGapNote(allLevels()), '', 'control: nothing to say when both histories loaded');
 });
 
@@ -627,11 +622,9 @@ test('H2H pixel pass: header counts today\'s book, lead line carries the level m
   assert.equal(S.fhPriceRangeSource([{ book: 'P' }], { book: 'B' }), 'Pinnacle, Bet365 where missing (today)');
   assert.equal(S.fhPriceRangeSource([{ book: 'P' }, { book: 'B' }], { book: 'B' }), 'Pinnacle, Bet365 where missing (1 meeting + today)');
   assert.equal(S.fhPriceRangeSource([{ book: 'P' }], { book: 'P' }), 'Pinnacle', 'control: all Pinnacle');
-  // Lead line: one line, the level mix appended when present.
-  const lvl = S.fhRecLevelMix([{ level: 'ATP' }, { level: 'CH' }]);
-  assert.equal(lvl, ' · incl. 1 CH'); assert.equal(S.fhRecLevelMix([{ level: 'ATP' }]), '', 'control: ATP-only adds nothing');
-  const card = S.fhH2hRecCard('Overall', [{ won: false, level: 'CH' }, { won: false, level: 'ATP' }], null, 'A. One', 'B. Two', 'One', 'Two');
-  assert.match(card, /Two leads<\/span><span[^>]*>·<\/span><span[^>]*>2 meetings · incl\. 1 CH<\/span>/);
+  // Lead line: one line — "X leads · n meetings". TEN-437: the record is ATP's population, so no level mix exists to append.
+  const card = S.fhH2hRecCard('Overall', [{ won: false, level: 'ATP' }, { won: false, level: 'ATP' }], null, 'A. One', 'B. Two', 'One', 'Two');
+  assert.match(card, /Two leads<\/span><span[^>]*>·<\/span><span[^>]*>2 meetings<\/span>/);
   // TEN-380 Q5 (founder 2026-10-03): no Elo in an H2H meeting row (README §5 grid).
   const er = { opp: 'C. Alcaraz', oppKey: null, date: '2025-11-16', round: 'F', won: true, pS: 2, oS: 0, sets: [[7, 6, 4], [6, 4, null]], mid: 'x' };
   assert.ok(!/ma-row-elo|data-elo|2205/.test(h2hRowHtml(S, Object.assign({}, er, { oppElo: { v: 2205, asOf: '2025-11-10' } }))), 'no Elo in the row');
@@ -646,7 +639,10 @@ test('H2H price header names the Bet365 fallback count; 0 priced reads the empty
   const mm = (date, p1Won, ek) => ({ date, tournament: 'Umag', round: 'ATP Umag - Final', surface: 'clay', p1Won, result: p1Won ? '2 - 0' : '0 - 2', qualifying: false, eventKey: ek });
   const base = { id: 'upcoming-9', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 1, p2Key: 2, surface: 'clay', date: '2026-09-01',
     h2h: { matches: [mm('2026-07-26', true, 10), mm('2024-07-28', true, 11), mm('2023-07-30', false, 12), mm('2022-07-31', false, 13)] },
-    p1RecentFormMatches: [], p2RecentFormMatches: [], _fhH2hData: true, _fhCh: [[], []] };
+    p1RecentFormMatches: [], p2RecentFormMatches: [], _fhH2hData: true };
+  // TEN-437: the meetings are the two career histories (H2HCore.joinMeetings); the list above is p1's side of them.
+  base._fhCh = [base.h2h.matches.map(x => ({ eventKey: x.eventKey, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface, level: 'atp',
+    opponent: 'C. Alcaraz', won: x.p1Won, result: x.result })), base.h2h.matches.map(x => ({ eventKey: x.eventKey, date: x.date, won: !x.p1Won }))];
   const rows = [{ date: '2026-07-26', opp: 'Alcaraz C.', won: true, P: null, B: [1.8, 2.0], oppKey: '2' },
     { date: '2024-07-28', opp: 'Alcaraz C.', won: true, P: [1.9, 1.95], B: [1.85, 1.95], oppKey: '2' },
     { date: '2023-07-30', opp: 'Alcaraz C.', won: false, P: [2.3, 1.62], B: null, oppKey: '2' }];
@@ -784,14 +780,12 @@ test('pipeline H2H: a finished board match never appears in its own H2H record',
   assert.ok(PIPE.indexOf('buildModelOutput(matches)') > pass, 'and before the model');
 });
 test('H2H page: meetings are keyed and won by player key, never short name (ruling 2026-09-24)', () => {
-  assert.match(html, /H2H2\[ka \+ '\|' \+ kb\] = \{/, 'today\'s meetings keyed by the two player keys');
-  assert.match(html, /mt\.p1Won \? ka : kb,/, 'fixture meeting winner stored as a key');
-  // TEN-402: the page's record reads both players' career-history files (one per PLAYER KEY), joined in h2hJoinMeetings;
+  // TEN-402: the page's record reads both players' career-history files (one per PLAYER KEY), joined in H2HCore.joinMeetings (h2h-core.js, TEN-437);
   // each row is oriented to player A by key and the record counts the rows A won (executed in test-ten402-b.mjs).
   assert.match(html, /const k = a\.key \+ '\|' \+ b\.key;/, 'the pair is held by key');
   assert.match(html, /Promise\.all\(\[ch\(a\.key\), ch\(b\.key\)\]\)/, 'each side read from its own key file');
   assert.match(html, /const F = h\.F, n = F\.length, aw = F\.filter\(r => r\.won\)\.length, bw = n - aw;/, 'record counted on the A-oriented rows');
-  assert.doesNotMatch(html, /r\[5\] === a\.short|m\[5\] === a\.short|H2H2\[sa \+/, 'control: no short-name winner or key remains');
+  assert.doesNotMatch(html, /r\[5\] === a\.short|m\[5\] === a\.short|H2H2\[/, 'control: no short-name winner or key remains, and no m.h2h meeting map (TEN-437)');
 });
 // Fix 1 (TEN-263 follow-up): the H2H page roster is keyed by PLAYER KEY. Two profiles
 // sharing a short name ("Z. Zhang" = Zhizhen 590 and Ze Zhang) are both listed, both
@@ -809,7 +803,8 @@ function h2hPageModule(profiles, board) {
     let P = {}, ROSTER = [], NK_COUNT = {};
     const DV = n => n === 'playerProfiles' ? profiles : n === 'matches' ? board : null;
     const fn = () => null; const H2H_ROUND = {};
-    ${['shortOf', 'monoOf', 'h2hIoc', 'h2hNameKey', 'buildH2HData', 'results', 'pickerTag'].map(slice).join('\n')}
+    const H2HCore = (function(){ const window = {}; ${H2H_CORE_SRC}; return window.H2HCore; })();
+    ${['shortOf', 'monoOf', 'h2hIoc', 'buildH2HData', 'results', 'pickerTag'].map(slice).join('\n')}
     const d = buildH2HData(); P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {};
     return { P, ROSTER, H2H: d.H2H, NK: NK_COUNT, results, pickerTag };
   `)(profiles, board, { SfCountryIoc: SF_COUNTRY_IOC });
@@ -834,14 +829,11 @@ test('H2H page: two players with the same short name are both on the roster, sel
   const tags = hits.map(M.pickerTag);
   assert.notEqual(tags[0], tags[1], 'the two list rows are told apart');
   assert.match(M.pickerTag('590'), /age 29/); assert.equal(M.pickerTag('7'), 'ESP · #2', 'control: a unique name adds nothing (country as its IOC code, TEN-402 r1)');
-  // each Zhang's own meetings with Alcaraz, by key pair (renderVals looks up key|key both ways)
-  const own = (a, b) => (M.H2H[a + '|' + b] || M.H2H[b + '|' + a] || { meetings: [] }).meetings.flatMap(y => y[1]).map(r => r[6]).sort();
-  assert.deepEqual(own('590', '7'), [111]);
-  assert.deepEqual(own('36963', '7'), [222, 333]);
-  // winners stored as keys
-  assert.deepEqual(M.H2H['36963|7'].meetings.flatMap(y => y[1]).map(r => r[5]), ['36963', '7']);
+  // TEN-437: the roster builds no meeting map any more (it read m.h2h and nothing used it); each Zhang's meetings come from
+  // his own key's career-history file through H2HCore.joinMeetings — executed in test-ten437-h2h.mjs "namesakes".
+  assert.equal(M.H2H, undefined, 'no m.h2h meeting map');
 });
-// TEN-402: the page's meetings come from both players' career-history files (h2hJoinMeetings), not tournamentHistory.
+// TEN-402: the page's meetings come from both players' career-history files (H2HCore.joinMeetings), not tournamentHistory.
 // The two rulings these tests carried — a namesake is never credited from one side, and a finished board match between
 // the pair never counts — are executed on the new join in test-ten402-b.mjs ("a namesake is never credited", "own board
 // match out"). The roster still counts namesakes for it:
@@ -850,17 +842,10 @@ test('H2H page: the roster counts each surname + initial, so the join can refuse
   assert.equal(two.NK['zhang|z'], 2);
   assert.equal(h2hPageModule({ 590: { name: 'Z. Zhang' }, 7: { name: 'C. Alcaraz' } }, []).NK['zhang|z'], 1, 'control: a unique name');
 });
-test('card / Key factors: a record with Challenger or ITF meetings says so; an all-ATP record says nothing', () => {
-  const H = new Function(`${slice('h2hLevelMix')}\nreturn h2hLevelMix;`)();
-  assert.equal(H({ matches: [{ level: 'ATP' }, { level: 'CH' }, { level: 'ITF' }, { level: 'ITF' }] }), ' · incl. 1 CH, 2 ITF');
-  assert.equal(H({ matches: [{ level: 'ATP' }, {}] }), '', 'control: ATP-only (and pre-ruling rows) add nothing');
-  assert.equal(H(null), '');
-  assert.match(html, /· H2H \$\{m\.h2h\.record\}\$\{h2hLevelMix\(m\.h2h\)\}/, 'the match card shows the mix');
-});
-// The Key factors H2H card's level mix is checked in test-ten341-key-factors.mjs (TEN-341: the H2H tab's meetings).
-test('H2H page: the record counts ATP main-draw meetings only (TEN-402 Data 1), so it carries no level mix; fixture rows keep their level', () => {
-  assert.match(html, /const H2H_PAGE_LEVELS = \['atp'\];/);
-  assert.match(html, /mt\.level \|\| 'ATP',\n\s*\]\);/);
+// TEN-437: the board card's "· H2H x-y" line was built and never placed in the card (dead since the TEN-377 card); it is
+// deleted with its level-mix helper. No surface prints a level mix: every record is ATP's population.
+test('board card: no H2H line is built from m.h2h (TEN-437 single source)', () => {
+  assert.doesNotMatch(html, /h2hInlineHtml|function h2hLevelMix|m\.h2h\.record/);
 });
 test('model H2H layer: the detail text names the level mix; the math is unchanged', () => {
   const { h2h } = require('./h2h-model/adjustments.js');
@@ -871,13 +856,6 @@ test('model H2H layer: the detail text names the level mix; the math is unchange
   assert.match(withLv.detail, /H2H 2-0 \(2 meetings, incl\. 1 CH;/);
   assert.equal(withLv.deltaP1, noLv.deltaP1, 'the level changes the text, never the number');
   assert.doesNotMatch(noLv.detail, /incl\./);
-});
-test('the Form/H2H tab takes each api-tennis meeting\'s own level (pre-ruling rows stay ATP)', () => {
-  const m = allLevels();
-  m.h2h.matches = m.h2h.matches.concat([{ eventKey: 20, date: '2026-03-09', p1Won: false, result: '1 - 2', surface: 'hard', tournament: 'Cap Cana', round: 'Qualifying', level: 'CH' }]);
-  const rows = S.fhAllMeetingRows(m);
-  assert.deepEqual(rows.map(x => [String(x.eventKey), x._level]), [['10', 'ATP'], ['20', 'CH'], ['30', 'ITF']]);
-  assert.equal(m._fhMeetDupes, 2, 'the CH meeting in both sources counts once');
 });
 // c · the set-1 mirror pair never counts one meeting twice.
 test('set-1 mirror pair: the two lines are complements over the same meetings', () => {

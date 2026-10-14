@@ -20,9 +20,10 @@
 //      class before — a new file 404ing live while every test passed.)
 //   4. The H2H page can SEE the shard cache. _tourHistShards is a main-script
 //      `const`, so it is not on window; the H2H IIFE reads it through the
-//      __h2hEnv getter bridge. Without the bridge entry the lookup throws /
-//      returns undefined and h2hFromHist — the only source of pre-2021 meetings
-//      — renders "never met" for pairs that have met.
+//      __h2hEnv getter bridge for its tournament selector. (TEN-437: this check
+//      used to guard h2hFromHist, deleted in TEN-402; the page's pre-2021
+//      meetings now come from H2HCore.joinMeetings over career-history — check 7
+//      EXECUTES that join on keyless archive rows instead of trusting a comment.)
 //
 // Run: node tools/test-tournament-history-shards.js   (wired into `npm test`)
 const assert = require('assert');
@@ -137,15 +138,26 @@ assert.ok(/const loadHeavyDatasets = \(\) => \{[^}]*loadTourHistIndex\(\)/.test(
   'loadTourHistIndex() must be called from loadHeavyDatasets()');
 ok('index is loaded on startup with the other heavy datasets');
 
-// ── 7 · the __h2hEnv bridge exposes the shard cache to the H2H IIFE ──────────
+// ── 7 · the H2H page's tournament selector sees the shard cache; its MEETINGS ─
+//        (pre-2021 included) come from the live H2HCore.joinMeetings, executed ──
 const envLine = (html.match(/window\.__h2hEnv = \{[^\n]*\};/) || [''])[0];
 assert.ok(/tourHistShards:\s*\(\)\s*=>\s*_tourHistShards/.test(envLine),
   '__h2hEnv must expose tourHistShards — _tourHistShards is a main-script const, '
-  + 'invisible to the H2H IIFE without the bridge, and h2hFromHist() is the only '
-  + 'source of pre-2021 meetings');
+  + 'invisible to the H2H IIFE (its tournament selector) without the bridge');
 assert.ok(/DV\('tourHistShards'\)/.test(html),
   'the H2H adapter must read the cache through DV(), not by touching the const directly');
-ok('H2H reads the shard cache through the __h2hEnv bridge');
+assert.ok(/const joined = H2HCore\.joinMeetings\(a, b, S\.chA, S\.chB, /.test(html),
+  'the H2H page builds its meetings with H2HCore.joinMeetings (TEN-437)');
+{
+  const H2HCore = require(path.join(ROOT, 'h2h-core.js'));
+  // Medvedev v Tsitsipas, Shanghai 2019 SF and AO 2021 SF: TML archive rows — no eventKey, dated at the event start.
+  const arc = (date, t, rd, won, opp) => ({ date, tournament: t, round: rd, won, opponent: opp, level: 'atp', src: 'archive', result: won ? '2 - 0' : '0 - 2' });
+  const out = H2HCore.joinMeetings({ full: 'Daniil Medvedev', short: 'D. Medvedev' }, { full: 'Stefanos Tsitsipas', short: 'S. Tsitsipas' },
+    [arc('2019-10-07', 'Shanghai Masters', 'SF', true, 'S. Tsitsipas'), arc('2021-02-08', 'Australian Open', 'SF', true, 'S. Tsitsipas')],
+    [arc('2019-10-07', 'Shanghai Masters', 'SF', false, 'D. Medvedev'), arc('2021-02-08', 'Australian Open', 'SF', false, 'D. Medvedev')], {}, []);
+  assert.deepEqual(out.map(x => x.date), ['2019-10-07', '2021-02-08'], 'keyless pre-2021 archive meetings must count (TEN-437 root cause)');
+}
+ok('H2H page: tournament selector reads the shard cache; pre-2021 meetings come from the live H2HCore.joinMeetings');
 
 // ── 8 · pending is distinguishable from empty (no false "no record" copy) ────
 // EXECUTE the two predicates rather than grepping for them. A source-text check

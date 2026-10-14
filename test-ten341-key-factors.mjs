@@ -20,6 +20,8 @@ import { slice as sliceFrom, constSrc, FNS as ODDS_FNS } from './tools/ten303-od
 const HERE = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const CORE = require('./market-edge-core.js');
+// TEN-437: the H2H box's meetings are H2HCore.joinMeetings (h2h-core.js; window.H2HCore in the page).
+globalThis.H2HCore = require('./h2h-core.js');
 const html = readFileSync(process.env.TEN341_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const slice = n => sliceFrom(n, html);
 function between(a, b) { const i = html.indexOf(a), j = html.indexOf(b, i); assert.ok(i > 0 && j > i, 'block not found: ' + a.slice(0, 40)); return html.slice(i, j); }
@@ -327,14 +329,24 @@ test('DNA: below the 10-match floor an axis is a dash, never a 0; only Surface E
 });
 
 // ---------- Head to head ----------
-function h2hMatch(rows, over){ return match(Object.assign({ _fhH2hData: true, _fhCh: [[], []], _fhCloses: [null, null], _fhElo: null, h2h: { matches: rows } }, over || {})); }
+// TEN-437: a meeting is a row in p1's career history naming C. Alcaraz (the box reads H2HCore.joinMeetings over the two
+// shards, never m.h2h). `over._fhCh[0]` rows carry extra fields (set scores, flags) onto the meeting with their eventKey.
+function h2hMatch(rows, over){
+  const extra = new Map(((over && over._fhCh && over._fhCh[0]) || []).filter(x => x.eventKey != null).map(x => [x.eventKey, x]));
+  const ch = rows.map(r => Object.assign({ date: r.date, tournament: r.tournament, round: r.round, surface: r.surface, opponent: 'C. Alcaraz', won: r.p1Won,
+    result: r.result, level: r.level === 'ATP' ? 'atp' : 'chitf', eventKey: r.eventKey }, extra.get(r.eventKey) || {}));
+  return match(Object.assign({ _fhH2hData: true, _fhCloses: [null, null], _fhElo: null }, over || {}, { _fhCh: [ch, []] }));
+}
 const mt = (date, won, extra) => Object.assign({ date, tournament: 'Ev', round: 'R16', surface: 'Hard', p1Won: won, result: won ? '2 - 1' : '1 - 2', level: 'ATP', eventKey: null }, extra || {});
 // Mutation: the walkover filter dropped, a retirement dropped, or the tug drawn toward the trailer.
-test('Head to head: the H2H tab\'s record — walkovers out (N2), a retirement counts, the tug toward the leader, the level mix in the meta', () => {
+// TEN-437: ATP's record — a Challenger meeting is listed by ATP and never counted, so it is no meeting here either, and
+// a record never carries a level mix. Mutation: Challenger rows back in the population.
+test('Head to head: the H2H tab\'s record — walkovers out (N2), a retirement counts, the tug toward the leader, Challengers out (ATP rule)', () => {
   setup();
-  const h = S.kfH2HCard(h2hMatch([mt('2023-03-01', true), mt('2024-05-10', false, { tournament: 'Munich', level: 'CH' }), mt('2025-01-20', true, { result: '0 - 0', tournament: 'Ghost' }),
-    mt('2024-11-02', true, { result: '1 - 0', tournament: 'Paris', surface: 'Clay' })]));
-  assert.match(head(h), /^Head to head 3 meetings · incl\. 1 CH ›$/);
+  const h = S.kfH2HCard(h2hMatch([mt('2023-03-01', true), mt('2024-05-10', false, { tournament: 'Munich' }), mt('2025-01-20', true, { result: '0 - 0', tournament: 'Ghost' }),
+    mt('2024-11-02', true, { result: '1 - 0', tournament: 'Paris', surface: 'Clay' }), mt('2022-06-01', false, { tournament: 'Heilbronn', level: 'CH' })]));
+  assert.match(head(h), /^Head to head 3 meetings ›$/);
+  assert.doesNotMatch(text(h), /Heilbronn|incl\./, 'the Challenger meeting is not in the record');
   assert.match(text(h), /J\. Sinner C\. Alcaraz 2 \+1 Sinner 1/, '3 played: the walkover ("0 - 0") is no meeting');
   assert.match(h, /class="kf-h2h-tug" data-lead="a" style="[^"]*right:50%; width:16\.6/);
   assert.match(text(h), /4 Sets won 3 — Tiebreaks — 1 Deciding sets 1 1 On hard 1/, 'sets from the scores (the retirement\'s 1–0 counts), no set scores = no tiebreak count, today\'s surface = the two hard meetings');

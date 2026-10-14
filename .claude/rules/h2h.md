@@ -51,11 +51,13 @@ no day work, checks or screenshots on this page until the founder reopens it.
   dashed. **Model prices** mono white, no colour.
 
 ## Data
-- **Meetings** = every completed ATP main-draw meeting in both players' match history, all levels incl. Laver Cup and
-  exhibitions (25 Sep ruling; the Form rule does not apply). Walkovers out; a retirement counts (as the ATP does) —
-  Cincinnati 2025 F (Sinner retired) is counted, founder-ruled 2026-10-08, card 01102d24. Sinner–Alcaraz = 17, Alcaraz
-  10–7 on 8 Oct 2026. Flip: `H2H_PAGE_LEVELS`, `H2H_PAGE_NOT_COUNTED`. **Test:**
-  `test-ten402-b.mjs`.
+- **Meetings** = `H2HCore.joinMeetings` (`h2h-core.js`) over both players' career-history shards — the ONE site-wide H2H
+  list, the Match analysis tab's and Key factors' too, ATP's official H2H population (founder TEN-437, 2026-10-14; replaces
+  TEN-402 Data 1's "including exhibitions"): Laver Cup counted, exhibitions and Hopman Cup not; walkovers out; a
+  retirement counts (Cincinnati 2025 F, founder 2026-10-08, card 01102d24). Sinner–Alcaraz = 17, Alcaraz 10–7;
+  Medvedev–Tsitsipas = 15, Medvedev 10–5 (ATP, 14 Oct 2026). Rules and constants: `modal-form-h2h.md` "One H2H record".
+  A history that did not load shows "Head-to-head could not load" + Retry, never "No meetings on record", and is not
+  cached (`h2hRetryPair`; a visit drops failed pairs). **Test:** `test-ten402-b.mjs`, `test-ten437-h2h.mjs`.
 - **Prices — ONE join across the site (founder ruling 2026-10-08, card 01102d24).** Ledger Home / Away = the Database
   join, Pinnacle closing else Bet365 closing, per match: `DatabaseTab.priceRows()` = `database-yield.json` rows PLUS the
   retirements the store keeps behind its flag (`retRows` / `retNames`, `dbPriceJoinRows`; same book rule, ties,

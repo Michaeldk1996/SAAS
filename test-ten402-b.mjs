@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createRequire } from 'node:module';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN402_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
@@ -33,7 +34,9 @@ const constLine = name => {
 const h2hCardSrc = slice('h2hCard');
 
 // ---------------------------------------------------------------- Data 1: the meetings
-const joinM = new Function(`${constLine('H2H_PAGE_LEVELS')}\n${constLine('H2H_PAGE_NOT_COUNTED')}\n${slice('h2hNameKey')}\n${slice('h2hJoinMeetings')}\nreturn h2hJoinMeetings;`)();
+// TEN-437: the page's join is THE site-wide one, H2HCore.joinMeetings (h2h-core.js) — required here, never a copy.
+const H2HCore = createRequire(import.meta.url)(join(HERE, 'h2h-core.js'));
+const joinM = H2HCore.joinMeetings;
 const A = { key: '1', short: 'J. Sinner', full: 'J. Sinner' }, B = { key: '2', short: 'C. Alcaraz', full: 'C. Alcaraz' };
 const row = (o) => Object.assign({ level: 'atp', round: 'F', result: '2 - 0', sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }] }, o);
 
@@ -63,15 +66,18 @@ test('Data 1 / TEN-263: a row only one side records counts only when its name is
   assert.equal(f.opponent, 'C. Alcaraz');
 });
 
-test('Data 1: ATP main draw only — Challenger / ITF and qualifying out; Laver Cup and exhibitions in (ticket); own board match out', () => {
+// TEN-437 (founder 2026-10-14, replaces TEN-402 Data 1's "including exhibitions"): ATP's official H2H population — read off
+// atptour.com's own H2H data: Laver Cup counted, exhibitions (Six Kings Slam) and Hopman Cup absent.
+test('Data 1: ATP\'s record — Challenger / ITF and qualifying out; Laver Cup in, exhibitions and Hopman Cup out; own board match out', () => {
   const mk = (ek, o) => [row(Object.assign({ eventKey: ek, date: '2024-0' + (ek % 9 + 1) + '-01', won: true, opponent: 'C. Alcaraz' }, o)),
     row(Object.assign({ eventKey: ek, date: '2024-0' + (ek % 9 + 1) + '-01', won: false, opponent: 'J. Sinner' }, o))];
   const pairs = [mk(1, { tournament: 'ATP Laver Cup' }), mk(2, { tournament: 'Six Kings Slam' }), mk(3, { tournament: 'Bergamo', level: 'chitf' }),
-    mk(4, { tournament: 'Wimbledon', round: 'Qualifying' }), mk(5, { tournament: 'Beijing', qualifying: true }), mk(6, { tournament: 'Today' })];
+    mk(4, { tournament: 'Wimbledon', round: 'Qualifying' }), mk(5, { tournament: 'Beijing', qualifying: true }), mk(6, { tournament: 'Today' }),
+    mk(7, { tournament: 'ATP Hopman Cup' })];
   const out =joinM(A, B, pairs.map(p => p[0]), pairs.map(p => p[1]), {}, [6]);
-  assert.deepEqual(out.map(x => x.eventKey).sort(), [1, 2], 'Laver Cup + an exhibition kept; CH, qualifying ×2 and the own board match dropped');
-  assert.match(html, /const H2H_PAGE_LEVELS = \['atp'\];/);
-  assert.match(html, /const H2H_PAGE_NOT_COUNTED = null;/, 'ticket Data 1: "including Laver Cup and exhibitions"');
+  assert.deepEqual(out.map(x => x.eventKey).sort(), [1], 'Laver Cup kept; the exhibition, Hopman Cup, CH, qualifying ×2 and the own board match dropped');
+  assert.deepEqual(H2HCore.H2H_LEVELS, ['atp']);
+  assert.match(html, /const joined = H2HCore\.joinMeetings\(a, b, S\.chA, S\.chB, /, 'the page calls the one join');
 });
 
 test('Data 1: walkovers are not completed meetings; the record is counted by the A-side key file', () => {

@@ -1,0 +1,152 @@
+/*
+ * h2h-core.js — TEN-437. The ONE head-to-head meeting list for the whole site.
+ *
+ * Every surface that shows an H2H record, a meeting count or anything computed over a pair's meetings (Match analysis →
+ * H2H tab, Key factors' H2H box, the Head to Head page, the Download report that prints them) builds its meetings
+ * here, from both players' career-history shards (career-history/{key}.json: the api-tennis fixture window plus the TML
+ * archive). The only reader of a pair's meetings that does NOT come through here is the edge model's H2H layer
+ * (h2h-model/adjustments.js, `m.h2h.matches`), excluded by the founder until he rules on its recency weighting
+ * (TEN-437, 2026-10-14). The single-source guard in test-ten437-h2h.mjs fails CI on any other reader.
+ *
+ * One pure module, loaded by the dashboard (<script src>, window.H2HCore) and required by Node (the golden-pair gate,
+ * the pipeline reconciliation). No DOM, no fetch, no Date.now: the same rows give the same meetings everywhere.
+ *
+ * POPULATION = ATP's official H2H record, read off atptour.com's own H2H data on 2026-10-14 (TEN-437 report B):
+ *   counted  — tour-level main draw (250/500/1000), Grand Slams, ATP Finals, Next Gen ATP Finals, Davis Cup (every
+ *              stage), Olympics, ATP Cup, United Cup, Laver Cup (2017 on), retirements, defaults
+ *   excluded — Challengers and ITF (career-history level 'chitf'), every qualifying round, Hopman Cup and exhibitions
+ *              (Six Kings Slam, UTS, …: absent from ATP's list); walkovers are listed (flagged) but never counted
+ * Each rule is one constant below (H2H_LEVELS, H2H_NOT_COUNTED) or one line in `inPopulation`.
+ */
+(function (root) {
+  'use strict';
+
+  // Node requires the identity table; the browser reads window.TournamentIdentity at CALL time (this file loads in
+  // <head>, before tournament-identity.js at the end of <body>).
+  const TI_NODE = (typeof module !== 'undefined' && module.exports) ? require('./tournament-identity.js') : null;
+  const ti = () => TI_NODE || (root && root.TournamentIdentity) || null;
+
+  // career-history `level`. ATP's record is tour level only: 'chitf' (Challenger / ITF) rows are listed by ATP under
+  // "other tournaments" and never counted.
+  const H2H_LEVELS = ['atp'];
+  // Events that are not in ATP's H2H record although the feed tags them as men's singles: Hopman Cup (ITF, mixed) and
+  // exhibitions. Laver Cup, Davis Cup, ATP Cup, United Cup, the Olympics and the Next Gen Finals ARE counted.
+  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+  // De-duplication window, days from a keyless archive row (dated at the EVENT's start, TML) to the keyed api-tennis
+  // row of the same match (dated on the match day): Shanghai 2019 SF is 07.10 in the archive and 12.10 in the feed,
+  // a Slam final up to 14 days after its start. A match is never earlier than its event's start (−1 for time zones).
+  const H2H_DEDUPE_WINDOW = [-1, 16];
+
+  // Surname + first initial ("J. Sinner" → sinner|j): the roster's namesake count and the join's name test.
+  function nameKey(nm) { const t = String(nm || '').toLowerCase().replace(/['’.\-]/g, ' ').split(' ').filter(Boolean); return t.length >= 2 ? t[t.length - 1] + '|' + t[0][0] : null; }
+  // Namesake counts for a roster of full or short names (the uniqueness test for one-sided rows).
+  function nameCounts(names) { const o = {}; (names || []).forEach(n => { const k = nameKey(n); if (k) o[k] = (o[k] || 0) + 1; }); return o; }
+
+  function dayNum(iso) { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5) : null; }
+  function eventId(name) {
+    const s = String(name || '');
+    if (/davis cup/i.test(s)) return 'davis cup';
+    if (/laver cup/i.test(s)) return 'laver cup';
+    if (/united cup/i.test(s)) return 'united cup';
+    if (/atp cup/i.test(s)) return 'atp cup';
+    const T = ti(), c = T && T.canonicalTournament ? T.canonicalTournament(s) : null;
+    return c && c.id ? c.id : s.toLowerCase().replace(/^atp\s+/, '').replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  // One round code from the archive's ("SF", "R16", "RR") and the feed's ("Semi-finals", "1/8-finals") spellings; null
+  // when unknown (an unknown round never blocks a match, a known different one always does).
+  function roundCode(r) {
+    const s = String(r || '').trim().toLowerCase().replace(/^.* - /, '');
+    if (!s) return null;
+    if (/^(f|final|the final)$/.test(s)) return 'F';
+    if (/^(sf|semi-?finals?|semifinals?)$/.test(s)) return 'SF';
+    if (/^(qf|quarter-?finals?|quarterfinals?)$/.test(s)) return 'QF';
+    if (/^(rr|round robin)$/.test(s)) return 'RR';
+    const frac = /^1\/(\d+)-finals?$/.exec(s); if (frac) return 'R' + (2 * +frac[1]);
+    const rn = /^r(\d+)$/.exec(s); if (rn) return 'R' + rn[1];
+    return null;
+  }
+
+  // TEN-437 (3): one match seen twice — a keyless archive row and a keyed feed row (or two rows from the two players'
+  // shards dated by the two conventions) — is ONE meeting. Same winner, same event, the keyed row within
+  // H2H_DEDUPE_WINDOW of the keyless one, rounds not contradicting. The keyed row is kept (it carries the match day and
+  // reaches the match-stats shards); a keyless row that matches two keyed rows is ambiguous and kept as its own meeting.
+  function dedupe(rows) {
+    const keyed = rows.filter(x => x.eventKey != null);
+    const drop = new Set(), taken = new Set();
+    rows.filter(x => x.eventKey == null).forEach(x => {
+      const d0 = dayNum(x.date); if (d0 == null) return;
+      const ev = eventId(x.tournament), rc = roundCode(x.round);
+      const hits = keyed.filter(y => {
+        if (taken.has(y) || y.won !== x.won) return false;
+        const d = dayNum(y.date); if (d == null || d - d0 < H2H_DEDUPE_WINDOW[0] || d - d0 > H2H_DEDUPE_WINDOW[1]) return false;
+        if (eventId(y.tournament) !== ev) return false;
+        const yr = roundCode(y.round);
+        return !(rc && yr && rc !== yr);
+      });
+      if (hits.length === 1) { taken.add(hits[0]); drop.add(x); }
+    });
+    return drop.size ? rows.filter(x => !drop.has(x)) : rows;
+  }
+
+  // ATP's H2H list (see the header). A walkover stays in the LIST, flagged — ATP lists it and never counts it, and so do
+  // we: `record` and `played` leave it out; a retirement or a default is a meeting.
+  function inPopulation(x) {
+    return H2H_LEVELS.includes(String(x.level || '').toLowerCase())
+      && !x.qualifying && !/^qualif/i.test(String(x.round || ''))
+      && !H2H_NOT_COUNTED.test(String(x.tournament || ''));
+  }
+
+  // A-oriented career rows for the pair (TEN-402's join, unchanged; TEN-437 moved it here from the H2H page and added
+  // `dedupe` and the ATP population). A meeting = a row in A's file that names B (or carries an eventKey B's file
+  // holds), paired with B's row for the same match: the same eventKey, else the same date, opposite results and each
+  // row naming the other. A row only one side records counts only when the name it carries is unique on the roster
+  // (surname + initial; TEN-263: a namesake is never credited). Two rows that disagree (same eventKey, other date or
+  // the same result) count nowhere. ownEks: finished board matches between the two never count (ruling 2026-09-24).
+  // a / b: { full, short } (names as the roster prints them).
+  function joinMeetings(a, b, chA, chB, nkCount, ownEks) {
+    const nk = nameKey, nkA = nk(a.full), nkB = nk(b.full);
+    const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;
+    const A = Array.isArray(chA) ? chA : [], B = Array.isArray(chB) ? chB : [];
+    const bEk = new Map(B.filter(y => y && y.eventKey != null).map(y => [String(y.eventKey), y]));
+    const used = new Set(), bad = new Set(), seen = new Set(), out = [];
+    const flip = y => Object.assign({}, y, { won: !y.won, opponent: b.short,
+      result: String(y.result || '').replace(/^\s*(\d+)\s*-\s*(\d+)\s*$/, '$2 - $1'),
+      sets: Array.isArray(y.sets) ? y.sets.map(s => Object.assign({}, s, { p: s.o, o: s.p, pTb: s.oTb, oTb: s.pTb })) : y.sets });
+    const push = (x, how) => {
+      const k = x.eventKey != null ? 'e' + x.eventKey : 'd' + x.date + '|' + (x.round || '');
+      if (seen.has(k)) return;
+      seen.add(k); out.push(Object.assign({}, x, { _how: how }));
+    };
+    A.forEach(x => {
+      if (!x || typeof x.won !== 'boolean') return;
+      const ek = x.eventKey != null ? String(x.eventKey) : null, named = nk(x.opponent) === nkB;
+      if (!named && !(ek && bEk.has(ek))) return;
+      let y = ek ? bEk.get(ek) : null;
+      if (y && (y.date !== x.date || y.won === x.won)) { bad.add(y); return; }
+      if (!y) {
+        const ys = B.filter(z => z && !used.has(z) && z.date === x.date && typeof z.won === 'boolean' && z.won !== x.won && nk(z.opponent) === nkA);
+        if (ys.length === 1) y = ys[0];
+      }
+      if (y) { used.add(y); push(x, 'both'); }
+      else if (named && uniq(nkB)) push(x, 'a');
+    });
+    B.forEach(y => {
+      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean' || nk(y.opponent) !== nkA || !uniq(nkA)) return;
+      push(flip(y), 'b');
+    });
+    const own = new Set((ownEks || []).map(String));
+    return dedupe(out).filter(x => inPopulation(x) && !(x.eventKey != null && own.has(String(x.eventKey))))
+      .sort((x, y) => String(x.date).localeCompare(String(y.date)));
+  }
+
+  // The meetings that count (walkovers out) and the record over them (A's wins first): n = the population.
+  // A walkover = the flag, or no set played (a "0 - 0" result with no set scores) — the same test the rows the pages
+  // draw apply (fhFinishRow), so a record here and a record on screen can never disagree.
+  function isWalkover(x) { return !!x.walkover || (/^\s*0\s*-\s*0\s*$/.test(String(x.result || '')) && !(Array.isArray(x.sets) && x.sets.length)); }
+  function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
+  function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }
+
+  const api = { H2H_LEVELS, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, nameKey, nameCounts, eventId, roundCode, dedupe, inPopulation, joinMeetings, isWalkover, played, record };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.H2HCore = api;
+})(typeof window !== 'undefined' ? window : this);

@@ -613,6 +613,9 @@ jobs:
           # merges a served tournament-history shard's same-event rows through it ("London" + "Queen's
           # Club"). Not copied = 404 => the rows are listed raw again. Required; asserted below.
           cp tournament-identity.js _site/
+          # TEN-437: the ONE head-to-head meeting list (window.H2HCore). Not copied = 404 => every H2H surface
+          # (Match analysis tab, Key factors, the Head to Head page) has no meetings. Required; asserted below.
+          cp h2h-core.js _site/
           # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
           # and the per-player market-edge shards + index (build-market-edge.js).
           # The shards also feed the full ledger's two closing-odds columns.
@@ -961,7 +964,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js \
+                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
                    points-at-risk.json \
@@ -1238,6 +1241,14 @@ jobs:
       # cannot walk aborts rather than SKIPs (the pre-build run skips 19 of them).
       - name: Reconcile suite on the freshly built store (fail-closed pre-publish gate)
         run: PP2_BUILT_STORE=_site node tools/test-pp2-reconcile.js
+
+      # TEN-437 (founder 2026-10-14): the head-to-head record, reconciled on the store THIS run built. The production join
+      # (h2h-core.js) runs over the golden pairs (tools/fixtures/ten437/h2h-golden-pairs.json) on _site/career-history/;
+      # the run fails — before the upload, so nothing publishes — if the total meetings fall below the previous published
+      # run's (h2h-reconcile.json) or any exact pair falls below ATP's checked count (a floor that needs no network).
+      # Fail-closed: no `|| true`, no continue-on-error.
+      - name: H2H golden-pair reconciliation on the freshly built store (fail-closed pre-publish gate)
+        run: node tools/h2h-reconcile.mjs --site _site
 
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
