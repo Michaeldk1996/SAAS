@@ -1138,13 +1138,20 @@ finally:
     raw.DAILY_YIELD_MODE = 'window'
 dw = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
 seen_timeout = []
+seen_params = []
 def _api(path, params, key, timeout=180, raw_=False, **kw):
-    seen_timeout.append(timeout)
+    seen_timeout.append(timeout); seen_params.append(dict(params))
     return CLOSED, None
 dw.install()
 raw.api_get = lambda path, params, key, timeout=180, raw=False: _api(path, params, key, timeout)
 raw.daily_hist_get('d0', 'k', dw.t.timestamp() + 600, __import__('collections').Counter())
 check('the daily pull passes the post-match call timeout', seen_timeout == [raw.PM_CALL_TIMEOUT_S], seen_timeout)
+check('the daily pull names bookmakers=pinnacle+30 (founder 2026-10-14: never the account default)',
+      seen_params == [{'fixtureId': 'd0', 'bookmakers': 'pinnacle+30'}], seen_params)
+_hg = []
+raw.api_get = lambda path, params, key, timeout=180, raw=False: (_hg.append(dict(params)) or (b'{}', None))
+raw.hist_get('h0', 'k')
+check('the back-fill / archive hist_get names bookmakers=pinnacle+30', _hg == [{'fixtureId': 'h0', 'bookmakers': 'pinnacle+30'}], _hg)
 
 print()
 if FAILED:

@@ -15671,9 +15671,14 @@ function trMarketFor(key){
 // A split archive string (Montreal / Toronto share "Canadian Open", Hamburg / Antwerp "European Open") names another
 // event's editions too, so it never joins career-history rows by name (TEN-401); the event's other strings still do.
 function trArchiveNames(mk){ const f = (mk && mk.archiveFilter) || {}; return ((mk && mk.archiveNames) || []).filter(n => !(n in f)); }
+// Founder 2026-10-14 (Pinnacle archive item 6): two names of ONE event meet through tournament-identity.js, the table the
+// builders group on — "Canada Masters" = the career row's "Montreal" / "Toronto" (the season filter beside every caller
+// ties each row to that year's edition, so the year decides the host), "Queen's Club" = "London". The substring test
+// alone missed both (186 + 62 rows unjoined, measured 2026-10-14).
 function trSameEvent(t, names){
   const a = String(t || '').toLowerCase(); if (!a) return true;
-  return names.some(n => { const b = String(n || '').toLowerCase(); return !!b && (a.includes(b) || b.includes(a)); });
+  const TI = typeof window !== 'undefined' && window.TournamentIdentity, ida = TI ? TI.canonicalTournament(t).id : null;
+  return names.some(n => { const b = String(n || '').toLowerCase(); return !!b && (a.includes(b) || b.includes(a) || (!!ida && TI.canonicalTournament(n).id === ida)); });
 }
 // The editions a player's record at this event counts (N6: only editions entered — a pre-TEN-320 store's synthesised gap
 // year, `withdrew`, never counts). Shared by the Tournament tab and Key factors' Tournament card.
