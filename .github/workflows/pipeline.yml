@@ -383,6 +383,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # founder brief 2026-10-15 item 5: each close's player keys come from the current api-tennis fixture, every run
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
           t0=$(date +%s); rc=0
           rm -f pinnacle-closes.json

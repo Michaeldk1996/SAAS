@@ -1,0 +1,53 @@
+# Pinnacle archive back-fill (founder brief 2026-10-15 item 4; rules: .claude/rules/pinnacle-archive.md "Back-fill").
+# Every ATP / Challenger singles fixture Oddspapi still holds Pinnacle +30 history for (~180 days), oldest first, into
+# the permanent archive (insert-only) before it expires. Own slot on the free endpoint (never the odds loop's key
+# gate), one call every 6.5 s, and it yields the key to the post-start pull while an oddspapi-postmatch.yml run is
+# queued or running. Runs from main only, every 6 hours, until nothing is left; each run reports every month's progress.
+name: Pinnacle archive back-fill
+on:
+  schedule:
+    - cron: '11 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: pinnacle-backfill
+  cancel-in-progress: false
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+      GITHUB_TOKEN: ${{ github.token }}
+      PINARCH_BACKFILL_FIXTURES: .pinarch-backfill-fixtures.json
+      PINARCH_BACKFILL_STATE: .pinarch-backfill-state.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Refuse to run off main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then echo "::error::the back-fill runs from main only (got ${GITHUB_REF})"; exit 1; fi
+      - uses: actions/cache/restore@v4
+        with:
+          path: |
+            .pinarch-backfill-fixtures.json
+            .pinarch-backfill-state.json
+          key: pinarch-backfill-${{ github.run_id }}
+          restore-keys: pinarch-backfill-
+      - name: back-fill (oldest first, below the post-start pull)
+        run: |
+          set -euo pipefail
+          python3 tools/pinarch.py backfill --budget 19500
+          python3 tools/pinarch.py counts --record backfill
+      - uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: |
+            .pinarch-backfill-fixtures.json
+            .pinarch-backfill-state.json
+          key: pinarch-backfill-${{ github.run_id }}

@@ -17,7 +17,7 @@ Commands
                              restore SQL (--sql-out) and, with --apply, run it through the Management API
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only); backup: WORKFLOW_PAT; restore --apply:
 SUPABASE_ACCESS_TOKEN."""
-import base64, datetime as dt, glob, gzip, hashlib, json, os, re, subprocess, sys, tempfile, time, urllib.error, urllib.parse, urllib.request
+import base64, collections, datetime as dt, glob, gzip, hashlib, json, os, re, subprocess, sys, tempfile, time, urllib.error, urllib.parse, urllib.request
 
 RAW, CLOSE, COUNT = 'oddspapi_archive_raw', 'pinnacle_archive_close', 'pinnacle_archive_count'
 TABLES = (RAW, CLOSE, COUNT)
@@ -578,9 +578,82 @@ def export_rows(rows):
     return out
 
 
+API_FIELDS = ('event_winner', 'event_status', 'tournament_round', 'tournament_name', 'event_type_type', 'event_date', 'event_final_result',
+              'event_first_player', 'event_second_player')
+
+
+def refresh_keys(out, fetch):
+    """Founder brief 2026-10-15 item 5: every export row's player keys come from the CURRENT api-tennis fixture (its
+    event key), every run — a key api-tennis corrected after the match left the board (L. Xiao 31666 -> 38140, 22 Sep)
+    reaches every reader. `fetch(event_key)` -> the fixture dict, or None when unreadable. A row keeps its stored keys
+    when the fixture cannot be read or cannot be oriented (counted, never guessed). Rows are changed in place."""
+    rep = {'checked': 0, 'unchanged': 0, 'changed': 0, 'unreadable': 0, 'unoriented': 0, 'resultRefreshed': 0, 'examples': []}
+    for r in out:
+        rep['checked'] += 1
+        f = fetch(r['eventKey'])
+        # item 3: an archive close's api-tennis result is the CURRENT fixture's, not the one stored when the close was derived
+        # (often mid-match: "Set 1"), so the Database feed can add the match once it has a result. Archive rows only: their
+        # p1 is the api-tennis first player, so the fixture's own first / second words apply unchanged.
+        if f and r.get('label') == ARCHIVE_LABEL:
+            cur = {x: f.get(x) for x in API_FIELDS if f.get(x) is not None}
+            if cur and any((r.get('apiTennis') or {}).get(x) != v for x, v in cur.items()):
+                r['apiTennis'] = dict(r.get('apiTennis') or {}, **cur); rep['resultRefreshed'] += 1
+        k1, k2 = (f or {}).get('first_player_key'), (f or {}).get('second_player_key')
+        if not (str(k1 or '').isdigit() and str(k2 or '').isdigit()):
+            rep['unreadable'] += 1; continue
+        k1, k2 = int(k1), int(k2)
+        a, b = r['p1Key'], r['p2Key']
+        if {a, b} == {k1, k2}:
+            rep['unchanged'] += 1; continue
+        n1, n2 = f.get('event_first_player'), f.get('event_second_player')
+        if a == k1 or b == k2:   first = True        # one key still agrees: it fixes the orientation
+        elif a == k2 or b == k1: first = False
+        elif same_surname(r.get('p1Name'), n1) and same_surname(r.get('p2Name'), n2) and not (same_surname(r.get('p1Name'), n2) and same_surname(r.get('p2Name'), n1)):
+            first = True
+        elif same_surname(r.get('p1Name'), n2) and same_surname(r.get('p2Name'), n1) and not (same_surname(r.get('p1Name'), n1) and same_surname(r.get('p2Name'), n2)):
+            first = False
+        else:
+            rep['unoriented'] += 1; continue
+        new1, new2 = (k1, k2) if first else (k2, k1)
+        if len(rep['examples']) < 20:
+            rep['examples'].append(f"{r['eventKey']} {r.get('p1Name')} v {r.get('p2Name')}: {a}/{b} -> {new1}/{new2}")
+        r['keysFrom'] = {'stored': [a, b], 'apiTennis': [new1, new2]}
+        r['p1Key'], r['p2Key'] = new1, new2
+        rep['changed'] += 1
+    return rep
+
+
+def apitennis_fixture_fetcher(key, workers=16):
+    """event_key -> the current api-tennis fixture (get_fixtures&match_key=), all asked at once on a small pool."""
+    import concurrent.futures as cf
+    def one(ek):
+        u = 'https://api.api-tennis.com/tennis/?' + urllib.parse.urlencode({'method': 'get_fixtures', 'APIkey': key, 'match_key': ek, 'timezone': 'UTC'})
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'stennisfy-pinarch'}), timeout=60) as r:
+                    res = json.loads(r.read()).get('result') or []
+                return next((f for f in res if isinstance(f, dict) and str(f.get('event_key')) == str(ek)), None)
+            except Exception:                                  # noqa: BLE001 — retried, then unreadable (keys kept)
+                time.sleep(2 * (attempt + 1))
+        return None
+    def prefetch(eks):
+        with cf.ThreadPoolExecutor(workers) as ex:
+            return dict(zip(eks, ex.map(one, eks)))
+    return prefetch
+
+
 def cmd_export(path):
     rows = select_all(CLOSE, 'id,event_key,match_date,p1_key,p2_key,p1_name,p2_name,p1,p2,label,source,book,close_ts,start_ts,start_source,gap_to_start_s,supersedes,detail')
     out = export_rows(rows)
+    akey = os.environ.get('API_TENNIS_KEY') or ''
+    if akey:
+        got = apitennis_fixture_fetcher(akey)(sorted({r['eventKey'] for r in out}))
+        krep = refresh_keys(out, got.get)
+        print('### export keys (current api-tennis fixture)', json.dumps(krep))
+        if krep['unreadable'] > len(out) // 2:
+            print(f"::warning::api-tennis fixture read failed for {krep['unreadable']} of {len(out)} closes: their stored keys stand", flush=True)
+    else:
+        print('::warning::no API_TENNIS_KEY: export keys are the stored ones (not refreshed this run)', flush=True)
     by = {}
     for r in out:
         by[r['label']] = by.get(r['label'], 0) + 1
@@ -668,6 +741,47 @@ def effective_cut(live_flip, true_start, true_end, sched):
     return live_flip, CUT_SOURCE, None
 
 
+def _od_parts(od_name):
+    """Oddspapi 'Surname Words, Given Words' -> (surname tokens, given initials); None without a comma (not a person
+    name we can split safely)."""
+    n = str(od_name or '')
+    if ',' not in n or '/' in n:
+        return None
+    sur, giv = n.split(',', 1)
+    return surname_tokens(sur), {t[0] for t in re.split(r'[\s\-]+', _fold(giv)) if t and t[0].isalpha()}
+
+
+def _api_parts(api_name):
+    """api-tennis 'V. C. Loureiro J.' -> (['loureiro'], {'v', 'c', 'j'}); 'Wu Tung-Lin' -> (['wu', 'tung', 'lin'], set())."""
+    toks = str(api_name or '').split()
+    return surname_tokens(api_name), {re.sub(r'[^a-z]', '', _fold(t))[:1] for t in toks if t.endswith('.') and re.sub(r'[^a-z]', '', _fold(t))}
+
+
+def same_player_compound(api_name, od_name):
+    """One player across a compound surname: api-tennis keeps the first part ("I. Parisca" = "Parisca Romera, Ignacio",
+    "C. Bittoun" = "Bittoun Kouzmine, Constantin"), so OUR shorter surname must START theirs; theirs, when shorter, may be
+    the start or the end of ours. Initials, where both sides have them, must share one. Never a tail of theirs ("A. Martin"
+    is not "Lopez San Martin")."""
+    od = _od_parts(od_name)
+    x, ia = _api_parts(api_name)
+    if not od or not x or not od[0]:
+        return False
+    y, ib = od
+    if ia and ib and not (ia & ib):
+        return False
+    if len(x) <= len(y):
+        return y[:len(x)] == x and len(''.join(x)) >= 3
+    return (x[:len(y)] == y or x[-len(y):] == y) and len(''.join(y)) >= 2
+
+
+def orient_compound(a1, a2, od1, od2):
+    if same_player_compound(a1, od1) and same_player_compound(a2, od2):
+        return 'same'
+    if same_player_compound(a1, od2) and same_player_compound(a2, od1):
+        return 'swap'
+    return None
+
+
 def events_for(fl_rows, fixture_map, discovered, at_key):
     """Each flip -> {event_key, fixture_id, p1IsParticipant1, cut, keys, names, trueStart}. The fixture comes from the
     odds loop's board map (odds-fixture-map.json, eventKey -> fixtureId + orient) or, else, from the Oddspapi
@@ -708,6 +822,16 @@ def events_for(fl_rows, fixture_map, discovered, at_key):
                     o = R.orient({'p1': a1, 'p2': a2}, f.get('participant1Name'), f.get('participant2Name'))
                     if o:
                         cands.append((f, o))
+        if not fx and not cands:
+            # compound surnames (item 1): Oddspapi's "Parisca Romera, Ignacio" is api-tennis's "I. Parisca" — tried only when
+            # the strict join found nothing, and still both players, ±36 h and exactly one candidate
+            for d in (flip.date() - dt.timedelta(days=1), flip.date(), flip.date() + dt.timedelta(days=1)):
+                for f, st in by_day.get(d, []):
+                    if abs((st - flip).total_seconds()) > 36 * 3600:
+                        continue
+                    o = orient_compound(a1, a2, f.get('participant1Name'), f.get('participant2Name'))
+                    if o:
+                        cands.append((f, o))
         if not fx:
             if len(cands) != 1:
                 m('no Oddspapi fixture' if not cands else 'two or more Oddspapi fixtures'); continue
@@ -727,11 +851,19 @@ def events_for(fl_rows, fixture_map, discovered, at_key):
     return out, miss
 
 
+# Oddspapi files api-tennis's "ATP Davis Cup - World Group …" singles under its own "Davis Cup" category (founder brief
+# 2026-10-15 item 1: all 24 failed ATP joins of 17 Sep – 14 Oct were Davis Cup ties, invisible to an ATP/Challenger list)
+DISCOVERY_CATEGORIES = ('ATP', 'Challenger', 'Davis Cup')
+DISCOVERY_VERSION = 2
+
+
 def discovery(frm, to, cache_path, odds_key, max_age_h=6):
     """Oddspapi tennis fixtures (the only METERED call here: /v4/fixtures, one per 6-day window), cached in
     `cache_path` so each window is asked once; the window holding `now` is re-asked once it is max_age_h old."""
     A = _load('aor', 'archive-oddspapi-raw.py')
     cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {'windows': {}}
+    if cache.get('v') != DISCOVERY_VERSION:              # a cache kept under another category list is asked again, once
+        cache = {'v': DISCOVERY_VERSION, 'windows': {}}
     now, calls, d = dt.datetime.now(dt.timezone.utc), 0, frm.replace(hour=0, minute=0, second=0, microsecond=0)
     while d < to:
         w_end = min(d + dt.timedelta(days=6), to.replace(hour=0, minute=0, second=0, microsecond=0) + dt.timedelta(days=1))
@@ -747,7 +879,7 @@ def discovery(frm, to, cache_path, odds_key, max_age_h=6):
                 print(f'::warning::Oddspapi fixtures {k} failed ({e}): that window is skipped this run', flush=True)
             else:
                 keep = [{x: f.get(x) for x in ('fixtureId', 'participant1Name', 'participant2Name', 'startTime', 'trueStartTime', 'categoryName', 'tournamentName', 'statusName')}
-                        for f in rows if f.get('categoryName') in ('ATP', 'Challenger')]
+                        for f in rows if f.get('categoryName') in DISCOVERY_CATEGORIES]
                 cache['windows'][k] = {'at': now.isoformat(timespec='seconds'), 'fixtures': keep}
         d = w_end
     tmp = cache_path + '.tmp'
@@ -932,6 +1064,123 @@ def cmd_pull(budget_s, cache_path, hours=6):
                 'keyWaitS': counts['waitS'], 'http429': counts['http429'], 'oddspapiFixtureCalls': calls, 'apiTennisDaysFailed': failed})
     print('### pull', json.dumps(rep))
     return rep
+
+
+# ── the back-fill (founder 2026-10-15 item 4): every ATP / Challenger singles fixture Oddspapi still holds history
+# for, oldest first, into the archive before it expires — on the own slot, BELOW the post-start pull ────────────────
+BACKFILL_RETENTION_DAYS = 180   # /v4/historical-odds 404s past ~180 days (measured); the oldest fixtures go first
+BACKFILL_GAP_S = 6.5            # one second wider than the pull's cooldown: the post-start pull keeps the faster slot
+BACKFILL_YIELD_S = 20           # while a post-start pull runs, the back-fill sits out and asks again after this
+BACKFILL_404_TRIES = 2          # a fixture that answered 404 on two runs is not asked again (no history to keep)
+POSTMATCH_WORKFLOW = 'oddspapi-postmatch.yml'
+_busy = {'at': -1e9, 'busy': False}
+
+
+def postmatch_busy(clock=time.monotonic, gh=None):
+    """True while an oddspapi-postmatch.yml run (the post-start pull's dispatcher) is queued or running: the back-fill
+    yields the key to it. Read at most once a minute; an unreadable answer counts as busy (never run over the pull)."""
+    if clock() - _busy['at'] < 60:
+        return _busy['busy']
+    A = None if gh else _load('aor', 'archive-oddspapi-raw.py')
+    gh = gh or A.gh_get
+    busy = False
+    for st in ('in_progress', 'queued'):
+        d, err = gh(f'/repos/{os.environ.get("GITHUB_REPOSITORY", "Michaeldk1996/SAAS")}/actions/workflows/{POSTMATCH_WORKFLOW}/runs?status={st}&per_page=5')
+        if d is None or (d.get('total_count') or 0) > 0:
+            busy = True
+    _busy.update(at=clock(), busy=busy)
+    return busy
+
+
+def backfill_queue(fixtures, held_pin, in_bucket, state, now, frm, to):
+    """The back-fill's targets, oldest first: ATP / Challenger singles fixtures Oddspapi lists between `frm` and `to`
+    that have started, with no Pinnacle +30 payload in the archive, no bucket object waiting for the daily import, and
+    fewer than BACKFILL_404_TRIES 404s on earlier runs."""
+    q = []
+    for f in fixtures:
+        st = iso_ms(f.get('trueStartTime') or f.get('startTime'))
+        if st is None or not (frm <= st < to) or st > now or '/' in str(f.get('participant1Name')):
+            continue
+        if f.get('categoryName') not in DISCOVERY_CATEGORIES:
+            continue
+        fid = f['fixtureId']
+        if fid in held_pin or fid in in_bucket or (state.get(fid) or {}).get('n404', 0) >= BACKFILL_404_TRIES:
+            continue
+        q.append((st, fid, f))
+    q.sort(key=lambda x: (x[0], x[1]))
+    return q
+
+
+def cmd_backfill(budget_s, cache_path, state_path, frm=None, to=None, clock=None):
+    """Pull, oldest first, the Pinnacle +30 history (free endpoint, `bookmakers=pinnacle+30`) of every fixture in the
+    queue and store each payload in the archive (insert-only). The own slot (never the odds loop's key gate), one call
+    every BACKFILL_GAP_S, and it yields to the post-start pull while that runs. Reports every month's progress."""
+    A = _load('aor', 'archive-oddspapi-raw.py')
+    okey = env('ODDSPAPI_KEY')
+    clock = clock or A._clock_s
+    t_end = clock() + budget_s
+    now = dt.datetime.now(dt.timezone.utc)
+    frm = frm or (now - dt.timedelta(days=BACKFILL_RETENTION_DAYS + 5))
+    to = to or dt.datetime(2026, 9, 17, tzinfo=dt.timezone.utc)   # from 17 Sep the live-flip pulls cover every start
+    disc, calls = discovery(frm, to, cache_path, okey)
+    held_pin, any_raw = set(), set()
+    for r in select_all(RAW, 'id,fixture_id,books'):
+        any_raw.add(r['fixture_id'])
+        if HIST_BOOK in (r.get('books') or []):
+            held_pin.add(r['fixture_id'])
+    in_bucket = set()
+    url, sb = A.supabase_creds()
+    have, _sizes, ok = A.held_objects(url, sb)
+    if ok:
+        in_bucket = {f for f in have if f not in any_raw}          # waiting for the daily import; asked again after it
+    state = json.load(open(state_path)) if os.path.exists(state_path) else {}
+    q = backfill_queue(disc, held_pin, in_bucket, state, now, frm, to)
+    total = collections.Counter(iso_ms(f.get('trueStartTime') or f.get('startTime')).strftime('%Y-%m') for f in disc
+                                if f.get('categoryName') in DISCOVERY_CATEGORIES and '/' not in str(f.get('participant1Name'))
+                                and iso_ms(f.get('trueStartTime') or f.get('startTime')) and frm <= iso_ms(f.get('trueStartTime') or f.get('startTime')) < to)
+    queued = collections.Counter(st.strftime('%Y-%m') for st, _, _ in q)
+    print(f'### back-fill {frm.date()}..{to.date()}: {sum(total.values())} ATP/Challenger singles listed, {len(q)} to pull, oldest first; '
+          f'{len(in_bucket)} bucket objects wait for the daily import; Oddspapi fixture calls (metered) {calls}', flush=True)
+    counts = {'waitS': 0, 'http429': 0, 'yieldS': 0}
+    done, errs, last = collections.Counter(), collections.Counter(), [0.0]
+    t0 = clock()
+    for st, fid, f in q:
+        while postmatch_busy() and clock() < t_end:
+            time.sleep(BACKFILL_YIELD_S); counts['yieldS'] += BACKFILL_YIELD_S
+        gap = last[0] + BACKFILL_GAP_S - clock()
+        if gap > 0:
+            time.sleep(gap)
+        if clock() > t_end:
+            break
+        body, err = hist_get(fid, okey, counts)
+        last[0] = clock()
+        mo = st.strftime('%Y-%m')
+        if body is None:
+            errs[(mo, str(err))] += 1
+            if err == 404:
+                s = state.setdefault(fid, {}); s['n404'] = s.get('n404', 0) + 1; s['last'] = now.isoformat(timespec='seconds')
+            continue
+        gz, raw_body, sha = payload_parts(body)
+        insert(RAW, [{'fixture_id': fid, 'source': 'oddspapi /v4/historical-odds', 'pulled_at': dt.datetime.now(dt.timezone.utc).isoformat(),
+                      'books': books_of(raw_body), 'payload_gz': hexbytes(gz), 'payload_sha256': sha, 'body_bytes': len(raw_body),
+                      'meta': {'trigger': 'backfill', 'book': HIST_BOOK, 'category': f.get('categoryName'), 'startTime': f.get('startTime'),
+                               'trueStartTime': f.get('trueStartTime'), 'participants': [f.get('participant1Name'), f.get('participant2Name')]}}],
+               'fixture_id,payload_sha256')
+        done[mo] += 1
+    tmp = state_path + '.tmp'
+    with open(tmp, 'w') as fh:
+        json.dump(state, fh)
+    os.replace(tmp, state_path)
+    secs = max(clock() - t0, 1)
+    rate = sum(done.values()) / secs * 3600
+    months = {}
+    for mo in sorted(total):
+        left = queued[mo] - done[mo] - sum(v for (m, _), v in errs.items() if m == mo)
+        months[mo] = {'listed': total[mo], 'queuedAtStart': queued[mo], 'pulled': done[mo], 'failed': {e: v for (m, e), v in errs.items() if m == mo}, 'left': left,
+                      'expires': (dt.datetime.strptime(mo + '-01', '%Y-%m-%d').replace(tzinfo=dt.timezone.utc) + dt.timedelta(days=BACKFILL_RETENTION_DAYS)).date().isoformat()}
+    print('### back-fill', json.dumps({'pulled': sum(done.values()), 'perHour': round(rate, 1), 'months': months, 'keyWaitS': round(counts['waitS']),
+                                        'yieldS': counts['yieldS'], 'http429': counts['http429'], 'oddspapiFixtureCalls': calls}), flush=True)
+    return months
 
 
 # ── the Tennis-Data feed (F3c: our Pinnacle closes into database-yield.json) ───────────────────────────────────────────
@@ -1147,6 +1396,9 @@ if __name__ == '__main__':
     elif a[0] == 'pull':
         cmd_pull(int(a[a.index('--budget') + 1]) if '--budget' in a else 480, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'),
                  int(a[a.index('--hours') + 1]) if '--hours' in a else 6)
+    elif a[0] == 'backfill':
+        cmd_backfill(int(a[a.index('--budget') + 1]) if '--budget' in a else 19000, os.environ.get('PINARCH_BACKFILL_FIXTURES', '.pinarch-backfill-fixtures.json'),
+                     os.environ.get('PINARCH_BACKFILL_STATE', '.pinarch-backfill-state.json'))
     elif a[0] == 'export':
         cmd_export(a[1])
     elif a[0] == 'td-feed':

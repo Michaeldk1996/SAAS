@@ -88,8 +88,12 @@ no day work, checks or screenshots on this page until the founder reopens it.
   - **Names** (`h2hTdSame`): surname + initial; the surname-tail rule both ways — the archive's shorter name is the first
     or last word(s) of ours ("Mpetshi G." = G. Mpetshi Perricard, "Bautista R.", "Del Potro J.M."), a longer one must
     START with ours ("Ramos-Vinolas A." = A. Ramos; "Lopez San Martin A." is NOT A. Martin). The initial keeps brothers
-    apart (A. / M. Zverev, F. / J.M. Cerundolo, S. / P. Tsitsipas). Barrios Vera (archive "Barrios M." / "Barrios Vera
-    M.T.", ours T.) stays unjoined — the initials differ. Residual: "Silva J." (1 row, US Open 2010, Júlio Silva) would
+    apart (A. / M. Zverev, F. / J.M. Cerundolo, S. / P. Tsitsipas). **The archive name table applies first** (founder
+    brief 2026-10-15 item 2): `build-odds-performance.js` `ARCHIVE_NAME_ALIASES` / `ARCHIVE_NAME_BLOCK` (hand-checked, the
+    table Market edge and the closes shards already use) ride in `database-yield-players.json` as `aliases` (archive name →
+    our profile spelling: "Barrios M." / "Barrios Vera M.T." = T. Barrios Vera, "Miguel L." = G. Miguel) and `blocked`
+    ("Zhang Z." / "Zhang Ze." = Ze Zhang, "Daniel M." = Marcos Daniel: they join nobody). **Test:** `test-ten402-b.mjs`
+    "archive name table". Residual: "Silva J." (1 row, US Open 2010, Júlio Silva) would
     pass the rule for J. Reis Da Silva but has no career match to join.
   - **Backing tile (Tournament) = flat 1u over the Tournament ledger's priced rows, on the one join, retirements settled
     on the official ATP result** (founder ruling 2026-10-08, card 01102d24 — the same rule as Market edge on this page
