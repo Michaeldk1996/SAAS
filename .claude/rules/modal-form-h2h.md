@@ -23,7 +23,10 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   `build-match-closes.js`, reads the committed `matches.json` history for `oddsMovement.books.Pinnacle`
   (to 2 Sep) and `oddsMovement.chart.books["Pinnacle +30s"]` (Oddspapi pinnacle+30, from 23 Sep), and merges
   into `captured-closes-pinnacle.json` (committed back after the deploy; held rows are never deleted).
-  Pinnacle +30s rows are labelled **"Pinnacle · captured"** like the Jul–Sep rows (board ruling, card 9f0e123c).
+  Pinnacle +30s rows are labelled **"Pinnacle · captured"** like the Jul–Sep rows (board ruling, card 9f0e123c); a close
+  the Oddspapi archive replaced (founder brief 2026-10-14) reads **"Pinnacle close · from Pinnacle history"** (the shard's
+  `pinLabel`, `fhSrcTitle`). The closes come from the permanent Pinnacle archive's export (`pinnacle-closes.json`,
+  `.claude/rules/pinnacle-archive.md`).
   **3–22 Sep** (no series in matches.json) was backfilled once (TEN-346, board ruling Q3 on card 9f0e123c) from
   Oddspapi `/v4/historical-odds` pinnacle+30 by `tools/ten346-backfill-captured-pinnacle.js` (+ the key-yielding
   `tools/ten346-backfill-pinnacle-fetch.py`), cut and merged by this builder; the file's `backfills` record says what

@@ -401,6 +401,21 @@ jobs:
           node build-captured-pinnacle.js || rc=$?
           node tools/step-check.mjs --step "Refresh captured Pinnacle closes (best-effort)" --rc "$rc" --since "$t0" --exists captured-closes-pinnacle.json
 
+      # Founder brief 2026-10-14 (item 1 + 2): the match-close shards are rebuilt from the permanent Pinnacle archive
+      # (Supabase pinnacle_archive_close — .claude/rules/pinnacle-archive.md): the current close per match, an archive
+      # close ("from Pinnacle history") over a captured one. Read-only (SELECT). A failed read leaves no export, and
+      # build-match-closes falls back to the committed captured-closes-pinnacle.json (named in its stats) — never
+      # nothing, and the step-check reports the failure.
+      - name: Export the archive's Pinnacle closes (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          rm -f pinnacle-closes.json
+          python3 tools/pinarch.py export pinnacle-closes.json || rc=$?
+          node tools/step-check.mjs --step "Export the archive's Pinnacle closes (best-effort)" --rc "$rc" --since "$t0" --fresh pinnacle-closes.json
+
       - name: Build match-close shards (best-effort)
         run: |
           t0=$(date +%s); rc=0

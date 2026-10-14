@@ -190,17 +190,24 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   Pinnacle feed in its place.
 - **Order for a 2026 match** (each slot only when the one above has no two-sided close; never two books or two sources in
   one match): (1) our live Oddspapi capture, labelled **"captured"**, shown first; (2) the Oddspapi Pinnacle archive pulled
-  after the start, labelled **"from Pinnacle history"** — it REPLACES the captured price, and the replaced value is logged,
-  never deleted; (3) api-tennis Pinnacle (`Pncl`) — a cross-check, and a backup only when Oddspapi has no close; it never
-  overrides the archive (it carries no timestamp and prices to 2 decimals, measured 2026-10-14); (4) Tennis-Data 2026 —
-  Bet365 only, a fallback only where no Pinnacle close exists; it never overrides Pinnacle.
-- **Every close stores** its source, label, timestamp and gap to the start. The close is the last ACTIVE archive entry at or
-  before the actual start, both sides required; never a scheduled time, never an in-play entry.
-- **One number on every page:** our Pinnacle closes are fed into the Database archive itself (`database-yield.json`), so the
-  Database, Head to Head, the Player Profile and Match analysis read the same close.
+  after the start, labelled **"from Pinnacle history"** — it REPLACES the captured price (a new archive row whose
+  `supersedes` names the captured one; the captured row stays in the archive); (3) Tennis-Data 2026 Bet365 — a fallback
+  only where no Pinnacle close exists (13 Jan–Apr 2026: Oddspapi keeps no history that old, so the R8 Bet365 fallback
+  prices those rows). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
+  timestamps; measured 2 decimals) — a cross-check only.
+- **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before our live-flip start**
+  (`live_flip_log.last_not_live_seen_at`, the last poll where the match was not live), both sides required, never a
+  scheduled time, never an in-play entry. Every close stores its source, label, timestamp (`close_ts`, the later side),
+  start and gap to the start; the Oddspapi `trueStartTime` and the close at it are kept beside it (`detail.startCheck`).
+  Code: `tools/pinarch.py` `close_at` / `archive_close_row`; rules and jobs: `.claude/rules/pinnacle-archive.md`.
+  **Test:** `tools/test-pinarch-close.py`.
+- **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).
+  Every pipeline run exports the current close per match (`pinnacle-closes.json`, an archive close over a captured one)
+  and `build-match-closes.js` builds the closing-prices shards from it (fallback: the committed
+  `captured-closes-pinnacle.json`, named in the shard stats); the shard's `pinLabel` column carries the label to the
+  page ("Pinnacle close · from Pinnacle history" / "· captured"). *Status 2026-10-14:* the Database archive
+  (`database-yield.json`) is fed from the same export in the following landing; until then it prices as before.
 - **TML** (Tennis Abstract match files) is used for match, date and score checks only — it carries no odds.
-- **Status (2026-10-14):** ruled; slots (2)–(4) and the Database feed are NOT built yet (Part 2 steps 3–4 wait on the
-  validation in the 2026-10-14 report). Until they land, the pages price as before (Database join + the R8 picker).
 
 **The board close = Pinnacle's closing price** (founder 2026-09-27, TEN-295 comment 054dc038 item 1; `bsp-pipeline.js` `pinnacleCloseOf` → `m.pinClose`; page `_mcPinClose*`). Source **Pinnacle +30s (Oddspapi)**, else **Pinnacle (api-tennis)** — both legs from ONE source, read from the chart series (`oddsMovement.chart.books`, stored keys `Pinnacle +30s` / `Pinnacle (api-tennis)`); per leg the last real price (≥ 1.01) **strictly before** the start. Start = the card state's actual `startTs`; only where none exists, the **earliest** scheduled start (`m.startTs`, the Oddspapi fixture start, the card's Europe/Berlin clock — schedules disagree when an order of play moves, and a later cut can take an in-play price). Neither source with a pre-start pair → **dash**. Never another book, never an estimate. Finished cards only; a run without the series carries the prior `pinClose`. The model never reads it (`runModel` byte-identical with and without, 54 of 54 cards, 27 Sep). Tests: Harris v Kovacevic (actual 10:31:59Z) → Pinnacle +30s 1.534 / 2.65 (10:10:08Z), never the 10:32:14Z tick, never Bet105's 1.526 / 2.64; Oddspapi missing a leg → the api-tennis pair; neither → null. Since TEN-377 it feeds no card figure (the card book's close does); its own age is judged on each leg's **last price change** (the series records changes only) against `ageRefTs` — the actual start, else the **latest** schedule (cut at the earliest, aged to the latest: Wong v Vallejo, schedules 11:30Z / 13:40Z, is 144 min old, never "14 min"); exact to the millisecond. A prior `pinClose` is carried when a run has no series or no pre-start pair, only while both legs are still before that run's cut. **Staleness beyond that is the founder's pending call** (27 Sep: 18 of 37 actual-start closes' older leg last moved > 30 min before the start, 14 > 60; all 9 scheduled-start closes > 30 min to the latest schedule, 5 > 60).
 

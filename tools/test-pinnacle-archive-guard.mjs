@@ -13,15 +13,17 @@ const MIGRATION = 'supabase/migrations/20261014120000_pinnacle_archive.sql';
 // Files that may NAME the tables. Code among them is scanned for write paths below; docs and tests only name them.
 const ALLOWED = new Set([MIGRATION, 'tools/pinarch.py', 'tools/pinarch-guard.mjs', '.github/workflows/pinnacle-archive.yml',
   'tools/test-pinnacle-archive-guard.mjs', 'tools/test-pinnacle-archive-sql.py', 'tools/test-pinarch-roundtrip.py',
-  'tools/test-pinarch-guard-check.mjs', '.claude/rules/pinnacle-archive.md']);
-const DOCS = new Set(['.claude/rules/pinnacle-archive.md']);
+  'tools/test-pinarch-guard-check.mjs', 'tools/test-pinarch-close.py',
+  // name the table in comments only (they read the export file, never the table): scanned for write paths like the rest
+  'build-match-closes.js', '.github/workflows/pipeline.yml']);
+const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';
 
 export function faults(file, text) {
   const out = [];
   const t = TABLES.find(n => text.includes(n));
   if (!t) return out;
-  if (!ALLOWED.has(file)) return [`${file} names ${t} but is not on the archive allow-list (only tools/pinarch.py writes it)`];
-  if (DOCS.has(file) || /^tools\/test-/.test(file)) return out;
+  if (!ALLOWED.has(file) && !isDoc(file)) return [`${file} names ${t} but is not on the archive allow-list (only tools/pinarch.py writes it)`];
+  if (isDoc(file) || /^tools\/test-/.test(file)) return out;
   const body = file === MIGRATION
     // the migration's own trigger + guard definitions name UPDATE / DELETE / TRUNCATE on purpose: drop those lines
     ? text.split('\n').filter(l => !/before update or delete|before truncate|drop trigger if exists|tg_op|has_table_privilege|revoke all on|revoke all on function|-- /i.test(l)).join('\n')

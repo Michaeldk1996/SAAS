@@ -119,3 +119,43 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 archive-oddspapi-raw.py postmatch
+
+  # Founder brief 2026-10-14 (item 2): after each ATP / Challenger match starts, pull its free /v4/historical-odds
+  # (pinnacle+30) in the first key window, store the payload in the permanent Pinnacle archive and derive the close at
+  # our live-flip start (tools/pinarch.py pull; .claude/rules/pinnacle-archive.md). Runs AFTER the post-match job, so
+  # the two never call Oddspapi at once; the same key gate (the :05–:14 window + loop_idle) applies to every call.
+  pinnacle-history:
+    needs: postmatch
+    if: always() && inputs.mode != 'verify-report'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            tools/pinarch.py
+            archive-oddspapi-raw.py
+            refresh-odds-history.py
+            chart_series.py
+            odds-fixture-map.json
+          sparse-checkout-cone-mode: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Oddspapi fixtures cache (one metered /v4/fixtures call per 6-day window, re-asked every 6 h)
+        uses: actions/cache@v4
+        with:
+          path: .pinarch-fixtures.json
+          key: pinarch-fixtures-${{ github.run_id }}
+          restore-keys: pinarch-fixtures-
+      - name: Pull and derive the Pinnacle history of the matches that just started
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          PINARCH_FIXTURES: .pinarch-fixtures.json
+        run: python3 tools/pinarch.py pull --budget 600

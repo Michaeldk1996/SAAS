@@ -29,7 +29,8 @@
  * close to its match by ID (opponentKey / eventKey), not by name.
  *
  *   rows: [date, oppArchiveName, won(1|0), pinP, pinO, b365P, b365O, ret(1|0), oppKey|null]
- *   cap:  [date, oppKey, pinP, pinO, b365P, b365O, eventKey|null]   (won is not captured)
+ *   cap:  [date, oppKey, pinP, pinO, b365P, b365O, eventKey|null, pinLabel|null]   (won is not captured;
+ *         pinLabel = 'captured' | 'from Pinnacle history', the Pinnacle close's archive label)
  * Emits match-closes/{key}.json + match-closes-index.json. No network calls.
  */
 const fs = require('fs');
@@ -213,13 +214,21 @@ function capturedBet365(root, resolver, stats) {
 // Captured Pinnacle closes: captured-closes-pinnacle.json, refreshed every pipeline run by
 // build-captured-pinnacle.js (TEN-316; first a one-time extract, tools/ten263-extract-captured-pinnacle.mjs),
 // already cut at the actual start and keyed by board eventKey + both player keys.
+// Founder brief 2026-10-14: the closes come from the permanent Pinnacle archive — pinnacle-closes.json, exported from
+// Supabase pinnacle_archive_close every pipeline run (tools/pinarch.py export: the current close per match, an archive
+// close "from Pinnacle history" over a captured one), same row shape plus its label. Without the export (a failed read)
+// the committed captured-closes-pinnacle.json is read, every row labelled "captured"; stats.capPinSource says which.
 function capturedPinnacle(root, stats) {
-  const d = readJson(path.join(root, 'captured-closes-pinnacle.json'), null);
+  const exp = readJson(path.join(root, 'pinnacle-closes.json'), null);
+  const useExport = !!(exp && Array.isArray(exp.rows) && exp.rows.length);
+  const d = useExport ? exp : readJson(path.join(root, 'captured-closes-pinnacle.json'), null);
+  stats.capPinSource = useExport ? 'pinnacle-closes.json (archive)' : 'captured-closes-pinnacle.json (fallback)';
   const out = [];
   for (const r of (d && d.rows) || []) {
     const P = pair(r.p1, r.p2);
     if (!P || !r.p1Key || !r.p2Key || !r.date) continue;
-    out.push({ date: r.date, k1: String(r.p1Key), k2: String(r.p2Key), P, ek: r.eventKey != null ? String(r.eventKey) : null });
+    out.push({ date: r.date, k1: String(r.p1Key), k2: String(r.p2Key), P, ek: r.eventKey != null ? String(r.eventKey) : null,
+               label: (useExport && r.label) || 'captured' });
     stats.capPin++;
   }
   return out;
@@ -260,8 +269,9 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
   const caps = capturedPinnacle(root, stats).concat(capturedBet365(root, wide, stats));
   for (const c of caps) {
     const P = c.P || null, B = c.B || null;
-    addCap(c.k1, [c.date, c.k2, P ? P[0] : null, P ? P[1] : null, B ? B[0] : null, B ? B[1] : null, c.ek]);
-    addCap(c.k2, [c.date, c.k1, P ? P[1] : null, P ? P[0] : null, B ? B[1] : null, B ? B[0] : null, c.ek]);
+    const L = P ? (c.label || 'captured') : null;           // the Pinnacle close's label: captured | from Pinnacle history
+    addCap(c.k1, [c.date, c.k2, P ? P[0] : null, P ? P[1] : null, B ? B[0] : null, B ? B[1] : null, c.ek, L]);
+    addCap(c.k2, [c.date, c.k1, P ? P[1] : null, P ? P[0] : null, B ? B[1] : null, B ? B[0] : null, c.ek, L]);
   }
   fs.rmSync(outDir, { recursive: true, force: true });
   fs.mkdirSync(outDir, { recursive: true });
@@ -272,7 +282,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
     const tmp = path.join(outDir, `.${key}.json.tmp`);
     fs.writeFileSync(tmp, JSON.stringify({ key, through: latest,
       cols: ['date', 'opp', 'won', 'pin', 'pinOpp', 'b365', 'b365Opp', 'ret', 'oppKey'], rows: list,
-      capCols: ['date', 'oppKey', 'pin', 'pinOpp', 'b365', 'b365Opp', 'eventKey'], cap: cl }));
+      capCols: ['date', 'oppKey', 'pin', 'pinOpp', 'b365', 'b365Opp', 'eventKey', 'pinLabel'], cap: cl }));
     fs.renameSync(tmp, path.join(outDir, `${key}.json`));
     index[key] = [list.length, cl.length];
   }

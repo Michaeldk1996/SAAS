@@ -30,8 +30,7 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
 - **The deploy fails if a count ever goes down.** `publish.yml` runs `tools/pinarch-guard.mjs` before the Pages deploy:
   any table below the highest count recorded in `pinnacle_archive_count`, a trigger missing, a write privilege or RLS
   off → the publish fails and the site keeps its last build. An unreachable database is a loud SKIP, never a pass and
-  never a block. **Test:** `tools/test-pinarch-guard-check.mjs`. *Status 2026-10-14:* the guard step is added to
-  `publish.yml` in the landing after `install` has created the tables (before that the RPC does not exist).
+  never a block. **Test:** `tools/test-pinarch-guard-check.mjs`.
 - **Restore = the backups alone.** `python3 tools/pinarch.py restore <checkout of stennisfy-ops> --sql-out restore.sql`
   verifies every file's sha256 against its manifest (a mismatch stops it), then writes `INSERT … OVERRIDING SYSTEM VALUE …
   ON CONFLICT DO NOTHING` for every row with its original id (so every `supersedes` still points at its row) and moves each
@@ -45,7 +44,21 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
 - `daily` (cron 04:37 UTC) = `import` + `backup`: `captured-closes-pinnacle.json` (latest main) → close rows labelled
   `captured`; every object in the `oddspapi-raw` bucket not yet archived (by path + the object's `updated_at`) → raw rows;
   then today's dated backup. A changed captured row or a changed bucket object is added as a new row with `supersedes`.
+- `derive` (in `daily`: the last 3 days; on dispatch: `--days N`) — for every ATP / Challenger singles match our live
+  poller saw start (`live_flip_log`), the newest payload the archive holds for its Oddspapi fixture → one close row
+  labelled `from Pinnacle history` (rule: `odds.md` "Pinnacle closing source by period"). The fixture comes from the odds
+  loop's board map (`odds-fixture-map.json`: eventKey → fixtureId + orient), else from the Oddspapi fixtures list joined on
+  BOTH surnames within 36 h (exactly one candidate; two or more, or none → no close, counted). Player keys are
+  api-tennis's (`get_fixtures`, `timezone=UTC`). The Oddspapi fixtures list is the only METERED call (`/v4/fixtures`, one
+  per 6-day window, cached; re-asked every 6 h); the meter is printed before and after.
 - `restore-check` — rebuilds every row from the backups and compares with the live tables (no write).
+- **Post-start pull** — `oddspapi-postmatch.yml` job `pinnacle-history` (dispatched at :07 / :22 / :37 / :52 by the
+  pg_cron pinger, after the post-match job so the two never call Oddspapi at once): every match our poller saw start in the
+  last 6 h without an archive close → its free `/v4/historical-odds` in the first key window (the :05–:14 window +
+  `loop_idle`), stored as a raw row, then the close derived at once. A match whose close is not derivable yet is pulled
+  again at most 4 times, 30 min apart. The captured close stays first on the page until the archive close supersedes it.
+- **Export** — every pipeline run, `python3 tools/pinarch.py export pinnacle-closes.json` (read-only) writes the current
+  close per match; `build-match-closes.js` builds the closing-prices shards from it.
 
 ## Measured at the build (2026-10-14 03:29Z)
 Database 2.34 GB of an 8 GB disk (5.53 GB free; Pro plan, Micro compute). Bucket `oddspapi-raw` 6,137 fixtures, 181 MB

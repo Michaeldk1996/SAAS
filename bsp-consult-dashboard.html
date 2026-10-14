@@ -13257,7 +13257,7 @@ function fhParseCloses(d){
     ? { rows: d.rows.map(x => ({ date: x[0], opp: x[1], won: x[2] === 1, P: two(x[3], x[4]), B: two(x[5], x[6]), ret: x[7] === 1,
           oppKey: x[8] != null ? String(x[8]) : null })),
         cap: (d.cap || []).map(x => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]),
-          ek: x[6] != null ? String(x[6]) : null })) }
+          ek: x[6] != null ? String(x[6]) : null, PL: x[7] || null })) }
     : null;
 }
 function fhLoadCloses(key){
@@ -13291,13 +13291,19 @@ function fhCloseFor(cl, date, oppName, won, oppKey, ek){
   // own: by eventKey when both carry one, else by opponent key within ±1 day among rows
   // that do not name a DIFFERENT match.
   const e = ek != null ? String(ek) : '';
+  let capLabel = null;
   const capFor = b => {
     const pool = (cl.cap || []).filter(x => x[b]);
     const byEk = e ? pool.filter(x => x.ek === e) : [];
     const hits = byEk.length ? byEk : (ok ? pool.filter(x => x.oppKey === ok && near(x) && !(e && x.ek && x.ek !== e)) : []);
+    if (hits.length === 1 && b === 'P') capLabel = hits[0].PL;
     return hits.length === 1 ? hits[0][b] : null;
   };
-  return fhPickBook({ Ptd: td && td.P, Pcap: capFor('P'), Btd: td && td.B, Bcap: capFor('B') });
+  const pick = fhPickBook({ Ptd: td && td.P, Pcap: capFor('P'), Btd: td && td.B, Bcap: capFor('B') });
+  // Founder 2026-10-14: our Pinnacle close carries its archive label — "captured" (our live capture) or "from Pinnacle
+  // history" (the Oddspapi archive pulled after the start, which replaces it).
+  if (pick && pick.book === 'P' && pick.src === 'cap' && capLabel) pick.srcLabel = capLabel;
+  return pick;
 }
 // Today's price (Price range dot): Pinnacle current (api-tennis multibook "Pncl"),
 // else Bet365 current (bet365 stream, then api-tennis's bet365, then m.odds when it
@@ -13322,7 +13328,7 @@ function fhTodayPair(m){
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
-function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
+function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
 function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // TEN-402 r1 fix 3 (founder 2026-10-09): on a sheet opened from the Head to Head page the tag is part of the header's grey
 // mono meta line ("… · B365", the meta's own face, size and tone), not a caps chip.

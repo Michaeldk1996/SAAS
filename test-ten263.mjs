@@ -444,13 +444,13 @@ test('build-match-closes: captured Bet365 cut at the actual start, captured Pinn
     const r = build(root, join(root, 'match-closes'), join(root, 'match-closes-index.json'));
     const cap = JSON.parse(readFileSync(join(root, 'match-closes', '5.json'), 'utf8')).cap;
     assert.deepEqual(cap, [
-      ['2026-08-10', '6', null, null, 1.8, 2.0, null],     // last tick before the start, not the in-play 1.2 / 4.5
-      ['2026-08-15', '6', null, null, 1.66, 2.2, null],    // oriented to Sinner; the start from the fixture index
-      ['2026-08-20', '6', 1.7, 2.15, null, null, '777'],   // captured Pinnacle, keyed by eventKey
-      ['2026-08-18', '6', null, null, 2.2, 1.615, null],   // the 1.01/1.01 suspension tick is not the close
+      ['2026-08-10', '6', null, null, 1.8, 2.0, null, null],     // last tick before the start, not the in-play 1.2 / 4.5
+      ['2026-08-15', '6', null, null, 1.66, 2.2, null, null],    // oriented to Sinner; the start from the fixture index
+      ['2026-08-20', '6', 1.7, 2.15, null, null, '777', 'captured'],   // captured Pinnacle, keyed by eventKey, labelled
+      ['2026-08-18', '6', null, null, 2.2, 1.615, null, null],   // the 1.01/1.01 suspension tick is not the close
     ].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
     const alc = JSON.parse(readFileSync(join(root, 'match-closes', '6.json'), 'utf8')).cap;
-    assert.deepEqual(alc[0], ['2026-08-10', '5', null, null, 2.0, 1.8, null], 'the opponent\'s shard carries the mirrored pair');
+    assert.deepEqual(alc[0], ['2026-08-10', '5', null, null, 2.0, 1.8, null, null], 'the opponent\'s shard carries the mirrored pair');
     assert.equal(r.stats.capNoStart, 1, 'the fixture with no actual start is dropped, never cut at a scheduled time');
     assert.equal(r.stats.capOneSided, 1, 'a side with only in-play ticks has no close');
     assert.equal(r.stats.capUnresolved, 1, 'a doubles pair never joins');
@@ -616,6 +616,11 @@ test('B365 tag, and every price names its book and source', () => {
   assert.ok(formRowHtml(S, r).includes('title="Pinnacle close · captured"') && h2hRowHtml(S, r).includes('title="Pinnacle close · captured"'));
   assert.equal(S.fhSrcTitle({ book: 'P', src: 'td' }), 'Pinnacle close · Tennis-Data');
   assert.equal(S.fhSrcTitle(null), 'No Pinnacle or Bet365 close on record');
+  // founder brief 2026-10-14: the archive label rides on the captured-Pinnacle slot (the shard's pinLabel column)
+  const lab = { rows: [], cap: [{ date: '2026-10-09', oppKey: '6', P: [1.229, 4.64], B: null, ek: '9', PL: 'from Pinnacle history' }] };
+  assert.equal(S.fhSrcTitle(S.fhCloseFor(lab, '2026-10-09', 'Y. Zhou', true, 6, 9)), 'Pinnacle close · from Pinnacle history');
+  const unl = { rows: [], cap: [{ date: '2026-10-09', oppKey: '6', P: [1.23, 4.67], B: null, ek: '9', PL: null }] };
+  assert.equal(S.fhSrcTitle(S.fhCloseFor(unl, '2026-10-09', 'Y. Zhou', true, 6, 9)), 'Pinnacle close · captured', 'no label → captured');
 });
 test('H2H pixel pass: header counts today\'s book, lead line carries the level mix, fixed dot columns, row Elo, design line-height', () => {
   // Price header: today's Bet365 price makes the section mixed even when every meeting is Pinnacle.
@@ -1217,4 +1222,38 @@ test('Live modal: untracked winners/UE (all 0 over 10+ points) are dashes, a rea
   assert.equal(mk(0, 138)(), true, 'all 0 over 138 points: not tracked');
   assert.equal(mk(0, 6)(), false, 'under 10 points an all-zero sheet can be real');
   assert.equal(mk(3, 138)(), false, 'real counts');
+});
+
+// Founder brief 2026-10-14: the closing-prices shards are built from the permanent Pinnacle archive's export
+// (pinnacle-closes.json — the current close per match, labelled). The export wins over the committed captured file, and
+// the label reaches the shard's pinLabel column and the page's source title. Control: without the export the captured
+// file is read and every Pinnacle row is labelled "captured".
+test('build-match-closes: the archive export (pinnacle-closes.json) wins, with its label; the captured file is the fallback', () => {
+  const { build } = require('./build-match-closes.js');
+  const root = mkdtempSync(join(tmpdir(), 'ten263x-'));
+  try {
+    mkdirSync(join(root, 'odds-archive'));
+    writeFileSync(join(root, 'odds-archive', '2025.csv'), 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl\n');
+    writeFileSync(join(root, 'player-profiles.json'), JSON.stringify({ players: { 5: { name: 'L. Musetti' }, 6: { name: 'Y. Zhou' } } }));
+    writeFileSync(join(root, 'matches.json'), '[]');
+    writeFileSync(join(root, 'captured-closes-pinnacle.json'), JSON.stringify({ rows: [
+      { eventKey: 9, date: '2026-10-09', p1Key: 5, p2Key: 6, p1: 1.23, p2: 4.67 }] }));
+    const outDir = join(root, 'match-closes'), idx = join(root, 'match-closes-index.json');
+    let r = build(root, outDir, idx);
+    let cap = JSON.parse(readFileSync(join(outDir, '5.json'), 'utf8')).cap;
+    assert.deepEqual(cap, [['2026-10-09', '6', 1.23, 4.67, null, null, '9', 'captured']], 'control: the captured file, labelled captured');
+    assert.equal(r.stats.capPinSource, 'captured-closes-pinnacle.json (fallback)');
+    writeFileSync(join(root, 'pinnacle-closes.json'), JSON.stringify({ rows: [
+      { eventKey: 9, date: '2026-10-09', p1Key: 5, p2Key: 6, p1: 1.229, p2: 4.64, label: 'from Pinnacle history' }] }));
+    r = build(root, outDir, idx);
+    cap = JSON.parse(readFileSync(join(outDir, '5.json'), 'utf8')).cap;
+    assert.deepEqual(cap, [['2026-10-09', '6', 1.229, 4.64, null, null, '9', 'from Pinnacle history']], 'the archive close, labelled');
+    assert.equal(r.stats.capPinSource, 'pinnacle-closes.json (archive)');
+    const zhou = JSON.parse(readFileSync(join(outDir, '6.json'), 'utf8')).cap;
+    assert.deepEqual(zhou[0].slice(2, 4), [4.64, 1.229], 'the opponent\'s shard carries the mirrored pair');
+  } finally { rmSync(root, { recursive: true, force: true }); }
+  const parse = new Function(slice('fhParseCloses') + '\nreturn fhParseCloses;')();
+  const pc = parse({ rows: [], cap: [['2026-10-09', 6, 1.229, 4.64, null, null, 9, 'from Pinnacle history'], ['2026-10-09', 6, null, null, 1.8, 2.0, null]] });
+  assert.equal(pc.cap[0].PL, 'from Pinnacle history', 'the page reads the shard\'s pinLabel column');
+  assert.equal(pc.cap[1].PL, null, 'an older 7-column shard row has no label (read as captured)');
 });
