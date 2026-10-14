@@ -13,6 +13,7 @@ ok(!checkStep({ step: 's', rc: '0', since: 100, exists: ['b.json'] }, st({ 'b.js
 ok(checkStep({ step: 's', rc: '0', since: 100, exists: ['b.json'] }, st({ 'b.json': { t: 50 } })).ok, 'an exists-only output may be older (the step may legitimately not rewrite it)');
 const yml = readFileSync(new URL('../.github/workflows/pipeline.yml', import.meta.url), 'utf8');
 ok(!/^\s*run: node [^\n]*\|\| true\s*$/m.test(yml), 'no best-effort node step left without its check');
+ok(!/^\s+node [^\n(]*\|\| true\s*$/m.test(yml), 'no `node … || true` line left inside a multi-line step either');
 const checks = (yml.match(/node tools\/step-check\.mjs --step "/g) || []).length;
 ok(checks >= 14, `every best-effort step is checked (${checks})`);
 ok(/node build-match-closes\.js \|\| rc=\$\?\n\s*node tools\/step-check\.mjs --step "[^"]+" --rc "\$rc" --since "\$t0" --fresh match-closes-index\.json/.test(yml), 'match-closes is checked for a fresh index');

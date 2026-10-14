@@ -1404,8 +1404,10 @@ jobs:
       # Replaces the standalone admin-log.yml (deleted in Edit 3).
       - name: Append completed matches to admin log (best-effort)
         run: |
-          node build-admin-log.js || true
-          node push-admin-log-to-firestore.js || true
+          rc=0; node build-admin-log.js || rc=$?
+          node tools/step-check.mjs --step "build-admin-log.js" --rc "$rc" --exists admin-log.json
+          rc=0; node push-admin-log-to-firestore.js || rc=$?
+          node tools/step-check.mjs --step "push-admin-log-to-firestore.js" --rc "$rc"
       - name: Commit admin log (only if changed)
         run: |
           if [ -z "$(git status --porcelain -- admin-log.json)" ]; then
@@ -1488,7 +1490,8 @@ jobs:
       # negative control), wired into `npm test` above.
       - name: Refresh the committed profile-cache floor (once a UTC day)
         run: |
-          node tools/profile-cache-store.js freeze || true
+          rc=0; node tools/profile-cache-store.js freeze || rc=$?
+          node tools/step-check.mjs --step "profile-cache-store.js freeze" --rc "$rc" --exists player-profiles-cache.json.gz
           if [ -z "$(git status --porcelain -- player-profiles-cache.json.gz player-tournament-history.json.gz)" ]; then
             echo "Committed profile-cache floor already carries today's stamp — nothing to commit."
             exit 0
@@ -1540,7 +1543,8 @@ jobs:
             echo "Committed match-stat floor already refreshed today ($LAST_DAY) — one per UTC day."
             exit 0
           fi
-          node tools/match-stats-store.js freeze || true
+          rc=0; node tools/match-stats-store.js freeze || rc=$?
+          node tools/step-check.mjs --step "match-stats-store.js freeze" --rc "$rc" --exists historical-match-stats.floor.json
           if [ -z "$(git status --porcelain -- historical-match-stats.floor.json)" ]; then
             echo "Committed match-stat floor unchanged this run — nothing to commit."
             exit 0
