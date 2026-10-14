@@ -5716,6 +5716,32 @@ function deriveSlamBoxes(profile) {
 // reach players well beyond today's fixtures. The tour average is computed over
 // the seed set only, preserving its meaning as "the current field's average".
 // Players with no real fetchPlayerStats() result are skipped — never fabricated.
+// F1 — the latest board-match date per player key, from the committed captured Pinnacle closes (every row is a
+// board card, keyed by api-tennis player keys). A missing or unreadable file gives an empty map: no entry is
+// then judged stale by this rule, and the 14-day TTL still applies (the rule can only ADD rebuilds).
+function boardMatchDatesByPlayer(file = 'captured-closes-pinnacle.json') {
+  const out = new Map();
+  let rows = [];
+  try { rows = (JSON.parse(fs.readFileSync(file, 'utf8')).rows) || []; } catch (e) { return out; }
+  for (const r of rows) {
+    if (!r || !r.date) continue;
+    for (const k of [r.p1Key, r.p2Key]) {
+      if (k == null) continue;
+      const key = String(k), d = String(r.date).slice(0, 10);
+      if (!out.has(key) || out.get(key) < d) out.set(key, d);
+    }
+  }
+  return out;
+}
+// A cached profile built on or before the day of a later board match cannot hold that match: stale. A match
+// on the build day is stale too unless the build came after the match day ended (a same-day build may predate
+// the result). Pure, exported, locked by tools/test-f1-profile-cache.js.
+function profileCacheStaleByBoard(cached, lastBoardDate) {
+  if (!cached || !cached.builtAt || !lastBoardDate) return false;
+  const built = String(cached.builtAt).slice(0, 10);
+  return built <= String(lastBoardDate).slice(0, 10);
+}
+
 async function buildPlayerProfiles(matches, surfaceMap) {
   const seedPlayers = new Map(); // key -> name (today's fixtures)
   for (const m of matches) {
@@ -5732,10 +5758,21 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   const profiles = {};
   const opponentPool = new Map(); // key -> name (discovered, non-seed)
 
+  // F1 (founder ruling 2026-10-14): a board player's fresh build is written back to the cache, so a player
+  // who leaves the board keeps serving his LAST board build — never the older copy the 14-day TTL would
+  // reuse (Musetti, cache built 6 Oct, played 9 Oct, read 3 Sep as his last match until the TTL ran out).
+  // And a cached entry built before a board match of that player (a captured close dated after builtAt)
+  // is stale whatever its age: it cannot hold that match.
+  const lastBoardDate = boardMatchDatesByPlayer();
+  const staleByBoard = (key, cached) => profileCacheStaleByBoard(cached, lastBoardDate.get(String(key)));
+
   // Pass 1 — seed players, always fresh. Collect their opponents along the way.
   for (const [key, name] of seedPlayers) {
     const { profile, opponents } = await buildOneProfile(key, name, surfaceMap);
-    if (profile) profiles[key] = profile;
+    if (profile) {
+      profiles[key] = profile;
+      cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile };
+    }
     for (const [oppKey, oppName] of opponents) {
       if (!seedPlayers.has(oppKey) && !opponentPool.has(oppKey)) opponentPool.set(oppKey, oppName);
     }
@@ -5759,7 +5796,8 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     if (cached && cached.v !== PROFILE_SCHEMA_VERSION) wrongSchemaRejections++;
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
-      && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
+      && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS)
+      && !staleByBoard(key, cached);
     // TEN-371: a gate fixture player's cached null (one failed build) is never
     // "fresh" — retried every run rather than withheld for the 14-day TTL.
     if (fresh && !(PINNED_PROFILE_KEYS.has(String(key)) && !cached.profile)) {
@@ -5828,7 +5866,8 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     const cached = cachedPlayers[key];
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
-      && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
+      && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS)
+      && !staleByBoard(key, cached);
     if (fresh && !(PINNED_PROFILE_KEYS.has(key) && !cached.profile)) {
       if (cached.profile) { profiles[key] = cached.profile; shardReused++; }
       continue;
@@ -7728,7 +7767,7 @@ module.exports = { isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMat
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
   writeTournamentHistoryShards, profilesWithoutTournamentHistory,
   TOURNAMENT_HISTORY_SHARD_DIR, TOURNAMENT_HISTORY_INDEX_PATH,
-  fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
+  fetchPlayerCareerHistory, boardMatchDatesByPlayer, profileCacheStaleByBoard, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
   TOURNAMENT_HISTORY_SCHEMA_VERSION,
   // TEN-206 search/shard split. loadAtpStandings is exported alongside the two
   // writers because the index is built from the rows it keeps as a side effect —

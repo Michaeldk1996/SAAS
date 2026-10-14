@@ -66,6 +66,20 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   it. Only the order is proven. **Test:** `test-ten402-r2l.mjs` (the real loaders and module: no request before paint /
   until asked, pending ≠ 0 ≠ "—", one fetch per session, failed → retry, the box on a failed join, the H2H page on the
   shared state), `tools/test-ten402-r2l-mutants.js`.
+- **Fresh profile data (F1, founder ruling 2026-10-14).** A board player's fresh build is written to the profile cache
+  every run (`bsp-pipeline.js` `buildPlayerProfiles` pass 1), so a player who leaves the board serves his last board build —
+  never an older copy the 14-day TTL would reuse. A cached profile built on or before the day of a later board match of that
+  player (a `captured-closes-pinnacle.json` row with his key) is stale and rebuilt (`profileCacheStaleByBoard`). Why:
+  Musetti's cache was built 6 Oct, he played Zhou on 9 Oct and left the board; his career-history and recentForm ended on
+  3 Sep until the TTL ran out (23 rows on 14 Oct). **Test:** `tools/test-f1-profile-cache.js`.
+- **Set scores from career-history (F2, founder ruling 2026-10-14).** Record per tournament's Set scores column reads the
+  career-history row the join meets for every edition row, all years (`tournJoin`); recentForm (this season + the last 10)
+  still overrides with the same data where it holds the match. A row the join cannot meet stays a dash. **Test:**
+  `tools/test-f2-set-scores.js` (Musetti Shanghai 2023–2026; control: career rows without sets → dashes).
+- **"After the archive" on a dateless row (F4, founder ruling 2026-10-14).** A row with no date takes the reason from its
+  edition (`trPxAfterOfEdition`: that season's dates in tournament-profiles.json, else its latest edition moved to the year;
+  a later year needs no dates). An edition starting on or before the archive's last day, or one with no dated edition, gets
+  no reason — never a guess. **Test:** `tools/test-f4-after-archive.js`.
 - **Live-edition rows (R3 fix 3).** A Record per tournament row dated after the Database archive's last match
   (`database-yield.json` `meta.dateRange[1]`, 13 Sep 2026 on 9 Oct; e.g. Alcaraz Tokyo 2026) has no closing price on
   record yet: its H / A print `—` and the whole cell carries the Match analysis Tournament tab's hover, "After the

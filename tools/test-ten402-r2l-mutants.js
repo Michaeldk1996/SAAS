@@ -33,7 +33,7 @@ const MUTANTS = [
   ['the "Backing him here" tile dashes while loading', 'pp2',
     "    var pinTxt = t.backingPending ? BACKING_PEND_HTML : t.pinN ? t.pinTxt || signed(t.pinPl, 1, 'u') : DASH;",
     "    var pinTxt = t.pinN ? t.pinTxt || signed(t.pinPl, 1, 'u') : DASH;"],
-  ['the rows\' H dash while loading', 'pp2', "t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.price)", 'oddsText(m.price)'],
+  ['the rows\' H dash while loading', 'pp2', "t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.price)", 'oddsText(m.price)'],
   ['opening Record per tournament does not ask for the join', 'pp2', " if (state.modal === 'tourn') tournNeedJoin();", ''],
   ['every box asks for the join', 'pp2', " if (state.modal === 'tourn') tournNeedJoin();", ' tournNeedJoin();'],
   ['opening an event does not ask for the join', 'pp2', "el.getAttribute('data-t')); tournNeedJoin(); }", "el.getAttribute('data-t')); }"],
@@ -58,9 +58,9 @@ const MUTANTS = [
   ['R3 fix 2: the box dashes on every answered join', 'pp2',
     "    return (tournViews(p) || []).some(function (t) { return t.backingFailed; });", "    return true;"],
   ['R3 fix 3: the H cell drops the reason', 'pp2',
-    "t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.price)", "t.backingPending ? BACKING_PEND_HTML : oddsText(m.price)"],
+    "t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.price)", "t.backingPending ? BACKING_PEND_HTML : oddsText(m.price)"],
   ['R3 fix 3: the A cell drops the reason', 'pp2',
-    "t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.oppPrice)", "t.backingPending ? BACKING_PEND_HTML : oddsText(m.oppPrice)"],
+    "t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.oppPrice)", "t.backingPending ? BACKING_PEND_HTML : oddsText(m.oppPrice)"],
   ['R3 fix 3: a priced row after the end prints the reason instead of its price', 'pp2',
     "    if (!m || m.price != null) return null;", "    if (!m) return null;"],
   ['R3 fix 3: the archive\'s last day itself counts as after it', 'html',
@@ -68,7 +68,7 @@ const MUTANTS = [
   ['R3 fix 3: the reason before the join answered (no end date yet → every row)', 'html',
     "  return end && date && String(date).slice(0, 10) > end ? trPxAfterTitle() : null;", "  return date && (!end || String(date).slice(0, 10) > end) ? trPxAfterTitle() : null;"],
   ['R3 fix 3: the profile words its own copy of the reason', 'pp2',
-    "    var why = typeof window.trPxAfterOf === 'function' ? window.trPxAfterOf(m.date) : null;", "    var why = typeof window.trPxAfterOf === 'function' && window.trPxAfterOf(m.date) ? 'After the archive: no closing price yet' : null;"],
+    "    var why = m.date ? (typeof window.trPxAfterOf === 'function' ? window.trPxAfterOf(m.date) : null)", "    var why = m.date ? (typeof window.trPxAfterOf === 'function' && window.trPxAfterOf(m.date) ? 'After the archive: no closing price yet' : null)"],
 ];
 const SUITE = path.join(ROOT, 'test-ten402-r2l.mjs');
 const run = env => spawnSync(process.execPath, ['--test', SUITE], { env: Object.assign({}, process.env, env), encoding: 'utf8' });
