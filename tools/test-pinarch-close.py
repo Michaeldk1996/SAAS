@@ -121,5 +121,54 @@ rl = P.raw_latest(['f1', 'f2'])
 check('raw_latest(): f1 → its Pinnacle +30 payload (id 1), not the newer bet365 one (id 2); f2 (bet365 only) → NO_PINNACLE',
       rl['f1']['id'] == 1 and rl['f1']['payload_gz'] == 'P1' and rl['f2'] is P.NO_PINNACLE, rl)
 P.rest = real
+# the cut (founder ruling 2026-10-14): the EARLIER of our live-flip and Oddspapi's sanity-gated trueStart
+flip = T('2026-09-27T16:40:20Z')
+c, src, rej = P.effective_cut(flip, T('2026-09-27T16:36:38Z'), T('2026-09-27T18:10:00Z'), T('2026-09-27T16:30:00Z'))
+check('cut: a sane trueStart earlier than our live-flip wins (Dickerson v Pissetti Vialle shape)', c == T('2026-09-27T16:36:38Z') and src == P.TRUE_START_SOURCE, (c, src))
+c, src, rej = P.effective_cut(flip, T('2026-09-27T16:45:00Z'), T('2026-09-27T18:10:00Z'), None)
+check('cut: a trueStart LATER than our live-flip never moves the cut later (resolve_start alone would, within 5 min)', c == flip and src == P.CUT_SOURCE, (c, src))
+c, src, rej = P.effective_cut(flip, T('2026-09-27T09:00:00Z'), T('2026-09-27T18:10:00Z'), None)
+check('cut: a trueStart failing the 6 h gate is rejected, with the gate\'s reason', c == flip and rej == 'implausible_duration', (c, rej))
+c, src, rej = P.effective_cut(flip, T('2026-09-27T16:36:38Z'), T('2026-09-27T16:00:00Z'), None)
+check('cut: end before start is rejected', c == flip and rej == 'end_before_start', (c, rej))
+check('cut: no trueStart → our live-flip', P.effective_cut(flip, None, None, None)[0] == flip)
+# the close moves with the cut: an in-play entry between trueStart and the live-flip is never the close
+S4 = P.mw_series(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-09-27T16:00:00Z', 1.08), e('2026-09-27T16:39:00Z', 1.02)]}},
+    '122': {'players': {'0': [e('2026-09-27T16:00:00Z', 7.26), e('2026-09-27T16:39:00Z', 12.09)]}}}}}}}}).encode())
+evx = dict(ev, cut=T('2026-09-27T16:36:38Z'), liveFlipCut=flip, cutSource=P.TRUE_START_SOURCE, trueStart=T('2026-09-27T16:36:38Z'), p1IsParticipant1=True)
+rx, _ = P.archive_close_row(evx, 9, 'idDP', S4)
+check('row: the close at the earlier cut (1.08 / 7.26), start_source names the trueStart, the check still measures against the live-flip',
+      rx['p1'] == 1.08 and rx['p2'] == 7.26 and rx['start_source'] == P.TRUE_START_SOURCE and rx['detail']['startCheck']['trueStartMinusCutS'] == -222, rx)
+rflip, _ = P.archive_close_row(dict(evx, cut=flip, cutSource=P.CUT_SOURCE), 9, 'idDP', S4)
+check('control: cut at the live-flip alone takes the in-play 1.02 / 12.09', rflip['p1'] == 1.02 and rflip['p2'] == 12.09, rflip)
+held2 = [dict(rflip, id=40)]
+corr = P.plan_archive_closes([rx], held2)
+check('the changed close is a NEW correction row superseding the old one (never an edit)', len(corr) == 1 and corr[0]['supersedes'] == 40 and corr[0]['dedupe_key'] != rflip['dedupe_key'], corr)
+# the post-start pull's own slot: never the odds loop's key gate, always pinnacle+30, 5 s cooldown, 429 pause + retry
+import inspect
+src_pull = inspect.getsource(P.cmd_pull) + inspect.getsource(P.hist_get)
+check('pull: no odds-loop key gate in the pull path (wait_for_key / daily_hist_get / loop_idle / key_is_ours)',
+      not any(x in src_pull for x in ('wait_for_key', 'daily_hist_get', 'loop_idle', 'key_is_ours')), src_pull[:200])
+calls, now_ = [], [100.0]
+slept = []
+def fake_get(f):
+    calls.append((f, now_[0])); return (None, 429) if len(calls) == 1 else (b'{}', None)
+def fake_sleep(x): slept.append(x); now_[0] += x
+P._last_hist[0] = 98.0
+cnt = {}
+body, err = P.hist_get('idX', 'k', cnt, clock=lambda: now_[0], sleep=fake_sleep, get=fake_get)
+check('pull: 5.5 s cooldown honoured, a 429 pauses 60 s and retries the same fixture', body == b'{}' and len(calls) == 2 and slept[0] == 3.5 and 60 in slept
+      and calls[1][1] - calls[0][1] >= 60 and cnt['http429'] == 1, (calls, slept, cnt))
+class FA:
+    seen = []
+    @staticmethod
+    def api_get(path, params, key, timeout=0, raw=False):
+        FA.seen.append((path, dict(params))); return b'{}', None
+real_load = P._load; P._load = lambda n, f: FA
+P._last_hist[0] = 0.0
+P.hist_get('idY', 'k', {}, sleep=lambda x: None)
+P._load = real_load
+check('pull: every history call names bookmakers=pinnacle+30 (never the account default)', FA.seen == [('/v4/historical-odds', {'fixtureId': 'idY', 'bookmakers': 'pinnacle+30'})], FA.seen)
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

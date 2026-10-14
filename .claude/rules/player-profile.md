@@ -66,6 +66,12 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   it. Only the order is proven. **Test:** `test-ten402-r2l.mjs` (the real loaders and module: no request before paint /
   until asked, pending ≠ 0 ≠ "—", one fetch per session, failed → retry, the box on a failed join, the H2H page on the
   shared state), `tools/test-ten402-r2l-mutants.js`.
+- **One event, one identity in the join (founder 2026-10-14, Pinnacle archive item 6).** Record per tournament meets its
+  career-history rows through `trSameEvent`, which also accepts two names with one `tournament-identity.js` identity:
+  "Canada Masters" = the career row's "Montreal" / "Toronto" (the season filter beside it ties each row to that year's
+  edition, so the year decides the host), "Queen's Club" = "London". The substring test alone left 186 + 62 rows unjoined
+  (measured 14 Oct). The Match analysis Tournament tab uses the same function. **Test:** `tools/test-trsameevent-identity.js`
+  (the pre-fix test as control; London Olympics stays apart).
 - **Fresh profile data (F1, founder ruling 2026-10-14).** A board player's fresh build is written to the profile cache
   every run (`bsp-pipeline.js` `buildPlayerProfiles` pass 1), so a player who leaves the board serves his last board build —
   never an older copy the 14-day TTL would reuse. A cached profile built on or before the day of a later board match of that

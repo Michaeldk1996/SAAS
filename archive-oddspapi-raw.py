@@ -88,6 +88,7 @@ HEARTBEAT_KEY = f'{META_PREFIX}/last-run.json'
 # bet365-history target list this one is NOT tier-filtered: all levels.
 TARGETS = os.path.join(HERE, '.oddspapi-raw-targets.json.gz')
 
+HIST_BOOKS = 'pinnacle+30'   # the books every daily / back-fill history pull names (one per call: the plan's only book)
 HIST_SLEEP = 5.5          # ~1 call / 5s, measured; concurrency does not help
 MAX_RETRY = 4
 FIXTURES_SLEEP = 2.5
@@ -172,11 +173,14 @@ def guard_quota(key, need):
 def hist_get(fixture_id, key):
     """One free /v4/historical-odds call, FULL payload, every market, every tick.
 
-    No `bookmakers` filter: the key is entitled to bet365 today, and hard-coding
-    the book here would silently drop any book a future plan adds.
+    It names the book (founder 2026-10-14, Pinnacle archive item 3): without a
+    `bookmakers` filter the endpoint returns the account's entitled book of the
+    day, and every payload pulled while the key was entitled to bet365 (before
+    26 Sep) came back bet365-only, then was never pulled again. HIST_BOOKS is the
+    one list; a plan that adds a book adds it there.
     A 429 is a RATE limit, not a budget limit, and does not bill."""
     for attempt in range(MAX_RETRY):
-        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id},
+        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id, 'bookmakers': HIST_BOOKS},
                             key, raw=True)
         if err == 429:
             time.sleep(HIST_SLEEP * (attempt + 2))
@@ -919,7 +923,7 @@ def daily_hist_get(fixture_id, key, budget_end, counts):
     for _ in range(DAILY_429_TRIES):
         if not wait_for_key(budget_end, counts):
             return None, 'budget'
-        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id}, key,
+        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id, 'bookmakers': HIST_BOOKS}, key,
                             timeout=PM_CALL_TIMEOUT_S, raw=True)
         if err != 429:
             return body, err

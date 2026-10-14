@@ -136,6 +136,7 @@ jobs:
           sparse-checkout: |
             tools/pinarch.py
             archive-oddspapi-raw.py
+            ten225-load-line-summary.py
             refresh-odds-history.py
             chart_series.py
             odds-fixture-map.json

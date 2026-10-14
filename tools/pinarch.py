@@ -506,19 +506,21 @@ def archive_close_row(ev, raw_id, fixture_id, series):
     a, b = (c['121'], c['122']) if ev['p1IsParticipant1'] else (c['122'], c['121'])
     close_ts = max(iso_ms(a[1]), iso_ms(b[1]))
     ts = ev.get('trueStart')
-    check = {'firstLive': ev.get('firstLive'), 'lastNotLive': ev.get('lastNotLive'), 'oddspapiTrueStart': ts.isoformat() if ts else None}
+    flip = ev.get('liveFlipCut') or ev['cut']
+    check = {'firstLive': ev.get('firstLive'), 'lastNotLive': ev.get('lastNotLive'), 'oddspapiTrueStart': ts.isoformat() if ts else None,
+             'trueStartReject': ev.get('trueStartReject')}
     if ts:
         c2, _ = close_at(series, ts)
         if c2:
             x, y = (c2['121'], c2['122']) if ev['p1IsParticipant1'] else (c2['122'], c2['121'])
             check['closeAtTrueStart'] = [x[0], y[0], max(x[1], y[1])]
-        lo, hi = sorted((ts, ev['cut']))
+        lo, hi = sorted((ts, flip))
         check['entriesBetweenTrueStartAndCut'] = sum(1 for oc in ('121', '122') for p in series.get(oc) or [] if lo < iso_ms(p['createdAt']) <= hi)
-        check['trueStartMinusCutS'] = round((ts - ev['cut']).total_seconds())
+        check['trueStartMinusCutS'] = round((ts - flip).total_seconds())
     row = {'event_key': int(ev['event_key']), 'fixture_id': fixture_id, 'match_date': ev.get('date'),
            'p1_key': ev.get('p1Key'), 'p2_key': ev.get('p2Key'), 'p1_name': ev.get('p1Name'), 'p2_name': ev.get('p2Name'),
            'p1': a[0], 'p2': b[0], 'book': 'Pinnacle +30s', 'label': ARCHIVE_LABEL, 'source': ARCHIVE_SOURCE,
-           'close_ts': close_ts.isoformat(), 'start_ts': ev['cut'].isoformat(), 'start_source': CUT_SOURCE,
+           'close_ts': close_ts.isoformat(), 'start_ts': ev['cut'].isoformat(), 'start_source': ev.get('cutSource') or CUT_SOURCE,
            'gap_to_start_s': round((ev['cut'] - close_ts).total_seconds(), 3), 'raw_id': raw_id,
            'detail': {'p1Ts': a[1], 'p2Ts': b[1], 'startCheck': check, 'apiTennis': ev.get('api') or {}}}
     row['dedupe_key'] = '|'.join(str(x) for x in (ARCHIVE_SOURCE, ARCHIVE_LABEL, row['event_key'], fixture_id, row['close_ts'], row['p1'], row['p2']))
@@ -643,6 +645,29 @@ def apitennis_day(day, key):
     return None
 
 
+TRUE_START_SOURCE = 'oddspapi trueStart (earlier than our live-flip)'
+
+
+def effective_cut(live_flip, true_start, true_end, sched):
+    """The close cut (founder ruling 2026-10-14, the start-time check): the EARLIER of our live-flip start and
+    Oddspapi's trueStart, the trueStart first passing the ruled sanity gate of ten225-load-line-summary.py
+    resolve_start (end before start, a match over 6 h, or no end and a start over 6 h before the schedule -> rejected).
+    Only the gate is used: its own cross-check can pick a start up to 5 min LATER than the flip, which this rule never
+    does. Returns (cut, source, reject reason)."""
+    if live_flip is None:
+        return None, None, None
+    if true_start is None:
+        return live_flip, CUT_SOURCE, None
+    L = _load('lls', 'ten225-load-line-summary.py')
+    e = lambda d: d.timestamp() if d else None
+    ts, _src, reason, *_ = L.resolve_start(e(true_start), e(true_end), e(sched), None, None, None)
+    if ts is None:
+        return live_flip, CUT_SOURCE, reason
+    if true_start < live_flip:
+        return true_start, TRUE_START_SOURCE, None
+    return live_flip, CUT_SOURCE, None
+
+
 def events_for(fl_rows, fixture_map, discovered, at_key):
     """Each flip -> {event_key, fixture_id, p1IsParticipant1, cut, keys, names, trueStart}. The fixture comes from the
     odds loop's board map (odds-fixture-map.json, eventKey -> fixtureId + orient) or, else, from the Oddspapi
@@ -688,9 +713,12 @@ def events_for(fl_rows, fixture_map, discovered, at_key):
                 m('no Oddspapi fixture' if not cands else 'two or more Oddspapi fixtures'); continue
             fx, p1first = cands[0][0]['fixtureId'], cands[0][1] == 'same'
             ts = iso_ms(cands[0][0].get('trueStartTime'))
+        fxr = by_id.get(fx) or (cands[0][0] if cands else {})
+        eff, src, reject = effective_cut(cut, ts, iso_ms(fxr.get('trueEndTime')), iso_ms(fxr.get('startTime')))
         at = (at_key or {}).get(ek) or {}
         k1, k2 = at.get('first_player_key'), at.get('second_player_key')
-        out.append({'event_key': ek, 'fixture_id': fx, 'p1IsParticipant1': p1first, 'cut': cut, 'firstLive': fl.get('first_live_seen_at'),
+        out.append({'event_key': ek, 'fixture_id': fx, 'p1IsParticipant1': p1first, 'cut': eff, 'cutSource': src,
+                    'liveFlipCut': cut, 'trueStartReject': reject, 'firstLive': fl.get('first_live_seen_at'),
                     'lastNotLive': fl.get('last_not_live_seen_at'), 'trueStart': ts, 'date': fl.get('event_date') or (flip or cut).date().isoformat(),
                     'p1Name': a1, 'p2Name': a2, 'p1Key': int(k1) if str(k1 or '').isdigit() else None,
                     'p2Key': int(k2) if str(k2 or '').isdigit() else None, 'level': fl.get('event_type_type'), 'tour': fl.get('tournament_name'),
@@ -823,30 +851,64 @@ def cmd_derive(days, cache_path):
     return rep
 
 
-def cmd_pull(budget_s, cache_path):
+HIST_BOOK = 'pinnacle+30'      # every history pull names the book (founder 2026-10-14 item 3): never the account default
+HIST_COOLDOWN_S = 5.5         # Oddspapi's only limit on the free history endpoint: ~1 call / 5 s (measured)
+HIST_429_PAUSE_S = 60
+HIST_429_TRIES = 3
+_last_hist = [0.0]
+
+
+def hist_get(fixture_id, key, counts, clock=time.monotonic, sleep=time.sleep, get=None):
+    """One free /v4/historical-odds call for Pinnacle +30 in the post-start pull's OWN slot (founder 2026-10-14 item 2:
+    never blocked by the odds loop's key gate; the endpoint is free, only the ~5 s cooldown applies). A 429 pauses 60 s
+    and retries the same fixture, at most 3 times. Returns (body, err)."""
+    A = None if get else _load('aor', 'archive-oddspapi-raw.py')
+    get = get or (lambda f: A.api_get('/v4/historical-odds', {'fixtureId': f, 'bookmakers': HIST_BOOK}, key, timeout=60, raw=True))
+    for _ in range(HIST_429_TRIES):
+        wait = _last_hist[0] + HIST_COOLDOWN_S - clock()
+        if wait > 0:
+            sleep(wait); counts['waitS'] = counts.get('waitS', 0) + wait
+        body, err = get(fixture_id)
+        _last_hist[0] = clock()
+        if err != 429:
+            return body, err
+        counts['http429'] = counts.get('http429', 0) + 1
+        sleep(HIST_429_PAUSE_S); counts['waitS'] = counts.get('waitS', 0) + HIST_429_PAUSE_S
+    return None, 429
+
+
+def cmd_pull(budget_s, cache_path, hours=6):
     """After each ATP / Challenger match starts: pull its /v4/historical-odds (free) in the first key window, store the
     payload in the archive, derive the close at our live-flip start. A match whose close is not derivable yet is
-    tried again on the next run, for up to 6 h after its start."""
+    tried again on the next run, for up to 6 h after its start. With `hours` > 6 it is the backlog pull: every match
+    started in that window with no archive close and no Pinnacle +30 payload yet."""
     A = _load('aor', 'archive-oddspapi-raw.py')
     okey = env('ODDSPAPI_KEY')
     t_end = A._clock_s() + budget_s
     now = dt.datetime.now(dt.timezone.utc)
-    fl = [f for f in flips(now - dt.timedelta(hours=6)) if iso_ms(f.get('last_not_live_seen_at'))]
-    done = {r['event_key'] for r in select_all(CLOSE, 'id,event_key', f'label=eq.{urllib.parse.quote(ARCHIVE_LABEL)}&event_key=in.(' + ','.join(str(f['event_key']) for f in fl) + ')')} if fl else set()
+    fl = [f for f in flips(now - dt.timedelta(hours=hours)) if iso_ms(f.get('last_not_live_seen_at'))]
+    done = set()
+    for i in range(0, len(fl), 100):                       # chunked: a 30-day backlog is ~1,400 event keys
+        done |= {r['event_key'] for r in select_all(CLOSE, 'id,event_key', f'label=eq.{urllib.parse.quote(ARCHIVE_LABEL)}&event_key=in.('
+                                                    + ','.join(str(f['event_key']) for f in fl[i:i + 100]) + ')')}
     fl = [f for f in fl if int(f['event_key']) not in done]
-    disc, calls = discovery(now - dt.timedelta(days=1), now + dt.timedelta(days=1), cache_path, okey) if fl else ([], 0)
+    disc, calls = discovery(now - dt.timedelta(hours=max(hours, 24) + 24), now + dt.timedelta(days=1), cache_path, okey) if fl else ([], 0)
     at, failed = _at_keys({f['event_date'] for f in fl if f.get('event_date')})
     evs, miss = events_for(fl, _board_map(), disc, at)
     # at most PULL_TRIES pulls per match, PULL_GAP_MIN apart: a payload with no pre-start entry is not pulled every run
-    prior = {}
+    prior, has_pin = {}, set()
     for i in range(0, len(evs), 20):
         chunk = ','.join('"' + e['fixture_id'] + '"' for e in evs[i:i + 20])
-        _, rows, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,pulled_at,source&fixture_id=in.({urllib.parse.quote(chunk)})')
+        _, rows, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,pulled_at,source,books&fixture_id=in.({urllib.parse.quote(chunk)})')
         for r in rows or []:
             if r.get('source') == 'oddspapi /v4/historical-odds':
                 prior.setdefault(r['fixture_id'], []).append(iso_ms(r['pulled_at']))
+            if HIST_BOOK in (r.get('books') or []):
+                has_pin.add(r['fixture_id'])
     def due(ev):
         p = prior.get(ev['fixture_id']) or []
+        if hours > 6 and ev['fixture_id'] in has_pin:
+            return False                                    # backlog: a Pinnacle +30 payload is held; derive reads it
         return len(p) < PULL_TRIES and (not p or (now - max(p)).total_seconds() >= PULL_GAP_MIN * 60)
     skipped = sum(1 for e in evs if not due(e))
     evs = [e for e in evs if due(e)]
@@ -855,16 +917,14 @@ def cmd_pull(budget_s, cache_path):
     for ev in evs:
         if A._clock_s() > t_end:
             break
-        body, err = A.daily_hist_get(ev['fixture_id'], okey, t_end, counts)
-        if err == 'budget':
-            break
-        time.sleep(A.HIST_SLEEP)
+        body, err = hist_get(ev['fixture_id'], okey, counts)
         if body is None:
             errs[str(err)] = errs.get(str(err), 0) + 1; continue
         gz, raw_body, sha = payload_parts(body)
         ids = insert(RAW, [{'fixture_id': ev['fixture_id'], 'source': 'oddspapi /v4/historical-odds', 'pulled_at': dt.datetime.now(dt.timezone.utc).isoformat(),
                             'books': books_of(raw_body), 'payload_gz': hexbytes(gz), 'payload_sha256': sha, 'body_bytes': len(raw_body),
-                            'meta': {'eventKey': ev['event_key'], 'trigger': 'post-start', 'liveFlipCut': ev['cut'].isoformat()}}], 'fixture_id,payload_sha256')
+                            'meta': {'eventKey': ev['event_key'], 'trigger': 'post-start' if hours <= 6 else 'backlog', 'cut': ev['cut'].isoformat(),
+                                     'liveFlipCut': (ev.get('liveFlipCut') or ev['cut']).isoformat(), 'book': HIST_BOOK}}], 'fixture_id,payload_sha256')
         raw_add += len(ids)
         pulled[ev['fixture_id']] = ev
     rep, _ = derive_and_add(list(pulled.values()), raw_latest(list(pulled))) if pulled else ({'derived': 0, 'added': 0}, [])
@@ -900,7 +960,8 @@ if __name__ == '__main__':
     elif a[0] == 'derive':
         cmd_derive(int(a[a.index('--days') + 1]) if '--days' in a else 3, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'))
     elif a[0] == 'pull':
-        cmd_pull(int(a[a.index('--budget') + 1]) if '--budget' in a else 480, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'))
+        cmd_pull(int(a[a.index('--budget') + 1]) if '--budget' in a else 480, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'),
+                 int(a[a.index('--hours') + 1]) if '--hours' in a else 6)
     elif a[0] == 'export':
         cmd_export(a[1])
     elif a[0] == 'restore':
