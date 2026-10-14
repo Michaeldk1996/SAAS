@@ -80,9 +80,17 @@ def insert(table, rows, conflict):
     if not rows:
         return []
     q = urllib.parse.urlencode({'on_conflict': conflict, 'select': 'id'})
-    _, out, _ = rest('POST', f'/rest/v1/{table}?{q}', body=rows,
-                     headers={'Prefer': 'resolution=ignore-duplicates,return=representation'})
-    return [r['id'] for r in (out or [])]
+    # PostgREST takes one key set per request ("All object keys must match", PGRST102): rows are sent grouped by
+    # their keys, never padded (a padded null would override a column default)
+    groups = {}
+    for r in rows:
+        groups.setdefault(tuple(sorted(r)), []).append(r)
+    ids = []
+    for g in groups.values():
+        _, out, _ = rest('POST', f'/rest/v1/{table}?{q}', body=g,
+                         headers={'Prefer': 'resolution=ignore-duplicates,return=representation'})
+        ids += [r['id'] for r in (out or [])]
+    return ids
 
 
 def select_pages(table, select, filt='', page=1000, after=0):

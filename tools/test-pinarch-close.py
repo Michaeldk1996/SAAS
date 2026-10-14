@@ -74,5 +74,25 @@ check('board map: orient "swap" with the card p1 = the api-tennis first player â
 check('Oddspapi fixture joined on both surnames: participant 1 is the api-tennis SECOND player', by['2']['fixture_id'] == 'idSJ' and by['2']['p1IsParticipant1'] is False
       and by['2']['trueStart'] == T('2026-10-09T11:58:00Z'), by.get('2'))
 check('two candidate fixtures â†’ no match (never a guess), counted', '3' not in by and miss.get('two or more Oddspapi fixtures') == 1, miss)
+# PostgREST refuses a request whose rows carry different keys (PGRST102, seen on the first derive, 2026-10-14):
+# insert() sends one request per key set; the old single-request insert is the control
+def fake_rest(sent):
+    def rest(method, path, body=None, headers=None, **k):
+        if len({tuple(sorted(r)) for r in body}) > 1:
+            raise RuntimeError('POST -> HTTP 400: PGRST102 All object keys must match')
+        sent.append(body); return 201, [{'id': i} for i in range(len(body))], {}
+    return rest
+mixed = [{'dedupe_key': 'a', 'p1': 1.5}, {'dedupe_key': 'b', 'p1': 1.6, 'supersedes': 5}, {'dedupe_key': 'c', 'p1': 1.7}]
+sent = []; real = P.rest; P.rest = fake_rest(sent)
+try: ids = P.insert(P.CLOSE, mixed, 'dedupe_key'); err = None
+except Exception as x: ids, err = [], x
+check('insert(): rows with and without supersedes go in one request per key set, every row sent, none padded',
+      err is None and len(ids) == 3 and len(sent) == 2 and all('supersedes' not in r for r in sent[0]) and sent[1][0].get('supersedes') == 5, (err, sent))
+def old_insert(table, rows, conflict):
+    _, out, _ = P.rest('POST', '/x', body=rows, headers={}); return [r['id'] for r in out]
+try: old_insert(P.CLOSE, mixed, 'dedupe_key'); ctl = False
+except RuntimeError: ctl = True
+check('control: one request with mixed keys is refused (the first derive\'s failure)', ctl)
+P.rest = real
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
