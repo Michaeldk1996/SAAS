@@ -1,0 +1,79 @@
+# Permanent Pinnacle archive (founder brief 2026-10-14, item 1). Rules: .claude/rules/pinnacle-archive.md.
+#   install  apply supabase/migrations/20261014120000_pinnacle_archive.sql (additive) and verify the guard
+#   import   captured-closes-pinnacle.json + the oddspapi-raw bucket -> the archive tables (rows are only ever added)
+#   backup   today's dated copy into the private ops repo (Michaeldk1996/stennisfy-ops), never replacing a day
+#   restore-check  rebuild every row from the backups into restore SQL and compare its counts with the live tables
+#   daily    import + backup (the schedule). Runs from main only.
+name: Pinnacle archive
+on:
+  schedule:
+    - cron: '37 4 * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: install | import | backup | restore-check | daily
+        required: true
+        default: daily
+permissions:
+  contents: read
+concurrency:
+  group: pinnacle-archive
+  cancel-in-progress: false
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      MODE: ${{ github.event.inputs.mode || 'daily' }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 50
+      - name: Refuse to run off main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then echo "::error::the archive jobs run from main only (got ${GITHUB_REF})"; exit 1; fi
+      - name: install — apply the additive migration
+        if: env.MODE == 'install'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https://([a-z0-9]+)\.supabase\.co.*#\1#')
+          resp=$(jq -Rs '{query: .}' supabase/migrations/20261014120000_pinnacle_archive.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @- \
+            "https://api.supabase.com/v1/projects/$REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1); body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code: $body" | head -c 800; echo
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then echo "::error::migration http $code"; exit 1; fi
+          if printf '%s' "$body" | jq -e 'type=="object" and (has("message") or has("error"))' >/dev/null 2>&1; then echo "::error::migration failed"; exit 1; fi
+          python3 tools/pinarch.py counts --record install
+      - name: import — captured closes and the raw bucket
+        if: env.MODE == 'import' || env.MODE == 'daily'
+        run: |
+          set -euo pipefail
+          git fetch -q origin main && git checkout -q origin/main -- captured-closes-pinnacle.json
+          export CAPTURED_COMMIT=$(git log -1 --format=%H origin/main -- captured-closes-pinnacle.json)
+          python3 tools/pinarch.py counts --record before-import
+          python3 tools/pinarch.py import-captured captured-closes-pinnacle.json
+          python3 tools/pinarch.py import-bucket
+          python3 tools/pinarch.py counts --record import
+      - name: backup — today's dated copy to the private ops repo
+        if: env.MODE == 'backup' || env.MODE == 'daily'
+        env:
+          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          python3 tools/pinarch.py backup
+          python3 tools/pinarch.py counts --record backup
+      - name: restore-check — rebuild every row from the backups (no write)
+        if: env.MODE == 'restore-check'
+        env:
+          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+        run: |
+          set -euo pipefail
+          git clone -q --depth 1 "https://x-access-token:${WORKFLOW_PAT}@github.com/Michaeldk1996/stennisfy-ops.git" ops
+          python3 tools/pinarch.py restore ops --sql-out /tmp/restore.sql --compare
+          python3 tools/pinarch.py counts
