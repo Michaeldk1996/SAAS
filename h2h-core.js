@@ -70,14 +70,19 @@
   // shards dated by the two conventions) — is ONE meeting. Same winner, same event, the keyed row within
   // H2H_DEDUPE_WINDOW of the keyless one, rounds not contradicting. The keyed row is kept (it carries the match day and
   // reaches the match-stats shards); a keyless row that matches two keyed rows is ambiguous and kept as its own meeting.
+  // Only a row ONE side recorded can be the other side's copy (a match both histories hold was already paired by the
+  // join), so a candidate pair is one-sided rows from opposite sides; a team tie (Davis Cup) never merges — its id folds
+  // every tie of a year into one.
+  const ONE_SIDED = { a: 'b', b: 'a' };
   function dedupe(rows) {
     const keyed = rows.filter(x => x.eventKey != null);
     const drop = new Set(), taken = new Set();
-    rows.filter(x => x.eventKey == null).forEach(x => {
+    rows.filter(x => x.eventKey == null && ONE_SIDED[x._how]).forEach(x => {
       const d0 = dayNum(x.date); if (d0 == null) return;
       const ev = eventId(x.tournament), rc = roundCode(x.round);
+      if (ev === 'davis cup') return;
       const hits = keyed.filter(y => {
-        if (taken.has(y) || y.won !== x.won) return false;
+        if (taken.has(y) || y.won !== x.won || y._how !== ONE_SIDED[x._how]) return false;
         const d = dayNum(y.date); if (d == null || d - d0 < H2H_DEDUPE_WINDOW[0] || d - d0 > H2H_DEDUPE_WINDOW[1]) return false;
         if (eventId(y.tournament) !== ev) return false;
         const yr = roundCode(y.round);
@@ -140,9 +145,15 @@
   }
 
   // The meetings that count (walkovers out) and the record over them (A's wins first): n = the population.
-  // A walkover = the flag, or no set played (a "0 - 0" result with no set scores) — the same test the rows the pages
-  // draw apply (fhFinishRow), so a record here and a record on screen can never disagree.
-  function isWalkover(x) { return !!x.walkover || (/^\s*0\s*-\s*0\s*$/.test(String(x.result || '')) && !(Array.isArray(x.sets) && x.sets.length)); }
+  // A walkover = the flag, or no set played: no set scores and no readable score above 0 - 0. Byte for byte the test the
+  // rows the pages draw apply (fhFinishRow: `!r.sets && (r.pS == null || r.pS + r.oS === 0)`), so a record here and a
+  // record on screen can never disagree.
+  function isWalkover(x) {
+    if (x.walkover) return true;
+    if (Array.isArray(x.sets) && x.sets.length) return false;
+    const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
+    return !m || +m[1] + +m[2] === 0;
+  }
   function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
   function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }
 

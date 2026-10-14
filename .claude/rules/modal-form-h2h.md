@@ -28,9 +28,12 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   `H2H_DEDUPE_WINDOW` [-1, 16] days, rounds not contradicting; the keyed row is kept. **Test:** "dedupe" (Shanghai 2019 SF:
   07.10 archive, 12.10 feed).
 - **Prices attach to meetings, never the reverse:** the book rule is unchanged (Pinnacle close, else Bet365 close, one
-  book per meeting); only the pairing changed — a keyless archive meeting (dated at its event's start) takes its close from
-  the `H2H_DEDUPE_WINDOW` after that date, same opponent and result, nearest first, each close used once (`fhCloseFor`
-  `win`/`used`); a keyed meeting keeps ±1 day. A meeting with no close prints a dash. "X of Y meetings priced": Y = every
+  book per meeting; `fhCloseFor` is unchanged); only the pairing changed — a keyless archive meeting (dated at its event's
+  start) looks for its close in the `H2H_DEDUPE_WINDOW` after that date, same opponent (`fhH2hWindowCloses`). Never
+  ambiguous: meetings competing for the same closes (an RR and a final in one event) get them in round order only when
+  every close is there and each matches its meeting's result — else every one of them is a dash; a team tie (Davis / Laver
+  Cup) takes none (no Tennis-Data close exists, a tour match's would be wrong). A keyed meeting keeps ±1 day. A meeting
+  with no close prints a dash. **Test:** "prices attach to meetings" (Dimitrov–Goffin ATP Finals 2017 RR + F). "X of Y meetings priced": Y = every
   meeting in the filter (the full H2H count), never the priced subset. Sets won, Tiebreaks, Deciding sets and the surface
   counts read the same list, "N of M with set scores" with real counts. **Test:** "UI" ("0 of 15 meetings priced"), the
   mutant "coverage line counts priced meetings only".

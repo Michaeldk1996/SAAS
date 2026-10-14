@@ -31,6 +31,8 @@ const PAGE_MUTANTS = [
   ['a failed history load cached as an answer (H2H page)', "        if (!ra.ok || !rb.ok) { S.st = 'failed';", "        if (false) { S.st = 'failed';"],
   ['the H2H page loses its Retry', "<span class=\"seg h2hp-retry\" onclick=\"H2HPage._h2hRetry()\"", "<span class=\"seg h2hp-retry\""],
   ['a display read of m.h2h.record (a second source)', "function kfH2HCard(m){", "function kfH2HCard(m){ const _r = m.h2h && m.h2h.record;"],
+  ['a team tie priced off a tour match\'s close', "!/davis cup|laver cup/i.test(String(x.tournament || ''))", "true"],
+  ['two meetings share one close (the pairing takes the first, not a dash)', "      if (cls.size !== grp.length) continue;", "      if (cls.size < 1) continue;"],
   ['the coverage line counts priced meetings only (Y ≠ the full H2H count)', "`${nP} of ${F.length} meetings priced`", "`${nP} of ${PR.length} meetings priced`"],
 ];
 

@@ -9,10 +9,14 @@
 //   3. FAILS if any exact golden pair has fewer meetings than ATP's count on its check date — meetings never disappear,
 //      so this floor needs no previous run and no network: an unreachable previous file can never switch the guard off;
 //   4. writes <site>/h2h-reconcile.json for the next run.
+// The drop check compares runs built from the SAME golden fixture (its sha-256 travels in the file): rebuilding the
+// fixture (tools/ten437-golden-build.mjs — a reviewed code change) resets the baseline, so a deliberate correction that
+// lowers the total can ship; nothing else can lower it.
 // A missing previous file (first run, or the site unreachable) is said in the log; checks 1, 3 and 4 still run.
 //
 // Run: node tools/h2h-reconcile.mjs --site _site [--previous <url-or-file>]
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +27,7 @@ const GOLDEN = path.join(ROOT, 'tools/fixtures/ten437/h2h-golden-pairs.json');
 const PREVIOUS_URL = 'https://michaeldk1996.github.io/SAAS/h2h-reconcile.json';
 
 // Pure: the verdict over one run. `shard(key)` → rows (or null when the store has no file for him); `names` → roster.
+export function goldenHash(golden) { return crypto.createHash('sha256').update(JSON.stringify(golden.pairs.map(p => [p.a.key, p.b.key, p.atp, !!p.knownGap]))).digest('hex').slice(0, 16); }
 export function reconcile({ golden, shard, names, previous }) {
   const nk = H2HCore.nameCounts(names);
   const pairs = golden.pairs.map(p => {
@@ -33,9 +38,11 @@ export function reconcile({ golden, shard, names, previous }) {
   const total = pairs.reduce((s, x) => s + x.n, 0);
   const errors = [];
   pairs.filter(x => !x.knownGap && x.n < x.atp).forEach(x => errors.push(`${x.a} – ${x.b}: ${x.n} meetings, below ATP's ${x.atp} on ${golden.checkedOn}`));
-  const prevTotal = previous && Number.isFinite(previous.total) ? previous.total : null;
+  const hash = goldenHash(golden);
+  const sameFixture = !!previous && previous.golden === hash;
+  const prevTotal = sameFixture && Number.isFinite(previous.total) ? previous.total : null;
   if (prevTotal != null && total < prevTotal) errors.push(`total H2H meetings across ${pairs.length} golden pairs fell from ${prevTotal} (previous run) to ${total}`);
-  return { ok: !errors.length, total, prevTotal, pairs, errors };
+  return { ok: !errors.length, total, prevTotal, pairs, errors, hash, fixtureChanged: !!previous && !sameFixture };
 }
 
 async function readPrevious(src) {
@@ -58,8 +65,8 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.a
   const prev = await readPrevious(arg('--previous') || PREVIOUS_URL);
   const v = reconcile({ golden, shard, names, previous: prev.json });
   v.pairs.forEach(x => console.log(`  ${x.a} – ${x.b}: ${x.rec} over ${x.n}${x.knownGap ? ' (known gap)' : ''} · ATP ${x.atp}`));
-  console.log(`TEN-437: ${v.total} H2H meetings across ${v.pairs.length} golden pairs (previous run: ${v.prevTotal == null ? 'none to compare — ' + (prev.why || 'no total in the file') : v.prevTotal}).`);
-  fs.writeFileSync(path.join(site, 'h2h-reconcile.json'), JSON.stringify({ v: 1, builtAt: new Date().toISOString(), total: v.total,
+  console.log(`TEN-437: ${v.total} H2H meetings across ${v.pairs.length} golden pairs (previous run: ${v.prevTotal == null ? 'none to compare — ' + (v.fixtureChanged ? 'the golden fixture changed since, baseline reset' : prev.why || 'no total in the file') : v.prevTotal}).`);
+  fs.writeFileSync(path.join(site, 'h2h-reconcile.json'), JSON.stringify({ v: 1, builtAt: new Date().toISOString(), total: v.total, golden: v.hash,
     goldenCheckedOn: golden.checkedOn, pairs: v.pairs }) + '\n');
   if (!v.ok) { v.errors.forEach(e => console.error(`::error::TEN-437 H2H reconcile: ${e}`)); process.exit(1); }
 }

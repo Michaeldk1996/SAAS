@@ -13266,25 +13266,17 @@ function fhLoadCloses(key){
 // whose opponent did not resolve fall back to the opponent surname. Exactly one
 // candidate, and the archive's result must agree with ours. Captured rows: see capFor.
 // Then the ruled picker chooses — never one side from one source and one from another.
-// win / used (TEN-437, H2H meetings only): a row dated at its event's start looks for its close in [win[0], win[1]] days
-// after that date instead of ±1 — same result, nearest first, a close already taken by an earlier meeting skipped.
-function fhCloseFor(cl, date, oppName, won, oppKey, ek, win, used){
+function fhCloseFor(cl, date, oppName, won, oppKey, ek){
   if (!cl) return null;
   const d0 = fhDayNum(date);
   if (d0 == null) return null;
-  const W = win || [-1, 1];
-  const near = x => { const d = fhDayNum(x.date); return d != null && d - d0 >= W[0] && d - d0 <= W[1]; };
+  const near = x => { const d = fhDayNum(x.date); return d != null && Math.abs(d - d0) <= 1; };
   const ok = String(oppKey == null ? '' : oppKey), nk = fhNameKey(oppName);
   let td = null;
   const byKey = ok ? (cl.rows || []).filter(x => x.oppKey === ok && near(x)) : [];
   const byName = !byKey.length && nk ? (cl.rows || []).filter(x => x.oppKey == null && near(x) && fhNameKey(x.opp) === nk) : [];
-  let tdHits = byKey.length ? byKey : byName;
-  if (win){
-    tdHits = tdHits.filter(x => x.won === !!won && !(used && used.has(x)))
-      .sort((x, y) => Math.abs(fhDayNum(x.date) - d0) - Math.abs(fhDayNum(y.date) - d0));
-    if (tdHits.length > 1 && fhDayNum(tdHits[0].date) !== fhDayNum(tdHits[1].date)) tdHits = [tdHits[0]];
-  }
-  if (tdHits.length === 1 && tdHits[0].won === !!won){ td = tdHits[0]; if (used) used.add(td); }
+  const tdHits = byKey.length ? byKey : byName;
+  if (tdHits.length === 1 && tdHits[0].won === !!won) td = tdHits[0];
   // Captures are one row per book (separate sources), so each book's row is found on its
   // own: by eventKey when both carry one, else by opponent key within ±1 day among rows
   // that do not name a DIFFERENT match.
@@ -13927,7 +13919,14 @@ function fhEnsureH2hData(m){
   return m._fhH2hP;
 }
 // Retry after a failed history load (the tab's and Key factors' "Retry").
-function fhH2hRetry(){ if (!_fh || !_fh.m) return; _fh.m._fhH2hFailed = null; fhH2h({}); if (aBuilt(_fh.m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(_fh.m)); }
+function fhH2hRetry(){
+  if (!_fh || !_fh.m) return;
+  const m = _fh.m;
+  const paint = () => { if (_fh && _fh.m === m){ if (aBuilt(m, 'h2h')) fhH2h({}); if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); } };
+  m._fhH2hFailed = null;
+  const p = fhEnsureH2hData(m);   // the one fetch; both tabs repaint when it settles (loaded or failed again)
+  paint(); p.then(paint, paint);
+}
 // Team events and exhibitions count exactly as in the ATP's official win-loss record
 // (ruling 2026-09-25, TEN-273: "do as the ATP"). Same list as the pipeline's
 // H2H_NOT_ATP_RECORD: Hopman Cup and exhibitions never enter the meeting list.
@@ -13972,6 +13971,37 @@ function sfH2hOwnEks(aKey, bKey){
   return (typeof matches !== 'undefined' && Array.isArray(matches) ? matches : []).filter(x => x && x.finalScore && x.p1Key != null && x.p2Key != null
       && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(x => eventKeyOfMatch(x)).filter(x => x != null && x !== '');
 }
+// TEN-437 (4) · the closes a pair's keyless (archive) meetings may take: per meeting, the Tennis-Data rows of that
+// opponent in [H2H_DEDUPE_WINDOW] days after the event-start date. Meetings whose candidates overlap form one group; a
+// group gets its closes only when it holds as many distinct closes as meetings, every meeting has a known round, and
+// round order then date order pairs each meeting with a close of its own result — else every meeting in it is a dash.
+// Team ties (Davis / Laver Cup) take none. Returns Map(meeting row → { side, date }) — the close's own day, read back
+// through fhCloseFor at ±1 so the book rule stays the one picker's.
+const FH_H2H_RD_RANK = { RR: 0, R128: 1, R64: 2, R32: 3, R16: 4, QF: 5, SF: 6, F: 7 };
+function fhH2hWindowCloses(list, closes, m){
+  const out = new Map(), W = H2HCore.H2H_DEDUPE_WINDOW;
+  for (const side of [0, 1]){
+    const cl = closes && closes[side]; if (!cl || !Array.isArray(cl.rows)) continue;
+    const oppKey = String((side ? m.p1Key : m.p2Key) == null ? '' : (side ? m.p1Key : m.p2Key)), nk = fhNameKey(side ? m.p1 : m.p2);
+    const rows = cl.rows.filter(x => (oppKey && x.oppKey === oppKey) || (x.oppKey == null && nk && fhNameKey(x.opp) === nk));
+    const meet = list.filter(x => x.eventKey == null && !out.has(x) && !/davis cup|laver cup/i.test(String(x.tournament || '')));
+    const cand = new Map(meet.map(x => { const d0 = fhDayNum(x.date); return [x, d0 == null ? [] : rows.filter(y => { const d = fhDayNum(y.date); return d != null && d - d0 >= W[0] && d - d0 <= W[1]; })]; }));
+    const seen = new Set();
+    for (const x of meet){
+      if (seen.has(x) || !cand.get(x).length) continue;
+      // the group: every meeting reachable through shared candidate closes
+      const grp = [x], cls = new Set(cand.get(x)); seen.add(x);
+      for (let grew = true; grew;){ grew = false; for (const y of meet) if (!seen.has(y) && cand.get(y).some(c => cls.has(c))){ seen.add(y); grp.push(y); cand.get(y).forEach(c => cls.add(c)); grew = true; } }
+      if (cls.size !== grp.length) continue;
+      const rk = r => FH_H2H_RD_RANK[H2HCore.roundCode(r.round)];
+      if (grp.length > 1 && grp.some(r => rk(r) == null)) continue;
+      const ms = grp.slice().sort((a, b) => (rk(a) || 0) - (rk(b) || 0)), cs = [...cls].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      const won = r => (side ? !r.won : r.won);
+      if (ms.every((r, i) => cs[i].won === won(r))) ms.forEach((r, i) => out.set(r, { side, date: cs[i].date }));
+    }
+  }
+  return out;
+}
 function fhH2hMeetingRows(m){
   const ch = m._fhCh || [[], []];
   const own = sfH2hOwnEks(m.p1Key, m.p2Key).concat([eventKeyOfMatch(m)]).filter(x => x != null && x !== '');
@@ -13989,8 +14019,10 @@ function fhMeetings(m){
   const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
     [m.p1RecentFormMatches || [], m.p2RecentFormMatches || []].flat().map(x => [x.opponent, x.opponentKey])));
   // TEN-437 (4): a keyless archive row is dated at its EVENT's start, so its close (dated on the match day) is looked for
-  // in the H2HCore dedupe window after it, same opponent and result, each close used by one meeting only.
-  const used = [new Set(), new Set()];
+  // in the H2HCore dedupe window after it — same opponent and result, and never ambiguous (fhH2hWindowCloses): a team
+  // tie takes none (no Tennis-Data close exists; a tour match's would be wrong), and meetings that compete for the same
+  // closes (an RR and a final in one event) get them in round order only when every one is there, else a dash.
+  const winPick = fhH2hWindowCloses(list, me, m);
   const out = list.map((x, i) => {
     const ek = x.eventKey != null ? String(x.eventKey) : null;
     let sets = fhSetsFrom(x.sets), ret = typeof x.retired === 'boolean' ? x.retired : null, wo = typeof x.walkover === 'boolean' ? x.walkover : null, tier = null, qual = !!x.qualifying;
@@ -14008,9 +14040,15 @@ function fhMeetings(m){
       ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null,
       level: 'ATP', src0: x._how || 'both' };
     fhFinishRow(r);
-    const win = ek ? null : H2HCore.H2H_DEDUPE_WINDOW;
-    let c = fhCloseFor(me[0], r.date, m.p2, r.won, m.p2Key, r.ek, win, used[0]);
-    if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won, m.p1Key, r.ek, win, used[1]); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src }; }
+    let c = null;
+    if (ek){
+      c = fhCloseFor(me[0], r.date, m.p2, r.won, m.p2Key, r.ek);
+      if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won, m.p1Key, r.ek); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src }; }
+    } else {
+      const w = winPick.get(x);
+      if (w) c = w.side === 0 ? fhCloseFor(me[0], w.date, m.p2, r.won, m.p2Key, null)
+        : (c2 => c2 && { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src })(fhCloseFor(me[1], w.date, m.p1, !r.won, m.p1Key, null));
+    }
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     r.oppElo = fhEloAt(m._fhElo, m.p2, r.date, eloOwners);   // H2H rows: same basis as Form (ruling 2026-09-24)
     return r;
@@ -29739,7 +29777,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function ensureInit(visit) {
     bindDocClose();
     if (visit) _h2hDbAskAt = 0;   // TEN-402 R3 fix 1: a visit's first render that needs the join asks a failed one again
-    if (visit) Object.keys(_h2hPairs).forEach(k => { if (_h2hPairs[k] && _h2hPairs[k].st === 'failed') delete _h2hPairs[k]; });   // TEN-437 (5)
+    if (visit && typeof _h2hPairs !== 'undefined') Object.keys(_h2hPairs).forEach(k => { if (_h2hPairs[k] && _h2hPairs[k].st === 'failed') delete _h2hPairs[k]; });   // TEN-437 (5)
     triggerLoads();
     ensureDna();
     if (dataReady()) { build(); render(); return; }

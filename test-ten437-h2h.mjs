@@ -15,7 +15,7 @@
 // Mutations that turn it red: tools/test-ten437-mutants.js (each applied to a copy of h2h-core.js / the page).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
@@ -145,6 +145,24 @@ test('namesakes: a one-sided row naming a shared surname + initial is never cred
   assert.deepEqual(rec(p), { a: 2, b: 0, n: 2 }, 'both histories loaded: the eventKey pairs them whatever the roster says');
 });
 
+// Mutations: the windowed pairing off (archive meetings unpriced again), a close shared by two meetings, a team tie
+// priced off a tour match. (TEN-437 review finding 1: Dimitrov–Goffin, ATP Finals 2017 RR + F, both archive rows dated
+// 2017-11-12, same winner.)
+test('prices attach to meetings: archive meetings take their own close; a shared or missing close is a dash, never a neighbour\'s', () => {
+  const sh = rows => ({ rows, cap: [] });
+  const arc = (date, t, rd, won, o) => Object.assign({ date, tournament: t, round: rd, won, opponent: 'D. Goffin', level: 'atp', result: won ? '2 - 0' : '0 - 2' }, o || {});
+  const mk = (chA, cl) => ({ id: 'upcoming-77', p1: 'G. Dimitrov', p2: 'D. Goffin', p1Key: 11, p2Key: 22, surface: 'hard', date: '2026-10-14',
+    _fhH2hData: true, _fhCh: [chA, []], _fhCloses: [sh(cl), null], _fhElo: null, p1RecentFormMatches: [], p2RecentFormMatches: [] });
+  const close = (date, won, P) => ({ date, opp: 'Goffin D.', won, P, B: null, ret: false, oppKey: '22' });
+  const two = [arc('2017-11-12', 'Tour Finals', 'RR', true), arc('2017-11-12', 'Tour Finals', 'F', true)];
+  const px = m => S.fhMeetings(m).map(r => [r.round, r.price]);
+  assert.deepEqual(px(mk(two, [close('2017-11-13', true, [1.5, 2.6]), close('2017-11-19', true, [1.37, 3.48])])), [['RR', 1.5], ['F', 1.37]], 'round order pairs each meeting with its own close');
+  assert.deepEqual(px(mk(two, [close('2017-11-19', true, [1.37, 3.48])])), [['RR', null], ['F', null]], 'one close for two meetings: both dash, never the final\'s price on the RR');
+  assert.deepEqual(px(mk([arc('2019-02-01', 'Davis Cup QLS R1: BEL vs BUL', 'RR', true), arc('2019-02-10', 'Sofia', 'SF', true)], [close('2019-02-15', true, [1.6, 2.3])])),
+    [['RR', null], ['SF', 1.6]], 'a team tie takes no Tennis-Data close; the tour match keeps its own');
+  assert.deepEqual(px(mk([arc('2021-02-08', 'Australian Open', 'SF', true)], [close('2021-02-19', true, [1.46, 2.93])])), [['SF', 1.46]], 'a Slam SF 11 days after the event start is priced');
+});
+
 // ── 3 · de-duplication ─────────────────────────────────────────────────────────────────────────────────────────────────
 // Mutation: dedupe off (Shanghai 2019 counted twice), or the window too short for an archive date.
 test('dedupe: Shanghai 2019 SF is ONE meeting — archive row 07.10 (event start, no eventKey) and feed row 12.10 (match day)', () => {
@@ -158,9 +176,15 @@ test('dedupe: Shanghai 2019 SF is ONE meeting — archive row 07.10 (event start
   assert.equal(H2HCore.joinMeetings(A, B, [arc], [Object.assign({}, feed, { tournament: 'ATP Vienna' })], {}, []).length, 2);
   assert.equal(H2HCore.joinMeetings(A, B, [arc], [Object.assign({}, feed, { round: 'Final' })], {}, []).length, 2);
   assert.equal(H2HCore.joinMeetings(A, B, [arc], [Object.assign({}, feed, { won: true, result: '2 - 0' })], {}, []).length, 2);
-  // the golden Medvedev–Tsitsipas pair with that feed row added still reads 10–5 over 15
+  // the golden Medvedev–Tsitsipas pair with Tsitsipas's copy of Shanghai 2019 coming from the feed instead of the archive
+  // (the shape the pipeline's per-player hole fill produces: one side archive, the other side feed) still reads 10–5 / 15
   const p = G.pairs.find(x => x.a.short === 'D. Medvedev' && x.b.short === 'S. Tsitsipas');
-  assert.deepEqual(H2HCore.record(H2HCore.joinMeetings(p.a, p.b, p.chA, p.chB.concat([feed]), p.nk, [])), { a: 10, b: 5, n: 15 });
+  const chB = p.chB.filter(y => !(y.date === '2019-10-07' && /Shanghai/.test(y.tournament))).concat([feed]);
+  assert.equal(chB.length, p.chB.length, 'one copy swapped for the other');
+  assert.deepEqual(H2HCore.record(H2HCore.joinMeetings(p.a, p.b, p.chA, chB, p.nk, [])), { a: 10, b: 5, n: 15 });
+  // a meeting BOTH histories already hold is never merged with another row of its event (no false merge of a real one)
+  const bothArc = [Object.assign({}, arc, { round: 'RR' })], bothArcB = [{ date: '2019-10-07', tournament: 'Shanghai Masters', round: 'RR', opponent: 'D. Medvedev', won: false, result: '0 - 2', level: 'atp' }];
+  assert.equal(H2HCore.joinMeetings(A, B, bothArc, bothArcB.concat([Object.assign({}, feed, { round: '' })]), {}, []).length, 2);
 });
 
 // ── 4 · a failed history load ──────────────────────────────────────────────────────────────────────────────────────────
@@ -204,7 +228,7 @@ test('failed load (H2H page): the pair is "failed", never "ready" with no meetin
   X.h2hPairFor(a, b); await new Promise(r => setTimeout(r, 0));
   assert.equal(X.pairs['1093|1906'].st, 'ready'); assert.equal(loads, 4, 'both histories fetched again');
   assert.match(slice('h2hCard'), /if \(h\.failed\) return card\([\s\S]*Head-to-head could not load[\s\S]*H2HPage\._h2hRetry\(\)/);
-  assert.match(slice('ensureInit'), /if \(visit\) Object\.keys\(_h2hPairs\)\.forEach\(k => \{ if \(_h2hPairs\[k\] && _h2hPairs\[k\]\.st === 'failed'\) delete _h2hPairs\[k\]; \}\);/);
+  assert.match(slice('ensureInit'), /if \(visit && typeof _h2hPairs !== 'undefined'\) Object\.keys\(_h2hPairs\)\.forEach\(k => \{ if \(_h2hPairs\[k\] && _h2hPairs\[k\]\.st === 'failed'\) delete _h2hPairs\[k\]; \}\);/);
 });
 
 // ── 5 · single source ──────────────────────────────────────────────────────────────────────────────────────────────────
@@ -212,12 +236,15 @@ test('failed load (H2H page): the pair is "failed", never "ready" with no meetin
 // and the pipeline (not shipped): its m.h2h.matches input is the one reader outside h2h-core.js, by ruling.
 test('single source: no shipped display code reads m.h2h\'s record or meetings; the only meeting builders call H2HCore.joinMeetings', async () => {
   const { CODE_REQUIRED } = await import(join(HERE, 'tools/publish-site.mjs'));
-  const files = CODE_REQUIRED.filter(f => /\.(html|js)$/.test(f));
+  const shipped = [...readFileSync(join(HERE, 'tools/site-code.sh'), 'utf8').matchAll(/^cp ([^"$\n]+?) "\$SITE\/"/gm)].flatMap(m => m[1].trim().split(/\s+/));
+  const files = [...new Set(CODE_REQUIRED.concat(shipped))].filter(f => /\.(html|js)$/.test(f) && !/[*]/.test(f));
+  assert.ok(files.includes('trading-report.js') && files.includes('admin.html'), 'every file the site ships is scanned');
   assert.ok(files.includes('h2h-core.js') && files.includes('bsp-consult-dashboard.html'), 'h2h-core.js is published with the page');
-  const READ = /\.h2h\s*(?:\?\.|\.)\s*(?:record|matches|p1Wins|p2Wins)\b|\b(?:m|match|mm|x|row|card|fx)\s*(?:\?\.|\.)\s*h2h\b(?![-\w])/;
+  const READ = /\.h2h\s*(?:\?\.|\.)\s*(?:record|matches|p1Wins|p2Wins)\b|\b(?:m|match|mm|x|row|card|fx)\s*(?:\?\.|\.)\s*h2h\b(?![-\w])|\[\s*['"]h2h['"]\s*\]|\{\s*(?:[\w$]+\s*,\s*)*h2h\s*(?:,|\})/;
   const hits = [];
   for (const f of files) {
-    const src = f === 'bsp-consult-dashboard.html' ? html : readFileSync(join(HERE, f), 'utf8');
+    const fp = join(HERE, f); if (f !== 'bsp-consult-dashboard.html' && !existsSync(fp)) continue;
+    const src = f === 'bsp-consult-dashboard.html' ? html : readFileSync(fp, 'utf8');
     // code only: a // comment, a /* … */ block line or a ` * ` doc line names m.h2h in prose, it reads nothing
     src.split('\n').forEach((l, i) => { if (/^\s*(\*|\/\*)/.test(l)) return; if (READ.test(l.replace(/\/\/.*$/, ''))) hits.push(`${f}:${i + 1}: ${l.trim().slice(0, 120)}`); });
     if (f !== 'h2h-core.js') assert.doesNotMatch(src, /function\s+\w*(?:joinMeetings|JoinMeetings|AllMeetingRows|MeetingList)\s*\(/, `${f} defines its own meeting join`);
@@ -247,14 +274,18 @@ test('population constants are ATP\'s (report B, 2026-10-14) and the excluded-ev
 // ── 6 · the pipeline reconciliation (tools/h2h-reconcile.mjs, run on the store each pipeline run builds) ─────────────────
 // Mutations: the drop check off, the ATP floor off.
 test('reconcile: a total below the previous run fails; an exact pair below ATP fails with no previous run; an equal run passes', async () => {
-  const { reconcile } = await import(join(HERE, 'tools/h2h-reconcile.mjs'));
+  const { reconcile, goldenHash } = await import(join(HERE, 'tools/h2h-reconcile.mjs'));
   const golden = { checkedOn: G.checkedOn, pairs: G.pairs.filter(p => ['D. Medvedev|S. Tsitsipas', 'A. Zverev|S. Wawrinka'].includes(p.a.short + '|' + p.b.short)) };
   const store = {}; golden.pairs.forEach(p => { store[p.a.key] = (store[p.a.key] || []).concat(p.chA); store[p.b.key] = (store[p.b.key] || []).concat(p.chB); });
   const names = ['D. Medvedev', 'S. Tsitsipas', 'A. Zverev', 'S. Wawrinka'];
-  const ok = reconcile({ golden, shard: k => store[k] || null, names, previous: { total: 20 } });
+  const h = goldenHash(golden);
+  const ok = reconcile({ golden, shard: k => store[k] || null, names, previous: { total: 20, golden: h } });
   assert.equal(ok.total, 20); assert.equal(ok.ok, true, ok.errors.join('; '));
-  const drop = reconcile({ golden, shard: k => store[k] || null, names, previous: { total: 21 } });
+  const drop = reconcile({ golden, shard: k => store[k] || null, names, previous: { total: 21, golden: h } });
   assert.equal(drop.ok, false); assert.match(drop.errors.join(), /fell from 21 \(previous run\) to 20/);
+  const rebuilt = reconcile({ golden, shard: k => store[k] || null, names, previous: { total: 21, golden: 'another fixture' } });
+  assert.equal(rebuilt.ok, true, 'a rebuilt golden fixture resets the baseline (a reviewed code change), never a silent pass');
+  assert.equal(rebuilt.fixtureChanged, true);
   // the 2018-2021 archive rows gone from both shards (the TEN-437 failure): below ATP's 15 even with no previous file
   const cut = k => (store[k] || []).filter(x => x.eventKey != null);
   const floor = reconcile({ golden, shard: cut, names, previous: null });
