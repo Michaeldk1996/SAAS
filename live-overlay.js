@@ -154,7 +154,8 @@
 
       const status = (fix.event_status || fix.status || '').toLowerCase();
       const isFinal = status.includes('finished') || status.includes('retired') ||
-                      status.includes('walkover') || status.includes('abandoned');
+                      status.includes('walkover') || status.includes('abandoned') ||
+                      status.includes('awarded');   // a default (TEN-437) is decided: freeze it
 
       if (isFinal) {
         _frozen.add(ek);

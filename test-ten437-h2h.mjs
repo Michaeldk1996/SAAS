@@ -360,5 +360,16 @@ test('board: "Awarded" is a decided match everywhere the board sorts live / upco
   const ending = new Function(`${slice('careerRowEnding')}; return careerRowEnding;`)();
   assert.equal(ending({ defaulted: true, won: true, result: '0 - 0' }), 'def.', 'Fils v M. Ymer, Lyon 2023: a default, not a retirement or a walkover');
   assert.equal(ending({ won: true, result: '0 - 0' }), 'ret.', 'control: an unflagged 0 - 0 win still reads by its score');
+  // the two writers outside the pipeline (review 2026-10-15): the 10-min score refresher must not flip a default back to
+  // LIVE, and the live overlay freezes it like any decided match
+  const rs = readFileSync(join(HERE, 'refresh-scores.py'), 'utf8');
+  assert.match(rs, /^FINISHED = \('Finished', 'Retired', 'Walk Over', 'Awarded'\)$/m, 'refresh-scores.py: Awarded is finished');
+  assert.match(rs, /if status == 'Awarded':\n\s*m\['defaulted'\] = True/, 'refresh-scores.py stamps defaulted like the pipeline');
+  assert.match(readFileSync(join(HERE, 'live-overlay.js'), 'utf8'), /status\.includes\('awarded'\)/, 'live-overlay.js freezes a default');
+  // a default nobody won and no game was played in is not a result (the production guard, run)
+  const { isUnplayedFinishedFixture } = require(join(HERE, 'bsp-pipeline.js'));
+  const z = [{ score_set: '1', score_first: '0', score_second: '0' }];
+  assert.equal(isUnplayedFinishedFixture({ event_status: 'Awarded', event_winner: null, scores: z }), true, 'no winner, 0-0: never a card');
+  assert.equal(isUnplayedFinishedFixture({ event_status: 'Awarded', event_winner: 'First Player', scores: z }), false, 'Fils v M. Ymer: a 0-0 default with a winner is a result');
 });
 

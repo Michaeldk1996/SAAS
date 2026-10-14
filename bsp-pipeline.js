@@ -2461,7 +2461,8 @@ const isCancelledFixture = f => f.event_status === 'Cancelled';
 // finalScore would render "0-0". No winner and not one game won by anyone = no
 // ball was struck, so like a Cancelled fixture it is never a card. Any game won,
 // or a named winner (a retirement after 0-0), keeps it a real result.
-const isUnplayedFinishedFixture = f => f.event_status === 'Finished'
+// TEN-437: a default ("Awarded") with no winner and no game is not a result either.
+const isUnplayedFinishedFixture = f => (f.event_status === 'Finished' || isAwarded(f))
   && f.event_winner !== 'First Player' && f.event_winner !== 'Second Player'
   && (!Array.isArray(f.scores) || f.scores.every(s => Number(s.score_first) === 0 && Number(s.score_second) === 0));
 

@@ -33,7 +33,8 @@ MATCHES = os.path.join(HERE, 'matches.json')
 # logging so a real rate accrues over weeks. Added per TEN-8 wake 2026-08-08.
 AUDIT = os.path.join(HERE, 'underway-audit.jsonl')
 API_BASE = 'https://api.api-tennis.com/tennis/'
-FINISHED = ('Finished', 'Retired', 'Walk Over')
+# 'Awarded' = a default (TEN-437 ruling 2026-10-14): a decided match, in step with RECORD_STATUSES in bsp-pipeline.js.
+FINISHED = ('Finished', 'Retired', 'Walk Over', 'Awarded')
 # Suspended mid-play (rain/light/curfew): not live, not decided. Mirrors
 # INTERRUPTED_STATUSES in bsp-pipeline.js — keep the two in step.
 INTERRUPTED = ('Interrupted', 'Suspended')
@@ -436,6 +437,11 @@ def main():
             # chip (TEN-8). Kept in lockstep with bsp-pipeline.js's stamping.
             m['retired'] = (status == 'Retired')
             m['walkover'] = (status == 'Walk Over')
+            # a default carries the additive defaulted flag the pipeline stamps (buildPastMatchObject); absent otherwise
+            if status == 'Awarded':
+                m['defaulted'] = True
+            else:
+                m.pop('defaulted', None)
             fs = build_final_score(f, p1_is_first)
             if fs:
                 m['finalScore'] = fs
