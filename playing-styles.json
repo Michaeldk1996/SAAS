@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T23:34:22.964Z",
+  "generatedAt": "2026-10-14T22:47:44.033Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1376,6 +1376,24 @@
       "archetype_label": "Attacking Baseliner"
     },
     {
+      "name": "D. Vallejo",
+      "rank": 84,
+      "archetype_data_coverage": "partial",
+      "partial_axes": [
+        "counter_puncher",
+        "solid_defender"
+      ],
+      "badges": [],
+      "pressure_score": null,
+      "mcp_charted": 0,
+      "win_pct": 52.5,
+      "clay_wr": 56,
+      "hard_wr": 56,
+      "grass_wr": 0,
+      "top10_wins": 0,
+      "archetype_label": "Solid Baseliner"
+    },
+    {
       "name": "A. Shevchenko",
       "rank": 85,
       "archetype_data_coverage": "full",
@@ -2622,9 +2640,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 10,
-      "win_pct": 74.2,
+      "win_pct": 74.6,
       "clay_wr": 82,
-      "hard_wr": 69,
+      "hard_wr": 70,
       "grass_wr": 67,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -3903,7 +3921,7 @@
       "source": "challenger"
     },
     {
-      "name": "E. Couacaud",
+      "name": "Enzo Couacaud",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -3912,8 +3930,7 @@
       "hard_wr": 60,
       "grass_wr": 0,
       "matches": 264,
-      "source": "challenger",
-      "player_key": "394"
+      "source": "challenger"
     },
     {
       "name": "Evgeny Karlovskiy",
@@ -4150,7 +4167,7 @@
       "source": "challenger"
     },
     {
-      "name": "L. Broady",
+      "name": "Liam Broady",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4159,8 +4176,7 @@
       "hard_wr": 60,
       "grass_wr": 31,
       "matches": 237,
-      "source": "challenger",
-      "player_key": "410"
+      "source": "challenger"
     },
     {
       "name": "Dennis Novak",
@@ -4283,7 +4299,7 @@
       "source": "challenger"
     },
     {
-      "name": "C. Hemery",
+      "name": "Calvin Hemery",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4292,8 +4308,7 @@
       "hard_wr": 48,
       "grass_wr": null,
       "matches": 223,
-      "source": "challenger",
-      "player_key": "1206"
+      "source": "challenger"
     },
     {
       "name": "Mats Moraing",
@@ -4507,7 +4522,7 @@
       "source": "challenger"
     },
     {
-      "name": "A. Andreev",
+      "name": "Adrian Andreev",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4516,8 +4531,7 @@
       "hard_wr": 49,
       "grass_wr": null,
       "matches": 205,
-      "source": "challenger",
-      "player_key": "2409"
+      "source": "challenger"
     },
     {
       "name": "Akira Santillan",
@@ -4616,7 +4630,7 @@
       "source": "challenger"
     },
     {
-      "name": "S. Kozlov",
+      "name": "Stefan Kozlov",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4625,11 +4639,10 @@
       "hard_wr": 58,
       "grass_wr": 20,
       "matches": 197,
-      "source": "challenger",
-      "player_key": "1087"
+      "source": "challenger"
     },
     {
-      "name": "O. Luz",
+      "name": "Orlando Luz",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4638,8 +4651,7 @@
       "hard_wr": 23,
       "grass_wr": null,
       "matches": 197,
-      "source": "challenger",
-      "player_key": "4053"
+      "source": "challenger"
     },
     {
       "name": "Altug Celikbilek",
@@ -5201,7 +5213,7 @@
       "source": "challenger"
     },
     {
-      "name": "Y. Shimizu",
+      "name": "Yuta Shimizu",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -5210,8 +5222,7 @@
       "hard_wr": 56,
       "grass_wr": null,
       "matches": 160,
-      "source": "challenger",
-      "player_key": "2100"
+      "source": "challenger"
     },
     {
       "name": "M. Gigante",
@@ -5772,7 +5783,7 @@
       "source": "challenger"
     },
     {
-      "name": "B. Zhukayev",
+      "name": "Beibit Zhukayev",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -5782,7 +5793,6 @@
       "grass_wr": 57,
       "matches": 134,
       "source": "challenger",
-      "player_key": "579",
       "archetype_label": "Big Server + First Strike"
     },
     {
@@ -6497,7 +6507,7 @@
       "source": "challenger"
     },
     {
-      "name": "G. Heide",
+      "name": "Gustavo Heide",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -6507,11 +6517,10 @@
       "grass_wr": null,
       "matches": 110,
       "source": "challenger",
-      "player_key": "2410",
       "archetype_label": "Attacking Baseliner"
     },
     {
-      "name": "C. Tabur",
+      "name": "Clement Tabur",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -6521,7 +6530,6 @@
       "grass_wr": null,
       "matches": 108,
       "source": "challenger",
-      "player_key": "1762",
       "archetype_label": "Solid Baseliner"
     },
     {
@@ -6662,7 +6670,7 @@
       "player_key": "1261"
     },
     {
-      "name": "P. Jubb",
+      "name": "Paul Jubb",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -6671,8 +6679,7 @@
       "hard_wr": 57,
       "grass_wr": 53,
       "matches": 105,
-      "source": "challenger",
-      "player_key": "385"
+      "source": "challenger"
     },
     {
       "name": "Ernests Gulbis",
@@ -7179,7 +7186,7 @@
       "source": "challenger"
     },
     {
-      "name": "G. Bueno",
+      "name": "Gonzalo Bueno",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7188,8 +7195,7 @@
       "hard_wr": 40,
       "grass_wr": null,
       "matches": 93,
-      "source": "challenger",
-      "player_key": "9209"
+      "source": "challenger"
     },
     {
       "name": "C. Denolly",
@@ -7241,7 +7247,7 @@
       "source": "challenger"
     },
     {
-      "name": "G. Onclin",
+      "name": "Gauthier Onclin",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7251,7 +7257,6 @@
       "grass_wr": 0,
       "matches": 92,
       "source": "challenger",
-      "player_key": "818",
       "archetype_label": "Solid Baseliner"
     },
     {
@@ -7768,7 +7773,7 @@
       "archetype_label": "Attacking Baseliner"
     },
     {
-      "name": "M. Damas",
+      "name": "Miguel Damas",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7777,8 +7782,7 @@
       "hard_wr": 35,
       "grass_wr": null,
       "matches": 77,
-      "source": "challenger",
-      "player_key": "1209"
+      "source": "challenger"
     },
     {
       "name": "Daniel Cukierman",
@@ -7966,7 +7970,7 @@
       "source": "challenger"
     },
     {
-      "name": "P. Martin Tiffon",
+      "name": "Pol Martin Tiffon",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7975,8 +7979,7 @@
       "hard_wr": 20,
       "grass_wr": null,
       "matches": 74,
-      "source": "challenger",
-      "player_key": "1338"
+      "source": "challenger"
     },
     {
       "name": "Facundo Juarez",
@@ -8231,7 +8234,7 @@
       "source": "challenger"
     },
     {
-      "name": "M. Soto",
+      "name": "Matias Soto",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -8240,8 +8243,7 @@
       "hard_wr": 50,
       "grass_wr": null,
       "matches": 69,
-      "source": "challenger",
-      "player_key": "9035"
+      "source": "challenger"
     },
     {
       "name": "Andrey Chepelev",
@@ -9152,7 +9154,7 @@
       "source": "challenger"
     },
     {
-      "name": "K. Sell",
+      "name": "Karue Sell",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -9161,8 +9163,7 @@
       "hard_wr": 62,
       "grass_wr": null,
       "matches": 53,
-      "source": "challenger",
-      "player_key": "8218"
+      "source": "challenger"
     },
     {
       "name": "Jurgen Zopp",
@@ -9850,7 +9851,7 @@
       "source": "challenger"
     },
     {
-      "name": "L. Midon",
+      "name": "Lautaro Midon",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -9859,8 +9860,7 @@
       "hard_wr": 60,
       "grass_wr": null,
       "matches": 46,
-      "source": "challenger",
-      "player_key": "10018"
+      "source": "challenger"
     },
     {
       "name": "M. Dodig",
@@ -10165,7 +10165,7 @@
       "source": "challenger"
     },
     {
-      "name": "L. Castelnuovo",
+      "name": "Luca Castelnuovo",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -10174,11 +10174,10 @@
       "hard_wr": 50,
       "grass_wr": null,
       "matches": 42,
-      "source": "challenger",
-      "player_key": "2220"
+      "source": "challenger"
     },
     {
-      "name": "K. Feldbausch",
+      "name": "Kilian Feldbausch",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -10187,8 +10186,7 @@
       "hard_wr": 50,
       "grass_wr": null,
       "matches": 42,
-      "source": "challenger",
-      "player_key": "1297"
+      "source": "challenger"
     },
     {
       "name": "Vincent Millot",
@@ -10504,7 +10502,7 @@
       "source": "challenger"
     },
     {
-      "name": "S. Sakellaridis",
+      "name": "Stefanos Sakellaridis",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -10514,7 +10512,6 @@
       "grass_wr": null,
       "matches": 38,
       "source": "challenger",
-      "player_key": "742",
       "archetype_label": "Big Server + Complete Baseliner"
     },
     {
@@ -10676,7 +10673,7 @@
       "source": "challenger"
     },
     {
-      "name": "A. Gray",
+      "name": "Alastair Gray",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -10685,8 +10682,7 @@
       "hard_wr": 52,
       "grass_wr": 17,
       "matches": 36,
-      "source": "challenger",
-      "player_key": "2110"
+      "source": "challenger"
     },
     {
       "name": "Sebastian Gima",
@@ -12149,7 +12145,7 @@
       "source": "challenger"
     },
     {
-      "name": "P. Zahraj",
+      "name": "Patrick Zahraj",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12158,8 +12154,7 @@
       "hard_wr": 62,
       "grass_wr": null,
       "matches": 24,
-      "source": "challenger",
-      "player_key": "5791"
+      "source": "challenger"
     },
     {
       "name": "Ye Cong Mo",
@@ -12511,7 +12506,7 @@
       "source": "challenger"
     },
     {
-      "name": "S. Palosi",
+      "name": "Stefan Palosi",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12520,8 +12515,7 @@
       "hard_wr": 0,
       "grass_wr": null,
       "matches": 22,
-      "source": "challenger",
-      "player_key": "9656"
+      "source": "challenger"
     },
     {
       "name": "Dominic Thiem",
@@ -12766,7 +12760,7 @@
       "source": "challenger"
     },
     {
-      "name": "K. Seelig",
+      "name": "Kyle Seelig",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12775,11 +12769,10 @@
       "hard_wr": 31,
       "grass_wr": null,
       "matches": 20,
-      "source": "challenger",
-      "player_key": "1237"
+      "source": "challenger"
     },
     {
-      "name": "I. Marcondes",
+      "name": "Igor Ribeiro Marcondes",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12788,8 +12781,7 @@
       "hard_wr": 50,
       "grass_wr": null,
       "matches": 20,
-      "source": "challenger",
-      "player_key": "3679"
+      "source": "challenger"
     },
     {
       "name": "Lorenzo Claverie",
@@ -12866,7 +12858,7 @@
       "source": "challenger"
     },
     {
-      "name": "H. Searle",
+      "name": "Henry Searle",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12875,8 +12867,7 @@
       "hard_wr": 31,
       "grass_wr": 75,
       "matches": 20,
-      "source": "challenger",
-      "player_key": "38784"
+      "source": "challenger"
     },
     {
       "name": "Buvaysar Gadamauri",
