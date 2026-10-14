@@ -4342,17 +4342,6 @@
     },
     "runs": [
       {
-        "at": "2026-09-25T07:16:16Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 19
-      },
-      {
         "at": "2026-09-25T08:16:11Z",
         "fixturesUnitsSpent": 1,
         "hitExpired": 0,
@@ -8738,6 +8727,17 @@
         "openMisses": 2,
         "stale": 2,
         "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 6
+      },
+      {
+        "at": "2026-10-14T06:00:22Z",
+        "fixturesUnitsSpent": 0,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 2,
+        "stale": 0,
+        "ttlBit": false,
         "unmapped": 0,
         "upcoming": 6
       }
