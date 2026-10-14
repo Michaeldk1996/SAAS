@@ -5015,6 +5015,11 @@
       if (c) {
         e.date = c.date; e.surface = c.surface || null; e.level = c.level || null;
         e.sheetId = c.date + '|' + (c.opponent || '');
+        // F2 (founder ruling 2026-10-14): set scores come from career-history for every row, every year — the one
+        // store with them for the whole career. recentForm (below) only holds this season + the last 10 matches.
+        // Rows are the player's own side ("4-6, 2-6" for Musetti's 2025 loss to Auger-Aliassime).
+        if (c.sets && c.sets.length) e.setScores = setScoreText(c, ', ');
+        if (c.retired) e.retired = true;
         got = true;
       }
 
@@ -5115,9 +5120,11 @@
   /** TEN-402 R3 fix 3 · an unpriced row dated after the Database archive's last match (the live edition) prints its "—"
    *  with the page's one reason on hover (window.trPxAfterOf — the Match analysis Tournament tab's words); anything
    *  else (priced, earlier, the join not answered, no page) → null and the cell prints as before. */
-  function pxAfterHtml(m) {
+  function pxAfterHtml(m, t) {
     if (!m || m.price != null) return null;
-    var why = typeof window.trPxAfterOf === 'function' ? window.trPxAfterOf(m.date) : null;
+    // F4 (founder 2026-10-14): a dateless row asks by its edition (the event + year) instead of a date.
+    var why = m.date ? (typeof window.trPxAfterOf === 'function' ? window.trPxAfterOf(m.date) : null)
+      : (t && typeof window.trPxAfterOfEdition === 'function' ? window.trPxAfterOfEdition(t.name, m.year) : null);
     return why ? '<span data-pp2-px-after="1" title="' + esc(why) + '" style="display:block;">' + DASH + '</span>' : null;   // the whole cell hovers
   }
   function tournEditionRows(p, t) {
@@ -5588,9 +5595,9 @@
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;' +
                'padding:5px 0;', m.setScores ? esc(m.setScores) : DASH) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-soft);text-align:right;' +
-               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.price)) +
+               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.price)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);text-align:right;' +
-               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m) || oddsText(m.oppPrice));
+               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.oppPrice));
       }).join('');
     }).join('');
 

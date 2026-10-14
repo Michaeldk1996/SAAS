@@ -3930,6 +3930,9 @@ check('the all-stores table covers every data store the module reads', () => {
     // TEN-402 R3 fix 3: the host's "this row is after the Database archive's last match" reason (trPxAfterOf over the
     // join's meta.dateRange the page already loaded; test-ten402-r2l.mjs "R3 fix 3") — logic, not a data store
     'trPxAfterOf',
+    // F4 (founder 2026-10-14): the same reason for a row with no date, judged by its edition (trPxAfterOfEdition over the
+    // join's meta.dateRange + the page's tournament-profiles.json; tools/test-f4-after-archive.js) — logic, not a store
+    'trPxAfterOfEdition',
     // TEN-402 r3: the page's one event name (sfEventName — Record per tournament prints it) — a display function, no rows
     'sfEventName',
     // Draw record drill-in (founder 2026-10-13): the host's lazy per-match file (pp2DrawNeed asks, pp2DrawMatches reads

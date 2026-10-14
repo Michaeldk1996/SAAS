@@ -260,7 +260,10 @@ jobs:
       # — it may never be why a deploy goes red; tools/test-match-stats-store.js is
       # what proves the floor is readable, and it runs before the commit, not here.
       - name: Hydrate the match-stat store from the committed floor
-        run: node tools/match-stats-store.js hydrate || true
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/match-stats-store.js hydrate || rc=$?
+          node tools/step-check.mjs --step "Hydrate the match-stat store from the committed floor" --rc "$rc" --since "$t0" --exists historical-match-stats.json
 
       # TEN-206 Q2(d) ch-1, second half: "commit one gzipped file daily."
       # player-profiles-cache.json was ALREADY tracked — 57.4 MB of pretty JSON frozen
@@ -276,7 +279,10 @@ jobs:
       # design: a missing or corrupt .gz warns and leaves the restored copy alone. It
       # must never be why a deploy goes red.
       - name: Hydrate profile caches from the committed floor
-        run: node tools/profile-cache-store.js hydrate || true
+        run: |
+          t0=$(date +%s); rc=0
+          node tools/profile-cache-store.js hydrate || rc=$?
+          node tools/step-check.mjs --step "Hydrate profile caches from the committed floor" --rc "$rc" --since "$t0" --exists player-profiles-cache.json
 
       - name: Run pipeline (with retry + health tracking)
         env:
@@ -301,7 +307,10 @@ jobs:
       - name: Backfill history match shards (best-effort)
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node backfill-history-shards.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node backfill-history-shards.js || rc=$?
+          node tools/step-check.mjs --step "Backfill history match shards (best-effort)" --rc "$rc" --since "$t0" --exists point-by-point-cache.json
 
       # Point-by-point sidecar (Task 4): lazy companion the dashboard fetches on
       # demand for finished matches. Best-effort — never block the deploy: a
@@ -309,7 +318,10 @@ jobs:
       - name: Build point-by-point sidecar (best-effort)
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node build-point-by-point.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-point-by-point.js || rc=$?
+          node tools/step-check.mjs --step "Build point-by-point sidecar (best-effort)" --rc "$rc" --since "$t0" --exists point-by-point.json --exists pbp-index.json
 
       # News feed (TEN-8): pull the api-tennis get_news window and store every
       # article verbatim in news-feed.json for the dashboard's News page. Uses the
@@ -319,7 +331,10 @@ jobs:
       - name: Build news feed (best-effort)
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node build-news-feed.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-news-feed.js || rc=$?
+          node tools/step-check.mjs --step "Build news feed (best-effort)" --rc "$rc" --since "$t0" --exists news-feed.json
 
       # Tournament entries (TEN-8): for each current ATP-main-tour singles event,
       # the roster of players in it (derived from get_fixtures) enriched with ATP
@@ -330,7 +345,10 @@ jobs:
       - name: Build tournament entries (best-effort)
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node build-tournament-entries.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-tournament-entries.js || rc=$?
+          node tools/step-check.mjs --step "Build tournament entries (best-effort)" --rc "$rc" --since "$t0" --exists tournament-entries.json
 
       # Market-performance shards, rebuilt every run against the profiles the pipeline
       # just refreshed. Reads only the committed odds-archive/ CSVs, so it makes no
@@ -338,21 +356,30 @@ jobs:
       # 2026-07-18). Rebuilding here rather than relying on the committed shards is what
       # keeps players who newly enter the profile roster from silently missing the block.
       - name: Build market performance shards (best-effort)
-        run: node build-odds-performance.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-odds-performance.js || rc=$?
+          node tools/step-check.mjs --step "Build market performance shards (best-effort)" --rc "$rc" --since "$t0" --fresh odds-performance-index.json
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,
       # grouped by tournament from the same committed odds-archive/ CSVs. No
       # network calls. Best-effort: a failure keeps the committed JSON.
       - name: Build tournament market (best-effort)
-        run: node build-tournament-market.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-tournament-market.js || rc=$?
+          node tools/step-check.mjs --step "Build tournament market (best-effort)" --rc "$rc" --since "$t0" --fresh tournament-market.json
 
       # Event hold rate (founder Q9, TEN-368): per ATP event, service games held over
       # service games played from the committed box-score archive (boxscore-archive/),
       # all editions on file, n = service games. No network calls. Best-effort: a
       # failure leaves the Tournament tab's and Key factors' hold cells dashed.
       - name: Build event hold rate (best-effort)
-        run: node build-event-hold.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-event-hold.js || rc=$?
+          node tools/step-check.mjs --step "Build event hold rate (best-effort)" --rc "$rc" --since "$t0" --fresh event-hold.json
 
       # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
       # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
@@ -369,10 +396,16 @@ jobs:
       # captured-closes-pinnacle.json (committed back after the deploy, below). No network calls.
       # Best-effort: a failure leaves the committed file, which build-match-closes reads as before.
       - name: Refresh captured Pinnacle closes (best-effort)
-        run: node build-captured-pinnacle.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-captured-pinnacle.js || rc=$?
+          node tools/step-check.mjs --step "Refresh captured Pinnacle closes (best-effort)" --rc "$rc" --since "$t0" --exists captured-closes-pinnacle.json
 
       - name: Build match-close shards (best-effort)
-        run: node build-match-closes.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-match-closes.js || rc=$?
+          node tools/step-check.mjs --step "Build match-close shards (best-effort)" --rc "$rc" --since "$t0" --fresh match-closes-index.json
 
       # TEN-310 R8 (2026-09-28): runs AFTER the match-close shards — it prices each side by the tab's order
       # and reads our captured closes from match-closes/{key}.json.
@@ -413,7 +446,10 @@ jobs:
       # settlement snapshot (fetch-market-size.js never re-queries a frozen
       # venue). A venue outage must not break the pipeline.
       - name: Build market-size shards (best-effort)
-        run: node fetch-market-size.js --slate matches.json --out market || true
+        run: |
+          t0=$(date +%s); rc=0
+          node fetch-market-size.js --slate matches.json --out market || rc=$?
+          node tools/step-check.mjs --step "Build market-size shards (best-effort)" --rc "$rc" --since "$t0" --exists market-index.json
 
       # TEN-151 Trading Report data layer (Route B, FUSED): per-player 24-month
       # situational splits (SH/SPW/RPW/BPS/BPW as numerator/denominator) built from
@@ -502,7 +538,10 @@ jobs:
       # definition. Best-effort: if it fails, the page dashes those three columns
       # and says the file is not published; Rate never depends on it.
       - name: Build Lines field distribution (best-effort)
-        run: node build-lines-field.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-lines-field.js || rc=$?
+          node tools/step-check.mjs --step "Build Lines field distribution (best-effort)" --rc "$rc" --since "$t0" --fresh lines-field.json
 
       # TEN-304: the Weather tab's per-venue forecasts (Open-Meteo free endpoint, founder ruling;
       # no key). One call per OUTDOOR venue on the board, venue-local hourly (2 past + 8 forecast
@@ -512,7 +551,10 @@ jobs:
       # A failed fetch carries the last good file from the live site with its original fetchedAt,
       # so the tab can show its age. Best-effort: with no file, the tab shows its unavailable state.
       - name: Build weather files (best-effort)
-        run: node build-weather.js || true
+        run: |
+          t0=$(date +%s); rc=0
+          node build-weather.js || rc=$?
+          node tools/step-check.mjs --step "Build weather files (best-effort)" --rc "$rc" --since "$t0" --exists weather-index.json
 
       - name: Assemble site
         run: |

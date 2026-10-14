@@ -202,6 +202,11 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
   cause. The watchdog's red run (alarm b) reached nobody on 12–13 Oct; this one goes to the founder's chat.
   **Test:** `test-ten396-stall-guard.mjs` (publish 25 min → cancel + 1 dispatch; 15 min / executing → untouched; stale
   site → one Telegram per build, fresh → silent).
+- **No best-effort step fails silently (F5, founder ruling 2026-10-14).** Every `pipeline.yml` step that used to end in
+  `|| true` now records its exit code and runs `tools/step-check.mjs` after it: a swallowed non-zero exit, a missing or empty
+  output, or (for an output the step always writes) a file this step did not rewrite is an `::error::` annotation, a line in
+  the step summary and a row in `.step-checks.jsonl`. The steps stay best-effort (the check never fails the run), so the data
+  publish is unchanged. **Test:** `tools/test-f5-step-check.mjs` (no `node … || true` left unchecked).
 - **`gate-run.mjs` exits with `process.exitCode`, never `process.exit()`:** the shard logs are one large write to a pipe,
   and `process.exit()` dropped the failing command's own output on 13 Oct (the log stopped mid-line).
 - **`build-info.json`:** `commit` = the CODE commit live (`check-live-build.sh` works unchanged); `data` = the pipeline

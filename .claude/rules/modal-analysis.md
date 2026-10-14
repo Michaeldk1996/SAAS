@@ -173,8 +173,12 @@ this file wins.
 
 ## Metrics with no formula before TEN-312 (D6)
 - **Per-tournament "+Y.Ypt vs market"** = the player-scope rule (`build-market-edge.js` `summarise`: actual win %
-  − mean de-vigged implied %) applied to that player's rows at the event, **n ≥ 5**, prices in the R8 book order
-  (`FH_BOOK_ORDER`). n < 5 → "—". **Test:** a fixture event with 5 priced rows reproduces `summarise`.
+  − mean de-vigged implied %) applied to that player's rows at the event, **n ≥ 5**, prices from the **one Database
+  join** (`trModelOf`, `bsp-consult-dashboard.html` — the rows the Backing tile sums: Pinnacle closing, else Bet365
+  closing, per match, the source-by-period rule in `odds.md` "Pinnacle closing source by period"; founder F6,
+  2026-10-14, supersedes "prices in the R8 book order (`FH_BOOK_ORDER`)", which the 2026-10-08/09 join rulings had
+  already retired on this tab and the profile). n < 5 → "—". **Test:** a fixture event with 5 priced rows reproduces
+  `summarise`.
 - **Surface Elo:** there is no 52-week or career Surface Elo (`ratings.md`). The DNA radar's Surface Elo axis
   shows the **current** surface Elo on both views, labelled "current". **Test:** switching the DNA window does not
   change the Elo axis value.

@@ -15908,6 +15908,27 @@ function trPxAfterOf(date){
   return end && date && String(date).slice(0, 10) > end ? trPxAfterTitle() : null;
 }
 window.trPxAfterOf = trPxAfterOf;
+// F4 (founder ruling 2026-10-14): a row with NO date (no career-history match) still gets the reason when its EDITION
+// is after the archive's last match. The edition's dates = that season in tournament-profiles.json (first → last match
+// on record), else its latest edition moved to that year (the News page's rule, newsEventSpans). A year after the
+// archive's last year needs no dates. An edition that starts on or before the last day, or one with no dated edition
+// and no store yet, gets no reason (null) — never a guess.
+function trPxAfterOfEdition(name, year){
+  const end = trDbEnd(), y = Number(year);
+  if (!end || !isFinite(y)) return null;
+  const ey = Number(end.slice(0, 4));
+  if (y > ey) return trPxAfterTitle();
+  if (y < ey) return null;
+  const key = (typeof sfEventKey === 'function' && sfEventKey(name)) || name;
+  const spans = typeof newsEventSpans === 'function' ? newsEventSpans(key) : null;
+  if (!spans) return null;
+  const seasons = Object.keys(spans).map(Number).filter(isFinite);
+  if (!seasons.length) return null;
+  const sp = spans[y], latest = Math.max(...seasons);
+  const start = sp ? sp.s : (String(Number(spans[latest].s.slice(0, 4)) + (y - latest)) + spans[latest].s.slice(4));
+  return start > end ? trPxAfterTitle() : null;
+}
+window.trPxAfterOfEdition = trPxAfterOfEdition;
 // Prices model rows in place on the Database join (A = the player, each row's own opponent, his career-history rows
 // for the nearest-first match step). A row the join does not hold is unpriced ("—"), never a closes price.
 function trDbJoinPx(name, ch){
