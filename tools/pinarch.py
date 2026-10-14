@@ -607,15 +607,26 @@ def _load(name, file):
     return m
 
 
+FLIP_PAGE = 1000
+
+
 def flips(since, until=None):
     """ATP + Challenger singles our live poller saw go live: api-tennis event key, names, our live-flip times."""
     q = (f"/rest/v1/live_flip_log?select=event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds,event_date,first_player,"
          f"second_player,tournament_name,event_type_type&first_live_seen_at=gte.{urllib.parse.quote(since.isoformat())}"
-         f"&event_type_type=in.({','.join(urllib.parse.quote(x) for x in LEVELS)})&order=first_live_seen_at.asc&limit=20000")
+         f"&event_type_type=in.({','.join(urllib.parse.quote(x) for x in LEVELS)})&order=first_live_seen_at.asc,event_key.asc")
     if until:
         q += f"&first_live_seen_at=lt.{urllib.parse.quote(until.isoformat())}"
-    _, rows, _ = rest('GET', q)
-    return rows or []
+    # PostgREST answers at most 1,000 rows per request (max-rows), whatever `limit` asks for: page until a short page
+    # (the first 30-day derive read exactly 1,000 flips and silently stopped on 2026-10-14)
+    out, off = [], 0
+    while True:
+        _, rows, _ = rest('GET', f'{q}&limit={FLIP_PAGE}&offset={off}')
+        rows = rows or []
+        out += rows
+        if len(rows) < FLIP_PAGE:
+            return out
+        off += len(rows)
 
 
 def apitennis_day(day, key):
@@ -740,14 +751,26 @@ def _at_keys(days):
     return out, failed
 
 
+NO_PINNACLE = {'noPinnacle': True}
+
+
 def raw_latest(fixture_ids):
-    """The newest raw row per fixture (payload included), fetched in small chunks."""
+    """The newest raw row per fixture that carries Pinnacle +30 (payload included), fetched in small chunks. A fixture
+    whose archived payloads are all another book's (the bet365 post-match archive) maps to NO_PINNACLE, never to one
+    of those payloads."""
     out, ids = {}, sorted(set(fixture_ids))
     for i in range(0, len(ids), 10):
         chunk = ','.join('"' + x + '"' for x in ids[i:i + 10])
-        _, rows, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,payload_gz,pulled_at&fixture_id=in.({urllib.parse.quote(chunk)})&order=id.asc')
+        _, rows, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,books,pulled_at&fixture_id=in.({urllib.parse.quote(chunk)})&order=id.asc')
+        pick = {}
         for r in rows or []:
-            out[r['fixture_id']] = r
+            if 'pinnacle+30' in (r.get('books') or []):
+                pick[r['fixture_id']] = r['id']
+            else:
+                out.setdefault(r['fixture_id'], NO_PINNACLE)
+        for fid, rid in pick.items():
+            _, one, _ = rest('GET', f'/rest/v1/{RAW}?select=id,fixture_id,payload_gz,pulled_at,books&id=eq.{rid}')
+            out[fid] = one[0]
     return out
 
 
@@ -760,6 +783,9 @@ def derive_and_add(events, raws):
         r = raws.get(ev['fixture_id'])
         if not r:
             why['no raw payload yet'] = why.get('no raw payload yet', 0) + 1; continue
+        if r is NO_PINNACLE:
+            k = 'archived payloads carry no Pinnacle +30 (another book only)'
+            why[k] = why.get(k, 0) + 1; continue
         body = gzip.decompress(unhex(r['payload_gz']))
         row, w = archive_close_row(ev, r['id'], ev['fixture_id'], mw_series(body))
         if row is None:

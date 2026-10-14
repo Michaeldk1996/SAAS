@@ -94,5 +94,32 @@ try: old_insert(P.CLOSE, mixed, 'dedupe_key'); ctl = False
 except RuntimeError: ctl = True
 check('control: one request with mixed keys is refused (the first derive\'s failure)', ctl)
 P.rest = real
+# flips(): PostgREST caps every answer at 1,000 rows; the first 30-day derive read exactly 1,000 and stopped
+import re as _re
+def cap_rest(total):
+    def rest(method, path, body=None, headers=None, **k):
+        lim = int(_re.search(r'limit=(\d+)', path).group(1)); off = int((_re.search(r'offset=(\d+)', path) or [0, 0])[1] or 0)
+        n = max(0, min(lim, 1000, total - off))
+        return 200, [{'event_key': off + j} for j in range(n)], {}
+    return rest
+P.rest = cap_rest(2003)
+got = P.flips(T('2026-09-14T00:00:00Z'))
+check('flips(): pages past the 1,000-row cap (2,003 flips → 2,003 rows, none twice)', len(got) == 2003 and len({g['event_key'] for g in got}) == 2003, len(got))
+def old_flips(since):
+    _, rows, _ = P.rest('GET', '/rest/v1/live_flip_log?limit=20000'); return rows
+check('control: one request with limit=20000 returns only 1,000 (the first derive)', len(old_flips(None)) == 1000)
+# raw_latest(): the newest payload CARRYING Pinnacle +30, never a newer other-book payload
+RAWS = [{'id': 1, 'fixture_id': 'f1', 'books': ['pinnacle+30'], 'pulled_at': 'a', 'payload_gz': 'P1'},
+        {'id': 2, 'fixture_id': 'f1', 'books': ['bet365'], 'pulled_at': 'b', 'payload_gz': 'B1'},
+        {'id': 3, 'fixture_id': 'f2', 'books': ['bet365'], 'pulled_at': 'c', 'payload_gz': 'B2'}]
+def raw_rest(method, path, body=None, headers=None, **k):
+    m = _re.search(r'id=eq\.(\d+)', path)
+    if m: return 200, [r for r in RAWS if r['id'] == int(m.group(1))], {}
+    return 200, [dict(r, payload_gz=None) for r in RAWS], {}
+P.rest = raw_rest
+rl = P.raw_latest(['f1', 'f2'])
+check('raw_latest(): f1 → its Pinnacle +30 payload (id 1), not the newer bet365 one (id 2); f2 (bet365 only) → NO_PINNACLE',
+      rl['f1']['id'] == 1 and rl['f1']['payload_gz'] == 'P1' and rl['f2'] is P.NO_PINNACLE, rl)
+P.rest = real
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
