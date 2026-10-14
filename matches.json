@@ -101657,11 +101657,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2972_b-van-de-zandschulp.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "oddsMovement": {
@@ -102703,6 +102703,9 @@
         "seenAt": "2026-10-14T03:52:08.006Z",
         "since": "2026-10-14T00:31:49.256Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   }
 ]
