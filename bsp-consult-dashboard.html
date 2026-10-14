@@ -13538,7 +13538,7 @@ const FH_FORM_ROW_CAP = 40;                // = RECENT_FORM_ROW_CAP (bsp-pipelin
 function fhFormRowsFromCareer(ch){
   return (Array.isArray(ch) ? ch : []).filter(x => x && x.date).slice(0, FH_FORM_ROW_CAP).map(x => ({
     opponent: x.opponent, opponentKey: null, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface,
-    result: x.result, won: !!x.won, sets: x.sets, retired: !!x.retired, walkover: !!x.walkover,
+    result: x.result, won: !!x.won, sets: x.sets, retired: !!x.retired, walkover: !!x.walkover, defaulted: !!x.defaulted,
     qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey }));
 }
 function fhEnsureFormData(m){

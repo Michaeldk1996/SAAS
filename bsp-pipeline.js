@@ -932,7 +932,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
     // declared while event_final_result still lags at e.g. "2 - 1" — mis-stamps
     // a real R64/R32 as 'Q' and freezes it in the 7-day history cache (Blockx
     // def. Trungelliti, US Open '26 R64, cached mid-match as 'Q').
-    if (!_qual && !_frac && _cname && GRAND_SLAM_NAMES.has(_cname) && !retired && !walkover) {
+    if (!_qual && !_frac && _cname && GRAND_SLAM_NAMES.has(_cname) && !retired && !walkover && !defaulted) {   // TEN-437: a default stops early too
       const sc = String(result).split('-').map(s => parseInt(s.trim(), 10));
       const winnerSets = (sc.length === 2 && sc.every(Number.isFinite)) ? Math.max(sc[0], sc[1]) : NaN;
       if (Number.isFinite(winnerSets) && winnerSets < 3) _qual = true;
@@ -3726,6 +3726,7 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   const clean = (fixtures || [])
     .filter(f => isSingles(f) && RECORD_STATUSES.includes(f.event_status))
     .filter(f => !isWalkover(f))
+    .filter(f => f.event_winner === 'First Player' || f.event_winner === 'Second Player')   // TEN-437 review: no winner = no form row (as every other history builder)
     .slice()
     .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
 
@@ -3749,6 +3750,7 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
       sets: formSetsFromFixture(f, isFirst),
       retired: f.event_status === 'Retired',
       walkover: f.event_status === 'Walk Over',
+      ...(isAwarded(f) ? { defaulted: true } : {}),   // TEN-437: a default is a played match, never read as a w/o
       qualifying: f.event_qualification === 'True',
       // Tour tier for the recent-form name restyle (TEN-104). event_type_type is
       // the only reliable tier source (the tournament name alone can't tell an
@@ -5496,7 +5498,7 @@ async function fetchPlayerCareerHistory(playerKey) {
     // set count (max of the two, orientation-safe) catches wins AND losses.
     // Retirements/walkovers are excluded: a main-draw match that stopped early can
     // legitimately show <3 winner sets and must stay main draw.
-    const _isRet = f.event_status === 'Retired';
+    const _isRet = f.event_status === 'Retired' || isAwarded(f);   // TEN-437: a default also stops early
     const _isWo = f.event_status === 'Walk Over';
     // TEN-157: a genuine main-draw round carries a "1/N-finals" label; a leaked
     // qualifying row carries the qualifying bracket's word label (QF/SF/Final).

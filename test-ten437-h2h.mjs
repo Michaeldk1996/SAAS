@@ -331,6 +331,11 @@ test('defaults: an "Awarded" fixture is a flagged history row, counted in the ye
   const y = P.buildAllTierYearly([f], 1759, {}, 2026, surf, new Map());
   const t = (y.find(r => r.year === '2023') || {}).atp || {};
   assert.deepEqual(t.total, { won: 1, lost: 0 }, 'the year tally counts it (lockstep with the row list)');
+  // recent form (TEN-437 review): the default is a flagged form row; an "Awarded" fixture with no winner is no row at all
+  const form = P.recentFormFromFixtures([f, Object.assign({}, f, { event_key: 2, event_date: '2023-05-20', event_winner: null })], 1759, surf);
+  const fm = form.matches;
+  assert.equal(fm.length, 1, 'the no-winner fixture is not a form row (Bacaloni–Tepmahc, Monastir 2022)');
+  assert.equal(fm[0].defaulted, true);
   assert.equal(H2HCore.isWalkover({ result: '0 - 0', defaulted: true }), false, 'a 0 - 0 default is a meeting');
   assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), true, 'control: a 0 - 0 row with no flag is still a walkover');
   const fr = { date: '2023-05-24', tournament: 'ATP Lyon', round: '1/8-finals', opponent: 'M. Ymer', won: true, result: '0 - 0', level: 'atp', eventKey: 11865152, defaulted: true };
