@@ -56,7 +56,7 @@ const MAX_PLAYERS_PER_RUN = Number(process.env.HISTORY_BACKFILL_MAX_PLAYERS || 1
 // forever. Anything still in play is left alone: caching a partial log would
 // freeze it at the suspension and keep serving those points after the match
 // ended (the trap build-point-by-point.js documents for interrupted matches).
-const FINAL_STATUSES = ['Finished', 'Retired', 'Walk Over'];
+const FINAL_STATUSES = ['Finished', 'Retired', 'Walk Over', 'Awarded'];   // TEN-437: a default is final too
 
 function isSingles(f) {
   return /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');

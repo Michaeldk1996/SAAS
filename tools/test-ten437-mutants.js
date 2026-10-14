@@ -22,6 +22,7 @@ const CORE_MUTANTS = [
   ['walkovers counted', "  function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }", "  function played(rows) { return rows || []; }"],
   ['dedupe off (Shanghai 2019 counted twice)', "    return drop.size ? rows.filter(x => !drop.has(x)) : rows;", "    return rows;"],
   ['the namesake rule dropped (a one-sided row credited to any same-named player)', "    const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;", "    const uniq = k => !!k;"],
+  ['a 0 - 0 default read as a walkover (ATP counts defaults)', "    if (x.defaulted) return false;", "    if (false) return false;"],
   ['Laver Cup excluded (ATP counts it)', "  const H2H_NOT_COUNTED = /hopman cup|", "  const H2H_NOT_COUNTED = /laver cup|hopman cup|"],
 ];
 const PAGE_MUTANTS = [

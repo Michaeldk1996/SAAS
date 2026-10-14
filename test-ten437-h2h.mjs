@@ -313,3 +313,32 @@ test('model: its H2H layer runs on the ATP-rule list — Medvedev–Tsitsipas 10
     [{ recent: 2, mid: 4 }, { recent: 1.0, mid: 0.6, old: 0.2 }, 8, 3, { t1: 1.0, t2: 0.45, t3: 0.10 }], 'age bands and tiers as ruled: unchanged');
 });
 
+// ── 8 · defaults count, as ATP counts them (founder ruling 2026-10-14, card edd72529) ────────────────────────────────────
+// api-tennis marks a default "Awarded" (Fils v M. Ymer, Lyon 2023 R16: "0 - 0", First Player). Mutations: "Awarded" out
+// of RECORD_STATUSES again; a 0 - 0 default read as a walkover.
+test('defaults: an "Awarded" fixture is a flagged history row, counted in the year tally, and never a walkover', () => {
+  process.env.DOTENV_CONFIG_QUIET = 'true';
+  const P = require(join(HERE, 'bsp-pipeline.js'));
+  const f = { event_key: 11865152, event_date: '2023-05-24', event_status: 'Awarded', event_type_type: 'Atp Singles', tournament_key: 1, tournament_name: 'ATP Lyon',
+    tournament_round: 'ATP Lyon - 1/8-finals', event_first_player: 'A. Fils', first_player_key: 1759, event_second_player: 'M. Ymer', second_player_key: 1976,
+    event_final_result: '0 - 0', event_winner: 'First Player', event_qualification: 'False', scores: [] };
+  const surf = new Map([['1', 'clay']]);
+  const rows = P.playerMatchHistory([f], 1759, 2026, surf, new Map());
+  assert.equal(rows.length, 1, 'the default is a history row');
+  assert.equal(rows[0].won, true); assert.equal(rows[0].defaulted, true);
+  const loser = P.playerMatchHistory([f], 1976, 2026, surf, new Map());
+  assert.equal(loser.length, 1); assert.equal(loser[0].won, false);
+  const y = P.buildAllTierYearly([f], 1759, {}, 2026, surf, new Map());
+  const t = (y.find(r => r.year === '2023') || {}).atp || {};
+  assert.deepEqual(t.total, { won: 1, lost: 0 }, 'the year tally counts it (lockstep with the row list)');
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0', defaulted: true }), false, 'a 0 - 0 default is a meeting');
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), true, 'control: a 0 - 0 row with no flag is still a walkover');
+  const fr = { date: '2023-05-24', tournament: 'ATP Lyon', round: '1/8-finals', opponent: 'M. Ymer', won: true, result: '0 - 0', level: 'atp', eventKey: 11865152, defaulted: true };
+  assert.deepEqual(H2HCore.record(H2HCore.joinMeetings({ full: 'A. Fils', short: 'A. Fils' }, { full: 'M. Ymer', short: 'M. Ymer' }, [fr],
+    [Object.assign({}, fr, { opponent: 'A. Fils', won: false })], {}, [])), { a: 1, b: 0, n: 1 }, 'Fils–M. Ymer = ATP 1–0');
+  const m = { id: 'upcoming-1', p1: 'A. Fils', p2: 'M. Ymer', p1Key: 1759, p2Key: 1976, surface: 'clay', date: '2026-10-14',
+    _fhH2hData: true, _fhCh: [[fr], [Object.assign({}, fr, { opponent: 'A. Fils', won: false })]], _fhCloses: [null, null], _fhElo: null, p1RecentFormMatches: [], p2RecentFormMatches: [] };
+  const E = S.fhMeetings(m);
+  assert.equal(E.length, 1); assert.equal(E[0].wo, false, 'the tab counts it (fhFinishRow: a default is not "no set played")');
+});
+

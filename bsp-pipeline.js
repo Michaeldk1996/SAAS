@@ -719,6 +719,14 @@ function yearlyBreakdown(playerStats) {
 // so we key on event_status, never on the empty scoreline (a retirement the provider
 // stored with no partial score would else be misread as a walkover).
 const isWalkover = (f) => f.event_status === 'Walk Over';
+// TEN-437 founder ruling 2026-10-14 (card edd72529): a default counts in a player's record as ATP counts it. api-tennis
+// marks a default "Awarded" (21 of 178,061 men's singles fixtures 2021–2026: 6 ATP, 4 Challenger, 11 ITF — Fils v
+// M. Ymer Lyon 2023, Bublik v Rublev Dubai 2024 SF, Djokovic v Medvedev Beijing 2026 SF …). Every W–L history builder
+// below takes these statuses (one list, so they stay in lockstep); the row carries `defaulted: true`, the field the TML
+// archive rows already use. Stats builders (hold/break, situational, series, trading splits) are not history and keep
+// their own lists.
+const RECORD_STATUSES = ['Finished', 'Retired', 'Walk Over', 'Awarded'];
+const isAwarded = (f) => f.event_status === 'Awarded';
 
 // Year-by-year record across ALL tiers (ATP + Challenger + ITF), tallied from the
 // broad recent-form fixtures (which span currentYear-5..now). Seasons older than
@@ -754,7 +762,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
   const byYear = {}; // year -> { atp: {...}, chitf: {...} }
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
-    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (!RECORD_STATUSES.includes(f.event_status)) continue;
     // Qualifying rounds ARE counted (founder ruling 2026-08-04, TEN-8): the record
     // must match Flashscore, which counts every professional match — main draw AND
     // qualifying. The old `!== 'False'` gate dropped qualifying (and null-flagged)
@@ -846,7 +854,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
   const out = [];
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
-    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (!RECORD_STATUSES.includes(f.event_status)) continue;
     // Include qualifying rounds — must stay in lockstep with buildAllTierYearly
     // (this is its row-level twin; the two are tallied against each other) and
     // match Flashscore. See the ruling note there.
@@ -890,6 +898,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
     // `ret.`/`w/o` instead of rendering what reads as a wrong result.
     const retired = f.event_status === 'Retired';
     const walkover = f.event_status === 'Walk Over';
+    const defaulted = isAwarded(f);   // TEN-437: a default ("Awarded") counts, flagged as the archive flags it
     // TEN-89 (Record-by-season panel; founder rulings, interaction 0c006daf,
     // 2026-08-28). The season drill (showOverviewMatches) reads this row's `round`
     // RAW, so a qualifying match served under the main-draw key — api-tennis merges
@@ -981,7 +990,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
       ...(indoor !== null ? { indoor } : {}),
       ...(sets ? { sets } : {}),
       ...(altFormat ? { altFormat } : {}),
-      ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
+      ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}), ...(defaulted ? { defaulted: true } : {}) });
   }
   // (3) Structural first-loss net — edition-grouped, mirrors the editions path.
   // A player is eliminated at their first main-draw LOSS, so any WIN at a deeper
@@ -1144,7 +1153,7 @@ function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
     if (String(f.event_date || '').slice(0, 4) !== String(year)) continue;
-    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (!RECORD_STATUSES.includes(f.event_status)) continue;
     // Include qualifying rounds so the current-season surface record matches
     // Flashscore (founder ruling 2026-08-04, TEN-8). See buildAllTierYearly.
     if (!f.event_winner) continue;
@@ -1210,7 +1219,7 @@ function seasonRowFromFixtures(fixtures, playerKey, year, surfaceMap) {
   };
   let decidedCount = 0;
   for (const f of fixtures) {
-    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (!RECORD_STATUSES.includes(f.event_status)) continue;
     if (!f.event_winner) continue;
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
@@ -1398,7 +1407,7 @@ function courtSpeedRecordFromFixtures(fixtures, playerKey, category) {
   if (!category) return null;
   let wins = 0, losses = 0;
   for (const f of fixtures) {
-    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status) || !f.event_winner) continue;
+    if (!RECORD_STATUSES.includes(f.event_status) || !f.event_winner) continue;
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
     if (!isFirst && !isSecond) continue;
@@ -3715,7 +3724,7 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // Barcelona 2026), a received one as a win, and the card's form % with them. Same
   // fingerprint as every other record builder (isWalkover); a retirement is a match and stays.
   const clean = (fixtures || [])
-    .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status))
+    .filter(f => isSingles(f) && RECORD_STATUSES.includes(f.event_status))
     .filter(f => !isWalkover(f))
     .slice()
     .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
@@ -5440,7 +5449,7 @@ async function fetchPlayerCareerHistory(playerKey) {
     // 2026-09-06 across the feed's whole reach (2019+): every completed match
     // carries a terminal status, so this drops zero legitimate rows — the only
     // non-terminal rows are Cancelled and live in-play, neither a real result.
-    if (!['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) continue;
+    if (!RECORD_STATUSES.includes(f.event_status)) continue;
     // Count qualifying-round matches too, so the per-tournament record matches
     // Flashscore and stays in lockstep with the Record-by-season table
     // (founder ruling 2026-08-04: same rules as Flashscore everywhere we show a

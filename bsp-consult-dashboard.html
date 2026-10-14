@@ -13188,7 +13188,7 @@ function fhFinishRow(r){
     }
   };
   count();
-  if (!r.wo && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;   // no set played = walkover
+  if (!r.wo && !r.def && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;   // no set played = walkover (a default is not: TEN-437)
   r.bo = fhBestOf(r);
   // A retirement the flags missed: the winner stopped short of the sets a
   // completed match needs. Completeness comes from the score, never the flag alone.
@@ -13209,7 +13209,7 @@ function fhRowFromForm(x, selfKey, selfName, idx){
     date: x.date, tourn: (typeof sfEventName === 'function' ? sfEventName : fhTournClean)(x.tournament), tournRaw: x.tournament,   // TEN-402 r1 fix 2: the one event name
     surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
     opp: x.opponent, oppKey: x.opponentKey, won: !!x.won, result: x.result,
-    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, qualifying: !!x.qualifying, tier: x.tier,
+    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, def: !!x.defaulted, qualifying: !!x.qualifying, tier: x.tier,
     ek: x.eventKey, selfKey, selfName, formRow: x, price: null, oppPrice: null, book: null,
   };
   return fhFinishRow(r);
@@ -14036,7 +14036,7 @@ function fhMeetings(m){
     }
     const r = { mid: fhSafeId('h2h_' + i + '_' + (ek || x.date)), date: x.date, tourn: (typeof sfEventName === 'function' ? sfEventName : fhTournClean)(x.tournament), tournRaw: x.tournament,   // r1 fix 2
       surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
-      won: !!x.won, result: x.result, sets, ret: !!ret, wo: !!wo, qualifying: qual, tier: tier || x.level || null,
+      won: !!x.won, result: x.result, sets, ret: !!ret, wo: !!wo, def: !!x.defaulted, qualifying: qual, tier: tier || x.level || null,
       ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null,
       level: 'ATP', src0: x._how || 'both' };
     fhFinishRow(r);
@@ -15064,7 +15064,7 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
     date: x.date, tourn: (typeof sfEventName === 'function' ? sfEventName : fhTournClean)(x.tournament), tournRaw: x.tournament,   // TEN-402 r1 fix 2: the one event name
     surface: fhSurfName(x.surface), round: fhRoundCode(x.round, qual),
     opp: x.opponent, oppKey: null, won: !!x.won, result: x.result,
-    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, qualifying: qual, tier: x.level === 'atp' ? 'atp' : x.level,
+    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, def: !!x.defaulted, qualifying: qual, tier: x.level === 'atp' ? 'atp' : x.level,
     ek: x.eventKey != null ? x.eventKey : null, selfKey, selfName, price: null, oppPrice: null, book: null, src: null,
     level: fhLevelOf(x.level, x.tournament, null),
     alt: x.altFormat ? String(x.altFormat) : (ME_NONSTD_EVENT.test(String(x.tournament || '')) ? 'team event' : null),

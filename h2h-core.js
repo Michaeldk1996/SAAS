@@ -149,6 +149,8 @@
   // record on screen can never disagree.
   function isWalkover(x) {
     if (x.walkover) return true;
+    if (x.defaulted) return false;   // TEN-437: a default ("Awarded") is a meeting ATP counts, even at 0 - 0
+
     if (Array.isArray(x.sets) && x.sets.length) return false;
     const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
     return !m || +m[1] + +m[2] === 0;
