@@ -7598,25 +7598,31 @@ const MODEL_OUTPUT_PATH = 'model-output.json';
 // (written above, this run) — handed to it as h2h.matches in the row shape buildH2HMatchList writes. matches.json keeps
 // its own m.h2h (the api-tennis list); only the model's input copy changes. No store on disk (a broken run) → the
 // api-tennis list, said loudly, never an empty H2H. readShard / names are injectable for the test.
-function modelH2hMatches(m, { readShard, names, finishedBoard }) {
+function modelH2hMatches(m, { readShard, names, finishedBoard, nameByKey }) {
   const H2HCore = require('./h2h-core.js');
   const nk = H2HCore.nameCounts(names || []);
   const ek = m => { const id = String((m && m.id) || ''); const i = id.indexOf('-'); return i >= 0 ? id.slice(i + 1) : id; };
   const pair = [String(m.p1Key), String(m.p2Key)].sort().join('|');
   const own = (finishedBoard || []).filter(x => x && x.finalScore && x.p1Key != null && x.p2Key != null
     && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(ek).concat([ek(m)]).filter(Boolean);
-  const rows = H2HCore.played(H2HCore.joinMeetings({ full: m.p1Full || m.p1, short: m.p1 }, { full: m.p2Full || m.p2, short: m.p2 },
+  // The profile's name by key, as the screens' sfH2hSide passes it (TEN-437 review): one name rule for every reader.
+  const full = (k, n) => (nameByKey && k != null && nameByKey[String(k)]) || n;
+  const rows = H2HCore.played(H2HCore.joinMeetings({ full: full(m.p1Key, m.p1), short: m.p1 }, { full: full(m.p2Key, m.p2), short: m.p2 },
     readShard(m.p1Key) || [], readShard(m.p2Key) || [], nk, own));
   return rows.map(x => ({ date: x.date, tournament: x.tournament, round: x.round || null, surface: x.surface || null, p1Won: !!x.won,
     result: x.result, qualifying: false, eventKey: x.eventKey != null ? x.eventKey : null, level: 'ATP' }));
 }
 function modelH2hInputs(matches) {
   if (!fs.existsSync('career-history')) { console.warn('::warning::TEN-437: career-history/ is missing — the model keeps the api-tennis H2H list this run'); return null; }
-  let names = [];
-  try { names = Object.values(JSON.parse(fs.readFileSync('player-profiles.json', 'utf8')).players || {}).map(p => p && p.name).filter(Boolean); } catch (e) { /* no roster: every name counts as unique */ }
+  let names = [], nameByKey = {};
+  try {
+    const players = JSON.parse(fs.readFileSync('player-profiles.json', 'utf8')).players || {};
+    names = Object.values(players).map(p => p && p.name).filter(Boolean);
+    Object.keys(players).forEach(k => { if (players[k] && players[k].name) nameByKey[k] = players[k].name; });
+  } catch (e) { /* no roster: every name counts as unique */ }
   const cache = {};
   const readShard = k => { const s = String(k == null ? '' : k); if (!s) return null; if (!(s in cache)) { try { cache[s] = JSON.parse(fs.readFileSync(`career-history/${s}.json`, 'utf8')).matches || []; } catch (e) { cache[s] = null; } } return cache[s]; };
-  return { readShard, names, finishedBoard: matches };
+  return { readShard, names, finishedBoard: matches, nameByKey };
 }
 
 async function buildModelOutput(matches) {
