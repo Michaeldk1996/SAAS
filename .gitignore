@@ -153,3 +153,6 @@ lines-field.json
 .dna-boxscores/
 # TEN-368: built by build-event-hold.js in pipeline.yml from boxscore-archive/, published, never committed
 event-hold.json
+
+# Python bytecode (never committed)
+__pycache__/

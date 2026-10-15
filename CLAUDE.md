@@ -276,6 +276,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Permanent Pinnacle archive — Supabase tables (raw Oddspapi history + derived closes), append-only grants + triggers, daily dated backup to the private ops repo, restore, publish guard | `.claude/rules/pinnacle-archive.md` |
+| Historical odds archive — every Tennis-Data file byte for byte, Tennis-Data closes 2010+ (Pinnacle / Bet365 separate), the private dated CSV export, guards (founder 2026-10-16) | `.claude/rules/historical-odds-archive.md` |
 | Deploy lane — ready gate, first-come-first-served queue, deploy-batch as the one land path, confirm-live release, 40-min pipeline-aware hold, cutover, waiter reports | `.claude/rules/deploy-lane.md` |
 | App shell — 92px rail that opens on hover (248, pushes the page), groups, selected glow, badges, avatar menu, nav glyphs (TEN-403) | `.claude/rules/app-shell.md` |
 | Today's Matches (TEN-377) — header stats, Upcoming / Completed card rulings, odds pop-up pointer | `.claude/rules/todays-matches.md` |
