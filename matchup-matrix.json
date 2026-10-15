@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-14T22:48:02.937Z",
+  "generatedAt": "2026-10-15T23:09:51.583Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.",
@@ -18,14 +18,14 @@
     "Solid Defender": 18,
     "All Court Elite": 3
   },
-  "matchesCounted": 16157,
+  "matchesCounted": 16159,
   "tmlMatchesCounted": 13422,
-  "supplementMatchesInMatrix": 2735,
+  "supplementMatchesInMatrix": 2737,
   "matchesInWindow": 78091,
   "tmlWalkoverExcluded": 413,
   "formRuleExcluded": 47,
   "from": "2002-12-30",
-  "through": "2026-10-14",
+  "through": "2026-10-15",
   "retentionPct": 17.2,
   "archetypes": {
     "Big Server": {
@@ -165,9 +165,9 @@
         "w": 348
       },
       "Counterpuncher": {
-        "pct": 58,
-        "n": 706,
-        "w": 413
+        "pct": 59,
+        "n": 707,
+        "w": 414
       },
       "Solid Defender": {
         "pct": 62,
@@ -198,7 +198,7 @@
       },
       "Attacking Baseliner": {
         "pct": 50,
-        "n": 1597,
+        "n": 1598,
         "note": "same archetype — coin flip on style"
       },
       "Solid Baseliner": {
@@ -276,8 +276,8 @@
         "w": 321
       },
       "Big Server + Complete Baseliner": {
-        "pct": 42,
-        "n": 706,
+        "pct": 41,
+        "n": 707,
         "w": 293
       },
       "Attacking Baseliner": {
@@ -393,7 +393,7 @@
   },
   "surfaceNote": "matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 9680,
+    "hard": 9682,
     "clay": 4790,
     "grass": 1626
   },
@@ -511,8 +511,8 @@
         },
         "Counterpuncher": {
           "pct": 58,
-          "n": 459,
-          "w": 267
+          "n": 460,
+          "w": 268
         },
         "Solid Defender": {
           "pct": 57,
@@ -543,7 +543,7 @@
         },
         "Attacking Baseliner": {
           "pct": 50,
-          "n": 910,
+          "n": 911,
           "note": "same archetype — coin flip on style"
         },
         "Solid Baseliner": {
@@ -622,7 +622,7 @@
         },
         "Big Server + Complete Baseliner": {
           "pct": 42,
-          "n": 459,
+          "n": 460,
           "w": 192
         },
         "Attacking Baseliner": {
@@ -1417,8 +1417,8 @@
   "byPlayerSupplement": {
     "source": "api-tennis 2026 finished fixtures",
     "loaded": true,
-    "matchesAdded": 2742,
-    "foldedIntoMatrix": 2735,
+    "matchesAdded": 2744,
+    "foldedIntoMatrix": 2737,
     "dedupedAgainstTml": 135,
     "walkoverExcluded": 21,
     "dedupTolDays": 1
@@ -1427,15 +1427,15 @@
     "note": "Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.",
     "sourceFiles": 23,
     "sourceRows": 59354,
-    "rows": 32408,
-    "priced": 29682,
+    "rows": 32412,
+    "priced": 29684,
     "pricedPct": 91.6,
-    "rows2026": 5754,
-    "priced2026": 4272,
+    "rows2026": 5758,
+    "priced2026": 4274,
     "priced2026Pct": 74.2
   },
   "byPlayerPlayers": 248,
-  "byPlayerEndpointsCounted": 32408,
+  "byPlayerEndpointsCounted": 32412,
   "byPlayer": {
     "martin|a": {
       "name": "A. Martin",
@@ -2322,7 +2322,7 @@
       }
     },
     "pouille|l": {
-      "name": "L. Pouille",
+      "name": "Lucas Pouille",
       "vs": {
         "Attacking Baseliner": {
           "w": 9,
@@ -2432,7 +2432,7 @@
       "name": "A. Zverev",
       "vs": {
         "Counterpuncher": {
-          "w": 80,
+          "w": 81,
           "l": 23
         },
         "Attacking Baseliner": {
@@ -4161,7 +4161,7 @@
       }
     },
     "napolitano|s": {
-      "name": "Stefano Napolitano",
+      "name": "S. Napolitano",
       "vs": {
         "Counterpuncher": {
           "w": 0,
@@ -4346,7 +4346,7 @@
         },
         "Big Server + Complete Baseliner": {
           "w": 42,
-          "l": 40
+          "l": 41
         },
         "Big Server + First Strike": {
           "w": 37,
@@ -5407,7 +5407,7 @@
           "l": 16
         },
         "Attacking Baseliner": {
-          "w": 42,
+          "w": 43,
           "l": 53
         },
         "Big Server + First Strike": {
@@ -7544,7 +7544,7 @@
       }
     },
     "zhukayev|b": {
-      "name": "Beibit Zhukayev",
+      "name": "B. Zhukayev",
       "vs": {
         "Counterpuncher": {
           "w": 0,
@@ -7738,7 +7738,7 @@
       }
     },
     "sakellaridis|s": {
-      "name": "Stefanos Sakellaridis",
+      "name": "S. Sakellaridis",
       "vs": {
         "Attacking Baseliner": {
           "w": 1,
@@ -8014,7 +8014,7 @@
       }
     },
     "rincon|d": {
-      "name": "Daniel Rincon",
+      "name": "D. Rincon",
       "vs": {
         "Solid Baseliner": {
           "w": 0,
@@ -8336,7 +8336,7 @@
       }
     },
     "alboran|n": {
-      "name": "Nicolas Moreno De Alboran",
+      "name": "N. Moreno De Alboran",
       "vs": {
         "Attacking Baseliner": {
           "w": 2,
@@ -8816,7 +8816,7 @@
       }
     },
     "heide|g": {
-      "name": "Gustavo Heide",
+      "name": "G. Heide",
       "vs": {
         "Solid Baseliner": {
           "w": 0,
@@ -9081,7 +9081,7 @@
       }
     },
     "canas|a": {
-      "name": "Alejandro Moro Canas",
+      "name": "A. Moro Canas",
       "vs": {
         "Big Server + Complete Baseliner": {
           "w": 0,
@@ -9102,7 +9102,7 @@
       }
     },
     "martineau|m": {
-      "name": "Matteo Martineau",
+      "name": "M. Martineau",
       "vs": {
         "Big Server + First Strike": {
           "w": 0,
@@ -9400,7 +9400,7 @@
       }
     },
     "onclin|g": {
-      "name": "Gauthier Onclin",
+      "name": "G. Onclin",
       "vs": {
         "Big Server": {
           "w": 0,
@@ -9488,7 +9488,7 @@
       }
     },
     "tabur|c": {
-      "name": "Clement Tabur",
+      "name": "C. Tabur",
       "vs": {
         "Counterpuncher": {
           "w": 0,
@@ -9736,7 +9736,7 @@
       "vs": {
         "Attacking Baseliner": {
           "w": 11,
-          "l": 4
+          "l": 5
         },
         "Solid Baseliner": {
           "w": 1,
@@ -9765,7 +9765,7 @@
       }
     },
     "gentzsch|t": {
-      "name": "Tom Gentzsch",
+      "name": "T. Gentzsch",
       "vs": {
         "Big Server + First Strike": {
           "w": 1,
