@@ -210,7 +210,8 @@ function tmlSurface(raw) {
   if (s.includes('clay')) return 'clay';
   if (s.includes('grass')) return 'grass';
   if (s.includes('hard')) return 'hard';
-  return null; // carpet/unknown — excluded from the surface-scoped drill-down
+  if (s.includes('carpet')) return 'carpet';   // TEN-437 D4 (founder 2026-10-16): carpet is a real surface — the tour played on it until 2009
+  return null; // blank: unknown surface (the row still ships; a surface stat shows a dash for it)
 }
 function tmlDate(raw) {
   const d = String(raw || '').trim();
@@ -303,10 +304,10 @@ async function buildTmlIndex(log, opts = {}) {
       // per-set coverage at the fixture window (~50% of a veteran's career).
       const wSets = parseSetScores(r.score);
       // Winner's row entry.
-      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret, walkover, defaulted, bestOf, altFormat, sets: wSets });
+      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), oppId: lId, score: scoreDisplay(r.score, true), won: true, ret, walkover, defaulted, bestOf, altFormat, sets: wSets });
       trackIdentity(identity, wId, r.winner_name, r.winner_ioc, year);
       // Loser's row entry.
-      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret, walkover, defaulted, bestOf, altFormat, sets: flipSetScores(wSets) });
+      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), oppId: wId, score: scoreDisplay(r.score, false), won: false, ret, walkover, defaulted, bestOf, altFormat, sets: flipSetScores(wSets) });
       trackIdentity(identity, lId, r.loser_name, r.loser_ioc, year);
     }
   }
@@ -607,19 +608,26 @@ async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
   // while the suite stayed green.
   const index = opts.index || await buildTmlIndex(log);
   const apiToTml = reconcile(profiles, index.identity, countryToIoc, log);
+  // TEN-437 D3: the player's own TML/ATP id, for the shard writer (shard `id`), so a one-sided H2H row is credited only on
+  // an id match, never on a name.
+  if (opts.idsOut instanceof Map) for (const [apiKey, tmlId] of apiToTml) opts.idsOut.set(String(apiKey), String(tmlId));
   const out = {};
   for (const [apiKey, tmlId] of apiToTml) {
     const ms = index.byId.get(tmlId) || [];
     const list = [];
     for (const m of ms) {
       if (m.year < minYear || m.year > maxYear) continue;
-      if (!m.surface) continue; // drill-down is surface-scoped
+      // TEN-437 D4 (founder 2026-10-16): a carpet or blank-surface match is still a match — ATP counts it in every H2H.
+      // It used to be skipped here ("drill-down is surface-scoped"), which dropped every carpet-era indoor event
+      // (Paris, Basel, Lyon … to 2009) and blank-surface zonal Davis Cup ties from career history and so from the H2H.
       list.push({
         year: String(m.year), surface: m.surface, level: 'atp', date: m.date,
         tournament: m.tournamentName || m.tourney, round: m.round,
         // scoreDisplay renders opponentSets - playerSets; the live drill-down uses
         // playerSets - oppSets, so flip to keep both consistent.
         opponent: m.oppName, result: flipSets(m.score), won: m.won,
+        // TEN-437 D3: the opponent's TML/ATP id — the identity a one-sided H2H row is credited on (h2h-core).
+        ...(m.oppId ? { oppId: String(m.oppId) } : {}),
         // Per-set games, already subject-oriented by buildTmlIndex. Omitted
         // rather than emitted empty when the scoreline held none (walkovers),
         // so the renderer falls back to the set count instead of drawing a

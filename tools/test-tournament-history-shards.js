@@ -146,7 +146,7 @@ assert.ok(/tourHistShards:\s*\(\)\s*=>\s*_tourHistShards/.test(envLine),
   + 'invisible to the H2H IIFE (its tournament selector) without the bridge');
 assert.ok(/DV\('tourHistShards'\)/.test(html),
   'the H2H adapter must read the cache through DV(), not by touching the const directly');
-assert.ok(/const joined = H2HCore\.joinMeetings\(a, b, S\.chA, S\.chB, /.test(html),
+assert.ok(/const joined = H2HCore\.joinMeetings\(withId\(a\), withId\(b\), S\.chA, S\.chB, /.test(html),
   'the H2H page builds its meetings with H2HCore.joinMeetings (TEN-437)');
 {
   const H2HCore = require(path.join(ROOT, 'h2h-core.js'));

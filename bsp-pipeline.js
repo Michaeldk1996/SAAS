@@ -296,13 +296,18 @@ const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf M
 // Six Kings Slam, …) do not. api-tennis tags Hopman Cup "Atp Singles", so the
 // event-type filter alone keeps it — this name test removes it. The dashboard's
 // career-history join applies the same list (FH_H2H_NOT_ATP_RECORD).
-const H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+// The events no ATP record counts (the Form list below is built on it, unchanged).
+const ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+// TEN-437 D2 (founder 2026-10-16, "following ATP"): the H2H population also leaves out the Asian Games and Davis Cup
+// Group III/IV round-robins — absent from ATP's H2H (Hangzhou 2023: 9 roster pairs, none listed by ATP; Vacherot v
+// Efstathiou, Group III 2021, not listed). The ruling is the H2H population's; Form keeps its own list (reported).
+const H2H_NOT_ATP_RECORD = new RegExp(ATP_RECORD_NOT_COUNTED.source + '|asian games|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b', 'i');
 // Form (founder TEN-380 + TEN-383, 2026-10-04): a match outside the ATP's official
 // win-loss record never counts toward recent form — the card's Recent form %, the
 // Form tab and Key factors' Recent form count the same matches. Laver Cup is the
 // case the record leaves out (Davis Cup and United Cup count), plus the exhibitions
 // above. Same list as the dashboard's FH_FORM_NOT_ATP_RECORD. H2H keeps Laver Cup.
-const FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + H2H_NOT_ATP_RECORD.source, 'i');
+const FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + ATP_RECORD_NOT_COUNTED.source, 'i');
 function h2hCountsInAtpRecord(m) {
   return !H2H_NOT_ATP_RECORD.test(String((m && (m.tournament_name || m.tournament)) || ''));
 }
@@ -425,7 +430,7 @@ function buildH2HMatchList(h2hMatches, p1Key, surfaceMap) {
         date: m.event_date,
         tournament: m.tournament_name,
         round: m.tournament_round || null,
-        surface: surfaceMap.get(String(m.tournament_key)) || null,
+        surface: fixtureSurface(m, surfaceMap) || null,
         p1Won,
         result,
         // A qualifying-round meeting now COUNTS in the H2H (TEN-8 Flashscore
@@ -779,7 +784,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     if (!byYear[year]) byYear[year] = { atp: blankTier(), chitf: blankTier() };
     const bucket = byYear[year][tierOf(f)];
     bucket.total[won ? 'won' : 'lost']++;
-    const surface = surfaceMap.get(String(f.tournament_key));
+    const surface = fixtureSurface(f, surfaceMap);
     if (surface && bucket[surface]) bucket[surface][won ? 'won' : 'lost']++;
     // Additive: the surface buckets above are left counting indoor matches, so
     // no existing consumer moves. Indoor is recorded a second time, per surface,
@@ -869,7 +874,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
     // counts it in the year's Total, so dropping it here would make the row list
     // shorter than the Total the user clicked — the exact mismatch this pair of
     // builders exists to avoid. The surface-scoped drills filter it out anyway.
-    const rawSurface = surfaceMap.get(String(f.tournament_key));
+    const rawSurface = fixtureSurface(f, surfaceMap);
     const surface = ['clay', 'hard', 'grass'].includes(rawSurface) ? rawSurface : null;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
     // Skip a pre-match walkover the player GAVE — kept in lockstep with
@@ -985,7 +990,10 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtM
     // table counts that under its surface too). Absent when the map is empty (a cache that predates court capture):
     // the table then carries no indoor split either.
     const indoor = courtMap && courtMap.size ? courtMap.get(String(f.tournament_key)) === 'indoor' : null;
-    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
+    // TEN-437 D3: the opponent's api-tennis key — the identity a one-sided H2H row is credited on (h2h-core), carried
+    // from the fixture itself. Rows of a profile cached before this line carry none until it rebuilds (14-day TTL).
+    const oppKey = isFirst ? f.second_player_key : f.first_player_key;
+    out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, ...(oppKey != null && oppKey !== '' ? { oppKey: String(oppKey) } : {}), result, won, eventKey: f.event_key, src: 'fixtures',
       _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
       ...(indoor !== null ? { indoor } : {}),
       ...(sets ? { sets } : {}),
@@ -1051,6 +1059,18 @@ const SURFACE_CORRECTIONS = [
   // API reports it as clay on the ATP singles/doubles entries.
   { name: 'mallorca', tour: 'atp', surface: 'grass' },
 ];
+// TEN-437 S2 (founder 2026-10-16): api-tennis gives a tournament ONE surface per key, and the Olympic Games reuse one key
+// across editions, so every Olympic match read as grass (London 2012's surface). The surface is per edition, by year —
+// Tokyo 2021 hard, Paris 2024 clay — and this map is the source for every Olympic row, whatever its name spelling.
+const OLYMPIC_SURFACE_BY_YEAR = { 2000: 'hard', 2004: 'hard', 2008: 'hard', 2012: 'grass', 2016: 'hard', 2021: 'hard', 2024: 'clay', 2028: 'hard' };
+function olympicSurface(name, date) {
+  if (!/olympic/i.test(String(name || ''))) return null;
+  return OLYMPIC_SURFACE_BY_YEAR[String(date || '').slice(0, 4)] || null;
+}
+// The surface of one fixture: the per-key map, except an Olympic edition (above).
+function fixtureSurface(f, surfaceMap) {
+  return olympicSurface(f && f.tournament_name, f && f.event_date) || surfaceMap.get(String(f.tournament_key));
+}
 function correctTournamentSurface(t) {
   const name = String(t.tournament_name || '').trim().toLowerCase();
   const type = String(t.event_type_type || '').toLowerCase();
@@ -1160,7 +1180,7 @@ function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
     const isFirst = String(f.first_player_key) === String(playerKey);
     const isSecond = String(f.second_player_key) === String(playerKey);
     if (!isFirst && !isSecond) continue;
-    const surface = surfaceMap.get(String(f.tournament_key));
+    const surface = fixtureSurface(f, surfaceMap);
     if (!surface || !['clay', 'hard', 'grass'].includes(surface)) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
     if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
@@ -1228,7 +1248,7 @@ function seasonRowFromFixtures(fixtures, playerKey, year, surfaceMap) {
     if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
     decidedCount++;
     tally.total[won ? 'won' : 'lost']++;
-    const surface = surfaceMap.get(String(f.tournament_key));
+    const surface = fixtureSurface(f, surfaceMap);
     if (surface) tally[surface][won ? 'won' : 'lost']++;
   }
   if (decidedCount === 0) return null;
@@ -1434,7 +1454,7 @@ async function buildExtraStats(p1Key, p2Key, surface, surfaceMap, p1CurrentYearF
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 371); // 53 weeks, safely covers a full 52-week window
   const inLast52Weeks = f => new Date(f.event_date) >= cutoff;
-  const onThisSurface = f => surfaceMap.get(String(f.tournament_key)) === surface;
+  const onThisSurface = f => fixtureSurface(f, surfaceMap) === surface;
 
   return {
     last52Weeks: {
@@ -3195,7 +3215,7 @@ function tourLabelOf(fixture) {
 }
 
 async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
-  const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
+  const surface = fixtureSurface(fixture, surfaceMap) || 'hard';
   // Task 6: the same builder also handles suspended matches. Everything about
   // them is identical to a completed match (real stats, real per-set score, real
   // odds) EXCEPT that there's no result — so the score goes on `partialScore`
@@ -3393,7 +3413,7 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
 // finalScore/matchStats since the match hasn't been played.
 // =================================================================
 async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
-  const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
+  const surface = fixtureSurface(fixture, surfaceMap) || 'hard';
   const tour = tourLabelOf(fixture);
 
   const p1Key = fixture.first_player_key;
@@ -3748,7 +3768,7 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
       date: f.event_date,
       tournament: f.tournament_name,
       round: f.tournament_round,
-      surface: surfaceMap.get(String(f.tournament_key)) || null,
+      surface: fixtureSurface(f, surfaceMap) || null,
       result, won,
       sets: formSetsFromFixture(f, isFirst),
       retired: f.event_status === 'Retired',
@@ -4097,9 +4117,12 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   const holeYears = FIXTURE_HOLE_YEARS.filter((y) => y > archiveMaxYear);
   const archiveReadMax = Math.max(archiveMaxYear, ...holeYears);
   let archive = {};
+  // TEN-437 D3: api key -> the player's own TML/ATP id (written as the shard's `id`): the identity a one-sided H2H row is
+  // credited against. A test passes it with its archive; a player with no TML identity ships no id (never a guessed one).
+  const tmlIds = opts.tmlIds instanceof Map ? opts.tmlIds : new Map();
   try {
     // `opts.archive` lets a test drive this writer over a controlled archive instead of the network.
-    archive = opts.archive || await buildArchiveHistories(profiles, 2000, archiveReadMax, { log }) || {};
+    archive = opts.archive || await buildArchiveHistories(profiles, 2000, archiveReadMax, { log, idsOut: tmlIds }) || {};
   } catch (e) {
     log(`  Career archive unavailable (${e.message}) — shards will cover the fixture window only.`);
   }
@@ -4147,6 +4170,10 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     }
     const rows = [...fixtureRows, ...archiveRows]
       .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    // TEN-437 S2: an Olympic row carries its edition's surface (Tokyo 2021 hard, Paris 2024 clay), also on rows a cached
+    // profile built before the correction — the map is the one fixtureSurface() reads. Before the year tally,
+    // so the tally counts it on its edition's surface too (review 2026-10-16).
+    for (const r of rows) { const os = olympicSurface(r.tournament, r.date); if (os) r.surface = os; }
     // careerMatches is a build-time carrier only; it must not ship inside
     // player-profiles.json, which is on the critical path.
     delete p.careerMatches;
@@ -4252,6 +4279,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       // a zero on every one of ~700 files is bytes that say nothing.
       v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows, incomplete: shardIncomplete,
       ...(shardAltFormat ? { altFormat: shardAltFormat } : {}),
+      // TEN-437 D3 (reported 2026-10-16, additive): the player's own TML/ATP id. h2h-core credits a one-sided archive row
+      // only when its `oppId` equals the other player's `id` — never on a name.
+      ...(tmlIds.get(String(key)) ? { id: tmlIds.get(String(key)) } : {}),
     }, true);
     bytes += fs.statSync(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`).size;
     index[key] = rows.length;
@@ -4917,7 +4947,7 @@ async function buildOneProfile(key, name, surfaceMap) {
   const aggBySurface = { All: aggregateStatsFromFixtures(last52WeeksFixtures, key) };
   for (const surface of ['grass', 'hard', 'clay']) {
     const label = surface[0].toUpperCase() + surface.slice(1);
-    const onSurface = allFixtures.filter(f => surfaceMap.get(String(f.tournament_key)) === surface);
+    const onSurface = allFixtures.filter(f => fixtureSurface(f, surfaceMap) === surface);
     aggBySurface[label] = aggregateStatsFromFixtures(onSurface, key);
   }
 
@@ -7603,7 +7633,7 @@ const MODEL_OUTPUT_PATH = 'model-output.json';
 // (written above, this run) — handed to it as h2h.matches in the row shape buildH2HMatchList writes. matches.json keeps
 // its own m.h2h (the api-tennis list); only the model's input copy changes. No store on disk (a broken run) → the
 // api-tennis list, said loudly, never an empty H2H. readShard / names are injectable for the test.
-function modelH2hMatches(m, { readShard, names, finishedBoard, nameByKey }) {
+function modelH2hMatches(m, { readShard, readId, names, finishedBoard, nameByKey }) {
   const H2HCore = require('./h2h-core.js');
   const nk = H2HCore.nameCounts(names || []);
   const ek = m => { const id = String((m && m.id) || ''); const i = id.indexOf('-'); return i >= 0 ? id.slice(i + 1) : id; };
@@ -7612,7 +7642,9 @@ function modelH2hMatches(m, { readShard, names, finishedBoard, nameByKey }) {
     && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(ek).concat([ek(m)]).filter(Boolean);
   // The profile's name by key, as the screens' sfH2hSide passes it (TEN-437 review): one name rule for every reader.
   const full = (k, n) => (nameByKey && k != null && nameByKey[String(k)]) || n;
-  const rows = H2HCore.played(H2HCore.joinMeetings({ full: full(m.p1Key, m.p1), short: m.p1 }, { full: full(m.p2Key, m.p2), short: m.p2 },
+  // key + id (TEN-437 D3): a one-sided row is credited on the opponent's api key / TML id, never on a name
+  const side = (k, n) => ({ full: full(k, n), short: n, key: k != null ? String(k) : null, id: (readId && readId(k)) || null });
+  const rows = H2HCore.played(H2HCore.joinMeetings(side(m.p1Key, m.p1), side(m.p2Key, m.p2),
     readShard(m.p1Key) || [], readShard(m.p2Key) || [], nk, own));
   return rows.map(x => ({ date: x.date, tournament: x.tournament, round: x.round || null, surface: x.surface || null, p1Won: !!x.won,
     result: x.result, qualifying: false, eventKey: x.eventKey != null ? x.eventKey : null, level: 'ATP' }));
@@ -7626,8 +7658,10 @@ function modelH2hInputs(matches) {
     Object.keys(players).forEach(k => { if (players[k] && players[k].name) nameByKey[k] = players[k].name; });
   } catch (e) { /* no roster: every name counts as unique */ }
   const cache = {};
-  const readShard = k => { const s = String(k == null ? '' : k); if (!s) return null; if (!(s in cache)) { try { cache[s] = JSON.parse(fs.readFileSync(`career-history/${s}.json`, 'utf8')).matches || []; } catch (e) { cache[s] = null; } } return cache[s]; };
-  return { readShard, names, finishedBoard: matches, nameByKey };
+  const shard = k => { const s = String(k == null ? '' : k); if (!s) return null; if (!(s in cache)) { try { cache[s] = JSON.parse(fs.readFileSync(`career-history/${s}.json`, 'utf8')); } catch (e) { cache[s] = null; } } return cache[s]; };
+  const readShard = k => { const d = shard(k); return d ? (d.matches || []) : null; };
+  const readId = k => { const d = shard(k); return (d && d.id) || null; };   // TEN-437 D3: the shard's own TML/ATP id
+  return { readShard, readId, names, finishedBoard: matches, nameByKey };
 }
 
 async function buildModelOutput(matches) {
@@ -7807,7 +7841,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

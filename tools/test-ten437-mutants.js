@@ -15,15 +15,24 @@ const CORE_MUTANTS = [
   ['the eventKey-only join back (keyless archive rows skipped on both sides — the TEN-437 root cause)', [
     ["    A.forEach(x => {\n      if (!x || typeof x.won !== 'boolean') return;", "    A.forEach(x => {\n      if (!x || typeof x.won !== 'boolean' || x.eventKey == null) return;"],
     ["      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean'", "      if (!y || y.eventKey == null || used.has(y) || bad.has(y) || typeof y.won !== 'boolean'"]]],
-  ['a 2021 date cut-off', "    return dedupe(out).filter(x => inPopulation(x) &&", "    return dedupe(out).filter(x => String(x.date) >= '2021' && inPopulation(x) &&"],
+  ['a 2021 date cut-off', "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x) &&", "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => String(x.date) >= '2021' && inPopulation(x) &&"],
   ['Challengers / ITF back in', "  const H2H_LEVELS = ['atp'];", "  const H2H_LEVELS = ['atp', 'chitf'];"],
-  ['Hopman Cup and exhibitions back in', "  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;", "  const H2H_NOT_COUNTED = /$^/;"],
+  ['Hopman Cup and exhibitions back in', "  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis|", "  const H2H_NOT_COUNTED = /$^|"],
   ['qualifying back in', "      && !x.qualifying && !/^qualif/i.test(String(x.round || ''))", "      && true"],
   ['walkovers counted', "  function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }", "  function played(rows) { return rows || []; }"],
   ['dedupe off (Shanghai 2019 counted twice)', "    return drop.size ? rows.filter(x => !drop.has(x)) : rows;", "    return rows;"],
   ['the namesake rule dropped (a one-sided row credited to any same-named player)', "    const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;", "    const uniq = k => !!k;"],
   ['a 0 - 0 default read as a walkover (ATP counts defaults)', "    if (x.defaulted) return false;", "    if (false) return false;"],
   ['Laver Cup excluded (ATP counts it)', "  const H2H_NOT_COUNTED = /hopman cup|", "  const H2H_NOT_COUNTED = /laver cup|hopman cup|"],
+  // TEN-437 reconciliation fixes (founder 2026-10-16)
+  ['D1: qualifying read from the first row\'s label alone (both rows and the main-draw date ignored)',
+    "  function resolveQualifying(x, all) {\n    const tw = x._twin, rX = rnd(x), rT = rnd(tw);", "  function resolveQualifying(x, all) { return x;\n    const tw = x._twin, rX = rnd(x), rT = rnd(tw);"],
+  ['D2: the Asian Games counted', "mubadala world tennis|asian games|", "mubadala world tennis|"],
+  ['D2: Davis Cup Group III/IV counted', "|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b/i;", "/i;"],
+  ['D3: a one-sided archive row credited on its name', "      if (r.src === 'archive') return !!up(r.oppId) && up(r.oppId) === up(other.id);", "      if (r.src === 'archive') return uniq(nkOther);"],
+  ['D3: a feed row\'s api key ignored', "      if (r.oppKey != null && r.oppKey !== '') return other.key != null && String(r.oppKey) === String(other.key);", ""],
+  ['D5: a 0 - 0 retirement read as a walkover', "    if (x.retired) return false;", "    if (false) return false;"],
+  ['D1: a same-day main-draw double read as qualifying (on-or-before instead of before)', "    if (md == null || d0 < md) return Object.assign({}, x, { qualifying: true });", "    if (md == null || d0 <= md) return Object.assign({}, x, { qualifying: true });"],
 ];
 const PAGE_MUTANTS = [
   ['the Match analysis tab back on the api-tennis list (m.h2h)', "  return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own);",
@@ -35,6 +44,23 @@ const PAGE_MUTANTS = [
   ['a team tie priced off a tour match\'s close', "!/davis cup|laver cup/i.test(String(x.tournament || ''))", "true"],
   ['two meetings share one close (the pairing takes the first, not a dash)', "      if (cls.size !== grp.length) continue;", "      if (cls.size < 1) continue;"],
   ['the coverage line counts priced meetings only (Y ≠ the full H2H count)', "`${nP} of ${F.length} meetings priced`", "`${nP} of ${PR.length} meetings priced`"],
+  ['D3: the tab passes no TML/ATP id', "id: key != null ? careerHistoryIdOf(key) : null", "id: null"],
+  ['D5: the page reads a 0 - 0 retirement as a walkover', "if (!r.wo && !r.def && !r.ret && !r.sets", "if (!r.wo && !r.def && !r.sets"],
+  ['S1: Next Gen sets read with the 6-game set test (a retirement)', "const setDone = x => (ng ? Math.max(x[0], x[1]) === 4 : fhSetDone(x));", "const setDone = x => fhSetDone(x);"],
+  ['S1: games counted on a Next Gen match', "    r.gA = r.gB = r.tot = r.diff = null;   // S1", "    r.tot = 0; r.diff = 0;   // S1"],
+  ['S1: a games-based hot line reads a Next Gen match', "  if (def.need === 'games' && r.ng) return false;", ""],
+];
+// Mutants applied to a copy of career-backfill.js / bsp-pipeline.js written NEXT TO the original (so its relative
+// requires resolve), passed to the suite as TEN437_BACKFILL / TEN437_PIPELINE, and removed afterwards.
+const BACKFILL_MUTANTS = [
+  ['D4: a no-hard/clay/grass archive row skipped again', "      // TEN-437 D4 (founder 2026-10-16): a carpet or blank-surface match is still a match", "      if (!m.surface) continue;\n      // TEN-437 D4 (founder 2026-10-16): a carpet or blank-surface match is still a match"],
+  ['D4: carpet read as no surface', "  if (s.includes('carpet')) return 'carpet';", ""],
+  ['D3: archive rows without the opponent id', "        ...(m.oppId ? { oppId: String(m.oppId) } : {}),", ""],
+];
+const PIPELINE_MUTANTS = [
+  ['S2: Tokyo 2021 back on the per-key surface', "2021: 'hard', ", ""],
+  ['S2: the shard writer leaves cached Olympic rows on their old surface', "    for (const r of rows) { const os = olympicSurface(r.tournament, r.date); if (os) r.surface = os; }\n", ""],
+  ['D3: the shard without its own id', "      ...(tmlIds.get(String(key)) ? { id: tmlIds.get(String(key)) } : {}),", ""],
 ];
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten437-mut-'));
@@ -69,6 +95,19 @@ for (const [name, from, to] of PAGE_MUTANTS) {
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; }
   else console.log(`✔ caught: ${name}`);
 }
+for (const [file, envName, list] of [['career-backfill.js', 'TEN437_BACKFILL', BACKFILL_MUTANTS], ['bsp-pipeline.js', 'TEN437_PIPELINE', PIPELINE_MUTANTS]]) {
+  const SRC = fs.readFileSync(path.join(ROOT, file), 'utf8');
+  for (const [name, from, to] of list) {
+    if (SRC.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+    const copy = path.join(ROOT, `.ten437-mut-${file}`);
+    try {
+      fs.writeFileSync(copy, SRC.replace(from, to));
+      const r = run({ [envName]: copy });
+      if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
+    } finally { fs.rmSync(copy, { force: true }); }
+  }
+}
 fs.rmSync(dir, { recursive: true, force: true });
-console.log(`mutants: ${CORE_MUTANTS.length + PAGE_MUTANTS.length - survived} caught, ${survived} survived`);
+const total = CORE_MUTANTS.length + PAGE_MUTANTS.length + BACKFILL_MUTANTS.length + PIPELINE_MUTANTS.length;
+console.log(`mutants: ${total - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);

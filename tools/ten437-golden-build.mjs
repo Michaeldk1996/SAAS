@@ -78,6 +78,15 @@ const PAIRS = [
   ['Z. Bergs', 1064, 'bu13', 'R. Collignon', 825, 'c0jp', 0, 1, ''],
   ['J. Sinner', 2072, 's0ag', 'N. Djokovic', 1905, 'd643', 7, 5, 'Davis Cup counted; no exhibition (Six Kings Slam) in ATP\'s list'],
   ['R. Federer', 7357, 'f324', 'A. Zverev', 1980, 'z355', 3, 4, 'one-sided; no Hopman Cup in ATP\'s list'],
+  // TEN-437 reconciliation fixes (founder 2026-10-16), ATP read 2026-10-15 — one pair per fix
+  ['N. Basilashvili', 424, 'bg23', 'Y. Hanfmann', 1764, 'h997', 0, 0, 'D1: a qualifier both rows call "Semi-finals" (Halle 2021 Q2) is not a meeting'],
+  ['S. Kwon', 1098, 'kf17', 'R. Bautista-Agut', 2734, 'bd06', 1, 0, 'D1 reverse: a lucky loser\'s main-draw final (Adelaide 2 2023) that one row calls "Qualifying" is a meeting'],
+  ['Z. Zhang', 590, 'z371', 'Y. Watanuki', 1097, 'wb08', 0, 0, 'D2: the Asian Games (Hangzhou 2023 final) is not in ATP\'s H2H'],
+  ['P. Carreno-Busta', 434, 'cd85', 'Z. Zhang', 590, 'z371', 0, 0, 'D3: an archive row against Ze Zhang (Shanghai 2019) is never credited to Zhizhen Zhang'],
+  ['R. Gasquet', 1094, 'g628', 'S. Wawrinka', 2168, 'w367', 3, 3, 'D4: a carpet match (Paris 2006 R32) is a meeting'],
+  ['D. Lajovic', 2675, 'l987', 'T. Fritz', 2832, 'fb98', 1, 3, 'D5: a retirement before the first set finished (Cincinnati 2023, ret. 0-5) is a meeting'],
+  ['L. Tien', 10520, 't0ha', 'A. Michelsen', 10884, 'm0qi', 2, 3, 'S1: a Next Gen Finals meeting (4-game sets) counts; its RR and SF both'],
+  ['N. Djokovic', 1905, 'd643', 'A. Zverev', 1980, 'z355', 10, 5, 'S2: an Olympic meeting (Tokyo 2021 SF) — its surface is Hard'],
 ];
 
 // A pair our data cannot match yet, with the reason — reported to the founder, not hidden. The gate pins each one to the
@@ -94,11 +103,18 @@ async function getJson(url) { const r = await fetch(url, { cache: 'no-store' });
 const shardCache = new Map();
 async function shard(key, index) {
   const k = String(key);
-  if (!shardCache.has(k)) shardCache.set(k, index[k] ? getJson(`${SITE}/career-history/${k}.json`).then(d => d.matches) : Promise.resolve([]));
-  return shardCache.get(k);
+  if (!shardCache.has(k)) shardCache.set(k, index[k] ? getJson(`${SITE}/career-history/${k}.json`) : Promise.resolve({ matches: [] }));
+  return (await shardCache.get(k)).matches || [];
 }
+// TEN-437 D3: the player's own TML/ATP id, from his shard (what the screens hand the join)
+async function shardId(key, index) { await shard(key, index); return ((await shardCache.get(String(key))) || {}).id || null; }
+// TEN-437 D1: his other feed rows at the events of the kept feed meetings (same tournament, within 21 days) — the
+// qualifying rule dates a word-round meeting against the first main-draw round either player played there
+const dayN = d => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; };
+const context = (rows, kept) => { const meet = kept.filter(x => x.src !== 'archive'); const has = new Set(kept);
+  return rows.filter(r => r && !has.has(r) && r.src !== 'archive' && meet.some(x => x.tournament === r.tournament && Math.abs(dayN(x.date) - dayN(r.date)) <= 21)); };
 const pick = (o, ks) => { const r = {}; ks.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };
-const ROW_FIELDS = ['date', 'tournament', 'round', 'surface', 'level', 'opponent', 'won', 'result', 'eventKey', 'src', 'sets', 'retired', 'walkover', 'qualifying', 'holeFill'];
+const ROW_FIELDS = ['date', 'tournament', 'round', 'surface', 'level', 'opponent', 'oppId', 'oppKey', 'won', 'result', 'eventKey', 'src', 'sets', 'retired', 'walkover', 'defaulted', 'qualifying', 'holeFill', 'altFormat'];
 
 const roster = (await getJson(`${SITE}/player-profiles.json`)).players;
 const nk = H2HCore.nameCounts(Object.values(roster).map(p => p && p.name).filter(Boolean));
@@ -110,10 +126,13 @@ for (const [sa, ka, ca, sb, kb, cb, wa, wb, note] of PAIRS) {
   const nkA = H2HCore.nameKey(sa), nkB = H2HCore.nameKey(sb);
   const ekB = new Set(rowsB.filter(y => y && y.eventKey != null && H2HCore.nameKey(y.opponent) === nkA).map(y => String(y.eventKey)));
   const ekA = new Set(rowsA.filter(x => x && x.eventKey != null && H2HCore.nameKey(x.opponent) === nkB).map(x => String(x.eventKey)));
-  const chA = rowsA.filter(x => x && (H2HCore.nameKey(x.opponent) === nkB || (x.eventKey != null && ekB.has(String(x.eventKey))))).map(x => pick(x, ROW_FIELDS));
-  const chB = rowsB.filter(y => y && (H2HCore.nameKey(y.opponent) === nkA || (y.eventKey != null && ekA.has(String(y.eventKey))))).map(y => pick(y, ROW_FIELDS));
-  const p = { a: { short: sa, full: (roster[String(ka)] && roster[String(ka)].name) || sa, key: String(ka), atpCode: ca },
-    b: { short: sb, full: (roster[String(kb)] && roster[String(kb)].name) || sb, key: String(kb), atpCode: cb },
+  const keptA = rowsA.filter(x => x && (H2HCore.nameKey(x.opponent) === nkB || (x.eventKey != null && ekB.has(String(x.eventKey)))));
+  const keptB = rowsB.filter(y => y && (H2HCore.nameKey(y.opponent) === nkA || (y.eventKey != null && ekA.has(String(y.eventKey)))));
+  const chA = keptA.concat(context(rowsA, keptA)).map(x => pick(x, ROW_FIELDS));
+  const chB = keptB.concat(context(rowsB, keptB)).map(y => pick(y, ROW_FIELDS));
+  const [idA, idB] = [await shardId(ka, index), await shardId(kb, index)];
+  const p = { a: { short: sa, full: (roster[String(ka)] && roster[String(ka)].name) || sa, key: String(ka), atpCode: ca, ...(idA ? { id: idA } : {}) },
+    b: { short: sb, full: (roster[String(kb)] && roster[String(kb)].name) || sb, key: String(kb), atpCode: cb, ...(idB ? { id: idB } : {}) },
     atp: { a: wa, b: wb, n: wa + wb }, checkedOn: CHECKED_ON, source: `https://www.atptour.com/en/-/www/h2h/${ca}/${cb}`, note,
     nk: { [nkA]: nk[nkA] || 0, [nkB]: nk[nkB] || 0 }, chA, chB };
   const rec = H2HCore.record(H2HCore.joinMeetings(p.a, p.b, chA, chB, p.nk, []));

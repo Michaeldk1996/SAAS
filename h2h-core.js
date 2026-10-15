@@ -13,8 +13,9 @@
  * POPULATION = ATP's official H2H record, read off atptour.com's own H2H data on 2026-10-14 (TEN-437 report B):
  *   counted  — tour-level main draw (250/500/1000), Grand Slams, ATP Finals, Next Gen ATP Finals, Davis Cup (every
  *              stage), Olympics, ATP Cup, United Cup, Laver Cup (2017 on), retirements, defaults
- *   excluded — Challengers and ITF (career-history level 'chitf'), every qualifying round, Hopman Cup and exhibitions
- *              (Six Kings Slam, UTS, …: absent from ATP's list); walkovers are listed (flagged) but never counted
+ *   excluded — Challengers and ITF (career-history level 'chitf'), every qualifying round (read from BOTH players'
+ *              rows: `resolveQualifying`), Hopman Cup, exhibitions (Six Kings Slam, UTS, …), the Asian Games and Davis Cup
+ *              Group III/IV round-robins (absent from ATP's list); walkovers are listed (flagged) but never counted
  * Each rule is one constant below (H2H_LEVELS, H2H_NOT_COUNTED) or one line in `inPopulation`.
  */
 (function (root) {
@@ -30,7 +31,7 @@
   const H2H_LEVELS = ['atp'];
   // Events that are not in ATP's H2H record although the feed tags them as men's singles: Hopman Cup (ITF, mixed) and
   // exhibitions. Laver Cup, Davis Cup, ATP Cup, United Cup, the Olympics and the Next Gen Finals ARE counted.
-  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis|asian games|davis cup.*group (iii|iv)\b|davis cup g[34]\b/i;
   // De-duplication window, days from a keyless archive row (dated at the EVENT's start, TML) to the keyed api-tennis
   // row of the same match (dated on the match day): Shanghai 2019 SF is 07.10 in the archive and 12.10 in the feed,
   // a Slam final up to 14 days after its start. A match is never earlier than its event's start (−1 for time zones).
@@ -94,32 +95,76 @@
 
   // ATP's H2H list (see the header). A walkover stays in the LIST, flagged — ATP lists it and never counts it, and so do
   // we: `record` and `played` leave it out; a retirement or a default is a meeting.
+  // TEN-437 D1: a qualifying round is read from BOTH players' rows of the match, never from the first one alone. api-tennis
+  // files a qualifying draw under the main-draw key with the bracket's own words ("Semi-finals", "Final"); the history
+  // builder re-tags the winner's row "Qualifying" (first-loss net) but cannot re-tag the loser's, and a lucky loser's
+  // main-draw wins get the same tag (Kwon, Adelaide 2 2023). A word-round feed row is decided by the event's main-draw
+  // start: the first certified main-draw round ("1/N-finals") either player played at that event within 21 days. Before
+  // it = qualifying; on or after it = main draw (its round read from the row that names one). No such row in either
+  // history = qualifying when either row says so. Team events and certified rounds are never qualifying by date.
+  const WORD_ROUND = /^(quarter-?finals?|semi-?finals?|final|qualif\w*)$/i, FRAC_ROUND = /^1\/\d+\s*-?\s*finals?$/i;
+  const TEAM_EVENT = /davis cup|laver cup|united cup|atp cup/i;
+  const rnd = r => String((r && r.round) || '').trim().replace(/^.* - /, '');
+  const qualTag = r => !!r && (!!r.qualifying || /^qualif/i.test(rnd(r)));
+  function resolveQualifying(x, all) {
+    const tw = x._twin, rX = rnd(x), rT = rnd(tw);
+    if (x.src === 'archive' || TEAM_EVENT.test(String(x.tournament || ''))) return x;
+    if (FRAC_ROUND.test(rX) || FRAC_ROUND.test(rT)) return Object.assign({}, x, { qualifying: false, round: FRAC_ROUND.test(rX) ? x.round : tw.round });
+    if (!WORD_ROUND.test(rX) && !WORD_ROUND.test(rT)) return x;                       // RR, blank, archive-style codes
+    const mainWord = [x, tw].filter(r => r && WORD_ROUND.test(rnd(r)) && !qualTag(r)).map(rnd)[0] || null;
+    if (!mainWord) return Object.assign({}, x, { qualifying: true });                 // every row of it says Qualifying
+    // the event's main draw, from both players' own rows: same tournament, same level, around this date
+    const d0 = dayNum(x.date); let md = null, rr = false;
+    if (d0 != null) for (const r of all) {
+      if (!r || r.tournament !== x.tournament || String(r.level || '') !== String(x.level || '')) continue;
+      const d = dayNum(r.date); if (d == null || d - d0 < -16 || d - d0 > 5) continue;
+      if (/^(rr|round robin|)$/i.test(rnd(r))) rr = true;                                // the Finals' group stage carries no round
+      if (FRAC_ROUND.test(rnd(r)) && (md == null || d < md)) md = d;
+    }
+    if (rr) return Object.assign({}, x, { qualifying: false, round: mainWord });      // round-robin event (Finals): no qualifying draw
+    // no main-draw round for either player at this event: a QF/SF/F needs one before it (a bye still plays R2) => qualifying.
+    // Strictly BEFORE the first main-draw round = qualifying; ON that day it is main draw — these are the two players' own
+    // rows, so one of them played a main-draw round that day (a rain-delayed double after a bye: R2 and QF together).
+    if (md == null || d0 < md) return Object.assign({}, x, { qualifying: true });
+    return Object.assign({}, x, { qualifying: false, round: mainWord });
+  }
+
   function inPopulation(x) {
     return H2H_LEVELS.includes(String(x.level || '').toLowerCase())
-      && !x.qualifying && !/^qualif/i.test(String(x.round || ''))
+      && !x.qualifying && !/^qualif/i.test(String(x.round || ''))   // (D1: resolveQualifying has already read both rows)
       && !H2H_NOT_COUNTED.test(String(x.tournament || ''));
   }
 
   // A-oriented career rows for the pair (TEN-402's join, unchanged; TEN-437 moved it here from the H2H page and added
   // `dedupe` and the ATP population). A meeting = a row in A's file that names B (or carries an eventKey B's file
   // holds), paired with B's row for the same match: the same eventKey, else the same date, opposite results and each
-  // row naming the other. A row only one side records counts only when the name it carries is unique on the roster
-  // (surname + initial; TEN-263: a namesake is never credited). Two rows that disagree (same eventKey, other date or
-  // the same result) count nowhere. ownEks: finished board matches between the two never count (ruling 2026-09-24).
-  // a / b: { full, short } (names as the roster prints them).
+  // row naming the other. Two rows that disagree (same eventKey, other date or the same result) count nowhere.
+  // ownEks: finished board matches between the two never count (ruling 2026-09-24).
+  // TEN-437 D3 (founder 2026-10-16): a row only ONE side records is credited on the opponent's IDENTITY, never on a name
+  // alone — an archive row only when its `oppId` (TML/ATP id) equals the other player's `id`; a feed row on its `oppKey`
+  // (api-tennis key) against the other player's `key`. A feed row from a profile cached before `oppKey` existed still
+  // falls back to the roster-unique-name rule (TEN-263) until that profile rebuilds; an archive row never does.
+  // a / b: { full, short, key, id } (names as the roster prints them; key = api-tennis key; id = the shard's TML/ATP id).
   function joinMeetings(a, b, chA, chB, nkCount, ownEks) {
     const nk = nameKey, nkA = nk(a.full), nkB = nk(b.full);
     const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;
+    const up = v => (v == null || v === '' ? null : String(v).toUpperCase());
+    // Is this one-sided row (from the owner's file) about `other`? Identity first; the name rule only for a legacy feed row.
+    const isAbout = (r, other, nkOther) => {
+      if (r.src === 'archive') return !!up(r.oppId) && up(r.oppId) === up(other.id);
+      if (r.oppKey != null && r.oppKey !== '') return other.key != null && String(r.oppKey) === String(other.key);
+      return uniq(nkOther);
+    };
     const A = Array.isArray(chA) ? chA : [], B = Array.isArray(chB) ? chB : [];
     const bEk = new Map(B.filter(y => y && y.eventKey != null).map(y => [String(y.eventKey), y]));
     const used = new Set(), bad = new Set(), seen = new Set(), out = [];
     const flip = y => Object.assign({}, y, { won: !y.won, opponent: b.short,
       result: String(y.result || '').replace(/^\s*(\d+)\s*-\s*(\d+)\s*$/, '$2 - $1'),
       sets: Array.isArray(y.sets) ? y.sets.map(s => Object.assign({}, s, { p: s.o, o: s.p, pTb: s.oTb, oTb: s.pTb })) : y.sets });
-    const push = (x, how) => {
+    const push = (x, how, y) => {
       const k = x.eventKey != null ? 'e' + x.eventKey : 'd' + x.date + '|' + (x.round || '');
       if (seen.has(k)) return;
-      seen.add(k); out.push(Object.assign({}, x, { _how: how }));
+      seen.add(k); out.push(Object.assign({}, x, { _how: how, _twin: y || null }));
     };
     A.forEach(x => {
       if (!x || typeof x.won !== 'boolean') return;
@@ -131,15 +176,16 @@
         const ys = B.filter(z => z && !used.has(z) && z.date === x.date && typeof z.won === 'boolean' && z.won !== x.won && nk(z.opponent) === nkA);
         if (ys.length === 1) y = ys[0];
       }
-      if (y) { used.add(y); push(x, 'both'); }
-      else if (named && uniq(nkB)) push(x, 'a');
+      if (y) { used.add(y); push(x, 'both', y); }
+      else if (named && isAbout(x, b, nkB)) push(x, 'a');
     });
     B.forEach(y => {
-      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean' || nk(y.opponent) !== nkA || !uniq(nkA)) return;
+      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean' || nk(y.opponent) !== nkA || !isAbout(y, a, nkA)) return;
       push(flip(y), 'b');
     });
     const own = new Set((ownEks || []).map(String));
-    return dedupe(out).filter(x => inPopulation(x) && !(x.eventKey != null && own.has(String(x.eventKey))))
+    const all = A.concat(B);
+    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x) && !(x.eventKey != null && own.has(String(x.eventKey))))
       .sort((x, y) => String(x.date).localeCompare(String(y.date)));
   }
 
@@ -150,6 +196,7 @@
   function isWalkover(x) {
     if (x.walkover) return true;
     if (x.defaulted) return false;   // TEN-437: a default ("Awarded") is a meeting ATP counts, even at 0 - 0
+    if (x.retired) return false;     // TEN-437 D5: a retirement before the first set finished (0 - 0) is a meeting
 
     if (Array.isArray(x.sets) && x.sets.length) return false;
     const m = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
@@ -158,7 +205,7 @@
   function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
   function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }
 
-  const api = { H2H_LEVELS, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, nameKey, nameCounts, eventId, roundCode, dedupe, inPopulation, joinMeetings, isWalkover, played, record };
+  const api = { H2H_LEVELS, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, inPopulation, joinMeetings, isWalkover, played, record };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.H2HCore = api;
 })(typeof window !== 'undefined' ? window : this);

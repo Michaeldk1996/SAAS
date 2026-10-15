@@ -1,6 +1,6 @@
 // TEN-437 (founder 2026-10-14) — one head-to-head record everywhere on the site, ATP's official population, guarded.
 //
-//   1. Golden-pair gate: tools/fixtures/ten437/h2h-golden-pairs.json holds 49 pairs with ATP's OFFICIAL W–L (the Record
+//   1. Golden-pair gate: tools/fixtures/ten437/h2h-golden-pairs.json holds 57 pairs with ATP's OFFICIAL W–L (the Record
 //      fields of atptour.com's H2H endpoint, checked 2026-10-14) and the live career-history rows each pair's join reads
 //      (266 of them keyless TML archive rows — the rows the old eventKey-only join dropped). The PRODUCTION function,
 //      h2h-core.js H2HCore.joinMeetings, must reproduce ATP on every pair. Two pairs are known gaps (a default ATP counts
@@ -93,6 +93,7 @@ const MODAL = new Function('ENV', `
   const playerProfiles = ENV.profiles;
   function formPanelHtml(){ return ''; } function ensureFormPanelTabs(){} function ensureFormRows(m){ return Promise.resolve(m); }
   function loadCareerHistory(k){ return ENV.loadCareerHistory(k); } function careerHistoryAnswered(k){ return ENV.answered(k); }
+  function careerHistoryIdOf(k){ return (ENV.ids && ENV.ids[String(k)]) || null; }   // TEN-437 D3: the shard's own TML/ATP id
   function loadPlayerProfiles(){ return Promise.resolve(); }
   function ensureStyleMeetings(m){ return Promise.resolve(m); } function ensurePsMatrix(){ return Promise.resolve(); }
   function ppStyleFor(){ return null; } function psArchFor(){ return null; } function styleMeetRowsFor(){ return []; }
@@ -104,7 +105,8 @@ const MODAL = new Function('ENV', `
   ${block()}
   return { fhMeetings, fhH2hMeetingRows, fhEnsureH2hData, fhBuildH2H, fhStateFor };
 `);
-const ENV = { profiles: {}, loadCareerHistory: () => Promise.resolve([]), answered: () => true };
+const ENV = { profiles: {}, loadCareerHistory: () => Promise.resolve([]), answered: () => true,
+  ids: Object.fromEntries(G.pairs.flatMap(p => [[p.a.key, p.a.id], [p.b.key, p.b.id]]).filter(e => e[1])) };
 const S = MODAL(ENV);
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&#39;|&#x27;/g, "'").replace(/\s+/g, ' ').trim();
 
@@ -127,7 +129,9 @@ test('UI: the H2H page builds its meetings with the same join and the same input
   assert.match(slice('fhH2hMeetingRows'), /H2HCore\.joinMeetings\(sfH2hSide\(m\.p1Key, m\.p1\), sfH2hSide\(m\.p2Key, m\.p2\), ch\[0\], ch\[1\], sfH2hNkCount\(\), own\)/);
   const page = slice('h2hPairFor');
   assert.match(page, /const ownF = fn\('sfH2hOwnEks'\), nkF = fn\('sfH2hNkCount'\);/);
-  assert.match(page, /H2HCore\.joinMeetings\(a, b, S\.chA, S\.chB, nkF \? nkF\(\) : NK_COUNT, own\)/);
+  assert.match(page, /H2HCore\.joinMeetings\(withId\(a\), withId\(b\), S\.chA, S\.chB, nkF \? nkF\(\) : NK_COUNT, own\)/);
+  assert.match(page, /const withId = p => Object\.assign\(\{\}, p, \{ id: idF \? idF\(p\.key\) : null \}\);/, 'the page passes each side\'s TML/ATP id (D3)');
+  assert.match(slice('sfH2hSide'), /id: key != null \? careerHistoryIdOf\(key\) : null/, 'the tab passes each side\'s TML/ATP id (D3)');
   assert.match(slice('fhMeetings'), /const list = fhH2hMeetingRows\(m\);/, 'Key factors and the tab read fhMeetings');
   assert.match(slice('kfH2HCard'), /fhMeetings\(m\)/, 'Key factors\' H2H box reads the tab\'s rows');
 });
@@ -166,21 +170,25 @@ test('prices attach to meetings: archive meetings take their own close; a shared
 // ── 3 · de-duplication ─────────────────────────────────────────────────────────────────────────────────────────────────
 // Mutation: dedupe off (Shanghai 2019 counted twice), or the window too short for an archive date.
 test('dedupe: Shanghai 2019 SF is ONE meeting — archive row 07.10 (event start, no eventKey) and feed row 12.10 (match day)', () => {
-  const A = { full: 'Daniil Medvedev', short: 'D. Medvedev' }, B = { full: 'Stefanos Tsitsipas', short: 'S. Tsitsipas' };
-  const arc = { date: '2019-10-07', tournament: 'Shanghai Masters', round: 'SF', opponent: 'S. Tsitsipas', won: true, result: '2 - 0', level: 'atp', src: 'archive' };
+  const A = { full: 'Daniil Medvedev', short: 'D. Medvedev', key: '1093', id: 'MM58' }, B = { full: 'Stefanos Tsitsipas', short: 'S. Tsitsipas', key: '1906', id: 'TE51' };
+  // as the shards carry them (TEN-437 D1/D3): the archive row names its opponent's TML/ATP id, and Tsitsipas's file holds
+  // his earlier main-draw round at the event (what dates the feed's "Semi-finals" as main draw)
+  const arc = { date: '2019-10-07', tournament: 'Shanghai Masters', round: 'SF', opponent: 'S. Tsitsipas', oppId: 'TE51', won: true, result: '2 - 0', level: 'atp', src: 'archive' };
   const feed = { date: '2019-10-12', tournament: 'ATP Shanghai', round: 'Semi-finals', opponent: 'D. Medvedev', won: false, result: '0 - 2', level: 'atp', eventKey: 11702704, src: 'fixtures' };
-  const out = H2HCore.joinMeetings(A, B, [arc], [feed], {}, []);
+  const r16 = { date: '2019-10-09', tournament: 'ATP Shanghai', round: '1/8-finals', opponent: 'G. Monfils', won: true, result: '2 - 1', level: 'atp', eventKey: 11702001, src: 'fixtures' };
+  const join = (a, b) => H2HCore.joinMeetings(A, B, a, b.concat([r16]), {}, []);
+  const out = join([arc], [feed]);
   assert.equal(out.length, 1, `Shanghai 2019 counted ${out.length} times`);
   assert.equal(out[0].eventKey, 11702704, 'the keyed row is kept (it reaches the match-stats shards)');
   // controls: a different event, a contradicting round, or the other winner in the window are separate meetings
-  assert.equal(H2HCore.joinMeetings(A, B, [arc], [Object.assign({}, feed, { tournament: 'ATP Vienna' })], {}, []).length, 2);
-  assert.equal(H2HCore.joinMeetings(A, B, [arc], [Object.assign({}, feed, { round: 'Final' })], {}, []).length, 2);
-  assert.equal(H2HCore.joinMeetings(A, B, [arc], [Object.assign({}, feed, { won: true, result: '2 - 0' })], {}, []).length, 2);
+  assert.equal(join([arc], [Object.assign({}, feed, { tournament: 'ATP Vienna' })]).length, 1, 'another event: the Vienna row has no main-draw round in that file, so it is not a meeting by itself — and the archive Shanghai stays');
+  assert.equal(join([arc], [Object.assign({}, feed, { round: 'Final' })]).length, 2);
+  assert.equal(join([arc], [Object.assign({}, feed, { won: true, result: '2 - 0' })]).length, 2);
   // the golden Medvedev–Tsitsipas pair with Tsitsipas's copy of Shanghai 2019 coming from the feed instead of the archive
   // (the shape the pipeline's per-player hole fill produces: one side archive, the other side feed) still reads 10–5 / 15
   const p = G.pairs.find(x => x.a.short === 'D. Medvedev' && x.b.short === 'S. Tsitsipas');
-  const chB = p.chB.filter(y => !(y.date === '2019-10-07' && /Shanghai/.test(y.tournament))).concat([feed]);
-  assert.equal(chB.length, p.chB.length, 'one copy swapped for the other');
+  const chB = p.chB.filter(y => !(y.date === '2019-10-07' && /Shanghai/.test(y.tournament))).concat([feed, r16]);
+  assert.equal(chB.length, p.chB.length + 1, 'one copy swapped for the other (plus his R16 at that event)');
   assert.deepEqual(H2HCore.record(H2HCore.joinMeetings(p.a, p.b, p.chA, chB, p.nk, [])), { a: 10, b: 5, n: 15 });
   // a meeting BOTH histories already hold is never merged with another row of its event (no false merge of a real one)
   const bothArc = [Object.assign({}, arc, { round: 'RR' })], bothArcB = [{ date: '2019-10-07', tournament: 'Shanghai Masters', round: 'RR', opponent: 'D. Medvedev', won: false, result: '0 - 2', level: 'atp' }];
@@ -266,7 +274,8 @@ test('population constants are ATP\'s (report B, 2026-10-14) and the excluded-ev
   const P = require(join(HERE, 'bsp-pipeline.js'));
   assert.equal(H2HCore.H2H_NOT_COUNTED.source, P.H2H_NOT_ATP_RECORD.source);
   for (const t of ['ATP Laver Cup', 'ATP Davis Cup', 'Olympic Games', 'ATP United Cup', 'ATP Cup', 'Next Gen Finals']) assert.ok(H2HCore.inPopulation({ level: 'atp', tournament: t }), t);
-  for (const t of ['ATP Hopman Cup', 'Six Kings Slam', 'UTS London']) assert.ok(!H2HCore.inPopulation({ level: 'atp', tournament: t }), t);
+  for (const t of ['ATP Hopman Cup', 'Six Kings Slam', 'UTS London', 'Asian Games', 'ATP Davis Cup - Group III', 'Davis Cup G4 R1: X vs Y']) assert.ok(!H2HCore.inPopulation({ level: 'atp', tournament: t }), t);
+  for (const t of ['ATP Davis Cup - World Group I', 'ATP Davis Cup - World Group II', 'Davis Cup G1 R2: SVK vs HUN', 'Davis Cup G2 R1: GEO vs FIN']) assert.ok(H2HCore.inPopulation({ level: 'atp', tournament: t }), t);
   assert.ok(!H2HCore.inPopulation({ level: 'chitf', tournament: 'Bergamo' }), 'Challenger');
   assert.ok(!H2HCore.inPopulation({ level: 'atp', tournament: 'Wimbledon', round: 'Qualifying' }), 'qualifying');
   assert.deepEqual(H2HCore.record([{ won: true, walkover: true }, { won: true, result: '0 - 0' }, { won: false, retired: true, result: '1 - 0', sets: [{ p: 6, o: 4 }, { p: 1, o: 0 }] }]),
@@ -373,3 +382,120 @@ test('board: "Awarded" is a decided match everywhere the board sorts live / upco
   assert.equal(isUnplayedFinishedFixture({ event_status: 'Awarded', event_winner: 'First Player', scores: z }), false, 'Fils v M. Ymer: a 0-0 default with a winner is a result');
 });
 
+
+// ── 11 · the 2026-10-16 reconciliation fixes (founder: "fix all defects in one pass") — one guard per fix ────────────────
+// Every pair the reconciliation of every roster pair against ATP found wrong for a reason below is a golden pair now
+// (tools/fixtures/ten437/h2h-golden-pairs.json, notes "D1".."S2"); these tests pin the rule itself, so a revert of any
+// one fix turns CI red (tools/test-ten437-mutants.js names the mutation for each).
+const BACKFILL_PATH = process.env.TEN437_BACKFILL || join(HERE, 'career-backfill.js');
+const PIPELINE_PATH = process.env.TEN437_PIPELINE || join(HERE, 'bsp-pipeline.js');
+const golden = note => G.pairs.find(p => String(p.note || '').startsWith(note));
+const goldenRecord = p => H2HCore.record(H2HCore.joinMeetings(p.a, p.b, p.chA, p.chB, p.nk, []));
+
+// D1 — qualifying is read from BOTH rows and dated against the event's main draw. Mutation: the first row's label alone.
+test('D1: a qualifier both rows call "Semi-finals" is no meeting; a lucky loser\'s main-draw final one row calls "Qualifying" is one', () => {
+  assert.deepEqual(goldenRecord(golden('D1: ')), { a: 0, b: 0, n: 0 }, 'Basilashvili–Hanfmann, Halle 2021 Q2 (ATP 0–0)');
+  assert.deepEqual(goldenRecord(golden('D1 reverse')), { a: 1, b: 0, n: 1 }, 'Kwon–Bautista-Agut, Adelaide 2 2023 F (ATP 1–0)');
+  const A = { full: 'A. Aaa', short: 'A. Aaa', key: '1', id: 'AA01' }, B = { full: 'B. Bbb', short: 'B. Bbb', key: '2', id: 'BB02' };
+  const row = (who, opp, date, round, won, ek) => ({ date, tournament: 'ATP Somewhere', round, opponent: opp, won, result: won ? '2 - 0' : '0 - 2', level: 'atp', eventKey: ek, src: 'fixtures' });
+  const r1 = row('A', 'C. Ccc', '2024-05-06', '1/16-finals', true, 9001);
+  // dated after A's R1 at the event = main draw, even though one row says Qualifying
+  const qf = [row('A', 'B. Bbb', '2024-05-09', 'Qualifying', true, 9002)], qfB = [row('B', 'A. Aaa', '2024-05-09', 'Quarter-finals', false, 9002)];
+  assert.equal(H2HCore.joinMeetings(A, B, qf.concat([r1]), qfB, {}, []).length, 1, 'main draw by date');
+  // on or before the first main-draw round = qualifying, whatever word the rows use
+  const q = [row('A', 'B. Bbb', '2024-05-05', 'Final', true, 9003)], qB = [row('B', 'A. Aaa', '2024-05-05', 'Final', false, 9003)];
+  assert.equal(H2HCore.joinMeetings(A, B, q.concat([r1]), qB, {}, []).length, 0, 'qualifying by date');
+  // a round-robin event (the Finals: group matches carry no round) has no qualifying draw
+  const rr = Object.assign(row('A', 'D. Ddd', '2024-11-11', '', true, 9010), { tournament: 'ATP Finals - Turin' });
+  const f = [Object.assign(row('A', 'B. Bbb', '2024-11-17', 'Final', true, 9011), { tournament: 'ATP Finals - Turin' })];
+  const fB = [Object.assign(row('B', 'A. Aaa', '2024-11-17', 'Final', false, 9011), { tournament: 'ATP Finals - Turin' })];
+  assert.equal(H2HCore.joinMeetings(A, B, f.concat([rr]), fB, {}, []).length, 1, 'the Finals final counts');
+  // a rain-delayed double after a bye (review 2026-10-16): R2 and the QF the same day — the QF is main draw
+  const r2 = row('A', 'E. Eee', '2024-05-09', '1/8-finals', true, 9020);
+  const qfd = [row('A', 'B. Bbb', '2024-05-09', 'Quarter-finals', true, 9021)], qfdB = [row('B', 'A. Aaa', '2024-05-09', 'Quarter-finals', false, 9021)];
+  assert.equal(H2HCore.joinMeetings(A, B, qfd.concat([r2]), qfdB, {}, []).length, 1, 'a same-day double is main draw');
+});
+
+// D2 — Mutation: "asian games" (or the Group III/IV entry) out of H2H_NOT_COUNTED.
+test('D2: the Asian Games and Davis Cup Group III/IV are not in the H2H population (as ATP)', () => {
+  assert.deepEqual(goldenRecord(golden('D2: ')), { a: 0, b: 0, n: 0 }, 'Z. Zhang–Watanuki, Hangzhou 2023 final (ATP 0–0)');
+  assert.ok(!H2HCore.inPopulation({ level: 'atp', tournament: 'Asian Games' }));
+  assert.ok(!H2HCore.inPopulation({ level: 'atp', tournament: 'ATP Davis Cup - Group III' }));
+});
+
+// D3 — Mutation: a one-sided archive row credited on its name again.
+test('D3: a one-sided archive row is credited only on the opponent\'s TML/ATP id, never on a name', () => {
+  assert.deepEqual(goldenRecord(golden('D3: ')), { a: 0, b: 0, n: 0 }, 'Carreno-Busta–Z. Zhang: the Shanghai 2019 row is Ze Zhang (ATP 0–0)');
+  const A = { full: 'P. Carreno-Busta', short: 'P. Carreno-Busta', key: '434', id: 'CD85' }, B = { full: 'Z. Zhang', short: 'Z. Zhang', key: '590', id: 'Z371' };
+  const arc = oppId => ({ date: '2019-10-07', tournament: 'Shanghai Masters', round: 'R64', opponent: 'Z. Zhang', won: true, result: '2 - 1', level: 'atp', src: 'archive', ...(oppId ? { oppId } : {}) });
+  assert.equal(H2HCore.joinMeetings(A, B, [arc('Z272')], [], {}, []).length, 0, 'another Zhang: never');
+  assert.equal(H2HCore.joinMeetings(A, B, [arc(null)], [], {}, []).length, 0, 'no id: left out (never on a name)');
+  assert.equal(H2HCore.joinMeetings(A, B, [arc('Z371')], [], {}, []).length, 1, 'his id: credited');
+  // a feed row with the opponent's api key: the key decides (his key credited, another's not)
+  const feed = k => ({ date: '2024-03-08', tournament: 'ATP Indian Wells', round: '1/64-finals', opponent: 'Z. Zhang', oppKey: k, won: true, result: '2 - 0', level: 'atp', eventKey: 1, src: 'fixtures' });
+  assert.equal(H2HCore.joinMeetings(A, B, [feed('590')], [], {}, []).length, 1);
+  assert.equal(H2HCore.joinMeetings(A, B, [feed('99999')], [], {}, []).length, 0);
+  // the shard carries the player's own id and every archive row its opponent's (pipeline + archive builder)
+  const pipe = readFileSync(PIPELINE_PATH, 'utf8');
+  assert.match(pipe, /\.\.\.\(tmlIds\.get\(String\(key\)\) \? \{ id: tmlIds\.get\(String\(key\)\) \} : \{\}\),/, 'the shard writes its own id');
+  assert.match(readFileSync(BACKFILL_PATH, 'utf8'), /\.\.\.\(m\.oppId \? \{ oppId: String\(m\.oppId\) \} : \{\}\),/, 'archive rows carry oppId');
+});
+
+// D4 — Mutation: the archive builder skips a row with no hard/clay/grass surface again.
+const TML_HEADER = 'tourney_id,tourney_name,surface,draw_size,tourney_level,indoor,tourney_date,match_num,winner_id,winner_seed,winner_entry,winner_name,winner_hand,winner_ht,winner_ioc,winner_age,winner_rank,winner_rank_points,loser_id,loser_seed,loser_entry,loser_name,loser_hand,loser_ht,loser_ioc,loser_age,loser_rank,loser_rank_points,score,best_of,round,minutes';
+test('D4: a carpet or blank-surface archive match ships (surface "carpet" / none) and is a meeting', async () => {
+  assert.deepEqual(goldenRecord(golden('D4: ')), { a: 3, b: 3, n: 6 }, 'Gasquet–Wawrinka with Paris 2006 R32 on carpet (ATP 3–3)');
+  const CB = require(BACKFILL_PATH);
+  const line = (id, name, surf, date, score) => [id, name, surf, 32, 'A', '', date, 1, 'G628', '', '', 'Richard Gasquet', 'R', '', 'FRA', 20, 10, 0,
+    'W367', '', '', 'Stan Wawrinka', 'R', '', 'SUI', 21, 30, 0, score, 3, 'R32', 90].join(',');
+  const csv = [TML_HEADER, line('2006-352', 'Paris Masters', 'Carpet', '20061030', '7-5 6-1'), line('2017-D1', 'Davis Cup G1 R1: POL vs BIH', '', '20170203', '6-4 6-4 6-4')].join('\n');
+  const index = await CB._internal.buildTmlIndex(() => {}, { csvByYear: { 2006: csv.split('\n').slice(0, 2).join('\n'), 2017: [TML_HEADER, csv.split('\n')[2]].join('\n') } });
+  const out = await CB.buildArchiveHistories({ 1094: { name: 'R. Gasquet' } }, 2000, 2020, { index, idsOut: new Map() });
+  const rows = out['1094'] || [];
+  assert.equal(rows.length, 2, 'both the carpet and the blank-surface match ship');
+  assert.equal(rows.find(r => /Paris/.test(r.tournament)).surface, 'carpet');
+  assert.equal(rows.find(r => /Davis/.test(r.tournament)).surface, null, 'blank stays blank (a dash in surface stats)');
+  assert.ok(rows.every(r => r.oppId === 'W367'), 'each row names its opponent\'s id');
+});
+
+// D5 — Mutation: isWalkover reads a 0 - 0 retirement as a walkover again (core), or fhFinishRow does (page).
+test('D5: a retirement before the first set finished (0 - 0, no set scores) is a meeting, not a walkover', () => {
+  assert.deepEqual(goldenRecord(golden('D5: ')), { a: 1, b: 3, n: 4 }, 'Lajovic–Fritz with Cincinnati 2023 ret. 0-5 (ATP 1–3)');
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0', retired: true }), false);
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), true, 'control: an unflagged 0 - 0 is still a walkover');
+  const r = new Function(`${slice('fhSetDone')}; ${slice('fhBestOf')}; const FH_SLAMS = new Set(); const psNormTour = s => s; ${slice('fhFinishRow')}; return fhFinishRow;`)()({ result: '0 - 0', ret: true, wo: false, def: false, won: false, sets: null, tourn: 'Cincinnati' });
+  assert.equal(r.wo, false, 'the page does not read it as a walkover');
+});
+
+// S1 — Mutation: the 4-game sets read with the 6-game set test again (a retirement), or games counted.
+test('S1: Next Gen Finals sets (to 4 games) are finished sets, not a retirement, and carry no games figure', () => {
+  const fin = new Function(`${slice('fhSetDone')}; ${slice('fhBestOf')}; const FH_SLAMS = new Set(); const psNormTour = s => s; ${slice('fhFinishRow')}; return fhFinishRow;`)();
+  // Rublev v Tsitsipas, Milan 2018 SF: 3-4(3) 4-3(5) 0-4 4-2 3-4(2), Tsitsipas won (Rublev's side)
+  const r = fin({ result: '2 - 3', won: false, ret: false, wo: false, def: false, tourn: 'Next Gen ATP Finals', tournRaw: 'Next Gen ATP Finals', sets: [[3, 4, 3], [4, 3, 5], [0, 4, null], [4, 2, null], [3, 4, 2]] });
+  assert.equal(r.ret, false, 'not a retirement');
+  assert.deepEqual([r.pS, r.oS], [2, 3], 'five finished sets, 2–3');
+  assert.equal(r.decider, true, 'went the distance (best of five)');
+  assert.equal(r.tot, null, 'no games total from a 4-game-set match');
+  assert.equal(r.diff, null, 'no games margin');
+  assert.equal(r.tbN, 3, 'its 4-3 sets are tiebreaks');
+  // ...but no games-based hot line reads it (review 2026-10-16: "Tiebreak in match" is a games line)
+  const elig = new Function(`${slice('fhEligible')}; return fhEligible;`)();
+  assert.equal(elig(r, { need: 'games' }), false, 'no games line');
+  assert.equal(elig(r, { need: 'sets' }), true, 'a sets line reads it');
+  assert.deepEqual(goldenRecord(golden('S1: ')), { a: 2, b: 3, n: 5 }, 'Tien–Michelsen with the Next Gen 2024 meetings (ATP 2–3)');
+});
+
+// S2 — Mutation: an Olympic year dropped from the map, or the shard writer's pass removed.
+test('S2: an Olympic match carries its edition\'s surface — Tokyo 2021 hard, Paris 2024 clay — on every row', () => {
+  const P = require(PIPELINE_PATH);
+  assert.equal(P.olympicSurface('Olympic Games', '2021-07-29'), 'hard');
+  assert.equal(P.olympicSurface('Olympic Games', '2024-08-02'), 'clay');
+  assert.equal(P.olympicSurface('London Olympics', '2012-08-01'), 'grass');
+  assert.equal(P.olympicSurface('Rio Olympics', '2016-08-10'), 'hard');
+  assert.equal(P.olympicSurface('Beijing Olympics', '2008-08-12'), 'hard');
+  assert.equal(P.olympicSurface('Wimbledon', '2021-07-01'), null, 'only Olympic events');
+  assert.equal(P.fixtureSurface({ tournament_name: 'Olympic Games', event_date: '2021-07-29', tournament_key: 'x' }, new Map([['x', 'grass']])), 'hard', 'the per-key grass is overridden');
+  assert.equal(P.fixtureSurface({ tournament_name: 'ATP Doha', event_date: '2026-02-18', tournament_key: 'y' }, new Map([['y', 'hard']])), 'hard');
+  assert.match(readFileSync(PIPELINE_PATH, 'utf8'), /for \(const r of rows\) \{ const os = olympicSurface\(r\.tournament, r\.date\); if \(os\) r\.surface = os; \}/, 'the shard writer corrects cached rows');
+  assert.deepEqual(goldenRecord(golden('S2: ')), { a: 10, b: 5, n: 15 }, 'Djokovic–Zverev (ATP 10–5)');
+});

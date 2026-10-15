@@ -69,6 +69,7 @@ function makeScope(plan) {
     let _careerHistoryIndexPromise = null;
     const _careerHistoryShards = {};
     const _careerHistoryPromises = {};
+    const _careerHistoryIds = {};   // TEN-437 D3: the page keeps each shard's own id beside its rows
     const console = { warn: (...a) => __scope.warns.push(a.join(' ')) };
     const fetch = __scope.fetch;
     function pp2RepaintIfOpen(){ }

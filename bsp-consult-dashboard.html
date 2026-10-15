@@ -10734,6 +10734,8 @@ let careerHistoryIndex = null;
 let _careerHistoryIndexPromise = null;
 const _careerHistoryShards = {};
 const _careerHistoryPromises = {};
+const _careerHistoryIds = {};   // TEN-437 D3: player key -> his TML/ATP id, from his shard's `id`
+function careerHistoryIdOf(playerKey){ return _careerHistoryIds[String(playerKey || '')] || null; }
 // TEN-228 · a FAILED index fetch must not be cached as "the index is empty".
 //
 // This used to set `careerHistoryIndex = {}` on both the non-ok and the thrown
@@ -10835,6 +10837,7 @@ function loadCareerHistory(playerKey){
       // the index, and the honest reading of that is "we do not know".
       if (!d || !Array.isArray(d.matches)) return Promise.reject(new Error('shard has no matches array'));
       _careerHistoryShards[pk] = d.matches;
+      _careerHistoryIds[pk] = d.id ? String(d.id) : null;   // TEN-437 D3: the player's own TML/ATP id (identity for one-sided H2H rows)
       return d.matches;
     })
     .catch(err => drop(err.message));
@@ -13022,7 +13025,7 @@ let _fh = null;                            // per-open-analysis UI state (README
 function fhEsc(s){ return escapeHtml(s == null ? '' : String(s)); }
 function fhSurfName(s){
   const k = String(s || '').toLowerCase();
-  return k.startsWith('hard') ? 'Hard' : k.startsWith('clay') ? 'Clay' : k.startsWith('grass') ? 'Grass' : null;
+  return k.startsWith('hard') ? 'Hard' : k.startsWith('clay') ? 'Clay' : k.startsWith('grass') ? 'Grass' : k.startsWith('carpet') ? 'Carpet' : null;   // TEN-437 D4: carpet is a real surface
 }
 // A colour at alpha a. Takes any CSS colour, a var() token included (TEN-314: the colours are tokens, not hex).
 function fhHexA(c, a){ return `color-mix(in srgb, ${c} ${+(a * 100).toFixed(2)}%, transparent)`; }
@@ -13176,10 +13179,14 @@ function fhSetTxt(x){ return x[0] + '-' + x[1] + (x[2] != null ? '(' + x[2] + ')
 // Completes a normalised row: set counts, completeness, best-of, games.
 function fhFinishRow(r){
   const res = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(r.result || ''));
+  // TEN-437 S1 (founder 2026-10-16): the Next Gen Finals play sets to 4 games (a tiebreak at 3-3, best of five). Its sets
+  // are read as finished sets — not as a retirement — and the match stays out of every games-based figure (a different scale).
+  const ng = r.ng = !!r.nextgen || /next\s*gen/i.test(String(r.tournRaw || r.tourn || ''));
+  const setDone = x => (ng ? Math.max(x[0], x[1]) === 4 : fhSetDone(x));
   const count = () => {
     if (r.sets){
       // Only sets that were finished count: a retirement's last set is unfinished.
-      r.done = []; for (const x of r.sets){ if (fhSetDone(x)) r.done.push(x); else break; }
+      r.done = []; for (const x of r.sets){ if (setDone(x)) r.done.push(x); else break; }
       if (r.done.length < r.sets.length && !r.wo) r.ret = true;   // unfinished set = play stopped
       r.pS = r.done.filter(x => x[0] > x[1]).length;
       r.oS = r.done.filter(x => x[1] > x[0]).length;
@@ -13189,13 +13196,18 @@ function fhFinishRow(r){
     }
   };
   count();
-  if (!r.wo && !r.def && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;   // no set played = walkover (a default is not: TEN-437)
-  r.bo = fhBestOf(r);
+  // no set played = walkover — but a default is not (TEN-437), and neither is a retirement before the first set finished
+  // (TEN-437 D5: Lajovic v Fritz, Cincinnati 2023, ret. at 0-5 — ATP counts it)
+  if (!r.wo && !r.def && !r.ret && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;
+  r.bo = ng ? 5 : fhBestOf(r);
   // A retirement the flags missed: the winner stopped short of the sets a
   // completed match needs. Completeness comes from the score, never the flag alone.
   if (!r.wo && !r.ret && r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)){ r.ret = true; count(); }
   r.complete = !r.ret && !r.wo && r.pS != null;
-  if (r.sets){
+  if (r.sets && ng){
+    r.gA = r.gB = r.tot = r.diff = null;   // S1: no games figure from a 4-game-set match
+    r.tbN = r.done.filter(x => Math.max(x[0], x[1]) === 4 && Math.min(x[0], x[1]) === 3).length;   // its 4-3 sets are tiebreaks
+  } else if (r.sets){
     r.gA = r.sets.reduce((s, x) => s + x[0], 0); r.gB = r.sets.reduce((s, x) => s + x[1], 0);
     r.tot = r.gA + r.gB; r.diff = r.gA - r.gB;
     r.tbN = r.done.filter(x => Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6).length;
@@ -13372,6 +13384,7 @@ function fhIneligibleWhy(r, def){
   if (r.wo) return 'W/O';
   if (r.ret) return 'RET';
   if (def.need === 'games' && !r.sets) return 'no set scores';
+  if (def.need === 'games' && r.ng) return 'Next Gen format';   // TEN-437 S1: 4-game sets — no games-based line
   if (def.bo3 && r.bo === 5) return 'Bo5';
   return '';
 }
@@ -13380,6 +13393,7 @@ function fhEligible(r, def){
   if (def.need === 'set1') return !!(r.sets && r.sets.length && (r.sets.length > 1 || !r.ret));
   if (r.ret) return false;
   if (def.need === 'games' && !r.sets) return false;
+  if (def.need === 'games' && r.ng) return false;   // TEN-437 S1 (review): a games-based line (Tiebreak in match too) never reads a 4-game-set match
   if (def.bo3 && r.bo !== 3) return false;
   return true;
 }
@@ -13931,11 +13945,14 @@ function fhH2hRetry(){
 // Team events and exhibitions count exactly as in the ATP's official win-loss record
 // (ruling 2026-09-25, TEN-273: "do as the ATP"). Same list as the pipeline's
 // H2H_NOT_ATP_RECORD: Hopman Cup and exhibitions never enter the meeting list.
-const FH_H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+const FH_ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+// TEN-437 D2 (2026-10-16): the H2H population (h2h-core H2H_NOT_COUNTED) also leaves out the Asian Games and Davis Cup
+// Group III/IV, as ATP's H2H; Form keeps the base list above.
+const FH_H2H_NOT_ATP_RECORD = new RegExp(FH_ATP_RECORD_NOT_COUNTED.source + '|asian games|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b', 'i');
 // Form (founder review 2, TEN-380, 2026-10-04): a match outside the ATP's official win-loss record is never a Form row —
 // not in the last 10, the record, v market, the hot lines or Key factors' Recent form. Laver Cup is the case the record
 // leaves out (Davis Cup and United Cup count, as the ATP counts them), plus the exhibitions above.
-const FH_FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FH_H2H_NOT_ATP_RECORD.source, 'i');
+const FH_FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FH_ATP_RECORD_NOT_COUNTED.source, 'i');
 // A meeting's level. Names that settle it come first: a junior event is never a pro
 // meeting (null: unclassified, never guessed), an ITF-named event (M15…, W25…, "ITF") is
 // ITF — the form shards' tier calls some of those 'challenger'. Then the tour level: the
@@ -13965,7 +13982,7 @@ function sfH2hNkCount(){
   if (_sfNkSrc !== pp || !Object.keys(_sfNk).length) { _sfNkSrc = pp; _sfNk = H2HCore.nameCounts(Object.keys(pp).map(k => pp[k] && pp[k].name).filter(Boolean)); }
   return _sfNk;
 }
-function sfH2hSide(key, name){ const p = key != null ? ((typeof playerProfiles !== 'undefined' && playerProfiles) || {})[String(key)] : null; return { full: (p && p.name) || name, short: name, key: key != null ? String(key) : null }; }
+function sfH2hSide(key, name){ const p = key != null ? ((typeof playerProfiles !== 'undefined' && playerProfiles) || {})[String(key)] : null; return { full: (p && p.name) || name, short: name, key: key != null ? String(key) : null, id: key != null ? careerHistoryIdOf(key) : null }; }
 function sfH2hOwnEks(aKey, bKey){
   if (aKey == null || bKey == null) return [];
   const pair = [String(aKey), String(bKey)].sort().join('|');
@@ -27993,7 +28010,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       // the modal can never count a pair differently.
       const ownF = fn('sfH2hOwnEks'), nkF = fn('sfH2hNkCount');
       const own = ownF ? ownF(a.key, b.key) : [];
-      const joined = H2HCore.joinMeetings(a, b, S.chA, S.chB, nkF ? nkF() : NK_COUNT, own);
+      // TEN-437 D3: each side's TML/ATP id (from his shard) — a one-sided row is credited on identity, never a name
+      const idF = fn('careerHistoryIdOf');
+      const withId = p => Object.assign({}, p, { id: idF ? idF(p.key) : null });
+      const joined = H2HCore.joinMeetings(withId(a), withId(b), S.chA, S.chB, nkF ? nkF() : NK_COUNT, own);
       S.rows = joined.map((x, i) => {
         const r = fhRowFromForm(Object.assign({}, x, { tier: x.level }), a.key, a.short, i);
         r.mid = fhSafeId('h2hp_' + a.key + '_' + b.key + '_' + (x.eventKey != null ? x.eventKey : x.date + '_' + i));

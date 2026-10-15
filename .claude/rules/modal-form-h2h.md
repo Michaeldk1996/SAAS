@@ -21,12 +21,44 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   decision. Measured before the switch on the 26-match board (14 Oct): median shift 0pp, max 0.23pp, no value flag
   flipped. So the Stennisfy Model page's "Why" text prints the screens' record too. **Test:** `test-ten437-h2h.mjs`
   "model" (Medvedev–Tsitsipas "H2H 10-5 (15 meetings…", bands and tiers pinned) + "single source".
-- **Population = what atptour.com's H2H record counts** (read off ATP's own H2H data, report B, 2026-10-14): counted —
-  tour-level main draw, Grand Slams, ATP Finals, Next Gen ATP Finals, Davis Cup (every stage), Olympics, ATP Cup, United
-  Cup, Laver Cup (2017 on), retirements, defaults. Not counted — Challengers and ITF (career-history `chitf`), every
-  qualifying round, walkovers (listed "w/o", counted nowhere — N2), Hopman Cup and exhibitions (absent from ATP's list).
-  Constants: `H2H_LEVELS`, `H2H_NOT_COUNTED` (= the pipeline's `H2H_NOT_ATP_RECORD`), `inPopulation`, `isWalkover`.
-  No record carries a level mix (there is no lower level in it). **Test:** "population constants", `test-ten273-team-events.mjs`.
+- **Population = what atptour.com's H2H record counts** (read off ATP's own H2H data, report B, 2026-10-14; the every-pair
+  reconciliation 2026-10-16): counted — tour-level main draw, Grand Slams, ATP Finals, Next Gen ATP Finals, Davis Cup
+  (World Group / WG I / WG II, zonal Groups I–II), Olympics, ATP Cup, United Cup, Laver Cup (2017 on), retirements —
+  including one before the first set finished (0 - 0, no set scores: a meeting, never a walkover) — and defaults. Not
+  counted — Challengers and ITF (career-history `chitf`), every qualifying round, walkovers (listed "w/o", counted
+  nowhere — N2), Hopman Cup, exhibitions, the Asian Games and Davis Cup Group III/IV round-robins (all absent from ATP's
+  list; founder 2026-10-16 "following ATP"). Constants: `H2H_LEVELS`, `H2H_NOT_COUNTED` (= the pipeline's
+  `H2H_NOT_ATP_RECORD`), `inPopulation`, `isWalkover`. No record carries a level mix (there is no lower level in it).
+  **Test:** "population constants", "D2", "D5", `test-ten273-team-events.mjs`.
+- **Qualifying is read from BOTH players' rows, dated against the event's main draw** (founder 2026-10-16, D1).
+  api-tennis files a qualifying draw under the main-draw key with its own "Semi-finals"/"Final" words. A feed meeting
+  whose round is a word (QF / SF / F / Qualifying) is qualifying when it is dated BEFORE the first certified
+  main-draw round ("1/N-finals") either player played at that event (same tournament and level, −16…+5 days; on that
+  day it is main draw — a rain-delayed double after a bye), or when
+  neither player has such a round there (a QF/SF/F needs one before it — a bye still plays R2) — except at a
+  round-robin event (the Finals: group matches carry no round). It is main draw when dated after it, whatever either row's
+  label says (a lucky loser's run: Kwon, Adelaide 2 2023), and when both rows say "Qualifying" it is qualifying.
+  A "1/N-finals" round is always main draw; archive rows and team events keep their own round. `resolveQualifying`.
+  Known limit: when one player has no career-history shard and the other's only main-draw rounds before the meeting
+  were walkovers (not in the shards), the meeting reads as qualifying — such a pair is on no screen (both players of a
+  board match or of the H2H page have shards). **Test:** "D1", golden pairs Basilashvili–Hanfmann (0–0) and Kwon–Bautista-Agut (1–0).
+- **A one-sided row is credited on identity, never a name** (founder 2026-10-16, D3; replaces TEN-263's
+  roster-unique-name rule for archive rows): an archive row only when its `oppId` (the opponent's TML/ATP id, written by
+  `buildArchiveHistories`) equals the other player's shard `id`; a feed row on its `oppKey` (api-tennis key) against the
+  other player's key. A row with no id is left out. Exception, until each cached profile rebuilds (14-day TTL): a feed
+  row built before `oppKey` existed still uses the roster-unique-name rule. **Test:** "D3", golden pair
+  Carreno-Busta–Z. Zhang (0–0: the Shanghai 2019 row is Ze Zhang).
+- **Carpet is a surface; a blank surface is a dash** (founder 2026-10-16, D4): the archive builder keeps every TML match —
+  carpet (indoor events to 2009) ships with `surface: 'carpet'`, a blank-surface match (some zonal Davis Cup ties) with
+  `surface: null`; both are meetings; the surface chips stay All / Hard / Clay / Grass (a carpet meeting is in All and
+  reads "Carpet" on its row). **Test:** "D4", golden pair Gasquet–Wawrinka (Paris 2006 R32 on carpet).
+- **Next Gen Finals sets are sets** (founder 2026-10-16, S1): sets to 4 games (tiebreak at 3-3, best of five) are read
+  as finished sets — sets won, deciders and its 4-3 tiebreaks count — and the match carries no games figure (totals,
+  handicaps, "Tiebreak in match": a different scale — `fhEligible` drops it from every games line). **Test:** "S1".
+- **An Olympic match carries its edition's surface** (founder 2026-10-16, S2): api-tennis gives one surface per
+  tournament key and the Olympics reuse a key, so `OLYMPIC_SURFACE_BY_YEAR` (`bsp-pipeline.js`: Tokyo 2021 hard, Paris
+  2024 clay, London 2012 grass, Rio 2016 / Beijing 2008 hard) decides every Olympic row, and the shard writer corrects
+  rows of profiles cached before it. **Test:** "S2".
 - **One match is one meeting:** a keyless archive row (dated at the event's start) and a keyed feed row (match day)
   for the same match are one meeting — same winner, same event (`TournamentIdentity`), the keyed row within
   `H2H_DEDUPE_WINDOW` [-1, 16] days, rounds not contradicting; the keyed row is kept. **Test:** "dedupe" (Shanghai 2019 SF:
@@ -41,7 +73,7 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   meeting in the filter (the full H2H count), never the priced subset. Sets won, Tiebreaks, Deciding sets and the surface
   counts read the same list, "N of M with set scores" with real counts. **Test:** "UI" ("0 of 15 meetings priced"), the
   mutant "coverage line counts priced meetings only".
-- **Golden-pair gate:** `tools/fixtures/ten437/h2h-golden-pairs.json` (49 pairs, ATP's Record fields with the check date,
+- **Golden-pair gate:** `tools/fixtures/ten437/h2h-golden-pairs.json` (57 pairs — one per 2026-10-16 fix included — ATP's Record fields with the check date,
   the live shard rows each join reads; rebuilt by `tools/ten437-golden-build.mjs`). CI fails on any pair that differs from
   ATP. **Known gaps (reported, pinned so any change turns CI red):** Fils–M. Ymer (Lyon 2023) and Bublik–Rublev (Dubai
   2024) — defaults ATP counts, api-tennis status "Awarded", dropped by `playerMatchHistory`. Mutations:
