@@ -125,6 +125,22 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: node tools/pinarch-guard.mjs
 
+      # Founder brief 2026-10-16 (items 1-2): the same guard for the historical odds archive (Tennis-Data files and
+      # closes, the export log). Unreachable or not installed yet = a loud SKIP, never a block.
+      - name: Historical odds archive guard (rows never go down)
+        if: steps.resolve.outputs.ready == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: node tools/histarch-guard.mjs
+
+      # Founder brief 2026-10-16 (item 4): the private odds export and the archive's backups never reach the site. Any
+      # odds CSV, export-named file or export header in the assembled site fails the publish (the site keeps its last
+      # build).
+      - name: No odds export in the published site
+        if: steps.resolve.outputs.ready == 'true'
+        run: node tools/no-odds-export-check.mjs --site _site
+
       - name: Upload Pages artifact
         if: steps.resolve.outputs.ready == 'true' && steps.mode.outputs.deploy == 'true'
         uses: actions/upload-pages-artifact@v3
