@@ -148,6 +148,12 @@ test('archive name table (founder brief 2026-10-15 item 2): an aliased archive n
   assert.deepEqual([a[0].price, a[0].oppPrice], [3.50, 1.30], 'T. Barrios Vera meets "Barrios M." (Rio 2026, the loser at 3.50)');
   const z = zz(); priceJoin(z, ZZ, OP, db);
   assert.equal(z[0].price, 2.80, 'a feed row\'s "Zhang Z." still prices Z. Zhang (no name is blocked)');
+  // the aliased player's OWN spelling still meets the row (G. Miguel's profile reads "L. A. Miguel", as the archive does)
+  const mg = dbPriceJoinRows({ meta: { rounds: ['1st Round'] }, rows: [[20260218, 0, 0, 0, 0, 1.10, 7.00, 1, 1]], retRows: [] },
+    { names: [['Gaubas V.', 'Miguel L.']], retNames: [], aliases: { 'Miguel L.': 'G. Miguel' } });
+  const g1 = [{ date: '2026-02-18', won: true, round: null }]; priceJoin(g1, { full: 'V. Gaubas' }, { full: 'G. Miguel' }, mg);
+  const g2 = [{ date: '2026-02-18', won: false, round: null }]; priceJoin(g2, { full: 'L. A. Miguel' }, { full: 'V. Gaubas' }, mg);
+  assert.deepEqual([g1[0].price, g2[0].price], [1.10, 7.00], 'both sides meet "Miguel L.": Gaubas v G. Miguel and Miguel\'s own "L. A. Miguel"');
   const ctl = dbPriceJoinRows(base, { names: nm.names, retNames: [] });
   const c1 = ledger(); priceJoin(c1, TB, BER, ctl);
   assert.equal(c1[0].price ?? null, null, 'control: no table, the initials differ and Barrios Vera misses');
