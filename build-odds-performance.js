@@ -270,6 +270,11 @@ const ARCHIVE_NAME_ALIASES = {
   'Vallejo, Adolfo Daniel': '9217',     // D. Vallejo
   'Miguel, Luis Guto': '67442',         // G. Miguel
 };
+// Our spelling of an aliased player who has no profile (the page's price join keys an alias by name, founder brief
+// 2026-10-15 item 2): the api-tennis fixture spelling his matches carry. Profiles win where they exist.
+const ARCHIVE_ALIAS_NAMES = {
+  '67442': 'G. Miguel',
+};
 const ARCHIVE_NAME_BLOCK = new Set([
   'Zhang Z.',    // Ze Zhang (2010-15, ranks 253-308) — would join Z. Zhang (Zhizhen, "Zhang Zh.")
   'Zhang Ze.',   // Ze Zhang (2019) — same
@@ -700,5 +705,5 @@ if (require.main === module) process.exit(main());
 module.exports = {
   keyFromOurName, keyFromArchiveName, devig, summarize,
   readCsv, ourCandidateKeys, fullKey, LEVEL_ALIASES,
-  archiveOverride, ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK,
+  archiveOverride, ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK, ARCHIVE_ALIAS_NAMES,
 };

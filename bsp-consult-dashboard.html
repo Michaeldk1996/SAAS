@@ -27828,11 +27828,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function h2hPriceJoin(rows, a, b, db, oppOf, career) {
     if (!db || !Array.isArray(db.rows) || !Array.isArray(db.names)) return 0;
     if (!db._h2hKeys) Object.defineProperty(db, '_h2hKeys', { value: { kc: new Map(), byP: new Map() }, enumerable: false, configurable: true });
-    // founder brief 2026-10-15 item 2: the store's archive name table (build-odds-performance.js ARCHIVE_NAME_ALIASES /
-    // _BLOCK, carried by database-yield-players.json): an aliased archive name is keyed as the player it names ("Barrios M."
-    // = T. Barrios Vera), a blocked one joins nobody ("Zhang Z." = Ze Zhang, never Zhizhen)
-    const AL = db.aliases || {}, BL = db.blocked || new Set(), NOBODY = { s: '', i: '', w: [] };
-    const kc = db._h2hKeys.kc, key = nm => { let k = kc.get(nm); if (!k) kc.set(nm, k = BL.has(nm) ? NOBODY : h2hTdKey(Object.prototype.hasOwnProperty.call(AL, nm) ? AL[nm] : nm)); return k; };
+    // founder brief 2026-10-15 item 2: the store's archive name table (build-odds-performance.js ARCHIVE_NAME_ALIASES, carried
+    // by database-yield-players.json): an aliased archive name is keyed as the player it names ("Barrios M." = T. Barrios Vera)
+    const AL = db.aliases || {};
+    const kc = db._h2hKeys.kc, key = nm => { let k = kc.get(nm); if (!k) kc.set(nm, k = h2hTdKey(Object.prototype.hasOwnProperty.call(AL, nm) ? AL[nm] : nm)); return k; };
     const ka = key(a.full);
     // A's Database rows, indexed by the opponent's surname words (memoised per player on the db object)
     const pk = a.full + '|' + db.rows.length;
@@ -34129,7 +34128,7 @@ window.DatabaseTab = (function(){
   function dbPriceJoinRows(base, nm){
     var rr = (base && base.retRows) || [], rn = (nm && nm.retNames) || [];
     if (rr.length !== rn.length) throw new Error('database-yield retRows / retNames out of step (' + rr.length + ' v ' + rn.length + ')');
-    return { rows: base.rows.concat(rr), names: nm.names.concat(rn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {}, blocked: new Set(nm.blocked || []) };
+    return { rows: base.rows.concat(rr), names: nm.names.concat(rn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };
   }
   var PRICE_JOIN = null;
   function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES)); }); }
