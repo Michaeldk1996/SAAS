@@ -209,8 +209,10 @@ function hangzhouPanels(src, setProp) {
 }
 function checkAllSpan(src) {
   const p = hangzhouPanels(src);
-  const got = ['fav', 'dog'].map(s => s + ' ' + p[s].all[1] + '/' + p[s].all[2]).join(', ');
-  if (got !== 'fav 1.20/1.85, dog 2.04/3.05+') return 'Hangzhou All From/To: ' + got + ' (want fav 1.20/1.85, dog 2.04/3.05+)';
+  // The rule, on the live store (measured 8 Oct on the archive to 13 Sep: fav 1.20/1.85, dog 2.04/3.05+; 16 Oct on the
+  // archive to 6 Oct: fav 1.20/1.85, dog 2.00/3.00+). The figures move with the data; the rule does not.
+  if (!/\+$/.test(String(p.dog.all[2]))) return 'dog: All To does not end with "+" (the top band\'s open end): ' + p.dog.all[2];
+  if (/\+$/.test(String(p.fav.all[2]))) return 'fav: All To carries a "+": ' + p.fav.all[2];
   for (const s of ['fav', 'dog']) {
     const b = p[s].bands;
     if (p[s].all[1] !== b[0][1]) return s + ': All From is not the lowest band From';
@@ -385,7 +387,7 @@ test('darker track: one helper, card + 6% track, inner + 10% selected, no blue; 
 test('Entry list: hairlines, chips, caret, panel, tier heads, card table / empty state, names', () => assert.equal(checkEntry(SRC), null));
 test('Database: in a table with gated cells the All-row yield keeps its sign colour (Hangzhou Open)', () => assert.equal(checkAllRow(SRC), null));
 
-test('r1.1 All row From / To span the side on both sides (Hangzhou Open 1.20 / 1.85 · 2.04 / 3.05+)', () => assert.equal(checkAllSpan(SRC), null));
+test('r1.1 All row From / To span the side on both sides (Hangzhou Open, live store)', () => assert.equal(checkAllSpan(SRC), null));
 test('r1.2 band cells never wrap; the Tournament row fits the ROI overlay at 1512', () => assert.equal(checkBandNoWrap(SRC), null));
 test('r1.4 one "This week" source for header + Entry list eyebrow; the current week is the first chip', () => assert.equal(checkThisWeek(SRC), null));
 test('r1.5 / r1.6 every player row has a rank (list, else ATP standings, else —) and a full name', () => assert.equal(checkRanksNames(SRC), null));

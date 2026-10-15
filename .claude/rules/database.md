@@ -58,7 +58,7 @@ take styling from it, structure from the rules below.
   lower cut, To = that + "+" (`3.75` / `3.75+`). Cut-points follow the active filter (`DB_DOG_OPEN_TOP=true`).
 - **Test (founder TEN-401 r1 fix 1, 2026-10-08, both sides, Tour and Tournament):** an All row spans its side — From =
   the lowest band's From, To = the **top band's To exactly as that row prints it**. Underdogs All = Narrow underdog From /
-  Long shot To (`1.88` / `3.75+`; Hangzhou Open `2.04` / `3.05+`, Wimbledon `1.95` / `5.57+`); Favourites All = Heavy
+  Long shot To (`1.88` / `3.75+`; Hangzhou Open `2.04` / `3.05+` on the archive to 13 Sep, `2.00` / `3.00+` to 6 Oct; Wimbledon `1.95` / `5.57+`); Favourites All = Heavy
   favourite From / Narrow favourite To (`1.01` / `1.97`; Hangzhou `1.20` / `1.85`, Wimbledon `1.01` / `1.95`). Never the
   side's lowest price + "+" (the old Underdogs "1.88+"). `test-ten399-database-frame.mjs` bands, `test-ten401-b.mjs` r1.1.
 - **Test (card 52bf5cc5 "allcount" = figures):** both All rows count every priced match (40,972; exact-price ties
