@@ -89,10 +89,11 @@ no day work, checks or screenshots on this page until the founder reopens it.
     or last word(s) of ours ("Mpetshi G." = G. Mpetshi Perricard, "Bautista R.", "Del Potro J.M."), a longer one must
     START with ours ("Ramos-Vinolas A." = A. Ramos; "Lopez San Martin A." is NOT A. Martin). The initial keeps brothers
     apart (A. / M. Zverev, F. / J.M. Cerundolo, S. / P. Tsitsipas). **The archive name table applies first** (founder
-    brief 2026-10-15 item 2): `build-odds-performance.js` `ARCHIVE_NAME_ALIASES` / `ARCHIVE_NAME_BLOCK` (hand-checked, the
-    table Market edge and the closes shards already use) ride in `database-yield-players.json` as `aliases` (archive name →
-    our profile spelling: "Barrios M." / "Barrios Vera M.T." = T. Barrios Vera, "Miguel L." = G. Miguel) and `blocked`
-    ("Zhang Z." / "Zhang Ze." = Ze Zhang, "Daniel M." = Marcos Daniel: they join nobody). **Test:** `test-ten402-b.mjs`
+    brief 2026-10-15 item 2): `build-odds-performance.js` `ARCHIVE_NAME_ALIASES` (hand-checked, the table Market edge and
+    the closes shards already use) rides in `database-yield-players.json` as `aliases` (archive name → our spelling, the
+    profile's else `ARCHIVE_ALIAS_NAMES`: "Barrios M." / "Barrios Vera M.T." = T. Barrios Vera, "Miguel L." = G. Miguel).
+    `ARCHIVE_NAME_BLOCK` is NOT carried: the Database feed's own rows spell Zhizhen Zhang "Zhang Z.", the archive's Ze
+    Zhang spelling, so a name block would drop his 2026 prices (3 matches, measured 15 Oct). **Test:** `test-ten402-b.mjs`
     "archive name table". Residual: "Silva J." (1 row, US Open 2010, Júlio Silva) would
     pass the rule for J. Reis Da Silva but has no career match to join.
   - **Backing tile (Tournament) = flat 1u over the Tournament ledger's priced rows, on the one join, retirements settled
