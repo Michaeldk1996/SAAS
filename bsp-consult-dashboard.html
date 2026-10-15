@@ -27831,7 +27831,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // founder brief 2026-10-15 item 2: the store's archive name table (build-odds-performance.js ARCHIVE_NAME_ALIASES, carried
     // by database-yield-players.json): an aliased archive name is keyed as the player it names ("Barrios M." = T. Barrios Vera)
     const AL = db.aliases || {};
-    const kc = db._h2hKeys.kc, key = nm => { let k = kc.get(nm); if (!k) kc.set(nm, k = h2hTdKey(Object.prototype.hasOwnProperty.call(AL, nm) ? AL[nm] : nm)); return k; };
+    // an aliased name keeps its own key as `alt` too: the alias names the player as his opponents' files spell him ("G.
+    // Miguel"), his own profile may spell him as the archive does ("L. A. Miguel") — either meets the row
+    const kc = db._h2hKeys.kc, key = nm => { let k = kc.get(nm); if (!k) { const al = Object.prototype.hasOwnProperty.call(AL, nm);
+      k = h2hTdKey(al ? AL[nm] : nm); if (al) k = Object.assign({}, k, { alt: h2hTdKey(nm) }); kc.set(nm, k); } return k; };
+    const same = (x, y) => h2hTdSame(x, y) || !!(y && y.alt && h2hTdSame(x, y.alt));
     const ka = key(a.full);
     // A's Database rows, indexed by the opponent's surname words (memoised per player on the db object)
     const pk = a.full + '|' + db.rows.length;
@@ -27840,10 +27844,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       A0 = { byW: new Map() };
       db.names.forEach((nm, i) => {
         if (!nm) return;
-        const c = h2hTdSame(ka, key(nm[0])) ? { i, aWon: true, o: nm[1] } : h2hTdSame(ka, key(nm[1])) ? { i, aWon: false, o: nm[0] } : null;
+        const c = same(ka, key(nm[0])) ? { i, aWon: true, o: nm[1] } : same(ka, key(nm[1])) ? { i, aWon: false, o: nm[0] } : null;
         if (!c) return;
         c.k = key(c.o); c.rd = h2hTdRound(db, i); c.st = h2hTdEvent(db, i).start; c.day = Date.UTC(Math.floor(db.rows[i][0] / 10000), Math.floor(db.rows[i][0] / 100) % 100 - 1, db.rows[i][0] % 100) / 86400000;
-        h2hTdIx(c.k).forEach(w => { if (!A0.byW.has(w)) A0.byW.set(w, []); A0.byW.get(w).push(c); });
+        new Set(h2hTdIx(c.k).concat(c.k.alt ? h2hTdIx(c.k.alt) : [])).forEach(w => { if (!A0.byW.has(w)) A0.byW.set(w, []); A0.byW.get(w).push(c); });
       });
       db._h2hKeys.byP.set(pk, A0);
     }
@@ -27864,7 +27868,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           const dd = c.day - m.d, ds = c.st - m.d;
           if (c.aWon !== m.won || clash(m.rd, c.rd)) return;
           if (m.ek ? dd < MW[0] || dd > MW[1] : dd < W[0] || dd > W[1] || (!m.row && (ds < SW[0] || ds > SW[1]))) return;
-          if (!h2hTdSame(m.k, c.k)) return;
+          if (!same(m.k, c.k)) return;
           // match day to match day; a start-dated career row start to start; a ledger row of unknown kind (step 3) its own date
           out.push({ l: j, r: c.i, ad: Math.abs(m.ek || m.row ? dd : ds) });
         }));
