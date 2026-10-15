@@ -284,8 +284,33 @@ def check_dry_run(src):
         shutil.rmtree(root)
 
 
+def check_corrections(src):
+    """Founder 2026-10-15: odds-archive/corrections.json is applied to every refreshed workbook BEFORE the merge, so a
+    later drop-in of a result Tennis-Data has wrong (Bergs v Medjedovic, Rotterdam 2026) changes nothing and is never
+    'absent + added'. The wrong row's winner / loser and every w / l pair are swapped."""
+    root = setup(src)
+    try:
+        with open(os.path.join(root, 'odds-archive', 'corrections.json'), 'w') as fh:
+            json.dump({'corrections': [{'kind': 'swap-winner', 'season': 2026, 'sources': ['a', 'b'],
+                       'match': {'date': '2026-08-01', 'tournament': 'Test Open', 'round': '1st Round', 'winner': 'Beta B.', 'loser': 'Alpha A.'}}]}, fh)
+        before = raw(root)
+        wrong = ['1', 'X', 'Test Open', '2026-08-01', 'ATP250', 'Outdoor', 'Hard', '1st Round', '3', 'Beta B.', 'Alpha A.', '20', '10', 'Completed',
+                 '2.5', '1.5', '', '', '2.6', '1.6', '2.45', '1.55']
+        r = run(root, [wrong, PUBLISHED[1]])
+        if r.returncode != 0:
+            return 'a drop-in of the corrected match exited %d: %s' % (r.returncode, r.stderr.strip()[-200:])
+        s = json.loads(r.stdout)
+        if s.get('corrected') != 1 or s['changed'] or s['added']:
+            return 'correction not applied before the merge: %s' % {k: s.get(k) for k in ('corrected', 'changed', 'added')}
+        if raw(root) != before:
+            return 'the corrected archive row was rewritten'
+        return None
+    finally:
+        shutil.rmtree(root)
+
+
 CHECKS = [check_key_correction, check_one_season, check_name_fixups, check_dry_run, check_merge_adds, check_keeps_existing, check_correction_reported, check_never_thinner,
-          check_empty_refused, check_validation, check_dash_not_zero]
+          check_empty_refused, check_validation, check_dash_not_zero, check_corrections]
 
 SRC = open(TOOL).read()
 MUTANTS = {
@@ -296,6 +321,7 @@ MUTANTS = {
     'check_merge_adds': ("merged.extend(src[k] for k in added)", "pass"),
     'check_keeps_existing': ("            merged.append(old)\n    added", "            merged.append(dict(old, b365w=''))\n    added"),
     'check_correction_reported': ("            changed.append((k, diff))\n            merged.append(new)", "            merged.append(old)"),
+    'check_corrections': ("        corrected = apply_corrections(source, season, load_corrections(a.archive_dir))", "        corrected = 0"),
     'check_never_thinner': ("    if (absent and not accepted) or len(merged) < len(published):", "    if False:"),
     'check_empty_refused': ("    if not rows:\n        raise Invalid('workbook has no data rows')\n", "    if not rows:\n        return 2026, [], ''\n"),
     'check_validation': ("    if dups:\n", "    if False:\n"),
@@ -342,6 +368,14 @@ def published_checks():
     got = json.load(open(os.path.join(HERE, 'database-yield.json')))['meta'].get('pinnacleLastPriced')
     if got != pin:
         out.append('database-yield pinnacleLastPriced %s, the archive says %s' % (got, pin))
+    # every correction is in the published season: its wrong row absent, the swapped row present
+    cp = os.path.join(ad, 'corrections.json')
+    for c in (json.load(open(cp)).get('corrections') or []) if os.path.exists(cp) else []:
+        m = c['match']
+        with open(os.path.join(ad, '%d.csv' % c['season']), newline='') as fh:
+            ks = {(r['date'], r['tournament'], r['round'], r['winner'], r['loser']) for r in csv.DictReader(fh)}
+        if (m['date'], m['tournament'], m['round'], m['winner'], m['loser']) in ks or (m['date'], m['tournament'], m['round'], m['loser'], m['winner']) not in ks:
+            out.append('correction not in the published %d.csv: %s v %s' % (c['season'], m['winner'], m['loser']))
     tm = json.load(open(os.path.join(HERE, 'tournament-market.json')))
     if 'database-yield.json' not in tm.get('source', ''):
         out.append('tournament-market.json is not built from database-yield.json')
