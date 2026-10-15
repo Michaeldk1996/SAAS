@@ -35,6 +35,12 @@ historical backfill only.
 - **Never thinner (exit 1, nothing written).** A published match that is absent from the
   source, or a merged season smaller than the published one, stops the run. An empty
   workbook is refused even for a season with no published file.
+- **A result Tennis-Data has wrong is corrected in `odds-archive/corrections.json`** (founder 2026-10-15, "correct it if
+  it's wrong"): kind `swap-winner` (winner / loser and every w / l pair swapped), two or more independent sources per
+  entry. The refresh tool applies it to the workbook BEFORE the merge, so a later drop-in of the same wrong row changes
+  nothing (`corrected` in its summary). First entry: Rotterdam 2026 R1, Medjedovic d. Bergs 7-6 7-6 (Tennis-Data has
+  Bergs). **Test:** `test-odds-archive-refresh.py` `check_corrections` (+ mutant) and the published check (the wrong
+  row absent, the swapped row present).
 - **A missing price is a dash.** `-`, blanks and anything outside 1.01–1000 are written as
   empty cells. Never a zero, and never another book's price (a missing Pinnacle price
   stays an empty CELL; which book prices a Database row is the join rule below).

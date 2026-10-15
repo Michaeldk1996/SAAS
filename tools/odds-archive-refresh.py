@@ -13,6 +13,9 @@ What it does, in order. Any failure exits non-zero and leaves the archive untouc
        - every row has a winner, a loser and a date that parses (no row is skipped);
        - every date is in ONE season, and it is the season the file name says;
        - one row per match: no duplicate (date, tournament, round, winner, loser).
+  1b. CORRECT: every row odds-archive/corrections.json names (a result Tennis-Data has wrong,
+     founder 2026-10-15) is fixed in the source BEFORE the merge, so a later drop-in of the same
+     wrong row changes nothing.
   2. MERGE, don't overwrite. A match not in the archive is ADDED. A match already in
      the archive keeps its row unless the source now says something different, which
      is a source correction: it is applied and every changed field is reported.
@@ -65,6 +68,36 @@ class Invalid(Exception):
 
 def key(r):
     return (r['date'], r['tournament'], r['round'], r['winner'], r['loser'])
+
+
+SWAP_PAIRS = (('winner', 'loser'), ('wrank', 'lrank'), ('b365w', 'b365l'), ('psw', 'psl'), ('maxw', 'maxl'), ('avgw', 'avgl'))
+
+
+def load_corrections(archive_dir):
+    """odds-archive/corrections.json (founder 2026-10-15): results Tennis-Data has wrong, applied to every refreshed
+    workbook before it is merged, so a later drop-in of the same wrong row changes nothing. No file = no corrections."""
+    p = os.path.join(archive_dir, 'corrections.json')
+    if not os.path.exists(p):
+        return []
+    c = json.load(open(p)).get('corrections') or []
+    for x in c:
+        if x.get('kind') != 'swap-winner' or len(x.get('sources') or []) < 2:
+            raise Invalid('correction %s: only swap-winner with two or more sources is supported' % x.get('match'))
+    return c
+
+
+def apply_corrections(rows, season, corrections):
+    """Swap winner / loser and every w / l pair on each row a correction names (its source key). Returns the number
+    applied; a correction whose row is absent is not an error (that workbook already says it right, or lacks it)."""
+    n = 0
+    want = {(c['match']['date'], c['match']['tournament'], c['match']['round'], c['match']['winner'], c['match']['loser'])
+            for c in corrections if int(c.get('season', 0)) == int(season)}
+    for r in rows:
+        if key(r) in want:
+            for a, b in SWAP_PAIRS:
+                r[a], r[b] = r.get(b, ''), r.get(a, '')
+            n += 1
+    return n
 
 
 def load_source(path):
@@ -164,13 +197,18 @@ def main(argv=None):
         print('INVALID — nothing merged: %s' % e, file=sys.stderr)
         return 3
 
+    try:
+        corrected = apply_corrections(source, season, load_corrections(a.archive_dir))
+    except Invalid as e:
+        print('INVALID — nothing merged: %s' % e, file=sys.stderr)
+        return 3
     path, published = read_season(a.archive_dir, season)
     merged, added, changed, absent = merge(published, source)
     summary = {
         'refreshedAt': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'season': season, 'sourceSha256': sha, 'sourceRows': len(source),
         'rowsBefore': len(published), 'rowsAfter': len(merged),
-        'added': len(added), 'changed': len(changed),
+        'added': len(added), 'changed': len(changed), 'corrected': corrected,
         'latestDateBefore': max((r['date'] for r in published), default=None),
         'latestDate': max((r['date'] for r in merged), default=None),
         'changedExamples': [{'match': ' / '.join(k), 'fields': {c: {'was': o, 'now': n} for c, (o, n) in d.items()}}

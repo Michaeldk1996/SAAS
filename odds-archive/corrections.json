@@ -1,0 +1,23 @@
+{
+  "rule": "Founder 2026-10-15: a Tennis-Data row whose result is wrong is corrected here, and the correction is applied to every refreshed workbook before it is merged (tools/odds-archive-refresh.py apply_corrections), so a later drop-in of the same wrong row changes nothing. Kind 'swap-winner' swaps winner / loser and every w / l column pair (ranks, Bet365, Pinnacle, max, avg). A correction needs two independent sources.",
+  "corrections": [
+    {
+      "kind": "swap-winner",
+      "season": 2026,
+      "match": {
+        "date": "2026-02-10",
+        "tournament": "ABN AMRO World Tennis Tournament",
+        "round": "1st Round",
+        "winner": "Bergs Z.",
+        "loser": "Medjedovic H."
+      },
+      "reason": "Medjedovic won 7-6(5) 7-6(5); Tennis-Data lists Bergs as the winner.",
+      "sources": [
+        "api-tennis fixture result (winner Medjedovic)",
+        "Betexplorer: Medjedovic H. v Bergs Z.",
+        "Sporza"
+      ],
+      "ruledBy": "founder 2026-10-15 ('correct it if it's wrong')"
+    }
+  ]
+}
