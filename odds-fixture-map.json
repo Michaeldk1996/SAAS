@@ -4328,11 +4328,11 @@
     },
     "12171133": {
       "fixtureId": "id1200308575614834",
-      "mappedAt": "2026-10-14T09:46:50Z",
+      "mappedAt": "2026-10-15T22:30:52Z",
       "orient": "same",
       "p1": "R. Jodar",
       "p2": "C. Ruud",
-      "startTime": "2026-10-16T04:00:00.000Z",
+      "startTime": "2026-10-16T06:30:00.000Z",
       "tournamentId": 3085
     },
     "12171245": {
@@ -4364,23 +4364,12 @@
       "observedSpanDays": 18.81,
       "projectedTtlUnitsPerDay": 1.7,
       "runs": 400,
-      "spentRuns": 153,
+      "spentRuns": 154,
       "ttlBitRuns": 32,
       "ttlBitShare": 0.08,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-27T02:01:20Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 12
-      },
       {
         "at": "2026-09-27T03:01:49Z",
         "fixturesUnitsSpent": 0,
@@ -8769,9 +8758,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 3
+      },
+      {
+        "at": "2026-10-15T22:30:52Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 3
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-15T12:45:18Z"
+  "updatedAt": "2026-10-15T22:30:52Z"
 }
