@@ -1000,7 +1000,10 @@ def hist_get(fixture_id, key, counts, clock=time.monotonic, sleep=time.sleep, ge
         wait = _last_hist[0] + HIST_COOLDOWN_S - clock()
         if wait > 0:
             sleep(wait); counts['waitS'] = counts.get('waitS', 0) + wait
-        body, err = get(fixture_id)
+        try:
+            body, err = get(fixture_id)
+        except Exception as e:                              # noqa: BLE001 — a dropped connection mid-body (IncompleteRead,
+            body, err = None, f'network: {type(e).__name__}'  # reset) is one failed fixture, never the end of the run
         _last_hist[0] = clock()
         if err != 429:
             return body, err

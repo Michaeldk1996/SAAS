@@ -257,5 +257,11 @@ check('join: "A. Martin" is never "Lopez San Martin" (a tail of theirs is not ou
 real_orient = P._load('roh', 'refresh-odds-history.py').orient
 check('control: the strict join alone finds neither Parisca Romera nor Wu, Tung-Lin', real_orient({'p1': 'P. Lagutin', 'p2': 'I. Parisca'}, 'Lagutin, Pavel', 'Parisca Romera, Ignacio') is None
       and real_orient({'p1': 'Wu Tung-Lin', 'p2': 'M. Dahlin'}, 'Wu, Tung-Lin', 'Dahlin, Max') is None)
+# a dropped connection mid-body is one failed fixture, never the end of the run (back-fill, 15 Oct 02:01Z)
+import http.client
+def boom(f): raise http.client.IncompleteRead(b'', 61948)
+P._last_hist[0] = 0.0
+b_, e_ = P.hist_get('idZ', 'k', {}, sleep=lambda x: None, get=boom)
+check('pull: an IncompleteRead is returned as an error (network: IncompleteRead), not raised', b_ is None and e_ == 'network: IncompleteRead', (b_, e_))
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
