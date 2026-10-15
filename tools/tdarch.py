@@ -24,6 +24,7 @@ Commands
                             file's sha256 must equal its manifest
   daily [CLOSES_JSON]       the whole daily job in one clone of the private ops repo: mirror + originals, files, closes,
                             CSV export, backup; one commit, a plain push (env WORKFLOW_PAT)
+  verify-export OPS_CHECKOUT the newest export: per-year counts = the archive's, unreachable from the site, sha256s match
   counts [--record JOB]     row counts + the guard; one historical_archive_count row
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
 import collections, csv, datetime as dt, glob, gzip, hashlib, io, json, os, re, subprocess, sys
@@ -527,7 +528,9 @@ def cmd_daily(closes_json):
     else:
         print('::warning::no pinnacle-closes.json: the CSV export is skipped this run (nothing written)')
     cmd_backup(ops)
-    P.git('add', '-A', 'tennis-data', EXPORT_DIR, BACKUP_DIR, cwd=ops, check=False)
+    for d in ('tennis-data', EXPORT_DIR, BACKUP_DIR):             # one add per folder: a missing one never blocks the rest
+        if os.path.isdir(os.path.join(ops, d)):
+            P.git('add', '-A', d, cwd=ops)
     if P.git('status', '--porcelain', cwd=ops).strip():
         P.git('-c', 'user.name=stennisfy-archive-bot', '-c', 'user.email=archive-bot@users.noreply.github.com',
               'commit', '--quiet', '-m', f'historical odds archive {day}: originals +{n_orig}, export, backup', cwd=ops)
