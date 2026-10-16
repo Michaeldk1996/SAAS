@@ -3458,11 +3458,23 @@
       return inSome && outSome ? null : inSome;
     });
   }
-  // The window's surface key for a row and its resolved court: Indoor -> 'indoors', else its surface.
-  function last52SurfOf(r, court) {
+  // TEN-442 · THE ONE PER-MATCH CELL CLASSIFIER. Every record cell that lists matches places a calSpine row with
+  // this, and nothing else: the Last 52 window counts AND lists with it (carved = false — the window's cells are
+  // its own rows), the season table, the career row and the surface rows list with it (carved = whether the
+  // season row being drilled carries an Indoors split, i.e. whether gridCells() carved Indoors out of Hard /
+  // Clay / Grass for that season and tier). Returns 'indoors' | 'clay' | 'hard' | 'grass', null for a row with
+  // no surface (counted in the Total only), or COURT_UNKNOWN: a carved season's row whose court did not resolve,
+  // which belongs in exactly one of Indoors or its surface and cannot be listed under either without guessing.
+  var COURT_UNKNOWN = '?court';
+  function seasonCellOf(r, court, carved) {
     if (!r) return null;
     if (court === 'Indoor') return 'indoors';
+    if (carved && court !== 'Outdoor') return COURT_UNKNOWN;
     return r.surface === 'clay' || r.surface === 'grass' || r.surface === 'hard' ? r.surface : null;
+  }
+  // The window's surface key for a row and its resolved court: Indoor -> 'indoors', else its surface.
+  function last52SurfOf(r, court) {
+    return seasonCellOf(r, court, false);
   }
   function last52GridCells(p, tier) {
     if (!careerHistorySettled(p.key) && !calSpine(p).length) return null;
@@ -3486,7 +3498,7 @@
     return {
       date: r.date, year: r.year, surface: r.surface, event: r.event, round: r.round, opp: r.opp,
       won: r.won, sets: r.sets, setScores: r.score, price: r.price, oppPrice: r.oppPrice,
-      retired: r.retired, wo: r.wo, tier: r.tier, src: 'career', sheetId: r.sheetId, m: null
+      retired: r.retired, wo: r.wo, tier: r.tier, level: r.level || null, src: 'career', sheetId: r.sheetId, m: null
     };
   }
 
@@ -3499,119 +3511,6 @@
       withCourt: rows.filter(function (y) { return !!y.indoor; }).length,
       window: rows.filter(function (y) { return y.allTier !== false; }).length
     };
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // §5.2 DRILL SPINE — the per-match rows behind a surface row or a season cell
-  // ═══════════════════════════════════════════════════════════════════════════
-  //
-  // The design opens a drill under any record and lists DATE · OPPONENT · RD ·
-  // SETS · SET SCORES · H · A. We hold TWO per-match stores and neither one can
-  // fill that alone. Measured on the deployed file:
-  //
-  //   recentForm.matches          Zverev 66 rows. Carries date, surface,
-  //                               tournament, round, per-set scores, tier — i.e.
-  //                               every column. Covers a rolling window only
-  //                               (all 66 fall in 2026/late-2025).
-  //   tournamentHistory editions  Zverev 829 rows. Carries event, edition YEAR,
-  //                               round, opponent and a sets score. Carries NO
-  //                               date, NO surface, NO per-set scores, NO price.
-  //
-  // So a drill is built from whichever store can answer the question asked:
-  //   * a SURFACE drill needs per-match surface -> recentForm only;
-  //   * a YEAR (Total) drill needs only the year -> both, form preferred.
-  //
-  // Rows from the edition store therefore dash their date, set scores and prices.
-  // That is the §3 rule applied honestly ("a dash only when no source holds it"),
-  // not a gap being papered over — and the drill header states the shortfall
-  // rather than letting a partial list read as complete.
-  //
-  // ⚠️ The edition store does NOT reconcile with the season table. Zverev 2023:
-  // season row 56-26, editions 55-27. Martinez 2023: season row 44-35, editions
-  // 9-16. The season table is the provider's season aggregate and is the ruled
-  // spine (§4), so it stays the headline; the drill reports its own count against
-  // it. Raised to the founder as gate item (ii) — this is the one thing standing
-  // between "records open" and "records open and reconcile".
-  // The dedup key deliberately EXCLUDES the round.
-  //
-  // The two stores do not spell it the same way: recentForm goes through
-  // roundLabel(), which renders early rounds draw-relative ("3R"), while the
-  // edition store carries the raw draw code ("R32"). Keying on the round made
-  // every shared match look like two matches. Measured on the deployed page:
-  // Zverev's 2026 Total drill listed 98 rows against a 66-match season cell,
-  // and all 32 edition rows were duplicates of form rows.
-  //
-  // year + event + opponent identifies a match: a player meets a given opponent
-  // at a given event in a given year at most once outside a round robin, and the
-  // round-robin events seed one group meeting.
-  function drillKey(year, event, opp) {
-    return String(year) + '|' +
-      String(event || '').toLowerCase().replace(/[^a-z0-9]/g, '') + '|' +
-      surnameOf(String(opp || '')).toLowerCase();
-  }
-  function drillSpine(p) {
-    if (drillSpine._k === p.key && drillSpine._v) return drillSpine._v;
-    var out = [], seen = {};
-    // TEN-391 · the ribbon's list now runs back to its 18th Form row (bsp-pipeline.js capRecentFormMatches), into
-    // seasons whose drills read the edition store before. A season drill takes ONE store, and a form store that holds
-    // only the tail of such a season would replace its edition rows with a partial list (measured on the deployed
-    // roster: 16 player-seasons, Draper 2025 from 39 rows to 3). So the form store answers the seasons it answered
-    // before — the current season and the seasons of the 10 most recent matches — with every row it now holds for them.
-    var lr = ledgerRows(p), formYears = {};
-    formYears[currentYear()] = true;
-    lr.slice(-10).forEach(function (x) { formYears[String(x.m.date || '').slice(0, 4)] = true; });
-    // 1. recentForm, through the LEDGER's own price join — item 19: one join,
-    //    not a second lookup. ledgerRows() is the single place a price is chosen.
-    lr.forEach(function (x) {
-      var m = x.m;
-      if (!formYears[String(m.date || '').slice(0, 4)]) return;
-      var ev = String(m.tournament || '') || DASH, rd = roundLabel(m);   // raw feed name: drillKey's contract
-      var k = drillKey(String(m.date).slice(0, 4), ev, m.opponent);
-      seen[k] = true;
-      out.push({
-        date: m.date || null, year: String(m.date || '').slice(0, 4),
-        surface: m.surface ? String(m.surface).toLowerCase() : null,
-        event: eventName(m, p), round: rd, opp: m.opponent || null, won: !!m.won,   // fix item 13: display name
-        sets: setsScoreOf(m), setScores: setScoreText(m),
-        price: x.price, oppPrice: x.oppPrice, src: 'form', m: m
-      });
-    });
-    // 2. tournamentHistory editions for everything the form window never saw.
-    tournHistOf(p).forEach(function (t) {
-      (t.editions || []).forEach(function (e) {
-        (e.matches || []).forEach(function (mm) {
-          if (mm.walkover) return;             // TEN-313: not a match played, so not in the cell either
-          var k = drillKey(e.year, t.name, mm.opp);
-          if (seen[k]) return;
-          seen[k] = true;
-          out.push({
-            date: null, year: String(e.year),
-            surface: null,                       // no surface on this store, by measurement
-            event: t.name || null, round: mm.round || null, opp: mm.opp || null,
-            won: mm.res === 'W', sets: mm.score || null, setScores: null,
-            price: null, oppPrice: null, src: 'edition', m: null
-          });
-        });
-      });
-    });
-    // Most recent first; undated (edition) rows sort after the dated ones of the
-    // same year, because an unknown date cannot claim a position among known ones.
-    out.sort(function (a, b) {
-      if (a.year !== b.year) return a.year < b.year ? 1 : -1;
-      if (!!a.date !== !!b.date) return a.date ? -1 : 1;
-      if (a.date && b.date) return a.date < b.date ? 1 : -1;
-      return 0;
-    });
-    drillSpine._k = p.key; drillSpine._v = out;
-    return out;
-  }
-  // "3 - 1" from the per-set array — the design's SETS column.
-  function setsScoreOf(m) {
-    var sets = (m && m.sets) || [];
-    if (!sets.length) return m && m.result ? String(m.result) : null;
-    var w = 0, l = 0;
-    sets.forEach(function (s) { if ((s.p || 0) > (s.o || 0)) w++; else if ((s.o || 0) > (s.p || 0)) l++; });
-    return w + ' - ' + l;
   }
 
   // ─── PROGRESSIVE DRILL PAGING ───────────────────────────────────────────────
@@ -3632,69 +3531,46 @@
   // open (the handlers enforce it), so a single pager cannot be clobbered.
   var drillPager = null;
 
-  // ONE STORE PER YEAR — never the union.
-  //
-  // Deduping the two stores by (year, event, opponent) took Zverev's 2026 Total
-  // drill from 98 rows to 74 against a 66-match cell, but it did not reach zero,
-  // and a roster census found 282 of 1,329 year-cells (21.2%) still listing MORE
-  // matches than the record above them — worst case Norrie 2021, 85 rows against
-  // a 36-match cell. That residue is not a key problem: the two stores genuinely
-  // disagree about how many matches a season held (Zverev 2021: season row 33-6,
-  // edition rows 62-15), so no key can reconcile them.
-  //
-  // Mixing two stores that disagree cannot produce a trustworthy count, so a year
-  // takes ONE of them. recentForm wins where it has anything for that year: it is
-  // dated, subject-relative, carries per-set scores and is the store the ledger's
-  // price join is built over. Where it is silent, the edition store is all we hold.
-  // A year the form store covers only partly then reads "Showing 13 of 81" — a
-  // coverage statement, which is true, rather than 94 rows, which is not.
-  // year -> 'form' | 'edition', memoised per player. Built once over the spine
-  // rather than re-scanned per call: the career drills ask this for every row.
-  function drillSourceMap(p) {
-    if (drillSourceMap._k === p.key && drillSourceMap._v) return drillSourceMap._v;
-    var m = {};
-    drillSpine(p).forEach(function (r) {
-      if (r.src === 'form') m[r.year] = 'form';
-      else if (!m[r.year]) m[r.year] = 'edition';
-    });
-    drillSourceMap._k = p.key; drillSourceMap._v = m;
-    return m;
-  }
-  function drillSourceFor(p, year) {
-    if (!year) return null;
-    return drillSourceMap(p)[String(year)] || 'edition';
-  }
-  // The one-store-per-year rule is applied PER ROW-YEAR, not per drill. A career
-  // drill therefore equals the sum of its own year drills by construction — the
-  // reconciliation the founder asked for in item 4 — instead of quietly unioning
-  // two stores that disagree the moment the scope widens past one season.
-  // `since` is the Last-52 window's cut-off (YYYY-MM-DD). It is the SAME filter
-  // last52GridCells() counts with, so a windowed row and its drill card cannot
-  // disagree. An undated row can never satisfy it, which is why it is excluded
-  // from the count too rather than being listed under a record it is not in.
-  function drillRows(p, surf, year, since) {
-    // The Last-52 window lists the rows it counted (last52Rows), newest first like the spine.
-    if (since) {
-      var courts = seasonCourts(p);
-      return calSpine(p).filter(function (r, i) {
-        if (!(r.date && r.date >= since)) return false;
-        if (year && r.year !== String(year)) return false;
-        if (!surf) return true;
-        return last52SurfOf(r, courts[i]) === surf;
-      }).map(last52DrillRow).reverse();
+  // TEN-442 (founder 2026-10-17) · EVERY RECORD CELL LISTS FROM ONE STORE AND ONE CLASSIFIER. The season table,
+  // the career row and the surface rows used to list drillSpine() (recentForm + tournament-history editions) while
+  // their counts come from careerByYear — a different store with a different year (edition season vs match date),
+  // a narrower tier (editions are ATP main-tour only) and no surface or court at all: measured on the deployed
+  // roster, all 1,327 Indoors cells and 1,365 of 1,659 2021+ Clay cells listed nothing. careerByYear and
+  // career-history are built by twin pipeline functions over the same fixtures (bsp-pipeline.js
+  // buildAllTierYearly / playerMatchHistory: same year, same surface map, same court map), so a season cell's
+  // matches are the career-history rows of that year that seasonCellOf() places in that cell.
+  // drillScope() returns the scope's rows, each tagged with its `cell`; a drill is that scope filtered on `cell`,
+  // and the drill's gap note counts off the same tags — so the list and its note cannot disagree.
+  // `tier` scopes like the Tier control: the rows of that feed scope, over the seasons whose row holds a split for
+  // it (careerTierCells sums the same seasons). Newest first, like the spine.
+  function drillScope(p, year, since, tier) {
+    var sp = calSpine(p), courts = seasonCourts(p);
+    var t = tier && tier !== 'all' ? tier : null;
+    var seasons = {};
+    if (!since) {
+      spineYears(p).forEach(function (y) {
+        var tr = tierRowOf(y, t);
+        if (tr) seasons[String(y.year)] = { carved: !!tr.indoor };
+      });
     }
-    var src = drillSourceMap(p);
-    return drillSpine(p).filter(function (r) {
-      if (year && r.year !== String(year)) return false;
-      if (since && !(r.date && r.date >= since)) return false;
-      if (r.src !== (src[r.year] || 'edition')) return false;
-      if (!surf) return true;
-      // Indoors is a COURT TYPE carved out of the surfaces; recentForm carries a
-      // surface but no court type, so an Indoors drill has no per-match source at
-      // all and must say so rather than silently listing hard-court matches.
-      if (surf === 'indoors') return false;
-      return r.surface === surf;
+    var out = [];
+    sp.forEach(function (r, i) {
+      if (year && r.year !== String(year)) return;
+      if (t && r.tier !== t) return;
+      if (since) {
+        // The Last-52 window lists the rows it counted (last52Rows), on the window's own classifier.
+        if (!(r.date && r.date >= since)) return;
+      } else if (!seasons[r.year]) return;
+      var row = last52DrillRow(r);
+      row.court = courts[i] || null;
+      row.cell = seasonCellOf(r, courts[i], !since && seasons[r.year].carved);
+      out.push(row);
     });
+    return out.reverse();
+  }
+  function drillRows(p, surf, year, since, tier) {
+    var rows = drillScope(p, year, since, tier);
+    return surf ? rows.filter(function (r) { return r.cell === surf; }) : rows;
   }
 
   // The drill card (README §5.2B) — used by both the surface rows and the season
@@ -3711,26 +3587,28 @@
   // and the first draft said "no matches in the per-match store for this record",
   // which is false. The matches are stored; the SURFACE is what is missing, and
   // those are different defects with different fixes. A reason has to be true.
-  function drillNote(rowsN, paintedN, cellN, surf, surfaceless) {
-    if (!rowsN) {
-      if (surf === 'indoors') return 'no per-match court type on record';
-      if (surfaceless) {
-        // "in scope", not "here": these rows belong to the YEAR (or career), not
-        // to this surface — no one can say which surface they were played on,
-        // which is the whole reason they cannot appear.
-        return 'the ' + surfaceless + ' match' + (surfaceless === 1 ? '' : 'es') +
-          ' in scope carr' + (surfaceless === 1 ? 'ies' : 'y') + ' no surface';
-      }
-      return 'no matches in the per-match store for this record';
-    }
-    if (paintedN < rowsN) {
-      return 'Showing ' + paintedN + ' of ' + rowsN + ' ' + MIDDOT + ' scroll for more';
-    }
+  // TEN-442 item 8 · a list shorter than its cell shows what it holds and states the gap in counts ("4 counted ·
+  // 3 found in results · 1 missing"), then the reasons it can name, each counted off the same drillScope() tags:
+  // `gap.court` = rows of the scope whose court type did not resolve and that could belong in this cell (they sit
+  // in exactly one of Indoors or their surface, so neither lists them); `gap.surfaceless` = rows of the scope with
+  // no surface (a surface cell cannot claim them). Never padded, never an empty panel without a sentence.
+  function drillNote(rowsN, paintedN, cellN, surf, gap) {
+    var g = gap || {};
+    var more = paintedN < rowsN ? ' ' + MIDDOT + ' showing ' + paintedN + ' ' + MIDDOT + ' scroll for more' : '';
     if (rowsN < cellN) {
-      return 'Showing ' + rowsN + ' of ' + cellN + ' ' + MIDDOT +
-        (surfaceless
-          ? ' ' + surfaceless + ' more in scope carry no surface'
-          : ' the rest are not in the per-match store');
+      var why = [];
+      if (g.court) {
+        why.push(g.court + ' ' + (surf === 'indoors' ? '' : surf + ' ') + 'match' +
+          (g.court === 1 ? ' has' : 'es have') + ' no court type on record yet');
+      }
+      if (g.surfaceless && surf) {
+        why.push(g.surfaceless + ' in scope carr' + (g.surfaceless === 1 ? 'ies' : 'y') + ' no surface');
+      }
+      return cellN + ' counted ' + MIDDOT + ' ' + rowsN + ' found in results ' + MIDDOT + ' ' +
+        (cellN - rowsN) + ' missing' + (why.length ? ' ' + MIDDOT + ' ' + why.join(' ' + MIDDOT + ' ') : '') + more;
+    }
+    if (paintedN < rowsN && rowsN === cellN) {
+      return 'Showing ' + paintedN + ' of ' + rowsN + ' ' + MIDDOT + ' scroll for more';
     }
     if (rowsN > cellN) {
       // OVERFLOW — the list holds MORE than the record it sits under.
@@ -3742,28 +3620,28 @@
       // actual 2021. It is the provider's season aggregate that is short, not
       // the match list that is long. Which source is wrong varies, so the note
       // states the DISAGREEMENT and leaves the cause to the report.
-      return rowsN + ' matches on record here against a ' + cellN +
-        '-match season row ' + MIDDOT + ' the two sources disagree';
+      return rowsN + ' found in results against ' + cellN + ' counted ' + MIDDOT + ' the two sources disagree' + more;
     }
-    return 'All ' + rowsN + ' matches';
+    return 'All ' + rowsN + ' match' + (rowsN === 1 ? '' : 'es');
   }
   function renderDrill(p, opts) {
-    // TEN-384 · under the Tier control a drill lists the rows that carry that tier; a row whose
-    // per-match store holds no tier cannot be placed and is left out (the note's count says so).
-    var tierOk = function (r) { return !opts.tier || opts.tier === 'all' || drillRowTier(r) === opts.tier; };
-    // fx5 item 2 · a drill whose scope reads tournament-history edition rows (a career drill, or a year the
-    // form store does not cover) lists nothing and states nothing while that shard loads — never "no
-    // matches in the per-match store" — and paints once when it lands.
-    var thPend = !opts.since && tournHistPending(p) && (!opts.year || drillSourceFor(p, opts.year) !== 'form');
-    var rows = thPend ? [] : drillRows(p, opts.surf, opts.year, opts.since).filter(tierOk);
+    // TEN-442 · the list is the dated career-history store (calSpine). Until that shard has answered, the drill
+    // lists nothing and SAYS it is loading — never a count about the player made from a fact about the network —
+    // and the host repaints when it lands (loadPp2CareerHistory -> pp2RepaintIfOpen).
+    var chPend = !careerHistorySettled(p.key);
+    var scope = chPend ? [] : drillScope(p, opts.year, opts.since, opts.tier);
+    var rows = opts.surf ? scope.filter(function (r) { return r.cell === opts.surf; }) : scope;
     var shown = rows.slice(0, DRILL_PAGE);
     var cellN = (opts.won || 0) + (opts.lost || 0);
-    // Rows that are in the store for this scope but carry no surface. Only a
-    // SURFACE drill can lose rows to that, so an all-matches drill asks nothing.
-    var surfaceless = (opts.surf && opts.surf !== 'indoors')
-      ? drillRows(p, null, opts.year, opts.since).filter(tierOk).filter(function (r) { return !r.surface; }).length
-      : 0;
-    var note = thPend ? '' : drillNote(rows.length, shown.length, cellN, opts.surf, surfaceless);
+    // The reasons a surface list can run short, counted off the same tags the list was filtered on.
+    var gap = { court: 0, surfaceless: 0 };
+    if (opts.surf) {
+      scope.forEach(function (r) {
+        if (r.cell === COURT_UNKNOWN && (opts.surf === 'indoors' || r.surface === opts.surf)) gap.court++;
+        else if (r.cell === null && opts.surf !== 'indoors') gap.surfaceless++;
+      });
+    }
+    var note = chPend ? 'match list loading' : drillNote(rows.length, shown.length, cellN, opts.surf, gap);
 
     var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
                 ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
@@ -3781,7 +3659,7 @@
     // would repeat a group header that is already on screen.
     var body = drillBodyHtml(rows, 0, shown.length, drillPager = {
       rows: rows, next: shown.length, lastEvent: null, cellN: cellN, surf: opts.surf,
-      surfaceless: surfaceless,
+      gap: gap,
       // A career-scope drill lists every edition of an event, so "Australian Open"
       // heads a group once per year. Without the year in the meta the reader cannot
       // tell 2019's group from 2024's.
@@ -3835,12 +3713,12 @@
       var hook = (r.src === 'career' && r.sheetId) ? sheetHook(r.sheetId)
         : (r.src === 'form' && r.date) ? sheetHook(r.date + '|' + (r.opp || '')) : '';
       var cur = hook ? sheetCursor() : '';
-      var cell = function (style, txt) {
-        return '<div ' + hook + 'style="' + cur + style + '">' + txt + '</div>';
+      var cell = function (style, txt, attr) {
+        return '<div ' + hook + (attr || '') + 'style="' + cur + style + '">' + txt + '</div>';
       };
       return grp +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);padding:5px 0;',
-             esc(r.date ? fmtDotDate(r.date) + '.' : DASH)) +
+             esc(r.date ? fmtDotDate(r.date) + '.' : DASH), 'data-pp2-drill-row="' + (r.won ? 'W' : 'L') + '" ') +
         cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
         cell('font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;' +
              'white-space:nowrap;padding:5px 0;', esc(r.opp ? initialSurname(r.opp) : DASH)) +   // fx3 D12: drills read "I. M. Surname"
@@ -3872,18 +3750,24 @@
     grid.insertAdjacentHTML('beforeend', drillBodyHtml(pg.rows, pg.next, to, pg));
     pg.next = to;
     var noteEl = sc.parentNode && sc.parentNode.querySelector('[data-pp2-drill-note]');
-    if (noteEl) noteEl.textContent = drillNote(pg.rows.length, pg.next, pg.cellN, pg.surf, pg.surfaceless);
+    if (noteEl) noteEl.textContent = drillNote(pg.rows.length, pg.next, pg.cellN, pg.surf, pg.gap);
   }
   // "2024 · Clay · ATP" under the event group row. Only stated where held — the
   // design's example reads "Australian Open · Hard · Grand Slam", but the level
   // word is not in either per-match store (recentForm carries `tier`, which is
   // atp/challenger, not the 250/500/1000/Slam level), so the tier is what we can
   // truthfully print. Reported rather than approximated.
+  // TEN-442 item 7 · a career-history row states its surface ("No surface" where it holds none — the matches the
+  // footnote counts), its court where it resolved Indoor, and its tier: the genuine level where the price join
+  // landed (§8.17), else the Tier control's own scope word — never a scope standing in for a 250/500/1000 level.
   function eventMetaOf(r, withYear) {
     var bits = [];
     if (withYear && r.year) bits.push(r.year);
     if (r.surface) bits.push(r.surface.charAt(0).toUpperCase() + r.surface.slice(1));
+    else if (r.src === 'career') bits.push('No surface');
+    if (r.src === 'career' && r.court === 'Indoor') bits.push('Indoor');
     if (r.m && r.m.tier) bits.push(String(r.m.tier).toUpperCase() === 'ATP' ? 'ATP' : String(r.m.tier));
+    else if (r.src === 'career' && (r.level || r.tier)) bits.push(r.level || careerTierWord(r.tier));
     return bits.join(' ' + MIDDOT + ' ');
   }
 
@@ -11875,8 +11759,7 @@
       BAR_TRACK_BG: BAR_TRACK_BG,
       barRow: barRow,
       drillRows: drillRows,
-      drillSpine: drillSpine,
-      drillSourceFor: drillSourceFor,
+      drillScope: drillScope, seasonCellOf: seasonCellOf, COURT_UNKNOWN: COURT_UNKNOWN,
       drillNote: drillNote,
       drillBodyHtml: drillBodyHtml,
       onDrillScroll: onDrillScroll,

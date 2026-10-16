@@ -86,22 +86,24 @@ H.check('391-b · fewer Form matches on record than 18: every one is kept and th
   assert.ok(/last 12 /.test(L.text(html)), 'eyebrow');
   return '12 Form rows on record -> last 12';
 });
-H.check('391-c · a season the list reaches only by its tail keeps the edition store in the season drill (no partial list)', () => {
+H.check('391-c · a season the Form list reaches only by its tail still drills in full (TEN-442: the season drill lists career-history)', () => {
   // 5 this season + 5 of 2025 = the 10 most recent; 2024 is reached only because the list now runs to the 18th row.
+  // Before TEN-442 a season drill took the form store where it reached and read 8 of 12 here; it now lists the
+  // career-history rows of the season, which the Form cap does not touch.
   const fx = [];
   for (let i = 0; i < 5; i++) fx.push(fixture(day(2026, 1, 10 + i), true, 'Australian Open'));
   for (let i = 0; i < 5; i++) fx.push(fixture(day(2025, 8, 10 + i), true, 'Cincinnati'));
   for (let i = 0; i < 12; i++) fx.push(fixture(day(2024, 9, 1 + i), i % 2 === 0, 'Chengdu'));
   const kept = P.capRecentFormMatches(P.recentFormFromFixtures(fx, KEY, surfaceMap).matches, 2026);
   assert.strictEqual(kept.filter(m => m.date.startsWith('2024')).length, 8, '2024 rows in the list');
-  const eds = [{ name: 'Chengdu', editions: [{ year: 2024, matches: [...Array(12)].map((_, i) => ({ opp: 'O. Pponent' + i, res: i % 2 ? 'L' : 'W', round: 'R32', score: '2-0' })) }] }];
-  const p = { key: KEY, name: 'J. Thompson', recentForm: { pct: null, matches: kept }, tournamentHistory: eds };
-  const I = loadPp2({ [KEY]: p });
-  assert.strictEqual(I.drillSourceFor(p, '2024'), 'edition', '2024 drill source');
+  const courts = new Map();
+  const careerByYear = P.buildAllTierYearly(fx, KEY, {}, 2026, surfaceMap, courts);
+  const ch = P.playerMatchHistory(fx, KEY, 2026, surfaceMap, courts);
+  const p = { key: KEY, name: 'J. Thompson', recentForm: { pct: null, matches: kept }, careerByYear };
+  const I = loadPp2({ [KEY]: p }, { careerHistory: { [KEY]: ch } });
   assert.strictEqual(I.drillRows(p, null, '2024').length, 12, '2024 drill rows');
-  assert.strictEqual(I.drillSourceFor(p, '2025'), 'form');
   assert.strictEqual(I.drillRows(p, null, '2025').length, 5);
-  return '2024: 12 edition rows (not 8 of 12 form rows) · 2025: 5 form rows';
+  return '2024: 12 rows (the Form list holds 8) · 2025: 5 rows';
 });
 
 // ── 395 · Last 52 = the season table ────────────────────────────────────────────

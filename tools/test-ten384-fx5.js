@@ -152,18 +152,20 @@ H.check('2 · Record per tournament modal while the shard loads: no empty-state 
   const t3 = T(withState(I2, { key: p2.key, tournQuery: 'zzz', tournOpen: null }, () => I2.renderTournModal(p2)));
   assert(/No tournament matches that search\./.test(t3));
 });
-H.check('2 · a career drill while the shard loads lists nothing and states nothing (no "no matches in the per-match store")', () => {
-  const { I, p } = fxModule({ th: null, extra: TH_PENDING() });
-  // a year the form store does not cover: its rows come from the edition store
+H.check('2 · a career drill while its shard loads lists nothing and says it is loading (TEN-442: the career-history shard)', () => {
+  // TEN-442 · season drills list the dated career-history store, so THAT shard is the one whose absence means
+  // "not loaded" (careerHistorySettled). Never a count about the player made from a fact about the network.
+  const { I, W, p } = fxModule();
+  delete W.careerHistory[FX.key];
   const h = I.renderDrill(p, { title: '2019', year: '2019', won: 12, lost: 8 });
   const note = (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(h) || [])[1];
-  assert.strictEqual(I.drillSourceFor(p, '2019'), 'edition', 'the fixture covers 2019 from the form store — vacuous');
-  assert.strictEqual(note, '', 'the drill note reads "' + note + '" while the shard loads');
+  assert.strictEqual(note, 'match list loading', 'the drill note reads "' + note + '" while the shard loads');
+  assert(!/data-pp2-drill-row=/.test(h), 'rows painted while the shard loads');
   // landed: the same drill states its note
   const { I: I2, p: p2 } = fxModule();
   const n2 = (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(I2.renderDrill(p2, { title: '2019', year: '2019', won: 12, lost: 8 })) || [])[1];
-  assert(n2, 'the landed drill has no note');
-  return 'pending note "" → landed "' + n2 + '"';
+  assert(n2 && n2 !== 'match list loading', 'the landed drill has no note');
+  return 'pending note "match list loading" → landed "' + n2 + '"';
 });
 await H.checkAsync('2 · the host marks the shard in flight BEFORE the first await and clears it when it settles (answer or failure)', async () => {
   const f = sliceFn('loadPp2TourHist', 'async function ');

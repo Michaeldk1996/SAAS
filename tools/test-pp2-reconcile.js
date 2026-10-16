@@ -332,6 +332,14 @@ const I = M._internals;
 // still passes or fails, and measures nothing. That is how §14A first reported
 // 33 undated matches on a fixture built to carry 8.
 const W = global.window;
+// TEN-442: season drills list the dated career-history store. A synthetic player's rows go in through the sandbox
+// handle and come out again, so no fixture leaks into the roster checks.
+function withCH(key, rows, fn) {
+  const had = Object.prototype.hasOwnProperty.call(W.careerHistory, key), prev = W.careerHistory[key];
+  W.careerHistory[key] = rows;
+  try { return fn(); } finally { if (had) W.careerHistory[key] = prev; else delete W.careerHistory[key]; }
+}
+const chRow = (o) => Object.assign({ level: 'atp', round: '1/16-finals', result: '2 - 0', src: 'fixtures', tournament: 'Test Cup', opponent: 'X. Ample' }, o);
 // Founder Q8 (TEN-368): the per-event Backing is the page's row join, window.trProfileBacking. The module's Q3 guard
 // (pinN <= n) still runs on whatever that join answers, so the guard checks feed it a controlled answer — `claim(t)`
 // priced rows at +1.25u — and restore the sandbox after.
@@ -4368,13 +4376,9 @@ check('TEN-313: an edition W-L does not count a walkover received (tournViews)',
   const v = I.tournViews(p)[0];
   assert.deepStrictEqual([v.won, v.lost, v.reconciles], [1, 1, true]);
 });
-// Mutation: drop `if (mm.walkover) return;` in drillSpine step 2 → the walkover edition row is listed.
-check('TEN-313: a drill list carries no walkover edition row (drillSpine)', () => {
-  const p = { key: '__ten313drill', name: 'T. Drill', recentForm: { matches: [] }, tournamentHistory: [{ name: 'Barcelona', won: 1, lost: 0,
-    editions: [{ year: 2019, matches: [{ res: 'W', round: 'R32', opp: 'A. One', score: '2 - 0' }, { res: 'W', round: 'R16', opp: 'B. Two', score: '', walkover: true }] }] }] };
-  const rows = I.drillSpine(p).filter(r => r.src === 'edition');
-  assert.deepStrictEqual(rows.map(r => r.opp), ['A. One']);
-});
+// (TEN-442: the season drill no longer reads tournament-history editions, so drillSpine's walkover skip is gone with
+// it. The store it reads, career-history, carries no walkover by construction — tools/test-ten313-records.js
+// "N2 writer: no walkover (either side, either half) reaches the shard".)
 // (TEN-384 Q1: the Streaks tab and its calRuns() walkover check were removed with the tab.)
 
 // The two recent-form record helpers, fed a walkover each way. The live ledger check
@@ -5487,8 +5491,9 @@ check('item 2e · the drill pages instead of truncating — every match stays re
   } finally { Object.assign(I.state, saved); }
   // one page painted, the rest reachable — and the note says so rather than
   // implying the list is complete
-  assert(new RegExp('Showing ' + I.DRILL_PAGE + ' of ' + big.n + ' · scroll for more').test(html),
-    `the note does not state the paging for ${big.p.key} (${big.n} rows)`);
+  // TEN-442: a list that is ALSO short of its cell states the gap first and the paging after it.
+  assert(new RegExp('(Showing ' + I.DRILL_PAGE + ' of ' + big.n + '|found in results .* showing ' + I.DRILL_PAGE +
+    ') · scroll for more').test(html), `the note does not state the paging for ${big.p.key} (${big.n} rows)`);
   assert(/data-pp2-drill-scroll="1"/.test(html), 'the scroll container has no pager hook');
   assert(/data-pp2-drill-grid="1"/.test(html), 'the row grid has no pager hook');
   // the paged note must NOT read as a data shortfall — those are different claims
@@ -5532,50 +5537,43 @@ mustFail('[neg] the append check would catch a pager that reset its event groupi
 });
 
 check('a dashed surface drill states the TRUE reason — stored-but-surfaceless vs absent', () => {
-  // Zverev 2025 on the deployed store: the year drill lists all 81 matches and the
-  // Clay drill lists none, because that year's rows come from the edition store,
-  // which carries no surface. Saying "no matches in the per-match store" there is
-  // false — the matches are stored. Two reasons, two sentences.
-  const mk = (form) => ({
-    key: '__r' + (form ? 'f' : 'e'), name: 'R. Eason',
+  // Two reasons, two sentences: the matches are stored but carry no surface (a surface cell cannot claim them),
+  // or the store holds nothing for the scope. TEN-442: both now state the gap in counts first.
+  const mk = (key) => ({ key, name: 'R. Eason',
     careerByYear: [{ year: '2024', allTier: true, total: { won: 6, lost: 2 },
-      clay: { won: 6, lost: 2 }, hard: null, grass: null, indoor: null }],
-    recentForm: { matches: [] },
-    tournamentHistory: [{ name: 'Test Cup', editions: [{ year: '2024', matches:
-      Array.from({ length: 8 }, (_, i) => ({ res: i < 6 ? 'W' : 'L', round: 'R32',
-        opp: 'X. Ample ' + i, score: '2 - 0' })) }] }],
-  });
-  const stored = mk(false);
-  // the edition store holds all 8 rows for 2024...
-  assert.strictEqual(I.drillRows(stored, null, '2024').length, 8, 'the year drill lost its rows');
-  // ...and none of them can answer a surface question
-  assert.strictEqual(I.drillRows(stored, 'clay', '2024').length, 0, 'an edition row claimed a surface');
-  const saved = { ...I.state };
+      clay: { won: 6, lost: 2 }, hard: null, grass: null, indoor: null }] });
+  const stored = mk('__re');
+  const rows = Array.from({ length: 8 }, (_, i) => chRow({ year: '2024', date: '2024-05-0' + (i + 1), surface: null,
+    won: i < 6, opponent: 'X. Ample ' + i }));
   let html;
-  try {
-    I.state.key = stored.key; I.state.careerScope = 'career';
-    I.state.careerDrill = { kind: 'cell', year: '2024', surf: 'clay' };
-    html = I.renderCareerModal(stored, { archetype: null });
-  } finally { Object.assign(I.state, saved); }
-  assert(/the 8 matches in scope carry no surface/.test(html),
+  withCH(stored.key, rows, () => {
+    assert.strictEqual(I.drillRows(stored, null, '2024').length, 8, 'the year drill lost its rows');
+    assert.strictEqual(I.drillRows(stored, 'clay', '2024').length, 0, 'a surfaceless row claimed a surface');
+    const saved = { ...I.state };
+    try {
+      I.state.key = stored.key; I.state.careerScope = 'career';
+      I.state.careerDrill = { kind: 'cell', year: '2024', surf: 'clay' };
+      html = I.renderCareerModal(stored, { archetype: null });
+    } finally { Object.assign(I.state, saved); }
+  });
+  assert(/8 counted · 0 found in results · 8 missing · 8 in scope carry no surface/.test(html),
     'the drill does not say WHY the surface list is empty');
-  assert(!/no matches in the per-match store/.test(html),
-    'the drill still claims the matches are unstored when they are stored');
-  // and where there genuinely are no rows at all, the other reason stands
-  const empty = { key: '__none', name: 'N. One',
-    careerByYear: [{ year: '2024', allTier: true, total: { won: 6, lost: 2 },
-      clay: { won: 6, lost: 2 }, hard: null, grass: null, indoor: null }] };
+  // and where the store genuinely holds nothing for the scope, the gap stands without a reason it cannot know
+  const empty = mk('__none');
   let h2;
-  try {
-    I.state.key = empty.key; I.state.careerScope = 'career';
-    I.state.careerDrill = { kind: 'cell', year: '2024', surf: 'clay' };
-    h2 = I.renderCareerModal(empty, { archetype: null });
-  } finally { Object.assign(I.state, saved); }
-  assert(/no matches in the per-match store for this record/.test(h2),
-    'a genuinely empty scope lost its reason');
+  withCH(empty.key, [], () => {
+    const saved = { ...I.state };
+    try {
+      I.state.key = empty.key; I.state.careerScope = 'career';
+      I.state.careerDrill = { kind: 'cell', year: '2024', surf: 'clay' };
+      h2 = I.renderCareerModal(empty, { archetype: null });
+    } finally { Object.assign(I.state, saved); }
+  });
+  assert(/data-pp2-drill-note="1"[^>]*>8 counted · 0 found in results · 8 missing</.test(h2),
+    'a genuinely empty scope lost its gap statement');
 });
 mustFail('[neg] the reason check would catch the blanket "not in the store" wording', () => {
-  const note = 'no matches in the per-match store for this record';
+  const note = '8 counted · 0 found in results · 8 missing';
   assert(/carry no surface/.test(note), 'the drill does not say WHY the surface list is empty');
 });
 
@@ -5669,13 +5667,20 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
       won: i < 12, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }], tier: 'atp',
     })) },
   };
+  // TEN-442: the drill lists career-history; the same 14 matches as that store holds them.
+  const ch = withForm.recentForm.matches.map((m) => chRow({ year: '2026', date: m.date, surface: 'clay', won: m.won,
+    opponent: m.opponent, tournament: m.tournament, round: 'Final' }));
   const saved = { ...I.state };
-  let html;
-  try {
-    I.state.key = withForm.key; I.state.careerScope = 'career';
-    I.state.careerDrill = { kind: 'surface', surf: 'clay', year: null };
-    html = I.renderCareerModal(withForm, { archetype: null });
-  } finally { Object.assign(I.state, saved); }
+  let html, clayN, indoorN;
+  withCH(withForm.key, ch, () => {
+    try {
+      I.state.key = withForm.key; I.state.careerScope = 'career';
+      I.state.careerDrill = { kind: 'surface', surf: 'clay', year: null };
+      html = I.renderCareerModal(withForm, { archetype: null });
+    } finally { Object.assign(I.state, saved); }
+    clayN = I.drillRows(withForm, 'clay', null).length;
+    indoorN = I.drillRows(withForm, 'indoors', null).length;
+  });
   // the drill card itself
   // TEN-384 C6: the drill is a panel inside the season panel — 1px --edge-6, r11 (was --inner + --edge-10).
   assert(/background:var\(--card\);border:1px solid var\(--edge-6\);border-radius:11px;/.test(html), 'the drill card border is not the reference\'s');
@@ -5691,10 +5696,9 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
   // break that join and the drill's price column must go with it. A row that keeps
   // its price through a broken ledger join is reading a second lookup.
   const before = (html.match(/text-align:right;padding:5px 0;">[^<—]/g) || []).length;
-  assert(I.drillRows(withForm, 'clay', null).length === 14,
-    'the clay drill did not find the 14 form rows');
-  assert(I.drillRows(withForm, 'indoors', null).length === 0,
-    'an Indoors drill listed matches it has no court type for');
+  assert(clayN === 14, 'the clay drill did not find the 14 rows');
+  // the season row carries no Indoors split and the rows no court, so nothing is Indoors
+  assert(indoorN === 0, 'an Indoors drill listed matches the season table does not count indoor');
   assert(before >= 0);
 });
 mustFail('[neg] the drill check would catch a modal with no drill markup at all', () => {
@@ -5718,39 +5722,38 @@ check('the drill never lets its row count masquerade as the cell\'s record', () 
   };
   const saved = { ...I.state };
   let html;
-  try {
-    I.state.key = short.key; I.state.careerScope = 'career';
-    I.state.careerDrill = { kind: 'surface', surf: 'clay', year: null };
-    html = I.renderCareerModal(short, { archetype: null });
-  } finally { Object.assign(I.state, saved); }
+  withCH(short.key, short.recentForm.matches.map((m) => chRow({ year: '2026', date: m.date, surface: 'clay', won: true })), () => {
+    try {
+      I.state.key = short.key; I.state.careerScope = 'career';
+      I.state.careerDrill = { kind: 'surface', surf: 'clay', year: null };
+      html = I.renderCareerModal(short, { archetype: null });
+    } finally { Object.assign(I.state, saved); }
+  });
   assert(/30\u201314 \u00b7 44 matches/.test(html), 'the drill header does not carry the CELL\'s record');
-  assert(/Showing 6 of 44 · the rest are not in the per-match store/.test(html),
+  // TEN-442 item 8: "N counted · M found in results · K missing"
+  assert(/44 counted · 6 found in results · 38 missing/.test(html),
     'a 6-row list is presenting itself as the full 44-match record');
 });
 mustFail('[neg] the shortfall check would catch a drill that claimed to show everything', () => {
   const html = 'All 6 matches';
-  assert(/Showing 6 of 44 · the rest are not in the per-match store/.test(html),
+  assert(/44 counted · 6 found in results · 38 missing/.test(html),
     'a partial list claims to be complete');
 });
 
 check('a year drill takes ONE store — the union double-counted on the live page', () => {
-  // Regression lock for a defect the unit suite did NOT catch and the deployed
-  // probe did: Zverev's 2026 Total drill listed 98 rows under a 66-match cell.
-  // Two causes, both locked here — a round code spelled two ways defeating the
-  // dedup key, and the union of two stores that disagree.
+  // Regression lock for a defect the unit suite did NOT catch and the deployed probe did: Zverev's 2026 Total drill
+  // listed 98 rows under a 66-match cell, from the union of recentForm and tournament-history. TEN-442: a season
+  // drill lists career-history alone, so the same two matches held by the other two stores never add to it.
   const dual = {
     key: '__dual', name: 'D. Ual',
     careerByYear: [{ year: '2026', allTier: true, total: { won: 2, lost: 0 },
       clay: { won: 2, lost: 0 }, hard: null, grass: null, indoor: null }],
     recentForm: { matches: [
       { opponent: 'B. Bonzi', date: '2026-05-26', tournament: 'French Open',
-        round: 'ATP French Open - 3rd Round', surface: 'clay', won: true,
-        sets: [{ p: 6, o: 3 }], tier: 'atp' },
+        round: 'ATP French Open - 3rd Round', surface: 'clay', won: true, sets: [{ p: 6, o: 3 }], tier: 'atp' },
       { opponent: 'T. Machac', date: '2026-05-28', tournament: 'French Open',
-        round: 'ATP French Open - Quarter-final', surface: 'clay', won: true,
-        sets: [{ p: 6, o: 4 }], tier: 'atp' },
+        round: 'ATP French Open - Quarter-final', surface: 'clay', won: true, sets: [{ p: 6, o: 4 }], tier: 'atp' },
     ] },
-    // the SAME two matches as the edition store spells them: raw draw codes
     tournamentHistory: [{ name: 'French Open', won: 2, lost: 0, editions: [
       { year: '2026', matches: [
         { res: 'W', round: 'R32', opp: 'B. Bonzi', score: '3 - 0' },
@@ -5758,18 +5761,13 @@ check('a year drill takes ONE store — the union double-counted on the live pag
       ] },
     ] }],
   };
-  const saved = { ...I.state };
-  try {
-    I.state.key = dual.key;
+  const ch = dual.recentForm.matches.map((m) => chRow({ year: '2026', date: m.date, surface: 'clay', won: true,
+    opponent: m.opponent, tournament: 'French Open' }));
+  withCH(dual.key, ch, () => {
     const rows = I.drillRows(dual, null, '2026');
-    assert.strictEqual(rows.length, 2,
-      `the 2026 drill lists ${rows.length} rows for 2 matches — the stores were unioned`);
-    assert(rows.every(r => r.src === 'form'),
-      'the drill mixed stores instead of preferring the dated one');
-    // and the round spelling must not be what holds them apart
-    assert.strictEqual(I.drillSpine(dual).filter(r => r.year === '2026').length, 2,
-      'the spine itself carries the duplicate');
-  } finally { Object.assign(I.state, saved); }
+    assert.strictEqual(rows.length, 2, `the 2026 drill lists ${rows.length} rows for 2 matches — the stores were unioned`);
+    assert(rows.every(r => r.src === 'career'), 'the drill mixed stores instead of reading career-history');
+  });
 });
 mustFail('[neg] the one-store check would catch the unioned list measured live', () => {
   const rows = 98, cell = 66;   // Zverev 2026, deployed, before the fix
@@ -5784,20 +5782,18 @@ check('a drill holding MORE than its record says so, and does not name a cause',
     key: '__ov', name: 'O. Ver',
     careerByYear: [{ year: '2021', allTier: true, total: { won: 2, lost: 1 },
       clay: { won: 2, lost: 1 }, hard: null, grass: null, indoor: null }],
-    tournamentHistory: [{ name: 'Big Event', won: 5, lost: 2, editions: [
-      { year: '2021', matches: Array.from({ length: 7 }, (_, i) => ({
-        res: i < 5 ? 'W' : 'L', round: 'R' + (128 >> i), opp: 'P' + i + '. Layer', score: '3 - 0',
-      })) },
-    ] }],
   };
   const saved = { ...I.state };
   let html;
-  try {
-    I.state.key = over.key; I.state.careerScope = 'career';
-    I.state.careerDrill = { kind: 'cell', year: '2021', surf: '' };
-    html = I.renderCareerModal(over, { archetype: null });
-  } finally { Object.assign(I.state, saved); }
-  assert(/7 matches on record here against a 3-match season row · the two sources disagree/.test(html),
+  withCH(over.key, Array.from({ length: 7 }, (_, i) => chRow({ year: '2021', date: '2021-05-0' + (i + 1), surface: 'clay',
+    won: i < 5, opponent: 'P' + i + '. Layer', tournament: 'Big Event' })), () => {
+    try {
+      I.state.key = over.key; I.state.careerScope = 'career';
+      I.state.careerDrill = { kind: 'cell', year: '2021', surf: '' };
+      html = I.renderCareerModal(over, { archetype: null });
+    } finally { Object.assign(I.state, saved); }
+  });
+  assert(/7 found in results against 3 counted · the two sources disagree/.test(html),
     'the overflow is not stated on the page');
   assert(!/double-count/.test(html), 'the note asserts a cause it cannot know');
   assert(!/All 7 matches/.test(html), 'an overflowing list still claims to be complete');

@@ -274,6 +274,12 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       assert.deepStrictEqual([r22.indoor, r22.atp.indoor], [null, null]);
     });
     check('N3 writer: _indoor is a build-time carrier, never written to a shard', () => assert.ok(!shard.matches.some((m) => '_indoor' in m)));
+    // TEN-442 · Mutation: drop `if (r.holeFill) r.indoor = !!r._indoor;` → the Rotterdam hole row ships no court flag and
+    // the 2021 Indoors drill cannot place the match the season row counts (atp indoor 1-0 below).
+    check('TEN-442 writer: a 2021 hole-fill row ships the court flag the season row counted it on', () => {
+      const hole = shard.matches.filter((m) => m.holeFill);
+      assert.deepStrictEqual(hole.map((m) => [m.tournament, m.indoor]), [['Rotterdam', true]]);
+    });
     const [, r21, r19] = profiles[7].careerByYear;
     check('N3 writer: 2021 adopts feed + fill, atp + chitf = total (atp 1-0 indoor 1-0, chitf 1-0)', () => {
       assert.deepStrictEqual(r21.total, wl(2, 0)); assert.deepStrictEqual(tiersSum(r21), r21.total);

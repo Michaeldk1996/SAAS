@@ -4133,7 +4133,16 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       row.rows = y ? y.rows : 0;
       row.atpOnly = adopted.has(row) ? false : (y ? y.atpOnly : false);   // adopted: number and rows describe the same set
     }
-    for (const r of rows) delete r._indoor;   // TEN-313 build-time carrier, never shipped
+    // TEN-442: a 2021 hole-fill row ships the court flag the fixtures half carries (TEN-395), set from the same
+    // `_indoor` tallyCareerYears just counted into the season row's Indoors — so the Record-by-season drill can
+    // place it. Dropping it left 32 deployed 2021 cells listing one or two short.
+    // Only where the season row adopted the rows (reconcileYearRows): a year left on the feed's count never counted
+    // its hole rows at all, so none of them may claim its Indoors.
+    const adoptedYears = new Set([...adopted].map(row => String(row.year)));
+    for (const r of rows) {
+      if (r.holeFill) r.indoor = adoptedYears.has(String(r.year)) && !!r._indoor;
+      delete r._indoor;   // TEN-313 build-time carrier, never shipped
+    }
 
     // TEN-244: stamp completeness on EVERY row, both halves, in one place - a
     // predicate applied on only one source half is a predicate a reader cannot
