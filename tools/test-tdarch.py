@@ -90,5 +90,15 @@ fr = T.file_rows(inv)
 check('file rows: gzip of the ORIGINAL bytes, which decompress back to their sha256',
       all(T.sha(gzip.decompress(bytes.fromhex(r['content_gz'][2:]))) == r['sha256'] for r in fr))
 shutil.rmtree(repo); shutil.rmtree(wb)
+# a reader that exits (the .xls reader without xlrd) blanks the description, never stops the archive run
+_orig = T.P._load
+class _M:
+    @staticmethod
+    def read_xls(b): raise SystemExit('pre-2013 seasons are .xls and need xlrd')
+T.P._load = lambda n, f: _M
+d = T.describe_workbook(b'\xd0\xcf\x11\xe0 old xls')
+T.P._load = _orig
+check('workbook: a reader that calls sys.exit is caught (the bytes are still stored; the description is a dash)',
+      d['row_count'] is None and 'xlrd' in d.get('describeError', ''), d)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

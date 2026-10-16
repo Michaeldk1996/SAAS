@@ -57,6 +57,7 @@ jobs:
           WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
         run: |
           set -euo pipefail
+          pip3 install --quiet xlrd==2.0.1          # the pre-2013 originals are .xls (only to describe them; the bytes are stored either way)
           python3 tools/pinarch.py export pinnacle-closes.json
           python3 tools/tdarch.py daily pinnacle-closes.json
           python3 tools/tdarch.py counts --record daily
