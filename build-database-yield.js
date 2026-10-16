@@ -71,7 +71,7 @@ const BASELINES_OUT = process.env.DB_YIELD_OUT_DIR ? path.join(OUT_DIR, 'tour-ba
 const FEED = process.env.DB_YIELD_FEED || path.join(__dirname, 'pinnacle-archive-td.csv');
 // --- Pinnacle (approx.) (founder ruling 2026-10-16) — optional feed ----------------------------------------------
 // written every pipeline run by `tools/tdarch.py approx-feed` from the historical archive's snapshot table: api-tennis's
-// stored Pinnacle price for an ATP main-draw match of 13 Jan - 12 Apr 2026 with no Tennis-Data Pinnacle pair. A SNAPSHOT
+// stored Pinnacle price for an ATP main-draw match of 13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle pair. A SNAPSHOT
 // (no timestamp), never a close: book index 2, its own name. Order per row: Tennis-Data Pinnacle > our archive's close
 // (the td-feed override) > Pinnacle (approx.) > Bet365. No file = no row on book 2 (byte-identical to before).
 const APPROX_FEED = process.env.DB_YIELD_APPROX || path.join(__dirname, 'pinnacle-approx.csv');
@@ -138,6 +138,11 @@ const tournaments = [];
 const idxOf = (arr, v) => { let i = arr.indexOf(v); if (i < 0) { i = arr.length; arr.push(v); } return i; };
 
 const BOOKS = ['Pinnacle', 'Bet365', 'Pinnacle (approx.)']; // idx 0,1,2 (2 = a snapshot, never a close: founder 2026-10-16)
+// Founder ruling 2026-10-16 (round 3, item 1): OUR Pinnacle closes (the permanent Pinnacle archive, fed in by td-feed)
+// carry their own codes so every surface names their source: 3 = 'from Pinnacle history', 4 = 'captured'. Both are
+// Pinnacle closing prices: every Pinnacle count, yield and figure counts them as Pinnacle (prices unchanged).
+const ARCH_BOOK = { 'from Pinnacle history': 3, captured: 4 };
+const isPinIdx = i => i === 0 || i === 3 || i === 4;
 
 const rows = [];      // [dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, dogPrice, favWon, bookIdx]
 const names = [];     // [winnerName, loserName] parallel to rows
@@ -155,7 +160,7 @@ const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, e
 // number is exactly what the footnote was criticised for.
 const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0 };
 const WINDOW_START = 2010; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
-const bookCount = { 0: 0, 1: 0, 2: 0 };
+const bookCount = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
 let dateMin = '99999999', dateMax = '00000000';
 // TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
 // The Database header says where the source's Pinnacle prices stop; it is never typed.
@@ -171,7 +176,7 @@ if (feedOn) {
   if (head.join(',') !== FEED_COLS.join(',')) { console.error(`${FEED}: unexpected header ${lines[0]}`); process.exit(1); }
   for (const l of lines.slice(1)) {
     const c = l.split(','); const r = {}; FEED_COLS.forEach((k, i) => { r[k] = c[i]; });
-    if (r.kind === 'override') feed.overrides.set([r.date, r.tournament, r.winner, r.loser].join('|'), [num(r.psw), num(r.psl)]);
+    if (r.kind === 'override') feed.overrides.set([r.date, r.tournament, r.winner, r.loser].join('|'), [num(r.psw), num(r.psl), r.label]);
     else if (r.kind === 'add') feed.adds.push(r);
   }
 }
@@ -203,13 +208,14 @@ function processLine(c, col, season, fromFeed) {
     // when both of its prices are valid, else Bet365 when both of its are; neither = dropped.
     let P = [num(c[col.psw]), num(c[col.psl])];
     const B365 = [num(c[col.b365w]), num(c[col.b365l])];
+    let archLabel = fromFeed ? (c[col.label] || '').trim() : null;   // our archive's own close: its label (3 / 4 below)
     if (!fromFeed && feedOn) {
       const fk = [(c[col.date] || '').trim(), (c[col.tournament] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()].join('|');
       const ov = feed.overrides.get(fk);
       if (ov) {
         feedUsedKeys.add(fk);
         if (validPrice(P[0]) && validPrice(P[1])) feed.tdHadPinnacle++;           // a Tennis-Data Pinnacle price is never replaced
-        else if (validPrice(ov[0]) && validPrice(ov[1])) { P = ov; feed.overridden++; }
+        else if (validPrice(ov[0]) && validPrice(ov[1])) { P = [ov[0], ov[1]]; archLabel = ov[2]; feed.overridden++; }
       }
     }
     let AP = null;                                                // Pinnacle (approx.): only where no Pinnacle close exists
@@ -223,12 +229,14 @@ function processLine(c, col, season, fromFeed) {
         else if (validPrice(ap[0]) && validPrice(ap[1])) { AP = ap; approx.applied++; }
       }
     }
-    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? 0 : AP ? 2 : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
+    const pinIdx = archLabel ? ARCH_BOOK[archLabel] : 0;
+    if (archLabel && pinIdx == null) { console.error(`archive feed: unknown label ${JSON.stringify(archLabel)}`); process.exit(1); }
+    const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? 2 : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
     const B_ = isRet ? retBucket : bucket;
     if (bookIdx < 0) { B_.noPrice++; return; }
-    const [pw, pl] = bookIdx === 0 ? P : bookIdx === 2 ? AP : B365;
+    const [pw, pl] = isPinIdx(bookIdx) ? P : bookIdx === 2 ? AP : B365;
 
     if (pw === pl) {                                            // exact tie: no favourite, no underdog
       B_.tie++;
@@ -336,7 +344,7 @@ function yields(pred) {
   return { n, fav: n ? favProfit / n : null, dog: n ? dogProfit / n : null };
 }
 const yAll = yields(null);
-const yPS = yields(r => r[8] === 0);
+const yPS = yields(r => isPinIdx(r[8]));
 const yB365 = yields(r => r[8] === 1);
 
 // --- TEN-384 · tour baselines (the profile's Market edge tiles and box) ------
@@ -362,7 +370,7 @@ function baselinesOf(list, books) {
   };
 }
 const dbList = rows.map(r => ({ fav: r[5], dog: r[6], won: r[7], book: r[8] }));
-const BOOK_COUNTS = { Pinnacle: bookCount[0], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] } : {}) };
+const BOOK_COUNTS = { Pinnacle: bookCount[0] + bookCount[3] + bookCount[4], Bet365: bookCount[1], ...(approxOn ? { [BOOKS[2]]: bookCount[2] } : {}) };
 const TB = baselinesOf(dbList, BOOK_COUNTS);
 
 // --- write artefacts --------------------------------------------------------
@@ -407,12 +415,12 @@ const meta = {
     rule: 'Exact price ties kept for the price join only (both players priced at the tie; overround > 1.15, pre-' +
       WINDOW_START + ' and unknown levels out); excluded from every favourite / underdog figure.',
     kept: tieRows.length, keptRetired: tieRaw.filter(x => x[11]).length,
-    byBook: { Pinnacle: tieRaw.filter(x => x[8] === 0).length, Bet365: tieRaw.filter(x => x[8] === 1).length },
+    byBook: { Pinnacle: tieRaw.filter(x => isPinIdx(x[8])).length, Bet365: tieRaw.filter(x => x[8] === 1).length },
   },
   ...(approxOn ? { approx: {
     file: path.basename(APPROX_FEED), book: BOOKS[2], hover: APPROX_HOVER,
     rule: 'api-tennis\'s stored Pinnacle price (a snapshot: no timestamp, not a confirmed close) for an ATP main-draw match of ' +
-      '13 Jan - 12 Apr 2026 with no Tennis-Data Pinnacle close and no close in our Pinnacle archive; Bet365 where api-tennis has no pair.',
+      '13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle close and no close in our Pinnacle archive; Bet365 where api-tennis has no pair.',
     rows: approx.rows, applied: approx.applied, tdHadPinnacle: approx.tdHadPinnacle, archiveFirst: approx.archiveFirst, unmatched: approx.unmatched,
   } } : {}),
   ...(feedOn ? { archiveFeed: {
@@ -422,6 +430,9 @@ const meta = {
       'A Tennis-Data Pinnacle price is never replaced.',
     overridden: feed.overridden, tdHadPinnacle: feed.tdHadPinnacle, overrideUnmatched: feed.overrideUnmatched,
     added: feed.added, addedRetired: feed.addedRetired, addedDropped: feed.addedDropped,
+    // founder 2026-10-16 (round 3, item 1): the Database rows priced on our archive's closes, by their own code / label
+    bookCodes: { 3: 'from Pinnacle history', 4: 'captured' },
+    rowsByLabel: { 'from Pinnacle history': bookCount[3], captured: bookCount[4] },
   } } : {}),
   levels, surfaces, rounds, tournaments,
   yieldOverall: {
@@ -492,7 +503,7 @@ console.log(`retired, flagged    : ${retBucket.priced} priced (retRows) of ${buc
   `[no price ${retBucket.noPrice}, tie ${retBucket.tie}, overround ${retBucket.overround}, pre-${WINDOW_START} ${retBucket.preWindow}, edge ${retBucket.edge}]  ` +
   `${retSum === bucket.retired ? 'OK' : 'MISMATCH!'}`);
 console.log(`date range          : ${dateMin} .. ${dateMax}`);
-console.log(`book split (used)   : Pinnacle ${bookCount[0]}  Bet365 ${bookCount[1]}` + (approxOn ? `  Pinnacle (approx.) ${bookCount[2]} (feed ${approx.rows}: applied ${approx.applied}, Tennis-Data Pinnacle kept ${approx.tdHadPinnacle}, archive close kept ${approx.archiveFirst}, unmatched ${approx.unmatched})` : ''));
+console.log(`book split (used)   : Pinnacle ${bookCount[0]} (Tennis-Data) + ${bookCount[3]} from Pinnacle history + ${bookCount[4]} captured  Bet365 ${bookCount[1]}` + (approxOn ? `  Pinnacle (approx.) ${bookCount[2]} (feed ${approx.rows}: applied ${approx.applied}, Tennis-Data Pinnacle kept ${approx.tdHadPinnacle}, archive close kept ${approx.archiveFirst}, unmatched ${approx.unmatched})` : ''));
 console.log(`yield ALL           : fav ${pct(yAll.fav)}  dog ${pct(yAll.dog)}  n=${yAll.n}`);
 console.log(`yield Pinnacle      : fav ${pct(yPS.fav)}  dog ${pct(yPS.dog)}  n=${yPS.n}`);
 console.log(`yield Bet365        : fav ${pct(yB365.fav)}  dog ${pct(yB365.dog)}  n=${yB365.n}`);

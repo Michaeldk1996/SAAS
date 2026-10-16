@@ -101,8 +101,9 @@ try:
         rr, nn = (base['retRows'], names['retNames']) if ret else (base['rows'], names['names'])
         return next((r for r, n in zip(rr, nn) if n == [w, l]), None)
     r_bor0, r_bor1 = row_of(base0, names0, 'Cilic M.', 'Borges N.'), row_of(base1, names1, 'Cilic M.', 'Borges N.')
-    check('control: without the feed the 1.91/1.91 tie is excluded; with it the row is priced on Pinnacle (book 0)',
-          r_bor0 is None and r_bor1 is not None and r_bor1[8] == 0 and r_bor1[5] == 1.79 and r_bor1[6] == 2.12, (r_bor0, r_bor1))
+    # founder 2026-10-16 (round 3, item 1): our archive's close carries its own code — 4 = captured (3 = from Pinnacle history)
+    check('control: without the feed the 1.91/1.91 tie is excluded; with it the row is priced on our captured Pinnacle close (book 4)',
+          r_bor0 is None and r_bor1 is not None and r_bor1[8] == 4 and r_bor1[5] == 1.79 and r_bor1[6] == 2.12, (r_bor0, r_bor1))
     r_sk1 = row_of(base1, names1, 'Skatov T.', 'De Jong J.')
     check('the unpriced Tennis-Data row is priced on our close (favourite De Jong won? no: Skatov won at 5.90)', r_sk1 and r_sk1[7] == 0 and r_sk1[6] == 5.9, r_sk1)
     r_mz = row_of(base1, names1, 'Zhou Y.', 'Musetti L.')
@@ -145,5 +146,29 @@ check('control: without the joins and the table, the api-tennis forms stand (the
       ('van Assche L.', 'Zhang Z.') in adds0 and ('Etcheverry T.M.', 'Carreno-Busta P.') in adds0 and ('Barrios B.', 'Nobody Q.') in adds0, adds0)
 check('ruling 5: the real archive name table parses (hand-checked names only, no "Surname, Given" forms)',
       P.parse_name_table(open(os.path.join(ROOT, 'build-odds-performance.js')).read()).get('Mpetshi G.') == '9222')
+# ruling 4 (founder 2026-10-16): a NEW event's details from tournament-surfaces.json + TOURNAMENT_CATALOG; best of 5 at Slams only
+NE = [dict(eventKey=41, date='2026-10-20', p1Name='A. New', p2Name='B. Event', p1=1.6, p2=2.4, label='from Pinnacle history',
+           apiTennis=api(tournament_name='ATP Newtown', tournament_key=999, tournament_round='ATP Newtown - 1/16-finals')),
+      dict(eventKey=42, date='2026-10-21', p1Name='C. New', p2Name='D. Event', p1=1.6, p2=2.4, label='from Pinnacle history',
+           apiTennis=api(tournament_name='ATP Newtown', tournament_key=999, tournament_round='ATP Newtown - 1/8-finals')),
+      dict(eventKey=43, date='2026-10-21', p1Name='E. Davis', p2Name='F. Cup', p1=1.6, p2=2.4, label='from Pinnacle history',
+           apiTennis=api(tournament_name='Davis Cup - World Group I', tournament_key=998, tournament_round='')),
+      dict(eventKey=44, date='2026-10-21', p1Name='G. Not', p2Name='H. Listed', p1=1.6, p2=2.4, label='from Pinnacle history',
+           apiTennis=api(tournament_name='ATP Nocatalog', tournament_key=997, tournament_round='ATP Nocatalog - Final'))]
+cat = {'Newtown': 'ATP 250', 'Davis Cup - World Group I': 'ATP 250'}
+surf = {'surfaces': {'999': 'hard', '998': 'hard', '997': 'clay'}, 'courts': {'999': 'indoor', '998': 'indoor', '997': 'outdoor'}}
+tdn = [dict(zip(H.split(','), l.split(','))) for l in ['2026-10-06,Shanghai Masters,Masters 1000,Outdoor,Hard,1st Round,3,Aaa A.,Bbb B.,1,2,Completed,1.5,2.6,,']]
+nf, nr = P.td_feed_rows(NE, tdn, {}, '2026-01-13', None, cat, surf)
+na = [r for r in nf if r['kind'] == 'add']
+check('ruling 4: a new event is added from our own tables (surface Hard, court Indoor, ATP250, best of 3; R32 = 1st Round of a 32 draw)',
+      len(na) == 2 and all(r['series'] == 'ATP250' and r['surface'] == 'Hard' and r['court'] == 'Indoor' and r['bestof'] == '3' for r in na)
+      and sorted(r['round'] for r in na) == ['1st Round', '2nd Round'] and nr['newEvent'] == 2, (na, nr))
+check('ruling 4: Davis Cup stays out; an event the catalog lacks is counted, never guessed', nr['noTdEdition'] == 2, nr)
+slam = [dict(NE[0], apiTennis=dict(NE[0]['apiTennis'], tournament_name='ATP Newslam'))]
+sf_, _ = P.td_feed_rows(slam, tdn, {}, '2026-01-13', None, {'Newslam': 'Grand Slam'}, surf)
+check('ruling 4: best of 5 at a Grand Slam only', [r['bestof'] for r in sf_ if r['kind'] == 'add'] == ['5'], sf_)
+n0, r0 = P.td_feed_rows(NE, tdn, {}, '2026-01-13')
+check('control: without the tables a new event is not added (the pre-ruling behaviour)', not [r for r in n0 if r['kind'] == 'add'] and r0['noTdEdition'] == 4, r0)
+check('ruling 4: the real catalog parses (Madrid ATP 1000, Wimbledon Grand Slam)', P.parse_catalog(open(os.path.join(ROOT, 'bsp-consult-dashboard.html')).read()).get('Madrid') == 'ATP 1000')
 print(f'\ntest-pinarch-tdfeed: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

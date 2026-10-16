@@ -401,7 +401,7 @@ jobs:
       # to the committed copy); a failed build keeps the committed files (atomic writes). The committed copies stay the
       # drop-in job's.
       # Founder ruling 2026-10-16 (ruling 1): Pinnacle (approx.) — api-tennis's stored Pinnacle snapshot for an ATP
-      # main-draw match of 13 Jan - 12 Apr 2026 with no Tennis-Data Pinnacle close, from the historical archive's snapshot
+      # main-draw match of 13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle close, from the historical archive's snapshot
       # table (a SELECT; its own source and label, never a close). build-database-yield.js prices such a row on it only
       # where neither Tennis-Data nor our Pinnacle archive holds a close; Bet365 stays the fallback. No snapshot rows yet
       # (the import has not run) = no feed file, said in the log; any other read failure is reported by the step-check.

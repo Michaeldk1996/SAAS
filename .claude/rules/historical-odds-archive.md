@@ -52,7 +52,8 @@ file we hold is irreplaceable.
   RPC `historical_snapshot_guard()`, read by `publish.yml` through `tools/histarch-guard.mjs`. Backed up daily with the four
   tables (`snapshot-full` / `scount-full`). **Test:** `tools/test-historical-archive-sql.py` (negative controls),
   `tools/test-histarch.mjs`.
-- **What it holds:** for every Tennis-Data ATP main-draw row of 13 Jan – 12 Apr 2026 with no Tennis-Data Pinnacle pair
+- **What it holds:** for every Tennis-Data ATP main-draw row of 13 Jan – 16 Sep 2026 (12 Apr until founder round 3 item 3)
+  with no Tennis-Data Pinnacle pair
   (walkovers out), api-tennis's stored `Pncl` match-winner pair from the ONE api-tennis ATP-singles fixture that joins it
   (day −1 … +2, both surnames; Home = the fixture's first player), oriented to the Tennis-Data winner; a missing side or a
   price below 1.01 is no row. Written only by `tools/tdarch.py approx-import` (`historical-archive.yml` mode
@@ -61,7 +62,24 @@ file we hold is irreplaceable.
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).
 
+## Same-day re-runs (founder ruling 2026-10-16, round 3 item 5)
+- A second daily run on a day already written skips that day's export / backup with the log line "day already written,
+  skipped" — **only when the day is complete**: its `manifest.json` reads and every file it lists is there with its sha256
+  (`pinarch.py day_written`, used by `tdarch.py` export + backup and `pinarch.py` backup). A day folder that is incomplete or
+  does not match its manifest is a real failure: the run fails, nothing is replaced. **Test:** `tools/test-tdarch.py` (skip
+  + two controls), `tools/test-pinarch-roundtrip.py`.
+
+## Drop-ins are copied to the ops repo (founder ruling 2026-10-16, round 3 item 6)
+- The drop-in path is unchanged (`odds-archive.md`). Every workbook dropped in is ALSO staged byte for byte
+  (`~/.stennisfy/odds-archive-dropin/ops-outbox/<stamp>-<name>`) and pushed by `tools/odds-archive-ops-copy.sh` to
+  `stennisfy-ops` → `tennis-data/originals/` (plain push; bytes ops already holds are not added twice; a name it holds
+  with other bytes is never replaced). The daily job above imports that folder. A failed push never blocks the refresh:
+  the copy stays in the outbox, is retried on every later run, and LAST-RUN.txt says so. **Test:**
+  `tools/test-dropin-ops-copy.sh`. *The installed launchd copy runs the script as it was installed:* re-run
+  `bash tools/odds-archive-dropin.sh --install` once after this lands.
+
 ## Known exposure (founder to rule)
-- **The `SAAS` repo is public**, and `odds-archive/*.csv` (every Tennis-Data season 2004–2026 with its Pinnacle and Bet365
+- **The `SAAS` repo is public** (founder 2026-10-16, round 3 item 6: no move, no history rewrite; on the pre-launch
+  security list, solved with authentication), and `odds-archive/*.csv` (every Tennis-Data season 2004–2026 with its Pinnacle and Bet365
   prices) is tracked in it. The repo check lists those 23 files by name (`REPO_KNOWN`) instead of failing on them, pending
   the founder's ruling on moving them to the private repo. Any OTHER odds CSV fails.

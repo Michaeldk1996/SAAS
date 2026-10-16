@@ -57,6 +57,20 @@ ex = P.export_rows([captured | {'match_date': '2026-10-09', 'p1_key': 2849, 'p2_
                     dict(add[0], id=6, match_date='2026-10-09', p1_key=2849, p2_key=9999)])
 check('export: one row per event in the captured file\'s shape, labelled', len(ex) == 1 and ex[0]['p1'] == 1.229 and ex[0]['label'] == 'from Pinnacle history'
       and ex[0]['p1Key'] == 2849 and ex[0]['date'] == '2026-10-09', ex)
+# founder ruling 2026-10-16 (round 3, item 2): a close cut at Oddspapi's trueStart ALONE (no live-flip) is held back — in
+# the archive, never exported as a close; the event takes any other close it has, else none
+base = dict(add[0], match_date='2026-04-20', p1_key=11, p2_key=22)
+nf = dict(base, id=20, event_key=7001, start_source=P.NO_FLIP_SOURCE)
+nf_cap = dict(captured, id=21, event_key=7002, match_date='2026-04-21', p1_key=11, p2_key=22, source='s', book='b')
+nf2 = dict(base, id=22, event_key=7002, start_source=P.NO_FLIP_SOURCE, supersedes=21)
+ok = dict(base, id=23, event_key=7003)
+exh = {r['eventKey']: r for r in P.export_rows([nf, nf_cap, nf2, ok])}
+check('hold-back: a trueStart-only close is never exported (its event has no close)', 7001 not in exh, sorted(exh))
+check('hold-back: an event whose trueStart-only close superseded a captured one exports the captured close', exh.get(7002, {}).get('label') == 'captured', exh.get(7002))
+check('control: a close cut at the live-flip / earlier-of rule is exported unchanged', exh.get(7003, {}).get('p1') == base['p1'], exh.get(7003))
+check('control: without the hold-back the trueStart-only close WOULD be the export (the rule is what removes it)',
+      7001 in P.current_closes([nf, nf_cap, nf2, ok]) and P.current_closes([nf, nf_cap, nf2, ok])[7002]['id'] == 22)
+check('hold-back: the held-back rows are still archive rows (nothing deleted or rewritten)', P.held_back(nf) and P.held_back(nf2) and not P.held_back(ok))
 # orientation through the event mapper
 fl = [{'event_key': 1, 'first_player': 'L. Musetti', 'second_player': 'Y. Zhou', 'first_live_seen_at': '2026-10-09T11:01:10Z',
        'last_not_live_seen_at': '2026-10-09T11:00:40Z', 'event_date': '2026-10-09', 'event_type_type': 'Atp Singles'},

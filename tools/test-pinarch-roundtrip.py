@@ -70,6 +70,18 @@ try:
     except FileExistsError:
         replaced = False
     check('a dated copy is never replaced (writing the same day again is refused)', not replaced)
+    # founder 2026-10-16 (round 3, item 5): the daily job's same-day check — a complete day is skipped, a broken one fails
+    check('day_written: a complete day reads as written (the re-run skips it)', P.day_written(os.path.join(out, P.BACKUP_DIR, '2026-10-14')))
+    check('day_written: no folder = not written', not P.day_written(os.path.join(out, P.BACKUP_DIR, '2026-10-30')))
+    import shutil as _sh
+    _sh.copytree(os.path.join(out, P.BACKUP_DIR, '2026-10-14'), os.path.join(out, 'broken'))
+    open(os.path.join(out, 'broken', m1['files'][0]['name']), 'ab').write(b'x')
+    try:
+        P.day_written(os.path.join(out, 'broken')); hid = True
+    except RuntimeError:
+        hid = False
+    check('control: a day folder whose file does not match its manifest is a real failure, never a skip', not hid)
+    _sh.rmtree(os.path.join(out, 'broken'))
     r3 = ins_raw('id3', body1.replace(b'id1', b'id3'))
     m2 = P.write_backup_day(out, '2026-10-15', [dump(P.RAW, after=m1['raw']['toId'])], dump(P.CLOSE), dump(P.COUNT), m1)
     check('day 2 holds only the row added since day 1', m2['raw']['rows'] == 1 and m2['raw']['fromId'] == r3 and m2['previous'] == '2026-10-14', m2['raw'])

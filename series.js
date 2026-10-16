@@ -191,6 +191,7 @@
         price: ok ? px.price : null,
         oppPrice: ok ? px.oppPrice : null,
         book: ok ? (BOOK_NAME[px.book] || px.book || null) : null,
+        src: ok ? (px.src || null) : null,   // hist / cap: our Pinnacle archive's close (founder 2026-10-16)
       };
     });
   }
@@ -910,7 +911,8 @@
               : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
               : '<span class="sr-mres">' + DASH + '</span>';
       var after = (r.price == null && typeof window.trPxAfterOf === 'function') ? window.trPxAfterOf(r.date) : null;
-      var title = r.book === BOOK_NAME.A ? r.book + ' · ' + (window.SF_APPROX_HOVER || 'not a confirmed close') : r.book ? r.book + ' closing' : after;
+      var title = r.book === BOOK_NAME.A ? r.book + ' · ' + (window.SF_APPROX_HOVER || 'not a confirmed close')
+        : r.book ? r.book + ' closing' + (r.src === 'hist' ? ' · from Pinnacle history' : r.src === 'cap' ? ' · captured' : '') : after;
       var pl = '';
       if (isResult && _pxState !== 'idle' && _pxState !== 'loading') {
         pl = DASH;

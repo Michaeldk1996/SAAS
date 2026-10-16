@@ -167,6 +167,7 @@ Full source detail, book ladder, card and close rules: `.claude/rules/odds.md`.
 - **Close = last price before the *actual* start** — never the scheduled time, which lands after the real start 58% of the time.
 - **Kibl timestamps are insert time, never book-post time.** Label them that way everywhere.
 - **Kibl has no history endpoint** — uncaptured prices are lost permanently. The archive must run daily.
+- **One task owns price sources.** Every change to which book, feed or cut prices a match goes through the price-source task only (founder 2026-10-16) — `.claude/rules/odds.md`.
 
 ---
 
