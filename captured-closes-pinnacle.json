@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-15T11:03:19.629Z",
+ "generatedAt": "2026-10-16T07:33:25.428Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "1f292ba825e7be54a7b3eb4ccc4e49ce13033658",
-  "at": "2026-10-15T10:52:43Z"
+  "commit": "871da5ec49bc05e9e6388ea73b9e653341b4e7e6",
+  "at": "2026-10-16T07:15:18Z"
  },
- "commitsScanned": 5146,
+ "commitsScanned": 5181,
  "lastRun": {
-  "from": "2026-10-15T10:03:21Z",
-  "snapshots": 6,
-  "added": 0,
-  "replaced": 1,
-  "series": 20,
-  "kept": 18,
+  "from": "2026-10-15T10:52:43Z",
+  "snapshots": 36,
+  "added": 1,
+  "replaced": 0,
+  "series": 21,
+  "kept": 19,
   "bySource": {
-   "api-tennis-live": 18
+   "api-tennis-live": 19
   },
   "byBook": {
-   "Pinnacle +30s": 18
+   "Pinnacle +30s": 19
   },
   "dropped": {
    "noStart": 2
@@ -8862,6 +8862,20 @@
    "p2": 2.029,
    "at": "2026-10-15T05:49:49.487Z",
    "trueStart": "2026-10-15T06:23:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171133,
+   "date": "2026-10-16",
+   "p1Key": 50323,
+   "p2Key": 430,
+   "p1Name": "R. Jodar",
+   "p2Name": "C. Ruud",
+   "p1": 1.775,
+   "p2": 2.17,
+   "at": "2026-10-16T04:52:14.579Z",
+   "trueStart": "2026-10-16T06:30:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
