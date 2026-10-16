@@ -1422,18 +1422,62 @@ def td_round(api_round, K):
     return None
 
 
-def td_feed_rows(export_rows, td_rows, alias, pin_stop):
+def td_spellings(export_rows, by_day, table_names=None):
+    """Founder ruling 2026-10-16 (ruling 5: "normalise the loser spellings through the existing alias table"): player key ->
+    the spelling Tennis-Data uses for him, so a match built after Tennis-Data's last day names a player exactly as his
+    earlier Tennis-Data rows do ("Zhang Zh.", "Etcheverry T.M.", "Van Assche L.", "Carreno Busta P."). Learned from every
+    archive close that joins exactly ONE Tennis-Data row (same day ±1, both surnames) — the latest such row wins; else the
+    ONE name the archive name table (build-odds-performance.js ARCHIVE_NAME_ALIASES) gives that key; else none (the caller
+    falls back to td_name). A key two Tennis-Data spellings share on the same latest date is left out (never a guess)."""
+    seen = {}
+    for e in export_rows:
+        day = dt.date.fromisoformat(e['date'])
+        cands = [r for k in (day - dt.timedelta(days=1), day, day + dt.timedelta(days=1)) for r in by_day.get(k.isoformat(), [])
+                 if (same_surname(r['winner'], e['p1Name']) and same_surname(r['loser'], e['p2Name']))
+                 or (same_surname(r['winner'], e['p2Name']) and same_surname(r['loser'], e['p1Name']))]
+        if len(cands) != 1:
+            continue
+        r = cands[0]
+        w1 = same_surname(r['winner'], e['p1Name'])
+        for key, nm in ((e.get('p1Key'), r['winner'] if w1 else r['loser']), (e.get('p2Key'), r['loser'] if w1 else r['winner'])):
+            if key is None:
+                continue
+            k = str(key)
+            cur = seen.get(k)
+            if cur is None or r['date'] > cur[0]:
+                seen[k] = (r['date'], {nm})
+            elif r['date'] == cur[0]:
+                cur[1].add(nm)
+    out = {k: next(iter(v[1])) for k, v in seen.items() if len(v[1]) == 1}
+    inv = {}
+    for nm, k in (table_names or {}).items():
+        inv.setdefault(str(k), set()).add(nm)
+    for k, v in inv.items():
+        if k not in out and len(v) == 1:
+            out[k] = next(iter(v))
+    return out
+
+
+def parse_name_table(js_text):
+    """build-odds-performance.js ARCHIVE_NAME_ALIASES: a Tennis-Data name -> the player key it names (hand-checked)."""
+    i = js_text.index('const ARCHIVE_NAME_ALIASES = {'); j = js_text.index('\n};', i)
+    return {n: k for n, k in re.findall(r"""^\s*'([^']+)':\s*'(\d+)'""", js_text[i:j], re.M) if ',' not in n}
+
+
+def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None):
     """Feed rows + a report. `override`: a Tennis-Data row (same day ±1, both surnames) with no Pinnacle pair gets our
     close (the row is named exactly as Tennis-Data wrote it). `add`: an ATP main-draw match after Tennis-Data's last day,
-    from an ARCHIVE close that carries its api-tennis result. Everything else is counted, never guessed."""
+    from an ARCHIVE close that carries its api-tennis result, its players spelled as Tennis-Data spells them
+    (td_spellings). Everything else is counted, never guessed."""
     td_last = max(r['date'] for r in td_rows) if td_rows else ''
     by_day = {}
     for r in td_rows:
         if r['date'] > pin_stop:
             by_day.setdefault(r['date'], []).append(r)
+    spell = td_spellings(export_rows, by_day, table_names)
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
                     'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
-                    'noTdEdition': 0, 'noResult': 0}
+                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0}
     for e in export_rows:
         rep['closes'] += 1
         d = e['date']
@@ -1476,8 +1520,11 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop):
             rep['qualifyingOrRound'] += 1; continue
         first_won = a['event_winner'] == 'First Player'
         w, l = (e['p1Name'], e['p2Name']) if first_won else (e['p2Name'], e['p1Name'])
+        wk, lk = (e.get('p1Key'), e.get('p2Key')) if first_won else (e.get('p2Key'), e.get('p1Key'))
+        wn, ln = spell.get(str(wk)) if wk is not None else None, spell.get(str(lk)) if lk is not None else None
+        rep['spelledAsTennisData'] += (wn is not None) + (ln is not None)
         out.append({'kind': 'add', 'date': d, 'tournament': meta['tournament'], 'series': meta['series'], 'court': meta['court'],
-                    'surface': meta['surface'], 'round': rnd, 'bestof': meta['bestof'], 'winner': td_name(w), 'loser': td_name(l),
+                    'surface': meta['surface'], 'round': rnd, 'bestof': meta['bestof'], 'winner': wn or td_name(w), 'loser': ln or td_name(l),
                     'comment': 'Retired' if st == 'Retired' else 'Completed', 'psw': e['p1'] if first_won else e['p2'],
                     'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
         rep['addRetired' if st == 'Retired' else 'add'] += 1
@@ -1497,7 +1544,8 @@ def cmd_td_feed(export_path, out_csv):
     td = read_td(os.path.join(ROOT_DIR, 'odds-archive'))
     alias = parse_alias(open(os.path.join(ROOT_DIR, 'build-tournament-market.js')).read())
     pin_stop = max((r['date'] for r in td if _vp(r.get('psw')) and _vp(r.get('psl'))), default='')
-    rows, rep = td_feed_rows(exp.get('rows') or [], td, alias, pin_stop)
+    names = parse_name_table(open(os.path.join(ROOT_DIR, 'build-odds-performance.js')).read())
+    rows, rep = td_feed_rows(exp.get('rows') or [], td, alias, pin_stop, names)
     for r in rows:
         if any(',' in str(r.get(k) or '') for k in FEED_COLS):
             die(f'a feed field holds a comma: {r}')

@@ -7,7 +7,7 @@
 // byName('A. Zverev') missed, and every publish failed for 7+ hours.
 //
 // This drives the REAL writers (buildMatchObject, buildUpcomingMatchObject,
-// buildOneProfile, fetchOddsForSport) with fetch stubbed, in three states —
+// buildOneProfile) with fetch stubbed, in three states —
 // Odds API data present, absent, and present with full-name forms — and asserts
 // the display names come out identical, in api-tennis form, in all three.
 'use strict';
@@ -112,20 +112,12 @@ const namesByKey = (m) => ({ [m.p1Key]: m.p1, [m.p2Key]: m.p2 });
      'the most recent fixture spelling wins over older, more frequent ones (string or numeric key)');
   ok(P.profileNameFromFixtures([F('X', 'Y', 1, 2, '2026-01-01')], 9) === null, 'no fixture of his own gives null (get_players fallback)');
 
-  // Odds API refusal: logged with its status and remaining credits, never fatal.
-  const logged = [];
-  const warn = console.warn;
-  console.warn = (...a) => { logged.push(a.join(' ')); };
-  let events, threw = null;
-  try { events = await P.fetchOddsForSport('tennis_atp_china_open'); } catch (e) { threw = e; }
-  try { await P.fetchActiveTennisSportKeys(); } catch (e) { threw = threw || e; }
-  console.warn = warn;
-  ok(!threw, 'an Odds API refusal never throws');
-  ok(Array.isArray(events) && events.length === 0, 'a refusal yields no Odds API prices');
-  ok(logged.some(l => /^Odds API unavailable: 401 \(tennis_atp_china_open, x-requests-remaining=0\)/.test(l)),
-     `a refusal is logged as "Odds API unavailable: 401" with remaining credits (${logged[0] || 'nothing logged'})`);
-  ok(logged.some(l => /^Odds API unavailable: 401 \(sports list/.test(l)), 'a refused sports list is logged the same way');
-  ok(oddsApiCalls === 2, 'both Odds API calls were really made (the stub was reached)');
+  // The Odds API is retired (founder 2026-10-16): the pipeline makes no Odds API call and carries no key.
+  const pipeSrc = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+  const wf = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'pipeline.yml'), 'utf8');
+  ok(!/the-odds-api\.com|ODDS_API_KEY|fetchOddsForSport|fetchAllTennisEvents/.test(pipeSrc), 'bsp-pipeline.js calls no Odds API and reads no key');
+  ok(!/ODDS_API_KEY/.test(wf), 'pipeline.yml passes no Odds API key');
+  ok(typeof P.fetchOddsForSport === 'undefined' && typeof P.fetchActiveTennisSportKeys === 'undefined', 'no Odds API fetcher is exported');
 
   // A dead pairing labelled 'Finished' (no winner, no game won) is never a card,
   // so it can never render a 0-0 final score. Real records from 2026-10-01.

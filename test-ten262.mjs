@@ -464,7 +464,7 @@ STALE.header = function (src) {
 // TEN-262 founder ruling (option A): the method note says "priced on", never "settled on".
 // Painted by the real renderFootnote.
 STALE.footnote = function (src) {
-  const code = ['el', 'esc', 'fmtInt'].map(f => fnSource(src, f)).join('\n') + '\n' +
+  const code = ['el', 'esc', 'fmtInt', 'dbApproxN', 'dbApproxHover'].map(f => fnSource(src, f)).join('\n') + '\n' +
     (() => { const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';"); return src.slice(i, src.indexOf('\n', i)); })() + '\n' +
     fnSource(src, 'renderFootnote');
   // TEN-384 (option "me") figures: the published store after the per-row join.
@@ -486,7 +486,7 @@ STALE.footnote = function (src) {
 // Second method-note fixture: other counts and another stop date, so a hard-coded
 // "38,830" or "13 Jan 2026" cannot pass.
 STALE.footnote2 = function (src) {
-  const code = ['el', 'esc', 'fmtInt'].map(f => fnSource(src, f)).join('\n') + '\n' +
+  const code = ['el', 'esc', 'fmtInt', 'dbApproxN', 'dbApproxHover'].map(f => fnSource(src, f)).join('\n') + '\n' +
     (() => { const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';"); return src.slice(i, src.indexOf('\n', i)); })() + '\n' +
     fnSource(src, 'renderFootnote');
   const M = { dateRange: ['2010-01-04', '2027-03-01'], books: ['Pinnacle', 'Bet365'], pinnacleLastPriced: '2027-01-10', used: 123, archiveRows: 456,

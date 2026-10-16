@@ -33,7 +33,8 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   the **Database join** — `database-yield.json` rows plus the retirements behind its flag (`DatabaseTab.priceRows()`),
   Pinnacle closing, else Bet365 closing, per match, through the Head to Head page's `h2hPriceJoin` — flat 1u, **a
   retirement settled on the official ATP result**. Never the closes shard (`match-closes/`), never the market-edge
-  shard's attribution or price. A row the join lacks (an exact price tie, no career-history row, no archive row) is `—`.
+  shard's attribution or price. A row the join lacks (no career-history row, no archive row) is `—`; an exact price tie is priced at the tie since the
+  founder ruling of 2026-10-16 (`tieRows`, `database.md` "Price join").
   The Head to Head page's Tournament card reads the same model, so both print the identical figure (Alcaraz, US Open
   +7.1u / 32 priced on 8 Oct 2026). The Match analysis Tournament tab (`trModelFor`) prices on the same join since the
   founder ruling of 2026-10-09 (card 7bc622d5; `modal-analysis.md` "Tournament tab → Prices"): for an event whose match

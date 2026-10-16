@@ -194,7 +194,10 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `supersedes` names the captured one; the captured row stays in the archive); (3) Tennis-Data 2026 Bet365 — a fallback
   only where no Pinnacle close exists. **Measured (back-fill, 15 Oct):** Oddspapi's `/v4/historical-odds` reaches back ~185 days — on
   15 Oct the 11–12 Apr fixtures already 404'd and 13 Apr answered — so 13 Jan – 12 Apr 2026 has no Oddspapi history (the
-  R8 Bet365 fallback prices those rows) and **13–30 Apr IS held** (the back-fill's `pinnacle+30` payloads). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
+  R8 Bet365 fallback prices those rows) and **13–30 Apr IS held** (the back-fill's `pinnacle+30` payloads). **Exception (founder ruling 2026-10-16): on the Database join, an ATP main-draw match of 13 Jan – 12 Apr
+  2026 with no Pinnacle close is priced on "Pinnacle (approx.)" — api-tennis's stored `Pncl` price, a SNAPSHOT with its own
+  label and hover ("Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close") — before Bet365
+  (`historical-odds-archive.md`, `database.md`).** **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
   timestamps; measured 2 decimals) — a cross-check only.
 - **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before the EARLIER of our live-flip
   start and Oddspapi's `trueStartTime`** (founder ruling 2026-10-14, after the start-time check: api-tennis flagged a match

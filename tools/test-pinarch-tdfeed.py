@@ -121,5 +121,29 @@ try:
     check('dateRange runs to the newest added match', m1['dateRange'][1] == '2026-10-09', m1['dateRange'])
 finally:
     shutil.rmtree(tmp, ignore_errors=True)
+# ruling 5 (founder 2026-10-16): an added match spells its players as their earlier Tennis-Data rows do
+TDS = [dict(zip(H.split(','), l.split(','))) for l in [
+    '2026-09-01,US Open,Grand Slam,Outdoor,Hard,1st Round,5,Zhang Zh.,Van Assche L.,1,2,Completed,1.5,2.6,,',
+    '2026-09-02,US Open,Grand Slam,Outdoor,Hard,2nd Round,5,Etcheverry T.M.,Carreno Busta P.,1,2,Completed,1.5,2.6,,',
+    '2025-10-05,Shanghai Masters,Masters 1000,Outdoor,Hard,1st Round,3,Aaa A.,Bbb B.,1,2,Completed,1.5,2.6,1.52,2.7',
+    '2025-10-07,Shanghai Masters,Masters 1000,Outdoor,Hard,4th Round,3,Aaa A.,Ccc C.,1,2,Completed,1.5,2.6,1.52,2.7']]
+ES = [{'eventKey': 31, 'date': '2026-09-01', 'p1Name': 'Z. Zhang', 'p2Name': 'L. van Assche', 'p1Key': 590, 'p2Key': 3001, 'p1': 1.5, 'p2': 2.6, 'label': 'captured'},
+      {'eventKey': 32, 'date': '2026-09-02', 'p1Name': 'T. M. Etcheverry', 'p2Name': 'P. Carreno-Busta', 'p1Key': 3002, 'p2Key': 3003, 'p1': 1.5, 'p2': 2.6, 'label': 'captured'},
+      {'eventKey': 33, 'date': '2026-10-09', 'p1Name': 'L. van Assche', 'p2Name': 'Z. Zhang', 'p1Key': 3001, 'p2Key': 590, 'p1': 1.9, 'p2': 1.9, 'label': 'from Pinnacle history', 'apiTennis': api()},
+      {'eventKey': 34, 'date': '2026-10-09', 'p1Name': 'P. Carreno-Busta', 'p2Name': 'T. M. Etcheverry', 'p1Key': 3003, 'p2Key': 3002, 'p1': 1.9, 'p2': 1.9, 'label': 'from Pinnacle history', 'apiTennis': api(event_winner='Second Player')},
+      {'eventKey': 35, 'date': '2026-10-09', 'p1Name': 'B. Barrios', 'p2Name': 'Q. Nobody', 'p1Key': 396, 'p2Key': 9999, 'p1': 1.9, 'p2': 1.9, 'label': 'from Pinnacle history', 'apiTennis': api()}]
+alias = {'Shanghai': ['Shanghai Masters']}
+fr, rp = P.td_feed_rows(ES, TDS, alias, '2026-01-13', {'Barrios Vera M.T.': '396'})
+adds = {(r['winner'], r['loser']) for r in fr if r['kind'] == 'add'}
+check('ruling 5: an added match spells both players as their Tennis-Data rows ("Zhang Zh.", "Van Assche L.", "Etcheverry T.M.", "Carreno Busta P.")',
+      ('Van Assche L.', 'Zhang Zh.') in adds and ('Etcheverry T.M.', 'Carreno Busta P.') in adds, adds)
+check('ruling 5: a player with no Tennis-Data row of his own takes the ONE name the archive name table gives his key, else td_name',
+      ('Barrios Vera M.T.', 'Nobody Q.') in adds, adds)
+fr0, _ = P.td_feed_rows(ES[2:], TDS, alias, '2026-01-13')
+adds0 = {(r['winner'], r['loser']) for r in fr0 if r['kind'] == 'add'}
+check('control: without the joins and the table, the api-tennis forms stand (the pre-fix spellings)',
+      ('van Assche L.', 'Zhang Z.') in adds0 and ('Etcheverry T.M.', 'Carreno-Busta P.') in adds0 and ('Barrios B.', 'Nobody Q.') in adds0, adds0)
+check('ruling 5: the real archive name table parses (hand-checked names only, no "Surname, Given" forms)',
+      P.parse_name_table(open(os.path.join(ROOT, 'build-odds-performance.js')).read()).get('Mpetshi G.') == '9222')
 print(f'\ntest-pinarch-tdfeed: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

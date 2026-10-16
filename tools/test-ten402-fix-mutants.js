@@ -71,8 +71,12 @@ const MUTANTS = [
     '    if (!k || !t || !k.s || !t.s || (k.i && t.i && k.i !== t.i)) return false;', '    if (!k || !t || !k.s || !t.s) return false;'],
   // ---- founder ruling 2026-10-08 (card 01102d24): one join, retirements settled on the ATP result
   ['ruling 2026-10-08: the join drops the retirements behind the store\'s flag (Cincinnati 2025 F a dash again)',
-    '    return { rows: base.rows.concat(rr), names: nm.names.concat(rn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };',
-    '    return { rows: base.rows, names: nm.names, meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };'],
+    '    return { rows: base.rows.concat(rr, tr), names: nm.names.concat(rn, tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };',
+    '    return { rows: base.rows.concat(tr), names: nm.names.concat(tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };'],
+  // ---- founder ruling 2026-10-16 (ruling 3): exact ties kept for the join only
+  ['ruling 2026-10-16: the join drops the kept ties (a tied meeting a dash again)',
+    '    return { rows: base.rows.concat(rr, tr), names: nm.names.concat(rn, tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };',
+    '    return { rows: base.rows.concat(rr), names: nm.names.concat(rn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };'],
   ['ruling 2026-10-08: the Backing tile counts only the completed rows (tile N ≠ the ledger\'s priced rows)',
     '    const np = P.priced.length, units = P.units;', '    const np = P.priced.filter(r => !r.ret).length, units = P.units;'],
   ['ruling 2026-10-08: the Tournament panel prices its rows a second time',

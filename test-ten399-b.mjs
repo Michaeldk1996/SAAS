@@ -197,7 +197,7 @@ function checkTournRow(src) {
 // ---------------------------------------------------------------- Compare events
 const CMP_FNS = ['el', 'esc', 'yr', 'fmtP', 'fmtPct', 'fmtInt', 'median', 'agg', 'bands', 'filteredRows',
   'catalogEntryForNames', 'tournPicks', 'addTournPick', 'removeTournPick', 'tournCompareOn',
-  'tcSignCol', 'tcYield', 'tcUnits', 'tcProfit', 'renderCompare', 'poly', 'paintSeries', 'sampleKeep', 'smoothVals', 'tournLabelOf'];
+  'tcSignCol', 'tcYield', 'tcUnits', 'tcProfit', 'dbApproxN', 'dbApproxHover', 'dbApproxNote', 'renderCompare', 'poly', 'paintSeries', 'sampleKeep', 'smoothVals', 'tournLabelOf'];
 function cmpHarness(src, picks, st = {}) {
   const T = DATA.meta.tournaments;
   const catalog = picks.map(n => ({ label: n, names: [n] }));

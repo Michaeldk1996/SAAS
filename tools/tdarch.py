@@ -26,6 +26,10 @@ Commands
                             CSV export, backup; one commit, a plain push (env WORKFLOW_PAT)
   verify-export OPS_CHECKOUT the newest export: per-year counts = the archive's, unreachable from the site, sha256s match
   counts [--record JOB]     row counts + the guard; one historical_archive_count row
+  approx-import             Pinnacle (approx.) — founder ruling 2026-10-16: api-tennis's stored Pinnacle price for every ATP
+                            main-draw match of 13 Jan - 12 Apr 2026 with no Tennis-Data Pinnacle close, into the snapshot
+                            table (its own source and label, never a close); env API_TENNIS_KEY
+  approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js)
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
 import collections, csv, datetime as dt, glob, gzip, hashlib, io, json, os, re, subprocess, sys
 import importlib.util
@@ -36,7 +40,13 @@ _s = importlib.util.spec_from_file_location('pinarch', os.path.join(HERE, 'pinar
 P = importlib.util.module_from_spec(_s); _s.loader.exec_module(P)
 
 FILE, CLOSE, EXPORT, COUNT = 'historical_odds_file', 'historical_close', 'historical_odds_export', 'historical_archive_count'
-TABLES = (FILE, CLOSE, EXPORT, COUNT)
+SNAP, SNAPCOUNT = 'historical_snapshot', 'historical_snapshot_count'
+TABLES = (FILE, CLOSE, EXPORT, COUNT, SNAP, SNAPCOUNT)
+# Pinnacle (approx.), founder ruling 2026-10-16: a SNAPSHOT (api-tennis carries no time for its prices), never a close.
+APPROX_SOURCE, APPROX_LABEL = 'api-tennis Pinnacle', 'Pinnacle (approx.)'
+APPROX_FROM, APPROX_TO = '2026-01-13', '2026-04-12'
+APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close'
+APPROX_FEED_COLS = ['date', 'tournament', 'winner', 'loser', 'psw', 'psl', 'eventKey', 'snapshotId']
 FROM_YEAR = 2010
 EXPORT_DIR = 'closes-export'
 BACKUP_DIR = 'historical-archive'
@@ -428,8 +438,14 @@ def cmd_backup(ops):
     put('file-new.jsonl.gz', new_files)                                      # incremental: file rows are large
     man[FILE] = {'fromId': new_files[0]['id'] if new_files else None, 'toId': new_files[-1]['id'] if new_files else since,
                  'rows': len(new_files), 'cumulativeRows': ((prev.get(FILE) or {}).get('cumulativeRows') or 0) + len(new_files)}
-    for t, name in ((CLOSE, 'close-full.jsonl.gz'), (EXPORT, 'export-full.jsonl.gz'), (COUNT, 'count-full.jsonl.gz')):
-        rows = P.select_all(t, '*')
+    for t, name in ((CLOSE, 'close-full.jsonl.gz'), (EXPORT, 'export-full.jsonl.gz'), (COUNT, 'count-full.jsonl.gz'),
+                    (SNAP, 'snapshot-full.jsonl.gz'), (SNAPCOUNT, 'scount-full.jsonl.gz')):
+        try:
+            rows = P.select_all(t, '*')
+        except RuntimeError:
+            if t in (SNAP, SNAPCOUNT):                       # not installed yet: no file for it today (never a fake empty one)
+                print(f'::warning::backup: {t} unreadable (not installed yet?) — not backed up today'); continue
+            raise
         put(name, rows); man[t] = {'rows': len(rows)}
     man['files'] = files
     with open(os.path.join(d, 'manifest.json'), 'w') as fh:
@@ -447,7 +463,7 @@ def read_backups(ops):
             blob = open(os.path.join(base, day, f['name']), 'rb').read()
             if sha(blob) != f['sha256']:
                 raise ValueError(f'{day}/{f["name"]}: sha256 does not match its manifest — refusing to restore from it')
-            t = {'file': FILE, 'close': CLOSE, 'export': EXPORT, 'count': COUNT}[f['name'].split('-')[0]]
+            t = {'file': FILE, 'close': CLOSE, 'export': EXPORT, 'count': COUNT, 'snapshot': SNAP, 'scount': SNAPCOUNT}[f['name'].split('-')[0]]
             for line in gzip.decompress(blob).splitlines():
                 r = json.loads(line); rows[t][r['id']] = r
     return rows
@@ -468,7 +484,9 @@ def verify_exports(ops):
 
 def cmd_restore_check(ops):
     rows = read_backups(ops)
-    for t in (FILE, CLOSE):
+    for t in (FILE, CLOSE, SNAP):
+        if t == SNAP and not rows[t]:
+            print(f'### restore-check {t}: no backup holds it yet — not compared'); continue
         top = max(rows[t], default=0)
         live = {r['id'] for page in P.select_pages(t, 'id', page=1000) for r in page if r['id'] <= top}
         missing, extra = live - set(rows[t]), set(rows[t]) - live
@@ -582,6 +600,167 @@ def cmd_verify_export(ops, site='https://michaeldk1996.github.io/SAAS'):
 
 
 # ── guard ───────────────────────────────────────────────────────────────────────────────────────────────────────────
+# ── Pinnacle (approx.): api-tennis's stored Pinnacle snapshot, 13 Jan - 12 Apr 2026 ATP main draw ────────────────────
+def approx_targets(td_rows):
+    """Tennis-Data rows in the window with no Tennis-Data Pinnacle pair (a Tennis-Data close is never replaced), a played
+    match (walkovers out)."""
+    return [r for r in td_rows if APPROX_FROM <= r['date'] <= APPROX_TO and not (price(r.get('psw')) and price(r.get('psl')))
+            and 'walk' not in str(r.get('comment') or '').lower()]
+
+
+def approx_join(r, by_day):
+    """The ONE api-tennis ATP-singles fixture of a Tennis-Data row: dated the row's day -1 .. +2 (Tennis-Data dates some
+    rows at the event's start), both surnames, either orientation. Returns (fixture, winnerIsFirst) or (None, reason)."""
+    d = dt.date.fromisoformat(r['date']); c = []
+    for k in (d - dt.timedelta(days=1), d, d + dt.timedelta(days=1), d + dt.timedelta(days=2)):
+        for f in by_day.get(k.isoformat(), []):
+            a, b = f.get('event_first_player'), f.get('event_second_player')
+            if P.same_surname(r['winner'], a) and P.same_surname(r['loser'], b): c.append((f, True))
+            elif P.same_surname(r['winner'], b) and P.same_surname(r['loser'], a): c.append((f, False))
+    if len(c) == 1:
+        return c[0]
+    return None, ('two fixtures' if c else 'no fixture')
+
+
+def approx_rows(targets, by_day, odds_of, fetched_at):
+    """Snapshot rows (Home = the fixture's first player) + a report. A side missing or below 1.01 = no row (Bet365 stays
+    the fallback); nothing is filled from another book."""
+    rows, rep = [], collections.Counter()
+    for r in targets:
+        f, w = approx_join(r, by_day)
+        if f is None:
+            rep['join: ' + w] += 1; continue
+        ha = odds_of(f['event_key']) or {}
+        h, a = (ha.get('Home') or {}).get('Pncl'), (ha.get('Away') or {}).get('Pncl')
+        ph, pa = price(h), price(a)
+        if ph is None or pa is None:
+            rep['no Pinnacle pair on api-tennis'] += 1; continue
+        pw, pl = (ph, pa) if w else (pa, ph)
+        rows.append({'dedupe_key': '|'.join(str(x) for x in (APPROX_SOURCE, r['date'], r['tournament'], r['winner'], r['loser'], f['event_key'], pw, pl)),
+                     'source': APPROX_SOURCE, 'label': APPROX_LABEL, 'match_date': r['date'], 'tournament': r['tournament'],
+                     'round': r.get('round') or None, 'winner': r['winner'], 'loser': r['loser'], 'event_key': int(f['event_key']),
+                     'price_winner': pw, 'price_loser': pl, 'fetched_at': fetched_at,
+                     'detail': {'home': h, 'away': a, 'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
+                                'winnerIsFirst': w, 'apiTennisBook': 'Pncl', 'hover': APPROX_HOVER}})
+        rep['stored'] += 1
+    return rows, dict(rep)
+
+
+def snap_key(r):
+    return (str(r['match_date']), r['tournament'], r['winner'], r['loser'])
+
+
+def plan_snapshots(new_rows, held):
+    """A held dedupe_key adds nothing; a changed price for a held match is a new row that supersedes the old one."""
+    keys = {h['dedupe_key'] for h in held}
+    latest = {}
+    for h in sorted(held, key=lambda h: h['id']):
+        latest[snap_key(h)] = h['id']
+    return [dict(r, supersedes=latest[snap_key(r)]) if snap_key(r) in latest else r for r in new_rows if r['dedupe_key'] not in keys]
+
+
+def current_snapshots(rows):
+    sup = {r['supersedes'] for r in rows if r.get('supersedes')}
+    return sorted((r for r in rows if r['id'] not in sup), key=lambda r: (str(r['match_date']), r['tournament'], r['winner']))
+
+
+def approx_feed_rows(current):
+    return [{'date': str(r['match_date']), 'tournament': r['tournament'], 'winner': r['winner'], 'loser': r['loser'],
+             'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id']} for r in current]
+
+
+def _at(params):
+    import urllib.parse, urllib.request
+    u = 'https://api.api-tennis.com/tennis/?' + urllib.parse.urlencode({**params, 'APIkey': P.env('API_TENNIS_KEY')})
+    err = None
+    for i in range(3):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(u, headers={'User-Agent': 'stennisfy-tdarch'}), timeout=120) as r:
+                return json.loads(r.read())
+        except Exception as e:
+            err = e
+    raise RuntimeError(f'api-tennis {params.get("method")} failed 3 times: {err}')
+
+
+def cmd_approx_import():
+    import concurrent.futures as cf
+    td = [r for f in sorted(glob.glob(os.path.join(ROOT, 'odds-archive', '2026.csv'))) for r in csv.DictReader(open(f))]
+    targets = approx_targets(td)
+    d0, d1 = dt.date.fromisoformat(APPROX_FROM) - dt.timedelta(days=1), dt.date.fromisoformat(APPROX_TO) + dt.timedelta(days=2)
+    days = [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
+    by_day = collections.defaultdict(list)
+    def day(d):
+        j = _at({'method': 'get_fixtures', 'date_start': d, 'date_stop': d, 'timezone': 'UTC'})
+        if not isinstance(j.get('result'), list) and j.get('success') != 1:
+            raise RuntimeError(f'get_fixtures {d}: no result list ({str(j)[:200]})')
+        return j.get('result') or []
+    with cf.ThreadPoolExecutor(8) as ex:
+        for res in ex.map(day, days):
+            for f in res:
+                if f.get('event_type_type') == 'Atp Singles':
+                    by_day[f['event_date']].append(f)
+    if not by_day:
+        P.die('api-tennis returned no ATP singles fixture for the whole window: nothing written')
+    cache = {}
+    def odds(ek):
+        o = _at({'method': 'get_odds', 'match_key': ek}).get('result') or {}
+        return (o.get(str(ek)) or {}).get('Home/Away') or {}
+    joined = [(r, approx_join(r, by_day)) for r in targets]
+    eks = sorted({f['event_key'] for _, (f, _) in joined if f is not None})
+    with cf.ThreadPoolExecutor(12) as ex:
+        for ek, ha in zip(eks, ex.map(odds, eks)):
+            cache[ek] = ha
+    fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    rows, rep = approx_rows(targets, by_day, cache.get, fetched)
+    held = P.select_all(SNAP, 'id,dedupe_key,match_date,tournament,winner,loser,supersedes')
+    add = plan_snapshots(rows, held)
+    ids = []
+    for i in range(0, len(add), 500):
+        ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
+    month = collections.Counter(r['date'][:7] for r in targets)
+    got = collections.Counter(str(r['match_date'])[:7] for r in rows)
+    print('### approx-import', json.dumps({'window': [APPROX_FROM, APPROX_TO], 'targets': len(targets), 'report': rep, 'added': len(ids),
+                                           'corrections': sum(1 for r in add if r.get('supersedes')),
+                                           'perMonth': {m: f'{got[m]}/{month[m]}' for m in sorted(month)}}))
+    cmd_snapshot_counts('approx-import')
+
+
+def cmd_approx_feed(out_csv):
+    try:
+        held = P.select_all(SNAP, 'id,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes')
+    except RuntimeError as e:
+        if 'PGRST205' in str(e) or 'HTTP 404' in str(e):        # the snapshot table is not installed yet: no feed, said out loud
+            print(f'::warning::approx-feed: the snapshot table is not installed yet ({e}) — no feed file; Bet365 stays the fallback')
+            return
+        raise
+    cur = current_snapshots(held)
+    if not cur:
+        print('::warning::approx-feed: no snapshot rows yet (approx-import has not run) — no feed file; Bet365 stays the fallback')
+        return
+    rows = approx_feed_rows(cur)
+    for r in rows:
+        if any(',' in str(r[k]) for k in APPROX_FEED_COLS):
+            P.die(f'a feed field holds a comma: {r}')
+    tmp = out_csv + '.tmp'
+    with open(tmp, 'w') as fh:
+        fh.write(','.join(APPROX_FEED_COLS) + '\n')
+        for r in rows:
+            fh.write(','.join(str(r[k]) for k in APPROX_FEED_COLS) + '\n')
+    os.replace(tmp, out_csv)
+    print('### approx-feed', json.dumps({'rows': len(rows), 'file': out_csv}))
+
+
+def cmd_snapshot_counts(record=None):
+    _, g, _ = P.rest('POST', '/rest/v1/rpc/historical_snapshot_guard', {})
+    print('### snapshot guard', json.dumps(g))
+    if record:
+        row = {'job': record, 'snapshot_rows': g[SNAP]['rows'], 'detail': {'guardOk': g.get('ok')}}
+        P.insert(SNAPCOUNT, [row], 'id')
+    if not g.get('ok'):
+        P.die('historical snapshot guard NOT ok: ' + json.dumps(g))
+    return g
+
+
 def cmd_counts(record=None):
     _, g, _ = P.rest('POST', '/rest/v1/rpc/historical_archive_guard', {})
     print('### guard', json.dumps(g))
@@ -619,5 +798,11 @@ if __name__ == '__main__':
         cmd_verify_export(a[1])
     elif a[0] == 'counts':
         cmd_counts(a[a.index('--record') + 1] if '--record' in a else None)
+    elif a[0] == 'approx-import':
+        cmd_approx_import()
+    elif a[0] == 'approx-feed':
+        cmd_approx_feed(a[1])
+    elif a[0] == 'snapshot-counts':
+        cmd_snapshot_counts(a[a.index('--record') + 1] if '--record' in a else None)
     else:
         print(__doc__); sys.exit(2)
