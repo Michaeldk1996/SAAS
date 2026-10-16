@@ -48,7 +48,7 @@ const S = new Function('CORE', `
   function styleKey(n){ return n; }
   function ppStyleFor(n){ return STY[n] || null; }
   function formPanelHtml(){ return ''; } function ensureFormPanelTabs(){}
-  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); }
+  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); } function careerHistoryIdOf(){ return null; }   // TEN-437 D3: no shard id in these fixtures
   function openPlayerProfileFromMatch(){}
   function loadMatchStatsIndex(){ return Promise.resolve(new Set()); } function loadSetStatsShard(){ return Promise.resolve(null); } const _setStatsShards = {};
   function loadPlayerStyles(){ return Promise.resolve(); } const _careerHistoryShards = {};

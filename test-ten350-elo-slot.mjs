@@ -38,7 +38,7 @@ const HELPERS = ['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'pp
 const code = doc => `${doc}
   const playerProfiles = {};
   function formPanelHtml(){ return ''; } function ensureFormPanelTabs(){} function ensureFormRows(m){ return Promise.resolve(m); }
-  function loadCareerHistory(){ return Promise.resolve([]); } function ensureStyleMeetings(m){ return Promise.resolve(m); }
+  function loadCareerHistory(){ return Promise.resolve([]); } function careerHistoryIdOf(){ return null; } function ensureStyleMeetings(m){ return Promise.resolve(m); }
   function ensurePsMatrix(){ return Promise.resolve(); } function ppStyleFor(){ return null; } function psArchFor(){ return null; }
   function styleMeetRowsFor(){ return []; } function openPlayerProfileFromMatch(){} function aGoTab(){}
   const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
@@ -72,7 +72,9 @@ function h2hMatch() {
     { eventKey: 30, date: '2022-07-14', level: 'atp', tournament: 'Umag', round: '1/8-finals', won: true, result: '2 - 0', surface: 'hard', sets: [{ p: 6, o: 2 }, { p: 6, o: 2 }] }];
   return { id: 'upcoming-351', p1: 'H. Hurkacz', p2: 'A. Davidovich Fokina', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-09-29', h2h: null,
     _fhH2hData: true, _fhCloses: [null, null], p1RecentFormMatches: [], p2RecentFormMatches: [], _fhElo: hist,
-    _fhCh: [ch1, ch1.map(x => ({ eventKey: x.eventKey, date: x.date, won: !x.won }))] };
+    // TEN-437 D1: the Lyon final's event has its first main-draw round on file (p1's quarter-final v a third player)
+    _fhCh: [ch1.concat([{ eventKey: 11, date: '2025-05-29', level: 'atp', tournament: 'Lyon', round: '1/4-finals', won: true, result: '2 - 0', opponent: 'K. Other' }]),
+      ch1.map(x => ({ eventKey: x.eventKey, date: x.date, won: !x.won }))] };
 }
 // TEN-380 Q5 (founder 2026-10-03): no Elo in any match row (README §5 grid). The opponent's Elo at the match date lives
 // in the Form bar tooltip ("v Opponent · Elo N"), with the reason on hover when no snapshot qualifies.

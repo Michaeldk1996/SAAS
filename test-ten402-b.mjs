@@ -77,7 +77,7 @@ test('Data 1: ATP\'s record — Challenger / ITF and qualifying out; Laver Cup i
   const out =joinM(A, B, pairs.map(p => p[0]), pairs.map(p => p[1]), {}, [6]);
   assert.deepEqual(out.map(x => x.eventKey).sort(), [1], 'Laver Cup kept; the exhibition, Hopman Cup, CH, qualifying ×2 and the own board match dropped');
   assert.deepEqual(H2HCore.H2H_LEVELS, ['atp']);
-  assert.match(html, /const joined = H2HCore\.joinMeetings\(a, b, S\.chA, S\.chB, /, 'the page calls the one join');
+  assert.match(html, /const joined = H2HCore\.joinMeetings\(withId\(a\), withId\(b\), S\.chA, S\.chB, /, 'the page calls the one join');
 });
 
 test('Data 1: walkovers are not completed meetings; the record is counted by the A-side key file', () => {

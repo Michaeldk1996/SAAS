@@ -39,7 +39,7 @@ const S = new Function(`
     head: { appendChild(){} }, createElement(){ return { set textContent(v){} }; } };
   const playerProfiles = {};
   function formPanelHtml(){ return ''; } function ensureFormPanelTabs(){}
-  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); }
+  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); } function careerHistoryIdOf(){ return null; }   // TEN-437 D3: no shard id in these fixtures
   function ensureStyleMeetings(m){ return Promise.resolve(m); } function ensurePsMatrix(){ return Promise.resolve(); }
   function ppStyleFor(){ return null; } function psArchFor(){ return null; } function styleMeetRowsFor(){ return []; }
   function openPlayerProfileFromMatch(){} function aGoTab(){}
@@ -68,7 +68,9 @@ function fixture(specs, extra) {
   }
   return Object.assign({ id: 'fx-h2h-' + String.fromCharCode(97 + (EK % 26)), p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', surface: 'hard', date: '2026-09-01',
     h2h: { matches: list }, p1RecentFormMatches: form, p2RecentFormMatches: [], _fhH2hData: true,
-    _fhCh: [form.map(x => Object.assign({}, x, { level: 'atp' })).concat([{ date: '2019-01-01', level: 'atp' }]),
+    // TEN-437 D1: each word-round meeting's event has its first main-draw round on file (p1 v a third player, same day)
+    _fhCh: [form.map(x => Object.assign({}, x, { level: 'atp' })).concat([{ date: '2019-01-01', level: 'atp' }],
+      form.map(x => ({ date: x.date, tournament: x.tournament, round: '1/4-finals', level: 'atp', opponent: 'K. Other', won: true, result: '2 - 0', eventKey: x.eventKey + 100000 }))),
       form.map(x => Object.assign({}, x, { level: 'atp', opponent: 'J. Sinner', opponentKey: '1', won: !x.won,
         result: String(x.result).replace(/^(\d+) - (\d+)$/, '$2 - $1'), sets: x.sets.map(t => ({ p: t.o, o: t.p, pTb: t.oTb, oTb: t.pTb })) }))
         .concat([{ date: '2019-01-01', level: 'atp' }])], _fhCloses: [null, null] }, extra || {});

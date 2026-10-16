@@ -57,6 +57,7 @@ function sandbox() {
     function ensureFormPanelTabs(){}
     function ensureFormRows(m){ return Promise.resolve(m); }
     function loadCareerHistory(){ return Promise.resolve([]); }
+    function careerHistoryIdOf(){ return null; }   // TEN-437 D3: no shard id in these fixtures
     function ensureStyleMeetings(m){ return Promise.resolve(m); }
     function ensurePsMatrix(){ return Promise.resolve(); }
     function ppStyleFor(){ return null; }
@@ -319,6 +320,10 @@ function allLevels0() {
       { eventKey: 40, date: '2023-01-01', level: 'atp', tournament: 'Elsewhere', round: 'Final', won: true, result: '2 - 0', surface: 'hard' },
       { eventKey: 99, date: '2026-09-23', level: 'atp', tournament: 'Hangzhou', round: '1/16-finals', won: true, result: '2 - 0', surface: 'hard' },
       { eventKey: 50, date: '2024-06-24', level: 'atp', tournament: 'Wimbledon', round: 'Qualifying', won: true, result: '2 - 1', surface: 'grass' },
+      // TEN-437 D1: a word-round feed meeting ("Final") is main draw when the event's first main-draw round is on file —
+      // p1's own quarter-finals at Lyon and Elsewhere, against a third player (never a meeting)
+      { eventKey: 11, date: '2025-05-29', level: 'atp', tournament: 'Lyon', round: '1/4-finals', won: true, result: '2 - 0', surface: 'clay', opponent: 'K. Other' },
+      { eventKey: 41, date: '2022-12-29', level: 'atp', tournament: 'Elsewhere', round: '1/4-finals', won: true, result: '2 - 0', surface: 'hard', opponent: 'K. Other' },
     ], []] };
 }
 // p2's own rows of the same matches: same day, opposite result.
@@ -341,11 +346,12 @@ test('H2H meetings (TEN-437): ATP\'s record only — Challenger, ITF and qualify
 });
 test('a shared eventKey counts only when both rows are one match: same day, opposite results', () => {
   const m = allLevels();
-  m._fhCh[0].push({ eventKey: 60, date: '2021-05-01', level: 'atp', tournament: 'A', round: 'F', won: true, result: '2 - 0' },
+  const qfA = { eventKey: 61, date: '2021-04-28', level: 'atp', tournament: 'A', round: '1/4-finals', won: true, result: '2 - 0', opponent: 'K. Other' };   // D1 context
+  m._fhCh[0].push(qfA, { eventKey: 60, date: '2021-05-01', level: 'atp', tournament: 'A', round: 'F', won: true, result: '2 - 0' },
                   { eventKey: 70, date: '2021-06-01', level: 'atp', tournament: 'B', round: 'F', won: true, result: '2 - 0' });
   m._fhCh[1].push({ eventKey: 60, date: '2021-05-01', won: true }, { eventKey: 70, date: '2021-06-02', won: false });
   assert.deepEqual(S.fhH2hMeetingRows(m).map(x => String(x.eventKey)), ['10'], 'same result on both sides, or a different day → not a meeting');
-  const ok = allLevels(); ok._fhCh[0].push({ eventKey: 60, date: '2021-05-01', level: 'atp', tournament: 'A', round: 'F', won: true, result: '2 - 0' });
+  const ok = allLevels(); ok._fhCh[0].push(qfA, { eventKey: 60, date: '2021-05-01', level: 'atp', tournament: 'A', round: 'F', won: true, result: '2 - 0' });
   ok._fhCh[1].push({ eventKey: 60, date: '2021-05-01', won: false });
   assert.deepEqual(S.fhH2hMeetingRows(ok).map(x => String(x.eventKey)), ['60', '10'], 'control: mirrored rows are one meeting');
 });
@@ -643,6 +649,9 @@ test('H2H price header names the Bet365 fallback count; 0 priced reads the empty
   // TEN-437: the meetings are the two career histories (H2HCore.joinMeetings); the list above is p1's side of them.
   base._fhCh = [base.h2h.matches.map(x => ({ eventKey: x.eventKey, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface, level: 'atp',
     opponent: 'C. Alcaraz', won: x.p1Won, result: x.result })), base.h2h.matches.map(x => ({ eventKey: x.eventKey, date: x.date, won: !x.p1Won }))];
+  // TEN-437 D1: each final's event has its first main-draw round on file (p1's quarter-final v a third player)
+  base._fhCh[0].push(...base.h2h.matches.map(x => ({ eventKey: x.eventKey + 100, date: x.date.slice(0, 8) + String(+x.date.slice(8) - 2).padStart(2, '0'),
+    tournament: 'Umag', round: '1/4-finals', surface: 'clay', level: 'atp', opponent: 'K. Other', won: true, result: '2 - 0' })));
   const rows = [{ date: '2026-07-26', opp: 'Alcaraz C.', won: true, P: null, B: [1.8, 2.0], oppKey: '2' },
     { date: '2024-07-28', opp: 'Alcaraz C.', won: true, P: [1.9, 1.95], B: [1.85, 1.95], oppKey: '2' },
     { date: '2023-07-30', opp: 'Alcaraz C.', won: false, P: [2.3, 1.62], B: null, oppKey: '2' }];
@@ -668,6 +677,8 @@ function slicePipe(name) {
   let d = 0, i = PIPE.indexOf('{', st); for (; i < PIPE.length; i++) { if (PIPE[i] === '{') d++; else if (PIPE[i] === '}') { d--; if (!d) break; } }
   return PIPE.slice(st, i + 1);
 }
+// TEN-437 S2: buildH2HMatchList reads a fixture's surface through fixtureSurface (Olympic editions by year)
+const SURF_SRC = () => `${/const OLYMPIC_SURFACE_BY_YEAR = [^;]*;/.exec(PIPE)[0]}\n${slicePipe('olympicSurface')}\n${slicePipe('fixtureSurface')}`;
 const TYPES_SRC = /const H2H_EVENT_TYPES = new Set\(\[[^\]]*\]\);/.exec(PIPE);
 test('pipeline H2H: ATP, Challenger and ITF singles count; exhibitions, doubles and women do not', () => {
   assert.ok(TYPES_SRC, 'H2H_EVENT_TYPES not found');
@@ -677,7 +688,7 @@ test('pipeline H2H: ATP, Challenger and ITF singles count; exhibitions, doubles 
   assert.match(slicePipe('fetchH2H'), /\.filter\(m => H2H_EVENT_TYPES\.has\(m\.event_type_type\)\)/, 'fetchH2H filters on the set');
 });
 test('pipeline H2H: every meeting row carries its level (ATP / CH / ITF)', () => {
-  const P = new Function(`${slicePipe('h2hP1WasFirst')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('buildH2HMatchList')}\nreturn { buildH2HMatchList };`)();
+  const P = new Function(`${SURF_SRC()}\n${slicePipe('h2hP1WasFirst')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('buildH2HMatchList')}\nreturn { buildH2HMatchList };`)();
   const raw = (ek, type) => ({ event_key: ek, event_type_type: type, event_date: '2026-01-0' + ek, tournament_name: 'X', tournament_key: 1,
     event_first_player: 'J. Sinner', first_player_key: 1, event_second_player: 'C. Alcaraz', second_player_key: 2,
     event_winner: 'First Player', event_final_result: '2 - 0', event_qualification: 'False' });
@@ -686,7 +697,7 @@ test('pipeline H2H: every meeting row carries its level (ATP / CH / ITF)', () =>
 });
 // ── Founder rulings 2026-09-24 (comment eece3eda) ──
 // 5 · who won a meeting is decided by player key, never surname.
-const PK = () => new Function(`${slicePipe('lastName')}\n${slicePipe('h2hP1WasFirst')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('summarizeH2H')}\n${slicePipe('buildH2HMatchList')}\nreturn { summarizeH2H, buildH2HMatchList, h2hP1WasFirst };`)();
+const PK = () => new Function(`${SURF_SRC()}\n${slicePipe('lastName')}\n${slicePipe('h2hP1WasFirst')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('summarizeH2H')}\n${slicePipe('buildH2HMatchList')}\nreturn { summarizeH2H, buildH2HMatchList, h2hP1WasFirst };`)();
 test('pipeline H2H: two same-surname players (Zhizhen Zhang 590, Ze Zhang 36963) orient by player key', () => {
   const P = PK();
   // Zhizhen (590) v Ze (36963). Both print as "Z. Zhang": a surname rule reads every row as p1 = first player.

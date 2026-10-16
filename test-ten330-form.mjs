@@ -40,7 +40,7 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
   'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhRetNote', 'fhFormDataRows', 'fhSegStyle', 'fhSegTrack'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
-  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'FH_H2H_NOT_ATP_RECORD', 'FH_FORM_NOT_ATP_RECORD', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
+  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'FH_ATP_RECORD_NOT_COUNTED', 'FH_H2H_NOT_ATP_RECORD', 'FH_FORM_NOT_ATP_RECORD', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
