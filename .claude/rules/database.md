@@ -11,6 +11,23 @@ take styling from it, structure from the rules below.
 - **Test:** every row of `database-yield.json` is priced Pinnacle closing, else Bet365 closing, per match
   (`build-database-yield.js`, the same `pickBook` as Market edge). Tour = Favourites −1.78% · Underdogs −6.96% on
   40,972 matches (All −4.37% = the tour-baselines figure), measured 2026-10-07.
+- **Exact price ties behind a flag (founder ruling 2026-10-16: "Keep tied prices. Exclude them only from favourite/underdog
+  figures.").** A tie is no favourite and no underdog, so it stays out of `rows` (every Database figure, `tour-baselines.json`,
+  `tournament-market.json`; `meta.exclusions.exactTie` still counts it). The same build keeps every tie that passes the other
+  filters (overround, window, level) in `tieRows` / `tieNames` (same row shape, favWon 1; `meta.ties`: 222 = Pinnacle 175 +
+  Bet365 47, 5 of them retirements, measured 16 Oct 2026), read ONLY by the one price join (`dbPriceJoinRows`), which prices
+  both players at the tie. Before = after on every Database figure (rows and tour-baselines byte-identical). **Test:**
+  `test-ten402-b.mjs` "exact price ties ride BEHIND A FLAG" (controls: no Database row is a tie; a store without tieRows
+  joins as before; a names shard out of step never prices).
+- **Pinnacle (approx.) — book 2 (founder ruling 2026-10-16).** An ATP main-draw row of 13 Jan – 12 Apr 2026 with no
+  Tennis-Data Pinnacle pair and no close in our Pinnacle archive is priced on api-tennis's stored Pinnacle price
+  (`pinnacle-approx.csv`, `tools/tdarch.py approx-feed`, from the archive's snapshot table) — a SNAPSHOT, never a close:
+  `r[8] = 2`, `meta.books[2]` "Pinnacle (approx.)", its own count in `meta.bookCounts`; Bet365 where api-tennis has no pair.
+  Order per row: Tennis-Data Pinnacle > our archive's close > Pinnacle (approx.) > Bet365. The join reads it as book "A";
+  every hover on it is "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close" (`SF_APPROX_HOVER`), the
+  footnote, the chart note and the Player split name it with its count; no feed = nothing changes. *Known:* the header
+  sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries the
+  disclosure. Market edge / Form / H2H tab closes (`FH_BOOK_ORDER`) do not read it. **Test:** `tools/test-approx-pinnacle.mjs`.
 - **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
   (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
   in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of

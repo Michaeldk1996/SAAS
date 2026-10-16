@@ -6,8 +6,8 @@ name: BSP data pipeline
 # (Pages artifacts are ephemeral, so the 44 MB player-profiles.json does NOT
 # bloat git history — unlike committing it back every run would).
 #
-# SETUP REQUIRED (see AUTOMATION.md): add repo secrets ODDS_API_KEY and
-# API_TENNIS_KEY, and enable Pages (Settings → Pages → Source: GitHub Actions).
+# SETUP REQUIRED (see AUTOMATION.md): add the repo secret API_TENNIS_KEY
+# (The Odds API is retired, founder 2026-10-16), and enable Pages (Settings → Pages → Source: GitHub Actions).
 
 on:
   schedule:
@@ -286,7 +286,6 @@ jobs:
 
       - name: Run pipeline (with retry + health tracking)
         env:
-          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
           # Stage 4 of the Tennis Edge Model (h2h-model): pre-bakes the Claude AI
           # match summary into model-output.json. The engine (Stages 1-3) runs with
@@ -401,6 +400,21 @@ jobs:
       # No network calls. A failed feed leaves no feed file and the build is the Tennis-Data archive alone (byte-identical
       # to the committed copy); a failed build keeps the committed files (atomic writes). The committed copies stay the
       # drop-in job's.
+      # Founder ruling 2026-10-16 (ruling 1): Pinnacle (approx.) — api-tennis's stored Pinnacle snapshot for an ATP
+      # main-draw match of 13 Jan - 12 Apr 2026 with no Tennis-Data Pinnacle close, from the historical archive's snapshot
+      # table (a SELECT; its own source and label, never a close). build-database-yield.js prices such a row on it only
+      # where neither Tennis-Data nor our Pinnacle archive holds a close; Bet365 stays the fallback. No snapshot rows yet
+      # (the import has not run) = no feed file, said in the log; any other read failure is reported by the step-check.
+      - name: Export the Pinnacle (approx.) snapshots (best-effort)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          t0=$(date +%s); rc=0
+          rm -f pinnacle-approx.csv
+          python3 tools/tdarch.py approx-feed pinnacle-approx.csv || rc=$?
+          node tools/step-check.mjs --step "Export the Pinnacle (approx.) snapshots (best-effort)" --rc "$rc" --since "$t0"
+
       - name: Feed the archive's Pinnacle closes into the Database (best-effort)
         run: |
           t0=$(date +%s); rc=0

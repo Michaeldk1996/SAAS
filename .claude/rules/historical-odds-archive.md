@@ -45,6 +45,22 @@ file we hold is irreplaceable.
   equal the archive's; no export file answers 200 from the site; a restore from the backups reproduces every row and every
   export file's sha256.
 
+## Pinnacle (approx.) — snapshots, never closes (founder ruling 2026-10-16)
+- **Its own tables:** `historical_snapshot` (source `api-tennis Pinnacle`, label `Pinnacle (approx.)` — both enforced by a
+  CHECK, so a snapshot can never carry a close's source or label) + `historical_snapshot_count`; migration
+  `20261016150000_historical_snapshot.sql`, the same protections (SELECT + INSERT only, triggers, RLS) and their own guard
+  RPC `historical_snapshot_guard()`, read by `publish.yml` through `tools/histarch-guard.mjs`. Backed up daily with the four
+  tables (`snapshot-full` / `scount-full`). **Test:** `tools/test-historical-archive-sql.py` (negative controls),
+  `tools/test-histarch.mjs`.
+- **What it holds:** for every Tennis-Data ATP main-draw row of 13 Jan – 12 Apr 2026 with no Tennis-Data Pinnacle pair
+  (walkovers out), api-tennis's stored `Pncl` match-winner pair from the ONE api-tennis ATP-singles fixture that joins it
+  (day −1 … +2, both surnames; Home = the fixture's first player), oriented to the Tennis-Data winner; a missing side or a
+  price below 1.01 is no row. Written only by `tools/tdarch.py approx-import` (`historical-archive.yml` mode
+  `approx-import`); a changed snapshot is a new row whose `supersedes` names the old one. **Test:** `tools/test-tdarch.py`.
+- **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
+  close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
+  closes).
+
 ## Known exposure (founder to rule)
 - **The `SAAS` repo is public**, and `odds-archive/*.csv` (every Tennis-Data season 2004–2026 with its Pinnacle and Bet365
   prices) is tracked in it. The repo check lists those 23 files by name (`REPO_KNOWN`) instead of failing on them, pending

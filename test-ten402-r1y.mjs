@@ -81,9 +81,9 @@ test('fix 3 + TEN-437: a Bet365 meeting row carries the tab\'s "B" marker; one f
 test('fix 3: the Playing styles and Tournament ledgers mark no row either; each carries the footnote; the old "B = Bet365" line is gone', () => {
   const sty = slice('cStyleLedger'), tp = slice('cTourPanel'), tc = slice('tourneyCard');
   assert.match(sty, /hTitle: h2hPriceTitle\(q\), aTitle: h2hPriceTitle\(q\), hMark: '' \};/);
-  assert.match(sty, /\$\{maMatchRowsHtml\(groups, C_LED_OPTS\)\}\$\{more\}<\/div>\n\s*\$\{h2hPxNote\(\)\}/, 'under the Playing styles ledger');
+  assert.match(sty, /\$\{maMatchRowsHtml\(groups, C_LED_OPTS\)\}\$\{more\}<\/div>\n\s*\$\{h2hPxNote\('', px\)\}/, 'under the Playing styles ledger');
   assert.match(tp, /Object\.assign\(trRowData\(r\), \{ hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: '',/, 'trRowData\'s B is overridden on this page only');
-  assert.match(tp, /\$\{rows \? h2hPxNote\('padding:4px 14px 14px;'\) : ''\}/, 'under each Tournament ledger (none when the panel has no rows)');
+  assert.match(tp, /\$\{rows \? h2hPxNote\('padding:4px 14px 14px;', P\.all\) : ''\}/, 'under each Tournament ledger (none when the panel has no rows)');
   assert.ok(!/trSrcLine\(/.test(tc), 'the Tournament card no longer prints "Closing odds · … · B = Bet365"');
   // control: Match analysis's Tournament rows keep their B (the founder scoped the change to this page's ledgers)
   assert.match(slice('trRowData'), /hMark: r\.price != null && r\.book === 'B' \? 'B' : '',/);

@@ -6,16 +6,16 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verdict } from './histarch-guard.mjs';
+import { verdict, snapVerdict } from './histarch-guard.mjs';
 import { offenders, EXPORT_HEADER } from './no-odds-export-check.mjs';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 let passed = 0, failed = 0;
 const check = (name, ok, detail = '') => { if (ok) { passed++; console.log('  PASS ', name); } else { failed++; console.log('  FAIL ', name, '\n       ', String(detail).slice(-300)); } };
 
-const TABLES = ['historical_odds_file', 'historical_close', 'historical_odds_export', 'historical_archive_count'];
+const TABLES = ['historical_odds_file', 'historical_close', 'historical_odds_export', 'historical_archive_count', 'historical_snapshot_count', 'historical_snapshot'];
 const T = TABLES.join('|');
-const MIGRATION = 'supabase/migrations/20261016090000_historical_odds_archive.sql';
-const ALLOWED = new Set([MIGRATION, 'tools/tdarch.py', 'tools/histarch-guard.mjs', '.github/workflows/historical-archive.yml',
+const MIGRATIONS = new Set(['supabase/migrations/20261016090000_historical_odds_archive.sql', 'supabase/migrations/20261016150000_historical_snapshot.sql']);
+const ALLOWED = new Set([...MIGRATIONS, 'tools/tdarch.py', 'tools/histarch-guard.mjs', '.github/workflows/historical-archive.yml',
   'tools/test-histarch.mjs', 'tools/test-historical-archive-sql.py', 'tools/test-tdarch.py']);
 const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';
 export function faults(file, text) {
@@ -23,7 +23,7 @@ export function faults(file, text) {
   if (!t) return [];
   if (!ALLOWED.has(file) && !isDoc(file)) return [`${file} names ${t} but is not on the archive allow-list`];
   if (isDoc(file) || /^tools\/test-/.test(file)) return [];
-  const body = file === MIGRATION
+  const body = MIGRATIONS.has(file)
     ? text.split('\n').filter(l => !/before update or delete|before truncate|drop trigger if exists|tg_op|has_table_privilege|revoke all on|-- /i.test(l)).join('\n')
     : text;
   const rx = [
@@ -61,6 +61,14 @@ check('2. guard: fewer file rows than recorded → block', verdict(G({ historica
 check('2. guard: a dropped trigger → block', verdict(G({ historical_odds_export: { ...ok.historical_odds_export, triggers: false } })).block);
 check('2. guard: a write privilege → block', verdict(G({ historical_close: { ...ok.historical_close, privilegeFaults: ['service_role DELETE'] } })).block);
 check('2. guard: a missing table → block', verdict(G({ historical_odds_file: undefined })).block);
+// Pinnacle (approx.) snapshots (founder ruling 2026-10-16): the same guard covers their own tables
+const S = (o = {}) => ({ historical_snapshot: { rows: 750, triggers: true, rls: true, privilegeFaults: [] },
+  historical_snapshot_count: { rows: 2, triggers: true, rls: true, privilegeFaults: [] }, maxRecorded: { snapshot: 750 }, ok: true, ...o });
+check('2. snapshot guard: healthy → no block', !snapVerdict(S()).block && !snapVerdict(S()).skip);
+check('2. snapshot guard: fewer snapshots than recorded → block', snapVerdict(S({ historical_snapshot: { rows: 700, triggers: true, rls: true, privilegeFaults: [] } })).block);
+check('2. snapshot guard: a write privilege → block', snapVerdict(S({ historical_snapshot: { rows: 750, triggers: true, rls: true, privilegeFaults: ['service_role UPDATE'] } })).block);
+check('2. snapshot guard: a dropped trigger → block', snapVerdict(S({ historical_snapshot_count: { rows: 2, triggers: false, rls: true, privilegeFaults: [] } })).block);
+check('2. snapshot guard: no answer → SKIP, never a pass', snapVerdict(null).skip === true && snapVerdict(null).block === false);
 check('2. guard: no answer → SKIP, never a pass', verdict(null).skip === true && verdict(null).block === false);
 
 const site = { 'index.html': '<html>', 'database-yield.json': '{"rows":[]}', 'data/tournament-quotes.csv': 'event,speaker,year,quote\n',

@@ -2,7 +2,6 @@
  * BSP Consult — Data Pipeline (Odds + API-Tennis)
  * -----------------------------------------------------------------
  * Combines two real, tested sources:
- *   - The Odds API: live odds, best-price comparison (free tier)
  *   - API-Tennis.com: real fixtures with player keys, H2H history,
  *     and career/surface stats (trial key confirmed working)
  *
@@ -23,7 +22,6 @@
  * 1. Node 18+ (built-in fetch)
  * 2. npm install dotenv
  * 3. .env file:
- *      ODDS_API_KEY=your_odds_api_key
  *      API_TENNIS_KEY=your_api_tennis_key
  * 4. node bsp-pipeline.js
  */
@@ -60,79 +58,14 @@ function writeJsonAtomic(file, data, compact) {
   fs.renameSync(tmp, file);
 }
 
-const ODDS_API_KEY = process.env.ODDS_API_KEY;
-const ODDS_API_BASE = 'https://api.the-odds-api.com/v4';
-
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
 
 // =================================================================
-// ODDS API — fixtures + live odds (unchanged, already tested)
+// The Odds API — RETIRED (founder ruling 2026-10-16: "retire it. Remove the backup call and its key from the
+// pipeline"). It was a price backup only (TEN-371) and its credits ran out; every card is built from an api-tennis
+// fixture. buildMatchObject (an Odds API event + its fixture) stays exported for the TEN-371 name-spine test only.
 // =================================================================
-// TEN-371 (founder ruling 2026-10-01): The Odds API is a PRICE backup only. A
-// failure here is never fatal and never silent: it is logged as "Odds API
-// unavailable: <status>" with the remaining-credits header, and the run carries
-// on with no Odds API prices. It used to `return []` on a non-2xx, so a quota
-// refusal read as "Found 0 odds events" for the whole of September.
-function oddsApiRemaining(res) {
-  return (res && res.headers && typeof res.headers.get === 'function'
-    && res.headers.get('x-requests-remaining')) || 'n/a';
-}
-
-async function fetchActiveTennisSportKeys() {
-  const url = `${ODDS_API_BASE}/sports?apiKey=${ODDS_API_KEY}`;
-  let res, sports;
-  try {
-    res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`Odds API unavailable: ${res.status} (sports list, x-requests-remaining=${oddsApiRemaining(res)}) — continuing with no Odds API prices.`);
-      return [];
-    }
-    sports = await res.json();
-  } catch (e) {
-    console.warn(`Odds API unavailable: ${e.message} (sports list) — continuing with no Odds API prices.`);
-    return [];
-  }
-  if (!Array.isArray(sports)) {
-    console.warn(`Odds API unavailable: ${res.status} with a non-list body (sports list) — continuing with no Odds API prices.`);
-    return [];
-  }
-  // ATP only — BSP Consult is focused on ATP, not WTA.
-  return sports.filter(s => s.key.startsWith('tennis_') && s.key.includes('atp') && s.active)
-    .map(s => ({ key: s.key, title: s.title }));
-}
-
-async function fetchOddsForSport(sportKey) {
-  const url = `${ODDS_API_BASE}/sports/${sportKey}/odds?apiKey=${ODDS_API_KEY}&regions=eu&markets=h2h&oddsFormat=decimal`;
-  let res, body;
-  try {
-    res = await fetch(url);
-    if (!res.ok) {
-      console.warn(`Odds API unavailable: ${res.status} (${sportKey}, x-requests-remaining=${oddsApiRemaining(res)}) — continuing with no Odds API prices.`);
-      return [];
-    }
-    body = await res.json();
-  } catch (e) {
-    console.warn(`Odds API unavailable: ${e.message} (${sportKey}) — continuing with no Odds API prices.`);
-    return [];
-  }
-  if (!Array.isArray(body)) {
-    console.warn(`Odds API unavailable: ${res.status} with a non-list body (${sportKey}) — continuing with no Odds API prices.`);
-    return [];
-  }
-  console.log(`Odds API ${sportKey}: HTTP ${res.status}, ${body.length} event(s), x-requests-remaining=${oddsApiRemaining(res)}.`);
-  return body;
-}
-
-async function fetchAllTennisEvents() {
-  const sports = await fetchActiveTennisSportKeys();
-  const allEvents = [];
-  for (const sport of sports) {
-    const events = await fetchOddsForSport(sport.key);
-    allEvents.push(...events);
-  }
-  return allEvents;
-}
 
 function impliedProbability(decimalOdds) {
   return decimalOdds ? 1 / decimalOdds : null;
@@ -3402,9 +3335,8 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
 // =================================================================
 // UPCOMING fixture-only matches — scheduled matches that exist in
 // API-Tennis get_fixtures but have NO betting-odds event yet (a bookmaker
-// hasn't opened markets). The odds-driven Today/Tomorrow tabs are built
-// only from fetchAllTennisEvents(), so these would otherwise never appear
-// until odds are published. This forward-looking sibling of
+// hasn't opened markets). Since The Odds API was retired (founder 2026-10-16)
+// every upcoming card is built here. This forward-looking sibling of
 // buildPastMatchObject() surfaces them the moment they're in the fixtures
 // feed (odds stay null → the UI renders them "coming soon", same as any
 // odds-driven match with no markets yet, see buildMatchObject). No
@@ -6188,19 +6120,10 @@ function writePlayerShardsAndIndex(allProfiles, tourAverage, wrongSchemaRejectio
 // =================================================================
 async function runPipeline() {
   const today = new Date().toISOString().split('T')[0];
-  // Fixture-fetch horizon must cover how far ahead the ODDS feed posts cards.
-  // fetchAllTennisEvents() has NO date window and returns ATP/Masters markets
-  // several days out, but a card can only be linked to a fixture fetched here.
-  // Too-narrow a window leaves an early card with no fixture match, so
-  // buildMatchObject hits `if (!fixture) return match` and the card renders with
-  // null p1Key/p2Key -> no player photo and no recent-form bars. 5 days keeps the
+  // Fixture-fetch horizon (unchanged when The Odds API was retired, 2026-10-16). 5 days keeps the
   // near-term board fully hydrated; api-tennis is on a paid/unmetered plan so the
   // few extra ATP-singles fixtures per day cost nothing.
   const rangeEnd = new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0];
-
-  console.log('Fetching odds events...');
-  const oddsEvents = await fetchAllTennisEvents();
-  console.log(`Found ${oddsEvents.length} odds events.`);
 
   console.log(`Fetching API-Tennis fixtures (${today} to ${rangeEnd}) for player keys / H2H / stats...`);
   const apiTennisFixtures = await fetchApiTennisFixtures(today, rangeEnd);
@@ -6226,22 +6149,8 @@ async function runPipeline() {
   const profileCount = Object.values(tournamentProfiles.profiles).filter(Boolean).length;
   console.log(`Tournament profiles ready: ${profileCount}/${Object.keys(tournamentProfiles.profiles).length} tournaments have historical data on record.`);
 
+  // The Odds API is retired (founder 2026-10-16): no odds-driven cards; every upcoming card is a fixture card below.
   const matches = [];
-  const oddsOnly = [];
-  for (const event of oddsEvents) {
-    const built = await buildMatchObject(event, apiTennisFixtures, surfaceMap, venueMap);
-    if (built && built.skipped) { oddsOnly.push(built); continue; }
-    matches.push(built);
-  }
-  // TEN-371: an Odds API event with no api-tennis fixture is left off the board
-  // (founder ruling 2026-10-01 — no names or IDs are invented for it). Named
-  // here so each one is visible in the build log.
-  console.log(`Odds API: ${oddsEvents.length} event(s) → ${matches.length} carded on an api-tennis fixture, `
-    + `${oddsOnly.length} left off (${oddsOnly.filter(s => s.skipped === 'no-fixture').length} no fixture, `
-    + `${oddsOnly.filter(s => s.skipped === 'undecidable').length} undecidable orientation).`);
-  for (const s of oddsOnly) {
-    console.log(`  not carded (${s.skipped}): ${s.oddsEvent.home_team} v ${s.oddsEvent.away_team} · ${s.oddsEvent.sport_title} · ${s.oddsEvent.commence_time}`);
-  }
 
   // Fixture-driven upcoming matches: scheduled fixtures in the today→+2-day
   // window (apiTennisFixtures, already fetched above) that have NO odds event
@@ -7839,7 +7748,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, fetchOddsForSport, fetchActiveTennisSportKeys, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

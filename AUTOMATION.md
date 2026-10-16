@@ -30,10 +30,9 @@ laptop being awake or online.
    git remote add origin git@github.com:<you>/<repo>.git
    git push -u origin main
    ```
-2. **Add the two API keys as repo secrets** (Settings → Secrets and variables →
+2. **Add the API key as a repo secret** (Settings → Secrets and variables →
    Actions → New repository secret):
-   - `ODDS_API_KEY`
-   - `API_TENNIS_KEY`
+   - `API_TENNIS_KEY` (The Odds API is retired, founder 2026-10-16: no `ODDS_API_KEY`)
    (These come from your local `.env`. `.env` itself is git-ignored — never
    commit it.)
 3. **Enable Pages**: Settings → Pages → Source → **GitHub Actions**.

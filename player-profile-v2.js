@@ -6182,7 +6182,7 @@
   }
   /** The step-3 sheet for one drill row: on its dated career-history match when the join met one, else its own. */
   function drawSheetPayload(p, r) {
-    var c = r.careerMatch, bk = r.price != null && r.oppPrice != null && (r.book === 'P' || r.book === 'B') ? r.book : null;
+    var c = r.careerMatch, bk = r.price != null && r.oppPrice != null && (r.book === 'P' || r.book === 'B' || r.book === 'A') ? r.book : null;
     var row;
     if (c) {
       var walkover = !!(c.walkover || c.wo);
@@ -9786,7 +9786,7 @@
   // the book ids the ledger rows carry -> the sheet's { book, src } (the host's ME_PROFILE_BOOK, plus the
   // ledger's own bet365 pre-match capture, which it labels 'bet365')
   var SHEET_BOOK = { pinnacle: ['P', 'td'], 'pinnacle-capture': ['P', 'cap'], 'bet365-archive': ['B', 'td'],
-    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'] };
+    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'pinnacle-approx': ['A', 'td'] };   // A: Pinnacle (approx.), a snapshot (founder 2026-10-16)
   function sheetPayload(p, ctx, id) {
     var x = sheetRowFor(p, ctx, id);
     if (!x) return null;

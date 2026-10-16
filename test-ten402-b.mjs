@@ -110,7 +110,7 @@ test('Data 2: Home = A\'s closing price, Away = B\'s, from the Database rows (bo
   assert.deepEqual([rows[1].price, rows[1].oppPrice, rows[1].book], [1.80, 2.00, 'B']);
   // founder r1 fix 3 (2026-10-09): no per-row Bet365 mark; one footnote under the ledger (executed in test-ten402-r1y.mjs)
   assert.match(h2hCardSrc, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: r\.price != null && r\.book === 'B' \? 'B' : '',/, 'the ledger row carries the B marker on a Bet365 close (TEN-437)');
-  assert.match(h2hCardSrc, /\$\{h2hPxNote\('margin-top:-8px;'\)\}/, 'one footnote under the Meetings ledger');
+  assert.match(h2hCardSrc, /\$\{h2hPxNote\('margin-top:-8px;', F\)\}/, 'one footnote under the Meetings ledger');
 });
 
 test('Data 2: a meeting with no matching Database row is a dash — wrong winner, outside the window, a round that contradicts, or two equally close', () => {
@@ -208,7 +208,7 @@ test('ruling 2026-10-08: the store keeps retirements BEHIND A FLAG — retRows /
   assert.equal(b.rows.length, b.meta.used, 'rows = the Database\'s used rows only');
   assert.ok(b.meta.exclusions.retired >= b.retRows.length, 'the Database still voids (and counts) every retirement');
   const J0 = dbPriceJoinRows(b, n);
-  assert.equal(J0.rows.length, b.rows.length + b.retRows.length); assert.equal(J0.nDb, b.rows.length);
+  assert.equal(J0.rows.length, b.rows.length + b.retRows.length + (b.tieRows || []).length); assert.equal(J0.nDb, b.rows.length);
   assert.equal(J0.rows[0], b.rows[0], 'the Database rows first, untouched');
   assert.throws(() => dbPriceJoinRows(b, { names: n.names, retNames: n.retNames.slice(1) }), /out of step/, 'a names shard out of step never prices');
   // every Database row is a Completed archive match; every flagged row a Retired one (spot-checked on the archive)
@@ -222,6 +222,25 @@ test('ruling 2026-10-08: the store keeps retirements BEHIND A FLAG — retRows /
   b.retRows.forEach((r, i) => { const k = isoOf(r[0]) + '|' + n.retNames[i][0] + '|' + n.retNames[i][1]; if (arch.has(k)) { seen++; assert.match(arch.get(k), /^(Retired|Rrtired)$/, k); } });
   assert.ok(seen > 100, 'spot check reached ' + seen + ' flagged rows');
   b.rows.forEach((r, i) => { const k = isoOf(r[0]) + '|' + n.names[i][0] + '|' + n.names[i][1]; if (arch.has(k)) assert.equal(arch.get(k), 'Completed', k); });
+});
+
+// Founder ruling 2026-10-16 (ruling 3): "Keep tied prices. Exclude them only from favourite/underdog figures."
+test('ruling 2026-10-16: exact price ties ride BEHIND A FLAG — tieRows / tieNames, priced at the tie in the join, in no Database row', () => {
+  const [b, n] = readStore();
+  assert.ok(Array.isArray(b.tieRows) && b.tieRows.length > 150 && b.tieRows.length === n.tieNames.length, 'tieRows / tieNames parallel');
+  assert.equal(b.meta.ties.kept, b.tieRows.length);
+  assert.ok(b.tieRows.every(r => r[5] === r[6]), 'every kept row is an exact tie');
+  assert.ok(!b.rows.some(r => r[5] === r[6]), 'control: no Database row is a tie (every favourite / underdog figure excludes them)');
+  assert.ok(b.meta.exclusions.exactTie >= b.tieRows.length, 'the Database still counts every tie as excluded');
+  const J = dbPriceJoinRows(b, n);
+  assert.equal(J.rows.length, b.rows.length + b.retRows.length + b.tieRows.length, 'the join holds the ties');
+  assert.equal(J.rows[J.rows.length - 1], b.tieRows[b.tieRows.length - 1], 'the ties last, after the retirements');
+  assert.throws(() => dbPriceJoinRows(b, { names: n.names, retNames: n.retNames, tieNames: n.tieNames.slice(1) }), /tieRows \/ tieNames out of step/, 'a tie names shard out of step never prices');
+  const J1 = dbPriceJoinRows({ rows: b.rows, retRows: b.retRows, meta: b.meta }, { names: n.names, retNames: n.retNames });
+  assert.equal(J1.rows.length, b.rows.length + b.retRows.length, 'control: a store without tieRows joins as before');
+  // Zverev v Ruud, Roland Garros 2023 SF (an exact 1.95 tie): priced in the join, never a Database row
+  const zi = n.tieNames.findIndex(x => x[0] === 'Ruud C.' && x[1] === 'Zverev A.');
+  assert.ok(zi >= 0 && b.tieRows[zi][0] === 20230609 && b.tieRows[zi][5] === 1.95, 'Ruud d. Zverev RG 2023 SF priced 1.95 / 1.95');
 });
 
 // ---------------------------------------------------------------- item 8: the match-stats sheet

@@ -88,6 +88,12 @@ its names shard and `tour-baselines.json` from `odds-archive/*.csv` plus the arc
   edition (`build-tournament-market.js` ALIAS), the round in Tennis-Data's words from that edition's numbered rounds; a
   retirement goes behind the flag (`retRows`). Challenger, qualifying, walkovers, a captured-only close, an event with no
   Tennis-Data edition and two candidate rows are counted in the td-feed report, never guessed;
+- **An added match names its players as Tennis-Data does** (founder ruling 2026-10-16, ruling 5: "normalise the loser
+  spellings through the existing alias table"): `pinarch.py td_spellings` — the spelling of the player's key in his latest
+  Tennis-Data row that one of our closes joins, else the ONE name the archive name table (`ARCHIVE_NAME_ALIASES`) gives his
+  key, else `td_name` ("Zhang Zh.", "Etcheverry T.M.", "Van Assche L.", "Carreno Busta P."). **Test:**
+  `tools/test-pinarch-tdfeed.py` "ruling 5" (control: the api-tennis forms without it).
+- **Exact ties and Pinnacle (approx.)** (founder rulings 2026-10-16): `database.md` "Price join".
 - `meta.pinnacleLastPriced` stays Tennis-Data's own last Pinnacle day; without the feed file the build is byte-identical
   to the Tennis-Data archive alone. The committed copies stay the drop-in job's. **Test:** `tools/test-pinarch-tdfeed.py`.
 - *Open (founder):* the header sentence "(the source's Pinnacle prices stop on 13 Jan 2026)" is still literally true of

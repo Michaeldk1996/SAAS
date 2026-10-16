@@ -56,7 +56,7 @@ const PAGE_MUTANTS = [
   ['ruling 4: the Bet365 hover back to the source label', "const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';", "const FH_B365_HOVER = 'Bet365 close · Tennis-Data';"],
   ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
   ['item 5: the page prices a retirement it voids, or a keyless meeting, from a captured close', "      if (r.ek == null || r.ret) return;\n", ""],
-  ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "function fhSrcTitle(r){ return r && r.book ?", "function fhSrcTitle(r){ return r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
+  ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "`${FH_BOOK.A} · ${SF_APPROX_HOVER}` : r && r.book ?", "`${FH_BOOK.A} · ${SF_APPROX_HOVER}` : r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
   ['item 5: the H2H page skips our captured Pinnacle (Database Bet365 kept)', "      h2hCapPinnacle(S.rows, a, b, S.clA, S.clB);\n", ""],
   ['item 5: the page step takes any captured book (a captured Bet365 over the Database)', "      if (!c || c.book !== 'P' || c.src !== 'cap') return;", "      if (!c || c.src !== 'cap') return;"],
   ['board exclusion: the tab counts its own match', "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],

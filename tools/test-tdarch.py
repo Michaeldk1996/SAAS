@@ -100,5 +100,40 @@ d = T.describe_workbook(b'\xd0\xcf\x11\xe0 old xls')
 T.P._load = _orig
 check('workbook: a reader that calls sys.exit is caught (the bytes are still stored; the description is a dash)',
       d['row_count'] is None and 'xlrd' in d.get('describeError', ''), d)
+# ── Pinnacle (approx.), founder ruling 2026-10-16 ──
+A1 = dict(zip(HEAD.strip().split(','), ['2026-02-03', 'Dallas', 'ATP500', 'Indoor', 'Hard', '1st Round', '3', 'Alpha A.', 'Beta B.', '1', '2', 'Completed', '1.5', '2.5', '', '', '', '', '', '', 'file']))
+A2 = dict(A1, date='2026-01-12')                                     # before the window
+A3 = dict(A1, date='2026-01-13', psw='1.52', psl='2.6')             # Tennis-Data has Pinnacle: never replaced
+A4 = dict(A1, date='2026-04-13')                                     # after the window
+A5 = dict(A1, date='2026-03-01', winner='Gamma C.', loser='Delta D.', comment='Walkover')
+A6 = dict(A1, date='2026-03-02', winner='Eps E.', loser='Zeta Z.')
+tg = T.approx_targets([A1, A2, A3, A4, A5, A6])
+check('approx: targets = the window 13 Jan – 12 Apr, no Tennis-Data Pinnacle pair, walkovers out',
+      [r['date'] for r in tg] == ['2026-02-03', '2026-03-02'], [r['date'] for r in tg])
+bd = {'2026-02-04': [{'event_key': 7, 'event_first_player': 'B. Beta', 'event_second_player': 'A. Alpha', 'event_date': '2026-02-04'}],
+      '2026-03-02': [{'event_key': 8, 'event_first_player': 'E. Eps', 'event_second_player': 'Z. Zeta', 'event_date': '2026-03-02'},
+                     {'event_key': 9, 'event_first_player': 'Z. Zeta', 'event_second_player': 'E. Eps', 'event_date': '2026-03-02'}]}
+check('approx: the one fixture, either orientation (winner second here)', T.approx_join(A1, bd)[0]['event_key'] == 7 and T.approx_join(A1, bd)[1] is False)
+check('control: two candidate fixtures join nothing (never a guess)', T.approx_join(A6, bd) == (None, 'two fixtures'))
+odds = {7: {'Home': {'Pncl': '2.40', 'bet365': '2.3'}, 'Away': {'Pncl': '1.62'}}}
+rows_, rep_ = T.approx_rows(tg, bd, odds.get, '2026-10-16T12:00:00+00:00')
+r0 = rows_[0] if rows_ else {}
+check('approx: Home = the first player, oriented to the Tennis-Data winner (Away 1.62 / Home 2.40)',
+      len(rows_) == 1 and r0['price_winner'] == 1.62 and r0['price_loser'] == 2.4 and r0['label'] == 'Pinnacle (approx.)' and r0['source'] == 'api-tennis Pinnacle', rows_)
+check('approx: the report counts every target (one stored, one two-fixture join)', rep_ == {'stored': 1, 'join: two fixtures': 1}, rep_)
+r1, rp1 = T.approx_rows(tg[:1], bd, {7: {'Home': {'Pncl': '2.40'}, 'Away': {'bet365': '1.6'}}}.get, 'x')
+check('approx: a missing Pinnacle side is no row (Bet365 stays the fallback; never another book)', r1 == [] and rp1 == {'no Pinnacle pair on api-tennis': 1}, (r1, rp1))
+r2, _ = T.approx_rows(tg[:1], bd, {7: {'Home': {'Pncl': '1.00'}, 'Away': {'Pncl': '9'}}}.get, 'x')
+check('approx: a price below 1.01 is no row', r2 == [])
+held = [dict(r0, id=1)]
+check('approx: a re-import adds nothing', T.plan_snapshots(rows_, held) == [])
+ch = T.approx_rows(tg[:1], bd, {7: {'Home': {'Pncl': '2.30'}, 'Away': {'Pncl': '1.65'}}}.get, 'x')[0]
+pl = T.plan_snapshots(ch, held)
+check('approx: a changed snapshot is ONE new row that supersedes the old one', len(pl) == 1 and pl[0]['supersedes'] == 1, pl)
+cur = T.current_snapshots(held + [dict(pl[0], id=2)])
+fr = T.approx_feed_rows(cur)
+check('approx: the feed carries the current snapshot only', len(fr) == 1 and fr[0]['psw'] == 1.65 and fr[0]['snapshotId'] == 2 and list(fr[0]) == T.APPROX_FEED_COLS, fr)
+check('approx: the hover is the ruled words', T.APPROX_HOVER == 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close')
+
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

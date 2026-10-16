@@ -173,7 +173,7 @@
   }
   // The price join's answer per match row object: { price, oppPrice, book } (book 'P' | 'B'), written by priceBoard().
   var PX = (typeof WeakMap === 'function') ? new WeakMap() : null;
-  var BOOK_NAME = { P: 'Pinnacle', B: 'bet365' };   // house style (TEN-384: "Pinnacle", "bet365")
+  var BOOK_NAME = { P: 'Pinnacle', B: 'bet365', A: 'Pinnacle (approx.)' };   // house style (TEN-384: "Pinnacle", "bet365"); A = a snapshot (founder 2026-10-16)
   function pxOf(m) { return (PX && m && typeof m === 'object' && PX.get(m)) || null; }
   function streakRows(st) {
     var ms = Array.isArray(st.matches) ? st.matches : [];
@@ -910,7 +910,7 @@
               : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
               : '<span class="sr-mres">' + DASH + '</span>';
       var after = (r.price == null && typeof window.trPxAfterOf === 'function') ? window.trPxAfterOf(r.date) : null;
-      var title = r.book ? r.book + ' closing' : after;
+      var title = r.book === BOOK_NAME.A ? r.book + ' · ' + (window.SF_APPROX_HOVER || 'not a confirmed close') : r.book ? r.book + ' closing' : after;
       var pl = '';
       if (isResult && _pxState !== 'idle' && _pxState !== 'loading') {
         pl = DASH;

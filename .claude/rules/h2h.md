@@ -63,7 +63,9 @@ no day work, checks or screenshots on this page until the founder reopens it.
   retirements the store keeps behind its flag (`retRows` / `retNames`, `dbPriceJoinRows`; same book rule, ties,
   overround > 1.15 and pre-2010 out). **A retirement is priced and settled on the official ATP result** (a win at the
   winner's close, a loss at the retiree's), never `—`: Sinner–Alcaraz Cincinnati 2025 F = Alcaraz 2.71 / Sinner 1.53, all
-  17 meetings priced. An exact price tie stays out (the Database drops it): `—`. Favourite = shorter price; yield = flat
+  17 meetings priced. **An exact price tie is priced** at the tie for both players (founder ruling 2026-10-16: "keep tied
+  prices, exclude them only from favourite/underdog figures" — the store's `tieRows` / `tieNames`, behind a flag like the
+  retirements; no Database figure reads them). Favourite = shorter price; yield = flat
   1u. No price → `—`. ONE join on the page (`h2hPriceJoin`, exported as `H2HPage.priceJoin` and shared with the player
   profile): the Head-to-head ledger, the Playing styles ledger and the Tournament ledger (each row's own opponent) —
   never the style-meetings shard's `oddsSelf` / `oddsOpp` nor the closes shard. **Test:** `test-ten402-b.mjs` "Data 2
@@ -105,7 +107,7 @@ no day work, checks or screenshots on this page until the founder reopens it.
     Tournament tab prices on the same join too (founder 2026-10-09, card 7bc622d5; `trModelFor` passes `trDbJoinPx`), so
     for an event whose match lists agree the three surfaces print one figure (`modal-analysis.md` "Tournament tab → Prices"). Measured 8 Oct 2026:
     Alcaraz, US Open +7.1u / 32 priced (+7.13u; the three retirements in: 2021 QF v Auger-Aliassime −1, 2022 R128 v Baez
-    +0.02, 2023 R128 v Koepfer +0.02); Zverev, Roland Garros +5.3u / 30 (the 2023 SF v Ruud is an exact tie at 1.95 → `—`;
+    +0.02, 2023 R128 v Koepfer +0.02); Zverev, Roland Garros +5.3u / 30 (the 2023 SF v Ruud, an exact tie at 1.95, was `—` then and is priced 1.95 / 1.95 since the 2026-10-16 tie ruling;
     the 2016–2021 editions resolve to no career-history row → `—`). Apply: sum flat 1u (win = price − 1, loss = −1) over
     the panel's rows that show a price; it must equal the tile and the profile's "Backing him here".
     **Test:** `test-ten402-c.mjs` "ruling 2026-10-08: the Tournament panel draws ONE model", `test-ten332-tournament.mjs`
