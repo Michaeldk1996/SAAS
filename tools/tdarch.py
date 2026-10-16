@@ -133,7 +133,8 @@ def describe_workbook(blob):
         ds = sorted(r['date'] for r in norm)
         return {'row_count': len(rows), 'first_date': ds[0] if ds else None, 'last_date': ds[-1] if ds else None,
                 'seasons': sorted({int(d[:4]) for d in ds})}
-    except Exception as e:                       # noqa: BLE001 — the bytes are stored either way; the description is a dash
+    except BaseException as e:                   # noqa: BLE001 — the bytes are stored either way; the description is a dash
+        # (BaseException: mirror-odds-archive.py's .xls reader exits when xlrd is missing — never the end of the run)
         return {'row_count': None, 'first_date': None, 'last_date': None, 'seasons': [], 'describeError': str(e)[:200]}
 
 
