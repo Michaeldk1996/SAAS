@@ -42,7 +42,7 @@ function sandbox(db, careers, blk) {
     const _careerHistoryShards = careers || {};
     let _h2hDbSt = db ? 'ready' : null, _h2hDb = db || null; function h2hEnsureDb() {}
     const FH_DASH = 'var(--text-label)', FH_DASHC = '—'; let _fh = null;
-    const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' }, FH_SRC = { td: 'Tennis-Data', cap: 'captured' };
+    const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' }, FH_SRC = { td: 'Tennis-Data', cap: 'captured' }, FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';
     function psTourMeta() { return null; }
     function fhEsc(s) { return escapeHtml(s == null ? '' : String(s)); }
     ${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK', '_h2hLedPx', 'H2H_PX_NOTE'].map(innerConst).join('')}

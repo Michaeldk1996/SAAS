@@ -103,7 +103,7 @@ const MODAL = new Function('ENV', `
   ${PS_TOUR_META_SRC}
   ${HELPERS.map(n => slice(n)).join('\n')}
   ${block()}
-  return { fhMeetings, fhH2hMeetingRows, fhEnsureH2hData, fhBuildH2H, fhStateFor };
+  return { fhMeetings, fhH2hMeetingRows, fhEnsureH2hData, fhBuildH2H, fhStateFor, fhSrcTitle, fhH2hSrcTitle, fhB365Tag, formRule: FH_FORM_NOT_ATP_RECORD };
 `);
 const ENV = { profiles: {}, loadCareerHistory: () => Promise.resolve([]), answered: () => true,
   ids: Object.fromEntries(G.pairs.flatMap(p => [[p.a.key, p.a.id], [p.b.key, p.b.id]]).filter(e => e[1])) };
@@ -128,7 +128,7 @@ test('UI: the H2H page builds its meetings with the same join and the same input
   assert.equal((html.match(/H2HCore\.joinMeetings\(/g) || []).length, 2, 'exactly two callers: the tab (fhH2hMeetingRows) and the page (h2hPairFor)');
   assert.match(slice('fhH2hMeetingRows'), /H2HCore\.joinMeetings\(sfH2hSide\(m\.p1Key, m\.p1\), sfH2hSide\(m\.p2Key, m\.p2\), ch\[0\], ch\[1\], sfH2hNkCount\(\), own\)/);
   const page = slice('h2hPairFor');
-  assert.match(page, /const ownF = fn\('sfH2hOwnEks'\), nkF = fn\('sfH2hNkCount'\);/);
+  assert.match(page, /const nkF = fn\('sfH2hNkCount'\);\n\s*const own = \[\];/, 'the page excludes no board match (ruling 2026-10-16)');
   assert.match(page, /H2HCore\.joinMeetings\(withId\(a\), withId\(b\), S\.chA, S\.chB, nkF \? nkF\(\) : NK_COUNT, own\)/);
   assert.match(page, /const withId = p => Object\.assign\(\{\}, p, \{ id: idF \? idF\(p\.key\) : null \}\);/, 'the page passes each side\'s TML/ATP id (D3)');
   assert.match(slice('sfH2hSide'), /id: key != null \? careerHistoryIdOf\(key\) : null/, 'the tab passes each side\'s TML/ATP id (D3)');
@@ -498,4 +498,168 @@ test('S2: an Olympic match carries its edition\'s surface — Tokyo 2021 hard, P
   assert.equal(P.fixtureSurface({ tournament_name: 'ATP Doha', event_date: '2026-02-18', tournament_key: 'y' }, new Map([['y', 'hard']])), 'hard');
   assert.match(readFileSync(PIPELINE_PATH, 'utf8'), /for \(const r of rows\) \{ const os = olympicSurface\(r\.tournament, r\.date\); if \(os\) r\.surface = os; \}/, 'the shard writer corrects cached rows');
   assert.deepEqual(goldenRecord(golden('S2: ')), { a: 10, b: 5, n: 15 }, 'Djokovic–Zverev (ATP 10–5)');
+});
+
+// ── 12 · board-match exclusion (founder ruling 2026-10-16, replacing 2026-09-24's) ─────────────────────────────────────
+// "Apply it only to the match's own analysis (match analysis tab + model). The H2H page and every other surface show the
+// full ATP count, including this week's match." Mutations: the tab counting its own match; the page or the model excluding.
+test('board-match exclusion: only the match\'s own analysis leaves it out — Medvedev–Tsitsipas 11–5 / 16 elsewhere', () => {
+  const p = G.pairs.find(x => x.a.short === 'D. Medvedev' && x.b.short === 'S. Tsitsipas');
+  // Shanghai 2026 R16, 14 Oct: Medvedev d. Tsitsipas 6-4 7-5 (eventKey 12170285; ATP counts it: 11–5 / 16 on 16 Oct)
+  const sh = (won, opp) => ({ date: '2026-10-14', tournament: 'Shanghai', round: '1/8-finals', opponent: opp, won, result: won ? '2 - 0' : '0 - 2', level: 'atp', eventKey: 12170285, src: 'fixtures' });
+  const chA = p.chA.concat([sh(true, 'S. Tsitsipas')]), chB = p.chB.concat([sh(false, 'D. Medvedev')]);
+  // the H2H page's call: no exclusion
+  assert.deepEqual(H2HCore.record(H2HCore.joinMeetings(p.a, p.b, chA, chB, p.nk, [])), { a: 11, b: 5, n: 16 }, 'H2H page');
+  // the match's own analysis: the tab's own code, opened on that match
+  const m = { id: 'past-12170285', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906, surface: 'hard', date: '2026-10-14',
+    _fhH2hData: true, _fhCh: [chA, chB], _fhCloses: [null, null], _fhElo: null, p1RecentFormMatches: [], p2RecentFormMatches: [] };
+  const E = S.fhMeetings(m).filter(r => !r.wo);
+  assert.deepEqual([E.length, E.filter(r => r.won).length], [15, 10], 'its own Match analysis: 10–5 / 15');
+  // another board match of the pair (a future meeting) counts Shanghai like every other surface
+  const m2 = Object.assign({}, m, { id: 'upcoming-99999999', _fhH2hData: true });
+  assert.equal(S.fhMeetings(m2).filter(r => !r.wo).length, 16, 'any other analysis: 16');
+  // the model: its own match out, nothing else
+  const P = require(PIPELINE_PATH);
+  const rd = k => (String(k) === '1093' ? chA : String(k) === '1906' ? chB : []);
+  const inp = { readShard: rd, readId: k => (String(k) === '1093' ? p.a.id : p.b.id), names: [p.a.full, p.b.full], nameByKey: {} };
+  assert.equal(P.modelH2hMatches({ id: 'past-12170285', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906 }, inp).length, 15, 'model, its own match');
+  assert.equal(P.modelH2hMatches({ id: 'upcoming-99999999', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906 }, inp).length, 16, 'model, another match');
+});
+
+// ── 13 · tab price pairing (founder ruling 2026-10-16: "the tab prices the same 34 meetings the page does") ─────────────
+// A keyless (archive) meeting takes a Tennis-Data close inside its window; meetings whose windows overlap form a group.
+// Different events pair in EVENT-DATE order and only one event's meetings in round order. Ordering the whole group by
+// round gave Roland Garros 2020 QF (start 28.09) Hamburg 2020 F's close (27.09): the result check failed and both dashed.
+// Mutations: the group ordered by round alone again; ATP / United Cup back in the window pairing.
+test('tab price pairing: Rublev–Tsitsipas Hamburg 2020 F 1.84 and Roland Garros 2020 QF 2.77, as the page prices them', () => {
+  const p = G.pairs.find(x => x.a.short === 'A. Rublev' && x.b.short === 'S. Tsitsipas');
+  // Rublev's Tennis-Data closes v Tsitsipas, as the live closes store reads them (fhParseCloses, 2026-10-16)
+  const closes = { rows: [
+    { date: '2020-09-27', opp: 'Tsitsipas S.', won: true, P: [1.84, 2.1], B: [1.7, 2.05], ret: false, oppKey: '1906' },
+    { date: '2020-10-07', opp: 'Tsitsipas S.', won: false, P: [2.77, 1.52], B: [2.5, 1.53], ret: false, oppKey: '1906' }], cap: [] };
+  const m = { id: 'upcoming-77', p1: 'A. Rublev', p2: 'S. Tsitsipas', p1Key: 2847, p2Key: 1906, surface: 'hard', date: '2026-10-14',
+    _fhH2hData: true, _fhCh: [p.chA, p.chB], _fhCloses: [closes, null], _fhElo: null, p1RecentFormMatches: [], p2RecentFormMatches: [] };
+  const E = S.fhMeetings(m).filter(r => /^2020-(09|10)/.test(r.date)).map(r => [r.date, r.round, r.price, r.oppPrice, r.book]);
+  assert.deepEqual(E, [['2020-09-21', 'F', 1.84, 2.1, 'P'], ['2020-09-28', 'QF', 2.77, 1.52, 'P']]);
+});
+test('tab price pairing: a team cup takes no window close; two events, one close, one winner stays a dash', () => {
+  const sh = rows => ({ rows, cap: [] });
+  const arc = (date, t, rd, won) => ({ date, tournament: t, round: rd, won, opponent: 'A. Zverev', level: 'atp', result: won ? '3 - 0' : '0 - 3' });
+  const mk = (chA, cl) => ({ id: 'upcoming-77', p1: 'N. Djokovic', p2: 'A. Zverev', p1Key: 11, p2Key: 22, surface: 'hard', date: '2026-10-14',
+    _fhH2hData: true, _fhCh: [chA, []], _fhCloses: [sh(cl), null], _fhElo: null, p1RecentFormMatches: [], p2RecentFormMatches: [] });
+  const px = m => S.fhMeetings(m).map(r => [r.date, r.price]);
+  const ao = close => ({ date: '2021-02-16', opp: 'Zverev A.', won: true, P: [1.68, 2.33], B: null, ret: false, oppKey: '22' });
+  // Djokovic–Zverev, ATP Cup 2021 (02.02) + Australian Open 2021 QF (08.02, played 16.02): the AO close is the AO meeting's
+  assert.deepEqual(px(mk([arc('2021-02-08', 'Australian Open', 'QF', true), arc('2021-02-02', 'ATP Cup', 'RR', true)], [ao()])),
+    [['2021-02-02', null], ['2021-02-08', 1.68]], 'ATP Cup dash, Australian Open priced');
+  // Cilic–Dimitrov shape: an Olympics meeting a week before a Masters SF, one close, the same winner — dates cannot say whose
+  assert.deepEqual(px(mk([arc('2021-02-08', 'Australian Open', 'QF', true), arc('2021-02-01', 'Melbourne Summer Set', 'R16', true)], [ao()])),
+    [['2021-02-01', null], ['2021-02-08', null]], 'both dash, never a guess');
+});
+
+// ── 14 · ATP's rules apply to H2H only; Form keeps its own list (founder 2026-10-16, correction of the same day) ──────
+// "ATP's rules apply to H2H only … ATP_RECORD_NOT_COUNTED is read by H2H only. Form keeps its current rules, unchanged …
+// pin Form to its own list, so the two can't silently merge." Golden rows from the live shards (2026-10-16): Fritz's Laver
+// Cup 2025 (ATP counts it: H2H in, Form out), Zhang's Asian Games 2023 and Vacherot's Davis Cup Group III 2021 (ATP leaves
+// them out: H2H out, Form in). Mutations: Form wired to the H2H list; the H2H list losing the Asian Games; the H2H join
+// reading a list of its own in the pipeline.
+const FRITZ_LC = ['2025-09-22', '2025-09-21'].map(date => ({ date, tournament: 'ATP Laver Cup', round: '', level: 'atp', won: true }));
+const ZHANG_AG = ['2023-09-30', '2023-09-28', '2023-09-27', '2023-09-26', '2023-09-25'].map(date => ({ date, tournament: 'Asian Games', level: 'atp', won: true }));
+const VACH_DC3 = ['2021-06-19', '2021-06-18', '2021-06-17', '2021-06-16'].map(date => ({ date, tournament: 'ATP Davis Cup - Group III', round: '', level: 'atp', won: true }));
+test('H2H counts Fritz\'s Laver Cup and not Zhang\'s Asian Games or Vacherot\'s Group III; Form counts the reverse', () => {
+  const P = require(PIPELINE_PATH);
+  const n = (L, rows) => rows.filter(r => !L.test(r.tournament)).length;
+  assert.deepEqual([FRITZ_LC, ZHANG_AG, VACH_DC3].map(r => n(H2HCore.ATP_RECORD_NOT_COUNTED, r)), [2, 0, 0], 'H2H: ATP\'s list');
+  assert.deepEqual([FRITZ_LC, ZHANG_AG, VACH_DC3].map(r => n(P.H2H_NOT_ATP_RECORD, r)), [2, 0, 0], 'pipeline H2H (h2hCountsInAtpRecord)');
+  assert.deepEqual([FRITZ_LC, ZHANG_AG, VACH_DC3].map(r => n(S.formRule, r)), [0, 5, 4], 'Form tab: its own list');
+  assert.deepEqual([FRITZ_LC, ZHANG_AG, VACH_DC3].map(r => n(P.FORM_NOT_ATP_RECORD, r)), [0, 5, 4], 'card / profile cap: its own list');
+  // the card's Recent form %: two losses + Fritz's Laver Cup wins = 0% (Laver Cup out); + Zhang's Asian Games wins = 71.4%
+  const loss = ['2025-10-01', '2025-09-30'].map(date => ({ date, tournament: 'Shanghai', level: 'atp', won: false }));
+  assert.equal(P.recentFormPct(loss.concat(FRITZ_LC)), 0);
+  assert.equal(P.recentFormPct(loss.concat(ZHANG_AG)), 71.4);
+});
+// The map (founder: "report the final map of which surface reads which list"):
+//   H2H — the meeting list on every screen (H2HCore.joinMeetings → inPopulation), the pipeline's h2hCountsInAtpRecord /
+//         H2H_NOT_ATP_RECORD, the model (modelH2hMatches → joinMeetings): h2h-core ATP_RECORD_NOT_COUNTED.
+//   Form — the Form tab + Key factors' Recent form (FH_FORM_NOT_ATP_RECORD), the card's Recent form % and the profile cap
+//         (FORM_NOT_ATP_RECORD), the profile ribbon / ledger (player-profile-v2.js), the matchup matrix
+//         (tools/build-matchup-matrix.js): one Form list, Laver Cup + exhibitions + Hopman Cup out.
+test('the list map: every H2H reader is h2h-core\'s ATP list; every Form reader is the one Form list, never the ATP one', () => {
+  const P = require(PIPELINE_PATH);
+  const PIPE = readFileSync(PIPELINE_PATH, 'utf8');
+  const atp = H2HCore.ATP_RECORD_NOT_COUNTED.source;
+  // H2H
+  assert.equal(H2HCore.H2H_NOT_COUNTED, H2HCore.ATP_RECORD_NOT_COUNTED, 'the join\'s list is the ATP list');
+  assert.equal(P.H2H_NOT_ATP_RECORD.source, atp, 'pipeline H2H');
+  assert.match(PIPE, /\nconst H2H_NOT_ATP_RECORD = require\('\.\/h2h-core\.js'\)\.ATP_RECORD_NOT_COUNTED;\n/, 'the pipeline reads it, holds no copy');
+  assert.ok(!/^(?!\s*\/\/).*asian games/im.test(html), 'the dashboard holds no H2H list of its own (H2HCore.joinMeetings applies it)');
+  // Form: one list, four readers, not the ATP one
+  const form = P.FORM_NOT_ATP_RECORD.source;
+  const lit = (f, re) => { const m = re.exec(readFileSync(join(HERE, f), 'utf8')); assert.ok(m, f + ': Form list not found'); return new RegExp(m[1], 'i').source; };
+  assert.equal(S.formRule.source, form, 'Form tab = card');
+  assert.equal(lit('player-profile-v2.js', /\n\s*var FORM_NOT_ATP_RECORD = \/(.*)\/i;\n/), form, 'profile = card');
+  assert.equal(lit('tools/build-matchup-matrix.js', /\nconst FORM_NOT_ATP_RECORD = \/(.*)\/i;\n/), form, 'matrix = card');
+  assert.notEqual(form, atp, 'Form is not the H2H list');
+  assert.ok(/laver cup/.test(form) && !/asian games|group \(iii/.test(form), 'Form: Laver Cup out (4 Oct), Asian Games / Group III in');
+  for (const f of ['player-profile-v2.js', 'tools/build-matchup-matrix.js'])
+    assert.ok(!/ATP_RECORD_NOT_COUNTED|H2HCore/.test(readFileSync(join(HERE, f), 'utf8')), f + ' reads the H2H list');
+  assert.match(PIPE, /\nconst FORM_NOT_ATP_RECORD = new RegExp\('laver cup\|' \+ FORM_EVENTS_NOT_COUNTED\.source, 'i'\);\n/, 'pipeline Form = its own base list');
+  assert.match(html, /\nconst FH_FORM_NOT_ATP_RECORD = new RegExp\('laver cup\|' \+ FH_FORM_EVENTS_NOT_COUNTED\.source, 'i'\);\n/, 'dashboard Form = its own base list');
+});
+// ── 15 · the Bet365 fallback's hover (founder ruling 2026-10-16, item 4) ─────────────────────────────────────────────────
+// "Keep the Bet365 closes for now, with the 'B' marker visible and the hover saying 'Bet365 closing odds, Pinnacle not
+// available'." Mutation: the old source-label hover back.
+test('a Bet365-priced meeting: "B" marker kept, hover "Bet365 closing odds, Pinnacle not available" (tab and page)', () => {
+  const HOVER = 'Bet365 closing odds, Pinnacle not available';
+  assert.equal(S.fhH2hSrcTitle({ book: 'B', src: 'td' }), HOVER, 'the H2H tab\'s price cells');
+  assert.match(S.fhB365Tag({ book: 'B', src: 'td' }, true), new RegExp(`title="${HOVER}"[^>]*>B365<`), 'the H2H tab\'s B365 tag');
+  assert.equal(S.fhH2hSrcTitle({ book: 'P', src: 'td' }), 'Pinnacle close · Tennis-Data', 'control: a Pinnacle close keeps its label');
+  // H2H only: Form and every other surface keep the source label
+  assert.equal(S.fhSrcTitle({ book: 'B', src: 'td' }), 'Bet365 close · Tennis-Data', 'Form keeps its hover');
+  assert.match(S.fhB365Tag({ book: 'B', src: 'td' }), /title="Bet365 close · Tennis-Data \(no Pinnacle close for this match\)"/, 'a non-H2H tag keeps its hover');
+  assert.match(slice('fhH2hRowData'), /hTitle: fhH2hSrcTitle\(r\), aTitle: fhH2hSrcTitle\(r\)/, 'the tab\'s H2H rows read the H2H hover');
+  assert.match(slice('h2hPriceTitle'), /if \(r\.price != null\) return r\.book === 'B' \? FH_B365_HOVER : /, 'the H2H page reads the same hover');
+  assert.match(slice('fhH2hRowData'), /hMark: r\.price != null && r\.book === 'B' \? 'B' : ''/, 'the tab\'s B marker in the H cell');
+  // item 4 (founder 2026-10-16): "show it on the H2H page meeting rows too, same as the tab"
+  assert.match(html, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: r\.price != null && r\.book === 'B' \? 'B' : '',\n\s*oppTitle: r\.tourn/, 'the H2H page meeting row carries the B marker');
+});
+
+// ── 16 · Pinnacle first on every screen (founder 2026-10-16, item 5) ────────────────────────────────────────────────────
+// "On the 13 meetings from Jul–Sep 2026, the H2H page must use our captured Pinnacle close, same as the tab, not the
+// Database's Bet365." The page's own step (h2hCapPinnacle) runs the tab's matcher (fhCloseFor → fhPickBook, FH_BOOK_ORDER)
+// on the closes shard. Golden: Struff v Tabilo, Cincinnati 2026 R64 (ek 12154667) — Struff's live closes shard holds a
+// captured Pinnacle close 2.59 / 1.555 and a Tennis-Data Bet365 2.38 / 1.57; the Database priced it Bet365.
+// Mutations: the page step dropped; the step taking any book (a captured Bet365 over the Database's).
+test('H2H page: Struff–Tabilo Cincinnati 2026 takes the captured Pinnacle close 2.59, not the Database\'s Bet365 2.38', () => {
+  const PX = new Function('W', `
+    const FH_BOOK_ORDER = ['Pcap', 'Ptd', 'Btd', 'Bcap'];
+    ${['fhIsInitial', 'fhDayNum', 'fhNameKey', 'fhPickBook', 'fhCloseFor', 'fhParseCloses'].map(n => slice(n)).join('\n')}
+    const fn = n => ({ fhCloseFor })[n] || null;
+    ${slice('h2hCapPinnacle')}
+    return { h2hCapPinnacle, fhParseCloses };`)();
+  // Struff's match-closes/2831.json rows for Tabilo (2982), as served 2026-10-16
+  const clA = PX.fhParseCloses({ rows: [['2026-08-15', 'Tabilo A.', 0, null, null, 2.38, 1.57, 0, '2982']],
+    cap: [['2026-08-15', '2982', 2.59, 1.555, null, null, '12154667', 'captured'], ['2026-08-15', '2982', null, null, 2.375, 1.571, null, null]] });
+  const a = { key: '2831', short: 'J-L. Struff' }, b = { key: '2982', short: 'A. Tabilo' };
+  // the page row after the Database join: priced Bet365 from Tennis-Data
+  const row = () => ({ date: '2026-08-15', won: false, ek: 12154667, round: 'R64', price: 2.38, oppPrice: 1.57, book: 'B', src: 'td' });
+  const r1 = row();
+  assert.equal(PX.h2hCapPinnacle([r1], a, b, clA, null), 1);
+  assert.deepEqual([r1.price, r1.oppPrice, r1.book, r1.src, r1.srcLabel], [2.59, 1.555, 'P', 'cap', 'captured']);
+  // from Tabilo's side only (Struff's shard missing): mirrored
+  const clB = PX.fhParseCloses({ rows: [], cap: [['2026-08-15', '2831', 1.555, 2.59, null, null, '12154667', 'captured']] });
+  const r2 = row(); PX.h2hCapPinnacle([r2], a, b, null, clB);
+  assert.deepEqual([r2.price, r2.oppPrice, r2.book], [2.59, 1.555, 'P'], 'mirrored from the opponent\'s shard');
+  // control: no captured Pinnacle → the Database price stays (a captured Bet365 never replaces it)
+  const r3 = row(); PX.h2hCapPinnacle([r3], a, b, PX.fhParseCloses({ rows: [], cap: [['2026-08-15', '2982', null, null, 2.375, 1.571, null, null]] }), null);
+  assert.deepEqual([r3.price, r3.book, r3.src], [2.38, 'B', 'td'], 'Database Bet365 kept when no Pinnacle close exists');
+  // a retirement stays voided on this page (the Database rule); a keyless (archive) meeting never takes a captured close
+  const r4 = Object.assign(row(), { ret: true, price: null, oppPrice: null, book: null, src: null }); PX.h2hCapPinnacle([r4], a, b, clA, null);
+  assert.equal(r4.price, null, 'retirement: dash, as the Database voids it');
+  const r5 = Object.assign(row(), { ek: null }); PX.h2hCapPinnacle([r5], a, b, clA, null);
+  assert.deepEqual([r5.price, r5.book], [2.38, 'B'], 'keyless meeting: no captured close');
+  // wired: the page runs it after the Database join, and counts priced meetings from the rows
+  const page = slice('h2hPairFor');
+  assert.match(page, /if \(_h2hDbSt === 'ready'\) h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\);\n\s*h2hCapPinnacle\(S\.rows, a, b, S\.clA, S\.clB\);/);
+  assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| 'captured'\)/);
 });

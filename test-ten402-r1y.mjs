@@ -55,19 +55,20 @@ const CARD = new Function('E', `
   function sectionHead(t) { return '<h3>' + t + '</h3>'; } function h2hSeg() { return ''; } function fhEnsureStyles() {}
   function fhScoreLines() { return { scored: [], covMap: {} }; } function fhH2hLineDefs() { return []; }
   function fhHotLinesTable() { return null; } function fhHotMoreHtml() { return ''; }
-  ${constLine('MA_ROW_COLS')}${constLine('MA_ROW_GAP')}${constLine('MA_ROW_COLS_H2H')}${constLine('MA_ROW_GAP_H2H')}${constLine('H2H_HOT_FOOT')}${constLine('H2H_PX_NOTE')}
+  ${constLine('FH_B365_HOVER')}${constLine('MA_ROW_COLS')}${constLine('MA_ROW_GAP')}${constLine('MA_ROW_COLS_H2H')}${constLine('MA_ROW_GAP_H2H')}${constLine('H2H_HOT_FOOT')}${constLine('H2H_PX_NOTE')}
   ${['escapeHtml', 'maMatchRowsHtml', 'fhSetTxt', 'fhH2hSetScores', 'fhDDMM', 'fhOdd', 'h2hTug', 'h2hPriceTitle', 'h2hPxNote', 'h2hCard'].map(slice).join('\n')}
   return { h2hCard, maMatchRowsHtml };`)(E);
 const meeting = (o) => Object.assign({ mid: 'm' + o.date, tourn: 'Monte Carlo', surface: 'Clay', round: 'F', won: false, pS: 0, oS: 2,
   sets: [[6, 7, 5], [3, 6]], price: 2.0, oppPrice: 1.8, book: 'P' }, o);
 const viewOf = (rows, S) => ({ h2h: { S: Object.assign({ pm: {} }, S || {}), all: rows, F: rows, surf: 'all', aS: 'Alcaraz', bS: 'Sinner', aName: 'C. Alcaraz', bName: 'J. Sinner', bFull: 'J. Sinner' } });
 
-test('fix 3: the Meetings ledger marks no row\'s book — one footnote "Closing price · Pinnacle, else Bet365" under it', () => {
+// TEN-437 (founder 2026-10-16) supersedes fix 3's no-marker ledger: "show it on the H2H page meeting rows too, same as the tab".
+test('fix 3 + TEN-437: a Bet365 meeting row carries the tab\'s "B" marker; one footnote "Closing price · Pinnacle, else Bet365" under it', () => {
   const rows = [meeting({ date: '2026-04-12', book: 'B' }), meeting({ date: '2025-11-16', tourn: 'Finals - Turin', surface: 'Hard', won: false, price: 2.8, oppPrice: 1.5, book: 'P' })];
   const h = CARD.h2hCard(viewOf(rows));
-  assert.ok(!h.includes('ma-row-mark'), 'no B (the "°" the founder saw) after a Bet365 price');
-  assert.match(text(h), / 2\.00 1\.80 /, 'the Bet365 row keeps its prices');
-  assert.match(h, /title="Bet365 closing price · Database join \(Tennis-Data\) — no Pinnacle price for this match"/, 'the hover still names the book');
+  assert.equal((h.match(/class="ma-row-mark"[^>]*>B</g) || []).length, 1, 'one B, on the Bet365 row only (the Pinnacle row carries none)');
+  assert.match(text(h), / 2\.00 ?B 1\.80 /, 'the Bet365 row keeps its prices, B after the H price');
+  assert.match(h, /title="Bet365 closing odds, Pinnacle not available"/, 'the hover names the book (founder 2026-10-16, TEN-437)');
   const notes = h.match(/<div class="h2hp-pxnote"[^>]*>([^<]*)<\/div>/g) || [];
   assert.equal(notes.length, 1, 'one footnote under the ledger');
   assert.match(notes[0], />Closing price · Pinnacle, else Bet365<\/div>$/);
@@ -91,7 +92,7 @@ test('fix 3: the Playing styles and Tournament ledgers mark no row either; each 
 // The sheet header (fhSheetHeadHtml), executed: the Head to Head page's sheet vs any other host.
 const HEAD = new Function('_fh', `
   const FH_DASH = 'var(--text-label)', FH_DASHC = '—';
-  ${constLine('FH_MONO')}${constLine('FH_BOOK')}${constLine('FH_SRC')}
+  ${constLine('FH_MONO')}${constLine('FH_BOOK')}${constLine('FH_SRC')}${constLine('FH_B365_HOVER')}
   function fhSurname(n) { return String(n || '').split(/\\s+/).pop(); } function aAvatarHtml() { return ''; }
   function fhEsc(s) { return String(s == null ? '' : s); }
   ${['fhDDMM', 'fhSrcTitle', 'fhB365Tag', 'fhB365Meta', 'fhSheetHeadHtml'].map(slice).join('\n')}

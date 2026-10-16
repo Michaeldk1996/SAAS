@@ -109,7 +109,7 @@ test('Data 2: Home = A\'s closing price, Away = B\'s, from the Database rows (bo
   // row 1: Bet365 (book 1), the favourite Sinner (A) won at 1.80
   assert.deepEqual([rows[1].price, rows[1].oppPrice, rows[1].book], [1.80, 2.00, 'B']);
   // founder r1 fix 3 (2026-10-09): no per-row Bet365 mark; one footnote under the ledger (executed in test-ten402-r1y.mjs)
-  assert.match(h2hCardSrc, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: '',/, 'the ledger row carries no B marker');
+  assert.match(h2hCardSrc, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: r\.price != null && r\.book === 'B' \? 'B' : '',/, 'the ledger row carries the B marker on a Bet365 close (TEN-437)');
   assert.match(h2hCardSrc, /\$\{h2hPxNote\('margin-top:-8px;'\)\}/, 'one footnote under the Meetings ledger');
 });
 

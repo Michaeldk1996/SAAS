@@ -13332,10 +13332,15 @@ function fhTodayPair(m){
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
 function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
-function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+// TEN-437 (founder 2026-10-16): a Bet365-priced H2H meeting keeps its close, its "B" marker, and this hover — on the
+// Match analysis H2H tab and the H2H page — until a Pinnacle source is found. H2H only: Form and every other surface keep
+// fhSrcTitle's source label.
+const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';
+function fhH2hSrcTitle(r){ return r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }
+function fhB365Tag(r, h2h){ return r && r.book === 'B' ? `<span title="${h2h ? FH_B365_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)'}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // TEN-402 r1 fix 3 (founder 2026-10-09): on a sheet opened from the Head to Head page the tag is part of the header's grey
 // mono meta line ("… · B365", the meta's own face, size and tone), not a caps chip.
-function fhB365Meta(r){ return r && r.book === 'B' ? `<span class="fh-b365" title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">· B365</span>` : ''; }
+function fhB365Meta(r){ return r && r.book === 'B' ? `<span class="fh-b365" title="${FH_B365_HOVER}" style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">· B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 // Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
@@ -13942,17 +13947,13 @@ function fhH2hRetry(){
   const p = fhEnsureH2hData(m);   // the one fetch; both tabs repaint when it settles (loaded or failed again)
   paint(); p.then(paint, paint);
 }
-// Team events and exhibitions count exactly as in the ATP's official win-loss record
-// (ruling 2026-09-25, TEN-273: "do as the ATP"). Same list as the pipeline's
-// H2H_NOT_ATP_RECORD: Hopman Cup and exhibitions never enter the meeting list.
-const FH_ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
-// TEN-437 D2 (2026-10-16): the H2H population (h2h-core H2H_NOT_COUNTED) also leaves out the Asian Games and Davis Cup
-// Group III/IV, as ATP's H2H; Form keeps the base list above.
-const FH_H2H_NOT_ATP_RECORD = new RegExp(FH_ATP_RECORD_NOT_COUNTED.source + '|asian games|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b', 'i');
-// Form (founder review 2, TEN-380, 2026-10-04): a match outside the ATP's official win-loss record is never a Form row —
-// not in the last 10, the record, v market, the hot lines or Key factors' Recent form. Laver Cup is the case the record
-// leaves out (Davis Cup and United Cup count, as the ATP counts them), plus the exhibitions above.
-const FH_FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FH_ATP_RECORD_NOT_COUNTED.source, 'i');
+// The H2H meeting list applies h2h-core.js ATP_RECORD_NOT_COUNTED inside H2HCore.joinMeetings — ATP's rules, H2H only
+// (TEN-437, founder 2026-10-16 correction). Form never reads it: Form keeps its OWN list (founder review 2, TEN-380,
+// 2026-10-04): a match outside it is never a Form row — not in the last 10, the record, v market, the hot lines or Key
+// factors' Recent form. Laver Cup, Hopman Cup and exhibitions out; Challengers / ITF / qualifying, the Asian Games and
+// Davis Cup Group III/IV stay in. Same list as the pipeline's FORM_NOT_ATP_RECORD, the profile and the matchup matrix.
+const FH_FORM_EVENTS_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+const FH_FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FH_FORM_EVENTS_NOT_COUNTED.source, 'i');
 // A meeting's level. Names that settle it come first: a junior event is never a pro
 // meeting (null: unclassified, never guessed), an ITF-named event (M15…, W25…, "ITF") is
 // ITF — the form shards' tier calls some of those 'challenger'. Then the tour level: the
@@ -13970,12 +13971,13 @@ function fhLevelOf(level, tournament, tier){
 }
 // TEN-437 · the pair's meetings: H2HCore.joinMeetings (h2h-core.js) — ATP's official H2H population over both players'
 // career-history shards, the same call the Head to Head page makes. Never the api-tennis list (m.h2h), which holds
-// almost nothing before 2022. Finished board matches between the two never count (sfH2hOwnEks), nor the fixture itself.
-// The three inputs every H2H surface hands H2HCore.joinMeetings besides the two shards — one helper each, so the Match
+// almost nothing before 2022. Board-match exclusion (founder ruling 2026-10-16, replacing 2026-09-24's): a match never
+// counts in ITS OWN analysis — the Match analysis tab and Key factors of that match leave out its eventKey, nothing else;
+// the Head to Head page and every other surface show ATP's full count, this week's finished board matches included.
+// The inputs every H2H surface hands H2HCore.joinMeetings besides the two shards — one helper each, so the Match
 // analysis tab, Key factors and the Head to Head page can never feed the join differently:
 //   sfH2hNkCount — the roster's namesake counts (every profile's name; a one-sided row needs a unique surname + initial)
 //   sfH2hSide    — a player as the join reads him: the profile's full name when there is one, the board's short name
-//   sfH2hOwnEks  — finished board matches between the two (a match never counts in its own record, ruling 2026-09-24)
 let _sfNkSrc = null, _sfNk = {};
 function sfH2hNkCount(){
   const pp = (typeof playerProfiles !== 'undefined' && playerProfiles) || {};
@@ -13983,17 +13985,12 @@ function sfH2hNkCount(){
   return _sfNk;
 }
 function sfH2hSide(key, name){ const p = key != null ? ((typeof playerProfiles !== 'undefined' && playerProfiles) || {})[String(key)] : null; return { full: (p && p.name) || name, short: name, key: key != null ? String(key) : null, id: key != null ? careerHistoryIdOf(key) : null }; }
-function sfH2hOwnEks(aKey, bKey){
-  if (aKey == null || bKey == null) return [];
-  const pair = [String(aKey), String(bKey)].sort().join('|');
-  return (typeof matches !== 'undefined' && Array.isArray(matches) ? matches : []).filter(x => x && x.finalScore && x.p1Key != null && x.p2Key != null
-      && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(x => eventKeyOfMatch(x)).filter(x => x != null && x !== '');
-}
 // TEN-437 (4) · the closes a pair's keyless (archive) meetings may take: per meeting, the Tennis-Data rows of that
 // opponent in [H2H_DEDUPE_WINDOW] days after the event-start date. Meetings whose candidates overlap form one group; a
-// group gets its closes only when it holds as many distinct closes as meetings, every meeting has a known round, and
-// round order then date order pairs each meeting with a close of its own result — else every meeting in it is a dash.
-// Team ties (Davis / Laver Cup) take none. Returns Map(meeting row → { side, date }) — the close's own day, read back
+// group gets its closes only when it holds as many distinct closes as meetings, meetings of one event have known rounds,
+// and event-date order, then round order within one event, pairs each meeting with a close of its own result — else every
+// meeting in it is a dash. Team ties (Davis / Laver / ATP / United Cup) take none here.
+// Returns Map(meeting row → { side, date }) — the close's own day, read back
 // through fhCloseFor at ±1 so the book rule stays the one picker's.
 const FH_H2H_RD_RANK = { RR: 0, R128: 1, R64: 2, R32: 3, R16: 4, QF: 5, SF: 6, F: 7 };
 function fhH2hWindowCloses(list, closes, m){
@@ -14002,7 +13999,7 @@ function fhH2hWindowCloses(list, closes, m){
     const cl = closes && closes[side]; if (!cl || !Array.isArray(cl.rows)) continue;
     const oppKey = String((side ? m.p1Key : m.p2Key) == null ? '' : (side ? m.p1Key : m.p2Key)), nk = fhNameKey(side ? m.p1 : m.p2);
     const rows = cl.rows.filter(x => (oppKey && x.oppKey === oppKey) || (x.oppKey == null && nk && fhNameKey(x.opp) === nk));
-    const meet = list.filter(x => x.eventKey == null && !out.has(x) && !/davis cup|laver cup/i.test(String(x.tournament || '')));
+    const meet = list.filter(x => x.eventKey == null && !out.has(x) && !/davis cup|laver cup|atp cup|united cup/i.test(String(x.tournament || '')));
     const cand = new Map(meet.map(x => { const d0 = fhDayNum(x.date); return [x, d0 == null ? [] : rows.filter(y => { const d = fhDayNum(y.date); return d != null && d - d0 >= W[0] && d - d0 <= W[1]; })]; }));
     const seen = new Set();
     for (const x of meet){
@@ -14012,8 +14009,11 @@ function fhH2hWindowCloses(list, closes, m){
       for (let grew = true; grew;){ grew = false; for (const y of meet) if (!seen.has(y) && cand.get(y).some(c => cls.has(c))){ seen.add(y); grp.push(y); cand.get(y).forEach(c => cls.add(c)); grew = true; } }
       if (cls.size !== grp.length) continue;
       const rk = r => FH_H2H_RD_RANK[H2HCore.roundCode(r.round)];
-      if (grp.length > 1 && grp.some(r => rk(r) == null)) continue;
-      const ms = grp.slice().sort((a, b) => (rk(a) || 0) - (rk(b) || 0)), cs = [...cls].sort((a, b) => String(a.date).localeCompare(String(b.date)));
+      // TEN-437 (founder 2026-10-16): meetings of DIFFERENT events order by their event date — Hamburg 2020 F (21 Sep) before
+      // Roland Garros 2020 QF (28 Sep) — and only meetings of ONE event (same start date) by round, which must be known.
+      // Ordering the whole group by round handed RG's QF Hamburg's close, failed the result check and dashed both.
+      if (grp.some(r => rk(r) == null && grp.some(o => o !== r && o.date === r.date))) continue;
+      const ms = grp.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)) || (rk(a) || 0) - (rk(b) || 0)), cs = [...cls].sort((a, b) => String(a.date).localeCompare(String(b.date)));
       const won = r => (side ? !r.won : r.won);
       if (ms.every((r, i) => cs[i].won === won(r))) ms.forEach((r, i) => out.set(r, { side, date: cs[i].date }));
     }
@@ -14022,7 +14022,7 @@ function fhH2hWindowCloses(list, closes, m){
 }
 function fhH2hMeetingRows(m){
   const ch = m._fhCh || [[], []];
-  const own = sfH2hOwnEks(m.p1Key, m.p2Key).concat([eventKeyOfMatch(m)]).filter(x => x != null && x !== '');
+  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');   // the match itself, nothing else (ruling 2026-10-16)
   return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own);
 }
 function fhMeetings(m){
@@ -14315,7 +14315,7 @@ function fhBuildH2H(m){
         // 8px out on both sides, its own surface / radius / padding and a column of rows.
         const body = `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3}; padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
           ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:1px solid color-mix(in srgb, var(--text) 3.5%, transparent);">
-            <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r)}</span>
+            <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r, true)}</span>
             <span style="font-family:var(--font-words); font-size:10.5px; letter-spacing:0.10em; text-transform:uppercase; font-weight:700; color:${t2};">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
             <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : 'var(--text-soft)'}; text-align:right;">${o.v.toFixed(2)}</span>
           </div>`).join('')}
@@ -14421,7 +14421,7 @@ function fhH2hRowData(r){
     sets: r.wo || r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,
     scores: fhH2hSetScores(r), scoresTitle: fhH2hSetScores(r),
     h: r.price == null ? FH_DASHC : fhOdd(r.price), a: r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
-    hTitle: fhSrcTitle(r), aTitle: fhSrcTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
+    hTitle: fhH2hSrcTitle(r), aTitle: fhH2hSrcTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
     oppTitle: r.tourn + ' ' + String(r.date).slice(0, 4) + ' · v ' + fhFullName(r.opp, r.oppKey), oppAttrs: ' class="fh-opp"',   // TEN-380 Q5: no Elo in the row (README §5 grid); it lives in the bar tooltip
     cls: 'fh-h2row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
     selected: !!(_fh && _fh.sheet === r.mid) };
@@ -27936,6 +27936,28 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     });
     return n;
   }
+  // TEN-437 (founder 2026-10-16, item 5: "Pinnacle first on every screen"): a meeting our own capture — or the Pinnacle
+  // history archive behind it — holds a Pinnacle close for takes that close, as the Match analysis tab does (FH_BOOK_ORDER:
+  // Pcap first), over the Database's Tennis-Data row. Captured Pinnacle rows only, through the tab's own matcher
+  // (fhCloseFor: eventKey, else opponent key ±1 day, one candidate): every other price stays the Database join's.
+  function h2hCapPinnacle(rows, a, b, clA, clB) {
+    const closeFor = fn('fhCloseFor');
+    const capOnly = c => (c && Array.isArray(c.cap) && c.cap.length ? { rows: [], cap: c.cap } : null);   // captured rows only
+    const A = capOnly(clA), B = capOnly(clB);
+    if (!closeFor || (!A && !B)) return 0;
+    let n = 0;
+    rows.forEach(r => {
+      // keyed meetings only (a keyless archive row is dated at its event's start, not the match day); a retirement stays
+      // a dash here, as the page's Database join voids it (h2hPriceTitle)
+      if (r.ek == null || r.ret) return;
+      let c = A ? closeFor(A, r.date, b.short, r.won, b.key, r.ek) : null;
+      if (!c && B) { const c2 = closeFor(B, r.date, a.short, !r.won, a.key, r.ek); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src, srcLabel: c2.srcLabel }; }
+      if (!c || c.book !== 'P' || c.src !== 'cap') return;
+      r.price = c.price; r.oppPrice = c.oppPrice; r.book = 'P'; r.src = 'cap'; r.srcLabel = c.srcLabel || null;
+      n++;
+    });
+    return n;
+  }
   // Per-pair data: both career-history shards (lazy, the dashboard's own loader) + the Database rows (lazy, once).
   const _h2hPairs = {};
   let _h2hDb = null, _h2hDbSt = null;
@@ -27999,17 +28021,21 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       const ch = key => (lch ? Promise.resolve().then(() => lch(key))
           .then(r => ({ rows: Array.isArray(r) ? r : null, ok: Array.isArray(r) && (!answered || answered(key)) }))
           .catch(() => ({ rows: null, ok: false })) : Promise.resolve({ rows: null, ok: false }));
-      Promise.all([ch(a.key), ch(b.key)]).then(([ra, rb]) => {
+      // TEN-437 (founder 2026-10-16, item 5): both players' closes shards too — their captured Pinnacle closes price a meeting
+      // first, as on the tab. A closes shard that does not load costs only that step (the Database join still prices).
+      const lcl = fn('fhLoadCloses');
+      const cl = key => (lcl ? Promise.resolve().then(() => lcl(key)).catch(() => null) : Promise.resolve(null));
+      Promise.all([ch(a.key), ch(b.key), cl(a.key), cl(b.key)]).then(([ra, rb, ca, cb]) => {
         if (!ra.ok || !rb.ok) { S.st = 'failed'; S.failedNames = [ra.ok ? null : a.short, rb.ok ? null : b.short].filter(Boolean); render(); return; }
-        S.chA = ra.rows; S.chB = rb.rows; S.st = 'ready'; render();
+        S.chA = ra.rows; S.chB = rb.rows; S.clA = ca || null; S.clB = cb || null; S.st = 'ready'; render();
       });
     }
     h2hEnsureDb();
     if (S.st === 'ready' && (S.rows == null || S.dbAt !== _h2hDbSt)) {
-      // TEN-437: the same three inputs the Match analysis tab hands the join (sfH2hOwnEks / sfH2hNkCount), so the page and
-      // the modal can never count a pair differently.
-      const ownF = fn('sfH2hOwnEks'), nkF = fn('sfH2hNkCount');
-      const own = ownF ? ownF(a.key, b.key) : [];
+      // TEN-437: the same inputs the Match analysis tab hands the join (sfH2hNkCount, the side's id). No board-match
+      // exclusion here: the page shows ATP's full count, this week's finished board matches included (ruling 2026-10-16).
+      const nkF = fn('sfH2hNkCount');
+      const own = [];
       // TEN-437 D3: each side's TML/ATP id (from his shard) — a one-sided row is credited on identity, never a name
       const idF = fn('careerHistoryIdOf');
       const withId = p => Object.assign({}, p, { id: idF ? idF(p.key) : null });
@@ -28022,7 +28048,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       });
       S.woN = S.rows.filter(r => r.wo).length;                   // a walkover is not a completed meeting
       S.rows = S.rows.filter(r => !r.wo);
-      S.priced = _h2hDbSt === 'ready' ? h2hPriceJoin(S.rows, a, b, _h2hDb, null, S.chA) : 0;
+      if (_h2hDbSt === 'ready') h2hPriceJoin(S.rows, a, b, _h2hDb, null, S.chA);
+      h2hCapPinnacle(S.rows, a, b, S.clA, S.clB);
+      S.priced = S.rows.filter(r => r.price != null).length;
       S.dbAt = _h2hDbSt;
       S.firstYear = [S.chA, S.chB].map(ch => (Array.isArray(ch) && ch.length ? Math.min(...ch.filter(x => x && String(x.level || '').toLowerCase() === 'atp').map(x => +String(x.date || '').slice(0, 4)).filter(Boolean)) : null));
     }
@@ -28587,7 +28615,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           return { date: fhDDMM(r.date) + '.', won: r.won, opp: r.tourn, oppTag: r.surface || '', rd: r.round,
             sets: r.pS == null || r.ret ? '—' : r.pS + '–' + r.oS, setsColor: r.pS == null || r.ret ? 'var(--text-label)' : null, scores: sc2, scoresTitle: sc2,
             h: r.price == null ? '—' : fhOdd(r.price), a: r.oppPrice == null ? '—' : fhOdd(r.oppPrice),
-            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',
+            // TEN-437 (founder 2026-10-16): a Bet365-priced meeting carries the tab's "B" marker here too (supersedes TEN-402 r1
+            // fix 3's no-marker ledger); the hover says why.
+            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
             oppTitle: r.tourn + ' ' + String(r.date).slice(0, 4) + ' · v ' + h.bFull, cls: 'h2hp-row', attrs: ` data-fh-mid="${E(r.mid)}"`,
             click: ` onclick="H2HPage._open('${E(r.mid)}')"`, selected: openMid === r.mid,
             wrapCls: 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') };
@@ -28615,7 +28645,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function h2hPxNote(style) { return `<div class="h2hp-pxnote" style="${style || ''} font-family:var(--font-nums); font-size:10.5px; color:var(--text-label);">${E(H2H_PX_NOTE)}</div>`; }
   // A price cell's hover: the book and source, or why it is a dash.
   function h2hPriceTitle(r) {
-    if (r.price != null) return (r.book === 'B' ? 'Bet365' : 'Pinnacle') + ' closing price · Database join (Tennis-Data)' + (r.book === 'B' ? ' — no Pinnacle price for this match' : '');
+    if (r.price != null) return r.book === 'B' ? FH_B365_HOVER : r.src === 'cap' ? 'Pinnacle closing price · ' + (r.srcLabel || 'captured')
+      : 'Pinnacle closing price · Database join (Tennis-Data)';
     if (_h2hDbSt === 'loading') return 'Loading closing prices…';
     if (_h2hDbSt === 'failed') return 'Closing prices could not be loaded';
     return r.ret ? 'No closing price: the Database voids a retirement' : 'No Pinnacle or Bet365 closing price for this meeting in the Database';

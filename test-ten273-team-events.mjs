@@ -10,9 +10,9 @@ process.env.DOTENV_CONFIG_QUIET = 'true';
 const require = createRequire(import.meta.url);
 const P = require('./bsp-pipeline.js');
 const html = fs.readFileSync(new URL('./bsp-consult-dashboard.html', import.meta.url), 'utf8');
-// TEN-437 D2: the H2H list is the base list (FH_ATP_RECORD_NOT_COUNTED, Form's) + the Asian Games / Davis Cup Group III-IV
-const lines = ['const FH_ATP_RECORD_NOT_COUNTED', 'const FH_H2H_NOT_ATP_RECORD'].map((p) => html.split('\n').find((l) => l.startsWith(p)));
-const FH = new Function(`${lines.join('\n')}; return FH_H2H_NOT_ATP_RECORD;`)();
+// TEN-437 (founder 2026-10-16): the dashboard's H2H list is h2h-core's ATP_RECORD_NOT_COUNTED, applied inside
+// H2HCore.joinMeetings (the dashboard holds no H2H copy).
+const FH = require('./h2h-core.js').ATP_RECORD_NOT_COUNTED;
 
 const COUNT = ['ATP Davis Cup - World Group', 'ATP Cup', 'ATP United Cup', 'ATP Laver Cup', 'Olympic Games', 'Next Gen Finals - Jeddah'];
 const EXCLUDE = ['ATP Hopman Cup', ' Hopman Cup (World), Clay', 'UTS Guadalajara', 'Ultimate Tennis Showdown', 'Six Kings Slam', 'Kooyong Classic', 'Mubadala World Tennis Championship', 'Exhibition Riyadh'];

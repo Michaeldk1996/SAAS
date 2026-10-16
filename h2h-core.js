@@ -16,7 +16,8 @@
  *   excluded — Challengers and ITF (career-history level 'chitf'), every qualifying round (read from BOTH players'
  *              rows: `resolveQualifying`), Hopman Cup, exhibitions (Six Kings Slam, UTS, …), the Asian Games and Davis Cup
  *              Group III/IV round-robins (absent from ATP's list); walkovers are listed (flagged) but never counted
- * Each rule is one constant below (H2H_LEVELS, H2H_NOT_COUNTED) or one line in `inPopulation`.
+ * Each rule is one constant below (H2H_LEVELS, ATP_RECORD_NOT_COUNTED = H2H_NOT_COUNTED — H2H only) or one line in
+ * `inPopulation`.
  */
 (function (root) {
   'use strict';
@@ -29,9 +30,14 @@
   // career-history `level`. ATP's record is tour level only: 'chitf' (Challenger / ITF) rows are listed by ATP under
   // "other tournaments" and never counted.
   const H2H_LEVELS = ['atp'];
-  // Events that are not in ATP's H2H record although the feed tags them as men's singles: Hopman Cup (ITF, mixed) and
-  // exhibitions. Laver Cup, Davis Cup, ATP Cup, United Cup, the Olympics and the Next Gen Finals ARE counted.
-  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis|asian games|davis cup.*group (iii|iv)\b|davis cup g[34]\b/i;
+  // The events ATP's record leaves out although the feed tags them as men's singles — the H2H population's list, read by
+  // H2H ONLY (founder 2026-10-16: "ATP's rules apply to H2H only"; Form keeps its own list in the pipeline / dashboard).
+  // ATP's own data (H2H endpoint + player-activity IsWinLossCountable, 2026-10-16): Hopman Cup, exhibitions, the Asian
+  // Games (Z. Zhang 2023: 19–17, no Hangzhou) and Davis Cup Group III/IV (Vacherot 2021 Group III 4–0, ATP 2021 0–0) are
+  // not counted; Laver Cup, Davis Cup Finals / Qualifiers / World Group I–II, ATP Cup, United Cup, the Olympics and the
+  // Next Gen Finals are.
+  const ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis|asian games|davis cup.*group (iii|iv)\b|davis cup g[34]\b/i;
+  const H2H_NOT_COUNTED = ATP_RECORD_NOT_COUNTED;
   // De-duplication window, days from a keyless archive row (dated at the EVENT's start, TML) to the keyed api-tennis
   // row of the same match (dated on the match day): Shanghai 2019 SF is 07.10 in the archive and 12.10 in the feed,
   // a Slam final up to 14 days after its start. A match is never earlier than its event's start (−1 for time zones).
@@ -205,7 +211,7 @@
   function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
   function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }
 
-  const api = { H2H_LEVELS, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, inPopulation, joinMeetings, isWalkover, played, record };
+  const api = { H2H_LEVELS, ATP_RECORD_NOT_COUNTED, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, inPopulation, joinMeetings, isWalkover, played, record };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.H2HCore = api;
 })(typeof window !== 'undefined' ? window : this);

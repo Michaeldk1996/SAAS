@@ -611,7 +611,7 @@ test('B365 tag, and every price names its book and source', () => {
   assert.ok(!formRowHtml(S, r).includes('>B365<') && !h2hRowHtml(S, r).includes('>B365<'), 'no book badge after the name on either tab');
   assert.equal((formRowHtml(S, r).match(/class="ma-row-mark"[^>]*>B</g) || []).length, 1, 'one B marker, in the H cell');
   assert.equal((h2hRowHtml(S, r).match(/class="ma-row-mark"[^>]*>B</g) || []).length, 1, 'one B marker, in the Home cell');
-  assert.ok(formRowHtml(S, r).includes('title="Bet365 close · Tennis-Data"'));
+  assert.ok(formRowHtml(S, r).includes('title="Bet365 close · Tennis-Data"'), 'Form keeps its source label (the TEN-437 hover is H2H only)');
   r.book = 'P'; r.src = 'cap';
   assert.ok(!formRowHtml(S, r).includes('ma-row-mark') && !h2hRowHtml(S, r).includes('ma-row-mark'), 'Pinnacle rows carry no marker or tag');
   assert.ok(formRowHtml(S, r).includes('title="Pinnacle close · captured"') && h2hRowHtml(S, r).includes('title="Pinnacle close · captured"'));
@@ -794,7 +794,7 @@ test('H2H page: meetings are keyed and won by player key, never short name (ruli
   // TEN-402: the page's record reads both players' career-history files (one per PLAYER KEY), joined in H2HCore.joinMeetings (h2h-core.js, TEN-437);
   // each row is oriented to player A by key and the record counts the rows A won (executed in test-ten402-b.mjs).
   assert.match(html, /const k = a\.key \+ '\|' \+ b\.key;/, 'the pair is held by key');
-  assert.match(html, /Promise\.all\(\[ch\(a\.key\), ch\(b\.key\)\]\)/, 'each side read from its own key file');
+  assert.match(html, /Promise\.all\(\[ch\(a\.key\), ch\(b\.key\), cl\(a\.key\), cl\(b\.key\)\]\)/, 'each side read from its own key file (history + closes, TEN-437)');
   assert.match(html, /const F = h\.F, n = F\.length, aw = F\.filter\(r => r\.won\)\.length, bw = n - aw;/, 'record counted on the A-oriented rows');
   assert.doesNotMatch(html, /r\[5\] === a\.short|m\[5\] === a\.short|H2H2\[/, 'control: no short-name winner or key remains, and no m.h2h meeting map (TEN-437)');
 });

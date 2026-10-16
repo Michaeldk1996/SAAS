@@ -241,11 +241,11 @@ test('builder: the Form rule — Laver Cup and exhibitions out of every cell, Da
   // one list in all three places
   const re = s => /laver cup\|hopman cup\|ultimate tennis showdown\|\\buts\\b\|six kings\|exhibition\|kooyong classic\|mubadala world tennis/.test(s);
   assert.ok(re(BUILDER), 'builder list drifted');
-  // (TEN-437 D2: the H2H list extends this base with the Asian Games and Davis Cup Group III/IV; Form keeps the base)
-  assert.ok(/const ATP_RECORD_NOT_COUNTED = \/hopman cup\|ultimate tennis showdown\|\\buts\\b\|six kings\|exhibition\|kooyong classic\|mubadala world tennis\/i;/.test(PIPE)
-    && /new RegExp\('laver cup\|' \+ ATP_RECORD_NOT_COUNTED\.source/.test(PIPE), 'pipeline list drifted');
-  assert.ok(/const FH_ATP_RECORD_NOT_COUNTED = \/hopman cup\|ultimate tennis showdown\|\\buts\\b\|six kings\|exhibition\|kooyong classic\|mubadala world tennis\/i;/.test(HTML)
-    && /new RegExp\('laver cup\|' \+ FH_ATP_RECORD_NOT_COUNTED\.source/.test(HTML), 'dashboard list drifted');
+  // (TEN-437, founder 2026-10-16: the H2H list is h2h-core's ATP_RECORD_NOT_COUNTED; Form keeps this list of its own)
+  assert.ok(/const FORM_EVENTS_NOT_COUNTED = \/hopman cup\|ultimate tennis showdown\|\\buts\\b\|six kings\|exhibition\|kooyong classic\|mubadala world tennis\/i;/.test(PIPE)
+    && /new RegExp\('laver cup\|' \+ FORM_EVENTS_NOT_COUNTED\.source/.test(PIPE), 'pipeline list drifted');
+  assert.ok(/const FH_FORM_EVENTS_NOT_COUNTED = \/hopman cup\|ultimate tennis showdown\|\\buts\\b\|six kings\|exhibition\|kooyong classic\|mubadala world tennis\/i;/.test(HTML)
+    && /new RegExp\('laver cup\|' \+ FH_FORM_EVENTS_NOT_COUNTED\.source/.test(HTML), 'dashboard list drifted');
 });
 
 // ── Render: cells, tug bars, the open detail, links ──────────────────────────────────────────────────────────────────

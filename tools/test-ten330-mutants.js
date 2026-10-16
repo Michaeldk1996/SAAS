@@ -66,7 +66,7 @@ fs.rmSync(dir, { recursive: true, force: true });
 const pipe = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
 const PIPE_MUTANTS = [
   ['TEN-383: Laver Cup back in the card\'s Recent form %', ".filter(m => !FORM_NOT_ATP_RECORD.test(String(m.tournament || '')))", ''],
-  ['TEN-383: Davis Cup and United Cup out of the card\'s Recent form %', "new RegExp('laver cup|' + ATP_RECORD_NOT_COUNTED.source, 'i')", "new RegExp('laver cup|davis cup|united cup|' + ATP_RECORD_NOT_COUNTED.source, 'i')"],
+  ['TEN-383: Davis Cup and United Cup out of the card\'s Recent form %', "new RegExp('laver cup|' + FORM_EVENTS_NOT_COUNTED.source, 'i')", "new RegExp('laver cup|davis cup|united cup|' + FORM_EVENTS_NOT_COUNTED.source, 'i')"],
 ];
 const pfile = path.join(ROOT, '.ten330-mut-pipeline.js');
 try {

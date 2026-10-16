@@ -17,13 +17,14 @@ const CORE_MUTANTS = [
     ["      if (!y || used.has(y) || bad.has(y) || typeof y.won !== 'boolean'", "      if (!y || y.eventKey == null || used.has(y) || bad.has(y) || typeof y.won !== 'boolean'"]]],
   ['a 2021 date cut-off', "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => inPopulation(x) &&", "    return dedupe(out).map(x => resolveQualifying(x, all)).filter(x => String(x.date) >= '2021' && inPopulation(x) &&"],
   ['Challengers / ITF back in', "  const H2H_LEVELS = ['atp'];", "  const H2H_LEVELS = ['atp', 'chitf'];"],
-  ['Hopman Cup and exhibitions back in', "  const H2H_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis|", "  const H2H_NOT_COUNTED = /$^|"],
+  ['Hopman Cup and exhibitions back in', "  const ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis|", "  const ATP_RECORD_NOT_COUNTED = /$^|"],
   ['qualifying back in', "      && !x.qualifying && !/^qualif/i.test(String(x.round || ''))", "      && true"],
   ['walkovers counted', "  function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }", "  function played(rows) { return rows || []; }"],
   ['dedupe off (Shanghai 2019 counted twice)', "    return drop.size ? rows.filter(x => !drop.has(x)) : rows;", "    return rows;"],
   ['the namesake rule dropped (a one-sided row credited to any same-named player)', "    const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;", "    const uniq = k => !!k;"],
   ['a 0 - 0 default read as a walkover (ATP counts defaults)', "    if (x.defaulted) return false;", "    if (false) return false;"],
-  ['Laver Cup excluded (ATP counts it)', "  const H2H_NOT_COUNTED = /hopman cup|", "  const H2H_NOT_COUNTED = /laver cup|hopman cup|"],
+  ['Laver Cup excluded from H2H (ATP counts it)', "  const ATP_RECORD_NOT_COUNTED = /hopman cup|", "  const ATP_RECORD_NOT_COUNTED = /laver cup|hopman cup|"],
+  ['the join\'s list no longer the exported ATP list (H2H_NOT_COUNTED a copy)', "  const H2H_NOT_COUNTED = ATP_RECORD_NOT_COUNTED;", "  const H2H_NOT_COUNTED = new RegExp(ATP_RECORD_NOT_COUNTED.source, 'i');"],
   // TEN-437 reconciliation fixes (founder 2026-10-16)
   ['D1: qualifying read from the first row\'s label alone (both rows and the main-draw date ignored)',
     "  function resolveQualifying(x, all) {\n    const tw = x._twin, rX = rnd(x), rT = rnd(tw);", "  function resolveQualifying(x, all) { return x;\n    const tw = x._twin, rX = rnd(x), rT = rnd(tw);"],
@@ -41,7 +42,7 @@ const PAGE_MUTANTS = [
   ['a failed history load cached as an answer (H2H page)', "        if (!ra.ok || !rb.ok) { S.st = 'failed';", "        if (false) { S.st = 'failed';"],
   ['the H2H page loses its Retry', "<span class=\"seg h2hp-retry\" onclick=\"H2HPage._h2hRetry()\"", "<span class=\"seg h2hp-retry\""],
   ['a display read of m.h2h.record (a second source)', "function kfH2HCard(m){", "function kfH2HCard(m){ const _r = m.h2h && m.h2h.record;"],
-  ['a team tie priced off a tour match\'s close', "!/davis cup|laver cup/i.test(String(x.tournament || ''))", "true"],
+  ['a team tie priced off a tour match\'s close', "!/davis cup|laver cup|atp cup|united cup/i.test(String(x.tournament || ''))", "true"],
   ['two meetings share one close (the pairing takes the first, not a dash)', "      if (cls.size !== grp.length) continue;", "      if (cls.size < 1) continue;"],
   ['the coverage line counts priced meetings only (Y ≠ the full H2H count)', "`${nP} of ${F.length} meetings priced`", "`${nP} of ${PR.length} meetings priced`"],
   ['D3: the tab passes no TML/ATP id', "id: key != null ? careerHistoryIdOf(key) : null", "id: null"],
@@ -49,6 +50,17 @@ const PAGE_MUTANTS = [
   ['S1: Next Gen sets read with the 6-game set test (a retirement)', "const setDone = x => (ng ? Math.max(x[0], x[1]) === 4 : fhSetDone(x));", "const setDone = x => fhSetDone(x);"],
   ['S1: games counted on a Next Gen match', "    r.gA = r.gB = r.tot = r.diff = null;   // S1", "    r.tot = 0; r.diff = 0;   // S1"],
   ['S1: a games-based hot line reads a Next Gen match', "  if (def.need === 'games' && r.ng) return false;", ""],
+  ['ruling 2 (corrected): the Form tab wired to the H2H list', "const FH_FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FH_FORM_EVENTS_NOT_COUNTED.source, 'i');", "const FH_FORM_NOT_ATP_RECORD = H2HCore.ATP_RECORD_NOT_COUNTED;"],
+  ['ruling 3: a price group paired by round alone (RG 2020 QF handed Hamburg 2020 F\'s close)', "const ms = grp.slice().sort((a, b) => String(a.date).localeCompare(String(b.date)) || (rk(a) || 0) - (rk(b) || 0))", "const ms = grp.slice().sort((a, b) => (rk(a) || 0) - (rk(b) || 0))"],
+  ['ruling 3: ATP Cup / United Cup back in the window pairing', "!/davis cup|laver cup|atp cup|united cup/i.test(String(x.tournament || '')));\n    const cand", "!/davis cup|laver cup/i.test(String(x.tournament || '')));\n    const cand"],
+  ['ruling 4: the Bet365 hover back to the source label', "const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';", "const FH_B365_HOVER = 'Bet365 close · Tennis-Data';"],
+  ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
+  ['item 5: the page prices a retirement it voids, or a keyless meeting, from a captured close', "      if (r.ek == null || r.ret) return;\n", ""],
+  ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "function fhSrcTitle(r){ return r && r.book ?", "function fhSrcTitle(r){ return r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
+  ['item 5: the H2H page skips our captured Pinnacle (Database Bet365 kept)', "      h2hCapPinnacle(S.rows, a, b, S.clA, S.clB);\n", ""],
+  ['item 5: the page step takes any captured book (a captured Bet365 over the Database)', "      if (!c || c.book !== 'P' || c.src !== 'cap') return;", "      if (!c || c.src !== 'cap') return;"],
+  ['board exclusion: the tab counts its own match', "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
+  ['board exclusion: the H2H page leaves out this week\'s board matches again', "      const nkF = fn('sfH2hNkCount');\n      const own = [];", "      const nkF = fn('sfH2hNkCount');\n      const own = (typeof matches !== 'undefined' ? matches : []).filter(x => x && x.finalScore).map(eventKeyOfMatch);"],
 ];
 // Mutants applied to a copy of career-backfill.js / bsp-pipeline.js written NEXT TO the original (so its relative
 // requires resolve), passed to the suite as TEN437_BACKFILL / TEN437_PIPELINE, and removed afterwards.
@@ -61,6 +73,9 @@ const PIPELINE_MUTANTS = [
   ['S2: Tokyo 2021 back on the per-key surface', "2021: 'hard', ", ""],
   ['S2: the shard writer leaves cached Olympic rows on their old surface', "    for (const r of rows) { const os = olympicSurface(r.tournament, r.date); if (os) r.surface = os; }\n", ""],
   ['D3: the shard without its own id', "      ...(tmlIds.get(String(key)) ? { id: tmlIds.get(String(key)) } : {}),", ""],
+  ['ruling 2 (corrected): the card\'s Form list wired to the H2H list', "\nconst FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FORM_EVENTS_NOT_COUNTED.source, 'i');\n", "\nconst FORM_NOT_ATP_RECORD = H2H_NOT_ATP_RECORD;\n"],
+  ['ruling 2 (corrected): the pipeline\'s H2H list its own copy (the Form base — Asian Games counted)', "\nconst H2H_NOT_ATP_RECORD = require('./h2h-core.js').ATP_RECORD_NOT_COUNTED;\n", "\nconst H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;\n"],
+  ['board exclusion: the model counts its own match', "  const own = [ek(m)].filter(Boolean);", "  const own = [];"],
 ];
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten437-mut-'));

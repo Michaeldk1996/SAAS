@@ -11,7 +11,7 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
 - **One function:** every surface that shows an H2H record, meeting count or anything computed over a pair's meetings
   (Match analysis → H2H tab, Key factors' H2H box, the Head to Head page, the Download report that prints them) builds the
   meetings with `H2HCore.joinMeetings` (`h2h-core.js`) over both players' career-history shards, fed by the same three
-  helpers (`sfH2hNkCount`, `sfH2hSide`, `sfH2hOwnEks`). A keyless archive row (TML, pre-2022) is joined by date + opposite
+  helpers (`sfH2hNkCount`, `sfH2hSide`, and the own-match key: `[eventKeyOfMatch(m)]` in the tab, none on the page). A keyless archive row (TML, pre-2022) is joined by date + opposite
   result + names, so it counts. **Test:** `test-ten437-h2h.mjs` "UI" + "golden pairs".
 - **The model reads the same list** (founder ruling 2026-10-14, card edd72529: "move the model to the full ATP-rule list,
   keep today's age bands and tiers"). `buildModelOutput` (`bsp-pipeline.js`) hands `runModel` a copy of each match whose
@@ -27,8 +27,10 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   including one before the first set finished (0 - 0, no set scores: a meeting, never a walkover) — and defaults. Not
   counted — Challengers and ITF (career-history `chitf`), every qualifying round, walkovers (listed "w/o", counted
   nowhere — N2), Hopman Cup, exhibitions, the Asian Games and Davis Cup Group III/IV round-robins (all absent from ATP's
-  list; founder 2026-10-16 "following ATP"). Constants: `H2H_LEVELS`, `H2H_NOT_COUNTED` (= the pipeline's
-  `H2H_NOT_ATP_RECORD`), `inPopulation`, `isWalkover`. No record carries a level mix (there is no lower level in it).
+  list; founder 2026-10-16 "following ATP"). Constants: `H2H_LEVELS`, `H2H_NOT_COUNTED` = `ATP_RECORD_NOT_COUNTED`
+  (h2h-core.js) — **read by H2H only** (founder 2026-10-16: "ATP's rules apply to H2H only"): every screen's meeting list
+  (`joinMeetings`), the pipeline's `H2H_NOT_ATP_RECORD` / `h2hCountsInAtpRecord`, the model (`modelH2hMatches`). No H2H
+  copy anywhere (the dashboard holds none). Form never reads it — see the Form rule below. `inPopulation`, `isWalkover`. No record carries a level mix (there is no lower level in it).
   **Test:** "population constants", "D2", "D5", `test-ten273-team-events.mjs`.
 - **Qualifying is read from BOTH players' rows, dated against the event's main draw** (founder 2026-10-16, D1).
   api-tennis files a qualifying draw under the main-draw key with its own "Semi-finals"/"Final" words. A feed meeting
@@ -66,9 +68,13 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
 - **Prices attach to meetings, never the reverse:** the book rule is unchanged (Pinnacle close, else Bet365 close, one
   book per meeting; `fhCloseFor` is unchanged); only the pairing changed — a keyless archive meeting (dated at its event's
   start) looks for its close in the `H2H_DEDUPE_WINDOW` after that date, same opponent (`fhH2hWindowCloses`). Never
-  ambiguous: meetings competing for the same closes (an RR and a final in one event) get them in round order only when
-  every close is there and each matches its meeting's result — else every one of them is a dash; a team tie (Davis / Laver
-  Cup) takes none (no Tennis-Data close exists, a tour match's would be wrong). A keyed meeting keeps ±1 day. A meeting
+  ambiguous: meetings competing for the same closes get them in EVENT-DATE order, and only meetings of one event (same
+  start date: an RR and a final) in round order (their rounds must be known), only when every close is there and each
+  matches its meeting's result — else every one of them is a dash (founder 2026-10-16: "the tab prices the same 34 meetings
+  the page does" — ordering a whole group by round gave RG 2020 QF Hamburg 2020 F's close and dashed both; 33 of the 34 now
+  priced as the page, 0 priced differently; Cilic–Dimitrov Cincinnati 2016 stays a dash: a close-less Olympics meeting a week
+  earlier, one close, one winner). A team tie (Davis / Laver / ATP / United Cup) takes none (no Tennis-Data close exists, a
+  tour match's would be wrong). **Test:** "tab price pairing" (Rublev–Tsitsipas 2020 1.84 / 2.77). A keyed meeting keeps ±1 day. A meeting
   with no close prints a dash. **Test:** "prices attach to meetings" (Dimitrov–Goffin ATP Finals 2017 RR + F). "X of Y meetings priced": Y = every
   meeting in the filter (the full H2H count), never the priced subset. Sets won, Tiebreaks, Deciding sets and the surface
   counts read the same list, "N of M with set scores" with real counts. **Test:** "UI" ("0 of 15 meetings priced"), the
@@ -169,10 +175,12 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   row / bar opens the shared sheet. Form has no row or tooltip renderer of its own.
 - **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
   the form shards; the tab drops any that reach it (career-history rows included).
-- **A Laver Cup match never becomes a Form row** (founder TEN-380, 2026-10-04 07:33Z): not in the last 10, the W–L, v market,
-  the hot lines or Key factors' Recent form — the next match slides in. Exhibitions (`FH_H2H_NOT_ATP_RECORD`) are out too.
-  Davis Cup and United Cup stay (team events the founder did not exclude). One constant, `FH_FORM_NOT_ATP_RECORD`, applied
-  in `fhFormPlayer`. **The Matches board card's Recent form % follows the same rule** (founder TEN-383, 2026-10-04): the
+- **A Laver Cup match never becomes a Form row** (founder TEN-380, 2026-10-04 07:33Z; kept by TEN-437 2026-10-16: "Form
+  keeps its current rules, unchanged" — ATP's rules are H2H only): not in the last 10, the W–L, v market, the hot lines or
+  Key factors' Recent form — the next match slides in. Hopman Cup and exhibitions are out too; Davis Cup, United Cup,
+  Challengers / ITF / qualifying (TEN-8, 2026-08-03), the Asian Games and Davis Cup Group III/IV stay in. Form's OWN list
+  (`FH_FORM_EVENTS_NOT_COUNTED` + Laver Cup = `FH_FORM_NOT_ATP_RECORD`), applied in `fhFormPlayer`; never h2h-core's
+  `ATP_RECORD_NOT_COUNTED`. **The Matches board card's Recent form % follows the same rule** (founder TEN-383, 2026-10-04): the
   pipeline's `recentFormPct` scores the last 10 rows outside `FORM_NOT_ATP_RECORD` (bsp-pipeline.js; the same list as
   `FH_FORM_NOT_ATP_RECORD`), so the card equals the Form tab's All surfaces · Last 10 W–L. The form shard keeps every row;
   the tab filters them. **The Player Profile's Recent form follows it too** (founder TEN-383, 2026-10-04 10:04Z, "profile
@@ -180,8 +188,9 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   `buildCtx`'s form rows (`inForm`, `FORM_NOT_ATP_RECORD` in player-profile-v2.js); the legacy renderer's Recent form tile,
   strip and list read `formRows`. Data only — the layout is locked, the ribbon still rates its last 18. Records keep every
   match: the header Current run / Last played / Season, Career record and its drills, the sheet lookup, the season W–L.
-  H2H keeps the 25 Sep ruling. **Test:** `test-ten330-form.mjs` "review 2: a Laver Cup match is not a Form row; Davis Cup
-  still is", "TEN-383: the board card's Recent form % counts the Form tab's matches" (one fixture: card = 100%, Form tab
+  H2H keeps ATP's list. **Test:** `test-ten437-h2h.mjs` "H2H counts Fritz's Laver Cup … Form counts the reverse" and "the
+  list map" (Form's four readers pinned to one Form list, never the ATP one); `test-ten330-form.mjs` "review 2: a Laver Cup
+  match is not a Form row; Davis Cup still is", "TEN-383: the board card's Recent form % counts the Form tab's matches" (one fixture: card = 100%, Form tab
   10–0) and "TEN-383: the Player Profile Recent form … counts the same matches" (the real V2 `buildCtx` → ribbon + ledger:
   no Laver Cup row, Davis/United Cup kept, last 10 = the card's 100%, "Window: 11 matches"); the three lists' sources are
   asserted equal. Mutants for all three in `tools/test-ten330-mutants.js`.
@@ -302,8 +311,12 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   **Test:** the set holds exactly these three singles types; `test-ten273-team-events.mjs`.
 - **A match never counts in its own H2H record** (ruling 2026-09-24), on every surface and in the model: the pipeline
   drops the fixture's own eventKey at every H2H build site (`h2hExcludeOwn`) and again before `matches.json` is written
-  (`stripOwnFixtureFromH2H`); the screens pass the board's finished matches to the join (`sfH2hOwnEks`). **Test:** a
-  finished board match whose own eventKey is in `h2h.matches` fails, and the record is recomputed without it.
+  (`stripOwnFixtureFromH2H`). **Superseded on the screens by founder 2026-10-16 (TEN-437 ruling 1):** only the match's OWN
+  analysis leaves it out — the Match analysis tab opened on that match (`own = [eventKeyOfMatch(m)]`) and the model
+  (`modelH2hMatches`, `own = [ek(m)]`); the H2H page and every other surface count every meeting, this week's included
+  (`own = []`; `sfH2hOwnEks` is gone). Medvedev–Tsitsipas reads 11–5 / 16 on the H2H page while the Shanghai match's own
+  analysis reads 10–5 / 15. **Test:** "board-match exclusion" in `test-ten437-h2h.mjs`; a finished board match whose own
+  eventKey is in `h2h.matches` fails, and the record is recomputed without it.
 - **Who won a meeting is decided by player key, never surname** (ruling 2026-09-24):
   `h2hP1WasFirst` compares `first_player_key` / `second_player_key` with p1's key; a row that
   carries neither is not counted. **Test:** two same-surname players (Zhizhen Zhang 590, Ze
@@ -360,3 +373,20 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
 - **Line-height:** the design's `normal` is set once for `#aSectionForm, #aSectionH2H, #fhSheet` — not
   on the whole modal shell, which (measured) moves every leaf of the nine other tabs.
 - **Price range:** a range from fewer than `FH_PRICE_THIN = 3` priced meetings shows an `n=k` chip.
+
+## Bet365 fallback on H2H prices (founder TEN-437, 2026-10-16, item 4)
+- Bet365 closes stay where no Pinnacle close exists (884 meetings in ATP main draw 13 Jan–30 Apr 2026 among them), with the
+  tab's "B" marker / "B365" tag and ONE hover on every H2H surface: `FH_B365_HOVER` = "Bet365 closing odds, Pinnacle not
+  available" (`fhH2hSrcTitle` in the tab's rows, `fhB365Tag(r, true)`, `fhB365Meta`, the H2H page's `h2hPriceTitle`).
+  H2H only: Form and every other surface keep `fhSrcTitle`'s source label. The H2H page's meeting rows carry the same
+  "B" marker as the tab (founder 2026-10-16 item 4; supersedes TEN-402 r1 fix 3's no-marker ledger). Remove only when a
+  Pinnacle source is found. **Test:** "a Bet365-priced meeting" in `test-ten437-h2h.mjs`; `test-ten402-r1y.mjs` fix 3.
+- **Pinnacle first on every screen** (founder 2026-10-16 item 5): the H2H page prices a meeting from our captured Pinnacle
+  close (or the Pinnacle history archive behind it, `cap` rows of `match-closes/{key}.json`) before the Database's
+  Tennis-Data row — the tab's `FH_BOOK_ORDER` first rung, through the tab's own matcher (`h2hCapPinnacle` → `fhCloseFor`).
+  Keyed meetings only (a keyless archive row is dated at its event's start); a retirement stays a dash on this page, as the
+  Database join voids it (17 captured-era retirements the tab prices — reported to the founder 2026-10-16).
+  Measured 2026-10-16 on 7,558 pairs: the 13 Jul–Sep 2026 meetings the page had priced Bet365 now read the tab's Pinnacle;
+  tab and page now differ on 0 priced non-team meetings. **Test:** "Struff–Tabilo Cincinnati 2026 takes the captured
+  Pinnacle close 2.59" in `test-ten437-h2h.mjs`.
+

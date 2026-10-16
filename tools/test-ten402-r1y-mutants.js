@@ -9,9 +9,10 @@ const ENV = { html: 'TEN402_HTML', tr: 'TEN402_TR' };
 const src = { html: fs.readFileSync(FILES.html, 'utf8'), tr: fs.readFileSync(FILES.tr, 'utf8') };
 const MUTANTS = [
   // ---- fix 3: price mark
-  ['fix 3: the Meetings ledger marks Bet365 rows again', 'html',
-    "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',",
-    "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',"],
+  // TEN-437 (founder 2026-10-16) reverses fix 3 for the Meetings ledger: its Bet365 rows carry the B; the mutant drops it.
+  ['TEN-437: the Meetings ledger drops the Bet365 B again', 'html',
+    "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',",
+    "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
   ['fix 3: the Playing styles ledger marks Bet365 rows again', 'html',
     "          hTitle: h2hPriceTitle(q), aTitle: h2hPriceTitle(q), hMark: '' };",
     "          hTitle: h2hPriceTitle(q), aTitle: h2hPriceTitle(q), hMark: q.price != null && q.book === 'B' ? 'B' : '' };"],

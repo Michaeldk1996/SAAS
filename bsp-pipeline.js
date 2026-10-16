@@ -295,19 +295,17 @@ const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf M
 // Gen Finals count; Hopman Cup (an ITF-sanctioned mixed event) and exhibitions (UTS,
 // Six Kings Slam, …) do not. api-tennis tags Hopman Cup "Atp Singles", so the
 // event-type filter alone keeps it — this name test removes it. The dashboard's
-// career-history join applies the same list (FH_H2H_NOT_ATP_RECORD).
-// The events no ATP record counts (the Form list below is built on it, unchanged).
-const ATP_RECORD_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
-// TEN-437 D2 (founder 2026-10-16, "following ATP"): the H2H population also leaves out the Asian Games and Davis Cup
-// Group III/IV round-robins — absent from ATP's H2H (Hangzhou 2023: 9 roster pairs, none listed by ATP; Vacherot v
-// Efstathiou, Group III 2021, not listed). The ruling is the H2H population's; Form keeps its own list (reported).
-const H2H_NOT_ATP_RECORD = new RegExp(ATP_RECORD_NOT_COUNTED.source + '|asian games|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b', 'i');
-// Form (founder TEN-380 + TEN-383, 2026-10-04): a match outside the ATP's official
-// win-loss record never counts toward recent form — the card's Recent form %, the
-// Form tab and Key factors' Recent form count the same matches. Laver Cup is the
-// case the record leaves out (Davis Cup and United Cup count), plus the exhibitions
-// above. Same list as the dashboard's FH_FORM_NOT_ATP_RECORD. H2H keeps Laver Cup.
-const FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + ATP_RECORD_NOT_COUNTED.source, 'i');
+// TEN-437 (founder 2026-10-16, correction "ATP rules apply to head-to-head only"): the H2H population's list IS
+// h2h-core.js ATP_RECORD_NOT_COUNTED — read, never copied (also the Asian Games and Davis Cup Group III/IV, absent from
+// ATP's H2H). Only H2H reads it.
+const H2H_NOT_ATP_RECORD = require('./h2h-core.js').ATP_RECORD_NOT_COUNTED;
+// Form keeps its OWN list, never the H2H one (founder TEN-380 + TEN-383 2026-10-04; kept by the 2026-10-16 correction):
+// Laver Cup, Hopman Cup and exhibitions out; Challengers / ITF / qualifying (TEN-8, 2026-08-03), the Asian Games and
+// Davis Cup Group III/IV stay in. The card's Recent form %, the Form tab, Key factors' Recent form, the profile ribbon and
+// the matchup matrix count the same matches: the same list as FH_FORM_NOT_ATP_RECORD, player-profile-v2.js and
+// tools/build-matchup-matrix.js (test-ten437-h2h.mjs "Form keeps its own list" pins all four).
+const FORM_EVENTS_NOT_COUNTED = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+const FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FORM_EVENTS_NOT_COUNTED.source, 'i');
 function h2hCountsInAtpRecord(m) {
   return !H2H_NOT_ATP_RECORD.test(String((m && (m.tournament_name || m.tournament)) || ''));
 }
@@ -3830,7 +3828,7 @@ function recentFormPct(rows) {
 // player. The stored profile list used to be the current season + the last 10 RAW rows, so a player with five 2026
 // matches (J. Thompson) drew a 10-chip ribbon while his fixtures held hundreds; 85 of 479 published profiles held
 // fewer than 18 Form rows. The list now keeps the current season + every row (newest first) down to the 18th that
-// counts toward form: a Laver Cup / exhibition row inside that span is kept (records read it) but does not count,
+// counts toward form: a row outside ATP's W–L (an exhibition, …) inside that span is kept (records read it) but does not count,
 // so the ribbon, its chips and the ledger (player-profile-v2.js inForm) always have 18 Form rows to draw when the
 // player has played them. `matches` is recentFormFromFixtures' list, newest first, walkovers already out.
 const PROFILE_FORM_WINDOW = 18;
@@ -7633,13 +7631,13 @@ const MODEL_OUTPUT_PATH = 'model-output.json';
 // (written above, this run) — handed to it as h2h.matches in the row shape buildH2HMatchList writes. matches.json keeps
 // its own m.h2h (the api-tennis list); only the model's input copy changes. No store on disk (a broken run) → the
 // api-tennis list, said loudly, never an empty H2H. readShard / names are injectable for the test.
-function modelH2hMatches(m, { readShard, readId, names, finishedBoard, nameByKey }) {
+function modelH2hMatches(m, { readShard, readId, names, nameByKey }) {
   const H2HCore = require('./h2h-core.js');
   const nk = H2HCore.nameCounts(names || []);
   const ek = m => { const id = String((m && m.id) || ''); const i = id.indexOf('-'); return i >= 0 ? id.slice(i + 1) : id; };
-  const pair = [String(m.p1Key), String(m.p2Key)].sort().join('|');
-  const own = (finishedBoard || []).filter(x => x && x.finalScore && x.p1Key != null && x.p2Key != null
-    && [String(x.p1Key), String(x.p2Key)].sort().join('|') === pair).map(ek).concat([ek(m)]).filter(Boolean);
+  // the match itself never counts in its own model input; every other meeting does, this week's finished board matches
+  // included (founder ruling 2026-10-16, replacing 2026-09-24's every-finished-board-match exclusion)
+  const own = [ek(m)].filter(Boolean);
   // The profile's name by key, as the screens' sfH2hSide passes it (TEN-437 review): one name rule for every reader.
   const full = (k, n) => (nameByKey && k != null && nameByKey[String(k)]) || n;
   // key + id (TEN-437 D3): a one-sided row is credited on the opponent's api key / TML id, never on a name
@@ -7661,7 +7659,7 @@ function modelH2hInputs(matches) {
   const shard = k => { const s = String(k == null ? '' : k); if (!s) return null; if (!(s in cache)) { try { cache[s] = JSON.parse(fs.readFileSync(`career-history/${s}.json`, 'utf8')); } catch (e) { cache[s] = null; } } return cache[s]; };
   const readShard = k => { const d = shard(k); return d ? (d.matches || []) : null; };
   const readId = k => { const d = shard(k); return (d && d.id) || null; };   // TEN-437 D3: the shard's own TML/ATP id
-  return { readShard, readId, names, finishedBoard: matches, nameByKey };
+  return { readShard, readId, names, nameByKey };
 }
 
 async function buildModelOutput(matches) {
