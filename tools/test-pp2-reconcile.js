@@ -3575,7 +3575,12 @@ const STORES = [
     // "unwired" — a false alarm from the gate's own accessor. Call the page's
     // accessors the way the page calls them or the gate measures itself.
     resolve: () => Object.keys(PLAYERS).filter(k => (I.splitCandidates(k, 'career') || []).length > 0).length,
-    universe: () => Object.keys(SPLITS_BUILT).length,
+    // The universe is the store's players WHO ARE ON TODAY'S BOARD (the holdbreak precedent above), not every player
+    // it was built for. career-splits/ is a 545-player build; the eager roster is today's board. On 16 Oct the board
+    // shrank at the day change (252 profiles) and the raw ratio read 250/545 = 46%, tripping the 50% floor and
+    // freezing every data publish from 00:00Z — although 250 of the 252 board players resolve. A store going dark
+    // (the accessor answering [] for everyone) still reads 0 of N and fails.
+    universe: () => Object.keys(SPLITS_BUILT).filter(k => PLAYERS[k]).length,
     floor: 0.5,
   },
   {
