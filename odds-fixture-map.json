@@ -4505,6 +4505,78 @@
       "p2": "T. Gentzsch",
       "startTime": "2026-10-17T14:00:00.000Z",
       "tournamentId": 45935
+    },
+    "12171789": {
+      "fixtureId": "id1204593575698088",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "J. Fearnley",
+      "p2": "H. Gaston",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171790": {
+      "fixtureId": "id1204593575698084",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "T. Griekspoor",
+      "p2": "M. Schoenhaus",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171791": {
+      "fixtureId": "id1204593575698086",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "M. Navone",
+      "p2": "J. M. Cerundolo",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171792": {
+      "fixtureId": "id1204593575698094",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "D. Prizmic",
+      "p2": "D. Dzumhur",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171793": {
+      "fixtureId": "id1204593575698082",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "H. Rune",
+      "p2": "R. Collignon",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171794": {
+      "fixtureId": "id1204593575698092",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "T. Samuel",
+      "p2": "Z. Bergs",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171795": {
+      "fixtureId": "id1204593575698096",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "J-L. Struff",
+      "p2": "M. Giron",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12171796": {
+      "fixtureId": "id1204593575698090",
+      "mappedAt": "2026-10-16T22:01:15Z",
+      "orient": "same",
+      "p1": "B. Van De Zandschulp",
+      "p2": "K. Majchrzak",
+      "startTime": "2026-10-18T10:30:00.000Z",
+      "tournamentId": 45935
     }
   },
   "missAudit": {
@@ -4517,23 +4589,12 @@
       "observedSpanDays": 18.83,
       "projectedTtlUnitsPerDay": 1.5,
       "runs": 400,
-      "spentRuns": 149,
+      "spentRuns": 150,
       "ttlBitRuns": 28,
       "ttlBitShare": 0.07,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-28T01:02:15Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 22
-      },
       {
         "at": "2026-09-28T02:01:21Z",
         "fixturesUnitsSpent": 0,
@@ -8922,9 +8983,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 10
+      },
+      {
+        "at": "2026-10-16T22:01:15Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 8,
+        "ttlBit": false,
+        "unmapped": 8,
+        "upcoming": 18
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-16T20:00:21Z"
+  "updatedAt": "2026-10-16T22:01:15Z"
 }
