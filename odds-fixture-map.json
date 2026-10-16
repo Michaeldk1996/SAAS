@@ -4337,11 +4337,11 @@
     },
     "12171245": {
       "fixtureId": "id1200308575620252",
-      "mappedAt": "2026-10-14T16:00:29Z",
+      "mappedAt": "2026-10-16T04:45:17Z",
       "orient": "same",
       "p1": "D. Medvedev",
       "p2": "T. Paul",
-      "startTime": "2026-10-16T04:00:00.000Z",
+      "startTime": "2026-10-16T10:00:00.000Z",
       "tournamentId": 3085
     },
     "12171477": {
@@ -4364,23 +4364,12 @@
       "observedSpanDays": 18.8,
       "projectedTtlUnitsPerDay": 1.7,
       "runs": 400,
-      "spentRuns": 153,
+      "spentRuns": 154,
       "ttlBitRuns": 32,
       "ttlBitShare": 0.08,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-27T08:30:29Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 9
-      },
       {
         "at": "2026-09-27T09:30:33Z",
         "fixturesUnitsSpent": 0,
@@ -8769,9 +8758,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 3
+      },
+      {
+        "at": "2026-10-16T04:45:17Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 3
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-15T22:30:52Z"
+  "updatedAt": "2026-10-16T04:45:17Z"
 }
