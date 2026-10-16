@@ -4361,6 +4361,78 @@
       "p2": "D. Medvedev",
       "startTime": "2026-10-17T11:00:00.000Z",
       "tournamentId": 3085
+    },
+    "12171713": {
+      "fixtureId": "id1204195975696932",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "P. Bar Biryukov",
+      "p2": "S. Sakellaridis",
+      "startTime": "2026-10-17T11:00:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171714": {
+      "fixtureId": "id1204195975696936",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "T. Daniel",
+      "p2": "N. Basilashvili",
+      "startTime": "2026-10-17T07:10:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171715": {
+      "fixtureId": "id1204195975696930",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "G. Diallo",
+      "p2": "H. Mayot",
+      "startTime": "2026-10-17T06:00:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171716": {
+      "fixtureId": "id1204195975696928",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "A. Omarkhanov",
+      "p2": "R. Sakamoto",
+      "startTime": "2026-10-17T06:00:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171717": {
+      "fixtureId": "id1204195975696940",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "L. Pavlovic",
+      "p2": "I. Simakin",
+      "startTime": "2026-10-17T08:20:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171718": {
+      "fixtureId": "id1204195975696942",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "R. Safiullin",
+      "p2": "I. Ivashka",
+      "startTime": "2026-10-17T09:00:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171719": {
+      "fixtureId": "id1204195975696934",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "A. Shevchenko",
+      "p2": "D. Glinka",
+      "startTime": "2026-10-17T12:00:00.000Z",
+      "tournamentId": 41959
+    },
+    "12171720": {
+      "fixtureId": "id1204195975696938",
+      "mappedAt": "2026-10-16T16:30:23Z",
+      "orient": "same",
+      "p1": "A. Walton",
+      "p2": "B. Zhukayev",
+      "startTime": "2026-10-17T07:10:00.000Z",
+      "tournamentId": 41959
     }
   },
   "missAudit": {
@@ -4374,22 +4446,11 @@
       "projectedTtlUnitsPerDay": 1.5,
       "runs": 400,
       "spentRuns": 148,
-      "ttlBitRuns": 29,
-      "ttlBitShare": 0.072,
+      "ttlBitRuns": 28,
+      "ttlBitShare": 0.07,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-27T19:47:03Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 1,
-        "openMisses": 1,
-        "stale": 1,
-        "ttlBit": true,
-        "unmapped": 0,
-        "upcoming": 23
-      },
       {
         "at": "2026-09-27T20:47:11Z",
         "fixturesUnitsSpent": 0,
@@ -8778,9 +8839,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 2
+      },
+      {
+        "at": "2026-10-16T16:30:23Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 8,
+        "ttlBit": false,
+        "unmapped": 8,
+        "upcoming": 10
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-16T14:30:12Z"
+  "updatedAt": "2026-10-16T16:30:23Z"
 }
