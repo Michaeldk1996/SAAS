@@ -6,6 +6,8 @@
 #            no Pinnacle +30 payload (own 5 s slot, never the odds loop's key gate), then derive their closes
 #   backup   today's dated copy into the private ops repo (Michaeldk1996/stennisfy-ops), never replacing a day
 #   restore-check  rebuild every row from the backups into restore SQL and compare its counts with the live tables
+#   derive-held  archive closes for held Pinnacle +30 payloads whose match has NO live-flip row, cut at Oddspapi's
+#            trueStart (founder 2026-10-16; window from / to, default the ruled 13-30 Apr; dry_run inserts nothing)
 #   daily    import + derive + backup (the schedule). Runs from main only.
 name: Pinnacle archive
 on:
@@ -14,13 +16,25 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | import | derive | pull-backlog | backup | restore-check | daily
+        description: install | import | derive | derive-held | pull-backlog | backup | restore-check | daily
         required: true
         default: daily
       days:
         description: derive — how many days of live-flipped matches to derive closes for (daily = 3)
         required: false
         default: '3'
+      from:
+        description: derive-held — first day (UTC, inclusive); the ruling covers 2026-04-13 .. 2026-04-30
+        required: false
+        default: '2026-04-13'
+      to:
+        description: derive-held — day after the last (UTC, exclusive)
+        required: false
+        default: '2026-05-01'
+      dry_run:
+        description: derive-held — 'yes' counts what it would add and inserts nothing
+        required: false
+        default: 'yes'
 permissions:
   contents: read
 concurrency:
@@ -78,6 +92,22 @@ jobs:
           set -euo pipefail
           python3 tools/pinarch.py derive --days "${{ github.event.inputs.days || '3' }}"
           python3 tools/pinarch.py counts --record derive
+      - name: derive-held — closes for held payloads with no live-flip row (Oddspapi trueStart cut; no metered call)
+        if: env.MODE == 'derive-held'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}
+          FROM: ${{ github.event.inputs.from || '2026-04-13' }}
+          TO: ${{ github.event.inputs.to || '2026-05-01' }}
+        run: |
+          set -euo pipefail
+          # fail closed: only the exact value "no" writes to the permanent archive; anything else is a dry run or an error
+          case "$DRY_RUN" in
+            yes) python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO" --dry-run ;;
+            no)  python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO"
+                 python3 tools/pinarch.py counts --record derive-held ;;
+            *)   echo "dry_run must be exactly 'yes' or 'no' (got '$DRY_RUN') — nothing run" >&2; exit 2 ;;
+          esac
       - name: pull-backlog — Pinnacle +30 history for started matches with no archive close, then their closes
         if: env.MODE == 'pull-backlog'
         env:

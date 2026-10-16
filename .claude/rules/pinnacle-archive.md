@@ -51,6 +51,17 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   BOTH surnames within 36 h (exactly one candidate; two or more, or none → no close, counted). Player keys are
   api-tennis's (`get_fixtures`, `timezone=UTC`). The Oddspapi fixtures list is the only METERED call (`/v4/fixtures`, one
   per 6-day window, cached; re-asked every 6 h); the meter is printed before and after.
+- `derive-held` (dispatch only; founder ruling 2026-10-16, TEN-437 item 6) — closes for the held `pinnacle+30` payloads
+  whose match has **no `live_flip_log` row** (the back-fill, before 17 Sep). Window `from` / `to` (UTC days; default the
+  ruled **13–30 Apr**; anything wider is not ruled), `dry_run` (default yes: counts, inserts nothing). Cut = Oddspapi's
+  `trueStartTime` alone after the `resolve_start` gate; missing or rejected → no close, counted (`odds.md` "Pinnacle
+  closing source by period"). Events = api-tennis `get_fixtures` (UTC) ATP / Challenger singles of the window, minus
+  walkovers / cancellations and minus any event with a live-flip row (the `derive` above owns those). The Oddspapi fixture:
+  the board map, else the fixtures we already hold — the committed `.ten225-fixture-index.json.gz` (`/v4/fixtures` as read
+  on 17 Sep: 21 Mar – 16 Sep, with trueStart and trueEnd), else a back-fill raw row's own `meta` — joined on BOTH surnames
+  within 36 h of api-tennis's start, exactly one candidate; a fixture claimed by two events is no one's. **It never makes
+  the metered `/v4/fixtures` call**: a match only that call could join gets no close and is counted. **Test:**
+  `tools/test-pinarch-close.py`.
 - `restore-check` — rebuilds every row from the backups and compares with the live tables (no write).
 - **Post-start pull** — `oddspapi-postmatch.yml` job `pinnacle-history` (dispatched at :07 / :22 / :37 / :52 by the
   pg_cron pinger, after the post-match job so the two never call Oddspapi at once): every match our poller saw start in the

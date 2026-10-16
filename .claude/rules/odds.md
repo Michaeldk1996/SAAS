@@ -192,8 +192,9 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   one match): (1) our live Oddspapi capture, labelled **"captured"**, shown first; (2) the Oddspapi Pinnacle archive pulled
   after the start, labelled **"from Pinnacle history"** — it REPLACES the captured price (a new archive row whose
   `supersedes` names the captured one; the captured row stays in the archive); (3) Tennis-Data 2026 Bet365 — a fallback
-  only where no Pinnacle close exists (13 Jan–Apr 2026: Oddspapi keeps no history that old, so the R8 Bet365 fallback
-  prices those rows). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
+  only where no Pinnacle close exists. **Measured (back-fill, 15 Oct):** Oddspapi's `/v4/historical-odds` reaches back ~185 days — on
+  15 Oct the 11–12 Apr fixtures already 404'd and 13 Apr answered — so 13 Jan – 12 Apr 2026 has no Oddspapi history (the
+  R8 Bet365 fallback prices those rows) and **13–30 Apr IS held** (the back-fill's `pinnacle+30` payloads). **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
   timestamps; measured 2 decimals) — a cross-check only.
 - **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before the EARLIER of our live-flip
   start and Oddspapi's `trueStartTime`** (founder ruling 2026-10-14, after the start-time check: api-tennis flagged a match
@@ -209,6 +210,19 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `close_at`, `archive_close_row`; rules and jobs: `.claude/rules/pinnacle-archive.md`.
   **Test:** `tools/test-pinarch-close.py` (the earlier cut wins; a later trueStart never moves it; the gate's rejects; the
   in-play control; the correction row).
+- **A held payload whose match has NO live-flip row is cut at Oddspapi's `trueStartTime` alone** (founder ruling
+  2026-10-16, TEN-437 item 6: "derive closes from the oddspapi Pinnacle prices we already hold for 13–30 Apr, using
+  oddspapi's own start time as the cut"). `live_flip_log` begins 17 Sep, so every back-fill payload before it has no
+  live-flip. The trueStart passes the same gate first; missing or rejected → **no close**, counted with the reason
+  (never the scheduled time, never an in-play entry). `start_source` = `oddspapi trueStart (no live-flip held)`; label,
+  both sides, insert-only and `supersedes` exactly as above. With a live-flip row the earlier-of rule is unchanged. Ruled
+  window: **13–30 Apr 2026**; the same code reaches the back-fill to 16 Sep only on an explicitly asked window (not
+  ruled). Code: `tools/pinarch.py` `effective_cut` (no live-flip), `events_held`, `derive-held`. **Measured (dry run
+  16 Oct, archive raw ids to 13,764, nothing inserted):** all 154 Tennis-Data ATP main-draw matches of 13–30 Apr have a
+  held `pinnacle+30` payload; 151 yield a close (2 walkovers have none; Tsitsipas v Marozsan, Munich, has a trueStart
+  20 h before its trueEnd → rejected). 13 Jan – 12 Apr stays without an Oddspapi Pinnacle close.
+  **Test:** `tools/test-pinarch-close.py` (the no-live-flip cut; a rejected / missing trueStart → no close; the in-play
+  entry after the cut never used; the live-flip control unchanged; one fixture claimed by two events → no close).
 - **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).
   Every pipeline run exports the current close per match (`pinnacle-closes.json`, an archive close over a captured one)
   and `build-match-closes.js` builds the closing-prices shards from it (fallback: the committed

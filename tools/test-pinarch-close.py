@@ -263,5 +263,88 @@ def boom(f): raise http.client.IncompleteRead(b'', 61948)
 P._last_hist[0] = 0.0
 b_, e_ = P.hist_get('idZ', 'k', {}, sleep=lambda x: None, get=boom)
 check('pull: an IncompleteRead is returned as an error (network: IncompleteRead), not raised', b_ is None and e_ == 'network: IncompleteRead', (b_, e_))
+# founder ruling 2026-10-16 (TEN-437 item 6): a held payload whose match has NO live-flip row is cut at Oddspapi's trueStart
+# alone, after the same gate; missing or rejected -> no close; never the schedule, never an in-play entry
+TS, TE, SCH = T('2026-04-20T10:07:00Z'), T('2026-04-20T11:40:00Z'), T('2026-04-20T10:00:00Z')
+c, src, rej = P.effective_cut(None, TS, TE, SCH)
+check('no live-flip: the sane trueStart is the cut, start_source names it', c == TS and src == P.NO_FLIP_SOURCE == 'oddspapi trueStart (no live-flip held)' and rej is None, (c, src, rej))
+check('no live-flip: no trueStart → no cut (never the scheduled time)', P.effective_cut(None, None, TE, SCH) == (None, None, P.NO_TRUE_START))
+check('no live-flip: a trueStart over 6 h before its end is rejected → no cut, the gate\'s reason',
+      P.effective_cut(None, T('2026-04-20T03:00:00Z'), TE, SCH) == (None, None, 'implausible_duration'))
+check('no live-flip: no end and a trueStart over 6 h before the schedule → rejected', P.effective_cut(None, T('2026-04-20T03:00:00Z'), None, SCH) == (None, None, 'implausible_early_start'))
+check('no live-flip: end before start → rejected', P.effective_cut(None, TS, T('2026-04-20T09:00:00Z'), SCH)[2] == 'end_before_start')
+check('control: with a live-flip the earlier-of rule is unchanged (an earlier sane trueStart wins; a later one never moves the cut)',
+      P.effective_cut(T('2026-04-20T10:09:00Z'), TS, TE, SCH)[:2] == (TS, P.TRUE_START_SOURCE)
+      and P.effective_cut(T('2026-04-20T10:05:00Z'), TS, TE, SCH)[:2] == (T('2026-04-20T10:05:00Z'), P.CUT_SOURCE)
+      and P.effective_cut(T('2026-04-20T10:05:00Z'), T('2026-04-20T03:00:00Z'), TE, SCH) == (T('2026-04-20T10:05:00Z'), P.CUT_SOURCE, 'implausible_duration'))
+S5 = P.mw_series(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-04-20T08:00:00Z', 1.60), e('2026-04-20T10:06:30Z', 1.55), e('2026-04-20T10:07:00Z', 1.52), e('2026-04-20T10:20:00Z', 1.15)]}},
+    '122': {'players': {'0': [e('2026-04-20T08:00:00Z', 2.40), e('2026-04-20T10:05:00Z', 2.55), e('2026-04-20T10:07:01Z', 2.70), e('2026-04-20T10:20:00Z', 5.50)]}}}}}}}}).encode())
+atf = [{'event_key': 12112000, 'event_date': '2026-04-20', 'event_time': '10:00', 'event_first_player': 'A. Rinderknech', 'event_second_player': 'T. Paul',
+        'first_player_key': 111, 'second_player_key': 222, 'event_type_type': 'Atp Singles', 'event_status': 'Finished', 'event_winner': 'Second Player',
+        'tournament_name': 'ATP Munich', 'tournament_round': 'ATP Munich - 1/16-finals'},
+       {'event_key': 12112001, 'event_date': '2026-04-20', 'event_time': '12:00', 'event_first_player': 'B. Bonzi', 'event_second_player': 'C. Moutet',
+        'first_player_key': 333, 'second_player_key': 444, 'event_type_type': 'Atp Singles', 'event_status': 'Finished'},
+       {'event_key': 12112002, 'event_date': '2026-04-20', 'event_time': '13:00', 'event_first_player': 'D. Altmaier', 'event_second_player': 'E. Hanfmann',
+        'first_player_key': 555, 'second_player_key': 666, 'event_type_type': 'Atp Singles', 'event_status': 'Finished'},
+       {'event_key': 12112003, 'event_date': '2026-04-20', 'event_time': '14:00', 'event_first_player': 'F. Fritz', 'event_second_player': 'G. Gaston',
+        'first_player_key': 777, 'second_player_key': 888, 'event_type_type': 'Atp Singles', 'event_status': 'Finished'},
+       {'event_key': 12112004, 'event_date': '2026-04-20', 'event_time': '15:00', 'event_first_player': 'H. Hurkacz', 'event_second_player': 'I. Ivashka',
+        'first_player_key': 1, 'second_player_key': 2, 'event_type_type': 'Atp Singles', 'event_status': 'Walk Over'},
+       {'event_key': 12112005, 'event_date': '2026-04-12', 'event_time': '15:00', 'event_first_player': 'J. Jarry', 'event_second_player': 'K. Kecmanovic',
+        'first_player_key': 3, 'second_player_key': 4, 'event_type_type': 'Atp Singles', 'event_status': 'Finished'}]
+idx = {'idRP': {'cat': 'ATP', 'p1': 'Paul, Tommy', 'p2': 'Rinderknech, Arthur', 'startSched': '2026-04-20T10:00:00Z', 'trueStart': '2026-04-20T10:07:00Z', 'trueEnd': '2026-04-20T11:40:00Z'},
+       'idBM': {'cat': 'ATP', 'p1': 'Bonzi, Benjamin', 'p2': 'Moutet, Corentin', 'startSched': '2026-04-20T12:00:00Z', 'trueStart': '2026-04-20T05:00:00Z', 'trueEnd': '2026-04-20T13:30:00Z'},
+       'idAH': {'cat': 'ATP', 'p1': 'Altmaier, Daniel', 'p2': 'Hanfmann, Yannick', 'startSched': '2026-04-20T13:00:00Z', 'trueStart': None, 'trueEnd': None}}
+meta_rows = [{'id': 1, 'fixture_id': 'idFG', 'meta': {'trigger': 'backfill', 'participants': ['Fritz, Taylor', 'Gaston, Hugo'], 'startTime': '2026-04-20T14:00:00Z',
+              'trueStartTime': '2026-04-20T14:03:00Z', 'category': 'ATP'}},
+             {'id': 2, 'fixture_id': 'idRP', 'meta': {'trigger': 'backfill', 'participants': ['Paul, Tommy', 'Rinderknech, Arthur'], 'startTime': '2026-04-20T10:00:00Z',
+              'trueStartTime': '2026-04-20T10:07:00Z', 'category': 'ATP'}}]
+fxm = P.held_fixture_meta(idx, meta_rows)
+check('held fixtures: the committed index (with trueEnd) over a back-fill row\'s meta; a fixture only in the meta is kept',
+      fxm['idRP']['from'] == 'fixture index' and fxm['idRP']['trueEndTime'] == '2026-04-20T11:40:00Z' and fxm['idFG']['from'] == 'back-fill raw meta', fxm)
+hevs, hmiss, hwhy = P.events_held(atf, fxm, {'12112003'})
+hby = {x['event_key']: x for x in hevs}
+check('no live-flip event: joined on both surnames, participant 1 = the api-tennis SECOND player, cut = trueStart, keys from api-tennis',
+      list(hby) == ['12112000'] and hby['12112000']['fixture_id'] == 'idRP' and hby['12112000']['p1IsParticipant1'] is False
+      and hby['12112000']['cut'] == T('2026-04-20T10:07:00Z') and hby['12112000']['cutSource'] == P.NO_FLIP_SOURCE and hby['12112000']['p1Key'] == 111, (hevs, hmiss))
+hw = dict(hwhy)
+check('rejected trueStart → no close, counted with the gate\'s reason; missing trueStart → no close, counted',
+      hw.get('12112001') == 'trueStart: implausible_duration' and hw.get('12112002') == 'trueStart: ' + P.NO_TRUE_START, hwhy)
+check('a match WITH a live-flip row is left to the live-flip derive; a walkover never starts; outside the window → not this path',
+      hw.get('12112003', '').startswith('live-flip row held') and hw.get('12112004', '').startswith('api-tennis: never started') and '12112005' not in hw, hwhy)
+hrow, _ = P.archive_close_row(hby['12112000'], 2, 'idRP', S5)
+check('no live-flip close: the last active entry at or before trueStart per side (Paul 1.52 @10:07:00, Rinderknech 2.55), never the 10:07:01 / 10:20 in-play',
+      hrow['p1'] == 2.55 and hrow['p2'] == 1.52 and hrow['close_ts'].startswith('2026-04-20T10:07:00') and hrow['start_ts'].startswith('2026-04-20T10:07:00')
+      and hrow['start_source'] == P.NO_FLIP_SOURCE and hrow['label'] == 'from Pinnacle history' and hrow['gap_to_start_s'] == 0.0, hrow)
+hsc = hrow['detail']['startCheck']
+check('no live-flip close: startCheck says no live-flip and keeps the trueStart / trueEnd / schedule', hsc['liveFlip'] is None and hsc['oddspapiTrueStart'].startswith('2026-04-20T10:07')
+      and hsc['oddspapiTrueEnd'].startswith('2026-04-20T11:40') and 'trueStartMinusCutS' not in hsc, hsc)
+check('control: cut at the schedule + 20 min would take the in-play 5.50 / 1.15 (so the trueStart cut is what keeps it out)',
+      P.close_at(S5, T('2026-04-20T10:20:00Z'))[0]['122'][0] == 5.50)
+NOW_RAWS = {'idRP': {'id': 2, 'payload_gz': '\\x' + __import__('gzip').compress(json.dumps({'bookmakers': {'pinnacle+30': {'markets': {'121': {'outcomes': {
+    '121': {'players': {'0': [e('2026-04-20T08:00:00Z', 1.60)]}}, '122': {'players': {'0': [e('2026-04-20T08:00:00Z', 2.40)]}}}}}}}}).encode()).hex()}}
+drows, dwhy, _ = P.derive_rows(hevs, NOW_RAWS)
+check('derive_rows: the held payload → one row; a fixture with no payload is counted, never priced', len(drows) == 1 and drows[0]['p1'] == 2.40 and dwhy == {}, (drows, dwhy))
+_, dwhy2, dper2 = P.derive_rows(hevs, {})
+check('derive_rows: no payload held → "no raw payload yet", per event', dwhy2 == {'no raw payload yet': 1} and dper2 == [('12112000', 'no raw payload yet')], (dwhy2, dper2))
+held_cap = [{'id': 50, 'event_key': 12112000, 'label': 'captured', 'dedupe_key': 'c', 'p1': 2.5, 'p2': 1.5, 'close_ts': '2026-04-20T09:00:00Z', 'supersedes': None}]
+pa = P.plan_archive_closes(drows, held_cap)
+check('insert-only: the new close supersedes a held one by a NEW row (never an edit); held again → nothing added',
+      len(pa) == 1 and pa[0]['supersedes'] == 50 and P.plan_archive_closes(drows, held_cap + [dict(pa[0], id=51)]) == [], pa)
+twin = [dict(atf[0], event_key=12112099, event_time='11:00')]
+tev, tmiss, _ = P.events_held(atf[:1] + twin, fxm, set())
+check('one Oddspapi fixture claimed by two api-tennis events → neither gets a close (never a guess)', tev == [] and tmiss.get('one Oddspapi fixture, two api-tennis events') == 2, tmiss)
+src_dh = inspect.getsource(P.cmd_derive_held)
+check('derive-held: never the metered /v4/fixtures (no discovery(), no api_get), writes only through insert(), --dry-run inserts nothing',
+      'discovery(' not in src_dh and 'api_get' not in src_dh and 'insert(CLOSE' in src_dh and 'if not dry_run' in src_dh, src_dh[:200])
+# TEN-437 review: the dispatch writes to the permanent archive only on dry_run exactly "no"; any other value runs nothing
+_wf = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '.github', 'workflows', 'pinnacle-archive.yml')).read()
+_dh = _wf[_wf.index("if: env.MODE == 'derive-held'"):]
+_dh = _dh[:_dh.index('      - name:')]
+check('derive-held dispatch fails closed: "yes" = --dry-run, only "no" inserts, anything else exits without running',
+      'case "$DRY_RUN" in' in _dh and 'yes) python3 tools/pinarch.py derive-held --from "$FROM" --to "$TO" --dry-run ;;' in _dh
+      and '*)   echo "dry_run must be exactly' in _dh and 'exit 2' in _dh and _dh.count('derive-held --from') == 2
+      and "DRY_RUN: ${{ github.event.inputs.dry_run || 'yes' }}" in _dh, _dh[:300])
 print(f'\ntest-pinarch-close: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
