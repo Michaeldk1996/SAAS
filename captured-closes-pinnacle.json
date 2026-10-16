@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-16T07:33:25.428Z",
+ "generatedAt": "2026-10-16T12:43:01.377Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "871da5ec49bc05e9e6388ea73b9e653341b4e7e6",
-  "at": "2026-10-16T07:15:18Z"
+  "commit": "5262b3433aad6f6e884e095a2cb615541590ed1e",
+  "at": "2026-10-16T12:31:33Z"
  },
- "commitsScanned": 5181,
+ "commitsScanned": 5204,
  "lastRun": {
-  "from": "2026-10-15T10:52:43Z",
-  "snapshots": 36,
+  "from": "2026-10-16T07:15:18Z",
+  "snapshots": 24,
   "added": 1,
   "replaced": 0,
-  "series": 21,
-  "kept": 19,
+  "series": 13,
+  "kept": 12,
   "bySource": {
-   "api-tennis-live": 19
+   "api-tennis-live": 12
   },
   "byBook": {
-   "Pinnacle +30s": 19
+   "Pinnacle +30s": 12
   },
   "dropped": {
-   "noStart": 2
+   "noStart": 1
   }
  },
  "stats": {
@@ -8876,6 +8876,20 @@
    "p2": 2.17,
    "at": "2026-10-16T04:52:14.579Z",
    "trueStart": "2026-10-16T06:30:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171245,
+   "date": "2026-10-16",
+   "p1Key": 1093,
+   "p2Key": 1894,
+   "p1Name": "D. Medvedev",
+   "p2Name": "T. Paul",
+   "p1": 1.458,
+   "p2": 2.95,
+   "at": "2026-10-16T08:53:21.392Z",
+   "trueStart": "2026-10-16T10:03:00.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
