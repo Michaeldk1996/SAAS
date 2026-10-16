@@ -14134,7 +14134,9 @@ function fhH2hWindowCloses(list, closes, m){
 }
 function fhH2hMeetingRows(m){
   const ch = m._fhCh || [[], []];
-  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');   // the match itself, nothing else (ruling 2026-10-16)
+  // the match itself, nothing else (ruling 2026-10-16) — and only while it is upcoming or live: once it is finished, its
+  // own analysis counts it, like every other surface (founder 2026-10-16 follow-up)
+  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');
   return H2HCore.joinMeetings(sfH2hSide(m.p1Key, m.p1), sfH2hSide(m.p2Key, m.p2), ch[0], ch[1], sfH2hNkCount(), own);
 }
 function fhMeetings(m){

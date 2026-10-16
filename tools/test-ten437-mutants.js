@@ -56,7 +56,8 @@ const PAGE_MUTANTS = [
   ['ruling 4: the Bet365 hover back to the source label', "const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';", "const FH_B365_HOVER = 'Bet365 close · Tennis-Data';"],
   ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
   ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ?", "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
-  ['board exclusion: the tab counts its own match', "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
+  ['board exclusion: the tab counts its own match while upcoming / live', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
+  ['board exclusion: the tab still leaves its own match out once finished', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');"],
   ['board exclusion: the H2H page leaves out this week\'s board matches again', "      const nkF = fn('sfH2hNkCount');\n      const own = [];", "      const nkF = fn('sfH2hNkCount');\n      const own = (typeof matches !== 'undefined' ? matches : []).filter(x => x && x.finalScore).map(eventKeyOfMatch);"],
 ];
 // Mutants applied to a copy of career-backfill.js / bsp-pipeline.js written NEXT TO the original (so its relative
@@ -73,6 +74,11 @@ const PIPELINE_MUTANTS = [
   ['ruling 2 (corrected): the card\'s Form list wired to the H2H list', "\nconst FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FORM_EVENTS_NOT_COUNTED.source, 'i');\n", "\nconst FORM_NOT_ATP_RECORD = H2H_NOT_ATP_RECORD;\n"],
   ['ruling 2 (corrected): the pipeline\'s H2H list its own copy (the Form base — Asian Games counted)', "\nconst H2H_NOT_ATP_RECORD = require('./h2h-core.js').ATP_RECORD_NOT_COUNTED;\n", "\nconst H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;\n"],
   ['board exclusion: the model counts its own match', "  const own = [ek(m)].filter(Boolean);", "  const own = [];"],
+  ['model freeze: the model\'s H2H takes its own match once finished', "  const own = [ek(m)].filter(Boolean);", "  const own = m.finalScore ? [] : [ek(m)].filter(Boolean);"],
+  ['model freeze: a started match recomputed (its pre-match entry ignored)', "    if (pre) { out[m.id] = Object.assign({}, pre, { frozen: true }); frozenN++; continue; }", ""],
+  ['model freeze: the published copy not read (cache snapshot only)', "[prior[m.id], published[m.id]].find(", "[prior[m.id]].find("],
+  ['model freeze: an ok entry always written as pre-match', "      preMatch: !started,\n", "      preMatch: true,\n"],
+  ['model freeze: a started match written as a pre-match entry', "players: result.players || null, preMatch: !started };", "players: result.players || null, preMatch: true };"],
 ];
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten437-mut-'));

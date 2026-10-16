@@ -319,6 +319,16 @@ jobs:
             echo "TEN-449: set-repairs.json from the store at $(git -C .te-store rev-parse --short HEAD)."
           fi
 
+      # TEN-437 (founder 2026-10-16): the model output of a started match is frozen at its pre-match state. The cache above
+      # holds the day's first snapshot; the last PUBLISHED copy holds every entry since — so a match that started after the
+      # snapshot still finds its pre-match output. Fail-open: no copy = no freeze source, said in the step log.
+      - name: Fetch the published model output (pre-match freeze source)
+        run: |
+          if curl -sfL --retry 2 --max-time 60 -o model-output.published.json "https://michaeldk1996.github.io/SAAS/model-output.json?cb=$(date +%s)"; then
+            echo "published model-output.json: $(wc -c < model-output.published.json) bytes"
+          else
+            rm -f model-output.published.json; echo "::warning::no published model-output.json — started matches freeze from the cache snapshot only"
+          fi
       - name: Run pipeline (with retry + health tracking)
         env:
           # TEN-449: the two switches above, independent; unset = off

@@ -311,12 +311,18 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   **Test:** the set holds exactly these three singles types; `test-ten273-team-events.mjs`.
 - **A match never counts in its own H2H record** (ruling 2026-09-24), on every surface and in the model: the pipeline
   drops the fixture's own eventKey at every H2H build site (`h2hExcludeOwn`) and again before `matches.json` is written
-  (`stripOwnFixtureFromH2H`). **Superseded on the screens by founder 2026-10-16 (TEN-437 ruling 1):** only the match's OWN
-  analysis leaves it out — the Match analysis tab opened on that match (`own = [eventKeyOfMatch(m)]`) and the model
-  (`modelH2hMatches`, `own = [ek(m)]`); the H2H page and every other surface count every meeting, this week's included
-  (`own = []`; `sfH2hOwnEks` is gone). Medvedev–Tsitsipas reads 11–5 / 16 on the H2H page while the Shanghai match's own
-  analysis reads 10–5 / 15. **Test:** "board-match exclusion" in `test-ten437-h2h.mjs`; a finished board match whose own
-  eventKey is in `h2h.matches` fails, and the record is recomputed without it.
+  (`stripOwnFixtureFromH2H`). **On the screens (founder 2026-10-16, TEN-437 ruling 1 + same-day follow-up):** a match leaves
+  ONLY its own analysis, and only while it is upcoming or live — the Match analysis tab opened on it
+  (`own = m.finalScore ? [] : [eventKeyOfMatch(m)]`). Once finished, its own analysis counts it like every other surface
+  (Medvedev–Tsitsipas Shanghai: 10–5 / 15 in its tab before the match ended, 11–5 / 16 after). The H2H page and every other
+  surface count every meeting, this week's included (`own = []`). **The model is frozen at the pre-match state:** its H2H
+  input never includes the match itself (`modelH2hMatches`, `own = [ek(m)]`), and once a match has started
+  (`modelMatchStarted`: finished, live, or interrupted with a score) its model-output entry is the one computed before the
+  start (`preMatch: true`), reused unchanged (`frozen: true`) from the run's restored cache or the last published
+  `model-output.json` (fetched by the pipeline step "Fetch the published model output"); never recomputed with its own
+  result. A started match with no pre-match entry on record is computed with its own match excluded, and counted in the log.
+  **Test:** "board-match exclusion" (upcoming → 15, finished → 16, model → 15 either way) and "model output: a finished match
+  keeps its pre-match entry" in `test-ten437-h2h.mjs`; mutants in `tools/test-ten437-mutants.js`.
 - **Who won a meeting is decided by player key, never surname** (ruling 2026-09-24):
   `h2hP1WasFirst` compares `first_player_key` / `second_player_key` with p1's key; a row that
   carries neither is not counted. **Test:** two same-surname players (Zhizhen Zhang 590, Ze

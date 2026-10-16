@@ -514,7 +514,11 @@ test('board-match exclusion: only the match\'s own analysis leaves it out — Me
   const m = { id: 'past-12170285', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906, surface: 'hard', date: '2026-10-14',
     _fhH2hData: true, _fhCh: [chA, chB], _fhCloses: [null, null], _fhElo: null, p1RecentFormMatches: [], p2RecentFormMatches: [] };
   const E = S.fhMeetings(m).filter(r => !r.wo);
-  assert.deepEqual([E.length, E.filter(r => r.won).length], [15, 10], 'its own Match analysis: 10–5 / 15');
+  assert.deepEqual([E.length, E.filter(r => r.won).length], [15, 10], 'its own Match analysis while upcoming / live: 10–5 / 15');
+  // founder 2026-10-16 follow-up: once the match is FINISHED its own analysis counts it too — 11–5 / 16, as the page
+  const mf = Object.assign({}, m, { finalScore: '2-0', _fhH2hData: true });
+  const Ef = S.fhMeetings(mf).filter(r => !r.wo);
+  assert.deepEqual([Ef.length, Ef.filter(r => r.won).length], [16, 11], 'its own Match analysis once finished: 11–5 / 16');
   // another board match of the pair (a future meeting) counts Shanghai like every other surface
   const m2 = Object.assign({}, m, { id: 'upcoming-99999999', _fhH2hData: true });
   assert.equal(S.fhMeetings(m2).filter(r => !r.wo).length, 16, 'any other analysis: 16');
@@ -523,6 +527,8 @@ test('board-match exclusion: only the match\'s own analysis leaves it out — Me
   const rd = k => (String(k) === '1093' ? chA : String(k) === '1906' ? chB : []);
   const inp = { readShard: rd, readId: k => (String(k) === '1093' ? p.a.id : p.b.id), names: [p.a.full, p.b.full], nameByKey: {} };
   assert.equal(P.modelH2hMatches({ id: 'past-12170285', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906 }, inp).length, 15, 'model, its own match');
+  // the model's H2H input stays the pre-match list even once the match is finished (frozen; founder 2026-10-16)
+  assert.equal(P.modelH2hMatches({ id: 'past-12170285', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906, finalScore: '2-0' }, inp).length, 15, 'model, its own FINISHED match: still 15');
   assert.equal(P.modelH2hMatches({ id: 'upcoming-99999999', p1: 'D. Medvedev', p2: 'S. Tsitsipas', p1Key: 1093, p2Key: 1906 }, inp).length, 16, 'model, another match');
 });
 
@@ -635,4 +641,39 @@ test('H2H page: no captured step — every meeting reads the master\'s join only
   assert.doesNotMatch(page, /fhCloseFor|\.cap\b/, 'no closes-shard price on this page');
   // our archive's closes ('cap' captured, 'hist' from Pinnacle history) still name their source on the join's rows
   assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \|\| r\.src === 'hist' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| FH_SRC\[r\.src\]\)/);
+});
+
+// ── 17 · a started match's model output is frozen at its pre-match state (founder 2026-10-16 follow-up) ────────────────
+// "The model's H2H input and price stay frozen at the pre-match state for that match; don't recompute a finished match's
+// model output with its own result in it." buildModelOutput, run for real in a scratch directory: a started match with a
+// pre-match entry on record (this run's cache, else the last published copy) gets that entry back unchanged; an
+// unstarted one is computed and marked preMatch. Mutations: the freeze dropped; the published copy not read.
+test('model output: a finished match keeps its pre-match entry (cache or published); an upcoming one is recomputed', async () => {
+  const { mkdtempSync, writeFileSync, readFileSync: rf, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const P = require(PIPELINE_PATH);
+  const pre = (id, fair) => ({ ok: true, match: { id }, players: null, stage1: null, stage2: null, stage3: { fair }, generatedAt: '2026-10-14T05:00:00Z', preMatch: true, summary: { ok: false, reason: 'x' } });
+  const dir = mkdtempSync(join(tmpdir(), 'ten437-frz-')), cwd = process.cwd(), env = process.env.ANTHROPIC_API_KEY;
+  try {
+    process.chdir(dir); delete process.env.ANTHROPIC_API_KEY;
+    writeFileSync('model-output.json', JSON.stringify({ matches: { 'past-1': pre('past-1', { p1: { odds: 1.55 } }) } }));
+    writeFileSync('model-output.published.json', JSON.stringify({ matches: { 'past-2': pre('past-2', { p1: { odds: 2.1 } }) } }));
+    const ms = [
+      { id: 'past-1', p1: 'A. One', p2: 'B. Two', finalScore: '2-0' },                    // finished, pre-match entry in the cache
+      { id: 'past-2', p1: 'C. Three', p2: 'D. Four', finalScore: '0-2' },                 // finished, pre-match entry only published
+      { id: 'live-3', p1: 'E. Five', p2: 'F. Six', live: true, liveScore: [[3, 2]] },     // live, no entry: computed, not preMatch
+      { id: 'upcoming-4', p1: 'G. Seven', p2: 'H. Eight' },                               // upcoming: computed
+    ];
+    await P.buildModelOutput(ms);
+    const out = JSON.parse(rf('model-output.json', 'utf8')).matches;
+    assert.deepEqual(out['past-1'], Object.assign(pre('past-1', { p1: { odds: 1.55 } }), { frozen: true }), 'cache pre-match entry, unchanged');
+    assert.deepEqual(out['past-2'], Object.assign(pre('past-2', { p1: { odds: 2.1 } }), { frozen: true }), 'published pre-match entry, unchanged');
+    assert.deepEqual([out['live-3'].frozen, out['live-3'].preMatch], [undefined, false], 'a started match is never written as a pre-match entry');
+    assert.deepEqual([out['upcoming-4'].frozen, out['upcoming-4'].preMatch], [undefined, true], 'an upcoming match is computed, marked pre-match');
+    assert.deepEqual([P.modelMatchStarted(ms[0]), P.modelMatchStarted(ms[2]), P.modelMatchStarted(ms[3])], [true, true, false]);
+    // the engine's ok entry is flagged the same way (the made-up players above cannot run the engine)
+    assert.match(readFileSync(PIPELINE_PATH, 'utf8'), /generatedAt: result\.meta && result\.meta\.generatedAt,\n\s*preMatch: !started,/, 'an ok entry records preMatch: !started');
+  } finally {
+    process.chdir(cwd); if (env != null) process.env.ANTHROPIC_API_KEY = env; rmSync(dir, { recursive: true, force: true });
+  }
 });

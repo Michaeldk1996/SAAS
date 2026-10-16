@@ -7727,6 +7727,11 @@ async function runPipeline() {
 // cached by a SHA-1 of its model facts, so an API call is spent only when a
 // match's numbers actually change (this pipeline runs every 15 min).
 const MODEL_OUTPUT_PATH = 'model-output.json';
+const MODEL_OUTPUT_PUBLISHED_PATH = process.env.MODEL_OUTPUT_PUBLISHED_PATH || 'model-output.published.json';
+// TEN-437: a match has started once it is finished, live, or interrupted with a partial score (the feed's own flags).
+function modelMatchStarted(m) {
+  return !!(m && (m.finalScore || m.live || (Array.isArray(m.liveScore) && m.liveScore.length) || (m.interrupted && m.partialScore)));
+}
 
 // TEN-437 founder ruling 2026-10-14 (card edd72529, "move the model to the full ATP-rule list, keep today's age bands and
 // tiers"; measured first on the 26-match board: median shift 0pp, max 0.23pp, no value flag flipped). The model's H2H
@@ -7790,11 +7795,25 @@ async function buildModelOutput(matches) {
     console.warn('  ANTHROPIC_API_KEY not set — engine output still written, AI summaries skipped (cached ones reused).');
   }
 
+  // TEN-437 (founder 2026-10-16 follow-up): a match's model output is FROZEN at its pre-match state once the match has
+  // started — never recomputed with its own result (or anything learnt since) in it. An entry computed before the start
+  // carries preMatch: true; a started match reuses that entry unchanged (frozen: true), from this run's restored cache or
+  // the last published copy (the workflow fetches it to MODEL_OUTPUT_PUBLISHED_PATH; absent = none). A started match with
+  // no pre-match entry on record is computed as before (its own match excluded from the H2H input) and counted.
+  let published = {};
+  try {
+    const p = JSON.parse(fs.readFileSync(MODEL_OUTPUT_PUBLISHED_PATH, 'utf8'));
+    published = (p && p.matches) || {};
+  } catch (_) { /* no published copy this run */ }
   const out = {};
-  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0;
+  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0, frozenN = 0, startedNoPre = 0;
   const h2hIn = modelH2hInputs(matches);   // TEN-437: the model's H2H = the screens' H2H
 
   for (const m of matches) {
+    const started = modelMatchStarted(m);
+    const pre = started ? [prior[m.id], published[m.id]].find(e => e && e.ok && e.preMatch === true) : null;
+    if (pre) { out[m.id] = Object.assign({}, pre, { frozen: true }); frozenN++; continue; }
+    if (started) startedNoPre++;
     let result;
     try {
       const mm = h2hIn && m.p1Key != null && m.p2Key != null
@@ -7802,7 +7821,7 @@ async function buildModelOutput(matches) {
       result = runModel(mm);
     } catch (e) {
       failed++;
-      out[m.id] = { ok: false, reason: `engine error: ${e.message}` };
+      out[m.id] = { ok: false, reason: `engine error: ${e.message}`, preMatch: !started };
       continue;
     }
     if (!result.ok) {
@@ -7810,7 +7829,7 @@ async function buildModelOutput(matches) {
       // UI can show an honest "not enough data" state (never a fabricated read).
       failed++;
       out[m.id] = { ok: false, reason: result.reason || 'model could not run',
-        players: result.players || null };
+        players: result.players || null, preMatch: !started };
       continue;
     }
     ran++;
@@ -7825,6 +7844,7 @@ async function buildModelOutput(matches) {
       stage2: result.stage2,
       stage3: result.stage3,
       generatedAt: result.meta && result.meta.generatedAt,
+      preMatch: !started,
       summary: null,
     };
 
@@ -7876,7 +7896,7 @@ async function buildModelOutput(matches) {
     count: Object.keys(out).length,
     matches: out,
   }, true);
-  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
+  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run); ${frozenN} started match(es) frozen at their pre-match output, ${startedNoPre} started with no pre-match output on record. Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
   return out;
 }
 
@@ -7942,7 +7962,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
