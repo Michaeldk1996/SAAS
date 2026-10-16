@@ -19,7 +19,18 @@ take styling from it, structure from the rules below.
   both players at the tie. Before = after on every Database figure (rows and tour-baselines byte-identical). **Test:**
   `test-ten402-b.mjs` "exact price ties ride BEHIND A FLAG" (controls: no Database row is a tie; a store without tieRows
   joins as before; a names shard out of step never prices).
-- **Pinnacle (approx.) — book 2 (founder ruling 2026-10-16).** An ATP main-draw row of 13 Jan – 12 Apr 2026 with no
+- **Our Pinnacle archive's closes — books 3 and 4 (founder ruling 2026-10-16, round 3 item 1).** A row priced on a close
+  from the permanent Pinnacle archive (the td-feed: a Tennis-Data 2026 row with no Pinnacle pair, or a match added after
+  Tennis-Data's last day) carries `r[8] = 3` (label "from Pinnacle history") or `4` ("captured"), never 0 (0 = Tennis-Data's
+  own Pinnacle column). Both are Pinnacle closes: every Database figure, count and split counts them as Pinnacle
+  (`dbBk`; `meta.bookCounts.Pinnacle` includes them; `meta.archiveFeed.rowsByLabel` names each), so no price or figure
+  moves. The join reads them as book "P" with source `hist` / `cap`, and every hover names the source: "Pinnacle close ·
+  from Pinnacle history" (Tournament tab, sheets, Series), "Pinnacle closing price · from Pinnacle history" (Head to Head),
+  the profile's sheet through `pinnacle-history`. Never "Tennis-Data" on our own close. **Test:**
+  `tools/test-approx-pinnacle.mjs` (builder codes 3 / 4, the join, every hover, the Database counts),
+  `tools/test-pinarch-tdfeed.py`.
+- **Pinnacle (approx.) — book 2 (founder ruling 2026-10-16).** An ATP main-draw row of 13 Jan – 16 Sep 2026 (12 Apr until
+  round 3 item 3) with no
   Tennis-Data Pinnacle pair and no close in our Pinnacle archive is priced on api-tennis's stored Pinnacle price
   (`pinnacle-approx.csv`, `tools/tdarch.py approx-feed`, from the archive's snapshot table) — a SNAPSHOT, never a close:
   `r[8] = 2`, `meta.books[2]` "Pinnacle (approx.)", its own count in `meta.bookCounts`; Bet365 where api-tennis has no pair.

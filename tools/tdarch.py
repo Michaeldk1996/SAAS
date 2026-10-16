@@ -27,7 +27,7 @@ Commands
   verify-export OPS_CHECKOUT the newest export: per-year counts = the archive's, unreachable from the site, sha256s match
   counts [--record JOB]     row counts + the guard; one historical_archive_count row
   approx-import             Pinnacle (approx.) — founder ruling 2026-10-16: api-tennis's stored Pinnacle price for every ATP
-                            main-draw match of 13 Jan - 12 Apr 2026 with no Tennis-Data Pinnacle close, into the snapshot
+                            main-draw match of 13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle close, into the snapshot
                             table (its own source and label, never a close); env API_TENNIS_KEY
   approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js)
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
@@ -44,7 +44,7 @@ SNAP, SNAPCOUNT = 'historical_snapshot', 'historical_snapshot_count'
 TABLES = (FILE, CLOSE, EXPORT, COUNT, SNAP, SNAPCOUNT)
 # Pinnacle (approx.), founder ruling 2026-10-16: a SNAPSHOT (api-tennis carries no time for its prices), never a close.
 APPROX_SOURCE, APPROX_LABEL = 'api-tennis Pinnacle', 'Pinnacle (approx.)'
-APPROX_FROM, APPROX_TO = '2026-01-13', '2026-04-12'
+APPROX_FROM, APPROX_TO = '2026-01-13', '2026-09-16'   # founder 2026-10-16: 12 Apr, widened to 16 Sep (round 3, item 3)
 APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close'
 APPROX_FEED_COLS = ['date', 'tournament', 'winner', 'loser', 'psw', 'psl', 'eventKey', 'snapshotId']
 FROM_YEAR = 2010
@@ -380,8 +380,9 @@ def write_export(ops, day, rows):
     """New dated files only: closes-export/<day>/pinnacle-closes-2010-YYYY_<day>.csv + one per year + manifest.json.
     Refuses an existing day (an export is never overwritten)."""
     d = os.path.join(ops, EXPORT_DIR, day)
-    if os.path.exists(d):
-        raise FileExistsError(f'{d} already exists: an export is never replaced')
+    if P.day_written(d):                                   # complete: a same-day re-run skips it (founder 2026-10-16)
+        print(f'### export-csv {day}: day already written, skipped')
+        return None
     os.makedirs(d)
     last_year = max([int(r['date'][:4]) for r in rows] or [FROM_YEAR])
     files = []
@@ -411,6 +412,8 @@ def cmd_export_csv(ops, closes_json):
     files = [(f, open(f, 'rb').read()) for f in sorted(glob.glob(os.path.join(ROOT, 'odds-archive', '[0-9][0-9][0-9][0-9].csv')))]
     rows = export_rows(td, arch, td_matches(files))
     man = write_export(ops, day, rows)
+    if man is None:                                        # today's export is already written and complete: nothing to add
+        return None
     full = man['files'][0]
     P.insert(EXPORT, [{'name': full['name'], 'sha256': full['sha256'], 'rows': full['rows'], 'per_year': man['perYear'],
                        'location': f'{P.OPS_REPO}:{EXPORT_DIR}/{day}/{full["name"]}', 'detail': {'files': man['files']}}], 'name')
@@ -422,8 +425,8 @@ def cmd_export_csv(ops, closes_json):
 def cmd_backup(ops):
     day = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')
     d = os.path.join(ops, BACKUP_DIR, day)
-    if os.path.exists(d):
-        print(f'### backup {day}: already written today — nothing replaced'); return None
+    if P.day_written(d):
+        print(f'### backup {day}: day already written, skipped'); return None
     days = sorted(p.name for p in os.scandir(os.path.join(ops, BACKUP_DIR)) if p.is_dir()) if os.path.isdir(os.path.join(ops, BACKUP_DIR)) else []
     prev = json.load(open(os.path.join(ops, BACKUP_DIR, days[-1], 'manifest.json'))) if days else {}
     since = (prev.get(FILE) or {}).get('toId') or 0
@@ -600,7 +603,7 @@ def cmd_verify_export(ops, site='https://michaeldk1996.github.io/SAAS'):
 
 
 # ── guard ───────────────────────────────────────────────────────────────────────────────────────────────────────────
-# ── Pinnacle (approx.): api-tennis's stored Pinnacle snapshot, 13 Jan - 12 Apr 2026 ATP main draw ────────────────────
+# ── Pinnacle (approx.): api-tennis's stored Pinnacle snapshot, 13 Jan - 16 Sep 2026 ATP main draw ────────────────────
 def approx_targets(td_rows):
     """Tennis-Data rows in the window with no Tennis-Data Pinnacle pair (a Tennis-Data close is never replaced), a played
     match (walkovers out)."""

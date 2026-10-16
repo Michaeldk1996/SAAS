@@ -19,6 +19,10 @@ live build and releases the lane. The result is in `LAST-RUN.txt` in the inbox, 
 macOS notification, and in `~/.stennisfy/odds-archive-dropin/dropin.log`. Install or
 reinstall the agent with `bash tools/odds-archive-dropin.sh --install`.
 
+**Every drop-in is also copied to the private ops repo** (founder ruling 2026-10-16, round 3 item 6, replacing the earlier
+ops-only ruling): the path above is kept exactly; each workbook is staged byte for byte and pushed to `stennisfy-ops` →
+`tennis-data/originals/` (`tools/odds-archive-ops-copy.sh`; rules in `historical-odds-archive.md` "Drop-ins are copied").
+
 **Do not refresh a season with `mirror-odds-archive.py`.** It rewrites a whole season from
 whatever it downloads; it has no merge and no never-thinner guard. It exists for the
 historical backfill only.

@@ -6199,7 +6199,7 @@
       id: 'draw|' + r.m.d + '|' + (r.opp || '') + '|' + r.i,
       subjectKey: String(p.key), subjectName: initialSurname(p.name), oppName: initialSurname(row.opponent),
       row: row,
-      price: bk ? Number(r.price) : null, oppPrice: bk ? Number(r.oppPrice) : null, book: bk, src: bk ? 'td' : null,
+      price: bk ? Number(r.price) : null, oppPrice: bk ? Number(r.oppPrice) : null, book: bk, src: bk ? (r.src || 'td') : null,
       scored: row.walkover || !!(row.sets && row.sets.length) || /^\s*\d+\s*-\s*\d+\s*$/.test(String(row.result || ''))
     };
   }
@@ -9786,7 +9786,8 @@
   // the book ids the ledger rows carry -> the sheet's { book, src } (the host's ME_PROFILE_BOOK, plus the
   // ledger's own bet365 pre-match capture, which it labels 'bet365')
   var SHEET_BOOK = { pinnacle: ['P', 'td'], 'pinnacle-capture': ['P', 'cap'], 'bet365-archive': ['B', 'td'],
-    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'pinnacle-approx': ['A', 'td'] };   // A: Pinnacle (approx.), a snapshot (founder 2026-10-16)
+    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'pinnacle-approx': ['A', 'td'],
+    'pinnacle-history': ['P', 'hist'] };   // hist: our Pinnacle archive, 'from Pinnacle history' (founder 2026-10-16, round 3 item 1)   // A: Pinnacle (approx.), a snapshot (founder 2026-10-16)
   function sheetPayload(p, ctx, id) {
     var x = sheetRowFor(p, ctx, id);
     if (!x) return null;

@@ -46,11 +46,18 @@ STATE="$HOME/.stennisfy/odds-archive-dropin"
 WORK="$HOME/.stennisfy/odds-archive-work"
 REPO_URL="${ODDS_REPO_URL:-https://github.com/Michaeldk1996/SAAS.git}"   # override only to test the job
 LABEL="com.stennisfy.odds-archive-dropin"
+# Founder ruling 2026-10-16 (round 3, item 6): every drop-in is ALSO copied byte for byte to the private ops repo
+# (stennisfy-ops → tennis-data/originals/). The path below is unchanged; the copy is staged here before anything else
+# and pushed by tools/odds-archive-ops-copy.sh (from the fresh clone). A failed push never blocks the refresh: the copy
+# stays in the outbox, is retried on every later run, and LAST-RUN.txt says so.
+OPS_OUTBOX="$HOME/.stennisfy/odds-archive-dropin/ops-outbox"; export OPS_OUTBOX
+OPS_NOTE=""
 export PATH="/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 mkdir -p "$INBOX/processed" "$INBOX/rejected" "$STATE" "$WORK"
 log() { echo "$(date -u +%Y-%m-%dT%H:%M:%SZ) $*" >> "$STATE/dropin.log"; echo "$*"; }
 notify() {
+  set -- "$1${OPS_NOTE:-}"
   printf '%s\n%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$1" > "$INBOX/LAST-RUN.txt"
   local msg="${1//\"/}"
   /usr/bin/osascript -e "display notification \"$msg\" with title \"Stennisfy odds archive\"" >/dev/null 2>&1 || true
@@ -115,6 +122,14 @@ FP="$(shasum -a 256 "$F" | cut -c1-16)-$(stat -f %m "$F")"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 TICKET="ODDS-ARCHIVE-$STAMP"
 RUN="$WORK/$STAMP"; REPO="$RUN/repo"; mkdir -p "$RUN"
+# item 6: stage the workbook's own bytes for stennisfy-ops (every drop-in, whatever the refresh decides below)
+mkdir -p "$OPS_OUTBOX"
+if cp -p "$F" "$OPS_OUTBOX/$STAMP-$NAME.tmp" && mv "$OPS_OUTBOX/$STAMP-$NAME.tmp" "$OPS_OUTBOX/$STAMP-$NAME"; then
+  log "staged for stennisfy-ops: $STAMP-$NAME"
+else
+  OPS_NOTE=" Copy to stennisfy-ops NOT staged (could not copy into $OPS_OUTBOX) — copy $NAME there by hand."
+  log "$OPS_NOTE"
+fi
 next() {   # hand over to the next workbook waiting in the inbox, if any
   rm -rf "$REPO"
   if pick >/dev/null; then trap - EXIT; cleanup; exec /bin/bash "$0"; fi
@@ -141,6 +156,12 @@ suite() {  # $1 = log name
 log "run $STAMP: $NAME ($FP)"
 git clone -q --depth 100 "$REPO_URL" "$REPO" || failed "git clone"
 cd "$REPO" || failed "cd"
+if bash tools/odds-archive-ops-copy.sh flush > "$RUN/ops-copy.log" 2>&1; then
+  log "stennisfy-ops: $(tail -1 "$RUN/ops-copy.log")"
+else
+  OPS_NOTE="${OPS_NOTE} Copy to stennisfy-ops FAILED — kept in the outbox and retried on the next run ($RUN/ops-copy.log)."
+  log "stennisfy-ops copy failed: $(tail -1 "$RUN/ops-copy.log")"
+fi
 BASE="$(git rev-parse HEAD)"
 npm ci > "$RUN/npmci.log" 2>&1; echo "npmci_exit=$?" >> "$RUN/npmci.log"
 grep -q '^npmci_exit=0$' "$RUN/npmci.log" || failed "npm ci"

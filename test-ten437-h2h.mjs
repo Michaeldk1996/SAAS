@@ -661,5 +661,6 @@ test('H2H page: Struff–Tabilo Cincinnati 2026 takes the captured Pinnacle clos
   // wired: the page runs it after the Database join, and counts priced meetings from the rows
   const page = slice('h2hPairFor');
   assert.match(page, /if \(_h2hDbSt === 'ready'\) h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\);\n\s*h2hCapPinnacle\(S\.rows, a, b, S\.clA, S\.clB\);/);
-  assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| 'captured'\)/);
+  // founder 2026-10-16 (round 3, item 1): our archive's closes ('cap' captured, 'hist' from Pinnacle history) name their source
+  assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \|\| r\.src === 'hist' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| FH_SRC\[r\.src\]\)/);
 });

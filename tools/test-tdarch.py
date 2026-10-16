@@ -65,10 +65,30 @@ ops = tempfile.mkdtemp()
 man = T.write_export(ops, '2026-10-16', ex)
 names = [f['name'] for f in man['files']]
 check('export: one 2010–YYYY file plus one per year, dated in the name', names[0] == 'pinnacle-closes-2010-2026_2026-10-16.csv' and 'pinnacle-closes-2026_2026-10-16.csv' in names, names)
+# founder ruling 2026-10-16 (round 3, item 5): a same-day re-run skips a COMPLETE day with a clear line, replaces nothing,
+# and a real failure (an incomplete or tampered day) is never hidden as a skip
+import contextlib
+before = {f: open(os.path.join(ops, T.EXPORT_DIR, '2026-10-16', f), 'rb').read() for f in os.listdir(os.path.join(ops, T.EXPORT_DIR, '2026-10-16'))}
+buf = io.StringIO()
+with contextlib.redirect_stdout(buf):
+    again = T.write_export(ops, '2026-10-16', ex[:1])
+after = {f: open(os.path.join(ops, T.EXPORT_DIR, '2026-10-16', f), 'rb').read() for f in os.listdir(os.path.join(ops, T.EXPORT_DIR, '2026-10-16'))}
+check('export: a same-day re-run of a complete day is skipped ("day already written, skipped"), nothing replaced',
+      again is None and 'day already written, skipped' in buf.getvalue() and before == after, buf.getvalue())
+bad_day = os.path.join(ops, T.EXPORT_DIR, '2026-10-17'); os.makedirs(bad_day)
 try:
-    T.write_export(ops, '2026-10-16', ex); check('export: a second export of the same day is refused', False)
-except FileExistsError:
-    check('export: a second export of the same day is refused (an export is never overwritten)', True)
+    T.write_export(ops, '2026-10-17', ex); hid = True
+except RuntimeError as e:
+    hid = 'not a complete day' not in str(e)
+check('control: a day folder without its manifest is a real failure, never skipped or replaced', not hid)
+shutil.copytree(os.path.join(ops, T.EXPORT_DIR, '2026-10-16'), os.path.join(ops, T.EXPORT_DIR, '2026-10-18'))
+open(os.path.join(ops, T.EXPORT_DIR, '2026-10-18', names[0]), 'ab').write(b'x')
+try:
+    T.write_export(ops, '2026-10-18', ex); hid = True
+except RuntimeError as e:
+    hid = 'does not match its manifest' not in str(e)
+check('control: a day whose file does not match its manifest is a real failure, never skipped', not hid)
+shutil.rmtree(bad_day); shutil.rmtree(os.path.join(ops, T.EXPORT_DIR, '2026-10-18'))
 n, bad = T.verify_exports(ops)
 check('export: every file matches its manifest sha256', n == len(names) and bad == [], (n, bad))
 p = os.path.join(ops, T.EXPORT_DIR, '2026-10-16', names[0])
@@ -104,12 +124,14 @@ check('workbook: a reader that calls sys.exit is caught (the bytes are still sto
 A1 = dict(zip(HEAD.strip().split(','), ['2026-02-03', 'Dallas', 'ATP500', 'Indoor', 'Hard', '1st Round', '3', 'Alpha A.', 'Beta B.', '1', '2', 'Completed', '1.5', '2.5', '', '', '', '', '', '', 'file']))
 A2 = dict(A1, date='2026-01-12')                                     # before the window
 A3 = dict(A1, date='2026-01-13', psw='1.52', psl='2.6')             # Tennis-Data has Pinnacle: never replaced
-A4 = dict(A1, date='2026-04-13')                                     # after the window
+A4 = dict(A1, date='2026-09-17')                                     # after the window (16 Sep, founder round 3 item 3)
+A7 = dict(A1, date='2026-05-20', winner='Eta E.', loser='Theta T.')  # inside the widened window (13 Apr - 16 Sep)
 A5 = dict(A1, date='2026-03-01', winner='Gamma C.', loser='Delta D.', comment='Walkover')
 A6 = dict(A1, date='2026-03-02', winner='Eps E.', loser='Zeta Z.')
+tg = T.approx_targets([A1, A2, A3, A4, A5, A6, A7])
+check('approx: targets = the window 13 Jan – 16 Sep, no Tennis-Data Pinnacle pair, walkovers out',
+      [r['date'] for r in tg] == ['2026-02-03', '2026-03-02', '2026-05-20'], [r['date'] for r in tg])
 tg = T.approx_targets([A1, A2, A3, A4, A5, A6])
-check('approx: targets = the window 13 Jan – 12 Apr, no Tennis-Data Pinnacle pair, walkovers out',
-      [r['date'] for r in tg] == ['2026-02-03', '2026-03-02'], [r['date'] for r in tg])
 bd = {'2026-02-04': [{'event_key': 7, 'event_first_player': 'B. Beta', 'event_second_player': 'A. Alpha', 'event_date': '2026-02-04'}],
       '2026-03-02': [{'event_key': 8, 'event_first_player': 'E. Eps', 'event_second_player': 'Z. Zeta', 'event_date': '2026-03-02'},
                      {'event_key': 9, 'event_first_player': 'Z. Zeta', 'event_second_player': 'E. Eps', 'event_date': '2026-03-02'}]}

@@ -294,6 +294,25 @@ def serialize_rows(rows):
     return b''.join(json.dumps(r, sort_keys=True, separators=(',', ':')).encode() + b'\n' for r in rows)
 
 
+def day_written(d):
+    """Founder ruling 2026-10-16 (round 3, item 5): a same-day re-run skips a day folder that is ALREADY COMPLETE — its
+    manifest.json reads and every file it lists is present with its sha256. True = complete (skip, with the log line
+    "day already written, skipped"); False = no such folder (write it). A folder that exists but is NOT complete (no or
+    unreadable manifest, a file missing or a sha256 that differs) raises: a real failure is never hidden as a skip."""
+    if not os.path.exists(d):
+        return False
+    try:
+        man = json.load(open(os.path.join(d, 'manifest.json')))
+        files = man['files']
+    except Exception as e:                                     # noqa: BLE001 — named in the error, never swallowed
+        raise RuntimeError(f'{d} exists but its manifest is missing or unreadable ({e}): not a complete day — refusing to skip or replace it')
+    for f in files:
+        fp = os.path.join(d, f['name'])
+        if not os.path.exists(fp) or hashlib.sha256(open(fp, 'rb').read()).hexdigest() != f['sha256']:
+            raise RuntimeError(f'{d}/{f["name"]} is missing or does not match its manifest sha256: not a complete day — refusing to skip or replace it')
+    return True
+
+
 def write_backup_day(outdir, day, raw_pages, close_rows, count_rows, prev_manifest):
     """Write one dated copy. Raw = the rows added since the previous copy (ids above its toId), streamed page by page
     into files of about CHUNK_BYTES; close and count = full snapshots. Refuses to touch an existing day."""
@@ -353,8 +372,8 @@ def cmd_backup():
     else:
         git('checkout', '--quiet', '-b', 'main', cwd=work)
     days = sorted(p.name for p in os.scandir(os.path.join(work, BACKUP_DIR)) if p.is_dir()) if os.path.isdir(os.path.join(work, BACKUP_DIR)) else []
-    if day in days:
-        print(f'### backup {day}: already written today — nothing replaced'); return {'day': day, 'skipped': True}
+    if day in days and day_written(os.path.join(work, BACKUP_DIR, day)):
+        print(f'### backup {day}: day already written, skipped'); return {'day': day, 'skipped': True}
     prev = json.load(open(os.path.join(work, BACKUP_DIR, days[-1], 'manifest.json'))) if days else None
     since = ((prev or {}).get('raw') or {}).get('toId') or 0
     close_rows, count_rows = select_all(CLOSE, '*'), select_all(COUNT, '*')
@@ -571,11 +590,19 @@ def plan_archive_closes(new_rows, held):
     return list(reversed(add))
 
 
+def held_back(r):
+    """Founder ruling 2026-10-16 (round 3, item 2): a close cut at Oddspapi's trueStart ALONE (no live-flip held: the
+    TEN-437 derive-held rows of 13-30 Apr) is held back — the start-alone cut was rejected on 1,211 matches (48% exact).
+    It stays in the archive (append-only, its own start_source) and is never exported as a close: no reader sees it."""
+    return r.get('start_source') == NO_FLIP_SOURCE
+
+
 def export_rows(rows):
     """The current close per event in captured-closes-pinnacle.json's row shape (build-match-closes reads it), plus its
-    label, source, times and gap. Rows without both player keys stay in the archive but cannot be keyed here."""
+    label, source, times and gap. Rows without both player keys stay in the archive but cannot be keyed here. A held-back
+    close (held_back) is not a close: the event's current close is chosen among the other rows, else it has none."""
     out = []
-    for k, r in sorted(current_closes(rows).items()):
+    for k, r in sorted(current_closes([x for x in rows if not held_back(x)]).items()):
         if not (r.get('p1_key') and r.get('p2_key') and r.get('match_date')):
             continue
         out.append({'eventKey': k, 'date': str(r['match_date']), 'p1Key': r['p1_key'], 'p2Key': r['p2_key'],
@@ -587,7 +614,7 @@ def export_rows(rows):
 
 
 API_FIELDS = ('event_winner', 'event_status', 'tournament_round', 'tournament_name', 'event_type_type', 'event_date', 'event_final_result',
-              'event_first_player', 'event_second_player')
+              'event_first_player', 'event_second_player', 'tournament_key')
 
 
 def refresh_keys(out, fetch):
@@ -665,10 +692,15 @@ def cmd_export(path):
     by = {}
     for r in out:
         by[r['label']] = by.get(r['label'], 0) + 1
+    hb = [r for r in rows if held_back(r)]
+    held = {'rule': 'closes cut at Oddspapi trueStart alone (no live-flip held) are held back: in the archive, never exported '
+            '(founder ruling 2026-10-16, round 3 item 2)', 'rows': len(hb), 'events': len({r['event_key'] for r in hb}),
+            'eventsWithAnotherClose': len({r['event_key'] for r in hb} & {r['eventKey'] for r in out})}
+    print('### export held back', json.dumps(held))
     doc = {'generatedAt': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
            'source': 'Supabase pinnacle_archive_close (the permanent Pinnacle archive); current close per event',
            'rule': 'an archive close ("from Pinnacle history") beats a captured one; a superseded row is never current',
-           'tableRows': len(rows), 'byLabel': by, 'rows': out}
+           'tableRows': len(rows), 'byLabel': by, 'heldBack': held, 'rows': out}
     tmp = path + '.tmp'
     with open(tmp, 'w') as fh:
         json.dump(doc, fh)
@@ -1407,6 +1439,35 @@ def td_edition_meta(td_rows, alias, key):
             'bestof': r0.get('bestof'), 'K': max(nums) if nums else 0, 'year': yr}
 
 
+# Founder ruling 2026-10-16 (ruling 4): a NEW ATP event (no Tennis-Data edition) takes its details from our own tables —
+# surface + court = tournament-surfaces.json by api-tennis tournament_key, tier = the dashboard's TOURNAMENT_CATALOG,
+# best of 5 at a Grand Slam only, else 3. Davis Cup and Laver Cup stay out (team events, never Tennis-Data rows).
+CATALOG_SERIES = {'Grand Slam': 'Grand Slam', 'ATP 1000': 'Masters 1000', 'ATP 500': 'ATP500', 'ATP 250': 'ATP250', 'ATP Finals': 'Masters Cup'}
+TEAM_EVENT = re.compile(r'davis cup|laver cup', re.I)
+
+
+def parse_catalog(html_text):
+    """The dashboard's TOURNAMENT_CATALOG: name -> category."""
+    i = html_text.index('const TOURNAMENT_CATALOG = ['); j = html_text.index('\n];', i)
+    return dict(re.findall(r"""name:\s*'([^']+)',\s*category:\s*'([^']+)'""", html_text[i:j]))
+
+
+def new_event_meta(key, api, catalog, surfaces, sizes):
+    """Details for an event Tennis-Data never carried, or None (counted, never guessed): no team event, a catalogued tier,
+    a known surface + court for its tournament_key, and K from the largest draw round seen for it this year (`sizes`)."""
+    if TEAM_EVENT.search(key or ''):
+        return None
+    series = CATALOG_SERIES.get((catalog or {}).get(key))
+    tk = str((api or {}).get('tournament_key') or '')
+    surf, court = ((surfaces or {}).get('surfaces') or {}).get(tk), ((surfaces or {}).get('courts') or {}).get(tk)
+    if not series or not surf or not court:
+        return None
+    big = max(sizes or [0])
+    K = {128: 4, 64: 3, 32: 2, 16: 1}.get(big, 0)
+    return {'tournament': key, 'series': series, 'court': court.capitalize(), 'surface': surf.capitalize(),
+            'bestof': '5' if series == 'Grand Slam' else '3', 'K': K, 'year': None, 'newEvent': True}
+
+
 def td_round(api_round, K):
     r = _fold((api_round or '').split(' - ')[-1]).strip()
     if 'qualif' in r:
@@ -1464,7 +1525,7 @@ def parse_name_table(js_text):
     return {n: k for n, k in re.findall(r"""^\s*'([^']+)':\s*'(\d+)'""", js_text[i:j], re.M) if ',' not in n}
 
 
-def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None):
+def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalog=None, surfaces=None):
     """Feed rows + a report. `override`: a Tennis-Data row (same day ±1, both surnames) with no Pinnacle pair gets our
     close (the row is named exactly as Tennis-Data wrote it). `add`: an ATP main-draw match after Tennis-Data's last day,
     from an ARCHIVE close that carries its api-tennis result, its players spelled as Tennis-Data spells them
@@ -1475,9 +1536,14 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None):
         if r['date'] > pin_stop:
             by_day.setdefault(r['date'], []).append(r)
     spell = td_spellings(export_rows, by_day, table_names)
+    sizes = {}                                   # (event, year) -> the draw sizes its archive closes show (a new event's K)
+    for e in export_rows:
+        a = e.get('apiTennis') or {}
+        k = (re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip(), e['date'][:4])
+        sizes.setdefault(k, []).append(ROUND_SIZE.get(_fold(str(a.get('tournament_round') or '').split(' - ')[-1]).strip(), 0))
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
                     'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
-                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0}
+                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0}
     for e in export_rows:
         rep['closes'] += 1
         d = e['date']
@@ -1513,6 +1579,10 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None):
             rep['noResult'] += 1; continue
         key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
         meta = td_edition_meta(td_rows, alias, key)
+        if not meta and catalog is not None:
+            meta = new_event_meta(key, a, catalog, surfaces, sizes.get((key, d[:4])))
+            if meta:
+                rep['newEvent'] += 1
         if not meta:
             rep['noTdEdition'] += 1; continue
         rnd = td_round(a.get('tournament_round'), meta['K'])
@@ -1545,7 +1615,12 @@ def cmd_td_feed(export_path, out_csv):
     alias = parse_alias(open(os.path.join(ROOT_DIR, 'build-tournament-market.js')).read())
     pin_stop = max((r['date'] for r in td if _vp(r.get('psw')) and _vp(r.get('psl'))), default='')
     names = parse_name_table(open(os.path.join(ROOT_DIR, 'build-odds-performance.js')).read())
-    rows, rep = td_feed_rows(exp.get('rows') or [], td, alias, pin_stop, names)
+    catalog = parse_catalog(open(os.path.join(ROOT_DIR, 'bsp-consult-dashboard.html')).read())
+    try:
+        surfaces = json.load(open(os.path.join(ROOT_DIR, 'tournament-surfaces.json')))
+    except (OSError, ValueError):
+        surfaces = None                          # no surface table: a new event cannot be added (counted as noTdEdition)
+    rows, rep = td_feed_rows(exp.get('rows') or [], td, alias, pin_stop, names, catalog, surfaces)
     for r in rows:
         if any(',' in str(r.get(k) or '') for k in FEED_COLS):
             die(f'a feed field holds a comma: {r}')

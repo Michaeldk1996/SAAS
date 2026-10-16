@@ -31,7 +31,7 @@ const MUTANTS = [
   ['js', 'Data 5: a P&L on a line family', 'if (isResult && _pxState !== \'idle\'', 'if (_pxState !== \'idle\''],
   ['js', 'Data 5: rows not priced on the Database join', '        trDbJoinPx(displayName(p.key, p.name), pc[1])(list);\n', '\n'],
   ['js', 'Data 5: a failed join says nothing', '>Prices unavailable<', '>0 priced<'],
-  ['js', 'Data 5: the after-archive reason dropped', "r.book ? r.book + ' closing' : after;", "r.book ? r.book + ' closing' : null;"],
+  ['js', 'Data 5: the after-archive reason dropped', "r.src === 'cap' ? ' · captured' : '') : after;", "r.src === 'cap' ? ' · captured' : '') : null;"],
   ['js', 'Type: a hyphen in scores', "'<span class=\"sr-mscore\">' + (r.score ? esc(scoreTxt(r.score)) : DASH)", "'<span class=\"sr-mscore\">' + (r.score ? esc(r.score) : DASH)"],
   ['js', 'Type: a hyphen-minus in P&L', "return (v > 0 ? '+' : (v < 0 ? '−' : '')) + Math.abs(v).toFixed(dp);", "return (v > 0 ? '+' : (v < 0 ? '-' : '')) + Math.abs(v).toFixed(dp);"],
   ['js', 'Pop-up: the pool replaced by the count', "' of ' + esc(String(st.pool)) + ' ' +", "' of ' + esc(String(st.count)) + ' ' +"],

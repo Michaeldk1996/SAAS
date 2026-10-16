@@ -15,7 +15,8 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   provider from Supabase). One dated folder per day: `raw-NNNN.jsonl.gz` (the raw rows added since the previous day,
   every column), `close-full.jsonl.gz` and `count-full.jsonl.gz` (full snapshots), `manifest.json` (ids, row counts,
   sha256 of every file, the previous day). A day is never replaced: the writer refuses an existing folder and only ever
-  plain-pushes (never `--force`), so git history keeps every earlier copy too.
+  plain-pushes (never `--force`), so git history keeps every earlier copy too. A same-day re-run skips a COMPLETE day ("day already written, skipped"); an incomplete one fails
+  (`historical-odds-archive.md` "Same-day re-runs").
 
 ## Rules — each one is a test
 - **Rows are only ever added.** Grants: anon / authenticated get nothing; `service_role` (the pipeline's key) gets
@@ -51,7 +52,8 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   BOTH surnames within 36 h (exactly one candidate; two or more, or none → no close, counted). Player keys are
   api-tennis's (`get_fixtures`, `timezone=UTC`). The Oddspapi fixtures list is the only METERED call (`/v4/fixtures`, one
   per 6-day window, cached; re-asked every 6 h); the meter is printed before and after.
-- `derive-held` (dispatch only; founder ruling 2026-10-16, TEN-437 item 6) — closes for the held `pinnacle+30` payloads
+- `derive-held` (dispatch only; founder ruling 2026-10-16, TEN-437 item 6; **its closes are HELD BACK since founder round 3
+  item 2** — in the archive, never exported or shown, `odds.md` "held back") — closes for the held `pinnacle+30` payloads
   whose match has **no `live_flip_log` row** (the back-fill, before 17 Sep). Window `from` / `to` (UTC days; default the
   ruled **13–30 Apr**; anything wider is not ruled), `dry_run` (default yes: counts, inserts nothing). Cut = Oddspapi's
   `trueStartTime` alone after the `resolve_start` gate; missing or rejected → no close, counted (`odds.md` "Pinnacle
