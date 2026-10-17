@@ -3953,7 +3953,10 @@ check('the all-stores table covers every data store the module reads', () => {
     // its state; the rows reconcile with careerSplits — tools/test-draw-record-drill.js A3, every player), the one
     // price join over the page's already-loaded Database rows + career-history (pp2DrawJoin), and the opponent profile
     // link (pp2HasProfile over the standings, pp2OpenProfile = psOpenProfile) — triggers and logic, no store of their own
-    'pp2DrawNeed', 'pp2DrawMatches', 'pp2DrawJoin', 'pp2HasProfile', 'pp2OpenProfile']);
+    'pp2DrawNeed', 'pp2DrawMatches', 'pp2DrawJoin', 'pp2HasProfile', 'pp2OpenProfile',
+    // founder 2026-10-16 (round 3, item 1): the host's one source wording for a price (fhSrcTitle, the Match analysis
+    // Tournament tab's words) — Record per tournament's H / A hover reads it; a display function, no rows
+    'fhSrcTitle']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
