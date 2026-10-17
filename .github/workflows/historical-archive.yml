@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | daily | verify-export | restore-check | inventory | approx-import
+        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import
         required: true
         default: daily
 permissions:
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https://([a-z0-9]+)\.supabase\.co.*#\1#')
-          for MIG in supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql; do
+          for MIG in supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql; do
             resp=$(jq -Rs '{query: .}' "$MIG" | curl -sS -w $'\n%{http_code}' -X POST \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @- \
               "https://api.supabase.com/v1/projects/$REF/database/query")
@@ -71,6 +71,11 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py approx-import
+      - name: start10 — Pinnacle (approx.) from the Oddspapi Pinnacle archive at start − 10 (founder ruling 2026-10-17; insert-only)
+        if: env.MODE == 'start10-import' || env.MODE == 'start10-dry-run'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py start10-import ${{ env.MODE == 'start10-dry-run' && '--dry-run' || '' }}
       - name: verify-export / restore-check — rebuild from the backups, compare with the archive (no write)
         if: env.MODE == 'verify-export' || env.MODE == 'restore-check'
         env:

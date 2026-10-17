@@ -440,14 +440,16 @@ test('build-match-closes: captured Bet365 cut at the actual start, captured Pinn
     } }));
     writeFileSync(join(root, '.ten225-fixture-index.json.gz'), gzipSync(JSON.stringify({ fixtures: { C: { trueStart: new Date(T3 * 1000).toISOString() } } })));
     writeFileSync(join(root, 'captured-closes-pinnacle.json'), JSON.stringify({ rows: [
-      { eventKey: 777, date: '2026-08-20', p1Key: 5, p2Key: 6, p1: 1.7, p2: 2.15 },
-      { eventKey: 778, date: '2026-08-21', p1Key: 5, p2Key: 6, p1: 1.7, p2: null } ] }));
+      { eventKey: 777, date: '2026-08-20', p1Key: 5, p2Key: 6, p1: 1.7, p2: 2.15, startSource: 'api-tennis-live' },  // held back (≤ 16 Sep, ruling 2026-10-17 item 1)
+      { eventKey: 778, date: '2026-08-21', p1Key: 5, p2Key: 6, p1: 1.7, p2: null },
+      { eventKey: 779, date: '2026-09-20', p1Key: 5, p2Key: 6, p1: 1.7, p2: 2.15, startSource: 'api-tennis-live' },  // our live-flip: a close
+      { eventKey: 780, date: '2026-09-21', p1Key: 5, p2Key: 6, p1: 1.7, p2: 2.15, startSource: 'oddspapi' } ] }));   // trueStart alone: held (item 3)
     const r = build(root, join(root, 'match-closes'), join(root, 'match-closes-index.json'));
     const cap = JSON.parse(readFileSync(join(root, 'match-closes', '5.json'), 'utf8')).cap;
     assert.deepEqual(cap, [
       ['2026-08-10', '6', null, null, 1.8, 2.0, null, null],     // last tick before the start, not the in-play 1.2 / 4.5
       ['2026-08-15', '6', null, null, 1.66, 2.2, null, null],    // oriented to Sinner; the start from the fixture index
-      ['2026-08-20', '6', 1.7, 2.15, null, null, '777', 'captured'],   // captured Pinnacle, keyed by eventKey, labelled
+      ['2026-09-20', '6', 1.7, 2.15, null, null, '779', 'captured'],   // captured Pinnacle, keyed by eventKey, labelled
       ['2026-08-18', '6', null, null, 2.2, 1.615, null, null],   // the 1.01/1.01 suspension tick is not the close
     ].sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0)));
     const alc = JSON.parse(readFileSync(join(root, 'match-closes', '6.json'), 'utf8')).cap;
@@ -457,6 +459,7 @@ test('build-match-closes: captured Bet365 cut at the actual start, captured Pinn
     assert.equal(r.stats.capUnresolved, 1, 'a doubles pair never joins');
     assert.equal(r.stats.capB365, 3);
     assert.equal(r.stats.capPin, 1, 'a one-sided captured Pinnacle row is dropped');
+    assert.equal(r.stats.capPinHeldBack, 2, 'the fallback holds back a captured close of 20 Aug and one cut at trueStart alone (rulings 2026-10-17 items 1, 3)');
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
@@ -1226,7 +1229,7 @@ test('build-match-closes: the archive export (pinnacle-closes.json) wins, with i
     writeFileSync(join(root, 'player-profiles.json'), JSON.stringify({ players: { 5: { name: 'L. Musetti' }, 6: { name: 'Y. Zhou' } } }));
     writeFileSync(join(root, 'matches.json'), '[]');
     writeFileSync(join(root, 'captured-closes-pinnacle.json'), JSON.stringify({ rows: [
-      { eventKey: 9, date: '2026-10-09', p1Key: 5, p2Key: 6, p1: 1.23, p2: 4.67 }] }));
+      { eventKey: 9, date: '2026-10-09', p1Key: 5, p2Key: 6, p1: 1.23, p2: 4.67, startSource: 'api-tennis-live' }] }));
     const outDir = join(root, 'match-closes'), idx = join(root, 'match-closes-index.json');
     let r = build(root, outDir, idx);
     let cap = JSON.parse(readFileSync(join(outDir, '5.json'), 'utf8')).cap;

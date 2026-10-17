@@ -157,5 +157,50 @@ fr = T.approx_feed_rows(cur)
 check('approx: the feed carries the current snapshot only', len(fr) == 1 and fr[0]['psw'] == 1.65 and fr[0]['snapshotId'] == 2 and list(fr[0]) == T.APPROX_FEED_COLS, fr)
 check('approx: the hover is the ruled words', T.APPROX_HOVER == 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close')
 
+# ── Pinnacle (approx.) from the Oddspapi Pinnacle archive at start - 10 (founder ruling 2026-10-17, item 2) ──
+B1 = dict(A1, date='2026-05-20', winner='Eta E.', loser='Theta T.')
+B0 = dict(A1, date='2026-04-12', winner='Kappa K.', loser='Lambda L.')              # before the start - 10 window
+tg10 = T.start10_targets([A1, B0, B1, A4])
+check('start10: targets = 13 Apr - 16 Sep only (January - 12 April stays on api-tennis)', [r['date'] for r in tg10] == ['2026-05-20'], [r['date'] for r in tg10])
+bd10 = {'2026-05-20': [{'event_key': 50, 'event_first_player': 'T. Theta', 'event_second_player': 'E. Eta', 'event_date': '2026-05-20', 'event_time': '12:00'}]}
+FX = {'F50': {'trueStartTime': '2026-05-20T12:00:00Z', 'trueEndTime': '2026-05-20T13:30:00Z', 'startTime': '2026-05-20T12:00:00Z', 'from': 'fixture index'}}
+def e(ts, p, active=True): return {'createdAt': ts, 'price': p, 'active': active}
+SER = {'121': [e('2026-05-20T11:40:00Z', 2.10), e('2026-05-20T11:49:00Z', 2.20), e('2026-05-20T11:55:00Z', 2.30), e('2026-05-20T12:05:00Z', 3.00)],
+       '122': [e('2026-05-20T11:40:00Z', 1.75), e('2026-05-20T11:48:00Z', 1.70), e('2026-05-20T11:56:00Z', 1.65), e('2026-05-20T12:05:00Z', 1.40)]}
+od_of = lambda f: ('F50', True)                                                   # the api-tennis first player = participant 1
+r10, rep10 = T.start10_rows(tg10, bd10, od_of, FX, lambda fid: (77, SER), '2026-10-17T10:00:00+00:00')
+x = r10[0] if r10 else {}
+check('start10: the last ACTIVE pinnacle+30 pair at trueStart - 10 min, oriented to the Tennis-Data winner (Eta 1.70 / Theta 2.20)',
+      len(r10) == 1 and x['price_winner'] == 1.70 and x['price_loser'] == 2.2 and x['source'] == 'oddspapi Pinnacle (start − 10)' and x['label'] == 'Pinnacle (approx.)', r10)
+check('start10: stored with its cut, price time, start, start source and gap to start',
+      x.get('cut_ts') == '2026-05-20T11:50:00Z' and x.get('price_ts') == '2026-05-20T11:49:00Z' and x.get('start_ts') == '2026-05-20T12:00:00Z'
+      and x.get('gap_to_start_s') == 660.0 and x.get('start_source') == T.P.NO_FLIP_SOURCE and x.get('fixture_id') == 'F50' and x.get('raw_id') == 77, x)
+check('control: an entry after the cut (11:55 / 11:56) and an in-play one (12:05) are never the price', x.get('price_winner') not in (1.65, 1.40) and x.get('price_loser') not in (2.30, 3.00))
+r10b, _ = T.start10_rows(tg10, bd10, lambda f: ('F50', False), FX, lambda fid: (77, SER), 'x')
+check('start10: the other orientation (api first player = participant 2) swaps the sides', r10b and r10b[0]['price_winner'] == 2.20 and r10b[0]['price_loser'] == 1.70, r10b)
+bad = {'F50': dict(FX['F50'], trueEndTime='2026-05-21T09:00:00Z')}
+rr, rp = T.start10_rows(tg10, bd10, od_of, bad, lambda fid: (77, SER), 'x')
+check('start10: a trueStart the ruled gate rejects (a match over 6 h) gives no row (api-tennis, then Bet365, price it)', rr == [] and any(k.startswith('start: ') for k in rp), rp)
+late = {'121': SER['121'][2:], '122': SER['122'][2:]}
+rr2, rp2 = T.start10_rows(tg10, bd10, od_of, FX, lambda fid: (77, late), 'x')
+check('start10: no active pair at or before the cut gives no row', rr2 == [] and any(k.startswith('no pre-cut pair') for k in rp2), rp2)
+rr3, rp3 = T.start10_rows(tg10, bd10, od_of, FX, lambda fid: (None, 'no pinnacle+30 payload held'), 'x')
+check('start10: no payload held gives no row', rr3 == [] and rp3 == {'payload: no pinnacle+30 payload held': 1}, rp3)
+B2 = dict(B1, winner='Eta E.', loser='Theta T.', tournament='Other')
+rr4, rp4 = T.start10_rows([B1, B2], bd10, od_of, FX, lambda fid: (77, SER), 'x')
+check('start10: one Oddspapi fixture two Tennis-Data rows claim is no one\'s', rr4 == [] and rp4.get('oddspapi: one fixture, two Tennis-Data rows') == 2, rp4)
+at_row = T.approx_rows(tg10, {'2026-05-20': bd10['2026-05-20']}, {50: {'Home': {'Pncl': '2.25'}, 'Away': {'Pncl': '1.68'}}}.get, 'x')[0][0]
+heldA = [dict(at_row, id=1)]
+pl10 = T.plan_snapshots(r10, heldA)
+check('start10: a start - 10 snapshot never supersedes the api-tennis one for the same match (two sources, both kept)',
+      len(pl10) == 1 and not pl10[0].get('supersedes'), pl10)
+cur10 = T.current_snapshots(heldA + [dict(pl10[0], id=2)])
+fr10 = T.approx_feed_rows(cur10)
+check('start10: the feed carries both sources, each named, the start - 10 row with its cut and gap',
+      sorted(r['source'] for r in fr10) == ['api-tennis Pinnacle', 'oddspapi Pinnacle (start − 10)']
+      and [r for r in fr10 if r['source'].startswith('oddspapi')][0]['cutTs'] == '2026-05-20T11:50:00Z'
+      and [r for r in fr10 if r['source'].startswith('api')][0]['cutTs'] == '' and list(fr10[0]) == T.APPROX_FEED_COLS, fr10)
+check('start10: the hover is the ruled words', T.START10_HOVER == 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close')
+
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

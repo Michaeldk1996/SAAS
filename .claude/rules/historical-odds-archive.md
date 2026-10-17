@@ -58,6 +58,16 @@ file we hold is irreplaceable.
   (day −1 … +2, both surnames; Home = the fixture's first player), oriented to the Tennis-Data winner; a missing side or a
   price below 1.01 is no row. Written only by `tools/tdarch.py approx-import` (`historical-archive.yml` mode
   `approx-import`); a changed snapshot is a new row whose `supersedes` names the old one. **Test:** `tools/test-tdarch.py`.
+- **Start − 10 (founder ruling 2026-10-17 item 2):** a second source in the same table, `oddspapi Pinnacle (start − 10)`, same
+  label (migration `20261017090000_historical_snapshot_start10.sql`; CHECKs: only the two sources; a start − 10 row always
+  carries `cut_ts`, `price_ts` ≤ `cut_ts` < `start_ts`, `start_source`, `gap_to_start_s`, `fixture_id`, `raw_id`; an
+  api-tennis row carries none of them). For the same Tennis-Data rows of 13 Apr – 16 Sep: the last active `pinnacle+30`
+  match-winner entry per side at or before Oddspapi's `trueStartTime` − 10 min, from the payload the Pinnacle archive holds
+  for the ONE Oddspapi fixture that joins the api-tennis fixture (the `derive-held` join: board map, else the held fixture
+  index / back-fill meta; a fixture two matches claim is no one's); the trueStart through the `resolve_start` gate; no
+  pre-cut pair on both sides = no row (api-tennis then prices it). Written only by `tools/tdarch.py start10-import`
+  (`historical-archive.yml` modes `start10-dry-run` / `start10-import`); supersedes are per source. **Test:**
+  `tools/test-tdarch.py` (cut, orientation, never a post-cut entry, gate, claimed twice), `tools/test-historical-archive-sql.py`.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).

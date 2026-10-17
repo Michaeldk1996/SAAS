@@ -18,24 +18,28 @@ function fn(src, name) {
 }
 const constLine = (src, name) => { const i = src.indexOf('const ' + name + ' '); return src.slice(i, src.indexOf('\n', i)); };
 const HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close';
+const OD10 = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close';  // founder 2026-10-17 item 2
 
 // the shared constants + source titles (Tournament tab, profile, sheets)
-const C = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhSourceNote')}
-  return { FH_BOOK, SF_APPROX_HOVER, fhSrcTitle, fhSourceNote };`)();
+const C = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhSourceNote')}
+  return { FH_BOOK, SF_APPROX_HOVER, SF_OD10_HOVER, fhSrcTitle, fhSourceNote };`)();
 check('the hover is the ruled words', C.SF_APPROX_HOVER === HOVER);
 check('a Pinnacle (approx.) price hovers "Pinnacle (approx.) · <ruled words>" — never "Pinnacle close"',
   C.fhSrcTitle({ book: 'A', src: 'td' }) === 'Pinnacle (approx.) · ' + HOVER && !/close ·/.test(C.fhSrcTitle({ book: 'A', src: 'td' })));
+check('start − 10: the hover is the ruled words, and a start − 10 price reads "Pinnacle (approx.) · Pinnacle history, taken 10 minutes …"',
+  C.SF_OD10_HOVER === OD10 && C.fhSrcTitle({ book: 'A', src: 'od10' }) === 'Pinnacle (approx.) · ' + OD10);
+check('start − 10: the api-tennis rows keep their own hover', C.fhSrcTitle({ book: 'A', src: 'td' }) === 'Pinnacle (approx.) · ' + HOVER);
 check('control: a Pinnacle / Bet365 close keeps its words', C.fhSrcTitle({ book: 'P', src: 'td' }) === 'Pinnacle close · Tennis-Data' && C.fhSrcTitle({ book: 'B', src: 'td' }) === 'Bet365 close · Tennis-Data');
 check('the source note names the snapshot with its count, never folds it into "Pinnacle"',
   C.fhSourceNote([{ book: 'P' }, { book: 'A' }, { book: 'A' }, { book: 'B' }]) === 'Pinnacle, Pinnacle (approx.) snapshot where no close (2), Bet365 where missing (1)');
 check('control: without a snapshot the note is unchanged', C.fhSourceNote([{ book: 'P' }, { book: 'B' }]) === 'Pinnacle, Bet365 where missing (1)' && C.fhSourceNote([{ book: 'P' }]) === 'Pinnacle');
 
 // the one join: book 2 → 'A'
-const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \? 'A' : 'B';/.test(html);
-check('the price join maps the store\'s book 2 to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
+const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \? 'A' : 'B';/.test(html);
+check('the price join maps the store\'s books 2 and 5 (the two snapshot sources) to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
 // founder 2026-10-16 (round 3, item 1): our archive's closes carry their own source on every surface, never "Tennis-Data"
-const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \? 'cap' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
-check('the price join gives our archive\'s closes their own source: 3 → "from Pinnacle history", 4 → "captured"', join34);
+const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \? 'cap' : bk === 5 \? 'od10' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
+check('the price join gives our archive\'s closes their own source: 3 → "from Pinnacle history", 4 → "captured", 5 → the start − 10 snapshot', join34);
 check('a Tournament-tab / sheet price from Pinnacle history reads "Pinnacle close · from Pinnacle history", a captured one "· captured"',
   C.fhSrcTitle({ book: 'P', src: 'hist', srcLabel: 'from Pinnacle history' }) === 'Pinnacle close · from Pinnacle history'
   && C.fhSrcTitle({ book: 'P', src: 'hist' }) === 'Pinnacle close · from Pinnacle history'
@@ -55,7 +59,7 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   const vm = await import('node:vm');
   const assigns = html.split('\n').filter(l => /window\.fhSrcTitle\s*=/.test(l)).join('\n');
   const run = (extra) => { const ctx = vm.createContext({}); ctx.window = ctx;
-    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${extra}`, ctx);
+    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${extra}`, ctx);
     try { return ctx.window.fhSrcTitle({ book: 'P', src: 'hist' }); } catch (e) { return e.name; } };
   check('the page never re-assigns its global fhSrcTitle: window.fhSrcTitle answers through window (17 Oct live stack overflow)',
     run(assigns) === 'Pinnacle close · from Pinnacle history');
@@ -80,7 +84,7 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   const rebinds = html.split('\n').filter(l => !/^\s*\/\//.test(l) && /(?:^|[^.\w])(?:window\.)?fhSrcTitle\s*=(?!=)|(?:const|let|var)\s+fhSrcTitle\b/.test(l)).length;
   check('one declaration of fhSrcTitle on the page and no re-binding of the name, so every bare call reads it', decls === 1 && rebinds === 0, JSON.stringify({ decls, rebinds }));
   const runCallers = (extra) => { const ctx = vm.createContext({}); ctx.window = ctx;
-    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'FH_MONO')}\n${constLine(html, 'FH_B365_HOVER')}
+    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'FH_MONO')}\n${constLine(html, 'FH_B365_HOVER')}
       function fhEsc(s){ return String(s == null ? '' : s); } function trPxAfterTitle(){ return 'after'; }
       ${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhH2hSrcTitle')}\n${fn(html, 'fhB365Tag')}\n${fn(html, 'fhPriceCell')}\n${fn(html, 'trPxTitle')}\n${extra}`, ctx);
     const hist = { book: 'P', src: 'hist' }, b = { book: 'B', src: 'td' };
@@ -113,12 +117,16 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
 
 // Head to Head ledgers: hover + footnote
 const h2h = html.slice(html.indexOf('function h2hPxNote('), html.indexOf('function h2hPriceTitle(') + 2000);
-const H = new Function('SF_APPROX_HOVER', `const E = s => String(s); let _h2hDbSt = 'ready'; ${constLine(html, 'FH_B365_HOVER')}\n${constLine(html, 'H2H_PX_NOTE')}\n${fn('\n' + h2h, 'h2hPxNote')}\n${fn('\n' + h2h, 'h2hPriceTitle')}
-  return { h2hPxNote, h2hPriceTitle };`)(HOVER);
+const H = new Function('SF_APPROX_HOVER', 'SF_OD10_HOVER', `const E = s => String(s); let _h2hDbSt = 'ready'; ${constLine(html, 'FH_B365_HOVER')}\n${constLine(html, 'H2H_PX_NOTE')}\n${fn('\n' + h2h, 'h2hPxNote')}\n${fn('\n' + h2h, 'h2hPriceTitle')}
+  return { h2hPxNote, h2hPriceTitle };`)(HOVER, OD10);
 check('a Head to Head ledger price on the snapshot hovers the ruled words', H.h2hPriceTitle({ price: 1.8, book: 'A' }) === 'Pinnacle (approx.) · ' + HOVER);
 check('a Head to Head ledger price from our archive names it: "Pinnacle closing price · from Pinnacle history" / "· captured"',
   H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'hist', srcLabel: 'from Pinnacle history' }) === 'Pinnacle closing price · from Pinnacle history'
   && H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'cap', srcLabel: 'captured' }) === 'Pinnacle closing price · captured');
+check('a Head to Head ledger price on the start − 10 snapshot hovers its own words', H.h2hPriceTitle({ price: 1.8, book: 'A', src: 'od10' }) === 'Pinnacle (approx.) · ' + OD10);
+check('the profile hands a start − 10 price to its sheet as its own source (A / od10), never the api-tennis hover',
+  /r\.src === 'od10' \? 'pinnacle-approx-od10' : 'pinnacle-approx'/.test(fn(html, 'trProfilePriceOf'))
+  && /'pinnacle-approx-od10': \['A', 'od10'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')));
 check('control: a Tennis-Data Pinnacle ledger price still names Tennis-Data', H.h2hPriceTitle({ price: 1.8, book: 'P', src: 'td' }) === 'Pinnacle closing price · Database join (Tennis-Data)');
 check('control: a Bet365 / Pinnacle ledger price keeps its words (TEN-437 Bet365 hover)', H.h2hPriceTitle({ price: 1.8, book: 'B' }) === 'Bet365 closing odds, Pinnacle not available' && /^Pinnacle closing price/.test(H.h2hPriceTitle({ price: 1.8, book: 'P' })));
 check('a ledger holding snapshot prices says so in its footnote, with the count',
@@ -128,7 +136,7 @@ check('control: a ledger without one keeps the plain footnote', />Closing price 
 // Founder 2026-10-16: each price gets exactly ONE hover, matching its source — a Pinnacle (approx.) price never shows
 // TEN-437's Bet365 hover, on any surface (tab rows, tags, sheet meta, the H2H page, the Tournament tab).
 const B365H = 'Bet365 closing odds, Pinnacle not available';
-const hoverSrc = src => new Function(`${constLine(src, 'FH_BOOK')}\n${constLine(src, 'FH_SRC')}\n${constLine(src, 'SF_APPROX_HOVER')}\n${constLine(src, 'FH_B365_HOVER')}
+const hoverSrc = src => new Function(`${constLine(src, 'FH_BOOK')}\n${constLine(src, 'FH_SRC')}\n${constLine(src, 'SF_APPROX_HOVER')}\n${constLine(src, 'SF_OD10_HOVER')}\n${constLine(src, 'FH_B365_HOVER')}
   const FH_MONO = ''; let _h2hDbSt = 'ready';
   ${fn(src, 'fhSrcTitle')}\n${fn(src, 'fhH2hSrcTitle')}\n${fn(src, 'fhB365Tag')}\n${fn(src, 'fhB365Meta')}\n${fn(src, 'trPxTitle')}
   ${fn('\n' + src.slice(src.indexOf('function h2hPriceTitle(')), 'h2hPriceTitle')}
@@ -147,13 +155,13 @@ check('one hover per price: a Pinnacle (approx.) price reads only the snapshot h
   oh.ok, JSON.stringify(oh));
 const ohMut = oneHover(html.replace("function fhH2hSrcTitle(r){ return r && r.book === 'B' ?", "function fhH2hSrcTitle(r){ return r && r.book !== 'P' ?"));
 check('control: an H2H hover that treats any non-Pinnacle book as Bet365 is caught', !ohMut.ok);
-const ohMut2 = oneHover(html.replace("if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + SF_APPROX_HOVER;\n", ''));
+const ohMut2 = oneHover(html.replace("if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER);\n", ''));
 check('control: the H2H page dropping its snapshot branch is caught', !ohMut2.ok);
 
 // Series: the cell title
 const ser = readFileSync(join(ROOT, 'series.js'), 'utf8');
 check('Series names book A "Pinnacle (approx.)" and its title is the ruled words, not "… closing"',
-  /BOOK_NAME = \{ P: 'Pinnacle', B: 'bet365', A: 'Pinnacle \(approx\.\)' \}/.test(ser) && /r\.book === BOOK_NAME\.A \? r\.book \+ ' · ' \+ \(window\.SF_APPROX_HOVER/.test(ser));
+  /BOOK_NAME = \{ P: 'Pinnacle', B: 'bet365', A: 'Pinnacle \(approx\.\)' \}/.test(ser) && /r\.book === BOOK_NAME\.A \? r\.book \+ ' · ' \+ \(\(r\.src === 'od10' \? window\.SF_OD10_HOVER : window\.SF_APPROX_HOVER\)/.test(ser));
 
 // Database page: per-book sums take book 2 (no crash), the footnote names it with its count
 const agg = new Function(`function median(a){ return a.length ? a[a.length >> 1] : null; }\n${fn(html, 'agg')}\nreturn agg;`)();
@@ -188,9 +196,14 @@ writeFileSync(join(d, 'odds-archive', '2026.csv'), H26 + [
   '2026-02-04,Dallas Open,ATP500,Indoor,Hard,1st Round,3,Arch A.,Ive I.,1,2,Completed,1.5,2.6,,',                        // archive close first
   '2026-02-05,Dallas Open,ATP500,Indoor,Hard,1st Round,3,Bet B.,Three T.,1,2,Completed,1.5,2.6,,',                       // no snapshot: Bet365
   '2026-02-06,Dallas Open,ATP500,Indoor,Hard,1st Round,3,Cap C.,Ture T.,1,2,Completed,1.5,2.6,,',                        // our captured close
+  '2026-07-20,Generali Open,ATP250,Outdoor,Clay,1st Round,3,Ten T.,Odd O.,1,2,Completed,1.5,2.6,,',                     // start − 10 + api-tennis: start − 10 first
+  '2026-07-21,Generali Open,ATP250,Outdoor,Clay,1st Round,3,Ate A.,Only O.,1,2,Completed,1.5,2.6,,',                    // api-tennis only (no pre-cut pair)
 ].join('\n') + '\n');
-writeFileSync(join(d, 'approx.csv'), 'date,tournament,winner,loser,psw,psl,eventKey,snapshotId\n' +
-  '2026-01-13,Adelaide International,Pin P.,Ned N.,1.4,2.9,1,1\n2026-02-03,Dallas Open,Snap S.,Shot S.,1.45,2.75,2,2\n2026-02-04,Dallas Open,Arch A.,Ive I.,1.45,2.75,3,3\n');
+const AT = 'api-tennis Pinnacle', OD = 'oddspapi Pinnacle (start − 10)';
+writeFileSync(join(d, 'approx.csv'), 'date,tournament,winner,loser,psw,psl,eventKey,snapshotId,source,cutTs,gapToStartS\n' +
+  `2026-01-13,Adelaide International,Pin P.,Ned N.,1.4,2.9,1,1,${AT},,\n2026-02-03,Dallas Open,Snap S.,Shot S.,1.45,2.75,2,2,${AT},,\n2026-02-04,Dallas Open,Arch A.,Ive I.,1.45,2.75,3,3,${AT},,\n` +
+  `2026-07-20,Generali Open,Ten T.,Odd O.,1.41,2.95,4,4,${AT},,\n2026-07-20,Generali Open,Ten T.,Odd O.,1.43,2.88,4,5,${OD},2026-07-20T09:50:00Z,1140\n` +
+  `2026-07-21,Generali Open,Ate A.,Only O.,1.6,2.3,6,6,${AT},,\n`);
 writeFileSync(join(d, 'feed.csv'), 'kind,date,tournament,series,court,surface,round,bestof,winner,loser,comment,psw,psl,archiveId,label,eventKey\n' +
   'override,2026-02-04,Dallas Open,,,,,,Arch A.,Ive I.,,1.48,2.7,9,from Pinnacle history,9\n' +
   'override,2026-02-06,Dallas Open,,,,,,Cap C.,Ture T.,,1.47,2.72,10,captured,10\n');
@@ -206,6 +219,18 @@ check('builder: the Pinnacle count includes our archive\'s closes (no figure mov
   MB.bookCounts.Pinnacle === 3 && MB.archiveFeed.rowsByLabel['from Pinnacle history'] === 1 && MB.archiveFeed.rowsByLabel.captured === 1, JSON.stringify(MB.bookCounts));
 check('builder: no Pinnacle close → the snapshot, book 2', JSON.stringify(R['Snap S.']) === JSON.stringify([2, 1.45, 2.75]), R['Snap S.']);
 check('builder: no snapshot → Bet365 stays the fallback', JSON.stringify(R['Bet B.']) === JSON.stringify([1, 1.5, 2.6]), R['Bet B.']);
+// founder ruling 2026-10-17 item 2: 13 Apr – 16 Sep, the Oddspapi archive at start − 10 first (book 5), api-tennis next (2)
+check('builder: start − 10 before api-tennis (book 5, at its own price)', JSON.stringify(R['Ten T.']) === JSON.stringify([5, 1.43, 2.88]), R['Ten T.']);
+check('builder: no start − 10 pair → the api-tennis snapshot (book 2)', JSON.stringify(R['Ate A.']) === JSON.stringify([2, 1.6, 2.3]), R['Ate A.']);
+check('builder: both snapshot sources count as Pinnacle (approx.), each named with its hover and count in meta',
+  MB.bookCounts['Pinnacle (approx.)'] === 3 && MB.approx.sources.od.used === 1 && MB.approx.sources.at.used === 2 && MB.approx.sources.od.hover === OD10,
+  JSON.stringify({ bc: MB.bookCounts, s: MB.approx && MB.approx.sources }));
+const agg5 = new Function(`function median(a){ return a.length ? a[a.length >> 1] : null; }\n${fn(html, 'agg')}\nreturn agg;`)();
+const a5 = agg5([{ p: 1.5, w: 1, b: 2 }, { p: 1.6, w: 0, b: 5 }]);
+check('the Database folds book 5 into Pinnacle (approx.) — never Pinnacle or Bet365', a5.book.ap && a5.book.ap.n === 2 && !a5.book.ps && !a5.book.b365, JSON.stringify(a5.book));
+writeFileSync(join(d, 'old.csv'), 'date,tournament,winner,loser,psw,psl,eventKey,snapshotId\n2026-02-03,Dallas Open,Snap S.,Shot S.,1.45,2.75,2,2\n');
+let oldErr = ''; try { run({ DB_YIELD_APPROX: join(d, 'old.csv'), DB_YIELD_FEED: join(d, 'feed.csv') }); } catch (e) { oldErr = String(e.stderr || e); }
+check('control: a feed without the source column is refused, never read as one source', /unexpected header/.test(oldErr), oldErr);
 const R0 = run({ DB_YIELD_APPROX: join(d, 'none.csv'), DB_YIELD_FEED: join(d, 'feed.csv') });
 check('control: without the snapshot feed the same row is Bet365', JSON.stringify(R0['Snap S.']) === JSON.stringify([1, 1.5, 2.6]), R0['Snap S.']);
 console.log(`\ntest-approx-pinnacle: ${passed} passed, ${failed} failed`);

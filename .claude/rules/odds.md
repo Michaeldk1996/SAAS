@@ -194,9 +194,13 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `supersedes` names the captured one; the captured row stays in the archive); (3) Tennis-Data 2026 Bet365 — a fallback
   only where no Pinnacle close exists. **Measured (back-fill, 15 Oct):** Oddspapi's `/v4/historical-odds` reaches back ~185 days — on
   15 Oct the 11–12 Apr fixtures already 404'd and 13 Apr answered — so 13 Jan – 12 Apr 2026 has no Oddspapi history (the
-  R8 Bet365 fallback prices those rows) and **13–30 Apr IS held** (the back-fill's `pinnacle+30` payloads). **Exception (founder rulings 2026-10-16): on the Database join, an ATP main-draw match of 13 Jan – 16 Sep
-  2026 (12 Apr until round 3 item 3) with no Pinnacle close is priced on "Pinnacle (approx.)" — api-tennis's stored `Pncl` price, a SNAPSHOT with its own
-  label and hover ("Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close") — before Bet365
+  R8 Bet365 fallback prices those rows) and **13–30 Apr IS held** (the back-fill's `pinnacle+30` payloads). **Exception (founder rulings 2026-10-16 and 2026-10-17 item 2): on the Database join, an ATP main-draw match of 13 Jan – 16 Sep
+  2026 with no Pinnacle close is priced on "Pinnacle (approx.)", a SNAPSHOT, never a close, in this order: (1) 13 Apr – 16 Sep
+  only, the Oddspapi Pinnacle archive at Oddspapi's start − 10 min (the last active `pinnacle+30` entry per side at or before
+  `trueStartTime` − 10 min, the trueStart through the `resolve_start` gate; stored with its source, cut time and gap to the
+  start; hover "Pinnacle (approx.) · Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close");
+  (2) api-tennis's stored `Pncl` price where the archive has no pre-cut pair (13 Jan – 12 Apr always: no archive exists;
+  hover unchanged, "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close"); (3) Bet365; (4) a dash
   (`historical-odds-archive.md`, `database.md`).** **api-tennis Pinnacle (`Pncl`) is never a close** (founder brief 2026-10-14 item 2: it has no
   timestamps; measured 2 decimals) — a cross-check only.
 - **The archive close = the last ACTIVE `pinnacle+30` match-winner entry at or before the EARLIER of our live-flip
@@ -223,6 +227,21 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   that adds more such rows changes nothing a reader sees. **Test:** `tools/test-pinarch-close.py` "hold-back" (the
   trueStart-only close never exported; an event it superseded keeps its captured close; control: without the rule it
   would be the export).
+- **Our captured closes of 12 Jul – 16 Sep are held back — never shown as a close** (founder ruling 2026-10-17 item 1). The
+  420 `captured` rows dated on or before 16 Sep were cut at Oddspapi's start alone (the plain-Pinnacle series was read every
+  3 h from `/v4/historical-odds`; 298 of 408 closing prices first appeared after the start), the method held back for
+  April. They stay in the archive as their own source with a note on how they were made (`pinarch.py` `HELD_BACK_RULES`,
+  rule `captured-before-live-flip`), never deleted; the export, the closes shards' fallback (`build-match-closes.js`
+  `CAPTURED_HELD_TO`) and every reader skip them. Those matches are priced as Pinnacle (approx.) (above), else Bet365.
+  **Test:** `tools/test-pinarch-close.py` "captured hold-back" (20 Jul and 16 Sep held, 17 Sep kept, control).
+- **"Close" is reserved for a price cut at a VERIFIED start** (founder ruling 2026-10-17 item 3): our live-flip
+  (`live_flip_log`), or the earlier-of rule from 17 Sep (`effective_cut`: the earlier of our live-flip and the gated
+  trueStart). Every other derived price — a cut at Oddspapi's start alone, start − 10, api-tennis's `Pncl`, any snapshot —
+  is never labelled a close in any wording ("close", "closing", "Close"), and its hover says "not a confirmed close".
+  Tennis-Data's own closing columns and the board card's Close (the card book's last price before the actual start,
+  `_mcCardCloseOf`) are outside this rule's scope until the founder rules on them. **Test:** `tools/test-close-label.py`
+  (every exported close carries a verified start; a start-alone / pre-17-Sep captured / snapshot row is never exported;
+  every snapshot hover and label in the code says "not a confirmed close" and never "close ·"; controls).
 - **Every change to a price source goes through ONE task only** (founder ruling 2026-10-16, round 3 item 2): the
   price-source task (the founder's 2026-10-16 Tennis-Data / Pinnacle brief and its rounds). A price source = which book,
   feed or cut prices a match, or the order between them, on any surface (the Database join, the closes shards, Form /

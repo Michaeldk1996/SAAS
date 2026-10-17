@@ -52,6 +52,10 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   BOTH surnames within 36 h (exactly one candidate; two or more, or none → no close, counted). Player keys are
   api-tennis's (`get_fixtures`, `timezone=UTC`). The Oddspapi fixtures list is the only METERED call (`/v4/fixtures`, one
   per 6-day window, cached; re-asked every 6 h); the meter is printed before and after.
+- **Held back (never exported, never deleted):** a `derive-held` close (rule `start-alone`) and a `captured` close of a
+  match on or before 16 Sep (rule `captured-before-live-flip`, founder ruling 2026-10-17 item 1: those 420 were cut at
+  Oddspapi's start alone). `pinarch.py` `HELD_BACK_RULES` carries how each was made; the export's `heldBack.byRule`
+  counts them (`odds.md` "held back").
 - `derive-held` (dispatch only; founder ruling 2026-10-16, TEN-437 item 6; **its closes are HELD BACK since founder round 3
   item 2** — in the archive, never exported or shown, `odds.md` "held back") — closes for the held `pinnacle+30` payloads
   whose match has **no `live_flip_log` row** (the back-fill, before 17 Sep). Window `from` / `to` (UTC days; default the

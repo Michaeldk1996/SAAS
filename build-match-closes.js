@@ -218,15 +218,23 @@ function capturedBet365(root, resolver, stats) {
 // Supabase pinnacle_archive_close every pipeline run (tools/pinarch.py export: the current close per match, an archive
 // close "from Pinnacle history" over a captured one), same row shape plus its label. Without the export (a failed read)
 // the committed captured-closes-pinnacle.json is read, every row labelled "captured"; stats.capPinSource says which.
+const CAPTURED_HELD_TO = '2026-09-16';   // = tools/pinarch.py CAPTURED_HELD_TO
 function capturedPinnacle(root, stats) {
   const exp = readJson(path.join(root, 'pinnacle-closes.json'), null);
   const useExport = !!(exp && Array.isArray(exp.rows) && exp.rows.length);
   const d = useExport ? exp : readJson(path.join(root, 'captured-closes-pinnacle.json'), null);
   stats.capPinSource = useExport ? 'pinnacle-closes.json (archive)' : 'captured-closes-pinnacle.json (fallback)';
   const out = [];
+  stats.capPinHeldBack = 0;
   for (const r of (d && d.rows) || []) {
     const P = pair(r.p1, r.p2);
     if (!P || !r.p1Key || !r.p2Key || !r.date) continue;
+    // founder ruling 2026-10-17 (item 1): a captured close dated on or before 16 Sep was cut at Oddspapi's start alone (no
+    // verified start before our live-flip log) — never a close. The export already holds it back (tools/pinarch.py
+    // held_back); the fallback file still carries it, so it is held back here too: a failed export never brings it back.
+    // founder ruling 2026-10-17 (item 3): "close" only at a verified start — on the fallback that is our live-flip
+    // (startSource 'api-tennis-live', = pinarch.py CAPTURED_VERIFIED_SOURCES); a trueStart-only cut is held back too.
+    if (!useExport && (String(r.date) <= CAPTURED_HELD_TO || r.startSource !== 'api-tennis-live')) { stats.capPinHeldBack++; continue; }
     out.push({ date: r.date, k1: String(r.p1Key), k2: String(r.p2Key), P, ek: r.eventKey != null ? String(r.eventKey) : null,
                label: (useExport && r.label) || 'captured' });
     stats.capPin++;
