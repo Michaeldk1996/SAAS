@@ -62,13 +62,13 @@ function repo() {
   fs.writeFileSync(path.join(d, 'roster.json'), JSON.stringify({ players: { 1: { name: 'A. Alpha', country: 'Australia', age: 30, careerByYear: [{}] }, 2: { name: 'N. Newman', country: 'Australia', age: 26, careerByYear: [{}] } } }));
   return d;
 }
-function run(d, mode, opts = {}, now = '2026-10-19T05:00:00Z') {
+function run(d, mode, opts = {}, now = '2026-10-19T05:00:00Z', extra = {}) {
   const log = path.join(d, 'requests.log');
   fs.writeFileSync(path.join(d, 'pages.json'), JSON.stringify(pages(opts)));
   let code = 0, out = '';
   try {
-    out = execFileSync(process.execPath, ['--import', STUB, TOOL, '--root', d, '--mode', mode], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, TE_DELAY_MS: '0', TE_STUB_PAGES: path.join(d, 'pages.json'), TE_STUB_LOG: log, TE_ROSTER: path.join(d, 'roster.json'),
+    out = execFileSync(process.execPath, ['--import', STUB, TOOL, '--root', d, '--mode', mode, ...(extra.args || [])], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+      env: { ...process.env, ...(extra.env || {}), TE_DELAY_MS: '0', TE_STUB_PAGES: path.join(d, 'pages.json'), TE_STUB_LOG: log, TE_ROSTER: path.join(d, 'roster.json'),
         API_TENNIS_KEY: 'x', TE_NOW: now, TE_CACHE: fs.mkdtempSync(path.join(os.tmpdir(), 'te-c-')) } });
   } catch (e) { code = e.status; out = String(e.stdout || '') + String(e.stderr || ''); }
   const reqs = fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) : [];
@@ -146,6 +146,44 @@ const te = (url) => url.includes('tennisexplorer');
     assert.strictEqual(r.code, 0, r.out);
     assert.strictEqual(r.reqs.filter(te).filter((u) => /newman-1\/\?annual=/.test(u)).length, 3);
     assert.ok(!r.reqs.some((u) => /noprofile|player_key=3\b/i.test(u)), 'a player without a profile was looked up');
+  });
+}
+{
+  // TIME BUDGET (founder 2026-10-17, comment cd899856 item 3): a run that cannot fit is refused BEFORE fetching; a run
+  // that overruns stops at the budget — either way exit 1, nothing written, and the message says to split
+  const d = repo(); const before = snapshot(d);
+  const r = run(d, 'weekly', {}, undefined, { env: { TE_SEC_PER_PAGE: '600', TE_BUDGET_MIN: '10' } });
+  check('budget pre-flight: an estimate past the budget exits 1 before any request; store byte-identical; says split', () => {
+    assert.strictEqual(r.code, 1, r.out); assert.strictEqual(r.reqs.filter(te).length, 0); assert.strictEqual(snapshot(d), before);
+    assert.ok(/past the 10 min budget — split the run \(--part i\/n\)/.test(r.out), r.out);
+  });
+  const d2 = repo(); const before2 = snapshot(d2);
+  const r2 = run(d2, 'weekly', {}, undefined, { env: { TE_SEC_PER_PAGE: '0', TE_BUDGET_MIN: '0.000001' } });
+  check('budget in-run: hitting the budget stops the run — exit 1, the last good store unchanged', () => {
+    assert.strictEqual(r2.code, 1, r2.out); assert.strictEqual(snapshot(d2), before2); assert.ok(/hit its .* min budget/.test(r2.out), r2.out);
+  });
+  // --part i/n: the parts are disjoint and together cover the roster
+  const seen = [];
+  for (const part of ['0/2', '1/2']) {
+    const dp = repo(); const rp = run(dp, 'weekly', {}, undefined, { args: ['--part', part] });
+    const rep = JSON.parse(fs.readFileSync(path.join(dp, 'te-refresh-report.json'), 'utf8'));
+    seen.push({ part, code: rp.code, players: rep.estimate.players, alpha: rp.reqs.some((u) => /\/player\/alpha\//.test(u)), newman: rp.reqs.some((u) => /newman-1/.test(u)) });
+  }
+  check('--part 0/2 + 1/2: each player refreshed by exactly one part', () => {
+    assert.ok(seen.every((x) => x.code === 0), JSON.stringify(seen));
+    assert.strictEqual(seen.filter((x) => x.alpha).length, 1, JSON.stringify(seen)); assert.strictEqual(seen.filter((x) => x.newman).length, 1, JSON.stringify(seen));
+    assert.strictEqual(seen[0].players + seen[1].players, 2);
+  });
+}
+{
+  // the workflow: two weekly parts cover the roster, and the tool's budget trips before the job timeout kills a run
+  const y = fs.readFileSync(path.join(path.dirname(TOOL), '..', '.github', 'workflows', 'te-refresh.yml'), 'utf8');
+  check('workflow: weekly crons 05:00 and 11:00 run parts 0/2 and 1/2; the re-read runs whole; budget < job timeout', () => {
+    assert.ok(/cron: '0 5 \* \* 1'/.test(y) && /cron: '0 11 \* \* 1'/.test(y), 'two weekly crons');
+    assert.ok(/'0 11 \* \* 1' && '1\/2'/.test(y) && /'30 3 \* \* \*' && '0\/1'/.test(y) && /\|\| '0\/2'\)/.test(y), 'part mapping');
+    const budget = +(/TE_BUDGET_MIN: '(\d+)'/.exec(y) || [])[1], timeout = +(/timeout-minutes: (\d+)/.exec(y) || [])[1];
+    assert.ok(budget > 0 && timeout > 0 && budget < timeout && timeout < 360, `budget ${budget} min, job timeout ${timeout} min, Actions limit 360`);
+    assert.ok(/--part "\$TE_PART"/.test(y), 'the run passes its part');
   });
 }
 console.log(`\nte-refresh: ${pass} passed, ${fail} failed`);

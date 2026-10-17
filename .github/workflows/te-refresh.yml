@@ -3,8 +3,11 @@ name: TE store refresh (TEN-443)
 # Keeps te-history/ (the licensed Tennis Explorer store the pipeline reads for career records) current — founder
 # ruling 2026-10-17 (TEN-443, comment 49d2974c item 1): on GitHub Actions, never a laptop.
 #
-#   weekly  Monday 05:00 UTC — every player's profile + current season, a TE correction's season, a new player's whole
-#           history (tools/te-refresh.mjs --mode weekly, ~630 pages at 8–10 s = ~95 min)
+#   weekly  Monday, in TWO parts (05:00 and 11:00 UTC, `--part 0/2` and `1/2`) — every player's profile + current
+#           season (January: last season too), a TE correction's season, a new player's whole history. The roster is
+#           every profiled player (player-index.json hasProfile, 725 on 2026-10-17): ~1,450 pages ≈ 3.6 h whole, and
+#           ~2,180 ≈ 5.5 h in January, past the job timeout — hence the split (≈ 1.8 h / 2.7 h a part, measured
+#           9.02 s per page).
 #   reread  daily 03:30 UTC — every season of 1/28 of the players, so each player is fully re-read every 28 days
 #           (the monthly full re-read; one monthly job would be ~13 h, past the 6 h job limit)
 #
@@ -14,13 +17,17 @@ name: TE store refresh (TEN-443)
 # only reads the committed files. No step swallows a failure.
 on:
   schedule:
-    - cron: '0 5 * * 1'      # weekly
+    - cron: '0 5 * * 1'      # weekly, part 0/2
+    - cron: '0 11 * * 1'     # weekly, part 1/2
     - cron: '30 3 * * *'     # daily rolling re-read
   workflow_dispatch:
     inputs:
       mode:
         description: weekly | reread
         default: weekly
+      part:
+        description: i/n — this run's share of the roster (weekly default 0/2; reread 0/1)
+        default: ''
 
 concurrency:
   group: te-refresh          # weekly and re-read never overlap, and never race each other's push
@@ -41,8 +48,12 @@ jobs:
       - name: Refresh the Tennis Explorer store
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-          TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '0 5 * * 1' && 'weekly' || 'reread') }}
-        run: node tools/te-refresh.mjs --mode "$TE_MODE"
+          TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '30 3 * * *' && 'reread' || 'weekly') }}
+          # the weekly run is split in two (a roster this size does not fit one job in January); the re-read is whole
+          TE_PART: ${{ inputs.part != '' && inputs.part || (github.event.schedule == '0 11 * * 1' && '1/2' || (github.event.schedule == '30 3 * * *' && '0/1' || '0/2')) }}
+          # the tool stops itself at this budget, before the job timeout below can kill a run mid-write
+          TE_BUDGET_MIN: '270'
+        run: node tools/te-refresh.mjs --mode "$TE_MODE" --part "$TE_PART"
       - name: Guard the refreshed store against the committed one
         run: node tools/te-history-guard.mjs . --prev-ref HEAD
       - name: Commit the refreshed store
@@ -55,7 +66,7 @@ jobs:
           git config user.email "bsp-te-bot@users.noreply.github.com"
           COMMITBACK_OWNED="te-history-index.json te-refresh-log.jsonl" tools/commitback-push.sh "chore(te): Tennis Explorer store refresh ($TE_MODE) [skip ci]" te-history te-history-index.json te-refresh-log.jsonl
         env:
-          TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '0 5 * * 1' && 'weekly' || 'reread') }}
+          TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '30 3 * * *' && 'reread' || 'weekly') }}
       - name: Report
         if: always()
         run: |

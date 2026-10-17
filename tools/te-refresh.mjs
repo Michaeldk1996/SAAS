@@ -27,6 +27,18 @@ import os from 'node:os';
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const ROOT = path.resolve(arg('--root', path.join(path.dirname(new URL(import.meta.url).pathname), '..')));
 const MODE = arg('--mode', 'weekly');
+// `--part i/n`: this run refreshes only its 1/n of the roster (a stable split by key), so a roster too large for one
+// Actions job runs as n sequential jobs (founder 2026-10-17, comment cd899856 item 3).
+const [PART, PARTS] = String(arg('--part', '0/1')).split('/').map(Number);
+if (!(PARTS >= 1 && PART >= 0 && PART < PARTS)) { console.error(`bad --part ${arg('--part')}`); process.exit(2); }
+// TIME BUDGET. The job's own timeout (te-refresh.yml timeout-minutes 300) would kill a run mid-write; the tool stops
+// first. Before fetching it estimates the run (pages × the measured 9.02 s per page, 2026-10-17, 1,748 requests) and
+// refuses one that cannot fit; while running it stops at the budget. Either way it writes NOTHING (all or nothing)
+// and exits 1, so the alert fires and says to split (--part).
+const BUDGET_MIN = Number(process.env.TE_BUDGET_MIN || 270);
+const SEC_PER_PAGE = Number(process.env.TE_SEC_PER_PAGE || 9.02);
+const NEW_PLAYER_PAGES = 17;   // name search + profile + ~15 seasons (the roster's mean career, measured 2026-10-17)
+const T0 = Date.now();
 if (!['weekly', 'reread'].includes(MODE)) { console.error(`unknown --mode ${MODE}`); process.exit(2); }
 process.env.TE_CACHE = process.env.TE_CACHE || fs.mkdtempSync(path.join(os.tmpdir(), 'te-refresh-cache-'));
 const OUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'te-refresh-out-'));
@@ -87,9 +99,28 @@ async function main() {
   const roster = await loadRoster();
   const report = { mode: MODE, at: NOW.toISOString(), players: 0, newPlayers: [], unmatched: [], refused: [], seasonsFetched: 0, changes: {} };
   const slice = (k) => [...String(k)].reduce((s, c) => s + c.charCodeAt(0), 0) % 28 === DAY % 28;
+  const inPart = (k) => [...String(k)].reduce((s, c) => (s * 31 + c.charCodeAt(0)) % 1000003, 7) % PARTS === PART;
+  const mine = roster.filter((p) => inPart(p.key));
+  // pre-flight: what this run will fetch, at the measured pace
+  const estPages = mine.reduce((s, p) => { const k = idx.players[p.key];
+    if (!k) return s + NEW_PLAYER_PAGES;
+    if (MODE === 'reread') return s + (slice(p.key) ? 1 + (k.seasons || 0) : 0);
+    return s + 2 + (NOW.getUTCMonth() === 0 ? 1 : 0); }, 0);
+  const estMin = estPages * SEC_PER_PAGE / 60;
+  report.part = `${PART}/${PARTS}`; report.estimate = { players: mine.length, pages: estPages, minutes: Math.round(estMin), budgetMinutes: BUDGET_MIN };
+  console.log(`te-refresh ${MODE} part ${PART}/${PARTS}: ${mine.length} players · est ${estPages} pages ≈ ${Math.round(estMin)} min of a ${BUDGET_MIN} min budget`);
+  if (estMin > BUDGET_MIN) {
+    fs.writeFileSync(path.join(ROOT, 'te-refresh-report.json'), JSON.stringify(report, null, 1));
+    console.log(`::error::te-refresh would need ~${Math.round(estMin)} min (${estPages} pages × ${SEC_PER_PAGE} s) for ${mine.length} players, past the ${BUDGET_MIN} min budget — split the run (--part i/n); nothing fetched, the store is unchanged`);
+    process.exit(1);
+  }
   const nextIdx = { ...idx, players: { ...idx.players }, unmatched: { ...(idx.unmatched || {}) } };
 
-  for (const p of roster) {
+  for (const p of mine) {
+    if ((Date.now() - T0) / 60000 > BUDGET_MIN) {
+      console.log(`::error::te-refresh hit its ${BUDGET_MIN} min budget after ${report.players} of ${mine.length} players — stopped before the job timeout; nothing written, the last good store is unchanged; split the run (--part i/n)`);
+      process.exit(1);
+    }
     const known = idx.players[p.key];
     // the daily re-read touches only its 1/28 slice (and any new player); everyone else keeps his file this run
     if (MODE === 'reread' && known && !slice(p.key)) continue;
