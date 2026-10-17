@@ -1228,7 +1228,7 @@ jobs:
             const tour = (idx.tour && idx.tour.all) || {};
             // The tour baseline is struck on the SAME basis as the player yields (TEN-310): Pinnacle,
             // else Bet365. A baseline with no Bet365 side at all is the superseded Pinnacle-only build.
-            if (!tour.book || !(tour.book.bet365 > 0) || tour.book.pinnacle + tour.book.bet365 !== tour.n) {
+            if (!tour.book || !(tour.book.bet365 > 0) || tour.book.pinnacle + tour.book.bet365 + (tour.book.approx || 0) !== tour.n) {
               console.error(`market-edge tour baseline book mix ${JSON.stringify(tour.book)} over n=${tour.n} — not the TEN-310 basis (a stale Pinnacle-only build?)`);
               process.exit(1);
             }
@@ -1243,7 +1243,7 @@ jobs:
               if (!s.headline || !s.headline.n) continue;
               if (s.priceBasis !== "Pinnacle closing, else Bet365 closing") { console.error(`${f}: priceBasis ${JSON.stringify(s.priceBasis)} — pre-TEN-310 shard shipped`); process.exit(1); }
               if (s.headline.units == null) { console.error(`${f}: headline.units absent on a shard with ${s.headline.n} priced rows — the role cards "At 1u flat" figure would dash`); process.exit(1); }
-              if (s.headline.book.pinnacle + s.headline.book.bet365 !== s.headline.n) { console.error(`${f}: headline book mix ${JSON.stringify(s.headline.book)} does not add to n=${s.headline.n} — TEN-310 basis violated`); process.exit(1); }
+              if (s.headline.book.pinnacle + s.headline.book.bet365 + (s.headline.book.approx || 0) !== s.headline.n) { console.error(`${f}: headline book mix ${JSON.stringify(s.headline.book)} does not add to n=${s.headline.n} — TEN-310 basis violated`); process.exit(1); }
               if (++checked >= 40) break;
             }
             if (!checked) { console.error("market-edge/: no shard carries a priced sample — the whole join is empty"); process.exit(1); }

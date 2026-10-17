@@ -1197,19 +1197,26 @@ check('price bands sum to the headline priced count, for every shard', () => {
 // counts every `pinnacle*` row as Pinnacle, every other as Bet365 (build-market-edge.js BASIS_BOOKS /
 // addTo). This check kept the two pre-R8 labels; only a FRESH build carries capture rows (the committed
 // floor predates R8), so it first went red in the TEN-329 built-store gate, run 5227: "358: 13 rows".
-const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture']);
-const meIsPinnacle = (m) => String(m.book).startsWith('pinnacle');
+// founder ruling 2026-10-17 (one price per match): a row the Database prices carries the Database's book, so the
+// archive close ('pinnacle-history') and the two Pinnacle (approx.) snapshots join the labels; a snapshot is counted
+// under its own `approx` bucket, never as a Pinnacle close
+const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture', 'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);
+const meIsApprox = (m) => String(m.book).startsWith('pinnacle-approx');
+const meIsPinnacle = (m) => String(m.book).startsWith('pinnacle') && !meIsApprox(m);
+const meApproxN = (h) => (h.book && h.book.approx) || 0;
 check('per-row book counts sum to the headline, and the label is never blended', () => {
   let captured = 0;
   for (const k of MK_KEYS) {
     const s = MARKET[k];
-    assert.strictEqual(s.headline.book.pinnacle + s.headline.book.bet365, s.headline.n,
+    assert.strictEqual(s.headline.book.pinnacle + s.headline.book.bet365 + meApproxN(s.headline), s.headline.n,
       `${k}: book mix does not sum to the priced count`);
     const rows = s.matches.filter(m => !ME_BOOKS.has(m.book));
     assert.strictEqual(rows.length, 0, `${k}: ${rows.length} rows carry no book label`);
     assert.strictEqual(s.matches.filter(meIsPinnacle).length, s.headline.book.pinnacle,
       `${k}: row-level Pinnacle count disagrees with the summary`);
-    assert.strictEqual(s.matches.filter(m => !meIsPinnacle(m)).length, s.headline.book.bet365,
+    assert.strictEqual(s.matches.filter(meIsApprox).length, meApproxN(s.headline),
+      `${k}: row-level Pinnacle (approx.) count disagrees with the summary`);
+    assert.strictEqual(s.matches.filter(m => !meIsPinnacle(m) && !meIsApprox(m)).length, s.headline.book.bet365,
       `${k}: row-level Bet365 count disagrees with the summary`);
     captured += s.matches.filter(m => /-capture$/.test(m.book)).length;
   }
@@ -1235,7 +1242,7 @@ check('TEN-310 · Bet365 fallback rows are inside the headline basis, and the bo
   assert(p > 0, 'no Pinnacle rows at all — the basis is empty');
   for (const k of MK_KEYS) {
     const h = MARKET[k].headline;
-    assert.strictEqual(h.book.pinnacle + h.book.bet365, h.n, `${k}: book mix ${JSON.stringify(h.book)} does not add to n=${h.n}`);
+    assert.strictEqual(h.book.pinnacle + h.book.bet365 + meApproxN(h), h.n, `${k}: book mix ${JSON.stringify(h.book)} does not add to n=${h.n}`);
     const off = (MARKET[k].matches || []).filter(m => m.book && !m.inBasis);
     assert.strictEqual(off.length, 0, `${k}: ${off.length} priced rows left out of the basis`);
   }
