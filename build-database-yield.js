@@ -219,7 +219,8 @@ const approxUsed = new Set();
 
 function processLine(c, col, season, fromFeed) {
     bucket.archive++;
-    const att = () => [(c[col.series] || '').trim(), (c[col.court] || '').trim(), (c[col.bestof] || '').trim(), (c[col.comment] || '').trim()];
+    const att = () => [(c[col.series] || '').trim(), (c[col.court] || '').trim(), (c[col.bestof] || '').trim(), (c[col.comment] || '').trim(),
+      col.wrank != null ? (c[col.wrank] || '').trim() : '', col.lrank != null ? (c[col.lrank] || '').trim() : ''];
     if (!fromFeed) { const d = (c[col.date] || '').trim(); if (d > pinnacleLastPriced && validPrice(num(c[col.psw])) && validPrice(num(c[col.psl]))) pinnacleLastPriced = d; }
 
     const comment = (c[col.comment] || '').trim();
@@ -373,7 +374,7 @@ for (const r of feed.team) {
   const dI = parseInt(String(r.date || '').replace(/-/g, ''), 10);
   if (!validPrice(pw) || !validPrice(pl) || bk == null || !Number.isFinite(dI) || (1 / pw) + (1 / pl) > 1.15) { feed.teamDropped++; continue; }
   const isRet = RETIRED.has((r.comment || '').trim());
-  xAtt.push([(r.series || '').trim(), (r.court || '').trim(), (r.bestof || '').trim(), (r.comment || '').trim()]);
+  xAtt.push([(r.series || '').trim(), (r.court || '').trim(), (r.bestof || '').trim(), (r.comment || '').trim(), '', '']);
   xRaw.push([dI, null, (r.surface || '').trim(), (r.round || '').trim(), (r.tournament || '').trim(), Math.min(pw, pl), Math.max(pw, pl),
     pw <= pl ? 1 : 0, bk, (r.winner || '').trim(), (r.loser || '').trim(), 't' + (isRet ? 'r' : '') + (pw === pl ? 'e' : '')]);
   feed.teamKept++;
@@ -516,14 +517,16 @@ writeAtomic(OUT_BASE, JSON.stringify({ meta, rows, retRows, tieRows }));
 // store holds are listed; nothing else changes. ARCHIVE_NAME_BLOCK is NOT carried: the feed's own rows spell Zhizhen
 // Zhang "Zhang Z." (pinarch td_name), so blocking that name would drop his 2026 prices (measured 15 Oct: 3 matches).
 const nameTable = (() => {
-  const { ARCHIVE_NAME_ALIASES, ARCHIVE_ALIAS_NAMES } = require('./build-odds-performance.js');
+  const { ARCHIVE_NAME_ALIASES, ARCHIVE_ALIAS_NAMES, ARCHIVE_PAGE_SPELLINGS } = require('./build-odds-performance.js');
   let prof = {};
   try { prof = (JSON.parse(fs.readFileSync(path.join(__dirname, 'player-profiles.json'), 'utf8')).players) || {}; } catch (e) { /* no table: page join as before */ }
-  const held = new Set(); for (const pr of names.concat(retNames, tieNames)) for (const n of pr || []) held.add(n);
+  // the era shard's names too (founder 2026-10-17: before 2010 and the team events are in the join)
+  const held = new Set(); for (const pr of names.concat(retNames, tieNames, xRaw.map(x => [x[9], x[10]]))) for (const n of pr || []) held.add(n);
   const aliases = {};
   const missing = [];
+  for (const [n, our] of Object.entries(ARCHIVE_PAGE_SPELLINGS || {})) if (held.has(n)) aliases[n] = our;
   for (const [n, k] of Object.entries(ARCHIVE_NAME_ALIASES)) {
-    if (n.includes(',') || !held.has(n)) continue;
+    if (n.includes(',') || !held.has(n) || aliases[n]) continue;
     const our = (prof[k] && prof[k].name) || ARCHIVE_ALIAS_NAMES[k];
     if (our) aliases[n] = our; else missing.push(`${n} (${k})`);
   }
@@ -544,10 +547,12 @@ writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
 // each, winner first, with its price pair, book code and set (db = a Database row, ret / tie = behind their flags, x = the
 // era shard). Built from the same rows as the page files above, so a price can never differ between them.
 const iso = d => { const s = String(d); return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; };
-const MASTER_COLS = ['date', 'tournament', 'series', 'surface', 'court', 'round', 'bestof', 'winner', 'loser', 'comment', 'pw', 'pl', 'book', 'set', 'flags'];
+// wrank / lrank: the archive's ranks at the match (Tennis-Data's own columns; empty for a match our archive added) — the
+// legacy profile odds card's opponent-rank splits read them (founder ruling 2026-10-17, ruling 5)
+const MASTER_COLS = ['date', 'tournament', 'series', 'surface', 'court', 'round', 'bestof', 'winner', 'loser', 'comment', 'pw', 'pl', 'book', 'set', 'flags', 'wrank', 'lrank'];
 const masterRows = [];
 const pushM = (d, tour, surf, rnd, w, l, fav, dog, favWon, book, a, set, flags) => masterRows.push([iso(d), tour, a[0], surf, a[1], rnd, a[2], w, l, a[3],
-  favWon ? fav : dog, favWon ? dog : fav, book, set, flags]);
+  favWon ? fav : dog, favWon ? dog : fav, book, set, flags, a[4] || '', a[5] || '']);
 rows.forEach((r, i) => pushM(r[0], tournaments[r[4]], surfaces[r[2]], rounds[r[3]], names[i][0], names[i][1], r[5], r[6], r[7], r[8], rowsAtt[i], 'db', ''));
 retRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], retAtt[i], 'ret', 'r'));
 tieRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], tieAtt[i], 'tie', 'e' + (x[11] ? 'r' : '')));

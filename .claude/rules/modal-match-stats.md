@@ -54,7 +54,7 @@ found at restore time are marked inline.
   solid), whichever side it is on (founder Q3 / ruling 8, TEN-380). The figures stay `--text` on both sides. **Test:**
   `test-ten338-match-stats.mjs` "TEN-380" (mutation: bars by identity, A solid / B 45%).
 - **Sheet styling (TEN-380, step 3 reference):** the inline sheet `--card` + `--edge-6`; meta line Plex 11 / 0.06em, sentence
-  case; avatars `--selected` + 1px `--line`, letter `--text`; price chips `--card` + `--line`, both `--text`; **both players'
+  case; avatars `--selected` + 1px `--line`, letter `--text`; price chips `--card` + `--line`, both `--text` — their prices are the Database join's for the match (founder 2026-10-17 round 2 item 5; `maMsSheetEntry` → `sfDbPxRows`), a dash where it holds none; **both players'
   names and values `--text`**; row labels `--text-label`; result pill Plex 10/700 0.14em on white 5% + `--line`; the caption
   band (KEY STATS, section heads) `--inner` with a transparent 1px border, 800. **Test:** `test-ten338-match-stats.mjs`
   "TEN-380", `test-ten314-sheet.mjs` header, `test-ten314-components.mjs` caption strip.

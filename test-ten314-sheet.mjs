@@ -117,9 +117,13 @@ test('header: the meta date follows the design per source (Form DD.MM · lists D
 // Mutation: the Match Stats tab back to buildMatchStatsSheet for a completed match, or maMsSheetInit not called.
 test('the Match Stats tab renders THE sheet inline for a finished match, filled from the match\'s own box score', () => {
   assert.match(slice('buildMatchStatsSection'), /if \(hasPointLog\) return maMsSheetHtml\(m\);/);
-  assert.match(html, /  matchstats\(m\)\{ aPaint\('aSectionMatchStats', buildMatchStatsSection\(m\)\); maMsSheetInit\(m\); \},/);
-  const entry = new Function('eventKeyOfMatch', 'h2hRoundLabel', 'maRoundName', '_mcCardCloseOf', `${slice('fhSurfName')}; ${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
-    () => 99, x => x, x => x, (m, w) => (w === 'p1' ? 1.54 : 2.62));
+  assert.match(html, /  matchstats\(m\)\{\n    aPaint\('aSectionMatchStats', buildMatchStatsSection\(m\)\); maMsSheetInit\(m\);/);
+  // ruling 5 (founder 2026-10-17): the header prices are the master's join (sfDbPxRows); the card close never stands in
+  const mk = px => new Function('eventKeyOfMatch', 'h2hRoundLabel', 'maRoundName', '_mcCardCloseOf', 'sfDbPxRows', `${slice('fhSurfName')}; ${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
+    () => 99, x => x, x => x, (m, w) => (w === 'p1' ? 9.99 : 9.99), px);
+  const entry = mk(() => [{ price: 1.54, oppPrice: 2.62, book: 'P', src: 'td', srcLabel: 'Pinnacle close · Tennis-Data' }]);
+  const none = mk(() => [null])({ p1: 'A', p1Key: 1, p2: 'B', p2Key: 2, tour: 'ATP X', finalScore: { sets: [{ p1: 6, p2: 4 }], p1Sets: 1, p2Sets: 0, winner: 'p1' } });
+  assert.deepEqual([none.r.price, none.r.oppPrice], [null, null], 'no join row: a dash, never the card close');
   const E = entry({ p1: 'A', p1Key: 1, p2: 'B', p2Key: 2, tour: 'ATP X', finalScore: { sets: [{ p1: 6, p2: 4 }, { p1: 6, p2: 3 }], p1Sets: 2, p2Sets: 0, winner: 'p1' },
     matchStats: { p1: { 'Service:Aces': 3 }, p2: { 'Service:Aces': 9 } }, setStats: { 1: { p1: { a: 1 }, p2: { a: 2 } } } });
   assert.deepEqual(E.r.sets, [[6, 4], [6, 3]]); assert.equal(E.r.won, true); assert.equal(E.r.ek, '99');

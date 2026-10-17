@@ -13223,7 +13223,7 @@ function fhRowFromForm(x, selfKey, selfName, idx){
     date: x.date, tourn: (typeof sfEventName === 'function' ? sfEventName : fhTournClean)(x.tournament), tournRaw: x.tournament,   // TEN-402 r1 fix 2: the one event name
     surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
     opp: x.opponent, oppKey: x.opponentKey, won: !!x.won, result: x.result,
-    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, def: !!x.defaulted, qualifying: !!x.qualifying, tier: x.tier,
+    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, def: !!x.defaulted, qualifying: !!x.qualifying, tier: x.tier != null ? x.tier : (x.level != null ? x.level : null),
     ek: x.eventKey, selfKey, selfName, formRow: x, price: null, oppPrice: null, book: null,
   };
   return fhFinishRow(r);
@@ -13619,9 +13619,8 @@ function fhFormPlayer(m, idx, st){
     return r;
   });
   // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds the match (sfDbPxRows)
-  if (typeof sfDbPxRows === 'function') sfDbPxRows(key, name, all0.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: r.round, opp: r.opp }))).forEach((d, i) => {
-    if (d) Object.assign(all0[i], { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel });
-  });
+  // ruling 3: a master class row reads the join only (a dash where it holds none)
+  if (typeof sfDbPxRows === 'function') sfDbPxRows(key, name, all0.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: r.round, opp: r.opp }))).forEach((d, i) => sfDbPxApply(all0[i], d));
   const all = all0.filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself
     && !r.wo   // N2 (TEN-312): a walkover is not a match played — no bar, no row, no count, no price, no line
     && !FH_FORM_NOT_ATP_RECORD.test(String(r.tournRaw || r.tourn || '')));   // founder review 2: Laver Cup is not a Form row
@@ -14100,7 +14099,7 @@ function fhMeetings(m){
   // Head to Head page calls it (player A's side, B's full name, the page's round code; walkovers never priced)
   const oppPr = m.p2Key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null, oppFull = (oppPr && oppPr.name) || m.p2, RO = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.roundOf;
   if (typeof sfDbPxRows === 'function') sfDbPxRows(m.p1Key, m.p1, out.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: RO ? RO(r.round, r.tournRaw) : r.round, opp: oppFull })))
-    .forEach((d, i) => { if (d) Object.assign(out[i], { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel }); });
+    .forEach((d, i) => sfDbPxApply(out[i], d));   // ruling 3: a master class meeting reads the join only
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
 }
 // Price range average (flag b). Margin removed: invert the mean no-vig
@@ -15151,9 +15150,12 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
   r.retSettle = !!(r.retSettle || x.retired);
   // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds this match (sfDbPxRows) — the
   // career row as the Head to Head page and the profile hand it over (its own date, result, round and opponent)
+  // ruling 3: an ATP tour-level row (the master's class) reads the join only — a dash where it holds none, has not loaded
+  // or failed. (sfDbPxRows is always defined on the page; only a data-layer harness slices this function without it.)
   if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){
     const d = sfDbPxRows(selfKey, selfName, [{ date: x.date, won: r.won, round: r.round, opp: x.opponent }])[0];
     if (d){ r.price = d.price; r.oppPrice = d.oppPrice; r.book = d.book; r.src = d.src; r.srcLabel = d.srcLabel; }
+    else { r.price = null; r.oppPrice = null; r.book = null; r.src = null; r.srcLabel = null; }
   }
   const res = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
   r.setsOk = !!(r.sets && res && r.sets.length === (+res[1]) + (+res[2]) && r.done && r.done.length === r.sets.length);
@@ -16011,6 +16013,20 @@ function sfDbPxRows(selfKey, selfName, views){
 }
 // The tab loaders' wait for the join (a failed load is not cached: sfDbJoinLoad retries on the next open).
 function sfDbPxLoad(){ return typeof sfDbJoinLoad === 'function' ? Promise.resolve().then(() => sfDbJoinLoad()).catch(() => null) : Promise.resolve(null); }
+// Founder ruling 2026-10-17 (ruling 3): the match classes the master holds — every ATP tour-level match (main draw, the team
+// events, before 2010 included; career-history level 'atp', not qualifying, not a walkover) — take their price from the
+// join ONLY: no closes-shard, Market edge shard or capture price stands in. The join holds no row, has not loaded or
+// failed = a dash ("—"), never another price (fix 4). Challenger, qualifying and ITF keep the closes path until phase 2.
+function sfMasterClass(r){
+  if (!r || r.wo || r.walkover || r.qualifying) return false;
+  return /^atp$/i.test(String(r.tier != null ? r.tier : r.level != null ? r.level : ''));
+}
+// one view priced from the join: the join's price, else (a master class) nothing at all
+function sfDbPxApply(r, d){
+  if (d) { Object.assign(r, { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel }); return r; }
+  if (sfMasterClass(r)) Object.assign(r, { price: null, oppPrice: null, book: null, src: null, srcLabel: null });
+  return r;
+}
 // TEN-402 R3 fix 3 · a match dated after the Database archive's last match (the live edition) has no closing price on
 // record yet: ONE reason, worded once (trPxAfterTitle), shown on hover by every surface that prints such a row's "—" —
 // the Match analysis Tournament tab and the player profile's Record per tournament rows (window.trPxAfterOf).
@@ -16571,9 +16587,15 @@ function maMsSheetEntry(m){
   const setJ = m.setStats ? Object.fromEntries(Object.keys(m.setStats).map(k => [Number(k), j(m.setStats[k])]).filter(x => Number.isFinite(x[0]) && x[1])) : null;
   // TEN-380 review item 4 (one book per fixture, TEN-377 close rule): the card book's close — the header's and the card's —
   // never the api-tennis J close another book printed.
-  const close = w => { const v = typeof _mcCardCloseOf === 'function' ? Number(_mcCardCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
+  // Founder ruling 2026-10-17 (ruling 5): the header's two prices are the MASTER's (the one price join: Pinnacle closing,
+  // else Bet365 closing, per match, with its hover), never the card book's close. A match the join does not hold, a join
+  // still loading or failed, or a match the master does not cover (Challenger, qualifying, ITF) = a dash.
+  const oppPr = m.p2Key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null;
+  const d = won != null && !m.walkover && typeof sfDbPxRows === 'function'
+    ? sfDbPxRows(m.p1Key, m.p1, [{ date: m.date, won, round: null, opp: (oppPr && oppPr.name) || m.p2 }])[0] : null;
   return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
-    r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: close('p1'), oppPrice: close('p2'),
+    r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: d ? d.price : null, oppPrice: d ? d.oppPrice : null,
+      book: d ? d.book : null, src: d ? d.src : null, srcLabel: d ? d.srcLabel : null,
       tourn: m.tour, surface: fhSurfName(m.surface), round: maRoundName(m.tournamentRound), date: m.date,
       inline: { match: j(m.matchStats), sets: setJ && Object.keys(setJ).length ? setJ : null } } };
 }
@@ -18858,16 +18880,24 @@ function ps2MeetCard(m, side, R, more){
   }
   const all = R.rows, list = more ? all : all.slice(0, PS2_ROWS_SHOWN);
   const od = v => (v == null ? FH_DASHC : Number(v).toFixed(2));
+  // founder ruling 2026-10-17 (ruling 5): each meeting's H / A = the master's join (sfDbPxRows: Pinnacle closing, else
+  // Bet365 closing, per match, the hover's source with it) — never the shard's oddsSelf / oddsOpp. Join still loading = a
+  // blank cell (no price yet, never another); failed or no row = a dash (fix 4).
+  const jst = typeof _sfDbJoinSt !== 'undefined' ? _sfDbJoinSt : null;
+  const px = jst === 'ready' && typeof sfDbPxRows === 'function'
+    ? sfDbPxRows(key, R.name, list.map(r => ({ date: r.date, won: !!r.won, round: psRoundAbbr(r.round) || null, opp: r.opponent }))) : list.map(() => null);
+  const pxOf = new Map(list.map((r, i) => [r, px[i]]));
+  const cell = (r, side2) => { if (jst !== 'ready' && jst !== 'failed') return ''; const d = pxOf.get(r); return d ? od(side2 ? d.oppPrice : d.price) : FH_DASHC; };
   const groups = psGroupMeetings(list).map(g => {
     const meta = psTourMeta(g.tournament), surf = g.rows[0].surface;
     const sd = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '';
     return { title: g.tournament, meta: [sd, meta && meta.tier].filter(Boolean).join(' · '), rows: g.rows.map(r => {
       const x = ps2Meeting(r);
       return { date: psFmtMeetDate(r.date), won: !!r.won, opp: r.opponent, rd: psRoundAbbr(r.round) || FH_DASHC, sets: x.sets, scores: x.scores, scoresTitle: x.scores + (x.ret ? ' ret.' : ''), ret: x.ret, scoresColor: 'var(--text-label)',
-        h: od(r.oddsSelf), oppPrice: od(r.oddsOpp), attrs: ` data-ps2-row="${side ? 'b' : 'a'}"`,
+        h: cell(r, false), oppPrice: cell(r, true), hTitle: pxOf.get(r) && typeof fhSrcTitle === 'function' ? fhSrcTitle(pxOf.get(r)) : undefined, attrs: ` data-ps2-row="${side ? 'b' : 'a'}"`,
         click: maRowOnclick({ key, name: R.name, ek: null, date: r.date, opp: r.opponent,
           fallback: { date: r.date, tourn: r.tournament, surface: sd || null, round: psRoundAbbr(r.round) || null, won: !!r.won, sets: x.gs.length ? x.gs : null, ret: x.ret,
-            price: r.oddsSelf != null ? Number(r.oddsSelf) : null, oppPrice: r.oddsOpp != null ? Number(r.oddsOpp) : null } }) };
+            price: pxOf.get(r) ? pxOf.get(r).price : null, oppPrice: pxOf.get(r) ? pxOf.get(r).oppPrice : null } }) };
     }) };
   });
   const rest = all.length - PS2_ROWS_SHOWN;
@@ -19035,7 +19065,10 @@ const A_TAB_BUILD = {
     _aStyleMatch = m;
     aPaint('aSectionStyle', buildStyleSection(m));
     const styles = Object.keys((playerStyles && playerStyles.byKey) || {}).length ? null : (_pgStylesP = _pgStylesP || loadPlayerStyles());
-    return Promise.all([styles, ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
+    // founder ruling 2026-10-17 (ruling 5): the career meetings' prices are the master's join — the tab waits for it and
+    // for both career histories (the join's step 1), never the style-meetings shard's own oddsSelf / oddsOpp
+    const ch = k => (k == null || k === '' ? null : Promise.resolve().then(() => loadCareerHistory(k)).catch(() => null));
+    return Promise.all([styles, ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna(), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null), ch(m.p1Key), ch(m.p2Key)]).then(() => {
       m._ps2Loaded = true;
       if (_aStyleMatch !== m || !aBuilt(m, 'style')) return;
       aPaint('aSectionStyle', buildStyleSection(m));
@@ -19053,7 +19086,15 @@ const A_TAB_BUILD = {
     // returned so Download report waits for the meetings, not the loading line (live 2026-09-28: it printed 21 characters)
     return fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });
   },
-  matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m); },
+  matchstats(m){
+    aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m);
+    // ruling 5: the header prices are the master's join — repaint once it (and player A's career history, its step 1) lands
+    const ch = m.p1Key != null && typeof loadCareerHistory === 'function' ? Promise.resolve().then(() => loadCareerHistory(m.p1Key)).catch(() => null) : null;
+    return Promise.all([(typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null), ch]).then(() => {
+      if (!aBuilt(m, 'matchstats')) return;
+      aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m);
+    });
+  },
   // TEN-339: loading line, then the two histories, closes and box scores (pgEnsureData); returned so Download report waits.
   progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); return pgEnsureData(m).then(() => { if (aBuilt(m, 'progression')) aPaint('aSectionProgression', buildMatchProgressionSection(m)); }); },
   // TEN-324: the career spine (careerByYear) for both players, eager file or shard; returned so Download report waits.
@@ -27945,7 +27986,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const W = H2H_PAGE_PRICE_WINDOW, MW = H2H_PAGE_MATCH_WINDOW, SW = H2H_PAGE_START_WINDOW, RW = H2H_PAGE_ROW_WINDOW;
     // matches → their Database row (step 1 / 3): ms = [{ d, won, rd, k, ek, row }]; ek = dated on the match day, row = a
     // ledger row with no career match (step 3)
-    const dbPairs = (ms, skip) => {
+    const dbPairs = (ms, skip, anyRound) => {
       const out = [];
       ms.forEach((m, j) => {
         const seen = new Set();
@@ -27953,7 +27994,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           if (seen.has(c) || (skip && skip.has(c.i))) return;
           seen.add(c);
           const dd = c.day - m.d, ds = c.st - m.d;
-          if (c.aWon !== m.won || clash(m.rd, c.rd)) return;
+          if (c.aWon !== m.won || (!anyRound && clash(m.rd, c.rd))) return;
           if (m.ek ? dd < MW[0] || dd > MW[1] : dd < W[0] || dd > W[1] || (!m.row && (ds < SW[0] || ds > SW[1]))) return;
           if (!same(m.k, c.k)) return;
           // match day to match day; a start-dated career row start to start; a ledger row of unknown kind (step 3) its own date
@@ -27979,6 +28020,19 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       meet.push({ d, won: x.won, rd: code(fhRoundCode(x.round, x.qualifying)), k, ek: x.eventKey != null, x });
     });
     M = h2hNearest(dbPairs(meet));
+    // Founder ruling 2026-10-17 (ruling 2): a career match the strict pass left unpriced takes a Database row whose ROUND
+    // differs — the archive and the feed disagree on a round (Lyon 2022: Tennis-Data "2nd Round", the feed QF) — only when
+    // the date window, both players and the winner hold, the event is the same (trSameEvent: the page's one event test),
+    // and it is the ONLY such row for that match and that match the only one for the row. Two candidates = a dash.
+    const evOk = (m, i) => typeof trSameEvent === 'function' && !!(m.x && m.x.tournament)
+      && trSameEvent(m.x.tournament, [db.meta && db.meta.tournaments ? db.meta.tournaments[db.rows[i][4]] : '']);
+    const left = meet.map((m, j) => (M.doneL.has(j) ? -1 : j)).filter(j => j >= 0);
+    if (left.length) {
+      const T = dbPairs(left.map(j => meet[j]), M.usedR, true).filter(q => evOk(meet[left[q.l]], q.r));
+      const nl = new Map(), nr = new Map();
+      T.forEach(q => { nl.set(q.l, (nl.get(q.l) || 0) + 1); nr.set(q.r, (nr.get(q.r) || 0) + 1); });
+      T.forEach(q => { if (nl.get(q.l) === 1 && nr.get(q.r) === 1) { M.map.set(left[q.l], q.r); M.doneL.add(left[q.l]); M.usedR.add(q.r); meet[left[q.l]].rdTol = true; } });
+    }
     if (m1) m1.set(career, { full: a.full, meet, M });
     }
     // ledger rows → career matches (step 2)
@@ -28010,28 +28064,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     });
     return n;
   }
-  // TEN-437 (founder 2026-10-16, item 5: "Pinnacle first on every screen"): a meeting our own capture — or the Pinnacle
-  // history archive behind it — holds a Pinnacle close for takes that close, as the Match analysis tab does (FH_BOOK_ORDER:
-  // Pcap first), over the Database's Tennis-Data row. Captured Pinnacle rows only, through the tab's own matcher
-  // (fhCloseFor: eventKey, else opponent key ±1 day, one candidate): every other price stays the Database join's.
-  function h2hCapPinnacle(rows, a, b, clA, clB) {
-    const closeFor = fn('fhCloseFor');
-    const capOnly = c => (c && Array.isArray(c.cap) && c.cap.length ? { rows: [], cap: c.cap } : null);   // captured rows only
-    const A = capOnly(clA), B = capOnly(clB);
-    if (!closeFor || (!A && !B)) return 0;
-    let n = 0;
-    rows.forEach(r => {
-      // keyed meetings only (a keyless archive row is dated at its event's start, not the match day); a retirement stays
-      // a dash here, as the page's Database join voids it (h2hPriceTitle)
-      if (r.ek == null || r.ret) return;
-      let c = A ? closeFor(A, r.date, b.short, r.won, b.key, r.ek) : null;
-      if (!c && B) { const c2 = closeFor(B, r.date, a.short, !r.won, a.key, r.ek); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src, srcLabel: c2.srcLabel }; }
-      if (!c || c.book !== 'P' || c.src !== 'cap') return;
-      r.price = c.price; r.oppPrice = c.oppPrice; r.book = 'P'; r.src = 'cap'; r.srcLabel = c.srcLabel || null;
-      n++;
-    });
-    return n;
-  }
+  // Founder ruling 2026-10-17 (ruling 5): the page's captured-Pinnacle step (h2hCapPinnacle, TEN-437 item 5) is removed —
+  // those prices are not closes (odds.md "held back"); every meeting reads the master's join and nothing overrides it.
   // Per-pair data: both career-history shards (lazy, the dashboard's own loader) + the Database rows (lazy, once).
   const _h2hPairs = {};
   let _h2hDb = null, _h2hDbSt = null;
@@ -28124,7 +28158,6 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       S.woN = S.rows.filter(r => r.wo).length;                   // a walkover is not a completed meeting
       S.rows = S.rows.filter(r => !r.wo);
       if (_h2hDbSt === 'ready') h2hPriceJoin(S.rows, a, b, _h2hDb, null, S.chA);
-      h2hCapPinnacle(S.rows, a, b, S.clA, S.clB);
       S.priced = S.rows.filter(r => r.price != null).length;
       S.dbAt = _h2hDbSt;
       S.firstYear = [S.chA, S.chB].map(ch => (Array.isArray(ch) && ch.length ? Math.min(...ch.filter(x => x && String(x.level || '').toLowerCase() === 'atp').map(x => +String(x.date || '').slice(0, 4)).filter(Boolean)) : null));

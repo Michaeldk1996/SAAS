@@ -37,6 +37,9 @@ const path = require('path');
 
 const ROOT = __dirname;
 const ARCHIVE_DIR = path.join(ROOT, 'odds-archive');
+// Founder ruling 2026-10-17 (ruling 5): the card reads the ONE master (build-database-yield.js, same run) — each match's
+// own price, Pinnacle closing else Bet365 closing — never the average across books (avgw / avgl) or the best of them.
+const MASTER_PATH = path.join(ROOT, 'database-yield-master.json');
 const OUT_DIR = path.join(ROOT, 'odds-performance');
 const INDEX_PATH = path.join(ROOT, 'odds-performance-index.json');
 const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
@@ -266,6 +269,16 @@ const ARCHIVE_NAME_ALIASES = {
   'Struff J.L.': '2831',             // J-L. Struff: the archive's hyphen-less initials (founder ruling 2026-10-17, item 4)
   'O Connell C.': '421',             // C. O'Connell: the archive drops the apostrophe (founder ruling 2026-10-17, item 4)
   'Miguel L.': '67442',              // G. Miguel (Luis Augusto "Guto" Miguel): known by a later given name (Rio 2026, the archive's only row)
+  // founder ruling 2026-10-17 (ruling 1): the spellings that left 103 career matches unjoined, each checked row by row
+  // against the archive (odds-archive/*.csv) and the players' own career rows; a key only where a career row carries it
+  'Moroni G.M.': '413',              // M. Moroni (Gian Marco): Pune + Barcelona 2022
+  'Moroni G.': '413',                // M. Moroni: Gstaad 2019 (Filippo Moroni, the other "F. Moroni", plays from 2021)
+  'Statham J.': '4105',              // R. Statham (José Rubin Statham): Auckland 2009-19, 8 rows
+  'Madaras D.': '1860',              // N. Madaras (Nicolae Dragos Madaras): Sofia 2022, Bastad 2023
+  'Aragone JC': '2924',              // J. Aragone (JC Aragone): Antalya 2019
+  'Aragone J.C.': '2924',            // J. Aragone: Delray Beach 2021
+  'Monteiro J.': '1074',             // T. Monteiro: Winston-Salem 2019 (the archive's only "Monteiro J." row)
+  'Wu T.L.': '1062',                 // Wu Tung-Lin: Winston-Salem 2021 … Indian Wells 2023, 6 rows
   // oddspapi (bet365-history) spellings — players known by a LATER given name; exact
   // strings, and no Tennis-Data name carries a comma, so they cannot collide.
   'Barrios Vera, Marcelo Tomas': '396', // T. Barrios Vera
@@ -276,6 +289,19 @@ const ARCHIVE_NAME_ALIASES = {
 // 2026-10-15 item 2): the api-tennis fixture spelling his matches carry. Profiles win where they exist.
 const ARCHIVE_ALIAS_NAMES = {
   '67442': 'G. Miguel',
+};
+// The page join's spelling for an archive name whose player has no api-tennis key on record (his matches are only ever
+// an opponent's rows, with no key) or whose fixtures spell him two ways (founder ruling 2026-10-17, ruling 1). Read by
+// build-database-yield.js's name table ahead of the keyed table above; the keyed builders never read it.
+const ARCHIVE_PAGE_SPELLINGS = {
+  'Dolgopolov O.': 'A. Dolgopolov',               // Oleksandr / "Alexandr" Dolgopolov: 412 archive rows, 78 career rows unjoined
+  'Zhang Ze': 'Z. Zhang',                         // Ze Zhang (2015-18; the keyed builders keep him blocked from Zhizhen)
+  'Zhang Ze.': 'Z. Zhang',                        // Ze Zhang (2019)
+  'Hernandez-Fernandez J': 'J. Hernandez-Fernandez', // Lyon 2018: the archive dropped the dot
+  'Statham J.': 'R. Statham',                     // the career rows of 2008-21 spell him "R. Statham" ("J. R. Statham" from 2021)
+  // keyed above too; listed so the page join's spelling never depends on whether he is in the eager profile file
+  'Moroni G.M.': 'M. Moroni', 'Moroni G.': 'M. Moroni', 'Madaras D.': 'N. Madaras', 'Aragone JC': 'J. Aragone',
+  'Aragone J.C.': 'J. Aragone', 'Wu T.L.': 'Wu Tung-Lin',
 };
 const ARCHIVE_NAME_BLOCK = new Set([
   'Zhang Z.',    // Ze Zhang (2010-15, ranks 253-308) — would join Z. Zhang (Zhizhen, "Zhang Zh.")
@@ -416,8 +442,9 @@ function main() {
     });
   });
 
-  const seasons = fs.readdirSync(ARCHIVE_DIR).filter((f) => /^\d{4}\.csv$/.test(f)).sort();
-  if (!seasons.length) throw new Error(`no season files in ${ARCHIVE_DIR} -- run mirror-odds-archive.py first`);
+  const master = JSON.parse(fs.readFileSync(MASTER_PATH, 'utf8'));
+  const MC = {}; ((master.meta && master.meta.cols) || []).forEach((c, i) => { MC[c] = i; });
+  if (MC.pw == null || !Array.isArray(master.rows)) throw new Error(`${MASTER_PATH}: not a master file`);
 
   const buckets = new Map(); // our player key -> { all, surface{}, role{}, season{} }
   const ambiguous = new Map();
@@ -461,17 +488,20 @@ function main() {
 
   // archiveLatest is still reported so the UI can say how stale the mirror is -- the
   // form window no longer depends on it, because it is a match count now, not a date.
+  // archiveLatest = the master's latest match (team events are not this card's: they stay out, as in the Database)
   let archiveLatest = '';
-  const parsedSeasons = new Map();
-  seasons.forEach((file) => {
-    const rows = readCsv(path.join(ARCHIVE_DIR, file));
-    parsedSeasons.set(file, rows);
-    rows.forEach((r) => { if (r.date && r.date > archiveLatest) archiveLatest = r.date; });
-  });
+  const masterRows = master.rows.filter((m) => !String(m[MC.flags] || '').includes('t')).map((m) => ({
+    date: m[MC.date], tournament: m[MC.tournament], series: m[MC.series], surface: m[MC.surface], round: m[MC.round],
+    winner: m[MC.winner], loser: m[MC.loser], comment: m[MC.comment], wrank: MC.wrank != null ? m[MC.wrank] : '', lrank: MC.lrank != null ? m[MC.lrank] : '',
+    // the match's ONE price pair (winner first): both the "average" and the "best" slots read it — no cross-book figure
+    avgw: m[MC.pw], avgl: m[MC.pl], maxw: m[MC.pw], maxl: m[MC.pl] }));
+  masterRows.forEach((r) => { if (r.date && r.date > archiveLatest) archiveLatest = r.date; });
+  const bySeason = new Map();
+  masterRows.forEach((r) => { const y = String(r.date).slice(0, 4); if (!bySeason.has(y)) bySeason.set(y, []); bySeason.get(y).push(r); });
+  const seasons = [...bySeason.keys()].sort();
 
-  seasons.forEach((file) => {
-    const season = file.slice(0, 4);
-    parsedSeasons.get(file).forEach((row) => {
+  seasons.forEach((season) => {
+    bySeason.get(season).forEach((row) => {
       stats.rows += 1;
       // Retirements and walkovers are ~3.5% of a season and bias the result: the price
       // was struck for a match that was never really played out.
@@ -706,6 +736,6 @@ if (require.main === module) process.exit(main());
 // drift that lost Vallejo and Shang from career-splits; one implementation, two callers.
 module.exports = {
   keyFromOurName, keyFromArchiveName, devig, summarize,
-  readCsv, ourCandidateKeys, fullKey, LEVEL_ALIASES,
+  readCsv, ourCandidateKeys, fullKey, LEVEL_ALIASES, ARCHIVE_PAGE_SPELLINGS,
   archiveOverride, ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK, ARCHIVE_ALIAS_NAMES,
 };

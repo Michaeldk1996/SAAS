@@ -559,9 +559,13 @@ test('founder ruling 2026-10-17 (item 1): the closes-shard tabs show the Databas
   const row = o => { const i = d.ch.findIndex(x => x.opponent === o); return S.meRowFromCareer(d.ch[i], d.cl, '1', 'J. Sinner', i); };
   const pk = r => [r.price, r.oppPrice, r.book, r.src];
   assert.deepEqual(pk(row('A. B')), [1.55, 2.45, 'A', 'od10'], 'the Database\'s start − 10 snapshot, never the closes 1.50 / 2.60');
-  assert.deepEqual(pk(row('C. D')), [2.0, 1.85, 'P', 'td'], 'a match the Database does not hold keeps the closes price');
+  // founder ruling 2026-10-17 (ruling 3): an ATP tour-level match is the master's class — a dash where the join holds
+  // none, and a dash before the join answers (never the closes price); the closes shard prices Challenger / ITF only
+  assert.deepEqual(pk(row('C. D')), [null, null, null, null], 'an ATP match the Database does not hold: a dash, never the closes price');
   S.dbJoin = null;
-  assert.deepEqual(pk(row('A. B')), [1.5, 2.6, 'P', 'td'], 'control: before the join answers, the closes price');
+  assert.deepEqual(pk(row('A. B')), [null, null, null, null], 'before the join answers: a dash, never the closes price');
+  const ci = d.ch.findIndex(x => x.opponent === 'C. D'), chx = Object.assign({}, d.ch[ci], { level: 'chitf' });
+  assert.deepEqual(pk(S.meRowFromCareer(chx, d.cl, '1', 'J. Sinner', ci)).slice(0, 2), [2.0, 1.85], 'control: a Challenger row keeps its closes price (phase 2)');
   // every closes tab hands its rows to the ONE shared function
   for (const f of ['fhFormPlayer', 'fhMeetings', 'meRowFromCareer']) assert.ok(/sfDbPxRows\(/.test(slice(f)), f + ' prices through sfDbPxRows');
 });
