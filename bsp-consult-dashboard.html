@@ -28024,7 +28024,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     if (!v) {
       const js = rows.map(view);
       h2hPriceJoin(js, p, null, _h2hDb, null, career);
-      v = js.map(j => (j.price == null ? null : { price: j.price, oppPrice: j.oppPrice, book: j.book, src: 'td' }));
+      // founder 2026-10-16 (round 3, item 1): the join's own source travels (our archive's 'hist' / 'cap'), never a blanket 'td'
+      v = js.map(j => (j.price == null ? null : { price: j.price, oppPrice: j.oppPrice, book: j.book, src: j.src || 'td', srcLabel: j.srcLabel }));
       _h2hLedPx.set(mk, v);
     }
     return v;

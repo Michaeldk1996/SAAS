@@ -40,6 +40,8 @@ check('a Tournament-tab / sheet price from Pinnacle history reads "Pinnacle clos
   C.fhSrcTitle({ book: 'P', src: 'hist', srcLabel: 'from Pinnacle history' }) === 'Pinnacle close · from Pinnacle history'
   && C.fhSrcTitle({ book: 'P', src: 'hist' }) === 'Pinnacle close · from Pinnacle history'
   && C.fhSrcTitle({ book: 'P', src: 'cap', srcLabel: 'captured' }) === 'Pinnacle close · captured');
+check('every copy of a Database-join price keeps the join\'s source (no blanket src: \'td\' — the Playing styles ledger printed our archive\'s close as Tennis-Data)',
+  !/book: j\.book, src: 'td'/.test(html) && /book: j\.book, src: j\.src \|\| 'td', srcLabel: j\.srcLabel/.test(html));
 check('trDbJoinPx passes the join\'s own source on (the Tournament tab printed every join price as Tennis-Data)',
   /r\.src = ok \? \(x\.src \|\| 'td'\) : null;\s*r\.srcLabel = ok \? x\.srcLabel : undefined;/.test(fn(html, 'trDbJoinPx')));
 check('the profile hands its sheet the archive\'s source (pinnacle-history → P / hist)',
