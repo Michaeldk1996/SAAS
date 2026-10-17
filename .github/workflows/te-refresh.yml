@@ -1,0 +1,82 @@
+name: TE store refresh (TEN-443)
+
+# Keeps te-history/ (the licensed Tennis Explorer store the pipeline reads for career records) current — founder
+# ruling 2026-10-17 (TEN-443, comment 49d2974c item 1): on GitHub Actions, never a laptop.
+#
+#   weekly  Monday 05:00 UTC — every player's profile + current season, a TE correction's season, a new player's whole
+#           history (tools/te-refresh.mjs --mode weekly, ~630 pages at 8–10 s = ~95 min)
+#   reread  daily 03:30 UTC — every season of 1/28 of the players, so each player is fully re-read every 28 days
+#           (the monthly full re-read; one monthly job would be ~13 h, past the 6 h job limit)
+#
+# Measured before this existed: an Actions runner reads TE (6/6 pages 200, parse, no challenge — 2026-10-17).
+# The refresh is ALL OR NOTHING and guarded before it writes: a block, a refused player or a short store exits non-zero
+# with the committed store untouched, and the alert step fires. It never blocks or slows the nightly pipeline, which
+# only reads the committed files. No step swallows a failure.
+on:
+  schedule:
+    - cron: '0 5 * * 1'      # weekly
+    - cron: '30 3 * * *'     # daily rolling re-read
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: weekly | reread
+        default: weekly
+
+concurrency:
+  group: te-refresh          # weekly and re-read never overlap, and never race each other's push
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Refresh the Tennis Explorer store
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '0 5 * * 1' && 'weekly' || 'reread') }}
+        run: node tools/te-refresh.mjs --mode "$TE_MODE"
+      - name: Guard the refreshed store against the committed one
+        run: node tools/te-history-guard.mjs . --prev-ref HEAD
+      - name: Commit the refreshed store
+        run: |
+          if [ -z "$(git status --porcelain -- te-history te-history-index.json te-refresh-log.jsonl)" ]; then
+            echo "No change — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-te-bot"
+          git config user.email "bsp-te-bot@users.noreply.github.com"
+          COMMITBACK_OWNED="te-history-index.json te-refresh-log.jsonl" tools/commitback-push.sh "chore(te): Tennis Explorer store refresh ($TE_MODE) [skip ci]" te-history te-history-index.json te-refresh-log.jsonl
+        env:
+          TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '0 5 * * 1' && 'weekly' || 'reread') }}
+      - name: Report
+        if: always()
+        run: |
+          if [ -f te-refresh-report.json ]; then
+            node -e 'const r=require("./te-refresh-report.json");const n=Object.values(r.changes).reduce((s,x)=>s+x.changes.length,0);console.log(`## TE refresh (${r.mode})\n\n${r.players} players · ${r.seasonsFetched} season pages · ${r.newPlayers.length} new · ${r.unmatched.length} unmatched · ${r.refused.length} refused · ${n} rows changed`)' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: te-refresh-report
+          path: te-refresh-report.json
+          if-no-files-found: warn
+      - name: Alert on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          MSG="TE store refresh FAILED (TEN-443). The last good te-history store is unchanged. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "::error::TE refresh failed and no Telegram secret is set — the alert has nowhere to go: $MSG"
+            exit 1
+          fi
+          curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${MSG}"

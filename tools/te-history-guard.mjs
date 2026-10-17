@@ -14,11 +14,13 @@ import { execFileSync } from 'node:child_process';
 export const STORE_DIR = 'te-history';
 export const INDEX = 'te-history-index.json';
 const BUILDER = 'tools/te-build-history.mjs';
+// the two sanctioned writers: the Mac build, and the GitHub Actions refresh (all-or-nothing, guarded before it writes)
+const WRITERS = new Set([BUILDER, 'tools/te-refresh.mjs']);
 
 // `prev` = the index as last committed (git HEAD^ in CI): the store may never shrink against it, so rewriting the
 // index smaller (its own high-water mark included) cannot pass
-export function prevIndex(root) {
-  for (const ref of ['HEAD^', 'origin/main']) {
+export function prevIndex(root, refs = ['HEAD^', 'origin/main']) {
+  for (const ref of refs) {
     try { return JSON.parse(execFileSync('git', ['-C', root, 'show', `${ref}:${INDEX}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch (e) { /* not committed there */ }
   }
   return null;
@@ -70,7 +72,7 @@ export function checkWriters(root) {
   for (const rel of files) {
     const r = rel.replace(/^\.\//, '');
     // the builder writes it; the guard and tests only build throw-away copies in temp dirs
-    if (r === BUILDER || r === 'tools/te-history-guard.mjs' || /^tools\/test-/.test(r)) continue;
+    if (WRITERS.has(r) || r === 'tools/te-history-guard.mjs' || /^tools\/test-/.test(r)) continue;
     const src = fs.readFileSync(path.join(root, r), 'utf8');
     if (!src.includes('te-history')) continue;
     // constants that hold the store's path: `const TE_HISTORY_DIR = 'te-history'` …
@@ -78,15 +80,18 @@ export function checkWriters(root) {
     const constRe = consts.length ? new RegExp(`\\b(${consts.join('|')})\\b`) : null;
     src.split('\n').forEach((line, i) => {
       const write = (WRITE_FN.test(line) && (/te-history/.test(line) || (constRe && constRe.test(line)))) || SHELL_WRITE.test(line);
-      if (write) why.push(`${r}:${i + 1} writes te-history — only ${BUILDER} may`);
+      if (write) why.push(`${r}:${i + 1} writes te-history — only ${[...WRITERS].join(' and ')} may`);
     });
   }
   return { ok: why.length === 0, why };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const root = process.argv[2] || path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const s = checkStore(root, { prev: prevIndex(root) }), w = checkWriters(root);
+  // `--prev-ref HEAD`: a refresh that has not committed yet compares its working tree with the committed store
+  const a = process.argv.slice(2); const ri = a.indexOf('--prev-ref');
+  const refs = ri >= 0 ? [a[ri + 1]] : undefined;
+  const root = a.find((x, i) => !x.startsWith('--') && (ri < 0 || i !== ri + 1)) || path.join(path.dirname(new URL(import.meta.url).pathname), '..');
+  const s = checkStore(root, { prev: prevIndex(root, refs) }), w = checkWriters(root);
   const why = [...s.why, ...w.why];
   if (why.length) { console.log(`::error::te-history guard FAILED — ${why.join('; ')}`); process.exit(1); }
   console.log(`te-history guard ok · ${s.players} players · ${s.rows} rows · no writer outside ${BUILDER}`);

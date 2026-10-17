@@ -52,8 +52,14 @@ const CLUB = [/bundesliga/, / - championship$/, /\bleague\b|\bliga\b|extraliga|n
 const keyOf = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
   .replace(/\bsaint\b/g, 'st').replace(/[^a-z]/g, '');
 let ATP_NAMES = null;
+// The catalogue is committed as te-atp-events.json (written by this tool from the sources below), so a GitHub Actions
+// refresh — which has neither the api-tennis cache nor tml-cache — classifies exactly as the Mac build did.
+export const CATALOGUE_FILE = 'te-atp-events.json';
+export function setAtpNames(list) { ATP_NAMES = new Set(list); }
 function atpNames() {
   if (ATP_NAMES) return ATP_NAMES;
+  const committed = path.join(OUT, CATALOGUE_FILE);
+  if (fs.existsSync(committed)) { ATP_NAMES = new Set(JSON.parse(fs.readFileSync(committed, 'utf8')).names); if (ATP_NAMES.size) return ATP_NAMES; }
   ATP_NAMES = new Set();
   const cat = path.join(CACHE, 'apitennis-tournaments.json');
   if (fs.existsSync(cat)) for (const t of JSON.parse(fs.readFileSync(cat, 'utf8')).result || [])
@@ -206,6 +212,29 @@ export function reconcileBalance(rows, balance) {
   return bad;
 }
 
+// One player's record from his pages: the profile (table + injuries) and his season pages. Returns { rec } or
+// { refuse: why }. The same gate the Mac build and the Actions refresh both pass through.
+export function buildPlayerRecord({ key, slug, dob, name, mainHtml, seasonHtml, keepRows, builtAt }) {
+  const balance = parseBalance(mainHtml); const inj = injuries(mainHtml);
+  if (!balance) return { refuse: 'profile page has no season table' };
+  let rows = (keepRows || []).slice();
+  for (const [y, html] of Object.entries(seasonHtml || {})) rows = rows.filter((r) => String(r.season) !== String(y)).concat(parseSeason(html, slug, y));
+  rows.sort((x, y) => String(y.date).localeCompare(String(x.date)));
+  for (const r of rows) {   // retirements: TE's injury table names the date and event of each match he retired in
+    const dmy = r.date.split('-').reverse().join('.');
+    if (!r.won && inj.some((x) => x[0].startsWith(dmy) && /retired/i.test(x[2]))) r.ret = true;
+  }
+  const bad = reconcileBalance(rows, balance);
+  // TE's own table and TE's own list can disagree (Barrios Vera 2026: two wins by an opponent's retirement in the
+  // list — api-tennis agrees — and 29-29 in the table). Never resolved silently: the player is written, the rows are
+  // the record, and every disagreeing cell is carried as `tableMismatch` for the moved-cell report and the drill.
+  // A season whose mismatch exceeds 2 matches is a parse problem, not a TE slip: that player is not written.
+  const gap = (b) => { const m = b.match(/rows (\d+)\/(\d+) vs table (\d+)\/(\d+)/); return m ? Math.abs(m[1] - m[3]) + Math.abs(m[2] - m[4]) : 99; };
+  if (bad.some((b) => gap(b) > 2)) return { refuse: 'rows do not reconcile with TE\'s table', bad: bad.slice(0, 6) };
+  const rec = { key, slug, dob: dob || null, name: name || null, builtAt: builtAt || new Date().toISOString(), balance, rows, ...(bad.length ? { tableMismatch: bad } : {}) };
+  return { rec, bad };
+}
+
 function main() {
   const players = JSON.parse(fs.readFileSync(path.join(CACHE, 'players.json'), 'utf8'));
   const dir = path.join(OUT, 'te-history'); fs.mkdirSync(dir, { recursive: true });
@@ -219,35 +248,26 @@ function main() {
     const mainF = cacheFile(`/player/${p.slug}/`);
     if (!fs.existsSync(mainF)) { report.missingPages.push(`${key} profile`); continue; }
     const mainHtml = fs.readFileSync(mainF, 'utf8');
-    const balance = parseBalance(mainHtml); const inj = injuries(mainHtml);
-    let rows = []; let missing = false;
+    const seasonHtml = {}; let missing = false;
     for (const y of p.years || []) {
       const f = cacheFile(`/player/${p.slug}/?annual=${y}`);
       if (!fs.existsSync(f)) { missing = true; report.missingPages.push(`${key} ${y}`); continue; }
-      rows = rows.concat(parseSeason(fs.readFileSync(f, 'utf8'), p.slug, y));
+      seasonHtml[y] = fs.readFileSync(f, 'utf8');
     }
     if (missing) { report.kept.push(key); continue; }
-    for (const r of rows) {   // retirements: TE's injury table names the date and event of each match he retired in
-      const dmy = r.date.split('-').reverse().join('.');
-      if (!r.won && inj.some((x) => x[0].startsWith(dmy) && /retired/i.test(x[2]))) r.ret = true;
-    }
-    const bad = reconcileBalance(rows, balance);
-    // TE's own table and TE's own list can disagree (Barrios Vera 2026: two wins by an opponent's retirement in the
-    // list — api-tennis agrees — and 29-29 in the table). Never resolved silently: the player is written, the rows are
-    // the record, and every disagreeing cell is carried as `tableMismatch` for the moved-cell report and the drill.
-    // A season whose mismatch exceeds 2 matches is a parse problem, not a TE slip: that player is not written.
-    const gap = (b) => { const m = b.match(/rows (\d+)\/(\d+) vs table (\d+)\/(\d+)/); return m ? Math.abs(m[1] - m[3]) + Math.abs(m[2] - m[4]) : 99; };
-    if (bad.some((b) => gap(b) > 2)) { report.notReconciled.push({ key, slug: p.slug, bad: bad.slice(0, 6) }); continue; }
+    const built = buildPlayerRecord({ key, slug: p.slug, dob: p.dob, name: p.name, mainHtml, seasonHtml, builtAt: idx.builtAt });
+    if (built.refuse) { report.notReconciled.push({ key, slug: p.slug, bad: built.bad || [built.refuse] }); continue; }
+    const { rec, bad } = built; const rows = rec.rows;
     if (bad.length) report.tableMismatch.push({ key, slug: p.slug, cells: bad });
-    const rec = { key, slug: p.slug, dob: p.dob || null, name: p.name || null, builtAt: idx.builtAt, balance, rows, ...(bad.length ? { tableMismatch: bad } : {}) };
     fs.writeFileSync(path.join(dir, `${key}.json`), serialise(rec));
-    idx.players[key] = { slug: p.slug, rows: rows.length, seasons: (p.years || []).length };
+    idx.players[key] = { slug: p.slug, dob: p.dob || null, rows: rows.length, seasons: (p.years || []).length };
     report.written++;
   }
   idx.totalRows = Object.values(idx.players).reduce((s, x) => s + x.rows, 0);
   const n = Object.keys(idx.players).length;
   idx.highWater = { totalRows: Math.max(prev.highWater?.totalRows || 0, idx.totalRows), players: Math.max(prev.highWater?.players || 0, n) };
   fs.writeFileSync(idxF, JSON.stringify(idx, null, 1));
+  fs.writeFileSync(path.join(OUT, CATALOGUE_FILE), JSON.stringify({ builtAt: idx.builtAt, source: 'api-tennis ATP singles tournaments + TML tourney names', names: [...atpNames()].sort() }));
   report.unparsedRows = unparsed.length; report.unparsedSample = unparsed.slice(0, 5);
   console.log(JSON.stringify({ players: n, totalRows: idx.totalRows, ...report, notReconciled: report.notReconciled.length, tableMismatch: report.tableMismatch,
     notReconciledList: report.notReconciled.slice(0, 10) }, null, 1));

@@ -35,11 +35,12 @@ const LOG = fs.createWriteStream(path.join(CACHE, 'scrape.log'), { flags: 'a' })
 const log = (m) => { const l = `${new Date().toISOString()} ${m}`; LOG.write(l + '\n'); console.log(l); };
 
 let last = 0, requests = 0;
+export const stats = () => ({ requests });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function cacheFile(rel) { return path.join(CACHE, 'html', rel.replace(/^\/+/, '').replace(/[^A-Za-z0-9._-]+/g, '_') + '.html'); }
 
 // fetch one TE page through the cache. `stable` = a past season: cached copy is final.
-async function page(rel, { stable = false, finalAfter = 0 } = {}) {
+export async function page(rel, { stable = false, finalAfter = 0 } = {}) {
   const f = cacheFile(rel);
   if (fs.existsSync(f)) {
     const m = fs.statSync(f).mtimeMs;
@@ -72,7 +73,7 @@ const strip = (s) => s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(
 const norm = (s) => String(s || '').normalize('NFKD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
 
 // men's column of the search page: [{slug, last, first, country}]
-function searchRows(html) {
+export function searchRows(html) {
   const out = [];
   for (const tr of html.split(/<tr class="(?:one|two)"/).slice(1)) {
     const tds = tr.split('<td').slice(1);
@@ -84,7 +85,7 @@ function searchRows(html) {
   }
   return out;
 }
-function profileFacts(html) {
+export function profileFacts(html) {
   const d = strip((html.match(/class="plDetail"[\s\S]*?<\/table>/) || [''])[0]);
   const dob = d.match(/Age:\s*(\d+)\s*\((\d+)\.\s*(\d+)\.\s*(\d{4})\)/);
   const country = (d.match(/Country:\s*([A-Za-z .'-]+?)\s+(?:Height|Age|Current)/) || [])[1] || null;
@@ -116,7 +117,7 @@ function fromCache(last, first, initial) {
   }
   return out;
 }
-async function resolve(p) {
+export async function resolve(p) {
   const last = p.last || p.name.split(' ').filter((t) => !/\.$/.test(t)).join(' ');
   const initial = norm(p.first || p.name)[0];
   // search on the longest plain-letter token of the surname: "O'Connell" -> "Connell", "Barrios Vera" -> "Barrios"
@@ -184,4 +185,4 @@ async function main() {
   fs.writeFileSync(path.join(CACHE, 'DONE'), new Date().toISOString() + '\n');
   log(`DONE players ${vals.length} · matched ${vals.filter((v) => v.slug).length} · unmatched ${vals.filter((v) => v.unmatched).length} · requests ${requests}`);
 }
-main();
+if (import.meta.url === `file://${process.argv[1]}`) main();

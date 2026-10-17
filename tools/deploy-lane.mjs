@@ -148,6 +148,7 @@ export const DATA_BOT_AUTHORS = new Set([
   'bsp-weather-bot@users.noreply.github.com',     // pipeline.yml weather-archive commit-back (TEN-304, founder 2026-09-27)
   'bsp-dna-bot@users.noreply.github.com',         // dna-ratings.yml daily DNA radar refresh (TEN-319, founder 2026-09-28)
   'bsp-captured-pinnacle-bot@users.noreply.github.com', // pipeline.yml captured-Pinnacle commit-back (TEN-316, ruled 2026-09-28)
+  'bsp-te-bot@users.noreply.github.com',          // te-refresh.yml Tennis Explorer store refresh (TEN-443, founder 2026-10-17)
 ]);
 // Every file a data bot writes, with its writer.
 export const DATA_FILES = new Set([
@@ -166,8 +167,10 @@ export const DATA_FILES = new Set([
   'playing-styles.json', 'matchup-matrix.json', 'holdbreak.json', 'situational.json', 'style-meetings-index.json', // refresh-playing-styles.sh
   'entry_lists.json', 'entry_lists_advance.json',                                 // refresh-entry-lists*.sh
   'dna-apitennis-ratings.json',                                                   // dna-ratings.yml (TEN-319)
+  'te-history-index.json', 'te-refresh-log.jsonl',                               // te-refresh.yml (TEN-443)
 ]);
 export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304); career-splits/: refresh-career-splits.sh (TEN-391)
+DATA_DIRS.push('te-history/');   // te-history/: te-refresh.yml commit-back (TEN-443); a separate line so the TEN-261 mutant anchors above stay exact
 const CODE_FILE = /\.(js|mjs|cjs|py|sh|ya?ml|html|css)$/i;
 export function isDataPath(f) {
   const base = f.split('/').pop();
