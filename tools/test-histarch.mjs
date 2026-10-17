@@ -14,7 +14,8 @@ const check = (name, ok, detail = '') => { if (ok) { passed++; console.log('  PA
 
 const TABLES = ['historical_odds_file', 'historical_close', 'historical_odds_export', 'historical_archive_count', 'historical_snapshot_count', 'historical_snapshot'];
 const T = TABLES.join('|');
-const MIGRATIONS = new Set(['supabase/migrations/20261016090000_historical_odds_archive.sql', 'supabase/migrations/20261016150000_historical_snapshot.sql']);
+const MIGRATIONS = new Set(['supabase/migrations/20261016090000_historical_odds_archive.sql', 'supabase/migrations/20261016150000_historical_snapshot.sql',
+  'supabase/migrations/20261017090000_historical_snapshot_start10.sql']);
 const ALLOWED = new Set([...MIGRATIONS, 'tools/tdarch.py', 'tools/histarch-guard.mjs', '.github/workflows/historical-archive.yml',
   'tools/test-histarch.mjs', 'tools/test-historical-archive-sql.py', 'tools/test-tdarch.py']);
 const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';

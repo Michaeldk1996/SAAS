@@ -29,16 +29,20 @@ take styling from it, structure from the rules below.
   the Player Profile's Record per tournament prices hover the same words (`pxSrcHtml` → the host's `fhSrcTitle`), its sheet through `pinnacle-history`; the join's Bet365 reaches the profile as Tennis-Data's (`bet365-archive`). Never "Tennis-Data" on our own close. **Test:**
   `tools/test-approx-pinnacle.mjs` (builder codes 3 / 4, the join, every hover, the Database counts),
   `tools/test-pinarch-tdfeed.py`.
-- **Pinnacle (approx.) — book 2 (founder ruling 2026-10-16).** An ATP main-draw row of 13 Jan – 16 Sep 2026 (12 Apr until
-  round 3 item 3) with no
-  Tennis-Data Pinnacle pair and no close in our Pinnacle archive is priced on api-tennis's stored Pinnacle price
-  (`pinnacle-approx.csv`, `tools/tdarch.py approx-feed`, from the archive's snapshot table) — a SNAPSHOT, never a close:
-  `r[8] = 2`, `meta.books[2]` "Pinnacle (approx.)", its own count in `meta.bookCounts`; Bet365 where api-tennis has no pair.
-  Order per row: Tennis-Data Pinnacle > our archive's close > Pinnacle (approx.) > Bet365. The join reads it as book "A";
-  every hover on it is "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close" (`SF_APPROX_HOVER`), the
-  footnote, the chart note and the Player split name it with its count; no feed = nothing changes. *Known:* the header
-  sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries the
-  disclosure. Market edge / Form / H2H tab closes (`FH_BOOK_ORDER`) do not read it. **Test:** `tools/test-approx-pinnacle.mjs`.
+- **Pinnacle (approx.) — books 5 and 2 (founder rulings 2026-10-16, 2026-10-17 item 2).** An ATP main-draw row of 13 Jan –
+  16 Sep 2026 with no Tennis-Data Pinnacle pair and no close in our Pinnacle archive is priced on a SNAPSHOT, never a close
+  (`pinnacle-approx.csv`, `tools/tdarch.py approx-feed`, from the archive's snapshot table, each row naming its `source`,
+  `cutTs`, `gapToStartS`): first, 13 Apr – 16 Sep only, the Oddspapi Pinnacle archive at Oddspapi's start − 10 min
+  (`r[8] = 5`, source `oddspapi Pinnacle (start − 10)`; the join reads book "A" / src `od10`; hover "Pinnacle (approx.) ·
+  Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close", `SF_OD10_HOVER`); else api-tennis's
+  stored Pinnacle price (`r[8] = 2`, book "A"; hover "Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close",
+  `SF_APPROX_HOVER`) — 13 Jan – 12 Apr always (no archive exists). Both count as ONE book in every Database figure,
+  "Pinnacle (approx.)" in `meta.bookCounts` (codes 2 + 5), `meta.approx.sources.od` / `.at` name each with its count and
+  hover. Order per row: Tennis-Data Pinnacle > our archive's close > start − 10 > api-tennis > Bet365 > a dash. The
+  footnote, the chart note and the Player split name the snapshot with its count; no feed = nothing changes. *Known:* the
+  header sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries
+  the disclosure. Market edge / Form / H2H tab closes (`FH_BOOK_ORDER`) do not read it. **Test:**
+  `tools/test-approx-pinnacle.mjs` (start − 10 first, api-tennis fallback, the fold, each hover, an old feed refused).
 - **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
   (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
   in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of

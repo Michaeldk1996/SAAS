@@ -911,7 +911,7 @@
               : (r.won === false) ? '<span class="sr-mres sr-l">L</span>'
               : '<span class="sr-mres">' + DASH + '</span>';
       var after = (r.price == null && typeof window.trPxAfterOf === 'function') ? window.trPxAfterOf(r.date) : null;
-      var title = r.book === BOOK_NAME.A ? r.book + ' · ' + (window.SF_APPROX_HOVER || 'not a confirmed close')
+      var title = r.book === BOOK_NAME.A ? r.book + ' · ' + ((r.src === 'od10' ? window.SF_OD10_HOVER : window.SF_APPROX_HOVER) || 'not a confirmed close')
         : r.book ? r.book + ' closing' + (r.src === 'hist' ? ' · from Pinnacle history' : r.src === 'cap' ? ' · captured' : '') : after;
       var pl = '';
       if (isResult && _pxState !== 'idle' && _pxState !== 'loading') {

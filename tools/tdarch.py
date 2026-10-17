@@ -29,7 +29,14 @@ Commands
   approx-import             Pinnacle (approx.) — founder ruling 2026-10-16: api-tennis's stored Pinnacle price for every ATP
                             main-draw match of 13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle close, into the snapshot
                             table (its own source and label, never a close); env API_TENNIS_KEY
-  approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js)
+  start10-import [--dry-run]
+                            Pinnacle (approx.) — founder ruling 2026-10-17: for every ATP main-draw match of 13 Apr - 16 Sep
+                            2026 with no Tennis-Data Pinnacle close, the Oddspapi Pinnacle archive's last active pinnacle+30
+                            pair at Oddspapi's trueStart - 10 min (the ruled sanity gate first), into the snapshot table with
+                            its cut, price time, start and gap to start; reads the archive, the committed fixture index and
+                            api-tennis get_fixtures (UTC); never a metered Oddspapi call. --dry-run counts, inserts nothing
+  approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js), each row with
+                            its source
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
 import collections, csv, datetime as dt, glob, gzip, hashlib, io, json, os, re, subprocess, sys
 import importlib.util
@@ -46,7 +53,14 @@ TABLES = (FILE, CLOSE, EXPORT, COUNT, SNAP, SNAPCOUNT)
 APPROX_SOURCE, APPROX_LABEL = 'api-tennis Pinnacle', 'Pinnacle (approx.)'
 APPROX_FROM, APPROX_TO = '2026-01-13', '2026-09-16'   # founder 2026-10-16: 12 Apr, widened to 16 Sep (round 3, item 3)
 APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close'
-APPROX_FEED_COLS = ['date', 'tournament', 'winner', 'loser', 'psw', 'psl', 'eventKey', 'snapshotId']
+APPROX_FEED_COLS = ['date', 'tournament', 'winner', 'loser', 'psw', 'psl', 'eventKey', 'snapshotId', 'source', 'cutTs', 'gapToStartS']
+# Founder ruling 2026-10-17 (item 2): for 13 Apr - 16 Sep ATP main draw the first Pinnacle (approx.) source is the Oddspapi
+# Pinnacle archive cut at Oddspapi's start - 10 min; api-tennis where the archive has no pre-cut pair; then Bet365; a dash.
+# Still a SNAPSHOT (same label), never a close: the start alone is not a verified start (odds.md "close label").
+START10_SOURCE = 'oddspapi Pinnacle (start − 10)'
+START10_FROM, START10_TO = '2026-04-13', '2026-09-16'
+START10_MIN = 10
+START10_HOVER = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close'
 FROM_YEAR = 2010
 EXPORT_DIR = 'closes-export'
 BACKUP_DIR = 'historical-archive'
@@ -650,7 +664,8 @@ def approx_rows(targets, by_day, odds_of, fetched_at):
 
 
 def snap_key(r):
-    return (str(r['match_date']), r['tournament'], r['winner'], r['loser'])
+    # per SOURCE: a start - 10 snapshot never supersedes an api-tennis one for the same match (two sources, both kept)
+    return (r.get('source') or APPROX_SOURCE, str(r['match_date']), r['tournament'], r['winner'], r['loser'])
 
 
 def plan_snapshots(new_rows, held):
@@ -669,7 +684,81 @@ def current_snapshots(rows):
 
 def approx_feed_rows(current):
     return [{'date': str(r['match_date']), 'tournament': r['tournament'], 'winner': r['winner'], 'loser': r['loser'],
-             'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id']} for r in current]
+             'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
+             'source': r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '', 'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s']}
+            for r in current]
+
+
+# ── Pinnacle (approx.) from the Oddspapi Pinnacle archive at start - 10 (founder ruling 2026-10-17, item 2) ─────────
+def start10_targets(td_rows):
+    return [r for r in approx_targets(td_rows) if START10_FROM <= r['date'] <= START10_TO]
+
+
+def od_fixture_of(f, R, bmap, by_day_od):
+    """The ONE Oddspapi fixture of an api-tennis fixture, the derive-held join: the board map, else the fixtures we hold
+    (fixture index + back-fill raw meta) naming BOTH players within 36 h. (fixtureId, apiFirstIsParticipant1) or
+    (None, reason)."""
+    ek, a1, a2, ref = str(f.get('event_key')), f.get('event_first_player'), f.get('event_second_player'), P._at_start(f)
+    bm = (bmap or {}).get(ek)
+    if bm and bm.get('fixtureId') and bm.get('orient') in ('same', 'swap') and R.norm(bm.get('p1')) in (R.norm(a1), R.norm(a2)):
+        return bm['fixtureId'], (bm['orient'] == 'same') == (R.norm(bm.get('p1')) == R.norm(a1))
+    if ref is None:
+        return None, 'api-tennis: no start date'
+    c = P._fixture_candidates(R, a1, a2, ref, by_day_od)
+    if len(c) != 1:
+        return None, 'no Oddspapi fixture held' if not c else 'two or more Oddspapi fixtures'
+    return c[0][0]['fixtureId'], c[0][1] == 'same'
+
+
+def start10_rows(targets, by_day, od_of, fixtures, series_of, fetched_at, minutes=START10_MIN):
+    """Snapshot rows at Oddspapi's trueStart - `minutes` + a report. `od_of(fixture)` -> (fixtureId, firstIsP1) | (None,
+    why); `fixtures[fid]` the held Oddspapi fixture (trueStartTime, trueEndTime, startTime); `series_of(fid)` -> (raw_id,
+    mw_series) | (None, why). The trueStart passes the ruled gate (effective_cut, no live-flip); a missing or rejected start,
+    or no active pair on BOTH sides at or before the cut -> no row (api-tennis, then Bet365, price the match). A fixture two
+    Tennis-Data rows claim is no one's."""
+    rep, cand = collections.Counter(), []
+    for r in targets:
+        f, w = approx_join(r, by_day)
+        if f is None:
+            rep['join: ' + w] += 1; continue
+        fid, first_p1 = od_of(f)
+        if fid is None:
+            rep['oddspapi: ' + first_p1] += 1; continue
+        cand.append((r, f, w, fid, first_p1))
+    claimed = collections.Counter(c[3] for c in cand)
+    rows = []
+    for r, f, w, fid, first_p1 in cand:
+        if claimed[fid] > 1:
+            rep['oddspapi: one fixture, two Tennis-Data rows'] += 1; continue
+        fx = fixtures.get(fid) or {}
+        ts, te, sc = P.iso_ms(fx.get('trueStartTime')), P.iso_ms(fx.get('trueEndTime')), P.iso_ms(fx.get('startTime'))
+        start, src, reject = P.effective_cut(None, ts, te, sc)
+        if start is None:
+            rep['start: ' + str(reject)] += 1; continue
+        raw_id, S = series_of(fid)
+        if raw_id is None:
+            rep['payload: ' + S] += 1; continue
+        cut = start - dt.timedelta(minutes=minutes)
+        c, why = P.close_at(S, cut)
+        if c is None:
+            rep['no pre-cut pair: ' + why] += 1; continue
+        win_oc = '121' if bool(w) == bool(first_p1) else '122'
+        lose_oc = '122' if win_oc == '121' else '121'
+        pw, pl = c[win_oc][0], c[lose_oc][0]
+        pts = max(P.iso_ms(c['121'][1]), P.iso_ms(c['122'][1]))
+        iso = lambda x: x.isoformat().replace('+00:00', 'Z')
+        rows.append({'dedupe_key': '|'.join(str(x) for x in (START10_SOURCE, r['date'], r['tournament'], r['winner'], r['loser'], f['event_key'], pw, pl, iso(cut))),
+                     'source': START10_SOURCE, 'label': APPROX_LABEL, 'match_date': r['date'], 'tournament': r['tournament'],
+                     'round': r.get('round') or None, 'winner': r['winner'], 'loser': r['loser'], 'event_key': int(f['event_key']),
+                     'price_winner': pw, 'price_loser': pl, 'fetched_at': fetched_at,
+                     'cut_ts': iso(cut), 'price_ts': iso(pts), 'start_ts': iso(start), 'start_source': src,
+                     'gap_to_start_s': round((start - pts).total_seconds(), 3), 'fixture_id': fid, 'raw_id': raw_id,
+                     'detail': {'minutesBeforeStart': minutes, 'book': 'pinnacle+30', 'winnerOutcome': win_oc,
+                                'entries': {'121': list(c['121']), '122': list(c['122'])}, 'trueEnd': fx.get('trueEndTime'),
+                                'fixtureFrom': fx.get('from'), 'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
+                                'winnerIsFirst': w, 'hover': START10_HOVER}})
+        rep['stored'] += 1
+    return rows, dict(rep)
 
 
 def _at(params):
@@ -715,7 +804,7 @@ def cmd_approx_import():
             cache[ek] = ha
     fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
     rows, rep = approx_rows(targets, by_day, cache.get, fetched)
-    held = P.select_all(SNAP, 'id,dedupe_key,match_date,tournament,winner,loser,supersedes')
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
     add = plan_snapshots(rows, held)
     ids = []
     for i in range(0, len(add), 500):
@@ -728,9 +817,86 @@ def cmd_approx_import():
     cmd_snapshot_counts('approx-import')
 
 
+def cmd_start10_import(dry_run=False):
+    import concurrent.futures as cf
+    td = [r for f in sorted(glob.glob(os.path.join(ROOT, 'odds-archive', '2026.csv'))) for r in csv.DictReader(open(f))]
+    targets = start10_targets(td)
+    d0, d1 = dt.date.fromisoformat(START10_FROM) - dt.timedelta(days=1), dt.date.fromisoformat(START10_TO) + dt.timedelta(days=2)
+    days = [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
+    by_day = collections.defaultdict(list)
+    def day(d):
+        j = _at({'method': 'get_fixtures', 'date_start': d, 'date_stop': d, 'timezone': 'UTC'})
+        if not isinstance(j.get('result'), list) and j.get('success') != 1:
+            raise RuntimeError(f'get_fixtures {d}: no result list ({str(j)[:200]})')
+        return j.get('result') or []
+    with cf.ThreadPoolExecutor(8) as ex:
+        for res in ex.map(day, days):
+            for f in res:
+                if f.get('event_type_type') == 'Atp Singles':
+                    by_day[f['event_date']].append(f)
+    if not by_day:
+        P.die('api-tennis returned no ATP singles fixture for the whole window: nothing written')
+    R = P._load('roh', 'refresh-odds-history.py')
+    idx = json.load(gzip.open(os.path.join(P.ROOT_DIR, P.FIXTURE_INDEX))).get('fixtures') or {}
+    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill'))
+    disc = [f for f in fixtures.values() if f.get('categoryName') in P.DISCOVERY_CATEGORIES]
+    by_day_od, bmap = P._fixtures_by_day(disc), P._board_map()
+    od_cache = {}
+    def od_of(f):
+        k = str(f.get('event_key'))
+        if k not in od_cache:
+            od_cache[k] = od_fixture_of(f, R, bmap, by_day_od)
+        return od_cache[k]
+    fids = sorted({od_of(f)[0] for r in targets for f, _ in [approx_join(r, by_day)] if f is not None and od_of(f)[0]})
+    # ~1,500 payloads (~57 KB gz each): fetched 8 chunks at a time and turned into their match-winner series at once, so
+    # the run fits the job's hour and never holds every payload in memory (read only; P.raw_latest per 10-id chunk)
+    def chunk_series(ch):
+        out = {}
+        for fid, raw in P.raw_latest(ch).items():
+            out[fid] = raw if raw is P.NO_PINNACLE else (raw['id'], P.mw_series(gzip.decompress(P.unhex(raw['payload_gz']))))
+        return out
+    series = {}
+    with cf.ThreadPoolExecutor(8) as ex:
+        for part in ex.map(chunk_series, [fids[i:i + 10] for i in range(0, len(fids), 10)]):
+            series.update(part)
+    def series_of(fid):
+        got = series.get(fid)
+        if not got:
+            return None, 'no pinnacle+30 payload held'
+        if got is P.NO_PINNACLE:
+            return None, 'held payloads are another book only'
+        return got
+    fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    rows, rep = start10_rows(targets, by_day, od_of, fixtures, series_of, fetched)
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
+    add = plan_snapshots(rows, held)
+    ids = []
+    if not dry_run:
+        for i in range(0, len(add), 500):
+            ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
+    month = collections.Counter((r['date'][:7] if r['date'][:7] != '2026-04' else '2026-04 13-30') for r in targets)
+    got = collections.Counter((str(r['match_date'])[:7] if str(r['match_date'])[:7] != '2026-04' else '2026-04 13-30') for r in rows)
+    gaps = sorted(r['gap_to_start_s'] for r in rows)
+    print('### start10-import', json.dumps({'window': [START10_FROM, START10_TO], 'minutesBeforeStart': START10_MIN, 'dryRun': dry_run,
+                                            'targets': len(targets), 'report': rep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
+                                            'corrections': sum(1 for r in add if r.get('supersedes')),
+                                            'perMonth': {m: f'{got[m]}/{month[m]}' for m in sorted(month)},
+                                            'gapToStartS': {'median': gaps[len(gaps) // 2] if gaps else None, 'over60min': sum(g > 3600 for g in gaps)},
+                                            'oddspapiFixtureCalls': 0}))
+    if not dry_run:
+        cmd_snapshot_counts('start10-import')
+    return rows, rep
+
+
 def cmd_approx_feed(out_csv):
     try:
-        held = P.select_all(SNAP, 'id,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes')
+        try:
+            held = P.select_all(SNAP, 'id,source,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes,cut_ts,gap_to_start_s')
+        except RuntimeError as e:                                    # the start - 10 columns not installed yet: api-tennis rows only
+            if '42703' not in str(e) and 'does not exist' not in str(e):
+                raise
+            print(f'::warning::approx-feed: the start - 10 columns are not installed yet ({str(e)[:160]}) — api-tennis snapshots only')
+            held = P.select_all(SNAP, 'id,source,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes')
     except RuntimeError as e:
         if 'PGRST205' in str(e) or 'HTTP 404' in str(e):        # the snapshot table is not installed yet: no feed, said out loud
             print(f'::warning::approx-feed: the snapshot table is not installed yet ({e}) — no feed file; Bet365 stays the fallback')
@@ -750,7 +916,7 @@ def cmd_approx_feed(out_csv):
         for r in rows:
             fh.write(','.join(str(r[k]) for k in APPROX_FEED_COLS) + '\n')
     os.replace(tmp, out_csv)
-    print('### approx-feed', json.dumps({'rows': len(rows), 'file': out_csv}))
+    print('### approx-feed', json.dumps({'rows': len(rows), 'bySource': collections.Counter(r['source'] for r in rows), 'file': out_csv}))
 
 
 def cmd_snapshot_counts(record=None):
@@ -803,6 +969,8 @@ if __name__ == '__main__':
         cmd_counts(a[a.index('--record') + 1] if '--record' in a else None)
     elif a[0] == 'approx-import':
         cmd_approx_import()
+    elif a[0] == 'start10-import':
+        cmd_start10_import('--dry-run' in a)
     elif a[0] == 'approx-feed':
         cmd_approx_feed(a[1])
     elif a[0] == 'snapshot-counts':

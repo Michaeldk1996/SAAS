@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from _pinarch_pg import PG, MIG
 MIG2 = os.path.join(os.path.dirname(MIG), '20261016090000_historical_odds_archive.sql')
 MIG3 = os.path.join(os.path.dirname(MIG), '20261016150000_historical_snapshot.sql')
+MIG4 = os.path.join(os.path.dirname(MIG), '20261017090000_historical_snapshot_start10.sql')
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-historical-archive-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
@@ -89,6 +90,27 @@ try:
     q('revoke update on public.historical_snapshot from service_role')
     rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('restored → snapshot guard ok again', out == 'true', out)
     rc, out = q("select public.historical_archive_guard()->>'ok'"); check('the historical archive guard is unaffected', out == 'true', out)
+    # ── Pinnacle (approx.) at Oddspapi's start − 10 (founder ruling 2026-10-17): a second SNAPSHOT source, with its times ──
+    for i in (1, 2):
+        rc, err = pg.file(MIG4); check(f'start − 10 migration applies (pass {i}: idempotent)', rc == 0, err)
+    check('an api-tennis snapshot stored before the migration is still there', q('select count(*) from public.historical_snapshot')[1] == '1')
+    T10 = ("insert into public.historical_snapshot (dedupe_key,source,label,match_date,tournament,winner,loser,event_key,price_winner,price_loser,fetched_at,"
+           "cut_ts,price_ts,start_ts,start_source,gap_to_start_s,fixture_id,raw_id) values ('t1','oddspapi Pinnacle (start − 10)','Pinnacle (approx.)',"
+           "'2026-07-20','Kitzbuhel','A.','B.',2,1.5,2.6,now(),'2026-07-20 09:50Z','2026-07-20 09:41Z','2026-07-20 10:00Z','oddspapi trueStart',1140,'id1',7)")
+    check('service_role can store a start − 10 snapshot with its times', q(T10, 'service_role')[0] == 0)
+    rc, out = q(T10.replace("'t1'", "'t2'").replace(",'2026-07-20 09:50Z'", ",null"), 'service_role')
+    check('a start − 10 snapshot without its cut is refused', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t3'").replace("'2026-07-20 09:41Z'", "'2026-07-20 09:55Z'"), 'service_role')
+    check('a start − 10 snapshot priced after its cut is refused', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t4'").replace("'Pinnacle (approx.)'", "'from Pinnacle history'"), 'service_role')
+    check('a start − 10 snapshot can never carry a close label', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t5'").replace("'oddspapi Pinnacle (start − 10)'", "'api-tennis Pinnacle'"), 'service_role')
+    check('control: an api-tennis snapshot claiming times is refused', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t6'").replace("'oddspapi Pinnacle (start − 10)'", "'oddspapi Pinnacle'"), 'service_role')
+    check('control: an unknown snapshot source is refused', rc != 0, out)
+    rc, out = q(S.replace("'s1'", "'s9'"), 'service_role'); check('an api-tennis snapshot with no times is still accepted', rc == 0, out)
+    rc, out = q('update public.historical_snapshot set cut_ts = cut_ts', 'service_role'); check('service_role UPDATE still refused', rc != 0 and 'permission denied' in out, out)
+    rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the migration', out == 'true', out)
 finally:
     pg.close()
 print(f'\ntest-historical-archive-sql: {passed} passed, {failed} failed')

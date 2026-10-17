@@ -66,11 +66,29 @@ nf2 = dict(base, id=22, event_key=7002, start_source=P.NO_FLIP_SOURCE, supersede
 ok = dict(base, id=23, event_key=7003)
 exh = {r['eventKey']: r for r in P.export_rows([nf, nf_cap, nf2, ok])}
 check('hold-back: a trueStart-only close is never exported (its event has no close)', 7001 not in exh, sorted(exh))
-check('hold-back: an event whose trueStart-only close superseded a captured one exports the captured close', exh.get(7002, {}).get('label') == 'captured', exh.get(7002))
+check('hold-back: an event whose trueStart-only close superseded a captured one of 21 Apr exports nothing (both held back since 2026-10-17)', 7002 not in exh, exh.get(7002))
+exh2 = {r['eventKey']: r for r in P.export_rows([dict(nf_cap, match_date='2026-09-18', start_source='api-tennis-live'), dict(nf2, match_date='2026-09-18')])}
+check('hold-back: a trueStart-only close superseding a captured one of 18 Sep exports the captured close', exh2.get(7002, {}).get('label') == 'captured', exh2.get(7002))
 check('control: a close cut at the live-flip / earlier-of rule is exported unchanged', exh.get(7003, {}).get('p1') == base['p1'], exh.get(7003))
 check('control: without the hold-back the trueStart-only close WOULD be the export (the rule is what removes it)',
       7001 in P.current_closes([nf, nf_cap, nf2, ok]) and P.current_closes([nf, nf_cap, nf2, ok])[7002]['id'] == 22)
 check('hold-back: the held-back rows are still archive rows (nothing deleted or rewritten)', P.held_back(nf) and P.held_back(nf2) and not P.held_back(ok))
+# founder ruling 2026-10-17 item 1: a CAPTURED close of a match on or before 16 Sep (cut at Oddspapi's start alone) is held
+# back — kept in the archive as its own source, never exported as a close; from 17 Sep (the live-flip / earlier-of era) it is
+cap_jul = dict(captured, id=30, event_key=7101, match_date='2026-07-20', p1_key=11, p2_key=22, source='s', book='b')
+cap_sep16 = dict(captured, id=31, event_key=7102, match_date='2026-09-16', p1_key=11, p2_key=22, source='s', book='b')
+cap_sep17 = dict(captured, id=32, event_key=7103, match_date='2026-09-17', p1_key=11, p2_key=22, source='s', book='b', start_source='api-tennis-live')
+hist_jul = dict(base, id=33, event_key=7104, match_date='2026-07-21', supersedes=None)
+cap_jul2 = dict(captured, id=34, event_key=7104, match_date='2026-07-21', p1_key=11, p2_key=22, source='s', book='b')
+exc = {r['eventKey']: r for r in P.export_rows([cap_jul, cap_sep16, cap_sep17, hist_jul, cap_jul2])}
+check('captured hold-back: a captured close of 20 Jul is never exported (its event has no close)', 7101 not in exc, sorted(exc))
+check('captured hold-back: 16 Sep (the last day of the window) is held back too', 7102 not in exc, sorted(exc))
+check('captured hold-back: 17 Sep (verified start era) is exported as captured', exc.get(7103, {}).get('label') == 'captured', exc.get(7103))
+check('captured hold-back: a live-flip archive close of the same July event is still exported', exc.get(7104, {}).get('label') == 'from Pinnacle history', exc.get(7104))
+check('captured hold-back: the rule is named, and the rows stay archive rows', P.held_back_reason(cap_jul) == 'captured-before-live-flip'
+      and P.held_back_reason(cap_sep17) is None and P.held_back_reason(nf) == 'start-alone')
+check('control: without the captured hold-back the July captured close WOULD be the export',
+      7101 in P.current_closes([cap_jul, cap_sep16, cap_sep17]))
 # orientation through the event mapper
 fl = [{'event_key': 1, 'first_player': 'L. Musetti', 'second_player': 'Y. Zhou', 'first_live_seen_at': '2026-10-09T11:01:10Z',
        'last_not_live_seen_at': '2026-10-09T11:00:40Z', 'event_date': '2026-10-09', 'event_type_type': 'Atp Singles'},

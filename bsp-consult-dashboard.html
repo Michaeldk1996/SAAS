@@ -13243,6 +13243,10 @@ const FH_BOOK = { P: 'Pinnacle', B: 'Bet365', A: 'Pinnacle (approx.)' };
 // 13 Jan - 16 Sep 2026 (the Database join's book 2). A SNAPSHOT, never a close: every hover on it says so, in these words.
 const SF_APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close';
 if (typeof window !== 'undefined') window.SF_APPROX_HOVER = SF_APPROX_HOVER;
+// Founder ruling 2026-10-17 (item 2): 13 Apr - 16 Sep, the first Pinnacle (approx.) source = the Oddspapi Pinnacle archive at
+// Oddspapi's start - 10 min (the Database join's book 5, source 'od10'). Still a snapshot, never a close — its own words.
+const SF_OD10_HOVER = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close';
+if (typeof window !== 'undefined') window.SF_OD10_HOVER = SF_OD10_HOVER;
 // founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover through the same words —
 // fhSrcTitle is a top-level declaration of this classic script, so it IS window.fhSrcTitle. Never re-assign it (a wrapper
 // that calls fhSrcTitle calls itself: the stack overflow that broke every price hover on 17 Oct).
@@ -13339,7 +13343,7 @@ function fhTodayPair(m){
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
-function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${SF_APPROX_HOVER}` : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
+function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
 // TEN-437 (founder 2026-10-16): a Bet365-priced H2H meeting keeps its close, its "B" marker, and this hover — on the
 // Match analysis H2H tab and the H2H page — until a Pinnacle source is found. H2H only: Form and every other surface keep
 // fhSrcTitle's source label.
@@ -16057,7 +16061,7 @@ function trProfilePriceOf(key, name, t, m){
   const P = trProfileModel(key, name, t);
   if (!P || P.failed || !m) return null;
   const r = P.src.get(m);
-  return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? 'bet365-archive' : r.book === 'A' ? 'pinnacle-approx'
+  return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? 'bet365-archive' : r.book === 'A' ? (r.src === 'od10' ? 'pinnacle-approx-od10' : 'pinnacle-approx')
     : r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : null } : null;
 }
 window.trProfilePriceOf = trProfilePriceOf;
@@ -27952,8 +27956,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       // books 3 / 4 = our Pinnacle archive's closes (founder 2026-10-16, round 3 item 1): Pinnacle, and the hover names
       // their source ('from Pinnacle history' / 'captured'), never Tennis-Data.
       const bk = row[8];
-      r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 ? 'A' : 'B';
-      r.src = bk === 3 ? 'hist' : bk === 4 ? 'cap' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
+      r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 || bk === 5 ? 'A' : 'B';
+      r.src = bk === 3 ? 'hist' : bk === 4 ? 'cap' : bk === 5 ? 'od10' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
       n++;
     });
     return n;
@@ -28674,7 +28678,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
   // A price cell's hover: the book and source, or why it is a dash.
   function h2hPriceTitle(r) {
-    if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + SF_APPROX_HOVER;
+    if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER);
     if (r.price != null) return r.book === 'B' ? FH_B365_HOVER : r.src === 'cap' || r.src === 'hist' ? 'Pinnacle closing price · ' + (r.srcLabel || FH_SRC[r.src])
       : 'Pinnacle closing price · Database join (Tennis-Data)';
     if (_h2hDbSt === 'loading') return 'Loading closing prices…';
@@ -30544,7 +30548,7 @@ window.DatabaseTab = (function(){
   function agg(slice){
     if(!slice.length) return null;
     var profit=0, prices=[], byb={0:{n:0,pr:0},1:{n:0,pr:0},2:{n:0,pr:0}};
-    for(var i=0;i<slice.length;i++){ var v=slice[i], pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); var bb=(v.b===3||v.b===4)?0:v.b; byb[bb].n++; byb[bb].pr+=pr; }
+    for(var i=0;i<slice.length;i++){ var v=slice[i], pr=v.w?(v.p-1):-1; profit+=pr; prices.push(v.p); var bb=(v.b===3||v.b===4)?0:v.b===5?2:v.b; byb[bb].n++; byb[bb].pr+=pr; }
     return { n:slice.length, median:median(prices), yield:profit/slice.length, lo:slice[0].p, hi:slice[slice.length-1].p,
              book:{ ps: byb[0].n?{n:byb[0].n,yield:byb[0].pr/byb[0].n}:null, b365: byb[1].n?{n:byb[1].n,yield:byb[1].pr/byb[1].n}:null,
                     ap: byb[2].n?{n:byb[2].n,yield:byb[2].pr/byb[2].n}:null } };
@@ -30565,7 +30569,12 @@ window.DatabaseTab = (function(){
   // Founder ruling 2026-10-16: Pinnacle (approx.) = book 2, a snapshot (no timestamp, not a confirmed close). Named only
   // when the store holds such rows (meta.books[2] + bookCounts); without them every sentence is unchanged.
   function dbApproxN(){ return (M.books && M.books[2] && M.bookCounts && M.bookCounts[M.books[2]]) || 0; }
-  function dbApproxHover(){ return (M.approx && M.approx.hover) || window.SF_APPROX_HOVER || 'a snapshot, not a confirmed close'; }
+  // founder 2026-10-17 (item 2): two snapshot sources; each named with its own words and count
+  function dbApproxHover(){
+    var s = M.approx && M.approx.sources, at = (M.approx && M.approx.hover) || window.SF_APPROX_HOVER || 'a snapshot, not a confirmed close';
+    if (s && s.od && s.od.used) return s.od.hover + ' (13 Apr to 16 Sep 2026: '+fmtInt(s.od.used)+')' + (s.at && s.at.used ? ', else '+at+' ('+fmtInt(s.at.used)+')' : '');
+    return at;
+  }
   function dbApproxNote(){ return dbApproxN() ? ' (or, on '+fmtInt(dbApproxN())+' matches of 13 Jan to 16 Sep 2026, a '+esc(M.books[2])+' snapshot: '+esc(dbApproxHover())+')' : ''; }
   function bookLabel(books){
     var ps=false,b=false;
@@ -33354,7 +33363,7 @@ window.DatabaseTab = (function(){
       var v=recs[i], price = fading? v.op : v.p, won = fading? (v.w?0:1) : v.w;
       var pr = won ? (price-1) : -1;
       profit+=pr; prices.push(price); if(won) wins++;
-      var bb=(v.b===3||v.b===4)?0:v.b; byb[bb].n++; byb[bb].pr+=pr;
+      var bb=(v.b===3||v.b===4)?0:v.b===5?2:v.b; byb[bb].n++; byb[bb].pr+=pr;
     }
     var n=recs.length;
     return { n:n, wins:wins, losses:n-wins, winpct:n?wins/n:null, yield:n?profit/n:null, median:median(prices),

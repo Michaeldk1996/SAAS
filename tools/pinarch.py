@@ -590,11 +590,50 @@ def plan_archive_closes(new_rows, held):
     return list(reversed(add))
 
 
+# Founder ruling 2026-10-17 (item 1): the captured closes before our live-flip log (12 Jul - 16 Sep) were read from
+# Oddspapi's history after the fact and cut at Oddspapi's start alone — the method held back for April. None is a close.
+CAPTURED_HELD_TO = '2026-09-16'
+VERIFIED_START_FROM = '2026-09-17'      # our live-flip log (live_flip_log) begins 17 Sep: no verified start exists before it
+HELD_BACK_RULES = {
+    'start-alone': 'cut at Oddspapi trueStart alone, no live-flip held (the TEN-437 derive-held rows of 13-30 Apr; founder '
+                   'ruling 2026-10-16, round 3 item 2: the start-alone cut was rejected on 1,211 matches, 48% exact)',
+    'captured-before-live-flip': 'a captured close dated on or before 16 Sep 2026: the plain-Pinnacle series (12 Jul - 2 Sep) '
+                   'was read from Oddspapi /v4/historical-odds every 3 h (298 of 408 closing prices first appeared after the '
+                   'start) and the 7-13 Sep back-fill was pulled on 28 Sep; both cut at Oddspapi trueStart alone, no verified '
+                   'start (founder ruling 2026-10-17, item 1)',
+    'unverified-start': 'a close whose start is not a verified one: neither our live-flip nor the earlier-of rule from 17 Sep '
+                   '(a captured close cut at Oddspapi trueStart with no live-flip proof, or no start source on record); "close" '
+                   'is reserved for a verified start (founder ruling 2026-10-17, item 3)',
+}
+CAPTURED_VERIFIED_SOURCES = ('api-tennis-live',)   # build-captured-pinnacle.js startSource = our live-flip (the card state's)
+
+
+def verified_start(r):
+    """Founder ruling 2026-10-17 item 3: a price may be labelled a close only when cut at a VERIFIED start — our live-flip,
+    or the earlier-of rule (live-flip vs the gated trueStart) from 17 Sep. Archive closes name it in start_source; a
+    captured close is verified only from 17 Sep and only when its start is the live-flip."""
+    if r.get('label') == ARCHIVE_LABEL:
+        return r.get('start_source') in (CUT_SOURCE, TRUE_START_SOURCE)
+    if r.get('label') == 'captured':
+        return str(r.get('match_date') or '') >= VERIFIED_START_FROM and r.get('start_source') in CAPTURED_VERIFIED_SOURCES
+    return False
+
+
+def held_back_reason(r):
+    """Why a close is held back (in the archive, never exported or shown as a close), or None. Rules: HELD_BACK_RULES."""
+    if r.get('start_source') == NO_FLIP_SOURCE:
+        return 'start-alone'
+    if r.get('label') == 'captured' and str(r.get('match_date') or '') <= CAPTURED_HELD_TO:
+        return 'captured-before-live-flip'
+    if not verified_start(r):
+        return 'unverified-start'
+    return None
+
+
 def held_back(r):
-    """Founder ruling 2026-10-16 (round 3, item 2): a close cut at Oddspapi's trueStart ALONE (no live-flip held: the
-    TEN-437 derive-held rows of 13-30 Apr) is held back — the start-alone cut was rejected on 1,211 matches (48% exact).
-    It stays in the archive (append-only, its own start_source) and is never exported as a close: no reader sees it."""
-    return r.get('start_source') == NO_FLIP_SOURCE
+    """A held-back close stays in the archive (append-only, its own source / start_source) and is never exported: no
+    reader sees it. The event's current close is chosen among its other rows, else it has none (odds.md "held back")."""
+    return held_back_reason(r) is not None
 
 
 def export_rows(rows):
@@ -693,9 +732,11 @@ def cmd_export(path):
     for r in out:
         by[r['label']] = by.get(r['label'], 0) + 1
     hb = [r for r in rows if held_back(r)]
-    held = {'rule': 'closes cut at Oddspapi trueStart alone (no live-flip held) are held back: in the archive, never exported '
-            '(founder ruling 2026-10-16, round 3 item 2)', 'rows': len(hb), 'events': len({r['event_key'] for r in hb}),
-            'eventsWithAnotherClose': len({r['event_key'] for r in hb} & {r['eventKey'] for r in out})}
+    held = {'rule': 'held-back closes stay in the archive and are never exported (odds.md "held back")', 'rows': len(hb),
+            'events': len({r['event_key'] for r in hb}),
+            'eventsWithAnotherClose': len({r['event_key'] for r in hb} & {r['eventKey'] for r in out}),
+            'byRule': {k: {'why': HELD_BACK_RULES[k], 'rows': sum(1 for r in hb if held_back_reason(r) == k),
+                           'events': len({r['event_key'] for r in hb if held_back_reason(r) == k})} for k in HELD_BACK_RULES}}
     print('### export held back', json.dumps(held))
     doc = {'generatedAt': dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds'),
            'source': 'Supabase pinnacle_archive_close (the permanent Pinnacle archive); current close per event',
