@@ -13243,6 +13243,8 @@ const FH_BOOK = { P: 'Pinnacle', B: 'Bet365', A: 'Pinnacle (approx.)' };
 // 13 Jan - 16 Sep 2026 (the Database join's book 2). A SNAPSHOT, never a close: every hover on it says so, in these words.
 const SF_APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close';
 if (typeof window !== 'undefined') window.SF_APPROX_HOVER = SF_APPROX_HOVER;
+// founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover through the same words
+if (typeof window !== 'undefined') window.fhSrcTitle = (...a) => fhSrcTitle(...a);
 // hist = our Pinnacle archive's close, 'from Pinnacle history' (founder 2026-10-16, round 3 item 1)
 const FH_SRC = { td: 'Tennis-Data', cap: 'captured', hist: 'from Pinnacle history' };
 // The single picker every price on both tabs goes through.
@@ -16048,11 +16050,13 @@ function trProfileModel(key, name, t){
 }
 // The profile's Record per tournament rows read their H / A here: the model row's Database-join prices. undefined = no
 // model on this page (harnesses); null = not answered yet or the match is not a model row (qualifying, walkover).
+// founder 2026-10-16 (round 3, item 1): the book id names its source for the profile's hover and sheet — the Database
+// join's Bet365 is Tennis-Data's ('bet365-archive'), never the ledger's own capture ('bet365').
 function trProfilePriceOf(key, name, t, m){
   const P = trProfileModel(key, name, t);
   if (!P || P.failed || !m) return null;
   const r = P.src.get(m);
-  return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? 'bet365' : r.book === 'A' ? 'pinnacle-approx'
+  return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? 'bet365-archive' : r.book === 'A' ? 'pinnacle-approx'
     : r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : null } : null;
 }
 window.trProfilePriceOf = trProfilePriceOf;

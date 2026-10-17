@@ -26,7 +26,7 @@ take styling from it, structure from the rules below.
   (`dbBk`; `meta.bookCounts.Pinnacle` includes them; `meta.archiveFeed.rowsByLabel` names each), so no price or figure
   moves. The join reads them as book "P" with source `hist` / `cap`, and every hover names the source: "Pinnacle close ·
   from Pinnacle history" (Tournament tab, sheets, Series), "Pinnacle closing price · from Pinnacle history" (Head to Head),
-  the profile's sheet through `pinnacle-history`. Never "Tennis-Data" on our own close. **Test:**
+  the Player Profile's Record per tournament prices hover the same words (`pxSrcHtml` → the host's `fhSrcTitle`), its sheet through `pinnacle-history`; the join's Bet365 reaches the profile as Tennis-Data's (`bet365-archive`). Never "Tennis-Data" on our own close. **Test:**
   `tools/test-approx-pinnacle.mjs` (builder codes 3 / 4, the join, every hover, the Database counts),
   `tools/test-pinarch-tdfeed.py`.
 - **Pinnacle (approx.) — book 2 (founder ruling 2026-10-16).** An ATP main-draw row of 13 Jan – 16 Sep 2026 (12 Apr until

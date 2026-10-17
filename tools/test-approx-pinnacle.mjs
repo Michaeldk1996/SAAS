@@ -46,6 +46,24 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   /r\.src === 'hist' \? 'pinnacle-history' : r\.src === 'cap' \? 'pinnacle-capture'/.test(fn(html, 'trProfilePriceOf'))
   && /'pinnacle-history': \['P', 'hist'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')));
 
+// founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover their one source,
+// through the host's fhSrcTitle — run the module's own pxSrcHtml on the page's own words
+{
+  const pp = readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const sbI = pp.indexOf('var SHEET_BOOK = {'), sb = pp.slice(sbI, pp.indexOf('};', sbI) + 2);
+  const mk = (src) => new Function('window', `var DASH = '—'; function esc(s){ return String(s); }\n${fn(src, 'oddsText')}\n${sb}\n${fn(src, 'pxSrcHtml')}\nreturn pxSrcHtml;`)({ fhSrcTitle: C.fhSrcTitle });
+  const px = mk(pp);
+  check('profile: a Record per tournament price from Pinnacle history hovers "Pinnacle close · from Pinnacle history"',
+    px({ book: 'pinnacle-history' }, 1.5) === '<span data-pp2-px-src="1" title="Pinnacle close · from Pinnacle history">1.50</span>', px({ book: 'pinnacle-history' }, 1.5));
+  check('profile: captured / Tennis-Data / approx / Bet365 each hover their own source; no price = the plain dash',
+    /title="Pinnacle close · captured"/.test(px({ book: 'pinnacle-capture' }, 1.5)) && /title="Pinnacle close · Tennis-Data"/.test(px({ book: 'pinnacle' }, 1.5))
+    && px({ book: 'pinnacle-approx' }, 1.5).includes('Pinnacle (approx.) · ' + HOVER) && /title="Bet365 close · Tennis-Data"/.test(px({ book: 'bet365-archive' }, 1.5))
+    && px({ book: 'pinnacle' }, null) === '—');
+  check('profile: both price cells of a Record per tournament row print through pxSrcHtml', (pp.match(/pxAfterHtml\(m, t\) \|\| pxSrcHtml\(m, m\.(price|oppPrice)\)/g) || []).length === 2);
+  check('control: the Database join\'s Bet365 reaches the profile as Tennis-Data\'s (bet365-archive), never the ledger capture',
+    /r\.book === 'B' \? 'bet365-archive'/.test(fn(html, 'trProfilePriceOf')));
+}
+
 // Head to Head ledgers: hover + footnote
 const h2h = html.slice(html.indexOf('function h2hPxNote('), html.indexOf('function h2hPriceTitle(') + 2000);
 const H = new Function('SF_APPROX_HOVER', `const E = s => String(s); let _h2hDbSt = 'ready'; ${constLine(html, 'FH_B365_HOVER')}\n${constLine(html, 'H2H_PX_NOTE')}\n${fn('\n' + h2h, 'h2hPxNote')}\n${fn('\n' + h2h, 'h2hPriceTitle')}

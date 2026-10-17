@@ -1219,6 +1219,16 @@
   function oddsText(v) {
     return v == null ? DASH : Number(v).toFixed(2);
   }
+  /** Founder ruling 2026-10-16 (round 3, item 1): a Record per tournament price hovers its ONE source, as the Match
+   *  analysis Tournament tab does (the host's fhSrcTitle on the row's book: "Pinnacle close · from Pinnacle history",
+   *  "· captured", "· Tennis-Data", the Pinnacle (approx.) snapshot words, "Bet365 close · Tennis-Data"). No price → the
+   *  plain dash; no host (harnesses) → the plain figure. */
+  function pxSrcHtml(m, v) {
+    if (v == null) return DASH;
+    var bk = SHEET_BOOK[String(m && m.book || '').toLowerCase()];
+    var t = bk && typeof window !== 'undefined' && typeof window.fhSrcTitle === 'function' ? window.fhSrcTitle({ book: bk[0], src: bk[1] }) : null;
+    return t ? '<span data-pp2-px-src="1" title="' + esc(t) + '">' + oddsText(v) + '</span>' : oddsText(v);
+  }
 
   // ─── TEN-384 · the full ledger, rebuilt to the step-4 reference ────────────
   // One head row (Date · W/L · Opponent · Rd · Sets · Set scores · H · A) over the founder's 8-column grid,
@@ -5595,9 +5605,9 @@
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;' +
                'padding:5px 0;', m.setScores ? esc(m.setScores) : DASH) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-soft);text-align:right;' +
-               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.price)) +
+               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.price)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);text-align:right;' +
-               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || oddsText(m.oppPrice));
+               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.oppPrice));
       }).join('');
     }).join('');
 
