@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-17T09:13:50.635Z",
+ "generatedAt": "2026-10-17T12:53:34.630Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "8b99c0ffc97541f8400704acc088ab0d19bbd611",
-  "at": "2026-10-17T09:07:42Z"
+  "commit": "599db44e704466503f2180c6a64e9a9003bbaf3c",
+  "at": "2026-10-17T12:42:56Z"
  },
- "commitsScanned": 5237,
+ "commitsScanned": 5254,
  "lastRun": {
-  "from": "2026-10-16T12:31:33Z",
-  "snapshots": 33,
-  "added": 1,
+  "from": "2026-10-17T09:07:42Z",
+  "snapshots": 18,
+  "added": 4,
   "replaced": 0,
   "series": 18,
-  "kept": 9,
+  "kept": 13,
   "bySource": {
-   "api-tennis-live": 9
+   "api-tennis-live": 13
   },
   "byBook": {
-   "Pinnacle +30s": 9
+   "Pinnacle +30s": 13
   },
   "dropped": {
-   "noStart": 9
+   "noStart": 5
   }
  },
  "stats": {
@@ -8904,6 +8904,62 @@
    "p2": 4.27,
    "at": "2026-10-17T05:01:21.055Z",
    "trueStart": "2026-10-17T08:30:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171698,
+   "date": "2026-10-17",
+   "p1Key": 50323,
+   "p2Key": 1093,
+   "p1Name": "R. Jodar",
+   "p2Name": "D. Medvedev",
+   "p1": 2.62,
+   "p2": 1.555,
+   "at": "2026-10-17T10:57:23.632Z",
+   "trueStart": "2026-10-17T11:03:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171767,
+   "date": "2026-10-17",
+   "p1Key": 32558,
+   "p2Key": 38264,
+   "p1Name": "J. J. Schwaerzler",
+   "p2Name": "F. Cina",
+   "p1": 2.11,
+   "p2": 1.775,
+   "at": "2026-10-17T09:44:10.272Z",
+   "trueStart": "2026-10-17T10:24:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171768,
+   "date": "2026-10-17",
+   "p1Key": 7009,
+   "p2Key": 818,
+   "p1Name": "H. Wendelken",
+   "p2Name": "G. Onclin",
+   "p1": 2.06,
+   "p2": 1.813,
+   "at": "2026-10-17T08:49:26.270Z",
+   "trueStart": "2026-10-17T10:24:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171770,
+   "date": "2026-10-17",
+   "p1Key": 9222,
+   "p2Key": 1212,
+   "p1Name": "G. Mpetshi Perricard",
+   "p2Name": "R. Bertola",
+   "p1": 1.694,
+   "p2": 2.23,
+   "at": "2026-10-17T11:55:28.893Z",
+   "trueStart": "2026-10-17T12:27:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
