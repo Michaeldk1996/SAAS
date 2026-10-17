@@ -52,9 +52,14 @@ async function apiTennisPlayer(key) {
   return { dob: `${y}${m}${d}`, first: full.slice(0, -1).join(' '), last: full.slice(-1)[0] || null, country: p.player_country || null };
 }
 
+// The roster is EVERY player the site serves a profile for (player-index.json `hasProfile`, 727 on 2026-10-17), not
+// the eager player-profiles.json subset (founder ruling 2026-10-17, gate d6814167 "all_profiles"). A test may pass
+// either shape through TE_ROSTER (an index list, or a profiles store `{players:{key:{…}}}`).
 async function loadRoster() {
-  const src = process.env.TE_ROSTER || 'https://michaeldk1996.github.io/SAAS/player-profiles.json';
+  const src = process.env.TE_ROSTER || 'https://michaeldk1996.github.io/SAAS/player-index.json';
   const j = /^https?:/.test(src) ? await (await fetch(`${src}?cb=${Date.now()}`)).json() : JSON.parse(fs.readFileSync(src, 'utf8'));
+  const list = Array.isArray(j) ? j : Array.isArray(j.players) ? j.players : null;
+  if (list) return list.filter((p) => p && p.hasProfile).map((p) => ({ key: String(p.key), name: p.name, country: p.country, age: p.age }));
   return Object.entries(j.players || {}).filter(([, p]) => p && p.careerByYear).map(([key, p]) => ({ key, name: p.name, country: p.country, age: p.age }));
 }
 

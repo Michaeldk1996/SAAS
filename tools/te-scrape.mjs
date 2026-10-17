@@ -164,6 +164,11 @@ async function main() {
   fs.writeFileSync(lock, String(process.pid));
   const roster = JSON.parse(fs.readFileSync(arg('--players'), 'utf8'));
   const limit = Number(arg('--limit', roster.length));
+  // `--seasons 2021-2023`: only these seasons' pages (founder ruling 549b93d3 item 1: the players outside the roster
+  // whose short set lists are on screen); `--done NAME`: this roster's own finished marker, so a queued roster never
+  // reads the main roster's DONE as its own
+  const [sLo, sHi] = String(arg('--seasons', '0-9999')).split('-').map(Number);
+  const DONE_F = path.join(CACHE, arg('--done', 'DONE'));
   const outF = path.join(CACHE, 'players.json');
   const out = fs.existsSync(outF) ? JSON.parse(fs.readFileSync(outF, 'utf8')) : {};
   let n = 0;
@@ -174,7 +179,7 @@ async function main() {
     if (r.slug) {
       const f = profileFacts(await page(`/player/${r.slug}/`));
       // a past season is final once fetched after 15 Jan of the next year (late-December ties and corrections are in)
-      for (const y of f.years) await page(`/player/${r.slug}/?annual=${y}`, { stable: y < THIS_YEAR, finalAfter: Date.UTC(y + 1, 0, 15) });
+      for (const y of f.years.filter((y) => y >= sLo && y <= sHi)) await page(`/player/${r.slug}/?annual=${y}`, { stable: y < THIS_YEAR, finalAfter: Date.UTC(y + 1, 0, 15) });
       r.years = f.years;
     }
     fs.writeFileSync(outF, JSON.stringify(out, null, 1));
@@ -182,7 +187,7 @@ async function main() {
     log(`${n}/${roster.length} ${p.key} ${p.name}: ${r.slug ? `${r.slug} (${r.how}) ${r.years.length} seasons` : 'UNMATCHED ' + r.unmatched} · requests this run ${requests} · pages cached ${pages}`);
   }
   const vals = Object.values(out);
-  fs.writeFileSync(path.join(CACHE, 'DONE'), new Date().toISOString() + '\n');
+  fs.writeFileSync(DONE_F, new Date().toISOString() + '\n');
   log(`DONE players ${vals.length} · matched ${vals.filter((v) => v.slug).length} · unmatched ${vals.filter((v) => v.unmatched).length} · requests ${requests}`);
 }
 if (import.meta.url === `file://${process.argv[1]}`) main();

@@ -133,5 +133,20 @@ const te = (url) => url.includes('tennisexplorer');
   const r2 = run(d2, 'reread', {}, '2026-01-23T03:30:00Z');
   check('reread: a player outside the day\'s slice is not fetched at all', () => { assert.strictEqual(r2.code, 0, r2.out); assert.strictEqual(r2.reqs.filter(te).length, 0); });
 }
+{
+  // the roster is EVERY profiled player (player-index.json `hasProfile`, ruling d6814167), not the eager store: an
+  // index-shaped roster pulls the new profiled player and skips an index entry without a profile
+  const d = repo();
+  fs.writeFileSync(path.join(d, 'roster.json'), JSON.stringify({ players: [
+    { key: '1', name: 'A. Alpha', country: 'Australia', hasProfile: true },
+    { key: '2', name: 'N. Newman', country: 'Australia', hasProfile: true },
+    { key: '3', name: 'Z. Noprofile', country: 'Australia', hasProfile: false }] }));
+  const r = run(d, 'weekly');
+  check('player-index roster: a profiled player new to the store gets his full history; no profile, no request', () => {
+    assert.strictEqual(r.code, 0, r.out);
+    assert.strictEqual(r.reqs.filter(te).filter((u) => /newman-1\/\?annual=/.test(u)).length, 3);
+    assert.ok(!r.reqs.some((u) => /noprofile|player_key=3\b/i.test(u)), 'a player without a profile was looked up');
+  });
+}
 console.log(`\nte-refresh: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
