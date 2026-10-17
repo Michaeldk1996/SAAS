@@ -4059,6 +4059,16 @@ function subtractYearTally(yearRows, byYear) {
   }
 }
 
+// TEN-443 step 2 · Tennis Explorer store (written only by tools/te-build-history.mjs; guarded by tools/te-history-guard.mjs)
+const TeJoin = require('./te-join.js');
+const TE_HISTORY_DIR = 'te-history';
+const TE_HISTORY_INDEX = 'te-history-index.json';
+const TE_INGEST = process.env.TE_INGEST === '1';   // founder approval of the moved-cell report flips this default
+function readTeHistory(key) {
+  const f = `${TE_HISTORY_DIR}/${key}.json`;
+  if (!fs.existsSync(f)) return null;
+  return JSON.parse(fs.readFileSync(f, 'utf8'));   // a corrupt store file throws: the run stops rather than drop TE rows
+}
 async function writeCareerHistoryShards(profiles, opts = {}) {
   const log = opts.log || (() => {});
   // `opts.currentYear`: tests drive both regimes (2021 a hole year, and 2021 an ordinary archive year).
@@ -4100,6 +4110,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   const reasons = { retired: 0, walkover: 0, defaulted: 0, altFormat: {} };
   // TEN-310: hole-year TML rows kept / offered, per year, published in the index meta.
   const holeFill = {};
+  // TEN-443: Tennis Explorer ingest totals, published in the index meta (players merged, rows added, conflicts by kind)
+  const teTotals = { players: 0, conflicts: {} };
+  if (TE_INGEST && !fs.existsSync(TE_HISTORY_INDEX)) throw new Error(`TE_INGEST is on but ${TE_HISTORY_INDEX} is missing — refusing to publish career records without the Tennis Explorer store`);
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
@@ -4130,6 +4143,21 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // profile built before the correction — the map is the one fixtureSurface() reads. Before the year tally,
     // so the tally counts it on its edition's surface too (review 2026-10-16).
     for (const r of rows) { const os = olympicSurface(r.tournament, r.date); if (os) r.surface = os; }
+    // TEN-443 step 2: merge the player's Tennis Explorer rows (te-history/<key>.json) — one match = one row, TE's
+    // counting rules minus exhibitions, TE's court class and edition-year season, every disagreement kept on the row —
+    // and rebuild his season table from the merged rows, so cells and lists stay one set (TEN-442). Behind TE_INGEST:
+    // off until the founder approves the moved-cell report. With it on, a missing store stops the run (fail-closed).
+    if (TE_INGEST) {
+      const teRec = readTeHistory(key);
+      if (teRec) {
+        const m = TeJoin.applyTeHistory(rows, teRec);
+        rows.length = 0; rows.push(...m.rows);
+        p.careerByYear = TeJoin.careerByYearFromRows(rows);
+        teTotals.players++;
+        for (const [k, v] of Object.entries(m.diag)) if (typeof v === 'number') teTotals[k] = (teTotals[k] || 0) + v;
+        for (const [k, v] of Object.entries(m.diag.conflicts)) teTotals.conflicts[k] = (teTotals.conflicts[k] || 0) + v;
+      }
+    }
     // careerMatches is a build-time carrier only; it must not ship inside
     // player-profiles.json, which is on the critical path.
     delete p.careerMatches;
@@ -4166,7 +4194,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // its hole rows at all, so none of them may claim its Indoors.
     const adoptedYears = new Set([...adopted].map(row => String(row.year)));
     for (const r of rows) {
-      if (r.holeFill) r.indoor = adoptedYears.has(String(r.year)) && !!r._indoor;
+      if (r.holeFill && !r.te) r.indoor = adoptedYears.has(String(r.year)) && !!r._indoor;   // a TE-paired row keeps TE's court
       delete r._indoor;   // TEN-313 build-time carrier, never shipped
     }
 
@@ -4296,6 +4324,8 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     meta: {
       generatedAt: new Date().toISOString(),
       population: { players: Object.keys(index).length, rows: rowTotal, fixturesHalf: halfRows.fixtures, archiveHalf: halfRows.archive },
+      // TEN-443: Tennis Explorer ingest — null while TE_INGEST is off
+      te: TE_INGEST ? teTotals : null,
       exclusions: {
         // What a games-based rate must drop, and why.
         incomplete: incompleteTotal,      // did not finish, for its format

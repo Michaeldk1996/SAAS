@@ -1,14 +1,18 @@
 #!/usr/bin/env node
-// TEN-443 step 2 · Tennis Explorer (TE) player-history scraper. Founder ruling 2026-10-17 (gate 91feaca9, "access"):
-// scrape TE despite its terms (§2.2/§2.10/§2.11) — his call, risk reported. Rules this tool enforces, each a test:
+// TEN-443 step 2 · Tennis Explorer (TE) player-history scraper (founder 2026-10-17: TE is licensed via an agreement
+// with Livesport; gate 91feaca9). Rules this tool enforces, each a test:
 //   * ONE request at a time, >= TE_DELAY_MS (default 8 s) apart plus jitter; any non-200, a challenge page or an empty
 //     body stops the run (exit 3) — never retry in a loop, never parallelise.
+//   * Licensed source (founder 2026-10-17: agreement with Livesport); rows built from it carry src 'te'.
 //   * Every page is cached raw under TE_CACHE (default ~/.stennisfy/te-cache). A past season is never fetched twice;
 //     the current season and the profile page are refetched only when older than TE_MAX_AGE_H (default 20 h).
 //   * Runs on this Mac, off the pipeline. Nothing in CI or the nightly refresh calls it or waits for it.
-//   * A player is joined to a TE page only on a positive identity check: same surname and first name (or initial),
-//     same country, AND the page's date of birth equal to Sackmann's (or, with no DOB on record, the page's age within
-//     one year of ours). Anything else is "unmatched" with its reason — never a guess.
+//   * A player is joined to a TE page only on a positive identity check: same surname and first name (or initial)
+//     AND the page's date of birth equal to Sackmann's (or, with no DOB on record, the same country and the page's age
+//     within one year of ours). Anything else is "unmatched" with its reason — never a guess.
+//   * Resumable: players.json is written after every player and every page is cached, so a restart (sleep, reboot,
+//     lost connection) re-reads the cache and refetches nothing done within TE_MAX_AGE_H. tools/te-scrape-agent.sh
+//     (launchd, every 30 min) restarts it; a lock keeps it to one run; DONE / BLOCKED markers stop the restarts.
 // Run: node tools/te-scrape.mjs --players <keys.json> [--limit N]
 //   keys.json: [{key, name, country, age, first?, last?, dob?}] — first/last/dob from the DOB-checked Sackmann join
 //   (career-backfill.js reconcile + a DOB check; TEN-443 step 1); a roster builder lands with the step-2 ingest.
@@ -44,10 +48,20 @@ async function page(rel, { stable = false } = {}) {
   if (wait > 0) await sleep(wait);
   last = Date.now(); requests++;
   let res, text;
-  try { res = await fetch(BASE + rel, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } }); text = await res.text(); }
-  catch (e) { log(`STOP network ${rel}: ${e.message}`); process.exit(3); }
+  // A lost connection or a sleeping Mac is retried on the same page with backoff (1, 2, 4, 8, 16 min), then the run
+  // exits and the launchd job resumes it later from the cache. A non-200 or a challenge page is a BLOCK: never
+  // retried — BLOCKED is written and every later start refuses to run until a person removes it.
+  for (let attempt = 0; ; attempt++) {
+    try { res = await fetch(BASE + rel, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } }); text = await res.text(); break; }
+    catch (e) {
+      if (attempt >= 5) { log(`PAUSE network ${rel}: ${e.message} — exiting, the job resumes from cache`); process.exit(4); }
+      const ms = 60e3 * 2 ** attempt; log(`retry ${attempt + 1}/5 in ${ms / 60e3} min: ${rel}: ${e.message}`); await sleep(ms);
+    }
+  }
   if (res.status !== 200 || !text || text.length < 5000 || /cf-mitigated|Attention Required|captcha/i.test(text)) {
-    log(`STOP status=${res.status} len=${text ? text.length : 0} ${rel}`); process.exit(3);
+    const why = `status=${res.status} len=${text ? text.length : 0} ${rel}`;
+    fs.writeFileSync(path.join(CACHE, 'BLOCKED'), `${new Date().toISOString()} ${why}\n`);
+    log(`STOP ${why} — BLOCKED written; no automatic restart`); process.exit(3);
   }
   fs.writeFileSync(f, text);
   return text;
@@ -81,13 +95,20 @@ const cnorm = (c) => { const n = norm(c); return COUNTRY_ALIAS[n] || n; };
 
 async function resolve(p) {
   const last = p.last || p.name.split(' ').filter((t) => !/\.$/.test(t)).join(' ');
-  const initial = (p.first || p.name)[0].toLowerCase();
-  const html = await page(`/list-players/?search-text-pl=${encodeURIComponent(last.split(' ').slice(-1)[0])}`);
-  const cands = searchRows(html).filter((r) => norm(r.last) === norm(last) || norm(r.last).endsWith(norm(last.split(' ').slice(-1)[0])) && norm(r.last).includes(norm(last)));
-  const named = cands.filter((r) => p.first ? norm(r.first) === norm(p.first) || norm(r.first).startsWith(norm(p.first)) || norm(p.first).startsWith(norm(r.first)) : norm(r.first)[0] === initial);
-  const pool = (named.length ? named : cands.filter((r) => norm(r.first)[0] === initial)).filter((r) => !p.country || cnorm(r.country) === cnorm(p.country));
+  const initial = norm(p.first || p.name)[0];
+  // search on the longest plain-letter token of the surname: "O'Connell" -> "Connell", "Barrios Vera" -> "Barrios"
+  const term = last.split(/[\s'’-]+/).filter(Boolean).sort((a, b) => b.length - a.length)[0];
+  const html = await page(`/list-players/?search-text-pl=${encodeURIComponent(term)}`);
+  const cands = searchRows(html).filter((r) => norm(r.last) === norm(last) || norm(r.last).includes(norm(term)));
+  const toks = (x) => String(x || '').split(/[\s-]+/).map(norm).filter(Boolean);
+  // first names: equal, a prefix either way, or one shared token ("Tomas" vs "Marcelo Tomas") — the DOB still decides
+  const named = cands.filter((r) => p.first ? norm(r.first) === norm(p.first) || norm(r.first).startsWith(norm(p.first)) || norm(p.first).startsWith(norm(r.first)) || toks(r.first).some((t) => toks(p.first).includes(t)) : norm(r.first)[0] === initial);
+  // Country is a tie-break only: TE writes some countries in Czech ("Moldavsko") and ours differ (Taiwan / Chinese
+  // Taipei, neutral flags). The identity test is the date of birth; without one, the same country AND age ± 1.
+  let pool = named.length ? named : cands.filter((r) => norm(r.first)[0] === initial);
+  if (!p.dob) pool = pool.filter((r) => !p.country || cnorm(r.country) === cnorm(p.country));
   const checked = [];
-  for (const c of pool.slice(0, 4)) {
+  for (const c of pool.slice(0, 6)) {
     const f = profileFacts(await page(`/player/${c.slug}/`));
     const ok = p.dob ? f.dob === p.dob : (f.age != null && p.age != null && Math.abs(f.age - p.age) <= 1);
     checked.push({ slug: c.slug, name: `${c.last}, ${c.first}`, dob: f.dob, age: f.age, ok });
@@ -98,6 +119,10 @@ async function resolve(p) {
 }
 
 async function main() {
+  if (fs.existsSync(path.join(CACHE, 'BLOCKED'))) { log('BLOCKED marker present — not running (remove it after checking the cause)'); process.exit(3); }
+  const lock = path.join(CACHE, 'run.lock');
+  try { const pid = +fs.readFileSync(lock, 'utf8'); process.kill(pid, 0); log(`another run (pid ${pid}) is active — exiting`); process.exit(0); } catch (e) { /* no live holder */ }
+  fs.writeFileSync(lock, String(process.pid));
   const roster = JSON.parse(fs.readFileSync(arg('--players'), 'utf8'));
   const limit = Number(arg('--limit', roster.length));
   const outF = path.join(CACHE, 'players.json');
@@ -113,9 +138,11 @@ async function main() {
       r.years = f.years;
     }
     fs.writeFileSync(outF, JSON.stringify(out, null, 1));
-    log(`${n}/${roster.length} ${p.key} ${p.name}: ${r.slug ? `${r.slug} (${r.how}) ${r.years.length} seasons` : 'UNMATCHED ' + r.unmatched} · requests ${requests}`);
+    const pages = fs.readdirSync(path.join(CACHE, 'html')).length;
+    log(`${n}/${roster.length} ${p.key} ${p.name}: ${r.slug ? `${r.slug} (${r.how}) ${r.years.length} seasons` : 'UNMATCHED ' + r.unmatched} · requests this run ${requests} · pages cached ${pages}`);
   }
   const vals = Object.values(out);
+  fs.writeFileSync(path.join(CACHE, 'DONE'), new Date().toISOString() + '\n');
   log(`DONE players ${vals.length} · matched ${vals.filter((v) => v.slug).length} · unmatched ${vals.filter((v) => v.unmatched).length} · requests ${requests}`);
 }
 main();

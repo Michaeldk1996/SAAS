@@ -3508,7 +3508,8 @@
     return {
       date: r.date, year: r.year, surface: r.surface, event: r.event, round: r.round, opp: r.opp,
       won: r.won, sets: r.sets, setScores: r.score, price: r.price, oppPrice: r.oppPrice,
-      retired: r.retired, wo: r.wo, tier: r.tier, level: r.level || null, src: 'career', sheetId: r.sheetId, m: null
+      retired: r.retired, wo: r.wo, tier: r.tier, level: r.level || null, src: 'career', sheetId: r.sheetId, m: null,
+      conflicts: r.conflicts || null
     };
   }
 
@@ -3730,6 +3731,16 @@
   }
   // One page of drill rows. `pg` is the pager, mutated in place so the caller can
   // ask "how far have I painted" without re-deriving it from the DOM.
+  // TEN-443 · the drill's mark for a row whose sources disagree: a "≠" after the score, its tooltip naming both values.
+  var CONFLICT_SRC = { 'api-tennis': 'api-tennis', archive: 'archive' };
+  function conflictMark(r) {
+    if (!r || !r.conflicts || !r.conflicts.length) return '';
+    var parts = r.conflicts.map(function (c) {
+      return c.kind + (c.sub ? ' (' + c.sub + ')' : '') + ': Tennis Explorer ' + c.te + ' · ' + (CONFLICT_SRC[c.src] || c.src || 'ours') + ' ' + c.ours;
+    });
+    return ' <span data-pp2-conflict="' + esc(r.conflicts.map(function (c) { return c.kind; }).join(' ')) +
+      '" title="' + esc('Sources disagree — ' + parts.join('; ')) + '" style="color:var(--text-label);cursor:help;">≠</span>';
+  }
   function drillBodyHtml(rows, from, to, pg) {
     return rows.slice(from, to).map(function (r) {
       var grp = '';
@@ -3766,7 +3777,7 @@
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
              ';padding:5px 0;', esc(r.sets || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
-             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores))) +
+             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
              'text-align:right;padding:5px 0;', oddsText(r.price)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
@@ -7241,6 +7252,9 @@
         // TEN-395 · career-history's own per-match court flag (bsp-pipeline.js playerMatchHistory): true = counted in
         // the season table's Indoors, by the table's own tournament_key join. null on a row built before the flag.
         seasonIndoor: typeof r.indoor === 'boolean' ? r.indoor : null,
+        // TEN-443 · a Tennis Explorer pairing that disagreed with our source (result, score, surface, court, walkover):
+        // the row keeps every disagreement and the drill marks it — never resolved silently.
+        conflicts: Array.isArray(r.conflicts) && r.conflicts.length ? r.conflicts : null,
         event: evOf(r),
         // §8.17 · the REAL tier, and only the real one. career-history's own
         // `level` column holds 'atp'/'chitf' — a feed scope, not a tour tier — and
