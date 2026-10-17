@@ -331,8 +331,8 @@ def export_rows(td_closes, archive_rows, matches=()):
     for a in arch:
         day = dt.date.fromisoformat(a['date'])
         c = [(k, e) for d in (day - dt.timedelta(days=1), day, day + dt.timedelta(days=1)) for k, e in by_day.get(d.isoformat(), [])
-             if (P.same_surname(e['td']['winner'], a['p1Name']) and P.same_surname(e['td']['loser'], a['p2Name']))
-             or (P.same_surname(e['td']['winner'], a['p2Name']) and P.same_surname(e['td']['loser'], a['p1Name']))]
+             if (P.same_player(e['td']['winner'], a['p1Name'], a.get('p1Key')) and P.same_player(e['td']['loser'], a['p2Name'], a.get('p2Key')))
+             or (P.same_player(e['td']['winner'], a['p2Name'], a.get('p2Key')) and P.same_player(e['td']['loser'], a['p1Name'], a.get('p1Key')))]
         if len(c) == 1:
             joined.setdefault(c[0][0], []).append(a)
         elif len(c) > 1:
@@ -351,7 +351,7 @@ def export_rows(td_closes, archive_rows, matches=()):
         js = joined.get(k) or []
         if not pin and len(js) == 1:
             a = js[0]
-            w1 = P.same_surname(td['winner'], a['p1Name'])
+            w1 = P.same_player(td['winner'], a['p1Name'], a.get('p1Key'))
             row.update(pinnacle_p1=a['p1'] if w1 else a['p2'], pinnacle_p2=a['p2'] if w1 else a['p1'], source=src_of(a),
                        close_time=a.get('closeTs') or '', start_time=a.get('startTs') or '', start_source=a.get('startSource') or '',
                        gap_to_start_s=a.get('gapToStartS') if a.get('gapToStartS') is not None else '')
@@ -632,8 +632,9 @@ def approx_join(r, by_day):
     for k in (d - dt.timedelta(days=1), d, d + dt.timedelta(days=1), d + dt.timedelta(days=2)):
         for f in by_day.get(k.isoformat(), []):
             a, b = f.get('event_first_player'), f.get('event_second_player')
-            if P.same_surname(r['winner'], a) and P.same_surname(r['loser'], b): c.append((f, True))
-            elif P.same_surname(r['winner'], b) and P.same_surname(r['loser'], a): c.append((f, False))
+            ka, kb = f.get('first_player_key'), f.get('second_player_key')
+            if P.same_player(r['winner'], a, ka) and P.same_player(r['loser'], b, kb): c.append((f, True))
+            elif P.same_player(r['winner'], b, kb) and P.same_player(r['loser'], a, ka): c.append((f, False))
     if len(c) == 1:
         return c[0]
     return None, ('two fixtures' if c else 'no fixture')

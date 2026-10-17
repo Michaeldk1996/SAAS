@@ -152,7 +152,7 @@
     win.forEach((r) => { const k = whyNotPriced(r) || 'priced'; why[k] = (why[k] || 0) + 1; });
     const whyBo3 = {};
     (o.winnerRows ? scoped.filter(inWinner) : priced).forEach((r) => { const k = whyNotBo3(r) || 'bo3'; whyBo3[k] = (whyBo3[k] || 0) + 1; });
-    const book = { P: priced.filter((r) => r.book === 'P').length, B: priced.filter((r) => r.book === 'B').length };
+    const book = { P: priced.filter((r) => r.book === 'P').length, B: priced.filter((r) => r.book === 'B').length, A: priced.filter((r) => r.book === 'A').length };
     const lines = o.todayPrice == null ? null : lineModel(bo3, tb, o.todayPrice, o.surname || '', floor);
     return {
       scoped: scoped.length, priced, bo3, bands, tb, series, why, whyBo3, book,

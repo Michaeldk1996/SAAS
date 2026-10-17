@@ -198,14 +198,53 @@ function pickBook(row) {
  */
 // The 1.01 floor (CLAUDE.md odds invariant) is the core's too: a price below it has no band, so it is
 // on no basis — never in the headline while missing from the bands.
-const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture']);
+const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture',
+  'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);   // the Database's own books (founder 2026-10-17, item 1)
+
+/**
+ * Founder ruling 2026-10-17 (item 1): ONE price per match on every surface. A Tennis-Data row the Database prices takes
+ * the Database's price, book and source — database-yield.json `rows` plus the retirements and exact ties behind its flags
+ * (`retRows` / `tieRows`), keyed by date | tournament | winner | loser exactly as Tennis-Data writes them — so the
+ * profile's Market edge and the Match analysis tab show what the Database, Head to Head and the profile's Record per
+ * tournament show. A row the Database does not hold (outside its window or rules) keeps this builder's own order (R8);
+ * the cross-surface check (tools/price-consistency.mjs) reports those. Database book codes: build-database-yield.js.
+ */
+const DB_BOOK = {
+  0: ['pinnacle', 'Pinnacle'], 1: ['bet365-archive', 'Bet365 (archive close)'], 2: ['pinnacle-approx', 'Pinnacle (approx.)'],
+  3: ['pinnacle-history', 'Pinnacle (from Pinnacle history)'], 4: ['pinnacle-capture', 'Pinnacle (our capture)'],
+  5: ['pinnacle-approx-od10', 'Pinnacle (approx., start − 10)'],
+};
+const dbKey = (date, tournament, winner, loser) => [String(date).slice(0, 10), tournament, winner, loser].join('|');
+function loadDbPrices(root) {
+  let b, n;
+  try {
+    b = JSON.parse(fs.readFileSync(path.join(root, 'database-yield.json'), 'utf8'));
+    n = JSON.parse(fs.readFileSync(path.join(root, 'database-yield-players.json'), 'utf8'));
+  } catch (e) { return null; }
+  const T = (b.meta && b.meta.tournaments) || [];
+  const map = new Map(), dup = new Set();
+  [['rows', 'names'], ['retRows', 'retNames'], ['tieRows', 'tieNames']].forEach(([rk, nk]) => {
+    const R = b[rk] || [], N = n[nk] || [];
+    if (R.length !== N.length) throw new Error(`database-yield ${rk} (${R.length}) and ${nk} (${N.length}) are out of step`);
+    R.forEach((x, i) => {
+      const nm = N[i], bk = DB_BOOK[x[8]];
+      if (!nm || !bk) return;
+      const d = String(x[0]);
+      const k = dbKey(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, T[x[4]], nm[0], nm[1]);
+      if (map.has(k)) { dup.add(k); return; }
+      map.set(k, { w: x[7] ? x[5] : x[6], l: x[7] ? x[6] : x[5], book: bk[0], label: bk[1] });
+    });
+  });
+  dup.forEach((k) => map.delete(k));   // two Database rows under one key: neither is "the" price (never a guess)
+  return map;
+}
 const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0;
 
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row
   // order and has already moved a painted card 1.42 -> 1.41 on this codebase. A
   // decimal price is exact in cents, so the sum is exact in cents.
-  return { n: 0, wins: 0, expSum: 0, varSum: 0, profitCents: 0, priceCents: 0, pinnacle: 0, bet365: 0 };
+  return { n: 0, wins: 0, expSum: 0, varSum: 0, profitCents: 0, priceCents: 0, pinnacle: 0, bet365: 0, approx: 0 };
 }
 
 function addTo(a, side) {
@@ -216,7 +255,8 @@ function addTo(a, side) {
   const cents = Math.round(side.price * 100);
   a.profitCents += core.plCents(side);          // the tab's P&L, the same function
   a.priceCents += cents;
-  if (String(side.book).startsWith('pinnacle')) a.pinnacle += 1; else a.bet365 += 1;
+  if (String(side.book).startsWith('pinnacle-approx')) a.approx += 1;   // Pinnacle (approx.): a snapshot, never a close
+  else if (String(side.book).startsWith('pinnacle')) a.pinnacle += 1; else a.bet365 += 1;
 }
 
 /**
@@ -225,7 +265,7 @@ function addTo(a, side) {
  * never 0%, never a plausible default".
  */
 function summarise(a) {
-  if (!a || !a.n) return { n: 0, wins: 0, losses: 0, gate: 'none', winRate: null, expectedWinRate: null, vsMarket: null, yield: null, units: null, ci95: null, avgPrice: null, book: { pinnacle: 0, bet365: 0 } };
+  if (!a || !a.n) return { n: 0, wins: 0, losses: 0, gate: 'none', winRate: null, expectedWinRate: null, vsMarket: null, yield: null, units: null, ci95: null, avgPrice: null, book: { pinnacle: 0, bet365: 0, approx: 0 } };
   const gate = a.n >= GATE_FULL ? 'full' : a.n >= GATE_SMALL ? 'small' : 'thin';
   const actual = (a.wins / a.n) * 100;
   const expected = (a.expSum / a.n) * 100;
@@ -250,7 +290,7 @@ function summarise(a) {
     units: a.n ? r2(a.profitCents / 100) : null,
     ci95: rateOk && se > 0 ? [r1(actual - expected - 1.96 * se), r1(actual - expected + 1.96 * se)] : null,
     avgPrice: r2(a.priceCents / a.n / 100),
-    book: { pinnacle: a.pinnacle, bet365: a.bet365 },
+    book: { pinnacle: a.pinnacle, bet365: a.bet365, approx: a.approx },
   };
 }
 
@@ -360,7 +400,10 @@ function main() {
   // blind returns, and it is the number each player's yield is compared against.
   const tour = { all: emptyAgg(), level: {}, season: {} };
   const perPlayer = new Map();
-  const stats = { rows: 0, incomplete: 0, retired: 0, unpriced: 0, sides: 0, joined: 0, ties: 0, captured: 0 };
+  const stats = { rows: 0, incomplete: 0, retired: 0, unpriced: 0, sides: 0, joined: 0, ties: 0, captured: 0, dbPriced: 0, ownOrder: 0 };
+  // founder ruling 2026-10-17 item 1: the Database's own price per match (null = no database-yield.json: every row on R8)
+  const dbPrices = loadDbPrices(ROOT);
+  stats.dbLoaded = !!dbPrices;
   // R8: our captured closes, per subject, from match-closes/{key}.json (build-match-closes.js runs first
   // in the pipeline). cap = [date, oppKey, pin, pinOpp, b365, b365Opp, eventKey]. Absent shard = none.
   const capCache = new Map();
@@ -399,6 +442,8 @@ function main() {
       // and one source per side. Captures come from the subject's own match-closes shard.
       const level = LEVEL_ALIASES[row.series] || null;
       const td = pickBookPairs(row);
+      const dbp = dbPrices ? dbPrices.get(dbKey(row.date, row.tournament, row.winner, row.loser)) : null;
+      if (dbp) stats.dbPriced += 1; else stats.ownOrder += 1;
       const base = [
         { name: row.winner, opp: row.loser, won: true, tdP: td.P, tdB: td.B },
         { name: row.loser, opp: row.winner, won: false, tdP: td.P && [td.P[1], td.P[0]], tdB: td.B && [td.B[1], td.B[0]] },
@@ -411,7 +456,8 @@ function main() {
         // Opponent key: the subject's match-closes row first (the key the tab uses), else our resolver.
         let oppKey = caps && caps.tdOpp.get(`${row.date}|${b.opp}|${b.won ? 1 : 0}`);
         if (!oppKey) { const oh = resolve(b.opp); oppKey = oh ? String(oh.key) : null; }
-        const pick = pickSide(b, caps, row.date, oppKey);
+        const pick = dbp ? { book: dbp.book, label: dbp.label, price: b.won ? dbp.w : dbp.l, oppPrice: b.won ? dbp.l : dbp.w }
+          : pickSide(b, caps, row.date, oppKey);
         if (!pick) return;
         const pW = devig(pick.price, pick.oppPrice);
         if (pW == null) return;
@@ -591,6 +637,7 @@ function main() {
 
   log(`archive rows ${stats.rows}, ${stats.retired} retired kept (ruling A), ${stats.incomplete} walkover/awarded/disqualified excluded, ${stats.unpriced} unpriced dropped`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}`);
+  log(`one price per match: ${stats.dbPriced} rows priced as the Database prices them, ${stats.ownOrder} rows the Database does not hold (R8 order)${dbPrices ? '' : ' — database-yield.json absent'}`);
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
   log(`shards written: ${shipped}`);
