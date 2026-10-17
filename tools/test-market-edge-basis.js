@@ -181,9 +181,11 @@ console.log('build stamp');
   const ROOT = path.join(__dirname, '..');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-stamp-'));
   try {
-    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js']) fs.copyFileSync(path.join(ROOT, f), path.join(tmp, f));
+    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js', 'build-database-yield.js']) fs.copyFileSync(path.join(ROOT, f), path.join(tmp, f));
     for (const f of ['odds-archive', 'court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(ROOT, f))) fs.symlinkSync(path.join(ROOT, f), path.join(tmp, f));
     fs.writeFileSync(path.join(tmp, 'player-profiles.json'), JSON.stringify({ players: { 47: { name: 'J. Sinner' } } }));
+    // Market edge reads the master the Database builder writes in the same run (founder ruling 2026-10-17).
+    execFileSync(process.execPath, [path.join(tmp, 'build-database-yield.js')], { stdio: 'pipe' });
     const t0 = Date.now();
     execFileSync(process.execPath, [path.join(tmp, 'build-market-edge.js'), '--quiet'], { env: Object.assign({}, process.env, { GITHUB_SHA: 'abc123stamp' }), stdio: 'pipe' });
     const built = JSON.parse(fs.readFileSync(path.join(tmp, 'market-edge-index.json'), 'utf8'));
@@ -230,40 +232,50 @@ console.log('build stamp');
     }
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 
-  // 4 · founder ruling 2026-10-17 (item 1): one price per match. A Tennis-Data row the Database prices takes the
-  //     Database's price and book (here a start − 10 snapshot, book 5); a row the Database does not hold keeps R8.
+  // 4 · founder ruling 2026-10-17 ("one source of truth"): Market edge reads ONLY the master file build-database-yield.js
+  //     writes. Each match takes the master's price and book (here a start − 10 snapshot, book 5, and a Bet365 row); a
+  //     team event (flag t) stays out; the Tennis-Data CSVs are never read; no master = the build fails, never a fallback.
   {
     const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-db-'));
     try {
       for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js']) fs.copyFileSync(path.join(ROOT, f), path.join(t2, f));
       for (const f of ['court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(ROOT, f))) fs.symlinkSync(path.join(ROOT, f), path.join(t2, f));
+      // A Tennis-Data file with OTHER prices for the same matches: if the builder ever read it again, the checks go red.
       fs.mkdirSync(path.join(t2, 'odds-archive'));
       const H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl,maxw,maxl,avgw,avgl,avgsrc';
       fs.writeFileSync(path.join(t2, 'odds-archive', '2026.csv'), [H,
         '2026-07-14,Hamburg,ATP500,Outdoor,Clay,1st Round,3,Sinner J.,Doe J.,1,90,Completed,1.10,6.50,,,1.10,6.50,1.10,6.50,file',
         '2026-07-16,Hamburg,ATP500,Outdoor,Clay,2nd Round,3,Roe R.,Sinner J.,40,1,Completed,5.00,1.15,,,5.00,1.15,5.00,1.15,file', ''].join('\n'));
       fs.writeFileSync(path.join(t2, 'player-profiles.json'), JSON.stringify({ players: { 47: { name: 'J. Sinner' } } }));
-      const run = (withDb) => {
-        for (const f of ['database-yield.json', 'database-yield-players.json']) fs.rmSync(path.join(t2, f), { force: true });
-        if (withDb) {
-          fs.writeFileSync(path.join(t2, 'database-yield.json'), JSON.stringify({ meta: { tournaments: ['Hamburg'] },
-            rows: [[20260714, 0, 0, 0, 0, 1.12, 6.10, 1, 5]], retRows: [], tieRows: [] }));
-          fs.writeFileSync(path.join(t2, 'database-yield-players.json'), JSON.stringify({ names: [['Sinner J.', 'Doe J.']], retNames: [], tieNames: [] }));
-        }
-        execFileSync(process.execPath, [path.join(t2, 'build-market-edge.js'), '--quiet'], { stdio: 'pipe' });
-        return JSON.parse(fs.readFileSync(path.join(t2, 'market-edge', '47.json'), 'utf8')).matches;
+      const cols = ['date', 'tournament', 'series', 'surface', 'court', 'round', 'bestof', 'winner', 'loser', 'comment', 'pw', 'pl', 'book', 'set', 'flags'];
+      const run = (withMaster) => {
+        fs.rmSync(path.join(t2, 'database-yield-master.json'), { force: true }); fs.rmSync(path.join(t2, 'market-edge'), { recursive: true, force: true });
+        if (withMaster) fs.writeFileSync(path.join(t2, 'database-yield-master.json'), JSON.stringify({ meta: { schema: 1, cols, latest: '2026-09-12' }, rows: [
+          ['2026-07-14', 'Hamburg', 'ATP500', 'Clay', 'Outdoor', '1st Round', 3, 'Sinner J.', 'Doe J.', 'Completed', 1.12, 6.10, 5, 'db', ''],
+          ['2026-07-16', 'Hamburg', 'ATP500', 'Clay', 'Outdoor', '2nd Round', 3, 'Roe R.', 'Sinner J.', 'Completed', 5.00, 1.15, 1, 'db', ''],
+          ['2026-09-12', 'Davis Cup', 'Team event', '', '', '', '', 'Sinner J.', 'Doe J.', 'Completed', 1.20, 4.50, 3, 'x', 't']] }));
+        const r = spawnSync(process.execPath, [path.join(t2, 'build-market-edge.js'), '--quiet'], { encoding: 'utf8' });
+        if (r.status !== 0) return { status: r.status };
+        const sh = JSON.parse(fs.readFileSync(path.join(t2, 'market-edge', '47.json'), 'utf8'));
+        return { status: 0, sh, ms: sh.matches,
+          ix: JSON.parse(fs.readFileSync(path.join(t2, 'market-edge-index.json'), 'utf8')) };
       };
       const pick = (ms, d) => { const m = ms.find((x) => x.date === d); return m ? [m.price, m.book] : null; };
       const a = run(true), b = run(false);
       const want1 = [1.12, 'pinnacle-approx-od10'], want2 = [1.15, 'bet365-archive'];
-      if (JSON.stringify(pick(a, '2026-07-14')) === JSON.stringify(want1)) ok('a match the Database holds takes its price and book (start − 10 1.12, not Bet365 1.10)');
-      else fail(`Database-held row ${JSON.stringify(pick(a, '2026-07-14'))}, want ${JSON.stringify(want1)}`);
-      if (JSON.stringify(pick(a, '2026-07-16')) === JSON.stringify(want2)) ok('a match the Database does not hold keeps the R8 order (Bet365 1.15)');
-      else fail(`not-held row ${JSON.stringify(pick(a, '2026-07-16'))}, want ${JSON.stringify(want2)}`);
-      if (JSON.stringify(pick(b, '2026-07-14')) === JSON.stringify([1.10, 'bet365-archive'])) ok('control: without database-yield.json the same row is on R8 (Bet365 1.10)');
-      else fail(`control row ${JSON.stringify(pick(b, '2026-07-14'))}`);
-      const s = JSON.parse(fs.readFileSync(path.join(t2, 'market-edge', '47.json'), 'utf8'));
-      if (!checkShard('db-first', Object.assign({}, s)).some((x) => /book mix/.test(x))) ok('the shard book mix still adds up'); else fail('book mix check fails on a db-first shard');
+      if (a.status === 0 && JSON.stringify(pick(a.ms, '2026-07-14')) === JSON.stringify(want1)) ok('a master row takes its price and book (start − 10 1.12, never the CSV\'s Bet365 1.10)');
+      else fail(`master row ${JSON.stringify(a.ms && pick(a.ms, '2026-07-14'))}, want ${JSON.stringify(want1)}`);
+      if (a.status === 0 && JSON.stringify(pick(a.ms, '2026-07-16')) === JSON.stringify(want2)) ok('a Bet365 master row reads Bet365 1.15 for the loser side');
+      else fail(`Bet365 row ${JSON.stringify(a.ms && pick(a.ms, '2026-07-16'))}, want ${JSON.stringify(want2)}`);
+      if (a.status === 0 && !a.ms.some((m) => m.date === '2026-09-12')) ok('a team event (flag t) is in the master but never in Market edge');
+      else fail('the Davis Cup master row reached Market edge');
+      if (a.status === 0 && a.ix.source === 'database-yield-master.json' && a.ix.latestMatch === '2026-07-16' && a.ix.masterLatest === '2026-09-12') ok('the index names its source and both latest dates (the lag guard reads them)');
+      else fail(`index source/latest ${JSON.stringify(a.ix && [a.ix.source, a.ix.latestMatch, a.ix.masterLatest])}`);
+      if (b.status !== 0) ok('control: no master file → the build fails (no fallback to the Tennis-Data CSVs)');
+      else fail('built without a master: a fallback path exists');
+      if (a.status === 0) {
+        if (!checkShard('master', Object.assign({}, a.sh)).some((x) => /book mix/.test(x))) ok('the shard book mix still adds up'); else fail('book mix check fails on a master-built shard');
+      }
     } finally { fs.rmSync(t2, { recursive: true, force: true }); }
   }
 

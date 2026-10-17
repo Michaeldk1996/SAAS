@@ -92,6 +92,10 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   null round, "Roland-Garros", Davis Cup, United Cup). The format gate outranks the price gate.
 
 ## Populations
+- **Source (founder ruling 2026-10-17, "one source of truth"):** the player-profile shards are built from the ONE master
+  `database-yield-master.json` (`odds.md` "One master, one build") — the Database's own price, book and source per match,
+  team events out — never the Tennis-Data CSVs or the closes shards. Where the book order below still names Tennis-Data
+  and captures, it describes how the master's Database row was priced. **Test:** `tools/test-market-edge-basis.js`.
 - **Match winner (bands + profit chart):** the profile's priced rows (ruling B), Bo5 included: Tennis-Data
   "Completed" and "Retired" matches (retirement ruling A, 2026-09-28), each priced in `FH_BOOK_ORDER` (some from our
   captures). Walkovers never. **Test:** `tools/test-ten325-retirements.js` (the real builder over a synthetic archive).

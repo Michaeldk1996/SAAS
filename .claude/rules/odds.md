@@ -255,8 +255,26 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   (`DatabaseTab.priceRows()` through `H2HPage.priceJoin`; its order Tennis-Data Pinnacle > our archive close > start − 10 >
   api-tennis Pinnacle (approx.) > Bet365, one source per match, `database.md` "Price join"). The five closes-shard tabs take
   it through `sfDbPxRows` (`fhFormPlayer`, `fhMeetings`, `meRowFromCareer`) and wait for it to load (`sfDbPxLoad`); the
-  Market edge builder (`build-market-edge.js` `loadDbPrices`) prices every Tennis-Data row the Database holds at the
-  Database's price and book. No page builds its own price for a match the Database holds.
+  Market edge builder (`build-market-edge.js`) reads ONLY the master file (below). No page builds its own price for a
+  match the Database holds.
+- **One master, one build (founder ruling 2026-10-17, "one source of truth for every match and every price").** The
+  protected archive (Tennis-Data originals, the Pinnacle archive, the snapshots) feeds ONE build step,
+  `build-database-yield.js`, which writes the Database files plus `database-yield-x.json` (the era shard: every priced
+  match before 2010 and the team events — Davis Cup, Laver Cup, United Cup, ATP Cup, Hopman — fed from our archive by
+  `pinarch.py td-feed` kind `team`) and `database-yield-master.json` (every priced match, one row each, winner first, with
+  its book code and set). The join (`DatabaseTab.priceRows()`) reads the era shard beside the two Database files on a COPY
+  of the dictionaries, so team and pre-2010 matches are priced on every join surface while every Database figure, ROI and
+  `tour-baselines.json` stays byte-identical (team events stay out of them, as before). Market edge reads the master and
+  never the Tennis-Data CSVs or a capture of its own; team events stay out of it; no master = no build (no fallback).
+  Neither file is committed. A missing era shard on the site = those matches read a dash (a 404 is "no rows"), never
+  another price. **Test:** `tools/test-market-edge-basis.js` (master price and book, team out, the no-master control),
+  `test-ten402-b.mjs` "the era shard", `tools/test-pinarch-tdfeed.py` (team kind). Measured on the live inputs 17 Oct
+  (probe r13): Database files byte-identical before / after; Market edge 44,365 of 44,368 sides unchanged, 0 prices
+  changed, 3 dropped (the Database's overround void), 195 added (October 2026, after Tennis-Data's last day); 56 team
+  matches priced, all "from Pinnacle history"; 16,495 pre-2010 matches (13,696 Tennis-Data Pinnacle, 2,799 Bet365).
+- **Lag (same ruling):** the publish fails when Market edge's index does not name the master as its source or its latest
+  match is not the Database's (`tools/price-consistency.mjs`, before the site-data upload; a committed floor shipped
+  after a failed build fails it). **Test:** `tools/test-price-consistency.mjs` part 6 (one day behind; no source).
   **Test:** `tools/price-consistency.mjs` (pipeline.yml, before the site-data upload; fails the publish): over every 2026
   ATP main-draw career match and a 1-in-10 player sample of every year, the page's own functions — the Database join, the
   tab row, the Form tab, the H2H tab (1-in-20 sample), the Market edge shard row, the Head to Head page's captured step —
@@ -264,8 +282,8 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `test-ten332-tournament.mjs` "founder ruling 2026-10-17 (item 1)", `tools/test-market-edge-basis.js` (Database first,
   R8 control).
   *Exceptions, reported by the same check and pending a founder ruling (not fixed):* a match the Database does not hold
-  (before 2010, Challenger / ITF, overround over 1.15, a join miss) keeps the surface's own closes price (`FH_BOOK_ORDER`;
-  the Market edge builder's R8 order); while the Database join has not loaded, or failed, the tabs show their closes price;
+  (Challenger / ITF, qualifying, overround over 1.15, a join miss) keeps the surface's own closes price (`FH_BOOK_ORDER`;
+  the Market edge shard simply has no row for it); while the Database join has not loaded, or failed, the tabs show their closes price;
   the Head to Head page's captured-Pinnacle step (`h2hCapPinnacle`) still overrides the join on that page.
 - **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).
   Every pipeline run exports the current close per match (`pinnacle-closes.json`, an archive close over a captured one)

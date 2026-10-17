@@ -51,7 +51,7 @@ function page(opt) {
   const env = { fetched: [], repaints: [], frames: [], idles: [], mounted: 0, fail: opt.fail || 0, now: 1e6, h2hRenders: 0 };
   env.fetch = url => { env.fetched.push(url);
     if (env.fail > 0) { env.fail--; return Promise.reject(new Error('network down')); }
-    return Promise.resolve({ ok: true, json: () => Promise.resolve(/players/.test(url) ? { names: [] } : { meta: opt.meta || {}, rows: [] }) }); };
+    return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(/players/.test(url) ? { names: [] } : /-x\.json/.test(url) ? { xRows: [], xNames: [] } : { meta: opt.meta || {}, rows: [] }) }); };
   env.raf = fn => { env.frames.push(fn); return env.frames.length; };
   env.ric = fn => { env.idles.push(fn); return env.idles.length; };
   env.frame = () => { const q = env.frames.splice(0); q.forEach(f => f(0)); return q.length; };
@@ -59,12 +59,13 @@ function page(opt) {
   const el = () => ({ style: { display: 'none' } });
   env.document = { _els: { playerListView: el(), playerProfileView: el() }, getElementById(id) { return this._els[id] || null; } };
   const DB = new Function('fetch', `
-    var BASE_URL = './database-yield.json', NAMES_URL = './database-yield-players.json';
-    var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null;
+    var BASE_URL = './database-yield.json', NAMES_URL = './database-yield-players.json', X_URL = './database-yield-x.json';
+    var DATA=null, NAMES=null, XDATA=null, M=null, basePromise=null, namesPromise=null, xPromise=null, playerIndex=null;
     function buildPlayerIndex(){ playerIndex = {}; }
     function dbPriceJoinRows(d, n){ return { rows: d.rows, names: n.names, meta: d.meta }; }
     ${slice('loadBase')}
     ${slice('loadNames')}
+    ${slice('loadX')}
     var PRICE_JOIN = null;
     ${slice('priceRows')}
     return { priceRows: priceRows, loadBase: loadBase, loadNames: loadNames };`)(env.fetch);
@@ -114,7 +115,8 @@ function page(opt) {
       get st(){ return _sfDbJoinSt; }, get join(){ return _sfDbJoin; } };`)(env);
   return { env, api };
 }
-const yieldFetches = env => env.fetched.filter(u => /database-yield/.test(u)).length;
+// the two Database files (the era shard, database-yield-x.json, rides with them: asserted once per session below)
+const yieldFetches = env => env.fetched.filter(u => /database-yield(-players)?\.json$/.test(u)).length;
 
 test('R2 · opening a profile requests no Database file before its first paint; the first idle moment after it requests the join once', async () => {
   const { env, api } = page();
@@ -134,7 +136,7 @@ test('R2 · opening a profile requests no Database file before its first paint; 
   await flush(); await flush(); await flush();
   assert.equal(api.st, 'ready');
   assert.ok(env.repaints.length > r0, 'no repaint when the join landed');
-  assert.deepEqual(env.fetched, ['./database-yield.json', './database-yield-players.json']);
+  assert.deepEqual(env.fetched, ['./database-yield.json', './database-yield-players.json', './database-yield-x.json']);
   assert.ok(env.repaints.includes('2382'), 'the profile was not repainted when the join landed');
 });
 
@@ -177,6 +179,7 @@ test('R2 · one fetch per session, shared by the profile, the Head to Head page 
   api.pp2MountNow('2072'); env.frame(); env.frame(); env.idle(); await flush();   // another profile
   assert.equal(env.fetched.filter(u => u === './database-yield.json').length, 1, env.fetched.join(', '));
   assert.equal(env.fetched.filter(u => u === './database-yield-players.json').length, 1, env.fetched.join(', '));
+  assert.equal(env.fetched.filter(u => u === './database-yield-x.json').length, 1, env.fetched.join(', '));
   assert.equal(env.priceRowsCalls, 1, 'the join was computed more than once');
 });
 

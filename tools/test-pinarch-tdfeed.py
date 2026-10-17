@@ -163,12 +163,17 @@ na = [r for r in nf if r['kind'] == 'add']
 check('ruling 4: a new event is added from our own tables (surface Hard, court Indoor, ATP250, best of 3; R32 = 1st Round of a 32 draw)',
       len(na) == 2 and all(r['series'] == 'ATP250' and r['surface'] == 'Hard' and r['court'] == 'Indoor' and r['bestof'] == '3' for r in na)
       and sorted(r['round'] for r in na) == ['1st Round', '2nd Round'] and nr['newEvent'] == 2, (na, nr))
-check('ruling 4: Davis Cup stays out; an event the catalog lacks is counted, never guessed', nr['noTdEdition'] == 2, nr)
+check('ruling 4: an event the catalog lacks is counted, never guessed', nr['noTdEdition'] == 1, nr)
+# founder ruling 2026-10-17 (fix 2): a Davis Cup close is never a Database row ('add'); it is its own kind, 'team', for the era shard
+tm = [r for r in nf if r['kind'] == 'team']
+check('2026-10-17 fix 2: Davis Cup is a team row (the era shard), never an added Database row',
+      len(tm) == 1 and nr['team'] == 1 and not [r for r in nf if r['kind'] == 'add' and 'Davis' in r['tournament']]
+      and tm[0]['label'] and tm[0]['psw'] and tm[0]['psl'], (tm, nr))
 slam = [dict(NE[0], apiTennis=dict(NE[0]['apiTennis'], tournament_name='ATP Newslam'))]
 sf_, _ = P.td_feed_rows(slam, tdn, {}, '2026-01-13', None, {'Newslam': 'Grand Slam'}, surf)
 check('ruling 4: best of 5 at a Grand Slam only', [r['bestof'] for r in sf_ if r['kind'] == 'add'] == ['5'], sf_)
 n0, r0 = P.td_feed_rows(NE, tdn, {}, '2026-01-13')
-check('control: without the tables a new event is not added (the pre-ruling behaviour)', not [r for r in n0 if r['kind'] == 'add'] and r0['noTdEdition'] == 4, r0)
+check('control: without the tables a new event is not added (the pre-ruling behaviour)', not [r for r in n0 if r['kind'] == 'add'] and r0['noTdEdition'] == 3 and r0['team'] == 1, r0)
 check('ruling 4: the real catalog parses (Madrid ATP 1000, Wimbledon Grand Slam)', P.parse_catalog(open(os.path.join(ROOT, 'bsp-consult-dashboard.html')).read()).get('Madrid') == 'ATP 1000')
 print(f'\ntest-pinarch-tdfeed: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

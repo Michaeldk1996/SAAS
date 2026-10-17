@@ -885,7 +885,7 @@ test('market-edge per run: a player already published but off the board roster i
   const { execFileSync } = require('node:child_process');
   const root = mkdtempSync(join(tmpdir(), 'ten263me-'));
   try {
-    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js']) writeFileSync(join(root, f), readFileSync(join(HERE, f)));
+    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js', 'build-database-yield.js']) writeFileSync(join(root, f), readFileSync(join(HERE, f)));
     mkdirSync(join(root, 'odds-archive')); mkdirSync(join(root, 'market-edge'));
     const H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl,maxw,maxl,avgw,avgl,avgsrc';
     writeFileSync(join(root, 'odds-archive', '2025.csv'), [H,
@@ -893,6 +893,8 @@ test('market-edge per run: a player already published but off the board roster i
       '2025-05-02,Madrid Masters,Masters 1000,Outdoor,Clay,Quarterfinals,3,Alcaraz C.,Sinner J.,2,1,Completed,1.8,2.0,1.85,2.05,1.9,2.1,1.82,2.02,file'].join('\n') + '\n');
     writeFileSync(join(root, 'player-profiles.json'), JSON.stringify({ players: { 5: { name: 'J. Sinner' } } }));
     writeFileSync(join(root, 'market-edge', '6.json'), JSON.stringify({ name: 'C. Alcaraz', stale: true, matches: [] }));
+    // Market edge reads the master the Database builder writes from the archive in the same run (founder 2026-10-17).
+    execFileSync(process.execPath, ['build-database-yield.js'], { cwd: root, stdio: 'pipe' });
     execFileSync(process.execPath, ['build-market-edge.js', '--quiet'], { cwd: root });
     const alc = JSON.parse(readFileSync(join(root, 'market-edge', '6.json'), 'utf8'));
     assert.ok(!alc.stale, 'the off-roster shard was rewritten');

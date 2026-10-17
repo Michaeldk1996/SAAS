@@ -6,7 +6,8 @@
 //   2. control: the Market edge shard shows another price for that match → exit 1, "Market edge shard ≠ Database";
 //   3. control: the closes shard's captured step shows another price → exit 1, "Head to Head captured step ≠ Database";
 //   4. control: a site with no player to check → exit 1 (a check on an empty set is not a check);
-//   5. wiring: pipeline.yml runs the guard before the site-data upload, fail-closed.
+//   5. wiring: pipeline.yml runs the guard before the site-data upload, fail-closed;
+//   6. lag: Market edge's index names the master and its latest match; controls: a day behind, a floor with no source.
 import { spawnSync, execFileSync } from 'node:child_process';
 import { mkdtempSync, mkdirSync, writeFileSync, copyFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -60,6 +61,21 @@ else {
     r = run();
     check('3 · control: a captured close with another price (the Head to Head page step) → exit 1', r.status === 1 && /captured step ≠ Database/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));
     writeFileSync(join(site, 'match-closes', K + '.json'), closes([]));
+
+    // 6 · lag (founder ruling 2026-10-17): Market edge's latest match = the master's, and its index names the master
+    const b = JSON.parse(readFileSync(join(site, 'database-yield.json'), 'utf8'));
+    let last = 0; for (const k of ['rows', 'retRows', 'tieRows']) for (const x of b[k] || []) if (x[0] > last) last = x[0];
+    const iso = `${String(last).slice(0, 4)}-${String(last).slice(4, 6)}-${String(last).slice(6, 8)}`;
+    writeFileSync(join(site, 'market-edge-index.json'), JSON.stringify({ source: 'database-yield-master.json', latestMatch: iso, players: {} }));
+    r = run(); s = summary(r);
+    check('6 · Market edge built from the master with its latest match → exit 0, lag checked', r.status === 0 && s && s.lag && s.lag.checked === true, (r.stdout || '') + (r.stderr || ''));
+    writeFileSync(join(site, 'market-edge-index.json'), JSON.stringify({ source: 'database-yield-master.json', latestMatch: '2026-09-13', players: {} }));
+    r = run();
+    check('6 · control: Market edge one match day behind the master → exit 1, "lags the master"', r.status === 1 && /lags the master/.test(r.stderr), (r.stdout || '') + (r.stderr || ''));
+    writeFileSync(join(site, 'market-edge-index.json'), JSON.stringify({ latestMatch: iso, players: {} }));
+    r = run();
+    check('6 · control: a committed floor (no source) → exit 1', r.status === 1 && /lags the master/.test(r.stderr), (r.stdout || '') + (r.stderr || ''));
+    rmSync(join(site, 'market-edge-index.json'));
 
     writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify({ matches: [] }));
     r = run();
