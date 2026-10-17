@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+/*
+ * tools/started-evidence.js — did a match Tennis-Data does not mark Completed / Retired actually start?
+ * Founder ruling 2026-10-17 (odds master close-out, item 1): a match that STARTED counts as played and shows its price —
+ * retired, defaulted, or marked "Awarded" / "Disqualified" / any other non-result after play began. Only a match where no
+ * ball was played (a true walkover) stays a dash. Where the sources disagree on whether it started, it is flagged and
+ * keeps the dash — never picked.
+ *
+ * Sources per match (no other, nothing guessed):
+ *   - Tennis-Data's comment: "Walkover" claims no ball was played; Awarded / Disqualified / Sched / … claim nothing.
+ *   - each player's career-history row of the match (the pipeline's store: api-tennis rows 2021 on, Tennis Abstract rows
+ *     before): `walkover: true` = no ball played; a set score with a game won = started; neither = no evidence.
+ * The Database build adds one more source: our archive's close for the row (td-feed override), which exists only for a
+ * match our live poller saw in play (pinarch: a close is cut at a verified live start) — api-tennis showing it started.
+ * Verdict: `started` when at least one source says started, none says walkover and Tennis-Data does not say Walkover;
+ * `walkover` when every source that speaks says no ball was played; `disagree` when they differ; `none` when no career
+ * row speaks (and Tennis-Data claims nothing). Only `started` is priced (build-database-yield.js, behind the retired flag).
+ *
+ * Usage: node tools/started-evidence.js [--root DIR] [--out started-evidence.json]
+ * Reads DIR/odds-archive/*.csv, DIR/career-history/{key}.json, DIR/player-profiles.json + DIR/matches.json (the roster
+ * the name join reads). No network. A store with no career-history/ writes nothing and exits 0 (no evidence = a dash).
+ */
+const fs = require('fs');
+const path = require('path');
+const { readCsv, keyFromArchiveName, ourCandidateKeys } = require('../build-odds-performance.js');
+const { makeResolver } = require('../build-match-closes.js');
+
+// Tennis-Data comments that are a result as they stand (build-database-yield.js RESULT_STANDS + RETIRED)
+const PLAYED_COMMENTS = new Set(['Completed', 'Retired', 'Rrtired']);
+const WALKOVER_COMMENT = 'Walkover';
+// a career row of this match: dated [−16, +3] days of Tennis-Data's date (an archive row is dated at its event's start)
+const WINDOW = [-16, 3];
+
+const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
+const day = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; };
+const price = v => { const f = parseFloat(v); return Number.isFinite(f) && f >= 1.01 && f <= 1000 ? f : null; };
+
+// one career row → what it says about the start
+function rowSays(r) {
+  if (!r) return null;
+  if (r.walkover) return 'walkover';
+  const games = (Array.isArray(r.sets) ? r.sets : []).reduce((a, s) => a + (+(s && s.p) || 0) + (+(s && s.o) || 0), 0);
+  return games > 0 ? 'started' : null;
+}
+function verdictOf(comment, says) {
+  const s = says.filter(Boolean);
+  const claims = comment === WALKOVER_COMMENT ? s.concat('walkover') : s;
+  if (!claims.length) return 'none';
+  if (claims.every(x => x === 'started')) return 'started';
+  if (claims.every(x => x === 'walkover')) return 'walkover';
+  return 'disagree';
+}
+
+function build(root) {
+  const chDir = path.join(root, 'career-history');
+  if (!fs.existsSync(chDir)) return null;
+  const roster = new Map();
+  const readJson = (p, d) => { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { return d; } };
+  const p = readJson(path.join(root, 'player-profiles.json'), {}).players || {};
+  Object.entries(p).forEach(([k, v]) => { if (v && v.name) roster.set(String(k), String(v.name)); });
+  const m = readJson(path.join(root, 'matches.json'), []);
+  (Array.isArray(m) ? m : (m.matches || [])).forEach(x => { if (x.p1Key != null && x.p1 && !roster.has(String(x.p1Key))) roster.set(String(x.p1Key), x.p1);
+    if (x.p2Key != null && x.p2 && !roster.has(String(x.p2Key))) roster.set(String(x.p2Key), x.p2); });
+  const idx = readJson(path.join(root, 'career-history-index.json'), {}).players || {};
+  Object.entries(idx).forEach(([k, v]) => { const n = v && (v.name || v.n); if (n && !roster.has(String(k))) roster.set(String(k), String(n)); });
+  const res = makeResolver(roster);
+  const shardCache = new Map();
+  const shard = k => { if (!shardCache.has(k)) { const d = readJson(path.join(chDir, `${k}.json`), null); shardCache.set(k, d ? (d.matches || []) : null); } return shardCache.get(k); };
+  const surnameOf = n => { const c = ourCandidateKeys(n); return c.length ? c.map(x => x.surname) : []; };
+
+  const files = fs.readdirSync(path.join(root, 'odds-archive')).filter(f => /^\d{4}\.csv$/.test(f)).sort();
+  const out = [];
+  for (const f of files) for (const r of readCsv(path.join(root, 'odds-archive', f))) {
+    const comment = String(r.comment || '').trim();
+    if (PLAYED_COMMENTS.has(comment)) continue;
+    const priced = (price(r.psw) && price(r.psl)) || (price(r.b365w) && price(r.b365l));
+    if (!priced) continue;                     // nothing to price either way
+    const d = day(r.date);
+    const keyW = res.archive(r.winner), keyL = res.archive(r.loser);
+    const look = (key, won, oppArchive) => {
+      if (!key) return { key: null, says: null, why: 'name not joined' };
+      const rows = shard(key);
+      if (!rows) return { key, says: null, why: 'no career-history shard' };
+      const oppK = keyFromArchiveName(oppArchive);
+      const hits = rows.filter(x => {
+        const dx = day(x.date); if (d == null || dx == null) return false;
+        const dd = dx - d; if (dd < WINDOW[0] || dd > WINDOW[1]) return false;
+        if (!!x.won !== won) return false;
+        return oppK && surnameOf(x.opponent).includes(oppK.surname);
+      });
+      if (hits.length !== 1) return { key, says: null, why: hits.length ? `${hits.length} candidate rows` : 'no career row' };
+      const h = hits[0];
+      return { key, says: rowSays(h), why: null, row: { date: h.date, tournament: h.tournament, round: h.round || null, sets: h.sets || null,
+        walkover: !!h.walkover, retired: !!h.retired, defaulted: !!h.defaulted, src: h.src || (h.eventKey != null ? 'fixtures' : 'archive') } };
+    };
+    const w = look(keyW, true, r.loser), l = look(keyL, false, r.winner);
+    out.push({ date: r.date, tournament: r.tournament, round: r.round, winner: r.winner, loser: r.loser, comment,
+      says: [w.says, l.says], verdict: verdictOf(comment, [w.says, l.says]), winnerRow: w, loserRow: l });
+  }
+  const counts = {};
+  out.forEach(x => { const k = `${x.comment}|${x.verdict}`; counts[k] = (counts[k] || 0) + 1; });
+  return { rule: 'started = a career row shows a game played, none shows a walkover, and Tennis-Data does not say Walkover (founder 2026-10-17)',
+    builtAt: new Date().toISOString(), rows: out.length, counts, matches: out };
+}
+
+module.exports = { build, rowSays, verdictOf, PLAYED_COMMENTS };
+
+if (require.main === module) {
+  const root = path.resolve(arg('--root', '.')), outPath = arg('--out', path.join(root, 'started-evidence.json'));
+  const r = build(root);
+  if (!r) { console.log('started-evidence: no career-history/ in ' + root + ' — no evidence written (every non-result row keeps its dash)'); process.exit(0); }
+  const tmp = outPath + '.tmp';
+  fs.writeFileSync(tmp, JSON.stringify(r, null, 1)); fs.renameSync(tmp, outPath);
+  console.log(`started-evidence: ${r.rows} non-result priced Tennis-Data rows · ${JSON.stringify(r.counts)}`);
+}

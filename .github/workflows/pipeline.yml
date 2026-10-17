@@ -365,55 +365,60 @@ jobs:
       # Founder brief 2026-10-14 (item 1 + 2): the match-close shards are rebuilt from the permanent Pinnacle archive
       # (Supabase pinnacle_archive_close — .claude/rules/pinnacle-archive.md): the current close per match, an archive
       # close ("from Pinnacle history") over a captured one. This run's refreshed captured closes are appended first
-      # (INSERT … ON CONFLICT DO NOTHING through tools/pinarch.py, the one writer); the export is a SELECT. A failed read leaves no export, and
-      # build-match-closes falls back to the committed captured-closes-pinnacle.json (named in its stats) — never
-      # nothing, and the step-check reports the failure.
-      - name: Export the archive's Pinnacle closes (best-effort)
+      # (INSERT … ON CONFLICT DO NOTHING through tools/pinarch.py, the one writer); the export is a SELECT.
+      # Founder ruling 2026-10-17 (odds master close-out, item 3): FAIL-CLOSED. The archive unreachable, or answering
+      # short, fails the run: nothing is uploaded, the site keeps the last good master and pre-2010 file, and the
+      # failure step below sends a Telegram alert. No `|| true`, no fallback to a partial Database.
+      - name: Export the archive's Pinnacle closes (fail-closed)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           # founder brief 2026-10-15 item 5: each close's player keys come from the current api-tennis fixture, every run
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
-          t0=$(date +%s); rc=0
-          rm -f pinnacle-closes.json
+          rm -f pinnacle-closes.json .archive-failed
           # this run's refreshed captured closes go into the archive first (insert-only; a held row adds nothing)
-          python3 tools/pinarch.py import-captured captured-closes-pinnacle.json || rc=$?
-          python3 tools/pinarch.py export pinnacle-closes.json || rc=$?
-          node tools/step-check.mjs --step "Export the archive's Pinnacle closes (best-effort)" --rc "$rc" --since "$t0" --fresh pinnacle-closes.json
+          python3 tools/pinarch.py import-captured captured-closes-pinnacle.json || { echo "pinarch import-captured failed" > .archive-failed; exit 1; }
+          python3 tools/pinarch.py export pinnacle-closes.json || { echo "pinarch export failed (archive unreachable?)" > .archive-failed; exit 1; }
 
       # Founder brief 2026-10-14 (F3c): our Pinnacle closes are fed into the Database archive. td-feed turns the export
       # into a Tennis-Data-shaped feed (a Tennis-Data 2026 row with no Pinnacle pair takes our close; ATP main-draw matches
       # after the Tennis-Data file's last day are added from an archive close with its api-tennis result), and
-      # build-database-yield.js rebuilds database-yield.json, its names shard and tour-baselines.json from
-      # odds-archive/*.csv + the feed — BEFORE the tournament market, the match-close shards and the site copy read them.
-      # No network calls. A failed feed leaves no feed file and the build is the Tennis-Data archive alone (byte-identical
-      # to the committed copy); a failed build keeps the committed files (atomic writes). The committed copies stay the
-      # drop-in job's.
-      # Founder ruling 2026-10-16 (ruling 1): Pinnacle (approx.) — api-tennis's stored Pinnacle snapshot for an ATP
-      # main-draw match of 13 Jan - 16 Sep 2026 with no Tennis-Data Pinnacle close, from the historical archive's snapshot
-      # table (a SELECT; its own source and label, never a close). build-database-yield.js prices such a row on it only
-      # where neither Tennis-Data nor our Pinnacle archive holds a close; Bet365 stays the fallback. No snapshot rows yet
-      # (the import has not run) = no feed file, said in the log; any other read failure is reported by the step-check.
-      - name: Export the Pinnacle (approx.) snapshots (best-effort)
+      # build-database-yield.js rebuilds database-yield.json, its names shard, tour-baselines.json, the era shard and the
+      # master from odds-archive/*.csv + the feed — BEFORE the tournament market, the match-close shards and the site copy
+      # read them. Founder ruling 2026-10-16 (ruling 1): Pinnacle (approx.) — the historical archive's snapshot table (a
+      # SELECT; its own source and label, never a close). Founder ruling 2026-10-17 (close-out item 1): a match that
+      # started is priced — tools/started-evidence.js reads both players' career-history rows (written by run-pipeline.js
+      # above) for every Tennis-Data non-result row. All fail-closed (close-out item 3), then the archive gate compares
+      # every count with the last good run's.
+      - name: Export the Pinnacle (approx.) snapshots (fail-closed)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          t0=$(date +%s); rc=0
           rm -f pinnacle-approx.csv
-          python3 tools/tdarch.py approx-feed pinnacle-approx.csv || rc=$?
-          node tools/step-check.mjs --step "Export the Pinnacle (approx.) snapshots (best-effort)" --rc "$rc" --since "$t0"
+          python3 tools/tdarch.py approx-feed pinnacle-approx.csv || { echo "tdarch approx-feed failed (archive unreachable?)" > .archive-failed; exit 1; }
 
-      - name: Feed the archive's Pinnacle closes into the Database (best-effort)
+      - name: Feed the archive's Pinnacle closes into the Database (fail-closed)
         run: |
-          t0=$(date +%s); rc=0
-          rm -f pinnacle-archive-td.csv
-          if [ -s pinnacle-closes.json ]; then python3 tools/pinarch.py td-feed pinnacle-closes.json pinnacle-archive-td.csv || rc=$?; fi
-          node tools/step-check.mjs --step "Feed the archive's Pinnacle closes into the Database (best-effort)" --rc "$rc" --since "$t0" --fresh pinnacle-archive-td.csv
-          t0=$(date +%s); rc=0
-          node build-database-yield.js || rc=$?
-          node tools/step-check.mjs --step "Rebuild database-yield.json with the archive feed (best-effort)" --rc "$rc" --since "$t0" --fresh database-yield.json database-yield-players.json tour-baselines.json database-yield-x.json database-yield-master.json
+          rm -f pinnacle-archive-td.csv started-evidence.json
+          python3 tools/pinarch.py td-feed pinnacle-closes.json pinnacle-archive-td.csv || { echo "pinarch td-feed failed" > .archive-failed; exit 1; }
+          node tools/started-evidence.js --root . --out started-evidence.json || { echo "started-evidence failed" > .archive-failed; exit 1; }
+          node build-database-yield.js || { echo "build-database-yield failed" > .archive-failed; exit 1; }
+          node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json
+
+      - name: Alert — the Pinnacle archive gate failed (Telegram)
+        if: failure() && hashFiles('.archive-failed') != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          msg="Stennisfy: Pinnacle archive gate failed · run ${GITHUB_RUN_ID} · $(date -u +%Y-%m-%dT%H:%MZ) · nothing published, the site keeps the last good data"
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then echo "::error::archive gate failed and no Telegram secret is set: alert NOT sent"; exit 1; fi
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${msg}")
+          echo "Telegram alert: HTTP ${code}"
+          [ "$code" = "200" ] || { echo "::error::archive gate Telegram alert failed (HTTP ${code})"; exit 1; }
 
       # Market-performance shards (the legacy profile odds card), rebuilt every run against the profiles the pipeline
       # just refreshed. Founder ruling 2026-10-17 (ruling 5): they read the ONE master the Database rebuild above wrote
@@ -759,7 +764,7 @@ jobs:
           # events) the one price join reads beside the two files above. Built by the same run, never committed. Missing
           # (that run failed) = those matches read a dash on every surface (the page treats a 404 as "no rows"), never
           # another price; said out loud here.
-          if [ -f database-yield-x.json ]; then cp database-yield-x.json _site/; else echo "::warning::database-yield-x.json not built this run: matches before 2010 and team events read a dash"; fi
+          cp database-yield-x.json database-yield-master-meta.json _site/   # close-out item 3: both built this run (the archive gate failed the run otherwise)
           # TEN-384: the player profile's Market edge tour baselines, written by the SAME
           # build-database-yield.js run (so they equal the Database Tour aggregates) and loaded
           # with the profile data. Committed but not copied = 404 = every profile's tour line

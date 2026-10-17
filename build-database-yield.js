@@ -121,7 +121,34 @@ const LEVEL_ORDER = ['Grand Slam', 'Masters 1000', 'ATP 500', 'ATP 250', 'Finals
 const RESULT_STANDS = new Set(['Completed']);
 const RETIRED = new Set(['Retired', 'Rrtired']);   // Rrtired = Retired typo in the source
 const WALKOVER = new Set(['Walkover']);
-// everything else non-Completed (Awarded/Disqualified/Sched) => edge non-result, excluded
+// everything else non-Completed (Awarded/Disqualified/Sched) => edge non-result, excluded — UNLESS the match started
+// (founder ruling 2026-10-17, odds master close-out item 1): a match that started counts as played and shows its price —
+// retired, defaulted, or marked "Awarded" / "Disqualified" / any other non-result after play began. Only a match where
+// no ball was played (a true walkover) stays a dash; where the sources disagree on whether it started, the dash stays.
+// Evidence: started-evidence.json (tools/started-evidence.js: both players' career-history rows + Tennis-Data's comment,
+// verdict 'started' only), and for an archive-fed row our own live-flip (the archive derives a close only for a match our
+// poller saw go live; td-feed passes api-tennis "Awarded" through as the row's comment). A started non-result is priced
+// BEHIND the retired flag, settled on the official result like a retirement: no Database figure moves.
+const STARTED_PATH = process.env.DB_YIELD_STARTED || path.join(__dirname, 'started-evidence.json');
+const started = { on: false, evidence: 0, says: new Map(), matched: 0, priced: 0, byComment: {} };
+if (fs.existsSync(STARTED_PATH)) {
+  const ev = JSON.parse(fs.readFileSync(STARTED_PATH, 'utf8'));
+  if (!ev || !Array.isArray(ev.matches)) { console.error(`${STARTED_PATH}: no matches array`); process.exit(1); }
+  started.on = true; started.evidence = ev.matches.length;
+  for (const x of ev.matches) started.says.set([x.date, x.tournament, x.winner, x.loser].join('|'), Array.isArray(x.says) ? x.says : []);
+}
+// the row's verdict: its career sources (the evidence file) + our archive's live-flip close (a td-feed override), against
+// Tennis-Data's own comment (tools/started-evidence.js verdictOf — the one rule)
+// loaded only when a source speaks (a copy of this builder in a test's temp folder carries no tools/)
+let _startedVerdict = null;
+const startedVerdict = (comment, says) => {
+  if (!says.length) return 'none';
+  _startedVerdict = _startedVerdict || require('./tools/started-evidence.js').verdictOf;
+  return _startedVerdict(comment, says);
+};
+const startedOf = (tdKey, comment, archiveLiveFlip) =>
+  startedVerdict(comment, (started.says.get(tdKey) || []).concat(archiveLiveFlip ? ['started'] : [])) === 'started';
+const FEED_STARTED = new Set(['Awarded']);   // an archive-fed row: api-tennis "Awarded" after our poller saw it go live
 
 function num(x) {
   if (x === undefined || x === null) return NaN;
@@ -225,9 +252,16 @@ function processLine(c, col, season, fromFeed) {
 
     const comment = (c[col.comment] || '').trim();
     if (WALKOVER.has(comment)) { bucket.walkover++; return; }
+    // founder 2026-10-17 (close-out item 1): a non-result that STARTED is priced like a retirement (behind the flag)
+    const tdKey = [(c[col.date] || '').trim(), (c[col.tournament] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()].join('|');
+    const startedNonResult = !RESULT_STANDS.has(comment) && !RETIRED.has(comment)
+      && (fromFeed ? FEED_STARTED.has(comment) && !!(c[col.label] || '').trim() : startedOf(tdKey, comment, feedOn && feed.overrides.has(tdKey)));
+    if (startedNonResult) started.matched++;
     const isRet = RETIRED.has(comment);
     if (isRet) bucket.retired++;                                  // voided on the Database, per the 2026-09-20 ruling
-    else if (!RESULT_STANDS.has(comment)) { bucket.edge++; return; } // Awarded/Disqualified/Sched
+    else if (!RESULT_STANDS.has(comment)) { bucket.edge++; if (!startedNonResult) return; } // Awarded/Disqualified/Sched: out of the Database rows either way
+    // a retirement, or a non-result that started: priced behind the retired flag, never a Database row
+    const behindFlag = isRet || startedNonResult;
 
     // resolving book, per row (TEN-384 option "me" = build-market-edge.js pickBook): Pinnacle
     // when both of its prices are valid, else Bet365 when both of its are; neither = dropped.
@@ -263,7 +297,7 @@ function processLine(c, col, season, fromFeed) {
     const bookIdx = (validPrice(P[0]) && validPrice(P[1])) ? pinIdx : AP ? (APS === 'od' ? 5 : 2) : (validPrice(B365[0]) && validPrice(B365[1])) ? 1 : -1;
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
-    const B_ = isRet ? retBucket : bucket;
+    const B_ = behindFlag ? retBucket : bucket;
     if (bookIdx < 0) { B_.noPrice++; return; }
     const [pw, pl] = isPinIdx(bookIdx) ? P : isApproxIdx(bookIdx) ? AP : B365;
 
@@ -273,12 +307,12 @@ function processLine(c, col, season, fromFeed) {
       if ((1 / pw) + (1 / pl) <= 1.15 && season >= WINDOW_START && Number.isFinite(dI) && lvT) {
         tieAtt.push(att());
         tieRaw.push([dI, levels.indexOf(lvT), (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
-          (c[col.tournament] || '').trim(), pw, pl, 1, bookIdx, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), isRet ? 1 : 0]);
+          (c[col.tournament] || '').trim(), pw, pl, 1, bookIdx, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), behindFlag ? 1 : 0]);
       }
       else if ((1 / pw) + (1 / pl) <= 1.15 && season < WINDOW_START && Number.isFinite(dI)) {   // a tie before 2010: the era shard
         xAtt.push(att());
         xRaw.push([dI, lvT || null, (c[col.surface] || '').trim(), (c[col.round] || '').trim(), (c[col.tournament] || '').trim(),
-          pw, pl, 1, bookIdx, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), 'pe' + (isRet ? 'r' : '')]);
+          pw, pl, 1, bookIdx, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), 'pe' + (behindFlag ? 'r' : '')]);
       }
       return;
     }
@@ -296,7 +330,8 @@ function processLine(c, col, season, fromFeed) {
         xAtt.push(att());
         xRaw.push([dP, LEVEL_MAP[(c[col.series] || '').trim()] || null, (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
           (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
-          (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), 'p' + (isRet ? 'r' : '')]);
+          (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), 'p' + (behindFlag ? 'r' : '')]);
+        if (startedNonResult) { started.priced++; started.byComment[comment] = (started.byComment[comment] || 0) + 1; }
       }
       return;
     }
@@ -305,7 +340,7 @@ function processLine(c, col, season, fromFeed) {
     const dateStr = (c[col.date] || '').trim();
     const dateInt = parseInt(dateStr.replace(/-/g, ''), 10);
     if (!Number.isFinite(dateInt)) { B_.edge++; return; }       // unparseable date (none expected)
-    if (isRet) {
+    if (behindFlag) {
       const canonR = LEVEL_MAP[(c[col.series] || '').trim()];
       if (!canonR) { retBucket.edge++; return; }
       retAtt.push(att());
@@ -313,6 +348,7 @@ function processLine(c, col, season, fromFeed) {
         (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
         (c[col.winner] || '').trim(), (c[col.loser] || '').trim()]);
       retBucket.priced++;
+      if (startedNonResult) { started.priced++; started.byComment[comment] = (started.byComment[comment] || 0) + 1; }
       return;
     }
     if (dateStr < dateMin) dateMin = dateStr;
@@ -360,7 +396,7 @@ if (feedOn) {
     processLine(FEED_COLS.map(k => r[k] == null ? '' : r[k]), col, parseInt(String(r.date).slice(0, 4), 10), true);
     const got = bucket.used + retBucket.priced - before;
     if (!got) feed.addedDropped++;
-    else if (RETIRED.has((r.comment || '').trim())) feed.addedRetired++;
+    else if (RETIRED.has((r.comment || '').trim()) || FEED_STARTED.has((r.comment || '').trim())) feed.addedRetired++;
     else feed.added++;
   }
 }
@@ -373,7 +409,7 @@ for (const r of feed.team) {
   const pw = num(r.psw), pl = num(r.psl), bk = ARCH_BOOK[(r.label || '').trim()];
   const dI = parseInt(String(r.date || '').replace(/-/g, ''), 10);
   if (!validPrice(pw) || !validPrice(pl) || bk == null || !Number.isFinite(dI) || (1 / pw) + (1 / pl) > 1.15) { feed.teamDropped++; continue; }
-  const isRet = RETIRED.has((r.comment || '').trim());
+  const isRet = RETIRED.has((r.comment || '').trim()) || FEED_STARTED.has((r.comment || '').trim());   // a started default
   xAtt.push([(r.series || '').trim(), (r.court || '').trim(), (r.bestof || '').trim(), (r.comment || '').trim(), '', '']);
   xRaw.push([dI, null, (r.surface || '').trim(), (r.round || '').trim(), (r.tournament || '').trim(), Math.min(pw, pl), Math.max(pw, pl),
     pw <= pl ? 1 : 0, bk, (r.winner || '').trim(), (r.loser || '').trim(), 't' + (isRet ? 'r' : '') + (pw === pl ? 'e' : '')]);
@@ -471,6 +507,11 @@ const meta = {
     dropped: { noResolvingBookPrice: retBucket.noPrice, exactTie: retBucket.tie, overroundGt115: retBucket.overround,
       preWindow: retBucket.preWindow, edge: retBucket.edge },
   },
+  // Founder ruling 2026-10-17 (close-out item 1): matches that STARTED but carry a non-result comment, priced behind the
+  // retired flag (in retRows / the era shard), settled on the official result. Absent = no evidence file this run.
+  ...(started.on || started.priced ? { started: {
+    rule: 'A match that started is priced (behind the retired flag); a true walkover stays a dash; disagreeing sources keep the dash.',
+    evidence: started.evidence, matched: started.matched, priced: started.priced, byComment: started.byComment } } : {}),
   // Founder ruling 2026-10-16: exact ties behind a flag — `tieRows` (this file) / `tieNames` (the names shard), parallel,
   // same shape as rows / names (favWon 1: the winner's price = the loser's). NOT Database rows: no Database figure,
   // tour-baselines.json or tournament-market.json reads them. Read only by the price join (DatabaseTab.priceRows).

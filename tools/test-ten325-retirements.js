@@ -161,7 +161,7 @@ function controls() {
   const BM = [
     ['master: back to "Completed" only', "const RETIRED = new Set(['Retired', 'Rrtired']);", 'const RETIRED = new Set([]);', 'db'],
     ['builder: typo row missed', "new Set(['retired', 'rrtired'])", "new Set(['retired'])", 'me'],
-    ['master: non-results let in', "else if (!RESULT_STANDS.has(comment)) { bucket.edge++; return; }", 'else if (false) { bucket.edge++; }', 'db'],
+    ['master: non-results let in', "else if (!RESULT_STANDS.has(comment)) { bucket.edge++; if (!startedNonResult) return; }", 'else if (false) { bucket.edge++; }', 'db'],
     ['builder: ret not stamped', 'ret: !!s.ret,', '', 'me'],
   ];
   const HM = [
