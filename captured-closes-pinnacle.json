@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-17T12:53:34.630Z",
+ "generatedAt": "2026-10-17T16:06:02.724Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "599db44e704466503f2180c6a64e9a9003bbaf3c",
-  "at": "2026-10-17T12:42:56Z"
+  "commit": "59022fc02167cd88284d5ac54f017b880b94232d",
+  "at": "2026-10-17T15:47:14Z"
  },
- "commitsScanned": 5254,
+ "commitsScanned": 5269,
  "lastRun": {
-  "from": "2026-10-17T09:07:42Z",
-  "snapshots": 18,
-  "added": 4,
+  "from": "2026-10-17T12:42:56Z",
+  "snapshots": 16,
+  "added": 3,
   "replaced": 0,
-  "series": 18,
-  "kept": 13,
+  "series": 21,
+  "kept": 16,
   "bySource": {
-   "api-tennis-live": 13
+   "api-tennis-live": 16
   },
   "byBook": {
-   "Pinnacle +30s": 13
+   "Pinnacle +30s": 16
   },
   "dropped": {
    "noStart": 5
@@ -8950,6 +8950,20 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12171769,
+   "date": "2026-10-17",
+   "p1Key": 7102,
+   "p2Key": 10840,
+   "p1Name": "C. Chidekh",
+   "p2Name": "G. A. Bailly",
+   "p1": 1.173,
+   "p2": 5.39,
+   "at": "2026-10-17T11:28:22.460Z",
+   "trueStart": "2026-10-17T13:02:57.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12171770,
    "date": "2026-10-17",
    "p1Key": 9222,
@@ -8960,6 +8974,34 @@
    "p2": 2.23,
    "at": "2026-10-17T11:55:28.893Z",
    "trueStart": "2026-10-17T12:27:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171771,
+   "date": "2026-10-17",
+   "p1Key": 15270,
+   "p2Key": 9362,
+   "p1Name": "N. Basavareddy",
+   "p2Name": "E. Butvilas",
+   "p1": 1.537,
+   "p2": 2.55,
+   "at": "2026-10-17T12:35:58.367Z",
+   "trueStart": "2026-10-17T14:50:57.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171772,
+   "date": "2026-10-17",
+   "p1Key": 1205,
+   "p2Key": 853,
+   "p1Name": "K. Coppejans",
+   "p2Name": "A. Guerrieri",
+   "p1": 2.27,
+   "p2": 1.662,
+   "at": "2026-10-17T11:43:06.030Z",
+   "trueStart": "2026-10-17T14:33:06.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
