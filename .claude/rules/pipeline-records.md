@@ -43,7 +43,9 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   ATP Stuttgart (June) is grass (`tools/test-ten445-stuttgart.js`); nothing in `.github/` or the pipeline
   requests tennisexplorer.com.
   **Test — the target TEN-443 step 2 is building to (fails until it lands; builders still bucket by
-  `event_date` year and count pre-2021 from the provider aggregate):** for any profiled player, every
+  `event_date` year and count pre-2021 from the provider aggregate):** for any player the site serves a profile
+  for (`player-index.json` `hasProfile`: 727 on 2026-10-17, not only the eager `player-profiles.json` set —
+  founder ruling 2026-10-17, gate d6814167), every
   Record-by-season cell (Total and each surface, every season and Career) equals TE's same cell minus TE's
   exhibition and club matches in it; a 29–31 Dec United Cup tie counts in the next season.
   *Convergence:* a builder change reaches a player's cells and shard on his next profile rebuild (14-day
