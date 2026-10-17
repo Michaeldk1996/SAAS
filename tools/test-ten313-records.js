@@ -314,8 +314,9 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
   {
     const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
     check('N3 wiring: runPipeline re-applies to matches after the writer and re-writes matches.json', () => {
-      const w = src.indexOf('await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m), yearTallies: careerYearTallies });');
-      const c = src.indexOf('const yearlySidesPatched = reconcileMatchesYearly(matches, careerYearTallies);');
+      // TEN-443: the writer also hands back the TE-merged tables (teYearly), and the re-apply copies them to the modal
+      const w = src.indexOf('await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m), yearTallies: careerYearTallies, teYearly });');
+      const c = src.indexOf('const yearlySidesPatched = reconcileMatchesYearly(matches, careerYearTallies, teYearly);');
       const r = src.indexOf('if (matchBf.patched > 0 || yearlySidesPatched > 0) {');
       assert.ok(w > 0 && c > w && r > c, `writer ${w}, re-apply ${c}, re-write ${r}`);
     });

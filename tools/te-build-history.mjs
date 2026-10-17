@@ -21,8 +21,8 @@
 //             January–November row on the same page belongs to the year before the page (dateAmbiguous when a page
 //             holds December rows only)
 //   cat     = ATP | ATP qual | Challenger | Challenger qual | ITF | ITF qual | Davis Cup | ATP Cup | United Cup |
-//             Laver Cup | Hopman Cup | Olympics | Next Gen Finals | Exhibition  (Exhibition = exhibition or club
-//             match: not counted, founder ruling TEN-443)
+//             Laver Cup | Hopman Cup | Olympics | Next Gen Finals | Exhibition (exhibition or club match: not counted,
+//             founder ruling TEN-443) | Other (an event no official catalogue names: not counted, listed for a ruling)
 //   surface = clay | hard | grass | null (TE "Not set");  court = indoor | outdoor | null
 // Run: node tools/te-build-history.mjs [--cache ~/.stennisfy/te-cache] [--out <repo root>] [--only key,key]
 import fs from 'node:fs';
@@ -38,22 +38,57 @@ const ent = (s) => s.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&#0
 const txt = (s) => ent(String(s).replace(/<sup>(\d+)<\/sup>/g, '($1)').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ').trim();
 const cacheFile = (rel) => path.join(CACHE, 'html', rel.replace(/^\/+/, '').replace(/[^A-Za-z0-9._-]+/g, '_') + '.html');
 
-// Event categories. Exhibition/club: TE's own exhibition and club events (founder ruling: not counted). Identified by
-// the EVENT TE files the match under — a name list kept narrow on purpose ("Hurlingham - exhibition", never ITF
-// "M25 Hurlingham", which carries a Futures/Challenger header and counts).
+// Event categories. TE files every match under an event name and nothing else, so the category is read from that
+// name — and an ATP event is ONLY one we can name from an official catalogue: api-tennis's ATP singles tournaments
+// (~/.stennisfy/te-cache/apitennis-tournaments.json) or the TML tour archive's tourney names. Anything that is not a
+// Futures group, a Challenger, a named team event, the Olympics or a catalogued ATP event is 'Other' — NOT counted
+// and listed for a ruling (club leagues, national championships, multi-sport games, wildcard play-offs …). Founder
+// ruling TEN-443: exhibitions and club matches are not counted; an unknown event is never counted on a guess.
 const TEAM = [['davis cup', 'Davis Cup'], ['atp cup', 'ATP Cup'], ['united cup', 'United Cup'], ['laver cup', 'Laver Cup'], ['hopman cup', 'Hopman Cup']];
-const EXHIBITION = [/exhibition/, /^boodles/, /^utr pro/, /^diriyah/, /^adria tour/, /^ultimate tennis showdown/, /^six kings/, /^6 kings/,
-  /^kooyong classic/, /^mubadala world tennis/, /^world tennis league/, /^tie break tens/, /bundesliga/, / - championship$/, /^hurlingham/];
+const EXHIBITION = [/\bexh\.?\b|exhibition/, /^boodles/, /^utr\b/, /^diriyah/, /^adria tour/, /^ultimate tennis showdown/, /^six kings/, /^6 kings/,
+  /^kooyong/, /^mubadala world tennis/, /^world tennis league/, /^tie break tens/, /^hurlingham/, /^battle of bradenton/, /^thiem's seven/,
+  /^international premier league/, /^world teamtennis/, /tennis chall\.?$/];
+const CLUB = [/bundesliga/, / - championship$/, /\bleague\b|\bliga\b|extraliga|nationalliga/, /team championship|team cup/, /national tour/, /championship$/, /assoluti/];
+const keyOf = (s) => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
+  .replace(/\bsaint\b/g, 'st').replace(/[^a-z]/g, '');
+let ATP_NAMES = null;
+function atpNames() {
+  if (ATP_NAMES) return ATP_NAMES;
+  ATP_NAMES = new Set();
+  const cat = path.join(CACHE, 'apitennis-tournaments.json');
+  if (fs.existsSync(cat)) for (const t of JSON.parse(fs.readFileSync(cat, 'utf8')).result || [])
+    if (/atp singles/i.test(t.event_type_type || '')) ATP_NAMES.add(keyOf(t.tournament_name).replace(/^atp/, ''));
+  const tml = process.env.TML_CACHE || path.join(os.homedir(), 'bsp-consult-project', 'tml-cache');
+  if (fs.existsSync(tml)) for (const f of fs.readdirSync(tml).filter((x) => /^\d{4}\.csv$/.test(x))) {
+    const lines = fs.readFileSync(path.join(tml, f), 'utf8').split(/\r?\n/); const h = lines[0].split(','); const i = h.indexOf('tourney_name');
+    for (const l of lines.slice(1)) { const v = l.split(',')[i]; if (v) ATP_NAMES.add(keyOf(v)); }
+  }
+  if (!ATP_NAMES.size) throw new Error('no ATP event catalogue (api-tennis tournaments or tml-cache) — refusing to classify events');
+  return ATP_NAMES;
+}
+// TE spells some catalogued events differently ("Kitzbühel" / "Kitzbuhel", "Saint Petersburg" / "St. Petersburg",
+// "Masters Cup ATP" / "Tour Finals"); a TE name that equals, or extends, a catalogued name of 5+ letters is that event
+const TE_ATP_ALIAS = { masterscupatp: 'tourfinals', frenchopen: 'rolandgarros', queensclub: 'queensclub', hertogenbosch: 'shertogenbosch' };
+function isAtpEvent(tour) {
+  const k = keyOf(tour); const names = atpNames();
+  if (names.has(k) || names.has(TE_ATP_ALIAS[k] || '')) return true;
+  const base = k.replace(/\d+$/, '');                    // "Cologne 2", "Sao Paulo 2"
+  if (names.has(base)) return true;
+  for (const n of names) if (n.length >= 5 && (k.startsWith(n) || n.startsWith(k) && k.length >= 5)) return true;
+  return false;
+}
 export function categoryOf(tour, round) {
   const t = String(tour || '').toLowerCase().trim();
   const q = /^Q-/.test(round || '') ? ' qual' : '';
-  if (EXHIBITION.some((re) => re.test(t)) && !/^m\d+ /.test(t)) return 'Exhibition';
+  if (/^futures(\s+\d{2}|\s+\d{4})?$/.test(t)) return 'ITF' + q;          // "Futures 2021", "Futures 09"
+  if ((/\bchallenger$|\bchall\.$/.test(t) || /^challenger tour finals/.test(t)) && !EXHIBITION.some((re) => re.test(t))) return 'Challenger' + q;
+  if (EXHIBITION.some((re) => re.test(t))) return 'Exhibition';
   for (const [k, v] of TEAM) if (t.includes(k)) return v;
   if (/olympic/.test(t)) return 'Olympics';
   if (/next gen/.test(t)) return 'Next Gen Finals';
-  if (/^futures \d{4}$/.test(t)) return 'ITF' + q;
-  if (/chall/.test(t)) return 'Challenger' + q;
-  return 'ATP' + q;
+  if (CLUB.some((re) => re.test(t))) return 'Exhibition';                 // club / league / national championship
+  if (isAtpEvent(tour)) return 'ATP' + q;
+  return 'Other';
 }
 const SURF = { hard: ['hard', 'outdoor'], clay: ['clay', 'outdoor'], grass: ['grass', 'outdoor'], indoors: [null, 'indoor'] };
 
@@ -64,6 +99,21 @@ function setsOf(score) {
   }).filter(Boolean);
 }
 
+// split a TE "A - B" names cell into its two sides, links or plain text
+function splitSides(cellHtml) {
+  const parts = [];
+  let rest = cellHtml;
+  for (let k = 0; k < 2; k++) {
+    rest = rest.replace(/^\s*-?\s*/, '');
+    const a = rest.match(/^<a href="\/player\/([^/]+)\/"[^>]*>([\s\S]*?)<\/a>/);
+    if (a) { parts.push({ slug: a[1], name: txt(a[2]) }); rest = rest.slice(a[0].length); continue; }
+    const plain = rest.match(k === 0 ? /^([^<]*?)\s+-\s+/ : /^([^<]+)/);
+    if (!plain || !txt(plain[1])) return null;
+    parts.push({ slug: null, name: txt(plain[1]) }); rest = rest.slice(plain[0].length);
+  }
+  return parts.length === 2 ? parts : null;
+}
+export const unparsed = [];
 export function parseSeason(html, slug, season) {
   const i = html.indexOf(`id="matches-${season}-1-data"`);
   if (i < 0) return [];
@@ -78,10 +128,13 @@ export function parseSeason(html, slug, season) {
     const cell = (k) => { const r = c.match(new RegExp(`<td class="${k}"([^>]*)>([\\s\\S]*?)</td>`)); return r ? { a: r[1], v: r[2] } : { a: '', v: '' }; };
     const date = txt(cell('first time').v);
     const st = (cell('s-color').v.match(/title="([^"]+)"/) || [])[1] || null;
+    // "Winner - Loser": each side a player link, or plain text when TE has no page for the opponent (Mmoh 2016 v
+    // "Ellen K."). Never dropped: a side with no link keeps its printed name and a null slug.
     const names = cell('t-name').v;
-    const ps = [...names.matchAll(/<a href="\/player\/([^/]+)\/"[^>]*>([\s\S]*?)<\/a>/g)].map((x) => ({ slug: x[1], name: txt(x[2]) }));
-    if (ps.length < 2) continue;
-    const won = ps[0].slug === slug;
+    const sides = names.split(/<\/a>\s*-\s*|\s+-\s+(?=<a )/).length >= 2 ? splitSides(names) : null;
+    if (!sides) { unparsed.push({ season, html: txt(names) }); continue; }
+    const ps = sides;
+    const won = ps[0].slug === slug || (!ps[0].slug && ps[1].slug !== slug);
     const opp = won ? ps[1] : ps[0];
     const rnd = cell('round'); const round = txt(rnd.v);
     const tl = cell('tl'); const score = txt(tl.v); const mid = (tl.v.match(/match-detail\/\?id=(\d+)/) || [])[1] || null;
@@ -108,7 +161,7 @@ export function parseSeason(html, slug, season) {
 // Row = [season, date, event, cat, round, surface, court, opp, oppSlug, won, score, wo, ret, teMatchId, dateAmbiguous];
 // readers use rowsOf(), which returns the object form with src 'te'.
 export const COLS = ['season', 'date', 'event', 'cat', 'round', 'surface', 'court', 'opp', 'oppSlug', 'won', 'score', 'wo', 'ret', 'teMatchId', 'dateAmbiguous'];
-function serialise(rec) {
+export function serialise(rec) {
   const { rows, ...head } = rec;
   const lines = rows.map((r) => JSON.stringify(COLS.map((c) => (c === 'won' || c === 'wo' || c === 'ret' || c === 'dateAmbiguous' ? (r[c] ? 1 : 0) : r[c] ?? null))));
   return JSON.stringify({ ...head, format: 'te-history/1', cols: COLS, src: 'te' }).slice(0, -1) + ',"rows":[\n' + lines.join(',\n') + '\n]}\n';
@@ -195,6 +248,7 @@ function main() {
   const n = Object.keys(idx.players).length;
   idx.highWater = { totalRows: Math.max(prev.highWater?.totalRows || 0, idx.totalRows), players: Math.max(prev.highWater?.players || 0, n) };
   fs.writeFileSync(idxF, JSON.stringify(idx, null, 1));
+  report.unparsedRows = unparsed.length; report.unparsedSample = unparsed.slice(0, 5);
   console.log(JSON.stringify({ players: n, totalRows: idx.totalRows, ...report, notReconciled: report.notReconciled.length, tableMismatch: report.tableMismatch,
     notReconciledList: report.notReconciled.slice(0, 10) }, null, 1));
 }

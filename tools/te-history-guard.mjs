@@ -9,12 +9,21 @@
 // Run in npm test (every push) and before the publish upload. A red result is a question: read `why` first.
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 export const STORE_DIR = 'te-history';
 export const INDEX = 'te-history-index.json';
 const BUILDER = 'tools/te-build-history.mjs';
 
-export function checkStore(root) {
+// `prev` = the index as last committed (git HEAD^ in CI): the store may never shrink against it, so rewriting the
+// index smaller (its own high-water mark included) cannot pass
+export function prevIndex(root) {
+  for (const ref of ['HEAD^', 'origin/main']) {
+    try { return JSON.parse(execFileSync('git', ['-C', root, 'show', `${ref}:${INDEX}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch (e) { /* not committed there */ }
+  }
+  return null;
+}
+export function checkStore(root, opts = {}) {
   const why = [];
   const idxF = path.join(root, INDEX);
   let idx;
@@ -34,35 +43,50 @@ export function checkStore(root) {
   const nPlayers = Object.keys(players).length;
   if (nPlayers < (hw.players || 0)) why.push(`index lists ${nPlayers} players, high-water ${hw.players}`);
   if (total < (hw.totalRows || 0)) why.push(`store holds ${total} rows, high-water ${hw.totalRows}`);
+  const prev = opts.prev;
+  if (prev) {
+    const pp = Object.keys(prev.players || {}).length;
+    const pr = Math.max(prev.totalRows || 0, (prev.highWater || {}).totalRows || 0);
+    if (nPlayers < Math.max(pp, (prev.highWater || {}).players || 0)) why.push(`index lists ${nPlayers} players, the committed index listed ${pp}`);
+    if (total < pr) why.push(`store holds ${total} rows, the committed store held ${pr}`);
+    for (const [key, p] of Object.entries(prev.players || {})) if (!players[key]) why.push(`player ${key} dropped from the index`);
+  }
   return { ok: why.length === 0, why, players: nPlayers, rows: total };
 }
 
-// Nothing but the builder may write the store. Scans workflows and repo scripts for a write, move or delete of it.
+// Nothing but the builder may write the store. Scans repo scripts (.js .mjs .cjs .sh .py), workflows and composite
+// actions for a write, move or delete that names it — directly, or through a constant holding its path.
+const WRITE_FN = /\b(writeFileSync|writeFile|writeJsonAtomic|writeJson|renameSync|rename|rmSync|rm|rmdirSync|unlinkSync|unlink|copyFileSync|copyFile|cpSync|createWriteStream|appendFileSync|truncateSync)\s*\(/;
+const SHELL_WRITE = /\b(rm|mv|cp|rsync|truncate|tee)\b[^\n]*te-history|te-history[^\n]*\b(rm|mv|cp|rsync)\b|>>?\s*te-history|git (rm|mv|checkout --|restore)[^\n]*te-history|open\([^)]*te-history[^)]*['"][wa]/;
 export function checkWriters(root) {
   const why = [];
-  const write = /(writeFileSync|writeFile|renameSync|rmSync|unlinkSync|copyFileSync|createWriteStream)\s*\([^)]*te-history|te-history[^\n]*\b(?:rm|mv|cp|rsync)\b|\b(?:rm|mv|cp|rsync)\b[^\n]*te-history|>\s*te-history|git (?:rm|mv|checkout --)[^\n]*te-history/;
   const files = [];
   const walk = (d) => { for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) {
     const rel = path.join(d, e.name);
-    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && !e.name.startsWith('.') ) walk(rel); }
-    else if (/\.(m?js|ya?ml|sh)$/.test(e.name)) files.push(rel);
+    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github')) walk(rel); }
+    else if (/\.(m?js|cjs|ya?ml|sh|py)$/.test(e.name)) files.push(rel);
   } };
   walk('.');
-  const wf = path.join(root, '.github', 'workflows');
-  if (fs.existsSync(wf)) for (const f of fs.readdirSync(wf)) files.push(path.join('.github', 'workflows', f));
   for (const rel of files) {
     const r = rel.replace(/^\.\//, '');
-    if (r === BUILDER || r === 'tools/te-history-guard.mjs' || /^tools\/test-te-history/.test(r)) continue;
+    // the builder writes it; the guard and tests only build throw-away copies in temp dirs
+    if (r === BUILDER || r === 'tools/te-history-guard.mjs' || /^tools\/test-/.test(r)) continue;
     const src = fs.readFileSync(path.join(root, r), 'utf8');
     if (!src.includes('te-history')) continue;
-    src.split('\n').forEach((line, i) => { if (write.test(line)) why.push(`${r}:${i + 1} writes te-history — only ${BUILDER} may`); });
+    // constants that hold the store's path: `const TE_HISTORY_DIR = 'te-history'` …
+    const consts = [...src.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[`'"][^`'"\n]*te-history/g)].map((m) => m[1]);
+    const constRe = consts.length ? new RegExp(`\\b(${consts.join('|')})\\b`) : null;
+    src.split('\n').forEach((line, i) => {
+      const write = (WRITE_FN.test(line) && (/te-history/.test(line) || (constRe && constRe.test(line)))) || SHELL_WRITE.test(line);
+      if (write) why.push(`${r}:${i + 1} writes te-history — only ${BUILDER} may`);
+    });
   }
   return { ok: why.length === 0, why };
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const root = process.argv[2] || path.join(path.dirname(new URL(import.meta.url).pathname), '..');
-  const s = checkStore(root), w = checkWriters(root);
+  const s = checkStore(root, { prev: prevIndex(root) }), w = checkWriters(root);
   const why = [...s.why, ...w.why];
   if (why.length) { console.log(`::error::te-history guard FAILED — ${why.join('; ')}`); process.exit(1); }
   console.log(`te-history guard ok · ${s.players} players · ${s.rows} rows · no writer outside ${BUILDER}`);

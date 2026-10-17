@@ -20,6 +20,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execFileSync } from 'node:child_process';
 
 const CACHE = process.env.TE_CACHE || path.join(os.homedir(), '.stennisfy', 'te-cache');
 const DELAY = Number(process.env.TE_DELAY_MS || 8000);
@@ -38,11 +39,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 function cacheFile(rel) { return path.join(CACHE, 'html', rel.replace(/^\/+/, '').replace(/[^A-Za-z0-9._-]+/g, '_') + '.html'); }
 
 // fetch one TE page through the cache. `stable` = a past season: cached copy is final.
-async function page(rel, { stable = false } = {}) {
+async function page(rel, { stable = false, finalAfter = 0 } = {}) {
   const f = cacheFile(rel);
   if (fs.existsSync(f)) {
-    const age = Date.now() - fs.statSync(f).mtimeMs;
-    if (stable || age < MAX_AGE_MS) return fs.readFileSync(f, 'utf8');
+    const m = fs.statSync(f).mtimeMs;
+    if ((stable && m >= finalAfter) || Date.now() - m < MAX_AGE_MS) return fs.readFileSync(f, 'utf8');
   }
   const wait = last + DELAY + Math.floor(Math.random() * 2000) - Date.now();
   if (wait > 0) await sleep(wait);
@@ -98,8 +99,11 @@ async function resolve(p) {
   const initial = norm(p.first || p.name)[0];
   // search on the longest plain-letter token of the surname: "O'Connell" -> "Connell", "Barrios Vera" -> "Barrios"
   const term = last.split(/[\s'’-]+/).filter(Boolean).sort((a, b) => b.length - a.length)[0];
-  const html = await page(`/list-players/?search-text-pl=${encodeURIComponent(term)}`);
-  const cands = searchRows(html).filter((r) => norm(r.last) === norm(last) || norm(r.last).includes(norm(term)));
+  // TE's search returns nothing for a term under 3 letters ("Te"): search the longest first-name token instead
+  const firstTok = String(p.first || '').split(/[\s'’-]+/).filter(Boolean).sort((a, b) => b.length - a.length)[0];
+  const q = term.length >= 3 || !firstTok ? term : firstTok;
+  const html = await page(`/list-players/?search-text-pl=${encodeURIComponent(q)}`);
+  const cands = searchRows(html).filter((r) => norm(r.last) === norm(last) || (norm(term).length >= 3 && norm(r.last).includes(norm(term))));
   const toks = (x) => String(x || '').split(/[\s-]+/).map(norm).filter(Boolean);
   // first names: equal, a prefix either way, or one shared token ("Tomas" vs "Marcelo Tomas") — the DOB still decides
   const named = cands.filter((r) => p.first ? norm(r.first) === norm(p.first) || norm(r.first).startsWith(norm(p.first)) || norm(p.first).startsWith(norm(r.first)) || toks(r.first).some((t) => toks(p.first).includes(t)) : norm(r.first)[0] === initial);
@@ -121,7 +125,13 @@ async function resolve(p) {
 async function main() {
   if (fs.existsSync(path.join(CACHE, 'BLOCKED'))) { log('BLOCKED marker present — not running (remove it after checking the cause)'); process.exit(3); }
   const lock = path.join(CACHE, 'run.lock');
-  try { const pid = +fs.readFileSync(lock, 'utf8'); process.kill(pid, 0); log(`another run (pid ${pid}) is active — exiting`); process.exit(0); } catch (e) { /* no live holder */ }
+  // the holder must be alive AND be this scraper: after a reboot a pid can belong to anything else
+  try {
+    const pid = +fs.readFileSync(lock, 'utf8');
+    process.kill(pid, 0);
+    const cmd = execFileSync('ps', ['-p', String(pid), '-o', 'command='], { encoding: 'utf8' });
+    if (/te-scrape/.test(cmd)) { log(`another run (pid ${pid}) is active — exiting`); process.exit(0); }
+  } catch (e) { /* no live holder */ }
   fs.writeFileSync(lock, String(process.pid));
   const roster = JSON.parse(fs.readFileSync(arg('--players'), 'utf8'));
   const limit = Number(arg('--limit', roster.length));
@@ -134,7 +144,8 @@ async function main() {
     const r = out[p.key];
     if (r.slug) {
       const f = profileFacts(await page(`/player/${r.slug}/`));
-      for (const y of f.years) await page(`/player/${r.slug}/?annual=${y}`, { stable: y < THIS_YEAR - (new Date().getUTCMonth() === 0 ? 1 : 0) });
+      // a past season is final once fetched after 15 Jan of the next year (late-December ties and corrections are in)
+      for (const y of f.years) await page(`/player/${r.slug}/?annual=${y}`, { stable: y < THIS_YEAR, finalAfter: Date.UTC(y + 1, 0, 15) });
       r.years = f.years;
     }
     fs.writeFileSync(outF, JSON.stringify(out, null, 1));

@@ -4014,11 +4014,14 @@ function reconcileYearRows(yearRows, byYear) {
 // per-year tallies writeCareerHistoryShards published (opts.yearTallies). A side with no
 // shard gets `{}`, which still clears a pre-window aggregate's tier split. Returns the
 // number of sides patched — the caller re-writes matches.json when it is > 0.
-function reconcileMatchesYearly(matches, yearTallies) {
+function reconcileMatchesYearly(matches, yearTallies, teYearly) {
   let n = 0;
   for (const m of (matches || [])) {
     for (const side of ['p1', 'p2']) {
       if (!Array.isArray(m[side + 'Yearly'])) continue;
+      // TEN-443: a TE-merged player — the modal carries the profile's own rebuilt table, never a second count
+      const te = teYearly && teYearly.get(String(m[side + 'Key']));
+      if (te) { m[side + 'Yearly'] = JSON.parse(JSON.stringify(te)); n++; continue; }
       reconcileYearRows(m[side + 'Yearly'], yearTallies.get(String(m[side + 'Key'])) || {});
       n++;
     }
@@ -4064,9 +4067,15 @@ const TeJoin = require('./te-join.js');
 const TE_HISTORY_DIR = 'te-history';
 const TE_HISTORY_INDEX = 'te-history-index.json';
 const TE_INGEST = process.env.TE_INGEST === '1';   // founder approval of the moved-cell report flips this default
+let _teIndex = null;
 function readTeHistory(key) {
   const f = `${TE_HISTORY_DIR}/${key}.json`;
-  if (!fs.existsSync(f)) return null;
+  if (!_teIndex) _teIndex = JSON.parse(fs.readFileSync(TE_HISTORY_INDEX, 'utf8'));
+  if (!fs.existsSync(f)) {
+    // a player the index lists must have his file: a missing one is a clobbered store, not "no TE data"
+    if (_teIndex.players && _teIndex.players[key]) throw new Error(`${f} is listed in ${TE_HISTORY_INDEX} but missing — refusing to publish`);
+    return null;
+  }
   return JSON.parse(fs.readFileSync(f, 'utf8'));   // a corrupt store file throws: the run stops rather than drop TE rows
 }
 async function writeCareerHistoryShards(profiles, opts = {}) {
@@ -4112,6 +4121,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   const holeFill = {};
   // TEN-443: Tennis Explorer ingest totals, published in the index meta (players merged, rows added, conflicts by kind)
   const teTotals = { players: 0, conflicts: {} };
+  _teIndex = null;
   if (TE_INGEST && !fs.existsSync(TE_HISTORY_INDEX)) throw new Error(`TE_INGEST is on but ${TE_HISTORY_INDEX} is missing — refusing to publish career records without the Tennis Explorer store`);
 
   for (const [key, p] of Object.entries(profiles)) {
@@ -4147,9 +4157,11 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // counting rules minus exhibitions, TE's court class and edition-year season, every disagreement kept on the row —
     // and rebuild his season table from the merged rows, so cells and lists stay one set (TEN-442). Behind TE_INGEST:
     // off until the founder approves the moved-cell report. With it on, a missing store stops the run (fail-closed).
+    let teApplied = false;
     if (TE_INGEST) {
       const teRec = readTeHistory(key);
       if (teRec) {
+        teApplied = true;
         const m = TeJoin.applyTeHistory(rows, teRec);
         rows.length = 0; rows.push(...m.rows);
         p.careerByYear = TeJoin.careerByYearFromRows(rows);
@@ -4180,7 +4192,11 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // — the feed's aggregate is the undercount the fill exists to correct, and the rows name every match.
     // TEN-313: reconcileYearRows does the adopting, tier split included — run even for a
     // player with no rows, so his pre-window aggregate still loses its false ATP split.
-    const adopted = reconcileYearRows(p.careerByYear, byYear);
+    // TEN-443: a TE-merged player's table was just rebuilt FROM these rows, indoor split included, so it is adopted
+    // whole — re-running the hole-year adoption would add holeIndoor on top of TE's court class (2021 Indoors
+    // counted twice, review 2026-10-17). The match modal's p1Yearly/p2Yearly get this same table (opts.teYearly).
+    const adopted = teApplied ? new Set(p.careerByYear || []) : reconcileYearRows(p.careerByYear, byYear);
+    if (teApplied && opts.teYearly) opts.teYearly.set(String(key), p.careerByYear);
     if (!rows.length) continue;
     for (const row of (p.careerByYear || [])) {
       const y = byYear[String(row.year || '')];
@@ -7440,14 +7456,14 @@ async function runPipeline() {
   // careerMatches carrier and stamps careerByYear row counts, so a shard player
   // who skipped it would ship the heavy carrier and render without its counts.
   const allProfiles = playerProfiles._allProfiles || playerProfiles.players;
-  const careerYearTallies = new Map();
-  await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m), yearTallies: careerYearTallies });
+  const careerYearTallies = new Map(), teYearly = new Map();
+  await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m), yearTallies: careerYearTallies, teYearly });
   // TEN-313 (N3): the modal's Overview copy (p1Yearly/p2Yearly, same buildAllTierYearly
   // output) gets the same reconcile the profile's careerByYear just got, from the same
   // career-history rows — it lacked the 2021 fill, so 39 of 63 board players read
   // differently in the modal than on their profile. A side with no shard still has its
   // pre-window tier split cleared. matches.json is re-written below.
-  const yearlySidesPatched = reconcileMatchesYearly(matches, careerYearTallies);
+  const yearlySidesPatched = reconcileMatchesYearly(matches, careerYearTallies, teYearly);
   console.log(`Reconciled p1Yearly/p2Yearly against career-history on ${yearlySidesPatched} match-side(s).`);
 
   // Per-player shards + search index — after the strip above, so a shard carries

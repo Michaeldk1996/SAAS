@@ -22,6 +22,9 @@ const translit = (x) => x.replace(/oe/g, 'o').replace(/ue/g, 'u').replace(/ae/g,
 const similar0 = (a, b) => a === b || (a.length > 3 && b.length > 3 && (a.slice(-5) === b.slice(-5) || a.slice(0, 5) === b.slice(0, 5) || a.includes(b) || b.includes(a)));
 const prefix3 = (a, b) => { const [x, y] = a.length <= b.length ? [a, b] : [b, a]; return x.length >= 3 && y.startsWith(x); };   // "Nam" = "Nam Ji", "Hsu" = "Hsu Yu"
 const similar = (a, b) => similar0(a, b) || similar0(translit(a), translit(b)) || prefix3(a, b);
+// surname words in either order: our "R. Dutra Silva" vs TE "Silva Dutra R." (same player, words reversed)
+const wordsOf = (n, te) => { const t = String(n || '').trim().split(/\s+/).filter((x) => !/\.$/.test(x)); return t.map(norm).filter(Boolean).sort().join('|'); };
+const sameWords = (teName, ourNameS) => { const a = wordsOf(teName), b = wordsOf(ourNameS); return !!a && a === b && a.includes('|'); };
 // an Asian name written in the other order: TE "Yunchaokete B." vs our "Y. Bu" (Bu Yunchaokete)
 const swapped = (teName, ourNameS) => {
   const t = String(teName || '').trim().split(/\s+/), o = String(ourNameS || '').trim().split(/\s+/);
@@ -30,7 +33,7 @@ const swapped = (teName, ourNameS) => {
   return !!(ti && oi && tl && ol && tl.startsWith(oi.toLowerCase()) && ol.startsWith(ti.toLowerCase()));
 };
 // event name for comparison only: tier and gender prefixes/suffixes stripped ("ATP Rio de Janeiro", "ITF M25 Esch/Alzette Men")
-const evKey = (e) => norm(String(e || '').replace(/^(atp|wta|itf)\s+/i, '').replace(/^[mw]\d{2,3}\+?h?\s+/i, '').replace(/\s+(challenger\s+)?(men|women)$/i, '').replace(/\s+challenger$/i, '').replace(/\s+chall\.$/i, '')).slice(0, 5);
+const evKey = (e) => norm(String(e || '').replace(/\bSt\.?\s/gi, 'Saint ').replace(/^(atp|wta|itf)\s+/i, '').replace(/^[mw]\d{2,3}\+?h?\s+/i, '').replace(/\s+(challenger\s+)?(men|women)$/i, '').replace(/\s+challenger$/i, '').replace(/\s+chall\.$/i, '')).slice(0, 5);
 // our event names that TE spells differently (only the cost term reads this; it never decides a pair alone)
 const EVENT_ALIAS = { rolandgarros: 'French Open', usopen: 'US Open', canadamasters: 'Montreal', cincinnatimasters: 'Cincinnati',
   indianwellsmasters: 'Indian Wells', miamimasters: 'Miami', madridmasters: 'Madrid', romemasters: 'Rome', montecarlomasters: 'Monte Carlo',
@@ -44,7 +47,7 @@ function pairRows(teRows, ourRows) {
     ourRows.forEach((o, j) => {
       if (!o.date || !t.date) return;
       const nameExact = similar(ts, ourSurname(o.opponent));
-      const nameOk = nameExact || swapped(t.opp, o.opponent);
+      const nameOk = nameExact || swapped(t.opp, o.opponent) || sameWords(t.opp, o.opponent);
       const evOk = te && te === evKey(EVENT_ALIAS[norm(o.tournament)] || o.tournament) && !!t.won === !!o.won;
       if (!nameOk && !evOk) return;
       const dd = days(t.date, o.date);
@@ -123,7 +126,11 @@ function teOnlyRow(t) {
     round: t.round || null, opponent: ourName(t.opp), result: `${won} - ${lost}`, won: !!t.won, src: 'te', teCat: t.cat,
     indoor: t.court === 'indoor' ? true : t.court === 'outdoor' ? false : null };
   if (sets.length) r.sets = sets;
-  if (t.ret) r.retired = true;
+  // retired: TE's injury table names HIS retirements (t.ret); an opponent's retirement shows only as an unfinished
+  // last set — a set nobody won by the rules (6+ with a 2-game lead, 7-6, or a 10+ match tie-break)
+  const last = sets[sets.length - 1];
+  const finished = (x) => { const hi = Math.max(x.p, x.o), d = Math.abs(x.p - x.o); return (hi >= 6 && d >= 2) || hi === 7 || (hi >= 10 && d >= 2) || (hi === 1 && d === 1 && sets.length >= 3); };
+  if (t.ret || (last && !finished(last))) r.retired = true;
   if (t.teMatchId) r.teMatchId = t.teMatchId;
   if (t.dateAmbiguous) r.dateAmbiguous = true;
   return r;
@@ -155,11 +162,16 @@ function applyTeHistory(rows, teRec) {
     if (!t.wo && !!t.won !== !!r.won) { r.won = !!t.won; diag.resultFromTe++; }
     if (t.wo && !r.walkover) r.teWalkover = true;     // TE calls it a walkover: flagged, counted out below
     if (t.cat === 'Exhibition') r.teExhibition = true;
+    // an 'Other' TE event that pairs with an api-tennis or archive row: the official source proves the event; kept,
+    // counted and flagged (`teOther`) so the classification gap is visible
+    if (t.cat === 'Other') { r.teOther = t.event; diag.otherKeptByPair = (diag.otherKeptByPair || 0) + 1; }
   }
   const added = [];
   for (const t of teOnly) {
     if (t.wo) { diag.walkoversSkipped++; continue; }
     if (t.cat === 'Exhibition') { diag.exhibitionsSkipped++; continue; }
+    // 'Other': an event no official catalogue names — never counted on a guess; listed for a ruling
+    if (t.cat === 'Other') { diag.otherSkipped = (diag.otherSkipped || 0) + 1; (diag.otherEvents = diag.otherEvents || {})[t.event] = ((diag.otherEvents || {})[t.event] || 0) + 1; continue; }
     added.push(teOnlyRow(t)); diag.added++; diag.addedByCat[t.cat] = (diag.addedByCat[t.cat] || 0) + 1;
   }
   // one match = one row: an unpaired row of ours that repeats a paired row (same day, opponent, result) is a duplicate
