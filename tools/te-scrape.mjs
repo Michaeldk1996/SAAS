@@ -168,6 +168,18 @@ async function main() {
     if (/te-scrape/.test(cmd)) { log(`another run (pid ${pid}) is active — exiting`); process.exit(0); }
   } catch (e) { /* no live holder */ }
   fs.writeFileSync(lock, String(process.pid));
+  // `--evidence slug,slug`: fetch a TE page's profile and every season into the cache only — no join, nothing written
+  // to players.json. For a player the identity test cannot join (founder 2026-10-17: Svajda's TE page has no DOB), so
+  // career overlap can be measured as evidence for the founder's ruling. Same stream, same pace.
+  if (arg('--evidence')) {
+    for (const slug of arg('--evidence').split(',').filter(Boolean)) {
+      const f = profileFacts(await page(`/player/${slug}/`));
+      for (const y of f.years) await page(`/player/${slug}/?annual=${y}`, { stable: y < THIS_YEAR, finalAfter: Date.UTC(y + 1, 0, 15) });
+      log(`evidence ${slug}: profile + ${f.years.length} seasons cached · requests this run ${requests}`);
+    }
+    fs.writeFileSync(path.join(CACHE, arg('--done', 'DONE-evidence')), new Date().toISOString() + '\n');
+    return;
+  }
   const roster = JSON.parse(fs.readFileSync(arg('--players'), 'utf8'));
   const limit = Number(arg('--limit', roster.length));
   // `--seasons 2021-2023`: only these seasons' pages (founder ruling 549b93d3 item 1: the players outside the roster
