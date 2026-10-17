@@ -4676,6 +4676,15 @@
       "p2": "R. Jodar",
       "startTime": "2026-10-18T08:30:00.000Z",
       "tournamentId": 3085
+    },
+    "12171966": {
+      "fixtureId": "id1204195975721258",
+      "mappedAt": "2026-10-17T15:32:04Z",
+      "orient": "same",
+      "p1": "A. Shevchenko",
+      "p2": "S. Sakellaridis",
+      "startTime": "2026-10-18T10:00:00.000Z",
+      "tournamentId": 41959
     }
   },
   "missAudit": {
@@ -4685,26 +4694,15 @@
       "missResolutionHoursP50": 39.92,
       "missResolutionsMeasured": 174,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.78,
+      "observedSpanDays": 18.77,
       "projectedTtlUnitsPerDay": 1.4,
       "runs": 400,
-      "spentRuns": 145,
+      "spentRuns": 146,
       "ttlBitRuns": 26,
       "ttlBitShare": 0.065,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-28T19:48:38Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 36
-      },
       {
         "at": "2026-09-28T20:58:07Z",
         "fixturesUnitsSpent": 0,
@@ -9093,9 +9091,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 25
+      },
+      {
+        "at": "2026-10-17T15:32:04Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 26
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-17T14:31:57Z"
+  "updatedAt": "2026-10-17T15:32:04Z"
 }
