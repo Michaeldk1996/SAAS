@@ -268,7 +268,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Match Stats tone rules, point-log, score header | `.claude/rules/modal-match-stats.md` |
 | Match analysis News tab — feed, 5-day window, player_key join, N9 empty/unavailable, no sample | `.claude/rules/modal-news.md` |
 | Player Profile export parity | `.claude/rules/player-profile.md` |
-| Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
+| Records counting (Tennis Explorer rules minus exhibitions, TEN-443), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Match analysis modal rebuild (TEN-312): players/avatars, walkovers on every tab, sample gate, build order | `.claude/rules/modal-analysis.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |

@@ -6,27 +6,36 @@ Applies to every W/L record built from the api-tennis archive in `bsp-pipeline.j
 Restored from CLAUDE.md before 011e3e20 (2026-09-21 trim); TEN-312 N13, founder-approved 2026-09-28.
 Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that file wins.
 
-- **Records must match Flashscore — count qualifying matches (founder ruling 2026-08-04).** Every surface
-  that shows a win/loss record computed from our api-tennis archive must follow the **same counting rules as
-  Flashscore**: all decided professional singles at any level (ATP + Challenger + ITF) **and any round
-  including qualifying**. Do **not** apply an `event_qualification`/main-draw gate on these surfaces — it
-  made our numbers a strict subset of the public record (Buse 2024 read 36/22 vs Flashscore 47/28; the gap
-  was entirely dropped qualifying + null-flagged rows). Applies to `buildAllTierYearly` (Record-by-season),
-  its drill-down twin `playerMatchHistory`, `seasonSurfaceByTier` (current-season surface record),
-  `recentFormFromFixtures` (which additionally tags qualifying rows `'Q'`), and `fetchPlayerCareerHistory`
-  (Record-by-**tournament** — extended 2026-08-04 after the founder reinforced that *every* record/results
-  surface must share the same Flashscore rules; qualifying rows are tagged `'Q'`, rank -1, so W/L totals
-  grow but bestResult/titles are untouched). Scope note: provider-aggregate stats (career/surface win %) and
-  Tennis-Abstract career splits are separate data sources and are *not* forced to this rule. Separate,
-  unrelated cause: a player's Record-by-**tournament** can still read below the public record when the
-  api-tennis archive is genuinely *missing* older editions (e.g. Zverev's pre-2023 Canada) — a data horizon,
-  not this qualifying filter, and not closed by counting qualifying.
-  *Newer exception (TEN-312 N7, 2026-09-28):* the Match analysis **Tournament tab** W–L is **main draw only**
-  — qualifying rows are filtered out there. *Walkovers:* the Flashscore walkover convention no longer applies
-  — see the next rule.
-  **Test:** for any player on the board, the Record-by-season totals equal Flashscore's per-year Match Record
-  (walkovers excluded, per the next rule), and their per-tournament W/L includes qualifying rounds; no
-  qualifying/main-draw gate exists in any archive-record builder.
+- **Records match Tennis Explorer, minus exhibitions (founder ruling TEN-443, 2026-10-17, gate `91feaca9`;
+  replaces "Records must match Flashscore", 2026-08-04).** The reference for every win/loss record is the
+  player's Tennis Explorer (TE) page, table "Player's record W/L – singles" (Summary · Clay · Hard · Indoors ·
+  Grass · Not set), all seasons, pre-2021 included. TE's counting rules, read off its pages (TEN-443 doc
+  `report` §2), apply with ONE change: exhibitions and club matches are not counted.
+  - **Counted:** every decided professional singles match at ATP, Challenger and ITF level, **any round
+    including qualifying**; Davis Cup, ATP Cup, United Cup, Laver Cup, Hopman Cup, Olympics; retirements (rule
+    below). No `event_qualification`/main-draw gate in any archive-record builder.
+  - **Not counted:** walkovers (rule below); **junior events** (api-tennis `event_type_type` "Boys Singles" —
+    decide on the event type, not the name: 1,084 of 1,464 such rows carry a plain Slam name, and a Slam name at
+    `chitf` level is the tell); **exhibitions and club matches** (UTR Pro Tennis Series, Boodles, Hurlingham,
+    Adria Tour, Ultimate Tennis Showdown, Diriyah, Six Kings, Bundesliga/interclub, national championships).
+  - **Season = TE's edition year:** a tie played in late December of an event whose edition is the next
+    year (United Cup, ATP Cup, Hopman Cup) counts in the next season.
+  - **Indoors = TE's court class** for the event; Hard is outdoor hard.
+  - **A pre-2021 figure may rise to the match count** (the provider aggregate undercounts Challenger-era
+    players: N. Borges 2019 counted 3, 21 on record). Every moved cell is reported to the founder, old → new,
+    before it goes live.
+  - *Exceptions:* the Match analysis **Tournament tab** W–L stays **main draw only** (TEN-312 N7,
+    2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate
+    sources, not forced to this rule. The no-surface column (TE "Not set") is **pending a ruling** (TEN-443
+    step 2): until then Option A of TEN-442 stands.
+  - *Source (founder's call against TE's terms §2.2/§2.10/§2.11, risk reported):* TE pages come only from
+    `tools/te-scrape.mjs` — one request at a time ≥ 8 s apart, every page cached in `~/.stennisfy/te-cache`,
+    a past season never fetched twice, run on this Mac and never in CI or the nightly refresh; a player is
+    joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
+  **Test:** for any profiled player, every Record-by-season cell (Total and each surface, every season and
+  Career) equals TE's same cell minus TE's exhibition and club matches in it; no junior, walkover or
+  exhibition row is in any count; a 29–31 Dec United Cup tie counts in the next season; nothing in
+  `.github/` or the pipeline requests tennisexplorer.com.
 
 - **Walkovers — current rule (TEN-312 N2, founder 2026-09-28): a walkover is neither a win nor a loss, for
   either player, on every surface, the player profile included.** It is not a match played and never enters
