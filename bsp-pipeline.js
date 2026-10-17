@@ -4067,6 +4067,12 @@ const TeJoin = require('./te-join.js');
 const TE_HISTORY_DIR = 'te-history';
 const TE_HISTORY_INDEX = 'te-history-index.json';
 const TE_INGEST = process.env.TE_INGEST === '1';   // founder approval of the moved-cell report flips this default
+// TEN-443 · the sets api-tennis drops (a set in which one player won no games): set-repairs.json, written only by
+// tools/build-set-repairs.mjs, repairs a row where Tennis Explorer AND Sackmann agree and flags the rest. Behind
+// SET_REPAIR: off until the founder approves the moved-figures report (ruling b5b5ef00 item 1).
+const SetRepairs = require('./set-repairs.js');
+const SET_REPAIRS_FILE = 'set-repairs.json';
+const SET_REPAIR = process.env.SET_REPAIR === '1';
 let _teIndex = null;
 function readTeHistory(key) {
   const f = `${TE_HISTORY_DIR}/${key}.json`;
@@ -4122,6 +4128,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   // TEN-443: Tennis Explorer ingest totals, published in the index meta (players merged, rows added, conflicts by kind)
   const teTotals = { players: 0, conflicts: {} };
   _teIndex = null;
+  // With SET_REPAIR on, a missing or corrupt repair file stops the run rather than publish the short lists again.
+  const setRepairs = SET_REPAIR ? JSON.parse(fs.readFileSync(SET_REPAIRS_FILE, 'utf8')) : null;
+  const setRepairTotals = { repaired: 0, flagged: 0, stale: 0 };
   if (TE_INGEST && !fs.existsSync(TE_HISTORY_INDEX)) throw new Error(`TE_INGEST is on but ${TE_HISTORY_INDEX} is missing — refusing to publish career records without the Tennis Explorer store`);
 
   for (const [key, p] of Object.entries(profiles)) {
@@ -4153,6 +4162,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // profile built before the correction — the map is the one fixtureSurface() reads. Before the year tally,
     // so the tally counts it on its edition's surface too (review 2026-10-16).
     for (const r of rows) { const os = olympicSurface(r.tournament, r.date); if (os) r.surface = os; }
+    if (setRepairs) { const d = SetRepairs.applySetRepairs(rows, key, setRepairs); for (const k of Object.keys(setRepairTotals)) setRepairTotals[k] += d[k]; }
     // TEN-443 step 2: merge the player's Tennis Explorer rows (te-history/<key>.json) — one match = one row, TE's
     // counting rules minus exhibitions, TE's court class and edition-year season, every disagreement kept on the row —
     // and rebuild his season table from the merged rows, so cells and lists stay one set (TEN-442). Behind TE_INGEST:
@@ -4342,6 +4352,8 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       population: { players: Object.keys(index).length, rows: rowTotal, fixturesHalf: halfRows.fixtures, archiveHalf: halfRows.archive },
       // TEN-443: Tennis Explorer ingest — null while TE_INGEST is off
       te: TE_INGEST ? teTotals : null,
+      // TEN-443: dropped-set repairs — null while SET_REPAIR is off
+      setRepairs: SET_REPAIR ? { ...setRepairTotals, builtAt: setRepairs.builtAt || null } : null,
       exclusions: {
         // What a games-based rate must drop, and why.
         incomplete: incompleteTotal,      // did not finish, for its format
