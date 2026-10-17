@@ -36,7 +36,7 @@
 
 const fs = require('fs');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
-const { fetchRecentSinglesFixtures } = require('./bsp-pipeline.js');
+const { fetchRecentSinglesFixtures, isCountedSinglesFixture } = require('./bsp-pipeline.js');
 const { buildCacheEntry, parseFixture, mergeEntry } = require('./build-point-by-point.js');
 
 const HISTORIES_DIR = 'career-history';
@@ -58,9 +58,7 @@ const MAX_PLAYERS_PER_RUN = Number(process.env.HISTORY_BACKFILL_MAX_PLAYERS || 1
 // ended (the trap build-point-by-point.js documents for interrupted matches).
 const FINAL_STATUSES = ['Finished', 'Retired', 'Walk Over', 'Awarded'];   // TEN-437: a default is final too
 
-function isSingles(f) {
-  return /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
-}
+const isSingles = isCountedSinglesFixture;   // TEN-444: the record builders' own predicate (juniors out)
 
 function writeAtomic(path, contents) {
   const tmp = `${path}.tmp`;

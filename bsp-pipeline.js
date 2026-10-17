@@ -681,6 +681,16 @@ const isAwarded = (f) => f.event_status === 'Awarded';
 // yearlyBreakdown(playerStats) — the provider's ATP season aggregate, which has
 // clay/hard/grass and no court type at all — so they carry `indoor: null` and
 // the column dashes there rather than silently reading as zero indoor matches.
+// TEN-444 (founder ruling TEN-443, 2026-10-17, .claude/rules/pipeline-records.md): a record counts professional
+// singles only. api-tennis files junior Slam matches as "Boys Singles" / "Girls Singles"; the old /singles/ test let
+// them through and tierOf() then filed them as 'chitf' (1,464 career-history rows, 65 profiled players, measured
+// 2026-10-17). Decided on the EVENT TYPE, never the tournament name: 1,084 of those rows carry a plain Slam name.
+// Exhibitions ("Exhibition Men") and team-type events ("Teams Men") already fail the /singles/ test.
+function isCountedSinglesFixture(f) {
+  const t = String((f && f.event_type_type) || '');
+  return /singles/i.test(t) && !/doubles/i.test(t) && !/\b(?:boys|girls)\b/i.test(t);
+}
+
 function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfaceMap, courtMap) {
   // Defaulted from the cache rather than threaded through every caller: this has
   // eight call sites across three match builders, and a new required parameter
@@ -688,7 +698,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
   // explicitly (the tests do) still wins.
   if (courtMap === undefined) courtMap = defaultCourtMap();
   const cutoff = currentYear - 5;
-  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const isSingles = isCountedSinglesFixture;   // TEN-444: juniors out, by event type
   const tierOf = f => /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
   const blank = () => ({ won: 0, lost: 0 });
   const blankTier = () => ({
@@ -786,7 +796,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
 function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap, courtMap) {
   if (courtMap === undefined) courtMap = defaultCourtMap();
   const cutoff = currentYear - 5;
-  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const isSingles = isCountedSinglesFixture;   // TEN-444: juniors out, by event type
   const out = [];
   for (const f of (fixtures || [])) {
     if (!isSingles(f)) continue;
@@ -1097,7 +1107,7 @@ async function fetchPlayerFixturesForYear(playerKey, year) {
 // to `year`. Each surface bucket: { won, lost, matches:[{opponent, result,
 // tournament, date, won}] }.
 function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
-  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const isSingles = isCountedSinglesFixture;   // TEN-444: juniors out, by event type
   const tierOf = f => /atp/i.test(f.event_type_type || '') ? 'atp' : 'chitf';
   const blank = () => ({ clay: { won: 0, lost: 0, matches: [] }, hard: { won: 0, lost: 0, matches: [] }, grass: { won: 0, lost: 0, matches: [] } });
   const out = { atp: blank(), chitf: blank() };
@@ -3670,7 +3680,7 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // drill-down rows, current-season surface record) ALSO include qualifying so
   // they match Flashscore; provider-aggregate stats (career/surface win %) and
   // Tennis-Abstract career splits stay on their own sources and are unaffected.
-  const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  const isSingles = isCountedSinglesFixture;   // TEN-444: juniors out, by event type
   // TEN-313 (N2, founder ruling 2026-09-28, "as the ATP rules and the ATP website do"): a
   // walkover — given or received — is not a match played, so it never becomes a form row.
   // A given one was reaching the Form tab's W-L as a loss (Alcaraz's last 10 carried
@@ -7761,7 +7771,7 @@ module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFi
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, seasonRowFromFixtures, seasonSurfaceByTier, courtSpeedRecordFromFixtures, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, isCountedSinglesFixture, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, seasonRowFromFixtures, seasonSurfaceByTier, courtSpeedRecordFromFixtures, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
