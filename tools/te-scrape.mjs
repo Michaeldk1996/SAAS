@@ -54,8 +54,14 @@ export async function page(rel, { stable = false, finalAfter = 0 } = {}) {
   // exits and the launchd job resumes it later from the cache. A non-200 or a challenge page is a BLOCK: never
   // retried — BLOCKED is written and every later start refuses to run until a person removes it.
   for (let attempt = 0; ; attempt++) {
-    try { res = await fetch(BASE + rel, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' } }); text = await res.text(); break; }
+    const t0 = Date.now();
+    // a hung request is bounded (60 s, then the normal retry): one read hung 32 min on 2026-10-17 with no timeout.
+    // Pace and retries are unchanged — this only stops a stalled socket from holding the run.
+    try { res = await fetch(BASE + rel, { headers: { 'User-Agent': UA, 'Accept-Language': 'en' }, signal: AbortSignal.timeout(60000) }); text = await res.text(); break; }
     catch (e) {
+      // the cause, not just "fetch failed": a connect timeout, a reset and a closed socket point at different ends of
+      // the link (founder 2026-10-17, cd899856 item 1) — logged with how long the attempt took
+      const c = e.cause || {}; e.message = `${e.message} [${c.code || c.name || 'no-code'}${c.message ? ': ' + String(c.message).slice(0, 80) : ''} · ${Date.now() - t0} ms]`;
       if (attempt >= 5) { log(`PAUSE network ${rel}: ${e.message} — exiting, the job resumes from cache`); process.exit(4); }
       const ms = 60e3 * 2 ** attempt; log(`retry ${attempt + 1}/5 in ${ms / 60e3} min: ${rel}: ${e.message}`); await sleep(ms);
     }
