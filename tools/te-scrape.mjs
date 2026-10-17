@@ -10,7 +10,8 @@
 //     same country, AND the page's date of birth equal to Sackmann's (or, with no DOB on record, the page's age within
 //     one year of ours). Anything else is "unmatched" with its reason — never a guess.
 // Run: node tools/te-scrape.mjs --players <keys.json> [--limit N]
-//   keys.json: [{key, name, country, age, first?, last?, dob?}]  (built by tools/te-roster.mjs)
+//   keys.json: [{key, name, country, age, first?, last?, dob?}] — first/last/dob from the DOB-checked Sackmann join
+//   (career-backfill.js reconcile + a DOB check; TEN-443 step 1); a roster builder lands with the step-2 ingest.
 // Out: TE_CACHE/players.json  {key: {slug, how, dob, country}} | {key: {unmatched: reason, candidates}}
 import fs from 'node:fs';
 import path from 'node:path';

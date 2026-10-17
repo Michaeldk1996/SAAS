@@ -684,7 +684,8 @@ const isAwarded = (f) => f.event_status === 'Awarded';
 // TEN-444 (founder ruling TEN-443, 2026-10-17, .claude/rules/pipeline-records.md): a record counts professional
 // singles only. api-tennis files junior Slam matches as "Boys Singles" / "Girls Singles"; the old /singles/ test let
 // them through and tierOf() then filed them as 'chitf' (1,464 career-history rows, 65 profiled players, measured
-// 2026-10-17). Decided on the EVENT TYPE, never the tournament name: 1,084 of those rows carry a plain Slam name.
+// 2026-10-17). Decided on the EVENT TYPE, never the tournament name: 943 of those rows carry a plain Slam name and
+// 31 more are "Pardubicka juniorka" (TEN-443 review count).
 // Exhibitions ("Exhibition Men") and team-type events ("Teams Men") already fail the /singles/ test.
 function isCountedSinglesFixture(f) {
   const t = String((f && f.event_type_type) || '');

@@ -5,8 +5,8 @@
 //   buildAllTierYearly (the season table's counts) · playerMatchHistory (the per-match rows behind them) ·
 //   seasonSurfaceByTier (current-season surface record) · recentFormFromFixtures (the form list)
 // with a junior Slam run mixed into a pro season, exactly as api-tennis serves it: event_type_type "Boys Singles"
-// under a PLAIN Slam name ("French Open", rounds that look like qualifying). Measured 2026-10-17: 1,084 of 1,464
-// junior career-history rows carried no "Boys" in the name, so the test names them the way the feed does.
+// under a PLAIN Slam name ("French Open", rounds that look like qualifying). Measured 2026-10-17: 943 of the 1,464
+// junior rows at a Slam carried no "Boys" in the name (31 more are "Pardubicka juniorka"), so the test names them as the feed does.
 //
 // What makes it fail: the old predicate (/singles/ && !/doubles/) at ANY of the four builder sites, a predicate that
 // tests the tournament name instead of the event type, or one that drops Challenger/ITF singles with the juniors.
