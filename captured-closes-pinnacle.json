@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-16T12:43:01.377Z",
+ "generatedAt": "2026-10-17T09:13:50.635Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "5262b3433aad6f6e884e095a2cb615541590ed1e",
-  "at": "2026-10-16T12:31:33Z"
+  "commit": "8b99c0ffc97541f8400704acc088ab0d19bbd611",
+  "at": "2026-10-17T09:07:42Z"
  },
- "commitsScanned": 5204,
+ "commitsScanned": 5237,
  "lastRun": {
-  "from": "2026-10-16T07:15:18Z",
-  "snapshots": 24,
+  "from": "2026-10-16T12:31:33Z",
+  "snapshots": 33,
   "added": 1,
   "replaced": 0,
-  "series": 13,
-  "kept": 12,
+  "series": 18,
+  "kept": 9,
   "bySource": {
-   "api-tennis-live": 12
+   "api-tennis-live": 9
   },
   "byBook": {
-   "Pinnacle +30s": 12
+   "Pinnacle +30s": 9
   },
   "dropped": {
-   "noStart": 1
+   "noStart": 9
   }
  },
  "stats": {
@@ -8890,6 +8890,20 @@
    "p2": 2.95,
    "at": "2026-10-16T08:53:21.392Z",
    "trueStart": "2026-10-16T10:03:00.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171477,
+   "date": "2026-10-17",
+   "p1Key": 1980,
+   "p2Key": 2842,
+   "p1Name": "A. Zverev",
+   "p2Name": "A. Davidovich Fokina",
+   "p1": 1.265,
+   "p2": 4.27,
+   "at": "2026-10-17T05:01:21.055Z",
+   "trueStart": "2026-10-17T08:30:05.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
