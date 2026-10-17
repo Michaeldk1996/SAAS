@@ -11500,6 +11500,7 @@ function buildYearlyTables(m){
   const [p1Rows, p2Rows] = alignYearlyPair(y1 || [], y2 || []);
   // Warm the pop-up's shards for the two players while the tab paints, so the first cell click renders without a fetch.
   [m.p1Key, m.p2Key].forEach(k => { if (k != null) { loadCareerHistory(k); fhLoadCloses(k); } });
+  if (typeof sfDbPxLoad === 'function') sfDbPxLoad();   // the pop-up's prices are the Database's own where its join holds the match (2026-10-17 item 1)
   const legendChip = `<span style="font-size:8.5px; font-weight:700; letter-spacing:0.08em; color:${OV_C.m2}; background:${OV_C.legendChipBg}; border:1px solid ${OV_C.chipLine}; border-radius:3px; padding:1px 4px;">ATP</span>`;
   return `<div class="ov-pane" style="font-family:'Hanken Grotesk',system-ui,sans-serif; color:${OV_C.text}; line-height:normal;">`
     + `<div class="ov-grid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px;">`
@@ -11519,7 +11520,7 @@ function ovOpenCell(cid){
   ovRenderPop();
   if (!S.cell) return;
   const i = +cid.split('|')[0], key = i ? S.m.p2Key : S.m.p1Key, m = S.m;
-  Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
+  Promise.all([loadCareerHistory(key), fhLoadCloses(key), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
 }
 function ovCloseCell(){
   const S = _ov; S.cell = null; S.sel = null; S._popKey = null;
@@ -13582,7 +13583,9 @@ function fhEnsureFormData(m){
   // A keyed side left without a source may be a failed fetch (loadCareerHistory answers [] on one): the next open retries.
   if (m._fhFormData && !m._fhFormRetry) return Promise.resolve(m);
   const ch = k => (k == null || k === '' ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).then(r => Array.isArray(r) ? r : null).catch(() => null));
-  return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory()]).then(([, a, b, eh]) => {
+  // founder ruling 2026-10-17 (item 1): the Database join and both career histories too — every price the tab paints is
+  // the Database's own where its join holds the match (sfDbPxRows), so the tab waits for it rather than flash another price
+  return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null), ch(m.p1Key), ch(m.p2Key)]).then(([, a, b, eh]) => {
     m._fhCloses = [a, b]; m._fhElo = eh;
     // career-history only for a side the form shards do not cover
     return Promise.all([m.p1RecentFormMatches ? null : ch(m.p1Key), m.p2RecentFormMatches ? null : ch(m.p2Key)]);
@@ -13604,17 +13607,22 @@ function fhFormPlayer(m, idx, st){
   const ownEk = String(eventKeyOfMatch(m) || '');
   const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
     [rowsOf(0), rowsOf(1)].flat().map(x => [x.opponent, x.opponentKey])));
-  const all = raw.map((x, i) => {
+  const all0 = raw.map((x, i) => {
     const r = fhRowFromForm(x, key, name, idx * 1000 + i);
     r.oppElo = fhEloAt(m._fhElo, r.opp, r.date, eloOwners);
     // A career-history row carries no opponent key; the closes shard has resolved most of its opponents, so a
     // keyless row matches by name against every archive row (still exactly one candidate within ±1 day, same result).
     // One call either way, so the ruled order (Pcap → Ptd → Btd → Bcap) decides between every candidate.
     const c = r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek);
-    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
     return r;
-  }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself
+  });
+  // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds the match (sfDbPxRows)
+  if (typeof sfDbPxRows === 'function') sfDbPxRows(key, name, all0.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: r.round, opp: r.opp }))).forEach((d, i) => {
+    if (d) Object.assign(all0[i], { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel });
+  });
+  const all = all0.filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself
     && !r.wo   // N2 (TEN-312): a walkover is not a match played — no bar, no row, no count, no price, no line
     && !FH_FORM_NOT_ATP_RECORD.test(String(r.tournRaw || r.tourn || '')));   // founder review 2: Laver Cup is not a Form row
   const S = st, SURFSEL = S.surf, favOn = S.role === 'fav', dogOn = S.role === 'dog';
@@ -13948,7 +13956,7 @@ function fhEnsureH2hData(m){
   const ch = k => (k == null ? Promise.resolve({ rows: [], ok: true }) : Promise.resolve().then(() => loadCareerHistory(k))
     .then(r => ({ rows: Array.isArray(r) ? r : [], ok: Array.isArray(r) && careerHistoryAnswered(k) })).catch(() => ({ rows: [], ok: false })));
   const prof = Object.keys(playerProfiles || {}).length ? null : Promise.resolve().then(() => loadPlayerProfiles()).catch(() => null);   // the roster's namesake count
-  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), prof])
+  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), prof, (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)])   // + the Database join (2026-10-17 item 1)
     .then(([, c1, c2, e1, e2, eh]) => {
       if (!c1.ok || !c2.ok){ m._fhH2hP = null; m._fhH2hFailed = [c1.ok ? null : m.p1, c2.ok ? null : m.p2].filter(Boolean); return m; }
       m._fhH2hFailed = null; m._fhCh = [c1.rows, c2.rows]; m._fhCloses = [e1, e2]; m._fhElo = eh; m._fhH2hData = true; return m;
@@ -14084,10 +14092,15 @@ function fhMeetings(m){
       if (w) c = w.side === 0 ? fhCloseFor(me[0], w.date, m.p2, r.won, m.p2Key, null)
         : (c2 => c2 && { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src })(fhCloseFor(me[1], w.date, m.p1, !r.won, m.p1Key, null));
     }
-    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }
     r.oppElo = fhEloAt(m._fhElo, m.p2, r.date, eloOwners);   // H2H rows: same basis as Form (ruling 2026-09-24)
     return r;
   });
+  // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds the meeting — called exactly as the
+  // Head to Head page calls it (player A's side, B's full name, the page's round code; walkovers never priced)
+  const oppPr = m.p2Key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null, oppFull = (oppPr && oppPr.name) || m.p2, RO = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.roundOf;
+  if (typeof sfDbPxRows === 'function') sfDbPxRows(m.p1Key, m.p1, out.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: RO ? RO(r.round, r.tournRaw) : r.round, opp: oppFull })))
+    .forEach((d, i) => { if (d) Object.assign(out[i], { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel }); });
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
 }
 // Price range average (flag b). Margin removed: invert the mean no-vig
@@ -15126,7 +15139,7 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
     if (td) r.tdKey = td.date + '|' + td.opp + '|' + (td.won ? 1 : 0);   // the Tennis-Data row it joined (ruling B join)
     if (td && x.src === 'archive') r.date = td.date;
     const c = fhCloseFor(cl, td ? td.date : r.date, td ? td.opp : r.opp, r.won, td ? td.oppKey : null, r.ek);
-    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }
     if (td && td.oppKey) r.oppKey = td.oppKey;
     if (td && td.ret) r.retSettle = true;
   }
@@ -15136,6 +15149,12 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
   // match whose stored set list is shorter than its result ("3 - 0" with two sets) is NOT a
   // retirement: its result stands; only the set-score lines cannot read it (`setsOk`).
   r.retSettle = !!(r.retSettle || x.retired);
+  // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds this match (sfDbPxRows) — the
+  // career row as the Head to Head page and the profile hand it over (its own date, result, round and opponent)
+  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){
+    const d = sfDbPxRows(selfKey, selfName, [{ date: x.date, won: r.won, round: r.round, opp: x.opponent }])[0];
+    if (d){ r.price = d.price; r.oppPrice = d.oppPrice; r.book = d.book; r.src = d.src; r.srcLabel = d.srcLabel; }
+  }
   const res = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
   r.setsOk = !!(r.sets && res && r.sets.length === (+res[1]) + (+res[2]) && r.done && r.done.length === r.sets.length);
   r.day = fhDayNum(r.date);
@@ -15162,7 +15181,9 @@ function meRowsFor(career, cl, selfKey, selfName){
 // Each profile row borrows set scores, eventKey (stats sheet) and the display name/round from the one
 // career-history row that joined the same Tennis-Data row (`tdKey`); a row with no such career row
 // is joined by opponent surname + result in the event window, exactly one candidate; none → a dash, not clickable.
-const ME_PROFILE_BOOK = { 'pinnacle-capture': ['P', 'cap'], pinnacle: ['P', 'td'], 'bet365-archive': ['B', 'td'], 'bet365-capture': ['B', 'cap'] };
+const ME_PROFILE_BOOK = { 'pinnacle-capture': ['P', 'cap'], pinnacle: ['P', 'td'], 'bet365-archive': ['B', 'td'], 'bet365-capture': ['B', 'cap'],
+  // founder ruling 2026-10-17 (item 1): the builder prices a row the Database holds exactly as the Database does
+  'pinnacle-history': ['P', 'hist'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'] };
 const ME_TD_ROUND = { quarterfinals: 'QF', semifinals: 'SF', 'the final': 'F', 'round robin': 'RR' };
 function meWinnerRows(shard, career, selfKey, selfName){
   const byTd = {};
@@ -15189,7 +15210,7 @@ function meWinnerRows(shard, career, selfKey, selfName){
       opp: x.opp, oppKey: null, sets: null, ek: null, selfKey, selfName, level: 'ATP' };
     out.push(Object.assign(base, {
       mid: fhSafeId('mw' + selfKey + '_' + i + '_' + x.date), date: x.date, day: fhDayNum(x.date), won: !!x.won,
-      price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1],
+      price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1], srcLabel: undefined,   // the SHARD's source, never the career row's label
       // TEN-312 ruling A: the profile keeps Tennis-Data "Retired" rows (`ret`), settled at the close like any other.
       wo: false, retSettle: !!x.ret, profile: true,
     }));
@@ -15263,7 +15284,7 @@ function meLoad(m){
     if (E.state[i] === 'ready' || E.state[i] === 'loading') return;
     if (key == null){ E.state[i] = 'none'; E.data[i] = null; return; }      // no player key: history unknown, never "0 priced"
     E.state[i] = 'loading';
-    Promise.all([loadCareerHistory(key), fhLoadCloses(key), meLoadProfileShard(key)]).then(([ch, cl, ms]) => {
+    Promise.all([loadCareerHistory(key), fhLoadCloses(key), meLoadProfileShard(key), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)]).then(([ch, cl, ms]) => {   // + the Database join (2026-10-17 item 1)
       if (_me !== E) return;
       // answered = the shard was read (or the index says he has none); a failed closes fetch is not cached
       // (_fhCl), and without it every row would read unpriced — so it is a failure too, never "0 priced".
@@ -15525,11 +15546,11 @@ function mePill(MM){
   const pill = `<span class="me-pill" tabindex="0" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m2}; border:${ME_C.hw} solid ${ME_C.pillLine}; border-radius:999px; padding:2px 8px; cursor:default;">CLOSING ODDS</span>`;
   const ok = MM.filter(M => M.state === 'ready');
   if (ok.length < 2) return pill;
-  const P = ok.reduce((s, M) => s + M.book.P, 0), B = ok.reduce((s, M) => s + M.book.B, 0);
+  const P = ok.reduce((s, M) => s + M.book.P, 0), B = ok.reduce((s, M) => s + M.book.B, 0), A = ok.reduce((s, M) => s + (M.book.A || 0), 0);
   const last = ok.map(M => M.lastDate).filter(Boolean).sort().pop();
   const line = (l, v) => `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.m2}; white-space:nowrap;">${l}</span><span style="${FH_MONO} font-size:11px; color:${ME_C.m1}; white-space:nowrap;">${fhEsc(v)}</span>`;
   const body = `<span class="me-pill-tip" style="display:flex; flex-direction:column; gap:8px;"><span style="font-size:13px; font-weight:700; color:${ME_C.text};">Closing odds</span>`
-    + `<span style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:baseline;">${line('Pinnacle', String(P))}${line('Bet365', String(B) + (B ? ' (no Pinnacle close)' : ''))}${line('Latest match', last ? fhLongDate(last) : '—')}</span></span>`;
+    + `<span style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:baseline;">${line('Pinnacle', String(P))}${A ? line('Pinnacle (approx.)', String(A) + ' (a snapshot, not a confirmed close)') : ''}${line('Bet365', String(B) + (B ? ' (no Pinnacle close)' : ''))}${line('Latest match', last ? fhLongDate(last) : '—')}</span></span>`;
   // width:max-content — an absolute pop inside the 105px pill shrank to it, its grid's value column collapsed to 0 and the
   // text overflowed past the pane (a stray horizontal scrollbar, TEN-380 measure)
   return maTipHtml(pill, body, { popStyle: 'top:calc(100% + 8px); left:auto; right:0; transform:none; width:max-content;' });
@@ -15966,6 +15987,30 @@ function sfDbJoinLoad(){
     .catch(e => { _sfDbJoinSt = 'failed'; _sfDbJoinP = null; throw e; });   // retried on the next open
   return _sfDbJoinP;
 }
+// Founder ruling 2026-10-17 (item 1): ONE price per match on every page. A match the Database join holds (database-yield.json
+// rows + the retirements and exact ties behind its flags, matched by the Head to Head page's own join — H2HPage.priceJoin —
+// against the player's career history) shows exactly that price, book, source and hover on EVERY surface: Head to Head,
+// the profile, Series, the Tournament tab, and Form / H2H / Market edge / Overview / Progression (their closes-shard
+// prices give way to it). views = [{ date, won, round, opp }] from the player's side; returns per view { price, oppPrice,
+// book, src, srcLabel } or null — the join does not hold the match, or has not answered (a caller never starts the
+// join's fetch here: its tab loader asks for it, the profile after its first paint). A null keeps the caller's closes
+// price; tools/price-consistency.mjs reports those as matches the Database does not hold.
+function sfDbPxRows(selfKey, selfName, views){
+  const J = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.priceJoin;
+  if (typeof J !== 'function' || _sfDbJoinSt !== 'ready' || !_sfDbJoin || !views.length) return views.map(() => null);
+  const k = selfKey == null ? '' : String(selfKey);
+  const sh = k && typeof _careerHistoryShards !== 'undefined' && _careerHistoryShards ? _careerHistoryShards[k] : null;
+  const career = Array.isArray(sh) && sh.length ? sh : null;            // as the Head to Head page (h2hCareerOf)
+  // the player's full name as the Head to Head page and H2HCore read it (sfH2hSide: the profile's name, else the caller's)
+  const pr = k && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[k] : null;
+  const full = (pr && pr.name) || selfName;
+  if (!full) return views.map(() => null);
+  const js = views.map(v => ({ date: v.date, won: v.won, round: v.round, opp: v.opp }));
+  J(js, { full }, null, _sfDbJoin, null, career);
+  return js.map(j => (j.price == null ? null : { price: j.price, oppPrice: j.oppPrice, book: j.book, src: j.src || 'td', srcLabel: j.srcLabel }));
+}
+// The tab loaders' wait for the join (a failed load is not cached: sfDbJoinLoad retries on the next open).
+function sfDbPxLoad(){ return typeof sfDbJoinLoad === 'function' ? Promise.resolve().then(() => sfDbJoinLoad()).catch(() => null) : Promise.resolve(null); }
 // TEN-402 R3 fix 3 · a match dated after the Database archive's last match (the live edition) has no closing price on
 // record yet: ONE reason, worded once (trPxAfterTitle), shown on hover by every surface that prints such a row's "—" —
 // the Match analysis Tournament tab and the player profile's Record per tournament rows (window.trPxAfterOf).
@@ -22343,7 +22388,10 @@ window.pp2CareerClose = function (key, x){
   if (!cl || !x || x.walkover) return null;
   const r = meRowFromCareer(x, cl, k, '', 0);
   if (r.wo || r.price == null || r.oppPrice == null) return null;
-  return { price: r.price, oppPrice: r.oppPrice, book: r.book === 'P' ? 'pinnacle' : 'bet365', src: r.src };
+  // the profile's book names (SHEET_BOOK): Pinnacle (approx.) is never 'pinnacle', our archive's close keeps its source
+  const book = r.book === 'A' ? (r.src === 'od10' ? 'pinnacle-approx-od10' : 'pinnacle-approx')
+    : r.book === 'P' ? (r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : 'bet365';
+  return { price: r.price, oppPrice: r.oppPrice, book, src: r.src };
 };
 // TEN-384 · founder ruling (2026-10-05): the Market edge box and tiles draw COMPLETE on first
 // paint — no "—" / "no priced matches on record" that fills in a moment later. The box reads the
@@ -24504,7 +24552,7 @@ function pgEnsureData(m){
   const hist = k => (k == null ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).catch(() => null));
   const cls = k => (k == null ? Promise.resolve(null) : fhLoadCloses(k).catch(() => null));
   if (!Object.keys((playerStyles && playerStyles.byKey) || {}).length) _pgStylesP = _pgStylesP || loadPlayerStyles();
-  m._pgP = Promise.all([hist(keys[0]), hist(keys[1]), cls(keys[0]), cls(keys[1]), loadMatchStatsIndex(), _pgStylesP, _tpLoad && _tpLoad.catch(() => null)])
+  m._pgP = Promise.all([hist(keys[0]), hist(keys[1]), cls(keys[0]), cls(keys[1]), loadMatchStatsIndex(), _pgStylesP, _tpLoad && _tpLoad.catch(() => null), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)])   // + the Database join (2026-10-17 item 1)
     .then(([h1, h2, c1, c2, msIdx]) => {
       const sides = [pgSide(m, 0, h1, c1), pgSide(m, 1, h2, c2)];
       const eks = [...new Set(sides.flatMap(s => s.rows).map(r => r.ek).filter(ek => ek != null && msIdx.has(String(ek))).map(String))];
@@ -29889,7 +29937,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     }, 300);
   }
 
-  window.H2HPage = { render, ensureInit, _h2hRetry: h2hRetryPair, _debug: () => ({ P, ROSTER, state }),
+  window.H2HPage = { render, ensureInit, _h2hRetry: h2hRetryPair, _debug: () => ({ P, ROSTER, state }), roundOf: h2hRoundOf,
     // TEN-402 b: the Head-to-head record's handlers (inline onclick on shared-helper markup: the hot-lines table, rows)
     _open: h2hOpenMeeting,
     _h2hAllLines: () => setState(s2 => ({ h2hAllLines: !s2.h2hAllLines })),

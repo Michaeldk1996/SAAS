@@ -34,7 +34,10 @@ const MUTANTS = [
   ['Q8: two meetings in one edition left unresolved', "      if (c.length > 1) c = c.filter(r => fhRoundCode(r.round, false) === x.round);   // two meetings in one edition: the round decides\n", ''],
   ['Q8: the voted event-name aliases dropped', "  const names = [clean].concat(trArchiveNames(mk), al[clean] || []);", "  const names = [clean].concat(trArchiveNames(mk));"],
   ['TEN-402: the alias vote ignores the tournament-history shard cache (Head to Head resolves fewer rows than the profile)', "    || (typeof _tourHistShards === 'object' && Array.isArray(_tourHistShards[k]) ? _tourHistShards[k] : null) || [];", "    || [];"],
-  ['TEN-402: the profile back on the closes join', "  const P = trModelOf(hist, { ch, cl: null, px: trDbJoinPx(name, ch) }, k, name, clean, names, '', 'ready');", "  const P = trModelOf(hist, { ch, cl: _fhCl[k] }, k, name, clean, names, '', 'ready');"],
+  ['2026-10-17 item 1: the closes tabs no longer take the Database price', "  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){", "  if (false){"],
+  // 'TEN-402: the profile back on the closes join' retired 2026-10-17: an EQUIVALENT mutant since founder ruling item 1 —
+  // trRowOf hands meRowFromCareer no closes (cl = null) and meRowFromCareer prices every row the Database join holds
+  // (sfDbPxRows), so dropping the px step changes no output. The suite's 'M. N' row (closes only, no Database row) pins it.
   ['TEN-402: the flagged retirements dropped from the join', '    return { rows: base.rows.concat(rr, tr), names: nm.names.concat(rn, tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };', '    return { rows: base.rows.concat(tr), names: nm.names.concat(tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };'],
   ["TEN-402: the profile rows' H / A back on the market shard", '          price: jp && jp.price != null ? jp.price : null,', '          price: x.price != null ? x.price : null,', 'pp2'],
   ['TEN-402: the model never waits for the Database rows', "  if (!(k in _careerHistoryShards) || _sfDbJoinSt !== 'ready') return null;", '  if (!(k in _careerHistoryShards)) return null;'],

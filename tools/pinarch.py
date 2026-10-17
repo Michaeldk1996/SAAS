@@ -1431,6 +1431,30 @@ def same_surname(a, b):
     return l[:len(s)] == s or l[-len(s):] == s
 
 
+_NAME_ALIASES = None
+
+
+def name_aliases():
+    """build-odds-performance.js ARCHIVE_NAME_ALIASES (Tennis-Data name -> the api-tennis key it names), read once."""
+    global _NAME_ALIASES
+    if _NAME_ALIASES is None:
+        try:
+            _NAME_ALIASES = parse_name_table(open(os.path.join(ROOT_DIR, 'build-odds-performance.js')).read())
+        except (OSError, ValueError):
+            _NAME_ALIASES = {}
+    return _NAME_ALIASES
+
+
+def same_player(td, api, api_key=None):
+    """A Tennis-Data name against an api-tennis player: the surname rule (same_surname), or - founder ruling 2026-10-17
+    item 4 - the archive name table, which names the player's key ("Struff J.L." = J-L. Struff, 2831; "O Connell C." =
+    C. O'Connell, 421). The table only adds a join; it never refuses one the surname rule makes."""
+    k = name_aliases().get(str(td or '').strip())
+    if k is not None and api_key is not None and str(api_key) == k:
+        return True
+    return same_surname(td, api)
+
+
 def first_initial(name):
     m = re.search(r'\b([A-Za-z])\.', str(name or ''))
     return _fold(m.group(1)) if m else None
@@ -1535,12 +1559,12 @@ def td_spellings(export_rows, by_day, table_names=None):
     for e in export_rows:
         day = dt.date.fromisoformat(e['date'])
         cands = [r for k in (day - dt.timedelta(days=1), day, day + dt.timedelta(days=1)) for r in by_day.get(k.isoformat(), [])
-                 if (same_surname(r['winner'], e['p1Name']) and same_surname(r['loser'], e['p2Name']))
-                 or (same_surname(r['winner'], e['p2Name']) and same_surname(r['loser'], e['p1Name']))]
+                 if (same_player(r['winner'], e['p1Name'], e.get('p1Key')) and same_player(r['loser'], e['p2Name'], e.get('p2Key')))
+                 or (same_player(r['winner'], e['p2Name'], e.get('p2Key')) and same_player(r['loser'], e['p1Name'], e.get('p1Key')))]
         if len(cands) != 1:
             continue
         r = cands[0]
-        w1 = same_surname(r['winner'], e['p1Name'])
+        w1 = same_player(r['winner'], e['p1Name'], e.get('p1Key'))
         for key, nm in ((e.get('p1Key'), r['winner'] if w1 else r['loser']), (e.get('p2Key'), r['loser'] if w1 else r['winner'])):
             if key is None:
                 continue
@@ -1592,15 +1616,15 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             rep['beforePinnacleStop'] += 1; continue
         day = dt.date.fromisoformat(d)
         cands = [r for k in (day - dt.timedelta(days=1), day, day + dt.timedelta(days=1)) for r in by_day.get(k.isoformat(), [])
-                 if (same_surname(r['winner'], e['p1Name']) and same_surname(r['loser'], e['p2Name']))
-                 or (same_surname(r['winner'], e['p2Name']) and same_surname(r['loser'], e['p1Name']))]
+                 if (same_player(r['winner'], e['p1Name'], e.get('p1Key')) and same_player(r['loser'], e['p2Name'], e.get('p2Key')))
+                 or (same_player(r['winner'], e['p2Name'], e.get('p2Key')) and same_player(r['loser'], e['p1Name'], e.get('p1Key')))]
         if len(cands) > 1:
             rep['twoTdRows'] += 1; continue
         if cands:
             r = cands[0]
             if _vp(r.get('psw')) and _vp(r.get('psl')):
                 rep['tdHasPinnacle'] += 1; continue
-            w1 = same_surname(r['winner'], e['p1Name'])
+            w1 = same_player(r['winner'], e['p1Name'], e.get('p1Key'))
             out.append({'kind': 'override', 'date': r['date'], 'tournament': r['tournament'], 'series': r.get('series'), 'court': r.get('court'),
                         'surface': r.get('surface'), 'round': r.get('round'), 'bestof': r.get('bestof'), 'winner': r['winner'], 'loser': r['loser'],
                         'comment': r.get('comment'), 'psw': e['p1'] if w1 else e['p2'], 'psl': e['p2'] if w1 else e['p1'],

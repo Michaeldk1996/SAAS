@@ -6768,9 +6768,10 @@
      * the retirement settlement note, and the shard's build stamp.
      */
     function bookNote() {
-      var ps = { n: 0, pl: 0 }, b3 = { n: 0, pl: 0 };
+      var ps = { n: 0, pl: 0 }, b3 = { n: 0, pl: 0 }, ap = { n: 0, pl: 0 };
       basisRows.forEach(function (m) {
-        var t = /^pinnacle/.test(String(m.book || '')) ? ps : b3;
+        // Pinnacle (approx.) is a snapshot, never a close: its own count, never folded into Pinnacle (founder 2026-10-17)
+        var t = /^pinnacle-approx/.test(String(m.book || '')) ? ap : /^pinnacle/.test(String(m.book || '')) ? ps : b3;
         t.n++; t.pl += (m.pl || 0);
       });
       function y(t) { return t.n ? signed(100 * t.pl / t.n, 2, '%') : DASH; }
@@ -6778,6 +6779,7 @@
       return '<div data-pp2-mk="note" style="font-size:12px;line-height:19.2px;color:var(--text-label);">' +
         H.n + ' priced on closing prices (Pinnacle, else Bet365). Split by book: ' +
         y(ps) + ' across ' + ps.n.toLocaleString('en-US') + ' Pinnacle-priced matches, ' +
+        (ap.n ? y(ap) + ' across ' + ap.n.toLocaleString('en-US') + ' matches priced on Pinnacle (approx.), a snapshot, not a confirmed close, ' : '') +
         y(b3) + ' across ' + b3.n.toLocaleString('en-US') + ' matches priced on Bet365. ' +
         'Tour = the Database Tour figures (ATP main tour, all surfaces, 2010 on).' +
         (lvl ? ' ' + lvl + ' level close' + (lvl === 1 ? '' : 's') + ' in All matches only.' : '') +

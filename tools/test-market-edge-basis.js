@@ -40,7 +40,7 @@ function checkShard(name, s) {
   for (const [where, sum] of summaries) {
     if (!sum) continue;
     // every priced row is on the basis: the book mix adds to n exactly
-    if (sum.book && sum.book.pinnacle + sum.book.bet365 !== sum.n) bad.push(`${name}: ${where} book mix ${JSON.stringify(sum.book)} does not add to n=${sum.n}`);
+    if (sum.book && sum.book.pinnacle + sum.book.bet365 + (sum.book.approx || 0) !== sum.n) bad.push(`${name}: ${where} book mix ${JSON.stringify(sum.book)} does not add to n=${sum.n}`);
     if (sum.n > 0 && sum.units == null) bad.push(`${name}: ${where} has n=${sum.n} but no units — the "At 1u flat" figure would dash`);
   }
   // one curve point per summed row
@@ -82,7 +82,7 @@ function checkIndex(idx) {
   else {
     // The baseline is COMPUTED on the same basis: Bet365 fallback sides are in it, and the mix adds up.
     if (!tour.book || !(tour.book.bet365 > 0)) bad.push('index tour baseline has no Bet365 side — the superseded Pinnacle-only baseline');
-    else if (tour.book.pinnacle + tour.book.bet365 !== tour.n) bad.push(`index tour baseline book mix does not add to n=${tour.n}`);
+    else if (tour.book.pinnacle + tour.book.bet365 + (tour.book.approx || 0) !== tour.n) bad.push(`index tour baseline book mix does not add to n=${tour.n}`);
     if (tour.yield === -3.79) bad.push('index tour baseline is the hard-coded -3.79% constant, not a computed figure');
     if (!(tour.n > 10000)) bad.push(`index tour baseline rests on ${tour.n} sides — too few to be the whole archive`);
   }
@@ -229,6 +229,43 @@ console.log('build stamp');
       else fail('the market-edge build step does not record MARKET_EDGE_BUILD_START before building');
     }
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+
+  // 4 · founder ruling 2026-10-17 (item 1): one price per match. A Tennis-Data row the Database prices takes the
+  //     Database's price and book (here a start − 10 snapshot, book 5); a row the Database does not hold keeps R8.
+  {
+    const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-db-'));
+    try {
+      for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js']) fs.copyFileSync(path.join(ROOT, f), path.join(t2, f));
+      for (const f of ['court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(ROOT, f))) fs.symlinkSync(path.join(ROOT, f), path.join(t2, f));
+      fs.mkdirSync(path.join(t2, 'odds-archive'));
+      const H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl,maxw,maxl,avgw,avgl,avgsrc';
+      fs.writeFileSync(path.join(t2, 'odds-archive', '2026.csv'), [H,
+        '2026-07-14,Hamburg,ATP500,Outdoor,Clay,1st Round,3,Sinner J.,Doe J.,1,90,Completed,1.10,6.50,,,1.10,6.50,1.10,6.50,file',
+        '2026-07-16,Hamburg,ATP500,Outdoor,Clay,2nd Round,3,Roe R.,Sinner J.,40,1,Completed,5.00,1.15,,,5.00,1.15,5.00,1.15,file', ''].join('\n'));
+      fs.writeFileSync(path.join(t2, 'player-profiles.json'), JSON.stringify({ players: { 47: { name: 'J. Sinner' } } }));
+      const run = (withDb) => {
+        for (const f of ['database-yield.json', 'database-yield-players.json']) fs.rmSync(path.join(t2, f), { force: true });
+        if (withDb) {
+          fs.writeFileSync(path.join(t2, 'database-yield.json'), JSON.stringify({ meta: { tournaments: ['Hamburg'] },
+            rows: [[20260714, 0, 0, 0, 0, 1.12, 6.10, 1, 5]], retRows: [], tieRows: [] }));
+          fs.writeFileSync(path.join(t2, 'database-yield-players.json'), JSON.stringify({ names: [['Sinner J.', 'Doe J.']], retNames: [], tieNames: [] }));
+        }
+        execFileSync(process.execPath, [path.join(t2, 'build-market-edge.js'), '--quiet'], { stdio: 'pipe' });
+        return JSON.parse(fs.readFileSync(path.join(t2, 'market-edge', '47.json'), 'utf8')).matches;
+      };
+      const pick = (ms, d) => { const m = ms.find((x) => x.date === d); return m ? [m.price, m.book] : null; };
+      const a = run(true), b = run(false);
+      const want1 = [1.12, 'pinnacle-approx-od10'], want2 = [1.15, 'bet365-archive'];
+      if (JSON.stringify(pick(a, '2026-07-14')) === JSON.stringify(want1)) ok('a match the Database holds takes its price and book (start − 10 1.12, not Bet365 1.10)');
+      else fail(`Database-held row ${JSON.stringify(pick(a, '2026-07-14'))}, want ${JSON.stringify(want1)}`);
+      if (JSON.stringify(pick(a, '2026-07-16')) === JSON.stringify(want2)) ok('a match the Database does not hold keeps the R8 order (Bet365 1.15)');
+      else fail(`not-held row ${JSON.stringify(pick(a, '2026-07-16'))}, want ${JSON.stringify(want2)}`);
+      if (JSON.stringify(pick(b, '2026-07-14')) === JSON.stringify([1.10, 'bet365-archive'])) ok('control: without database-yield.json the same row is on R8 (Bet365 1.10)');
+      else fail(`control row ${JSON.stringify(pick(b, '2026-07-14'))}`);
+      const s = JSON.parse(fs.readFileSync(path.join(t2, 'market-edge', '47.json'), 'utf8'));
+      if (!checkShard('db-first', Object.assign({}, s)).some((x) => /book mix/.test(x))) ok('the shard book mix still adds up'); else fail('book mix check fails on a db-first shard');
+    } finally { fs.rmSync(t2, { recursive: true, force: true }); }
+  }
 
   // 3 · the modal's stamp text.
   const pp2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');

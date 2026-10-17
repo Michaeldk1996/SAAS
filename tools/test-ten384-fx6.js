@@ -289,7 +289,9 @@ H.check('6 · a Tokyo 2026 row the shard does not reach: the ledger prints the c
   try {
     const row = I.ledgerRows(p).find(r => r.m.date === '2026-10-01');
     assert(row, 'the Tokyo row is not on the ledger');
-    assert.deepStrictEqual([row.price, row.oppPrice, row.book], [1.182, 5.48, 'pinnacle'], 'ledger ' + JSON.stringify([row.price, row.oppPrice, row.book]));
+    // founder ruling 2026-10-17 (one price per match): a captured close keeps its own source name, 'pinnacle-capture' (the
+    // Market edge shard's name for it), so the profile's hover is the one every surface prints
+    assert.deepStrictEqual([row.price, row.oppPrice, row.book], [1.182, 5.48, 'pinnacle-capture'], 'ledger ' + JSON.stringify([row.price, row.oppPrice, row.book]));
     const cells = I.ledgerRowHtml(row).split('<span').slice(-2).map(c => T('<span' + c).trim());
     assert.deepStrictEqual(cells, ['1.18', '5.48']);
     // display only: the row carries no P&L, so no yield, unit or Derived-lines role moves

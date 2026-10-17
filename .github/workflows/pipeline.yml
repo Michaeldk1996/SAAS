@@ -1287,6 +1287,15 @@ jobs:
       - name: H2H golden-pair reconciliation on the freshly built store (fail-closed pre-publish gate)
         run: node tools/h2h-reconcile.mjs --site _site
 
+      # Founder ruling 2026-10-17 (item 1, standing): one price per match, on every page. The page's own functions run in
+      # headless Chrome over the site THIS run built: for every 2026 ATP main-draw career match and a 1-in-10 player
+      # sample of every year, the Database join, the Match analysis tab rows (Form, H2H, Market edge, Overview,
+      # Progression), the Market edge shard and the Head to Head page's captured step must give ONE price, source and
+      # hover. A difference on a match the Database holds fails the run before the upload (nothing publishes); matches
+      # the Database does not hold are reported in the log, pending a ruling. Fail-closed: no `|| true`.
+      - name: One price per match on every surface (fail-closed pre-publish gate)
+        run: CHROME_BIN=google-chrome node tools/price-consistency.mjs --site _site
+
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
       # Two separate jobs, both of which have to be true before anything ships:

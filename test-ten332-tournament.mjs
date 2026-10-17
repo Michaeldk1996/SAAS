@@ -57,7 +57,7 @@ const S = new Function('window', `
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName',
      'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
   ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
-  return { buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
+  return { meRowFromCareer, sfDbPxRows, buildTournamentSection, trModelFor, trStateFor, trProfileModel, trLoad, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml, trProfileBacking,
     chShards: _careerHistoryShards, thShards: _tourHistShards, fhCl: _fhCl, profiles: playerProfiles, profileFail: _trProfileFail, set hold(v){ _trHoldData = v; },
     get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED,
     // TEN-402 (founder 2026-10-08): the page-wide Database join rows (sfDbJoinLoad's state), set by the tests
@@ -318,7 +318,10 @@ new Function('window', pp2)(PPW);
 test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Database join (retirements settled on the ATP result) — never the closes shard, never the market-edge shard', () => {
   const games = [['2024-07-21', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }], ['2024-07-20', 'C. D', 'Semi-finals', false, L2, { p: [2.0, 1.85] }],
     ['2024-07-19', 'E. F', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }], ['2024-07-18', 'G. H', '1/8-finals', true, W2, { b: [1.4, 2.9] }],
-    ['2024-07-17', 'I. J', '1/16-finals', true, W2, { p: [1.3, 3.5] }], ['2024-07-16', 'K. L', '1/32-finals', true, W2, { p: [2.5, 1.55] }]];
+    ['2024-07-17', 'I. J', '1/16-finals', true, W2, { p: [1.3, 3.5] }], ['2024-07-16', 'K. L', '1/32-finals', true, W2, { p: [2.5, 1.55] }],
+    // founder ruling 2026-10-17 (item 1): a match the closes shard prices and the Database does not hold — on the Database
+    // join it is a dash; the closes path would print 1.70 / 2.10 (the mutant 'the profile back on the closes join')
+    ['2024-07-15', 'M. N', '1/64-finals', true, W2, { p: [1.7, 2.1] }]];
   // the closes shard (+2.5u) is loaded for the player — and read by nothing (TEN-402 r2: the tab left it too)
   const m = fixture([ed(2024, games)], { noDb: true });
   const d = S.tr.data[0];
@@ -329,7 +332,7 @@ test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Data
   const st = dbStore(games, g => DBPX[g[1]]);
   S.dbJoin = dbPriceJoinRows(st.base, st.nm);
   // the profile's own store: draw order, a qualifying round and a walkover the tab's history never carries (N7, N2)
-  const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32', '1/32-finals': 'R64' };
+  const R = { 'Final': 'F', 'Semi-finals': 'SF', 'Quarter-finals': 'QF', '1/8-finals': 'R16', '1/16-finals': 'R32', '1/32-finals': 'R64', '1/64-finals': 'R128' };
   const matches = games.slice().reverse().map(g => ({ res: g[3] ? 'W' : 'L', round: R[g[2]], opp: g[1], oppKey: null, score: g[3] ? '2 - 0' : '0 - 2' }));
   const prof = { key: '1', name: 'J. Sinner', tournamentHistory: [{ name: 'Washington', won: 5, lost: 1, titles: 1, bestResult: 'Winner', bestYears: [2024],
     editions: [{ year: 2024, finish: 'Winner', matches: [{ res: 'W', round: 'Q1', opp: 'Q. Qual', oppKey: null, score: '2 - 0' },
@@ -346,14 +349,14 @@ test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Data
   assert.ok(det.includes('Backing him here +2.7u'), det.slice(det.indexOf('Backing him here'), det.indexOf('Backing him here') + 60));
   assert.ok(text(I.renderTournModal(prof)).includes('+2.7u'), 'the Record per tournament column prints the same units');
   // the rows' H / A are the same join: the final at 1.60 / 2.40, the retirement 1.30 / 3.50, R16 the Bet365 1.50 / 2.70
-  const hx = (h, o) => { const x = new RegExp(o.replace('.', '\\.') + ' (?:F|SF|QF|R16|R32|R64) \\d - \\d — (\\d+\\.\\d\\d) (\\d+\\.\\d\\d)').exec(h); return x ? x[1] + ' / ' + x[2] : '—'; };
-  assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L', 'Q. Qual'].map(o => hx(det, o)), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70', '2.40 / 1.60', '—'],
+  const hx = (h, o) => { const x = new RegExp(o.replace('.', '\\.') + ' (?:F|SF|QF|R16|R32|R64|R128) \\d - \\d — (\\d+\\.\\d\\d) (\\d+\\.\\d\\d)').exec(h); return x ? x[1] + ' / ' + x[2] : '—'; };
+  assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L', 'Q. Qual', 'M. N'].map(o => hx(det, o)), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70', '2.40 / 1.60', '—', '—'],
     'the detail rows\' H / A = the Database join (the retirement too); the qualifier has none');
   // TEN-402 r2 (founder card 7bc622d5, 2026-10-09): the Match analysis Tournament tab prints the SAME figures — its tile, its
   // rows' H / A and B mark — from the same join; never the closes' +2.5u
   const tabH = S.buildTournamentSection(m), tb = tile(tabH, 'Backing');
   assert.equal(/class="tr-tile-v"[^>]*>([^<]+)</.exec(tb)[1], '+2.7u', 'the tab = the profile (+2.7u), not the closes (+2.5u)');
-  assert.ok(text(tb).includes('6 of 6 matches priced') && text(tb).includes('Bet365 where missing (1)'), text(tb));
+  assert.ok(text(tb).includes('6 of 7 matches priced') && text(tb).includes('Bet365 where missing (1)'), text(tb));
   const tabPx = o => { const x = new RegExp('>' + o.replace('.', '\\.') + '<[^]*?ma-row-score[^]*?</span></span><span[^>]*>([^<]*)(?:<span class="ma-row-mark"[^>]*>(B)</span>)?</span><span[^>]*>([^<]*)</span>').exec(card0(tabH)); return x ? x[1] + ' / ' + x[3] + (x[2] ? ' B' : '') : null; };
   assert.deepEqual(['A. B', 'I. J', 'G. H', 'K. L'].map(tabPx), ['1.60 / 2.40', '1.30 / 3.50', '1.50 / 2.70 B', '2.40 / 1.60'], 'the tab rows = the profile rows');
   // one model: row for row, the tab's prices are the profile model's (trProfileModel), and so are the units and n
@@ -380,7 +383,7 @@ test('ruling 2026-10-08: the profile\'s per-event Backing and H / A are the Data
   const pend = S.buildTournamentSection(m);
   assert.ok(text(tile(pend, 'Backing')).includes('— loading prices'), text(tile(pend, 'Backing')));
   assert.ok(!/1\.50|2\.60|1\.85/.test(text(card0(pend))), 'no closes price on the tab while pending');
-  assert.equal((card0(pend).match(/<span title="Loading prices" style="position:relative;[^"]*">(<\/span>|<span class="ma-row-mark")/g) || []).length, 6, 'six empty H cells');
+  assert.equal((card0(pend).match(/<span title="Loading prices" style="position:relative;[^"]*">(<\/span>|<span class="ma-row-mark")/g) || []).length, 7, 'seven empty H cells (every row, the one the Database does not hold included)');
   // a failed load: the tab's words, "prices unavailable" — never "loading" forever
   S.dbJoinSt = 'failed';
   assert.ok(text(I.renderTournDetail(prof, I.tournViews(prof).find(x => x.name === 'Washington'))).includes('Backing him here — prices unavailable'));
@@ -538,4 +541,27 @@ test('TEN-402 r2: a start-dated career row meets the Database join on its own da
   assert.deepEqual(P.all.map(r => r.price), [2.59, 1.65, 3.04, 1.58, 1.27], 'every row priced, the final included');
   assert.equal(Math.round(P.units * 100), -100 + 65 + 204 + 58 + 27);
   S.dbJoin = null;
+});
+
+// Founder ruling 2026-10-17 (item 1): ONE price per match on every page. The closes-shard tabs — Overview, Progression and
+// Market edge's derived lines (meRowFromCareer), Form and H2H (the same sfDbPxRows call) — show the Database's own price,
+// book and source wherever its join holds the match: here a start − 10 Pinnacle (approx.) snapshot (book 5) the closes
+// shard prices as a Tennis-Data Pinnacle close. A match the Database does not hold keeps the closes price (reported by
+// tools/price-consistency.mjs, pending a ruling). Controls: before the join answers, the closes price; the tab sources
+// call the shared function (no tab prices on its own once the join holds the match).
+test('founder ruling 2026-10-17 (item 1): the closes-shard tabs show the Database\'s own price, book and source wherever its join holds the match', () => {
+  const games = [['2026-07-26', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }], ['2026-07-23', 'C. D', '1/8-finals', false, L2, { p: [2.0, 1.85] }]];
+  fixture([ed(2026, games)], { noDb: true });
+  const d = S.tr.data[0];
+  S.chShards['1'] = d.ch;
+  const st = dbStore(games, g => (g[1] === 'A. B' ? { px: [1.55, 2.45], book: 5 } : null));
+  S.dbJoin = dbPriceJoinRows(st.base, st.nm);
+  const row = o => { const i = d.ch.findIndex(x => x.opponent === o); return S.meRowFromCareer(d.ch[i], d.cl, '1', 'J. Sinner', i); };
+  const pk = r => [r.price, r.oppPrice, r.book, r.src];
+  assert.deepEqual(pk(row('A. B')), [1.55, 2.45, 'A', 'od10'], 'the Database\'s start − 10 snapshot, never the closes 1.50 / 2.60');
+  assert.deepEqual(pk(row('C. D')), [2.0, 1.85, 'P', 'td'], 'a match the Database does not hold keeps the closes price');
+  S.dbJoin = null;
+  assert.deepEqual(pk(row('A. B')), [1.5, 2.6, 'P', 'td'], 'control: before the join answers, the closes price');
+  // every closes tab hands its rows to the ONE shared function
+  for (const f of ['fhFormPlayer', 'fhMeetings', 'meRowFromCareer']) assert.ok(/sfDbPxRows\(/.test(slice(f)), f + ' prices through sfDbPxRows');
 });

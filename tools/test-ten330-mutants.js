@@ -7,8 +7,8 @@ const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf
 const MUTANTS = [
   ['Q27: a name links with no profile behind it', "  const has = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)];", "  const has = key != null;"],
   ["N2: a walkover becomes a form row again", "    && !r.wo   // N2 (TEN-312)", "    && true   // N2 (TEN-312)"],
-  ['ruling A: a retirement left unpriced', '    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }\n    const d = fhDayNum(r.date); r.ago',
-    '    if (c && !r.ret){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }\n    const d = fhDayNum(r.date); r.ago'],
+  ['ruling A: a retirement left unpriced', '    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }\n    const d = fhDayNum(r.date); r.ago',
+    '    if (c && !r.ret){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; r.srcLabel = c.srcLabel; }\n    const d = fhDayNum(r.date); r.ago'],
   ['rows: " ret." dropped', "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');", "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ');"],
   ['rows: set scores double-space joined', "  return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');", "  return r.sets.map(x => x[0] + '-' + x[1]).join('  ') + (r.ret ? ' ret.' : '');"],
   ['bars: no closing price under the bar', "${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div>", "</span></div>"],

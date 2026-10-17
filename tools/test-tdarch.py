@@ -202,5 +202,16 @@ check('start10: the feed carries both sources, each named, the start - 10 row wi
       and [r for r in fr10 if r['source'].startswith('api')][0]['cutTs'] == '' and list(fr10[0]) == T.APPROX_FEED_COLS, fr10)
 check('start10: the hover is the ruled words', T.START10_HOVER == 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close')
 
+# founder ruling 2026-10-17 item 4: the archive name table joins "Struff J.L." / "O Connell C." on the player's key
+al = {'2026-07-21': [{'event_key': 91, 'event_first_player': 'J-L. Struff', 'second_player_key': 1, 'event_second_player': 'A. Shevchenko',
+                      'first_player_key': 2831},
+                     {'event_key': 92, 'event_first_player': 'J. Duckworth', 'first_player_key': 5, 'event_second_player': "C. O'Connell", 'second_player_key': 421}]}
+st = {'date': '2026-07-21', 'winner': 'Struff J.L.', 'loser': 'Shevchenko A.'}
+oc = {'date': '2026-07-21', 'winner': 'Duckworth J.', 'loser': 'O Connell C.'}
+check('alias: "Struff J.L." joins J-L. Struff on his key 2831', T.approx_join(st, al)[0]['event_key'] == 91, T.approx_join(st, al))
+check('alias: "O Connell C." joins C. O\'Connell on his key 421', T.approx_join(oc, al)[0]['event_key'] == 92, T.approx_join(oc, al))
+bad = {'2026-07-21': [dict(al['2026-07-21'][0], first_player_key=9999)]}
+check('control: the same names with another key do not join (the surname rule alone misses them)', T.approx_join(st, bad) == (None, 'no fixture'), T.approx_join(st, bad))
+check('control: the table only adds joins: a plain surname match still joins', T.P.same_player('Zverev A.', 'A. Zverev', None) and not T.P.same_player('Zverev A.', 'M. Zverev', None))
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

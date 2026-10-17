@@ -263,6 +263,8 @@ const ARCHIVE_NAME_ALIASES = {
   'Herbert P.H': '1748',             // P. Herbert, archive dropped the trailing dot
   'Meligeni Rodrigues F': '357',     // F. Meligeni Alves, other compound segment, no dot
   'Dedura-Palomero D.': '55858',     // D. Dedura, we truncate the compound
+  'Struff J.L.': '2831',             // J-L. Struff: the archive's hyphen-less initials (founder ruling 2026-10-17, item 4)
+  'O Connell C.': '421',             // C. O'Connell: the archive drops the apostrophe (founder ruling 2026-10-17, item 4)
   'Miguel L.': '67442',              // G. Miguel (Luis Augusto "Guto" Miguel): known by a later given name (Rio 2026, the archive's only row)
   // oddspapi (bet365-history) spellings — players known by a LATER given name; exact
   // strings, and no Tennis-Data name carries a comma, so they cannot collide.
