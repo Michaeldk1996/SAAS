@@ -4346,11 +4346,11 @@
     },
     "12171477": {
       "fixtureId": "id1200308575660770",
-      "mappedAt": "2026-10-15T12:45:18Z",
+      "mappedAt": "2026-10-17T01:02:00Z",
       "orient": "same",
       "p1": "A. Zverev",
       "p2": "A. Davidovich Fokina",
-      "startTime": "2026-10-17T04:00:00.000Z",
+      "startTime": "2026-10-17T08:30:00.000Z",
       "tournamentId": 3085
     },
     "12171698": {
@@ -4589,23 +4589,12 @@
       "observedSpanDays": 18.81,
       "projectedTtlUnitsPerDay": 1.5,
       "runs": 400,
-      "spentRuns": 150,
+      "spentRuns": 151,
       "ttlBitRuns": 28,
       "ttlBitShare": 0.07,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-28T04:31:02Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 22
-      },
       {
         "at": "2026-09-28T05:30:57Z",
         "fixturesUnitsSpent": 1,
@@ -8994,9 +8983,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 18
+      },
+      {
+        "at": "2026-10-17T01:02:00Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 18
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-16T22:01:15Z"
+  "updatedAt": "2026-10-17T01:02:00Z"
 }
