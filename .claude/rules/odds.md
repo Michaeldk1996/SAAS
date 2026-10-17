@@ -316,7 +316,10 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
 - **Archive names and round tolerance (same rulings, items 1–2):** the join meets the archive's spelling through
   `ARCHIVE_NAME_ALIASES` (key) and `ARCHIVE_PAGE_SPELLINGS` (the page's own spelling where no key exists:
   "Dolgopolov O." = A. Dolgopolov, "Zhang Ze" = Z. Zhang, Moroni, Statham, Madaras, Aragone, Monteiro, Wu Tung-Lin,
-  Hernandez-Fernandez), in `build-odds-performance.js`. A career match the join left unpriced takes a Database row whose
+  Hernandez-Fernandez), in `build-odds-performance.js`. An aliased name carries **every spelling we hold for its key** — the profile's (its newest fixture,
+  TEN-372) and the table's (`ARCHIVE_ALIAS_NAMES`, as opponents' older rows spell him) — and each one meets a row: on 17 Oct
+  67442's new profile "L. A. Miguel" unjoined Gaubas's Rio row "G. Miguel" and the publish guard failed every run from 18:20Z.
+  **Test:** `test-ten402-b.mjs` "archive name table" (both spellings price; control: the profile spelling alone misses). A career match the join left unpriced takes a Database row whose
   date, both players and event agree but whose round differs **only when it is the single candidate on both sides**
   (`rdTol`); two candidates stay a dash. **Test:** `test-ten402-b.mjs` "round tolerance" + "archive name table".
 - **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).

@@ -154,6 +154,18 @@ test('archive name table (founder brief 2026-10-15 item 2): an aliased archive n
   const g1 = [{ date: '2026-02-18', won: true, round: null }]; priceJoin(g1, { full: 'V. Gaubas' }, { full: 'G. Miguel' }, mg);
   const g2 = [{ date: '2026-02-18', won: false, round: null }]; priceJoin(g2, { full: 'L. A. Miguel' }, { full: 'V. Gaubas' }, mg);
   assert.deepEqual([g1[0].price, g2[0].price], [1.10, 7.00], 'both sides meet "Miguel L.": Gaubas v G. Miguel and Miguel\'s own "L. A. Miguel"');
+  // 17 Oct: 67442 gained a profile spelled "L. A. Miguel" (his newest fixture) while Gaubas's Rio row still says "G. Miguel".
+  // The table carries BOTH spellings; every one meets the row. Control: the profile spelling alone unjoins Gaubas's row.
+  const mgRows = { meta: { rounds: ['1st Round'] }, rows: [[20260218, 0, 0, 0, 0, 1.10, 7.00, 1, 1]], retRows: [] };
+  const both = dbPriceJoinRows(mgRows, { names: [['Gaubas V.', 'Miguel L.']], retNames: [], aliases: { 'Miguel L.': ['L. A. Miguel', 'G. Miguel'] } });
+  const h1 = [{ date: '2026-02-18', won: true, round: null }]; priceJoin(h1, { full: 'V. Gaubas' }, { full: 'G. Miguel' }, both);
+  const h2 = [{ date: '2026-02-18', won: false, round: null }]; priceJoin(h2, { full: 'L. A. Miguel' }, { full: 'V. Gaubas' }, both);
+  assert.deepEqual([h1[0].price, h2[0].price], [1.10, 7.00], 'a two-spelling alias: Gaubas v "G. Miguel" and Miguel\'s profile "L. A. Miguel" both price');
+  const only = dbPriceJoinRows(mgRows, { names: [['Gaubas V.', 'Miguel L.']], retNames: [], aliases: { 'Miguel L.': 'L. A. Miguel' } });
+  const h3 = [{ date: '2026-02-18', won: true, round: null }]; priceJoin(h3, { full: 'V. Gaubas' }, { full: 'G. Miguel' }, only);
+  assert.equal(h3[0].price ?? null, null, 'control: the profile spelling alone misses Gaubas\'s "G. Miguel" row (the 17 Oct red pipeline)');
+  const bsrc = readFileSync(join(HERE, 'build-database-yield.js'), 'utf8');
+  assert.match(bsrc, /new Set\(\[prof\[k\] && prof\[k\]\.name, ARCHIVE_ALIAS_NAMES\[k\]\]\.filter\(Boolean\)\)/, 'the build carries the profile\'s AND the table\'s spelling');
   const ctl = dbPriceJoinRows(base, { names: nm.names, retNames: [] });
   const c1 = ledger(); priceJoin(c1, TB, BER, ctl);
   assert.equal(c1[0].price ?? null, null, 'control: no table, the initials differ and Barrios Vera misses');

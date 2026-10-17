@@ -27961,9 +27961,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const AL = db.aliases || {};
     // an aliased name keeps its own key as `alt` too: the alias names the player as his opponents' files spell him ("G.
     // Miguel"), his own profile may spell him as the archive does ("L. A. Miguel") — either meets the row
+    // an alias may carry several spellings (an array: the profile's and the opponents' older rows'); each one meets
     const kc = db._h2hKeys.kc, key = nm => { let k = kc.get(nm); if (!k) { const al = Object.prototype.hasOwnProperty.call(AL, nm);
-      k = h2hTdKey(al ? AL[nm] : nm); if (al) k = Object.assign({}, k, { alt: h2hTdKey(nm) }); kc.set(nm, k); } return k; };
-    const same = (x, y) => h2hTdSame(x, y) || !!(y && y.alt && h2hTdSame(x, y.alt));
+      const sp = al ? [].concat(AL[nm]) : [nm];
+      k = h2hTdKey(sp[0]); if (al) k = Object.assign({}, k, { alt: sp.slice(1).concat(nm).map(h2hTdKey) }); kc.set(nm, k); } return k; };
+    const same = (x, y) => h2hTdSame(x, y) || !!(y && y.alt && y.alt.some(z => h2hTdSame(x, z)));
     const ka = key(a.full);
     // A's Database rows, indexed by the opponent's surname words (memoised per player on the db object)
     const pk = a.full + '|' + db.rows.length;
@@ -27975,7 +27977,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         const c = same(ka, key(nm[0])) ? { i, aWon: true, o: nm[1] } : same(ka, key(nm[1])) ? { i, aWon: false, o: nm[0] } : null;
         if (!c) return;
         c.k = key(c.o); c.rd = h2hTdRound(db, i); c.st = h2hTdEvent(db, i).start; c.day = Date.UTC(Math.floor(db.rows[i][0] / 10000), Math.floor(db.rows[i][0] / 100) % 100 - 1, db.rows[i][0] % 100) / 86400000;
-        new Set(h2hTdIx(c.k).concat(c.k.alt ? h2hTdIx(c.k.alt) : [])).forEach(w => { if (!A0.byW.has(w)) A0.byW.set(w, []); A0.byW.get(w).push(c); });
+        new Set(h2hTdIx(c.k).concat(...(c.k.alt || []).map(h2hTdIx))).forEach(w => { if (!A0.byW.has(w)) A0.byW.set(w, []); A0.byW.get(w).push(c); });
       });
       db._h2hKeys.byP.set(pk, A0);
     }
