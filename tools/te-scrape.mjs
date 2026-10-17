@@ -94,6 +94,28 @@ function profileFacts(html) {
 const COUNTRY_ALIAS = { 'czechia': 'czechrepublic', 'unitedstates': 'usa', 'chinesetaipei': 'taipei', 'korearepublic': 'southkorea' };
 const cnorm = (c) => { const n = norm(c); return COUNTRY_ALIAS[n] || n; };
 
+let _links = null;
+function cacheLinks() {
+  if (_links) return _links;
+  _links = new Map();
+  for (const f of fs.readdirSync(path.join(CACHE, 'html'))) {
+    const h = fs.readFileSync(path.join(CACHE, 'html', f), 'utf8');
+    for (const m of h.matchAll(/href="\/player\/([^/"]+)\/"[^>]*>(?:<strong>)?([^<]+)</g)) if (!_links.has(m[1])) _links.set(m[1], m[2].trim());
+  }
+  return _links;
+}
+function fromCache(last, first, initial) {
+  const sur = norm(last), toks = String(first || '').split(/[\s-]+/).map(norm).filter(Boolean);
+  const out = [];
+  for (const [slug, name] of cacheLinks()) {
+    const parts = name.split(/\s+/); const ini = /\.$/.test(parts[parts.length - 1]) ? norm(parts.pop()) : ''; const rest = norm(parts.join(''));
+    const direct = rest === sur && ini && ini[0] === initial;                                   // "Te R."
+    const flipped = ini && ini === sur.slice(0, ini.length) && toks.length && rest === toks.join('');   // "Yunchaokete B." / "Tunglin W."
+    const flippedNoFirst = !toks.length && ini && ini[0] === sur[0] && rest.length > 3 && rest[0] === initial;   // Y. Bu -> "Yunchaokete B."
+    if (direct || flipped || flippedNoFirst) out.push({ slug, last: rest, first: ini, country: null, fromCache: true });
+  }
+  return out;
+}
 async function resolve(p) {
   const last = p.last || p.name.split(' ').filter((t) => !/\.$/.test(t)).join(' ');
   const initial = norm(p.first || p.name)[0];
@@ -110,11 +132,17 @@ async function resolve(p) {
   // Country is a tie-break only: TE writes some countries in Czech ("Moldavsko") and ours differ (Taiwan / Chinese
   // Taipei, neutral flags). The identity test is the date of birth; without one, the same country AND age ± 1.
   let pool = named.length ? named : cands.filter((r) => norm(r.first)[0] === initial);
-  if (!p.dob) pool = pool.filter((r) => !p.country || cnorm(r.country) === cnorm(p.country));
+  // short surnames ("Te", "Bu", "Wu") return nothing from TE's search: look the player up among the opponent links
+  // already in the cache, where TE prints him "Surname I." — in either name order ("Yunchaokete B." for Bu Yunchaokete)
+  if (!pool.length) pool = fromCache(last, p.first, initial);
+  if (!p.dob) pool = pool.filter((r) => r.fromCache || !p.country || cnorm(r.country) === cnorm(p.country));   // cache rows: country checked on the profile
   const checked = [];
   for (const c of pool.slice(0, 6)) {
     const f = profileFacts(await page(`/player/${c.slug}/`));
-    const ok = p.dob ? f.dob === p.dob : (f.age != null && p.age != null && Math.abs(f.age - p.age) <= 1);
+    // identity: the DOB when we hold one; else age ± 1 AND the profile's country (TE may print it in Czech — a missing
+    // or unreadable country fails closed, the player stays unmatched)
+    const ok = p.dob ? f.dob === p.dob
+      : (f.age != null && p.age != null && Math.abs(f.age - p.age) <= 1 && (!c.fromCache || (!!f.country && !!p.country && cnorm(f.country) === cnorm(p.country))));
     checked.push({ slug: c.slug, name: `${c.last}, ${c.first}`, dob: f.dob, age: f.age, ok });
   }
   const pass = checked.filter((c) => c.ok);
