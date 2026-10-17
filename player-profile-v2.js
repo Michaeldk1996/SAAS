@@ -6264,7 +6264,9 @@
         if (s.p == null || s.o == null) continue;
         if (+s.p > +s.o) w++; else if (+s.o > +s.p) l++;
       }
-      if ((w || l) && a !== b && a + b > w + l) return { w: a, l: b, partial: true };
+      // `setMissing`: the feed's list is SHORT of the result (api-tennis drops a set one player won no games in) —
+      // counted on its own in the Lines note (TEN-443, founder ruling 2026-10-17) until the row is repaired
+      if ((w || l) && a !== b && a + b > w + l) return { w: a, l: b, partial: true, setMissing: true };
       if ((w || l) && a !== b && a + b < w + l) {
         var kept = r.setGames.filter(function (x) {
           return x.p != null && x.o != null && +x.p !== +x.o && Math.max(+x.p, +x.o) >= 6;
@@ -6346,6 +6348,7 @@
     var sel = role === 'fav' || role === 'dog' ? role : 'all';
     var sub = sel === 'all' ? pool : pool.filter(function (m) { return m.role === sel; });
     var withGames = sub.filter(function (m) { return !!m.g; }).length;
+    var setMissing = sub.filter(function (m) { return !!m.sc.setMissing; }).length;
 
     function hits(m, kind, arg, dir) {
       if (kind === 'ms') return m.sc.w === arg[0] && m.sc.l === arg[1];
@@ -6389,7 +6392,7 @@
       // TEN-384 fix 5 · All = As favourite + As underdog + unpriced, by construction; the note states the
       // unpriced count so the three tiles reconcile on the page.
       groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel,
-      withGames: withGames, excluded: excluded, noScore: noScore, unshaped: unshaped, fmtLabel: def.label, avg: avg
+      withGames: withGames, setMissing: setMissing, excluded: excluded, noScore: noScore, unshaped: unshaped, fmtLabel: def.label, avg: avg
     };
   }
 
@@ -6542,7 +6545,9 @@
     if (d.excluded) note += ' ' + d.excluded + ' retired or abandoned ' + (d.excluded === 1 ? 'match is' : 'matches are') + ' excluded.';
     if (d.unshaped) note += ' ' + d.unshaped + (d.unshaped === 1 ? ' match is' : ' matches are') +
       ' excluded because the set score on file is level and decides no match shape.';
-    if (d.withGames < d.n) note += ' Games lines rest on the ' + d.withGames + ' of ' + d.n + ' with per-set games.';
+    if (d.withGames < d.n) note += ' Games lines rest on the ' + d.withGames + ' of ' + d.n + ' with per-set games' +
+      // TEN-443: the matches whose feed list lacks a set, named until they are repaired (0 = the clause drops)
+      (d.setMissing ? '; ' + d.setMissing + ' with a set missing in the feed' : '') + '.';
     return head + tiles + colHead + body +
       '<div data-lc="note" style="font-size:11.5px;line-height:18.4px;color:var(--text-label);margin-top:16px;">' + esc(note) + '</div>';
   }
