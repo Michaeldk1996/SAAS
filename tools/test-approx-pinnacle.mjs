@@ -60,6 +60,38 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   check('the page never re-assigns its global fhSrcTitle: window.fhSrcTitle answers through window (17 Oct live stack overflow)',
     run(assigns) === 'Pinnacle close · from Pinnacle history');
   check('control: the 17 Oct wrapper line overflows the stack', run("window.fhSrcTitle = (...a) => fhSrcTitle(...a);") === 'RangeError');
+
+  // Founder 2026-10-17: the test covers EVERY surface that calls fhSrcTitle. (1) The callers are pinned: a new caller turns
+  // this red until it is added here. (2) The page holds one declaration and no re-binding of the name, so every bare call
+  // resolves to it. (3) Each caller small enough to run alone is run, in the page's own code, with every window.fhSrcTitle
+  // assignment the page makes applied — and the 17 Oct wrapper line put back makes each of them throw.
+  const prof = readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const callers = (src) => { const L = src.split('\n'), out = new Set();
+    L.forEach((l, n) => { if (!/fhSrcTitle\s*\(/.test(l) || /^\s*(\/\/|\*)/.test(l) || /^\s*function fhSrcTitle\s*\(/.test(l)) return;
+      for (let k = n; k >= 0 && k > n - 500; k--) { const m = /^\s*(?:async\s+)?function\s+(\w+)\s*\(|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:\(|function|async)/.exec(L[k]);
+        if (m && (m[1] || m[2]) !== 'fhSrcTitle') { out.add(m[1] || m[2]); break; } } });
+    return [...out].sort(); };
+  const PINNED_PAGE = ['cellHtml' /* Progression heat cell, inside buildMatchProgressionSection */, 'fhB365Tag', 'fhFormColumnHtml', 'fhFormRowData', 'fhH2hSrcTitle', 'fhPriceCell', 'meRowOf', 'ovPopHtml', 'trPxTitle'];
+  const PINNED_PROFILE = ['pxSrcHtml'];
+  check('every caller of fhSrcTitle is pinned (Progression, H2H B365 tag, Form bars + rows, H2H tab, price cells, Market edge, Overview pop-up, Tournament tab; the profile)',
+    JSON.stringify(callers(html)) === JSON.stringify(PINNED_PAGE) && JSON.stringify(callers(prof)) === JSON.stringify(PINNED_PROFILE),
+    JSON.stringify({ page: callers(html), profile: callers(prof) }));
+  const decls = (html.match(/^\s*function fhSrcTitle\s*\(/gm) || []).length;
+  const rebinds = html.split('\n').filter(l => !/^\s*\/\//.test(l) && /(?:^|[^.\w])(?:window\.)?fhSrcTitle\s*=(?!=)|(?:const|let|var)\s+fhSrcTitle\b/.test(l)).length;
+  check('one declaration of fhSrcTitle on the page and no re-binding of the name, so every bare call reads it', decls === 1 && rebinds === 0, JSON.stringify({ decls, rebinds }));
+  const runCallers = (extra) => { const ctx = vm.createContext({}); ctx.window = ctx;
+    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'FH_MONO')}\n${constLine(html, 'FH_B365_HOVER')}
+      function fhEsc(s){ return String(s == null ? '' : s); } function trPxAfterTitle(){ return 'after'; }
+      ${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhH2hSrcTitle')}\n${fn(html, 'fhB365Tag')}\n${fn(html, 'fhPriceCell')}\n${fn(html, 'trPxTitle')}\n${extra}`, ctx);
+    const hist = { book: 'P', src: 'hist' }, b = { book: 'B', src: 'td' };
+    const res = {};
+    for (const [k, f] of Object.entries({ h2hTab: () => ctx.fhH2hSrcTitle(hist), b365Tag: () => ctx.fhB365Tag(b, false), priceCell: () => ctx.fhPriceCell(1.5, 'right', false, hist, true), tournamentTab: () => ctx.trPxTitle(hist) }))
+      try { res[k] = f(); } catch (e) { res[k] = e.name; }
+    return res; };
+  const okRun = runCallers(assigns), badRun = runCallers("window.fhSrcTitle = (...a) => fhSrcTitle(...a);");
+  check('each caller runs with the page as shipped: H2H tab, B365 tag, price cell (Form / H2H rows), Tournament tab',
+    okRun.h2hTab === 'Pinnacle close · from Pinnacle history' && /Bet365 close · Tennis-Data/.test(okRun.b365Tag) && /title="Pinnacle close · from Pinnacle history"/.test(okRun.priceCell) && okRun.tournamentTab === 'Pinnacle close · from Pinnacle history', JSON.stringify(okRun));
+  check('control: with the 17 Oct wrapper every one of them throws RangeError', Object.values(badRun).every(v => v === 'RangeError'), JSON.stringify(badRun));
 }
 // founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover their one source,
 // through the host's fhSrcTitle — run the module's own pxSrcHtml on the page's own words
