@@ -48,6 +48,19 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   /r\.src === 'hist' \? 'pinnacle-history' : r\.src === 'cap' \? 'pinnacle-capture'/.test(fn(html, 'trProfilePriceOf'))
   && /'pinnacle-history': \['P', 'hist'\]/.test(readFileSync(join(ROOT, 'player-profile-v2.js'), 'utf8')));
 
+// 17 Oct 2026 live bug: `window.fhSrcTitle = (...a) => fhSrcTitle(...a)` replaced the page's global declaration with a
+// wrapper that called itself (RangeError on every price hover). Run the page's own fhSrcTitle as a classic-script global
+// plus every line of the page that assigns window.fhSrcTitle, then call it through window, as the profile does.
+{
+  const vm = await import('node:vm');
+  const assigns = html.split('\n').filter(l => /window\.fhSrcTitle\s*=/.test(l)).join('\n');
+  const run = (extra) => { const ctx = vm.createContext({}); ctx.window = ctx;
+    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${extra}`, ctx);
+    try { return ctx.window.fhSrcTitle({ book: 'P', src: 'hist' }); } catch (e) { return e.name; } };
+  check('the page never re-assigns its global fhSrcTitle: window.fhSrcTitle answers through window (17 Oct live stack overflow)',
+    run(assigns) === 'Pinnacle close · from Pinnacle history');
+  check('control: the 17 Oct wrapper line overflows the stack', run("window.fhSrcTitle = (...a) => fhSrcTitle(...a);") === 'RangeError');
+}
 // founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover their one source,
 // through the host's fhSrcTitle — run the module's own pxSrcHtml on the page's own words
 {
