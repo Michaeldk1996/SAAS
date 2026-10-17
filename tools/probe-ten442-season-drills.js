@@ -52,9 +52,11 @@ new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 
 const I = sb.PlayerProfileV2._internals;
 
 const CELLS = ['total', 'clay', 'hard', 'indoors', 'grass'];
-const causes = {}, examples = {};
+const causes = {}, examples = {}, byKind = { season: { cells: 0, exact: 0 }, career: { cells: 0, exact: 0 } }, kindCause = {};
 let cells = 0, exact = 0, players = 0;
-const put = (c, ctx) => { causes[c] = (causes[c] || 0) + 1; (examples[c] = examples[c] || []).push(ctx); };
+let kind = 'season';
+const put = (c, ctx) => { causes[c] = (causes[c] || 0) + 1; (examples[c] = examples[c] || []).push(ctx);
+  kindCause[kind + '|' + c] = (kindCause[kind + '|' + c] || 0) + 1; };
 for (const [key, p0] of Object.entries(STORE.players)) {
   const p = Object.assign({ key }, p0);
   if (!p.careerByYear || !p.careerByYear.length || !CH[key]) continue;
@@ -70,8 +72,10 @@ for (const [key, p0] of Object.entries(STORE.players)) {
         const n = rec ? (rec.won || 0) + (rec.lost || 0) : 0;
         if (!n) continue;
         cells++;
+        kind = s.year ? 'season' : 'career';
+        byKind[kind].cells++;
         const rows = c === 'total' ? scope : scope.filter((r) => r.cell === c);
-        if (rows.length === n) { exact++; continue; }
+        if (rows.length === n) { exact++; byKind[kind].exact++; continue; }
         const ctx = `${p.name} ${tier} ${s.year || 'career'} ${c}: ${n} counted, ${rows.length} found`;
         const yrs = s.year ? [s.year] : [...new Set(scope.map((r) => r.year))];
         const raw = CH[key].filter((r) => yrs.includes(String(r.year)));
@@ -95,6 +99,10 @@ console.log(`TEN-442 season-drill reconciliation · profiles ${STORE.fetchedAt} 
 console.log(`  ${players} players · ${cells} cells checked · ${exact} reconcile (list = W+L) · ${cells - exact} do not`);
 for (const [c, n] of Object.entries(causes).sort((a, b) => b[1] - a[1])) {
   console.log(`    ${String(n).padStart(6)}  ${c}   e.g. ${examples[c].slice(0, 2).join(' | ')}`);
+}
+for (const k of ['season', 'career']) {
+  console.log(`  ${k} cells: ${byKind[k].cells} checked · ${byKind[k].exact} reconcile · ${byKind[k].cells - byKind[k].exact} do not` +
+    Object.keys(kindCause).filter((x) => x.startsWith(k + '|')).map((x) => ` · ${x.slice(k.length + 1)} ${kindCause[x]}`).join(''));
 }
 console.log(`  shards without the per-match court flag: ${noFlag} of ${withFix} with fixture rows`);
 if (examples[LIST]) examples[LIST].forEach((e) => console.log('    ' + LIST + ': ' + e));

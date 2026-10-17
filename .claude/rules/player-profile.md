@@ -203,7 +203,15 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   row whose court did not resolve (`COURT_UNKNOWN`) is listed under neither Indoors nor its surface. **The test:** open
   any cell — the list holds exactly the cell's W–L and the note reads "All N matches"; where the store cannot back the
   count, the list shows what it holds and the note reads "N counted · M found in results · K missing" plus each reason
-  it can count ("… have no court type on record yet", "… in scope carry no surface"); a list longer than its cell reads
+  it can count ("… have no court type on record yet", "… in scope carry no surface"). **r2 (founder 2026-10-17):** the
+  part of a gap that falls in pre-window seasons (careerByYear `allTier: false`, before currentYear − 5) reads "P not in
+  database · Challenger/ITF results before 2021 not in database" — the count never claims those P are Challenger
+  matches (Zverev 2016–20 run short with no Challenger play), the clause states what the database lacks; a Total lists
+  its unresolved-court rows and names them ("· K have no court type on record yet") — such a row vanishes nowhere; the
+  Career footnote reads "N Davis Cup matches with no surface — listed under the year total" when the dated store holds
+  exactly the footnote's N and every one is a Davis Cup tie ("N matches with no surface — listed under the year total"
+  when not all are; the old wording when the store does not hold exactly N); N is the player's own. Indoors stays as
+  shipped (tournament-level court type) pending the founder's ruling. A list longer than its cell reads
   "M found in results against N counted · the two sources disagree"; while the career-history shard is unanswered it
   reads "match list loading" and lists nothing. Never padded, never a blank panel. Each group row states surface ("No
   surface" where none), "Indoor" where the court resolved Indoor, and the tier (the joined level, else the Tier

@@ -5476,11 +5476,23 @@ mustFail('[neg] the sum check would catch a career drill that unioned both store
     `career drill ${career} vs Σ year drills ${summed} + ${outside} out-of-window`);
 });
 
-check('item 2e · the drill pages instead of truncating — every match stays reachable', () => {
+// TEN-442: the drill lists career-history, which is gitignored and absent in the CI clone. The largest roster drill
+// is used where the store is present; otherwise a synthetic 400-match career (one season, every row dated) stands in,
+// so the paging is checked in CI too rather than skipped.
+const BIG_SYN = { key: '__big', name: 'B. Ig', careerByYear: [{ year: '2024', allTier: true, total: { won: 250, lost: 150 },
+  clay: null, hard: { won: 250, lost: 150 }, grass: null, indoor: null }] };
+const BIG_SYN_ROWS = Array.from({ length: 400 }, (_, i) => chRow({ year: '2024',
+  date: '2024-' + String(1 + (i % 12)).padStart(2, '0') + '-' + String(1 + (i % 28)).padStart(2, '0'),
+  surface: 'hard', won: i < 250, opponent: 'O. Pp' + i, tournament: 'Event ' + (i % 40) }));
+function withBigDrill(fn) {
   const big = Object.keys(PLAYERS)
     .map((k) => ({ key: k, ...PLAYERS[k] }))
     .map((p) => ({ p, n: I.drillRows(p, null, null).length }))
     .sort((a, b) => b.n - a.n)[0];
+  if (big && big.n > I.DRILL_PAGE) return fn(big);
+  return withCH(BIG_SYN.key, BIG_SYN_ROWS, () => fn({ p: BIG_SYN, n: I.drillRows(BIG_SYN, null, null).length }));
+}
+check('item 2e · the drill pages instead of truncating — every match stays reachable', () => withBigDrill((big) => {
   assert(big.n > I.DRILL_PAGE, `the largest career drill is ${big.n}, under one page`);
   const saved = { ...I.state };
   let html;
@@ -5501,7 +5513,7 @@ check('item 2e · the drill pages instead of truncating — every match stays re
     ' · the rest are not in the per-match store').test(html),
     'a paging cut is being reported as missing data');
   console.log(`        largest career drill ${big.n} rows (${big.p.name || big.p.key}), paged at ${I.DRILL_PAGE}`);
-});
+}));
 mustFail('[neg] the paging check would catch the old 200-row hard cap', () => {
   const rows = 1463, cap = 200;
   const shown = Math.min(rows, cap);
@@ -5509,11 +5521,7 @@ mustFail('[neg] the paging check would catch the old 200-row hard cap', () => {
   assert(shown === rows, `${shown} of ${rows} rows are reachable`);
 });
 
-check('item 2e · a scroll append reuses the SAME row builder and advances the pager', () => {
-  const big = Object.keys(PLAYERS)
-    .map((k) => ({ key: k, ...PLAYERS[k] }))
-    .map((p) => ({ p, n: I.drillRows(p, null, null).length }))
-    .sort((a, b) => b.n - a.n)[0];
+check('item 2e · a scroll append reuses the SAME row builder and advances the pager', () => withBigDrill((big) => {
   const rows = I.drillRows(big.p, null, null);
   // page 1 and page 2 through the real builder, then the whole list in one go —
   // the concatenation must be byte-identical, which is the only thing that proves
@@ -5525,7 +5533,7 @@ check('item 2e · a scroll append reuses the SAME row builder and advances the p
   assert.strictEqual(paged, whole,
     'two pages do not reassemble into the single-pass render — the group headers drifted');
   assert(paged.length > 0, 'the pager produced nothing');
-});
+}));
 mustFail('[neg] the append check would catch a pager that reset its event grouping', () => {
   const rows = [{ year: '2026', event: 'A' }, { year: '2026', event: 'A' }];
   const grp = (r, pg) => { const g = r.event; const out = g !== pg.last ? '[H]' : ''; pg.last = g; return out + 'r'; };

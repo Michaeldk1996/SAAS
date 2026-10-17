@@ -195,7 +195,38 @@ function audit(I, p) {
       return [(h.match(/data-pp2-drill-row=/g) || []).length, (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(h) || [])[1]]; };
     assert.deepStrictEqual(noteOf('indoors'), [0, '2 counted · 0 found in results · 2 missing · 4 matches have no court type on record yet']);
     assert.deepStrictEqual(noteOf('hard'), [0, '2 counted · 0 found in results · 2 missing · 4 hard matches have no court type on record yet']);
-    assert.deepStrictEqual(noteOf(''), [4, 'All 4 matches']);
+    // r2 item 6 · the Total lists the unresolved-court rows and names them — they vanish nowhere
+    assert.deepStrictEqual(noteOf(''), [4, 'All 4 matches · 4 have no court type on record yet']);
+  });
+  // r2 item 5 · a pre-window season (provider aggregate, tour-level archive rows) names its gap
+  check('a pre-2021 season states "N not in database · Challenger/ITF results before 2021 not in database"', () => {
+    const pre = Object.assign({}, profile, { careerByYear: profile.careerByYear.concat([{ year: '2020', allTier: false,
+      total: { won: 2, lost: 1 }, clay: { won: 2, lost: 1 }, hard: null, grass: null, indoor: null, atp: null, chitf: null }]) });
+    const Ip = loadModule(pre, rows);
+    const noteOf = (year, surf) => { Ip.resetState(); Ip.state.careerDrill = { kind: 'cell', year, surf };
+      return (/data-pp2-drill-note="1"[^>]*>([^<]*)</.exec(Ip.renderCareerModal(pre)) || [])[1]; };
+    const cut = String(new Date().getFullYear() - 5);
+    assert.strictEqual(noteOf('2020', ''), '3 counted · 0 found in results · 3 not in database · Challenger/ITF results before ' + cut + ' not in database');
+    assert.strictEqual(noteOf('2020', 'clay'), '3 counted · 0 found in results · 3 not in database · Challenger/ITF results before ' + cut + ' not in database');
+    // the Career row names that part of its gap, and only that part
+    assert.ok(/^\d+ counted · \d+ found in results · 3 not in database · Challenger\/ITF results before \d{4} not in database$/.test(noteOf('career', '')),
+      'career note: ' + noteOf('career', ''));
+  });
+  // r2 item 3 · Option A: the footnote says where the unsurfaced matches are listed, with the player's own count
+  check('the Career footnote reads "N Davis Cup matches with no surface — listed under the year total" from his own rows', () => {
+    const dc = rows.map((r) => (r.tournament === 'Exhibition Cup' ? Object.assign({}, r, { tournament: 'ATP Davis Cup - World Group' }) : r));
+    const Id = loadModule(profile, dc);
+    Id.resetState();
+    const html = Id.renderCareerModal(profile);
+    assert.ok(/>1 Davis Cup match with no surface — listed under the year total</.test(html), 'footnote: ' + (html.match(/>[^<>]*no surface[^<>]*</) || [''])[0]);
+    // season by season: a stored no-surface row in a season whose total does not count it is not "listed"
+    const moved = dc.map((r) => (/davis cup/i.test(r.tournament) ? Object.assign({}, r, { year: '2026', date: '2026-09-10' }) : r));
+    const Im = loadModule(profile, moved);
+    Im.resetState();
+    assert.ok(/>1 match with no surface on record</.test(Im.renderCareerModal(profile)), 'a mis-seasoned row was called listed');
+    // a non-Davis-Cup unsurfaced row is listed but not called Davis Cup
+    I.resetState();
+    assert.ok(/>1 match with no surface — listed under the year total</.test(I.renderCareerModal(profile)));
   });
   check('a career-history shard that has not answered says "match list loading", never a count', () => {
     const sb = loadModule(profile, rows);

@@ -3466,6 +3466,9 @@
   // no surface (counted in the Total only), or COURT_UNKNOWN: a carved season's row whose court did not resolve,
   // which belongs in exactly one of Indoors or its surface and cannot be listed under either without guessing.
   var COURT_UNKNOWN = '?court';
+  // The first season the database holds every tier for (bsp-pipeline.js buildAllTierYearly: cutoff = currentYear - 5);
+  // seasons before it come from the provider's aggregate and the tour-level TML archive.
+  function PRE_ARCHIVE_YEAR() { return String(+currentYear() - 5); }
   function seasonCellOf(r, court, carved) {
     if (!r) return null;
     if (court === 'Indoor') return 'indoors';
@@ -3595,7 +3598,19 @@
   function drillNote(rowsN, paintedN, cellN, surf, gap) {
     var g = gap || {};
     var more = paintedN < rowsN ? ' ' + MIDDOT + ' showing ' + paintedN + ' ' + MIDDOT + ' scroll for more' : '';
+    // A Total lists its unresolved-court rows (they sit in exactly one of Indoors or their surface) and says so.
+    var unk = !surf && g.court ? ' ' + MIDDOT + ' ' + g.court + ' ha' + (g.court === 1 ? 's' : 've') +
+      ' no court type on record yet' : '';
     if (rowsN < cellN) {
+      var short = cellN - rowsN, pre = Math.min(g.pre || 0, short), rest = short - pre;
+      var head = cellN + ' counted ' + MIDDOT + ' ' + rowsN + ' found in results';
+      // The count claims only "not in database"; the clause after it is a fact about the DATABASE, not about these
+      // matches. Zverev 2016–20 run 3–6 short with no Challenger play (team events the tour-level archive lacks), so
+      // calling every pre-window shortfall "Challenger/ITF results" would state a cause we cannot see.
+      if (pre) {
+        head += ' ' + MIDDOT + ' ' + pre + ' not in database ' + MIDDOT + ' Challenger/ITF results before ' +
+          g.preYear + ' not in database';
+      }
       var why = [];
       if (g.court) {
         why.push(g.court + ' ' + (surf === 'indoors' ? '' : surf + ' ') + 'match' +
@@ -3604,11 +3619,12 @@
       if (g.surfaceless && surf) {
         why.push(g.surfaceless + ' in scope carr' + (g.surfaceless === 1 ? 'ies' : 'y') + ' no surface');
       }
-      return cellN + ' counted ' + MIDDOT + ' ' + rowsN + ' found in results ' + MIDDOT + ' ' +
-        (cellN - rowsN) + ' missing' + (why.length ? ' ' + MIDDOT + ' ' + why.join(' ' + MIDDOT + ' ') : '') + more;
+      // The reasons are facts about the scope and stand with or without a pre-2021 clause before them.
+      return head + (rest ? ' ' + MIDDOT + ' ' + rest + ' missing' : '') +
+        (why.length ? ' ' + MIDDOT + ' ' + why.join(' ' + MIDDOT + ' ') : '') + unk + more;
     }
     if (paintedN < rowsN && rowsN === cellN) {
-      return 'Showing ' + paintedN + ' of ' + rowsN + ' ' + MIDDOT + ' scroll for more';
+      return 'Showing ' + paintedN + ' of ' + rowsN + ' ' + MIDDOT + ' scroll for more' + unk;
     }
     if (rowsN > cellN) {
       // OVERFLOW — the list holds MORE than the record it sits under.
@@ -3620,9 +3636,9 @@
       // actual 2021. It is the provider's season aggregate that is short, not
       // the match list that is long. Which source is wrong varies, so the note
       // states the DISAGREEMENT and leaves the cause to the report.
-      return rowsN + ' found in results against ' + cellN + ' counted ' + MIDDOT + ' the two sources disagree' + more;
+      return rowsN + ' found in results against ' + cellN + ' counted ' + MIDDOT + ' the two sources disagree' + unk + more;
     }
-    return 'All ' + rowsN + ' match' + (rowsN === 1 ? '' : 'es');
+    return 'All ' + rowsN + ' match' + (rowsN === 1 ? '' : 'es') + unk;
   }
   function renderDrill(p, opts) {
     // TEN-442 · the list is the dated career-history store (calSpine). Until that shard has answered, the drill
@@ -3634,11 +3650,27 @@
     var shown = rows.slice(0, DRILL_PAGE);
     var cellN = (opts.won || 0) + (opts.lost || 0);
     // The reasons a surface list can run short, counted off the same tags the list was filtered on.
-    var gap = { court: 0, surfaceless: 0 };
+    var gap = { court: 0, surfaceless: 0, pre: 0, preYear: PRE_ARCHIVE_YEAR() };
     if (opts.surf) {
       scope.forEach(function (r) {
         if (r.cell === COURT_UNKNOWN && (opts.surf === 'indoors' || r.surface === opts.surf)) gap.court++;
         else if (r.cell === null && opts.surf !== 'indoors') gap.surfaceless++;
+      });
+    } else {
+      // TEN-442 r2 item 6 · a Total lists every row of its scope, unresolved courts included, and names them.
+      gap.court = scope.filter(function (r) { return r.cell === COURT_UNKNOWN; }).length;
+    }
+    // TEN-442 r2 item 5 · a pre-window season (careerByYear `allTier: false`) counts from the provider's all-tier
+    // aggregate while its rows come from the tour-level TML archive, so its shortfall is Challenger/ITF play the
+    // database does not hold. Counted per season, so a Career drill names that part of its gap and no more.
+    if (!opts.since && !chPend) {
+      spineYears(p).forEach(function (y) {
+        if (y.allTier !== false || (opts.year && String(y.year) !== String(opts.year))) return;
+        var g = tierGridCells(y, opts.tier || 'all');
+        var rec = opts.surf ? g[opts.surf] : g.total;
+        var n = rec ? (rec.won || 0) + (rec.lost || 0) : 0;
+        var f = rows.filter(function (r) { return r.year === String(y.year); }).length;
+        if (n > f) gap.pre += n - f;
       });
     }
     var note = chPend ? 'match list loading' : drillNote(rows.length, shown.length, cellN, opts.surf, gap);
@@ -3766,6 +3798,7 @@
     if (r.surface) bits.push(r.surface.charAt(0).toUpperCase() + r.surface.slice(1));
     else if (r.src === 'career') bits.push('No surface');
     if (r.src === 'career' && r.court === 'Indoor') bits.push('Indoor');
+    if (r.src === 'career' && r.cell === COURT_UNKNOWN) bits.push('Court type not on record');
     if (r.m && r.m.tier) bits.push(String(r.m.tier).toUpperCase() === 'ATP' ? 'ATP' : String(r.m.tier));
     else if (r.src === 'career' && (r.level || r.tier)) bits.push(r.level || careerTierWord(r.tier));
     return bits.join(' ' + MIDDOT + ' ');
@@ -4496,9 +4529,29 @@
     // fx3 (D11): no small-sample footnote line — the mark sits under the rate in the row itself.
     var noteBits = ['vs all = surface win rate minus the all-surface rate ' + MIDDOT + ' click a surface for its matches'];
     if (residN > 0) {
-      noteBits.push('<span title="The gap between the provider’s season total and its own surface buckets, ' +
-        'so no individual match carries a surface to look up.">' + residN + ' match' + (residN === 1 ? '' : 'es') +
-        ' with no surface on record</span>');
+      // TEN-442 r2 item 3 (founder: Option A) · where the dated store holds exactly the matches the footnote counts,
+      // the footnote says where they are listed — under their year's Total — and names them when every one is a
+      // Davis Cup tie (a tie is played on the host's choice of court, so its event carries no surface). The count is
+      // the player's own, never a constant.
+      var nos = (!isL52 && careerHistorySettled(p.key))
+        ? drillScope(p, null, null, tier).filter(function (r) { return !r.surface; }) : null;
+      // Season by season, not in total: a stored no-surface row must sit in the season whose total counts it
+      // (S. Kwon: the table's unsurfaced match is in 2019, the stored row in 2017 — not "listed under the year total").
+      var listed = !!nos && nos.length === residN && spineYears(p).every(function (y) {
+        var g = tierGridCells(y, tier);
+        var t = g.total ? (g.total.won || 0) + (g.total.lost || 0) : 0;
+        ['clay', 'hard', 'grass', 'indoors'].forEach(function (k) { if (g[k]) t -= (g[k].won || 0) + (g[k].lost || 0); });
+        return t === nos.filter(function (r) { return r.year === String(y.year); }).length;
+      });
+      var davis = listed && nos.every(function (r) { return /davis cup/i.test(r.event || ''); });
+      noteBits.push(listed
+        ? '<span title="Their tournament carries no surface in the feed' + (davis ? ' (a Davis Cup tie is played on ' +
+          'the host’s choice of court)' : '') + '. Each one is listed under its year’s Total.">' + residN + ' ' +
+          (davis ? 'Davis Cup ' : '') + 'match' + (residN === 1 ? '' : 'es') + ' with no surface ' + EMDASH +
+          ' listed under the year total</span>'
+        : '<span title="The gap between the provider’s season total and its own surface buckets, ' +
+          'so no individual match carries a surface to look up.">' + residN + ' match' + (residN === 1 ? '' : 'es') +
+          ' with no surface on record</span>');
     }
     if (isL52) {
       // The undated figure is the Calendar's own (calResidual) — one number for both blocks.
