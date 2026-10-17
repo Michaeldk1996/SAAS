@@ -999,6 +999,11 @@ const SURFACE_CORRECTIONS = [
   // Mallorca Championships (ATP 250, the week before Wimbledon) is GRASS; the
   // API reports it as clay on the ATP singles/doubles entries.
   { name: 'mallorca', tour: 'atp', surface: 'grass' },
+  // TEN-445 (founder approval TEN-443 gate 91feaca9, 2026-10-17): the ATP Stuttgart event (key 2068, June, the Boss
+  // Open) is GRASS; api-tennis lists it as clay — the WTA Stuttgart (key 1977) is the clay one and stays clay. 399
+  // career-history rows 2021–26 sat under Clay while the archive half has the same event as grass (88 rows, 2015–19).
+  // Measured: the only event of 81 comparable in both halves whose surface disagreed.
+  { name: 'stuttgart', tour: 'atp', surface: 'grass' },
 ];
 // TEN-437 S2 (founder 2026-10-16): api-tennis gives a tournament ONE surface per key, and the Olympic Games reuse one key
 // across editions, so every Olympic match read as grass (London 2012's surface). The surface is per edition, by year —
@@ -7771,7 +7776,7 @@ module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFi
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, isCountedSinglesFixture, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, seasonRowFromFixtures, seasonSurfaceByTier, courtSpeedRecordFromFixtures, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, isCountedSinglesFixture, correctTournamentSurface, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, seasonRowFromFixtures, seasonSurfaceByTier, courtSpeedRecordFromFixtures, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
