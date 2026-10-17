@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-17T16:06:02.724Z",
+ "generatedAt": "2026-10-17T18:14:42.509Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "59022fc02167cd88284d5ac54f017b880b94232d",
-  "at": "2026-10-17T15:47:14Z"
+  "commit": "05aca02ee3128f99506c2e931ebd92a0ff8acd2f",
+  "at": "2026-10-17T18:02:25Z"
  },
- "commitsScanned": 5269,
+ "commitsScanned": 5280,
  "lastRun": {
-  "from": "2026-10-17T12:42:56Z",
-  "snapshots": 16,
-  "added": 3,
+  "from": "2026-10-17T15:47:14Z",
+  "snapshots": 12,
+  "added": 2,
   "replaced": 0,
   "series": 21,
-  "kept": 16,
+  "kept": 18,
   "bySource": {
-   "api-tennis-live": 16
+   "api-tennis-live": 18
   },
   "byBook": {
-   "Pinnacle +30s": 16
+   "Pinnacle +30s": 18
   },
   "dropped": {
-   "noStart": 5
+   "noStart": 3
   }
  },
  "stats": {
@@ -9002,6 +9002,34 @@
    "p2": 1.662,
    "at": "2026-10-17T11:43:06.030Z",
    "trueStart": "2026-10-17T14:33:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171773,
+   "date": "2026-10-17",
+   "p1Key": 1317,
+   "p2Key": 12832,
+   "p1Name": "M. Damm",
+   "p2Name": "B. Gadamauri",
+   "p1": 1.173,
+   "p2": 5.26,
+   "at": "2026-10-17T12:22:46.498Z",
+   "trueStart": "2026-10-17T16:53:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171774,
+   "date": "2026-10-17",
+   "p1Key": 798,
+   "p2Key": 2501,
+   "p1Name": "A. Dougaz",
+   "p2Name": "T. Gentzsch",
+   "p1": 2.009,
+   "p2": 1.833,
+   "at": "2026-10-17T13:13:08.465Z",
+   "trueStart": "2026-10-17T16:27:06.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
