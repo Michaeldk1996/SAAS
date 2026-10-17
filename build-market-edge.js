@@ -52,10 +52,10 @@ const core = require('./market-edge-core.js');
 const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES, archiveOverride } = base;
 
 const ROOT = __dirname;
-const ARCHIVE_DIR = path.join(ROOT, 'odds-archive');
 const OUT_DIR = path.join(ROOT, 'market-edge');
 const INDEX_PATH = path.join(ROOT, 'market-edge-index.json');
 const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
+const MASTER_PATH = path.join(ROOT, 'database-yield-master.json');   // the one master file (build-database-yield.js)
 const SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
 
 // 3 — TEN-310 basis (2026-09-27): Pinnacle close, else Bet365 close; favourite = price < 2.00;
@@ -201,43 +201,12 @@ function pickBook(row) {
 const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture',
   'pinnacle-history', 'pinnacle-approx', 'pinnacle-approx-od10']);   // the Database's own books (founder 2026-10-17, item 1)
 
-/**
- * Founder ruling 2026-10-17 (item 1): ONE price per match on every surface. A Tennis-Data row the Database prices takes
- * the Database's price, book and source — database-yield.json `rows` plus the retirements and exact ties behind its flags
- * (`retRows` / `tieRows`), keyed by date | tournament | winner | loser exactly as Tennis-Data writes them — so the
- * profile's Market edge and the Match analysis tab show what the Database, Head to Head and the profile's Record per
- * tournament show. A row the Database does not hold (outside its window or rules) keeps this builder's own order (R8);
- * the cross-surface check (tools/price-consistency.mjs) reports those. Database book codes: build-database-yield.js.
- */
+// Founder ruling 2026-10-17: the master's book codes (build-database-yield.js) -> this file's book ids and labels.
 const DB_BOOK = {
   0: ['pinnacle', 'Pinnacle'], 1: ['bet365-archive', 'Bet365 (archive close)'], 2: ['pinnacle-approx', 'Pinnacle (approx.)'],
   3: ['pinnacle-history', 'Pinnacle (from Pinnacle history)'], 4: ['pinnacle-capture', 'Pinnacle (our capture)'],
   5: ['pinnacle-approx-od10', 'Pinnacle (approx., start − 10)'],
 };
-const dbKey = (date, tournament, winner, loser) => [String(date).slice(0, 10), tournament, winner, loser].join('|');
-function loadDbPrices(root) {
-  let b, n;
-  try {
-    b = JSON.parse(fs.readFileSync(path.join(root, 'database-yield.json'), 'utf8'));
-    n = JSON.parse(fs.readFileSync(path.join(root, 'database-yield-players.json'), 'utf8'));
-  } catch (e) { return null; }
-  const T = (b.meta && b.meta.tournaments) || [];
-  const map = new Map(), dup = new Set();
-  [['rows', 'names'], ['retRows', 'retNames'], ['tieRows', 'tieNames']].forEach(([rk, nk]) => {
-    const R = b[rk] || [], N = n[nk] || [];
-    if (R.length !== N.length) throw new Error(`database-yield ${rk} (${R.length}) and ${nk} (${N.length}) are out of step`);
-    R.forEach((x, i) => {
-      const nm = N[i], bk = DB_BOOK[x[8]];
-      if (!nm || !bk) return;
-      const d = String(x[0]);
-      const k = dbKey(`${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`, T[x[4]], nm[0], nm[1]);
-      if (map.has(k)) { dup.add(k); return; }
-      map.set(k, { w: x[7] ? x[5] : x[6], l: x[7] ? x[6] : x[5], book: bk[0], label: bk[1] });
-    });
-  });
-  dup.forEach((k) => map.delete(k));   // two Database rows under one key: neither is "the" price (never a guess)
-  return map;
-}
 const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0;
 
 function emptyAgg() {
@@ -391,136 +360,77 @@ function main() {
     return hit ? (archetypeByName.get(hit.name) || null) : null;
   };
 
-  const seasons = fs.readdirSync(ARCHIVE_DIR).filter((f) => /^\d{4}\.csv$/.test(f)).sort();
-  if (!seasons.length) throw new Error(`no season files in ${ARCHIVE_DIR}`);
-
-  // Tour baseline (README §3: "tour baseline" must be COMPUTED over the same window and
-  // level, never a rounded constant). Every priced player-side in the archive, backed
-  // flat. It comes out near the vig, which is the point — it is what backing the field
-  // blind returns, and it is the number each player's yield is compared against.
+  // Founder ruling 2026-10-17 ("one source of truth for every match and every price"): Market edge reads the ONE master
+  // file build-database-yield.js writes in the same run (database-yield-master.json) — never the Tennis-Data files (they
+  // stopped on 6 Oct and would never show a new match) and never a capture of its own. Every row is a priced completed
+  // ATP main-draw match with the Database's price, book and source, winner first. Team events (flag t) stay out, as they
+  // stay out of every Database statistic and ROI; before 2010 (flag p) is in, as Market edge always showed it. No master
+  // = no build (the committed floor ships and the lag guard says so), never a fallback.
+  const master = JSON.parse(fs.readFileSync(MASTER_PATH, 'utf8'));
+  const MC = master.meta && master.meta.cols;
+  if (!Array.isArray(MC) || !Array.isArray(master.rows)) throw new Error(`${MASTER_PATH}: not a master file`);
+  const ci = {}; MC.forEach((c, i) => { ci[c] = i; });
   const tour = { all: emptyAgg(), level: {}, season: {} };
   const perPlayer = new Map();
-  const stats = { rows: 0, incomplete: 0, retired: 0, unpriced: 0, sides: 0, joined: 0, ties: 0, captured: 0, dbPriced: 0, ownOrder: 0 };
-  // founder ruling 2026-10-17 item 1: the Database's own price per match (null = no database-yield.json: every row on R8)
-  const dbPrices = loadDbPrices(ROOT);
-  stats.dbLoaded = !!dbPrices;
-  // R8: our captured closes, per subject, from match-closes/{key}.json (build-match-closes.js runs first
-  // in the pipeline). cap = [date, oppKey, pin, pinOpp, b365, b365Opp, eventKey]. Absent shard = none.
-  const capCache = new Map();
-  function capsFor(key) {
-    const k = String(key);
-    if (!capCache.has(k)) {
-      let caps = null;
-      try {
-        const d = JSON.parse(fs.readFileSync(path.join(ROOT, 'match-closes', k + '.json'), 'utf8'));
-        const two = (a, b) => (num(a) >= 1.01 && num(b) >= 1.01 ? [num(a), num(b)] : null);
-        caps = (d.cap || []).map((x) => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]) }));
-        // The shard's Tennis-Data rows carry the opponent key build-match-closes resolved; the tab
-        // matches captures by that key, so the profile must too. `${date}|${opp}|${won}` → key.
-        caps.tdOpp = new Map();
-        (d.rows || []).forEach((x) => { if (x[8] != null) caps.tdOpp.set(`${x[0]}|${x[1]}|${x[2]}`, String(x[8])); });
-      } catch (e) { caps = null; }
-      capCache.set(k, caps);
-    }
-    return capCache.get(k);
-  }
+  const stats = { rows: 0, retired: 0, team: 0, sides: 0, joined: 0, ties: 0, latest: '' };
+  const pinnacleEnd = {};
+  const bet365End = {};
 
-  seasons.forEach((file) => {
-    const season = file.slice(0, 4);
-    readCsv(path.join(ARCHIVE_DIR, file)).forEach((row) => {
-      stats.rows += 1;
-      // TEN-312 retirement ruling A (founder, 2026-09-28): an in-match retirement is a priced match,
-      // settled at the listed close — a win at the winner's price, a loss at the retiree's. Tennis-Data
-      // marks it "Retired" (one row is typed "Rrtired"). Walkovers, "Awarded" and "Disqualified" were never
-      // played out and stay excluded. build-odds-performance.js keeps its own exclusion (other consumers).
-      const retired = isRetiredComment(row.comment);
-      if (row.comment && row.comment.toLowerCase() !== 'completed' && !retired) { stats.incomplete += 1; return; }
-      if (retired) stats.retired += 1;
-
-      // R8 (founder, 2026-09-28): each side is priced by the tab's order (FH_BOOK_ORDER, Form/H2H rule):
-      // our captured Pinnacle → Tennis-Data Pinnacle → Tennis-Data Bet365 → our captured Bet365, one book
-      // and one source per side. Captures come from the subject's own match-closes shard.
-      const level = LEVEL_ALIASES[row.series] || null;
-      const td = pickBookPairs(row);
-      const dbp = dbPrices ? dbPrices.get(dbKey(row.date, row.tournament, row.winner, row.loser)) : null;
-      if (dbp) stats.dbPriced += 1; else stats.ownOrder += 1;
-      const base = [
-        { name: row.winner, opp: row.loser, won: true, tdP: td.P, tdB: td.B },
-        { name: row.loser, opp: row.winner, won: false, tdP: td.P && [td.P[1], td.P[0]], tdB: td.B && [td.B[1], td.B[0]] },
-      ];
-      let pricedSides = 0;
-      const sides = [];
-      base.forEach((b) => {
-        const hit = resolve(b.name);
-        const caps = hit ? capsFor(hit.key) : null;
-        // Opponent key: the subject's match-closes row first (the key the tab uses), else our resolver.
-        let oppKey = caps && caps.tdOpp.get(`${row.date}|${b.opp}|${b.won ? 1 : 0}`);
-        if (!oppKey) { const oh = resolve(b.opp); oppKey = oh ? String(oh.key) : null; }
-        const pick = dbp ? { book: dbp.book, label: dbp.label, price: b.won ? dbp.w : dbp.l, oppPrice: b.won ? dbp.l : dbp.w }
-          : pickSide(b, caps, row.date, oppKey);
-        if (!pick) return;
-        const pW = devig(pick.price, pick.oppPrice);
-        if (pW == null) return;
-        if (b.won && pick.price === pick.oppPrice) stats.ties += 1;   // one count per match, not per side
-        pricedSides++;
-        sides.push({ name: b.name, opp: b.opp, won: b.won, p: pW, price: pick.price, oppPrice: pick.oppPrice, bk: pick });
-      });
-      if (!pricedSides) { stats.unpriced += 1; return; }
-
-      sides.forEach((s) => {
-        const bk = s.bk;
-        stats.sides += 1;
-        const side = {
-          date: row.date, event: row.tournament, level, surface: row.surface,
-          // Court type (Indoor/Outdoor). The archive's `court` column is 100%
-          // populated across 2004-2026 (59,433 rows, 10,412 Indoor) — measured,
-          // not assumed — so this is carried through rather than derived. It is
-          // what the Calendar modal's Indoors segment reads. Scope is the
-          // archive's: ATP tour MAIN DRAW only, which is why the Record-by-season
-          // grid cannot use it and reads api-tennis's "(Indoor)" surface instead.
-          court: (row.court || '').trim() || null,
-          round: row.round, season, ret: retired,
-          speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
-          oppArchetype: archetypeOf(s.opp),
-          opp: s.opp, won: s.won, p: s.p, price: s.price, oppPrice: s.oppPrice,
-          book: bk.book, bookLabel: bk.label,
-          // role: the tab's rule (TEN-310) — favourite = price < 2.00, from the shared core.
-          role: core.isFavPrice(s.price) ? 'fav' : 'dog',
-        };
-        // The tour baseline rests on the SAME basis as the player yields (TEN-310: Pinnacle,
-        // else Bet365), or the "vs tour" gap would be a book-mix artefact rather than a finding.
-        if (isYieldBasis(side)) {
-          addTo(tour.all, side);
-          if (level) { tour.level[level] = tour.level[level] || emptyAgg(); addTo(tour.level[level], side); }
-          tour.season[season] = tour.season[season] || emptyAgg();
-          addTo(tour.season[season], side);
-        }
-
-        const hit = resolve(s.name);
-        if (!hit) return;
-        if (bk.book === 'pinnacle-capture' || bk.book === 'bet365-capture') stats.captured += 1;
-        if (only && hit.key !== only) return;
-        stats.joined += 1;
-        if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] });
-        perPlayer.get(hit.key).sides.push(side);
-      });
+  master.rows.forEach((m) => {
+    const row = { date: m[ci.date], tournament: m[ci.tournament], series: m[ci.series], surface: m[ci.surface], court: m[ci.court],
+      round: m[ci.round], winner: m[ci.winner], loser: m[ci.loser], comment: m[ci.comment] };
+    const flags = String(m[ci.flags] || '');
+    if (flags.includes('t')) { stats.team += 1; return; }   // a team event: in the master, never in Market edge (as the Database)
+    const bk = DB_BOOK[m[ci.book]];
+    if (!bk) throw new Error(`master: unknown book code ${m[ci.book]} on ${row.date} ${row.winner} v ${row.loser}`);
+    stats.rows += 1;
+    if (row.date > stats.latest) stats.latest = row.date;
+    const season = String(row.date).slice(0, 4);
+    const retired = isRetiredComment(row.comment);
+    if (retired) stats.retired += 1;
+    const level = LEVEL_ALIASES[row.series] || null;
+    const L = level || row.series;
+    if (/^pinnacle(-history|-capture)?$/.test(bk[0]) && (!pinnacleEnd[L] || row.date > pinnacleEnd[L])) pinnacleEnd[L] = row.date;
+    if (bk[0] === 'bet365-archive' && (!bet365End[L] || row.date > bet365End[L])) bet365End[L] = row.date;
+    const pw = num(m[ci.pw]), pl = num(m[ci.pl]);
+    if (pw === pl) stats.ties += 1;
+    [{ name: row.winner, opp: row.loser, won: true }, { name: row.loser, opp: row.winner, won: false }].forEach((b) => {
+      const price = b.won ? pw : pl, oppPrice = b.won ? pl : pw;
+      const p = devig(price, oppPrice);
+      if (p == null) return;
+      stats.sides += 1;
+      const side = {
+        date: row.date, event: row.tournament, level, surface: row.surface,
+        // Court type (Indoor/Outdoor), carried in the master from Tennis-Data's court column (the feed's for added
+        // matches): what the Calendar modal's Indoors segment reads. Scope: ATP tour MAIN DRAW only.
+        court: (row.court || '').trim() || null,
+        round: row.round, season, ret: retired,
+        speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
+        oppArchetype: archetypeOf(b.opp),
+        opp: b.opp, won: b.won, p, price, oppPrice,
+        book: bk[0], bookLabel: bk[1],
+        // role: the tab's rule (TEN-310) — favourite = price < 2.00, from the shared core.
+        role: core.isFavPrice(price) ? 'fav' : 'dog',
+      };
+      // The tour baseline rests on the SAME basis as the player yields, or the "vs tour" gap would be a book-mix artefact.
+      if (isYieldBasis(side)) {
+        addTo(tour.all, side);
+        if (level) { tour.level[level] = tour.level[level] || emptyAgg(); addTo(tour.level[level], side); }
+        tour.season[season] = tour.season[season] || emptyAgg();
+        addTo(tour.season[season], side);
+      }
+      const hit = resolve(b.name);
+      if (!hit) return;
+      if (only && hit.key !== only) return;
+      stats.joined += 1;
+      if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] });
+      perPlayer.get(hit.key).sides.push(side);
     });
   });
 
   const tourSummary = summarise(tour.all);
   const tourByLevel = {};
   Object.keys(tour.level).forEach((L) => { tourByLevel[L] = summarise(tour.level[L]); });
-
-  // Coverage disclosure per level — §5 asks for "Pinnacle coverage end date per level".
-  const pinnacleEnd = {};
-  const bet365End = {};
-  seasons.forEach((file) => {
-    readCsv(path.join(ARCHIVE_DIR, file)).forEach((row) => {
-      const L = LEVEL_ALIASES[row.series] || row.series;
-      if (num(row.psw) > 1 && num(row.psl) > 1 && (!pinnacleEnd[L] || row.date > pinnacleEnd[L])) pinnacleEnd[L] = row.date;
-      if (num(row.b365w) > 1 && num(row.b365l) > 1 && (!bet365End[L] || row.date > bet365End[L])) bet365End[L] = row.date;
-    });
-  });
 
   if (!fs.existsSync(OUT_DIR)) fs.mkdirSync(OUT_DIR, { recursive: true });
 
@@ -632,12 +542,13 @@ function main() {
     builtFromCommit: stamp.builtFromCommit,
     tour: { all: tourSummary, level: tourByLevel },
     coverage: { pinnacleEndByLevel: pinnacleEnd, bet365ArchiveEndByLevel: bet365End },
+    // founder ruling 2026-10-17: built from the master; the publish guard compares these two (a lag fails the upload)
+    source: 'database-yield-master.json', latestMatch: stats.latest, masterLatest: master.meta.latest || null,
     players: index,
   }, null, 1));
 
-  log(`archive rows ${stats.rows}, ${stats.retired} retired kept (ruling A), ${stats.incomplete} walkover/awarded/disqualified excluded, ${stats.unpriced} unpriced dropped`);
-  log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}`);
-  log(`one price per match: ${stats.dbPriced} rows priced as the Database prices them, ${stats.ownOrder} rows the Database does not hold (R8 order)${dbPrices ? '' : ' — database-yield.json absent'}`);
+  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired kept (ruling A), ${stats.team} team-event matches left out`);
+  log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}, latest match ${stats.latest} (master ${master.meta.latest})`);
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
   log(`shards written: ${shipped}`);

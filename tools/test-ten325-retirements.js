@@ -36,13 +36,18 @@ const ROWS = [
   '2025-03-04,Test Open,ATP250,Outdoor,Hard,Semifinals,3,Tester A.,Delta E.,10,40,Walkover,1.3,3.6,1.3,3.6,1.3,3.6,1.28,3.5,file',
   '2025-03-05,Test Open,ATP250,Outdoor,Hard,The Final,3,Tester A.,Eps F.,10,50,Awarded,1.2,4.5,1.2,4.5,1.2,4.5,1.18,4.4,file',
 ];
-function runBuilder(builderSrc) {
+// Founder ruling 2026-10-17: Market edge reads the ONE master file build-database-yield.js writes, so the chain is driven
+// end to end — the real Database builder over the synthetic archive, then the real Market edge builder over its master.
+function runBuilder(builderSrc, dbSrc = DB_BUILDER) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten325-'));
   for (const f of ['build-odds-performance.js', 'market-edge-core.js']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, 'build-market-edge.js'), builderSrc);
+  fs.writeFileSync(path.join(dir, 'build-database-yield.js'), dbSrc);
   fs.mkdirSync(path.join(dir, 'odds-archive'));
   fs.writeFileSync(path.join(dir, 'odds-archive', '2025.csv'), [HEAD].concat(ROWS).join('\n') + '\n');
   fs.writeFileSync(path.join(dir, 'player-profiles.json'), JSON.stringify({ players: { 9001: { name: 'A. Tester' } } }));
+  const d = spawnSync(process.execPath, [path.join(dir, 'build-database-yield.js')], { encoding: 'utf8' });
+  if (d.status !== 0) throw new Error(`database builder exited ${d.status}: ${(d.stderr || '').slice(0, 400)}`);
   const r = spawnSync(process.execPath, [path.join(dir, 'build-market-edge.js'), '--quiet'], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error(`builder exited ${r.status}: ${(r.stderr || '').slice(0, 400)}`);
   return JSON.parse(fs.readFileSync(path.join(dir, 'market-edge', '9001.json'), 'utf8'));
@@ -143,6 +148,7 @@ l.length ? l.forEach(fail) : ok('the settlement note: one constant, printed on H
 
 // ---- run + controls ---------------------------------------------------------------------------------------
 const BUILDER = fs.readFileSync(path.join(ROOT, 'build-market-edge.js'), 'utf8');
+const DB_BUILDER = fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8');
 console.log('TEN-325 ruling A — retirements settle at the listed price');
 const b = checkBuilder(runBuilder(BUILDER));
 b.length ? b.forEach(fail) : ok('builder keeps Retired / Rrtired rows at their close, drops W/O and Awarded, marks ret');
@@ -151,11 +157,12 @@ f.length ? f.forEach(fail) : ok('Form and H2H settle retirements (priced = has a
 
 function controls() {
   const once = (src, from, to, name) => { if (src.split(from).length !== 2) throw new Error(`mutant anchor not unique/present: ${name}`); return src.replace(from, to); };
+  // [name, from, to, which builder]: the population filter lives in the master's builder now (build-database-yield.js)
   const BM = [
-    ['builder: back to "Completed" only', "if (row.comment && row.comment.toLowerCase() !== 'completed' && !retired)", "if (row.comment && row.comment.toLowerCase() !== 'completed')"],
-    ['builder: typo row missed', "new Set(['retired', 'rrtired'])", "new Set(['retired'])"],
-    ['builder: walkovers let in', "if (row.comment && row.comment.toLowerCase() !== 'completed' && !retired)", 'if (false)'],
-    ['builder: ret not stamped', 'ret: !!s.ret,', ''],
+    ['master: back to "Completed" only', "const RETIRED = new Set(['Retired', 'Rrtired']);", 'const RETIRED = new Set([]);', 'db'],
+    ['builder: typo row missed', "new Set(['retired', 'rrtired'])", "new Set(['retired'])", 'me'],
+    ['master: non-results let in', "else if (!RESULT_STANDS.has(comment)) { bucket.edge++; return; }", 'else if (false) { bucket.edge++; }', 'db'],
+    ['builder: ret not stamped', 'ret: !!s.ret,', '', 'me'],
   ];
   const HM = [
     ['Form: priced drops retirements', 'const priced = win.filter(r => r.price != null), np', 'const priced = win.filter(r => r.price != null && !r.ret), np'],
@@ -177,7 +184,10 @@ function controls() {
     src[where] = once(src[where], from, to, name);
     if (checkLabel(src.core, src.html, src.profile).length) caught++; else fail(`control survived: ${name}`);
   }
-  for (const [name, from, to] of BM) { if (checkBuilder(runBuilder(once(BUILDER, from, to, name))).length) caught++; else fail(`control survived: ${name}`); }
+  for (const [name, from, to, w] of BM) {
+    const out = w === 'db' ? runBuilder(BUILDER, once(DB_BUILDER, from, to, name)) : runBuilder(once(BUILDER, from, to, name));
+    if (checkBuilder(out).length) caught++; else fail(`control survived: ${name}`);
+  }
   for (const [name, from, to] of HM) { if (checkFormH2h(once(HTML, from, to, name)).length) caught++; else fail(`control survived: ${name}`); }
   console.log(`  mutants: ${caught} of ${LM.length + BM.length + HM.length} caught`);
 }

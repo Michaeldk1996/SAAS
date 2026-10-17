@@ -423,7 +423,7 @@ jobs:
           node tools/step-check.mjs --step "Feed the archive's Pinnacle closes into the Database (best-effort)" --rc "$rc" --since "$t0" --fresh pinnacle-archive-td.csv
           t0=$(date +%s); rc=0
           node build-database-yield.js || rc=$?
-          node tools/step-check.mjs --step "Rebuild database-yield.json with the archive feed (best-effort)" --rc "$rc" --since "$t0" --fresh database-yield.json database-yield-players.json tour-baselines.json
+          node tools/step-check.mjs --step "Rebuild database-yield.json with the archive feed (best-effort)" --rc "$rc" --since "$t0" --fresh database-yield.json database-yield-players.json tour-baselines.json database-yield-x.json database-yield-master.json
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,
@@ -755,6 +755,11 @@ jobs:
           # built by build-database-yield.js from odds-archive/*.csv. Committed but not
           # copied = silent 404 → the Database tab renders empty. Required when the flag is on.
           cp database-yield.json database-yield-players.json _site/
+          # Founder ruling 2026-10-17 ("one source of truth"): the era shard (every priced match before 2010 and the team
+          # events) the one price join reads beside the two files above. Built by the same run, never committed. Missing
+          # (that run failed) = those matches read a dash on every surface (the page treats a 404 as "no rows"), never
+          # another price; said out loud here.
+          if [ -f database-yield-x.json ]; then cp database-yield-x.json _site/; else echo "::warning::database-yield-x.json not built this run: matches before 2010 and team events read a dash"; fi
           # TEN-384: the player profile's Market edge tour baselines, written by the SAME
           # build-database-yield.js run (so they equal the Database Tour aggregates) and loaded
           # with the profile data. Committed but not copied = 404 = every profile's tour line

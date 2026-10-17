@@ -1508,7 +1508,7 @@ def td_edition_meta(td_rows, alias, key):
 # surface + court = tournament-surfaces.json by api-tennis tournament_key, tier = the dashboard's TOURNAMENT_CATALOG,
 # best of 5 at a Grand Slam only, else 3. Davis Cup and Laver Cup stay out (team events, never Tennis-Data rows).
 CATALOG_SERIES = {'Grand Slam': 'Grand Slam', 'ATP 1000': 'Masters 1000', 'ATP 500': 'ATP500', 'ATP 250': 'ATP250', 'ATP Finals': 'Masters Cup'}
-TEAM_EVENT = re.compile(r'davis cup|laver cup', re.I)
+TEAM_EVENT = re.compile(r'davis cup|laver cup|united cup|atp cup|hopman', re.I)
 
 
 def parse_catalog(html_text):
@@ -1608,7 +1608,8 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         sizes.setdefault(k, []).append(ROUND_SIZE.get(_fold(str(a.get('tournament_round') or '').split(' - ')[-1]).strip(), 0))
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
                     'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
-                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0}
+                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0, 'team': 0, 'teamRetired': 0,
+                    'teamWalkover': 0, 'teamNoResult': 0}
     for e in export_rows:
         rep['closes'] += 1
         d = e['date']
@@ -1630,6 +1631,25 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
                         'comment': r.get('comment'), 'psw': e['p1'] if w1 else e['p2'], 'psl': e['p2'] if w1 else e['p1'],
                         'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
             rep['override'] += 1; continue
+        # Founder ruling 2026-10-17 (fix 2): a team event (Davis Cup, Laver Cup …) our archive prices goes into the master
+        # with the same source order and hover; Tennis-Data never carries one, so it is its own feed kind ('team'), read
+        # into the era shard only — never a Database row, statistic or ROI.
+        ta = e.get('apiTennis') or {}
+        if ta and TEAM_EVENT.search(str(ta.get('tournament_name') or '')):
+            st = str(ta.get('event_status') or '')
+            if 'walk' in st.lower():
+                rep['teamWalkover'] += 1; continue
+            if ta.get('event_winner') not in ('First Player', 'Second Player') or st not in ('Finished', 'Retired'):
+                rep['teamNoResult'] += 1; continue
+            first_won = ta['event_winner'] == 'First Player'
+            w, l = (e['p1Name'], e['p2Name']) if first_won else (e['p2Name'], e['p1Name'])
+            wk, lk = (e.get('p1Key'), e.get('p2Key')) if first_won else (e.get('p2Key'), e.get('p1Key'))
+            wn, ln = spell.get(str(wk)) if wk is not None else None, spell.get(str(lk)) if lk is not None else None
+            out.append({'kind': 'team', 'date': d, 'tournament': str(ta.get('tournament_name')).replace(',', ' '), 'series': 'Team event',
+                        'court': '', 'surface': '', 'round': '', 'bestof': '', 'winner': wn or td_name(w), 'loser': ln or td_name(l),
+                        'comment': 'Retired' if st == 'Retired' else 'Completed', 'psw': e['p1'] if first_won else e['p2'],
+                        'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
+            rep['teamRetired' if st == 'Retired' else 'team'] += 1; continue
         if d <= td_last:
             rep['notInTdWindow'] += 1; continue       # inside Tennis-Data's window but not in it: not an ATP main-draw match
         a = e.get('apiTennis') or {}

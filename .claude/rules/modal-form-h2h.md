@@ -326,7 +326,7 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
 - `market-edge/` and `market-edge-index.json` are rebuilt by `build-market-edge.js` in
   **every pipeline run**. They are never hand-built or hand-edited: any edit is overwritten on
   the next run. The committed copy is only the floor published if the builder fails.
-- Inputs: `odds-archive/*.csv` (drop-in refresh), `player-profiles.json` (pipeline),
+- Inputs: `database-yield-master.json` (the one master, built by `build-database-yield.js` in the same run — founder 2026-10-17), `player-profiles.json` (pipeline),
   `court-speed-map.json`, `playing-styles.json`.
 
 ## Captured Bet365 covers ITF Men and Davis Cup (ruling 2026-09-24)

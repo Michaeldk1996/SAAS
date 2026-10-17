@@ -166,6 +166,33 @@ test('archive name table (founder brief 2026-10-15 item 2): an aliased archive n
   assert.doesNotMatch(src.split('const nameTable')[1].split('writeAtomic(OUT_NAMES')[0], /ARCHIVE_NAME_BLOCK/, 'the block list is not carried to the page join');
 });
 
+test('one source of truth (founder 2026-10-17): the era shard (before 2010 + team events) joins on a COPY of the dictionaries; out of step never prices', () => {
+  const base = { meta: { levels: ['Grand Slam'], surfaces: ['Hard'], rounds: ['The Final'], tournaments: ['Australian Open'] },
+    rows: [[20250126, 0, 0, 0, 0, 1.40, 3.00, 1, 0]], retRows: [] };
+  const nm = { names: [['Sinner J.', 'Zverev A.']], retNames: [] };
+  const xs = { xRows: [[20080127, 'Grand Slam', 'Hard', 'The Final', 'Australian Open', 1.30, 3.60, 1, 0, 'p'],
+    [20260912, null, 'Hard', '', 'Davis Cup World Group', 1.20, 4.50, 1, 1, 't']], xNames: [['Djokovic N.', 'Tsonga J.W.'], ['Sinner J.', 'Doe J.']] };
+  const before = JSON.stringify(base.meta);
+  const J0 = dbPriceJoinRows(base, nm, xs);
+  assert.equal(JSON.stringify(base.meta), before, 'the Database page\'s own dictionaries gain no entry');
+  assert.deepEqual([J0.rows.length, J0.nDb, J0.nX], [3, 1, 2]);
+  assert.deepEqual(J0.rows[1], [20080127, 0, 0, 0, 0, 1.30, 3.60, 1, 0], 'a pre-2010 row reuses the strings the store already has');
+  const t = J0.rows[2];
+  assert.deepEqual([t[1], J0.meta.tournaments[t[4]], J0.meta.rounds[t[3]], t[8]], [-1, 'Davis Cup World Group', '', 1], 'a team row: no level, its own event, its book');
+  const dj = [{ date: '2008-01-27', won: true, round: 'F' }];
+  priceJoin(dj, { full: 'N. Djokovic' }, { full: 'J. W. Tsonga' }, J0);
+  assert.deepEqual([dj[0].price, dj[0].oppPrice, dj[0].book], [1.30, 3.60, 'P'], 'Australian Open 2008 F prices from the era shard');
+  const dc = [{ date: '2026-09-12', won: true, round: null }];
+  priceJoin(dc, { full: 'J. Sinner' }, { full: 'J. Doe' }, J0);
+  assert.deepEqual([dc[0].price, dc[0].oppPrice, dc[0].book], [1.20, 4.50, 'B'], 'a Davis Cup tie prices from the era shard');
+  assert.throws(() => dbPriceJoinRows(base, nm, { xRows: xs.xRows, xNames: xs.xNames.slice(1) }), /xRows \/ xNames out of step/);
+  // control: without the shard the same two meetings are dashes
+  const J1 = dbPriceJoinRows(base, nm);
+  const d1 = [{ date: '2008-01-27', won: true, round: 'F' }]; priceJoin(d1, { full: 'N. Djokovic' }, { full: 'J. W. Tsonga' }, J1);
+  assert.equal(d1[0].price ?? null, null, 'control: no era shard, Australian Open 2008 F is a dash');
+  assert.equal(J1.meta, base.meta, 'no shard: the meta is the store\'s own (no copy made)');
+});
+
 test('Data 2 on the real stores: every Sinner–Alcaraz price equals the odds archive (Pinnacle, else Bet365) — a retirement too, on the ATP result (ruling 2026-10-08)', () => {
   const db = dbPriceJoinRows(...readStore());
   const csv = [];

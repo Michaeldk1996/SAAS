@@ -60,6 +60,8 @@ const ARCHIVE_DIR = process.env.DB_YIELD_ARCHIVE_DIR || path.join(__dirname, 'od
 const OUT_DIR = process.env.DB_YIELD_OUT_DIR || __dirname;
 const OUT_BASE = path.join(OUT_DIR, 'database-yield.json');
 const OUT_NAMES = path.join(OUT_DIR, 'database-yield-players.json');
+const OUT_X = path.join(OUT_DIR, 'database-yield-x.json');             // the era shard (before 2010 + team events)
+const OUT_MASTER = path.join(OUT_DIR, 'database-yield-master.json');   // the one master file the builders read
 const OUT_BASELINES = path.join(__dirname, 'tour-baselines.json');
 const BASELINES_OUT = process.env.DB_YIELD_OUT_DIR ? path.join(OUT_DIR, 'tour-baselines.json') : OUT_BASELINES;   // tests write elsewhere
 // Founder brief 2026-10-14 (F3c): our Pinnacle closes are fed into this archive. The feed is a Tennis-Data-shaped CSV
@@ -157,6 +159,15 @@ const names = [];     // [winnerName, loserName] parallel to rows
 // indices are assigned AFTER the main loop so a retired row can never reorder meta.surfaces / rounds /
 // tournaments for the Database rows (an entry only a retirement uses is appended at the end).
 const tieRaw = [];    // same shape as retRaw (+ isRet): ties kept for the price join only (founder 2026-10-16)
+// Founder ruling 2026-10-17 ("one source of truth for every match and every price"): the matches the master holds but
+// the Database's statistics leave out — every priced match before 2010 and the team events (Davis Cup, Laver Cup …) —
+// ride in their own era shard, database-yield-x.json, read by the price join only (never a Database figure). Shape:
+// [dateInt, level|null, surface, round, tournament, favPrice, dogPrice, favWon, bookIdx, winner, loser, flags] with flags
+// 'p' (before 2010) or 't' (team event), plus 'r' (a retirement) and 'e' (an exact price tie).
+const xRaw = [];
+// …and every priced match of every set goes into the ONE master file (database-yield-master.json) with the attributes the
+// builders downstream need (series, court, best-of, comment): `att` is pushed beside each accepted row, same index.
+const rowsAtt = [], retAtt = [], tieAtt = [], xAtt = [];
 const retRaw = [];    // [dateInt, lvlIdx, surface, round, tournament, favPrice, dogPrice, favWon, bookIdx, winner, loser]
 const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, edge: 0 };
 
@@ -173,7 +184,7 @@ let dateMin = '99999999', dateMax = '00000000';
 let pinnacleLastPriced = '';
 
 // --- the archive feed (optional) ---------------------------------------------
-const feed = { overrides: new Map(), adds: [], overridden: 0, tdHadPinnacle: 0, overrideUnmatched: 0, added: 0, addedRetired: 0, addedDropped: 0 };
+const feed = { overrides: new Map(), adds: [], team: [], teamKept: 0, teamDropped: 0, overridden: 0, tdHadPinnacle: 0, overrideUnmatched: 0, added: 0, addedRetired: 0, addedDropped: 0 };
 const FEED_COLS = ['kind', 'date', 'tournament', 'series', 'court', 'surface', 'round', 'bestof', 'winner', 'loser', 'comment', 'psw', 'psl', 'archiveId', 'label', 'eventKey'];
 const feedOn = fs.existsSync(FEED);
 if (feedOn) {
@@ -184,6 +195,7 @@ if (feedOn) {
     const c = l.split(','); const r = {}; FEED_COLS.forEach((k, i) => { r[k] = c[i]; });
     if (r.kind === 'override') feed.overrides.set([r.date, r.tournament, r.winner, r.loser].join('|'), [num(r.psw), num(r.psl), r.label]);
     else if (r.kind === 'add') feed.adds.push(r);
+    else if (r.kind === 'team') feed.team.push(r);   // founder 2026-10-17: a team event's archive close (the era shard only)
   }
 }
 const feedUsedKeys = new Set();
@@ -207,6 +219,7 @@ const approxUsed = new Set();
 
 function processLine(c, col, season, fromFeed) {
     bucket.archive++;
+    const att = () => [(c[col.series] || '').trim(), (c[col.court] || '').trim(), (c[col.bestof] || '').trim(), (c[col.comment] || '').trim()];
     if (!fromFeed) { const d = (c[col.date] || '').trim(); if (d > pinnacleLastPriced && validPrice(num(c[col.psw])) && validPrice(num(c[col.psl]))) pinnacleLastPriced = d; }
 
     const comment = (c[col.comment] || '').trim();
@@ -257,8 +270,14 @@ function processLine(c, col, season, fromFeed) {
       B_.tie++;
       const dT = (c[col.date] || '').trim(), dI = parseInt(dT.replace(/-/g, ''), 10), lvT = LEVEL_MAP[(c[col.series] || '').trim()];
       if ((1 / pw) + (1 / pl) <= 1.15 && season >= WINDOW_START && Number.isFinite(dI) && lvT) {
+        tieAtt.push(att());
         tieRaw.push([dI, levels.indexOf(lvT), (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
           (c[col.tournament] || '').trim(), pw, pl, 1, bookIdx, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), isRet ? 1 : 0]);
+      }
+      else if ((1 / pw) + (1 / pl) <= 1.15 && season < WINDOW_START && Number.isFinite(dI)) {   // a tie before 2010: the era shard
+        xAtt.push(att());
+        xRaw.push([dI, lvT || null, (c[col.surface] || '').trim(), (c[col.round] || '').trim(), (c[col.tournament] || '').trim(),
+          pw, pl, 1, bookIdx, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), 'pe' + (isRet ? 'r' : '')]);
       }
       return;
     }
@@ -268,7 +287,18 @@ function processLine(c, col, season, fromFeed) {
     // Option A, 2026-09-04). Placed AFTER the exclusion checks so those buckets keep their
     // full-archive counts and preWindow captures only otherwise-usable pre-2010 rows.
     // (2009 carries no Pinnacle and no Bet365 pair -> falls out via noPrice, not here.)
-    if (season < WINDOW_START) { B_.preWindow++; return; }
+    if (season < WINDOW_START) {
+      B_.preWindow++;
+      // founder ruling 2026-10-17: before 2010 the match is in the master and the price join, never a Database figure
+      const dP = parseInt((c[col.date] || '').trim().replace(/-/g, ''), 10);
+      if (Number.isFinite(dP)) {
+        xAtt.push(att());
+        xRaw.push([dP, LEVEL_MAP[(c[col.series] || '').trim()] || null, (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
+          (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
+          (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), 'p' + (isRet ? 'r' : '')]);
+      }
+      return;
+    }
 
     // ---- usable row ----
     const dateStr = (c[col.date] || '').trim();
@@ -277,6 +307,7 @@ function processLine(c, col, season, fromFeed) {
     if (isRet) {
       const canonR = LEVEL_MAP[(c[col.series] || '').trim()];
       if (!canonR) { retBucket.edge++; return; }
+      retAtt.push(att());
       retRaw.push([dateInt, levels.indexOf(canonR), (c[col.surface] || '').trim(), (c[col.round] || '').trim(),
         (c[col.tournament] || '').trim(), Math.min(pw, pl), Math.max(pw, pl), pw < pl ? 1 : 0, bookIdx,
         (c[col.winner] || '').trim(), (c[col.loser] || '').trim()]);
@@ -299,6 +330,7 @@ function processLine(c, col, season, fromFeed) {
     const favWon = pw < pl ? 1 : 0;   // winner carries pw; shorter price won iff pw<pl
 
     rows.push([dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, dogPrice, favWon, bookIdx]);
+    rowsAtt.push(att());
     names.push([(c[col.winner] || '').trim(), (c[col.loser] || '').trim()]);
     bucket.used++;
     bookCount[bookIdx]++;
@@ -330,6 +362,21 @@ if (feedOn) {
     else if (RETIRED.has((r.comment || '').trim())) feed.addedRetired++;
     else feed.added++;
   }
+}
+
+// Founder ruling 2026-10-17 (fix 2): the team events (Davis Cup, Laver Cup …) our Pinnacle archive prices go into the
+// master with the same source order and hover as every other match (our archive close: 3 'from Pinnacle history' /
+// 4 'captured'), flagged out of every Database statistic and ROI. The same price guards: both sides >= 1.01 (here > 1.00
+// as validPrice), overround <= 1.15; an exact tie is kept (flag 'e').
+for (const r of feed.team) {
+  const pw = num(r.psw), pl = num(r.psl), bk = ARCH_BOOK[(r.label || '').trim()];
+  const dI = parseInt(String(r.date || '').replace(/-/g, ''), 10);
+  if (!validPrice(pw) || !validPrice(pl) || bk == null || !Number.isFinite(dI) || (1 / pw) + (1 / pl) > 1.15) { feed.teamDropped++; continue; }
+  const isRet = RETIRED.has((r.comment || '').trim());
+  xAtt.push([(r.series || '').trim(), (r.court || '').trim(), (r.bestof || '').trim(), (r.comment || '').trim()]);
+  xRaw.push([dI, null, (r.surface || '').trim(), (r.round || '').trim(), (r.tournament || '').trim(), Math.min(pw, pl), Math.max(pw, pl),
+    pw <= pl ? 1 : 0, bk, (r.winner || '').trim(), (r.loser || '').trim(), 't' + (isRet ? 'r' : '') + (pw === pl ? 'e' : '')]);
+  feed.teamKept++;
 }
 
 // TEN-402: the retired rows' dictionary indices, assigned after every Database row has claimed its own.
@@ -484,6 +531,34 @@ const nameTable = (() => {
   return { aliases };
 })();
 writeAtomic(OUT_NAMES, JSON.stringify({ names, retNames, tieNames, aliases: nameTable.aliases }));
+// Founder ruling 2026-10-17: the era shard (before 2010 + team events), read by the price join only. Its names sit in
+// the same file; its strings are its own (no Database dictionary is touched, so no Database picker gains an entry).
+const xCount = f => xRaw.filter(x => x[11].includes(f)).length;
+const X_META = { schema: 1, rule: 'Priced completed matches the master holds but the Database statistics leave out: before ' + WINDOW_START +
+  ' (flag p) and team events (flag t), with r = a retirement (settled on the official ATP result) and e = an exact tie. Same book ' +
+  'codes as database-yield.json. Read by the price join only; no Database figure, tour baseline or ROI reads it.',
+  counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped } };
+writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
+  xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]) }));
+// …and the ONE master file every builder downstream reads (build-market-edge.js): every priced completed match, one row
+// each, winner first, with its price pair, book code and set (db = a Database row, ret / tie = behind their flags, x = the
+// era shard). Built from the same rows as the page files above, so a price can never differ between them.
+const iso = d => { const s = String(d); return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`; };
+const MASTER_COLS = ['date', 'tournament', 'series', 'surface', 'court', 'round', 'bestof', 'winner', 'loser', 'comment', 'pw', 'pl', 'book', 'set', 'flags'];
+const masterRows = [];
+const pushM = (d, tour, surf, rnd, w, l, fav, dog, favWon, book, a, set, flags) => masterRows.push([iso(d), tour, a[0], surf, a[1], rnd, a[2], w, l, a[3],
+  favWon ? fav : dog, favWon ? dog : fav, book, set, flags]);
+rows.forEach((r, i) => pushM(r[0], tournaments[r[4]], surfaces[r[2]], rounds[r[3]], names[i][0], names[i][1], r[5], r[6], r[7], r[8], rowsAtt[i], 'db', ''));
+retRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], retAtt[i], 'ret', 'r'));
+tieRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], tieAtt[i], 'tie', 'e' + (x[11] ? 'r' : '')));
+xRaw.forEach((x, i) => pushM(x[0], x[4], x[2], x[3], x[9], x[10], x[5], x[6], x[7], x[8], xAtt[i], 'x', x[11]));
+if (rowsAtt.length !== rows.length || retAtt.length !== retRaw.length || tieAtt.length !== tieRaw.length || xAtt.length !== xRaw.length) {
+  console.error('master: an attribute array is out of step with its rows'); process.exit(1);
+}
+writeAtomic(OUT_MASTER, JSON.stringify({ meta: { schema: 1, cols: MASTER_COLS, builtFrom: 'build-database-yield.js (the same run as database-yield.json)',
+  dateRange: [dateMin, dateMax], latest: masterRows.reduce((m, r) => (r[0] > m ? r[0] : m), ''), bookCodes: { 0: 'Tennis-Data Pinnacle', 1: 'Bet365 (Tennis-Data)',
+  2: 'Pinnacle (approx.) api-tennis', 3: 'Pinnacle (from Pinnacle history)', 4: 'Pinnacle (captured)', 5: 'Pinnacle (approx.) start - 10' },
+  counts: { all: masterRows.length, db: rows.length, ret: retRaw.length, tie: tieRaw.length, x: xRaw.length } }, rows: masterRows }));
 console.log(`name table (archive aliases → page join): ${JSON.stringify(nameTable)}`);
 // TEN-384: loaded by the player profile WITH the profile data (never database-yield.json).
 const B = TB;
@@ -529,6 +604,8 @@ console.log(`yield Pinnacle      : fav ${pct(yPS.fav)}  dog ${pct(yPS.dog)}  n=$
 console.log(`yield Bet365        : fav ${pct(yB365.fav)}  dog ${pct(yB365.dog)}  n=${yB365.n}`);
 console.log(`payload base        : ${kb(fs.statSync(OUT_BASE).size)} raw / ${kb(gz(OUT_BASE))} gz`);
 console.log(`payload names shard : ${kb(fs.statSync(OUT_NAMES).size)} raw / ${kb(gz(OUT_NAMES))} gz`);
+console.log(`era shard (x)       : ${JSON.stringify(X_META.counts)}  ${kb(fs.statSync(OUT_X).size)} raw / ${kb(gz(OUT_X))} gz`);
+console.log(`master file         : ${masterRows.length} priced matches  ${kb(fs.statSync(OUT_MASTER).size)} raw / ${kb(gz(OUT_MASTER))} gz`);
 console.log(`tour baselines      : all ${pct(TB.all.yield)}  fav ${pct(TB.favourite.yield)}  ` +
   `dog ${pct(TB.underdog.yield)}  n=${TB.all.matches} matches  (Pinnacle ${TB.bookCounts.Pinnacle} / Bet365 ${TB.bookCounts.Bet365})`);
 console.log(`pinnacle last priced: ${pinnacleLastPriced || '-'}`);

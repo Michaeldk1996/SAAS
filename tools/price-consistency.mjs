@@ -31,6 +31,22 @@ const PAGE = LIVE || existsSync(join(SITE, 'bsp-consult-dashboard.html')) ? 'bsp
 if (!LIVE) for (const f of [PAGE, 'database-yield.json', 'database-yield-players.json', 'career-history-index.json']) {
   if (!existsSync(join(SITE, f))) { console.error(`price-consistency: ${f} missing from ${SITE} — nothing to check, failing closed`); process.exit(1); }
 }
+// Lag (founder ruling 2026-10-17, "one source of truth"): every surface's latest match = the master's. The join surfaces
+// read the Database files themselves; Market edge is built from the master in the same run, so its index must name the
+// master as its source and carry the same latest match (a committed floor shipped after a failed build lags, or names
+// no source, and fails the upload).
+const LAG = { checked: false };
+if (!LIVE && existsSync(join(SITE, 'market-edge-index.json'))) {
+  const b = JSON.parse(readFileSync(join(SITE, 'database-yield.json'), 'utf8'));
+  let dbLast = 0; for (const k of ['rows', 'retRows', 'tieRows']) for (const r of b[k] || []) if (r[0] > dbLast) dbLast = r[0];
+  const ds = String(dbLast), dbIso = `${ds.slice(0, 4)}-${ds.slice(4, 6)}-${ds.slice(6, 8)}`;
+  const ix = JSON.parse(readFileSync(join(SITE, 'market-edge-index.json'), 'utf8'));
+  Object.assign(LAG, { checked: true, database: dbIso, marketEdge: ix.latestMatch || null, marketEdgeSource: ix.source || null });
+  if (ix.source !== 'database-yield-master.json' || ix.latestMatch !== dbIso) {
+    console.error(`price-consistency: Market edge lags the master — its latest match ${ix.latestMatch || '(none)'} from ${ix.source || '(no source: a committed floor)'}, the Database ${dbIso}`);
+    process.exit(1);
+  }
+} else if (!LIVE) console.log('price-consistency: lag check SKIPPED — no market-edge-index.json in the site (said out loud, not a pass)');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json', '.css': 'text/css',
   '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2' };
 const server = createServer((req, res) => {
@@ -191,7 +207,7 @@ const result = await E(`(async () => {
 ch.kill('SIGKILL'); if (!LIVE) server.close();
 for (const r of result.shown || []) console.log('SHOW ' + JSON.stringify(r));
 const failN = Object.values(result.fail).reduce((a, b) => a + b, 0);
-console.log(`### price-consistency ${JSON.stringify({ players: result.players, playersChecked: result.playersChecked, matches: result.matches, dbHeld: result.dbHeld,
+console.log(`### price-consistency ${JSON.stringify({ lag: LAG, players: result.players, playersChecked: result.playersChecked, matches: result.matches, dbHeld: result.dbHeld,
   notHeld: result.notHeld, checked: result.checked, failures: result.fail, reported: result.report, byYear: result.byYear })}`);
 if (FOCUS.length) { const f = Object.assign({}, result.focus); delete f.seen; console.log(`### focus ${JSON.stringify(f)}`); }
 for (const r of result.ex.fail.slice(0, 40)) console.log('FAIL ' + JSON.stringify(r));

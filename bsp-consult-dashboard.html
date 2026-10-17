@@ -34281,15 +34281,41 @@ window.DatabaseTab = (function(){
   // favWon is the archive winner's side). The Database's own figures never read retRows; nDb = where they start.
   // Founder ruling 2026-10-16: exact price ties ride behind their own flag too (tieRows / tieNames: priced at the tie for
   // both players, out of every favourite / underdog figure) — joined here, never read by the Database's own figures.
-  function dbPriceJoinRows(base, nm){
+  function dbPriceJoinRows(base, nm, xs){
     var rr = (base && base.retRows) || [], rn = (nm && nm.retNames) || [];
     if (rr.length !== rn.length) throw new Error('database-yield retRows / retNames out of step (' + rr.length + ' v ' + rn.length + ')');
     var tr = (base && base.tieRows) || [], tn = (nm && nm.tieNames) || [];
     if (tr.length !== tn.length) throw new Error('database-yield tieRows / tieNames out of step (' + tr.length + ' v ' + tn.length + ')');
-    return { rows: base.rows.concat(rr, tr), names: nm.names.concat(rn, tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };
+    // Founder ruling 2026-10-17 ("one source of truth"): the era shard (database-yield-x.json — every priced match before
+    // 2010 and the team events) joins too. Its rows carry their own strings; they are indexed into a COPY of the
+    // dictionaries, so the Database page's own meta (its pickers, its figures) never gains an entry.
+    var xr = (xs && xs.xRows) || [], xn = (xs && xs.xNames) || [];
+    if (xr.length !== xn.length) throw new Error('database-yield-x xRows / xNames out of step (' + xr.length + ' v ' + xn.length + ')');
+    var meta = base.meta;
+    if (xr.length) {
+      meta = Object.assign({}, base.meta, { levels: base.meta.levels.slice(), surfaces: base.meta.surfaces.slice(),
+        rounds: base.meta.rounds.slice(), tournaments: base.meta.tournaments.slice() });
+      var ix = function(arr, v){ var i = arr.indexOf(v); if (i < 0) { i = arr.length; arr.push(v); } return i; };
+      xr = xr.map(function(x){ return [x[0], x[1] == null ? -1 : ix(meta.levels, x[1]), ix(meta.surfaces, x[2]), ix(meta.rounds, x[3]),
+        ix(meta.tournaments, x[4]), x[5], x[6], x[7], x[8]]; });
+    }
+    return { rows: base.rows.concat(rr, tr, xr), names: nm.names.concat(rn, tn, xn), meta: meta, nDb: base.rows.length,
+      nX: xr.length, aliases: nm.aliases || {} };
+  }
+  // The era shard: a 404 (a deployment built before it existed) is "no such rows" — those matches show a dash; any other
+  // failure fails the whole join (the surfaces then show their failed state, never another price).
+  var X_URL = './database-yield-x.json', XDATA = null, xPromise = null;
+  function loadX(){
+    if (XDATA) return Promise.resolve(XDATA);
+    if (xPromise) return xPromise;
+    xPromise = fetch(X_URL, { cache: 'no-cache' }).then(function(r){ if (r.status === 404) return { xRows: [], xNames: [], missing: true };
+      if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function(j){ XDATA = j; return j; }).catch(function(e){ xPromise = null; throw e; });
+    return xPromise;
   }
   var PRICE_JOIN = null;
-  function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES)); }); }
+  function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return loadX(); })
+    .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES, XDATA)); }); }
   return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows };
 })();
 </script>
