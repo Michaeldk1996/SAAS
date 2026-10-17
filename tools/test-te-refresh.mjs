@@ -142,6 +142,12 @@ const te = (url) => url.includes('tennisexplorer');
     { key: '2', name: 'N. Newman', country: 'Australia', hasProfile: true },
     { key: '3', name: 'Z. Noprofile', country: 'Australia', hasProfile: false }] }));
   const r = run(d, 'weekly');
+  check('a store player who left the profiled set is still refreshed (one population that only grows)', () => {
+    const d3 = repo();
+    fs.writeFileSync(path.join(d3, 'roster.json'), JSON.stringify({ players: [{ key: '2', name: 'N. Newman', country: 'Australia', hasProfile: true }] }));
+    const r3 = run(d3, 'weekly');
+    assert.strictEqual(r3.code, 0, r3.out); assert.ok(r3.reqs.some((u) => /\/player\/alpha\//.test(u)), 'store player alpha not refreshed');
+  });
   check('player-index roster: a profiled player new to the store gets his full history; no profile, no request', () => {
     assert.strictEqual(r.code, 0, r.out);
     assert.strictEqual(r.reqs.filter(te).filter((u) => /newman-1\/\?annual=/.test(u)).length, 3);

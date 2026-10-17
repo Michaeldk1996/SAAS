@@ -96,7 +96,13 @@ async function main() {
   const idx = JSON.parse(fs.readFileSync(idxF, 'utf8'));
   // the new store starts as an exact copy of the committed one
   fs.cpSync(path.join(ROOT, G.STORE_DIR), path.join(OUT_DIR, G.STORE_DIR), { recursive: true });
+  // ONE population for the refresh and every report: everyone the site profiles now, plus everyone already in the store.
+  // The profiled set moves through the day (the eager file follows the board; the wide roster is rebuilt every run), so
+  // a player who drops out of it keeps being refreshed — the store never loses a player (the guard), and neither does
+  // the refresh.
   const roster = await loadRoster();
+  { const have = new Set(roster.map((p) => String(p.key)));
+    for (const [key, x] of Object.entries(idx.players)) if (!have.has(String(key))) roster.push({ key: String(key), name: x.name || null, country: null, age: null, fromStore: true }); }
   const report = { mode: MODE, at: NOW.toISOString(), players: 0, newPlayers: [], unmatched: [], refused: [], seasonsFetched: 0, changes: {} };
   const slice = (k) => [...String(k)].reduce((s, c) => s + c.charCodeAt(0), 0) % 28 === DAY % 28;
   const inPart = (k) => [...String(k)].reduce((s, c) => (s * 31 + c.charCodeAt(0)) % 1000003, 7) % PARTS === PART;
