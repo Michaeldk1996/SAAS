@@ -38,7 +38,7 @@ const MUTANTS = [
   // 'TEN-402: the profile back on the closes join' retired 2026-10-17: an EQUIVALENT mutant since founder ruling item 1 —
   // trRowOf hands meRowFromCareer no closes (cl = null) and meRowFromCareer prices every row the Database join holds
   // (sfDbPxRows), so dropping the px step changes no output. The suite's 'M. N' row (closes only, no Database row) pins it.
-  ['TEN-402: the flagged retirements dropped from the join', '    return { rows: base.rows.concat(rr, tr), names: nm.names.concat(rn, tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };', '    return { rows: base.rows.concat(tr), names: nm.names.concat(tn), meta: base.meta, nDb: base.rows.length, aliases: nm.aliases || {} };'],
+  ['TEN-402: the flagged retirements dropped from the join', '    return { rows: base.rows.concat(rr, tr, xr), names: nm.names.concat(rn, tn, xn), meta: meta, nDb: base.rows.length,', '    return { rows: base.rows.concat(tr, xr), names: nm.names.concat(tn, xn), meta: meta, nDb: base.rows.length,'],
   ["TEN-402: the profile rows' H / A back on the market shard", '          price: jp && jp.price != null ? jp.price : null,', '          price: x.price != null ? x.price : null,', 'pp2'],
   ['TEN-402: the model never waits for the Database rows', "  if (!(k in _careerHistoryShards) || _sfDbJoinSt !== 'ready') return null;", '  if (!(k in _careerHistoryShards)) return null;'],
   ['Q8: a failed load reads "loading prices" forever', "        : t.backingFailed\n          ? BACKING_FAIL_TXT\n          : t.vmTxt", "        : t.vmTxt", 'pp2'],
