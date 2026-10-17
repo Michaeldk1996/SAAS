@@ -687,9 +687,13 @@ const isAwarded = (f) => f.event_status === 'Awarded';
 // 2026-10-17). Decided on the EVENT TYPE, never the tournament name: 943 of those rows carry a plain Slam name and
 // 31 more are "Pardubicka juniorka" (TEN-443 review count).
 // Exhibitions ("Exhibition Men") and team-type events ("Teams Men") already fail the /singles/ test.
+// TEN-446 (founder ruling 2026-10-17, comment b5b5ef00): women's events out too — "Itf Women Singles",
+// "Challenger Women Singles", "Wta Singles". A name collision put 56 "Itf Women Singles" rows on men's keys (8 on
+// 3 profiled players); 12 "ITF W15 Monastir … Men" rows are men's matches ("Itf Men Singles") and stay counted, so
+// again the EVENT TYPE decides, never the tournament name.
 function isCountedSinglesFixture(f) {
   const t = String((f && f.event_type_type) || '');
-  return /singles/i.test(t) && !/doubles/i.test(t) && !/\b(?:boys|girls)\b/i.test(t);
+  return /singles/i.test(t) && !/doubles/i.test(t) && !/\b(?:boys|girls|women|wta)\b/i.test(t);
 }
 
 function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfaceMap, courtMap) {

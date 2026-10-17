@@ -17,6 +17,9 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   - **Not counted:** walkovers (rule below); **junior events** (api-tennis `event_type_type` "Boys Singles" /
     "Girls Singles", `isCountedSinglesFixture` — decide on the event type, never the name: of the 1,464
     junior rows at a Slam, 943 carry a plain Slam name, and 31 more are "Pardubicka juniorka"; TEN-444);
+    **women's events** ("Itf Women Singles", "Challenger Women Singles", "Wta Singles") that a name collision
+    files under a men's key — again by event type: "ITF W15 Monastir … Men" is "Itf Men Singles" and counts
+    (TEN-446, 2026-10-17);
     **exhibitions and club matches**, identified by the EVENT (TE's own exhibition/club events and api-tennis
     "Exhibition …" types), never a name substring: UTR Pro Tennis Series, Boodles, the Hurlingham Club
     exhibition (not ITF "M25 Hurlingham", which counts), Adria Tour, Ultimate Tennis Showdown, Diriyah, Six
@@ -35,7 +38,8 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     `tools/te-scrape.mjs` — one request at a time ≥ 8 s apart, every page cached in `~/.stennisfy/te-cache`,
     a past season never fetched twice, run on this Mac and never in CI or the nightly refresh; a player is
     joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
-  **Test — holds now:** no junior, walkover or exhibition row is in any count (`tools/test-ten444-juniors.js`);
+  **Test — holds now:** no junior, women's-event, walkover or exhibition row is in any count (`tools/test-ten444-juniors.js`,
+  `tools/test-ten446-womens.js`);
   ATP Stuttgart (June) is grass (`tools/test-ten445-stuttgart.js`); nothing in `.github/` or the pipeline
   requests tennisexplorer.com.
   **Test — the target TEN-443 step 2 is building to (fails until it lands; builders still bucket by
