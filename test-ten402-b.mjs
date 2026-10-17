@@ -162,8 +162,47 @@ test('archive name table (founder brief 2026-10-15 item 2): an aliased archive n
   assert.equal(OP_.ARCHIVE_NAME_ALIASES['Barrios M.'], '396');
   assert.equal(OP_.ARCHIVE_ALIAS_NAMES['67442'], 'G. Miguel', 'G. Miguel has no profile: the table carries his fixture spelling');
   const src = readFileSync(join(HERE, 'build-database-yield.js'), 'utf8');
-  assert.match(src, /ARCHIVE_NAME_ALIASES, ARCHIVE_ALIAS_NAMES \} = require\('\.\/build-odds-performance\.js'\)/);
+  assert.match(src, /ARCHIVE_NAME_ALIASES, ARCHIVE_ALIAS_NAMES, ARCHIVE_PAGE_SPELLINGS \} = require\('\.\/build-odds-performance\.js'\)/);
+  // founder ruling 2026-10-17 (ruling 1): the spellings that left career matches unjoined are in the table, each with
+  // the spelling its career rows carry (Dolgopolov's own initial; Statham as his 2008-21 rows spell him)
+  for (const [n, our] of [['Dolgopolov O.', 'A. Dolgopolov'], ['Zhang Ze', 'Z. Zhang'], ['Zhang Ze.', 'Z. Zhang'], ['Moroni G.M.', 'M. Moroni'], ['Moroni G.', 'M. Moroni'],
+    ['Statham J.', 'R. Statham'], ['Madaras D.', 'N. Madaras'], ['Aragone JC', 'J. Aragone'], ['Aragone J.C.', 'J. Aragone'], ['Hernandez-Fernandez J', 'J. Hernandez-Fernandez'], ['Wu T.L.', 'Wu Tung-Lin']])
+    assert.equal(OP_.ARCHIVE_PAGE_SPELLINGS[n], our, n);
+  assert.equal(OP_.ARCHIVE_NAME_ALIASES['Monteiro J.'], '1074', 'the one "Monteiro J." row is T. Monteiro');
+  // and the page join meets them: Djokovic v Ze Zhang, China Open 2015 (the archive's "Zhang Ze"); control without the table
+  const zeDb = { meta: { rounds: ['2nd Round'] }, rows: [[20151008, 0, 0, 0, 0, 1.01, 21.0, 1, 0]], retRows: [] };
+  const zeJ = dbPriceJoinRows(zeDb, { names: [['Djokovic N.', 'Zhang Ze']], retNames: [], aliases: { 'Zhang Ze': 'Z. Zhang' } });
+  const zeR = [{ date: '2015-10-08', won: true, round: null }]; priceJoin(zeR, { full: 'N. Djokovic' }, { full: 'Z. Zhang' }, zeJ);
+  assert.equal(zeR[0].price, 1.01, '"Zhang Ze" meets Z. Zhang');
+  const zeC = [{ date: '2015-10-08', won: true, round: null }]; priceJoin(zeC, { full: 'N. Djokovic' }, { full: 'Z. Zhang' }, dbPriceJoinRows(zeDb, { names: [['Djokovic N.', 'Zhang Ze']], retNames: [] }));
+  assert.equal(zeC[0].price ?? null, null, 'control: without the alias "Zhang Ze" misses');
   assert.doesNotMatch(src.split('const nameTable')[1].split('writeAtomic(OUT_NAMES')[0], /ARCHIVE_NAME_BLOCK/, 'the block list is not carried to the page join');
+});
+
+test('round tolerance (founder ruling 2026-10-17, ruling 2): ONE candidate with the same date, players, winner and event joins across a round difference; two never', () => {
+  const TOL = new Function('fhDayNum', `${JOIN_SRC}
+    function trSameEvent(t, names){ const a = String(t || '').toLowerCase(); return names.some(n => { const b = String(n || '').toLowerCase(); return !!b && (a.includes(b) || b.includes(a)); }); }
+    return h2hPriceJoin;`)(fhDayNum);
+  // Lyon 2022: Tennis-Data files Molcan v Coria as "2nd Round"; the feed (career-history) says QF
+  const db = { meta: { rounds: ['2nd Round', 'Quarterfinals'], tournaments: ['Lyon Open', 'Geneva Open'] },
+    rows: [[20220519, 0, 0, 0, 0, 1.70, 2.15, 1, 0]], names: [['Molcan A.', 'Coria F.']] };
+  const career = [{ date: '2022-05-19', won: true, opponent: 'F. Coria', round: '1/4-finals', tournament: 'Lyon', eventKey: 1 }];
+  // fresh copies per run: the join memoises its step 1 on the db object and the career array
+  const fresh = d => JSON.parse(JSON.stringify(d));
+  const run = (d, c) => { const rows = [{ date: '2022-05-19', won: true, round: 'QF' }]; TOL(rows, { full: 'A. Molcan' }, { full: 'F. Coria' }, fresh(d), null, fresh(c)); return rows[0].price ?? null; };
+  // the strict join alone: a contradicting round is a dash (control: no trSameEvent → strict only)
+  const strict = new Function('fhDayNum', `${JOIN_SRC}\nreturn h2hPriceJoin;`)(fhDayNum);
+  const r0 = [{ date: '2022-05-19', won: true, round: 'QF' }]; strict(r0, { full: 'A. Molcan' }, { full: 'F. Coria' }, fresh(db), null, fresh(career));
+  assert.equal(r0[0].price ?? null, null, 'control: without the tolerance the round clash is a dash');
+  assert.equal(run(db, career), 1.70, 'one candidate, same date / players / winner / event: priced across the round difference');
+  // two candidates (the same pair twice that week) → never a guess
+  const two = { meta: db.meta, rows: db.rows.concat([[20220520, 0, 0, 0, 0, 1.80, 2.00, 1, 0]]), names: db.names.concat([['Molcan A.', 'Coria F.']]) };
+  assert.equal(run(two, career), null, 'two candidates: a dash');
+  // another event (Geneva) with the same date and players: no
+  const other = { meta: db.meta, rows: [[20220519, 0, 0, 0, 1, 1.70, 2.15, 1, 0]], names: db.names };
+  assert.equal(run(other, career), null, 'a different event never joins');
+  // the wrong winner never joins
+  assert.equal(run({ meta: db.meta, rows: [[20220519, 0, 0, 0, 0, 1.70, 2.15, 1, 0]], names: [['Coria F.', 'Molcan A.']] }, career), null, 'the other winner: a dash');
 });
 
 test('one source of truth (founder 2026-10-17): the era shard (before 2010 + team events) joins on a COPY of the dictionaries; out of step never prices', () => {

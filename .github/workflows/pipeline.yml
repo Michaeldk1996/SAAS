@@ -349,16 +349,6 @@ jobs:
           node build-tournament-entries.js || rc=$?
           node tools/step-check.mjs --step "Build tournament entries (best-effort)" --rc "$rc" --since "$t0" --exists tournament-entries.json
 
-      # Market-performance shards, rebuilt every run against the profiles the pipeline
-      # just refreshed. Reads only the committed odds-archive/ CSVs, so it makes no
-      # network calls and cannot be broken by tennis-data.co.uk being down (it was, on
-      # 2026-07-18). Rebuilding here rather than relying on the committed shards is what
-      # keeps players who newly enter the profile roster from silently missing the block.
-      - name: Build market performance shards (best-effort)
-        run: |
-          t0=$(date +%s); rc=0
-          node build-odds-performance.js || rc=$?
-          node tools/step-check.mjs --step "Build market performance shards (best-effort)" --rc "$rc" --since "$t0" --fresh odds-performance-index.json
 
       # TEN-316 (ruled 2026-09-28, TEN-310 card fdfcd158): captured Pinnacle is refreshed EVERY run,
       # before the match-close shards read it. build-captured-pinnacle.js scans the committed matches.json
@@ -424,6 +414,16 @@ jobs:
           t0=$(date +%s); rc=0
           node build-database-yield.js || rc=$?
           node tools/step-check.mjs --step "Rebuild database-yield.json with the archive feed (best-effort)" --rc "$rc" --since "$t0" --fresh database-yield.json database-yield-players.json tour-baselines.json database-yield-x.json database-yield-master.json
+
+      # Market-performance shards (the legacy profile odds card), rebuilt every run against the profiles the pipeline
+      # just refreshed. Founder ruling 2026-10-17 (ruling 5): they read the ONE master the Database rebuild above wrote
+      # (database-yield-master.json, each match's own price — never the cross-book average), so this step runs after it.
+      # No network calls. Rebuilding here keeps players who newly enter the profile roster from missing the block.
+      - name: Build market performance shards (best-effort)
+        run: |
+          t0=$(date +%s); rc=0
+          node build-odds-performance.js || rc=$?
+          node tools/step-check.mjs --step "Build market performance shards (best-effort)" --rc "$rc" --since "$t0" --fresh odds-performance-index.json
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,

@@ -48,17 +48,22 @@ const CL = { rows: [
   { date: d(4, 20), opp: 'Fox F.', won: true, P: [1.3, 3.5], B: null, ret: false, oppKey: null },
 ], cap: [] };
 
+// Founder ruling 2026-10-17 (ruling 3): an ATP row is priced by the master's join only. This harness's join = the
+// fixture's own MASTER rows (the four ATP matches at Pinnacle), answering as sfDbPxRows does; the closes shard (CL) still
+// carries a Challenger close, which must never show (N8), and a Bet365 price for Alpha, which must never win.
+const MASTER = { [d(5, 9) + '|A. Alpha']: [1.52, 2.55], [d(5, 7) + '|B. Bravo']: [1.8, 2.0], [d(5, 5) + '|C. Charlie']: [2.2, 1.7], [d(5, 3) + '|D. Delta']: [1.4, 3.0] };
+const MASTER_STUB = (key, name, views) => views.map(v => { const p = MASTER[v.date + '|' + v.opp]; return p ? { price: p[0], oppPrice: p[1], book: 'P', src: 'td' } : null; });
 function vm(src) {
   const body = closure(src, ['ovPopModel', 'ovPopHtml', 'ovColumnHtml', 'buildYearlyTables', 'ovOpenRow', 'ovOpenCell', 'ovFlatBox'],
-    ['document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'matches', 'state', 'wl']);
+    ['document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'matches', 'state', 'wl', 'sfDbPxRows']);
   const opened = [], painted = {};
-  const api = new Function('document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', `
+  const api = new Function('document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'sfDbPxRows', `
     ${body}
     _careerHistoryShards['1'] = ${JSON.stringify(HIST)}; _fhCl['1'] = ${JSON.stringify(CL)};
     return { ovPopModel, ovPopHtml, ovColumnHtml, buildYearlyTables, ovOpenRow, ovOpenCell, ovStateFor, get _ov(){ return _ov; }, get _fh(){ return _fh; } };`)(
     { addEventListener() {}, querySelectorAll: () => [], getElementById: () => null }, { MarketEdgeCore: { RET_SETTLE_NOTE: RET } },
     (id, h) => { painted[id] = h; }, () => true, () => Promise.resolve([]), () => Promise.resolve(null), (mid) => opened.push(mid), () => {},
-    { 1: { careerByYear: CBY }, 2: { careerByYear: null } }, () => Promise.resolve(true));
+    { 1: { careerByYear: CBY }, 2: { careerByYear: null } }, () => Promise.resolve(true), MASTER_STUB);
   return Object.assign(api, { opened, painted });
 }
 const M = { id: 'x', p1: 'Z. Zulu', p2: 'Y. Yankee', p1Key: '1', p2Key: '2' };
@@ -84,13 +89,13 @@ const CHECKS = {
     const fox = Mo.rows.find(r => r.opp === 'F. Fox');
     assert.equal(fox.price, null, 'the Challenger close is never shown');
     assert.match(html, /4 of 8 priced/, 'the sub-line carries the priced count and the population');
-    assert.equal(stat(html, 'Avg price'), ((1.5 + 1.8 + 2.2 + 1.4) / 4).toFixed(2));
+    assert.equal(stat(html, 'Avg price'), ((1.52 + 1.8 + 2.2 + 1.4) / 4).toFixed(2));
   },
-  // Mutation: the pop-up prices from Bet365 before Pinnacle (FH_BOOK_ORDER reversed) — the R8 order is the shared picker's.
-  'prices follow the R8 order through the shared picker: Pinnacle before Bet365'(src) {
+  // Mutation: an ATP row back on the closes shard (its R8 picker, here reversed to Bet365 first) — the master's price wins.
+  'an ATP row reads the master join only: Alpha 1.52 / 2.55, never the closes shard\'s 1.50 / 2.60'(src) {
     const { Mo } = pop(src, `0|season|clay`);
     const a = Mo.rows.find(r => r.opp === 'A. Alpha');
-    assert.deepEqual([a.price, a.oppPrice, a.book], [1.5, 2.6, 'P']);
+    assert.deepEqual([a.price, a.oppPrice, a.book], [1.52, 2.55, 'P'], 'the master\'s 1.52 / 2.55, never the closes shard\'s 1.50 / 2.60');
   },
   // Mutation: the Win rate / 1u skip the gate (a % at n 1–4), or n = 0 prints "0%".
   'D2 on the pop-up: 1u needs 5 priced (4 → "—"), Win rate at n 3 → "—", n 8 → greyed'(src) {
@@ -209,7 +214,7 @@ test('DoD item 8: the old Overview row / drill / tooltip renderers are deleted',
 const MUTANTS = [
   ['walkovers kept', "    if (r.wo) return;                                         // N2: a walkover is not a match played\n", ''],
   ['N8 dropped', "    if (x.level !== 'atp') { r.price = null; r.oppPrice = null; r.book = null; r.src = null; }   // N8\n", ''],
-  ['book order reversed', "const FH_BOOK_ORDER = ['Pcap', 'Ptd', 'Btd', 'Bcap'];", "const FH_BOOK_ORDER = ['Btd', 'Bcap', 'Pcap', 'Ptd'];"],
+  ['ATP row back on the closes shard', "  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){", "  if (false){"],
   ['1u ungated', "  const R = maRate(0, np, { text: fhSigned(pl, 1, 'u').replace(/^(?=\\d)/, '±'), nopct: '—' });", "  const R = { mode: 'full', txt: fhSigned(pl, 1, 'u') };"],
   ['win rate ungated', "    + meRateBox('Win rate', w, n, null, OV_C.text, true)", "    + meStatBox('Win rate', n ? Math.round(w / n * 100) + '%' : '0%', OV_C.text, true)"],
   ['retirement note dropped', " ${core ? core.RET_SETTLE_NOTE : ''}`;", '`;'],

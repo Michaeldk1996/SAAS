@@ -114,10 +114,8 @@ no day work, checks or screenshots on this page until the founder reopens it.
     "ruling 2026-10-08", `tools/test-ten402-fix-mutants.js`, `tools/test-ten332-mutants.js` (TEN-402 mutants).
   - **Market edge** (this page) reads each player's `market-edge/{key}.json` rows (`meWinnerRows`): Pinnacle closing, else
     Bet365, retirements settled on the official ATP result — its footnote prints `MarketEdgeCore.RET_SETTLE_NOTE`
-    ("Retirements settled on the official ATP result."). Its book order is the shard's R8 order (founder 2026-09-28: our
-    captured Pinnacle close first), so a handful of 2026 rows differ from the Database join (Alcaraz: US Open 2026 R128
-    1.176 captured v Bet365 1.17, QF 1.294 v 1.25; Sinner: Madrid 2026 Bet365 capture, Wimbledon 2026 1.177 captured).
-    Not re-ruled on 8 Oct — open question for the founder.
+    ("Retirements settled on the official ATP result."). The shard is built from the master (`database-yield-master.json`, founder 2026-10-17
+    "one source of truth"), so its prices equal the Database join (team events stay out of Market edge).
   **Test:** `test-ten402-b.mjs` "review 2 …" (real `database-yield.json` + synthetic career fixtures), `test-ten402-c.mjs`
   (the ledgers' own path), `tools/test-ten402-fix-mutants.js`. Tests never read a bot-rewritten store
   (`style-meetings/*.json` is rewritten daily by the Styles bot): use an in-test fixture.

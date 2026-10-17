@@ -46,7 +46,7 @@ const MUTANTS = [
   ['sheet: initials in rings (D5 undone)', "  const av = (name, key) => `<span class=\"fh-av\">${aAvatarHtml(name, key)}</span>`;", "  const av = (name, key) => `<span class=\"fh-av\">${fhEsc(fhIni(name))}</span>`;"],
   ['sheet: inline copy keeps the set chips', "  const chips = o.inline ? '' : (r.sets || [])", "  const chips = (r.sets || [])"],
   ['sheet: Match Stats tab back to the old stat sheet', "  if (hasPointLog) return maMsSheetHtml(m);\n", ''],
-  ['sheet: Match Stats inline never filled', "buildMatchStatsSection(m)); maMsSheetInit(m); },", "buildMatchStatsSection(m)); },"],
+  ['sheet: Match Stats inline never filled', "buildMatchStatsSection(m)); maMsSheetInit(m);\n    // ruling 5", "buildMatchStatsSection(m));\n    // ruling 5"],
   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener
   ['sheet: Market edge rows gated on stats on file again', "click: ` onclick=\"meOpenRow('${r.mid}')\"` }", "click: r.ek ? ` onclick=\"meOpenRow('${r.mid}')\"` : '' }"],
   ['sheet: Overview pop-up rows do not open', "click: ` onclick=\"ovOpenRow('${r.mid}')\"`,", "click: '',"],

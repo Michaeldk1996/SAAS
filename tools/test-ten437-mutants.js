@@ -55,10 +55,7 @@ const PAGE_MUTANTS = [
   ['ruling 3: ATP Cup / United Cup back in the window pairing', "!/davis cup|laver cup|atp cup|united cup/i.test(String(x.tournament || '')));\n    const cand", "!/davis cup|laver cup/i.test(String(x.tournament || '')));\n    const cand"],
   ['ruling 4: the Bet365 hover back to the source label', "const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';", "const FH_B365_HOVER = 'Bet365 close · Tennis-Data';"],
   ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
-  ['item 5: the page prices a retirement it voids, or a keyless meeting, from a captured close', "      if (r.ek == null || r.ret) return;\n", ""],
   ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : r && r.book ?", "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
-  ['item 5: the H2H page skips our captured Pinnacle (Database Bet365 kept)', "      h2hCapPinnacle(S.rows, a, b, S.clA, S.clB);\n", ""],
-  ['item 5: the page step takes any captured book (a captured Bet365 over the Database)', "      if (!c || c.book !== 'P' || c.src !== 'cap') return;", "      if (!c || c.src !== 'cap') return;"],
   ['board exclusion: the tab counts its own match', "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
   ['board exclusion: the H2H page leaves out this week\'s board matches again', "      const nkF = fn('sfH2hNkCount');\n      const own = [];", "      const nkF = fn('sfH2hNkCount');\n      const own = (typeof matches !== 'undefined' ? matches : []).filter(x => x && x.finalScore).map(eventKeyOfMatch);"],
 ];

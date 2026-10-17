@@ -75,7 +75,7 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
       for (let k = n; k >= 0 && k > n - 500; k--) { const m = /^\s*(?:async\s+)?function\s+(\w+)\s*\(|^\s*(?:const|let)\s+(\w+)\s*=\s*(?:\(|function|async)/.exec(L[k]);
         if (m && (m[1] || m[2]) !== 'fhSrcTitle') { out.add(m[1] || m[2]); break; } } });
     return [...out].sort(); };
-  const PINNED_PAGE = ['cellHtml' /* Progression heat cell, inside buildMatchProgressionSection */, 'fhB365Tag', 'fhFormColumnHtml', 'fhFormRowData', 'fhH2hSrcTitle', 'fhPriceCell', 'meRowOf', 'ovPopHtml', 'trPxTitle'];
+  const PINNED_PAGE = ['cell' /* Playing style meeting rows (ruling 5), inside ps2MeetCard */, 'cellHtml' /* Progression heat cell, inside buildMatchProgressionSection */, 'fhB365Tag', 'fhFormColumnHtml', 'fhFormRowData', 'fhH2hSrcTitle', 'fhPriceCell', 'meRowOf', 'ovPopHtml', 'trPxTitle'];
   const PINNED_PROFILE = ['pxSrcHtml'];
   check('every caller of fhSrcTitle is pinned (Progression, H2H B365 tag, Form bars + rows, H2H tab, price cells, Market edge, Overview pop-up, Tournament tab; the profile)',
     JSON.stringify(callers(html)) === JSON.stringify(PINNED_PAGE) && JSON.stringify(callers(prof)) === JSON.stringify(PINNED_PROFILE),

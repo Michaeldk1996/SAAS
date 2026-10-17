@@ -277,14 +277,26 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   after a failed build fails it). **Test:** `tools/test-price-consistency.mjs` part 6 (one day behind; no source).
   **Test:** `tools/price-consistency.mjs` (pipeline.yml, before the site-data upload; fails the publish): over every 2026
   ATP main-draw career match and a 1-in-10 player sample of every year, the page's own functions — the Database join, the
-  tab row, the Form tab, the H2H tab (1-in-20 sample), the Market edge shard row, the Head to Head page's captured step —
-  give one `price | other price | hover` per match; any difference on a match the Database holds is red. Unit locks:
-  `test-ten332-tournament.mjs` "founder ruling 2026-10-17 (item 1)", `tools/test-market-edge-basis.js` (Database first,
-  R8 control).
-  *Exceptions, reported by the same check and pending a founder ruling (not fixed):* a match the Database does not hold
-  (Challenger / ITF, qualifying, overround over 1.15, a join miss) keeps the surface's own closes price (`FH_BOOK_ORDER`;
-  the Market edge shard simply has no row for it); while the Database join has not loaded, or failed, the tabs show their closes price;
-  the Head to Head page's captured-Pinnacle step (`h2hCapPinnacle`) still overrides the join on that page.
+  tab row, the Form tab, the H2H tab (1-in-20 sample), the Market edge shard row — give one `price | other price | hover`
+  per match; any difference on a match the Database holds is red. Unit locks: `test-ten332-tournament.mjs` "founder ruling
+  2026-10-17 (item 1)", `tools/test-market-edge-basis.js`.
+- **No other price path for anything the master holds** (founder rulings 2026-10-17, round 2 items 3 and 5). For an ATP
+  main-draw match (team events and pre-2010 included) every surface reads the Database join and nothing else: a match the
+  join does not hold is a dash (no closes-shard, no Bet365 archive, no captured price stands in); while the join loads the
+  cell is blank and repaints, a failed load is a dash (`sfDbPxApply`, `sfMasterClass`; Market edge rows `meRowFromCareer`;
+  the profile `masterClass`). The Head to Head page's captured-Pinnacle step (`h2hCapPinnacle`) is removed. The Playing style
+  meeting rows and the Match Stats header prices read the join. The legacy profile odds card shows the master price, never an
+  average of books. The guard fails the publish on a master-class match a surface prices while the join does not hold it
+  ("own price path"). *Remaining own path:* Challenger, qualifying and ITF keep the closes price (`FH_BOOK_ORDER`) until
+  phase 2 adds Challenger and ATP qualifying to the master (ITF stays out). **Test:** `tools/test-price-consistency.mjs`
+  control 3, `test-ten332-tournament.mjs` test 22 (dash, blank while loading, Challenger control), `test-ten437-h2h.mjs`
+  "no captured step", `test-ten334-overview.mjs`.
+- **Archive names and round tolerance (same rulings, items 1–2):** the join meets the archive's spelling through
+  `ARCHIVE_NAME_ALIASES` (key) and `ARCHIVE_PAGE_SPELLINGS` (the page's own spelling where no key exists:
+  "Dolgopolov O." = A. Dolgopolov, "Zhang Ze" = Z. Zhang, Moroni, Statham, Madaras, Aragone, Monteiro, Wu Tung-Lin,
+  Hernandez-Fernandez), in `build-odds-performance.js`. A career match the join left unpriced takes a Database row whose
+  date, both players and event agree but whose round differs **only when it is the single candidate on both sides**
+  (`rdTol`); two candidates stay a dash. **Test:** `test-ten402-b.mjs` "round tolerance" + "archive name table".
 - **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).
   Every pipeline run exports the current close per match (`pinnacle-closes.json`, an archive close over a captured one)
   and `build-match-closes.js` builds the closing-prices shards from it (fallback: the committed

@@ -624,43 +624,15 @@ test('a Bet365-priced meeting: "B" marker kept, hover "Bet365 closing odds, Pinn
   assert.match(html, /hTitle: h2hPriceTitle\(r\), aTitle: h2hPriceTitle\(r\), hMark: r\.price != null && r\.book === 'B' \? 'B' : '',\n\s*oppTitle: r\.tourn/, 'the H2H page meeting row carries the B marker');
 });
 
-// ── 16 · Pinnacle first on every screen (founder 2026-10-16, item 5) ────────────────────────────────────────────────────
-// "On the 13 meetings from Jul–Sep 2026, the H2H page must use our captured Pinnacle close, same as the tab, not the
-// Database's Bet365." The page's own step (h2hCapPinnacle) runs the tab's matcher (fhCloseFor → fhPickBook, FH_BOOK_ORDER)
-// on the closes shard. Golden: Struff v Tabilo, Cincinnati 2026 R64 (ek 12154667) — Struff's live closes shard holds a
-// captured Pinnacle close 2.59 / 1.555 and a Tennis-Data Bet365 2.38 / 1.57; the Database priced it Bet365.
-// Mutations: the page step dropped; the step taking any book (a captured Bet365 over the Database's).
-test('H2H page: Struff–Tabilo Cincinnati 2026 takes the captured Pinnacle close 2.59, not the Database\'s Bet365 2.38', () => {
-  const PX = new Function('W', `
-    const FH_BOOK_ORDER = ['Pcap', 'Ptd', 'Btd', 'Bcap'];
-    ${['fhIsInitial', 'fhDayNum', 'fhNameKey', 'fhPickBook', 'fhCloseFor', 'fhParseCloses'].map(n => slice(n)).join('\n')}
-    const fn = n => ({ fhCloseFor })[n] || null;
-    ${slice('h2hCapPinnacle')}
-    return { h2hCapPinnacle, fhParseCloses };`)();
-  // Struff's match-closes/2831.json rows for Tabilo (2982), as served 2026-10-16
-  const clA = PX.fhParseCloses({ rows: [['2026-08-15', 'Tabilo A.', 0, null, null, 2.38, 1.57, 0, '2982']],
-    cap: [['2026-08-15', '2982', 2.59, 1.555, null, null, '12154667', 'captured'], ['2026-08-15', '2982', null, null, 2.375, 1.571, null, null]] });
-  const a = { key: '2831', short: 'J-L. Struff' }, b = { key: '2982', short: 'A. Tabilo' };
-  // the page row after the Database join: priced Bet365 from Tennis-Data
-  const row = () => ({ date: '2026-08-15', won: false, ek: 12154667, round: 'R64', price: 2.38, oppPrice: 1.57, book: 'B', src: 'td' });
-  const r1 = row();
-  assert.equal(PX.h2hCapPinnacle([r1], a, b, clA, null), 1);
-  assert.deepEqual([r1.price, r1.oppPrice, r1.book, r1.src, r1.srcLabel], [2.59, 1.555, 'P', 'cap', 'captured']);
-  // from Tabilo's side only (Struff's shard missing): mirrored
-  const clB = PX.fhParseCloses({ rows: [], cap: [['2026-08-15', '2831', 1.555, 2.59, null, null, '12154667', 'captured']] });
-  const r2 = row(); PX.h2hCapPinnacle([r2], a, b, null, clB);
-  assert.deepEqual([r2.price, r2.oppPrice, r2.book], [2.59, 1.555, 'P'], 'mirrored from the opponent\'s shard');
-  // control: no captured Pinnacle → the Database price stays (a captured Bet365 never replaces it)
-  const r3 = row(); PX.h2hCapPinnacle([r3], a, b, PX.fhParseCloses({ rows: [], cap: [['2026-08-15', '2982', null, null, 2.375, 1.571, null, null]] }), null);
-  assert.deepEqual([r3.price, r3.book, r3.src], [2.38, 'B', 'td'], 'Database Bet365 kept when no Pinnacle close exists');
-  // a retirement stays voided on this page (the Database rule); a keyless (archive) meeting never takes a captured close
-  const r4 = Object.assign(row(), { ret: true, price: null, oppPrice: null, book: null, src: null }); PX.h2hCapPinnacle([r4], a, b, clA, null);
-  assert.equal(r4.price, null, 'retirement: dash, as the Database voids it');
-  const r5 = Object.assign(row(), { ek: null }); PX.h2hCapPinnacle([r5], a, b, clA, null);
-  assert.deepEqual([r5.price, r5.book], [2.38, 'B'], 'keyless meeting: no captured close');
-  // wired: the page runs it after the Database join, and counts priced meetings from the rows
+// ── 16 · nothing overrides the join on the H2H page (founder ruling 2026-10-17, ruling 5; REPLACES 2026-10-16 item 5) ──
+// The page's captured-Pinnacle step (h2hCapPinnacle) is removed: those prices are not closes (odds.md "held back": our
+// captured closes of 12 Jul – 16 Sep are never shown). Struff v Tabilo, Cincinnati 2026 R64 reads the master's join.
+// Control: the step's call is gone from the pair builder and its function from the page.
+test('H2H page: no captured step — every meeting reads the master\'s join only (ruling 5)', () => {
+  assert.equal(html.indexOf('function h2hCapPinnacle('), -1, 'the captured step is removed from the page');
   const page = slice('h2hPairFor');
-  assert.match(page, /if \(_h2hDbSt === 'ready'\) h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\);\n\s*h2hCapPinnacle\(S\.rows, a, b, S\.clA, S\.clB\);/);
-  // founder 2026-10-16 (round 3, item 1): our archive's closes ('cap' captured, 'hist' from Pinnacle history) name their source
+  assert.match(page, /if \(_h2hDbSt === 'ready'\) h2hPriceJoin\(S\.rows, a, b, _h2hDb, null, S\.chA\);\n\s*S\.priced = /, 'the join is the last price step');
+  assert.doesNotMatch(page, /fhCloseFor|\.cap\b/, 'no closes-shard price on this page');
+  // our archive's closes ('cap' captured, 'hist' from Pinnacle history) still name their source on the join's rows
   assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \|\| r\.src === 'hist' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| FH_SRC\[r\.src\]\)/);
 });

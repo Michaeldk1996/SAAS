@@ -4,7 +4,7 @@
 // 1.02 / 29.95):
 //   1. every surface agrees → exit 0, and the match was checked on the tab, Form and Market edge (no vacuous pass);
 //   2. control: the Market edge shard shows another price for that match → exit 1, "Market edge shard ≠ Database";
-//   3. control: the closes shard's captured step shows another price → exit 1, "Head to Head captured step ≠ Database";
+//   3. control: a surface prices a match of the master's class the join does not hold → exit 1 (own price path, ruling 3);
 //   4. control: a site with no player to check → exit 1 (a check on an empty set is not a check);
 //   5. wiring: pipeline.yml runs the guard before the site-data upload, fail-closed;
 //   6. lag: Market edge's index names the master and its latest match; controls: a day behind, a floor with no source.
@@ -57,9 +57,23 @@ else {
     check('2 · control: a Market edge shard with another price → exit 1', r.status === 1 && /Market edge shard ≠ Database/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));
     writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.02));
 
-    writeFileSync(join(site, 'match-closes', K + '.json'), closes([['2025-01-13', '400', 1.03, 25.0, null, null, 9001, 'captured']]));
+    // 3 · founder ruling 2026-10-17 (ruling 3): a master-class match the join does NOT hold (AO 2025 R2, absent from the
+    //     Database) that a surface prices anyway = a price path of its own → exit 1
+    const two = [{ date: '2025-01-13', year: 2025, tournament: 'Australian Open', level: 'atp', surface: 'hard', round: '1/64-finals', opponent: 'N. Jarry',
+      oppKey: '400', won: true, result: '3-0', eventKey: 9001, sets: [[6, 3], [6, 2], [6, 1]] },
+      { date: '2025-01-15', year: 2025, tournament: 'Australian Open', level: 'atp', surface: 'hard', round: '1/32-finals', opponent: 'Q. Nobody',
+      oppKey: '401', won: true, result: '3-0', eventKey: 9002, sets: [[6, 4], [6, 4], [6, 4]] }];
+    writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify({ matches: two }));
+    writeFileSync(join(site, 'market-edge', K + '.json'), JSON.stringify({ playerKey: K, name: NAME, matches: [
+      { date: '2025-01-13', event: 'Australian Open', round: '1st Round', opp: 'Jarry N.', won: true, price: 1.02, oppPrice: 29.95, book: 'pinnacle', inBasis: true },
+      { date: '2025-01-15', event: 'Australian Open', round: '2nd Round', opp: 'Nobody Q.', won: true, price: 1.04, oppPrice: 15.0, book: 'pinnacle', inBasis: true }] }));
+    // the closes shard's Tennis-Data row the Market edge row joins on (the tab ignores it: an ATP row reads the join only)
+    writeFileSync(join(site, 'match-closes', K + '.json'), JSON.stringify({ rows: [['2025-01-13', 'Jarry N.', 1, 1.02, 29.95, 1.01, 26, 0, '400'],
+      ['2025-01-15', 'Nobody Q.', 1, 1.04, 15.0, null, null, 0, '401']], cap: [] }));
     r = run();
-    check('3 · control: a captured close with another price (the Head to Head page step) → exit 1', r.status === 1 && /captured step ≠ Database/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));
+    check('3 · control: Market edge prices a match the join does not hold (own price path) → exit 1', r.status === 1 && /does not hold \(own price path\)/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));
+    writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify({ matches: [two[0]] }));
+    writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.02));
     writeFileSync(join(site, 'match-closes', K + '.json'), closes([]));
 
     // 6 · lag (founder ruling 2026-10-17): Market edge's latest match = the master's, and its index names the master

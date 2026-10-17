@@ -1090,6 +1090,13 @@
     _b365Idx = out; _b365Src = store;
     return out;
   }
+  // Founder ruling 2026-10-17 (ruling 3): a match the master holds (ATP tour level: main draw, team events, before 2010 —
+  // not qualifying, not a walkover) is priced by the master / its join only; the bet365 pre-match capture never stands in
+  // for it (it stays the display source for Challenger, qualifying and ITF until phase 2). Same test as the host's sfMasterClass.
+  function masterClass(r) {
+    if (!r || r.walkover || r.wo || r.qualifying || /^qualif/i.test(String(r.round || ''))) return false;
+    return /^atp$/i.test(String(r.tier != null ? r.tier : r.level != null ? r.level : ''));
+  }
   function b365PriceFor(subjName, m) {
     var s = b365Norm(subjName), o = b365Norm(m && m.opponent);
     if (!s || !o || !m || !m.date) return null;
@@ -1148,7 +1155,7 @@
         };
       }
       // Archive silent (or ambiguous on that date) — fall back to the capture.
-      var cap = b365PriceFor(p.name, m);
+      var cap = masterClass(m) ? null : b365PriceFor(p.name, m);
       if (cap) {
         return {
           m: m, price: cap.price, oppPrice: cap.oppPrice,
@@ -7225,7 +7232,7 @@
       // it — the Match analysis join (meRowFromCareer -> fhCloseFor, R8 book order), bridged as
       // window.pp2CareerClose. Display only, like the capture: no P&L, never a yield, unit or role basis.
       var cc = !pin && cl && typeof window.pp2CareerClose === 'function' ? window.pp2CareerClose(p.key, r) : null;
-      var lr = pin ? null : (cc || b365PriceFor(p.name, { date: r.date, opponent: r.opponent }));
+      var lr = pin ? null : (cc || (masterClass(r) ? null : b365PriceFor(p.name, { date: r.date, opponent: r.opponent })));
       return {
         date: r.date, year: y, mon: parseInt(r.date.slice(5, 7), 10) - 1,
         won: !!r.won,

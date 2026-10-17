@@ -42,8 +42,9 @@ Applies to the Playing style tab of the Match analysis modal (`buildStyleSection
 - **Meeting rows:** the reference's 6 rows under "Career meetings · Showing 6 of N" (TEN-380), grouped by tournament
   edition, newest first; the rest behind "Show N more matches" (`--text`; DESIGN GAP G30, **accepted by the founder** Q15,
   2026-09-30). Scores `--text-label`, H `--text-soft`. A box with no list says why in one line (loading, not classified,
-  no meetings). H / A = the row's closing prices (the shard's book: Pinnacle, Bet365 where missing; one book per
-  row), "—" where none. No price figure is summed here, so no retirement note applies.
+  no meetings). H / A = the Database join's price for the row (founder 2026-10-17 round 2 item 5:
+  `sfDbPxRows` on the player's career history, the join's hover), blank while the join loads, "—" where it holds no row
+  or failed to load — never the shard's `oddsSelf` / `oddsOpp`. No price figure is summed here, so no retirement note applies.
 - **DNA** = `dna-apitennis-ratings.json` (TEN-319, rebuilt twice daily). Axes Serve, Return, Under pressure (copied from
   surface-ratings, TEN-328), Dominance ratio, Surface Elo. Windows **"Last 52 weeks" | "Since Mar 2024"** — never
   "Career" (D6). **Surface Elo is the current rating on both views**, labelled "current" (the radar label "Surface Elo ·

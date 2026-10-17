@@ -381,12 +381,7 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   H2H only: Form and every other surface keep `fhSrcTitle`'s source label. The H2H page's meeting rows carry the same
   "B" marker as the tab (founder 2026-10-16 item 4; supersedes TEN-402 r1 fix 3's no-marker ledger). Remove only when a
   Pinnacle source is found. **Test:** "a Bet365-priced meeting" in `test-ten437-h2h.mjs`; `test-ten402-r1y.mjs` fix 3.
-- **Pinnacle first on every screen** (founder 2026-10-16 item 5): the H2H page prices a meeting from our captured Pinnacle
-  close (or the Pinnacle history archive behind it, `cap` rows of `match-closes/{key}.json`) before the Database's
-  Tennis-Data row — the tab's `FH_BOOK_ORDER` first rung, through the tab's own matcher (`h2hCapPinnacle` → `fhCloseFor`).
-  Keyed meetings only (a keyless archive row is dated at its event's start); a retirement stays a dash on this page, as the
-  Database join voids it (17 captured-era retirements the tab prices — reported to the founder 2026-10-16).
-  Measured 2026-10-16 on 7,558 pairs: the 13 Jul–Sep 2026 meetings the page had priced Bet365 now read the tab's Pinnacle;
-  tab and page now differ on 0 priced non-team meetings. **Test:** "Struff–Tabilo Cincinnati 2026 takes the captured
-  Pinnacle close 2.59" in `test-ten437-h2h.mjs`.
+- **No captured step on the H2H page** (founder 2026-10-17, round 2 item 5; REMOVES the 2026-10-16 item 5 "Pinnacle
+  first on every screen"): the page and the tab price every meeting the master holds from the Database join only
+  (`odds.md` "No other price path"); `h2hCapPinnacle` is gone. **Test:** "no captured step" in `test-ten437-h2h.mjs`.
 

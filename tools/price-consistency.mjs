@@ -5,10 +5,11 @@
 //           Record per tournament, Series and the Match analysis Tournament tab show;
 //   tab   = meRowFromCareer (+ sfDbPxRows) — what Form, H2H, Market edge (derived lines), Overview and Progression show;
 //   me    = the Market edge shard's row (build-market-edge.js) — the tab's Match winner view and the profile's Market edge;
-//   cap   = the Head to Head page's captured-Pinnacle step (h2hCapPinnacle) — it overrides the join on that page.
+//   (the Head to Head page's captured-Pinnacle step is removed, founder ruling 2026-10-17 ruling 5: nothing overrides the join)
 // A match the Database holds (ref != null) that any surface shows differently FAILS the run (exit 1): the gate before
-// pipeline.yml uploads the site. A match the Database does not hold but a surface prices is REPORTED (exit 0) — that
-// class waits on a founder ruling ("report those, but don't fix them yet").
+// pipeline.yml uploads the site. Founder ruling 2026-10-17 (ruling 3): every checked match is of a class the master holds
+// (ATP tour level, not qualifying, not a walkover), so a surface that prices one the join does NOT hold has a price path
+// of its own — that FAILS the run too ("no other price path").
 // Scope: every ATP-level, played, main-draw career match of 2026 for every player with a career-history shard, plus
 // every year for a fixed 1-in-10 sample of players (key % 10 === 0).
 // Usage: node tools/price-consistency.mjs --site _site [--report out.json] [--sample 10] [--limit N]
@@ -22,6 +23,9 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 // --base URL: read a DEPLOYED site instead of a local one (the live read-back); --only k1,k2: those players only;
 // --show ek1,ek2: print every surface's price for those api-tennis event keys
 const LIVE = arg('--base', null), ONLY = (arg('--only', '') || '').split(',').filter(Boolean), SHOW = (arg('--show', '') || '').split(',').filter(Boolean);
+// --pick "key|date-prefix|opponent-substring;…": print every surface for those matches too (the live read-back of a match
+// with no api-tennis event key — an archive row before 2021); every pick also runs the H2H tab check
+const PICK = (arg('--pick', '') || '').split(';').filter(Boolean).map(x => x.split('|'));
 const SITE = resolve(arg('--site', '_site')), REPORT = arg('--report', null), SAMPLE = +arg('--sample', 10), LIMIT = +arg('--limit', 0);
 // --focus keys.json: a list of api-tennis event keys whose tab prices are reported before (the closes shard alone) and
 // after (the Database join first) — the founder's "how many of the 420 changed" (a report, never a failure)
@@ -86,7 +90,8 @@ while (!(await E(`!!(window.H2HPage && window.H2HPage.priceJoin && window.Databa
 
 const result = await E(`(async () => {
   const SAMPLE = ${SAMPLE}, LIMIT = ${LIMIT}, H2H_EVERY = ${H2H_EVERY}, FOCUS = new Set(${JSON.stringify(FOCUS)});
-  const ONLY = new Set(${JSON.stringify(ONLY)}), SHOW = new Set(${JSON.stringify(SHOW)});
+  const ONLY = new Set(${JSON.stringify(ONLY)}), SHOW = new Set(${JSON.stringify(SHOW)}), PICK = ${JSON.stringify(PICK)};
+  const picked = (k, x) => PICK.some(([pk, pd, po]) => pk === k && String(x.date || '').startsWith(pd || '') && String(x.opponent || '').includes(po || ''));
   await sfDbJoinLoad();
   if (typeof loadPlayerProfiles === 'function' && !Object.keys(playerProfiles || {}).length) await loadPlayerProfiles().catch(() => null);
   const idx = await loadCareerHistoryIndex();
@@ -118,10 +123,18 @@ const result = await E(`(async () => {
     if (!name) continue;
     const [cl, ms] = await Promise.all([closesOf(k), meLoadProfileShard(k)]);
     S.playersChecked++;
-    const capOnly = cl && Array.isArray(cl.cap) && cl.cap.length ? { rows: [], cap: cl.cap } : null;
     const meRows = meRowsFor(career, cl, k, name);
     const win = new Map();
     (ms && ms.matches ? meWinnerRows(ms, meRows, k, name) : []).forEach(r => { if (r.tdKey) win.set(r.tdKey, win.has(r.tdKey) ? null : r); });
+    // a Market edge row with no Tennis-Data row behind it (our archive's matches after Tennis-Data's last day, the era
+    // shard): paired with the career match on the same day (±1), the same result and the opponent's surname — one only
+    const surn = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/^[a-z]{1,3}\\.?(-[a-z]\\.)?\\s+/, '').split(/[\\s,]+/)[0];
+    const meBy = new Map();
+    for (const m of (ms && ms.matches) || []) { if (m.price == null) continue; const kk = m.date + '|' + (m.won ? 1 : 0) + '|' + String(m.opp || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').split(/[\\s,]+/)[0]; meBy.set(kk, meBy.has(kk) ? null : m); }
+    const meOf = x => { const d0 = Date.parse(x.date + 'T00:00:00Z'); let hit = null, n = 0;
+      for (const dd of [0, -1, 1]) { const ds = new Date(d0 + dd * 864e5).toISOString().slice(0, 10), m = meBy.get(ds + '|' + (x.won ? 1 : 0) + '|' + surn(x.opponent)); if (m) { hit = m; n++; } }
+      return n === 1 ? { price: hit.price, oppPrice: hit.oppPrice, book: hit.book === 'bet365-archive' ? 'B' : /approx/.test(hit.book) ? 'A' : 'P',
+        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : 'td' } : null; };
     // the Form tab, called as the tab calls it, on this player's career rows (every window, every surface)
     const formAt = new Map();
     try {
@@ -145,13 +158,11 @@ const result = await E(`(async () => {
       const ref = js[0].price != null ? js[0] : null;
       S.matches++; S.byYear[y] = S.byYear[y] || { matches: 0, held: 0, failed: 0, reported: 0 }; S.byYear[y].matches++;
       const row = { key: k, player: name, date: x.date, opp: x.opponent, event: x.tournament, round: x.round || null, ref: pick(ref), tab: pick(tab) };
-      // the Head to Head page's captured-Pinnacle step (keyed meetings, retirements excluded — h2hCapPinnacle)
-      let cap = null;
-      if (capOnly && x.eventKey != null && !x.retired) { const c = fhCloseFor(capOnly, x.date, x.opponent, !!x.won, okOf(x), x.eventKey);
-        if (c && c.book === 'P' && c.src === 'cap') cap = c; }
-      const meRow = tab.tdKey ? win.get(tab.tdKey) || null : null;
+      const cap = null;   // the Head to Head page's captured step is gone (ruling 5): nothing to compare
+      // the fallback pairing only for a keyed (match-dated) career row; an archive row is dated at its event's start
+      const meRow = (tab.tdKey ? win.get(tab.tdKey) || null : null) || (x.eventKey != null && !tab.tdKey ? meOf(x) : null);
       const formRow = formAt.get(x.date + '|' + x.opponent + '|' + (x.won ? 1 : 0)) || null;
-      const showIt = SHOW.has(String(x.eventKey));
+      const showIt = SHOW.has(String(x.eventKey)) || picked(k, x);
       if (FOCUS.has(String(x.eventKey)) && !S.focus.seen[x.eventKey]) {
         S.focus.seen[x.eventKey] = 1; S.focus.found++;
         const keep = sfDbPxRows; let old;
@@ -164,7 +175,7 @@ const result = await E(`(async () => {
         if (S.focus.ex.length < 30) S.focus.ex.push({ eventKey: x.eventKey, player: name, date: x.date, opp: x.opponent, before: pick(old), after: pick(tab), meBefore: pick(oMe), meAfter: pick(meRow) });
       }
       if (showIt) { row.form = pick(formRow); row.me = pick(meRow); row.cap = pick(cap); S.shown.push(row); }
-      if (okOf(x) != null && x.eventKey != null && (FOCUS.has(String(x.eventKey)) || showIt || +x.eventKey % H2H_EVERY === 0)) h2hJobs.push({ x, ref, row });
+      if (okOf(x) != null && (x.eventKey != null || picked(k, x)) && (FOCUS.has(String(x.eventKey)) || showIt || +x.eventKey % H2H_EVERY === 0)) h2hJobs.push({ x, ref, row });
       if (ref) {
         S.dbHeld++; S.byYear[y].held++;
         let bad = false;
@@ -176,12 +187,13 @@ const result = await E(`(async () => {
         if (bad) S.byYear[y].failed++;
       } else {
         S.notHeld++;
-        const why = +y < 2010 ? 'before the Database window (2010)' : 'no Database row for the match';
-        let rep = false;
-        if (tab.price != null) { note('report', 'tab prices a match the Database does not hold · ' + why, row); rep = true; }
-        if (meRow && meRow.price != null) { note('report', 'Market edge prices a match the Database does not hold · ' + why, Object.assign({}, row, { me: pick(meRow) })); rep = true; }
-        if (cap) { note('report', 'Head to Head captured step prices a match the Database does not hold · ' + why, Object.assign({}, row, { cap: pick(cap) })); rep = true; }
-        if (rep) S.byYear[y].reported++;
+        // ruling 3: a master-class match the join does not hold is a dash on every surface — a price anywhere is a path of
+        // its own and fails the run
+        let bad = false;
+        if (tab.price != null) { S.fail.tab++; note('fail', 'tab prices a match the master does not hold (own price path)', row); bad = true; }
+        if (formRow && formRow.price != null) { S.fail.form++; note('fail', 'Form tab prices a match the master does not hold (own price path)', Object.assign({}, row, { form: pick(formRow) })); bad = true; }
+        if (meRow && meRow.price != null) { S.fail.me++; note('fail', 'Market edge prices a match the join does not hold (own price path)', Object.assign({}, row, { me: pick(meRow) })); bad = true; }
+        if (bad) S.byYear[y].failed++;
       }
     });
     // the H2H tab, called as the tab calls it, for a fixed 1-in-H2H_EVERY sample of keyed meetings (+ every focus match)
@@ -192,11 +204,11 @@ const result = await E(`(async () => {
       let ms2;
       try { ms2 = fhMeetings({ p1: name, p1Key: k, p2: nameOf(ok) || j.x.opponent, p2Key: ok, _fhCh: [career, oc], _fhCloses: [cl, ocl] }); }
       catch (e) { S.fail.threw++; note('fail', 'H2H tab threw', { key: k, player: name, opp: ok, err: String(e && e.message || e) }); continue; }
-      const hit = ms2.filter(r => String(r.ek) === String(j.x.eventKey));
+      const hit = ms2.filter(r => (j.x.eventKey != null ? String(r.ek) === String(j.x.eventKey) : r.date === j.x.date && r.won === !!j.x.won));
       if (hit.length !== 1 || hit[0].wo) continue;
-      if (SHOW.has(String(j.x.eventKey))) j.row.h2h = pick(hit[0]);
+      j.row.h2h = pick(hit[0]);   // printed only for a shown / picked match
       if (j.ref) { S.checked.h2h++; if (pick(hit[0]) !== pick(j.ref)) { S.fail.h2h++; note('fail', 'H2H tab ≠ Database', Object.assign({}, j.row, { h2h: pick(hit[0]) })); } }
-      else if (hit[0].price != null) note('report', 'H2H tab prices a match the Database does not hold', Object.assign({}, j.row, { h2h: pick(hit[0]) }));
+      else if (hit[0].price != null) { S.fail.h2h++; note('fail', 'H2H tab prices a match the master does not hold (own price path)', Object.assign({}, j.row, { h2h: pick(hit[0]) })); }
     }
   }
   S.focus.notFound = [...FOCUS].filter(k => !S.focus.seen[k]).map(k => Object.assign({ eventKey: k }, S.focus.rowOf[k] || { inNoCheckedCareer: true }));
