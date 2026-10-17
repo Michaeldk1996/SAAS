@@ -13243,8 +13243,9 @@ const FH_BOOK = { P: 'Pinnacle', B: 'Bet365', A: 'Pinnacle (approx.)' };
 // 13 Jan - 16 Sep 2026 (the Database join's book 2). A SNAPSHOT, never a close: every hover on it says so, in these words.
 const SF_APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close';
 if (typeof window !== 'undefined') window.SF_APPROX_HOVER = SF_APPROX_HOVER;
-// founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover through the same words
-if (typeof window !== 'undefined') window.fhSrcTitle = (...a) => fhSrcTitle(...a);
+// founder 2026-10-16 (round 3, item 1): the Player Profile's Record per tournament prices hover through the same words —
+// fhSrcTitle is a top-level declaration of this classic script, so it IS window.fhSrcTitle. Never re-assign it (a wrapper
+// that calls fhSrcTitle calls itself: the stack overflow that broke every price hover on 17 Oct).
 // hist = our Pinnacle archive's close, 'from Pinnacle history' (founder 2026-10-16, round 3 item 1)
 const FH_SRC = { td: 'Tennis-Data', cap: 'captured', hist: 'from Pinnacle history' };
 // The single picker every price on both tabs goes through.
