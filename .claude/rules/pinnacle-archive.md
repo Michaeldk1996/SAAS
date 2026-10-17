@@ -113,6 +113,9 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   (insert-only), `export pinnacle-closes.json` writes the current close per match (an archive close over a captured one),
   `td-feed` turns it into the Database feed and `build-database-yield.js` rebuilds the Database archive with it; then
   `build-match-closes.js` builds the closing-prices shards from the export. Pages read these files; the archive is the source.
+  **Fail-closed** (founder ruling 2026-10-17, odds master close-out item 3): each of those steps failing, or the archive gate
+  (`tools/archive-gate.mjs`) finding a count missing, empty or below the last good run's, fails the run — nothing uploads,
+  the site keeps the last good master and pre-2010 file, and a Telegram alert goes out (`odds.md` "The archive gate").
 
 ## Measured at the build (2026-10-14 03:29Z)
 Database 2.34 GB of an 8 GB disk (5.53 GB free; Pro plan, Micro compute). Bucket `oddspapi-raw` 6,137 fixtures, 181 MB

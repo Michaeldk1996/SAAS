@@ -1590,6 +1590,13 @@ def parse_name_table(js_text):
     return {n: k for n, k in re.findall(r"""^\s*'([^']+)':\s*'(\d+)'""", js_text[i:j], re.M) if ',' not in n}
 
 
+# api-tennis statuses whose match is a result for the feed. "Awarded" (a default) is one when our archive holds a close for
+# it: the archive cuts a close only at a verified live start, so play began (founder ruling 2026-10-17, odds master
+# close-out item 1: a match that started counts as played; build-database-yield.js prices it behind the retired flag).
+FEED_RESULT_STATUSES = ('Finished', 'Retired', 'Awarded')
+FEED_COMMENT = {'Retired': 'Retired', 'Awarded': 'Awarded'}
+
+
 def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalog=None, surfaces=None):
     """Feed rows + a report. `override`: a Tennis-Data row (same day ±1, both surnames) with no Pinnacle pair gets our
     close (the row is named exactly as Tennis-Data wrote it). `add`: an ATP main-draw match after Tennis-Data's last day,
@@ -1608,7 +1615,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         sizes.setdefault(k, []).append(ROUND_SIZE.get(_fold(str(a.get('tournament_round') or '').split(' - ')[-1]).strip(), 0))
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
                     'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
-                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0, 'team': 0, 'teamRetired': 0,
+                    'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0, 'team': 0, 'teamRetired': 0, 'addAwarded': 0, 'teamAwarded': 0,
                     'teamWalkover': 0, 'teamNoResult': 0}
     for e in export_rows:
         rep['closes'] += 1
@@ -1639,7 +1646,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             st = str(ta.get('event_status') or '')
             if 'walk' in st.lower():
                 rep['teamWalkover'] += 1; continue
-            if ta.get('event_winner') not in ('First Player', 'Second Player') or st not in ('Finished', 'Retired'):
+            if ta.get('event_winner') not in ('First Player', 'Second Player') or st not in FEED_RESULT_STATUSES:
                 rep['teamNoResult'] += 1; continue
             first_won = ta['event_winner'] == 'First Player'
             w, l = (e['p1Name'], e['p2Name']) if first_won else (e['p2Name'], e['p1Name'])
@@ -1647,9 +1654,9 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             wn, ln = spell.get(str(wk)) if wk is not None else None, spell.get(str(lk)) if lk is not None else None
             out.append({'kind': 'team', 'date': d, 'tournament': str(ta.get('tournament_name')).replace(',', ' '), 'series': 'Team event',
                         'court': '', 'surface': '', 'round': '', 'bestof': '', 'winner': wn or td_name(w), 'loser': ln or td_name(l),
-                        'comment': 'Retired' if st == 'Retired' else 'Completed', 'psw': e['p1'] if first_won else e['p2'],
+                        'comment': FEED_COMMENT.get(st, 'Completed'), 'psw': e['p1'] if first_won else e['p2'],
                         'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
-            rep['teamRetired' if st == 'Retired' else 'team'] += 1; continue
+            rep['teamRetired' if st == 'Retired' else 'teamAwarded' if st == 'Awarded' else 'team'] += 1; continue
         if d <= td_last:
             rep['notInTdWindow'] += 1; continue       # inside Tennis-Data's window but not in it: not an ATP main-draw match
         a = e.get('apiTennis') or {}
@@ -1660,7 +1667,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         st = str(a.get('event_status') or '')
         if 'walk' in st.lower():
             rep['walkover'] += 1; continue
-        if a.get('event_winner') not in ('First Player', 'Second Player') or st not in ('Finished', 'Retired'):
+        if a.get('event_winner') not in ('First Player', 'Second Player') or st not in FEED_RESULT_STATUSES:
             rep['noResult'] += 1; continue
         key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
         meta = td_edition_meta(td_rows, alias, key)
@@ -1680,9 +1687,9 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         rep['spelledAsTennisData'] += (wn is not None) + (ln is not None)
         out.append({'kind': 'add', 'date': d, 'tournament': meta['tournament'], 'series': meta['series'], 'court': meta['court'],
                     'surface': meta['surface'], 'round': rnd, 'bestof': meta['bestof'], 'winner': wn or td_name(w), 'loser': ln or td_name(l),
-                    'comment': 'Retired' if st == 'Retired' else 'Completed', 'psw': e['p1'] if first_won else e['p2'],
+                    'comment': FEED_COMMENT.get(st, 'Completed'), 'psw': e['p1'] if first_won else e['p2'],
                     'psl': e['p2'] if first_won else e['p1'], 'archiveId': e.get('archiveId'), 'label': e.get('label'), 'eventKey': e.get('eventKey')})
-        rep['addRetired' if st == 'Retired' else 'add'] += 1
+        rep['addRetired' if st == 'Retired' else 'addAwarded' if st == 'Awarded' else 'add'] += 1
     rep['tdLastDay'] = td_last
     return out, rep
 

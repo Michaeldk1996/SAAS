@@ -624,7 +624,9 @@ test('RULING: retirements are VOIDED, not settled, and the footnote says so', ()
   // priced ones ride behind a flag (retRows) for the site's price join only, and leave the loop before rows.push.
   assert.match(b, /const isRet = RETIRED\.has\(comment\);\n\s*if \(isRet\) bucket\.retired\+\+;/,
     'retirements must be counted into their own bucket');
-  const retPath = b.slice(b.indexOf('    if (isRet) {'), b.indexOf('rows.push(['));
+  // founder 2026-10-17 (odds master close-out item 1): a non-result that started rides the same flagged path (behindFlag)
+  assert.match(b, /const behindFlag = isRet \|\| startedNonResult;/, 'the flagged path is retirements + started non-results only');
+  const retPath = b.slice(b.indexOf('    if (behindFlag) {'), b.indexOf('rows.push(['));
   // (founder brief 2026-10-14: the per-row body is a function shared with the archive feed, so it leaves by `return`)
   assert.match(retPath, /retRaw\.push\([\s\S]*?(continue|return);\n    \}/, 'a retirement leaves the loop before it can reach rows.push (never a Database row)');
 

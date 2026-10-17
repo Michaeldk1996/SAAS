@@ -291,6 +291,28 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   phase 2 adds Challenger and ATP qualifying to the master (ITF stays out). **Test:** `tools/test-price-consistency.mjs`
   control 3, `test-ten332-tournament.mjs` test 22 (dash, blank while loading, Challenger control), `test-ten437-h2h.mjs`
   "no captured step", `test-ten334-overview.mjs`.
+- **A match that started is played and priced; only a true walkover is a dash** (founder ruling 2026-10-17, odds master
+  close-out item 1). A match counts as played and shows its price once play began — retired, defaulted, or marked
+  "Awarded" / "Disqualified" / any other non-result after the first ball. Only a match where no ball was played (a true
+  walkover) stays a dash. Sources: both players' career-history rows (`walkover: true` = no ball; a set score with a game
+  won = started), our archive's close (cut only at a verified live start = api-tennis showed it in play), and
+  Tennis-Data's own comment ("Walkover" claims no ball). **Where the sources disagree, the match is flagged and keeps the
+  dash** — never picked. `tools/started-evidence.js` (verdict, run in `pipeline.yml` after the career-history store is
+  written) → `build-database-yield.js` (`startedOf`, `meta.started`); the td-feed passes an api-tennis "Awarded" with an
+  archive close through as its comment (`FEED_RESULT_STATUSES`). A started non-result is priced BEHIND the retired flag
+  (settled on the official result, like a retirement), so no Database figure, ROI or baseline moves. **Test:**
+  `tools/test-started-priced.js` (a started "Awarded" priced, a true walkover a dash, disagreeing sources a dash; the
+  mutant that removes the rule goes red).
+- **The archive gate: nothing empty or partial publishes** (founder ruling 2026-10-17, close-out item 3). The archive
+  export, the snapshot export, the Database feed, the evidence step and the Database build are fail-closed in
+  `pipeline.yml` (no `|| true`, no fallback to a partial Database); after them `tools/archive-gate.mjs` fails the run when
+  any archive count is missing or empty, or below the last good run's (the published `database-yield-master-meta.json`:
+  master rows, export events, feed rows, snapshot rows, era-shard rows; a 404 = the first publish, said out loud; any other
+  read failure fails). A failed run uploads nothing, so the site keeps the last good master and pre-2010 file, and the
+  "Alert — the Pinnacle archive gate failed" step sends a Telegram. A deliberate reduction (a ruled hold-back) lands as a
+  reviewed `archive-gate-accept.json` (`{ "masterRows": { "atMost": N, "reason": "…" } }`), never a data-bot file.
+  **Test:** `tools/test-archive-gate.mjs` (archive unreachable → fail; fewer rows than the last good master → fail; the
+  wiring: no tolerant step, the gate before the upload, the alert on failure).
 - **Archive names and round tolerance (same rulings, items 1–2):** the join meets the archive's spelling through
   `ARCHIVE_NAME_ALIASES` (key) and `ARCHIVE_PAGE_SPELLINGS` (the page's own spelling where no key exists:
   "Dolgopolov O." = A. Dolgopolov, "Zhang Ze" = Z. Zhang, Moroni, Statham, Madaras, Aragone, Monteiro, Wu Tung-Lin,
