@@ -259,7 +259,8 @@ function stepRun(name) {
   const ind = body.find(l => l.trim()).search(/\S/);
   return body.map(l => l.slice(ind)).join('\n');
 }
-const stepNames = YML.split('\n').filter(l => /^      - name: /.test(l)).map(l => l.replace(/^      - name: /, '').trim());
+// the build job's steps (founder 2026-10-18: the separate fail-alert job after it is not the build job)
+const stepNames = YML.split('\n  fail-alert:')[0].split('\n').filter(l => /^      - name: /.test(l)).map(l => l.replace(/^      - name: /, '').trim());
 
 const BUILD = 'Build market-edge shards (best-effort)';
 const RED = 'Fail the run if market-edge was not rebuilt (post-deploy, loud)';

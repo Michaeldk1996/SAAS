@@ -1723,3 +1723,23 @@ jobs:
       - name: Fail the run if market-edge was not rebuilt (post-deploy, loud)
         if: always() && steps.deploy.outcome == 'success'
         run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json
+
+  # Founder ruling 2026-10-18 (pipeline-down alert): after two consecutive failed runs, ONE Telegram naming the failing
+  # step in plain words (once per streak, at its second failure). Its own job so it sees every step of the build job,
+  # the last one included, and runs only when that job failed. Never fails: an unsent alert is an ::error::.
+  fail-alert:
+    needs: build-and-deploy
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: tools, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Alert — two failed runs in a row (Telegram)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/pipeline-fail-alert.mjs

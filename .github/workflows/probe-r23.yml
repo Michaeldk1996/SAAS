@@ -30,7 +30,7 @@ jobs:
           DB_YIELD_STARTED=ev-new.json DB_YIELD_OUT_DIR=new node build-database-yield.js > new.log
           git worktree add /tmp/old origin/main -f >/dev/null 2>&1
           ln -s "$PWD/career-history" /tmp/old/career-history; cp career-history-index.json player-profiles.json /tmp/old/
-          (cd /tmp/old && node tools/started-evidence.js --out ev-old.json && DB_YIELD_STARTED=ev-old.json DB_YIELD_OUT_DIR=out node build-database-yield.js > old.log) ; mkdir -p /tmp/old/out
+          (mkdir -p /tmp/old/out && cd /tmp/old && node tools/started-evidence.js --out ev-old.json && DB_YIELD_STARTED=ev-old.json DB_YIELD_OUT_DIR=out node build-database-yield.js > old.log) ; mkdir -p /tmp/old/out
           node -e '
             const fs=require("fs");
             const ev=JSON.parse(fs.readFileSync("ev-new.json","utf8"));
