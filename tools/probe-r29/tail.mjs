@@ -17,7 +17,10 @@ const result = await E(`(async () => {
       if ((k === '1094' && sel[i].date === '2006-05-29') || (k === '2845' && sel[i].date === '2007-04-15')) two.push([name, sel[i].date, sel[i].opponent, x.price, x.oppPrice, x.book]); });
     if (ms && ms.matches && ms.matches.length) meWinnerRows(ms, meRowsFor(career, cl, k, name), k, name).forEach(r => { meRows++; if (r.tournRaw == null) meMiss++; });
   }
-  return { commit: bi && bi.commit, data: bi && bi.data, aliases: Object.keys(db.aliases || {}).length, delPotro: (db.aliases || {})['Del Potro J.M.'], rows, priced, meRows, meMiss, two };
+  const mj = await fetch('./matches.json?t=' + Date.now()).then(r => r.json()).catch(() => null);
+  const cards = Array.isArray(mj) ? mj : (mj && mj.matches) || [];
+  const q = { cards: cards.length, qualifyingBool: cards.filter(c => typeof c.qualifying === 'boolean').length, qualifyingTrue: cards.filter(c => c.qualifying === true).length, round: cards.filter(c => c.tournamentRound).length };
+  return { q, commit: bi && bi.commit, data: bi && bi.data, aliases: Object.keys(db.aliases || {}).length, delPotro: (db.aliases || {})['Del Potro J.M.'], rows, priced, meRows, meMiss, two };
 })()`).catch(e => fail('probe threw: ' + e.message));
 ch.kill('SIGKILL'); if (!LIVE) server.close();
 console.log('### v000 ' + JSON.stringify(result));
