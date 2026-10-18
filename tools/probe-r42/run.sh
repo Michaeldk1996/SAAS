@@ -7,7 +7,7 @@ BK=$(node -e "
 const s=f=>{try{return require('./after/'+f)}catch(e){return null}};
 const ks=new Set();
 for (const f of ['career-history-index.json','player-profiles.json','player-index.json']) { const j=s(f); if(!j) continue; const o=j.players||j;
-  for (const [k,v] of Object.entries(o)) if (/\bBergs\b/i.test(JSON.stringify(v))) ks.add(String(v && (v.key||v.playerKey) || k)); }
+  for (const [k,v] of Object.entries(o)) { const n = v && (v.name || v.n || v.player_name || ''); if (/^(Z\.|Zizou) Bergs$/i.test(String(n).trim())) ks.add(String(v.key || v.playerKey || k)); } }
 console.log([...ks].join(','))")
 echo "Bergs key(s): $BK"
 K=${BK%%,*}
