@@ -42,11 +42,11 @@ function sandbox(db, careers, blk) {
     const _careerHistoryShards = careers || {};
     let _h2hDbSt = db ? 'ready' : null, _h2hDb = db || null; function h2hEnsureDb() {}
     const FH_DASH = 'var(--text-label)', FH_DASHC = '—'; let _fh = null;
-    const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' }, FH_SRC = { td: 'Tennis-Data', cap: 'captured' }, FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';
+    const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' }, FH_SRC = { td: 'Tennis-Data', cap: 'captured' }, FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available', FH_B365_APPROX_HOVER = 'Bet365 (approx.) · not a confirmed close';
     function psTourMeta() { return null; }
     function fhEsc(s) { return escapeHtml(s == null ? '' : String(s)); }
     ${['H2H_PAGE_PRICE_WINDOW', 'H2H_PAGE_MATCH_WINDOW', 'H2H_PAGE_START_WINDOW', 'H2H_PAGE_ROW_WINDOW', 'H2H_TD_ROUND', 'H2H_PAGE_BEFORE_RANK', '_h2hLedPx', 'H2H_PX_NOTE'].map(innerConst).join('')}
-    ${['fhIsInitial', 'fhNameKey', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin', 'h2hCareerOf', 'h2hLedgerJoin', 'h2hPriceTitle', 'h2hPxNote', 'fhOdd', 'fhDDMM', 'fhSetTxt', 'fhH2hSetScores', 'fhSrcTitle', 'trPxTitle', 'trDbEnd', 'trDayWords', 'trRowData', 'trLastPlayed',
+    ${['fhIsInitial', 'fhNameKey', 'h2hRoundLabel', 'fhRoundCode', 'h2hTdIx', 'h2hTdKey', 'h2hTdSame', 'h2hTdRound', 'h2hTdEvent', 'h2hNearest', 'h2hPriceJoin', 'h2hCareerOf', 'h2hLedgerJoin', 'h2hPriceTitle', 'h2hPxNote', 'fhOdd', 'fhDDMM', 'fhSetTxt', 'fhH2hSetScores', 'fhB365Approx', 'fhSrcTitle', 'trPxTitle', 'trDbEnd', 'trDayWords', 'trRowData', 'trLastPlayed',
       'psRoundAbbr', 'psGroupMeetings', 'psFmtMeetDate', 'ps2SetDone', 'ps2Meeting'].map(slice).join('\n')}
     const document = undefined;
     const state = {}; let handlers = [];
