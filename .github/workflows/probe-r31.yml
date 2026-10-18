@@ -1,0 +1,23 @@
+name: probe-r31 (branch only — started-evidence same-event check)
+on:
+  push:
+    branches: [claude/wonderful-fermat-clvs94]
+    paths: [tools/probe-r31/trigger]
+permissions: { contents: read, actions: read }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Live data
+        run: |
+          RID=$(gh run list -R "$GITHUB_REPOSITORY" --workflow pipeline.yml --status success -L 1 --json databaseId -q '.[0].databaseId')
+          echo "site-data from pipeline run $RID"
+          gh run download "$RID" -R "$GITHUB_REPOSITORY" -n site-data -D live
+          ln -s "$PWD/odds-archive" live/odds-archive
+      - run: node tools/probe-r31/run.js live
