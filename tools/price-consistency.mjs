@@ -37,6 +37,11 @@ const H2H_EVERY = +arg('--h2h-every', 20);
 // not run (no player, Market edge lagging the master, a page function that threw) still exits 1. Without it the guard fails
 // on any difference, as before (its own test, and a read-back of a deployed site).
 const QOUT = arg('--quarantine-out', null);
+// --coverage-out FILE (founder ruling 2026-10-18, item 5): every played match of every player with a career-history shard,
+// per level and year: priced, or its reason (walkover · one side only · no bookmaker priced it · no source found yet), the 20
+// players with the most unpriced matches, and every "no source found yet" dash the master holds a fitting row for (a join
+// miss). A report — tools/price-coverage-alert.mjs compares it with the published one and alerts.
+const COV = arg('--coverage-out', null);
 const PAGE = LIVE || existsSync(join(SITE, 'bsp-consult-dashboard.html')) ? 'bsp-consult-dashboard.html' : 'index.html';
 if (!LIVE) for (const f of [PAGE, 'database-yield.json', 'database-yield-players.json', 'career-history-index.json']) {
   if (!existsSync(join(SITE, f))) { console.error(`price-consistency: ${f} missing from ${SITE} — nothing to check, failing closed`); process.exit(1); }
@@ -150,6 +155,32 @@ const result = await E(`(async () => {
     Q.push({ key: k, player: name, date: x.date, opp: x.opponent, event: x.tournament, round: x.round || null, page, kind, me: meId || null, db: dbKey || null, cause, shown: shown || null });
   const meIdOf = (k, tdKey, hit) => { if (tdKey) { const [date, opp, w] = tdKey.split('|'); return { key: k, date, opp, won: w === '1' }; }
     return hit && hit._id ? Object.assign({ key: k }, hit._id) : null; };
+  // ---- coverage (founder ruling 2026-10-18, item 5)
+  const COVON = ${!!COV};
+  const CV = { byLevel: {}, players: {}, joinMiss: 0, joinMissEx: [] };
+  const lvOf = x => x.level === 'atp' ? (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'ATP qualifying' : 'ATP main draw')
+    : (/^(M|W)\\d{2,3}\\b|\\bITF\\b/.test(String(x.tournament || '')) ? 'ITF' : (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'Challenger qualifying' : 'Challenger main draw'));
+  const coverOf = (k, name, career) => {
+    const rows = career.filter(x => x && x.date);
+    const vs = rows.map(x => ({ date: x.walkover ? null : x.date, won: !!x.won, round: x.round, opp: x.opponent }));
+    J(vs, { full: name }, null, db, null, career);
+    rows.forEach((x, i) => {
+      const lv = lvOf(x), y = String(x.date).slice(0, 4), v = vs[i];
+      const c = ((CV.byLevel[lv] = CV.byLevel[lv] || {})[y] = CV.byLevel[lv][y] || { n: 0, priced: 0, byBook: {}, walkover: 0, one: 0, nobook: 0, none: 0 });
+      c.n++;
+      if (x.walkover) { c.walkover++; return; }
+      if (v.price != null) { c.priced++; const b = v.book === 'A' ? (v.src === 'od10' ? 'start-10' : 'api-tennis approx') : v.book === 'B' ? 'Bet365' : 'real close'; c.byBook[b] = (c.byBook[b] || 0) + 1; return; }
+      const why = sfDbNoPriceWhy(name, vs[i]);
+      c[why]++;
+      const P = CV.players[k] = CV.players[k] || { name, unpriced: 0 }; P.unpriced++;
+      if (why === 'none') {
+        const me = ourSur(name), o = ourSur(x.opponent), d0 = dn(x.date);
+        const fit = (bySur.get(me) || []).filter(j => { const dd = dayOf(db.rows[j][0]) - d0; if (dd < -1 || dd > 16) return false;
+          const nm = db.names[j]; return tdSur(x.won ? nm[0] : nm[1]) === me && tdSur(x.won ? nm[1] : nm[0]) === o; });
+        if (fit.length) { CV.joinMiss++; if (CV.joinMissEx.length < 60) CV.joinMissEx.push({ key: k, player: name, date: x.date, opp: x.opponent, event: x.tournament, level: lv, cause: causeNotHeld(x, name) }); }
+      }
+    });
+  };
   let n = 0;
   for (const k of keys) {
     if (ONLY.size && !ONLY.has(k)) continue;
@@ -157,6 +188,7 @@ const result = await E(`(async () => {
     const career = await careerOf(k);
     if (!Array.isArray(career) || !career.length) continue;
     S.players++;
+    if (COVON) { const nm0 = nameOf(k); if (nm0) try { coverOf(k, nm0, career); } catch (e) { CV.threw = (CV.threw || 0) + 1; if (!CV.threwEx) CV.threwEx = { key: k, err: String(e && e.message || e) }; } }   // a report: never stops the publish
     const has2026 = career.some(x => x && String(x.date || '').slice(0, 4) === '2026');   // every level (founder 2026-10-18 item 3)
     if (!has2026 && !sample) continue;
     if (LIMIT && ++n > LIMIT) break;
@@ -264,6 +296,7 @@ const result = await E(`(async () => {
   S.focus.notFound = [...FOCUS].filter(k => !S.focus.seen[k]).map(k => Object.assign({ eventKey: k }, S.focus.rowOf[k] || { inNoCheckedCareer: true }));
   delete S.focus.rowOf;
   S.quarantine = Q;
+  if (COVON) { const top = Object.entries(CV.players).sort((a, b) => b[1].unpriced - a[1].unpriced).slice(0, 20).map(([key, v]) => Object.assign({ key }, v)); CV.top20 = top; delete CV.players; S.coverage = CV; }
   return S;
 })()`).catch(e => fail('the in-page check threw: ' + e.message));
 
@@ -276,6 +309,14 @@ if (FOCUS.length) { const f = Object.assign({}, result.focus); delete f.seen; co
 for (const r of result.ex.fail.slice(0, 40)) console.log('FAIL ' + JSON.stringify(r));
 for (const r of result.ex.report.slice(0, 40)) console.log('REPORT ' + JSON.stringify(r));
 if (REPORT) writeFileSync(REPORT, JSON.stringify(result, null, 1));
+if (COV && result.coverage) {
+  const C = result.coverage, tot = {};
+  for (const [lv, ys] of Object.entries(C.byLevel)) { const t = tot[lv] = { n: 0, priced: 0, walkover: 0, one: 0, nobook: 0, none: 0 }; for (const c of Object.values(ys)) for (const f of Object.keys(t)) t[f] += c[f] || 0; }
+  const tmp = COV + '.tmp';
+  writeFileSync(tmp, JSON.stringify({ rule: 'every played match of every player with a career-history shard: priced, or its reason (founder 2026-10-18 item 5)', builtAt: new Date().toISOString(), totals: tot, ...C }));
+  renameSync(tmp, COV);
+  console.log(`### price-coverage ${JSON.stringify({ totals: tot, joinMiss: C.joinMiss, threw: C.threw || 0, file: COV })}`);
+}
 if (!result.playersChecked || !result.matches) { console.error('price-consistency: checked 0 players / 0 matches — a check on an empty set is not a check'); process.exit(1); }
 if (QOUT) {
   // one entry per match (both players' sides of it merged), the pages that tripped listed together

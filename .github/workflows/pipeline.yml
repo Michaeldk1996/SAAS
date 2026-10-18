@@ -1321,7 +1321,10 @@ jobs:
       # as it will publish, and writes ONE alert for the run (sent after the upload, below). A check that could not run
       # (no player, Market edge lagging the master, a page function that threw) still fails the run.
       - name: One price per match on every surface (quarantine, then publish)
-        run: CHROME_BIN=google-chrome node tools/price-guard-run.mjs --site _site --root . --alert-out .price-alert.txt --run-label "pipeline run ${{ github.run_number }}"
+        run: |
+          CHROME_BIN=google-chrome node tools/price-guard-run.mjs --site _site --root . --alert-out .price-alert.txt --run-label "pipeline run ${{ github.run_number }}" --guard-args "--coverage-out _site/price-coverage.json"
+          # founder ruling 2026-10-18 (item 5): coverage per level, compared with the published report (the alert is sent after the upload)
+          node tools/price-coverage-alert.mjs --cur _site/price-coverage.json --baseline-url https://michaeldk1996.github.io/SAAS/price-coverage.json --out .coverage-alert.txt --run-label "pipeline run ${{ github.run_number }}"
 
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
@@ -1491,6 +1494,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node tools/price-alert-send.mjs .price-alert.txt
+      - name: Alert — price coverage dropped or a join miss (Telegram; founder ruling 2026-10-18 item 5)
+        if: always() && hashFiles('.coverage-alert.txt') != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/price-alert-send.mjs .coverage-alert.txt
 
       # Surface failures loudly: if the pipeline could not produce a fresh
       # success, fail the job so GitHub emails/notifies (and the health file
