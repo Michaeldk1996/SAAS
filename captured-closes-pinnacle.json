@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-18T09:17:12.374Z",
+ "generatedAt": "2026-10-18T13:11:51.451Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "1f0ed7085670b4f499394cfb2581f2b0f275b9b7",
-  "at": "2026-10-18T09:02:56Z"
+  "commit": "ba3efb913a432f051647ebb82d784d466ccad570",
+  "at": "2026-10-18T12:53:39Z"
  },
- "commitsScanned": 5313,
+ "commitsScanned": 5330,
  "lastRun": {
-  "from": "2026-10-17T18:02:25Z",
-  "snapshots": 34,
-  "added": 3,
+  "from": "2026-10-18T09:02:56Z",
+  "snapshots": 18,
+  "added": 2,
   "replaced": 0,
-  "series": 20,
-  "kept": 17,
+  "series": 42,
+  "kept": 19,
   "bySource": {
-   "api-tennis-live": 17
+   "api-tennis-live": 19
   },
   "byBook": {
-   "Pinnacle +30s": 17
+   "Pinnacle +30s": 19
   },
   "dropped": {
-   "noStart": 3
+   "noStart": 23
   }
  },
  "stats": {
@@ -9083,6 +9083,40 @@
    "round": "ATP Shanghai - Final",
    "qualifying": false,
    "event": "ATP Shanghai"
+  },
+  {
+   "eventKey": 12171966,
+   "date": "2026-10-18",
+   "p1Key": 566,
+   "p2Key": 742,
+   "p1Name": "A. Shevchenko",
+   "p2Name": "S. Sakellaridis",
+   "p1": 1.558,
+   "p2": 2.52,
+   "at": "2026-10-18T08:04:56.847Z",
+   "trueStart": "2026-10-18T10:03:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": null,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12171971,
+   "date": "2026-10-18",
+   "p1Key": 1212,
+   "p2Key": 38264,
+   "p1Name": "R. Bertola",
+   "p2Name": "F. Cina",
+   "p1": 2.47,
+   "p2": 1.581,
+   "at": "2026-10-18T10:15:47.900Z",
+   "trueStart": "2026-10-18T10:31:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": null,
+   "event": "ATP Brussels"
   }
  ]
 }
