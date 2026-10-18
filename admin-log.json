@@ -1,16 +1,7 @@
 {
  "schema": 1,
- "updated": "2026-10-18T13:25:53.884Z",
+ "updated": "2026-10-18T13:37:04.080Z",
  "runs": [
-  {
-   "ts": "2026-09-30T10:00:29.135Z",
-   "run": "36698616584",
-   "priced": 44,
-   "logged": 1084,
-   "flagged": 31,
-   "newlyLogged": 0,
-   "newlyFrozen": 0
-  },
   {
    "ts": "2026-09-30T10:10:05.119Z",
    "run": "36699665999",
@@ -18001,6 +17992,15 @@
    "flagged": 7,
    "newlyLogged": 0,
    "newlyFrozen": 0
+  },
+  {
+   "ts": "2026-10-18T13:37:04.080Z",
+   "run": "39131073691",
+   "priced": 33,
+   "logged": 1312,
+   "flagged": 8,
+   "newlyLogged": 5,
+   "newlyFrozen": 1
   }
  ],
  "flags": {
@@ -34946,7 +34946,7 @@
    "status": "finished",
    "finalScore": "6-4, 6-4",
    "modelFairLast": 0.6715,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12170856": {
    "key": "12170856",
@@ -34967,7 +34967,7 @@
    "status": "finished",
    "finalScore": "1-4",
    "modelFairLast": 0.4281,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171133": {
    "key": "12171133",
@@ -34988,7 +34988,7 @@
    "status": "finished",
    "finalScore": "4-6, 6-4, 6-3",
    "modelFairLast": 0.5521,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171245": {
    "key": "12171245",
@@ -35009,7 +35009,7 @@
    "status": "finished",
    "finalScore": "6-3, 1-6, 6-3",
    "modelFairLast": 0.6542,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171477": {
    "key": "12171477",
@@ -35030,7 +35030,7 @@
    "status": "finished",
    "finalScore": "7-5, 4-6, 3-6",
    "modelFairLast": 0.7827,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171698": {
    "key": "12171698",
@@ -35045,7 +35045,7 @@
    "status": "finished",
    "finalScore": "6-3, 6-4",
    "modelFairLast": 0.4038,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171713": {
    "key": "12171713",
@@ -35285,7 +35285,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4843,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171790": {
    "key": "12171790",
@@ -35300,7 +35300,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.9172,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171791": {
    "key": "12171791",
@@ -35310,12 +35310,18 @@
    "surface": "hard",
    "tour": "ATP Brussels",
    "modelFairEntry": 0.5123,
-   "valueSnapshot": null,
+   "valueSnapshot": {
+    "fairP1": 0.5398,
+    "fairP2": 0.4602,
+    "edgeVsPinnacleP1": -0.0607,
+    "edgeVsPinnacleP2": 0.0607,
+    "ts": "2026-10-18T13:29:41.819Z"
+   },
    "firstSeen": "2026-10-16T21:29:38.011Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.5123,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "modelFairLast": 0.5398,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171792": {
    "key": "12171792",
@@ -35336,7 +35342,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7191,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171794": {
    "key": "12171794",
@@ -35351,7 +35357,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5682,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171795": {
    "key": "12171795",
@@ -35366,7 +35372,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5151,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171796": {
    "key": "12171796",
@@ -35426,7 +35432,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5177,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171883": {
    "key": "12171883",
@@ -35441,7 +35447,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.4043,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171884": {
    "key": "12171884",
@@ -35456,7 +35462,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.6027,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171885": {
    "key": "12171885",
@@ -35471,7 +35477,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5554,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171886": {
    "key": "12171886",
@@ -35486,7 +35492,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7931,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171888": {
    "key": "12171888",
@@ -35501,7 +35507,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7961,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171889": {
    "key": "12171889",
@@ -35516,7 +35522,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.831,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171959": {
    "key": "12171959",
@@ -35537,7 +35543,7 @@
    "status": "finished",
    "finalScore": "1-6, 7-6(5), 6-4",
    "modelFairLast": 0.4691,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12171966": {
    "key": "12171966",
@@ -35597,7 +35603,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2133,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172009": {
    "key": "12172009",
@@ -35612,7 +35618,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.2772,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172010": {
    "key": "12172010",
@@ -35626,8 +35632,8 @@
    "firstSeen": "2026-10-18T00:22:34.959Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.3584,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "modelFairLast": 0.3579,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172011": {
    "key": "12172011",
@@ -35642,7 +35648,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.7233,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172012": {
    "key": "12172012",
@@ -35656,8 +35662,8 @@
    "firstSeen": "2026-10-18T00:22:34.959Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.6368,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "modelFairLast": 0.6468,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172013": {
    "key": "12172013",
@@ -35671,8 +35677,8 @@
    "firstSeen": "2026-10-18T00:22:34.959Z",
    "status": "upcoming",
    "finalScore": null,
-   "modelFairLast": 0.1687,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "modelFairLast": 0.1638,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172014": {
    "key": "12172014",
@@ -35687,7 +35693,7 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.8943,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "12172015": {
    "key": "12172015",
@@ -35702,7 +35708,82 @@
    "status": "upcoming",
    "finalScore": null,
    "modelFairLast": 0.5571,
-   "lastSeen": "2026-10-18T13:25:53.884Z"
+   "lastSeen": "2026-10-18T13:37:04.080Z"
+  },
+  "12172160": {
+   "key": "12172160",
+   "date": "2026-10-19",
+   "p1": "M. Cilic",
+   "p2": "N. Basilashvili",
+   "surface": "hard",
+   "tour": "ATP Almaty",
+   "modelFairEntry": 0.708,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-18T13:37:04.080Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.708,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
+  },
+  "12172161": {
+   "key": "12172161",
+   "date": "2026-10-19",
+   "p1": "M. Kukushkin",
+   "p2": "S. Sakellaridis",
+   "surface": "hard",
+   "tour": "ATP Almaty",
+   "modelFairEntry": 0.4544,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-18T13:37:04.080Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.4544,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
+  },
+  "12172162": {
+   "key": "12172162",
+   "date": "2026-10-19",
+   "p1": "P. Herbert",
+   "p2": "M. Mrva",
+   "surface": "hard",
+   "tour": "ATP Lyon (France) - Qualification",
+   "modelFairEntry": 0.5586,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-18T13:37:04.080Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.5586,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
+  },
+  "12172163": {
+   "key": "12172163",
+   "date": "2026-10-20",
+   "p1": "R. Sakamoto",
+   "p2": "K. Khachanov",
+   "surface": "hard",
+   "tour": "ATP Almaty",
+   "modelFairEntry": 0.2285,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-18T13:37:04.080Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.2285,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
+  },
+  "12172164": {
+   "key": "12172164",
+   "date": "2026-10-20",
+   "p1": "S. Shimabukuro",
+   "p2": "R. Safiullin",
+   "surface": "hard",
+   "tour": "ATP Almaty",
+   "modelFairEntry": 0.1292,
+   "valueSnapshot": null,
+   "firstSeen": "2026-10-18T13:37:04.080Z",
+   "status": "upcoming",
+   "finalScore": null,
+   "modelFairLast": 0.1292,
+   "lastSeen": "2026-10-18T13:37:04.080Z"
   },
   "e81136d8af2867898952ce896f71662f": {
    "key": "e81136d8af2867898952ce896f71662f",
