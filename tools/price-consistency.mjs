@@ -157,7 +157,7 @@ const result = await E(`(async () => {
     return hit && hit._id ? Object.assign({ key: k }, hit._id) : null; };
   // ---- coverage (founder ruling 2026-10-18, item 5)
   const COVON = ${!!COV};
-  const CV = { byLevel: {}, players: {}, joinMiss: 0, joinMissEx: [] };
+  const CV = { byLevel: {}, byMonth2026: {}, players: {}, joinMiss: 0, joinMissEx: [] };
   const lvOf = x => x.level === 'atp' ? (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'ATP qualifying' : 'ATP main draw')
     : (/^(M|W)\\d{2,3}\\b|\\bITF\\b/.test(String(x.tournament || '')) ? 'ITF' : (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'Challenger qualifying' : 'Challenger main draw'));
   const coverOf = (k, name, career) => {
@@ -166,12 +166,15 @@ const result = await E(`(async () => {
     J(vs, { full: name }, null, db, null, career);
     rows.forEach((x, i) => {
       const lv = lvOf(x), y = String(x.date).slice(0, 4), v = vs[i];
-      const c = ((CV.byLevel[lv] = CV.byLevel[lv] || {})[y] = CV.byLevel[lv][y] || { n: 0, priced: 0, byBook: {}, walkover: 0, one: 0, nobook: 0, none: 0 });
-      c.n++;
-      if (x.walkover) { c.walkover++; return; }
-      if (v.price != null) { c.priced++; const b = v.book === 'A' ? (v.src === 'od10' ? 'start-10' : 'api-tennis approx') : v.book === 'B' ? 'Bet365' : 'real close'; c.byBook[b] = (c.byBook[b] || 0) + 1; return; }
+      const nb = () => ({ n: 0, priced: 0, byBook: {}, walkover: 0, one: 0, nobook: 0, none: 0 });
+      const cs = [((CV.byLevel[lv] = CV.byLevel[lv] || {})[y] = CV.byLevel[lv][y] || nb())];
+      if (y === '2026') { const mo = String(x.date).slice(0, 7); cs.push(((CV.byMonth2026[lv] = CV.byMonth2026[lv] || {})[mo] = CV.byMonth2026[lv][mo] || nb())); }   // 2026 by month too
+      const c = { inc(f, b) { cs.forEach(o => { if (b) o.byBook[b] = (o.byBook[b] || 0) + 1; else o[f]++; }); } };
+      c.inc('n');
+      if (x.walkover) { c.inc('walkover'); return; }
+      if (v.price != null) { c.inc('priced'); c.inc(null, v.book === 'A' ? (v.src === 'od10' ? 'start-10' : 'api-tennis approx') : v.book === 'B' ? (v.src === 'cap' ? 'Bet365 (approx.)' : 'Bet365') : 'real close'); return; }
       const why = sfDbNoPriceWhy(name, vs[i]);
-      c[why]++;
+      c.inc(why);
       const P = CV.players[k] = CV.players[k] || { name, unpriced: 0 }; P.unpriced++;
       if (why === 'none') {
         const me = ourSur(name), o = ourSur(x.opponent), d0 = dn(x.date);
