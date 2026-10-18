@@ -1,8 +1,8 @@
-name: probe-r27 (branch only — 599 misses, Bet365 repair, two pre-2010 misses)
+name: probe-r28 (branch only — alias dry run)
 on:
   push:
     branches: [claude/wonderful-fermat-clvs94]
-    paths: [tools/probe-r27/trigger]
+    paths: [tools/probe-r28/trigger]
 permissions: { contents: read }
 jobs:
   probe:
@@ -14,8 +14,8 @@ jobs:
         with: { node-version: '22' }
       - name: Live read
         run: |
-          head -n 90 tools/price-consistency.mjs > tools/probe-r27/run.mjs && cat tools/probe-r27/tail.mjs >> tools/probe-r27/run.mjs
-          CHROME_BIN=google-chrome node tools/probe-r27/run.mjs --base https://michaeldk1996.github.io/SAAS/ > out.txt 2>&1 || true
+          head -n 90 tools/price-consistency.mjs > tools/probe-r28/run.mjs && cat tools/probe-r28/tail.mjs >> tools/probe-r28/run.mjs
+          CHROME_BIN=google-chrome node tools/probe-r28/run.mjs --base https://michaeldk1996.github.io/SAAS/ > out.txt 2>&1 || true
           grep -E '^### v|price-consistency' out.txt > probe-out.txt || true; tail -5 out.txt; cat probe-out.txt
       - uses: actions/upload-artifact@v4
-        with: { name: probe-r27, path: probe-out.txt }
+        with: { name: probe-r28, path: probe-out.txt }
