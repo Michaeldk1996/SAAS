@@ -239,7 +239,10 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   trueStart). Every other derived price — a cut at Oddspapi's start alone, start − 10, api-tennis's `Pncl`, any snapshot —
   is never labelled a close in any wording ("close", "closing", "Close"), and its hover says "not a confirmed close".
   Tennis-Data's own closing columns and the board card's Close (the card book's last price before the actual start,
-  `_mcCardCloseOf`) are outside this rule's scope until the founder rules on them. **Test:** `tools/test-close-label.py`
+  `_mcCardCloseOf`) are outside this rule's scope until the founder rules on them. **Our captured Bet365 price** (the closes
+  shard's `cap`, cut at Oddspapi's trueStart alone) keeps its price and every hover on it reads exactly "Bet365 (approx.) ·
+  not a confirmed close" (founder ruling 2026-10-18; `FH_B365_APPROX_HOVER`, through `fhSrcTitle`, the H2H titles, the
+  B365 tag, the sheet meta, the Overview pop-up and the Head to Head page). **Test:** `tools/test-close-label.py`
   (every exported close carries a verified start; a start-alone / pre-17-Sep captured / snapshot row is never exported;
   every snapshot hover and label in the code says "not a confirmed close" and never "close ·"; controls).
 - **Every change to a price source goes through ONE task only** (founder ruling 2026-10-16, round 3 item 2): the

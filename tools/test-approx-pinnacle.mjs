@@ -21,7 +21,7 @@ const HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed 
 const OD10 = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close';  // founder 2026-10-17 item 2
 
 // the shared constants + source titles (Tournament tab, profile, sheets)
-const C = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhSourceNote')}
+const C = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'FH_B365_APPROX_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhSourceNote')}
   return { FH_BOOK, SF_APPROX_HOVER, SF_OD10_HOVER, fhSrcTitle, fhSourceNote };`)();
 check('the hover is the ruled words', C.SF_APPROX_HOVER === HOVER);
 check('a Pinnacle (approx.) price hovers "Pinnacle (approx.) · <ruled words>" — never "Pinnacle close"',
@@ -59,7 +59,7 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   const vm = await import('node:vm');
   const assigns = html.split('\n').filter(l => /window\.fhSrcTitle\s*=/.test(l)).join('\n');
   const run = (extra) => { const ctx = vm.createContext({}); ctx.window = ctx;
-    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${fn(html, 'fhSrcTitle')}\n${extra}`, ctx);
+    vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'FH_B365_APPROX_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${extra}`, ctx);
     try { return ctx.window.fhSrcTitle({ book: 'P', src: 'hist' }); } catch (e) { return e.name; } };
   check('the page never re-assigns its global fhSrcTitle: window.fhSrcTitle answers through window (17 Oct live stack overflow)',
     run(assigns) === 'Pinnacle close · from Pinnacle history');
@@ -85,6 +85,8 @@ check('the profile hands its sheet the archive\'s source (pinnacle-history → P
   check('one declaration of fhSrcTitle on the page and no re-binding of the name, so every bare call reads it', decls === 1 && rebinds === 0, JSON.stringify({ decls, rebinds }));
   const runCallers = (extra) => { const ctx = vm.createContext({}); ctx.window = ctx;
     vm.runInContext(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'FH_MONO')}\n${constLine(html, 'FH_B365_HOVER')}
+${constLine(html, 'FH_B365_APPROX_HOVER')}
+${fn(html, 'fhB365Approx')}
       function fhEsc(s){ return String(s == null ? '' : s); } function trPxAfterTitle(){ return 'after'; }
       ${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhH2hSrcTitle')}\n${fn(html, 'fhB365Tag')}\n${fn(html, 'fhPriceCell')}\n${fn(html, 'trPxTitle')}\n${extra}`, ctx);
     const hist = { book: 'P', src: 'hist' }, b = { book: 'B', src: 'td' };
@@ -137,6 +139,8 @@ check('control: a ledger without one keeps the plain footnote', />Closing price 
 // TEN-437's Bet365 hover, on any surface (tab rows, tags, sheet meta, the H2H page, the Tournament tab).
 const B365H = 'Bet365 closing odds, Pinnacle not available';
 const hoverSrc = src => new Function(`${constLine(src, 'FH_BOOK')}\n${constLine(src, 'FH_SRC')}\n${constLine(src, 'SF_APPROX_HOVER')}\n${constLine(src, 'SF_OD10_HOVER')}\n${constLine(src, 'FH_B365_HOVER')}
+${constLine(src, 'FH_B365_APPROX_HOVER')}
+${fn(src, 'fhB365Approx')}
   const FH_MONO = ''; let _h2hDbSt = 'ready';
   ${fn(src, 'fhSrcTitle')}\n${fn(src, 'fhH2hSrcTitle')}\n${fn(src, 'fhB365Tag')}\n${fn(src, 'fhB365Meta')}\n${fn(src, 'trPxTitle')}
   ${fn('\n' + src.slice(src.indexOf('function h2hPriceTitle(')), 'h2hPriceTitle')}
@@ -153,7 +157,7 @@ const oneHover = src => {
 const oh = oneHover(html);
 check('one hover per price: a Pinnacle (approx.) price reads only the snapshot hover on every surface — never the Bet365 hover, no B mark, no B365 tag',
   oh.ok, JSON.stringify(oh));
-const ohMut = oneHover(html.replace("function fhH2hSrcTitle(r){ return r && r.book === 'B' ?", "function fhH2hSrcTitle(r){ return r && r.book !== 'P' ?"));
+const ohMut = oneHover(html.replace(": r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }", ": r && r.book !== 'P' ? FH_B365_HOVER : fhSrcTitle(r); }"));
 check('control: an H2H hover that treats any non-Pinnacle book as Bet365 is caught', !ohMut.ok);
 const ohMut2 = oneHover(html.replace("if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER);\n", ''));
 check('control: the H2H page dropping its snapshot branch is caught', !ohMut2.ok);

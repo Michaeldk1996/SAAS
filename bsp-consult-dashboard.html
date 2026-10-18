@@ -11579,7 +11579,7 @@ function ovPopHtml(M){
     // DESIGN GAP G22: the file's rows never retire; a retirement carries "ret." after its set scores (modal-overview.md item 1)
     scores: r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(', ') : FH_DASHC, ret: !!r.ret,
     price: r.price != null ? fhOdd(r.price) : FH_DASHC, oppPrice: r.oppPrice != null ? fhOdd(r.oppPrice) : FH_DASHC,
-    priceTip: r.book === 'B' ? fhSrcTitle(r) + ' (no Pinnacle close for this match)' : null,
+    priceTip: r.book === 'B' ? (fhB365Approx(r) ? FH_B365_APPROX_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)') : null,
     selected: _ov.sel === r.mid, click: ` onclick="ovOpenRow('${r.mid}')"`, attrs: ` data-ov-mid="${r.mid}"`,
   })) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
     grid: '50px 10px minmax(0,1.3fr) minmax(0,1fr) 34px 38px minmax(0,1.1fr) 42px 42px',
@@ -13344,16 +13344,21 @@ function fhTodayPair(m){
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
-function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
+function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
 // TEN-437 (founder 2026-10-16): a Bet365-priced H2H meeting keeps its close, its "B" marker, and this hover — on the
 // Match analysis H2H tab and the H2H page — until a Pinnacle source is found. H2H only: Form and every other surface keep
 // fhSrcTitle's source label.
 const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';
-function fhH2hSrcTitle(r){ return r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }
-function fhB365Tag(r, h2h){ return r && r.book === 'B' ? `<span title="${h2h ? FH_B365_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)'}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+// Founder ruling 2026-10-18: OUR captured Bet365 price (closes shard `cap`, cut at Oddspapi's trueStart alone, not a verified
+// start) is never called a close — every hover on it is this one line; the price is shown as before. Tennis-Data's own
+// Bet365 column (`td`) keeps its words (outside the close-label rule until ruled).
+const FH_B365_APPROX_HOVER = 'Bet365 (approx.) · not a confirmed close';
+function fhB365Approx(r){ return !!(r && r.book === 'B' && r.src === 'cap'); }
+function fhH2hSrcTitle(r){ return fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }
+function fhB365Tag(r, h2h){ return r && r.book === 'B' ? `<span title="${fhB365Approx(r) ? FH_B365_APPROX_HOVER : h2h ? FH_B365_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)'}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // TEN-402 r1 fix 3 (founder 2026-10-09): on a sheet opened from the Head to Head page the tag is part of the header's grey
 // mono meta line ("… · B365", the meta's own face, size and tone), not a caps chip.
-function fhB365Meta(r){ return r && r.book === 'B' ? `<span class="fh-b365" title="${FH_B365_HOVER}" style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">· B365</span>` : ''; }
+function fhB365Meta(r){ return r && r.book === 'B' ? `<span class="fh-b365" title="${fhB365Approx(r) ? FH_B365_APPROX_HOVER : FH_B365_HOVER}" style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">· B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 // Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
@@ -28771,7 +28776,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // A price cell's hover: the book and source, or why it is a dash.
   function h2hPriceTitle(r) {
     if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER);
-    if (r.price != null) return r.book === 'B' ? FH_B365_HOVER : r.src === 'cap' || r.src === 'hist' ? 'Pinnacle closing price · ' + (r.srcLabel || FH_SRC[r.src])
+    if (r.price != null) return r.book === 'B' ? (typeof fhB365Approx === 'function' && fhB365Approx(r) ? FH_B365_APPROX_HOVER : FH_B365_HOVER) : r.src === 'cap' || r.src === 'hist' ? 'Pinnacle closing price · ' + (r.srcLabel || FH_SRC[r.src])
       : 'Pinnacle closing price · Database join (Tennis-Data)';
     if (_h2hDbSt === 'loading') return 'Loading closing prices…';
     if (_h2hDbSt === 'failed') return 'Closing prices could not be loaded';

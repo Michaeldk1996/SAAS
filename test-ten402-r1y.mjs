@@ -92,10 +92,10 @@ test('fix 3: the Playing styles and Tournament ledgers mark no row either; each 
 // The sheet header (fhSheetHeadHtml), executed: the Head to Head page's sheet vs any other host.
 const HEAD = new Function('_fh', `
   const FH_DASH = 'var(--text-label)', FH_DASHC = '—';
-  ${constLine('FH_MONO')}${constLine('FH_BOOK')}${constLine('FH_SRC')}${constLine('FH_B365_HOVER')}
+  ${constLine('FH_MONO')}${constLine('FH_BOOK')}${constLine('FH_SRC')}${constLine('FH_B365_HOVER')}${constLine('FH_B365_APPROX_HOVER')}
   function fhSurname(n) { return String(n || '').split(/\\s+/).pop(); } function aAvatarHtml() { return ''; }
   function fhEsc(s) { return String(s == null ? '' : s); }
-  ${['fhDDMM', 'fhSrcTitle', 'fhB365Tag', 'fhB365Meta', 'fhSheetHeadHtml'].map(slice).join('\n')}
+  ${['fhDDMM', 'fhB365Approx', 'fhSrcTitle', 'fhB365Tag', 'fhB365Meta', 'fhSheetHeadHtml'].map(slice).join('\n')}
   return fhSheetHeadHtml;`);
 test('fix 3: the sheet\'s B365 stays, as grey mono in the header\'s meta line — on a sheet opened from Head to Head only', () => {
   const r = { tourn: 'Monte Carlo', surface: 'Clay', round: 'F', date: '2026-04-12', won: false, pS: 0, oS: 2, sets: [[6, 7], [3, 6]], price: 2.0, oppPrice: 1.8, book: 'B', src: 'td' };
