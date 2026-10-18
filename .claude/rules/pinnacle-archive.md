@@ -104,6 +104,12 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
   unreadable or unorientable fixture keeps the stored keys, counted) and an archive close's api-tennis result (a close
   derived mid-match stored "Set 1", so the Database feed could not add the match). The stored rows are never changed.
   **Test:** `tools/test-pinarch-close.py` (keys, result, the feed control).
+- **Every capture records its event key, round and qualifying flag, going forward** (founder ruling 2026-10-18, phase 2:
+  no back-fill). Board cards carry api-tennis's `event_qualification` as `qualifying` (`bsp-pipeline.js`; null when no
+  fixture matched); `build-captured-pinnacle.js` writes `eventKey`, `round`, `qualifying` (null, never a guessed false) and
+  `event` on every captured Pinnacle row; `pinarch.py` stores `event_qualification` with the round in each archive close
+  (`API_FIELDS`). Bet365 has no forward capture (Oddspapi bet365 403 since 26 Sep): its rows stay frozen history.
+  **Test:** `tools/test-capture-fields.js` (mutant: the flag not folded → red).
 - **Every history pull names the book** (founder 2026-10-14 item 3): `bookmakers=pinnacle+30` in `tools/pinarch.py`
   (`HIST_BOOK`) and in the daily archive / back-fill calls of `archive-oddspapi-raw.py` (`HIST_BOOKS`). Without it the
   endpoint returns the account's entitled book of the day, so every payload pulled while the key was entitled to bet365

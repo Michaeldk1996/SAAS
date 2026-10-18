@@ -76,6 +76,11 @@ function absorb(ev, matches) {
       const s = get(om);
       if (!s) continue;
       const o = ev[ek] || (ev[ek] = { p1: m.p1, p2: m.p2, p1Key: m.p1Key, p2Key: m.p2Key, date: m.date, series: {} });
+      // founder ruling 2026-10-18 (phase 2): the round and api-tennis's qualifying flag ride on every captured row, so a
+      // Challenger / qualifying close can join the master later by key, not a name-and-date guess (the newest snapshot wins)
+      if (m.tournamentRound != null) o.round = m.tournamentRound;
+      if (typeof m.qualifying === 'boolean') o.qualifying = m.qualifying;
+      if (m.tour) o.event = m.tour;
       const t = o.series[label] || (o.series[label] = { p1: new Map(), p2: new Map() });
       for (const side of ['p1', 'p2']) for (const x of s[side] || []) if (Array.isArray(x) && x[0] != null) t[side].set(String(x[0]), Number(x[1]));
     }
@@ -148,7 +153,8 @@ function deriveRow(ek, o, start, nowMs) {
   }
   if (!best) return { reason };
   return { row: { eventKey: Number(ek), date: o.date, p1Key: o.p1Key, p2Key: o.p2Key, p1Name: o.p1, p2Name: o.p2,
-    p1: best.a[1], p2: best.b[1], at: iso(best.atMs), trueStart: iso(start.ms), startSource: start.source, book: best.label } };
+    p1: best.a[1], p2: best.b[1], at: iso(best.atMs), trueStart: iso(start.ms), startSource: start.source, book: best.label,
+    round: o.round != null ? o.round : null, qualifying: typeof o.qualifying === 'boolean' ? o.qualifying : null, event: o.event || null } };
 }
 
 /** Merge fresh rows into held ones (see header). Returns { rows, added, replaced }. */
