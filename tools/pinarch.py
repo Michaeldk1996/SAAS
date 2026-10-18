@@ -652,8 +652,10 @@ def export_rows(rows):
     return out
 
 
+# founder ruling 2026-10-18 (phase 2): event_qualification too — every archive close records api-tennis's own qualifying
+# flag beside its event key and round, so Challenger and ATP qualifying closes can join the master by key
 API_FIELDS = ('event_winner', 'event_status', 'tournament_round', 'tournament_name', 'event_type_type', 'event_date', 'event_final_result',
-              'event_first_player', 'event_second_player', 'tournament_key')
+              'event_first_player', 'event_second_player', 'tournament_key', 'event_qualification')
 
 
 def refresh_keys(out, fetch):

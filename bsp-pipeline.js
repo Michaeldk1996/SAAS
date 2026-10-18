@@ -2181,6 +2181,9 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
     bestOdds: { p1: bestP1, p2: bestP2 },
     // New: enriched from API-Tennis if a matching fixture was found
     tournamentRound: null,
+    // founder ruling 2026-10-18 (phase 2): api-tennis's own qualifying flag, carried so every capture of this card's
+    // prices records it (null = no fixture matched)
+    qualifying: null,
     p1Key: null,
     p2Key: null,
     h2h: null,
@@ -2253,6 +2256,7 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   match.courtSpeed = courtSpeed;
 
   match.tournamentRound = fixture.tournament_round;
+  match.qualifying = fixture.event_qualification === 'True';
 
   // CORRECTNESS FIX: findApiTennisFixture() matches by last name in EITHER
   // player order (see its OR clause), so fixture.event_first_player is NOT
@@ -3200,6 +3204,7 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     odds: { p1: null, p2: null, bookmaker: null },
     bestOdds: { p1: null, p2: null },
     tournamentRound: fixture.tournament_round,
+    qualifying: fixture.event_qualification === 'True',   // founder ruling 2026-10-18 (phase 2): carried to every capture
     p1Key,
     p2Key,
     h2h: null,
@@ -3391,6 +3396,7 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     odds: { p1: null, p2: null, bookmaker: null },
     bestOdds: { p1: null, p2: null },
     tournamentRound: fixture.tournament_round,
+    qualifying: fixture.event_qualification === 'True',   // founder ruling 2026-10-18 (phase 2): carried to every capture
     p1Key,
     p2Key,
     h2h: null,
