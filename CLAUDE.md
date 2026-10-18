@@ -173,6 +173,14 @@ Full source detail, book ladder, card and close rules: `.claude/rules/odds.md`.
   Database holds. **Test:** `tools/price-consistency.mjs` on every publish; a match that differs is a dash on every page
   and named in one Telegram for the run, never a reason to stop the site updating (founder 2026-10-18) — `.claude/rules/odds.md`.
 - **One task owns price sources.** Every change to which book, feed or cut prices a match goes through the price-source task only (founder 2026-10-16) — `.claude/rules/odds.md`.
+- **The source order, one source per match:** Tennis-Data Pinnacle > our Pinnacle archive close > Pinnacle (approx.) at
+  start − 10 > Pinnacle (approx.) api-tennis > Bet365 > a dash; a snapshot is never labelled a close — `.claude/rules/odds.md`.
+- **The archives are append-only:** rows are only added (a correction is a new row naming the one it supersedes); a count
+  that goes down stops the publish unless an approved, committed override says why — `.claude/rules/pinnacle-archive.md`.
+- **Names join by identity, never a guess:** an archive spelling meets a player only through the key table or the
+  page-spelling table (every spelling we hold for him counts); two candidates are a dash — `.claude/rules/odds.md`.
+- **Walkovers:** a match where no ball was played is a dash and counts in no W–L, H2H or ROI; a match that started is
+  played and priced; sources that disagree keep the dash — `.claude/rules/odds.md`, `.claude/rules/pipeline-records.md`.
 
 ---
 
