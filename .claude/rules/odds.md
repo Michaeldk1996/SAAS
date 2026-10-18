@@ -275,19 +275,35 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
 - **Lag (same ruling):** the publish fails when Market edge's index does not name the master as its source or its latest
   match is not the Database's (`tools/price-consistency.mjs`, before the site-data upload; a committed floor shipped
   after a failed build fails it). **Test:** `tools/test-price-consistency.mjs` part 6 (one day behind; no source).
-  **Test:** `tools/price-consistency.mjs` (pipeline.yml, before the site-data upload; fails the publish): over every 2026
+  **Test:** `tools/price-consistency.mjs` (pipeline.yml, before the site-data upload): over every 2026
   ATP main-draw career match and a 1-in-10 player sample of every year, the page's own functions — the Database join, the
   tab row, the Form tab, the H2H tab (1-in-20 sample), the Market edge shard row — give one `price | other price | hover`
-  per match; any difference on a match the Database holds is red. Unit locks: `test-ten332-tournament.mjs` "founder ruling
+  per match; a difference is quarantined (below), never a reason to stop the publish. Unit locks: `test-ten332-tournament.mjs` "founder ruling
   2026-10-17 (item 1)", `tools/test-market-edge-basis.js`.
+- **One match problem never stops the site from updating** (founder ruling 2026-10-18; replaces "a difference fails the
+  publish"). When a page would price a match the master does not hold — or prices it differently — the run still
+  publishes, and that one match is a **dash on every page**, Market edge included, so every page still agrees:
+  `tools/price-guard-run.mjs` writes it to `price-quarantine.json` (the Database row, the Market edge row, the page that
+  tripped, the likely cause), re-runs `build-market-edge.js` with `PRICE_QUARANTINE` (its master row leaves every shard;
+  a player left with no row still gets a rewritten shard), publishes `_site/price-quarantine.json` (the join prices no
+  quarantined row: `dbPriceJoinRows` → `qz`, `h2hPriceJoin`; a 404 = none, any other failure fails the join), and checks
+  the site again as it will publish. ONE Telegram per run lists every affected match in plain words — "Gaubas v Miguel,
+  Rio 2026: Market edge priced it, the master didn't. Likely cause: name spelling ('Miguel L.' in the Database vs
+  'G. Miguel')." — sent after the upload by `tools/price-alert-send.mjs` (an unsent message is an `::error::`, never a red
+  run); a match a page still prices after the dash is named NOT CLEARED. The quarantine is rebuilt every run, so a match
+  that joins cleanly comes back by itself — no manual step. Only a check that could not run (no player, Market edge
+  lagging the master, a page function that threw) still fails the run; **the archive gate is the one data gate that stops
+  a publish.** **Test:** `tools/test-price-quarantine.mjs` (one unmatched match: the run publishes, it is dashed on every
+  page, one alert is sent; a different Market edge price: dashed by its Database row; MUTANT: Market edge still pricing the
+  dashed match → red; a check that cannot run still fails).
 - **No other price path for anything the master holds** (founder rulings 2026-10-17, round 2 items 3 and 5). For an ATP
   main-draw match (team events and pre-2010 included) every surface reads the Database join and nothing else: a match the
   join does not hold is a dash (no closes-shard, no Bet365 archive, no captured price stands in); while the join loads the
   cell is blank and repaints, a failed load is a dash (`sfDbPxApply`, `sfMasterClass`; Market edge rows `meRowFromCareer`;
   the profile `masterClass`). The Head to Head page's captured-Pinnacle step (`h2hCapPinnacle`) is removed. The Playing style
   meeting rows and the Match Stats header prices read the join. The legacy profile odds card shows the master price, never an
-  average of books. The guard fails the publish on a master-class match a surface prices while the join does not hold it
-  ("own price path"). *Remaining own path:* Challenger, qualifying and ITF keep the closes price (`FH_BOOK_ORDER`) until
+  average of books. A master-class match a surface prices while the join does not hold it ("own price path") is
+  quarantined — a dash on every page — and named in the run's alert (founder ruling 2026-10-18, below). *Remaining own path:* Challenger, qualifying and ITF keep the closes price (`FH_BOOK_ORDER`) until
   phase 2 adds Challenger and ATP qualifying to the master (ITF stays out). **Test:** `tools/test-price-consistency.mjs`
   control 3, `test-ten332-tournament.mjs` test 22 (dash, blank while loading, Challenger control), `test-ten437-h2h.mjs`
   "no captured step", `test-ten334-overview.mjs`.
@@ -300,19 +316,30 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   dash** — never picked. `tools/started-evidence.js` (verdict, run in `pipeline.yml` after the career-history store is
   written) → `build-database-yield.js` (`startedOf`, `meta.started`); the td-feed passes an api-tennis "Awarded" with an
   archive close through as its comment (`FEED_RESULT_STATUSES`). A started non-result is priced BEHIND the retired flag
-  (settled on the official result, like a retirement), so no Database figure, ROI or baseline moves. **Test:**
-  `tools/test-started-priced.js` (a started "Awarded" priced, a true walkover a dash, disagreeing sources a dash; the
-  mutant that removes the rule goes red).
+  (settled on the official result, like a retirement), so no Database figure, ROI or baseline moves. **A non-result the
+  sources show PLAYED OUT is a normal played match** (founder ruling 2026-10-18: the US Open 2019 final, Nadal d.
+  Medvedev, labelled "Sched"): every career row that speaks shows no retirement, default or walkover and the winner reached
+  the sets the format needs (best-of from Tennis-Data's row) → verdict `completed` → a Database row like any Completed
+  match, counted in every Database figure (`meta.started.completed`, `completedRows`); one row played out and the other a
+  retirement stays `started` (behind the flag); our live-flip says only that it started. **Test:**
+  `tools/test-started-priced.js` (a started "Awarded" priced, a true walkover a dash, disagreeing sources a dash, a
+  played-out "Sched" a Database row; two mutants — the started rule removed, a played-out match kept behind the flag —
+  go red).
 - **The archive gate: nothing empty or partial publishes** (founder ruling 2026-10-17, close-out item 3). The archive
   export, the snapshot export, the Database feed, the evidence step and the Database build are fail-closed in
   `pipeline.yml` (no `|| true`, no fallback to a partial Database); after them `tools/archive-gate.mjs` fails the run when
   any archive count is missing or empty, or below the last good run's (the published `database-yield-master-meta.json`:
   master rows, export events, feed rows, snapshot rows, era-shard rows; a 404 = the first publish, said out loud; any other
   read failure fails). A failed run uploads nothing, so the site keeps the last good master and pre-2010 file, and the
-  "Alert — the Pinnacle archive gate failed" step sends a Telegram. A deliberate reduction (a ruled hold-back) lands as a
-  reviewed `archive-gate-accept.json` (`{ "masterRows": { "atMost": N, "reason": "…" } }`), never a data-bot file.
-  **Test:** `tools/test-archive-gate.mjs` (archive unreachable → fail; fewer rows than the last good master → fail; the
-  wiring: no tolerant step, the gate before the upload, the alert on failure).
+  "Alert — the Pinnacle archive gate failed" step sends a Telegram. **A legitimate drop (a dedupe, a junior removal) is an
+  approved, logged override** (founder ruling 2026-10-18): `node tools/archive-gate.mjs accept --key masterRows --expect N
+  --reason "…"` writes an entry to `archive-gate-accept.json` (key, expected count, reason, who, when, a check over them),
+  committed with the change that causes the drop. The gate takes it only when its check matches (a hand edit is refused),
+  the file is tracked in git (a file put on the runner is refused) and the count is at or above the expected one; every
+  override used is logged (the run log, the step summary, `database-yield-master-meta.json` `overrides`); once the lower
+  count is published the entry says it is no longer needed. **Test:** `tools/test-archive-gate.mjs` (archive unreachable →
+  fail; fewer rows than the last good master → fail; an approved override passes and is logged; a hand-edited or
+  uncommitted override, or a drop below it, fails; CONTROL: the same drop with no override fails; the wiring).
 - **Archive names and round tolerance (same rulings, items 1–2):** the join meets the archive's spelling through
   `ARCHIVE_NAME_ALIASES` (key) and `ARCHIVE_PAGE_SPELLINGS` (the page's own spelling where no key exists:
   "Dolgopolov O." = A. Dolgopolov, "Zhang Ze" = Z. Zhang, Moroni, Statham, Madaras, Aragone, Monteiro, Wu Tung-Lin,

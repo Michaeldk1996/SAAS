@@ -170,8 +170,8 @@ Full source detail, book ladder, card and close rules: `.claude/rules/odds.md`.
 - **Kibl has no history endpoint** — uncaptured prices are lost permanently. The archive must run daily.
 - **One price per match, on every page** (founder 2026-10-17, standing): every page and tab reads a match's price from
   the Database join — the same price, label and hover; no page builds its own or falls back on its own for a match the
-  Database holds. **Test:** `tools/price-consistency.mjs` fails the publish on any difference; exceptions (matches the
-  Database does not hold, an unloaded join, the H2H page's captured step) are reported, pending a ruling — `.claude/rules/odds.md`.
+  Database holds. **Test:** `tools/price-consistency.mjs` on every publish; a match that differs is a dash on every page
+  and named in one Telegram for the run, never a reason to stop the site updating (founder 2026-10-18) — `.claude/rules/odds.md`.
 - **One task owns price sources.** Every change to which book, feed or cut prices a match goes through the price-source task only (founder 2026-10-16) — `.claude/rules/odds.md`.
 
 ---
