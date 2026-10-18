@@ -72,6 +72,40 @@ check('no snapshot label reads "Pinnacle (approx.) close" anywhere in the shippe
     re.search(r'Pinnacle \(approx\.\)\s*close', open(os.path.join(ROOT, f), encoding='utf8').read())
     for f in ('bsp-consult-dashboard.html', 'series.js', 'player-profile-v2.js', 'build-database-yield.js', 'tools/tdarch.py')))
 
+# ── 2b. our captured Bet365 price (cut at Oddspapi's trueStart alone) — founder ruling 2026-10-18: every hover on it reads
+#        exactly "Bet365 (approx.) · not a confirmed close"; the price itself is unchanged. Runs the page's OWN functions.
+import subprocess, json as _json
+JS = r"""
+const fs = require('fs'); const h = fs.readFileSync(process.argv[1], 'utf8');
+const fn = n => { const i = h.indexOf('function ' + n + '('); if (i < 0) throw new Error('no ' + n); let d = 0, j = h.indexOf('{', i);
+  for (let k = j; k < h.length; k++) { if (h[k] === '{') d++; else if (h[k] === '}' && --d === 0) return h.slice(i, k + 1); } };
+const cst = n => { const m = new RegExp('const ' + n + ' = (?:\'[^\']*\'|"[^"]*"|\\{[^}]*\\});').exec(h); if (!m) throw new Error('no ' + n); return m[0]; };
+const src = ['FH_BOOK', 'FH_SRC', 'FH_B365_HOVER', 'FH_B365_APPROX_HOVER', 'SF_APPROX_HOVER', 'SF_OD10_HOVER', 'FH_MONO'].map(cst).join('\n') + '\n' +
+  ['fhB365Approx', 'fhSrcTitle', 'fhH2hSrcTitle', 'fhB365Tag', 'fhB365Meta'].map(fn).join('\n');
+const f = new Function(src + '; return { fhSrcTitle, fhH2hSrcTitle, fhB365Tag, fhB365Meta };')();
+const t = s => (/title="([^"]*)"/.exec(s) || [])[1];
+const cap = { book: 'B', src: 'cap', price: 1.8, oppPrice: 2.0 }, td = { book: 'B', src: 'td', price: 1.8, oppPrice: 2.0 };
+console.log(JSON.stringify({ cap: [f.fhSrcTitle(cap), f.fhH2hSrcTitle(cap), t(f.fhB365Tag(cap, false)), t(f.fhB365Tag(cap, true)), t(f.fhB365Meta(cap))],
+  td: [f.fhSrcTitle(td), f.fhH2hSrcTitle(td)] }));
+"""
+def hovers_of(html_path):
+    out = subprocess.run(['node', '-e', JS, html_path], capture_output=True, text=True)
+    return _json.loads(out.stdout) if out.returncode == 0 else {'err': out.stderr[-400:]}
+H = os.path.join(ROOT, 'bsp-consult-dashboard.html')
+hv = hovers_of(H)
+WANT = 'Bet365 (approx.) · not a confirmed close'
+check('our captured Bet365 price: every hover (source title, H2H title, B365 tag, sheet meta) reads exactly "' + WANT + '"',
+      'cap' in hv and all(x == WANT for x in hv['cap']) and snapshot_ok(WANT), hv)
+check('control: Tennis-Data\'s own Bet365 column keeps its words (outside the rule until ruled)',
+      'td' in hv and hv['td'] == ['Bet365 close · Tennis-Data', 'Bet365 closing odds, Pinnacle not available'], hv)
+check('the Overview pop-up and the Head to Head page route a captured Bet365 price to the same line',
+      "priceTip: r.book === 'B' ? (fhB365Approx(r) ? FH_B365_APPROX_HOVER" in html and "fhB365Approx(r) ? FH_B365_APPROX_HOVER : FH_B365_HOVER) : " in html)
+import tempfile
+mut = html.replace(" : fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book ? ", " : r && r.book ? ", 1)
+with tempfile.NamedTemporaryFile('w', suffix='.html', delete=False, encoding='utf8') as fh: fh.write(mut); mp = fh.name
+mh = hovers_of(mp); os.unlink(mp)
+check('MUTANT (the captured-Bet365 branch removed from fhSrcTitle): the rule goes red', mut != html and 'cap' in mh and mh['cap'][0] != WANT, mh)
+
 # ── 3. the Database feed's close codes come from the export only ──
 src = open(os.path.join(HERE, 'pinarch.py'), encoding='utf8').read()
 tdf = src[src.index('def cmd_td_feed'):]; tdf = tdf[:tdf.index('\ndef ', 10)]
