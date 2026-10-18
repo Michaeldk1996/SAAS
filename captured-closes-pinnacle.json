@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-18T13:11:51.451Z",
+ "generatedAt": "2026-10-18T16:30:48.237Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "ba3efb913a432f051647ebb82d784d466ccad570",
-  "at": "2026-10-18T12:53:39Z"
+  "commit": "4a596de2ff4eddac7c88a48b76c2e215d916645d",
+  "at": "2026-10-18T16:18:03Z"
  },
- "commitsScanned": 5330,
+ "commitsScanned": 5346,
  "lastRun": {
-  "from": "2026-10-18T09:02:56Z",
-  "snapshots": 18,
-  "added": 2,
+  "from": "2026-10-18T12:53:39Z",
+  "snapshots": 17,
+  "added": 1,
   "replaced": 0,
-  "series": 42,
-  "kept": 19,
+  "series": 43,
+  "kept": 20,
   "bySource": {
-   "api-tennis-live": 19
+   "api-tennis-live": 20
   },
   "byBook": {
-   "Pinnacle +30s": 19
+   "Pinnacle +30s": 20
   },
   "dropped": {
    "noStart": 23
@@ -9112,6 +9112,23 @@
    "p2": 1.581,
    "at": "2026-10-18T10:15:47.900Z",
    "trueStart": "2026-10-18T10:31:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": null,
+   "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12171972,
+   "date": "2026-10-18",
+   "p1Key": 7102,
+   "p2Key": 818,
+   "p1Name": "C. Chidekh",
+   "p2Name": "G. Onclin",
+   "p1": 1.333,
+   "p2": 3.46,
+   "at": "2026-10-18T10:48:14.550Z",
+   "trueStart": "2026-10-18T13:16:24.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
    "round": null,
