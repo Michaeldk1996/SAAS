@@ -405,6 +405,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # best-effort: a missing, expired or unreadable artifact never fails the run (the lookup loop exits non-zero
+          # when no run carries one — on 18 Oct that failed two runs under bash -e)
+          set +e
           rm -f lower-unpriced.json
           RID=$(gh run list -R "$GITHUB_REPOSITORY" --workflow historical-archive.yml --status success -L 20 --json databaseId -q '.[].databaseId' 2>/dev/null | while read -r r; do
             gh api "repos/$GITHUB_REPOSITORY/actions/runs/$r/artifacts" -q '.artifacts[] | select(.name=="lower-unpriced" and (.expired|not)) | .id' 2>/dev/null | head -1 | grep -q . && { echo "$r"; break; }; done)
