@@ -4220,7 +4220,10 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // its hole rows at all, so none of them may claim its Indoors.
     const adoptedYears = new Set([...adopted].map(row => String(row.year)));
     for (const r of rows) {
-      if (r.holeFill && !r.te) r.indoor = adoptedYears.has(String(r.year)) && !!r._indoor;   // a TE-paired row keeps TE's court
+      // a TE-paired row keeps TE's court. TEN-449 review: on a TE-merged player the table was already built from r.indoor
+      // (careerByYearFromRows counts indoor === true), so the row ships exactly what was counted — setting it from _indoor
+      // here listed a row as indoor that the Indoors cell never counted.
+      if (r.holeFill && !r.te) r.indoor = teApplied ? r.indoor === true : adoptedYears.has(String(r.year)) && !!r._indoor;
       delete r._indoor;   // TEN-313 build-time carrier, never shipped
     }
 

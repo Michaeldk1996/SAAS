@@ -179,6 +179,23 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   let threw = null;
   try { await run(true, false); } catch (e) { threw = e; }
   check('TE_INGEST on with no store: the run stops (fail-closed)', () => assert.ok(threw && /te-history-index\.json is missing/.test(threw.message), String(threw)));
+  // TEN-449 review: a retirement api-tennis dates 6 days after TE (Kursumlijska Banja 2024) is ONE match, not two;
+  // the second pass takes leftovers only (same opponent, same result, ≤ 10 days) and never steals a first-pass pair
+  {
+    const TJ = require('../te-join.js');
+    const te = [{ date: '2024-09-17', opp: 'Fiorentini A.', event: 'Futures 2024', won: false }, { date: '2024-09-10', opp: 'Fiorentini A.', event: 'Futures 2024', won: false }];
+    const ours = [{ date: '2024-09-23', opponent: 'A. Fiorentini', tournament: 'M15 Kursumlijska Banja 18', won: false, src: 'fixtures' },
+      { date: '2024-09-11', opponent: 'A. Fiorentini', tournament: 'M15 Kursumlijska Banja 17', won: false, src: 'fixtures' }];
+    const p = TJ.pairRows(te, ours);
+    check('pairing: a row 6 days from TE with the same opponent and result pairs (one match = one row)', () => {
+      assert.strictEqual(p.pairs.length, 2); assert.strictEqual(p.teOnly.length, 0); assert.strictEqual(p.oursOnly.length, 0);
+      assert.strictEqual(p.pairs.find((x) => x.ours.date === '2024-09-11').te.date, '2024-09-10', 'the first-pass pair is kept');
+    });
+    check('pairing: 22 days apart, or a different result, does not pair', () => {
+      assert.strictEqual(TJ.pairRows([{ date: '2024-09-01', opp: 'Fiorentini A.', event: 'Futures 2024', won: false }], [ours[0]]).pairs.length, 0);
+      assert.strictEqual(TJ.pairRows([{ ...te[0], won: true }], [ours[0]]).pairs.length, 0);
+    });
+  }
   load(false);
   console.log(`\nTEN-443 TE ingest: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

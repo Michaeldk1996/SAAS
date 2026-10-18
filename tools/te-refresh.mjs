@@ -53,11 +53,15 @@ const YEAR = NOW.getUTCFullYear();
 const DAY = Math.floor((NOW - Date.UTC(YEAR, 0, 1)) / 864e5);
 
 async function apiTennisPlayer(key) {
+  // TEN-449: a lookup that FAILS stops the run (all-or-nothing, alerted); only a player api-tennis holds no birthday for
+  // stays unmatched. Degrading to null here left every new player silently unmatched when the key was missing.
   const k = process.env.API_TENNIS_KEY;
-  if (!k) return null;
+  if (!k) throw new Error('API_TENNIS_KEY is not set — a new player cannot be identified');
   const r = await fetch(`https://api.api-tennis.com/tennis/?method=get_players&APIkey=${k}&player_key=${key}`);
+  if (!r.ok) throw new Error(`api-tennis get_players for player ${key}: HTTP ${r.status}`);
   const j = await r.json().catch(() => null);
-  const p = j && Array.isArray(j.result) ? j.result[0] : null;
+  if (!j || !Array.isArray(j.result)) throw new Error(`api-tennis get_players for player ${key}: unreadable answer`);
+  const p = j.result[0] || null;
   if (!p || !p.player_bday) return null;
   const [d, m, y] = String(p.player_bday).split('.');
   const full = String(p.player_full_name || '').trim().split(/\s+/);
@@ -93,6 +97,7 @@ function diffRows(oldRows, newRows) {
 async function main() {
   const idxF = path.join(ROOT, G.INDEX);
   if (!fs.existsSync(idxF)) { console.log(`::error::${G.INDEX} is missing — the refresh never builds a store from nothing`); process.exit(1); }
+  if (!process.env.API_TENNIS_KEY) { console.log('::error::API_TENNIS_KEY is not set — a new player cannot be identified by date of birth; refusing to run'); process.exit(1); }
   const idx = JSON.parse(fs.readFileSync(idxF, 'utf8'));
   // the new store starts as an exact copy of the committed one
   fs.cpSync(path.join(ROOT, G.STORE_DIR), path.join(OUT_DIR, G.STORE_DIR), { recursive: true });

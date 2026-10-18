@@ -68,8 +68,8 @@ function run(d, mode, opts = {}, now = '2026-10-19T05:00:00Z', extra = {}) {
   let code = 0, out = '';
   try {
     out = execFileSync(process.execPath, ['--import', STUB, TOOL, '--root', d, '--mode', mode, ...(extra.args || [])], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
-      env: { ...process.env, ...(extra.env || {}), TE_DELAY_MS: '0', TE_STUB_PAGES: path.join(d, 'pages.json'), TE_STUB_LOG: log, TE_ROSTER: path.join(d, 'roster.json'),
-        API_TENNIS_KEY: 'x', TE_NOW: now, TE_CACHE: fs.mkdtempSync(path.join(os.tmpdir(), 'te-c-')) } });
+      env: { ...process.env, API_TENNIS_KEY: 'x', ...(extra.env || {}), TE_DELAY_MS: '0', TE_STUB_PAGES: path.join(d, 'pages.json'), TE_STUB_LOG: log, TE_ROSTER: path.join(d, 'roster.json'),
+        TE_NOW: now, TE_CACHE: fs.mkdtempSync(path.join(os.tmpdir(), 'te-c-')) } });
   } catch (e) { code = e.status; out = String(e.stdout || '') + String(e.stderr || ''); }
   const reqs = fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) : [];
   return { code, out, reqs };
@@ -152,6 +152,20 @@ const te = (url) => url.includes('tennisexplorer');
     assert.strictEqual(r.code, 0, r.out);
     assert.strictEqual(r.reqs.filter(te).filter((u) => /newman-1\/\?annual=/.test(u)).length, 3);
     assert.ok(!r.reqs.some((u) => /noprofile|player_key=3\b/i.test(u)), 'a player without a profile was looked up');
+  });
+}
+{
+  // TEN-449: no api-tennis key, or a failed birthday lookup, stops the run — never a silent "unmatched" for every new player
+  const d = repo(); const before = snapshot(d);
+  const r = run(d, 'weekly', {}, undefined, { env: { API_TENNIS_KEY: '' } });
+  check('no API_TENNIS_KEY: exit 1 before any request; store byte-identical; says why', () => {
+    assert.strictEqual(r.code, 1, r.out); assert.strictEqual(r.reqs.length, 0, r.reqs.join(' ')); assert.strictEqual(snapshot(d), before);
+    assert.ok(/API_TENNIS_KEY is not set/.test(r.out), r.out);
+  });
+  const d2 = repo(); const before2 = snapshot(d2);
+  const r2 = run(d2, 'weekly', {}, undefined, { env: { TE_STUB_API_STATUS: '500' } });
+  check('api-tennis lookup fails (HTTP 500): the run stops non-zero; store byte-identical; the new player is not written unmatched', () => {
+    assert.notStrictEqual(r2.code, 0, r2.out); assert.strictEqual(snapshot(d2), before2); assert.ok(/get_players for player 2: HTTP 500/.test(r2.out), r2.out);
   });
 }
 {
