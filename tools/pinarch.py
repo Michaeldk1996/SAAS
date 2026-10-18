@@ -1084,10 +1084,14 @@ def cmd_derive_held(frm, to, dry_run=False):
 # Oddspapi files api-tennis's "ATP Davis Cup - World Group …" singles under its own "Davis Cup" category (founder brief
 # 2026-10-15 item 1: all 24 failed ATP joins of 17 Sep – 14 Oct were Davis Cup ties, invisible to an ATP/Challenger list)
 DISCOVERY_CATEGORIES = ('ATP', 'Challenger', 'Davis Cup')
-DISCOVERY_VERSION = 2
+# The back-fill also pulls ITF Men (founder ruling 2026-10-18 item 3: "pull any missing Oddspapi history for qualifying,
+# Challenger and ITF fixtures from 13 Apr"; the endpoint is free). Only the back-fill reads ITF: the live-flip joins
+# (derive, pull, start - 10) keep DISCOVERY_CATEGORIES, so no ITF fixture is ever a candidate for an ATP / Challenger match.
+BACKFILL_CATEGORIES = DISCOVERY_CATEGORIES + ('ITF Men',)
+DISCOVERY_VERSION = 3
 
 
-def discovery(frm, to, cache_path, odds_key, max_age_h=6):
+def discovery(frm, to, cache_path, odds_key, max_age_h=6, itf=False):
     """Oddspapi tennis fixtures (the only METERED call here: /v4/fixtures, one per 6-day window), cached in
     `cache_path` so each window is asked once; the window holding `now` is re-asked once it is max_age_h old."""
     A = _load('aor', 'archive-oddspapi-raw.py')
@@ -1109,7 +1113,7 @@ def discovery(frm, to, cache_path, odds_key, max_age_h=6):
                 print(f'::warning::Oddspapi fixtures {k} failed ({e}): that window is skipped this run', flush=True)
             else:
                 keep = [{x: f.get(x) for x in ('fixtureId', 'participant1Name', 'participant2Name', 'startTime', 'trueStartTime', 'categoryName', 'tournamentName', 'statusName')}
-                        for f in rows if f.get('categoryName') in DISCOVERY_CATEGORIES]
+                        for f in rows if f.get('categoryName') in BACKFILL_CATEGORIES]
                 cache['windows'][k] = {'at': now.isoformat(timespec='seconds'), 'fixtures': keep}
         d = w_end
     tmp = cache_path + '.tmp'
@@ -1119,7 +1123,8 @@ def discovery(frm, to, cache_path, odds_key, max_age_h=6):
     seen = {}
     for w in cache['windows'].values():
         for f in w['fixtures']:
-            seen[f['fixtureId']] = f
+            if itf or f.get('categoryName') in DISCOVERY_CATEGORIES:
+                seen[f['fixtureId']] = f
     return list(seen.values()), calls
 
 
@@ -1320,7 +1325,7 @@ def backfill_queue(fixtures, held_pin, in_bucket, state, now, frm, to):
         st = iso_ms(f.get('trueStartTime') or f.get('startTime'))
         if st is None or not (frm <= st < to) or st > now or '/' in str(f.get('participant1Name')):
             continue
-        if f.get('categoryName') not in DISCOVERY_CATEGORIES:
+        if f.get('categoryName') not in BACKFILL_CATEGORIES:
             continue
         fid = f['fixtureId']
         if fid in held_pin or fid in in_bucket or (state.get(fid) or {}).get('n404', 0) >= BACKFILL_404_TRIES:
@@ -1341,7 +1346,7 @@ def cmd_backfill(budget_s, cache_path, state_path, frm=None, to=None, clock=None
     now = dt.datetime.now(dt.timezone.utc)
     frm = frm or (now - dt.timedelta(days=BACKFILL_RETENTION_DAYS + 5))
     to = to or dt.datetime(2026, 9, 17, tzinfo=dt.timezone.utc)   # from 17 Sep the live-flip pulls cover every start
-    disc, calls = discovery(frm, to, cache_path, okey)
+    disc, calls = discovery(frm, to, cache_path, okey, itf=True)
     held_pin, any_raw = set(), set()
     for r in select_all(RAW, 'id,fixture_id,books'):
         any_raw.add(r['fixture_id'])
@@ -1355,10 +1360,10 @@ def cmd_backfill(budget_s, cache_path, state_path, frm=None, to=None, clock=None
     state = json.load(open(state_path)) if os.path.exists(state_path) else {}
     q = backfill_queue(disc, held_pin, in_bucket, state, now, frm, to)
     total = collections.Counter(iso_ms(f.get('trueStartTime') or f.get('startTime')).strftime('%Y-%m') for f in disc
-                                if f.get('categoryName') in DISCOVERY_CATEGORIES and '/' not in str(f.get('participant1Name'))
+                                if f.get('categoryName') in BACKFILL_CATEGORIES and '/' not in str(f.get('participant1Name'))
                                 and iso_ms(f.get('trueStartTime') or f.get('startTime')) and frm <= iso_ms(f.get('trueStartTime') or f.get('startTime')) < to)
     queued = collections.Counter(st.strftime('%Y-%m') for st, _, _ in q)
-    print(f'### back-fill {frm.date()}..{to.date()}: {sum(total.values())} ATP/Challenger singles listed, {len(q)} to pull, oldest first; '
+    print(f'### back-fill {frm.date()}..{to.date()}: {sum(total.values())} ATP/Challenger/Davis Cup/ITF Men singles listed, {len(q)} to pull, oldest first; '
           f'{len(in_bucket)} bucket objects wait for the daily import; Oddspapi fixture calls (metered) {calls}', flush=True)
     counts = {'waitS': 0, 'http429': 0, 'yieldS': 0}
     done, errs, last = collections.Counter(), collections.Counter(), [0.0]

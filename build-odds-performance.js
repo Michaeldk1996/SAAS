@@ -469,6 +469,10 @@ function main() {
     });
   });
 
+  // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
+  const idGate = require('./td-identity.js').buildIdentityGate(ROOT, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
+  log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
+
   const master = JSON.parse(fs.readFileSync(MASTER_PATH, 'utf8'));
   const MC = {}; ((master.meta && master.meta.cols) || []).forEach((c, i) => { MC[c] = i; });
   if (MC.pw == null || !Array.isArray(master.rows)) throw new Error(`${MASTER_PATH}: not a master file`);
@@ -566,7 +570,8 @@ function main() {
         { name: row.winner, won: true, p: pWin, price: aw, best: bestW, fav: aw < al, oppRank: lr, oppPrice: al, oppP: pLose },
         { name: row.loser, won: false, p: pLose, price: al, best: bestL, fav: al < aw, oppRank: wr, oppPrice: aw, oppP: pWin },
       ].forEach((side) => {
-        const player = resolve(side.name);
+        const hit0 = resolve(side.name);
+        const player = hit0 && idGate && !idGate.allow(hit0.key, side.name, row.date) ? null : hit0;
         if (!player) return;
         stats.matchedSides += 1;
         const b = bucketsFor(player.key);
@@ -723,6 +728,7 @@ function main() {
   });
 
   fs.writeFileSync(INDEX_PATH, JSON.stringify({
+    identityGate: idGate ? idGate.stats : null,
     version: ODDS_PERF_SCHEMA_VERSION,
     builtAt: new Date().toISOString(),
     minMatches,

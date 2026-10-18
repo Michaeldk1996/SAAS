@@ -45,7 +45,7 @@ else {
       '2025-03-03,Test Open,ATP250,Outdoor,Hard,2nd Round,3,Tester A.,Pereira L.,10,30,Completed,1.5,2.6,1.5,2.7,1.5,2.7,1.48,2.6,file'];
     const mkRoot = (dir, builderSrc) => {
       mkdirSync(dir, { recursive: true });
-      for (const f of ['build-odds-performance.js', 'market-edge-core.js', 'build-database-yield.js']) copyFileSync(join(ROOT, f), join(dir, f));
+      for (const f of ['build-odds-performance.js', 'market-edge-core.js', 'build-database-yield.js', 'td-identity.js']) copyFileSync(join(ROOT, f), join(dir, f));
       writeFileSync(join(dir, 'build-market-edge.js'), builderSrc);
       mkdirSync(join(dir, 'odds-archive'), { recursive: true });
       writeFileSync(join(dir, 'odds-archive', '2025.csv'), [HEAD].concat(ROWS).join('\n') + '\n');

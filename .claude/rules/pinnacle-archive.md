@@ -82,7 +82,7 @@ Applies to `supabase/migrations/20261014120000_pinnacle_archive.sql`, `tools/pin
 - **Backlog pull** — `pinnacle-archive.yml` mode `pull-backlog` (`pull --hours N`): the same pull over the last N days, for
   every started match with no archive close and no Pinnacle +30 payload held.
 - **Back-fill** (founder brief 2026-10-15 item 4) — `.github/workflows/pinnacle-backfill.yml` (main only, every 6 h, ~5.4 h a
-  run, until nothing is left) runs `pinarch.py backfill`: every ATP / Challenger / Davis Cup singles fixture Oddspapi lists
+  run, until nothing is left) runs `pinarch.py backfill`: every ATP / Challenger / Davis Cup / ITF Men singles fixture Oddspapi lists (ITF Men added by founder ruling 2026-10-18 item 3; `BACKFILL_CATEGORIES`, read by the back-fill only — the live-flip joins keep `DISCOVERY_CATEGORIES`)
   from ~185 days back (its history window: on 15 Oct the 11–12 Apr fixtures already 404, 13 Apr on answer) to 17 Sep (from
   there the live-flip pulls cover every start), **oldest first**, with no Pinnacle +30 payload in the archive and no bucket
   object waiting for the daily import → its free `/v4/historical-odds` (`bookmakers=pinnacle+30`) as a raw row

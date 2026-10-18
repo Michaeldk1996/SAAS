@@ -40,7 +40,7 @@ const ROWS = [
 // end to end — the real Database builder over the synthetic archive, then the real Market edge builder over its master.
 function runBuilder(builderSrc, dbSrc = DB_BUILDER) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten325-'));
-  for (const f of ['build-odds-performance.js', 'market-edge-core.js']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
+  for (const f of ['build-odds-performance.js', 'market-edge-core.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, 'build-market-edge.js'), builderSrc);
   fs.writeFileSync(path.join(dir, 'build-database-yield.js'), dbSrc);
   fs.mkdirSync(path.join(dir, 'odds-archive'));

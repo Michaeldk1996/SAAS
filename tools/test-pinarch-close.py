@@ -210,12 +210,12 @@ fx = [{'fixtureId': 'b3', 'categoryName': 'ATP', 'participant1Name': 'A, B', 'st
       {'fixtureId': 'held', 'categoryName': 'ATP', 'participant1Name': 'G, H', 'startTime': '2026-05-02T10:00:00Z'},
       {'fixtureId': 'bucket', 'categoryName': 'ATP', 'participant1Name': 'I, J', 'startTime': '2026-05-02T11:00:00Z'},
       {'fixtureId': 'gone', 'categoryName': 'ATP', 'participant1Name': 'K, L', 'startTime': '2026-05-02T12:00:00Z'},
-      {'fixtureId': 'itf', 'categoryName': 'ITF Men', 'participant1Name': 'M, N', 'startTime': '2026-05-02T12:00:00Z'},
+      {'fixtureId': 'itf', 'categoryName': 'ITF Women', 'participant1Name': 'M, N', 'startTime': '2026-05-02T12:00:00Z'},
       {'fixtureId': 'dbl', 'categoryName': 'ATP', 'participant1Name': 'O / P', 'startTime': '2026-05-02T12:00:00Z'},
       {'fixtureId': 'old', 'categoryName': 'ATP', 'participant1Name': 'Q, R', 'startTime': '2026-04-10T12:00:00Z'},
       {'fixtureId': 'late', 'categoryName': 'ATP', 'participant1Name': 'S, T', 'startTime': '2026-09-20T12:00:00Z'}]
 q = P.backfill_queue(fx, {'held'}, {'bucket'}, {'gone': {'n404': 2}}, NOW, FRM, TO)
-check('back-fill queue: oldest first; skips a held Pinnacle +30 payload, a bucket object awaiting import, two 404s, ITF, doubles, out of window',
+check('back-fill queue: oldest first; skips a held Pinnacle +30 payload, a bucket object awaiting import, two 404s, ITF Women, doubles, out of window',
       [x[1] for x in q] == ['b1', 'b2', 'b3'], [x[1] for x in q])
 check('back-fill queue: a fixture with ONE 404 is asked again', [x[1] for x in P.backfill_queue(fx, set(), set(), {'b1': {'n404': 1}}, NOW, FRM, TO)][0] == 'b1')
 calls_gh, now2 = [], [0.0]
@@ -271,6 +271,15 @@ check('feed: control — the stored mid-match result is "noResult"; with the ref
 # item 1: the failed fixture joins — Davis Cup is discovered, compound surnames join (and nothing looser)
 check('discovery keeps Oddspapi\'s Davis Cup category (api-tennis files those ties as Atp Singles); an older cache is asked again',
       'Davis Cup' in P.DISCOVERY_CATEGORIES and 'ITF Men' not in P.DISCOVERY_CATEGORIES and 'cache.get(\'v\') != DISCOVERY_VERSION' in inspect.getsource(P.discovery))
+# founder ruling 2026-10-18 item 3: the back-fill pulls ITF Men too; the live-flip joins never see an ITF fixture
+_now = dt.datetime(2026, 10, 18, tzinfo=dt.timezone.utc)
+_fx = [{'fixtureId': 'itf1', 'participant1Name': 'A, B', 'startTime': '2026-04-20T10:00:00Z', 'categoryName': 'ITF Men'},
+       {'fixtureId': 'ch1', 'participant1Name': 'C, D', 'startTime': '2026-04-20T11:00:00Z', 'categoryName': 'Challenger'},
+       {'fixtureId': 'w1', 'participant1Name': 'E, F', 'startTime': '2026-04-20T12:00:00Z', 'categoryName': 'ITF Women'}]
+_q = [x[1] for x in P.backfill_queue(_fx, set(), set(), {}, _now, dt.datetime(2026, 4, 13, tzinfo=dt.timezone.utc), dt.datetime(2026, 9, 17, tzinfo=dt.timezone.utc))]
+check('back-fill: ITF Men queued with ATP / Challenger (never ITF Women); the live-flip joins keep DISCOVERY_CATEGORIES (no ITF)',
+      _q == ['itf1', 'ch1'] and 'ITF Men' in P.BACKFILL_CATEGORIES and 'ITF Men' not in P.DISCOVERY_CATEGORIES
+      and 'itf=True' in inspect.getsource(P.cmd_backfill) and 'itf=True' not in inspect.getsource(P.cmd_derive), _q)
 fl2 = [{'event_key': 11, 'first_player': 'P. Lagutin', 'second_player': 'I. Parisca', 'first_live_seen_at': '2026-10-11T14:40:00Z',
         'last_not_live_seen_at': '2026-10-11T14:39:30Z', 'event_date': '2026-10-11', 'event_type_type': 'Challenger Men Singles'},
        {'event_key': 12, 'first_player': 'Wu Tung-Lin', 'second_player': 'M. Dahlin', 'first_live_seen_at': '2026-09-20T07:05:00Z',
