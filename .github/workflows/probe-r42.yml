@@ -1,0 +1,17 @@
+name: probe-r42 (branch only — Bergs record)
+on:
+  push:
+    branches: [claude/wonderful-fermat-clvs94]
+    paths: [tools/probe-r42/trigger]
+permissions: { contents: read, actions: read }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: bash tools/probe-r42/run.sh $(cat tools/probe-r42/trigger)
