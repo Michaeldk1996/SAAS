@@ -11544,7 +11544,8 @@ function ovPopModel(){
     if (tier !== 'all' && x.level !== tier) return;
     const r = meRowFromCareer(x, cl, k, name, idx);
     if (r.wo) return;                                         // N2: a walkover is not a match played
-    if (x.level !== 'atp') { r.price = null; r.oppPrice = null; r.book = null; r.src = null; }   // N8
+    // N8 superseded (founder ruling 2026-10-18 item 3): a Challenger / ITF / qualifying row takes the master join's price
+    // (meRowFromCareer → sfDbPxRows), a dash where it holds none — never its closes shard's
     r.mid = fhSafeId('ov' + k + '_' + idx);
     M.rows.push(r);
   });
@@ -15162,7 +15163,7 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
   // career row as the Head to Head page and the profile hand it over (its own date, result, round and opponent)
   // ruling 3: an ATP tour-level row (the master's class) reads the join only — a dash where it holds none, has not loaded
   // or failed. (sfDbPxRows is always defined on the page; only a data-layer harness slices this function without it.)
-  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){
+  if (!r.wo && typeof sfDbPxRows === 'function'){   // founder ruling 2026-10-18 (item 3): every level, qualifying included
     const d = sfDbPxRows(selfKey, selfName, [{ date: x.date, won: r.won, round: r.round, opp: x.opponent }])[0];
     if (d){ r.price = d.price; r.oppPrice = d.oppPrice; r.book = d.book; r.src = d.src; r.srcLabel = d.srcLabel; }
     else { r.price = null; r.oppPrice = null; r.book = null; r.src = null; r.srcLabel = null; }
@@ -16026,10 +16027,11 @@ function sfDbPxLoad(){ return typeof sfDbJoinLoad === 'function' ? Promise.resol
 // Founder ruling 2026-10-17 (ruling 3): the match classes the master holds — every ATP tour-level match (main draw, the team
 // events, before 2010 included; career-history level 'atp', not qualifying, not a walkover) — take their price from the
 // join ONLY: no closes-shard, Market edge shard or capture price stands in. The join holds no row, has not loaded or
-// failed = a dash ("—"), never another price (fix 4). Challenger, qualifying and ITF keep the closes path until phase 2.
+// failed = a dash ("—"), never another price (fix 4). Founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger (main
+// draw + qualifying) and ITF are in the master too (the era shard's flag 'l', the ATP main-draw source order), so EVERY
+// played match is a master class row — the tabs' own closes path is gone for every level. A walkover is never priced.
 function sfMasterClass(r){
-  if (!r || r.wo || r.walkover || r.qualifying) return false;
-  return /^atp$/i.test(String(r.tier != null ? r.tier : r.level != null ? r.level : ''));
+  return !!r && !r.wo && !r.walkover;
 }
 // one view priced from the join: the join's price, else (a master class) nothing at all
 function sfDbPxApply(r, d){
@@ -28075,7 +28077,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       // their source ('from Pinnacle history' / 'captured'), never Tennis-Data.
       const bk = row[8];
       r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 || bk === 5 ? 'A' : 'B';
-      r.src = bk === 3 ? 'hist' : bk === 4 ? 'cap' : bk === 5 ? 'od10' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
+      // book 6 = our captured Bet365 at the lower levels (founder 2026-10-18 item 3): 'B' + 'cap' = "Bet365 (approx.) · not a confirmed close"
+      r.src = bk === 3 ? 'hist' : bk === 4 || bk === 6 ? 'cap' : bk === 5 ? 'od10' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
       n++;
     });
     return n;

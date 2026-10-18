@@ -196,7 +196,8 @@ this file wins.
   synthesised from a gap year (the old `withdrew` fill in `bsp-pipeline.js` minted "Withdrawal" for editions never
   held). **Test:** a player with editions 2019 and 2022 shows no 2020/2021 header.
 - **N7:** Tournament W–L is **main draw only** — qualifying rows are filtered out.
-- **N8:** Challenger / ITF row prices stay "—" (no opponent-key join yet).
+- **N8 (superseded by founder ruling 2026-10-18, item 3):** Challenger, qualifying and ITF rows take the master join's price like
+  every other match (`odds.md` "The lower levels in the master"); a dash only where the join holds none.
 - **N9:** News empty state = the file's copy: "No recent news for {A} or {B}." + "View all news →".
   `SAMPLE_NEWS` and the sample fallback are deleted, never hidden.
 - **N10:** the Key factors "Dimension edge" card uses the **5-axis DNA** data. The MCP / Sackmann radar

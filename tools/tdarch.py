@@ -640,12 +640,12 @@ def approx_join(r, by_day):
     return None, ('two fixtures' if c else 'no fixture')
 
 
-def approx_rows(targets, by_day, odds_of, fetched_at):
+def approx_rows(targets, by_day, odds_of, fetched_at, join=None):
     """Snapshot rows (Home = the fixture's first player) + a report. A side missing or below 1.01 = no row (Bet365 stays
     the fallback); nothing is filled from another book."""
     rows, rep = [], collections.Counter()
     for r in targets:
-        f, w = approx_join(r, by_day)
+        f, w = (join or approx_join)(r, by_day)
         if f is None:
             rep['join: ' + w] += 1; continue
         ha = odds_of(f['event_key']) or {}
@@ -658,8 +658,8 @@ def approx_rows(targets, by_day, odds_of, fetched_at):
                      'source': APPROX_SOURCE, 'label': APPROX_LABEL, 'match_date': r['date'], 'tournament': r['tournament'],
                      'round': r.get('round') or None, 'winner': r['winner'], 'loser': r['loser'], 'event_key': int(f['event_key']),
                      'price_winner': pw, 'price_loser': pl, 'fetched_at': fetched_at,
-                     'detail': {'home': h, 'away': a, 'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
-                                'winnerIsFirst': w, 'apiTennisBook': 'Pncl', 'hover': APPROX_HOVER}})
+                     'detail': dict({'home': h, 'away': a, 'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
+                                     'winnerIsFirst': w, 'apiTennisBook': 'Pncl', 'hover': APPROX_HOVER}, **(r.get('_detail') or {}))})
         rep['stored'] += 1
     return rows, dict(rep)
 
@@ -711,7 +711,7 @@ def od_fixture_of(f, R, bmap, by_day_od):
     return c[0][0]['fixtureId'], c[0][1] == 'same'
 
 
-def start10_rows(targets, by_day, od_of, fixtures, series_of, fetched_at, minutes=START10_MIN):
+def start10_rows(targets, by_day, od_of, fixtures, series_of, fetched_at, minutes=START10_MIN, join=None):
     """Snapshot rows at Oddspapi's trueStart - `minutes` + a report. `od_of(fixture)` -> (fixtureId, firstIsP1) | (None,
     why); `fixtures[fid]` the held Oddspapi fixture (trueStartTime, trueEndTime, startTime); `series_of(fid)` -> (raw_id,
     mw_series) | (None, why). The trueStart passes the ruled gate (effective_cut, no live-flip); a missing or rejected start,
@@ -719,7 +719,7 @@ def start10_rows(targets, by_day, od_of, fixtures, series_of, fetched_at, minute
     Tennis-Data rows claim is no one's."""
     rep, cand = collections.Counter(), []
     for r in targets:
-        f, w = approx_join(r, by_day)
+        f, w = (join or approx_join)(r, by_day)
         if f is None:
             rep['join: ' + w] += 1; continue
         fid, first_p1 = od_of(f)
@@ -757,7 +757,7 @@ def start10_rows(targets, by_day, od_of, fixtures, series_of, fetched_at, minute
                      'detail': {'minutesBeforeStart': minutes, 'book': 'pinnacle+30', 'winnerOutcome': win_oc,
                                 'entries': {'121': list(c['121']), '122': list(c['122'])}, 'trueEnd': fx.get('trueEndTime'),
                                 'fixtureFrom': fx.get('from'), 'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
-                                'winnerIsFirst': w, 'hover': START10_HOVER}})
+                                'winnerIsFirst': w, 'hover': START10_HOVER, **(r.get('_detail') or {})}})
         rep['stored'] += 1
     return rows, dict(rep)
 
@@ -889,10 +889,160 @@ def cmd_start10_import(dry_run=False):
     return rows, rep
 
 
-def cmd_approx_feed(out_csv):
+# ── The lower levels: ATP qualifying, Challenger (main draw + qualifying), ITF (founder ruling 2026-10-18 item 3) ──────
+# Same source order as ATP main draw: 13 Apr - 16 Sep the Oddspapi archive at start - 10, then api-tennis's stored Pinnacle
+# snapshot (1 Jan - 16 Sep), then the captured Bet365 (approx.), else a dash — every one a SNAPSHOT, never a close. The
+# rows go into the same append-only snapshot table, each carrying its level, round and both api-tennis player keys in
+# `detail`; the feed (pinnacle-approx-lower.csv) hands them to build-database-yield.js, which puts them in the master's
+# lower-level shard — never a Database figure. From 17 Sep the archive's own closes price these levels (td-feed 'lower').
+LOWER_FROM, LOWER_TO = '2026-01-01', '2026-09-16'
+LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'winnerKey', 'loserKey', 'psw', 'psl', 'eventKey',
+                   'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment']
+RESULT_STATUSES = ('Finished', 'Retired')
+
+
+lower_level = P.lower_level
+
+
+def lower_targets(fixtures, frm=LOWER_FROM, to=LOWER_TO):
+    """One target per played lower-level match with a result: the api-tennis fixture itself is the join (no name guess)."""
+    out, rep = [], collections.Counter()
+    for f in fixtures:
+        lv = lower_level(f)
+        if not lv or not (frm <= str(f.get('event_date') or '') <= to):
+            continue
+        st = str(f.get('event_status') or '')
+        if 'walk' in st.lower():
+            rep[lv + ': walkover'] += 1; continue
+        if st not in RESULT_STATUSES or f.get('event_winner') not in ('First Player', 'Second Player'):
+            rep[lv + ': no result'] += 1; continue
+        fw = f['event_winner'] == 'First Player'
+        a, b = f.get('event_first_player'), f.get('event_second_player')
+        ka, kb = f.get('first_player_key'), f.get('second_player_key')
+        out.append({'date': f['event_date'], 'tournament': str(f.get('tournament_name') or '').strip(), 'round': f.get('tournament_round') or None,
+                    'winner': a if fw else b, 'loser': b if fw else a, '_f': f, '_w': fw,
+                    '_detail': {'level': lv, 'round': f.get('tournament_round'), 'winnerKey': str(ka if fw else kb), 'loserKey': str(kb if fw else ka),
+                                'status': st}})
+        rep[lv] += 1
+    return out, dict(rep)
+
+
+def _lower_join(r, _by_day):
+    return r['_f'], r['_w']
+
+
+def lower_feed_rows(current):
+    """The lower-level snapshots, one source per match: start - 10 first, else api-tennis (by event key)."""
+    best = {}
+    for r in current:
+        d = r.get('detail') or {}
+        if not d.get('level'):
+            continue
+        k = r['event_key']
+        rank = 0 if r.get('source') == START10_SOURCE else 1
+        if k not in best or rank < best[k][0]:
+            best[k] = (rank, r)
+    out = []
+    for _, r in sorted(best.values(), key=lambda x: (str(x[1]['match_date']), x[1]['event_key'])):
+        d = r['detail']
+        out.append({'date': str(r['match_date']), 'level': d['level'], 'tournament': r['tournament'], 'round': d.get('round') or '',
+                    'winner': P.td_name(r['winner']), 'loser': P.td_name(r['loser']), 'winnerKey': d.get('winnerKey') or '', 'loserKey': d.get('loserKey') or '',
+                    'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
+                    'source': r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
+                    'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s'],
+                    'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed'})
+    return out
+
+
+def _lower_fixtures(frm, to):
+    import concurrent.futures as cf
+    d0, d1 = dt.date.fromisoformat(frm), dt.date.fromisoformat(to)
+    days = [(d0 + dt.timedelta(days=i)).isoformat() for i in range((d1 - d0).days + 1)]
+    def day(d):
+        j = _at({'method': 'get_fixtures', 'date_start': d, 'date_stop': d, 'timezone': 'UTC'})
+        if not isinstance(j.get('result'), list) and j.get('success') != 1:
+            raise RuntimeError(f'get_fixtures {d}: no result list ({str(j)[:200]})')
+        return d, [f for f in (j.get('result') or []) if lower_level(f)]
+    def odds(d):
+        j = _at({'method': 'get_odds', 'date_start': d, 'date_stop': d})
+        return d, j.get('result') if isinstance(j.get('result'), dict) else {}
+    fx, od, empty = [], {}, []
+    with cf.ThreadPoolExecutor(8) as ex:
+        for d, res in ex.map(day, days):
+            fx += res
+            if not res:
+                empty.append(d)
+        for d, res in ex.map(odds, days):
+            for ek, v in res.items():
+                od[str(ek)] = (v or {}).get('Home/Away') or {}
+    return fx, od, empty
+
+
+def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO):
+    """Write the lower-level snapshots (append-only, the same table and guard as the ATP main-draw ones)."""
+    fx, od, empty = _lower_fixtures(frm, to)
+    if not fx:
+        P.die('api-tennis returned no lower-level fixture for the whole window: nothing written')
+    targets, trep = lower_targets(fx, frm, to)
+    fetched = dt.datetime.now(dt.timezone.utc).isoformat(timespec='seconds')
+    api_rows, arep = approx_rows(targets, None, lambda ek: od.get(str(ek)) or {}, fetched, join=_lower_join)
+    # start - 10: the held Oddspapi payloads, joined as derive-held / start10-import join (board map, else the fixtures
+    # we hold naming BOTH players within 36 h); ITF Men fixtures are in the held index and the back-fill pulls their payloads
+    s10 = [r for r in targets if START10_FROM <= r['date'] <= START10_TO]
+    R = P._load('roh', 'refresh-odds-history.py')
+    idx = json.load(gzip.open(os.path.join(P.ROOT_DIR, P.FIXTURE_INDEX))).get('fixtures') or {}
+    fixtures = P.held_fixture_meta(idx, P.select_all(P.RAW, 'id,fixture_id,books,meta', 'meta->>trigger=eq.backfill'))
+    disc = [f for f in fixtures.values() if f.get('categoryName') in P.BACKFILL_CATEGORIES]
+    by_day_od, bmap = P._fixtures_by_day(disc), P._board_map()
+    oc = {}
+    def od_of(f):
+        k = str(f.get('event_key'))
+        if k not in oc:
+            oc[k] = od_fixture_of(f, R, bmap, by_day_od)
+        return oc[k]
+    fids = sorted({od_of(r['_f'])[0] for r in s10 if od_of(r['_f'])[0]})
+    import concurrent.futures as cf
+    def chunk_series(ch):
+        out = {}
+        for fid, raw in P.raw_latest(ch).items():
+            out[fid] = raw if raw is P.NO_PINNACLE else (raw['id'], P.mw_series(gzip.decompress(P.unhex(raw['payload_gz']))))
+        return out
+    series = {}
+    with cf.ThreadPoolExecutor(8) as ex:
+        for part in ex.map(chunk_series, [fids[i:i + 10] for i in range(0, len(fids), 10)]):
+            series.update(part)
+    def series_of(fid):
+        got = series.get(fid)
+        if not got:
+            return None, 'no pinnacle+30 payload held'
+        if got is P.NO_PINNACLE:
+            return None, 'held payloads are another book only'
+        return got
+    s10_rows, srep = start10_rows(s10, None, od_of, fixtures, series_of, fetched, join=_lower_join)
+    rows = s10_rows + api_rows
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
+    add = plan_snapshots(rows, held)
+    ids = []
+    if not dry_run:
+        for i in range(0, len(add), 500):
+            ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
+    lv_month = collections.Counter((r['_detail']['level'], r['date'][:7]) for r in targets)
+    got = collections.defaultdict(set)
+    for r in rows:
+        got[(r['detail']['level'], str(r['match_date'])[:7])].add(r['event_key'])
+    print('### lower-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'fixtures': len(fx), 'daysWithNoFixture': empty,
+                                          'targets': trep, 'apiTennis': arep, 'start10': srep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
+                                          'pricedOfPlayed': {f'{lv} {m}': f'{len(got[(lv, m)])}/{n}' for (lv, m), n in sorted(lv_month.items())},
+                                          'oddspapiFixtureCalls': 0}))
+    if not dry_run:
+        cmd_snapshot_counts('lower-import')
+    return rows
+
+
+def cmd_approx_feed(out_csv, lower_csv=None):
     try:
         try:
-            held = P.select_all(SNAP, 'id,source,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes,cut_ts,gap_to_start_s')
+            held = P.select_all(SNAP, 'id,source,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes,cut_ts,gap_to_start_s,detail')
         except RuntimeError as e:                                    # the start - 10 columns not installed yet: api-tennis rows only
             if '42703' not in str(e) and 'does not exist' not in str(e):
                 raise
@@ -904,6 +1054,17 @@ def cmd_approx_feed(out_csv):
             return
         raise
     cur = current_snapshots(held)
+    lower = lower_feed_rows(cur)
+    cur = [r for r in cur if not (r.get('detail') or {}).get('level')]
+    if lower_csv:
+        tmp = lower_csv + '.tmp'
+        with open(tmp, 'w') as fh:
+            fh.write(','.join(LOWER_FEED_COLS) + '\n')
+            for r in lower:
+                fh.write(','.join(str(r[k]).replace(',', ' ') for k in LOWER_FEED_COLS) + '\n')
+        os.replace(tmp, lower_csv)
+        print('### lower-feed', json.dumps({'rows': len(lower), 'byLevel': collections.Counter(r['level'] for r in lower),
+                                            'bySource': collections.Counter(r['source'] for r in lower), 'file': lower_csv}))
     if not cur:
         print('::warning::approx-feed: no snapshot rows yet (approx-import has not run) — no feed file; Bet365 stays the fallback')
         return
@@ -973,7 +1134,9 @@ if __name__ == '__main__':
     elif a[0] == 'start10-import':
         cmd_start10_import('--dry-run' in a)
     elif a[0] == 'approx-feed':
-        cmd_approx_feed(a[1])
+        cmd_approx_feed(a[1], a[2] if len(a) > 2 else None)
+    elif a[0] == 'lower-import':
+        cmd_lower_import('--dry-run' in a, a[a.index('--from') + 1] if '--from' in a else LOWER_FROM, a[a.index('--to') + 1] if '--to' in a else LOWER_TO)
     elif a[0] == 'snapshot-counts':
         cmd_snapshot_counts(a[a.index('--record') + 1] if '--record' in a else None)
     else:

@@ -397,13 +397,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          rm -f pinnacle-approx.csv
-          python3 tools/tdarch.py approx-feed pinnacle-approx.csv || { echo "tdarch approx-feed failed (archive unreachable?)" > .archive-failed; exit 1; }
+          rm -f pinnacle-approx.csv pinnacle-approx-lower.csv
+          # founder ruling 2026-10-18 (item 3): the lower levels' snapshots (ATP qualifying, Challenger, ITF) go to their own file
+          python3 tools/tdarch.py approx-feed pinnacle-approx.csv pinnacle-approx-lower.csv || { echo "tdarch approx-feed failed (archive unreachable?)" > .archive-failed; exit 1; }
 
       - name: Feed the archive's Pinnacle closes into the Database (fail-closed)
         run: |
-          rm -f pinnacle-archive-td.csv started-evidence.json
+          rm -f pinnacle-archive-td.csv started-evidence.json pinnacle-lower-closes.csv
           python3 tools/pinarch.py td-feed pinnacle-closes.json pinnacle-archive-td.csv || { echo "pinarch td-feed failed" > .archive-failed; exit 1; }
+          # founder ruling 2026-10-18 (item 3): the archive's closes of ATP qualifying, Challenger and ITF matches, for the master
+          python3 tools/pinarch.py lower-closes pinnacle-closes.json pinnacle-lower-closes.csv || { echo "pinarch lower-closes failed" > .archive-failed; exit 1; }
           node tools/started-evidence.js --root . --out started-evidence.json || { echo "started-evidence failed" > .archive-failed; exit 1; }
           node build-database-yield.js || { echo "build-database-yield failed" > .archive-failed; exit 1; }
           node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json

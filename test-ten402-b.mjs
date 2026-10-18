@@ -244,6 +244,24 @@ test('one source of truth (founder 2026-10-17): the era shard (before 2010 + tea
   assert.equal(J1.meta, base.meta, 'no shard: the meta is the store\'s own (no copy made)');
 });
 
+test('founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger and ITF ride the era shard behind flag l and price through the ONE join, each with its source', () => {
+  const base = { meta: { levels: ['Grand Slam'], surfaces: ['Hard'], rounds: ['The Final'], tournaments: ['Australian Open'] },
+    rows: [[20250126, 0, 0, 0, 0, 1.40, 3.00, 1, 0]], retRows: [] };
+  const nm = { names: [['Sinner J.', 'Zverev A.']], retNames: [] };
+  const xs = { xRows: [[20260520, 'Challenger', '', '', 'Challenger Bordeaux', 1.62, 2.30, 1, 5, 'l'],
+    [20260310, 'ITF', '', '', 'M25 Antalya', 1.75, 2.05, 0, 6, 'l'],
+    [20261005, 'ATP Qualifying', '', '', 'ATP Shanghai - Qualification', 1.50, 2.60, 1, 3, 'l']],
+    xNames: [['Bergs Z.', 'Herbert P.H.'], ['Doe J.', 'Roe R.'], ['Bergs Z.', 'Moe M.']] };
+  globalThis.FH_SRC = globalThis.FH_SRC || { hist: 'from Pinnacle history', cap: 'captured' };   // the page's label table (this harness slices none)
+  const J = dbPriceJoinRows(base, nm, xs);
+  const one = (date, won, self, opp) => { const v = [{ date, won, round: null }]; priceJoin(v, { full: self }, { full: opp }, J); return [v[0].price, v[0].oppPrice, v[0].book, v[0].src]; };
+  assert.deepEqual(one('2026-05-20', true, 'Z. Bergs', 'P. Herbert'), [1.62, 2.30, 'A', 'od10'], 'Challenger, start − 10 (book 5): Pinnacle (approx.)');
+  assert.deepEqual(one('2026-03-10', true, 'J. Doe', 'R. Roe'), [2.05, 1.75, 'B', 'cap'], 'ITF, our captured Bet365 (book 6): Bet365 with source cap — hovers "Bet365 (approx.) · not a confirmed close"');
+  assert.deepEqual(one('2026-10-05', true, 'Z. Bergs', 'M. Moe'), [1.50, 2.60, 'P', 'hist'], 'ATP qualifying from 17 Sep: our archive close (book 3)');
+  // control: no shard → the same Challenger match is a dash, never another price
+  assert.equal(one.call(null, '2026-05-20', true, 'Z. Bergs', 'P. Herbert') && (() => { const v = [{ date: '2026-05-20', won: true, round: null }]; priceJoin(v, { full: 'Z. Bergs' }, { full: 'P. Herbert' }, dbPriceJoinRows(base, nm)); return v[0].price ?? null; })(), null);
+});
+
 test('Data 2 on the real stores: every Sinner–Alcaraz price equals the odds archive (Pinnacle, else Bet365) — a retirement too, on the ATP result (ruling 2026-10-08)', () => {
   const db = dbPriceJoinRows(...readStore());
   const csv = [];

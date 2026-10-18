@@ -83,8 +83,9 @@ const CHECKS = {
     assert.ok(!/W\. Walker/.test(html));
     assert.equal(stat(html, 'Record'), '5–3');
   },
-  // Mutation: N8 dropped (a Challenger / ITF row keeps the price its closes shard carries).
-  'N8: Challenger / ITF rows show no price; Avg price and 1u run over the priced ATP rows only'(src) {
+  // Founder ruling 2026-10-18 (item 3; supersedes N8): a Challenger / ITF row takes the master join's price only — the
+  // fixture's join holds none for F. Fox, so a dash, never the close its closes shard carries.
+  'item 3 (was N8): a Challenger row the join does not hold shows no price; Avg price and 1u run over the priced rows only'(src) {
     const { Mo, html } = pop(src, `0|season|clay`);
     const fox = Mo.rows.find(r => r.opp === 'F. Fox');
     assert.equal(fox.price, null, 'the Challenger close is never shown');
@@ -213,8 +214,7 @@ test('DoD item 8: the old Overview row / drill / tooltip renderers are deleted',
 
 const MUTANTS = [
   ['walkovers kept', "    if (r.wo) return;                                         // N2: a walkover is not a match played\n", ''],
-  ['N8 dropped', "    if (x.level !== 'atp') { r.price = null; r.oppPrice = null; r.book = null; r.src = null; }   // N8\n", ''],
-  ['ATP row back on the closes shard', "  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){", "  if (false){"],
+  ['ATP row back on the closes shard', "  if (!r.wo && typeof sfDbPxRows === 'function'){   // founder ruling 2026-10-18 (item 3): every level, qualifying included", "  if (false){"],
   ['1u ungated', "  const R = maRate(0, np, { text: fhSigned(pl, 1, 'u').replace(/^(?=\\d)/, '±'), nopct: '—' });", "  const R = { mode: 'full', txt: fhSigned(pl, 1, 'u') };"],
   ['win rate ungated', "    + meRateBox('Win rate', w, n, null, OV_C.text, true)", "    + meStatBox('Win rate', n ? Math.round(w / n * 100) + '%' : '0%', OV_C.text, true)"],
   ['retirement note dropped', " ${core ? core.RET_SETTLE_NOTE : ''}`;", '`;'],

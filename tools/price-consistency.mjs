@@ -103,7 +103,7 @@ const result = await E(`(async () => {
   const idx = await loadCareerHistoryIndex();
   const db = _sfDbJoin, J = window.H2HPage.priceJoin;
   const keys = Object.keys(idx || {}).sort((a, b) => +a - +b);
-  const S = { shown: [], players: 0, playersChecked: 0, matches: 0, dbHeld: 0, notHeld: 0, byYear: {}, fail: { tab: 0, me: 0, cap: 0, form: 0, h2h: 0, threw: 0 },
+  const S = { shown: [], players: 0, playersChecked: 0, matches: 0, dbHeld: 0, notHeld: 0, byYear: {}, byLevel: {}, fail: { tab: 0, me: 0, cap: 0, form: 0, h2h: 0, threw: 0 },
     checked: { tab: 0, me: 0, cap: 0, form: 0, h2h: 0 }, report: {}, ex: { fail: [], report: [] },
     focus: { keys: FOCUS.size, found: 0, rowOf: {}, seen: {}, changed: { tab: 0, me: 0 }, unchanged: { tab: 0, me: 0 }, byBook: {}, ex: [] } };
   const ccache = new Map(), clcache = new Map();
@@ -157,7 +157,7 @@ const result = await E(`(async () => {
     const career = await careerOf(k);
     if (!Array.isArray(career) || !career.length) continue;
     S.players++;
-    const has2026 = career.some(x => x && String(x.date || '').slice(0, 4) === '2026' && x.level === 'atp');
+    const has2026 = career.some(x => x && String(x.date || '').slice(0, 4) === '2026');   // every level (founder 2026-10-18 item 3)
     if (!has2026 && !sample) continue;
     if (LIMIT && ++n > LIMIT) break;
     const name = nameOf(k);
@@ -191,9 +191,12 @@ const result = await E(`(async () => {
     const h2hJobs = [];
     career.forEach((x, i) => {
       if (x && FOCUS.has(String(x.eventKey)) && !S.focus.rowOf[x.eventKey]) S.focus.rowOf[x.eventKey] = { level: x.level, qualifying: !!x.qualifying, walkover: !!x.walkover, round: x.round || null, event: x.tournament, date: x.date, player: name };
-      if (!x || x.level !== 'atp' || x.walkover || x.qualifying || /^qualif/i.test(String(x.round || ''))) return;
+      // founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger and ITF are master classes too — every played match is checked
+      if (!x || x.walkover) return;
+      const lv = x.level !== 'atp' ? 'chitf' : x.qualifying || /^qualif/i.test(String(x.round || '')) ? 'atp-q' : 'atp';
       const y = String(x.date || '').slice(0, 4);
       if (!(y === '2026' || sample)) return;
+      S.byLevel[lv] = S.byLevel[lv] || { matches: 0, held: 0 }; S.byLevel[lv].matches++;
       const tab = meRowFromCareer(x, cl, k, name, i);
       const js = [{ date: x.date, won: !!x.won, round: tab.round, opp: x.opponent }];
       J(js, { full: name }, null, db, null, career);
@@ -219,7 +222,7 @@ const result = await E(`(async () => {
       if (showIt) { row.form = pick(formRow); row.me = pick(meRow); row.cap = pick(cap); S.shown.push(row); }
       if (okOf(x) != null && (x.eventKey != null || picked(k, x)) && (FOCUS.has(String(x.eventKey)) || showIt || +x.eventKey % H2H_EVERY === 0)) h2hJobs.push({ x, ref, row, dk: dbKeyOf(js[0].dbi) });
       if (ref) {
-        S.dbHeld++; S.byYear[y].held++;
+        S.dbHeld++; S.byYear[y].held++; S.byLevel[lv].held++;
         let bad = false;
         S.checked.tab++; if (meRow) S.checked.me++; if (cap) S.checked.cap++; if (formRow) S.checked.form++;
         const dk = dbKeyOf(js[0].dbi), mid = meRow ? meIdOf(k, tab.tdKey, meRow) : null;
@@ -268,7 +271,7 @@ ch.kill('SIGKILL'); if (!LIVE) server.close();
 for (const r of result.shown || []) console.log('SHOW ' + JSON.stringify(r));
 const failN = Object.values(result.fail).reduce((a, b) => a + b, 0);
 console.log(`### price-consistency ${JSON.stringify({ lag: LAG, players: result.players, playersChecked: result.playersChecked, matches: result.matches, dbHeld: result.dbHeld,
-  notHeld: result.notHeld, checked: result.checked, failures: result.fail, reported: result.report, byYear: result.byYear })}`);
+  notHeld: result.notHeld, checked: result.checked, failures: result.fail, reported: result.report, byYear: result.byYear, byLevel: result.byLevel })}`);
 if (FOCUS.length) { const f = Object.assign({}, result.focus); delete f.seen; console.log(`### focus ${JSON.stringify(f)}`); }
 for (const r of result.ex.fail.slice(0, 40)) console.log('FAIL ' + JSON.stringify(r));
 for (const r of result.ex.report.slice(0, 40)) console.log('REPORT ' + JSON.stringify(r));

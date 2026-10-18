@@ -36,7 +36,7 @@ found at restore time are marked inline.
   **Test:** a 2018 aggregate cell has no opener and the "Match list not on file" note; a 2019 ATP-only cell opens.
 - **Pop-up figures.** Record and Win rate over the listed matches (walkovers out, N2; Win rate through the D2 gate);
   Avg price and "At 1u flat" over the priced rows only, prices in the R8 order (`meRowFromCareer` → `fhPickBook`),
-  Challenger/ITF rows unpriced (N8); 1u through the gate on the priced n (Form's flat 1u rule). The sub-line names the
+  every level priced from the master join only (founder 2026-10-18 item 3, superseding N8: Challenger / ITF / qualifying included, a dash where the join holds none); 1u through the gate on the priced n (Form's flat 1u rule). The sub-line names the
   priced count out of n; the 1u tooltip names the book split and prints `RET_SETTLE_NOTE`. A retirement counts and is
   marked "ret." after its set scores — loss red when the player retired, neutral when his opponent did (DF L1997).
   A count that opens nothing says why on hover (no player id, a pre-2021 aggregate, no tier split before 2021). **Test:** `test-ten334-overview.mjs` (N2, N8, R8, D2, retirement, sheet).

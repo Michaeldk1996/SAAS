@@ -213,5 +213,31 @@ check('alias: "O Connell C." joins C. O\'Connell on his key 421', T.approx_join(
 bad = {'2026-07-21': [dict(al['2026-07-21'][0], first_player_key=9999)]}
 check('control: the same names with another key do not join (the surname rule alone misses them)', T.approx_join(st, bad) == (None, 'no fixture'), T.approx_join(st, bad))
 check('control: the table only adds joins: a plain surname match still joins', T.P.same_player('Zverev A.', 'A. Zverev', None) and not T.P.same_player('Zverev A.', 'M. Zverev', None))
+# ── the lower levels (founder ruling 2026-10-18 item 3) ──────────────────────────────────────────────────────────────
+F = lambda ek, t, st='Finished', win='First Player', q='False', tn='M25 Somewhere', d='2026-05-20', rnd='1/16-finals': {
+    'event_key': ek, 'event_type_type': t, 'event_status': st, 'event_winner': win, 'event_qualification': q, 'tournament_name': tn,
+    'tournament_round': rnd, 'event_date': d, 'event_first_player': 'A. One', 'event_second_player': 'B. Two', 'first_player_key': 11, 'second_player_key': 22}
+fxs = [F(1, 'Itf Men Singles'), F(2, 'Challenger Men Singles', win='Second Player'), F(3, 'Challenger Men Singles', q='True'),
+       F(4, 'Atp Singles', q='True'), F(5, 'Atp Singles'), F(6, 'Itf Men Singles', st='Walk Over'), F(7, 'Itf Men Singles', win=None),
+       F(8, 'Itf Women Singles'), F(9, 'Itf Men Singles', d='2026-09-20')]
+tg, trep = T.lower_targets(fxs)
+check('lower levels: ITF, Challenger, Challenger qualifying, ATP qualifying in; ATP main draw (Tennis-Data\'s), ITF Women, walkovers, no-result and after 16 Sep out',
+      [r['_f']['event_key'] for r in tg] == [1, 2, 3, 4] and [r['_detail']['level'] for r in tg] == ['itf', 'ch', 'ch-q', 'atp-q']
+      and trep.get('itf: walkover') == 1 and trep.get('itf: no result') == 1, (tg, trep))
+check('lower levels: the winner and both keys follow event_winner (no name guess)', tg[1]['winner'] == 'B. Two' and tg[1]['_detail']['winnerKey'] == '22', tg[1])
+odds = {1: {'Home': {'Pncl': '1.80'}, 'Away': {'Pncl': '2.05'}}, 2: {'Home': {'Pncl': '1.50'}, 'Away': {'Pncl': '2.60'}},
+        3: {'Home': {'Pncl': '1.00'}, 'Away': {'Pncl': '9.0'}}, 4: {'Home': {'bet365': '1.5'}, 'Away': {'bet365': '2.5'}}}
+ar, arep = T.approx_rows(tg, None, lambda ek: odds.get(ek), 'now', join=T._lower_join)
+check('lower levels: api-tennis Pinnacle oriented to the winner; a side below 1.01 or no Pinnacle pair = no row (never bet365 in its place)',
+      [(r['event_key'], r['price_winner'], r['price_loser']) for r in ar] == [(1, 1.8, 2.05), (2, 2.6, 1.5)] and arep.get('no Pinnacle pair on api-tennis') == 2
+      and all(r['label'] == 'Pinnacle (approx.)' and r['detail']['level'] for r in ar), (ar, arep))
+cur = [dict(r, id=i + 1) for i, r in enumerate(ar)] + [{'id': 9, 'source': T.START10_SOURCE, 'match_date': '2026-05-20', 'tournament': 'M25 Somewhere',
+       'winner': 'A. One', 'loser': 'B. Two', 'event_key': 1, 'price_winner': 1.77, 'price_loser': 2.1, 'cut_ts': '2026-05-20T09:50:00Z', 'gap_to_start_s': 610,
+       'detail': {'level': 'itf', 'winnerKey': '11', 'loserKey': '22'}}, {'id': 10, 'source': T.APPROX_SOURCE, 'match_date': '2026-05-20', 'tournament': 'X',
+       'winner': 'W', 'loser': 'L', 'event_key': 99, 'price_winner': 1.5, 'price_loser': 2.5, 'detail': {}}]
+lf = T.lower_feed_rows(cur)
+check('lower feed: one source per match, start - 10 over api-tennis; Tennis-Data snapshots (no level) are never in it',
+      [(r['eventKey'], r['source'], r['psw']) for r in lf] == [(1, T.START10_SOURCE, 1.77), (2, T.APPROX_SOURCE, 2.6)], lf)
+check('lower feed: the columns build-database-yield.js reads', all(set(T.LOWER_FEED_COLS) <= set(r) for r in lf))
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)
