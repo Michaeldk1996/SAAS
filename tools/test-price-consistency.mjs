@@ -20,10 +20,12 @@ const chrome = process.env.CHROME_BIN || ['/opt/pw-browsers/chromium', '/usr/bin
 
 // 5 · wiring (no browser needed)
 const yml = readFileSync(join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
-const step = yml.indexOf('node tools/price-consistency.mjs --site _site'), up = yml.indexOf('- name: Upload the built site for publish.yml (site-data)');
+// founder ruling 2026-10-18: the guard runs through tools/price-guard-run.mjs (quarantine, then publish) — its own test is
+// tools/test-price-quarantine.mjs; here: the orchestrator is wired, and a check that cannot run still fails the step
+const step = yml.indexOf('node tools/price-guard-run.mjs --site _site'), up = yml.indexOf('- name: Upload the built site for publish.yml (site-data)');
 const line = step < 0 ? '' : yml.slice(yml.lastIndexOf('\n', step), yml.indexOf('\n', step));
-check('pipeline.yml runs the guard on the built site before the site-data upload', step > 0 && up > step, { step, up });
-check('the step is fail-closed (no "|| true", no continue-on-error)', step > 0 && !/\|\|\s*true/.test(line)
+check('pipeline.yml runs the guard (through price-guard-run.mjs) on the built site before the site-data upload', step > 0 && up > step, { step, up });
+check('the step tolerates nothing (no "|| true", no continue-on-error): a check that cannot run fails it', step > 0 && !/\|\|\s*true/.test(line)
   && !/continue-on-error/.test(yml.slice(yml.lastIndexOf('- name:', step), step)), line);
 
 if (!chrome) { console.log('  SKIP  the browser checks: no Chrome (set CHROME_BIN) — said out loud, not a pass'); }

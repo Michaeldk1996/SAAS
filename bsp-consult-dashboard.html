@@ -28055,6 +28055,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       // the career match this row met (step 2), priced or not: the profile's Draw record drill opens its sheet on it
       if (j != null && meet[j]) Object.defineProperty(r, 'careerMatch', { value: meet[j].x, enumerable: false, configurable: true, writable: true });
       if (i == null) return;
+      // founder ruling 2026-10-18 (one match never stops the site): a row the publish run quarantined (price-quarantine.json —
+      // a surface priced it differently) is a dash on every surface until it joins cleanly again; it still holds its match
+      if (db.qz && db.qz.has(i)) return;
+      Object.defineProperty(r, 'dbi', { value: i, enumerable: false, configurable: true, writable: true });   // the row it met (the publish check names it)
       const row = db.rows[i], winP = row[7] ? row[5] : row[6], loseP = row[7] ? row[6] : row[5];
       // book 2 = Pinnacle (approx.), a snapshot (founder 2026-10-16): 'A', never read as Pinnacle or Bet365.
       // books 3 / 4 = our Pinnacle archive's closes (founder 2026-10-16, round 3 item 1): Pinnacle, and the hover names
@@ -34316,7 +34320,7 @@ window.DatabaseTab = (function(){
   // favWon is the archive winner's side). The Database's own figures never read retRows; nDb = where they start.
   // Founder ruling 2026-10-16: exact price ties ride behind their own flag too (tieRows / tieNames: priced at the tie for
   // both players, out of every favourite / underdog figure) — joined here, never read by the Database's own figures.
-  function dbPriceJoinRows(base, nm, xs){
+  function dbPriceJoinRows(base, nm, xs, q){
     var rr = (base && base.retRows) || [], rn = (nm && nm.retNames) || [];
     if (rr.length !== rn.length) throw new Error('database-yield retRows / retNames out of step (' + rr.length + ' v ' + rn.length + ')');
     var tr = (base && base.tieRows) || [], tn = (nm && nm.tieNames) || [];
@@ -34334,8 +34338,13 @@ window.DatabaseTab = (function(){
       xr = xr.map(function(x){ return [x[0], x[1] == null ? -1 : ix(meta.levels, x[1]), ix(meta.surfaces, x[2]), ix(meta.rounds, x[3]),
         ix(meta.tournaments, x[4]), x[5], x[6], x[7], x[8]]; });
     }
-    return { rows: base.rows.concat(rr, tr, xr), names: nm.names.concat(rn, tn, xn), meta: meta, nDb: base.rows.length,
-      nX: xr.length, aliases: nm.aliases || {} };
+    var rows = base.rows.concat(rr, tr, xr), names = nm.names.concat(rn, tn, xn);
+    // founder ruling 2026-10-18: the publish run's quarantine (price-quarantine.json) — each entry names the Database row
+    // (date|winner|loser) a surface priced differently; that row is a dash on every surface (h2hPriceJoin) this build
+    var qk = new Set(((q && q.entries) || []).map(function(e){ return e && e.db; }).filter(Boolean)), qz = new Set();
+    if (qk.size) rows.forEach(function(r, i){ var n = names[i]; if (n && qk.has(r[0] + '|' + n[0] + '|' + n[1])) qz.add(i); });
+    return { rows: rows, names: names, meta: meta, nDb: base.rows.length,
+      nX: xr.length, aliases: nm.aliases || {}, qz: qz };
   }
   // The era shard: a 404 (a deployment built before it existed) is "no such rows" — those matches show a dash; any other
   // failure fails the whole join (the surfaces then show their failed state, never another price).
@@ -34348,9 +34357,20 @@ window.DatabaseTab = (function(){
       .then(function(j){ XDATA = j; return j; }).catch(function(e){ xPromise = null; throw e; });
     return xPromise;
   }
+  // The publish run's quarantine (founder ruling 2026-10-18): a 404 (no quarantine, or a deployment before it) is none; any
+  // other failure fails the whole join, as the era shard's does (a quarantined match must never show a price).
+  var Q_URL = './price-quarantine.json', QDATA = null, qPromise = null;
+  function loadQ(){
+    if (QDATA) return Promise.resolve(QDATA);
+    if (qPromise) return qPromise;
+    qPromise = fetch(Q_URL, { cache: 'no-cache' }).then(function(r){ if (r.status === 404) return { entries: [], missing: true };
+      if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(function(j){ QDATA = j; return j; }).catch(function(e){ qPromise = null; throw e; });
+    return qPromise;
+  }
   var PRICE_JOIN = null;
-  function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return loadX(); })
-    .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES, XDATA)); }); }
+  function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return loadX(); }).then(function(){ return loadQ(); })
+    .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES, XDATA, QDATA)); }); }
   return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows };
 })();
 </script>

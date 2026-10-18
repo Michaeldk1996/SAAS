@@ -56,11 +56,39 @@ ok(r.status === 1, 'ARCHIVE SHORT (fewer master rows than the last good master) 
 ok(/masterRows: 41000 < 59000/.test(r.stdout), 'the error names the count and the last good count');
 rmSync(d, { recursive: true, force: true });
 
-d = site({ masterRows: 58000 }); writeFileSync(join(d, 'archive-gate-accept.json'), JSON.stringify({ masterRows: { atMost: 58000, reason: 'test: a ruled hold-back' } })); r = run(d, good);
-ok(r.status === 0 && /floor lowered 59000 → 58000/.test(r.stdout), 'a reviewed archive-gate-accept.json lowers one floor, said out loud');
+// the override (founder ruling 2026-10-18): written by the tool, committed, checked; a hand edit or a file put on the runner
+// is refused; an unapproved drop still fails
+const git = (d, ...a) => spawnSync('git', ['-c', 'user.name=Test Author', '-c', 'user.email=t@x', ...a], { cwd: d, encoding: 'utf8' });
+const commitAccept = d => { git(d, 'init', '-q'); git(d, 'add', 'archive-gate-accept.json'); git(d, 'commit', '-qm', 'override'); };
+const accept = (d, expect, reason) => spawnSync('node', ['tools/archive-gate.mjs', 'accept', '--dir', d, '--key', 'masterRows', '--expect', String(expect), '--reason', reason], { cwd: ROOT, encoding: 'utf8' });
+d = site({ masterRows: 58000 });
+let a = accept(d, 58000, 'test: junior rows removed');
+ok(a.status === 0 && existsSync(join(d, 'archive-gate-accept.json')), 'the accept command writes the override (key, expected count, reason)');
+const ent = JSON.parse(readFileSync(join(d, 'archive-gate-accept.json'), 'utf8')).entries[0];
+ok(ent && ent.key === 'masterRows' && ent.expect === 58000 && ent.reason === 'test: junior rows removed' && ent.by && ent.at && ent.check, 'the entry records who, when and a check', JSON.stringify(ent));
+r = run(d, good);
+ok(r.status === 1 && /not committed/.test(r.stdout), 'an override file not committed (put on the runner by hand) is refused → the run fails');
+rmSync(join(d, '.archive-failed'), { force: true });
+commitAccept(d); r = run(d, good);
+ok(r.status === 0 && /masterRows floor lowered 59000 → 58000 by an approved override \("test: junior rows removed"/.test(r.stdout), 'a committed, tool-written override lets the approved drop through, said out loud');
+ok(JSON.parse(readFileSync(join(d, 'database-yield-master-meta.json'), 'utf8')).overrides[0].to === 58000, 'the override used is logged in the published counts file');
 rmSync(d, { recursive: true, force: true });
-d = site({ masterRows: 57000 }); writeFileSync(join(d, 'archive-gate-accept.json'), JSON.stringify({ masterRows: { atMost: 58000, reason: 'test' } })); r = run(d, good);
-ok(r.status === 1, 'a drop below the accepted floor still fails');
+d = site({ masterRows: 57000 }); accept(d, 58000, 'test'); commitAccept(d); r = run(d, good);
+ok(r.status === 1, 'a drop below the approved count still fails');
+rmSync(d, { recursive: true, force: true });
+d = site({ masterRows: 58000 }); accept(d, 58000, 'test');
+const f = join(d, 'archive-gate-accept.json'), jj = JSON.parse(readFileSync(f, 'utf8')); jj.entries[0].expect = 50000; writeFileSync(f, JSON.stringify(jj));
+commitAccept(d); r = run(d, good);
+ok(r.status === 1 && /edited by hand/.test(r.stdout), 'a hand-edited override (the number changed) is refused → the run fails');
+rmSync(d, { recursive: true, force: true });
+d = site({ masterRows: 58000 }); writeFileSync(join(d, 'archive-gate-accept.json'), JSON.stringify({ masterRows: { atMost: 58000, reason: 'old form' } })); commitAccept(d); r = run(d, good);
+ok(r.status === 1, 'the old hand-written form is refused');
+rmSync(d, { recursive: true, force: true });
+d = site({ masterRows: 58000 }); r = run(d, good);
+ok(r.status === 1 && /masterRows: 58000 < 59000/.test(r.stdout), 'CONTROL: the same drop with no approved override fails');
+rmSync(d, { recursive: true, force: true });
+d = site({ masterRows: 58000 }); accept(d, 58000, 'test'); commitAccept(d); r = run(d, Object.assign({}, good, { masterRows: 58000 }));
+ok(r.status === 0 && /no longer needed/.test(r.stdout), 'once the lower count is published the override says it is no longer needed');
 rmSync(d, { recursive: true, force: true });
 
 d = site({}); r = run(d, null);

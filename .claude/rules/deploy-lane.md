@@ -216,6 +216,16 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
 - **Tests:** `tools/test-publish-split.js` (resolve, assemble, workflow wiring, lane), `tools/test-ten351-gate-run.js`
   (`--shard`, W1–W4), `tools/test-ten329-built-store-gate.js` (the reconcile runs before the `site-data` upload).
 
+## Pipeline-down alert (founder ruling 2026-10-18)
+
+- **Two failed `pipeline.yml` runs in a row → ONE Telegram naming the failing step in plain words** (the step name
+  without its "(fail-closed …)" note; both steps when they differ), once per streak — at its second failure, never again
+  for the same streak; a cancelled run is not a pass. Its own job (`fail-alert`, after the build job, only when it failed)
+  so it sees every step; an unsent message is an `::error::`, never a red job. Why: the 17 Oct outage (18:20Z → 00:24Z,
+  20 failed runs on one step) sent only the stall guard's "site stale" at 19:06Z, which says the site is old, not why.
+  **Test:** `tools/test-pipeline-fail-alert.mjs` (fake GitHub + Telegram: second failure → one message; first and third
+  → none; a cancelled run in between; the wiring).
+
 ## Pipeline stall guard (TEN-396, founder ruling 2026-10-07)
 
 A `pipeline.yml` run stuck in GitHub's `waiting` state holds the single `bsp-pipeline`

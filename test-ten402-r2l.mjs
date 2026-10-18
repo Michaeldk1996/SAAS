@@ -60,12 +60,14 @@ function page(opt) {
   env.document = { _els: { playerListView: el(), playerProfileView: el() }, getElementById(id) { return this._els[id] || null; } };
   const DB = new Function('fetch', `
     var BASE_URL = './database-yield.json', NAMES_URL = './database-yield-players.json', X_URL = './database-yield-x.json';
+    var Q_URL = './price-quarantine.json', QDATA=null, qPromise=null;
     var DATA=null, NAMES=null, XDATA=null, M=null, basePromise=null, namesPromise=null, xPromise=null, playerIndex=null;
     function buildPlayerIndex(){ playerIndex = {}; }
     function dbPriceJoinRows(d, n){ return { rows: d.rows, names: n.names, meta: d.meta }; }
     ${slice('loadBase')}
     ${slice('loadNames')}
     ${slice('loadX')}
+    ${slice('loadQ')}
     var PRICE_JOIN = null;
     ${slice('priceRows')}
     return { priceRows: priceRows, loadBase: loadBase, loadNames: loadNames };`)(env.fetch);
@@ -136,7 +138,7 @@ test('R2 · opening a profile requests no Database file before its first paint; 
   await flush(); await flush(); await flush();
   assert.equal(api.st, 'ready');
   assert.ok(env.repaints.length > r0, 'no repaint when the join landed');
-  assert.deepEqual(env.fetched, ['./database-yield.json', './database-yield-players.json', './database-yield-x.json']);
+  assert.deepEqual(env.fetched, ['./database-yield.json', './database-yield-players.json', './database-yield-x.json', './price-quarantine.json']);   // + the publish run's quarantine (founder 2026-10-18)
   assert.ok(env.repaints.includes('2382'), 'the profile was not repainted when the join landed');
 });
 

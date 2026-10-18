@@ -67,6 +67,7 @@ concurrency:
 
 permissions:
   contents: write      # was: read — needed so the run can commit admin-log.json back
+  actions: read        # founder 2026-10-18: the failure alert reads this run's and the previous runs' steps (tools/pipeline-fail-alert.mjs)
 
 jobs:
   build-and-deploy:
@@ -1300,11 +1301,14 @@ jobs:
       # Founder ruling 2026-10-17 (item 1, standing): one price per match, on every page. The page's own functions run in
       # headless Chrome over the site THIS run built: for every 2026 ATP main-draw career match and a 1-in-10 player
       # sample of every year, the Database join, the Match analysis tab rows (Form, H2H, Market edge, Overview,
-      # Progression), the Market edge shard and the Head to Head page's captured step must give ONE price, source and
-      # hover. A difference on a match the Database holds fails the run before the upload (nothing publishes); matches
-      # the Database does not hold are reported in the log, pending a ruling. Fail-closed: no `|| true`.
-      - name: One price per match on every surface (fail-closed pre-publish gate)
-        run: CHROME_BIN=google-chrome node tools/price-consistency.mjs --site _site
+      # Progression) and the Market edge shard must give ONE price, source and hover.
+      # Founder ruling 2026-10-18 ("one match problem must never stop the site from updating"): a match that differs is
+      # no longer a reason to stop the publish. tools/price-guard-run.mjs quarantines it — a dash on every page, Market
+      # edge rebuilt without it, the join told to price nothing for it (_site/price-quarantine.json) — re-checks the site
+      # as it will publish, and writes ONE alert for the run (sent after the upload, below). A check that could not run
+      # (no player, Market edge lagging the master, a page function that threw) still fails the run.
+      - name: One price per match on every surface (quarantine, then publish)
+        run: CHROME_BIN=google-chrome node tools/price-guard-run.mjs --site _site --root . --alert-out .price-alert.txt --run-label "pipeline run ${{ github.run_number }}"
 
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
@@ -1464,6 +1468,16 @@ jobs:
           retention-days: 1
           compression-level: 1
           include-hidden-files: true
+
+      # Founder ruling 2026-10-18: one Telegram per run listing every match the price check dashed (which match, which page
+      # tripped, the likely cause), sent AFTER the upload so the message can never hold a publish back. A message that
+      # cannot be sent is an ::error:: in the log and the step summary (never silent), and the run carries on.
+      - name: Alert — matches dashed by the price check (Telegram)
+        if: always() && hashFiles('.price-alert.txt') != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/price-alert-send.mjs .price-alert.txt
 
       # Surface failures loudly: if the pipeline could not produce a fresh
       # success, fail the job so GitHub emails/notifies (and the health file
@@ -1709,3 +1723,23 @@ jobs:
       - name: Fail the run if market-edge was not rebuilt (post-deploy, loud)
         if: always() && steps.deploy.outcome == 'success'
         run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json
+
+  # Founder ruling 2026-10-18 (pipeline-down alert): after two consecutive failed runs, ONE Telegram naming the failing
+  # step in plain words (once per streak, at its second failure). Its own job so it sees every step of the build job,
+  # the last one included, and runs only when that job failed. Never fails: an unsent alert is an ::error::.
+  fail-alert:
+    needs: build-and-deploy
+    if: failure()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { sparse-checkout: tools, fetch-depth: 1 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Alert — two failed runs in a row (Telegram)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/pipeline-fail-alert.mjs

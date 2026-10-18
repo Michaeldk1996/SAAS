@@ -376,9 +376,22 @@ function main() {
   const pinnacleEnd = {};
   const bet365End = {};
 
+  // Founder ruling 2026-10-18 ("one match problem must never stop the site"): the publish run's quarantine
+  // (price-quarantine.json, tools/price-consistency.mjs --quarantine-out) names each match a page priced while the join did
+  // not, or priced differently. Such a match is a dash on every page, Market edge included, so this build leaves its master
+  // row out of every player's shard (the tour baseline keeps it: it is the Database's own aggregate). Next run, a match
+  // that joins cleanly is not quarantined and comes back by itself.
+  const qPath = process.env.PRICE_QUARANTINE || null;
+  const qz = qPath && fs.existsSync(qPath) ? (JSON.parse(fs.readFileSync(qPath, 'utf8')).entries || []) : [];
+  const qDb = new Set(qz.map((e) => e.db).filter(Boolean));
+  const qMe = new Set(qz.flatMap((e) => e.me || []).map((x) => `${x.key}|${x.date}|${x.opp}|${x.won ? 1 : 0}`));
+  stats.quarantined = 0;
+
   master.rows.forEach((m) => {
     const row = { date: m[ci.date], tournament: m[ci.tournament], series: m[ci.series], surface: m[ci.surface], court: m[ci.court],
       round: m[ci.round], winner: m[ci.winner], loser: m[ci.loser], comment: m[ci.comment] };
+    const quarantined = (qDb.size || qMe.size) && (qDb.has(`${String(row.date).replace(/-/g, '')}|${row.winner}|${row.loser}`)
+      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolve(nm); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
     const flags = String(m[ci.flags] || '');
     if (flags.includes('t')) { stats.team += 1; return; }   // a team event: in the master, never in Market edge (as the Database)
     const bk = DB_BOOK[m[ci.book]];
@@ -421,6 +434,8 @@ function main() {
       }
       const hit = resolve(b.name);
       if (!hit) return;
+      // the player keeps a shard (rewritten without the match), so an old copy that priced it never stays behind
+      if (quarantined) { stats.quarantined += 1; if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] }); return; }
       if (only && hit.key !== only) return;
       stats.joined += 1;
       if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] });
@@ -552,6 +567,7 @@ function main() {
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
   log(`shards written: ${shipped}`);
+  if (qPath) console.log(`market-edge: ${stats.quarantined} player-side(s) left out by the publish quarantine (${qz.length} match(es), ${qPath})`);
   return 0;
 }
 
