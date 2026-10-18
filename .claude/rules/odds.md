@@ -346,7 +346,14 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   Hernandez-Fernandez), in `build-odds-performance.js`. An aliased name carries **every spelling we hold for its key** — the profile's (its newest fixture,
   TEN-372) and the table's (`ARCHIVE_ALIAS_NAMES`, as opponents' older rows spell him) — and each one meets a row: on 17 Oct
   67442's new profile "L. A. Miguel" unjoined Gaubas's Rio row "G. Miguel" and the publish guard failed every run from 18:20Z.
-  **Test:** `test-ten402-b.mjs` "archive name table" (both spellings price; control: the profile spelling alone misses). A career match the join left unpriced takes a Database row whose
+  **Test:** `test-ten402-b.mjs` "archive name table" (both spellings price; control: the profile spelling alone misses).
+  **Keyless spellings (founder ruling 2026-10-18, "spellings: approved"):** an opponent the archive spells another way and
+  who carries no key ("Del Potro J.M." = the career rows' "J. Martin del Potro", "Wang Y.T." = "J. Wang", "Stepanek M." =
+  "R. Stepanek") is listed in `ARCHIVE_PAGE_SPELLINGS` with the career rows' own spelling; Market edge's career join
+  (`meRowFromCareer`) reads the same table through the join's `aliases`, still exactly one row in the window, same result.
+  A name in both tables keeps every spelling. Measured on the live site 18 Oct: Market edge rows with no career match
+  599 → 361 of 43,979 (0 new misses); the join +5 priced, 0 lost, 0 changed. The 361 left are not spellings (a career
+  history that lacks the match, or two meetings at one event). **Test:** `tools/test-me-alias-join.mjs` (control, mutant). A career match the join left unpriced takes a Database row whose
   date, both players and event agree but whose round differs **only when it is the single candidate on both sides**
   (`rdTol`); two candidates stay a dash. **Test:** `test-ten402-b.mjs` "round tolerance" + "archive name table".
 - **One number on every page:** the closes live in the permanent Pinnacle archive (Supabase `pinnacle_archive_close`).
