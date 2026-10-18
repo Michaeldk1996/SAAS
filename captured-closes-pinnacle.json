@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-17T18:14:42.509Z",
+ "generatedAt": "2026-10-18T09:17:12.374Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "05aca02ee3128f99506c2e931ebd92a0ff8acd2f",
-  "at": "2026-10-17T18:02:25Z"
+  "commit": "1f0ed7085670b4f499394cfb2581f2b0f275b9b7",
+  "at": "2026-10-18T09:02:56Z"
  },
- "commitsScanned": 5280,
+ "commitsScanned": 5313,
  "lastRun": {
-  "from": "2026-10-17T15:47:14Z",
-  "snapshots": 12,
-  "added": 2,
+  "from": "2026-10-17T18:02:25Z",
+  "snapshots": 34,
+  "added": 3,
   "replaced": 0,
-  "series": 21,
-  "kept": 18,
+  "series": 20,
+  "kept": 17,
   "bySource": {
-   "api-tennis-live": 18
+   "api-tennis-live": 17
   },
   "byBook": {
-   "Pinnacle +30s": 18
+   "Pinnacle +30s": 17
   },
   "dropped": {
    "noStart": 3
@@ -9032,6 +9032,57 @@
    "trueStart": "2026-10-17T16:27:06.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12171878,
+   "date": "2026-10-18",
+   "p1Key": 9909,
+   "p2Key": 37897,
+   "p1Name": "G. Diallo",
+   "p2Name": "R. Sakamoto",
+   "p1": 1.97,
+   "p2": 1.877,
+   "at": "2026-10-18T04:23:22.869Z",
+   "trueStart": "2026-10-18T06:08:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": null,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12171879,
+   "date": "2026-10-18",
+   "p1Key": 10070,
+   "p2Key": 424,
+   "p1Name": "A. Walton",
+   "p2Name": "N. Basilashvili",
+   "p1": 2.2,
+   "p2": 1.709,
+   "at": "2026-10-18T05:39:26.521Z",
+   "trueStart": "2026-10-18T06:03:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": null,
+   "qualifying": null,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12171959,
+   "date": "2026-10-18",
+   "p1Key": 2842,
+   "p2Key": 50323,
+   "p1Name": "A. Davidovich Fokina",
+   "p2Name": "R. Jodar",
+   "p1": 2.18,
+   "p2": 1.769,
+   "at": "2026-10-18T07:27:17.330Z",
+   "trueStart": "2026-10-18T08:36:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Shanghai - Final",
+   "qualifying": false,
+   "event": "ATP Shanghai"
   }
  ]
 }
