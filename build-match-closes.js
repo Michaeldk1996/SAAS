@@ -60,7 +60,7 @@ function roster(root) {
   return out;
 }
 // Resolver over a roster. A name key shared by two different players is ambiguous → null.
-function makeResolver(players) {
+function makeResolver(players, gate) {
   const byFull = new Map(), bySurname = new Map(), keys = new Set(players.keys());
   players.forEach((name, key) => {
     const cands = ourCandidateKeys(name);
@@ -79,10 +79,10 @@ function makeResolver(players) {
     return ks.length === 1 ? ks[0] : null;
   };
   return {
-    archive(name) {                          // "Sinner J."
+    archive(name, date) {                    // "Sinner J." (+ the row's date: the identity gate, td-identity.js)
       const ov = archiveOverride(name);
-      if (ov) return ov.block ? null : (keys.has(String(ov.key)) ? String(ov.key) : null);
-      return fromKey(keyFromArchiveName(name));
+      const k = ov ? (ov.block ? null : (keys.has(String(ov.key)) ? String(ov.key) : null)) : fromKey(keyFromArchiveName(name));
+      return k && gate && date && !gate.allow(k, name, date) ? null : k;
     },
   };
 }
@@ -243,7 +243,10 @@ function capturedPinnacle(root, stats) {
 }
 
 function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
-  const td = makeResolver(roster(root));
+  // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
+  const idGate = require('./td-identity.js').buildIdentityGate(root, roster(root));
+  console.log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
+  const td = makeResolver(roster(root), idGate);
   const wide = makeCommaResolver(rosterNames(root));
   const archive = path.join(root, 'odds-archive');
   const seasons = fs.existsSync(archive) ? fs.readdirSync(archive).filter(f => /^\d{4}\.csv$/.test(f)).sort() : [];
@@ -260,7 +263,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
       if (comment.startsWith('walkover') || comment === 'w/o') { stats.walkovers++; return; }
       const ret = comment && comment !== 'completed' ? 1 : 0;
       const P = pair(r.psw, r.psl), B = pair(r.b365w, r.b365l);
-      const kw = td.archive(r.winner), kl = td.archive(r.loser);
+      const kw = td.archive(r.winner, r.date), kl = td.archive(r.loser, r.date);
       [[kw, r.loser, kl, 1, 0, 1], [kl, r.winner, kw, 0, 1, 0]].forEach(([key, opp, oppKey, won, i, j]) => {
         if (!key) return;
         stats.sides++;
@@ -295,7 +298,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
     index[key] = [list.length, cl.length];
   }
   const tmp = indexPath + '.tmp';
-  fs.writeFileSync(tmp, JSON.stringify({ through: latest, players: index }));
+  fs.writeFileSync(tmp, JSON.stringify({ through: latest, identityGate: idGate ? idGate.stats : null, players: index }));
   fs.renameSync(tmp, indexPath);
   return { stats, players: Object.keys(index).length, latest };
 }

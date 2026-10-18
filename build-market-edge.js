@@ -51,6 +51,7 @@ const base = require('./build-odds-performance.js');
 const core = require('./market-edge-core.js');
 const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES, archiveOverride } = base;
 
+const { buildIdentityGate } = require('./td-identity.js');
 const ROOT = __dirname;
 const OUT_DIR = path.join(ROOT, 'market-edge');
 const INDEX_PATH = path.join(ROOT, 'market-edge-index.json');
@@ -333,6 +334,11 @@ function main() {
     return cands.length === 1 ? cands[0] : null;
   }
 
+  // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
+  const idGate = buildIdentityGate(ROOT, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
+  log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
+  const resolveAt = (archiveName, date) => { const h = resolve(archiveName); return h && idGate && date && !idGate.allow(h.key, archiveName, date) ? null : h; };
+
   /**
    * TEN-206 §5.6 — the OPPONENT's archetype, stamped per row.
    *
@@ -355,8 +361,8 @@ function main() {
     }
   }
   log(`archetype roster: ${archetypeByName.size} labelled players`);
-  const archetypeOf = (archiveName) => {
-    const hit = resolve(archiveName);
+  const archetypeOf = (archiveName, date) => {
+    const hit = resolveAt(archiveName, date);
     return hit ? (archetypeByName.get(hit.name) || null) : null;
   };
 
@@ -391,7 +397,7 @@ function main() {
     const row = { date: m[ci.date], tournament: m[ci.tournament], series: m[ci.series], surface: m[ci.surface], court: m[ci.court],
       round: m[ci.round], winner: m[ci.winner], loser: m[ci.loser], comment: m[ci.comment] };
     const quarantined = (qDb.size || qMe.size) && (qDb.has(`${String(row.date).replace(/-/g, '')}|${row.winner}|${row.loser}`)
-      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolve(nm); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
+      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolveAt(nm, row.date); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
     const flags = String(m[ci.flags] || '');
     if (flags.includes('t')) { stats.team += 1; return; }   // a team event: in the master, never in Market edge (as the Database)
     const bk = DB_BOOK[m[ci.book]];
@@ -419,7 +425,7 @@ function main() {
         court: (row.court || '').trim() || null,
         round: row.round, season, ret: retired,
         speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
-        oppArchetype: archetypeOf(b.opp),
+        oppArchetype: archetypeOf(b.opp, row.date),
         opp: b.opp, won: b.won, p, price, oppPrice,
         book: bk[0], bookLabel: bk[1],
         // role: the tab's rule (TEN-310) — favourite = price < 2.00, from the shared core.
@@ -432,7 +438,7 @@ function main() {
         tour.season[season] = tour.season[season] || emptyAgg();
         addTo(tour.season[season], side);
       }
-      const hit = resolve(b.name);
+      const hit = resolveAt(b.name, row.date);
       if (!hit) return;
       // the player keeps a shard (rewritten without the match), so an old copy that priced it never stays behind
       if (quarantined) { stats.quarantined += 1; if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] }); return; }
@@ -558,6 +564,7 @@ function main() {
     tour: { all: tourSummary, level: tourByLevel },
     coverage: { pinnacleEndByLevel: pinnacleEnd, bet365ArchiveEndByLevel: bet365End },
     // founder ruling 2026-10-17: built from the master; the publish guard compares these two (a lag fails the upload)
+    identityGate: idGate ? { stats: idGate.stats, merged: idGate.merged } : null,
     source: 'database-yield-master.json', latestMatch: stats.latest, masterLatest: master.meta.latest || null,
     players: index,
   }, null, 1));

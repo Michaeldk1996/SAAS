@@ -87,7 +87,7 @@ function build(root) {
     if (x.p2Key != null && x.p2 && !roster.has(String(x.p2Key))) roster.set(String(x.p2Key), x.p2); });
   const idx = readJson(path.join(root, 'career-history-index.json'), {}).players || {};
   Object.entries(idx).forEach(([k, v]) => { const n = v && (v.name || v.n); if (n && !roster.has(String(k))) roster.set(String(k), String(n)); });
-  const res = makeResolver(roster);
+  const res = makeResolver(roster, require('../td-identity.js').buildIdentityGate(root, roster));   // the identity gate (founder 2026-10-18)
   const shardCache = new Map();
   const shard = k => { if (!shardCache.has(k)) { const d = readJson(path.join(chDir, `${k}.json`), null); shardCache.set(k, d ? (d.matches || []) : null); } return shardCache.get(k); };
   const surnameOf = n => { const c = ourCandidateKeys(n); return c.length ? c.map(x => x.surname) : []; };
@@ -100,7 +100,7 @@ function build(root) {
     const priced = (price(r.psw) && price(r.psl)) || (price(r.b365w) && price(r.b365l));
     if (!priced) continue;                     // nothing to price either way
     const d = day(r.date);
-    const keyW = res.archive(r.winner), keyL = res.archive(r.loser);
+    const keyW = res.archive(r.winner, r.date), keyL = res.archive(r.loser, r.date);
     const look = (key, won, oppArchive) => {
       if (!key) return { key: null, says: null, why: 'name not joined' };
       const rows = shard(key);
