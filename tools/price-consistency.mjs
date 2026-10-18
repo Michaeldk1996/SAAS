@@ -157,7 +157,7 @@ const result = await E(`(async () => {
     return hit && hit._id ? Object.assign({ key: k }, hit._id) : null; };
   // ---- coverage (founder ruling 2026-10-18, item 5)
   const COVON = ${!!COV};
-  const CV = { byLevel: {}, byMonth2026: {}, players: {}, joinMiss: 0, joinMissEx: [] };
+  const CV = { byLevel: {}, byMonth2026: {}, players: {}, joinMiss: 0, joinMissEx: [], roundDisagree: 0, roundDisagreeEx: [] };
   const lvOf = x => x.level === 'atp' ? (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'ATP qualifying' : 'ATP main draw')
     : (/^(M|W)\\d{2,3}\\b|\\bITF\\b/.test(String(x.tournament || '')) ? 'ITF' : (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'Challenger qualifying' : 'Challenger main draw'));
   const coverOf = (k, name, career) => {
@@ -180,7 +180,11 @@ const result = await E(`(async () => {
         const me = ourSur(name), o = ourSur(x.opponent), d0 = dn(x.date);
         const fit = (bySur.get(me) || []).filter(j => { const dd = dayOf(db.rows[j][0]) - d0; if (dd < -1 || dd > 16) return false;
           const nm = db.names[j]; return tdSur(x.won ? nm[0] : nm[1]) === me && tdSur(x.won ? nm[1] : nm[0]) === o; });
-        if (fit.length) { CV.joinMiss++; if (CV.joinMissEx.length < 60) CV.joinMissEx.push({ key: k, player: name, date: x.date, opp: x.opponent, event: x.tournament, level: lv, cause: causeNotHeld(x, name) }); }
+        // a Database row of the same pair whose round contradicts this one is ANOTHER match (or a level the two sources
+        // disagree on): the join refuses it on purpose, so it is reported as a round disagreement, never as a join miss
+        if (fit.length) { const cause = causeNotHeld(x, name), e = { key: k, player: name, date: x.date, opp: x.opponent, event: x.tournament, level: lv, cause };
+          if (/^round \\(/.test(cause)) { CV.roundDisagree++; if (CV.roundDisagreeEx.length < 100) CV.roundDisagreeEx.push(e); }
+          else { CV.joinMiss++; if (CV.joinMissEx.length < 60) CV.joinMissEx.push(e); } }
       }
     });
   };
@@ -318,7 +322,7 @@ if (COV && result.coverage) {
   const tmp = COV + '.tmp';
   writeFileSync(tmp, JSON.stringify({ rule: 'every played match of every player with a career-history shard: priced, or its reason (founder 2026-10-18 item 5)', builtAt: new Date().toISOString(), totals: tot, ...C }));
   renameSync(tmp, COV);
-  console.log(`### price-coverage ${JSON.stringify({ totals: tot, joinMiss: C.joinMiss, threw: C.threw || 0, file: COV })}`);
+  console.log(`### price-coverage ${JSON.stringify({ totals: tot, joinMiss: C.joinMiss, roundDisagree: C.roundDisagree || 0, threw: C.threw || 0, file: COV })}`);
 }
 if (!result.playersChecked || !result.matches) { console.error('price-consistency: checked 0 players / 0 matches — a check on an empty set is not a check'); process.exit(1); }
 if (QOUT) {

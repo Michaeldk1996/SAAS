@@ -61,7 +61,21 @@ else {
       const c = existsSync(cov) ? JSON.parse(readFileSync(cov, 'utf8')) : null;
       check('5 · the coverage report counts the match as priced, under ATP main draw 2025, with no join miss',
         rc.status === 0 && c && c.byLevel['ATP main draw'] && c.byLevel['ATP main draw']['2025'].n === 1 && c.byLevel['ATP main draw']['2025'].priced === 1 && c.joinMiss === 0,
-        (rc.stdout || '') + (rc.stderr || '') + JSON.stringify(c)); }
+        (rc.stdout || '') + (rc.stderr || '') + JSON.stringify(c));
+      // a qualifying row v the same opponent 3 days earlier: the Database's R1 row of that pair is ANOTHER match (the round
+      // contradicts), so the alert's join-miss count stays 0 and the case is listed as a round disagreement
+      const one = JSON.parse(readFileSync(join(site, 'career-history', K + '.json'), 'utf8'));
+      writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify({ matches: one.matches.concat([{ date: '2025-01-10', year: 2025,
+        tournament: 'Australian Open', level: 'atp', surface: 'hard', round: 'Qualifying', qualifying: true, opponent: 'N. Jarry', oppKey: '400', won: true,
+        result: '2-0', eventKey: 9003, sets: [[6, 3], [6, 2]] }]) }));
+      const rq = spawnSync(process.execPath, [join(ROOT, 'tools/price-consistency.mjs'), '--site', site, '--sample', '1', '--coverage-out', cov],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CHROME_BIN: chrome }), timeout: 180000 });
+      const cq = existsSync(cov) ? JSON.parse(readFileSync(cov, 'utf8')) : null;
+      writeFileSync(join(site, 'career-history', K + '.json'), JSON.stringify(one));
+      check('5 · a Database row whose round contradicts is a round disagreement, never a join miss (the alert stays quiet)',
+        rq.status === 0 && cq && cq.joinMiss === 0 && cq.roundDisagree === 1 && /^round \(/.test(cq.roundDisagreeEx[0].cause)
+          && cq.byLevel['ATP qualifying'] && cq.byLevel['ATP qualifying']['2025'].n === 1,
+        (rq.stdout || '') + (rq.stderr || '') + JSON.stringify(cq)); }
 
     writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.05));
     r = run();
