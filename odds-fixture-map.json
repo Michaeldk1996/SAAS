@@ -4703,6 +4703,78 @@
       "p2": "G. Onclin",
       "startTime": "2026-10-18T11:40:00.000Z",
       "tournamentId": 45935
+    },
+    "12172008": {
+      "fixtureId": "id1200309775722436",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "D. Altmaier",
+      "p2": "T. Droguet",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172009": {
+      "fixtureId": "id1200309775722444",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "M. Arnaldi",
+      "p2": "L. Musetti",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172010": {
+      "fixtureId": "id1200309775722438",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "B. Bonzi",
+      "p2": "C. Norrie",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172011": {
+      "fixtureId": "id1200309775722440",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "J. Faria",
+      "p2": "F. Balshaw",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172012": {
+      "fixtureId": "id1200309775722442",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "U. Humbert",
+      "p2": "C. Moutet",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172013": {
+      "fixtureId": "id1200309775722448",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "H. Medjedovic",
+      "p2": "B. Nakashima",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172014": {
+      "fixtureId": "id1200309775722446",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "L. Sonego",
+      "p2": "M. Kouame",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172015": {
+      "fixtureId": "id1200309775722450",
+      "mappedAt": "2026-10-18T00:47:22Z",
+      "orient": "same",
+      "p1": "S. Wawrinka",
+      "p2": "M. Landaluce",
+      "startTime": "2026-10-19T09:00:00.000Z",
+      "tournamentId": 3097
     }
   },
   "missAudit": {
@@ -4715,23 +4787,12 @@
       "observedSpanDays": 18.78,
       "projectedTtlUnitsPerDay": 1.4,
       "runs": 400,
-      "spentRuns": 147,
+      "spentRuns": 148,
       "ttlBitRuns": 26,
       "ttlBitShare": 0.065,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-29T05:02:45Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 36
-      },
       {
         "at": "2026-09-29T06:02:47Z",
         "fixturesUnitsSpent": 0,
@@ -9120,9 +9181,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 22
+      },
+      {
+        "at": "2026-10-18T00:47:22Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 8,
+        "ttlBit": false,
+        "unmapped": 8,
+        "upcoming": 30
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-17T16:32:10Z"
+  "updatedAt": "2026-10-18T00:47:22Z"
 }
