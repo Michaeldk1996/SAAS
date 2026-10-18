@@ -15,7 +15,7 @@
 // Usage: node tools/price-consistency.mjs --site _site [--report out.json] [--sample 10] [--limit N]
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, existsSync, writeFileSync, statSync } from 'node:fs';
+import { mkdtempSync, readFileSync, existsSync, writeFileSync, statSync, renameSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, extname, resolve, normalize } from 'node:path';
 
@@ -31,6 +31,12 @@ const SITE = resolve(arg('--site', '_site')), REPORT = arg('--report', null), SA
 // after (the Database join first) — the founder's "how many of the 420 changed" (a report, never a failure)
 const FOCUS = arg('--focus', null) ? JSON.parse(readFileSync(arg('--focus'), 'utf8')).map(String) : [];
 const H2H_EVERY = +arg('--h2h-every', 20);
+// --quarantine-out FILE (founder ruling 2026-10-18, "one match problem must never stop the site"): a per-match difference no
+// longer fails the run. Each affected match is written to FILE (the page's price-quarantine.json: the Database row to dash,
+// the Market edge row to leave out, the page that tripped, the likely cause) and the run exits 0; only a check that could
+// not run (no player, Market edge lagging the master, a page function that threw) still exits 1. Without it the guard fails
+// on any difference, as before (its own test, and a read-back of a deployed site).
+const QOUT = arg('--quarantine-out', null);
 const PAGE = LIVE || existsSync(join(SITE, 'bsp-consult-dashboard.html')) ? 'bsp-consult-dashboard.html' : 'index.html';
 if (!LIVE) for (const f of [PAGE, 'database-yield.json', 'database-yield-players.json', 'career-history-index.json']) {
   if (!existsSync(join(SITE, f))) { console.error(`price-consistency: ${f} missing from ${SITE} — nothing to check, failing closed`); process.exit(1); }
@@ -109,6 +115,41 @@ const result = await E(`(async () => {
   const pick = o => (o && o.price != null ? [o.price, o.oppPrice, fhSrcTitle(o)].join(' | ') : null);
   const note = (bucket, cls, row) => { const t = S[bucket === 'fail' ? 'fail' : 'report']; t[cls] = (t[cls] || 0) + 1; if (S.ex[bucket].length < 80) S.ex[bucket].push(Object.assign({ cls }, row)); };
   const nameOf = k => (playerProfiles && playerProfiles[k] && playerProfiles[k].name) || (idx[k] && (idx[k].name || idx[k].n)) || '';
+  // ---- the quarantine (founder ruling 2026-10-18): one entry per affected match, with the page that tripped and the likely cause
+  const Q = [];
+  const nrm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').replace(/[-']/g, ' ');
+  const ourSur = n => nrm(n).replace(/^([a-z]{1,3}\\.\\s*)+/, '').trim().split(/\\s+/)[0] || '';
+  const ourIni = n => { const m = /^\\s*([a-z])[a-z]{0,2}\\./.exec(nrm(n)); return m ? m[1] : null; };
+  const tdSur = n => nrm(n).trim().split(/\\s+/)[0] || '';
+  const tdIni = n => { const m = /\\s([a-z])[a-z]{0,2}\\.?(?:[a-z]\\.?)*\\s*$/.exec(nrm(n)); return m ? m[1] : null; };
+  const dayOf = v => Date.UTC(Math.floor(v / 10000), Math.floor(v / 100) % 100 - 1, v % 100) / 864e5;
+  const dn = s => Date.parse(String(s).slice(0, 10) + 'T00:00:00Z') / 864e5;
+  const bySur = new Map();
+  db.names.forEach((nm, i) => { if (nm) for (const x of nm) { const t = tdSur(x); if (!bySur.has(t)) bySur.set(t, []); bySur.get(t).push(i); } });
+  const dbKeyOf = i => i == null ? null : db.rows[i][0] + '|' + db.names[i][0] + '|' + db.names[i][1];
+  // why the join holds no row for a match some page priced: the Database row with the same two surnames near its date
+  const causeNotHeld = (x, name) => {
+    const me = ourSur(name), o = ourSur(x.opponent), d0 = dn(x.date);
+    const near = (bySur.get(me) || []).filter(i => { const dd = dayOf(db.rows[i][0]) - d0; return dd >= -20 && dd <= 30; })
+      .map(i => { const nm = db.names[i], mine = x.won ? nm[0] : nm[1], theirs = x.won ? nm[1] : nm[0]; return { i, mine, theirs }; })
+      .filter(c => tdSur(c.mine) === me);
+    const both = near.filter(c => tdSur(c.theirs) === o);
+    if (both.length > 1) return 'two Database rows fit this match (the join never picks between them)';
+    if (both.length === 1) {
+      const c = both[0], rd = db.meta.rounds[db.rows[c.i][3]];
+      if (ourIni(x.opponent) && tdIni(c.theirs) && ourIni(x.opponent) !== tdIni(c.theirs)) return \`name spelling ('\${c.theirs}' in the Database vs '\${x.opponent}')\`;
+      if (ourIni(name) && tdIni(c.mine) && ourIni(name) !== tdIni(c.mine)) return \`name spelling ('\${c.mine}' in the Database vs '\${name}')\`;
+      const off = Math.round(dayOf(db.rows[c.i][0]) - d0);
+      if (off < -3 || off > 16) return \`date (the Database dates it \${off > 0 ? '+' : ''}\${off} days from the career row)\`;
+      return \`round ('\${rd}' in the Database vs '\${x.round || 'none'}')\`;
+    }
+    if (near.length) return \`the opponent's name ('\${near.map(c => c.theirs).filter((v, j, a) => a.indexOf(v) === j).slice(0, 2).join("' / '")}' in the Database vs '\${x.opponent}')\`;
+    return 'the Database holds no row for this match';
+  };
+  const qAdd = (x, k, name, page, kind, meId, dbKey, cause, shown) =>
+    Q.push({ key: k, player: name, date: x.date, opp: x.opponent, event: x.tournament, round: x.round || null, page, kind, me: meId || null, db: dbKey || null, cause, shown: shown || null });
+  const meIdOf = (k, tdKey, hit) => { if (tdKey) { const [date, opp, w] = tdKey.split('|'); return { key: k, date, opp, won: w === '1' }; }
+    return hit && hit._id ? Object.assign({ key: k }, hit._id) : null; };
   let n = 0;
   for (const k of keys) {
     if (ONLY.size && !ONLY.has(k)) continue;
@@ -134,7 +175,8 @@ const result = await E(`(async () => {
     const meOf = x => { const d0 = Date.parse(x.date + 'T00:00:00Z'); let hit = null, n = 0;
       for (const dd of [0, -1, 1]) { const ds = new Date(d0 + dd * 864e5).toISOString().slice(0, 10), m = meBy.get(ds + '|' + (x.won ? 1 : 0) + '|' + surn(x.opponent)); if (m) { hit = m; n++; } }
       return n === 1 ? { price: hit.price, oppPrice: hit.oppPrice, book: hit.book === 'bet365-archive' ? 'B' : /approx/.test(hit.book) ? 'A' : 'P',
-        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : 'td' } : null; };
+        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : 'td',
+        _id: { date: hit.date, opp: hit.opp, won: !!hit.won } } : null; };
     // the Form tab, called as the tab calls it, on this player's career rows (every window, every surface)
     const formAt = new Map();
     try {
@@ -175,14 +217,16 @@ const result = await E(`(async () => {
         if (S.focus.ex.length < 30) S.focus.ex.push({ eventKey: x.eventKey, player: name, date: x.date, opp: x.opponent, before: pick(old), after: pick(tab), meBefore: pick(oMe), meAfter: pick(meRow) });
       }
       if (showIt) { row.form = pick(formRow); row.me = pick(meRow); row.cap = pick(cap); S.shown.push(row); }
-      if (okOf(x) != null && (x.eventKey != null || picked(k, x)) && (FOCUS.has(String(x.eventKey)) || showIt || +x.eventKey % H2H_EVERY === 0)) h2hJobs.push({ x, ref, row });
+      if (okOf(x) != null && (x.eventKey != null || picked(k, x)) && (FOCUS.has(String(x.eventKey)) || showIt || +x.eventKey % H2H_EVERY === 0)) h2hJobs.push({ x, ref, row, dk: dbKeyOf(js[0].dbi) });
       if (ref) {
         S.dbHeld++; S.byYear[y].held++;
         let bad = false;
         S.checked.tab++; if (meRow) S.checked.me++; if (cap) S.checked.cap++; if (formRow) S.checked.form++;
-        if (pick(tab) !== pick(ref)) { S.fail.tab++; note('fail', 'tab ≠ Database', row); bad = true; }
-        if (formRow && pick(formRow) !== pick(ref)) { S.fail.form++; note('fail', 'Form tab ≠ Database', Object.assign({}, row, { form: pick(formRow) })); bad = true; }
-        if (meRow && pick(meRow) !== pick(ref)) { S.fail.me++; note('fail', 'Market edge shard ≠ Database', Object.assign({}, row, { me: pick(meRow) })); bad = true; }
+        const dk = dbKeyOf(js[0].dbi), mid = meRow ? meIdOf(k, tab.tdKey, meRow) : null;
+        const diff = (pg, o) => qAdd(x, k, name, pg, 'different', mid, dk, \`a different price from the master (\${pick(o)} vs \${pick(ref)})\`, pick(o));
+        if (pick(tab) !== pick(ref)) { S.fail.tab++; note('fail', 'tab ≠ Database', row); bad = true; diff('the Match analysis tabs', tab); }
+        if (formRow && pick(formRow) !== pick(ref)) { S.fail.form++; note('fail', 'Form tab ≠ Database', Object.assign({}, row, { form: pick(formRow) })); bad = true; diff('the Form tab', formRow); }
+        if (meRow && pick(meRow) !== pick(ref)) { S.fail.me++; note('fail', 'Market edge shard ≠ Database', Object.assign({}, row, { me: pick(meRow) })); bad = true; diff('Market edge', meRow); }
         if (cap && pick(cap) !== pick(ref)) { S.fail.cap++; note('fail', 'Head to Head captured step ≠ Database', Object.assign({}, row, { cap: pick(cap) })); bad = true; }
         if (bad) S.byYear[y].failed++;
       } else {
@@ -190,9 +234,10 @@ const result = await E(`(async () => {
         // ruling 3: a master-class match the join does not hold is a dash on every surface — a price anywhere is a path of
         // its own and fails the run
         let bad = false;
-        if (tab.price != null) { S.fail.tab++; note('fail', 'tab prices a match the master does not hold (own price path)', row); bad = true; }
-        if (formRow && formRow.price != null) { S.fail.form++; note('fail', 'Form tab prices a match the master does not hold (own price path)', Object.assign({}, row, { form: pick(formRow) })); bad = true; }
-        if (meRow && meRow.price != null) { S.fail.me++; note('fail', 'Market edge prices a match the join does not hold (own price path)', Object.assign({}, row, { me: pick(meRow) })); bad = true; }
+        const nh = (pg, o) => qAdd(x, k, name, pg, 'not held', pg === 'Market edge' ? meIdOf(k, tab.tdKey, meRow) : null, null, causeNotHeld(x, name), pick(o));
+        if (tab.price != null) { S.fail.tab++; note('fail', 'tab prices a match the master does not hold (own price path)', row); bad = true; nh('the Match analysis tabs', tab); }
+        if (formRow && formRow.price != null) { S.fail.form++; note('fail', 'Form tab prices a match the master does not hold (own price path)', Object.assign({}, row, { form: pick(formRow) })); bad = true; nh('the Form tab', formRow); }
+        if (meRow && meRow.price != null) { S.fail.me++; note('fail', 'Market edge prices a match the join does not hold (own price path)', Object.assign({}, row, { me: pick(meRow) })); bad = true; nh('Market edge', meRow); }
         if (bad) S.byYear[y].failed++;
       }
     });
@@ -207,12 +252,15 @@ const result = await E(`(async () => {
       const hit = ms2.filter(r => (j.x.eventKey != null ? String(r.ek) === String(j.x.eventKey) : r.date === j.x.date && r.won === !!j.x.won));
       if (hit.length !== 1 || hit[0].wo) continue;
       j.row.h2h = pick(hit[0]);   // printed only for a shown / picked match
-      if (j.ref) { S.checked.h2h++; if (pick(hit[0]) !== pick(j.ref)) { S.fail.h2h++; note('fail', 'H2H tab ≠ Database', Object.assign({}, j.row, { h2h: pick(hit[0]) })); } }
-      else if (hit[0].price != null) { S.fail.h2h++; note('fail', 'H2H tab prices a match the master does not hold (own price path)', Object.assign({}, j.row, { h2h: pick(hit[0]) })); }
+      if (j.ref) { S.checked.h2h++; if (pick(hit[0]) !== pick(j.ref)) { S.fail.h2h++; note('fail', 'H2H tab ≠ Database', Object.assign({}, j.row, { h2h: pick(hit[0]) }));
+        qAdd(j.x, k, name, 'the H2H tab', 'different', null, j.dk, \`a different price from the master (\${pick(hit[0])} vs \${pick(j.ref)})\`, pick(hit[0])); } }
+      else if (hit[0].price != null) { S.fail.h2h++; note('fail', 'H2H tab prices a match the master does not hold (own price path)', Object.assign({}, j.row, { h2h: pick(hit[0]) }));
+        qAdd(j.x, k, name, 'the H2H tab', 'not held', null, null, causeNotHeld(j.x, name), pick(hit[0])); }
     }
   }
   S.focus.notFound = [...FOCUS].filter(k => !S.focus.seen[k]).map(k => Object.assign({ eventKey: k }, S.focus.rowOf[k] || { inNoCheckedCareer: true }));
   delete S.focus.rowOf;
+  S.quarantine = Q;
   return S;
 })()`).catch(e => fail('the in-page check threw: ' + e.message));
 
@@ -226,6 +274,27 @@ for (const r of result.ex.fail.slice(0, 40)) console.log('FAIL ' + JSON.stringif
 for (const r of result.ex.report.slice(0, 40)) console.log('REPORT ' + JSON.stringify(r));
 if (REPORT) writeFileSync(REPORT, JSON.stringify(result, null, 1));
 if (!result.playersChecked || !result.matches) { console.error('price-consistency: checked 0 players / 0 matches — a check on an empty set is not a check'); process.exit(1); }
+if (QOUT) {
+  // one entry per match (both players' sides of it merged), the pages that tripped listed together
+  const byMatch = new Map();
+  for (const q of result.quarantine || []) {
+    const sur = n => String(n || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/^([a-z]{1,3}\.\s*)+/, '').trim();
+    const id = q.date + '|' + [sur(q.player), sur(q.opp)].sort().join('|');
+    const e = byMatch.get(id) || Object.assign({}, q, { pages: [], me: [], db: q.db || null });
+    if (!e.pages.includes(q.page)) e.pages.push(q.page);
+    if (q.me && !e.me.some(m => m.key === q.me.key && m.date === q.me.date && m.opp === q.me.opp)) e.me.push(q.me);
+    if (q.db && !e.db) e.db = q.db;
+    byMatch.set(id, e);
+  }
+  const entries = [...byMatch.values()].map(e => { delete e.page; return e; });
+  const tmp = QOUT + '.tmp';
+  writeFileSync(tmp, JSON.stringify({ rule: 'one match problem never stops the site: each match below is a dash on every page this build (founder 2026-10-18)',
+    builtAt: new Date().toISOString(), failures: result.fail, entries }, null, 1));
+  renameSync(tmp, QOUT);
+  if (result.fail.threw) { console.error(`price-consistency: a page function threw (${result.fail.threw}) — the check did not run, failing closed`); process.exit(1); }
+  console.log(`price-consistency: ${failN ? failN + ' difference(s) on ' + entries.length + ' match(es) → quarantined (a dash on every page), the run publishes' : 'OK — no difference'} (${QOUT})`);
+  process.exit(0);
+}
 if (failN) { console.error(`price-consistency: ${failN} surface(s) show a different price, source or label than the Database for a match it holds`); process.exit(1); }
 console.log(`price-consistency: OK — ${result.dbHeld} matches the Database holds show one price on every surface checked`);
 process.exit(0);

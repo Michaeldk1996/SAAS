@@ -130,7 +130,7 @@ const WALKOVER = new Set(['Walkover']);
 // poller saw go live; td-feed passes api-tennis "Awarded" through as the row's comment). A started non-result is priced
 // BEHIND the retired flag, settled on the official result like a retirement: no Database figure moves.
 const STARTED_PATH = process.env.DB_YIELD_STARTED || path.join(__dirname, 'started-evidence.json');
-const started = { on: false, evidence: 0, says: new Map(), matched: 0, priced: 0, byComment: {} };
+const started = { on: false, evidence: 0, says: new Map(), matched: 0, priced: 0, byComment: {}, completed: 0, completedByComment: {}, completedRows: [] };
 if (fs.existsSync(STARTED_PATH)) {
   const ev = JSON.parse(fs.readFileSync(STARTED_PATH, 'utf8'));
   if (!ev || !Array.isArray(ev.matches)) { console.error(`${STARTED_PATH}: no matches array`); process.exit(1); }
@@ -146,8 +146,10 @@ const startedVerdict = (comment, says) => {
   _startedVerdict = _startedVerdict || require('./tools/started-evidence.js').verdictOf;
   return _startedVerdict(comment, says);
 };
-const startedOf = (tdKey, comment, archiveLiveFlip) =>
-  startedVerdict(comment, (started.says.get(tdKey) || []).concat(archiveLiveFlip ? ['started'] : [])) === 'started';
+// founder ruling 2026-10-18: a non-result whose sources show the match PLAYED OUT ('completed': the US Open 2019 final,
+// labelled "Sched") is a normal played match — a Database row like any Completed one, in every figure.
+const verdictOfRow = (tdKey, comment, archiveLiveFlip) =>
+  startedVerdict(comment, (started.says.get(tdKey) || []).concat(archiveLiveFlip ? ['live'] : []));
 const FEED_STARTED = new Set(['Awarded']);   // an archive-fed row: api-tennis "Awarded" after our poller saw it go live
 
 function num(x) {
@@ -254,12 +256,17 @@ function processLine(c, col, season, fromFeed) {
     if (WALKOVER.has(comment)) { bucket.walkover++; return; }
     // founder 2026-10-17 (close-out item 1): a non-result that STARTED is priced like a retirement (behind the flag)
     const tdKey = [(c[col.date] || '').trim(), (c[col.tournament] || '').trim(), (c[col.winner] || '').trim(), (c[col.loser] || '').trim()].join('|');
-    const startedNonResult = !RESULT_STANDS.has(comment) && !RETIRED.has(comment)
-      && (fromFeed ? FEED_STARTED.has(comment) && !!(c[col.label] || '').trim() : startedOf(tdKey, comment, feedOn && feed.overrides.has(tdKey)));
+    const verdict = RESULT_STANDS.has(comment) || RETIRED.has(comment) ? null
+      : fromFeed ? (FEED_STARTED.has(comment) && !!(c[col.label] || '').trim() ? 'started' : 'none')
+      : verdictOfRow(tdKey, comment, feedOn && feed.overrides.has(tdKey));
+    const completedNonResult = verdict === 'completed';
+    const startedNonResult = verdict === 'started';
     if (startedNonResult) started.matched++;
+    if (completedNonResult) { started.completed++; started.completedByComment[comment] = (started.completedByComment[comment] || 0) + 1;
+      started.completedRows.push(tdKey + '|' + comment); }
     const isRet = RETIRED.has(comment);
     if (isRet) bucket.retired++;                                  // voided on the Database, per the 2026-09-20 ruling
-    else if (!RESULT_STANDS.has(comment)) { bucket.edge++; if (!startedNonResult) return; } // Awarded/Disqualified/Sched: out of the Database rows either way
+    else if (!RESULT_STANDS.has(comment) && !completedNonResult) { bucket.edge++; if (!startedNonResult) return; } // Awarded/Disqualified/Sched: out of the Database rows unless they started (behind the flag) or were played out (a row)
     // a retirement, or a non-result that started: priced behind the retired flag, never a Database row
     const behindFlag = isRet || startedNonResult;
 
@@ -511,7 +518,9 @@ const meta = {
   // retired flag (in retRows / the era shard), settled on the official result. Absent = no evidence file this run.
   ...(started.on || started.priced ? { started: {
     rule: 'A match that started is priced (behind the retired flag); a true walkover stays a dash; disagreeing sources keep the dash.',
-    evidence: started.evidence, matched: started.matched, priced: started.priced, byComment: started.byComment } } : {}),
+    evidence: started.evidence, matched: started.matched, priced: started.priced, byComment: started.byComment,
+    // founder ruling 2026-10-18: non-results the sources show PLAYED OUT — Database rows like any Completed match
+    completed: started.completed, completedByComment: started.completedByComment, completedRows: started.completedRows } } : {}),
   // Founder ruling 2026-10-16: exact ties behind a flag — `tieRows` (this file) / `tieNames` (the names shard), parallel,
   // same shape as rows / names (favWon 1: the winner's price = the loser's). NOT Database rows: no Database figure,
   // tour-baselines.json or tournament-market.json reads them. Read only by the price join (DatabaseTab.priceRows).

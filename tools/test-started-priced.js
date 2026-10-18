@@ -37,8 +37,10 @@ fs.writeFileSync(path.join(arch, '2023.csv'), [H,
   L('2023-05-02', 'Alpha Open', '2nd Round', 'Dee D.', 'Eff E.', 'Walkover', 1.4, 2.9),       // true walkover → dash
   L('2023-05-03', 'Alpha Open', 'Quarterfinals', 'Dee D.', 'Gee G.', 'Disqualified', 1.6, 2.3), // sources disagree → dash
   L('2023-05-03', 'Alpha Open', 'Quarterfinals', 'Ace A.', 'Hay H.', 'Walkover', 1.3, 3.4),   // TD Walkover v a played row → dash
+  L('2023-05-04', 'Alpha Open', 'Semifinals', 'Jay J.', 'Kay K.', 'Sched', 1.8, 2.0),         // played out, mislabelled → a Database row
+  L('2023-05-04', 'Alpha Open', 'Semifinals', 'Lee L.', 'Moe M.', 'Awarded', 1.9, 1.95),       // one row played out, one retired → behind the flag
 ].join('\n') + '\n');
-const names = { 1: 'A. Ace', 2: 'B. Bee', 3: 'C. Cee', 4: 'D. Dee', 5: 'E. Eff', 7: 'G. Gee', 8: 'H. Hay' };
+const names = { 1: 'A. Ace', 2: 'B. Bee', 3: 'C. Cee', 4: 'D. Dee', 5: 'E. Eff', 7: 'G. Gee', 8: 'H. Hay', 10: 'J. Jay', 11: 'K. Kay', 12: 'L. Lee', 13: 'M. Moe' };
 fs.writeFileSync(path.join(tmp, 'player-profiles.json'), JSON.stringify({ players: Object.fromEntries(Object.entries(names).map(([k, n]) => [k, { name: n }])) }));
 const sh = (k, rows) => fs.writeFileSync(path.join(tmp, 'career-history', `${k}.json`), JSON.stringify({ matches: rows }));
 sh(1, [{ date: '2023-05-02', opponent: 'C. Cee', won: true, sets: [{ p: 4, o: 2 }], defaulted: true },
@@ -46,9 +48,17 @@ sh(1, [{ date: '2023-05-02', opponent: 'C. Cee', won: true, sets: [{ p: 4, o: 2 
 sh(3, [{ date: '2023-05-02', opponent: 'A. Ace', won: false, sets: [{ p: 2, o: 4 }], defaulted: true }]);
 sh(4, [{ date: '2023-05-02', opponent: 'E. Eff', won: true, walkover: true }, { date: '2023-05-03', opponent: 'G. Gee', won: true, sets: [{ p: 6, o: 3 }] }]);
 sh(7, [{ date: '2023-05-03', opponent: 'D. Dee', won: false, walkover: true }]);
+sh(10, [{ date: '2023-05-04', opponent: 'K. Kay', won: true, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }] }]);
+sh(11, [{ date: '2023-05-04', opponent: 'J. Jay', won: false, sets: [{ p: 3, o: 6 }, { p: 4, o: 6 }] }]);
+sh(12, [{ date: '2023-05-04', opponent: 'M. Moe', won: true, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }] }]);
+sh(13, [{ date: '2023-05-04', opponent: 'L. Lee', won: false, sets: [{ p: 3, o: 6 }, { p: 1, o: 2 }], retired: true }]);
 const ev = build(tmp);
 const v = t => (ev.matches.find(x => x.loser === t) || {}).verdict;
-ok(ev.rows === 4, `the evidence covers the 4 priced non-result rows (got ${ev.rows})`);
+ok(ev.rows === 6, `the evidence covers the 6 priced non-result rows (got ${ev.rows})`);
+ok(v('Kay K.') === 'completed', 'Jay v Kay ("Sched", both rows played out 6-3 6-4) → completed (founder 2026-10-18)');
+ok(v('Moe M.') === 'started', 'Lee v Moe (one row played out, the other a retirement) → started, never completed');
+ok(rowSays({ won: true, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }] }, 5) === 'started', 'two sets won of a best-of-five is not played out');
+ok(verdictOf('Sched', ['completed', 'live']) === 'completed' && verdictOf('Sched', ['started', 'live']) === 'started', 'our live-flip says it started, nothing about its end');
 ok(v('Cee C.') === 'started', 'Ace v Cee (Awarded, both rows played) → started');
 ok(v('Eff E.') === 'walkover', 'Dee v Eff (Walkover, a walkover row) → walkover');
 ok(v('Gee G.') === 'disagree', 'Dee v Gee (Disqualified, one row played, one walkover) → disagree');
@@ -66,12 +76,16 @@ function buildChecks(script, label) {
   const r = runBuild(script), b = r.base, nm = r.names;
   const retPairs = (b.retRows || []).map((x, i) => (nm.retNames || [])[i]).filter(Boolean).map(p => (Array.isArray(p) ? p : [p]).map(j => (typeof j === 'number' && nm.players ? nm.players[j] : j)).join(' v '));
   const checks = [
-    [(b.rows || []).length === 1, 'the Completed match is the one Database row (a started default never moves a Database figure)'],
+    [(b.rows || []).length === 2, 'the Completed match and the played-out "Sched" match are the Database rows (a started default never moves a Database figure)'],
+    [(nm.names || []).some(p => /Jay J\./.test(JSON.stringify(p))), 'the played-out "Sched" match is a Database row (founder 2026-10-18)'],
+    [!retPairs.some(p => /Kay K\./.test(p)), 'the played-out match is not behind the flag'],
+    [retPairs.some(p => /Moe M\./.test(p)), 'the half played-out, half retired match stays behind the flag'],
+    [b.meta && b.meta.started && b.meta.started.completed === 1 && b.meta.started.completedByComment.Sched === 1, 'meta.started counts 1 completed ("Sched")'],
     [retPairs.some(p => /Ace A\. v Cee C\.|Cee C\. v Ace A\./.test(p)), 'the started Awarded match is priced behind the retired flag'],
     [!retPairs.some(p => /Eff E\./.test(p)), 'the true walkover stays a dash'],
     [!retPairs.some(p => /Gee G\./.test(p)), 'the Disqualified match whose sources disagree stays a dash'],
     [!retPairs.some(p => /Hay H\./.test(p)), 'Tennis-Data Walkover v a played career row stays a dash'],
-    [b.meta && b.meta.started && b.meta.started.priced === 1, 'meta.started counts 1 priced'],
+    [b.meta && b.meta.started && b.meta.started.priced === 2, 'meta.started counts 2 priced behind the flag'],
   ];
   return { checks, label };
 }
@@ -89,6 +103,13 @@ try { const m = buildChecks(mutPath); caught = m.checks.some(([c]) => !c); }
 catch (e) { caught = true; }
 finally { fs.unlinkSync(mutPath); }
 ok(caught, 'MUTANT (the started rule removed) turns the build checks red');
+// mutant 2: a played-out non-result treated like a started one (behind the flag) → red
+const anchor2 = 'const completedNonResult = verdict === \'completed\';';
+ok(src.split(anchor2).length === 2, 'the completed-rule mutant anchor is found exactly once');
+fs.writeFileSync(mutPath, src.replace(anchor2, 'const completedNonResult = false;').replace("const startedNonResult = verdict === 'started';", "const startedNonResult = verdict === 'started' || verdict === 'completed';"));
+let caught2 = false;
+try { const m = buildChecks(mutPath); caught2 = m.checks.some(([c]) => !c); } catch (e) { caught2 = true; } finally { fs.unlinkSync(mutPath); }
+ok(caught2, 'MUTANT (a played-out match kept behind the flag, out of the Database figures) turns the build checks red');
 
 fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-started-priced: ${pass} passed, ${fail} failed`);

@@ -12,7 +12,9 @@
  *     before): `walkover: true` = no ball played; a set score with a game won = started; neither = no evidence.
  * The Database build adds one more source: our archive's close for the row (td-feed override), which exists only for a
  * match our live poller saw in play (pinarch: a close is cut at a verified live start) — api-tennis showing it started.
- * Verdict: `started` when at least one source says started, none says walkover and Tennis-Data does not say Walkover;
+ * Verdict: `completed` when every career row that speaks shows the match played out (no retirement or default, the winner
+ * reached the sets the format needs) — a normal played match, counted in every Database figure (founder 2026-10-18);
+ * `started` when at least one source says started, none says walkover and Tennis-Data does not say Walkover;
  * `walkover` when every source that speaks says no ball was played; `disagree` when they differ; `none` when no career
  * row speaks (and Tennis-Data claims nothing). Only `started` is priced (build-database-yield.js, behind the retired flag).
  *
@@ -35,18 +37,28 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 const day = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; };
 const price = v => { const f = parseFloat(v); return Number.isFinite(f) && f >= 1.01 && f <= 1000 ? f : null; };
 
-// one career row → what it says about the start
-function rowSays(r) {
+// one career row → what it says about the start, and whether the match was played out (founder ruling 2026-10-18: a
+// completed match Tennis-Data mislabels — "Sched" on the US Open 2019 final — is a normal played match). `completed` =
+// no retirement, default or walkover flag, and the match's winner reached the sets the format needs (best-of from
+// Tennis-Data's own row: 2 of 3, 3 of 5) on the row's own set scores. `started` = a game was played, not played out.
+function rowSays(r, bestOf) {
   if (!r) return null;
   if (r.walkover) return 'walkover';
-  const games = (Array.isArray(r.sets) ? r.sets : []).reduce((a, s) => a + (+(s && s.p) || 0) + (+(s && s.o) || 0), 0);
-  return games > 0 ? 'started' : null;
+  const sets = Array.isArray(r.sets) ? r.sets : [];
+  const games = sets.reduce((a, s) => a + (+(s && s.p) || 0) + (+(s && s.o) || 0), 0);
+  if (!(games > 0)) return null;
+  const need = +bestOf === 5 ? 3 : +bestOf === 3 ? 2 : null;
+  const winnerSets = sets.filter(s => s && (r.won ? +s.p > +s.o : +s.o > +s.p)).length;
+  if (need && !r.retired && !r.defaulted && winnerSets === need) return 'completed';
+  return 'started';
 }
+// `live` = our archive's close (cut only at a verified live start): it says the match started, nothing about its end.
 function verdictOf(comment, says) {
   const s = says.filter(Boolean);
   const claims = comment === WALKOVER_COMMENT ? s.concat('walkover') : s;
   if (!claims.length) return 'none';
-  if (claims.every(x => x === 'started')) return 'started';
+  if (claims.every(x => x === 'completed' || x === 'live') && claims.includes('completed')) return 'completed';
+  if (claims.every(x => x === 'started' || x === 'completed' || x === 'live')) return 'started';
   if (claims.every(x => x === 'walkover')) return 'walkover';
   return 'disagree';
 }
@@ -90,7 +102,7 @@ function build(root) {
       });
       if (hits.length !== 1) return { key, says: null, why: hits.length ? `${hits.length} candidate rows` : 'no career row' };
       const h = hits[0];
-      return { key, says: rowSays(h), why: null, row: { date: h.date, tournament: h.tournament, round: h.round || null, sets: h.sets || null,
+      return { key, says: rowSays(h, r.bestof), why: null, row: { date: h.date, tournament: h.tournament, round: h.round || null, sets: h.sets || null,
         walkover: !!h.walkover, retired: !!h.retired, defaulted: !!h.defaulted, src: h.src || (h.eventKey != null ? 'fixtures' : 'archive') } };
     };
     const w = look(keyW, true, r.loser), l = look(keyL, false, r.winner);
@@ -99,7 +111,7 @@ function build(root) {
   }
   const counts = {};
   out.forEach(x => { const k = `${x.comment}|${x.verdict}`; counts[k] = (counts[k] || 0) + 1; });
-  return { rule: 'started = a career row shows a game played, none shows a walkover, and Tennis-Data does not say Walkover (founder 2026-10-17)',
+  return { rule: 'started = a career row shows a game played, none shows a walkover, and Tennis-Data does not say Walkover (founder 2026-10-17); completed = every career row that speaks shows it played out (founder 2026-10-18)',
     builtAt: new Date().toISOString(), rows: out.length, counts, matches: out };
 }
 
