@@ -1,0 +1,21 @@
+name: probe-r30 (branch only — walkover rows)
+on:
+  push:
+    branches: [claude/wonderful-fermat-clvs94]
+    paths: [tools/probe-r30/trigger]
+permissions: { contents: read }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Live read
+        run: |
+          head -n 90 tools/price-consistency.mjs > tools/probe-r30/run.mjs && cat tools/probe-r30/tail.mjs >> tools/probe-r30/run.mjs
+          CHROME_BIN=google-chrome node tools/probe-r30/run.mjs --base https://michaeldk1996.github.io/SAAS/ > out.txt 2>&1 || true
+          grep -E '^### v|price-consistency' out.txt > probe-out.txt || true; tail -5 out.txt; cat probe-out.txt
+      - uses: actions/upload-artifact@v4
+        with: { name: probe-r30, path: probe-out.txt }
