@@ -18,9 +18,16 @@ export function compare(cur, base) {
     if (b && c.priced < b.priced) lines.push(`${lv}: priced ${b.priced} → ${c.priced} of ${c.n} (−${b.priced - c.priced})`);
   }
   if (base && base.totals) for (const lv of Object.keys(base.totals)) if (!cur.totals[lv] && base.totals[lv].priced) lines.push(`${lv}: priced ${base.totals[lv].priced} → none (the level is gone from the report)`);
-  if (cur.joinMiss > 0) {
-    lines.push(`${cur.joinMiss} match(es) read "No source found yet" although the master holds a row that fits:`);
-    for (const e of (cur.joinMissEx || []).slice(0, 10)) lines.push(`  ${e.player} v ${e.opp}, ${e.event || ''} ${e.date} (${e.level}) — ${e.cause}`);
+  // a join miss alerts once: only the matches the published report did not already list (the guard runs every ~10 min,
+  // so a known, reported case is never re-sent); with no published report every miss is new
+  const id = e => [e.key, e.date, e.opp].join('|');
+  const known = new Set(((base && base.joinMissEx) || []).map(id));
+  const fresh = (cur.joinMissEx || []).filter(e => !known.has(id(e)));
+  const grew = base && base.joinMissEx && cur.joinMiss > (base.joinMiss || 0) && !fresh.length;   // past the listed cap
+  if (fresh.length || grew) {
+    const n = !base || !base.joinMissEx ? cur.joinMiss : fresh.length || cur.joinMiss - (base.joinMiss || 0);
+    lines.push(`${n} new match(es) read "No source found yet" although the master holds a row that fits (${cur.joinMiss} in all):`);
+    for (const e of fresh.slice(0, 10)) lines.push(`  ${e.player} v ${e.opp}, ${e.event || ''} ${e.date} (${e.level}) — ${e.cause}`);
   }
   return lines;
 }
