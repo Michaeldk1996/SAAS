@@ -32,6 +32,18 @@ const PLAYED_COMMENTS = new Set(['Completed', 'Retired', 'Rrtired']);
 const WALKOVER_COMMENT = 'Walkover';
 // a career row of this match: dated [−16, +3] days of Tennis-Data's date (an archive row is dated at its event's start)
 const WINDOW = [-16, 3];
+// the same match, not a neighbouring meeting (founder 2026-10-18, measured: 4 walkovers had paired a real meeting a week
+// apart): a dated feed row (eventKey) within ±1 day; an archive row (dated at its event's start) never after the match and
+// with no round that contradicts Tennis-Data's
+const TD_ROUND = { 'The Final': 'F', 'Semifinals': 'SF', 'Quarterfinals': 'QF', 'Round Robin': 'RR' };
+const roundCode = s => { s = String(s || ''); if (/^(F|Final)$/i.test(s)) return 'F'; if (/^(SF|Semi-finals)$/i.test(s)) return 'SF';
+  if (/^(QF|Quarter-finals)$/i.test(s)) return 'QF'; if (/^RR$/.test(s)) return 'RR'; return /^R\d+$|1\/\d+-finals|Round/i.test(s) ? 'early' : null; };
+function sameMatch(x, tdRound, dd) {
+  if (x.eventKey != null) return Math.abs(dd) <= 1;
+  if (dd > 0) return false;
+  const a = roundCode(x.round), b = TD_ROUND[tdRound] || (/Round/i.test(String(tdRound || '')) ? 'early' : null);
+  return !(a && b && a !== b);
+}
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const day = s => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 864e5 : null; };
@@ -98,6 +110,7 @@ function build(root) {
         const dx = day(x.date); if (d == null || dx == null) return false;
         const dd = dx - d; if (dd < WINDOW[0] || dd > WINDOW[1]) return false;
         if (!!x.won !== won) return false;
+        if (!sameMatch(x, r.round, dd)) return false;
         return oppK && surnameOf(x.opponent).includes(oppK.surname);
       });
       if (hits.length !== 1) return { key, says: null, why: hits.length ? `${hits.length} candidate rows` : 'no career row' };
@@ -115,7 +128,7 @@ function build(root) {
     builtAt: new Date().toISOString(), rows: out.length, counts, matches: out };
 }
 
-module.exports = { build, rowSays, verdictOf, PLAYED_COMMENTS };
+module.exports = { sameMatch, build, rowSays, verdictOf, PLAYED_COMMENTS };
 
 if (require.main === module) {
   const root = path.resolve(arg('--root', '.')), outPath = arg('--out', path.join(root, 'started-evidence.json'));

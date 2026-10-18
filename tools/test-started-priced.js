@@ -9,7 +9,7 @@ const path = require('path');
 const os = require('os');
 const { execFileSync } = require('child_process');
 const ROOT = path.resolve(__dirname, '..');
-const { build, rowSays, verdictOf } = require('./started-evidence.js');
+const { build, rowSays, verdictOf, sameMatch } = require('./started-evidence.js');
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; console.log('  PASS  ' + m); } else { fail++; console.log('  FAIL  ' + m); } };
@@ -63,6 +63,44 @@ ok(v('Cee C.') === 'started', 'Ace v Cee (Awarded, both rows played) → started
 ok(v('Eff E.') === 'walkover', 'Dee v Eff (Walkover, a walkover row) → walkover');
 ok(v('Gee G.') === 'disagree', 'Dee v Gee (Disqualified, one row played, one walkover) → disagree');
 ok(v('Hay H.') === 'disagree', 'Ace v Hay (Tennis-Data Walkover, a played row) → disagree');
+// --- the same match, not a neighbouring meeting (founder 2026-10-18) -------------------------------------------------
+ok(sameMatch({ eventKey: 9, round: 'SF' }, 'Semifinals', 1) && !sameMatch({ eventKey: 9 }, 'Semifinals', 2) && !sameMatch({ eventKey: 9 }, 'Semifinals', -2),
+  'a feed row (eventKey) is the match only within ±1 day');
+ok(!sameMatch({ round: 'QF' }, 'Quarterfinals', 1) && sameMatch({ round: 'QF' }, 'Quarterfinals', -6), 'an archive row is never after the match');
+ok(!sameMatch({ round: 'SF' }, 'The Final', -3) && !sameMatch({ round: 'R32' }, 'Quarterfinals', -3) && sameMatch({ round: 'R32' }, '2nd Round', -3)
+  && sameMatch({ round: null }, 'The Final', -3), 'an archive row whose round contradicts Tennis-Data\'s is another meeting');
+{
+  // the four measured walkovers had paired a real meeting at another event: a feed row two days off, an archive row
+  // after the match, an archive row in another round. Each must leave the Tennis-Data Walkover a walkover.
+  const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'started-wo-'));
+  const a2 = path.join(t2, 'odds-archive'); fs.mkdirSync(a2); fs.mkdirSync(path.join(t2, 'career-history'));
+  fs.writeFileSync(path.join(a2, '2017.csv'), [H,
+    L('2017-03-16', 'Beta Masters', 'Quarterfinals', 'Fed F.', 'Kyr K.', 'Walkover', 1.3, 3.4),
+    L('2021-03-10', 'Gamma Open', 'Quarterfinals', 'Rub R.', 'Fuc F.', 'Walkover', 1.3, 3.4),
+    L('2025-04-30', 'Delta Masters', '3rd Round', 'Rub R.', 'Mon M.', 'Walkover', 1.5, 2.6),
+  ].join('\n') + '\n');
+  const n2 = { 21: 'F. Fed', 22: 'N. Kyr', 23: 'A. Rub', 24: 'M. Fuc', 25: 'G. Mon' };
+  fs.writeFileSync(path.join(t2, 'player-profiles.json'), JSON.stringify({ players: Object.fromEntries(Object.entries(n2).map(([k, n]) => [k, { name: n }])) }));
+  const s2 = (k, rows) => fs.writeFileSync(path.join(t2, 'career-history', `${k}.json`), JSON.stringify({ matches: rows }));
+  s2(21, [{ date: '2017-03-18', eventKey: 501, round: 'SF', opponent: 'N. Kyr', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }] }]);
+  s2(23, [{ date: '2021-03-12', round: 'QF', opponent: 'M. Fuc', won: true, sets: [{ p: 6, o: 2 }, { p: 6, o: 3 }] },
+    { date: '2025-04-26', round: 'F', opponent: 'G. Mon', won: true, sets: [{ p: 6, o: 2 }, { p: 6, o: 3 }] }]);
+  const e2 = build(t2), v2 = l => (e2.matches.find(x => x.loser === l) || {}).verdict;
+  ok(v2('Kyr K.') === 'walkover', 'a feed row two days off is another meeting → the walkover stays a walkover');
+  ok(v2('Fuc F.') === 'walkover', 'an archive row dated after the match is another meeting → walkover');
+  ok(v2('Mon M.') === 'walkover', 'an archive row in another round (F v 3rd Round) is another meeting → walkover');
+  // mutant: the same-match rule removed → the three read "disagree" again
+  const evSrc = fs.readFileSync(path.join(__dirname, 'started-evidence.js'), 'utf8');
+  const a3 = 'if (!sameMatch(x, r.round, dd)) return false;';
+  ok(evSrc.split(a3).length === 2, 'the same-match mutant anchor is found exactly once');
+  const mp = path.join(__dirname, '.mutant-started-evidence.js');
+  fs.writeFileSync(mp, evSrc.replace(a3, ''));
+  let red = false;
+  try { delete require.cache[mp]; const m = require(mp).build(t2); red = ['Kyr K.', 'Fuc F.', 'Mon M.'].some(l => (m.matches.find(x => x.loser === l) || {}).verdict !== 'walkover'); }
+  finally { fs.unlinkSync(mp); }
+  ok(red, 'MUTANT (the same-match rule removed) pairs a neighbouring meeting and turns the walkover checks red');
+  fs.rmSync(t2, { recursive: true, force: true });
+}
 const evPath = path.join(tmp, 'started-evidence.json'); fs.writeFileSync(evPath, JSON.stringify(ev));
 
 // --- the Database build --------------------------------------------------------------------------------------------

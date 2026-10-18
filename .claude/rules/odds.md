@@ -315,7 +315,7 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   "Awarded" / "Disqualified" / any other non-result after the first ball. Only a match where no ball was played (a true
   walkover) stays a dash. Sources: both players' career-history rows (`walkover: true` = no ball; a set score with a game
   won = started), our archive's close (cut only at a verified live start = api-tennis showed it in play), and
-  Tennis-Data's own comment ("Walkover" claims no ball). **Where the sources disagree, the match is flagged and keeps the
+  Tennis-Data's own comment ("Walkover" claims no ball). **A career row speaks only for its OWN match** (founder ruling 2026-10-18, walkover join fix): a feed row (eventKey) within ±1 day of Tennis-Data's date; an archive row (dated at its event's start) never after the match and with no round that contradicts Tennis-Data's (`sameMatch`). Measured: only the 4 walkovers that had paired a neighbouring real meeting (Federer v Kyrgios IW 2017, Rublev v Fucsovics Doha 2021, Rublev v Monfils Madrid 2025, Wawrinka v Pospisil AO 2014) move disagree → walkover; every other verdict and every price is unchanged. **Where the sources disagree, the match is flagged and keeps the
   dash** — never picked. `tools/started-evidence.js` (verdict, run in `pipeline.yml` after the career-history store is
   written) → `build-database-yield.js` (`startedOf`, `meta.started`); the td-feed passes an api-tennis "Awarded" with an
   archive close through as its comment (`FEED_RESULT_STATUSES`). A started non-result is priced BEHIND the retired flag
