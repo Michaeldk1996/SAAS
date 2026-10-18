@@ -1,0 +1,17 @@
+name: probe-r39 (branch only — older years)
+on:
+  push:
+    branches: [claude/wonderful-fermat-clvs94]
+    paths: [tools/probe-r39/trigger]
+permissions: { contents: read }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 tools/probe-r39/lower.py
