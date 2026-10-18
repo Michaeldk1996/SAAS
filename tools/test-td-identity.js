@@ -29,7 +29,18 @@ sh('61071', 'TG77', [R('2020-03-06', 'Y. Why')]);
 // a key seen only as an opponent, on the same matches a shard key's own rows hold (the same match filed twice)
 sh('1735', 'GE33', [R('2021-07-26', 'Q. Que', { oppKey: '500' }), R('2023-03-28', 'Q. Que', { oppKey: '500' })]);
 sh('500', 'Q500', [R('2021-07-26', 'D. E. Galan', { oppKey: '34000' }), R('2023-03-28', 'D. E. Galan', { oppKey: '34000' })]);
-const roster = new Map([['1056', 'A. Martin'], ['1872', 'P. Tsitsipas'], ['1735', 'D. Elahi Galan'], ['1091', 'F. Fognini'], ['438', 'A. Mannarino']]);
+// an api-tennis duplicate key seen only as an opponent, on matches the profiled key's shard lacks: never a rival
+sh('2838', 'N0AE', [R('2020-02-17', 'K. Kay'), R('2025-01-01', 'K. Kay')]);
+sh('700', 'X700', [R('2023-09-18', 'B. N. Nakashima', { oppKey: '1249' })]);
+// two players with one initial, as Zhizhen and Ze Zhang (an invented surname: the real "Zhang Z." is in the hand-checked
+// alias table): 590 has his own shard, the other is a Tennis Abstract identity only; Tennis-Data writes "Kowa Ka." for 590
+sh('590', 'Z371', [R('2015-09-28', 'G. Soeda'), R('2026-10-07', 'X. Ex')]);
+sh('701', 'X701', [R('2016-04-01', 'K. Kowa', { oppId: 'Z272' }), R('2018-04-01', 'K. Kowa', { oppId: 'Z272' })]);
+// a Tennis Abstract id a few rows give to another player: "M. Huesler" once under Millman's id
+sh('1746', 'H123', [R('2018-01-01', 'Q. Que'), R('2026-01-01', 'Q. Que')]);
+sh('702', 'X702', [R('2017-01-01', 'J. Millman', { oppId: 'MH30' }), R('2018-02-01', 'J. Millman', { oppId: 'MH30' }), R('2019-03-01', 'J. Millman', { oppId: 'MH30' }),
+  R('2019-06-01', 'J. Millman', { oppId: 'MH30' }), R('2018-07-24', 'M. Huesler', { oppId: 'MH30' })]);
+const roster = new Map([['2838', 'B. Nakashima'], ['590', 'K. Kowa'], ['1746', 'M. Huesler'], ['1056', 'A. Martin'], ['1872', 'P. Tsitsipas'], ['1735', 'D. Elahi Galan'], ['1091', 'F. Fognini'], ['438', 'A. Mannarino']]);
 fs.writeFileSync(path.join(tmp, 'player-profiles.json'), JSON.stringify({ players: Object.fromEntries([...roster].map(([k, n]) => [k, { name: n }])) }));
 
 const g = buildIdentityGate(tmp, roster);
@@ -43,6 +54,10 @@ ok(g.allow('1735', 'Galan D.E.', '2021-07-01') && !g.allow('1735', 'Galan D.E.',
 ok(g.allow('1872', 'Tsitsipas P.', '2023-05-01'), 'two keys with one Tennis Abstract id are one person, never a dash');
 ok(g.merged['34000'] === '1735', 'an opponent-only key whose every match is a 1735 match is the same person');
 ok(g.allow('1735', 'Galan D.E.', '2022-05-01'), 'so D. E. Galan is never a second candidate for Elahi Galan');
+ok(g.allow('2838', 'Nakashima B.', '2023-09-20'), 'an api-tennis key seen only as an opponent (no shard, no Tennis Abstract id) is never a rival');
+ok(g.allow('590', 'Kowa Ka.', '2017-01-01'), 'a longer abbreviation ("Kowa Ka.", as "Zhang Zh.") never fits a rival known only by the initial');
+ok(!g.allow('590', 'Kowa K.', '2017-01-01'), '...but the bare "Kowa K." with the other player active is a dash');
+ok(g.allow('1746', 'Huesler M.A.', '2018-07-26'), 'a name a Tennis Abstract id carries in under a quarter of its rows is not that identity\'s name');
 ok(g.allow('99999', 'Nobody N.', '2020-01-01'), 'a key the store does not hold passes (nothing to check against)');
 ok(g.stats.byKey['1056'] && g.stats.byKey['1056'].beforeCareer === 2 && g.stats.byKey['1056'].otherActive === 1, 'the gate counts each refusal by key and cause');
 
@@ -84,6 +99,6 @@ try { const out2 = fs.mkdtempSync(path.join(tmp, 'mc2-')); require(mp).build(tmp
 finally { fs.unlinkSync(mp); }
 ok(red, 'MUTANT (the identity gate removed) hands Alberto and Andrej to key 1056 and the store check goes red');
 
-fs.rmSync(tmp, { recursive: true, force: true });
+if (process.env.KEEP) console.log(tmp); else fs.rmSync(tmp, { recursive: true, force: true });
 console.log(`\ntest-td-identity: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

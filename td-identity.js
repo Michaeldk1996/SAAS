@@ -43,7 +43,8 @@ function buildIdentityGate(root, rosterNames) {
     else { if (t) tmlOwner.set(t, k); personOf.set(k, k); }
   }
   const P = new Map();      // person -> { lo, hi, names:Set, keys:Set, own:bool }
-  const person = (id) => { if (!P.has(id)) P.set(id, { id, lo: Infinity, hi: -Infinity, names: new Set(), keys: new Set(), own: false }); return P.get(id); };
+  const person = (id) => { if (!P.has(id)) P.set(id, { id, lo: Infinity, hi: -Infinity, names: new Set(), nameN: new Map(), keys: new Set(), own: false, tml: String(id).startsWith('tml:') }); return P.get(id); };
+  const seeName = (e, n) => { if (!n) return; e.names.add(n); e.nameN.set(n, (e.nameN.get(n) || 0) + 1); };
   const seeDate = (e, d) => { if (d == null) return; if (d < e.lo) e.lo = d; if (d > e.hi) e.hi = d; };
   for (const [k, d] of shards) { const e = person(personOf.get(k)); e.own = true; e.keys.add(k); d.matches.forEach((r) => seeDate(e, day(r.date))); }
   // opponent observations: api-tennis key (oppKey) or Tennis Abstract id (oppId)
@@ -52,12 +53,12 @@ function buildIdentityGate(root, rosterNames) {
     const dd = day(r.date);
     if (r.oppKey != null && r.oppKey !== '') {
       const ok = String(r.oppKey);
-      if (personOf.has(ok)) { const e = person(personOf.get(ok)); seeDate(e, dd); if (r.opponent) e.names.add(r.opponent); }
+      if (personOf.has(ok)) { const e = person(personOf.get(ok)); seeDate(e, dd); seeName(e, r.opponent); }
       else { if (!oppOnly.has(ok)) oppOnly.set(ok, []); oppOnly.get(ok).push({ d: dd, obs: k, name: r.opponent }); }
     } else if (r.oppId != null && r.oppId !== '') {
       const t = String(r.oppId);
       const pid = tmlOwner.has(t) ? personOf.get(tmlOwner.get(t)) : `tml:${t}`;
-      const e = person(pid); seeDate(e, dd); if (r.opponent) e.names.add(r.opponent);
+      const e = person(pid); seeDate(e, dd); seeName(e, r.opponent);
     }
   }
   // a key seen only as an opponent: the same person as a shard key when each of its matches is a row of that key's
@@ -79,17 +80,26 @@ function buildIdentityGate(root, rosterNames) {
     }
     if (owners && owners.size === 1) {
       const pid = [...owners][0]; personOf.set(ok, pid); merged[ok] = pid;
-      const e = person(pid); e.keys.add(ok); list.forEach((o) => { seeDate(e, o.d); if (o.name) e.names.add(o.name); });
+      const e = person(pid); e.keys.add(ok); list.forEach((o) => { seeDate(e, o.d); seeName(e, o.name); });
     } else {
-      personOf.set(ok, ok); const e = person(ok); e.keys.add(ok); list.forEach((o) => { seeDate(e, o.d); if (o.name) e.names.add(o.name); });
+      personOf.set(ok, ok); const e = person(ok); e.keys.add(ok); e.oppOnly = true; list.forEach((o) => { seeDate(e, o.d); seeName(e, o.name); });
     }
   }
-  if (rosterNames) rosterNames.forEach((v, k) => { const pid = personOf.get(String(k)); if (!pid) return; [].concat(v instanceof Set ? [...v] : v).forEach((n) => n && P.get(pid).names.add(n)); });
-  // name index
+  if (rosterNames) rosterNames.forEach((v, k) => { const pid = personOf.get(String(k)); if (!pid) return; [].concat(v instanceof Set ? [...v] : v).forEach((n) => { if (n) { P.get(pid).names.add(n); P.get(pid).profileName = n; } }); });
+  // name index. A rival must be a person we can tell apart: his own shard, or a Tennis Abstract identity — an api-tennis
+  // key seen only as an opponent, with neither, cannot be told from a duplicate key of the same player (measured 18 Oct:
+  // D. E. Galan 34000 / 1735, B. N. Nakashima 1249 / 2838, A. Blockx 26614 / 39913), so it is never a rival. And a name is
+  // a person's own only when it is his profile's, or at least a quarter of the times others name him (one Tennis
+  // Abstract id that a few rows give to another player — "M. Huesler" under J. Millman's id — names nobody).
   const bySurname = new Map();
-  for (const [pid, e] of P) e.names.forEach((n) => ourCandidateKeys(n).forEach((ck) => {
-    if (!ck.surname) return; if (!bySurname.has(ck.surname)) bySurname.set(ck.surname, []); bySurname.get(ck.surname).push({ pid, ck });
-  }));
+  for (const [pid, e] of P) {
+    if (e.oppOnly) continue;
+    const tot = [...e.nameN.values()].reduce((a, b) => a + b, 0);
+    e.names.forEach((n) => {
+      if (n !== e.profileName && tot && (e.nameN.get(n) || 0) < 0.25 * tot && e.nameN.size > 1) return;
+      ourCandidateKeys(n).forEach((ck) => { if (!ck.surname) return; if (!bySurname.has(ck.surname)) bySurname.set(ck.surname, []); bySurname.get(ck.surname).push({ pid, ck }); });
+    });
+  }
   const stats = { checked: 0, beforeCareer: 0, otherActive: 0, byKey: {} };
   const note = (key, why, name, date) => {
     const b = stats.byKey[key] || (stats.byKey[key] = { beforeCareer: 0, otherActive: 0, names: {} });
@@ -104,9 +114,13 @@ function buildIdentityGate(root, rosterNames) {
     if (me.own && isFinite(me.lo) && d < me.lo - CAREER_SLACK_DAYS) { note(key, 'beforeCareer', name, date); return false; }
     if (archiveOverride(name)) return true;           // the hand-checked key table: identity, not a name guess
     const k = keyFromArchiveName(name); if (!k) return true;
+    // Tennis-Data writes a longer given-name abbreviation exactly when two players share the initial ("Zhang Zh." /
+    // "Zhang Ze.", "Blanch Dar."): such a name never fits a rival known by the bare initial alone
+    const explicit = /\b[A-Za-z]{2,}\.(\s|$)/.test(String(name).trim().split(/\s+/).slice(1).join(' ') + ' ');
     const others = new Set();
     for (const c of bySurname.get(k.surname) || []) {
       if (c.pid === pid || !fits(c.ck, k)) continue;
+      if (explicit && c.ck.initials.length < 2) continue;
       const e = P.get(c.pid);
       if (isFinite(e.lo) && d >= e.lo - CAREER_SLACK_DAYS && d <= e.hi + CAREER_SLACK_DAYS) others.add(c.pid);
     }
