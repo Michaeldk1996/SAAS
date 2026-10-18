@@ -1734,6 +1734,64 @@ def cmd_td_feed(export_path, out_csv):
     return rows, rep
 
 
+# ── The lower levels from 17 Sep: our archive's closes (founder ruling 2026-10-18 item 3) ─────────────────────────────
+def lower_level(f):
+    """'atp-q' | 'ch' | 'ch-q' | 'itf' | None, from api-tennis's own fields (ATP main draw is Tennis-Data's)."""
+    t = f.get('event_type_type')
+    q = str(f.get('event_qualification')) == 'True' or 'qualif' in (str(f.get('tournament_name') or '') + ' ' + str(f.get('tournament_round') or '')).lower()
+    if t == 'Atp Singles':
+        return 'atp-q' if q else None
+    if t == 'Challenger Men Singles':
+        return 'ch-q' if q else 'ch'
+    if t == 'Itf Men Singles':
+        return 'itf'
+    return None
+
+
+LOWER_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'winnerKey', 'loserKey', 'psw', 'psl', 'eventKey',
+              'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment']
+
+
+def lower_close_rows(export_rows):
+    """Every exported close (verified start, held-back rules already applied by the export) of a lower-level match with
+    its api-tennis result: one row, the winner first, the label as the source ('from Pinnacle history' | 'captured')."""
+    out, rep = [], collections.Counter()
+    for e in export_rows:
+        a = e.get('apiTennis') or {}
+        lv = lower_level(a) if a else None
+        if not lv:
+            continue
+        st = str(a.get('event_status') or '')
+        if 'walk' in st.lower():
+            rep[lv + ': walkover'] += 1; continue
+        if a.get('event_winner') not in ('First Player', 'Second Player') or st not in FEED_RESULT_STATUSES:
+            rep[lv + ': no result'] += 1; continue
+        fw = a['event_winner'] == 'First Player'
+        w, l = (e['p1Name'], e['p2Name']) if fw else (e['p2Name'], e['p1Name'])
+        wk, lk = (e.get('p1Key'), e.get('p2Key')) if fw else (e.get('p2Key'), e.get('p1Key'))
+        out.append({'date': e['date'], 'level': lv, 'tournament': str(a.get('tournament_name') or '').replace(',', ' ').strip(),
+                    'round': str(a.get('tournament_round') or '').replace(',', ' '), 'winner': td_name(w), 'loser': td_name(l),
+                    'winnerKey': '' if wk is None else wk, 'loserKey': '' if lk is None else lk,
+                    'psw': e['p1'] if fw else e['p2'], 'psl': e['p2'] if fw else e['p1'], 'eventKey': e.get('eventKey') or '',
+                    'snapshotId': e.get('archiveId') or '', 'source': e.get('label') or '', 'cutTs': e.get('closeTs') or '',
+                    'gapToStartS': '' if e.get('gapToStartS') is None else e['gapToStartS'],
+                    'comment': FEED_COMMENT.get(st, 'Completed')})
+        rep[lv] += 1
+    return out, dict(rep)
+
+
+def cmd_lower_closes(export_path, out_csv):
+    rows, rep = lower_close_rows((json.load(open(export_path)).get('rows')) or [])
+    tmp = out_csv + '.tmp'
+    with open(tmp, 'w') as fh:
+        fh.write(','.join(LOWER_COLS) + '\n')
+        for r in rows:
+            fh.write(','.join(str(r[k]).replace(',', ' ') for k in LOWER_COLS) + '\n')
+    os.replace(tmp, out_csv)
+    print('### lower-closes', json.dumps({'rows': len(rows), 'report': rep, 'file': out_csv}))
+    return rows, rep
+
+
 def cmd_counts(record=None):
     g = guard_state()
     print('### guard', json.dumps(g))
@@ -1757,6 +1815,8 @@ if __name__ == '__main__':
         cmd_import_bucket(int(a[a.index('--limit') + 1]) if '--limit' in a else None)
     elif a[0] == 'backup':
         cmd_backup()
+    elif a[0] == 'lower-closes':
+        cmd_lower_closes(a[1], a[2])
     elif a[0] == 'derive':
         cmd_derive(int(a[a.index('--days') + 1]) if '--days' in a else 3, os.environ.get('PINARCH_FIXTURES', '.pinarch-fixtures.json'))
     elif a[0] == 'derive-held':

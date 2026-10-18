@@ -11544,7 +11544,8 @@ function ovPopModel(){
     if (tier !== 'all' && x.level !== tier) return;
     const r = meRowFromCareer(x, cl, k, name, idx);
     if (r.wo) return;                                         // N2: a walkover is not a match played
-    if (x.level !== 'atp') { r.price = null; r.oppPrice = null; r.book = null; r.src = null; }   // N8
+    // N8 superseded (founder ruling 2026-10-18 item 3): a Challenger / ITF / qualifying row takes the master join's price
+    // (meRowFromCareer → sfDbPxRows), a dash where it holds none — never its closes shard's
     r.mid = fhSafeId('ov' + k + '_' + idx);
     M.rows.push(r);
   });
@@ -13344,7 +13345,7 @@ function fhTodayPair(m){
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
-function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
+function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : typeof sfNoPriceReason === 'function' ? sfNoPriceReason(r) : 'No source found yet'; }
 // TEN-437 (founder 2026-10-16): a Bet365-priced H2H meeting keeps its close, its "B" marker, and this hover — on the
 // Match analysis H2H tab and the H2H page — until a Pinnacle source is found. H2H only: Form and every other surface keep
 // fhSrcTitle's source label.
@@ -13625,7 +13626,7 @@ function fhFormPlayer(m, idx, st){
   });
   // founder ruling 2026-10-17 (item 1): the Database's own price wherever its join holds the match (sfDbPxRows)
   // ruling 3: a master class row reads the join only (a dash where it holds none)
-  if (typeof sfDbPxRows === 'function') sfDbPxRows(key, name, all0.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: r.round, opp: r.opp }))).forEach((d, i) => sfDbPxApply(all0[i], d));
+  if (typeof sfDbPxRows === 'function') sfDbPxRows(key, name, all0.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: r.round, opp: r.opp }))).forEach((d, i, a) => sfDbPxApply(all0[i], d, a.why && a.why[i]));
   const all = all0.filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself
     && !r.wo   // N2 (TEN-312): a walkover is not a match played — no bar, no row, no count, no price, no line
     && !FH_FORM_NOT_ATP_RECORD.test(String(r.tournRaw || r.tourn || '')));   // founder review 2: Laver Cup is not a Form row
@@ -14104,7 +14105,7 @@ function fhMeetings(m){
   // Head to Head page calls it (player A's side, B's full name, the page's round code; walkovers never priced)
   const oppPr = m.p2Key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(m.p2Key)] : null, oppFull = (oppPr && oppPr.name) || m.p2, RO = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.roundOf;
   if (typeof sfDbPxRows === 'function') sfDbPxRows(m.p1Key, m.p1, out.map(r => ({ date: r.wo ? null : r.date, won: r.won, round: RO ? RO(r.round, r.tournRaw) : r.round, opp: oppFull })))
-    .forEach((d, i) => sfDbPxApply(out[i], d));   // ruling 3: a master class meeting reads the join only
+    .forEach((d, i, a) => sfDbPxApply(out[i], d, a.why && a.why[i]));   // ruling 3: a master class meeting reads the join only
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
 }
 // Price range average (flag b). Margin removed: invert the mean no-vig
@@ -15162,10 +15163,10 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
   // career row as the Head to Head page and the profile hand it over (its own date, result, round and opponent)
   // ruling 3: an ATP tour-level row (the master's class) reads the join only — a dash where it holds none, has not loaded
   // or failed. (sfDbPxRows is always defined on the page; only a data-layer harness slices this function without it.)
-  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){
-    const d = sfDbPxRows(selfKey, selfName, [{ date: x.date, won: r.won, round: r.round, opp: x.opponent }])[0];
+  if (!r.wo && typeof sfDbPxRows === 'function'){   // founder ruling 2026-10-18 (item 3): every level, qualifying included
+    const dd = sfDbPxRows(selfKey, selfName, [{ date: x.date, won: r.won, round: r.round, opp: x.opponent }]), d = dd[0];
     if (d){ r.price = d.price; r.oppPrice = d.oppPrice; r.book = d.book; r.src = d.src; r.srcLabel = d.srcLabel; }
-    else { r.price = null; r.oppPrice = null; r.book = null; r.src = null; r.srcLabel = null; }
+    else { r.price = null; r.oppPrice = null; r.book = null; r.src = null; r.srcLabel = null; r.noPriceWhy = dd.why ? dd.why[0] : null; }
   }
   const res = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
   r.setsOk = !!(r.sets && res && r.sets.length === (+res[1]) + (+res[2]) && r.done && r.done.length === r.sets.length);
@@ -16019,22 +16020,50 @@ function sfDbPxRows(selfKey, selfName, views){
   if (!full) return views.map(() => null);
   const js = views.map(v => ({ date: v.date, won: v.won, round: v.round, opp: v.opp }));
   J(js, { full }, null, _sfDbJoin, null, career);
-  return js.map(j => (j.price == null ? null : { price: j.price, oppPrice: j.oppPrice, book: j.book, src: j.src || 'td', srcLabel: j.srcLabel }));
+  const out = js.map(j => (j.price == null ? null : { price: j.price, oppPrice: j.oppPrice, book: j.book, src: j.src || 'td', srcLabel: j.srcLabel }));
+  out.why = js.map((j, i) => (j.price == null ? sfDbNoPriceWhy(full, views[i]) : null));   // founder ruling 2026-10-18 (item 5)
+  return out;
+}
+// Founder ruling 2026-10-18 (item 5): why a played match has no price. The master's unpriced rows (the Database build's
+// Tennis-Data rows with no pair, the lower-level import's checked matches) name it: 'one' = a bookmaker priced one player
+// only, 'nobook' = no bookmaker priced it; the same match = the join's own name test on both players, its date within
+// [−1, +16] days (a start-dated career row), exactly one candidate. Nothing found = 'none' ("No source found yet").
+function sfDbNoPriceWhy(full, v){
+  const H = typeof window !== 'undefined' && window.H2HPage;
+  const U = _sfDbJoin && _sfDbJoin.u;
+  if (!v || !v.date || !H || !H.tdKey || !U || !U.length) return 'none';
+  if (!_sfDbJoin._uIx) { const ix = new Map(); U.forEach(u => { const k = Math.floor(Date.UTC(+String(u[0]).slice(0, 4), +String(u[0]).slice(4, 6) - 1, +String(u[0]).slice(6, 8)) / 864e5); if (!ix.has(k)) ix.set(k, []); ix.get(k).push(u); }); _sfDbJoin._uIx = ix; }
+  const d0 = fhDayNum(v.date); if (d0 == null) return 'none';
+  const me = H.tdKey(full), op = H.tdKey(v.opp);
+  const hits = [];
+  for (let dd = -16; dd <= 1; dd++) for (const u of _sfDbJoin._uIx.get(d0 + dd) || []) {
+    const [w, l] = v.won ? [u[1], u[2]] : [u[2], u[1]];
+    if (H.tdSame(me, H.tdKey(w)) && H.tdSame(op, H.tdKey(l))) hits.push(u[3]);
+  }
+  return hits.length === 1 ? hits[0] : 'none';
+}
+const SF_NOPRICE = { wo: 'Walkover: no ball was played, so no price', nores: 'Not a result: no completed match to price',
+  one: 'One side only: a bookmaker priced one player, not both', nobook: 'No bookmaker priced it', none: 'No source found yet' };
+function sfNoPriceReason(r){
+  if (r && (r.wo || r.walkover)) return SF_NOPRICE.wo;
+  if (r && r.notResult) return SF_NOPRICE.nores;
+  return SF_NOPRICE[(r && r.noPriceWhy) || 'none'] || SF_NOPRICE.none;
 }
 // The tab loaders' wait for the join (a failed load is not cached: sfDbJoinLoad retries on the next open).
 function sfDbPxLoad(){ return typeof sfDbJoinLoad === 'function' ? Promise.resolve().then(() => sfDbJoinLoad()).catch(() => null) : Promise.resolve(null); }
 // Founder ruling 2026-10-17 (ruling 3): the match classes the master holds — every ATP tour-level match (main draw, the team
 // events, before 2010 included; career-history level 'atp', not qualifying, not a walkover) — take their price from the
 // join ONLY: no closes-shard, Market edge shard or capture price stands in. The join holds no row, has not loaded or
-// failed = a dash ("—"), never another price (fix 4). Challenger, qualifying and ITF keep the closes path until phase 2.
+// failed = a dash ("—"), never another price (fix 4). Founder ruling 2026-10-18 (item 3): ATP qualifying, Challenger (main
+// draw + qualifying) and ITF are in the master too (the era shard's flag 'l', the ATP main-draw source order), so EVERY
+// played match is a master class row — the tabs' own closes path is gone for every level. A walkover is never priced.
 function sfMasterClass(r){
-  if (!r || r.wo || r.walkover || r.qualifying) return false;
-  return /^atp$/i.test(String(r.tier != null ? r.tier : r.level != null ? r.level : ''));
+  return !!r && !r.wo && !r.walkover;
 }
 // one view priced from the join: the join's price, else (a master class) nothing at all
-function sfDbPxApply(r, d){
-  if (d) { Object.assign(r, { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel }); return r; }
-  if (sfMasterClass(r)) Object.assign(r, { price: null, oppPrice: null, book: null, src: null, srcLabel: null });
+function sfDbPxApply(r, d, why){
+  if (d) { Object.assign(r, { price: d.price, oppPrice: d.oppPrice, book: d.book, src: d.src, srcLabel: d.srcLabel, noPriceWhy: null }); return r; }
+  if (sfMasterClass(r)) Object.assign(r, { price: null, oppPrice: null, book: null, src: null, srcLabel: null, noPriceWhy: why || null });
   return r;
 }
 // TEN-402 R3 fix 3 · a match dated after the Database archive's last match (the live edition) has no closing price on
@@ -28075,7 +28104,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       // their source ('from Pinnacle history' / 'captured'), never Tennis-Data.
       const bk = row[8];
       r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 || bk === 5 ? 'A' : 'B';
-      r.src = bk === 3 ? 'hist' : bk === 4 ? 'cap' : bk === 5 ? 'od10' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
+      // book 6 = our captured Bet365 at the lower levels (founder 2026-10-18 item 3): 'B' + 'cap' = "Bet365 (approx.) · not a confirmed close"
+      r.src = bk === 3 ? 'hist' : bk === 4 || bk === 6 ? 'cap' : bk === 5 ? 'od10' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
       n++;
     });
     return n;
@@ -29994,6 +30024,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     _h2hPair: (ka, kb) => _h2hPairs[String(ka) + '|' + String(kb)] || null,
     // TEN-402 (founder 2026-10-08): THE price join, shared with the player profile's per-event model (trProfileModel).
     priceJoin: h2hPriceJoin,
+    // founder 2026-10-18 (item 5): the join's own name test, for the dash's reason (sfDbPxRows)
+    tdKey: h2hTdKey, tdSame: h2hTdSame,
     // Takes player KEYS (TEN-263); a short name is accepted only when exactly one roster player has it.
     _selftest: (an, bn) => {
       const kOf = x => { if (P[String(x)]) return String(x); const hit = ROSTER.filter(k => P[k].short === x); return hit.length === 1 ? hit[0] : null; };
@@ -34354,7 +34386,9 @@ window.DatabaseTab = (function(){
     var qk = new Set(((q && q.entries) || []).map(function(e){ return e && e.db; }).filter(Boolean)), qz = new Set();
     if (qk.size) rows.forEach(function(r, i){ var n = names[i]; if (n && qk.has(r[0] + '|' + n[0] + '|' + n[1])) qz.add(i); });
     return { rows: rows, names: names, meta: meta, nDb: base.rows.length,
-      nX: xr.length, aliases: nm.aliases || {}, qz: qz };
+      nX: xr.length, aliases: nm.aliases || {}, qz: qz,
+      // founder ruling 2026-10-18 (item 5): the played matches no source prices, with their reason ([date, winner, loser, code])
+      u: (xs && Array.isArray(xs.uRows)) ? xs.uRows : [] };
   }
   // The era shard: a 404 (a deployment built before it existed) is "no such rows" — those matches show a dash; any other
   // failure fails the whole join (the surfaces then show their failed state, never another price).

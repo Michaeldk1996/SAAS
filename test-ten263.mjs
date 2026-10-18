@@ -619,7 +619,7 @@ test('B365 tag, and every price names its book and source', () => {
   assert.ok(!formRowHtml(S, r).includes('ma-row-mark') && !h2hRowHtml(S, r).includes('ma-row-mark'), 'Pinnacle rows carry no marker or tag');
   assert.ok(formRowHtml(S, r).includes('title="Pinnacle close · captured"') && h2hRowHtml(S, r).includes('title="Pinnacle close · captured"'));
   assert.equal(S.fhSrcTitle({ book: 'P', src: 'td' }), 'Pinnacle close · Tennis-Data');
-  assert.equal(S.fhSrcTitle(null), 'No Pinnacle or Bet365 close on record');
+  assert.equal(S.fhSrcTitle(null), 'No source found yet');   // founder 2026-10-18 item 5: a dash names its reason
   // founder brief 2026-10-14: the archive label rides on the captured-Pinnacle slot (the shard's pinLabel column)
   const lab = { rows: [], cap: [{ date: '2026-10-09', oppKey: '6', P: [1.229, 4.64], B: null, ek: '9', PL: 'from Pinnacle history' }] };
   assert.equal(S.fhSrcTitle(S.fhCloseFor(lab, '2026-10-09', 'Y. Zhou', true, 6, 9)), 'Pinnacle close · from Pinnacle history');

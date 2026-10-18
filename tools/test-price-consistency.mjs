@@ -54,6 +54,15 @@ else {
     check('1 · every surface agrees → exit 0', r.status === 0, (r.stdout || '') + (r.stderr || ''));
     check('1 · the match was really checked on the tab, the Form tab and Market edge', s && s.dbHeld === 1 && s.checked.tab === 1 && s.checked.form === 1 && s.checked.me === 1, JSON.stringify(s));
 
+    // founder ruling 2026-10-18 (item 5): the coverage report — every played match counted by level and year, priced or its reason
+    { const cov = join(site, 'cov.json');
+      const rc = spawnSync(process.execPath, [join(ROOT, 'tools/price-consistency.mjs'), '--site', site, '--sample', '1', '--coverage-out', cov],
+        { encoding: 'utf8', env: Object.assign({}, process.env, { CHROME_BIN: chrome }), timeout: 180000 });
+      const c = existsSync(cov) ? JSON.parse(readFileSync(cov, 'utf8')) : null;
+      check('5 · the coverage report counts the match as priced, under ATP main draw 2025, with no join miss',
+        rc.status === 0 && c && c.byLevel['ATP main draw'] && c.byLevel['ATP main draw']['2025'].n === 1 && c.byLevel['ATP main draw']['2025'].priced === 1 && c.joinMiss === 0,
+        (rc.stdout || '') + (rc.stderr || '') + JSON.stringify(c)); }
+
     writeFileSync(join(site, 'market-edge', K + '.json'), shard(1.05));
     r = run();
     check('2 · control: a Market edge shard with another price → exit 1', r.status === 1 && /Market edge shard ≠ Database/.test(r.stdout), (r.stdout || '') + (r.stderr || ''));

@@ -565,7 +565,9 @@ test('founder ruling 2026-10-17 (item 1): the closes-shard tabs show the Databas
   S.dbJoin = null;
   assert.deepEqual(pk(row('A. B')), [null, null, null, null], 'before the join answers: a dash, never the closes price');
   const ci = d.ch.findIndex(x => x.opponent === 'C. D'), chx = Object.assign({}, d.ch[ci], { level: 'chitf' });
-  assert.deepEqual(pk(S.meRowFromCareer(chx, d.cl, '1', 'J. Sinner', ci)).slice(0, 2), [2.0, 1.85], 'control: a Challenger row keeps its closes price (phase 2)');
+  // founder ruling 2026-10-18 (item 3): Challenger, qualifying and ITF are in the master too — a Challenger row the join
+  // does not hold is a dash, never its closes price (the tabs' own path is gone for every level)
+  assert.deepEqual(pk(S.meRowFromCareer(chx, d.cl, '1', 'J. Sinner', ci)).slice(0, 2), [null, null], 'a Challenger row the join does not hold: a dash, never the closes 2.00 / 1.85');
   // every closes tab hands its rows to the ONE shared function
   for (const f of ['fhFormPlayer', 'fhMeetings', 'meRowFromCareer']) assert.ok(/sfDbPxRows\(/.test(slice(f)), f + ' prices through sfDbPxRows');
 });

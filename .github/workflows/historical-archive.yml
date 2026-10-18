@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import
+        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import
         required: true
         default: daily
 permissions:
@@ -66,6 +66,9 @@ jobs:
           python3 tools/tdarch.py daily pinnacle-closes.json
           python3 tools/tdarch.py counts --record daily
           python3 tools/tdarch.py snapshot-counts --record daily
+          # founder ruling 2026-10-18 (item 3): the lower levels' snapshots, again each day (insert-only: only what is new —
+          # e.g. the ITF payloads the back-fill pulled since — is added), and their unpriced reasons for the pipeline
+          python3 tools/tdarch.py lower-import --unpriced lower-unpriced.json
       - name: approx-import — Pinnacle (approx.) snapshots from api-tennis (founder ruling 2026-10-16; insert-only)
         if: env.MODE == 'approx-import'
         env:
@@ -76,6 +79,15 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py start10-import ${{ env.MODE == 'start10-dry-run' && '--dry-run' || '' }}
+      - name: lower levels — ATP qualifying, Challenger, ITF snapshots (start − 10, api-tennis) 1 Jan – 16 Sep 2026 (founder ruling 2026-10-18 item 3; insert-only)
+        if: env.MODE == 'lower-import' || env.MODE == 'lower-dry-run'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py lower-import --unpriced lower-unpriced.json ${{ env.MODE == 'lower-dry-run' && '--dry-run' || '' }}
+      - name: lower levels — hand the unpriced reasons to the pipeline (founder ruling 2026-10-18 item 5)
+        if: (env.MODE == 'lower-import' || env.MODE == 'daily') && hashFiles('lower-unpriced.json') != ''
+        uses: actions/upload-artifact@v4
+        with: { name: lower-unpriced, path: lower-unpriced.json, retention-days: 90 }
       - name: verify-export / restore-check — rebuild from the backups, compare with the archive (no write)
         if: env.MODE == 'verify-export' || env.MODE == 'restore-check'
         env:

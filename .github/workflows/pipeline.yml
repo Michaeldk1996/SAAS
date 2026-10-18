@@ -397,13 +397,26 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          rm -f pinnacle-approx.csv
-          python3 tools/tdarch.py approx-feed pinnacle-approx.csv || { echo "tdarch approx-feed failed (archive unreachable?)" > .archive-failed; exit 1; }
+          rm -f pinnacle-approx.csv pinnacle-approx-lower.csv
+          # founder ruling 2026-10-18 (item 3): the lower levels' snapshots (ATP qualifying, Challenger, ITF) go to their own file
+          python3 tools/tdarch.py approx-feed pinnacle-approx.csv pinnacle-approx-lower.csv || { echo "tdarch approx-feed failed (archive unreachable?)" > .archive-failed; exit 1; }
+
+      - name: Lower-level unpriced reasons (founder ruling 2026-10-18 item 5; best-effort — without it a dash reads "No source found yet")
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -f lower-unpriced.json
+          RID=$(gh run list -R "$GITHUB_REPOSITORY" --workflow historical-archive.yml --status success -L 20 --json databaseId -q '.[].databaseId' 2>/dev/null | while read -r r; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$r/artifacts" -q '.artifacts[] | select(.name=="lower-unpriced" and (.expired|not)) | .id' 2>/dev/null | head -1 | grep -q . && { echo "$r"; break; }; done)
+          if [ -n "$RID" ]; then gh run download "$RID" -R "$GITHUB_REPOSITORY" -n lower-unpriced -D . || echo "::warning::lower-unpriced: download failed"; else echo "::warning::lower-unpriced: no artifact yet (historical-archive.yml lower-import / daily)"; fi
+          ls -l lower-unpriced.json 2>/dev/null || true
 
       - name: Feed the archive's Pinnacle closes into the Database (fail-closed)
         run: |
-          rm -f pinnacle-archive-td.csv started-evidence.json
+          rm -f pinnacle-archive-td.csv started-evidence.json pinnacle-lower-closes.csv
           python3 tools/pinarch.py td-feed pinnacle-closes.json pinnacle-archive-td.csv || { echo "pinarch td-feed failed" > .archive-failed; exit 1; }
+          # founder ruling 2026-10-18 (item 3): the archive's closes of ATP qualifying, Challenger and ITF matches, for the master
+          python3 tools/pinarch.py lower-closes pinnacle-closes.json pinnacle-lower-closes.csv || { echo "pinarch lower-closes failed" > .archive-failed; exit 1; }
           node tools/started-evidence.js --root . --out started-evidence.json || { echo "started-evidence failed" > .archive-failed; exit 1; }
           node build-database-yield.js || { echo "build-database-yield failed" > .archive-failed; exit 1; }
           node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json
@@ -1308,7 +1321,10 @@ jobs:
       # as it will publish, and writes ONE alert for the run (sent after the upload, below). A check that could not run
       # (no player, Market edge lagging the master, a page function that threw) still fails the run.
       - name: One price per match on every surface (quarantine, then publish)
-        run: CHROME_BIN=google-chrome node tools/price-guard-run.mjs --site _site --root . --alert-out .price-alert.txt --run-label "pipeline run ${{ github.run_number }}"
+        run: |
+          CHROME_BIN=google-chrome node tools/price-guard-run.mjs --site _site --root . --alert-out .price-alert.txt --run-label "pipeline run ${{ github.run_number }}" --guard-args "--coverage-out _site/price-coverage.json"
+          # founder ruling 2026-10-18 (item 5): coverage per level, compared with the published report (the alert is sent after the upload)
+          node tools/price-coverage-alert.mjs --cur _site/price-coverage.json --baseline-url https://michaeldk1996.github.io/SAAS/price-coverage.json --out .coverage-alert.txt --run-label "pipeline run ${{ github.run_number }}"
 
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
@@ -1478,6 +1494,12 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         run: node tools/price-alert-send.mjs .price-alert.txt
+      - name: Alert — price coverage dropped or a join miss (Telegram; founder ruling 2026-10-18 item 5)
+        if: always() && hashFiles('.coverage-alert.txt') != ''
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: node tools/price-alert-send.mjs .coverage-alert.txt
 
       # Surface failures loudly: if the pipeline could not produce a fresh
       # success, fail the job so GitHub emails/notifies (and the health file

@@ -206,7 +206,7 @@ function capturedBet365(root, resolver, stats) {
     const [s1, s2] = dropSuspended(v.s1, v.s2);
     const a = lastAtOrBefore(s1, trueStart), b = lastAtOrBefore(s2, trueStart);
     if (a == null || b == null) { stats.capOneSided++; continue; } // one-sided = no price
-    out.push({ date: isoDay(trueStart), k1, k2, B: [a, b], ek: null });
+    out.push({ date: isoDay(trueStart), k1, k2, B: [a, b], ek: null, cat: v.cat, n1: v.p1, n2: v.p2 });
     stats.capB365++;
   }
   return out;
@@ -303,7 +303,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
   return { stats, players: Object.keys(index).length, latest };
 }
 
-module.exports = { build, makeResolver, makeCommaResolver, rosterNames, lastAtOrBefore, dropSuspended };
+module.exports = { build, makeResolver, makeCommaResolver, rosterNames, lastAtOrBefore, dropSuspended, capturedBet365 };
 if (require.main === module) {
   const r = build();
   const s = r.stats;

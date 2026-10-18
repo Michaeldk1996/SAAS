@@ -521,7 +521,7 @@ function main() {
   // form window no longer depends on it, because it is a match count now, not a date.
   // archiveLatest = the master's latest match (team events are not this card's: they stay out, as in the Database)
   let archiveLatest = '';
-  const masterRows = master.rows.filter((m) => !String(m[MC.flags] || '').includes('t')).map((m) => ({
+  const masterRows = master.rows.filter((m) => !/[tl]/.test(String(m[MC.flags] || ''))).map((m) => ({
     date: m[MC.date], tournament: m[MC.tournament], series: m[MC.series], surface: m[MC.surface], round: m[MC.round],
     winner: m[MC.winner], loser: m[MC.loser], comment: m[MC.comment], wrank: MC.wrank != null ? m[MC.wrank] : '', lrank: MC.lrank != null ? m[MC.lrank] : '',
     // the match's ONE price pair (winner first): both the "average" and the "best" slots read it — no cross-book figure

@@ -38,8 +38,10 @@ check('control: without a snapshot the note is unchanged', C.fhSourceNote([{ boo
 const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \? 'A' : 'B';/.test(html);
 check('the price join maps the store\'s books 2 and 5 (the two snapshot sources) to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
 // founder 2026-10-16 (round 3, item 1): our archive's closes carry their own source on every surface, never "Tennis-Data"
-const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \? 'cap' : bk === 5 \? 'od10' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
+const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
 check('the price join gives our archive\'s closes their own source: 3 → "from Pinnacle history", 4 → "captured", 5 → the start − 10 snapshot', join34);
+// founder 2026-10-18 (item 3): book 6 = our captured Bet365 at the lower levels — 'B' + 'cap', so it hovers as an approx, never a close
+check('the price join reads book 6 (our captured Bet365) as Bet365 with source "cap" → "Bet365 (approx.) · not a confirmed close"', join34 && join2 && C.fhSrcTitle({ book: 'B', src: 'cap' }) !== 'Bet365 close · captured');
 check('a Tournament-tab / sheet price from Pinnacle history reads "Pinnacle close · from Pinnacle history", a captured one "· captured"',
   C.fhSrcTitle({ book: 'P', src: 'hist', srcLabel: 'from Pinnacle history' }) === 'Pinnacle close · from Pinnacle history'
   && C.fhSrcTitle({ book: 'P', src: 'hist' }) === 'Pinnacle close · from Pinnacle history'

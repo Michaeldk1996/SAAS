@@ -34,7 +34,7 @@ const MUTANTS = [
   ['Q8: two meetings in one edition left unresolved', "      if (c.length > 1) c = c.filter(r => fhRoundCode(r.round, false) === x.round);   // two meetings in one edition: the round decides\n", ''],
   ['Q8: the voted event-name aliases dropped', "  const names = [clean].concat(trArchiveNames(mk), al[clean] || []);", "  const names = [clean].concat(trArchiveNames(mk));"],
   ['TEN-402: the alias vote ignores the tournament-history shard cache (Head to Head resolves fewer rows than the profile)', "    || (typeof _tourHistShards === 'object' && Array.isArray(_tourHistShards[k]) ? _tourHistShards[k] : null) || [];", "    || [];"],
-  ['2026-10-17 item 1: the closes tabs no longer take the Database price', "  if (!r.wo && !qual && r.level === 'ATP' && typeof sfDbPxRows === 'function'){", "  if (false){"],
+  ['2026-10-17 item 1: the closes tabs no longer take the Database price', "  if (!r.wo && typeof sfDbPxRows === 'function'){   // founder ruling 2026-10-18 (item 3): every level, qualifying included", "  if (false){"],
   // 'TEN-402: the profile back on the closes join' retired 2026-10-17: an EQUIVALENT mutant since founder ruling item 1 —
   // trRowOf hands meRowFromCareer no closes (cl = null) and meRowFromCareer prices every row the Database join holds
   // (sfDbPxRows), so dropping the px step changes no output. The suite's 'M. N' row (closes only, no Database row) pins it.
