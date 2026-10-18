@@ -30,3 +30,7 @@ console.log('closes-shard Tennis-Data rows: before', tb, 'after', ta, 'players c
 diffs.sort((x, y) => (y[2] - y[3]) - (x[2] - x[3])).forEach(d => console.log(d.join(' | ')));
 const gg = buildIdentityGate(LIVE, null);
 console.log('merged same-person keys:', JSON.stringify(gg.merged));
+console.log('1056 kept:', JSON.stringify(JSON.parse(fs.readFileSync(path.join(A, '1056.json'))).rows.map(r => r[0] + ' v ' + r[1])));
+const sh = k => JSON.parse(fs.readFileSync(path.join(LIVE, 'career-history', k + '.json')));
+const a = sh('101792').matches.map(r => r.date).sort(); console.log('101792 own', a[0], '..', a[a.length - 1], a.length);
+const m = sh('1056').matches.filter(r => r.date < '2023').map(r => `${r.date} ${r.tournament} ${r.level || ''} v ${r.opponent}`).sort(); console.log('1056 own rows before 2023:', m.length); m.forEach(x => console.log('  ', x));
