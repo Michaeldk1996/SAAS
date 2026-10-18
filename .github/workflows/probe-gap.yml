@@ -1,0 +1,26 @@
+name: probe-gap (branch only — removed before landing)
+on:
+  push:
+    branches: [claude/wonderful-fermat-clvs94]
+    paths: [tools/probe-gap/trigger]
+permissions: { contents: read, actions: read }
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Unpriced ATP main-draw rows, classified (read-only)
+        run: |
+          RID=$(gh run list -R "$GITHUB_REPOSITORY" --workflow pipeline.yml --status success -L 1 --json databaseId -q '.[0].databaseId')
+          echo "site-data from run $RID"
+          gh run download "$RID" -R "$GITHUB_REPOSITORY" -n site-data -D live
+          node tools/probe-gap/patch.mjs
+          CHROME_BIN=google-chrome node tools/probe-gap/pc.mjs --site live --coverage-out cov.json --sample 1000000 > pc.log 2>&1 || true
+          grep '^### price-coverage' pc.log | cut -c1-3000
+          tail -3 pc.log
+          cd tools/probe-gap && python3 classify.py ../../cov.json
