@@ -401,6 +401,16 @@ jobs:
           # founder ruling 2026-10-18 (item 3): the lower levels' snapshots (ATP qualifying, Challenger, ITF) go to their own file
           python3 tools/tdarch.py approx-feed pinnacle-approx.csv pinnacle-approx-lower.csv || { echo "tdarch approx-feed failed (archive unreachable?)" > .archive-failed; exit 1; }
 
+      - name: Lower-level unpriced reasons (founder ruling 2026-10-18 item 5; best-effort — without it a dash reads "No source found yet")
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          rm -f lower-unpriced.json
+          RID=$(gh run list -R "$GITHUB_REPOSITORY" --workflow historical-archive.yml --status success -L 20 --json databaseId -q '.[].databaseId' 2>/dev/null | while read -r r; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/runs/$r/artifacts" -q '.artifacts[] | select(.name=="lower-unpriced" and (.expired|not)) | .id' 2>/dev/null | head -1 | grep -q . && { echo "$r"; break; }; done)
+          if [ -n "$RID" ]; then gh run download "$RID" -R "$GITHUB_REPOSITORY" -n lower-unpriced -D . || echo "::warning::lower-unpriced: download failed"; else echo "::warning::lower-unpriced: no artifact yet (historical-archive.yml lower-import / daily)"; fi
+          ls -l lower-unpriced.json 2>/dev/null || true
+
       - name: Feed the archive's Pinnacle closes into the Database (fail-closed)
         run: |
           rm -f pinnacle-archive-td.csv started-evidence.json pinnacle-lower-closes.csv

@@ -197,6 +197,7 @@ const xRaw = [];
 // …and every priced match of every set goes into the ONE master file (database-yield-master.json) with the attributes the
 // builders downstream need (series, court, best-of, comment): `att` is pushed beside each accepted row, same index.
 const rowsAtt = [], retAtt = [], tieAtt = [], xAtt = [];
+const uRaw = [];   // founder 2026-10-18 (item 5): [date, winner, loser, reason] for a played match no source prices
 const retRaw = [];    // [dateInt, lvlIdx, surface, round, tournament, favPrice, dogPrice, favWon, bookIdx, winner, loser]
 const retBucket = { priced: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0, edge: 0 };
 
@@ -305,7 +306,15 @@ function processLine(c, col, season, fromFeed) {
     // TEN-402: a retirement passes the SAME filters as a used row, counted in its own buckets (retBucket),
     // so the Database's reconciliation (each archive row in exactly one bucket) is untouched.
     const B_ = behindFlag ? retBucket : bucket;
-    if (bookIdx < 0) { B_.noPrice++; return; }
+    if (bookIdx < 0) {
+      B_.noPrice++;
+      // founder ruling 2026-10-18 (item 5): every unpriced match carries its reason — a book that priced one player only is
+      // "one side only", none at all "no bookmaker priced it" (read by the price join's dash hover; never a Database figure)
+      const dU = parseInt((c[col.date] || '').trim().replace(/-/g, ''), 10);
+      const one = [P[0], P[1], B365[0], B365[1], num(c[col.psw]), num(c[col.psl]), num(c[col.b365w]), num(c[col.b365l])].some(validPrice);
+      if (Number.isFinite(dU)) uRaw.push([dU, (c[col.winner] || '').trim(), (c[col.loser] || '').trim(), one ? 'one' : 'nobook']);
+      return;
+    }
     const [pw, pl] = isPinIdx(bookIdx) ? P : isApproxIdx(bookIdx) ? AP : B365;
 
     if (pw === pl) {                                            // exact tie: no favourite, no underdog
@@ -505,6 +514,19 @@ for (const r of lowerBest.values()) {
     r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), 'l' + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
 }
+// founder ruling 2026-10-18 (item 5): the lower-level matches the import checked and could not price, with their reason —
+// unless another source (our captured Bet365) priced them here. Read by the join's dash hover only.
+const LOWER_UNPRICED = process.env.DB_YIELD_LOWER_UNPRICED || path.join(__dirname, 'lower-unpriced.json');
+lower.unpriced = { file: fs.existsSync(LOWER_UNPRICED), rows: 0, pricedElsewhere: 0 };
+if (lower.unpriced.file) {
+  let U = []; try { U = JSON.parse(fs.readFileSync(LOWER_UNPRICED, 'utf8')).rows || []; } catch (e) { console.error(`${LOWER_UNPRICED}: unreadable (${e.message})`); process.exit(1); }
+  const pricedEk = new Set([...lowerBest.values()].map(r => String(r.eventKey || '')).filter(Boolean));
+  for (const u of U) {
+    if (pricedEk.has(String(u[6]))) { lower.unpriced.pricedElsewhere++; continue; }
+    const dU = parseInt(String(u[0]).replace(/-/g, ''), 10);
+    if (Number.isFinite(dU)) { uRaw.push([dU, u[1], u[2], u[3] === 'one' ? 'one' : 'nobook', u[4] || '', u[5] || '']); lower.unpriced.rows++; }
+  }
+}
 console.log('lower levels:', JSON.stringify(lower));
 
 // TEN-402: the retired rows' dictionary indices, assigned after every Database row has claimed its own.
@@ -681,7 +703,7 @@ const X_META = { schema: 1, rule: 'Priced completed matches the master holds but
   'codes as database-yield.json. Read by the price join only; no Database figure, tour baseline or ROI reads it.',
   counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), lower: xCount('l'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped }, lower };
 writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
-  xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]) }));
+  xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]), uRows: uRaw }));
 // …and the ONE master file every builder downstream reads (build-market-edge.js): every priced completed match, one row
 // each, winner first, with its price pair, book code and set (db = a Database row, ret / tie = behind their flags, x = the
 // era shard). Built from the same rows as the page files above, so a price can never differ between them.

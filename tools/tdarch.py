@@ -978,7 +978,7 @@ def _lower_fixtures(frm, to):
     return fx, od, empty
 
 
-def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO):
+def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=None):
     """Write the lower-level snapshots (append-only, the same table and guard as the ATP main-draw ones)."""
     fx, od, empty = _lower_fixtures(frm, to)
     if not fx:
@@ -1020,6 +1020,24 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO):
         return got
     s10_rows, srep = start10_rows(s10, None, od_of, fixtures, series_of, fetched, join=_lower_join)
     rows = s10_rows + api_rows
+    # founder ruling 2026-10-18 (item 5): every played match we checked and could not price, with its reason — api-tennis
+    # priced one player only ("one side only") or neither ("no bookmaker priced it"). Read by build-database-yield.js (the
+    # dash's hover); a price from another source (our captured Bet365) wins over it there.
+    priced = {r['event_key'] for r in rows}
+    unpriced = []
+    for r in targets:
+        ek = int(r['_f']['event_key'])
+        if ek in priced:
+            continue
+        ha = od.get(str(ek)) or {}
+        sides = sum(1 for side in ('Home', 'Away') if price((ha.get(side) or {}).get('Pncl')) is not None)
+        d = r['_detail']
+        unpriced.append([r['date'], P.td_name(r['winner']), P.td_name(r['loser']), 'one' if sides == 1 else 'nobook', d['winnerKey'], d['loserKey'], ek, d['level']])
+    if unpriced_out:
+        tmp = unpriced_out + '.tmp'
+        with open(tmp, 'w') as fh:
+            json.dump({'rule': 'lower-level matches no source priced (founder 2026-10-18 item 5)', 'window': [frm, to], 'rows': unpriced}, fh)
+        os.replace(tmp, unpriced_out)
     held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
     add = plan_snapshots(rows, held)
     ids = []
@@ -1033,6 +1051,7 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO):
     print('### lower-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'fixtures': len(fx), 'daysWithNoFixture': empty,
                                           'targets': trep, 'apiTennis': arep, 'start10': srep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
                                           'pricedOfPlayed': {f'{lv} {m}': f'{len(got[(lv, m)])}/{n}' for (lv, m), n in sorted(lv_month.items())},
+                                          'unpriced': dict(collections.Counter(u[3] for u in unpriced)),
                                           'oddspapiFixtureCalls': 0}))
     if not dry_run:
         cmd_snapshot_counts('lower-import')
@@ -1136,7 +1155,8 @@ if __name__ == '__main__':
     elif a[0] == 'approx-feed':
         cmd_approx_feed(a[1], a[2] if len(a) > 2 else None)
     elif a[0] == 'lower-import':
-        cmd_lower_import('--dry-run' in a, a[a.index('--from') + 1] if '--from' in a else LOWER_FROM, a[a.index('--to') + 1] if '--to' in a else LOWER_TO)
+        cmd_lower_import('--dry-run' in a, a[a.index('--from') + 1] if '--from' in a else LOWER_FROM, a[a.index('--to') + 1] if '--to' in a else LOWER_TO,
+                         a[a.index('--unpriced') + 1] if '--unpriced' in a else None)
     elif a[0] == 'snapshot-counts':
         cmd_snapshot_counts(a[a.index('--record') + 1] if '--record' in a else None)
     else:
