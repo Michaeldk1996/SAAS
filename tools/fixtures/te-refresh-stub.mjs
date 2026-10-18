@@ -7,7 +7,8 @@ globalThis.fetch = async (url) => {
   url = String(url); log(url);
   const res = (status, body) => ({ status, ok: status === 200, headers: new Map(), text: async () => body, json: async () => JSON.parse(body) });
   if (url.includes('api.api-tennis.com') && process.env.TE_STUB_API_STATUS) return res(+process.env.TE_STUB_API_STATUS, 'error');
-  if (url.includes('api.api-tennis.com')) return res(200, JSON.stringify({ result: [{ player_key: 2, player_full_name: 'Nate Newman', player_bday: '03.04.2000', player_country: 'Australia' }] }));
+  const bday = process.env.TE_STUB_API_BDAY !== undefined ? process.env.TE_STUB_API_BDAY : '03.04.2000';   // '' = none on record
+  if (url.includes('api.api-tennis.com')) return res(200, JSON.stringify({ result: [{ player_key: 2, player_full_name: 'Nate Newman', player_bday: bday, player_country: 'Australia' }] }));
   const p = url.replace(/^https?:\/\/www\.tennisexplorer\.com/, '');
   const v = PAGES[p];
   if (v === undefined) return res(404, 'not found');

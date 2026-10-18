@@ -63,6 +63,8 @@ async function apiTennisPlayer(key) {
   if (!j || !Array.isArray(j.result)) throw new Error(`api-tennis get_players for player ${key}: unreadable answer`);
   const p = j.result[0] || null;
   if (!p || !p.player_bday) return null;
+  // a birthday in any other shape would become a garbage DOB and a silent "unmatched" — stop instead
+  if (!/^\d{2}\.\d{2}\.\d{4}$/.test(String(p.player_bday))) throw new Error(`api-tennis get_players for player ${key}: birthday "${p.player_bday}" is not dd.mm.yyyy`);
   const [d, m, y] = String(p.player_bday).split('.');
   const full = String(p.player_full_name || '').trim().split(/\s+/);
   return { dob: `${y}${m}${d}`, first: full.slice(0, -1).join(' '), last: full.slice(-1)[0] || null, country: p.player_country || null };
@@ -75,8 +77,11 @@ async function loadRoster() {
   const src = process.env.TE_ROSTER || 'https://michaeldk1996.github.io/SAAS/player-index.json';
   const j = /^https?:/.test(src) ? await (await fetch(`${src}?cb=${Date.now()}`)).json() : JSON.parse(fs.readFileSync(src, 'utf8'));
   const list = Array.isArray(j) ? j : Array.isArray(j.players) ? j.players : null;
-  if (list) return list.filter((p) => p && p.hasProfile).map((p) => ({ key: String(p.key), name: p.name, country: p.country, age: p.age }));
-  return Object.entries(j.players || {}).filter(([, p]) => p && p.careerByYear).map(([key, p]) => ({ key, name: p.name, country: p.country, age: p.age }));
+  const out = list ? list.filter((p) => p && p.hasProfile).map((p) => ({ key: String(p.key), name: p.name, country: p.country, age: p.age }))
+    : Object.entries(j.players || {}).filter(([, p]) => p && p.careerByYear).map(([key, p]) => ({ key, name: p.name, country: p.country, age: p.age }));
+  // TEN-449 review: a roster of an unexpected shape read as empty, and every new player was skipped without a word
+  if (!out.length) throw new Error(`roster ${src} holds no profiled player — refusing to refresh against an empty roster`);
+  return out;
 }
 
 const rowKey = (r) => `${r.date}|${r.oppSlug || r.opp}|${r.event}|${r.round}`;
@@ -138,7 +143,11 @@ async function main() {
     let slug = known && known.slug, dob = known && known.dob, isNew = false;
     if (!known) {
       const id = await apiTennisPlayer(p.key);   // the licensed feed's DOB is the identity test
-      const r = await S.resolve({ ...p, ...(id || {}), dob: id && id.dob });
+      // TEN-449 review: with no birthday, resolve() fell back to name + country + age ± 1 — a join the DOB-only rule
+      // forbids. No DOB on api-tennis = unmatched and listed, never a guess.
+      if (!id) { const why = 'no date of birth on api-tennis'; nextIdx.unmatched[p.key] = { why, at: NOW.toISOString() }; report.unmatched.push({ key: p.key, name: p.name, why }); continue; }
+      const r = await S.resolve({ ...p, ...id, dob: id.dob });
+      if (r.slug && r.dob !== id.dob) throw new Error(`player ${p.key}: joined ${r.slug} with DOB ${r.dob}, api-tennis has ${id.dob} — refusing a non-DOB join`);
       if (!r.slug) { nextIdx.unmatched[p.key] = { why: r.unmatched, at: NOW.toISOString() }; report.unmatched.push({ key: p.key, name: p.name, why: r.unmatched }); continue; }
       slug = r.slug; dob = r.dob; isNew = true; delete nextIdx.unmatched[p.key];
     }

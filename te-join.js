@@ -61,13 +61,14 @@ function pairRows(teRows, ourRows) {
   const te2our = new Map(), used = new Set();
   for (const [, i, j] of cand) { if (te2our.has(i) || used.has(j)) continue; te2our.set(i, j); used.add(j); }
   // TEN-449 review: a dated row can sit up to a week from TE's date (a retirement api-tennis dates at the final round,
-  // Kursumlijska Banja 2024: 6 days). Second pass over the LEFTOVERS only: same opponent by surname, same result,
+  // Kursumlijska Banja 2024: 6 days). Second pass over the LEFTOVERS only: same opponent surname exactly, same result,
   // within 10 days — else one match counts twice (TE-only added + ours kept).
   const cand2 = [];
   teRows.forEach((t, i) => {
     if (te2our.has(i) || !t.date) return;
     ourRows.forEach((o, j) => {
-      if (used.has(j) || !o.date || !!t.won !== !!o.won || !similar(teSurname(t.opp), ourSurname(o.opponent))) return;
+      // exact surname only: the loose `similar` lets "martin" sit inside "martinez" (review 2026-10-19)
+      if (used.has(j) || !o.date || !!t.won !== !!o.won || teSurname(t.opp) !== ourSurname(o.opponent)) return;
       const dd = Math.abs(days(t.date, o.date)); if (dd <= 10) cand2.push([dd, i, j]);
     });
   });

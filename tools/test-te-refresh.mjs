@@ -167,6 +167,24 @@ const te = (url) => url.includes('tennisexplorer');
   check('api-tennis lookup fails (HTTP 500): the run stops non-zero; store byte-identical; the new player is not written unmatched', () => {
     assert.notStrictEqual(r2.code, 0, r2.out); assert.strictEqual(snapshot(d2), before2); assert.ok(/get_players for player 2: HTTP 500/.test(r2.out), r2.out);
   });
+  // DOB-only joins: no birthday on api-tennis -> unmatched and listed, and TE is never searched for him by name/age
+  const d3 = repo(); const r3 = run(d3, 'weekly', {}, undefined, { env: { TE_STUB_API_BDAY: '' } });
+  check('no birthday on api-tennis: the new player stays unmatched (listed), no TE search, no age±1 join; run exits 0', () => {
+    assert.strictEqual(r3.code, 0, r3.out);
+    assert.ok(!r3.reqs.filter(te).some((u) => /list-players|newman/.test(u)), r3.reqs.join(' '));
+    const rep = JSON.parse(fs.readFileSync(path.join(d3, 'te-refresh-report.json'), 'utf8'));
+    assert.deepStrictEqual(rep.unmatched.map((u) => [u.key, u.why]), [['2', 'no date of birth on api-tennis']]);
+    assert.ok(!JSON.parse(fs.readFileSync(path.join(d3, 'te-history-index.json'), 'utf8')).players[2]);
+  });
+  const d4 = repo(); const before4 = snapshot(d4); const r4 = run(d4, 'weekly', {}, undefined, { env: { TE_STUB_API_BDAY: '2000-04-03' } });
+  check('a birthday not in dd.mm.yyyy stops the run; store byte-identical', () => {
+    assert.notStrictEqual(r4.code, 0, r4.out); assert.strictEqual(snapshot(d4), before4); assert.ok(/is not dd\.mm\.yyyy/.test(r4.out), r4.out);
+  });
+  const d5 = repo(); const before5 = snapshot(d5); fs.writeFileSync(path.join(d5, 'roster.json'), JSON.stringify({ unexpected: [] }));
+  const r5 = run(d5, 'weekly');
+  check('a roster with no profiled player stops the run; store byte-identical', () => {
+    assert.notStrictEqual(r5.code, 0, r5.out); assert.strictEqual(snapshot(d5), before5); assert.ok(/holds no profiled player/.test(r5.out), r5.out);
+  });
 }
 {
   // TIME BUDGET (founder 2026-10-17, comment cd899856 item 3): a run that cannot fit is refused BEFORE fetching; a run

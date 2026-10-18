@@ -195,6 +195,11 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       assert.strictEqual(TJ.pairRows([{ date: '2024-09-01', opp: 'Fiorentini A.', event: 'Futures 2024', won: false }], [ours[0]]).pairs.length, 0);
       assert.strictEqual(TJ.pairRows([{ ...te[0], won: true }], [ours[0]]).pairs.length, 0);
     });
+    check('pairing: the second pass needs the exact surname — "Martinez P." 6 days from "A. Martin" stays apart', () => {
+      const x = TJ.pairRows([{ date: '2024-03-10', opp: 'Martinez P.', event: 'Futures 2024', won: true }],
+        [{ date: '2024-03-04', opponent: 'A. Martin', tournament: 'Santiago Challenger', won: true, src: 'fixtures' }]);
+      assert.strictEqual(x.pairs.length, 0);
+    });
   }
   load(false);
   console.log(`\nTEN-443 TE ingest: ${pass} passed, ${fail} failed`);
