@@ -302,6 +302,33 @@ const ARCHIVE_PAGE_SPELLINGS = {
   // keyed above too; listed so the page join's spelling never depends on whether he is in the eager profile file
   'Moroni G.M.': 'M. Moroni', 'Moroni G.': 'M. Moroni', 'Madaras D.': 'N. Madaras', 'Aragone JC': 'J. Aragone',
   'Aragone J.C.': 'J. Aragone', 'Wu T.L.': 'Wu Tung-Lin',
+  // founder ruling 2026-10-18 ("spellings: approved"): the archive names behind the Market edge rows that met no career
+  // row (599 of 43,979, probe r27 on the live site, 18 Oct). Each value is the career rows' own spelling of that player,
+  // read off the opponents' rows that the miss sat beside (same result, the event's dates); none carries a player key.
+  'Del Potro J.M.': 'J. Martin del Potro',         // 119 of 121 misses
+  'Londero J.I.': 'J. Ignacio Londero',            // 37 of 37
+  'Chela J.I.': 'J. Ignacio Chela',                // 19 of 25
+  'Ferrero J.C.': 'J. Carlos Ferrero',             // 19 of 22
+  'Galan D.E.': 'D. Elahi Galan', 'Galan D.': 'D. Elahi Galan',   // 17 of 18, 2 of 2
+  'Cerundolo J.M.': 'J. Manuel Cerundolo',         // 4 of 5
+  'Varillas J.P.': 'J. Pablo Varillas', 'Varillas J. P.': 'J. Pablo Varillas',
+  'Etcheverry T.': 'T. Martin Etcheverry',
+  'Marin J.A.': 'J. Antonio Marin',
+  'Zayid M.S.': 'M. Shannan Zayid', 'Zayed M. S.': 'M. Shanan Zayed',
+  'Brzezicki J.P.': 'J. Pablo Brzezicki',
+  'Hsu Y.': 'H. Hsu Yu',
+  'Nam J.S.': 'S. Nam Ji',
+  'Lopez-Jaen M.A.': 'M. Angel Lopez Jaen',
+  'Sanchez De Luna J.': 'J. Antonio Sanchez-de Luna',
+  'Tirante T.A.': 'T. Agustin Tirante',
+  'Ramos A.': 'A. Ramos-Vinolas',
+  'Bautista R.': 'R. Bautista Agut',
+  'Meligeni Rodrigues F': 'F. Meligeni Alves',
+  // the two pre-2010 same-day misses (founder 2026-10-18 item 5): Yeu-Tzuoo "Jimmy" Wang, 40 archive rows 2004-12, whom
+  // the career rows call "J. Wang" (Gasquet, Roland Garros 2006 R128); "Stepanek M." = Radek Stepanek, the archive's only
+  // 2 rows under that name, both Monte Carlo 2007 at rank 25 (Monfils R64, Ljubicic R32)
+  'Wang Y.T.': 'J. Wang',
+  'Stepanek M.': 'R. Stepanek',
 };
 const ARCHIVE_NAME_BLOCK = new Set([
   'Zhang Z.',    // Ze Zhang (2010-15, ranks 253-308) — would join Z. Zhang (Zhizhen, "Zhang Zh.")

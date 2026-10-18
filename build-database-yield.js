@@ -576,11 +576,14 @@ const nameTable = (() => {
   const missing = [];
   for (const [n, our] of Object.entries(ARCHIVE_PAGE_SPELLINGS || {})) if (held.has(n)) aliases[n] = our;
   for (const [n, k] of Object.entries(ARCHIVE_NAME_ALIASES)) {
-    if (n.includes(',') || !held.has(n) || aliases[n]) continue;
+    if (n.includes(',') || !held.has(n)) continue;
     // every spelling we hold for the key: the profile's (its newest fixture, TEN-372) AND the table's (as opponents'
     // older rows spell him) — a profile rename ("G. Miguel" → "L. A. Miguel", 17 Oct) never unjoins an older row
     const our = [...new Set([prof[k] && prof[k].name, ARCHIVE_ALIAS_NAMES[k]].filter(Boolean))];
-    if (our.length) aliases[n] = our.length === 1 ? our[0] : our; else missing.push(`${n} (${k})`);
+    // a name in both tables keeps every spelling: the page spelling first, then the profile's and the table's (founder 2026-10-18)
+    if (aliases[n]) our.unshift(...[].concat(aliases[n]));
+    const all = [...new Set(our)];
+    if (all.length) aliases[n] = all.length === 1 ? all[0] : all; else missing.push(`${n} (${k})`);
   }
   if (missing.length) console.log(`name table: aliased archive names with no spelling of ours (left unjoined): ${missing.join(', ')}`);
   return { aliases };

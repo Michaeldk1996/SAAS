@@ -15134,6 +15134,11 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
     // One surname a prefix of the other ("A. Ramos" / "Ramos-Vinolas A.", "G. Mpetshi Perricard" / "Mpetshi G."):
     // accepted only when exactly one row in the window qualifies, with the same result.
     if (!hits.length && d0 != null && nk.length >= 4) hits = (cl.rows || []).filter(y => { const k2 = fhNameKey(y.opp); return inWin(y) && k2.length >= 4 && k2 !== nk && (k2.startsWith(nk) || nk.startsWith(k2)); });
+    // founder ruling 2026-10-18: an opponent the archive spells another way and who carries no key ("Del Potro J.M." =
+    // "J. Martin del Potro") meets his row through the ONE name table the price join reads (ARCHIVE_PAGE_SPELLINGS, published
+    // as database-yield-players.json `aliases`); still exactly one row in the window, same result
+    const AL = !hits.length && d0 != null && typeof _sfDbJoin !== 'undefined' && _sfDbJoin && _sfDbJoin.aliases;
+    if (AL) hits = (cl.rows || []).filter(y => inWin(y) && Object.prototype.hasOwnProperty.call(AL, y.opp) && [].concat(AL[y.opp]).some(v => fhNameKey(v) === nk));
     const td = hits.length === 1 ? hits[0] : null;
     if (td) r.tdKey = td.date + '|' + td.opp + '|' + (td.won ? 1 : 0);   // the Tennis-Data row it joined (ruling B join)
     if (td && x.src === 'archive') r.date = td.date;
