@@ -1,12 +1,11 @@
 // probe r34 — coverage: 2026 ATP main draw by month and source (the master), Challenger from 17 Sep (the archive export)
 import { readFileSync } from 'node:fs';
 const S = process.argv[2], KEY = process.env.API_TENNIS_KEY;
-const M = JSON.parse(readFileSync(S + '/database-yield-master.json', 'utf8'));
-const C = M.meta.cols, ix = n => C.indexOf(n);
+const D = JSON.parse(readFileSync(S + '/database-yield.json', 'utf8'));
 const BOOK = { 0: 'Tennis-Data Pinnacle', 1: 'Bet365 (Tennis-Data)', 2: 'Pinnacle (approx.) api-tennis', 3: 'Pinnacle close (from Pinnacle history)', 4: 'Pinnacle close (captured)', 5: 'Pinnacle (approx.) start-10' };
 const byM = {};
-for (const r of M.rows) { const d = r[ix('date')]; if (!String(d).startsWith('2026')) continue; if (String(r[ix('flags')] || '').includes('t')) continue;
-  const m = d.slice(0, 7), b = BOOK[r[ix('book')]] || String(r[ix('book')]); const o = byM[m] = byM[m] || {}; o[b] = (o[b] || 0) + 1; }
+for (const r of [].concat(D.rows || [], D.retRows || [], D.tieRows || [])) { const d = String(r[0]); if (!d.startsWith('2026')) continue;
+  const m = d.slice(0, 4) + '-' + d.slice(4, 6), b = BOOK[r[8]] || String(r[8]); const o = byM[m] = byM[m] || {}; o[b] = (o[b] || 0) + 1; }
 // denominators from api-tennis (UTC), finished / retired singles, walkovers out
 const dayShift = (d, n) => new Date(Date.parse(d + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10);
 const TEAM = /davis cup|laver cup|united cup|atp cup|hopman/i;
