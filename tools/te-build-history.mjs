@@ -255,7 +255,7 @@ function main() {
       if (!fs.existsSync(f)) { missing = true; report.missingPages.push(`${key} ${y}`); continue; }
       seasonHtml[y] = fs.readFileSync(f, 'utf8');
       // TEN-449: the store is as fresh as its stalest current-season page (past seasons are final)
-      if (y === Math.max(...p.years)) { const t = fs.statSync(f).mtimeMs; if (!(oldestCurrent <= t)) oldestCurrent = t; }
+      if (Number(y) === Math.max(...p.years.map(Number))) { const t = fs.statSync(f).mtimeMs; if (oldestCurrent === null || t < oldestCurrent) oldestCurrent = t; }
     }
     if (missing) { report.kept.push(key); continue; }
     const built = buildPlayerRecord({ key, slug: p.slug, dob: p.dob, name: p.name, mainHtml, seasonHtml, builtAt: idx.builtAt });
