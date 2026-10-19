@@ -11,7 +11,8 @@ def at(p):
 def fl(v):
     try: f = float(v); return f if f >= 1.01 else None
     except: return None
-T = [x for x in X if x['lv'] == 'ATP main draw' and x['cat'] in ('team event', 'no Tennis-Data row') and x.get('ek')]
+T = [x for x in X if x['lv'] == 'ATP main draw' and x['cat'] == 'team event' or (x['cat'].startswith('no Tennis-Data') and x.get('ek'))]
+T = [x for x in T if x.get('ek')]
 eks = sorted({str(x['ek']) for x in T}); print('event keys', len(eks), 'of rows', len(T), 'rows without key', sum(1 for x in X if x['lv']=='ATP main draw' and x['cat'] in ('team event','no Tennis-Data row') and not x.get('ek')))
 def one(ek):
     o = at({'method': 'get_odds', 'match_key': ek}); ha = ((o.get('result') or {}).get(ek) or {}).get('Home/Away') or {}
@@ -32,6 +33,6 @@ seen = set()
 for x in T:
     ek = str(x['ek'])
     if ek in seen: continue
-    seen.add(ek); b = R.get(ek, []); k = (ev(x['t']) if x['cat'] == 'team event' or ev(x['t']) != 'other' else ('qualifying?' if x.get('q1') else 'other-noTD'), x['date'][:4])
+    seen.add(ek); b = R.get(ek, []); k = (ev(x['t']) if ev(x['t']) != 'other' else (x['lv'] + (' q1' if x.get('q1') is True else ' notq1')), x['date'][:4])
     agg[k]['matches'] += 1; agg[k]['Pncl'] += 'Pncl' in b; agg[k]['bet365'] += 'bet365' in b; agg[k]['any'] += bool(b)
 for k in sorted(agg): print('ODDS', k, dict(agg[k]))
