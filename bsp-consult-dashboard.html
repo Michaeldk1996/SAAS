@@ -11577,8 +11577,9 @@ function ovOpenCell(cid){
   ovRenderPop();
   if (!S.cell) return;
   const i = +cid.split('|')[0], key = i ? S.m.p2Key : S.m.p1Key, m = S.m;
-  // TEN-449: the record file beside the rows — the cell counts the career record's rows (matches.json p1Yearly/p2Yearly)
-  Promise.all([loadCareerHistory(key).then(r => loadCareerRecord(key, (r || []).length)), fhLoadCloses(key), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
+  // TEN-449: the record file beside the rows — the cell counts the career record's rows (the profile's careerByYear),
+  // fetched only once the rows it indexes have answered
+  Promise.all([loadCareerHistory(key).then(r => (String(key) in _careerHistoryShards) ? loadCareerRecord(key, (r || []).length) : false), fhLoadCloses(key), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
 }
 // TEN-449 · the career record's COUNTED rows for one player, as [row, idx] pairs: his career-history rows with the record
 // file's overlay applied (the season, surface, court and result TE corrected), less the rows the record leaves out and the

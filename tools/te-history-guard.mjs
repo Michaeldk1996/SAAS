@@ -75,8 +75,9 @@ export function checkWriters(root) {
     if (WRITERS.has(r) || r === 'tools/te-history-guard.mjs' || /^tools\/test-/.test(r)) continue;
     const src = fs.readFileSync(path.join(root, r), 'utf8');
     if (!src.includes('te-history')) continue;
-    // constants that hold the store's path: `const TE_HISTORY_DIR = 'te-history'` …
-    const consts = [...src.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*[`'"][^`'"\n]*te-history/g)].map((m) => m[1]);
+    // constants that hold the store's path: `const TE_HISTORY_DIR = 'te-history'`, or built from it
+    // (`path.join(TE_STORE_DIR, 'te-history')`, TEN-449) — any initializer on its line that names te-history
+    const consts = [...src.matchAll(/(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=[^;\n]*te-history/g)].map((m) => m[1]);
     const constRe = consts.length ? new RegExp(`\\b(${consts.join('|')})\\b`) : null;
     src.split('\n').forEach((line, i) => {
       const write = (WRITE_FN.test(line) && (/te-history/.test(line) || (constRe && constRe.test(line)))) || SHELL_WRITE.test(line);

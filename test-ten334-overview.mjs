@@ -54,15 +54,16 @@ const CL = { rows: [
 const MASTER = { [d(5, 9) + '|A. Alpha']: [1.52, 2.55], [d(5, 7) + '|B. Bravo']: [1.8, 2.0], [d(5, 5) + '|C. Charlie']: [2.2, 1.7], [d(5, 3) + '|D. Delta']: [1.4, 3.0] };
 const MASTER_STUB = (key, name, views) => views.map(v => { const p = MASTER[v.date + '|' + v.opp]; return p ? { price: p[0], oppPrice: p[1], book: 'P', src: 'td' } : null; });
 function vm(src) {
-  const body = closure(src, ['ovPopModel', 'ovPopHtml', 'ovColumnHtml', 'buildYearlyTables', 'ovOpenRow', 'ovOpenCell', 'ovFlatBox'],
-    ['document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'matches', 'state', 'wl', 'sfDbPxRows']);
+  const body = closure(src, ['ovPopModel', 'ovPopHtml', 'ovColumnHtml', 'buildYearlyTables', 'ovOpenRow', 'ovOpenCell', 'ovFlatBox', 'careerRecordCountedRows'],
+    ['document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'loadCareerRecord', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'matches', 'state', 'wl', 'sfDbPxRows']);
   const opened = [], painted = {};
-  const api = new Function('document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'sfDbPxRows', `
+  const api = new Function('document', 'window', 'aPaint', 'aBuilt', 'loadCareerHistory', 'loadCareerRecord', 'fhLoadCloses', 'fhOpenSheet', 'ovRenderPop', 'playerProfiles', 'ensurePlayerProfile', 'sfDbPxRows', `
     ${body}
     _careerHistoryShards['1'] = ${JSON.stringify(HIST)}; _fhCl['1'] = ${JSON.stringify(CL)};
+    _careerRecordLayers['1'] = null;   // TEN-449: answered, not joined to Tennis Explorer — his record is these rows
     return { ovPopModel, ovPopHtml, ovColumnHtml, buildYearlyTables, ovOpenRow, ovOpenCell, ovStateFor, get _ov(){ return _ov; }, get _fh(){ return _fh; } };`)(
     { addEventListener() {}, querySelectorAll: () => [], getElementById: () => null }, { MarketEdgeCore: { RET_SETTLE_NOTE: RET } },
-    (id, h) => { painted[id] = h; }, () => true, () => Promise.resolve([]), () => Promise.resolve(null), (mid) => opened.push(mid), () => {},
+    (id, h) => { painted[id] = h; }, () => true, () => Promise.resolve([]), () => Promise.resolve(true), () => Promise.resolve(null), (mid) => opened.push(mid), () => {},
     { 1: { careerByYear: CBY }, 2: { careerByYear: null } }, () => Promise.resolve(true), MASTER_STUB);
   return Object.assign(api, { opened, painted });
 }

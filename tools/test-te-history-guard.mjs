@@ -58,6 +58,8 @@ for (const [name, rel, body] of [
   ["the pipeline's writeJsonAtomic", 'bsp-y.js', "writeJsonAtomic('te-history-index.json', {})\n"],
   ['an async fs.promises.unlink', 'tools/z.mjs', "await fs.promises.unlink('te-history/1.json')\n"],
   ['a write through a path constant', 'bsp-z.js', "const STORE = 'te-history';\nfs.rmSync(STORE, { recursive: true });\n"],
+  // TEN-449: the pipeline builds its store paths with path.join(TE_STORE_DIR, 'te-history')
+  ['a write through a joined path constant', 'bsp-j.js', "const TE_HISTORY_INDEX = require('path').join(TE_STORE_DIR, 'te-history-index.json');\nfs.writeFileSync(TE_HISTORY_INDEX, '{}');\n"],
   ['a .py script', 'scripts/w.py', "open('te-history/1.json', 'w').write('{}')\n"],
   ['a .cjs script', 'tools/w.cjs', "require('fs').writeFileSync('te-history-index.json', '{}')\n"],
 ]) check(`writer: ${name} -> red`, () => assert.strictEqual(writerCase(rel, body).ok, false));
