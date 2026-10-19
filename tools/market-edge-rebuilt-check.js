@@ -76,7 +76,7 @@ function main() {
 
 // Alert only: whatever happens in here, the step exits 0 (founder, 19 Oct, TEN-449).
 if (require.main === module) {
-  try { main(); } catch (e) { console.log(`::warning title=Market-edge check could not run::${e && e.message}`); }
+  try { main(); } catch (e) { console.log(`::error title=Market-edge check could not run::${e && e.message} (alert only, the run stays green)`); }
   process.exitCode = 0;
 }
 

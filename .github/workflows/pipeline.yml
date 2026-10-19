@@ -1803,25 +1803,31 @@ jobs:
       # market-edge is a per-run output. When THIS run did not rebuild it — the builder exited non-zero, the shipped
       # index's builtAt predates this run's build step (the committed floor shipped), or the build step never ran —
       # the check writes the reason as a ::warning:: and into the step summary, and the alert step after it sends ONE
-      # Telegram per streak (only when the previous run that evaluated the check did not already alert). Both steps
-      # exit 0 in every case (by construction, not continue-on-error, so they stay green in the UI and in the jobs API
-      # that the streak de-dup and fail-alert read): this never blocks the site or turns a data run red.
+      # Telegram per streak (only when no earlier run of the streak DELIVERED one — the marker step records a 2xx from
+      # Telegram, so a failed send is retried next run). Every step exits 0 in every case — by construction, not
+      # continue-on-error, so they stay green in the UI and in the jobs API that the de-dup and fail-alert read — and
+      # each run line ends in `|| echo "::error::…"` so even a missing or broken script can't turn a data run red.
       # Runs whenever this run handed its site to publish.yml (the site-data upload) — the successor of the old
       # "deploy succeeded" gate, which pointed at a deploy step that moved to publish.yml (cf703d612), so the check
       # never ran after the split. Locked by tools/test-ten263-pipeline.js.
       - name: Market-edge rebuilt check (alert only, never blocks)
         id: me_check
         if: always() && steps.site_data.outcome == 'success'
-        run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json
-      # Its running (not skipped) in a run IS the streak marker the next run reads (tools/market-edge-alert.mjs).
+        run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json || echo "::error title=Market-edge check did not run::market-edge-rebuilt-check.js exited $? (alert only, the run stays green)"
       - name: Alert — market-edge not rebuilt (Telegram, once per streak)
+        id: me_alert
         if: always() && steps.me_check.outputs.stale == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ME_REASON: ${{ steps.me_check.outputs.reason }}
-        run: node tools/market-edge-alert.mjs
+        run: node tools/market-edge-alert.mjs || echo "::error title=Market-edge alert not sent::market-edge-alert.mjs exited $? (alert only, the run stays green)"
+      # Runs only after Telegram answered 2xx: its running (not skipped) in a run IS the "streak already alerted" marker the
+      # next runs read (tools/market-edge-alert.mjs). A failed send leaves it skipped, so the next stale run sends again.
+      - name: Market-edge alert sent (streak marker)
+        if: always() && steps.me_alert.outputs.sent == 'true'
+        run: echo "Market-edge alert delivered for this streak; later runs of the streak stay quiet."
 
   # Founder ruling 2026-10-18 (pipeline-down alert): after two consecutive failed runs, ONE Telegram naming the failing
   # step in plain words (once per streak, at its second failure). Its own job so it sees every step of the build job,
