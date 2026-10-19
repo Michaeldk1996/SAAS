@@ -271,8 +271,10 @@ function main() {
   idx.highWater = { totalRows: Math.max(prev.highWater?.totalRows || 0, idx.totalRows), players: Math.max(prev.highWater?.players || 0, n) };
   // TEN-449: "Tennis Explorer data as of" — the UTC date of the stalest current-season page read; a full rebuild has
   // not been refreshed (the weekly refresh sets refreshedAt)
-  idx.asOf = oldestCurrent === null ? null : new Date(oldestCurrent).toISOString().slice(0, 10);
-  idx.refreshedAt = null;
+  // a partial rebuild (--only) keeps the players it did not touch, so their dates still count, and their refresh too
+  const built = oldestCurrent === null ? null : new Date(oldestCurrent).toISOString().slice(0, 10);
+  idx.asOf = ONLY ? ([built, prev.asOf].filter(Boolean).sort()[0] || null) : built;
+  idx.refreshedAt = ONLY ? (prev.refreshedAt || null) : null;
   fs.writeFileSync(idxF, JSON.stringify(idx, null, 1));
   fs.writeFileSync(path.join(OUT, CATALOGUE_FILE), JSON.stringify({ builtAt: idx.builtAt, source: 'api-tennis ATP singles tournaments + TML tourney names', names: [...atpNames()].sort() }));
   report.unparsedRows = unparsed.length; report.unparsedSample = unparsed.slice(0, 5);

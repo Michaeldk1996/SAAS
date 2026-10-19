@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // TEN-443 · keep the Tennis Explorer store current (founder ruling 2026-10-17, comment 49d2974c item 1). Runs on GitHub
-// Actions (.github/workflows/te-refresh.yml), never on a laptop; reachability from an Actions runner was measured first
+// Actions (the private store repo's te-refresh.yml; template tools/te-store-repo/te-refresh.yml), never on a laptop; reachability from an Actions runner was measured first
 // (6/6 pages 200, parse, no challenge, 2026-10-17).
 //
 //   --mode weekly   every matched player: his profile page and his CURRENT season (also last season in January, for
@@ -179,8 +179,17 @@ async function main() {
     report.players++;
   }
   nextIdx.builtAt = NOW.toISOString();
-  // TEN-449: the profile's "Tennis Explorer data as of <asOf>" note shows until a refresh has run; this ends it
-  nextIdx.refreshedAt = NOW.toISOString();
+  // TEN-449: the profile's "Tennis Explorer data as of <asOf>" note shows until a WEEKLY refresh has covered every
+  // player — every part of one week's run (the parts share the week's Monday). A re-read slice or one part alone does
+  // not end it. Once set, refreshedAt stays (each later complete week moves it on).
+  if (MODE === 'weekly') {
+    const d = new Date(NOW); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
+    const week = d.toISOString().slice(0, 10);
+    const done = (idx.weeklyParts && idx.weeklyParts.week === week && idx.weeklyParts.of === PARTS) ? idx.weeklyParts.done : [];
+    const parts = [...new Set([...done, PART])].sort((a, b) => a - b);
+    nextIdx.weeklyParts = { week, of: PARTS, done: parts };
+    if (parts.length === PARTS) nextIdx.refreshedAt = NOW.toISOString();
+  }
   nextIdx.totalRows = Object.values(nextIdx.players).reduce((s, x) => s + x.rows, 0);
   const n = Object.keys(nextIdx.players).length;
   nextIdx.highWater = { totalRows: Math.max(idx.highWater?.totalRows || 0, nextIdx.totalRows), players: Math.max(idx.highWater?.players || 0, n) };

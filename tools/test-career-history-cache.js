@@ -85,8 +85,9 @@ function makeScope(plan) {
     ${grab('loadCareerRecordIndex')}
     ${grab('loadCareerRecord')}
     ${grab('loadPp2CareerHistory')}
+    ${grab('careerRecordCountedRows')}
     return {
-      loadCareerHistoryIndex, loadCareerHistory, loadPp2CareerHistory, loadCareerRecord,
+      loadCareerHistoryIndex, loadCareerHistory, loadPp2CareerHistory, loadCareerRecord, careerRecordCountedRows,
       shards: () => _careerHistoryShards,
       index: () => careerHistoryIndex,
       window: (window = { }) => window,
@@ -279,6 +280,29 @@ console.log('TEN-228 · a failed career-history fetch is not cached as an answer
     await api.loadPp2CareerHistory('1980');
     assert.ok(!win.careerRecord || !('1980' in win.careerRecord), 'a mismatched overlay was applied');
     assert.ok(!win.careerHistory || !('1980' in win.careerHistory));
+  });
+
+  await check('TEN-449 · the Overview pop-up and the legacy drill list the record\'s COUNTED rows (overlay applied)', async () => {
+    const SH = { matches: [
+      { date: '2024-12-30', year: '2024', surface: 'hard', won: true },     // TE moves it to 2025
+      { date: '2024-05-01', year: '2024', surface: 'clay', won: true },     // not in TE: listed in the profile, counted nowhere
+      { date: '2024-03-01', year: '2024', surface: 'hard', won: false }] }; // agrees
+    const LAY = { v: 1, over: [[0, { year: '2025' }]], out: [[1, 'not-in-te']], add: [{ date: '2024-06-01', year: '2024', surface: 'grass', won: true, src: 'te' }] };
+    const plan = (url) => url.indexOf('career-history-index') > -1 ? IDX : url.indexOf('career-record-index') > -1 ? { v: 1, meta: {}, players: { 1980: 1 } }
+      : url.indexOf('career-record/') > -1 ? { v: 1, key: '1980', n: 3, record: LAY } : SH;
+    plan.record = true;
+    const { api } = makeScope(plan);
+    assert.strictEqual(api.careerRecordCountedRows('1980'), null, 'rows before both files answered');
+    await api.loadPp2CareerHistory('1980');
+    const rows = api.careerRecordCountedRows('1980');
+    const y2024 = rows.filter(([x]) => x.year === '2024');
+    assert.deepStrictEqual(y2024.map(([x, i]) => [x.surface, x.won, i]), [['hard', false, 2], ['grass', true, 'te0']]);
+    assert.deepStrictEqual(rows.filter(([x]) => x.year === '2025').map(([, i]) => i), [0]);
+    // not joined: the rows themselves, indices kept for the price join
+    const p2 = (url) => url.indexOf('career-history-index') > -1 ? IDX : url.indexOf('career-record-index') > -1 ? { v: 1, meta: {}, players: {} } : SH;
+    p2.record = true;
+    const s2 = makeScope(p2); await s2.api.loadPp2CareerHistory('1980');
+    assert.deepStrictEqual(s2.api.careerRecordCountedRows('1980').map(([, i]) => i), [0, 1, 2]);
   });
 
   // ── 3b · the review findings (clean-context pass, 2026-09-17) ─────────────

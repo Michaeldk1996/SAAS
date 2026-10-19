@@ -11577,7 +11577,22 @@ function ovOpenCell(cid){
   ovRenderPop();
   if (!S.cell) return;
   const i = +cid.split('|')[0], key = i ? S.m.p2Key : S.m.p1Key, m = S.m;
-  Promise.all([loadCareerHistory(key), fhLoadCloses(key), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
+  // TEN-449: the record file beside the rows — the cell counts the career record's rows (matches.json p1Yearly/p2Yearly)
+  Promise.all([loadCareerHistory(key).then(r => loadCareerRecord(key, (r || []).length)), fhLoadCloses(key), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
+}
+// TEN-449 · the career record's COUNTED rows for one player, as [row, idx] pairs: his career-history rows with the record
+// file's overlay applied (the season, surface, court and result TE corrected), less the rows the record leaves out and the
+// ones it lists but does not count, plus Tennis Explorer's own rows (idx 'te<j>'). No overlay (not joined to TE, or
+// TE_INGEST off): the career-history rows themselves. The same reading as the profile's recordRowsOf / countedSpine, so
+// a count the season table shows and the rows listed behind it are one set. null until both files have answered.
+function careerRecordCountedRows(k){
+  if (!(k in _careerHistoryShards) || !(k in _careerRecordLayers)) return null;
+  const ch = _careerHistoryShards[k] || [], lay = _careerRecordLayers[k];
+  if (!lay) return ch.map((x, idx) => [x, idx]);
+  const over = new Map(lay.over || []), out = new Map(lay.out || []), rows = [];
+  ch.forEach((x, idx) => { if (out.has(idx)) return; rows.push([over.has(idx) ? Object.assign({}, x, over.get(idx)) : x, idx]); });
+  (lay.add || []).forEach((x, j) => rows.push([x, 'te' + j]));
+  return rows;
 }
 function ovCloseCell(){
   const S = _ov; S.cell = null; S.sel = null; S._popKey = null;
@@ -11591,11 +11606,11 @@ function ovPopModel(){
   const year = yk === 'season' ? ovSeasonYear() : yk, tier = S.tier;
   const k = String(key);
   const M = { i, key, name, year, surf, tier, rows: [], state: 'ready' };
-  const answered = k in _careerHistoryShards && k in _fhCl;
+  const answered = k in _careerHistoryShards && k in _careerRecordLayers && k in _fhCl;
   // not answered: still loading, or a load failed (not cached — a second click on the count retries)
-  if (!answered) { M.state = (!(k in _careerHistoryShards) && _careerHistoryPromises[k]) || (!(k in _fhCl) && _fhClP[k]) ? 'loading' : 'failed'; return M; }
+  if (!answered) { M.state = (!(k in _careerHistoryShards) && _careerHistoryPromises[k]) || (!(k in _careerRecordLayers) && _careerRecordPromises[k]) || (!(k in _fhCl) && _fhClP[k]) ? 'loading' : 'failed'; return M; }
   const cl = _fhCl[k];
-  (_careerHistoryShards[k] || []).forEach((x, idx) => {
+  careerRecordCountedRows(k).forEach(([x, idx]) => {
     if (!x || String(x.year) !== year) return;
     if (surf !== 'total' && x.surface !== surf) return;
     if (tier !== 'all' && x.level !== tier) return;
@@ -23107,8 +23122,12 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
   });
   container.dataset.token = token;
   container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
-  const pool = await loadCareerHistory(key);
+  const hist = await loadCareerHistory(key);
+  // TEN-449: the season count is the career record's, so the list is its counted rows (the record file's overlay)
+  const recOk = (key in _careerHistoryShards) && await loadCareerRecord(key, (hist || []).length);
   if (container.dataset.token !== token) return;   // superseded by a newer click
+  if (!recOk) { container.innerHTML = `<div class="yr-drill-note">The match list did not load. Open the count again.</div>`; container.dataset.token = ''; return; }
+  const pool = careerRecordCountedRows(key).map(([x]) => x);
   const profile = playerProfiles[key] || {};
   const surf = String(surface || 'all').toLowerCase();
   const list = pool

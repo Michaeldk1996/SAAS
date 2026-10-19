@@ -144,6 +144,10 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   const repairsOnly = await run(false, false, (d) => fs.writeFileSync(path.join(d, 'set-repairs.json'), JSON.stringify({ builtAt: '2026-10-18T00:00:00Z', repairs: {}, flags: {} })), true);
   let repairsMissing = null;
   try { await run(true, true, null, true); } catch (e) { repairsMissing = e; }
+  // TEN-449: the store read in place from the private checkout (TE_STORE_DIR), as pipeline.yml runs it
+  process.env.TE_STORE_DIR = '.te-store';
+  const inPlace = await run(true, false, (d) => { teStore(path.join(d, '.te-store')); fs.writeFileSync(path.join(d, '.te-store', 'set-repairs.json'), JSON.stringify({ builtAt: 'x', repairs: {}, flags: {} })); }, true);
+  delete process.env.TE_STORE_DIR;
   // TEN-449: a TE-joined player whose profile carries no feed rows at all (and no archive rows)
   const norows = await (async () => {
     const P = load(true); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten443-')); teStore(tmp);
@@ -213,6 +217,12 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   check('GOLDEN · the run-time guard: a merge that touches a shared row stops the run (mutation control)', () => {
     assert.ok(guardThrew && /changed .*shared career-history rows/.test(guardThrew.message), String(guardThrew));
   });
+  check('TEN-449 · TE_STORE_DIR: the store and set-repairs.json are read in place, nothing copied into the checkout', () => {
+    assert.strictEqual(inPlace.shardBytes, on.shardBytes, 'same shared file as the store at the root');
+    assert.deepStrictEqual(inPlace.recFile, on.recFile, 'same record file');
+    assert.ok(inPlace.index.meta.setRepairs, 'set-repairs.json read from the store dir');
+    assert.ok(!fs.existsSync(path.join(inPlace.tmp, 'te-history')) && !fs.existsSync(path.join(inPlace.tmp, 'set-repairs.json')));
+  });
   check('TEN-449 · switches independent: SET_REPAIR alone runs with no Tennis Explorer store, and ships no record', () => {
     assert.strictEqual(repairsOnly.index.meta.te, null);
     assert.ok(repairsOnly.index.meta.setRepairs && repairsOnly.index.meta.setRepairs.builtAt === '2026-10-18T00:00:00Z');
@@ -226,7 +236,8 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     const y = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
     assert.ok(/TE_INGEST: \$\{\{ vars\.TE_INGEST == '1' && '1' \|\| '0' \}\}/.test(y), 'TE_INGEST from its own variable');
     assert.ok(/SET_REPAIR: \$\{\{ vars\.SET_REPAIR == '1' && '1' \|\| '0' \}\}/.test(y), 'SET_REPAIR from its own variable');
-    assert.ok(/if \[ "\$TE_INGEST" = "1" \]; then[\s\S]*?te-history[\s\S]*?fi/.test(y) && /if \[ "\$SET_REPAIR" = "1" \]; then[\s\S]*?set-repairs\.json[\s\S]*?fi/.test(y), 'each input placed under its own switch');
+    assert.ok(/if \[ "\$TE_INGEST" = "1" \]; then[\s\S]*?te-history[\s\S]*?fi/.test(y) && /if \[ "\$SET_REPAIR" = "1" \]; then[\s\S]*?set-repairs\.json[\s\S]*?fi/.test(y), 'each input checked under its own switch');
+    assert.ok(/TE_STORE_DIR: \.te-store/.test(y), 'the pipeline reads the store in place from the private checkout');
     assert.ok(/repository: michaeldk1996\/stennisfy-te-store/.test(y) && /persist-credentials: false/.test(y), 'the private store, token not persisted');
   });
   check('TEN-449 · a TE-joined player with no feed rows: no shared file (as with the switch off), his record file ships', () => {

@@ -67,7 +67,9 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   - **Record by season's hover** (founder TEN-449, 2026-10-19), only on a player whose record is TE's: "Counted as
     Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series." Until the
     weekly TE refresh first runs (`career-record-index.json` `meta.refreshedAt` null) it adds "Tennis Explorer data
-    as of <asOf>" (18 Oct for the first store); the refresh sets `refreshedAt` and the clause goes by itself. H2H
+    as of <asOf>" — the UTC date of the stalest current-season page in the store (17 Oct for the first store: 226 of 623
+    players' pages were read on 17 Oct, 397 on 18 Oct); `tools/te-refresh.mjs` sets `refreshedAt` only when every part of one week's weekly run has completed (not on a re-read
+    slice or one part alone), and the clause goes by itself. H2H
     (ATP rules) and Form keep their own notes.
   - *Exceptions:* the Match analysis **Tournament tab** W–L stays **main draw only** (TEN-312 N7,
     2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate

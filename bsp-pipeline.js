@@ -4068,14 +4068,17 @@ function subtractYearTally(yearRows, byYear) {
 
 // TEN-443 step 2 · Tennis Explorer store (written only by tools/te-build-history.mjs; guarded by tools/te-history-guard.mjs)
 const TeJoin = require('./te-join.js');
-const TE_HISTORY_DIR = 'te-history';
-const TE_HISTORY_INDEX = 'te-history-index.json';
+// TEN-449: TE_STORE_DIR — where the private store repo is checked out (.github/workflows/pipeline.yml: .te-store); the
+// pipeline reads te-history/, its index and set-repairs.json there and never copies them into this checkout
+const TE_STORE_DIR = process.env.TE_STORE_DIR || '.';
+const TE_HISTORY_DIR = require('path').join(TE_STORE_DIR, 'te-history');
+const TE_HISTORY_INDEX = require('path').join(TE_STORE_DIR, 'te-history-index.json');
 const TE_INGEST = process.env.TE_INGEST === '1';   // founder approval of the moved-cell report flips this default
 // TEN-443 · the sets api-tennis drops (a set in which one player won no games): set-repairs.json, written only by
 // tools/build-set-repairs.mjs, repairs a row where Tennis Explorer AND Sackmann agree and flags the rest. Behind
 // SET_REPAIR: off until the founder approves the moved-figures report (ruling b5b5ef00 item 1).
 const SetRepairs = require('./set-repairs.js');
-const SET_REPAIRS_FILE = 'set-repairs.json';
+const SET_REPAIRS_FILE = require('path').join(TE_STORE_DIR, 'set-repairs.json');
 const SET_REPAIR = process.env.SET_REPAIR === '1';
 let _teIndex = null;
 function readTeHistory(key) {

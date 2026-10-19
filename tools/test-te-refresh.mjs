@@ -207,6 +207,20 @@ const te = (url) => url.includes('tennisexplorer');
     const rep = JSON.parse(fs.readFileSync(path.join(dp, 'te-refresh-report.json'), 'utf8'));
     seen.push({ part, code: rp.code, players: rep.estimate.players, alpha: rp.reqs.some((u) => /\/player\/alpha\//.test(u)), newman: rp.reqs.some((u) => /newman-1/.test(u)) });
   }
+  // TEN-449: the freshness note ends only when every part of one week's run has completed — not on a part, not on a re-read
+  const ix = (d) => JSON.parse(fs.readFileSync(path.join(d, 'te-history-index.json'), 'utf8'));
+  const dw = repo();
+  run(dw, 'reread', {}, '2026-10-19T03:30:00Z'); const afterReread = ix(dw).refreshedAt;
+  run(dw, 'weekly', {}, '2026-10-19T05:00:00Z', { args: ['--part', '0/2'] }); const afterPart0 = ix(dw).refreshedAt;
+  run(dw, 'weekly', {}, '2026-10-19T11:00:00Z', { args: ['--part', '1/2'] }); const afterPart1 = ix(dw).refreshedAt;
+  const dx = repo();
+  run(dx, 'weekly', {}, '2026-10-19T05:00:00Z', { args: ['--part', '0/2'] });
+  run(dx, 'weekly', {}, '2026-10-27T11:00:00Z', { args: ['--part', '1/2'] }); const crossWeek = ix(dx).refreshedAt;
+  check('TEN-449 · refreshedAt: not on a re-read, not on part 0/2 alone; set when 1/2 completes the same week', () => {
+    assert.ok(!afterReread, `re-read set ${afterReread}`); assert.ok(!afterPart0, `part 0 alone set ${afterPart0}`);
+    assert.strictEqual(afterPart1, '2026-10-19T11:00:00.000Z');
+  });
+  check('TEN-449 · refreshedAt: parts from two different weeks do not add up to a full refresh', () => assert.ok(!crossWeek, String(crossWeek)));
   check('--part 0/2 + 1/2: each player refreshed by exactly one part', () => {
     assert.ok(seen.every((x) => x.code === 0), JSON.stringify(seen));
     assert.strictEqual(seen.filter((x) => x.alpha).length, 1, JSON.stringify(seen)); assert.strictEqual(seen.filter((x) => x.newman).length, 1, JSON.stringify(seen));
