@@ -3821,6 +3821,22 @@ const STORES = [
         return (rows[0].year === '2025' ? 1 : 0) + (rows[1].notCounted === 'not-in-te' ? 1 : 0) + (rows[2].src === 'te' ? 1 : 0);
       } finally { global.window.careerHistory = saved.ch; global.window.careerRecord = saved.cr; }
     } },
+  // TEN-449 · career-record-index.json `meta` (bridged as window.careerRecordMeta): the Record-by-season hover's
+  // freshness clause. Built by construction and read through the page's own recordSourceNote: the date shows before the
+  // first refresh, and goes once refreshedAt is set.
+  { name: 'careerRecordMeta', file: 'career-record-index.json · meta', universe: () => 2, floor: 1,
+    resolve: () => {
+      const W = global.window, saved = { cr: W.careerRecord, m: W.careerRecordMeta };
+      try {
+        const K = '990449';
+        W.careerRecord = { [K]: { v: 1, over: [], out: [], add: [] } };
+        W.careerRecordMeta = { asOf: '2026-10-17', refreshedAt: null };
+        const before = /as of 17 Oct\.$/.test(I.recordSourceNote({ key: K })) ? 1 : 0;
+        W.careerRecordMeta = { asOf: '2026-10-17', refreshedAt: '2026-10-26T05:00:00.000Z' };
+        const after = /as of/.test(I.recordSourceNote({ key: K })) ? 0 : 1;
+        return before + after;
+      } finally { W.careerRecord = saved.cr; W.careerRecordMeta = saved.m; }
+    } },
 ];
 
 for (const s of STORES) {
