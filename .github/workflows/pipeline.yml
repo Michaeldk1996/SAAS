@@ -1062,6 +1062,10 @@ jobs:
       # A 404 on auth.js only shows up as a dead button in the browser, so catch
       # it here where it is still a build error.
       - name: Assert site completeness
+        env:
+          # TEN-449: through env, not inline — any inline expression inside this run block makes GitHub parse the whole block as one
+          # expression, and the block is past the 21,000-character expression limit (the workflow then fails to load).
+          TE_INGEST: ${{ vars.TE_INGEST }}
         run: |
           # form-index.json gates the Form tab: the dashboard reads it before it
           # will fetch a single form shard, so if it 404s the tab is empty for
@@ -1336,7 +1340,7 @@ jobs:
           '
           # TEN-449: with TE_INGEST on, every profile season table is Tennis Explorer's, so the record files it is listed
           # against must ship — a missing index would read on the page as "nobody has a record" and list feed rows.
-          TE_INGEST='${{ vars.TE_INGEST }}' node -e '
+          node -e '
             const fs = require("fs");
             const on = process.env.TE_INGEST === "1";
             const has = fs.existsSync("_site/career-record-index.json");
