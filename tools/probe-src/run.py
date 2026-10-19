@@ -55,6 +55,7 @@ def ts(s):
     except Exception: return None
 def last(series, cut): 
     v = [p for t, p in series if t <= cut]; return v[-1] if v else None
+print('### captured', json.dumps({'fixturesFrom17Sep': sum(1 for x in B if (x.get('start') or 0) >= 1789603200), 'latestStart': dt.datetime.utcfromtimestamp(max(x.get('start') or 0 for x in B)).isoformat() if B else None}))
 for c in C:
     st = ts(c['start'])
     if st is None: continue
