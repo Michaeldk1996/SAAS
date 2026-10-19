@@ -2,8 +2,12 @@
 // TEN-449 · the weekly refresh's set-repair step (plan §4a, founder-approved 19 Oct). Runs in the PRIVATE store repo's
 // Actions (template tools/te-store-repo/te-refresh.yml), after BOTH weekly parts of one Monday have completed. It adds
 // set repairs for NEW short rows only — the rows set-repairs.json does not hold yet, as a repair or a flag (J. Sels's 6
-// are the first). Every existing repair and flag is FROZEN: if the rebuild would change, drop or move any of them, it
-// exits 1 and writes nothing.
+// are the first). Two classes of entry (coordinator ruling for the founder, TEN-449, 20 Oct):
+//   FROZEN    every entry of the 17 Oct build (3,217 repairs, 341 flags) — no `by` field. Never changes, drops or moves.
+//   REFRESH   every entry this step writes — `by: 'refresh'` + `at`. A repair never changes. A flag whose reason is that
+//             Tennis Explorer lacks the row ("… no Tennis Explorer row …", e.g. the player was not in the store yet) is
+//             re-checked each run and UPGRADED to a repair once TE and Sackmann agree; any other outcome keeps it as is.
+// If a rebuild would break either rule it exits 1 and writes nothing.
 //
 //   node saas/tools/te-set-repairs-refresh.mjs --store . --sackmann <dir> [--site <url|dir>]
 //   node saas/tools/te-set-repairs-refresh.mjs --store . --week-complete     (prints complete=true|false; exit 0)
@@ -13,11 +17,13 @@
 //   the deployed site    career-history-index.json + career-history/<key>.json for every player it lists (the rows the
 //                        site serves, set repairs already applied, so a repaired row is no longer short), and
 //                        player-index.json (our names)
-//   Sackmann             atp_players.csv + atp_matches*.csv at his pinned commit 5b6263dc48 (the workflow checks the
-//                        commit out and verifies it)
+//   Sackmann             the store repo's sackmann/: atp_players.csv + atp_matches*.csv, each verified against the
+//                        committed sackmann/SHA256SUMS before use (JeffSackmann/tennis_atp is no longer public, 404 on
+//                        19 Oct; sackmann/PROVENANCE.md shows these files reproduce the 17 Oct set-repairs.json)
 // The Sackmann-id / name input tools/build-set-repairs.mjs takes (on the Mac, a hand-built file) is built here by
 // buildIdentity(): a player's Sackmann id is the one atp_players.csv row with his date of birth (from the TE store,
 // where he was joined on it) and his surname; anyone else is matched by name inside the builder, as before.
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -53,29 +59,76 @@ export function buildIdentity({ roster, storeIndex, playersCsv }) {
 
 // ── frozen entries ──────────────────────────────────────────────────────────────────────────────────────────────
 const entries = (o) => Object.entries(o || {}).flatMap(([k, m]) => Object.entries(m || {}).map(([ek, v]) => [k, ek, v]));
-export const isKnown = (prev, key, ek) => !!(((prev.repairs || {})[key] || {})[ek] || ((prev.flags || {})[key] || {})[ek]);
+const get = (o, kind, k, ek) => (((o || {})[kind] || {})[k] || {})[ek];
+// a refresh-written flag that may still become a repair: Tennis Explorer lacked the row when it was written
+export const upgradable = (f) => !!f && f.by === 'refresh' && /no Tennis Explorer row/.test(String(f.why || ''));
+export const isKnown = (prev, key, ek) => !!(get(prev, 'repairs', key, ek) || get(prev, 'flags', key, ek));
+// the rows this run (re)builds: new short rows, and refresh-written flags that may upgrade
+export const wanted = (prev, key, ek) => !isKnown(prev, key, ek) || upgradable(get(prev, 'flags', key, ek));
+const tallyOf = (why) => String(why).replace(/\s*\(.*$/, '').replace(/:.*$/, '');
 export function merge(prev, fresh, at) {
-  const next = { ...prev, builtAt: prev.builtAt, refreshedAt: at, repairs: {}, flags: {}, counts: { ...(prev.counts || {}) } };
-  for (const kind of ['repairs', 'flags']) {
-    for (const [k, m] of Object.entries(prev[kind] || {})) next[kind][k] = { ...m };
-    for (const [k, ek, v] of entries(fresh[kind])) (next[kind][k] = next[kind][k] || {})[ek] = v;
+  const next = { ...prev, builtAt: prev.builtAt, refreshedAt: at, repairs: {}, flags: {}, counts: { ...(prev.counts || {}) }, shortRows: prev.shortRows || 0 };
+  for (const kind of ['repairs', 'flags']) for (const [k, m] of Object.entries(prev[kind] || {})) next[kind][k] = { ...m };
+  const added = { repaired: [], flagged: [], upgraded: [] };
+  const tally = (c, n) => { next.counts[c] = (next.counts[c] || 0) + n; if (!next.counts[c]) delete next.counts[c]; };
+  // The merge applies what the builder returned as it is; checkFrozen (below) is the one judge. The builder is asked only
+  // for new rows and upgradable flags (wanted), so a fresh entry landing on any other existing entry is a fault the
+  // check refuses — never something the merge quietly skips.
+  for (const [k, ek, v] of entries(fresh.repairs)) {
+    const old = get(prev, 'flags', k, ek), oldRep = get(prev, 'repairs', k, ek);
+    const e = { ...v, by: 'refresh', at, ...(old ? { upgradedFrom: old.why } : {}) };
+    (next.repairs[k] = next.repairs[k] || {})[ek] = e;
+    if (oldRep) continue;
+    tally(`repaired (TE ${v.te} page + Sackmann)`, 1);
+    if (old) { delete next.flags[k][ek]; if (!Object.keys(next.flags[k]).length) delete next.flags[k]; tally(tallyOf(old.why), -1); added.upgraded.push([k, ek, e, old]); }
+    else { next.shortRows++; added.repaired.push([k, ek, e]); }
   }
-  for (const [c, n] of Object.entries(fresh.counts || {})) next.counts[c] = (next.counts[c] || 0) + n;
-  next.shortRows = (prev.shortRows || 0) + (fresh.shortRows || 0);
-  return next;
+  for (const [k, ek, v] of entries(fresh.flags)) {
+    if (upgradable(get(prev, 'flags', k, ek))) continue;   // re-checked and still not a repair: kept exactly as it was
+    const e = { ...v, by: 'refresh', at }; const known = isKnown(prev, k, ek);
+    (next.flags[k] = next.flags[k] || {})[ek] = e;
+    if (!known) { tally(tallyOf(v.why), 1); next.shortRows++; added.flagged.push([k, ek, e]); }
+  }
+  return { next, added };
 }
-// every committed repair and flag is in `next` exactly as it was, and in the same list
+// FROZEN entries and every repair: in `next` exactly as they were, in the same list. A refresh-written flag: as it was,
+// or — only if upgradable — gone from the flags and present as a refresh repair.
 export function checkFrozen(prev, next) {
   const why = [];
   for (const [kind, other] of [['repairs', 'flags'], ['flags', 'repairs']]) {
     for (const [k, ek, v] of entries(prev[kind])) {
-      const now = ((next[kind] || {})[k] || {})[ek];
-      if (now === undefined) why.push(`${kind} ${k}/${ek} dropped`);
-      else if (!isDeepStrictEqual(now, v)) why.push(`${kind} ${k}/${ek} changed`);
-      if (((next[other] || {})[k] || {})[ek] !== undefined) why.push(`${kind} ${k}/${ek} also in ${other}`);
+      const now = get(next, kind, k, ek), there = get(next, other, k, ek);
+      const cls = v.by === 'refresh' ? 'refresh' : 'frozen';
+      if (kind === 'flags' && upgradable(v) && now === undefined && there && there.by === 'refresh' && there.upgradedFrom === v.why) continue;
+      if (now === undefined) why.push(`${cls} ${kind} ${k}/${ek} dropped`);
+      else if (!isDeepStrictEqual(now, v)) why.push(`${cls} ${kind} ${k}/${ek} changed`);
+      if (there !== undefined) why.push(`${cls} ${kind} ${k}/${ek} also in ${other}`);
     }
   }
   return why;
+}
+
+// ── Sackmann: the store's pinned copy, checked file by file against SHA256SUMS ─────────────────────────────────────
+export const SACK_FILE = /^(atp_players|atp_matches_(qual_chall_|futures_)?\d{4})\.csv$/;
+export function verifySackmann(dir) {
+  const sums = path.join(dir || '', 'SHA256SUMS');
+  if (!dir || !fs.existsSync(sums)) fail(`Sackmann SHA256SUMS missing (${sums})`);
+  const listed = new Map();
+  for (const l of fs.readFileSync(sums, 'utf8').split('\n').filter((x) => x.trim())) {
+    const m = /^([0-9a-f]{64}) [ *]?(\S+)$/.exec(l.trim()); if (!m) fail(`Sackmann SHA256SUMS: unreadable line "${l}"`);
+    listed.set(m[2], m[1]);
+  }
+  if (!listed.has('atp_players.csv')) fail('Sackmann SHA256SUMS does not list atp_players.csv');
+  if (![...listed.keys()].some((f) => f !== 'atp_players.csv' && SACK_FILE.test(f))) fail('Sackmann SHA256SUMS lists no match CSV');
+  for (const [f, h] of listed) {
+    const p = path.join(dir, f); if (!fs.existsSync(p)) fail(`Sackmann ${f} missing (listed in SHA256SUMS)`);
+    const got = crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+    if (got !== h) fail(`Sackmann ${f} does not match SHA256SUMS (${got.slice(0, 12)} ≠ ${h.slice(0, 12)})`);
+  }
+  // the loader reads every matching file in the directory: an unlisted one would be read unverified
+  const extra = fs.readdirSync(dir).filter((f) => SACK_FILE.test(f) && !listed.has(f));
+  if (extra.length) fail(`Sackmann file(s) not in SHA256SUMS: ${extra.join(', ')}`);
+  return listed.size;
 }
 
 // ── the week ────────────────────────────────────────────────────────────────────────────────────────────────────
@@ -114,9 +167,8 @@ export async function refresh({ store, sackmann, site = SITE, now = new Date().t
   if (!fs.existsSync(teDir) || !fs.statSync(teDir).isDirectory()) fail(`${STORE_DIR}/ missing in ${store}`);
   const prev = readJson(path.join(store, REPAIRS), REPAIRS);
   if (!prev || typeof prev.repairs !== 'object' || !prev.repairs || typeof prev.flags !== 'object' || !prev.flags) fail(`${REPAIRS} holds no repairs/flags maps`);
-  // Sackmann
-  if (!sackmann || !fs.existsSync(path.join(sackmann, 'atp_players.csv'))) fail(`Sackmann atp_players.csv missing (--sackmann ${sackmann})`);
-  if (!fs.readdirSync(sackmann).some((f) => /^atp_matches_(qual_chall_|futures_)?\d{4}\.csv$/.test(f))) fail(`Sackmann match CSVs missing in ${sackmann}`);
+  // Sackmann: every file verified before a byte is used
+  verifySackmann(sackmann);
   const sack = loadSackmann(sackmann);
   if (!sack.n) fail('Sackmann match CSVs hold no match');
   // the deployed site: every player's served rows
@@ -138,18 +190,19 @@ export async function refresh({ store, sackmann, site = SITE, now = new Date().t
   const nameOf = new Map(plist.map((p) => [String(p.key), p.name]));
   const { sids, names, stats } = buildIdentity({ roster: keys.map((k) => ({ key: k, name: nameOf.get(k) || null })), storeIndex: idx,
     playersCsv: fs.readFileSync(path.join(sackmann, 'atp_players.csv'), 'utf8') });
-  const fresh = buildFn({ shards, teDir, sack, sids, names, only: (key, r) => !isKnown(prev, String(key), String(r.eventKey)) });
-  const next = merge(prev, fresh, now);
+  const fresh = buildFn({ shards, teDir, sack, sids, names, only: (key, r) => wanted(prev, String(key), String(r.eventKey)) });
+  const { next, added } = merge(prev, fresh, now);
   const why = checkFrozen(prev, next);
-  const added = entries(fresh.repairs).length, flagged = entries(fresh.flags).length;
-  const summary = { players: keys.length, sackmannIds: stats.byDob, newShortRows: fresh.shortRows || 0, repaired: added, flagged,
-    frozen: { repairs: entries(prev.repairs).length, flags: entries(prev.flags).length } };
+  const frozen = (kind) => entries(prev[kind]).filter(([, , v]) => v.by !== 'refresh').length;
+  const summary = { players: keys.length, sackmannIds: stats.byDob, rowsChecked: fresh.shortRows || 0, repaired: added.repaired.length,
+    flagged: added.flagged.length, upgraded: added.upgraded.length, frozen: { repairs: frozen('repairs'), flags: frozen('flags') } };
   if (why.length) return { ok: false, why, summary };
-  if (!added && !flagged) { log(`set repairs: no new short row · ${JSON.stringify(summary)}`); return { ok: true, why: [], summary, wrote: false }; }
+  if (!added.repaired.length && !added.flagged.length && !added.upgraded.length) { log(`set repairs: nothing new · ${JSON.stringify(summary)}`); return { ok: true, why: [], summary, wrote: false }; }
   const tmp = path.join(store, `.${REPAIRS}.tmp`);
   fs.writeFileSync(tmp, JSON.stringify(next)); fs.renameSync(tmp, path.join(store, REPAIRS));
-  const lines = [...entries(fresh.repairs).map(([k, ek, v]) => ({ kind: 'repaired', key: k, eventKey: ek, date: v.date, opp: v.opp, old: v.short, new: v.sets, te: v.te, sackmann: v.sackmann })),
-    ...entries(fresh.flags).map(([k, ek, v]) => ({ kind: 'flagged', key: k, eventKey: ek, date: v.date, opp: v.opp, short: v.short, why: v.why }))];
+  const lines = [...added.repaired.map(([k, ek, v]) => ({ kind: 'repaired', key: k, eventKey: ek, date: v.date, opp: v.opp, old: v.short, new: v.sets, te: v.te, sackmann: v.sackmann })),
+    ...added.upgraded.map(([k, ek, v, old]) => ({ kind: 'upgraded', key: k, eventKey: ek, date: v.date, opp: v.opp, old: v.short, new: v.sets, was: old.why, te: v.te, sackmann: v.sackmann })),
+    ...added.flagged.map(([k, ek, v]) => ({ kind: 'flagged', key: k, eventKey: ek, date: v.date, opp: v.opp, short: v.short, why: v.why }))];
   fs.appendFileSync(path.join(store, REPAIRS_LOG), lines.map((l) => JSON.stringify({ at: now, ...l })).join('\n') + '\n');
   log(`set repairs: ${JSON.stringify(summary)}`);
   return { ok: true, why: [], summary, wrote: true };
@@ -166,7 +219,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   try {
     const r = await refresh({ store, sackmann: arg('--sackmann'), site: arg('--site', SITE) });
-    if (!r.ok) { console.log(`::error::set repairs refused to write — a frozen repair or flag would change: ${r.why.slice(0, 20).join('; ')}${r.why.length > 20 ? ` (+${r.why.length - 20} more)` : ''}; ${REPAIRS} is unchanged`); process.exit(1); }
+    if (!r.ok) { console.log(`::error::set repairs refused to write — a frozen entry or a repair would change: ${r.why.slice(0, 20).join('; ')}${r.why.length > 20 ? ` (+${r.why.length - 20} more)` : ''}; ${REPAIRS} is unchanged`); process.exit(1); }
   } catch (e) {
     console.log(`::error::set repairs: ${e.message} — nothing written`); process.exit(1);
   }

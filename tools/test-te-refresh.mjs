@@ -244,12 +244,13 @@ const te = (url) => url.includes('tennisexplorer');
 }
 
 // ── TEN-449 · the template against the store repo's REAL layout (plan §2) ──────────────────────────────────────────
-// The store repo's root holds only data — te-history/, te-history-index.json, te-atp-events.json, set-repairs.json —
-// and no tools/ (the first template ran `node tools/te-refresh.mjs` there and would have failed on its first step).
+// The store repo's root holds only data — te-history/, te-history-index.json, te-atp-events.json, set-repairs.json and
+// sackmann/ (the pinned Sackmann CSVs + SHA256SUMS + PROVENANCE.md) — and no tools/ (the first template ran
+// `node tools/te-refresh.mjs` there and would have failed on its first step).
 // The tools come from a second checkout of the public SAAS repo into saas/.
 const TPL_DIR = path.join(HERE, 'te-store-repo');
 const tpl = fs.readFileSync(path.join(TPL_DIR, 'te-refresh.yml'), 'utf8');
-const STORE_LAYOUT = ['te-history', 'te-history-index.json', 'te-atp-events.json', 'set-repairs.json'];
+const STORE_LAYOUT = ['te-history', 'te-history-index.json', 'te-atp-events.json', 'set-repairs.json', 'sackmann'];
 // a step's `run:` text by its name (a one-line run, or a `run: |` block)
 function stepRun(y, name) {
   const lines = y.split('\n'); const i = lines.findIndex((l) => l.trim() === `- name: ${name}`);
@@ -262,7 +263,7 @@ function stepRun(y, name) {
   }
   throw new Error(`step "${name}" has no run`);
 }
-const runs = [...tpl.matchAll(/^\s*run: (.*)$/gm)].map((m) => m[1]).join('\n') + '\n' + ['Commit the refreshed store', 'Fetch Sackmann at the pinned commit', 'Commit the set repairs', 'Alert on failure'].map((n) => stepRun(tpl, n)).join('\n');
+const runs = [...tpl.matchAll(/^\s*run: (.*)$/gm)].map((m) => m[1]).join('\n') + '\n' + ['Commit the refreshed store', 'Commit the set repairs', 'Alert on failure'].map((n) => stepRun(tpl, n)).join('\n');
 check('TEN-449 template: every tool it runs is saas/tools/<file> and the file exists in this repo; no bare tools/ path', () => {
   const used = [...runs.matchAll(/(\S*)tools\/([\w.-]+)/g)];
   assert.ok(used.length >= 4, `only ${used.length} tool references`);
@@ -288,12 +289,12 @@ check('TEN-449 template: the commit steps add only store-layout files (plus the 
   for (const f of added) assert.ok(STORE_LAYOUT.includes(f) || /^(te-refresh|set-repairs)-log\.jsonl$/.test(f), `adds ${f}`);
   assert.ok(!/git add (-A|--all|\.)/.test(tpl), 'never adds the whole tree (saas/ is in it)');
 });
-check('TEN-449 template: set repairs run only after a complete week, from Sackmann at the pinned commit 5b6263dc48, and stop on a wrong commit', () => {
-  assert.ok(/SACKMANN_COMMIT: 5b6263dc48/.test(tpl));
-  const gated = ['Fetch Sackmann at the pinned commit', 'Set repairs for new short rows (existing repairs and flags frozen)', 'Commit the set repairs'];
+check('TEN-449 template: set repairs run only after a complete week, reading Sackmann from the store\'s own sackmann/ (no outside fetch)', () => {
+  const gated = ['Set repairs for new short rows (17 Oct entries and every repair frozen)', 'Commit the set repairs'];
   for (const n of gated) assert.ok(new RegExp(`- name: ${n.replace(/[()]/g, '\\$&')}\\n\\s+if: steps\\.week\\.outputs\\.complete == 'true'`).test(tpl), n);
   assert.ok(/id: week\n\s+if: env\.TE_MODE == 'weekly'\n\s+run: node saas\/tools\/te-set-repairs-refresh\.mjs --store \. --week-complete/.test(tpl));
-  assert.ok(/"\$SACKMANN_COMMIT"\*\) echo[\s\S]*?\*\) echo "::error::[\s\S]*?exit 1/.test(stepRun(tpl, 'Fetch Sackmann at the pinned commit')));
+  assert.strictEqual(stepRun(tpl, 'Set repairs for new short rows (17 Oct entries and every repair frozen)'), 'node saas/tools/te-set-repairs-refresh.mjs --store . --sackmann sackmann');
+  assert.ok(!/tennis_atp|git clone|curl[^\n]*sackmann/i.test(runs), 'Sackmann is never fetched from outside the store');
 });
 check('TEN-449 template: dispatch inputs cover weekly 0/2 and 1/2, the re-read slice and the smoke 0/28', () => {
   assert.ok(/options: \[weekly, reread\]/.test(tpl)); assert.ok(/options: \['0\/2', '1\/2', '0\/1', '0\/28'\]/.test(tpl));
@@ -318,6 +319,7 @@ check('TEN-449 rollout: te-refresh.dispatch-only.yml is the template minus its S
   // (a git repo whose root is the data, origin a bare repo) with saas/ = this repository
   const ws = repo(); fs.rmSync(path.join(ws, 'roster.json'));
   fs.writeFileSync(path.join(ws, 'set-repairs.json'), JSON.stringify({ v: 1, repairs: {}, flags: {} }));
+  fs.mkdirSync(path.join(ws, 'sackmann')); fs.writeFileSync(path.join(ws, 'sackmann', 'atp_players.csv'), 'player_id\n');
   const roster = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-r-')), 'roster.json');
   fs.writeFileSync(roster, JSON.stringify({ players: { 1: { name: 'A. Alpha', country: 'Australia', age: 30, careerByYear: [{}] }, 2: { name: 'N. Newman', country: 'Australia', age: 26, careerByYear: [{}] } } }));
   const origin = fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-o-'));

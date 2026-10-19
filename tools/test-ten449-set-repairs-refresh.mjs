@@ -5,14 +5,16 @@
 //     Sackmann agreeing; his Sackmann id comes from the identity builder (DOB + surname), not from a hand-built file;
 //   * control: before he is in the store, his own-page rows flag "Sackmann only" (the 19 Oct measurement), so the
 //     repaired result above is not vacuous;
-//   * FROZEN: a committed repair and flag stay byte-identical; a MUTANT build that rebuilds the committed rows (the
-//     fixture sources would now repair the committed flag) is refused — exit path ok:false, set-repairs.json
-//     byte-identical, no log written;
-//   * fail closed: every input removed in turn (store index, te-history/, set-repairs.json, Sackmann players / matches,
-//     the site's career-history index, a listed shard, player-index.json, a shard answering 404) -> throws, nothing
-//     written; a transient 503 is retried;
+//   * FROZEN (the 17 Oct entries, no `by`): byte-identical; a MUTANT build that rebuilds the committed rows (the fixture
+//     sources would now repair the committed flag) is refused — ok:false, set-repairs.json byte-identical, no log;
+//   * REFRESH entries (`by: 'refresh'`): a "no Tennis Explorer row" flag upgrades to a repair once the player joins the
+//     store; a repair — refresh-written or frozen — never changes (mutants refused);
+//   * fail closed: every input removed in turn (store index, te-history/, set-repairs.json, Sackmann players / matches /
+//     SHA256SUMS, a CSV not matching or not listed in SHA256SUMS, the site's career-history index, a listed shard,
+//     player-index.json, a shard answering 404) -> throws, nothing written; a transient 503 is retried;
 //   * the week gate: the step runs only when every weekly part of one week has completed.
 import assert from 'node:assert';
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -73,7 +75,19 @@ function world({ selsInStore = true } = {}) {
   fs.writeFileSync(path.join(site, 'player-index.json'), JSON.stringify({ players: [{ key: SELS, name: 'Jelle Sels', hasProfile: true }, { key: NARDI, name: 'Luca Nardi', hasProfile: true }, { key: SCHW, name: 'Diego Schwartzman', hasProfile: true }] }));
   fs.writeFileSync(path.join(sack, 'atp_players.csv'), PLAYERS);
   fs.writeFileSync(path.join(sack, 'atp_matches_qual_chall_2022.csv'), matches);
+  sums(sack);
   return { d, store, site, sack };
+}
+// SHA256SUMS over the Sackmann files, as committed in the store repo's sackmann/
+function sums(dir) {
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.csv')).sort();
+  fs.writeFileSync(path.join(dir, 'SHA256SUMS'), files.map((f) => `${crypto.createHash('sha256').update(fs.readFileSync(path.join(dir, f))).digest('hex')}  ${f}`).join('\n') + '\n');
+}
+// put Sels into the store (as the weekly run does once he is joined on his DOB)
+function joinSels(w) {
+  fs.writeFileSync(path.join(w.store, 'te-history', `${SELS}.json`), JSON.stringify({ key: SELS, src: 'te', cols: COLS, rows: teSels }));
+  const f = path.join(w.store, 'te-history-index.json'); const idx = JSON.parse(fs.readFileSync(f, 'utf8'));
+  idx.players[SELS] = { dob: '19950810', rows: teSels.length }; fs.writeFileSync(f, JSON.stringify(idx));
 }
 const read = (w, f) => fs.readFileSync(path.join(w.store, f), 'utf8');
 const quiet = () => {};
@@ -88,7 +102,7 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
   const r = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-10-26T11:00:00Z', log: quiet });
   const after = JSON.parse(read(w, 'set-repairs.json'));
   await check('Sels-like rows: all 3 new short rows end REPAIRED (2 from his own TE page, 1 from Nardi\'s, Sackmann agreeing)', () => {
-    assert.strictEqual(r.ok, true, r.why.join('; ')); assert.strictEqual(r.summary.newShortRows, 3, JSON.stringify(r.summary));
+    assert.strictEqual(r.ok, true, r.why.join('; ')); assert.strictEqual(r.summary.rowsChecked, 3, JSON.stringify(r.summary)); assert.strictEqual(r.summary.repaired, 3);
     const s = after.repairs[SELS] || {};
     assert.deepStrictEqual([g(s[11792084]?.sets), g(s[11767792]?.sets), g(s[11399125]?.sets)], ['6-3 4-6 6-0', '4-6 0-6', '5-7 6-4 6-0'], JSON.stringify(after.flags[SELS]));
     assert.deepStrictEqual([s[11792084].te, s[11767792].te, s[11399125].te], ['own', 'opponent', 'own']);
@@ -109,15 +123,53 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
 }
 
 {
-  const w = world({ selsInStore: false });
-  const r = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, log: quiet });
-  const after = JSON.parse(read(w, 'set-repairs.json'));
-  await check('control: before he is in the store, his own-page rows flag "Sackmann only"; only the opponent-page row repairs', () => {
-    assert.strictEqual(r.ok, true);
-    assert.match(after.flags[SELS][11792084].why, /^Sackmann only/); assert.match(after.flags[SELS][11399125].why, /^Sackmann only/);
-    assert.deepStrictEqual(Object.keys(after.repairs[SELS]), ['11767792']);
+  // a REFRESH-written flag ("no Tennis Explorer row": he was not in the store yet) upgrades once he joins; the frozen
+  // entries and the refresh-written repair stay byte-identical across both runs
+  const w = world({ selsInStore: false }); const frozen0 = JSON.parse(read(w, 'set-repairs.json'));
+  const r1 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-10-26T11:00:00Z', log: quiet });
+  const a1 = JSON.parse(read(w, 'set-repairs.json'));
+  await check('control: before he is in the store, his own-page rows flag "Sackmann only (no Tennis Explorer row)", marked by: refresh; the opponent-page row repairs', () => {
+    assert.strictEqual(r1.ok, true, r1.why.join('; '));
+    for (const ek of [11792084, 11399125]) { assert.match(a1.flags[SELS][ek].why, /^Sackmann only \(no Tennis Explorer row\)/); assert.strictEqual(a1.flags[SELS][ek].by, 'refresh'); }
+    assert.deepStrictEqual(Object.keys(a1.repairs[SELS]), ['11767792']); assert.strictEqual(a1.repairs[SELS][11767792].by, 'refresh');
+    assert.ok(!a1.repairs[SCHW][1001].by && !a1.flags[SCHW][1002].by, 'frozen entries carry no refresh mark');
+  });
+  joinSels(w);
+  const r2 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-11-02T11:00:00Z', log: quiet });
+  const a2 = JSON.parse(read(w, 'set-repairs.json'));
+  await check('refresh-written flags UPGRADE to repairs once he joins the store (upgradedFrom kept; logged "upgraded")', () => {
+    assert.strictEqual(r2.ok, true, r2.why.join('; ')); assert.strictEqual(r2.summary.upgraded, 2, JSON.stringify(r2.summary));
+    for (const ek of [11792084, 11399125]) { const e = a2.repairs[SELS][ek]; assert.ok(e && e.by === 'refresh' && /^Sackmann only/.test(e.upgradedFrom) && e.te === 'own', JSON.stringify(e)); }
+    assert.ok(!a2.flags[SELS], JSON.stringify(a2.flags[SELS]));
+    assert.strictEqual(a2.shortRows, a1.shortRows, 'an upgrade is not a new short row');
+    const log = read(w, 'set-repairs-log.jsonl').trim().split('\n').map((x) => JSON.parse(x)).filter((x) => x.kind === 'upgraded');
+    assert.strictEqual(log.length, 2);
+  });
+  await check('across both runs: frozen entries and the earlier refresh repair are byte-identical', () => {
+    assert.deepStrictEqual(a2.repairs[SCHW], frozen0.repairs[SCHW]); assert.deepStrictEqual(a2.flags[SCHW], frozen0.flags[SCHW]);
+    assert.deepStrictEqual(a2.repairs[NARDI], frozen0.repairs[NARDI]); assert.deepStrictEqual(a2.repairs[SELS][11767792], a1.repairs[SELS][11767792]);
+  });
+  // a repair never changes, whoever wrote it: mutants that rewrite a refresh repair / a frozen repair are refused
+  const snap = read(w, 'set-repairs.json');
+  const tamper = (key, ek) => (opts) => { const o = build({ ...opts, only: null }); const e = (o.repairs[key] = o.repairs[key] || {})[ek] = { ...((o.repairs[key] || {})[ek] || {}), sets: [{ p: 6, o: 0 }, { p: 6, o: 0 }] }; return o; };
+  const m1 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, buildFn: tamper(SELS, '11767792'), log: quiet });
+  const m2 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, buildFn: tamper(SCHW, '1001'), log: quiet });
+  await check('MUTANT: a refresh-written repair rewritten -> refused, file byte-identical', () => {
+    assert.strictEqual(m1.ok, false); assert.ok(m1.why.some((x) => /refresh repairs 586\/11767792 changed/.test(x)), m1.why.join('; ')); assert.strictEqual(read(w, 'set-repairs.json'), snap);
+  });
+  await check('MUTANT: a frozen repair rewritten -> refused, file byte-identical', () => {
+    assert.strictEqual(m2.ok, false); assert.ok(m2.why.some((x) => /frozen repairs 67\/1001 changed/.test(x)), m2.why.join('; ')); assert.strictEqual(read(w, 'set-repairs.json'), snap);
   });
 }
+
+await check('checkFrozen: only a refresh flag whose reason is "no Tennis Explorer row" may become a repair', () => {
+  const tFlag = (why, by = 'refresh') => ({ flags: { 1: { 9: { short: [], why, ...(by ? { by } : {}) } } }, repairs: {} });
+  const up = (prev) => ({ flags: {}, repairs: { 1: { 9: { sets: [], by: 'refresh', upgradedFrom: prev.flags[1][9].why } } } });
+  const ok = tFlag('Sackmann only (no Tennis Explorer row)'); assert.deepStrictEqual(R.checkFrozen(ok, up(ok)), []);
+  const frozenFlag = tFlag('Sackmann only (no Tennis Explorer row)', null); assert.ok(R.checkFrozen(frozenFlag, up(frozenFlag)).length, 'a frozen flag upgraded');
+  const teOnly = tFlag('Tennis Explorer only (no Sackmann match)'); assert.ok(R.checkFrozen(teOnly, up(teOnly)).length, 'a non-upgradable refresh flag upgraded');
+  const changed = tFlag('Sackmann only (no Tennis Explorer row)'); assert.ok(R.checkFrozen(changed, tFlag('neither (no Tennis Explorer row; no Sackmann match)')).length, 'a refresh flag rewritten as another flag');
+});
 
 {
   // MUTANT: a rebuild that ignores "new rows only" — the fixture sources now agree on the committed flag 1002, so a full
@@ -142,21 +194,25 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
 
 // fail closed: each input removed in turn
 for (const [name, edit] of [
-  ['the store index', (w) => fs.rmSync(path.join(w.store, 'te-history-index.json'))],
-  ['te-history/', (w) => fs.rmSync(path.join(w.store, 'te-history'), { recursive: true })],
-  ['set-repairs.json', (w) => fs.rmSync(path.join(w.store, 'set-repairs.json'))],
+  ['the store index missing', (w) => fs.rmSync(path.join(w.store, 'te-history-index.json'))],
+  ['te-history/ missing', (w) => fs.rmSync(path.join(w.store, 'te-history'), { recursive: true })],
+  ['set-repairs.json missing', (w) => fs.rmSync(path.join(w.store, 'set-repairs.json'))],
   ['set-repairs.json without repairs/flags', (w) => fs.writeFileSync(path.join(w.store, 'set-repairs.json'), '{"v":1}')],
-  ['Sackmann atp_players.csv', (w) => fs.rmSync(path.join(w.sack, 'atp_players.csv'))],
-  ['Sackmann match CSVs', (w) => fs.rmSync(path.join(w.sack, 'atp_matches_qual_chall_2022.csv'))],
-  ['the --sackmann dir itself', (w) => fs.rmSync(w.sack, { recursive: true })],
-  ['the site\'s career-history-index.json', (w) => fs.rmSync(path.join(w.site, 'career-history-index.json'))],
-  ['a shard the index lists', (w) => fs.rmSync(path.join(w.site, 'career-history', `${SELS}.json`))],
-  ['player-index.json', (w) => fs.rmSync(path.join(w.site, 'player-index.json'))],
+  ['Sackmann atp_players.csv missing', (w) => fs.rmSync(path.join(w.sack, 'atp_players.csv'))],
+  ['Sackmann match CSVs missing', (w) => fs.rmSync(path.join(w.sack, 'atp_matches_qual_chall_2022.csv'))],
+  ['Sackmann SHA256SUMS missing', (w) => fs.rmSync(path.join(w.sack, 'SHA256SUMS'))],
+  ['a Sackmann file not matching SHA256SUMS (one byte changed)', (w) => fs.appendFileSync(path.join(w.sack, 'atp_matches_qual_chall_2022.csv'), ' ')],
+  ['an extra Sackmann CSV not in SHA256SUMS', (w) => fs.writeFileSync(path.join(w.sack, 'atp_matches_2023.csv'), CSV + '\n')],
+  ['SHA256SUMS not listing atp_players.csv', (w) => { const f = path.join(w.sack, 'SHA256SUMS'); fs.writeFileSync(f, fs.readFileSync(f, 'utf8').split('\n').filter((l) => !/atp_players/.test(l)).join('\n')); }],
+  ['the --sackmann dir itself missing', (w) => fs.rmSync(w.sack, { recursive: true })],
+  ['the site\'s career-history-index.json missing', (w) => fs.rmSync(path.join(w.site, 'career-history-index.json'))],
+  ['a shard the index lists missing', (w) => fs.rmSync(path.join(w.site, 'career-history', `${SELS}.json`))],
+  ['player-index.json missing', (w) => fs.rmSync(path.join(w.site, 'player-index.json'))],
 ]) {
   const w = world(); edit(w);
   const before = fs.existsSync(path.join(w.store, 'set-repairs.json')) ? read(w, 'set-repairs.json') : null;
   let err = null; try { await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, log: quiet }); } catch (e) { err = e; }
-  await check(`fail closed: ${name} missing -> stops, nothing written`, () => {
+  await check(`fail closed: ${name} -> stops, nothing written`, () => {
     assert.ok(err && err.closed, String(err && err.message));
     assert.strictEqual(fs.existsSync(path.join(w.store, 'set-repairs.json')) ? read(w, 'set-repairs.json') : null, before);
     assert.ok(!fs.existsSync(path.join(w.store, 'set-repairs-log.jsonl')));
