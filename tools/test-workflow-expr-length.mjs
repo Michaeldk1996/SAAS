@@ -26,7 +26,14 @@ export function scanText(text) {
   const out = [];
   for (let i = 0; i < L.length; i++) {
     const m = L[i].match(/^(\s*)(-\s+)?(run|script):(?:\s+(.*?))?\s*$/);
-    if (!m) continue;
+    if (!m) {
+      // A run/script key in a form this scanner doesn't measure (flow mapping `{ run: … }`, quoted key `"run":`, or a
+      // space before the colon) is valid YAML GitHub accepts — so fail closed rather than let it pass unmeasured.
+      if (/^\s*(-\s+)?(["'](run|script)["']\s*:|(run|script)\s+:(\s|$))|[{,]\s*["']?(run|script)["']?\s*:/.test(L[i])) {
+        out.push({ key: 'unmeasured', line: i + 1, len: 0, expr: true, unmeasured: true });
+      }
+      continue;
+    }
     const keyCol = m[1].length + (m[2] ? m[2].length : 0);
     const key = m[3];
     if (key === 'script') {
@@ -65,7 +72,8 @@ export function checkFiles(files) {
     for (const v of scanText(fs.readFileSync(f, 'utf8'))) {
       if (!v.expr) continue;
       checked++;
-      if (v.len > HEADROOM) fails.push(`FAIL ${path.relative(process.cwd(), f)}:${v.line}: ${v.key} value with an inline expression is ${v.len} chars (GitHub limit ${LIMIT}; keep under ${HEADROOM}) — pass it through env:`);
+      if (v.unmeasured) fails.push(`FAIL ${path.relative(process.cwd(), f)}:${v.line}: run/script key in a form this guard can't measure (flow mapping, quoted key or space before ':') — write it as a block-style \`run:\` / \`script:\` key`);
+      else if (v.len > HEADROOM) fails.push(`FAIL ${path.relative(process.cwd(), f)}:${v.line}: ${v.key} value with an inline expression is ${v.len} chars (GitHub limit ${LIMIT}; keep under ${HEADROOM}) — pass it through env:`);
     }
   }
   return { checked, fails };

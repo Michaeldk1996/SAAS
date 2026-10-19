@@ -109,4 +109,7 @@ test("the .github/actionlint.yaml ignore covers pipeline.yml's steps.deploy find
   const r2 = lintText(pipeline.replace("if: always() && steps.trading_splits.outcome", "if: always() && steps.trading_splitz.outcome"), 'pipeline.yml');
   assert.equal(r2.code, 1);
   assert.match(r2.output, /property "trading_splitz" is not defined/);
+  // an unrelated new step (which changes the step-id list actionlint prints) doesn't bring the ignored finding back
+  const r3 = lintText(pipeline.replace(/\n(\s*)- name: /, '\n$1- name: added\n$1  id: aaa_new\n$1  run: echo hi\n$1- name: '), 'pipeline.yml');
+  assert.equal(r3.code, 0, r3.output);
 });
