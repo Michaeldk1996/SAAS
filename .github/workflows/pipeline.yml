@@ -1814,6 +1814,11 @@ jobs:
         id: me_check
         if: always() && steps.site_data.outcome == 'success'
         run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json || echo "::error title=Market-edge check did not run::market-edge-rebuilt-check.js exited $? (alert only, the run stays green)"
+      # Streak reset: runs only when the check EVALUATED and found market-edge rebuilt. A broken check writes no outputs,
+      # so it never looks like "rebuilt" to the next run's de-dup (tools/market-edge-alert.mjs).
+      - name: Market-edge rebuilt (streak reset marker)
+        if: always() && steps.me_check.outputs.evaluated == 'true' && steps.me_check.outputs.stale == 'false'
+        run: echo "Market-edge rebuilt this run; a later not-rebuilt run starts a new streak."
       - name: Alert — market-edge not rebuilt (Telegram, once per streak)
         id: me_alert
         if: always() && steps.me_check.outputs.stale == 'true'
@@ -1823,10 +1828,11 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           ME_REASON: ${{ steps.me_check.outputs.reason }}
         run: node tools/market-edge-alert.mjs || echo "::error title=Market-edge alert not sent::market-edge-alert.mjs exited $? (alert only, the run stays green)"
-      # Runs only after Telegram answered 2xx: its running (not skipped) in a run IS the "streak already alerted" marker the
-      # next runs read (tools/market-edge-alert.mjs). A failed send leaves it skipped, so the next stale run sends again.
+      # "Streak already alerted": runs after Telegram answered 2xx (sent) or when an earlier run of the streak delivered
+      # (alerted — carried forward, so every quiet run of an alerted streak carries it). A failed send leaves it skipped,
+      # so the next stale run sends again (tools/market-edge-alert.mjs).
       - name: Market-edge alert sent (streak marker)
-        if: always() && steps.me_alert.outputs.sent == 'true'
+        if: always() && (steps.me_alert.outputs.sent == 'true' || steps.me_alert.outputs.alerted == 'true')
         run: echo "Market-edge alert delivered for this streak; later runs of the streak stay quiet."
 
   # Founder ruling 2026-10-18 (pipeline-down alert): after two consecutive failed runs, ONE Telegram naming the failing

@@ -4,13 +4,14 @@
 // step still exits 0: an alert must never hold back a publish. TELEGRAM_API_URL points the test at a fake server.
 import { readFileSync, existsSync, appendFileSync } from 'node:fs';
 
-export async function sendTelegram(text, env = process.env) {
+// timeoutMs (optional, default 20 s): a caller with its own time budget passes what is left of it (TEN-449).
+export async function sendTelegram(text, env = process.env, { timeoutMs = 20000 } = {}) {
   const tok = env.TELEGRAM_BOT_TOKEN, chat = env.TELEGRAM_CHAT_ID;
   if (!tok || !chat) return { ok: false, why: 'no Telegram secret set' };
   const base = (env.TELEGRAM_API_URL || 'https://api.telegram.org').replace(/\/$/, '');
   try {
     const r = await fetch(`${base}/bot${tok}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chat, text: text.slice(0, 4000), disable_web_page_preview: true }), signal: AbortSignal.timeout(20000) });
+      body: JSON.stringify({ chat_id: chat, text: text.slice(0, 4000), disable_web_page_preview: true }), signal: AbortSignal.timeout(timeoutMs) });
     return { ok: r.status >= 200 && r.status < 300, why: `HTTP ${r.status}` };
   } catch (e) { return { ok: false, why: e.name }; }   // never echo the URL: it carries the bot token
 }

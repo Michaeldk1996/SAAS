@@ -6,7 +6,7 @@
 // never block the site or turn a data run red. pipeline.yml runs it after the
 // built site has been handed to publish.yml (the `site-data` upload); when
 // market-edge was not rebuilt by THIS run it writes the reason as a ::warning::
-// and into the step summary, sets the step output `stale=true` (+ `reason`), and
+// and into the step summary, sets the step outputs `evaluated=true`, `stale` (+ `reason`), and
 // exits 0. The one-Telegram-per-streak alert is the next step
 // (tools/market-edge-alert.mjs), gated on that output.
 //
@@ -57,9 +57,9 @@ function main() {
     if (!process.env.GITHUB_OUTPUT) return;
     try { fs.appendFileSync(process.env.GITHUB_OUTPUT, lines.join('\n') + '\n'); } catch (_) { /* the ::warning:: is the channel */ }
   };
-  if (v.ok) { console.log(reason); output(['stale=false']); return 0; }
+  if (v.ok) { console.log(reason); output(['evaluated=true', 'stale=false']); return 0; }
   console.log(`::warning title=Market-edge was not rebuilt this run::${reason}. The data still published; Market edge shows the previous build.`);
-  output(['stale=true', `reason=${reason}`]);
+  output(['evaluated=true', 'stale=true', `reason=${reason}`]);
   if (process.env.GITHUB_STEP_SUMMARY) {
     try {
       fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
