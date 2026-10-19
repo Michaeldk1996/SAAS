@@ -7327,6 +7327,7 @@
         mon: parseInt(r.date.slice(5, 7), 10) - 1,
         won: !!r.won,
         notCounted: r.notCounted || null,
+        teOnly: r.src === 'te',      // TEN-449 · a Tennis Explorer row with no feed match behind it
         surface: r.surface ? String(r.surface).toLowerCase() : null,
         court: hit ? (hit.court || null) : null,
         // TEN-395 · career-history's own per-match court flag (bsp-pipeline.js playerMatchHistory): true = counted in
@@ -7588,7 +7589,7 @@
     var rec = countedSpine(p) !== calSpine(p);
     return {
       m: m,
-      teOnly: rec ? recordSpine(p).filter(function (r) { return r.src === 'te' && win[String(r.year)]; }).length : 0,
+      teOnly: rec ? recordSpine(p).filter(function (r) { return r.teOnly && win[String(r.year)]; }).length : 0,
       // SIGNED (TEN-384 fx2 item 8; it used to be clamped at zero). If the dated store ever held MORE
       // in-window rows than the spine totals, the negative is a third, different defect: it is never
       // printed as this one (calResidualNote prints only > 0) and never hidden either —
