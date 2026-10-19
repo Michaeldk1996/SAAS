@@ -4,7 +4,8 @@
 // Test: in every workflow file (.github/workflows/*.yml|yaml and tools/te-store-repo/te-refresh.yml), every `run:` value
 // and every `with: script:` value (actions/github-script) that contains an expression stays under the limit (with
 // headroom). Every scalar form counts (TEN-449 review): block (`|`, `>`, with chomping/indent indicators), single-line
-// plain, single- or double-quoted, and plain or quoted values continued over several lines.
+// plain, single- or double-quoted, and plain or quoted values continued over several lines. A form it can't measure
+// (flow mapping, quoted key, space before ':', a YAML alias `run: *big` as the whole value) fails closed.
 // Pass values into long blocks through `env:` instead. actionlint (tools/actionlint.mjs) has no rule for this limit.
 // Mutants for each form: tools/test-workflow-expr-length-mutants.mjs.
 // Usage: node tools/test-workflow-expr-length.mjs [file ...]   (no files = every workflow file in the repo)
@@ -47,6 +48,12 @@ export function scanText(text) {
     let end = j;
     while (end > i + 1 && L[end - 1].trim() === '') end--;
     const rest = m[4] || '';
+    // A YAML alias as the whole value (`run: *big`) is the anchored scalar from elsewhere in the file, of any length and
+    // with any expression in it; measuring the 4 characters `*big` would pass it unseen (TEN-449 review). Fail closed.
+    if (/^\*/.test(rest)) {
+      out.push({ key: key === 'script' ? 'with.script' : 'run', line: i + 1, len: 0, expr: true, unmeasured: true });
+      continue;
+    }
     const block = /^[|>][-+0-9]*\s*(#.*)?$/.test(rest);
     const value = block ? L.slice(i + 1, end).join('\n') : [rest, ...L.slice(i + 1, end)].join('\n');
     // An empty `run:` with a mapping under it (`defaults: run: shell:`, or a JOB named `run`) is not a scalar: scan into it.
@@ -72,7 +79,7 @@ export function checkFiles(files) {
     for (const v of scanText(fs.readFileSync(f, 'utf8'))) {
       if (!v.expr) continue;
       checked++;
-      if (v.unmeasured) fails.push(`FAIL ${path.relative(process.cwd(), f)}:${v.line}: run/script key in a form this guard can't measure (flow mapping, quoted key or space before ':') — write it as a block-style \`run:\` / \`script:\` key`);
+      if (v.unmeasured) fails.push(`FAIL ${path.relative(process.cwd(), f)}:${v.line}: run/script key in a form this guard can't measure (flow mapping, quoted key, space before ':' or a YAML alias as the value) — write it as a block-style \`run:\` / \`script:\` key with its own value`);
       else if (v.len > HEADROOM) fails.push(`FAIL ${path.relative(process.cwd(), f)}:${v.line}: ${v.key} value with an inline expression is ${v.len} chars (GitHub limit ${LIMIT}; keep under ${HEADROOM}) — pass it through env:`);
     }
   }

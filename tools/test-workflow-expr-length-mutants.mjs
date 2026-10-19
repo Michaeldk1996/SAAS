@@ -75,6 +75,32 @@ test('run/script keys in forms the guard cannot measure fail closed (flow mappin
   assert.ok(!scanText(wf(`      - run: echo ${EXPR}`)).some((x) => x.unmeasured));
 });
 
+// TEN-449 review: `run: *big` used to be measured as the 4 characters `*big` and passed, whatever the anchored scalar held.
+test('a YAML alias as the whole run:/script: value fails closed (the anchored value is never measured as "*big")', () => {
+  const anchored = `name: m\non: workflow_dispatch\nenv:\n  BIG: &big "${EXPR}${pad(LONG)}"\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n`;
+  for (const [name, step] of Object.entries({
+    'run: *big': `      - name: s\n        run: *big\n`,
+    '- run: *big': `      - run: *big\n        name: s\n`,
+    'with: script: *big': `      - uses: actions/github-script@v7\n        with:\n          script: *big\n`,
+  })) {
+    const line = (anchored + step).split('\n').findIndex((l) => l.includes('*big')) + 1;
+    const v = scanText(anchored + step);
+    assert.equal(v.length, 1, `${name}: ${JSON.stringify(v)}`);
+    assert.ok(v[0].unmeasured && v[0].expr && v[0].line === line, `${name}: not flagged as unmeasured: ${JSON.stringify(v)}`);
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'exprlen-'));
+    try {
+      const f = path.join(d, 'm.yml');
+      fs.writeFileSync(f, anchored + step);
+      const r = checkFiles([f]);
+      assert.equal(r.fails.length, 1, `${name}: ${JSON.stringify(r)}`);
+      assert.match(r.fails[0], new RegExp(`m\\.yml:${line}: .*YAML alias`));
+    } finally { fs.rmSync(d, { recursive: true, force: true }); }
+  }
+  // an anchor on a block-style value is still measured as that value (not as unmeasured)
+  const v = scanText(wf(`      - name: s\n        run: &a echo ${EXPR}`));
+  assert.ok(!v.some((x) => x.unmeasured), JSON.stringify(v));
+});
+
 test('checkFiles flags a mutant file and names the line', () => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'exprlen-'));
   try {
