@@ -3587,6 +3587,7 @@
       } else if (!seasons[r.year] && !(r.notCounted && !year && !t)) return;   // TEN-449: Career lists every not-counted row
       var row = last52DrillRow(r);
       if (r.notCounted) row.notCounted = r.notCounted;
+      if (r.provisional) row.provisional = r.provisional;
       row.court = courts[i] || null;
       row.cell = seasonCellOf(r, courts[i], !since && !!seasons[r.year] && seasons[r.year].carved);
       // TEN-449 · a row with no surface, outside Indoors, is the "Surface not known" column's (seasons only)
@@ -3764,6 +3765,14 @@
     return ' <span data-pp2-notcounted="1" title="Not in Tennis Explorer, not counted in this record" ' +
       'style="color:var(--text-label);">' + MIDDOT + ' not in Tennis Explorer, not counted</span>';
   }
+  // TEN-449 provisional (founder 2026-10-19, amends ruling 2A) · an api-tennis row dated on or after the day we read his
+  // TE current-season page: counted, and says it is provisional until Tennis Explorer lists it.
+  function provisionalMark(r) {
+    if (!r || !r.provisional) return '';
+    var t = MIDDOT + ' provisional ' + MIDDOT + ' api-tennis, not yet in Tennis Explorer (read ' + fmtDayMonth(r.provisional) + ')';
+    return ' <span data-pp2-provisional="1" title="' + esc('Counted provisionally: api-tennis has this match, Tennis Explorer ' +
+      'did not list it yet when read on ' + fmtDayMonth(r.provisional)) + '" style="color:var(--text-label);">' + esc(t) + '</span>';
+  }
   function conflictMark(r) {
     if (!r || !r.conflicts || !r.conflicts.length) return '';
     var parts = r.conflicts.map(function (c) {
@@ -3808,7 +3817,7 @@
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
              ';padding:5px 0;', esc(r.sets || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
-             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r)) +
+             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r) + provisionalMark(r)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
              'text-align:right;padding:5px 0;', oddsText(r.price)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
@@ -4768,11 +4777,16 @@
     var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
     if (!lay) return '';
     var meta = (typeof window !== 'undefined' && window.careerRecordMeta) || null;
-    if (!meta || meta.refreshedAt || !meta.asOf) return RECORD_SOURCE_NOTE;
+    // TEN-449 provisional · only when he has provisional rows (N > 0): how many, and since which read day
+    var pv = (lay.over || []).filter(function (e) { return e[1] && e[1].provisional; });
+    var since = pv.map(function (e) { return e[1].provisional; }).sort()[0];
+    var prov = pv.length ? ' Includes ' + pv.length + ' match' + (pv.length === 1 ? '' : 'es') + ' since ' + fmtDayMonth(since) +
+      ' from api-tennis, provisional until Tennis Explorer lists them.' : '';
+    if (!meta || meta.refreshedAt || !meta.asOf) return RECORD_SOURCE_NOTE + prov;
     var d = new Date(meta.asOf + 'T00:00:00Z');
-    if (!isFinite(d.getTime())) return RECORD_SOURCE_NOTE;
+    if (!isFinite(d.getTime())) return RECORD_SOURCE_NOTE + prov;
     var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return RECORD_SOURCE_NOTE + ' Tennis Explorer data as of ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + '.';
+    return RECORD_SOURCE_NOTE + ' Tennis Explorer data as of ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + '.' + prov;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -7348,6 +7362,7 @@
         mon: parseInt(r.date.slice(5, 7), 10) - 1,
         won: !!r.won,
         notCounted: r.notCounted || null,
+        provisional: r.provisional || null,   // TEN-449 · counted provisionally (the TE read day), until TE lists it
         teOnly: r.src === 'te',      // TEN-449 · a Tennis Explorer row with no feed match behind it
         surface: r.surface ? String(r.surface).toLowerCase() : null,
         court: hit ? (hit.court || null) : null,

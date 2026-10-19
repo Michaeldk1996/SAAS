@@ -4080,6 +4080,10 @@ const TE_INGEST = process.env.TE_INGEST === '1';   // founder approval of the mo
 const SetRepairs = require('./set-repairs.js');
 const SET_REPAIRS_FILE = require('path').join(TE_STORE_DIR, 'set-repairs.json');
 const SET_REPAIR = process.env.SET_REPAIR === '1';
+// TEN-449 provisional counting (founder 2026-10-19, amends ruling 2A): a DOB-joined player's api-tennis row dated on or after
+// his TE read day (te-history readAt) counts in the record, flagged, until TE lists it. Its own switch (vars.PROVISIONAL);
+// off = exactly the record without it. Only acts inside the TE merge, so it does nothing with TE_INGEST off.
+const PROVISIONAL = process.env.PROVISIONAL === '1';
 let _teIndex = null;
 function readTeHistory(key) {
   const f = `${TE_HISTORY_DIR}/${key}.json`;
@@ -4197,7 +4201,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
         // TEN-449 golden guard (founder 2026-10-19), on every run with the switch on: the merge may not touch a byte of
         // the shared rows — H2H, Lines and the model read them, and none of them may move. A merge that did stops the run.
         const feedBefore = JSON.stringify(rows);
-        const m = teMerge = TeJoin.applyTeHistory(rows, teRec);
+        const m = teMerge = TeJoin.applyTeHistory(rows, teRec, { provisional: PROVISIONAL });
         if (JSON.stringify(rows) !== feedBefore) throw new Error(`TEN-449: the Tennis Explorer merge changed ${key}'s shared career-history rows — H2H, Lines and the model would move; refusing to publish`);
         teTotals.players++;
         for (const [k, v] of Object.entries(m.diag)) if (typeof v === 'number') teTotals[k] = (teTotals[k] || 0) + v;

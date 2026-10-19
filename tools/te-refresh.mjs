@@ -161,6 +161,9 @@ async function main() {
     const old = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null;
     const oldRows = old ? B.rowsOf(old) : [];
     const mainHtml = await S.page(`/player/${slug}/`);
+    // TEN-449 provisional: readAt = when his current-season page was read (the profile's, if TE lists no current season)
+    const readStamp = () => (process.env.TE_NOW ? NOW : new Date()).toISOString();
+    let readAt = readStamp();
     const facts = S.profileFacts(mainHtml);
     const fresh = B.parseBalance(mainHtml) || {};
     const want = new Set();
@@ -173,15 +176,16 @@ async function main() {
       }
     }
     const seasonHtml = {};
-    for (const y of facts.years.filter((y) => want.has(y))) { seasonHtml[y] = await S.page(`/player/${slug}/?annual=${y}`); report.seasonsFetched++; }
+    for (const y of facts.years.filter((y) => want.has(y))) { seasonHtml[y] = await S.page(`/player/${slug}/?annual=${y}`); report.seasonsFetched++; if (Number(y) === YEAR) readAt = readStamp(); }
+    if (old && old.readAt && old.readAt > readAt) readAt = old.readAt;   // never backwards (te-history-guard checks)
     const built = B.buildPlayerRecord({ key: p.key, slug, dob, name: (old && old.name) || p.name, mainHtml, seasonHtml,
-      keepRows: oldRows.filter((r) => !(String(r.season) in seasonHtml)), builtAt: NOW.toISOString() });
+      keepRows: oldRows.filter((r) => !(String(r.season) in seasonHtml)), builtAt: NOW.toISOString(), readAt });
     if (built.refuse) { report.refused.push({ key: p.key, name: p.name, why: built.refuse, bad: built.bad }); continue; }
     const changes = diffRows(oldRows, built.rec.rows);
     if (changes.length && !isNew) report.changes[p.key] = { name: p.name, changes };
     if (isNew) report.newPlayers.push({ key: p.key, name: p.name, slug, seasons: facts.years.length, rows: built.rec.rows.length });
     fs.writeFileSync(f, B.serialise(built.rec));
-    nextIdx.players[p.key] = { slug, dob: dob || null, rows: built.rec.rows.length, seasons: facts.years.length };
+    nextIdx.players[p.key] = { slug, dob: dob || null, rows: built.rec.rows.length, seasons: facts.years.length, readAt };
     report.players++;
   }
   nextIdx.builtAt = NOW.toISOString();

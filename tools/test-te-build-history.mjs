@@ -80,5 +80,31 @@ check('store round-trip: rows are written one per line and read back with src te
   const txt = B.serialise(rec); assert.ok(txt.split('\n').length >= 3);
   const back = B.rowsOf(JSON.parse(txt)); assert.strictEqual(back[0].src, 'te'); assert.strictEqual(back[0].won, true); assert.deepStrictEqual(back[0].sets, [{ w: 6, l: 3 }, { w: 6, l: 4 }]);
 });
+// TEN-449 provisional: the builder writes each player's readAt from the cache's fetch time (mtime) of his current-season
+// page; a player TE lists no season for in the year of the read gets the profile page's (it said: no season yet)
+{
+  const { execFileSync } = await import('node:child_process');
+  const c2 = fs.mkdtempSync(path.join(os.tmpdir(), 'te-build-ra-')), out = fs.mkdtempSync(path.join(os.tmpdir(), 'te-build-out-'));
+  fs.mkdirSync(path.join(c2, 'html'));
+  const cf = (rel) => path.join(c2, 'html', rel.replace(/^\/+/, '').replace(/[^A-Za-z0-9._-]+/g, '_') + '.html');
+  const bal = (y) => `<div id="balMenu-1-data"><table><tr><td>${y}</td><td>1/0</td><td>-</td><td>1/0</td><td>-</td><td>-</td><td>-</td></tr></table></div>`;
+  const put = (rel, html, iso) => { fs.writeFileSync(cf(rel), html); const t = new Date(iso); fs.utimesSync(cf(rel), t, t); };
+  for (const [slug, y] of [['me', 2026], ['old', 2025]]) {
+    const who = `<a href="/player/${slug}/" class="notU"><strong>Me M.</strong></a>`;
+    put(`/player/${slug}/`, bal(y), '2026-10-17T10:00:00Z');
+    put(`/player/${slug}/?annual=${y}`, page(y, head('Brisbane', '/brisbane/') + row('05.01.', 'hard', who, opp('aa'), '1R', '6-1, 6-1')), y === 2026 ? '2026-10-18T07:43:00Z' : '2026-10-18T09:00:00Z');
+  }
+  fs.writeFileSync(path.join(c2, 'players.json'), JSON.stringify({ 1: { slug: 'me', years: [2026], dob: '19920101', name: 'M. Me' }, 2: { slug: 'old', years: [2025], dob: '19900101', name: 'O. Old' } }));
+  fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['brisbane'] }));
+  let err = null;
+  try { execFileSync(process.execPath, [path.join(path.dirname(new URL(import.meta.url).pathname), 'te-build-history.mjs'), '--cache', c2, '--out', out], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, TE_CACHE: c2 } }); } catch (e) { err = String(e.stderr || e.message); }
+  check('TEN-449 · readAt = the fetch time of the current-season page; the profile page\'s when TE lists no season that year', () => {
+    assert.strictEqual(err, null, err);
+    const idx = JSON.parse(fs.readFileSync(path.join(out, 'te-history-index.json'), 'utf8'));
+    const rec = (k) => JSON.parse(fs.readFileSync(path.join(out, 'te-history', `${k}.json`), 'utf8'));
+    assert.strictEqual(rec(1).readAt, '2026-10-18T07:43:00.000Z'); assert.strictEqual(idx.players[1].readAt, '2026-10-18T07:43:00.000Z');
+    assert.strictEqual(rec(2).readAt, '2026-10-17T10:00:00.000Z'); assert.strictEqual(idx.players[2].readAt, '2026-10-17T10:00:00.000Z');
+  });
+}
 console.log(`\nte-build-history: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

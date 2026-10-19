@@ -47,6 +47,18 @@ check('an empty index {"players":{}} against the committed index -> red', () => 
   const d = store((dd, idx) => { idx.players = {}; idx.totalRows = 0; idx.highWater = {}; });
   assert.strictEqual(checkStore(d, { prev: { players: { 1: {}, 2: {} }, totalRows: 5 } }).ok, false);
 });
+// TEN-449 provisional: readAt (when his TE current-season page was read) never goes backwards against the committed index
+check('TEN-449 · readAt: later or equal passes; earlier, or dropped, on the file or the index -> red, naming it', () => {
+  const T0 = '2026-10-18T07:43:00.000Z';
+  const prev = { players: { 1: { rows: 3, readAt: T0 }, 2: { rows: 2 } }, totalRows: 5, highWater: { totalRows: 5, players: 2 } };
+  const at = (fileAt, idxAt) => store((d, idx) => { fs.writeFileSync(path.join(d, 'te-history', '1.json'), JSON.stringify({ src: 'te', ...(fileAt ? { readAt: fileAt } : {}), rows: [row(1), row(2), row(3)] })); if (idxAt) idx.players[1].readAt = idxAt; });
+  assert.strictEqual(checkStore(at('2026-10-26T05:00:00.000Z', '2026-10-26T05:00:00.000Z'), { prev }).ok, true);
+  assert.strictEqual(checkStore(at(T0, T0), { prev }).ok, true, 'equal is not backwards');
+  only(at('2026-10-17T09:00:00.000Z', T0), /1\.json: readAt 2026-10-17T09:00:00\.000Z is before the committed .* never goes backwards/, { prev });
+  only(at(T0, '2026-10-17T09:00:00.000Z'), /index entry for 1: readAt .* never goes backwards/, { prev });
+  only(at(null, T0), /1\.json: readAt missing/, { prev });
+  assert.strictEqual(checkStore(at(null, null), { prev: { ...prev, players: { 1: { rows: 3 }, 2: { rows: 2 } } } }).ok, true, 'a committed store with no readAt: nothing to compare');
+});
 function writerCase(rel, body) {
   const d = store(); fs.mkdirSync(path.dirname(path.join(d, rel)), { recursive: true }); fs.writeFileSync(path.join(d, rel), body);
   return checkWriters(d);

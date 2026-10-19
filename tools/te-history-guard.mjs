@@ -53,6 +53,15 @@ export function checkStore(root, opts = {}) {
     if (nPlayers < Math.max(pp, (prev.highWater || {}).players || 0)) why.push(`index lists ${nPlayers} players, the committed index listed ${pp}`);
     if (total < pr) why.push(`store holds ${total} rows, the committed store held ${pr}`);
     for (const [key, p] of Object.entries(prev.players || {})) if (!players[key]) why.push(`player ${key} dropped from the index`);
+    // TEN-449 provisional: a player's TE read time (readAt) never goes backwards — an earlier one would count api-tennis
+    // rows provisionally that TE was already read past. Checked on his file and on the index.
+    for (const [key, p] of Object.entries(prev.players || {})) {
+      if (!p.readAt || !players[key]) continue;
+      let rec = null; try { rec = JSON.parse(fs.readFileSync(path.join(root, STORE_DIR, `${key}.json`), 'utf8')); } catch (e) { continue; }
+      for (const [where, at] of [[`${STORE_DIR}/${key}.json`, rec.readAt], [`the index entry for ${key}`, players[key].readAt]]) {
+        if (!(Date.parse(at) >= Date.parse(p.readAt))) why.push(`${where}: readAt ${at || 'missing'} is before the committed ${p.readAt} — readAt never goes backwards`);
+      }
+    }
   }
   return { ok: why.length === 0, why, players: nPlayers, rows: total };
 }

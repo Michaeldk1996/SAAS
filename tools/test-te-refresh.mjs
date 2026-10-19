@@ -93,8 +93,27 @@ const te = (url) => url.includes('tennisexplorer');
     const rec = JSON.parse(fs.readFileSync(path.join(d, 'te-history', '2.json'), 'utf8')); assert.strictEqual(rec.rows.length, 3);
     const rep = JSON.parse(fs.readFileSync(path.join(d, 'te-refresh-report.json'), 'utf8')); assert.strictEqual(rep.newPlayers[0].key, '2');
   });
+  check('TEN-449 · weekly: readAt is written for every player read, on his file and the index', () => {
+    const idx = JSON.parse(fs.readFileSync(path.join(d, 'te-history-index.json'), 'utf8'));
+    for (const k of ['1', '2']) {
+      const rec = JSON.parse(fs.readFileSync(path.join(d, 'te-history', `${k}.json`), 'utf8'));
+      assert.strictEqual(rec.readAt, '2026-10-19T05:00:00.000Z', `file ${k}`); assert.strictEqual(idx.players[k].readAt, '2026-10-19T05:00:00.000Z', `index ${k}`);
+    }
+  });
   check('weekly: the store grows and passes the guard (high-water raised)', () => {
     const idx = JSON.parse(fs.readFileSync(path.join(d, 'te-history-index.json'), 'utf8')); assert.strictEqual(idx.totalRows, 5); assert.strictEqual(idx.highWater.totalRows, 5);
+  });
+}
+{
+  // TEN-449 · readAt never goes backwards: a stored read later than this run's clock is kept, and the guard passes
+  const d = repo(); const LATER = '2026-10-25T00:00:00.000Z';
+  const f = path.join(d, 'te-history', '1.json'); fs.writeFileSync(f, JSON.stringify({ ...JSON.parse(fs.readFileSync(f, 'utf8')), readAt: LATER }));
+  const fi = path.join(d, 'te-history-index.json'); const ix = JSON.parse(fs.readFileSync(fi, 'utf8')); ix.players[1].readAt = LATER; fs.writeFileSync(fi, JSON.stringify(ix));
+  const r = run(d, 'weekly');
+  check('TEN-449 · readAt never goes backwards: a later stored read is kept by the refresh', () => {
+    assert.strictEqual(r.code, 0, r.out);
+    assert.strictEqual(JSON.parse(fs.readFileSync(f, 'utf8')).readAt, LATER);
+    assert.strictEqual(JSON.parse(fs.readFileSync(fi, 'utf8')).players[1].readAt, LATER);
   });
 }
 {

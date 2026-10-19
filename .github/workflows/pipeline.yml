@@ -324,6 +324,8 @@ jobs:
           # TEN-449: the two switches above, independent; unset = off
           TE_INGEST: ${{ vars.TE_INGEST == '1' && '1' || '0' }}
           SET_REPAIR: ${{ vars.SET_REPAIR == '1' && '1' || '0' }}
+          # TEN-449: provisional same-day counting (amends ruling 2A), its own switch; acts only inside the TE merge
+          PROVISIONAL: ${{ vars.PROVISIONAL == '1' && '1' || '0' }}
           TE_STORE_DIR: .te-store   # read in place from the private checkout; never copied into this one
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
           # Stage 4 of the Tennis Edge Model (h2h-model): pre-bakes the Claude AI

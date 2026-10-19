@@ -215,6 +215,25 @@ function teIdentityRefusal(rec) {
   return null;
 }
 
+// TEN-449 provisional counting (founder ruling 2026-10-19, amends 2A; behind PROVISIONAL). A DOB-joined player's
+// api-tennis row TE does not list counts PROVISIONALLY when it is dated on or after the day we read his TE
+// current-season page (`readAt`, Berlin calendar day: api-tennis dates are Berlin wall dates). Exclusions first: a junior,
+// women's-event, walkover, exhibition, national-championship or pro-series row is never provisional. On the read day the
+// row counts only if TE has no unpaired row within ±3 days with the same result (TE may list it under a name we fail to
+// pair). A store record with no readAt has no provisional rows (fail-safe: today's behaviour).
+const { berlinOffsetMs } = require('./berlin-time.js');
+const NEVER_PROVISIONAL = /\bwomen\b|\bW\d{2,3}\b|\bwta\b|exhibition|\bexh\b|\butr\b|pro (tennis )?series|boodles|hurlingham|adria tour|ultimate tennis showdown|diriyah|six kings|6 kings|kooyong|mubadala|tie break tens|bundesliga|interclub|\bliga\b|\bleague\b|championships?$|national/i;
+function readDayOf(readAt) {
+  const ms = Date.parse(readAt || '');
+  return Number.isFinite(ms) ? new Date(ms + berlinOffsetMs(ms)).toISOString().slice(0, 10) : null;
+}
+function isProvisional(r, readDay, teOnly) {
+  if (!readDay || r.src !== 'fixtures' || !r.date || r.date < readDay) return false;
+  if (r.walkover || isJuniorRow(r) || NEVER_PROVISIONAL.test(r.tournament || '')) return false;
+  if (r.date === readDay && teOnly.some((t) => t.date && Math.abs(days(t.date, r.date)) <= 3 && !!t.won === !!r.won)) return false;
+  return true;
+}
+
 // The career record is its OWN population (founder TEN-449): H2H, Lines, the model and every other reader of
 // career-history keep the feed rows exactly as built. So the merge never touches `rows`: it works on copies and returns
 //   rows   — the record's rows (copies of ours, TE-corrected, plus TE-only rows), which careerByYearFromRows counts;
@@ -223,7 +242,7 @@ function teIdentityRefusal(rec) {
 //            'not-in-te' (a DOB-joined player's row TE does not list: shown in the drill, marked, never counted);
 //   added  — the TE-only rows.
 // recordLayer() turns these into the shard's `record` block once the feed rows are final.
-function applyTeHistory(rows, teRec) {
+function applyTeHistory(rows, teRec, opts = {}) {
   const diag = { paired: 0, added: 0, addedByCat: {}, juniorsDropped: 0, stuttgartFixed: 0, oursOnly: 0, seasonMoves: 0,
     indoorOverrides: 0, indoorSet: 0, surfaceFromTe: 0, resultFromTe: 0, conflicts: {}, exhibitionsSkipped: 0, walkoversSkipped: 0 };
   const out = new Map(), orig = new Map();
@@ -275,11 +294,14 @@ function applyTeHistory(rows, teRec) {
   const refusal = teIdentityRefusal(teRec);
   if (refusal) throw new Error(refusal);
   const teOnlyCounts = !!teRec.dob;
+  const readDay = opts.provisional ? readDayOf(teRec.readAt) : null;   // TEN-449 provisional: off, or no readAt -> none
   for (const r of oursOnly) {
     if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
     diag.oursOnly++;
     if (/\bwomen\b|\bW\d{2,3}\b/i.test(r.tournament || '')) diag.womensEventRows = (diag.womensEventRows || 0) + 1;
-    if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
+    // the flag is set on the record's COPY only (r is a copy): the shared row never carries it
+    if (teOnlyCounts && isProvisional(r, readDay, teOnly)) { r.provisional = readDay; diag.provisional = (diag.provisional || 0) + 1; }
+    else if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
   }
   for (const r of ours) {
     if (r.teWalkover) out.set(orig.get(r), 'walkover');
@@ -297,7 +319,8 @@ function applyTeHistory(rows, teRec) {
 //   out   [[i, reason]]  — matches[i] is not in the record (reasons above)
 //   add   [row]          — TE-only rows, in the career-history row shape (src 'te')
 // The page's season drill applies it (player-profile-v2.js recordRowsOf); nothing else reads it.
-const RECORD_FIELDS = ['year', 'surface', 'indoor', 'won', 'conflicts'];
+// `provisional` (TEN-449): the read day of a row counted provisionally — in the overlay only, never on a shared row
+const RECORD_FIELDS = ['year', 'surface', 'indoor', 'won', 'conflicts', 'provisional'];
 function recordLayer(matches, m) {
   const over = [], outL = [];
   matches.forEach((r, i) => {
@@ -346,4 +369,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal };
+module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal, readDayOf };
