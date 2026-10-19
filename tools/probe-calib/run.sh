@@ -7,3 +7,4 @@ node -e 'const d=require("./.te-store/te-odds/calib-01.json");console.log("batch
 echo "== report"; node tools/te-calibration-report.mjs .te-store/te-odds/calib-01.json --no-prices
 echo "== dry-run"; python3 tools/tdarch.py te-import .te-store --dry-run
 # check 2 2026-10-19T17:15:56Z
+# check 3 2026-10-19T18:06:20Z
