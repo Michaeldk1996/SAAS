@@ -46,15 +46,16 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     dated on or after the day we read his TE current-season page (provisional)** (founder TEN-449, 2026-10-19;
     provisional counting amends ruling 2A, founder 2026-10-19). **Test:** with `PROVISIONAL` on, an api-tennis row TE
     does not list counts, flagged `provisional`, iff it is dated on or after his store record's `readAt` day (Berlin
-    calendar day; `te-join.js` `isProvisional`), it is not a junior, women's-event, walkover, exhibition, national
+    calendar day; `te-join.js` `isProvisional`) and at most 14 days after it (`PROVISIONAL_MAX_DAYS`: a stalled refresh
+    cannot keep a row counted), it is not a junior, women's-event, walkover, exhibition, national
     championship or pro-series row, and — if dated on the read day itself — the store has no unpaired TE row for him
-    within ±3 days with the same result. Every other row of ours TE does not list (an earlier one, an excluded one, any
-    row of a store record with no `readAt`, every row with `PROVISIONAL` off) stays in his season drill, marked "not in
+    within ±3 days, whatever its result; an exact duplicate (same day, opponent, result) counts once. Every other row of ours TE does not list (an earlier one, one more than 14 days after the read day, an excluded
+    one, any row of a store record with no `readAt`, every row with `PROVISIONAL` off) stays in his season drill, marked "not in
     Tennis Explorer, not counted", and is in no cell. Once TE lists the match, the pairing makes it one TE-corrected
     row; if TE never lists it, the refresh moves `readAt` past it and it goes back to not counted. The flag lives only
     in `career-record/<key>.json`; the drill marks it "· provisional · api-tennis, not yet in Tennis Explorer (read
-    <d Mon>)". `readAt` is written by `tools/te-build-history.mjs` (the cache's fetch time of that page) and
-    `tools/te-refresh.mjs` (on each read), and never goes backwards (`tools/te-history-guard.mjs`).
+    <d Mon>)". `readAt` is written by `tools/te-build-history.mjs` (the later cache fetch time of his latest season page and his profile page; none if the profile shows a newer season) and
+    `tools/te-refresh.mjs` (on each read), and never goes backwards, equals its index entry and is never in the future (`tools/te-history-guard.mjs`).
     *Exception:* a player joined without a DOB (only Z. Svajda, below; `te-join.js` `NO_DOB_EXCEPTION`, by key and TE page)
     keeps counting our rows TE lacks (never flagged provisional). The eight near-miss DOB joins (below, `NEAR_MISS_DOB`)
     are DOB-joined players: TE's rows count, plus provisional ones. A store record without a DOB, or with a DOB that is

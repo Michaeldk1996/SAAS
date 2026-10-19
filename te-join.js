@@ -221,16 +221,22 @@ function teIdentityRefusal(rec) {
 // women's-event, walkover, exhibition, national-championship or pro-series row is never provisional. On the read day the
 // row counts only if TE has no unpaired row within ±3 days with the same result (TE may list it under a name we fail to
 // pair). A store record with no readAt has no provisional rows (fail-safe: today's behaviour).
+// Review 2026-10-20 (lean to under-counting): the read-day guard needs no result match (any unpaired TE row within ±3
+// days); a row counts only within PROVISIONAL_MAX_DAYS after the read day (a stalled refresh cannot keep rows counted);
+// exact duplicates (same day, opponent surname, result) count once. The event type is not on career-history rows —
+// isCountedSinglesFixture drops api-tennis "Exhibition"/women's/junior types before a row exists; the name test below
+// is the second line.
 const { berlinOffsetMs } = require('./berlin-time.js');
 const NEVER_PROVISIONAL = /\bwomen\b|\bW\d{2,3}\b|\bwta\b|exhibition|\bexh\b|\butr\b|pro (tennis )?series|boodles|hurlingham|adria tour|ultimate tennis showdown|diriyah|six kings|6 kings|kooyong|mubadala|tie break tens|bundesliga|interclub|\bliga\b|\bleague\b|championships?$|national/i;
 function readDayOf(readAt) {
   const ms = Date.parse(readAt || '');
   return Number.isFinite(ms) ? new Date(ms + berlinOffsetMs(ms)).toISOString().slice(0, 10) : null;
 }
+const PROVISIONAL_MAX_DAYS = 14;
 function isProvisional(r, readDay, teOnly) {
-  if (!readDay || r.src !== 'fixtures' || !r.date || r.date < readDay) return false;
+  if (!readDay || r.src !== 'fixtures' || !r.date || r.date < readDay || days(r.date, readDay) > PROVISIONAL_MAX_DAYS) return false;
   if (r.walkover || isJuniorRow(r) || NEVER_PROVISIONAL.test(r.tournament || '')) return false;
-  if (r.date === readDay && teOnly.some((t) => t.date && Math.abs(days(t.date, r.date)) <= 3 && !!t.won === !!r.won)) return false;
+  if (r.date === readDay && teOnly.some((t) => t.date && Math.abs(days(t.date, r.date)) <= 3)) return false;
   return true;
 }
 
@@ -295,12 +301,14 @@ function applyTeHistory(rows, teRec, opts = {}) {
   if (refusal) throw new Error(refusal);
   const teOnlyCounts = !!teRec.dob;
   const readDay = opts.provisional ? readDayOf(teRec.readAt) : null;   // TEN-449 provisional: off, or no readAt -> none
+  const provKeys = new Set();   // an exact duplicate of a provisional row (same day, opponent, result) counts once
   for (const r of oursOnly) {
     if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
     diag.oursOnly++;
     if (/\bwomen\b|\bW\d{2,3}\b/i.test(r.tournament || '')) diag.womensEventRows = (diag.womensEventRows || 0) + 1;
     // the flag is set on the record's COPY only (r is a copy): the shared row never carries it
-    if (teOnlyCounts && isProvisional(r, readDay, teOnly)) { r.provisional = readDay; diag.provisional = (diag.provisional || 0) + 1; }
+    const pk = `${r.date}|${ourSurname(r.opponent)}|${!!r.won}`;
+    if (teOnlyCounts && !provKeys.has(pk) && isProvisional(r, readDay, teOnly)) { provKeys.add(pk); r.provisional = readDay; diag.provisional = (diag.provisional || 0) + 1; }
     else if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
   }
   for (const r of ours) {
@@ -369,4 +377,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal, readDayOf };
+module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal, readDayOf, PROVISIONAL_MAX_DAYS };

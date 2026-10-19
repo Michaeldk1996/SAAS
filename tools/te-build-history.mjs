@@ -293,12 +293,19 @@ function main() {
       if (Number(y) === Math.max(...p.years.map(Number))) { const t = fs.statSync(f).mtimeMs; if (oldestCurrent === null || t < oldestCurrent) oldestCurrent = t; }
     }
     if (missing) { report.kept.push(key); continue; }
-    // TEN-449 provisional: readAt = the cache's fetch time (mtime) of his current-season page — the season of the year it
-    // was read in; with no such season on TE, the profile page's (it lists the seasons, so TE had none for that year then)
+    // TEN-449 provisional: readAt = when we last saw TE's current state for him — the later of the cache's fetch times
+    // (mtime) of his latest season page and his profile page (the profile lists his seasons: read later and showing no
+    // newer season, nothing newer existed then; January case). A profile showing a season newer than any cached season
+    // page: no readAt (no provisional rows — under-count). Never earlier than the readAt already in the store.
     const yMax = Math.max(...(p.years || []).map(Number));
     const curF = cacheFile(`/player/${p.slug}/?annual=${yMax}`);
     const curT = Number.isFinite(yMax) && fs.existsSync(curF) ? fs.statSync(curF).mtimeMs : null;
-    const readAt = new Date(curT !== null && new Date(curT).getUTCFullYear() === yMax ? curT : fs.statSync(mainF).mtimeMs).toISOString();
+    const newer = Object.keys(parseBalance(mainHtml) || {}).some((y) => /^\d{4}$/.test(y) && Number(y) > yMax);
+    let readAt = curT === null || newer ? null : new Date(Math.max(curT, fs.statSync(mainF).mtimeMs)).toISOString();
+    const prevF = path.join(dir, `${key}.json`);
+    const prevAt = fs.existsSync(prevF) ? (JSON.parse(fs.readFileSync(prevF, 'utf8')).readAt || null) : null;
+    if (prevAt && (!readAt || prevAt > readAt)) readAt = prevAt;
+    if (newer) report.noReadAt = (report.noReadAt || []).concat(key);
     const built = buildPlayerRecord({ key, slug: p.slug, dob: p.dob, name: p.name, mainHtml, seasonHtml, builtAt: idx.builtAt, readAt });
     if (built.refuse) { report.notReconciled.push({ key, slug: p.slug, bad: built.bad || [built.refuse] }); continue; }
     const { rec, bad } = built; const rows = rec.rows;

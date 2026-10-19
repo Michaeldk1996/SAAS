@@ -603,15 +603,26 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       const x = merge([CILIC()], [R(2026, '2026-10-19', 'Kazakhstan Open', 'ATP', '1R', 'hard', 'indoor', 'Unrelated Q.', true, '6-2, 7-5')], '2026-10-26T05:00:00Z');
       assert.strictEqual(x.st('M. Cilic'), 'not-in-te'); assert.strictEqual(x.on('2026-10-19').length, 1); assert.strictEqual(x.on('2026-10-19')[0].src, 'te');
     });
-    check('provisional · read-day guard: on the read day, an unpaired TE row within ±3 days with the same result keeps it out', () => {
+    check('provisional · read-day guard: on the read day, ANY unpaired TE row within ±3 days keeps it out (review 2026-10-20)', () => {
       const WALTON = () => fx('2026-10-18', 'A. Walton', 'Almaty', true);
       const teWin = [R(2026, '2026-10-17', 'Kazakhstan Open', 'ATP qual', 'Q-2R', 'hard', 'indoor', 'Smith Z.', true, '6-4, 7-6')];
       const teLoss = [R(2026, '2026-10-17', 'Kazakhstan Open', 'ATP qual', 'Q-2R', 'hard', 'indoor', 'Smith Z.', false, '4-6, 6-7')];
       assert.strictEqual(merge([WALTON()], teWin, '2026-10-18T07:43:00Z').st('A. Walton'), 'not-in-te', 'same result nearby: guarded');
-      assert.strictEqual(merge([WALTON()], teLoss, '2026-10-18T07:43:00Z').st('A. Walton'), 'prov:2026-10-18', 'other result: counts');
+      assert.strictEqual(merge([WALTON()], teLoss, '2026-10-18T07:43:00Z').st('A. Walton'), 'not-in-te', 'other result: guarded too');
       assert.strictEqual(merge([CILIC()], teWin, '2026-10-18T07:43:00Z').st('M. Cilic'), 'prov:2026-10-18', 'the day after the read day: no guard');
       const far = [R(2026, '2026-10-14', 'Kazakhstan Open', 'ATP qual', 'Q-2R', 'hard', 'indoor', 'Smith Z.', true, '6-4, 7-6')];
       assert.strictEqual(merge([WALTON()], far, '2026-10-18T07:43:00Z').st('A. Walton'), 'prov:2026-10-18', '4 days away: counts');
+    });
+    check('provisional · age cap: counts up to 14 days after the read day, not after (a stalled refresh reverts it)', () => {
+      assert.strictEqual(TJ.PROVISIONAL_MAX_DAYS, 14);
+      assert.strictEqual(merge([fx('2026-11-01', 'M. Cilic', 'Paris', true)], [], '2026-10-18T07:43:00Z').st('M. Cilic'), 'prov:2026-10-18', '14 days');
+      assert.strictEqual(merge([fx('2026-11-02', 'M. Cilic', 'Paris', true)], [], '2026-10-18T07:43:00Z').st('M. Cilic'), 'not-in-te', '15 days');
+    });
+    check('provisional · an exact duplicate api-tennis row (same day, opponent, result) counts once', () => {
+      const a = fx('2026-10-19', 'A. Aubriot', 'Almaty', true), b = fx('2026-10-19', 'A. Aubriot', 'Almaty', true, { round: 'Qualifying' });
+      const x = TJ.applyTeHistory([a, b], rec([], '2026-10-18T07:43:00Z'), { provisional: true });
+      assert.strictEqual(x.diag.provisional, 1);
+      assert.ok(x.copyOf.get(a) && x.copyOf.get(a).provisional, 'the first counts'); assert.strictEqual(x.out.get(b), 'not-in-te', 'the second does not');
     });
     check('provisional · a junior, women\'s, walkover, exhibition, national-championship or pro-series row is never provisional', () => {
       const x = merge([fx('2026-10-19', 'J. Junior', 'Australian Open', true, { level: 'chitf' }), fx('2026-10-19', 'W. Woman', 'Itf W35 Lyon Women', true, { level: 'chitf' }),

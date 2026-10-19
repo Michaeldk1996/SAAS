@@ -41,6 +41,10 @@ export function checkStore(root, opts = {}) {
     total += n;
     if (n < (p.rows || 0)) why.push(`${STORE_DIR}/${key}.json holds ${n} rows, the index records ${p.rows}`);
     if (rec.src !== 'te' || (rec.rows || []).some((r) => !Array.isArray(r) && r.src !== 'te')) why.push(`${STORE_DIR}/${key}.json is not tagged src 'te'`);
+    // TEN-449 provisional: the file's readAt is its index entry's, and never in the future (a clock or a typo would count
+    // every api-tennis row from then on as read-day-or-later... and none before it)
+    if ((rec.readAt || null) !== (p.readAt || null)) why.push(`${STORE_DIR}/${key}.json readAt ${rec.readAt || 'missing'} differs from its index entry ${p.readAt || 'missing'}`);
+    if (rec.readAt && !(Date.parse(rec.readAt) <= (opts.now || Date.now()) + 3600e3)) why.push(`${STORE_DIR}/${key}.json readAt ${rec.readAt} is in the future or unreadable`);
   }
   const hw = idx.highWater || {};
   const nPlayers = Object.keys(players).length;

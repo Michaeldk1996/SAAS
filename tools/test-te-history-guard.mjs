@@ -47,17 +47,30 @@ check('an empty index {"players":{}} against the committed index -> red', () => 
   const d = store((dd, idx) => { idx.players = {}; idx.totalRows = 0; idx.highWater = {}; });
   assert.strictEqual(checkStore(d, { prev: { players: { 1: {}, 2: {} }, totalRows: 5 } }).ok, false);
 });
-// TEN-449 provisional: readAt (when his TE current-season page was read) never goes backwards against the committed index
-check('TEN-449 · readAt: later or equal passes; earlier, or dropped, on the file or the index -> red, naming it', () => {
-  const T0 = '2026-10-18T07:43:00.000Z';
+// TEN-449 provisional: readAt (when his TE current-season page was read) never goes backwards against the committed index,
+// equals its index entry, and is never in the future
+check('TEN-449 · readAt: later or equal passes; earlier, or dropped, against the committed index -> red, naming it', () => {
+  const T0 = '2026-10-18T07:43:00.000Z', NOW = Date.parse('2026-10-20T12:00:00Z');
   const prev = { players: { 1: { rows: 3, readAt: T0 }, 2: { rows: 2 } }, totalRows: 5, highWater: { totalRows: 5, players: 2 } };
   const at = (fileAt, idxAt) => store((d, idx) => { fs.writeFileSync(path.join(d, 'te-history', '1.json'), JSON.stringify({ src: 'te', ...(fileAt ? { readAt: fileAt } : {}), rows: [row(1), row(2), row(3)] })); if (idxAt) idx.players[1].readAt = idxAt; });
-  assert.strictEqual(checkStore(at('2026-10-26T05:00:00.000Z', '2026-10-26T05:00:00.000Z'), { prev }).ok, true);
-  assert.strictEqual(checkStore(at(T0, T0), { prev }).ok, true, 'equal is not backwards');
-  only(at('2026-10-17T09:00:00.000Z', T0), /1\.json: readAt 2026-10-17T09:00:00\.000Z is before the committed .* never goes backwards/, { prev });
-  only(at(T0, '2026-10-17T09:00:00.000Z'), /index entry for 1: readAt .* never goes backwards/, { prev });
-  only(at(null, T0), /1\.json: readAt missing/, { prev });
-  assert.strictEqual(checkStore(at(null, null), { prev: { ...prev, players: { 1: { rows: 3 }, 2: { rows: 2 } } } }).ok, true, 'a committed store with no readAt: nothing to compare');
+  const L = '2026-10-19T05:00:00.000Z';
+  assert.strictEqual(checkStore(at(L, L), { prev, now: NOW }).ok, true, why(at(L, L), { prev, now: NOW }));
+  assert.strictEqual(checkStore(at(T0, T0), { prev, now: NOW }).ok, true, 'equal is not backwards');
+  const back = checkStore(at('2026-10-17T09:00:00.000Z', '2026-10-17T09:00:00.000Z'), { prev, now: NOW });
+  assert.ok(!back.ok && back.why.length === 2 && back.why.every((w) => /never goes backwards/.test(w)) && /1\.json: readAt/.test(back.why[0]) && /index entry for 1/.test(back.why[1]), back.why.join(' | '));
+  const gone = checkStore(at(null, null), { prev, now: NOW });
+  assert.ok(!gone.ok && gone.why.length === 2 && gone.why.every((w) => /readAt missing/.test(w)), gone.why.join(' | '));
+  assert.strictEqual(checkStore(at(null, null), { prev: { ...prev, players: { 1: { rows: 3 }, 2: { rows: 2 } } }, now: NOW }).ok, true, 'a committed store with no readAt: nothing to compare');
+});
+check('TEN-449 · readAt: a file whose readAt differs from its index entry -> red (and only that)', () => {
+  const d = store((dd, idx) => { fs.writeFileSync(path.join(dd, 'te-history', '1.json'), JSON.stringify({ src: 'te', readAt: '2026-10-19T05:00:00.000Z', rows: [row(1), row(2), row(3)] })); idx.players[1].readAt = '2026-10-18T05:00:00.000Z'; });
+  only(d, /1\.json readAt 2026-10-19T05:00:00\.000Z differs from its index entry 2026-10-18T05:00:00\.000Z/, { now: Date.parse('2026-10-20T12:00:00Z') });
+});
+check('TEN-449 · readAt: more than an hour in the future -> red (and only that); within the hour passes', () => {
+  const mk = (at) => store((dd, idx) => { fs.writeFileSync(path.join(dd, 'te-history', '1.json'), JSON.stringify({ src: 'te', readAt: at, rows: [row(1), row(2), row(3)] })); idx.players[1].readAt = at; });
+  const NOW = Date.parse('2026-10-20T12:00:00Z');
+  only(mk('2026-10-20T13:30:00.000Z'), /readAt 2026-10-20T13:30:00\.000Z is in the future/, { now: NOW });
+  assert.strictEqual(checkStore(mk('2026-10-20T12:30:00.000Z'), { now: NOW }).ok, true);
 });
 function writerCase(rel, body) {
   const d = store(); fs.mkdirSync(path.dirname(path.join(d, rel)), { recursive: true }); fs.writeFileSync(path.join(d, rel), body);
