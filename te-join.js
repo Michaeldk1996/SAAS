@@ -136,7 +136,8 @@ const ourName = (te) => { const t = String(te || '').trim().split(/\s+/); if (t.
 function teOnlyRow(t) {
   const sets = (t.sets || []).map((s) => (t.won ? { p: s.w, o: s.l } : { p: s.l, o: s.w })).filter((x) => x.p + x.o > 0);
   const won = sets.filter((x) => x.p > x.o).length, lost = sets.filter((x) => x.p < x.o).length;
-  const r = { year: String(t.season), surface: t.surface || null, level: levelOfCat(t.cat), date: t.date, tournament: t.event,
+  // a counted TE "Other" event (multi-sport games, play-offs) is not tour level: Challenger/ITF tier (TEN-449)
+  const r = { year: String(t.season), surface: t.surface || null, level: t.cat === 'Other' ? 'chitf' : levelOfCat(t.cat), date: t.date, tournament: t.event,
     round: t.round || null, opponent: ourName(t.opp), result: `${won} - ${lost}`, won: !!t.won, src: 'te', teCat: t.cat,
     indoor: t.court === 'indoor' ? true : t.court === 'outdoor' ? false : null };
   if (sets.length) r.sets = sets;
@@ -150,11 +151,27 @@ function teOnlyRow(t) {
   return r;
 }
 
+// TE "Other" events that count (founder ruling TEN-449, 2026-10-19), by exact TE event name: the multi-sport games and
+// the wildcard / pre-qualifying play-offs. Pro series and invitationals, and national championships and tours (an
+// exhibition/club class since 2026-10-17), stay out; an "Other" event not named here stays out until it is ruled on.
+const OTHER_COUNTED = new Set(['Pan American Games', 'African Games', 'World University Games', 'Mediterranean Games',
+  'Commonwealth Games', 'Rome - pre-qualification', 'AO Wildcard Playoff - Australia', 'AO WC Playoff - Asia-Pacific']);
+
+// The career record is its OWN population (founder TEN-449): H2H, Lines, the model and every other reader of
+// career-history keep the feed rows exactly as built. So the merge never touches `rows`: it works on copies and returns
+//   rows   — the record's rows (copies of ours, TE-corrected, plus TE-only rows), which careerByYearFromRows counts;
+//   copyOf — Map(our row -> its record copy), for every row of ours that counts in the record;
+//   out    — Map(our row -> why it is not in the record): 'junior' · 'walkover' · 'exhibition' · 'duplicate' ·
+//            'not-in-te' (a DOB-joined player's row TE does not list: shown in the drill, marked, never counted);
+//   added  — the TE-only rows.
+// recordLayer() turns these into the shard's `record` block once the feed rows are final.
 function applyTeHistory(rows, teRec) {
   const diag = { paired: 0, added: 0, addedByCat: {}, juniorsDropped: 0, stuttgartFixed: 0, oursOnly: 0, seasonMoves: 0,
     indoorOverrides: 0, indoorSet: 0, surfaceFromTe: 0, resultFromTe: 0, conflicts: {}, exhibitionsSkipped: 0, walkoversSkipped: 0 };
+  const out = new Map(), orig = new Map();
   // TEN-444 / TEN-445 back-corrections, so a cached profile (14-day TTL) gets them on this run, not its rebuild
-  let ours = rows.filter((r) => { if (isJuniorRow(r)) { diag.juniorsDropped++; return false; } return true; });
+  let ours = rows.filter((r) => { if (isJuniorRow(r)) { diag.juniorsDropped++; out.set(r, 'junior'); return false; } return true; })
+    .map((r) => { const c = { ...r }; orig.set(c, r); return c; });
   for (const r of ours) {
     if (/Stuttgart/.test(r.tournament || '') && String(r.date || '').slice(5, 7) === '06' && r.level === 'atp' && r.surface === 'clay') { r.surface = 'grass'; diag.stuttgartFixed++; }
   }
@@ -184,22 +201,56 @@ function applyTeHistory(rows, teRec) {
   for (const t of teOnly) {
     if (t.wo) { diag.walkoversSkipped++; continue; }
     if (t.cat === 'Exhibition') { diag.exhibitionsSkipped++; continue; }
-    // 'Other': an event no official catalogue names — never counted on a guess; listed for a ruling
-    if (t.cat === 'Other') { diag.otherSkipped = (diag.otherSkipped || 0) + 1; (diag.otherEvents = diag.otherEvents || {})[t.event] = ((diag.otherEvents || {})[t.event] || 0) + 1; continue; }
+    // 'Other': counted only for a class the founder ruled in (OTHER_COUNTED); every other one is listed, not counted
+    if (t.cat === 'Other' && OTHER_COUNTED.has(t.event)) diag.otherCounted = (diag.otherCounted || 0) + 1;
+    else if (t.cat === 'Other') { diag.otherSkipped = (diag.otherSkipped || 0) + 1; (diag.otherEvents = diag.otherEvents || {})[t.event] = ((diag.otherEvents || {})[t.event] || 0) + 1; continue; }
     added.push(teOnlyRow(t)); diag.added++; diag.addedByCat[t.cat] = (diag.addedByCat[t.cat] || 0) + 1;
   }
   // one match = one row: an unpaired row of ours that repeats a paired row (same day, opponent, result) is a duplicate
   // in our source (TML lists some Davis Cup rubbers twice) — dropped and counted, not counted twice
   const pairedKey = new Set(pairs.map(({ ours: r }) => `${r.date}|${ourSurname(r.opponent)}|${!!r.won}`));
-  const dup = new Set();
+  // founder ruling TEN-449 (2026-10-19): for a player joined on his date of birth, the record counts only what TE lists;
+  // our rows TE lacks stay visible in the drill, marked "not in Tennis Explorer, not counted". A player joined without a
+  // DOB (the named exception, Svajda) keeps counting them.
+  const teOnlyCounts = !!teRec.dob;
   for (const r of oursOnly) {
-    if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { dup.add(r); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
-    r.teMissing = true; diag.oursOnly++;
-    if (/\bwomen\b|\bW\d{2,3}\b/i.test(r.tournament || '')) { r.teMissingWhy = "a women's event under his key (api-tennis)"; diag.womensEventRows = (diag.womensEventRows || 0) + 1; }
+    if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
+    diag.oursOnly++;
+    if (/\bwomen\b|\bW\d{2,3}\b/i.test(r.tournament || '')) diag.womensEventRows = (diag.womensEventRows || 0) + 1;
+    if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
   }
-  const merged = ours.filter((r) => !r.teWalkover && !r.teExhibition && !dup.has(r)).concat(added)
-    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-  return { rows: merged, diag };
+  for (const r of ours) {
+    if (r.teWalkover) out.set(orig.get(r), 'walkover');
+    else if (r.teExhibition) out.set(orig.get(r), 'exhibition');
+  }
+  const kept = ours.filter((r) => !out.has(orig.get(r)));
+  const copyOf = new Map(kept.map((c) => [orig.get(c), c]));
+  const merged = kept.concat(added).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  return { rows: merged, copyOf, out, added, diag };
+}
+
+// The shard's `record` block, from the FINAL feed rows (call after every later pass has run on them):
+//   over  [[i, {year?, surface?, indoor?, won?, conflicts?}]]  — matches[i] in the record, with what TE changed on it;
+//         a row of matches in neither `over` nor `out` counts in the record exactly as it is
+//   out   [[i, reason]]  — matches[i] is not in the record (reasons above)
+//   add   [row]          — TE-only rows, in the career-history row shape (src 'te')
+// The page's season drill applies it (player-profile-v2.js recordRowsOf); nothing else reads it.
+const RECORD_FIELDS = ['year', 'surface', 'indoor', 'won', 'conflicts'];
+function recordLayer(matches, m) {
+  const over = [], outL = [];
+  matches.forEach((r, i) => {
+    const why = m.out.get(r);
+    if (why) { outL.push([i, why]); return; }
+    const c = m.copyOf.get(r);
+    if (!c) return;
+    const d = {};
+    for (const f of RECORD_FIELDS) {
+      const a = c[f], b = r[f];
+      if (f === 'indoor' ? (a === true) !== (b === true) : JSON.stringify(a) !== JSON.stringify(b)) d[f] = f === 'indoor' ? a === true : a;
+    }
+    if (Object.keys(d).length) over.push([i, d]);
+  });
+  return { v: 1, over, out: outL, add: m.added };
 }
 
 // The season table rebuilt from the merged rows — cells and lists from ONE set of rows (TEN-442). Every season row
@@ -233,4 +284,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar };
+module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED };

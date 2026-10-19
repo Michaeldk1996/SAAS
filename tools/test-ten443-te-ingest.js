@@ -7,6 +7,10 @@
 // plus: exhibitions and walkovers stay out, a duplicate of ours is dropped (one match = one row), every disagreement
 // is kept on the row, TE rows carry src 'te', cells equal the rows listed, TE_INGEST off changes nothing, and with it
 // on a missing store stops the run.
+// TEN-449 (founder 2026-10-19): the record is its own population — `matches` is byte-identical with TE_INGEST on and
+// off and the record is the shard's `record` overlay (read back here the way the page does, recordOf); a DOB-joined
+// player's row TE lacks is listed, marked and not counted (the no-DOB exception keeps counting it); the multi-sport
+// and play-off "Other" classes count, the pro series do not; the "Surface not known" column lists TE's Not-set rows.
 'use strict';
 const assert = require('assert');
 const fs = require('fs'), os = require('os'), path = require('path');
@@ -30,6 +34,8 @@ function profile() {
     { year: '2024', surface: 'hard', level: 'atp', date: '2024-03-08', tournament: 'Indian Wells', round: 'R64', opponent: 'D. Delta', result: '0 - 2', won: false, src: 'fixtures', indoor: false, sets: [{ p: 4, o: 6 }, { p: 4, o: 6 }] },
     // a row TE files as an exhibition: paired, then dropped (founder ruling: exhibitions are not counted)
     { year: '2024', surface: 'grass', level: 'atp', date: '2024-06-28', tournament: 'Boodles Tennis Challenge', round: '—', opponent: 'Z. Zeta', result: '2 - 0', won: true, src: 'fixtures', indoor: false },
+    // TEN-449: a row of ours TE does not list (DOB-joined player): listed, marked, not counted
+    { year: '2024', surface: 'hard', level: 'chitf', date: '2024-08-05', tournament: 'Lexington Challenger', round: 'R32', opponent: 'Q. Quux', result: '2 - 0', won: true, src: 'fixtures', indoor: false, sets: [{ p: 6, o: 1 }, { p: 6, o: 2 }] },
   ];
   const cell = (w, l) => ({ won: w, lost: l });
   return {
@@ -60,9 +66,12 @@ function teStore(dir) {
     R(2016, '2016-03-04', 'Davis Cup', 'Davis Cup', '', null, null, 'Mu M.', true, '6-1, 6-1, 6-1'),    // our archive holds it twice
     R(2021, '2021-02-10', 'Rotterdam', 'ATP', '1R', null, 'indoor', 'Omicron O.', true, '6-3, 6-4'),    // the 2021 hole-fill row, indoor
     R(2024, '2024-06-25', 'Halle', 'ATP', 'R16', 'grass', 'outdoor', 'Pi P.', true, '6-3, 2-1'),         // TE only · won by the opponent's retirement
+    R(2023, '2023-10-25', 'Pan American Games', 'Other', '1R', 'hard', 'outdoor', 'Rho R.', true, '6-2, 6-2'),   // TEN-449: counted class
+    R(2023, '2023-05-01', 'UK Pro Series', 'Other', '1R', 'hard', 'outdoor', 'Sigma S.', true, '6-2, 6-2'),        // TEN-449: not counted
+    R(2023, '2023-09-15', 'Davis Cup', 'Davis Cup', '', null, null, 'Tau T.', false, '4-6, 4-6'),                  // TE "Not set": Surface not known
   ];
   fs.mkdirSync(path.join(dir, 'te-history'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'te-history', `${KEY}.json`), JSON.stringify({ key: KEY, slug: 'test', src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows }));
+  fs.writeFileSync(path.join(dir, 'te-history', `${KEY}.json`), JSON.stringify({ key: KEY, slug: 'test', dob: '19990101', src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows }));
   fs.writeFileSync(path.join(dir, 'te-history-index.json'), JSON.stringify({ players: { [KEY]: { rows: rows.length } }, totalRows: rows.length, highWater: { totalRows: rows.length, players: 1 } }));
 }
 // the TML archive as buildArchiveHistories hands it over: tournament-WEEK dates, a Davis Cup rubber listed twice, and a
@@ -85,9 +94,20 @@ async function run(on, withStore, edit) {
     await P.writeCareerHistoryShards(profiles, { archive: archive(), log: () => {}, currentYear: 2026, teYearly });
     const shard = JSON.parse(fs.readFileSync(path.join(tmp, 'career-history', `${KEY}.json`), 'utf8'));
     const index = JSON.parse(fs.readFileSync(path.join(tmp, 'career-history-index.json'), 'utf8'));
-    return { P, p: profiles[KEY], rows: shard.matches, index, teYearly };
+    return { P, p: profiles[KEY], shard, matches: shard.matches, rows: recordOf(shard), index, teYearly };
   } finally { process.chdir(cwd); }
 }
+// the record's rows as the page reads them (player-profile-v2.js recordRowsOf): matches + the `record` overlay
+function recordOf(shard) {
+  const L = shard.record; if (!L) return shard.matches;
+  const over = new Map(L.over), out = new Map(L.out), rows = [];
+  shard.matches.forEach((r, i) => {
+    const why = out.get(i); if (why && why !== 'not-in-te') return;
+    rows.push(Object.assign({}, r, over.get(i) || {}, why ? { notCounted: why } : {}));
+  });
+  return rows.concat(L.add);
+}
+const counted = (rows) => rows.filter((r) => !r.notCounted);
 const carved = (y, s) => { const v = y[s], i = y.indoor && y.indoor[s]; if (!v) return '–'; const w = v.won - (i ? i.won : 0), l = v.lost - (i ? i.lost : 0); return w + l ? `${w}-${l}` : '–'; };
 const wl = (c) => (c ? `${c.won}-${c.lost}` : '–');
 const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
@@ -95,10 +115,18 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
 (async () => {
   const off = await run(false, true);
   const on = await run(true, true);
+  // TEN-449: the same store with no DOB on the TE record (the Svajda exception)
+  const nodob = await run(true, true, (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; fs.writeFileSync(f, JSON.stringify(j)); });
   check('TE_INGEST off: the store is not read — season table and rows exactly as before', () => {
     assert.ok(!off.rows.some((r) => r.src === 'te' || r.te || r.conflicts), 'TE fields on an off run');
+    assert.ok(!('record' in off.shard), 'no record overlay on an off run');
     assert.strictEqual(wl(yr(off.p, '2016').total), '3-2', 'the pre-2021 aggregate kept');
     assert.strictEqual(off.index.meta.te, null);
+  });
+  check('TEN-449 · the record is its own population: matches are byte-identical with TE_INGEST on and off', () => {
+    const { record, ...rest } = on.shard;
+    assert.ok(record && record.v === 1, 'the record overlay ships');
+    assert.strictEqual(JSON.stringify(rest), JSON.stringify(off.shard), 'everything but `record` equals the off shard');
   });
   check('juniors removed: the cached junior row is gone from rows and count', () => {
     assert.ok(!on.rows.some((r) => r.opponent === 'J. Junior'));
@@ -121,6 +149,20 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     assert.ok(!on.rows.some((x) => /Boodles/.test(x.tournament) || x.opponent === 'E. Eta'));
     assert.strictEqual(wl(yr(on.p, '2024').total), '4-1');    // Rotterdam W, Stuttgart W, Halle Q W, Halle R16 W, Indian Wells L
   });
+  check('TEN-449 · a DOB-joined player\'s row TE lacks is listed, marked "not-in-te", and in no count', () => {
+    const r = on.rows.find((x) => x.opponent === 'Q. Quux');
+    assert.ok(r && r.notCounted === 'not-in-te', JSON.stringify(r));
+    assert.strictEqual(yr(on.p, '2024').chitf, null);   // Lexington was 2024's only Challenger/ITF row
+  });
+  check('TEN-449 · the no-DOB exception: a player joined without a DOB keeps counting the rows TE lacks', () => {
+    assert.ok(nodob.rows.some((x) => x.opponent === 'Q. Quux' && !x.notCounted));
+    assert.strictEqual(wl(yr(nodob.p, '2024').total), '5-1');
+  });
+  check('TEN-449 · "Other": the Pan American Games count, the UK Pro Series does not', () => {
+    assert.ok(on.rows.some((x) => x.tournament === 'Pan American Games' && x.level === 'chitf'));
+    assert.ok(!on.rows.some((x) => x.tournament === 'UK Pro Series'));
+    assert.strictEqual(wl(yr(on.p, '2023').total), '1-1');   // Pan Am W + Davis Cup L
+  });
   check('a row TE files as an exhibition is paired, then dropped from rows and count', () => {
     assert.ok(!on.rows.some((x) => /Boodles/.test(x.tournament || '')));
   });
@@ -128,7 +170,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     const r = on.rows.find((x) => x.opponent === 'P. Pi'); assert.ok(r && r.retired === true, JSON.stringify(r));
   });
   check('a WEEK-dated archive row pairs with TE four days later — one row, not a TE-only duplicate', () => {
-    const rs = on.rows.filter((x) => /Nu/.test(x.opponent || '')); assert.strictEqual(rs.length, 1); assert.ok(rs[0].te, 'paired');
+    const rs = on.rows.filter((x) => /Nu/.test(x.opponent || '')); assert.strictEqual(rs.length, 1); assert.strictEqual(rs[0].src, 'archive', 'paired: our row, not a TE-only one');
   });
   check('one match = one row: the archive listing a Davis Cup rubber twice yields one row', () => {
     assert.strictEqual(on.rows.filter((x) => /Mu$/.test(x.opponent || '')).length, 1);
@@ -148,16 +190,16 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   });
   check('cells and lists are one set: every season total equals the shard rows of that season', () => {
     for (const y of on.p.careerByYear) {
-      const n = on.rows.filter((r) => String(r.year) === String(y.year)).length;
+      const n = counted(on.rows).filter((r) => String(r.year) === String(y.year)).length;
       assert.strictEqual((y.total.won + y.total.lost), n, `${y.year}: cell ${wl(y.total)} vs ${n} rows`);
     }
   });
   check('the index meta reports the ingest', () => {
-    const t = on.index.meta.te; assert.ok(t && t.players === 1 && t.added === 6 && t.duplicatesDropped === 1 && t.juniorsDropped === 1 && t.indoorOverrides === 1 && t.seasonMoves === 1, JSON.stringify(t));
+    const t = on.index.meta.te; assert.ok(t && t.players === 1 && t.added === 8 && t.duplicatesDropped === 1 && t.juniorsDropped === 1 && t.indoorOverrides === 1 && t.seasonMoves === 1 && t.otherCounted === 1 && t.otherSkipped === 1 && t.notInTeNotCounted === 1, JSON.stringify(t));
   });
   check('the drill marks the disagreeing row: the 2024 Total drill paints a ≠ on Indian Wells and on no agreeing row', () => {
-    const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: on.p } }, careerHistory: { [KEY]: on.rows },
-      TournamentIdentity: require('../tournament-identity.js') };
+    const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: on.p } }, careerHistory: { [KEY]: on.matches },
+      careerRecord: { [KEY]: on.shard.record }, TournamentIdentity: require('../tournament-identity.js') };
     global.window = sb;
     new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sb);
     const I = sb.PlayerProfileV2._internals;
@@ -167,6 +209,17 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     const marks = html.match(/data-pp2-conflict="([^"]*)"/g) || [];
     assert.strictEqual(marks.length, 2, `marks ${marks.length}`);   // Indian Wells (score) + Rotterdam (court)
     assert.ok(/title="Sources disagree — score[^"]*Tennis Explorer 4-6 5-7 · api-tennis 4-6 4-6/.test(html), 'the score tooltip names both values');
+    // TEN-449: the row TE lacks is listed and says so; the note keeps it out of the count (5 counted + 1 not)
+    assert.strictEqual((html.match(/data-pp2-notcounted="1"/g) || []).length, 1, 'one not-counted mark');
+    assert.ok(/not in Tennis Explorer, not counted/.test(html));
+    // TEN-449 · "Surface not known": the 2023 Davis Cup tie TE leaves Not set is the column's, and its drill lists it
+    const g = I.tierGridCells(yr(on.p, '2023'), 'all');
+    assert.strictEqual(wl(g.unknown), '0-1');
+    const sc = I.drillScope(Object.assign({ key: KEY }, on.p), '2023', null, 'all').filter((r) => r.cell === 'unknown');
+    assert.deepStrictEqual(sc.map((r) => r.event || r.tournament), ['Davis Cup']);
+    I.state.careerDrill = null;
+    const head = I.renderCareerModal(Object.assign({ key: KEY }, on.p));
+    assert.ok(/>Surface not known</.test(head) && /repeat\(6,minmax\(0,1fr\)\)/.test(head), 'the sixth column paints');
   });
   check("the match modal's season table is the profile's rebuilt table (one count, TEN-313)", () => {
     const m = { p1Key: KEY, p1Yearly: [{ year: '2024', total: { won: 9, lost: 9 } }], p2Key: '1', p2Yearly: [] };

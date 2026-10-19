@@ -12,8 +12,13 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   Grass · Not set), all seasons, pre-2021 included. TE's counting rules, read off its pages (TEN-443 doc
   `report` §2), apply with ONE change: exhibitions and club matches are not counted.
   - **Counted:** every decided professional singles match at ATP, Challenger and ITF level, **any round
-    including qualifying**; Davis Cup, ATP Cup, United Cup, Laver Cup, Hopman Cup, Olympics; retirements (rule
-    below). No `event_qualification`/main-draw gate in any archive-record builder.
+    including qualifying**; Davis Cup, ATP Cup, United Cup, Laver Cup, Hopman Cup (Laver and Hopman in the ATP
+    tier, as TE's table counts them — founder TEN-449, 2026-10-19), Olympics; retirements (rule below); and two
+    classes of TE "Other" event, by exact TE event name (`te-join.js` `OTHER_COUNTED`, founder TEN-449,
+    2026-10-19): the **multi-sport games** (Pan American, African, World University, Mediterranean,
+    Commonwealth) and the **wildcard and pre-qualifying play-offs** (Rome pre-qualification, AO Wildcard Playoff,
+    AO WC Playoff Asia-Pacific), in the Challenger/ITF tier. No `event_qualification`/main-draw gate in any
+    archive-record builder.
   - **Not counted:** walkovers (rule below); **junior events** (api-tennis `event_type_type` "Boys Singles" /
     "Girls Singles", `isCountedSinglesFixture` — decide on the event type, never the name: of the 1,464
     junior rows at a Slam, 943 carry a plain Slam name, and 31 more are "Pardubicka juniorka"; TEN-444);
@@ -23,31 +28,56 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     **exhibitions and club matches**, identified by the EVENT (TE's own exhibition/club events and api-tennis
     "Exhibition …" types), never a name substring: UTR Pro Tennis Series, Boodles, the Hurlingham Club
     exhibition (not ITF "M25 Hurlingham", which counts), Adria Tour, Ultimate Tennis Showdown, Diriyah, Six
-    Kings, Bundesliga/interclub, national championships.
+    Kings, Bundesliga/interclub, national championships and national tours (German Championships, Israel
+    National Tennis Tour, National Tennis Tour Switzerland);
+    **TE "Other" pro series and invitationals** (UK Pro Series, European Pro Tennis Series, East Coast Pro
+    Series and the rest — mostly 2020 lockdown events; founder TEN-449, 2026-10-19); and **any TE "Other"
+    event not named in `OTHER_COUNTED`**, until the founder rules on it. A TE "Other" row that pairs with an
+    api-tennis or archive row counts (the official source proves the event).
   - **Season = TE's edition year:** a tie played in late December of an event whose edition is the next
     year (United Cup, ATP Cup, Hopman Cup) counts in the next season.
   - **Indoors = TE's court class** for the event; Hard is outdoor hard.
-  - **A pre-2021 figure may rise to the match count** (the provider aggregate undercounts Challenger-era
-    players: N. Borges 2019 counted 3, 21 on record). Every moved cell is reported to the founder, old → new,
-    before it goes live.
+  - **Every season, pre-2021 included, equals the match count TE lists — up or down** (founder TEN-449,
+    2026-10-19; replaces "a pre-2021 figure may rise to the match count"). Up: the provider aggregate
+    undercounts Challenger-era players (N. Borges 2019 counted 3, 21 on record). Down: 160 pre-2021 seasons
+    where the aggregate held more than TE lists (124 players, −916 matches). Every moved cell is reported to the
+    founder, old → new, before it goes live.
+  - **For a player joined to TE on his date of birth, the record counts only the rows TE lists** (founder
+    TEN-449, 2026-10-19). A row of ours TE does not list stays in his season drill, marked "not in Tennis
+    Explorer, not counted", and is in no cell. *Exception:* a player joined without a DOB (only Z. Svajda, below)
+    keeps counting our rows TE lacks.
+  - **"Surface not known" column** (founder TEN-449, 2026-10-19, option C of the `set-repair-notset` report;
+    replaces Option A of TEN-442): the Record-by-season table carries a sixth column = the season's Total less
+    Clay, Hard, Indoors and Grass as shown, so every season (and Career) sums to its total; its drill lists the
+    season's rows with no surface outside Indoors (TE "Not set", mostly Davis Cup). No existing cell moves; a row
+    with a surface of ours that TE leaves "Not set" keeps ours.
+  - **The career record is its own population.** The TE merge never changes the career-history `matches` that
+    H2H, Lines, the model and every other reader take: the record ships as the shard's `record` overlay
+    (`te-join.js` `recordLayer`), read only by the season table's drill.
   - *Exceptions:* the Match analysis **Tournament tab** W–L stays **main draw only** (TEN-312 N7,
     2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate
-    sources, not forced to this rule. The no-surface column (TE "Not set") is **pending a ruling** (TEN-443
-    step 2): until then Option A of TEN-442 stands.
+    sources, not forced to this rule.
   - *Source (founder's call against TE's terms §2.2/§2.10/§2.11, risk reported):* TE pages come only from
     `tools/te-scrape.mjs` — one request at a time ≥ 8 s apart, every page cached in `~/.stennisfy/te-cache`,
     a past season never fetched twice, run on this Mac and never in CI or the nightly refresh; a player is
     joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
+    *Named exception (founder TEN-449, 2026-10-19):* Z. Svajda (key 2986) is joined to TE `svajda` with no DOB on
+    TE, on 320 of 320 of our rows pairing with 0 result disagreements. It does not extend to any other player.
   **Test — holds now:** no junior, women's-event, walkover or exhibition row is in any count (`tools/test-ten444-juniors.js`,
   `tools/test-ten446-womens.js`);
   ATP Stuttgart (June) is grass (`tools/test-ten445-stuttgart.js`); nothing in `.github/` or the pipeline
   requests tennisexplorer.com.
+  **Test — holds on the TE_INGEST branch (`ten443-step2`), live once it lands:** with `TE_INGEST` on and off,
+  every career-history shard's `matches` is byte-identical (`record` is the only added key; measured
+  2026-10-19: 724 of 724 shards, H2H 0 of 38,662 pairs moved); the record rebuilt from `matches` + `record`
+  equals `careerByYear` for every TE-joined player (623 of 623).
   **Test — the target TEN-443 step 2 is building to (fails until it lands; builders still bucket by
   `event_date` year and count pre-2021 from the provider aggregate):** for any player the site serves a profile
-  for (`player-index.json` `hasProfile`: 727 on 2026-10-17, not only the eager `player-profiles.json` set —
-  founder ruling 2026-10-17, gate d6814167), every
-  Record-by-season cell (Total and each surface, every season and Career) equals TE's same cell minus TE's
-  exhibition and club matches in it; a 29–31 Dec United Cup tie counts in the next season.
+  for (`player-index.json` `hasProfile`: 725 on 2026-10-18, not only the eager `player-profiles.json` set —
+  founder ruling 2026-10-17, gate d6814167) who is joined to TE on his DOB, every
+  Record-by-season cell (Total and each surface, every season and Career) equals TE's same cell minus the
+  rows not counted above (exhibitions, club matches, national championships and tours, pro series and
+  invitationals, unnamed "Other" events, walkovers); a 29–31 Dec United Cup tie counts in the next season.
   *Convergence:* a builder change reaches a player's cells and shard on his next profile rebuild (14-day
   TTL, `OPPONENT_PROFILE_MAX_AGE_MS`), not on deploy; re-measure after the TTL, not before.
 

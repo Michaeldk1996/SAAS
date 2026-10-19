@@ -4167,14 +4167,14 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // counting rules minus exhibitions, TE's court class and edition-year season, every disagreement kept on the row —
     // and rebuild his season table from the merged rows, so cells and lists stay one set (TEN-442). Behind TE_INGEST:
     // off until the founder approves the moved-cell report. With it on, a missing store stops the run (fail-closed).
-    let teApplied = false;
+    // TEN-449 (founder 2026-10-19): the career record is its own population — `rows` (H2H, Lines, the model and every
+    // other reader) stay byte-for-byte what they are with TE_INGEST off. The merge returns the record's own rows; the
+    // season table is rebuilt from them below, and the shard carries them as a `record` overlay on `matches`.
+    let teMerge = null;
     if (TE_INGEST) {
       const teRec = readTeHistory(key);
       if (teRec) {
-        teApplied = true;
-        const m = TeJoin.applyTeHistory(rows, teRec);
-        rows.length = 0; rows.push(...m.rows);
-        p.careerByYear = TeJoin.careerByYearFromRows(rows);
+        const m = teMerge = TeJoin.applyTeHistory(rows, teRec);
         teTotals.players++;
         for (const [k, v] of Object.entries(m.diag)) if (typeof v === 'number') teTotals[k] = (teTotals[k] || 0) + v;
         for (const [k, v] of Object.entries(m.diag.conflicts)) teTotals.conflicts[k] = (teTotals.conflicts[k] || 0) + v;
@@ -4202,13 +4202,15 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // — the feed's aggregate is the undercount the fill exists to correct, and the rows name every match.
     // TEN-313: reconcileYearRows does the adopting, tier split included — run even for a
     // player with no rows, so his pre-window aggregate still loses its false ATP split.
-    // TEN-443: a TE-merged player's table was just rebuilt FROM these rows, indoor split included, so it is adopted
-    // whole — re-running the hole-year adoption would add holeIndoor on top of TE's court class (2021 Indoors
-    // counted twice, review 2026-10-17). The match modal's p1Yearly/p2Yearly get this same table (opts.teYearly).
-    const adopted = teApplied ? new Set(p.careerByYear || []) : reconcileYearRows(p.careerByYear, byYear);
-    if (teApplied && opts.teYearly) opts.teYearly.set(String(key), p.careerByYear);
-    if (!rows.length) continue;
-    for (const row of (p.careerByYear || [])) {
+    const adopted = reconcileYearRows(p.careerByYear, byYear);
+    // TEN-449: a TE-merged player's table is rebuilt from the record's rows (indoor split included) after the feed rows'
+    // own passes below; the match modal's p1Yearly/p2Yearly get this same table (opts.teYearly).
+    if (teMerge) {
+      p.careerByYear = TeJoin.careerByYearFromRows(teMerge.rows);
+      if (opts.teYearly) opts.teYearly.set(String(key), p.careerByYear);
+    }
+    if (!rows.length && !teMerge) continue;
+    for (const row of (teMerge ? [] : (p.careerByYear || []))) {
       const y = byYear[String(row.year || '')];
       row.rows = y ? y.rows : 0;
       row.atpOnly = adopted.has(row) ? false : (y ? y.atpOnly : false);   // adopted: number and rows describe the same set
@@ -4220,10 +4222,8 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // its hole rows at all, so none of them may claim its Indoors.
     const adoptedYears = new Set([...adopted].map(row => String(row.year)));
     for (const r of rows) {
-      // a TE-paired row keeps TE's court. TEN-449 review: on a TE-merged player the table was already built from r.indoor
-      // (careerByYearFromRows counts indoor === true), so the row ships exactly what was counted — setting it from _indoor
-      // here listed a row as indoor that the Indoors cell never counted.
-      if (r.holeFill && !r.te) r.indoor = teApplied ? r.indoor === true : adoptedYears.has(String(r.year)) && !!r._indoor;
+      // TEN-449: the feed rows of a TE-merged player take this same path; the record's court is in its overlay
+      if (r.holeFill) r.indoor = adoptedYears.has(String(r.year)) && !!r._indoor;
       delete r._indoor;   // TEN-313 build-time carrier, never shipped
     }
 
@@ -4300,6 +4300,8 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       // only when non-zero: the overwhelming majority of shards hold none, and
       // a zero on every one of ~700 files is bytes that say nothing.
       v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows, incomplete: shardIncomplete,
+      // TEN-449: the career record's overlay on `matches` (te-join.js recordLayer) — read by the season drill only
+      ...(teMerge ? { record: TeJoin.recordLayer(rows, teMerge) } : {}),
       ...(shardAltFormat ? { altFormat: shardAltFormat } : {}),
       // TEN-437 D3 (reported 2026-10-16, additive): the player's own TML/ATP id. h2h-core credits a one-sided archive row
       // only when its `oppId` equals the other player's `id` — never on a name.

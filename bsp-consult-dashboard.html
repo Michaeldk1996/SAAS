@@ -10735,6 +10735,7 @@ let _careerHistoryIndexPromise = null;
 const _careerHistoryShards = {};
 const _careerHistoryPromises = {};
 const _careerHistoryIds = {};   // TEN-437 D3: player key -> his TML/ATP id, from his shard's `id`
+const _careerRecordLayers = {};  // TEN-449: player key -> his shard's `record` overlay (the career record's own rows), or null
 function careerHistoryIdOf(playerKey){ return _careerHistoryIds[String(playerKey || '')] || null; }
 // TEN-228 · a FAILED index fetch must not be cached as "the index is empty".
 //
@@ -10838,6 +10839,7 @@ function loadCareerHistory(playerKey){
       if (!d || !Array.isArray(d.matches)) return Promise.reject(new Error('shard has no matches array'));
       _careerHistoryShards[pk] = d.matches;
       _careerHistoryIds[pk] = d.id ? String(d.id) : null;   // TEN-437 D3: the player's own TML/ATP id (identity for one-sided H2H rows)
+      _careerRecordLayers[pk] = d.record && typeof d.record === 'object' ? d.record : null;
       return d.matches;
     })
     .catch(err => drop(err.message));
@@ -22318,6 +22320,8 @@ async function loadPp2CareerHistory(key){
     const rows = await loadCareerHistory(k);
     if (k in _careerHistoryShards) {          // answered — settle the bridge
       window.careerHistory = window.careerHistory || {};
+      // TEN-449: the career record's overlay travels with the rows it indexes, set first so a repaint sees both
+      (window.careerRecord = window.careerRecord || {})[k] = _careerRecordLayers[k] || null;
       window.careerHistory[k] = rows || [];
     }
   } catch (e) { /* additive; the date/surface columns dash and the note says why */ }

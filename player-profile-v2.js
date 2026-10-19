@@ -3235,8 +3235,19 @@
       hard: carveIndoor(y.hard, ind && ind.hard),
       grass: carveIndoor(y.grass, ind && ind.grass),
       // No court-type source for this row -> dash, not a zero record.
-      indoors: ind ? ind.total : null
+      indoors: ind ? ind.total : null,
+      unknown: surfaceUnknown(y)
     };
+  }
+  // TEN-449 (founder 2026-10-19, option C) · "Surface not known" = the season's matches in no other column: its total
+  // less Clay, Hard, Grass and Indoors as the table shows them, so every season sums to its total. Nothing is guessed:
+  // the cell is arithmetic on counted cells, and it dashes when nothing is left (or the cells disagree).
+  function surfaceUnknown(y) {
+    if (!y || !y.total) return null;
+    var ind = y.indoor || null, won = y.total.won || 0, lost = y.total.lost || 0;
+    [carveIndoor(y.clay, ind && ind.clay), carveIndoor(y.hard, ind && ind.hard), carveIndoor(y.grass, ind && ind.grass),
+     ind ? ind.total : null].forEach(function (c) { if (c) { won -= c.won || 0; lost -= c.lost || 0; } });
+    return won >= 0 && lost >= 0 && won + lost > 0 ? { won: won, lost: lost } : null;
   }
   // Career footer: the same carve-out summed over the rows that can carry it.
   function careerGridCells(p) {
@@ -3371,8 +3382,8 @@
     if (hit(COURT_KNOWN_OUTDOOR)) return 'Outdoor';
     return null;
   }
-  function seasonCourts(p) {
-    var sp = calSpine(p);
+  function seasonCourts(p, spine) {
+    var sp = spine || calSpine(p);
     var cby = (p && p.careerByYear) || null;
     if (seasonCourts._v === sp && seasonCourts._y === cby) return seasonCourts._c;
     // The season table's indoor split per season; a season absent here splits nothing.
@@ -3409,7 +3420,7 @@
     }
     var groups = {};
     sp.forEach(function (r, i) {
-      if (!seasons[r.year] || !r.surface) return;
+      if (!seasons[r.year] || !r.surface || r.notCounted) return;   // TEN-449: a not-counted row is in no cell
       var go = groupOf(r);
       if (!go) return;
       var g = groups[go.k] || (groups[go.k] = { rec: go.rec || { won: 0, lost: 0 }, all: [], tw: 0, tl: 0, w: 0, l: 0, ev: {} });
@@ -3555,7 +3566,9 @@
   // `tier` scopes like the Tier control: the rows of that feed scope, over the seasons whose row holds a split for
   // it (careerTierCells sums the same seasons). Newest first, like the spine.
   function drillScope(p, year, since, tier) {
-    var sp = calSpine(p), courts = seasonCourts(p);
+    // TEN-449 · the season table, career row and surface rows list the career record's own rows (recordSpine); the
+    // Last 52 window keeps the feed rows it counts.
+    var sp = since ? calSpine(p) : recordSpine(p), courts = seasonCourts(p, sp);
     var t = tier && tier !== 'all' ? tier : null;
     var seasons = {};
     if (!since) {
@@ -3571,10 +3584,13 @@
       if (since) {
         // The Last-52 window lists the rows it counted (last52Rows), on the window's own classifier.
         if (!(r.date && r.date >= since)) return;
-      } else if (!seasons[r.year]) return;
+      } else if (!seasons[r.year] && !(r.notCounted && !year && !t)) return;   // TEN-449: Career lists every not-counted row
       var row = last52DrillRow(r);
+      if (r.notCounted) row.notCounted = r.notCounted;
       row.court = courts[i] || null;
-      row.cell = seasonCellOf(r, courts[i], !since && seasons[r.year].carved);
+      row.cell = seasonCellOf(r, courts[i], !since && !!seasons[r.year] && seasons[r.year].carved);
+      // TEN-449 · a row with no surface, outside Indoors, is the "Surface not known" column's (seasons only)
+      if (row.cell === null && !since) row.cell = 'unknown';
       out.push(row);
     });
     return out.reverse();
@@ -3603,9 +3619,12 @@
   // `gap.court` = rows of the scope whose court type did not resolve and that could belong in this cell (they sit
   // in exactly one of Indoors or their surface, so neither lists them); `gap.surfaceless` = rows of the scope with
   // no surface (a surface cell cannot claim them). Never padded, never an empty panel without a sentence.
-  function drillNote(rowsN, paintedN, cellN, surf, gap) {
+  function drillNote(listN, paintedN, cellN, surf, gap) {
     var g = gap || {};
-    var more = paintedN < rowsN ? ' ' + MIDDOT + ' showing ' + paintedN + ' ' + MIDDOT + ' scroll for more' : '';
+    var more = paintedN < listN ? ' ' + MIDDOT + ' showing ' + paintedN + ' ' + MIDDOT + ' scroll for more' : '';
+    // TEN-449 · the list may hold rows TE does not list: shown, counted nowhere, so every comparison uses the rest
+    var nc = g.notCounted || 0, rowsN = listN - nc;
+    if (nc) more = ' ' + MIDDOT + ' ' + nc + ' not in Tennis Explorer, not counted' + more;
     // A Total lists its unresolved-court rows (they sit in exactly one of Indoors or their surface) and says so.
     var unk = !surf && g.court ? ' ' + MIDDOT + ' ' + g.court + ' ha' + (g.court === 1 ? 's' : 've') +
       ' no court type on record yet' : '';
@@ -3631,8 +3650,9 @@
       return head + (rest ? ' ' + MIDDOT + ' ' + rest + ' missing' : '') +
         (why.length ? ' ' + MIDDOT + ' ' + why.join(' ' + MIDDOT + ' ') : '') + unk + more;
     }
-    if (paintedN < rowsN && rowsN === cellN) {
-      return 'Showing ' + paintedN + ' of ' + rowsN + ' ' + MIDDOT + ' scroll for more' + unk;
+    if (paintedN < listN && rowsN === cellN) {
+      return 'Showing ' + paintedN + ' of ' + listN + ' ' + MIDDOT + ' scroll for more' + (nc ? ' ' + MIDDOT + ' ' + nc +
+        ' not in Tennis Explorer, not counted' : '') + unk;
     }
     if (rowsN > cellN) {
       // OVERFLOW — the list holds MORE than the record it sits under.
@@ -3646,7 +3666,7 @@
       // states the DISAGREEMENT and leaves the cause to the report.
       return rowsN + ' found in results against ' + cellN + ' counted ' + MIDDOT + ' the two sources disagree' + unk + more;
     }
-    return 'All ' + rowsN + ' match' + (rowsN === 1 ? '' : 'es') + unk;
+    return 'All ' + rowsN + ' match' + (rowsN === 1 ? '' : 'es') + unk + more;
   }
   function renderDrill(p, opts) {
     // TEN-442 · the list is the dated career-history store (calSpine). Until that shard has answered, the drill
@@ -3658,15 +3678,19 @@
     var shown = rows.slice(0, DRILL_PAGE);
     var cellN = (opts.won || 0) + (opts.lost || 0);
     // The reasons a surface list can run short, counted off the same tags the list was filtered on.
-    var gap = { court: 0, surfaceless: 0, pre: 0, preYear: PRE_ARCHIVE_YEAR() };
+    // TEN-449 · a row TE does not list (a DOB-joined player) is listed, marked, and counted nowhere: `notCounted`
+    // keeps it out of every comparison with the cell.
+    var gap = { court: 0, surfaceless: 0, pre: 0, preYear: PRE_ARCHIVE_YEAR(),
+      notCounted: rows.filter(function (r) { return r.notCounted; }).length };
+    var counted = scope.filter(function (r) { return !r.notCounted; });
     if (opts.surf) {
-      scope.forEach(function (r) {
+      counted.forEach(function (r) {
         if (r.cell === COURT_UNKNOWN && (opts.surf === 'indoors' || r.surface === opts.surf)) gap.court++;
-        else if (r.cell === null && opts.surf !== 'indoors') gap.surfaceless++;
+        else if ((r.cell === null || r.cell === 'unknown') && opts.surf !== 'indoors' && opts.surf !== 'unknown') gap.surfaceless++;
       });
     } else {
       // TEN-442 r2 item 6 · a Total lists every row of its scope, unresolved courts included, and names them.
-      gap.court = scope.filter(function (r) { return r.cell === COURT_UNKNOWN; }).length;
+      gap.court = counted.filter(function (r) { return r.cell === COURT_UNKNOWN; }).length;
     }
     // TEN-442 r2 item 5 · a pre-window season (careerByYear `allTier: false`) counts from the provider's all-tier
     // aggregate while its rows come from the tour-level TML archive, so its shortfall is Challenger/ITF play the
@@ -3677,7 +3701,7 @@
         var g = tierGridCells(y, opts.tier || 'all');
         var rec = opts.surf ? g[opts.surf] : g.total;
         var n = rec ? (rec.won || 0) + (rec.lost || 0) : 0;
-        var f = rows.filter(function (r) { return r.year === String(y.year); }).length;
+        var f = rows.filter(function (r) { return r.year === String(y.year) && !r.notCounted; }).length;
         if (n > f) gap.pre += n - f;
       });
     }
@@ -3733,6 +3757,12 @@
   // ask "how far have I painted" without re-deriving it from the DOM.
   // TEN-443 · the drill's mark for a row whose sources disagree: a "≠" after the score, its tooltip naming both values.
   var CONFLICT_SRC = { 'api-tennis': 'api-tennis', archive: 'archive' };
+  // TEN-449 · a row Tennis Explorer does not list (DOB-joined player): shown, counted in no cell, and says so.
+  function notCountedMark(r) {
+    if (!r || !r.notCounted) return '';
+    return ' <span data-pp2-notcounted="1" title="Not in Tennis Explorer, not counted in this record" ' +
+      'style="color:var(--text-label);">' + MIDDOT + ' not in Tennis Explorer, not counted</span>';
+  }
   function conflictMark(r) {
     if (!r || !r.conflicts || !r.conflicts.length) return '';
     var parts = r.conflicts.map(function (c) {
@@ -3777,7 +3807,7 @@
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
              ';padding:5px 0;', esc(r.sets || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
-             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r)) +
+             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
              'text-align:right;padding:5px 0;', oddsText(r.price)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
@@ -4113,12 +4143,12 @@
   /** Carved season cells for a tier; every cell null where the row holds no split for it. */
   function tierGridCells(y, tier) {
     var r = tierRowOf(y, tier);
-    if (!r) return { total: null, clay: null, hard: null, grass: null, indoors: null, noSplit: true };
+    if (!r) return { total: null, clay: null, hard: null, grass: null, indoors: null, unknown: null, noSplit: true };
     return gridCells(r);
   }
   /** Career footer cells for a tier: the same carve-out summed over the rows that carry the tier. */
   function careerTierCells(p, tier) {
-    var out = { total: null, clay: null, hard: null, grass: null, indoors: null };
+    var out = { total: null, clay: null, hard: null, grass: null, indoors: null, unknown: null };
     var add = function (acc, r) {
       if (!r) return acc;
       if (!acc) return { won: r.won || 0, lost: r.lost || 0 };
@@ -4126,7 +4156,7 @@
     };
     spineYears(p).forEach(function (y) {
       var g = tierGridCells(y, tier);
-      ['total', 'clay', 'hard', 'grass', 'indoors'].forEach(function (k) { out[k] = add(out[k], g[k]); });
+      ['total', 'clay', 'hard', 'grass', 'indoors', 'unknown'].forEach(function (k) { out[k] = add(out[k], g[k]); });
     });
     return out;
   }
@@ -4596,7 +4626,7 @@
       ? 'Indoors is a court type carved out of the surface rows and columns, so Hard, Clay and Grass here are ' +
         'outdoor only. No season on record carries court type yet, so it reads as a dash throughout.'
       : 'Indoors is a court type carved out of the surface rows and columns, so Hard, Clay and Grass here are ' +
-        'outdoor only and the five columns still sum to the total. Court type reaches ' + ic.withCourt + ' of ' +
+        'outdoor only and the columns still sum to the total. Court type reaches ' + ic.withCourt + ' of ' +
         ic.rows + ' seasons' + (ic.withCourt < ic.rows
           ? '; the older rows come from a season aggregate that carries none, and dash rather than reading ' +
             'as no indoor matches played' : '') + '.';
@@ -4606,10 +4636,15 @@
       { label: 'Clay', id: 'clay' },
       { label: 'Hard', id: 'hard' },
       { label: 'Indoors', id: 'indoors' },
-      { label: 'Grass', id: 'grass' }
+      { label: 'Grass', id: 'grass' },
+      // TEN-449 (founder 2026-10-19, option C): every season sums to its total
+      { label: 'Surface not known', id: 'unknown' }
     ];
+    var unknownTip = 'Matches with no surface on record: Tennis Explorer lists most Davis Cup ties without one ' +
+      '("Not set"). Total less Clay, Hard, Indoors and Grass, so every season sums to its total.';
     var head = HEADS.map(function (h, i) {
-      return '<div' + (h.id === 'indoors' && indoorTip ? ' title="' + esc(indoorTip) + '"' : '') +
+      var tip = h.id === 'indoors' ? indoorTip : h.id === 'unknown' ? unknownTip : '';
+      return '<div' + (tip ? ' title="' + esc(tip) + '"' : '') +
         ' style="font-family:var(--font-words);font-size:10.5px;font-weight:700;' +
         'letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);' +
         'padding-bottom:11px;' + (i ? 'text-align:right;' : '') + '">' + h.label + '</div>';
@@ -4712,7 +4747,7 @@
       '<div style="font-size:12.5px;line-height:18.75px;color:var(--text-label);margin-bottom:14px;">' +
         'Click any record to browse those matches ' + EMDASH + ' a surface cell for that surface ' +
         'alone, the year for all of them.</div>' +
-      '<div style="display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:0 14px;' +
+      '<div style="display:grid;grid-template-columns:auto repeat(6,minmax(0,1fr));gap:0 14px;' +
         'align-items:center;">' + head + body + footer + surfDrill + '</div>',
       'bottom', '20px 24px 22px');
 
@@ -7178,15 +7213,47 @@
     if (t === 'f' || t === 'final' || t === 'thefinal') return 'F';
     return null;
   }
-  function calSpine(p) {
+  function calSpine(p) { return spineOver(p, careerHistoryFor(p.key), calSpine, false); }
+  // TEN-449 (founder 2026-10-19) · THE CAREER RECORD'S OWN ROWS. The record is a separate population from H2H, Lines
+  // and the model, so career-history's `matches` stay the feed rows and the shard carries the record as an overlay
+  // (`record`, te-join.js recordLayer, bridged as window.careerRecord): each row TE corrected (season, surface, court,
+  // result, the disagreements), the rows it leaves out, and the TE-only rows. A row TE does not list for a DOB-joined
+  // player stays in, marked `notCounted` — listed in the drill, counted in no cell. A shard without the overlay (the
+  // player is not joined to TE, or TE_INGEST is off) is its own record: these ARE the feed rows, the same array.
+  function recordRowsOf(p) {
     var ch = careerHistoryFor(p.key);
+    var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
+    if (!ch || !lay) return ch;
+    if (recordRowsOf._ch === ch && recordRowsOf._l === lay) return recordRowsOf._v;
+    var over = {}, out = {};
+    (lay.over || []).forEach(function (e) { over[e[0]] = e[1]; });
+    (lay.out || []).forEach(function (e) { out[e[0]] = e[1]; });
+    var rows = [];
+    ch.forEach(function (r, i) {
+      var why = out[i];
+      if (why && why !== 'not-in-te') return;          // junior, walkover, exhibition, duplicate: not the record's
+      var c = over[i] ? Object.assign({}, r, over[i]) : r;
+      if (why) c = Object.assign({}, c, { notCounted: why });
+      rows.push(c);
+    });
+    (lay.add || []).forEach(function (r) { rows.push(r); });
+    recordRowsOf._ch = ch; recordRowsOf._l = lay; recordRowsOf._v = rows;
+    return rows;
+  }
+  function recordSpine(p) {
+    var rows = recordRowsOf(p);
+    return rows === careerHistoryFor(p.key) ? calSpine(p) : spineOver(p, rows, recordSpine, true);
+  }
+  // `memo` holds one spine per caller (calSpine, recordSpine); `rowYear`: the record's season is its row's own year
+  // (TE's edition year — a late-December United Cup tie is next season's), not the date's.
+  function spineOver(p, ch, memo, rowYear) {
     var mk = marketFor(p.key);
     var b365 = window.bet365History;
     // fx6 item 6 · the page's match-closes shard (fhLoadCloses), bridged by the host; null until it lands.
     var cl = typeof window.pp2ClosesOf === 'function' ? window.pp2ClosesOf(p.key) : null;
-    if (calSpine._k === p.key && calSpine._ch === ch && calSpine._mk === mk && calSpine._b === b365 &&
-        calSpine._cl === cl && calSpine._v) {
-      return calSpine._v;
+    if (memo._k === p.key && memo._ch === ch && memo._mk === mk && memo._b === b365 &&
+        memo._cl === cl && memo._v) {
+      return memo._v;
     }
     var alias = calNameMap(p);
     var rows = (ch || []).filter(function (r) {
@@ -7245,13 +7312,17 @@
       var cc = !pin && cl && typeof window.pp2CareerClose === 'function' ? window.pp2CareerClose(p.key, r) : null;
       var lr = pin ? null : (cc || (masterClass(r) ? null : b365PriceFor(p.name, { date: r.date, opponent: r.opponent })));
       return {
-        date: r.date, year: y, mon: parseInt(r.date.slice(5, 7), 10) - 1,
+        date: r.date, year: rowYear && /^\d{4}$/.test(String(r.year || '')) ? String(r.year) : y,
+        mon: parseInt(r.date.slice(5, 7), 10) - 1,
         won: !!r.won,
+        notCounted: r.notCounted || null,
         surface: r.surface ? String(r.surface).toLowerCase() : null,
         court: hit ? (hit.court || null) : null,
         // TEN-395 · career-history's own per-match court flag (bsp-pipeline.js playerMatchHistory): true = counted in
         // the season table's Indoors, by the table's own tournament_key join. null on a row built before the flag.
-        seasonIndoor: typeof r.indoor === 'boolean' ? r.indoor : null,
+        // TEN-449 · the record's rows: careerByYearFromRows counts Indoors on `indoor === true` and nothing else, so a row
+        // with no court (TE "Not set") is outdoor here, exactly as its season row counted it.
+        seasonIndoor: rowYear ? r.indoor === true : typeof r.indoor === 'boolean' ? r.indoor : null,
         // TEN-443 · a Tennis Explorer pairing that disagreed with our source (result, score, surface, court, walkover):
         // the row keeps every disagreement and the drill marks it — never resolved silently.
         conflicts: Array.isArray(r.conflicts) && r.conflicts.length ? r.conflicts : null,
@@ -7334,7 +7405,7 @@
         sheetId: r.date + '|' + (r.opponent || '')
       };
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-    calSpine._k = p.key; calSpine._ch = ch; calSpine._mk = mk; calSpine._b = b365; calSpine._cl = cl; calSpine._v = out;
+    memo._k = p.key; memo._ch = ch; memo._mk = mk; memo._b = b365; memo._cl = cl; memo._v = out;
     return out;
   }
   /**

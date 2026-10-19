@@ -242,7 +242,7 @@ function audit(I, p) {
       "var rows = opts.surf ? scope.filter(function (r) { return r.cell === opts.surf; }) : scope;",
       "var rows = opts.surf === 'indoors' ? [] : opts.surf ? scope.filter(function (r) { return r.cell === opts.surf; }) : scope;")],
     ['calSpine drops the per-match court flag', (s) => s.replace(
-      "seasonIndoor: typeof r.indoor === 'boolean' ? r.indoor : null,", 'seasonIndoor: null,')],
+      "seasonIndoor: rowYear ? r.indoor === true : typeof r.indoor === 'boolean' ? r.indoor : null,", 'seasonIndoor: null,')],
     ['seasonCellOf stops carving Indoors out of the surfaces', (s) => s.replace(
       "if (court === 'Indoor') return 'indoors';\n    if (carved", "if (carved")],
     ['drillScope skips the tier filter', (s) => s.replace("if (t && r.tier !== t) return;", '')],
@@ -275,7 +275,7 @@ function audit(I, p) {
     assert.deepStrictEqual(overList(loadModule(profile, staleRows)), []);
   });
   check('negative control — drillScope lists a season the table does not carry → the audit goes red', () => {
-    const r = audit(loadModule(profile, rows, (s) => s.replace("} else if (!seasons[r.year]) return;", "} else if (!seasons[r.year]) seasons[r.year] = { carved: false };")), profile);
+    const r = audit(loadModule(profile, rows, (s) => s.replace("} else if (!seasons[r.year] && !(r.notCounted && !year && !t)) return;", "} else if (!seasons[r.year]) seasons[r.year] = { carved: false };")), profile);
     assert.ok(r.bad.length > 0, 'the out-of-table row passed');
   });
   check('negative control — seasonCellOf lists an unresolved court under its surface → Hard over-lists', () => {
