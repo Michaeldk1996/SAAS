@@ -10735,7 +10735,13 @@ let _careerHistoryIndexPromise = null;
 const _careerHistoryShards = {};
 const _careerHistoryPromises = {};
 const _careerHistoryIds = {};   // TEN-437 D3: player key -> his TML/ATP id, from his shard's `id`
-const _careerRecordLayers = {};  // TEN-449: player key -> his shard's `record` overlay (the career record's own rows), or null
+// TEN-449 payload B: player key -> his career-record file's overlay (the career record's own rows), or null for a player
+// the record index does not list (his record is his career-history rows). Written only on an ANSWER, like the shards.
+const _careerRecordLayers = {};
+const _careerRecordPromises = {};
+let careerRecordIndex = null;      // the index's `players`, once read
+let careerRecordMeta = null;       // its `meta` (asOf, refreshedAt): the Record by season freshness note
+let _careerRecordIndexPromise = null;
 function careerHistoryIdOf(playerKey){ return _careerHistoryIds[String(playerKey || '')] || null; }
 // TEN-228 · a FAILED index fetch must not be cached as "the index is empty".
 //
@@ -10839,11 +10845,60 @@ function loadCareerHistory(playerKey){
       if (!d || !Array.isArray(d.matches)) return Promise.reject(new Error('shard has no matches array'));
       _careerHistoryShards[pk] = d.matches;
       _careerHistoryIds[pk] = d.id ? String(d.id) : null;   // TEN-437 D3: the player's own TML/ATP id (identity for one-sided H2H rows)
-      _careerRecordLayers[pk] = d.record && typeof d.record === 'object' ? d.record : null;
       return d.matches;
     })
     .catch(err => drop(err.message));
   return _careerHistoryPromises[pk];
+}
+// TEN-449 payload B · the career record's own file, fetched by the player profile only. Same answered/failed split as
+// loadCareerHistory (TEN-228): a 404 is NOT "no record" — only an index we read that omits the player is. A failed
+// load is not cached; the next open retries. A file whose `n` disagrees with the career-history rows it indexes is a
+// mixed-build pair and is refused (the drill says it is loading rather than list rows against the wrong cells).
+// No career-record-index.json at all is an answer: TE_INGEST is off and nobody has a record file (the pipeline
+// writes the index whenever it writes one file). Resolves true once answered, false on a failure.
+function loadCareerRecordIndex(){
+  if (careerRecordIndex) return Promise.resolve(careerRecordIndex);
+  if (_careerRecordIndexPromise) return _careerRecordIndexPromise;
+  _careerRecordIndexPromise = fetch('./career-record-index.json', { cache: 'no-cache' })
+    .then(r => {
+      if (r.status === 404) return { players: {}, meta: null };          // ingest off: no record files exist
+      return r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status));
+    })
+    .then(d => {
+      if (!d || typeof d.players !== 'object' || !d.players) return Promise.reject(new Error('index has no players'));
+      careerRecordIndex = d.players; careerRecordMeta = d.meta || null;
+      return careerRecordIndex;
+    })
+    .catch(err => {
+      console.warn('career-record index load failed:', err.message, '— not cached, the next open retries');
+      _careerRecordIndexPromise = null;
+      return null;
+    });
+  return _careerRecordIndexPromise;
+}
+function loadCareerRecord(playerKey, nRows){
+  const pk = String(playerKey || '');
+  if (!pk) return Promise.resolve(false);
+  if (pk in _careerRecordLayers) return Promise.resolve(true);
+  if (_careerRecordPromises[pk]) return _careerRecordPromises[pk];
+  const drop = (why) => { console.warn('career record load failed:', pk, why, '— not cached, the next open retries'); delete _careerRecordPromises[pk]; return false; };
+  const ANSWERED = Symbol('answered upstream');
+  _careerRecordPromises[pk] = loadCareerRecordIndex()
+    .then(idx => {
+      if (!idx) return Promise.reject(new Error('index unavailable'));
+      if (!idx[pk]) { _careerRecordLayers[pk] = null; return ANSWERED; }   // not joined to Tennis Explorer
+      return fetch(`./career-record/${pk}.json`, { cache: 'no-cache' });
+    })
+    .then(r => r === ANSWERED ? ANSWERED : (r.ok ? r.json() : Promise.reject(new Error('record HTTP ' + r.status))))
+    .then(d => {
+      if (d === ANSWERED) return true;
+      if (!d || !d.record || typeof d.record !== 'object') return Promise.reject(new Error('record file has no overlay'));
+      if (typeof nRows === 'number' && d.n !== nRows) return Promise.reject(new Error('record indexes ' + d.n + ' rows, career-history has ' + nRows));
+      _careerRecordLayers[pk] = d.record;
+      return true;
+    })
+    .catch(err => drop(err.message));
+  return _careerRecordPromises[pk];
 }
 // Task 4: point-by-point sidecar. Lazy-loaded (only fetched the first time a
 // user opens the "Point by point" tab), memoised, and keyed by api-tennis event
@@ -22318,10 +22373,16 @@ async function loadPp2CareerHistory(key){
   const k = String(key);
   try {
     const rows = await loadCareerHistory(k);
-    if (k in _careerHistoryShards) {          // answered — settle the bridge
-      window.careerHistory = window.careerHistory || {};
-      // TEN-449: the career record's overlay travels with the rows it indexes, set first so a repaint sees both
+    // TEN-449 payload B: the record file is fetched beside the rows it indexes, and the bridge settles only when BOTH
+    // have answered — a failed record load leaves the player "not loaded" (retried on the next open) rather than list
+    // the feed rows against the record's cells. The overlay is set first so a repaint sees both.
+    const recOk = (k in _careerHistoryShards) ? await loadCareerRecord(k, (rows || []).length) : false;
+    if (recOk) {
       (window.careerRecord = window.careerRecord || {})[k] = _careerRecordLayers[k] || null;
+      window.careerRecordMeta = careerRecordMeta;
+    }
+    if (recOk && k in _careerHistoryShards) {   // answered — settle the bridge
+      window.careerHistory = window.careerHistory || {};
       window.careerHistory[k] = rows || [];
     }
   } catch (e) { /* additive; the date/surface columns dash and the note says why */ }

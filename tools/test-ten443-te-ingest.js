@@ -18,9 +18,10 @@ const ROOT = path.join(__dirname, '..');
 let pass = 0, fail = 0;
 const check = (n, fn) => { try { fn(); pass++; console.log('  ok   ' + n); } catch (e) { fail++; console.log('  FAIL ' + n + ' :: ' + e.message); } };
 
-function load(on) {
+function load(on, setRepair) {
   for (const k of Object.keys(require.cache)) if (k.startsWith(ROOT) && !k.includes('node_modules')) delete require.cache[k];
   if (on) process.env.TE_INGEST = '1'; else delete process.env.TE_INGEST;
+  if (setRepair) process.env.SET_REPAIR = '1'; else delete process.env.SET_REPAIR;
   return require('../bsp-pipeline.js');
 }
 const KEY = '9001';
@@ -83,8 +84,8 @@ const archive = () => ({ [KEY]: [
   { year: '2016', surface: 'clay', level: 'atp', date: '2016-03-04', tournament: 'Davis Cup G1: X vs Y', round: 'RR', opponent: 'M. Mu', result: '3 - 0', won: true },
   { year: '2021', surface: 'hard', level: 'atp', date: '2021-02-08', tournament: 'Rotterdam', round: 'R32', opponent: 'O. Omicron', result: '2 - 0', won: true },   // TML: outdoor; TE: indoor
 ] });
-async function run(on, withStore, edit) {
-  const P = load(on);
+async function run(on, withStore, edit, setRepair) {
+  const P = load(on, setRepair);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten443-'));
   if (withStore) teStore(tmp);
   if (edit) edit(tmp);
@@ -93,14 +94,19 @@ async function run(on, withStore, edit) {
   const teYearly = new Map();
   try {
     await P.writeCareerHistoryShards(profiles, { archive: archive(), log: () => {}, currentYear: 2026, teYearly });
-    const shard = JSON.parse(fs.readFileSync(path.join(tmp, 'career-history', `${KEY}.json`), 'utf8'));
+    const shardBytes = fs.readFileSync(path.join(tmp, 'career-history', `${KEY}.json`), 'utf8');
+    const shard = JSON.parse(shardBytes);
     const index = JSON.parse(fs.readFileSync(path.join(tmp, 'career-history-index.json'), 'utf8'));
-    return { P, p: profiles[KEY], shard, matches: shard.matches, rows: recordOf(shard), index, teYearly };
+    // TEN-449 payload B: the record's own file and its index, written only with TE_INGEST on
+    const recF = path.join(tmp, 'career-record', `${KEY}.json`), recIdxF = path.join(tmp, 'career-record-index.json');
+    const recFile = fs.existsSync(recF) ? JSON.parse(fs.readFileSync(recF, 'utf8')) : null;
+    const recIndex = fs.existsSync(recIdxF) ? JSON.parse(fs.readFileSync(recIdxF, 'utf8')) : null;
+    return { P, p: profiles[KEY], shard, shardBytes, recFile, recIndex, matches: shard.matches, rows: recordOf(shard, recFile), index, teYearly, tmp };
   } finally { process.chdir(cwd); }
 }
-// the record's rows as the page reads them (player-profile-v2.js recordRowsOf): matches + the `record` overlay
-function recordOf(shard) {
-  const L = shard.record; if (!L) return shard.matches;
+// the record's rows as the page reads them (player-profile-v2.js recordRowsOf): matches + the record file's overlay
+function recordOf(shard, recFile) {
+  const L = recFile && recFile.record; if (!L) return shard.matches;
   const over = new Map(L.over), out = new Map(L.out), rows = [];
   shard.matches.forEach((r, i) => {
     const why = out.get(i); if (why && why !== 'not-in-te') return;
@@ -122,16 +128,110 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   const nodob = await run(true, true, noDob('2986'));
   let noDobThrew = null;
   try { await run(true, true, noDob(KEY)); } catch (e) { noDobThrew = e; }
+  // TEN-449: the store's freshness fields reach the record index
+  const stamp = (fields) => (d) => { const f = path.join(d, 'te-history-index.json'); fs.writeFileSync(f, JSON.stringify(Object.assign(JSON.parse(fs.readFileSync(f, 'utf8')), fields))); };
+  const fresh = await run(true, true, stamp({ asOf: '2026-10-18', refreshedAt: null }));
+  const refreshed = await run(true, true, stamp({ asOf: '2026-10-18', refreshedAt: '2026-10-26T05:00:00.000Z' }));
+  // TEN-449 golden guard, mutation control: a merge that writes onto a shared row must stop the run
+  let guardThrew = null;
+  {
+    // patched AFTER load() (it clears the require cache), on the very te-join instance the pipeline holds
+    const mutant = () => { const TJ = require('../te-join.js'), orig = TJ.applyTeHistory;
+      TJ.applyTeHistory = (rows, rec) => { const m = orig(rows, rec); if (rows[0]) rows[0].surface = 'grass-mutant'; return m; }; };
+    try { await run(true, true, mutant); } catch (e) { guardThrew = e; }
+  }
+  // TEN-449 (founder 2026-10-19): the two switches are independent — each runs on its own input alone
+  const repairsOnly = await run(false, false, (d) => fs.writeFileSync(path.join(d, 'set-repairs.json'), JSON.stringify({ builtAt: '2026-10-18T00:00:00Z', repairs: {}, flags: {} })), true);
+  let repairsMissing = null;
+  try { await run(true, true, null, true); } catch (e) { repairsMissing = e; }
+  // TEN-449: a TE-joined player whose profile carries no feed rows at all (and no archive rows)
+  const norows = await (async () => {
+    const P = load(true); const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten443-')); teStore(tmp);
+    const cwd = process.cwd(); process.chdir(tmp);
+    try {
+      const pr = profile(); pr.careerMatches = [];
+      await P.writeCareerHistoryShards({ [KEY]: pr }, { archive: {}, log: () => {}, currentYear: 2026, teYearly: new Map() });
+      const recF = path.join(tmp, 'career-record', `${KEY}.json`);
+      return { tmp, recFile: fs.existsSync(recF) ? JSON.parse(fs.readFileSync(recF, 'utf8')) : null };
+    } finally { process.chdir(cwd); }
+  })();
   check('TE_INGEST off: the store is not read — season table and rows exactly as before', () => {
     assert.ok(!off.rows.some((r) => r.src === 'te' || r.te || r.conflicts), 'TE fields on an off run');
     assert.ok(!('record' in off.shard), 'no record overlay on an off run');
+    assert.strictEqual(off.recFile, null, 'no career-record file on an off run');
+    assert.strictEqual(off.recIndex, null, 'no career-record-index.json on an off run');
     assert.strictEqual(wl(yr(off.p, '2016').total), '3-2', 'the pre-2021 aggregate kept');
     assert.strictEqual(off.index.meta.te, null);
   });
-  check('TEN-449 · the record is its own population: matches are byte-identical with TE_INGEST on and off', () => {
-    const { record, ...rest } = on.shard;
-    assert.ok(record && record.v === 1, 'the record overlay ships');
-    assert.strictEqual(JSON.stringify(rest), JSON.stringify(off.shard), 'everything but `record` equals the off shard');
+  check('TEN-449 payload B · the shared match file is BYTE-identical with TE_INGEST on and off', () => {
+    assert.strictEqual(on.shardBytes, off.shardBytes, 'career-history/<key>.json differs between on and off');
+    assert.ok(!('record' in on.shard), 'the record must not ride the shared match file');
+  });
+  check('TEN-449 payload B · the record ships in its own file, indexed, `n` = the rows it indexes', () => {
+    assert.ok(on.recFile && on.recFile.record && on.recFile.record.v === 1, 'career-record/<key>.json with the overlay');
+    assert.strictEqual(on.recFile.n, on.matches.length, 'n is the length of the matches it indexes');
+    assert.ok(on.recIndex && on.recIndex.players[KEY], 'career-record-index.json lists the player');
+    assert.strictEqual(on.recIndex.meta.players, 1);
+  });
+  check('TEN-449 · freshness: the record index carries the store\'s asOf, and refreshedAt null until a refresh runs', () => {
+    assert.strictEqual(on.recIndex.meta.asOf, null, 'this fixture store has no asOf');
+    assert.strictEqual(on.recIndex.meta.refreshedAt, null);
+    assert.strictEqual(fresh.recIndex.meta.asOf, '2026-10-18');
+    assert.strictEqual(refreshed.recIndex.meta.refreshedAt, '2026-10-26T05:00:00.000Z');
+  });
+  // ── GOLDEN CHECK (founder 2026-10-19): turning the career-record layer on moves no H2H pair, no Lines input and no
+  // model output. They read the shared match files (byte-identical, above); these run the readers themselves.
+  check('GOLDEN · H2H: the production join (h2h-core.js) over the shared rows is identical on and off', () => {
+    const H = require('../h2h-core.js');
+    const me = { key: KEY, full: 'Test Player', short: 'T. Player' };
+    const opps = [...new Set(off.matches.map((r) => r.opponent).filter(Boolean))];
+    const nk = H.nameCounts([me.full, ...opps]);
+    let n = 0;
+    for (const o of opps) {
+      const B = { key: 'opp-' + o, full: o, short: o };
+      const x = H.record(H.joinMeetings(me, B, off.matches, [], nk, [])), y = H.record(H.joinMeetings(me, B, on.matches, [], nk, []));
+      assert.deepStrictEqual(y, x, `H2H vs ${o} moved`); n++;
+    }
+    assert.ok(n > 0, 'no opponent was joined — the check proved nothing');
+  });
+  check('GOLDEN · Lines: the shared rows the Lines tab reads (sets, games, completeness flags) are identical on and off', () => {
+    const lines = (ms) => JSON.stringify(ms.map((r) => [r.date, r.opponent, r.result, r.sets || null, !!r.incomplete, r.altFormat || null, r.won]));
+    assert.strictEqual(lines(on.matches), lines(off.matches));
+    assert.strictEqual(on.index.meta.perSetGames.rows, off.index.meta.perSetGames.rows);
+    assert.deepStrictEqual(on.index.meta.exclusions, off.index.meta.exclusions);
+  });
+  check('GOLDEN · model: runModel on the same match with the on and off season tables gives the same output', () => {
+    const { runModel } = require('../h2h-model/model');
+    const fx = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'ten449-model-match.json'), 'utf8'));
+    const withYearly = (y) => Object.assign({}, fx, { p1Yearly: y, p2Yearly: y });
+    const run1 = (y) => { const r = runModel(withYearly(y)); if (r.meta) delete r.meta.generatedAt; return r; };   // the clock is not an output
+    const a = run1(off.p.careerByYear), b = run1(on.p.careerByYear);
+    assert.ok(a.ok, 'the fixture match must price, or this proves nothing');
+    assert.notDeepStrictEqual(on.p.careerByYear, off.p.careerByYear, 'the season tables must differ, or this proves nothing');
+    assert.strictEqual(JSON.stringify(b), JSON.stringify(a), 'the model output moved with the season table');
+  });
+  check('GOLDEN · the run-time guard: a merge that touches a shared row stops the run (mutation control)', () => {
+    assert.ok(guardThrew && /changed .*shared career-history rows/.test(guardThrew.message), String(guardThrew));
+  });
+  check('TEN-449 · switches independent: SET_REPAIR alone runs with no Tennis Explorer store, and ships no record', () => {
+    assert.strictEqual(repairsOnly.index.meta.te, null);
+    assert.ok(repairsOnly.index.meta.setRepairs && repairsOnly.index.meta.setRepairs.builtAt === '2026-10-18T00:00:00Z');
+    assert.strictEqual(repairsOnly.recFile, null); assert.strictEqual(repairsOnly.recIndex, null);
+  });
+  check('TEN-449 · switches independent: TE_INGEST alone needs no set-repairs.json; SET_REPAIR on without it stops', () => {
+    assert.ok(on.index.meta.te && on.index.meta.setRepairs === null, 'TE on, repairs off');
+    assert.ok(repairsMissing && /set-repairs\.json/.test(repairsMissing.message), String(repairsMissing));
+  });
+  check('TEN-449 · switches independent in the workflow: two repository variables, each placing only its own input', () => {
+    const y = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
+    assert.ok(/TE_INGEST: \$\{\{ vars\.TE_INGEST == '1' && '1' \|\| '0' \}\}/.test(y), 'TE_INGEST from its own variable');
+    assert.ok(/SET_REPAIR: \$\{\{ vars\.SET_REPAIR == '1' && '1' \|\| '0' \}\}/.test(y), 'SET_REPAIR from its own variable');
+    assert.ok(/if \[ "\$TE_INGEST" = "1" \]; then[\s\S]*?te-history[\s\S]*?fi/.test(y) && /if \[ "\$SET_REPAIR" = "1" \]; then[\s\S]*?set-repairs\.json[\s\S]*?fi/.test(y), 'each input placed under its own switch');
+    assert.ok(/repository: michaeldk1996\/stennisfy-te-store/.test(y) && /persist-credentials: false/.test(y), 'the private store, token not persisted');
+  });
+  check('TEN-449 · a TE-joined player with no feed rows: no shared file (as with the switch off), his record file ships', () => {
+    assert.ok(!fs.existsSync(path.join(norows.tmp, 'career-history', `${KEY}.json`)), 'a shared file appeared that the off run would not write');
+    assert.ok(norows.recFile && norows.recFile.n === 0 && norows.recFile.record.add.length > 0, 'his record is TE\'s own rows');
   });
   check('juniors removed: the cached junior row is gone from rows and count', () => {
     assert.ok(!on.rows.some((r) => r.opponent === 'J. Junior'));
@@ -212,7 +312,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   });
   check('the drill marks the disagreeing row: the 2024 Total drill paints a ≠ on Indian Wells and on no agreeing row', () => {
     const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: on.p } }, careerHistory: { [KEY]: on.matches },
-      careerRecord: { [KEY]: on.shard.record }, TournamentIdentity: require('../tournament-identity.js') };
+      careerRecord: { [KEY]: on.recFile.record }, TournamentIdentity: require('../tournament-identity.js') };
     global.window = sb;
     new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sb);
     const I = sb.PlayerProfileV2._internals;
@@ -233,6 +333,17 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     I.state.careerDrill = null;
     const head = I.renderCareerModal(Object.assign({ key: KEY }, on.p));
     assert.ok(/>Surface not known</.test(head) && /repeat\(6,minmax\(0,1fr\)\)/.test(head), 'the sixth column paints');
+    // TEN-449 · Record by season's hover: the counting rule, + "as of" until the first refresh, only on a TE record
+    const NOTE = 'Counted as Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series.';
+    sb.careerRecordMeta = { asOf: '2026-10-18', refreshedAt: null };
+    assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE + ' Tennis Explorer data as of 18 Oct.');
+    assert.ok(I.renderCareerModal(Object.assign({ key: KEY }, on.p)).includes('title="' + NOTE + ' Tennis Explorer data as of 18 Oct."'), 'the hover is on Record by season');
+    sb.careerRecordMeta = { asOf: '2026-10-18', refreshedAt: '2026-10-26T05:00:00.000Z' };
+    assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE, 'the freshness clause goes once the refresh has run');
+    sb.careerRecord[KEY] = null;
+    assert.strictEqual(I.recordSourceNote({ key: KEY }), '', 'a player whose record is not TE\'s carries no TE claim');
+    assert.ok(!I.renderCareerModal(Object.assign({ key: KEY }, on.p)).includes(NOTE));
+    sb.careerRecord[KEY] = on.recFile.record;
   });
   check("the match modal's season table is the profile's rebuilt table (one count, TEN-313)", () => {
     const m = { p1Key: KEY, p1Yearly: [{ year: '2024', total: { won: 9, lost: 9 } }], p2Key: '1', p2Yearly: [] };

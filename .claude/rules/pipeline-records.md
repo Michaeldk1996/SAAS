@@ -52,11 +52,23 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     Clay, Hard, Indoors and Grass as shown, so every season (and Career) sums to its total; its drill lists the
     season's rows with no clay, hard or grass surface outside Indoors (TE "Not set", mostly Davis Cup; an outdoor
     carpet row too). No existing cell moves; a row with a surface of ours that TE leaves "Not set" keeps ours.
-  - **The career record is its own population.** The TE merge never changes the career-history `matches` that
-    H2H, Lines, the model and every other reader take: the record ships as the shard's `record` overlay
-    (`te-join.js` `recordLayer`), read by the profile's career record only: the season table's drills, the Last 52
-    window, and the undated-match notes, which compare the season table with the record's counted rows. The
-    Calendar tile still paints the feed rows and names the record's Tennis-Explorer-only rows it does not paint.
+  - **The career record is its own population, in its own file (payload B, founder TEN-449, 2026-10-19).** The TE
+    merge never changes the career-history files H2H, Lines, the model and every other reader take — not a byte.
+    The record is an overlay on them (`te-join.js` `recordLayer`) in `career-record/<key>.json` (+
+    `career-record-index.json`), fetched by the player profile only, which settles a player's store only when both
+    files have answered: the season table's drills, the Last 52 window, and the undated-match notes, which compare
+    the season table with the record's counted rows. The Calendar tile still paints the feed rows and names the
+    record's Tennis-Explorer-only rows it does not paint.
+  - **Two switches, each rolled back alone:** `TE_INGEST` (the record) and `SET_REPAIR` (the dropped sets) are the
+    repository variables `vars.TE_INGEST` / `vars.SET_REPAIR` (`.github/workflows/pipeline.yml`); either reads
+    from the private store repo `michaeldk1996/stennisfy-te-store` (`te-history/`, `set-repairs.json`), never from
+    this public repo, and a run with a switch on and its input missing stops. A run with `TE_INGEST` off publishes
+    no `career-record` file.
+  - **Record by season's hover** (founder TEN-449, 2026-10-19), only on a player whose record is TE's: "Counted as
+    Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series." Until the
+    weekly TE refresh first runs (`career-record-index.json` `meta.refreshedAt` null) it adds "Tennis Explorer data
+    as of <asOf>" (18 Oct for the first store); the refresh sets `refreshedAt` and the clause goes by itself. H2H
+    (ATP rules) and Form keep their own notes.
   - *Exceptions:* the Match analysis **Tournament tab** W–L stays **main draw only** (TEN-312 N7,
     2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate
     sources, not forced to this rule.
@@ -70,10 +82,13 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   `tools/test-ten446-womens.js`);
   ATP Stuttgart (June) is grass (`tools/test-ten445-stuttgart.js`); nothing in `.github/` or the pipeline
   requests tennisexplorer.com.
-  **Test — holds on the TE_INGEST branch (`ten443-step2`), live once it lands:** with `TE_INGEST` on and off,
-  every career-history shard's `matches` is byte-identical (`record` is the only added key; measured
-  2026-10-19: 724 of 724 shards, H2H 0 of 38,662 pairs moved); the record rebuilt from `matches` + `record`
-  equals `careerByYear` for every TE-joined player (623 of 623).
+  **Test — golden check (founder 2026-10-19), every CI run and every pipeline run:** turning the record on moves
+  no H2H pair, Lines input or model output. CI: `tools/test-ten443-te-ingest.js` "GOLDEN" checks (the shared file
+  byte-identical on and off; the h2h-core join, the Lines rows and `runModel` output identical; a mutant merge
+  that touches a shared row is caught). Pipeline: `writeCareerHistoryShards` stops the run if the merge changes
+  a byte of any player's shared rows. Measured 2026-10-19 on the real store: 724 of 724 shards byte-identical,
+  H2H 0 of 38,662 pairs moved; the record rebuilt from `matches` + its overlay equals `careerByYear` for every
+  TE-joined player (623 of 623).
   **Test — the target TEN-443 step 2 is building to (fails until it lands; builders still bucket by
   `event_date` year and count pre-2021 from the provider aggregate):** for any player the site serves a profile
   for (`player-index.json` `hasProfile`: 725 on 2026-10-18, not only the eager `player-profiles.json` set —

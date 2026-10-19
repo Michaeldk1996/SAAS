@@ -48,6 +48,13 @@ odds-index.json
 # ~480 players — derived output that would churn the whole set on every run.
 career-history/
 career-history-index.json
+# TEN-449: the career record's own files (CI-built) and the private store's inputs — never in this public repo
+career-record/
+career-record-index.json
+.te-store/
+te-history/
+te-history-index.json
+set-repairs.json
 
 # TEN-207 whole-career tournament-history shards + their index: one file per
 # player, split out of player-profiles.json (it was 50% of that file). Rebuilt

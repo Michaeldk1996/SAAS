@@ -4744,7 +4744,8 @@
     }
 
     var season = recPanel(
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;">' +
+      '<div' + (recordSourceNote(p) ? ' title="' + esc(recordSourceNote(p)) + '"' : '') +
+        ' style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 6px;">' +
         recCaps('Record by season ' + MIDDOT + ' ' + esc(tierWord)) + recCaps('Wins / losses') + '</div>' +
       '<div style="font-size:12.5px;line-height:18.75px;color:var(--text-label);margin-bottom:14px;">' +
         'Click any record to browse those matches ' + EMDASH + ' a surface cell for that surface ' +
@@ -4754,6 +4755,24 @@
       'bottom', '20px 24px 22px');
 
     return careerTabsHtml() + card + season;
+  }
+
+  // TEN-449 (founder 2026-10-19) · Record by season's hover: the counting rule, never confused with H2H's (ATP rules)
+  // or Form's, which keep their own notes. Only on a player whose record IS Tennis Explorer's (his career-record file
+  // answered with an overlay); a player not joined to TE, or TE_INGEST off, carries no such claim. Until the weekly
+  // refresh first runs (career-record-index meta.refreshedAt null) it adds the store's date; the refresh sets
+  // refreshedAt and the clause goes by itself.
+  var RECORD_SOURCE_NOTE = 'Counted as Tennis Explorer counts, minus exhibitions, club matches, national championships ' +
+    'and pro series.';
+  function recordSourceNote(p) {
+    var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
+    if (!lay) return '';
+    var meta = (typeof window !== 'undefined' && window.careerRecordMeta) || null;
+    if (!meta || meta.refreshedAt || !meta.asOf) return RECORD_SOURCE_NOTE;
+    var d = new Date(meta.asOf + 'T00:00:00Z');
+    if (!isFinite(d.getTime())) return RECORD_SOURCE_NOTE;
+    var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return RECORD_SOURCE_NOTE + ' Tennis Explorer data as of ' + d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + '.';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -7217,11 +7236,13 @@
   }
   function calSpine(p) { return spineOver(p, careerHistoryFor(p.key), calSpine, false); }
   // TEN-449 (founder 2026-10-19) · THE CAREER RECORD'S OWN ROWS. The record is a separate population from H2H, Lines
-  // and the model, so career-history's `matches` stay the feed rows and the shard carries the record as an overlay
-  // (`record`, te-join.js recordLayer, bridged as window.careerRecord): each row TE corrected (season, surface, court,
-  // result, the disagreements), the rows it leaves out, and the TE-only rows. A row TE does not list for a DOB-joined
-  // player stays in, marked `notCounted` — listed in the drill, counted in no cell. A shard without the overlay (the
-  // player is not joined to TE, or TE_INGEST is off) is its own record: these ARE the feed rows, the same array.
+  // and the model, so career-history's `matches` stay the feed rows and the record is an overlay on them in its own
+  // lazy file (payload B: career-record/<key>.json, te-join.js recordLayer, bridged as window.careerRecord): each row
+  // TE corrected (season, surface, court, result, the disagreements), the rows it leaves out, and the TE-only rows. A
+  // row TE does not list for a DOB-joined player stays in, marked `notCounted` — listed in the drill, counted in no
+  // cell. The host settles window.careerHistory[key] only once the record file has answered too (loadPp2CareerHistory),
+  // so every "not loaded" path covers both. No overlay (not joined to TE, or TE_INGEST off): his record IS the feed
+  // rows, the same array.
   function recordRowsOf(p) {
     var ch = careerHistoryFor(p.key);
     var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
@@ -11731,6 +11752,7 @@
     _internals: {
       recordRowsOf: recordRowsOf,
       countedSpine: countedSpine,
+      recordSourceNote: recordSourceNote,
       // §5.3 tournament list order (pinned — see tournOrder)
       tournViews: tournViews,
       tournOrder: tournOrder,

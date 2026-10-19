@@ -285,8 +285,46 @@ jobs:
           node tools/profile-cache-store.js hydrate || rc=$?
           node tools/step-check.mjs --step "Hydrate profile caches from the committed floor" --rc "$rc" --since "$t0" --exists player-profiles-cache.json
 
+      # TEN-449 (founder 2026-10-19, payload B). Two INDEPENDENT switches, repository variables so either rolls back
+      # alone without a code change: TE_INGEST (the career record from Tennis Explorer) and SET_REPAIR (the sets
+      # api-tennis drops). Their inputs live in the PRIVATE store repo michaeldk1996/stennisfy-te-store, never in this
+      # public one: te-history/ + te-history-index.json (TE_INGEST) and set-repairs.json (SET_REPAIR). Checked out with
+      # TE_STORE_READ_TOKEN (fine-grained, read-only Contents, that repo only) into .te-store/ — outside _site/, never
+      # published, never staged (every commit-back below names its paths; .gitignore lists these too). The token is not
+      # persisted in the git config and is masked by Actions. Fail-closed: a failed checkout or a missing file with its
+      # switch on stops the run here (and bsp-pipeline.js refuses a missing store on its own as well).
+      - name: Check out the private Tennis Explorer store (only when a switch is on)
+        if: ${{ vars.TE_INGEST == '1' || vars.SET_REPAIR == '1' }}
+        uses: actions/checkout@v4
+        with:
+          repository: michaeldk1996/stennisfy-te-store
+          token: ${{ secrets.TE_STORE_READ_TOKEN }}
+          path: .te-store
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Place the store's inputs for the switches that are on
+        if: ${{ vars.TE_INGEST == '1' || vars.SET_REPAIR == '1' }}
+        env:
+          TE_INGEST: ${{ vars.TE_INGEST }}
+          SET_REPAIR: ${{ vars.SET_REPAIR }}
+        run: |
+          set -euo pipefail
+          if [ "$TE_INGEST" = "1" ]; then
+            test -f .te-store/te-history-index.json || { echo "::error::TE_INGEST is on but the store has no te-history-index.json"; exit 1; }
+            rm -rf te-history && cp -r .te-store/te-history te-history && cp .te-store/te-history-index.json .
+            echo "TEN-449: Tennis Explorer store at $(git -C .te-store rev-parse --short HEAD): $(ls te-history | wc -l | tr -d ' ') player file(s)."
+          fi
+          if [ "$SET_REPAIR" = "1" ]; then
+            test -f .te-store/set-repairs.json || { echo "::error::SET_REPAIR is on but the store has no set-repairs.json"; exit 1; }
+            cp .te-store/set-repairs.json .
+            echo "TEN-449: set-repairs.json from the store at $(git -C .te-store rev-parse --short HEAD)."
+          fi
+
       - name: Run pipeline (with retry + health tracking)
         env:
+          # TEN-449: the two switches above, independent; unset = off
+          TE_INGEST: ${{ vars.TE_INGEST == '1' && '1' || '0' }}
+          SET_REPAIR: ${{ vars.SET_REPAIR == '1' && '1' || '0' }}
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
           # Stage 4 of the Tennis Edge Model (h2h-model): pre-bakes the Claude AI
           # match summary into model-output.json. The engine (Stages 1-3) runs with
@@ -822,6 +860,9 @@ jobs:
           # opens at all — publish both or neither.
           cp career-history-index.json _site/ 2>/dev/null || true
           cp -r career-history _site/ 2>/dev/null || true
+          # TEN-449 payload B: the career record's own files (TE_INGEST on only) — asserted below when the switch is on
+          cp career-record-index.json _site/ 2>/dev/null || true
+          cp -r career-record _site/ 2>/dev/null || true
           cp point-by-point.json _site/ 2>/dev/null || true
           cp pbp-index.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
@@ -1292,6 +1333,20 @@ jobs:
             const n = Object.keys(idx).length;
             if (!n) { console.error("career-history-index.json names 0 players — Calendar, Career record, Court speed and Streaks would all be empty site-wide"); process.exit(1); }
             console.log(`TEN-228: career-history-index.json names ${n} player(s).`);
+          '
+          # TEN-449: with TE_INGEST on, every profile season table is Tennis Explorer's, so the record files it is listed
+          # against must ship — a missing index would read on the page as "nobody has a record" and list feed rows.
+          TE_INGEST='${{ vars.TE_INGEST }}' node -e '
+            const fs = require("fs");
+            const on = process.env.TE_INGEST === "1";
+            const has = fs.existsSync("_site/career-record-index.json");
+            if (!on) { if (has) { console.error("career-record-index.json is in _site with TE_INGEST off"); process.exit(1); } console.log("TEN-449: TE_INGEST off — no career-record files."); process.exit(0); }
+            if (!has) { console.error("TE_INGEST is on but career-record-index.json is MISSING from _site"); process.exit(1); }
+            const idx = JSON.parse(fs.readFileSync("_site/career-record-index.json","utf8")).players || {};
+            const keys = Object.keys(idx);
+            const missing = keys.filter(k => !fs.existsSync(`_site/career-record/${k}.json`));
+            if (!keys.length || missing.length) { console.error(`career-record: ${keys.length} listed, ${missing.length} missing (${missing.slice(0, 5).join(", ")})`); process.exit(1); }
+            console.log(`TEN-449: career-record-index.json names ${keys.length} player(s), every file present.`);
           '
 
       # TEN-329 (founder 2026-09-28): the §4 reconcile suite against the store THIS RUN BUILT.

@@ -58,6 +58,8 @@ function makeScope(plan) {
     warns: [],
     fetch(url) {
       calls.push(url);
+      // TEN-449 payload B: a plan not marked `.record` serves the TE_INGEST-off state for the record files (no index)
+      if (!plan.record && url.indexOf('career-record') > -1) return Promise.resolve({ ok: false, status: 404 });
       const res = plan(url, calls.length);
       if (res === 'throw') return Promise.reject(new Error('network down'));
       if (typeof res === 'number') return Promise.resolve({ ok: false, status: res });
@@ -70,15 +72,21 @@ function makeScope(plan) {
     const _careerHistoryShards = {};
     const _careerHistoryPromises = {};
     const _careerHistoryIds = {};   // TEN-437 D3: the page keeps each shard's own id beside its rows
-    const _careerRecordLayers = {};   // TEN-449: and its career-record overlay
+    const _careerRecordLayers = {};   // TEN-449 payload B: the career-record file's overlay, its index and meta
+    const _careerRecordPromises = {};
+    let careerRecordIndex = null;
+    let careerRecordMeta = null;
+    let _careerRecordIndexPromise = null;
     const console = { warn: (...a) => __scope.warns.push(a.join(' ')) };
     const fetch = __scope.fetch;
     function pp2RepaintIfOpen(){ }
     ${grab('loadCareerHistoryIndex')}
     ${grab('loadCareerHistory')}
+    ${grab('loadCareerRecordIndex')}
+    ${grab('loadCareerRecord')}
     ${grab('loadPp2CareerHistory')}
     return {
-      loadCareerHistoryIndex, loadCareerHistory, loadPp2CareerHistory,
+      loadCareerHistoryIndex, loadCareerHistory, loadPp2CareerHistory, loadCareerRecord,
       shards: () => _careerHistoryShards,
       index: () => careerHistoryIndex,
       window: (window = { }) => window,
@@ -231,6 +239,46 @@ console.log('TEN-228 · a failed career-history fetch is not cached as an answer
     await api.loadPp2CareerHistory('1980');
     assert.strictEqual((win.careerHistory['1980'] || []).length, 1,
       'the rows did not reach the bridge: ' + JSON.stringify(win.careerHistory));
+  });
+
+  // ── 3a · TEN-449 payload B: the career record's own file ────────────────
+  const recPlan = (rec, opts = {}) => {
+    const p = (url) => {
+      if (url.indexOf('career-history-index') > -1) return IDX;
+      if (url.indexOf('career-record-index') > -1) return opts.idx || { v: 1, meta: { asOf: '2026-10-18', refreshedAt: null }, players: { 1980: 1 } };
+      if (url.indexOf('career-record/') > -1) return typeof rec === 'function' ? rec() : rec;
+      return SHARD;
+    };
+    p.record = true; return p;
+  };
+  const OVER = { v: 1, over: [[0, { year: '2025' }]], out: [], add: [] };
+  await check('TEN-449 · a listed player: the overlay and the index meta reach the bridge with his rows', async () => {
+    const { api, win } = makeScope(recPlan({ v: 1, key: '1980', n: 1, record: OVER }));
+    await api.loadPp2CareerHistory('1980');
+    assert.deepStrictEqual(win.careerRecord['1980'], OVER);
+    assert.strictEqual(win.careerRecordMeta.asOf, '2026-10-18');
+    assert.strictEqual((win.careerHistory['1980'] || []).length, 1);
+  });
+  await check('TEN-449 · a player the record index omits: answered as no record (null), rows settle', async () => {
+    const { api, win } = makeScope(recPlan(null, { idx: { v: 1, meta: {}, players: { 370: 1 } } }));
+    await api.loadPp2CareerHistory('1980');
+    assert.strictEqual(win.careerRecord['1980'], null);
+    assert.strictEqual((win.careerHistory['1980'] || []).length, 1);
+  });
+  await check('TEN-449 · a FAILED record file leaves the player unsettled, and the next open retries', async () => {
+    let fails = 1;
+    const { api, win, scope } = makeScope(recPlan(() => (fails-- > 0 ? 503 : { v: 1, key: '1980', n: 1, record: OVER })));
+    await api.loadPp2CareerHistory('1980');
+    assert.ok(!win.careerHistory || !('1980' in win.careerHistory), 'the bridge settled without the record — the drill would list feed rows against TE cells');
+    await api.loadPp2CareerHistory('1980');
+    assert.deepStrictEqual(win.careerRecord['1980'], OVER, 'the retry did not land the record');
+    assert.strictEqual(scope.calls.filter((u) => u.indexOf('career-record/1980') > -1).length, 2);
+  });
+  await check('TEN-449 · a record file indexing a different row count (a mixed build) is refused, not applied', async () => {
+    const { api, win } = makeScope(recPlan({ v: 1, key: '1980', n: 7, record: OVER }));
+    await api.loadPp2CareerHistory('1980');
+    assert.ok(!win.careerRecord || !('1980' in win.careerRecord), 'a mismatched overlay was applied');
+    assert.ok(!win.careerHistory || !('1980' in win.careerHistory));
   });
 
   // ── 3b · the review findings (clean-context pass, 2026-09-17) ─────────────

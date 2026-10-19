@@ -264,6 +264,20 @@ if (fs.existsSync(CH_DIR)) {
     CAREER_HIST[f.replace(/\.json$/, '')] = (j && j.matches) || [];
   });
 }
+// TEN-449 payload B · career-record/{key}.json — the career record's overlay on those rows, in its own file (written
+// only with TE_INGEST on). The page bridges it as window.careerRecord; the built-store gate reads it the same way, so
+// the season tables are reconciled against the record's rows, not the feed rows.
+const CR_DIR = path.join(BUILT || ROOT, 'career-record');
+const CAREER_REC = {};
+if (fs.existsSync(CR_DIR)) {
+  fs.readdirSync(CR_DIR).filter(f => f.endsWith('.json')).forEach((f) => {
+    const j = JSON.parse(fs.readFileSync(path.join(CR_DIR, f), 'utf8'));
+    const k = f.replace(/\.json$/, '');
+    // the page refuses an overlay whose `n` disagrees with the rows it indexes; so does the gate, loudly
+    if (!j || !j.record || (CAREER_HIST[k] && j.n !== CAREER_HIST[k].length)) throw new Error(`career-record/${f} does not index career-history/${f}`);
+    CAREER_REC[k] = j.record;
+  });
+}
 
 // ── STORE-DRIFT GUARD ────────────────────────────────────────────────────────
 // career-history/ is gitignored and CI-built. ABSENT is a normal local state and
@@ -319,7 +333,7 @@ const CH_DRIFT = (() => {
 const M = loadModule(PLAYERS, {
   careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
   holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
-  matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST,
+  matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST, careerRecord: CAREER_REC,
   dnaRatings: DNA, situational: SITUATIONAL,
   sfEventName: ONE_NAME   // TEN-402 r3: on the page the list prints the dashboard's one event name
 });
@@ -3793,7 +3807,7 @@ const STORES = [
   },
   // TEN-449 · the career record's overlay (the shard's `record` block, bridged as window.careerRecord). Built by
   // construction: one feed row TE re-dates, one row TE lacks (listed, not counted), one TE-only row.
-  { name: 'careerRecord', file: 'career-history/{key}.json · record', universe: () => 3, floor: 1,
+  { name: 'careerRecord', file: 'career-record/{key}.json · record', universe: () => 3, floor: 1,
     resolve: () => {
       const saved = { ch: global.window.careerHistory, cr: global.window.careerRecord };
       try {

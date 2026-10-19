@@ -3871,6 +3871,10 @@ function extractFormShards(matches) {
 const CAREER_HISTORY_SHARD_DIR = 'career-history';
 const CAREER_HISTORY_INDEX_PATH = 'career-history-index.json';
 const CAREER_HISTORY_SCHEMA_VERSION = 1;
+// TEN-449 payload B: the career record's own rows, one lazy file per Tennis-Explorer-joined player, and the index of
+// who has one (so a player without a record costs no request, and a failed fetch is never read as "no record").
+const CAREER_RECORD_SHARD_DIR = 'career-record';
+const CAREER_RECORD_INDEX_PATH = 'career-record-index.json';
 
 // TEN-244 — THE COMPLETENESS PREDICATE, derived from the SCORE, never from the
 // flags alone.
@@ -4109,6 +4113,19 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   }
 
   fs.mkdirSync(CAREER_HISTORY_SHARD_DIR, { recursive: true });
+  // TEN-449: the record files are rebuilt whole every run, so a run with TE_INGEST off (a rollback) publishes none
+  fs.rmSync(CAREER_RECORD_SHARD_DIR, { recursive: true, force: true });
+  fs.rmSync(CAREER_RECORD_INDEX_PATH, { force: true });
+  if (TE_INGEST) fs.mkdirSync(CAREER_RECORD_SHARD_DIR, { recursive: true });
+  const recordIndex = {};
+  let recordBytes = 0;
+  // `n` is the length of the `matches` the overlay indexes; the page drops an overlay whose `n` disagrees
+  const writeRecordFile = (key, rows, teMerge) => {
+    const f = `${CAREER_RECORD_SHARD_DIR}/${key}.json`;
+    writeJsonAtomic(f, { v: 1, key, n: rows.length, record: TeJoin.recordLayer(rows, teMerge) }, true);
+    recordIndex[key] = (teMerge.rows || []).length || 1;   // truthy: the page reads a listed key as "has a record"
+    recordBytes += fs.statSync(f).size;
+  };
   const index = {};
   let bytes = 0, rowTotal = 0, archived = 0, incompleteTotal = 0, setsRows = 0;
   // Per-half, because the whole point of TEN-244 is the FIXTURES half. A single
@@ -4169,12 +4186,16 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // off until the founder approves the moved-cell report. With it on, a missing store stops the run (fail-closed).
     // TEN-449 (founder 2026-10-19): the career record is its own population — `rows` (H2H, Lines, the model and every
     // other reader) stay byte-for-byte what they are with TE_INGEST off. The merge returns the record's own rows; the
-    // season table is rebuilt from them below, and the shard carries them as a `record` overlay on `matches`.
+    // season table is rebuilt from them below, and the record ships as an overlay on `matches` in its own file.
     let teMerge = null;
     if (TE_INGEST) {
       const teRec = readTeHistory(key);
       if (teRec) {
+        // TEN-449 golden guard (founder 2026-10-19), on every run with the switch on: the merge may not touch a byte of
+        // the shared rows — H2H, Lines and the model read them, and none of them may move. A merge that did stops the run.
+        const feedBefore = JSON.stringify(rows);
         const m = teMerge = TeJoin.applyTeHistory(rows, teRec);
+        if (JSON.stringify(rows) !== feedBefore) throw new Error(`TEN-449: the Tennis Explorer merge changed ${key}'s shared career-history rows — H2H, Lines and the model would move; refusing to publish`);
         teTotals.players++;
         for (const [k, v] of Object.entries(m.diag)) if (typeof v === 'number') teTotals[k] = (teTotals[k] || 0) + v;
         for (const [k, v] of Object.entries(m.diag.conflicts)) teTotals.conflicts[k] = (teTotals.conflicts[k] || 0) + v;
@@ -4209,7 +4230,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       p.careerByYear = TeJoin.careerByYearFromRows(teMerge.rows);
       if (opts.teYearly) opts.teYearly.set(String(key), p.careerByYear);
     }
-    if (!rows.length && !teMerge) continue;
+    // A player with no feed rows ships no career-history file, switch on or off (so the shared store is identical);
+    // a TE-joined one still gets his record file, all of it Tennis Explorer's own rows.
+    if (!rows.length) { if (teMerge) writeRecordFile(key, rows, teMerge); continue; }
     for (const row of (teMerge ? [] : (p.careerByYear || []))) {
       const y = byYear[String(row.year || '')];
       row.rows = y ? y.rows : 0;
@@ -4300,14 +4323,16 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       // only when non-zero: the overwhelming majority of shards hold none, and
       // a zero on every one of ~700 files is bytes that say nothing.
       v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows, incomplete: shardIncomplete,
-      // TEN-449: the career record's overlay on `matches` (te-join.js recordLayer) — read by the season drill only
-      ...(teMerge ? { record: TeJoin.recordLayer(rows, teMerge) } : {}),
       ...(shardAltFormat ? { altFormat: shardAltFormat } : {}),
       // TEN-437 D3 (reported 2026-10-16, additive): the player's own TML/ATP id. h2h-core credits a one-sided archive row
       // only when its `oppId` equals the other player's `id` — never on a name.
       ...(tmlIds.get(String(key)) ? { id: tmlIds.get(String(key)) } : {}),
     }, true);
     bytes += fs.statSync(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`).size;
+    // TEN-449 payload B (founder 2026-10-19): the career record's overlay on `matches` (te-join.js recordLayer) is its
+    // own lazy file, fetched by the player profile only — the shared match file above is byte-for-byte what it is with
+    // TE_INGEST off. `n` is the length of the `matches` it indexes; the page drops an overlay whose `n` disagrees.
+    if (teMerge) writeRecordFile(key, rows, teMerge);
     index[key] = rows.length;
     rowTotal += rows.length;
     for (const r of rows) {
@@ -4391,6 +4416,17 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     },
     players: index,
   }, true);
+  // TEN-449 payload B: who has a career-record file, and how fresh Tennis Explorer's rows are. `asOf` is the store's
+  // own date; `refreshedAt` is null until the weekly refresh first runs — the page's freshness note reads it.
+  if (TE_INGEST) {
+    const teIdx = _teIndex || JSON.parse(fs.readFileSync(TE_HISTORY_INDEX, 'utf8'));
+    writeJsonAtomic(CAREER_RECORD_INDEX_PATH, {
+      v: 1,
+      meta: { players: Object.keys(recordIndex).length, bytes: recordBytes, asOf: teIdx.asOf || null, refreshedAt: teIdx.refreshedAt || null },
+      players: recordIndex,
+    }, true);
+    log(`  TEN-449: ${Object.keys(recordIndex).length} career-record file(s) to ${CAREER_RECORD_SHARD_DIR}/ (${(recordBytes / 1024 / 1024).toFixed(1)} MB), Tennis Explorer as of ${teIdx.asOf || '—'}.`);
+  }
   const setsPct = rowTotal ? ((setsRows / rowTotal) * 100).toFixed(1) : '0.0';
   log(`Wrote ${Object.keys(index).length} career-history shard(s) to ${CAREER_HISTORY_SHARD_DIR}/ `
     + `(${rowTotal} rows, ${(bytes / 1024 / 1024).toFixed(1)} MB total, ${archived} with pre-${archiveMaxYear + 1} archive rows).`);

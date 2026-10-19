@@ -179,6 +179,8 @@ async function main() {
     report.players++;
   }
   nextIdx.builtAt = NOW.toISOString();
+  // TEN-449: the profile's "Tennis Explorer data as of <asOf>" note shows until a refresh has run; this ends it
+  nextIdx.refreshedAt = NOW.toISOString();
   nextIdx.totalRows = Object.values(nextIdx.players).reduce((s, x) => s + x.rows, 0);
   const n = Object.keys(nextIdx.players).length;
   nextIdx.highWater = { totalRows: Math.max(idx.highWater?.totalRows || 0, nextIdx.totalRows), players: Math.max(idx.highWater?.players || 0, n) };

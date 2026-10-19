@@ -215,7 +215,11 @@ const te = (url) => url.includes('tennisexplorer');
 }
 {
   // the workflow: two weekly parts cover the roster, and the tool's budget trips before the job timeout kills a run
-  const y = fs.readFileSync(path.join(path.dirname(TOOL), '..', '.github', 'workflows', 'te-refresh.yml'), 'utf8');
+  // TEN-449: the workflow runs in the PRIVATE store repo, never this public one — kept here as its template
+  const y = fs.readFileSync(path.join(path.dirname(TOOL), 'te-store-repo', 'te-refresh.yml'), 'utf8');
+  check('the refresh workflow is NOT in this public repo\'s .github/workflows (it would commit the store here)', () => {
+    assert.ok(!fs.existsSync(path.join(path.dirname(TOOL), '..', '.github', 'workflows', 'te-refresh.yml')));
+  });
   check('workflow: weekly crons 05:00 and 11:00 run parts 0/2 and 1/2; the re-read runs whole; budget < job timeout', () => {
     assert.ok(/cron: '0 5 \* \* 1'/.test(y) && /cron: '0 11 \* \* 1'/.test(y), 'two weekly crons');
     assert.ok(/'0 11 \* \* 1' && '1\/2'/.test(y) && /'30 3 \* \* \*' && '0\/1'/.test(y) && /\|\| '0\/2'\)/.test(y), 'part mapping');
