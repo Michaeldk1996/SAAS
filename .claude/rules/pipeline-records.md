@@ -45,9 +45,9 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   - **For a player joined to TE on his date of birth, the record counts only the rows TE lists** (founder
     TEN-449, 2026-10-19). A row of ours TE does not list stays in his season drill, marked "not in Tennis
     Explorer, not counted", and is in no cell. *Exception:* a player joined without a DOB (only Z. Svajda, below;
-    `te-join.js` `NO_DOB_EXCEPTION`, by key) keeps counting our rows TE lacks. The eight near-miss DOB joins (below,
-    `NEAR_MISS_DOB`) are DOB-joined players: only TE's rows count. A store record without a DOB, or with a DOB short
-    of yyyymmdd, for any other key stops the run.
+    `te-join.js` `NO_DOB_EXCEPTION`, by key and TE page) keeps counting our rows TE lacks. The eight near-miss DOB joins (below,
+    `NEAR_MISS_DOB`) are DOB-joined players: only TE's rows count. A store record without a DOB, or with a DOB that is
+    not a valid yyyymmdd date, for any other key stops the run.
   - **"Surface not known" column** (founder TEN-449, 2026-10-19, option C of the `set-repair-notset` report;
     replaces Option A of TEN-442): the Record-by-season table carries a sixth column = the season's Total less
     Clay, Hard, Indoors and Grass as shown, so every season (and Career) sums to its total; its drill lists the
@@ -81,21 +81,27 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     request at a time, ≥ 8 s apart, and stop on any non-200 or challenge page. Never from the public SAAS repo, its CI
     or the nightly pipeline. The refresh runs the tools from SAAS `main` (founder decision A, TEN-449, 2026-10-19). A
     player is joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
-    *Named exception (founder TEN-449, 2026-10-19):* Z. Svajda (key 2986) is joined to TE `svajda` with no DOB on
-    TE, on 320 of 320 of our rows pairing with 0 result disagreements. It does not extend to any other player.
+    *Named exception (founder TEN-449, 2026-10-19):* Z. Svajda (key 2986, pinned to TE `svajda`: the key on any
+    other page is refused) is joined with no DOB on TE, on 320 of 320 of our rows pairing with 0 result disagreements. It does not extend to any other player.
     *Named exception (founder TEN-449, 2026-10-19, report `bucket-d`):* eight players are joined on a near-miss DOB,
     each to one TE page with TE's DOB as the store records it (`te-join.js` `NEAR_MISS_DOB`), counted as DOB-joined
-    players (only TE's rows count). Paired / our rows, 0 result disagreements each: 702 Z. Tkemaladze `tkemaladze`
+    players (only TE's rows count). Paired / our rows as measured for the report on 19 Oct 2026 (live files, build
+    `ce98253e7`), 0 result disagreements each: 702 Z. Tkemaladze `tkemaladze`
     (TE 4 Jun 2000, ours 6 Apr: swapped) 216/217 — the one unpaired row, Lo Chien 27 Oct 2022, counts once as TE's
     copy; 12972 F. Rocha `rocha-a46b1` (TE 4 Oct 1999, ours 10 Apr: swapped) 172/172; 19461 E. Munoz `munoz-1a9fc`
     (TE 2005 only; both search pages read, no other E. Munoz) 32/32; 52682 F. Balshaw `balshaw` (TE 5 Jun 2006, ours
-    15 Jun) 131/131; 54221 G. Bennaton `bennaton` (TE 2005 only) 7/7; 70760 M. Ceban `ceban` (TE 2009 only) 18/34, the
+    15 Jun) 131/131 (a later live file adds his 19 Oct Lyon qualifying match, played after TE's page was read: 131/132
+    until the TE refresh lists it); 54221 G. Bennaton `bennaton` (TE 2005 only) 7/7; 70760 M. Ceban `ceban` (TE 2009 only) 18/34, the
     16 unpaired all junior Slam rows, which stay out; 78231 G. Al-Sulaiti `al-sulaiti-a86c2` (TE 2007 only) 5/5;
     78628 I. Snoussi `snoussi` (TE 2007 only) 15/15. It does not extend to any other player.
-    **Test:** `tools/test-ten443-te-ingest.js` "Bucket D": each of the eight joins and counts only TE's rows; a ninth
-    key with a year-only, short or missing DOB, a near-miss join in the cache's `players.json` for an unnamed key, a
-    named key on another page or DOB — each is refused (by `applyTeHistory`, the pipeline's run and
-    `te-build-history.mjs`); Ceban's 16 junior rows stay out; Tkemaladze's Lo Chien match counts once.
+    **Test:** `tools/test-ten443-te-ingest.js` "Bucket D": each of the eight joins and counts only TE's rows. Refused,
+    and the run stops: in the pipeline (`applyTeHistory`), a store record for any other key with no DOB or a DOB that
+    is not a valid yyyymmdd date (year-only, short, `00000000`, month 13, 31 Feb), and a named key on another page or
+    DOB; in the store build (`te-build-history.mjs`, exit 1 and nothing written), additionally any cache join whose TE
+    DOB is not OUR DOB for the key (the scraper's `roster*.json` + `identity-verified.json`; a swapped or near DOB on
+    an unnamed key), a key with no DOB of ours, and a near-miss or founder-exception join for an unnamed key. The
+    pipeline holds no DOB of ours, so the equality is checked at build time only. Ceban's 16 junior rows stay out;
+    Tkemaladze's Lo Chien match counts once.
   **Test — holds now:** no junior, women's-event, walkover or exhibition row is in any count (`tools/test-ten444-juniors.js`,
   `tools/test-ten446-womens.js`);
   ATP Stuttgart (June) is grass (`tools/test-ten445-stuttgart.js`); nothing in `.github/` or the pipeline

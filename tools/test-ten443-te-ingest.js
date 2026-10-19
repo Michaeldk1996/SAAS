@@ -124,7 +124,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   const on = await run(true, true);
   // TEN-449: the same store with no DOB on the TE record (the Svajda exception)
   // the named exception is by the record's player key (te-join.js NO_DOB_EXCEPTION: Svajda, 2986)
-  const noDob = (asKey) => (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; j.key = asKey; fs.writeFileSync(f, JSON.stringify(j)); };
+  const noDob = (asKey) => (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; j.key = asKey; if (asKey === '2986') j.slug = 'svajda'; fs.writeFileSync(f, JSON.stringify(j)); };
   const nodob = await run(true, true, noDob('2986'));
   let noDobThrew = null;
   try { await run(true, true, noDob(KEY)); } catch (e) { noDobThrew = e; }
@@ -418,14 +418,30 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
         const L = TJ.recordLayer(rows, m); assert.deepStrictEqual(L.out, [[1, 'not-in-te']]);
       });
     }
-    check('TEN-449 Bucket D · a ninth near-miss key is refused: year-only, short, or swapped-DOB records, and a near-miss join in the cache', () => {
-      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '2004', teRows)), /not a full yyyymmdd/);
-      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '200406', teRows)), /not a full yyyymmdd/);
+    check('TEN-449 Bucket D · a ninth near-miss key is refused: year-only, short, impossible or missing DOB records, and a near-miss join in the cache', () => {
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '2004', teRows)), /not a valid full yyyymmdd/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '200406', teRows)), /not a valid full yyyymmdd/);
+      for (const bad of ['00000000', '20041301', '20040000', '20040132', '20040231'])
+        assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', bad, teRows)), /not a valid full yyyymmdd/, bad);
       assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', null, teRows)), /not a named exception/);
       assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'near-miss-dob' }), /not a named exception for this key/);
       assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: null, how: 'founder-exception' }), /not a named exception for this key/);
       assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'hand-edit' }), /not a DOB join/);
       assert.strictEqual(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob' }), null, 'an ordinary DOB join passes');
+    });
+    check('TEN-449 Bucket D · with our DOB on hand (the store builder), a ninth key whose full TE DOB is swapped or near ours is refused', () => {
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040605', how: 'dob', ourDob: '20040506' }), /is not our DOB 20040506/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040516', how: 'dob', ourDob: '20040506' }), /is not our DOB/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob', ourDob: null }), /no DOB of ours on record/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob', ourDob: '20040506' }), null, 'equal DOBs pass');
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '702', slug: 'tkemaladze', dob: '20000604', how: 'near-miss-dob', ourDob: '20000406' }), null, 'a named key with the DOB the ruling was made on passes');
+      assert.match(TJ.teIdentityRefusal({ key: '702', slug: 'tkemaladze', dob: '20000604', how: 'near-miss-dob', ourDob: '20000407' }), /not the 20000406 the near-miss ruling/);
+    });
+    check('TEN-449 · the no-DOB exception is pinned to Svajda\'s page: key 2986 on any other slug is refused', () => {
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '2986', slug: 'svajda', dob: null }), null);
+      assert.match(TJ.teIdentityRefusal({ key: '2986', slug: 'svajda-2', dob: null }), /NO_DOB_EXCEPTION/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('2986', 'someone', null, teRows)), /NO_DOB_EXCEPTION/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '2986', slug: 'svajda', dob: null, how: 'founder-exception', ourDob: '20021129' }), null, 'his entry in the cache passes the builder');
     });
     check('TEN-449 Bucket D · a named key joins only its own page and DOB (another page, or our DOB in place of TE\'s, stops)', () => {
       assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-021d4', '2005', teRows)), /NEAR_MISS_DOB/);
@@ -451,27 +467,37 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       assert.strictEqual(counted22.length, 1, 'one counted row on the day'); assert.strictEqual(counted22[0].src, 'te');
       assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows).find((y) => y.year === '2022').total), '0-1');
     });
-    check('TEN-449 Bucket D · the store builder refuses a cache join that is not a DOB join or a named key (and passes a named one)', () => {
+    check('TEN-449 Bucket D · the store builder stops (exit 1, nothing written) on any refused cache join, and builds a named key', () => {
       const { spawnSync } = require('child_process');
-      const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-cache-')), out = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-out-'));
-      fs.mkdirSync(path.join(cache, 'html'));
-      fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['rotterdam'] }));
-      fs.writeFileSync(path.join(cache, 'players.json'), JSON.stringify({
+      const build = (players, roster) => {
+        const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-cache-')), out = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-out-'));
+        fs.mkdirSync(path.join(cache, 'html'));
+        fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['rotterdam'] }));
+        fs.writeFileSync(path.join(cache, 'players.json'), JSON.stringify(players));
+        fs.writeFileSync(path.join(cache, 'roster.json'), JSON.stringify(roster));
+        const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'te-build-history.mjs'), '--cache', cache, '--out', out], { encoding: 'utf8' });
+        return { r, out, rep: JSON.parse(r.stdout) };
+      };
+      const tk = { slug: 'tkemaladze', how: 'near-miss-dob', dob: '20000604', years: [] };
+      const bad = build({ 702: tk,
         9002: { slug: 'someone', how: 'near-miss-dob', dob: '20040506', years: [] },
         9003: { slug: 'other', how: 'dob', dob: '2004', years: [] },
-        702: { slug: 'tkemaladze', how: 'near-miss-dob', dob: '20000604', years: [] } }));
-      const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'te-build-history.mjs'), '--cache', cache, '--out', out], { encoding: 'utf8' });
-      assert.strictEqual(r.status, 0, r.stderr);
-      const rep = JSON.parse(r.stdout);
-      assert.deepStrictEqual(rep.refusedJoin.map((x) => x.key).sort(), ['9002', '9003']);
-      assert.deepStrictEqual(rep.missingPages, ['702 profile'], 'the named key passes the gate (then needs its pages)');
-      assert.ok(!fs.existsSync(path.join(out, 'te-history', '9002.json')) && !fs.existsSync(path.join(out, 'te-history', '9003.json')));
+        9004: { slug: 'swapped', how: 'dob', dob: '20040605', years: [] },
+        9005: { slug: 'unknown', how: 'dob', dob: '20040506', years: [] } },
+      [{ key: '702', dob: '20000406' }, { key: '9004', dob: '20040506' }]);
+      assert.strictEqual(bad.r.status, 1, 'a refused join must stop the build');
+      assert.deepStrictEqual(bad.rep.refusedJoin.map((x) => x.key).sort(), ['9002', '9003', '9004', '9005']);
+      assert.ok(!fs.existsSync(path.join(bad.out, 'te-history')) && !fs.existsSync(path.join(bad.out, 'te-history-index.json')), 'nothing written');
+      const good = build({ 702: tk }, [{ key: '702', dob: '20000406' }]);
+      assert.strictEqual(good.r.status, 0, good.r.stderr);
+      assert.deepStrictEqual(good.rep.refusedJoin, []);
+      assert.deepStrictEqual(good.rep.missingPages, ['702 profile'], 'the named key passes the gate (then needs its pages)');
     });
   }
   // TEN-449 Bucket D, through the real pipeline: a year-only DOB on an unnamed key stops the run
   let yearOnlyThrew = null;
   try { await run(true, true, (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); j.dob = '1999'; fs.writeFileSync(f, JSON.stringify(j)); }); } catch (e) { yearOnlyThrew = e; }
-  check('TEN-449 Bucket D · writeCareerHistoryShards stops on a year-only TE DOB for a key not named in NEAR_MISS_DOB', () => assert.ok(yearOnlyThrew && /not a full yyyymmdd/.test(yearOnlyThrew.message), String(yearOnlyThrew)));
+  check('TEN-449 Bucket D · writeCareerHistoryShards stops on a year-only TE DOB for a key not named in NEAR_MISS_DOB', () => assert.ok(yearOnlyThrew && /not a valid full yyyymmdd/.test(yearOnlyThrew.message), String(yearOnlyThrew)));
   load(false);
   console.log(`\nTEN-443 TE ingest: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

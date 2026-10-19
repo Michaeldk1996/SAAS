@@ -157,15 +157,17 @@ function teOnlyRow(t) {
 const OTHER_COUNTED = new Set(['Pan American Games', 'African Games', 'World University Games', 'Mediterranean Games',
   'Commonwealth Games', 'Rome - pre-qualification', 'AO Wildcard Playoff - Australia', 'AO WC Playoff - Asia-Pacific']);
 
-// Players joined to TE without a DOB, by name in the founder's ruling (TEN-449, 2026-10-19): Z. Svajda only.
-const NO_DOB_EXCEPTION = new Set(['2986']);
+// Players joined to TE without a DOB, by name in the founder's ruling (TEN-449, 2026-10-19): Z. Svajda only, pinned to
+// his TE page.
+const NO_DOB_EXCEPTION = new Map([['2986', { slug: 'svajda' }]]);
 
 // Players joined to TE on a NEAR-MISS date of birth, by key, in the founder's ruling (TEN-449, 2026-10-19, report
 // `bucket-d`): TE's DOB has day and month swapped, is 10 days off, or is the year only (TE prints "1. 1. <year>"; the
 // store records the year alone). Each is pinned to ONE TE page and ONE TE DOB, as the store records it; ours is kept for
 // the record. Unlike Svajda they are DOB-joined players: the record counts only TE's rows (ruling 2A). Overlap the
 // founder ruled on (paired / our rows, 0 result disagreements): 216/217, 172/172, 32/32, 131/131, 7/7, 18/34 (16 junior
-// rows), 5/5, 15/15. Nobody else: any other key with a DOB that is not a full yyyymmdd stops the run.
+// rows), 5/5, 15/15 (report of 19 Oct). Nobody else: any other key with a DOB that is not a valid full yyyymmdd stops the
+// run, and the store builder refuses any other key whose TE DOB differs from ours.
 const NEAR_MISS_DOB = new Map([
   ['702', { slug: 'tkemaladze', te: '20000604', ours: '20000406', why: 'day and month swapped' }],
   ['12972', { slug: 'rocha-a46b1', te: '19991004', ours: '19990410', why: 'day and month swapped' }],
@@ -180,8 +182,15 @@ const NEAR_MISS_DOB = new Map([
 // construction), plus the two founder-named classes, each only for its own keys.
 const JOIN_HOW = { dob: null, 'age±1': null, 'founder-exception': NO_DOB_EXCEPTION, 'near-miss-dob': NEAR_MISS_DOB };
 
+// a real calendar date, yyyymmdd (00000000, month 13, 31 Feb are not DOBs)
+const isFullDob = (d) => { if (!/^\d{8}$/.test(d)) return false; const y = +d.slice(0, 4), m = +d.slice(4, 6), dd = +d.slice(6);
+  const t = new Date(Date.UTC(y, m - 1, dd)); return y >= 1900 && m >= 1 && m <= 12 && dd >= 1 && dd <= 31 && t.getUTCMonth() === m - 1 && t.getUTCDate() === dd; };
+
 // Why a TE store record (te-history/<key>.json) — or, with `how`, a cache players.json entry — may NOT be joined; null
-// when it may. Fail-closed: a full yyyymmdd DOB, or a key named above with exactly its page and DOB.
+// when it may. Fail-closed: a valid full yyyymmdd DOB, or a key named above with exactly its page (and DOB).
+// With `ourDob` in the argument (the store builder, which holds the DOB the scraper joined on), an unnamed key's TE DOB
+// must also EQUAL ours, and a near-miss key's ours must be the one the founder ruled on; ourDob null = not on record,
+// refused for an unnamed key.
 function teIdentityRefusal(rec) {
   const key = String(rec.key), dob = rec.dob == null || rec.dob === '' ? null : String(rec.dob);
   if ('how' in rec) {
@@ -190,10 +199,19 @@ function teIdentityRefusal(rec) {
     if (named && !named.has(key)) return `${key}: join "${rec.how}" is not a named exception for this key — refusing a non-DOB join`;
   }
   const nm = NEAR_MISS_DOB.get(key);
-  if (nm) return rec.slug === nm.slug && dob === nm.te ? null
-    : `te-history/${key}.json is a named near-miss DOB join (NEAR_MISS_DOB) to ${nm.slug} with TE DOB ${nm.te}, but holds ${rec.slug} with DOB ${dob} — refusing`;
-  if (!dob) return NO_DOB_EXCEPTION.has(key) ? null : `te-history/${key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`;
-  if (!/^\d{8}$/.test(dob)) return `te-history/${key}.json has DOB "${dob}", not a full yyyymmdd, and is not a named exception (NEAR_MISS_DOB) — refusing a non-DOB join`;
+  if (nm) {
+    if (rec.slug !== nm.slug || dob !== nm.te) return `te-history/${key}.json is a named near-miss DOB join (NEAR_MISS_DOB) to ${nm.slug} with TE DOB ${nm.te}, but holds ${rec.slug} with DOB ${dob} — refusing`;
+    if ('ourDob' in rec && rec.ourDob !== nm.ours) return `${key}: our DOB ${rec.ourDob} is not the ${nm.ours} the near-miss ruling (NEAR_MISS_DOB) was made on — refusing`;
+    return null;
+  }
+  const nd = NO_DOB_EXCEPTION.get(key);
+  if (nd && rec.slug !== nd.slug) return `te-history/${key}.json is the named no-DOB join (NO_DOB_EXCEPTION) to ${nd.slug}, but holds ${rec.slug} — refusing`;
+  if (!dob) return nd ? null : `te-history/${key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`;
+  if (!isFullDob(dob)) return `te-history/${key}.json has DOB "${dob}", not a valid full yyyymmdd, and is not a named exception (NEAR_MISS_DOB) — refusing a non-DOB join`;
+  if ('ourDob' in rec && !nd) {
+    if (!rec.ourDob) return `${key}: no DOB of ours on record to check TE's ${dob} against — refusing a non-DOB join`;
+    if (rec.ourDob !== dob) return `${key}: TE DOB ${dob} is not our DOB ${rec.ourDob}, and the key is not a named exception (NEAR_MISS_DOB) — refusing a non-DOB join`;
+  }
   return null;
 }
 

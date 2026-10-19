@@ -236,23 +236,49 @@ export function buildPlayerRecord({ key, slug, dob, name, mainHtml, seasonHtml, 
   return { rec, bad };
 }
 
+// Our DOB for each key, as the scraper joined on it: its rosters (TE_CACHE/roster*.json, the DOB-checked Sackmann join)
+// and identity-verified.json (the age±1 joins, re-checked against api-tennis player_bday). Two sources that disagree on
+// a key leave it with no DOB of ours (refused, never a guess).
+export function ourDobs(cache) {
+  const dobs = new Map(), conflict = new Set();
+  const add = (k, d) => { k = String(k); if (!d) return; if (dobs.has(k) && dobs.get(k) !== String(d)) conflict.add(k); dobs.set(k, String(d)); };
+  for (const f of fs.readdirSync(cache).filter((x) => /^roster.*\.json$/.test(x)).sort()) {
+    const j = JSON.parse(fs.readFileSync(path.join(cache, f), 'utf8'));
+    for (const x of (Array.isArray(j) ? j : [])) add(x.key, x.dob);
+  }
+  const iv = path.join(cache, 'identity-verified.json');
+  if (fs.existsSync(iv)) for (const [k, v] of Object.entries(JSON.parse(fs.readFileSync(iv, 'utf8')).verified || {})) add(k, v.dob);
+  for (const k of conflict) dobs.set(k, null);
+  return dobs;
+}
+
 function main() {
   const players = JSON.parse(fs.readFileSync(path.join(CACHE, 'players.json'), 'utf8'));
+  // TEN-449: only a DOB join whose TE DOB equals ours, or a key the founder named (te-join.js NO_DOB_EXCEPTION /
+  // NEAR_MISS_DOB, each pinned to its page), becomes a store record. Any other entry — a hand-edited join, a near-miss or
+  // malformed DOB not named, a key with no DOB of ours — stops the build before a single file is written (exit 1).
+  const { teIdentityRefusal } = createRequire(import.meta.url)('../te-join.js');
+  const ours = ourDobs(CACHE);
+  const refusedJoin = [];
+  for (const [key, p] of Object.entries(players)) {
+    if ((ONLY && !ONLY.has(key)) || !p.slug) continue;
+    const refusal = teIdentityRefusal({ key, slug: p.slug, dob: p.dob, how: p.how, ourDob: ours.get(String(key)) ?? null });
+    if (refusal) refusedJoin.push({ key, slug: p.slug, why: refusal });
+  }
+  if (refusedJoin.length) {
+    console.log(JSON.stringify({ refusedJoin, written: 0 }, null, 1));
+    console.error(`te-build-history: ${refusedJoin.length} join(s) refused — nothing written`);
+    process.exit(1);
+  }
   const dir = path.join(OUT, 'te-history'); fs.mkdirSync(dir, { recursive: true });
   const idxF = path.join(OUT, 'te-history-index.json');
   const prev = fs.existsSync(idxF) ? JSON.parse(fs.readFileSync(idxF, 'utf8')) : { players: {}, highWater: { totalRows: 0, players: 0 } };
   const idx = { builtAt: new Date().toISOString(), source: 'tennisexplorer.com (licensed, Livesport agreement 2026-10-17)', players: { ...prev.players } };
-  const report = { written: 0, kept: [], notReconciled: [], tableMismatch: [], unmatched: [], missingPages: [] };
+  const report = { written: 0, kept: [], notReconciled: [], tableMismatch: [], unmatched: [], missingPages: [], refusedJoin };
   let oldestCurrent = null;
-  // TEN-449: only a DOB join, or a key the founder named (te-join.js NO_DOB_EXCEPTION / NEAR_MISS_DOB), becomes a store
-  // record; any other entry (a hand-edited join, a near-miss DOB not named) is refused and listed, never written
-  const { teIdentityRefusal } = createRequire(import.meta.url)('../te-join.js');
-  report.refusedJoin = [];
   for (const [key, p] of Object.entries(players)) {
     if (ONLY && !ONLY.has(key)) continue;
     if (!p.slug) { report.unmatched.push({ key, why: p.unmatched }); continue; }
-    const refusal = teIdentityRefusal({ key, slug: p.slug, dob: p.dob, how: p.how });
-    if (refusal) { report.refusedJoin.push({ key, slug: p.slug, why: refusal }); continue; }
     const mainF = cacheFile(`/player/${p.slug}/`);
     if (!fs.existsSync(mainF)) { report.missingPages.push(`${key} profile`); continue; }
     const mainHtml = fs.readFileSync(mainF, 'utf8');
