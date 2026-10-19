@@ -106,7 +106,7 @@ const te = (url) => url.includes('tennisexplorer');
 }
 {
   // TEN-449 · readAt never goes backwards: a stored read later than this run's clock is kept, and the guard passes
-  const d = repo(); const LATER = '2026-10-25T00:00:00.000Z';
+  const d = repo(); const LATER = '2026-10-19T06:00:00.000Z';   // after this run's clock (TE_NOW 05:00), not in the future
   const f = path.join(d, 'te-history', '1.json'); fs.writeFileSync(f, JSON.stringify({ ...JSON.parse(fs.readFileSync(f, 'utf8')), readAt: LATER }));
   const fi = path.join(d, 'te-history-index.json'); const ix = JSON.parse(fs.readFileSync(fi, 'utf8')); ix.players[1].readAt = LATER; fs.writeFileSync(fi, JSON.stringify(ix));
   const r = run(d, 'weekly');

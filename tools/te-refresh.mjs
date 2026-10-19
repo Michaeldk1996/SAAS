@@ -207,7 +207,7 @@ async function main() {
   fs.writeFileSync(path.join(ROOT, 'te-refresh-report.json'), JSON.stringify(report, null, 1));
 
   // a refused player keeps his previous file — but the run says so loudly and fails, so the alert fires
-  const guard = G.checkStore(OUT_DIR, { prev: idx });
+  const guard = G.checkStore(OUT_DIR, { prev: idx, now: Math.max(Date.now(), NOW.getTime()) });   // TEN-449: readAt stamps run past NOW
   if (!guard.ok || report.refused.length) {
     console.log(`::error::te-refresh refused to write: ${[...guard.why, ...report.refused.map((r) => `${r.key} ${r.name}: ${r.why}`)].join('; ')} — the last good store is unchanged`);
     process.exit(1);
