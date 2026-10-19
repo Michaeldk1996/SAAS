@@ -176,7 +176,10 @@ const result = await E(`(async () => {
     const vs = rows.map(x => ({ date: x.walkover ? null : x.date, won: !!x.won, round: x.round, opp: x.opponent }));
     J(vs, { full: name }, null, db, null, career);
     rows.forEach((x, i) => {
-      const lv = ownQual(x, career) ? 'ATP qualifying' : lvOf(x), y = String(x.date).slice(0, 4), v = vs[i];
+      // a row the join priced on a Tennis-Data row is main draw by evidence (Tennis-Data lists the main draw only): the own-rows
+      // rule moves only rows no Tennis-Data row priced (measured 19 Oct: 11 priced word-round rows would otherwise move)
+      const v = vs[i], tdPriced = v.price != null && (v.book === 'P' || v.book === 'B') && v.src === 'td';
+      const lv = !tdPriced && ownQual(x, career) ? 'ATP qualifying' : lvOf(x), y = String(x.date).slice(0, 4);
       const nb = () => ({ n: 0, priced: 0, byBook: {}, walkover: 0, one: 0, nobook: 0, none: 0 });
       const cs = [((CV.byLevel[lv] = CV.byLevel[lv] || {})[y] = CV.byLevel[lv][y] || nb())];
       if (y === '2026') { const mo = String(x.date).slice(0, 7); cs.push(((CV.byMonth2026[lv] = CV.byMonth2026[lv] || {})[mo] = CV.byMonth2026[lv][mo] || nb())); }   // 2026 by month too
