@@ -7,7 +7,8 @@
 //   REFRESH   every entry this step writes — `by: 'refresh'` + `at`. A repair never changes. A flag whose reason is that
 //             Tennis Explorer lacks the row ("… no Tennis Explorer row …", e.g. the player was not in the store yet) is
 //             re-checked each run and UPGRADED to a repair once TE and Sackmann agree; any other outcome keeps it as is.
-// If a rebuild would break either rule it exits 1 and writes nothing.
+// If a rebuild would break either rule it exits 1 and writes nothing. The frozen set is pinned in code (FROZEN_PIN: counts
+// + sha256): a committed file whose unmarked entries do not hash to it stops the step before anything is built.
 //
 //   node saas/tools/te-set-repairs-refresh.mjs --store . --sackmann <dir> [--site <url|dir>]
 //   node saas/tools/te-set-repairs-refresh.mjs --store . --week-complete     (prints complete=true|false; exit 0)
@@ -91,6 +92,23 @@ export function merge(prev, fresh, at) {
   }
   return { next, added };
 }
+// The 17 Oct entries, pinned in code (TEN-449 review): the committed file's unmarked entries must hash to exactly this,
+// so neither a hand edit of the store nor a refresh bug can change the frozen set without this file changing too.
+// Digest: sha256 over the sorted lines `kind \t key \t eventKey \t canonical JSON (keys sorted)`, one per entry.
+export const FROZEN_PIN = { repairs: 3217, flags: 341, sha256: '04d56a0d32df13066e3bb55f7b2e8293368b3e82f2c87fb954ed62fa90ac7a2b' };
+const canon = (v) => (Array.isArray(v) ? `[${v.map(canon).join(',')}]` : v && typeof v === 'object'
+  ? `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(',')}}` : JSON.stringify(v));
+export function frozenDigest(file) {
+  const lines = []; const n = { repairs: 0, flags: 0 };
+  for (const kind of ['repairs', 'flags']) for (const [k, ek, v] of entries(file[kind])) if (v.by !== 'refresh') { n[kind]++; lines.push(`${kind}\t${k}\t${ek}\t${canon(v)}`); }
+  return { ...n, sha256: crypto.createHash('sha256').update(lines.sort().join('\n')).digest('hex') };
+}
+export function checkPin(file, pin = FROZEN_PIN) {
+  const d = frozenDigest(file);
+  return d.repairs === pin.repairs && d.flags === pin.flags && d.sha256 === pin.sha256 ? []
+    : [`the frozen 17 Oct entries do not match the pin (file: ${d.repairs} repairs, ${d.flags} flags, ${d.sha256.slice(0, 12)}; pin: ${pin.repairs}, ${pin.flags}, ${pin.sha256.slice(0, 12)})`];
+}
+
 // FROZEN entries and every repair: in `next` exactly as they were, in the same list. A refresh-written flag: as it was,
 // or — only if upgradable — gone from the flags and present as a refresh repair.
 export function checkFrozen(prev, next) {
@@ -160,13 +178,14 @@ async function siteJson(site, rel) {
 }
 
 // buildFn is the set-repair builder (tools/build-set-repairs.mjs build); a test may pass a mutant
-export async function refresh({ store, sackmann, site = SITE, now = new Date().toISOString(), buildFn = buildRepairs, log = console.log }) {
+export async function refresh({ store, sackmann, site = SITE, now = new Date().toISOString(), buildFn = buildRepairs, log = console.log, frozenPin = FROZEN_PIN }) {
   // the store
   const idx = readJson(path.join(store, INDEX), INDEX);
   const teDir = path.join(store, STORE_DIR);
   if (!fs.existsSync(teDir) || !fs.statSync(teDir).isDirectory()) fail(`${STORE_DIR}/ missing in ${store}`);
   const prev = readJson(path.join(store, REPAIRS), REPAIRS);
   if (!prev || typeof prev.repairs !== 'object' || !prev.repairs || typeof prev.flags !== 'object' || !prev.flags) fail(`${REPAIRS} holds no repairs/flags maps`);
+  { const p = checkPin(prev, frozenPin); if (p.length) fail(p[0]); }
   // Sackmann: every file verified before a byte is used
   verifySackmann(sackmann);
   const sack = loadSackmann(sackmann);
@@ -192,7 +211,7 @@ export async function refresh({ store, sackmann, site = SITE, now = new Date().t
     playersCsv: fs.readFileSync(path.join(sackmann, 'atp_players.csv'), 'utf8') });
   const fresh = buildFn({ shards, teDir, sack, sids, names, only: (key, r) => wanted(prev, String(key), String(r.eventKey)) });
   const { next, added } = merge(prev, fresh, now);
-  const why = checkFrozen(prev, next);
+  const why = [...checkFrozen(prev, next), ...checkPin(next, frozenPin)];
   const frozen = (kind) => entries(prev[kind]).filter(([, , v]) => v.by !== 'refresh').length;
   const summary = { players: keys.length, sackmannIds: stats.byDob, rowsChecked: fresh.shortRows || 0, repaired: added.repaired.length,
     flagged: added.flagged.length, upgraded: added.upgraded.length, frozen: { repairs: frozen('repairs'), flags: frozen('flags') } };

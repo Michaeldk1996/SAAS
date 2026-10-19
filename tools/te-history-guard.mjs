@@ -14,6 +14,7 @@ import { execFileSync } from 'node:child_process';
 export const STORE_DIR = 'te-history';
 export const INDEX = 'te-history-index.json';
 const BUILDER = 'tools/te-build-history.mjs';
+const SAAS_CHECKOUT = 'saas';   // the store repo's refresh checks SAAS out here (tools/te-store-repo/te-refresh.yml)
 // the two sanctioned writers: the Mac build, and the GitHub Actions refresh (all-or-nothing, guarded before it writes)
 const WRITERS = new Set([BUILDER, 'tools/te-refresh.mjs']);
 
@@ -65,9 +66,10 @@ export function checkWriters(root) {
   const files = [];
   const walk = (d) => { for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) {
     const rel = path.join(d, e.name);
-    // TEN-449: a nested git checkout is another repository (the store repo's refresh checks the public SAAS repo out
-    // into saas/ for its tools) — its own CI guards it; scanning it from the store would name SAAS's own writers
-    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github') && !fs.existsSync(path.join(root, rel, '.git'))) walk(rel); }
+    // TEN-449: exactly one exception — saas/ at the root holding its own .git is the public SAAS repo, which the store
+    // repo's refresh checks out there for its tools; SAAS's CI guards it, and scanning it from the store would name
+    // SAAS's own writers. Any other directory, nested checkout or not, is scanned.
+    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github') && !(rel === SAAS_CHECKOUT && fs.existsSync(path.join(root, rel, '.git')))) walk(rel); }
     else if (/\.(m?js|cjs|ya?ml|sh|py)$/.test(e.name)) files.push(rel);
   } };
   walk('.');

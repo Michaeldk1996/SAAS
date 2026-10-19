@@ -40,6 +40,8 @@ const SEC_PER_PAGE = Number(process.env.TE_SEC_PER_PAGE || 9.02);
 const NEW_PLAYER_PAGES = 17;   // name search + profile + ~15 seasons (the roster's mean career, measured 2026-10-17)
 const T0 = Date.now();
 if (!['weekly', 'reread'].includes(MODE)) { console.error(`unknown --mode ${MODE}`); process.exit(2); }
+// TEN-449 review: the re-read is already a 1/28 slice; a part of it would silently re-read half a slice
+if (MODE === 'reread' && PARTS !== 1) { console.log(`::error::--mode reread re-reads its whole day's slice; --part must be 0/1, not ${PART}/${PARTS}`); process.exit(2); }
 process.env.TE_CACHE = process.env.TE_CACHE || fs.mkdtempSync(path.join(os.tmpdir(), 'te-refresh-cache-'));
 const OUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'te-refresh-out-'));
 if (!process.argv.includes('--out')) process.argv.push('--out', ROOT);   // the builder reads the committed catalogue from the repo

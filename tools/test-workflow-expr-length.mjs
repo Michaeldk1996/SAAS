@@ -1,7 +1,7 @@
 // TEN-449 (2026-10-19 incident): GitHub parses a `run:` block that holds any ${{ }} expression as ONE expression, and
 // refuses the whole workflow file when that exceeds 21,000 characters ("Exceeded max expression length 21000"). The
 // workflow then can't load: no dispatch starts a run, and the data pipeline stalls with nothing red in CI.
-// Test: in every workflow file (.github/workflows/*.yml|yaml and tools/te-store-repo/te-refresh.yml), every `run:` value
+// Test: in every workflow file (.github/workflows/*.yml|yaml and tools/te-store-repo/*.yml), every `run:` value
 // and every `with: script:` value (actions/github-script) that contains an expression stays under the limit (with
 // headroom). Every scalar form counts (TEN-449 review): block (`|`, `>`, with chomping/indent indicators), single-line
 // plain, single- or double-quoted, and plain or quoted values continued over several lines. A form it can't measure

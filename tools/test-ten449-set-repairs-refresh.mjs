@@ -90,6 +90,8 @@ function joinSels(w) {
   idx.players[SELS] = { dob: '19950810', rows: teSels.length }; fs.writeFileSync(f, JSON.stringify(idx));
 }
 const read = (w, f) => fs.readFileSync(path.join(w.store, f), 'utf8');
+// the fixture's own 17 Oct set, pinned as the real one is pinned in te-set-repairs-refresh.mjs (FROZEN_PIN)
+const PIN = R.frozenDigest(JSON.parse(read(world(), 'set-repairs.json')));
 const quiet = () => {};
 
 await check('identity builder: Sackmann id = the one atp_players row with his DOB and surname (not the other Sels); no DOB, no id', () => {
@@ -99,7 +101,7 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
 
 {
   const w = world(); const before = JSON.parse(read(w, 'set-repairs.json'));
-  const r = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-10-26T11:00:00Z', log: quiet });
+  const r = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, now: '2026-10-26T11:00:00Z', log: quiet });
   const after = JSON.parse(read(w, 'set-repairs.json'));
   await check('Sels-like rows: all 3 new short rows end REPAIRED (2 from his own TE page, 1 from Nardi\'s, Sackmann agreeing)', () => {
     assert.strictEqual(r.ok, true, r.why.join('; ')); assert.strictEqual(r.summary.rowsChecked, 3, JSON.stringify(r.summary)); assert.strictEqual(r.summary.repaired, 3);
@@ -118,7 +120,7 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
     assert.strictEqual(l.length, 3); assert.ok(l.every((x) => x.kind === 'repaired' && x.key === SELS && x.old && x.new));
   });
   const snap = read(w, 'set-repairs.json');
-  const r2 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-11-02T11:00:00Z', log: quiet });
+  const r2 = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, now: '2026-11-02T11:00:00Z', log: quiet });
   await check('a second run with no new short row writes nothing', () => { assert.strictEqual(r2.ok, true); assert.strictEqual(r2.wrote, false); assert.strictEqual(read(w, 'set-repairs.json'), snap); });
 }
 
@@ -126,7 +128,7 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
   // a REFRESH-written flag ("no Tennis Explorer row": he was not in the store yet) upgrades once he joins; the frozen
   // entries and the refresh-written repair stay byte-identical across both runs
   const w = world({ selsInStore: false }); const frozen0 = JSON.parse(read(w, 'set-repairs.json'));
-  const r1 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-10-26T11:00:00Z', log: quiet });
+  const r1 = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, now: '2026-10-26T11:00:00Z', log: quiet });
   const a1 = JSON.parse(read(w, 'set-repairs.json'));
   await check('control: before he is in the store, his own-page rows flag "Sackmann only (no Tennis Explorer row)", marked by: refresh; the opponent-page row repairs', () => {
     assert.strictEqual(r1.ok, true, r1.why.join('; '));
@@ -135,7 +137,7 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
     assert.ok(!a1.repairs[SCHW][1001].by && !a1.flags[SCHW][1002].by, 'frozen entries carry no refresh mark');
   });
   joinSels(w);
-  const r2 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, now: '2026-11-02T11:00:00Z', log: quiet });
+  const r2 = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, now: '2026-11-02T11:00:00Z', log: quiet });
   const a2 = JSON.parse(read(w, 'set-repairs.json'));
   await check('refresh-written flags UPGRADE to repairs once he joins the store (upgradedFrom kept; logged "upgraded")', () => {
     assert.strictEqual(r2.ok, true, r2.why.join('; ')); assert.strictEqual(r2.summary.upgraded, 2, JSON.stringify(r2.summary));
@@ -152,8 +154,8 @@ await check('identity builder: Sackmann id = the one atp_players row with his DO
   // a repair never changes, whoever wrote it: mutants that rewrite a refresh repair / a frozen repair are refused
   const snap = read(w, 'set-repairs.json');
   const tamper = (key, ek) => (opts) => { const o = build({ ...opts, only: null }); const e = (o.repairs[key] = o.repairs[key] || {})[ek] = { ...((o.repairs[key] || {})[ek] || {}), sets: [{ p: 6, o: 0 }, { p: 6, o: 0 }] }; return o; };
-  const m1 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, buildFn: tamper(SELS, '11767792'), log: quiet });
-  const m2 = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, buildFn: tamper(SCHW, '1001'), log: quiet });
+  const m1 = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, buildFn: tamper(SELS, '11767792'), log: quiet });
+  const m2 = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, buildFn: tamper(SCHW, '1001'), log: quiet });
   await check('MUTANT: a refresh-written repair rewritten -> refused, file byte-identical', () => {
     assert.strictEqual(m1.ok, false); assert.ok(m1.why.some((x) => /refresh repairs 586\/11767792 changed/.test(x)), m1.why.join('; ')); assert.strictEqual(read(w, 'set-repairs.json'), snap);
   });
@@ -176,7 +178,7 @@ await check('checkFrozen: only a refresh flag whose reason is "no Tennis Explore
   // rebuild would turn it into a repair. Refused; nothing written.
   const w = world(); const before = read(w, 'set-repairs.json');
   const mutant = (opts) => build({ ...opts, only: null });
-  const r = await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, buildFn: mutant, log: quiet });
+  const r = await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, buildFn: mutant, log: quiet });
   await check('MUTANT rebuild of committed rows: refused (flag 1002 would change), set-repairs.json byte-identical, no log', () => {
     assert.strictEqual(r.ok, false); assert.ok(r.why.some((x) => /1002/.test(x)), r.why.join('; '));
     assert.strictEqual(read(w, 'set-repairs.json'), before); assert.ok(!fs.existsSync(path.join(w.store, 'set-repairs-log.jsonl')));
@@ -211,7 +213,7 @@ for (const [name, edit] of [
 ]) {
   const w = world(); edit(w);
   const before = fs.existsSync(path.join(w.store, 'set-repairs.json')) ? read(w, 'set-repairs.json') : null;
-  let err = null; try { await R.refresh({ store: w.store, sackmann: w.sack, site: w.site, log: quiet }); } catch (e) { err = e; }
+  let err = null; try { await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, log: quiet }); } catch (e) { err = e; }
   await check(`fail closed: ${name} -> stops, nothing written`, () => {
     assert.ok(err && err.closed, String(err && err.message));
     assert.strictEqual(fs.existsSync(path.join(w.store, 'set-repairs.json')) ? read(w, 'set-repairs.json') : null, before);
@@ -230,13 +232,36 @@ for (const [name, edit] of [
     return { status: 200, json: async () => JSON.parse(fs.readFileSync(f, 'utf8')) };
   }; };
   const w = world(); const before = read(w, 'set-repairs.json'); serve(w, { [`career-history/${SELS}.json`]: { code: 404 } });
-  let err = null; try { await R.refresh({ store: w.store, sackmann: w.sack, site: R.SITE, log: quiet }); } catch (e) { err = e; }
+  let err = null; try { await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: R.SITE, log: quiet }); } catch (e) { err = e; }
   await check('HTTP: a shard answering 404 -> stops, nothing written', () => { assert.ok(err && /HTTP 404/.test(err.message), String(err)); assert.strictEqual(read(w, 'set-repairs.json'), before); });
   const w2 = world(); serve(w2, { [`career-history/${SELS}.json`]: { code: 503, times: 1 } });
-  let r = null; try { r = await R.refresh({ store: w2.store, sackmann: w2.sack, site: R.SITE, log: quiet }); } catch (e) { r = { ok: false, why: [e.message] }; }
+  let r = null; try { r = await R.refresh({ frozenPin: PIN, store: w2.store, sackmann: w2.sack, site: R.SITE, log: quiet }); } catch (e) { r = { ok: false, why: [e.message] }; }
   await check('HTTP: one transient 503 is retried and the run completes', () => assert.strictEqual(r.ok, true, r.why.join('; ')));
   globalThis.fetch = realFetch;
 }
+
+await check('FROZEN_PIN: the 17 Oct set is pinned in code — 3,217 repairs, 341 flags and a sha256', () => {
+  assert.strictEqual(R.FROZEN_PIN.repairs, 3217); assert.strictEqual(R.FROZEN_PIN.flags, 341); assert.match(R.FROZEN_PIN.sha256, /^[0-9a-f]{64}$/);
+});
+for (const [name, edit] of [
+  ['a frozen entry edited in the committed file', (j) => { j.flags[SCHW][1002].why = 'edited'; }],
+  ['a frozen entry dropped from the committed file', (j) => { delete j.repairs[SCHW][1001]; }],
+  ['a frozen entry disguised as refresh-written', (j) => { j.repairs[SCHW][1001].by = 'refresh'; }],
+  ['a frozen entry added', (j) => { j.flags[SCHW][1003] = { short: [], why: 'x' }; }],
+]) {
+  const w = world(); const f = path.join(w.store, 'set-repairs.json'); const j = JSON.parse(fs.readFileSync(f, 'utf8')); edit(j); fs.writeFileSync(f, JSON.stringify(j));
+  const before = read(w, 'set-repairs.json'); let err = null;
+  try { await R.refresh({ frozenPin: PIN, store: w.store, sackmann: w.sack, site: w.site, log: quiet }); } catch (e) { err = e; }
+  await check(`pin: ${name} -> stops before building, nothing written`, () => {
+    assert.ok(err && err.closed && /do not match the pin/.test(err.message), String(err && err.message));
+    assert.strictEqual(read(w, 'set-repairs.json'), before); assert.ok(!fs.existsSync(path.join(w.store, 'set-repairs-log.jsonl')));
+  });
+}
+await check('pin: refresh-written entries do not move the digest; key order inside an entry does not either', () => {
+  const j = JSON.parse(read(world(), 'set-repairs.json'));
+  j.repairs[SELS] = { 1: { sets: [], by: 'refresh' } }; j.flags[SCHW][1002] = Object.fromEntries(Object.entries(j.flags[SCHW][1002]).reverse());
+  assert.deepStrictEqual(R.frozenDigest(j), PIN);
+});
 
 await check('week gate: runs only when every weekly part of one week has completed', () => {
   const wk = (of, done, refreshedAt, week = '2026-10-26') => R.weekComplete({ weeklyParts: { week, of, done }, refreshedAt });

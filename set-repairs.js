@@ -1,8 +1,9 @@
 // TEN-443 · sets api-tennis dropped (founder ruling 2026-10-17, comment b5b5ef00 item 1).
 // api-tennis leaves out every set in which one player won no games (3,576 of 168,390 finished rows, 2021–2023 only,
-// measured 2026-10-17): the result reads "2 - 1" and the set list holds two sets. `set-repairs.json` (written only by
-// tools/build-set-repairs.mjs) holds, per player key and api-tennis event key, the full set list where Tennis Explorer
-// AND Sackmann agree on the full score, and a flag where they disagree or only one source has the match.
+// measured 2026-10-17): the result reads "2 - 1" and the set list holds two sets. `set-repairs.json` (built whole by
+// tools/build-set-repairs.mjs on 17 Oct; since then only added to — new short rows, and a refresh-written flag upgraded
+// to a repair — by tools/te-set-repairs-refresh.mjs in the store repo's weekly refresh, TEN-449) holds, per player key
+// and api-tennis event key, the full set list where Tennis Explorer AND Sackmann agree on the full score, and a flag where they disagree or only one source has the match.
 //
 // applySetRepairs(rows, key, store) — no I/O; CommonJS like bsp-pipeline.js:
 //   * a repair applies only while the row still holds exactly the short list it was built from (`short`), so a

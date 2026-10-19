@@ -45,7 +45,7 @@ on:
         options: [weekly, reread]
         default: weekly
       part:
-        description: "i/n of the roster: weekly 0/2 or 1/2 (Monday's two parts), reread 0/1 (the day's 1/28 slice), smoke 0/28 (weekly, ~26 players)"
+        description: "weekly only — i/n of the roster: 0/2 or 1/2 (Monday's two parts), 0/28 smoke (~26 players). A reread always runs 0/1 (the day's 1/28 slice)"
         type: choice
         options: ['0/2', '1/2', '0/1', '0/28']
         default: '0/2'
@@ -65,8 +65,9 @@ jobs:
     timeout-minutes: 300
     env:
       TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '30 3 * * *' && 'reread' || 'weekly') }}
-      # the weekly run is split in two (a roster this size does not fit one job in January); the re-read is whole
-      TE_PART: ${{ inputs.part != '' && inputs.part || (github.event.schedule == '0 11 * * 1' && '1/2' || (github.event.schedule == '30 3 * * *' && '0/1' || '0/2')) }}
+      # the weekly run is split in two (a roster this size does not fit one job in January); the re-read is ALWAYS whole
+      # (0/1, its day's 1/28 slice) — a re-read dispatch ignores the part choice, and te-refresh.mjs refuses any other
+      TE_PART: ${{ ((inputs.mode == 'reread' || github.event.schedule == '30 3 * * *') && '0/1') || (inputs.part != '' && inputs.part) || (github.event.schedule == '0 11 * * 1' && '1/2') || '0/2' }}
     steps:
       - name: Check out the store (this repo — data only)
         uses: actions/checkout@v4

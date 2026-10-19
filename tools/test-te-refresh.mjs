@@ -236,7 +236,9 @@ const te = (url) => url.includes('tennisexplorer');
   });
   check('workflow: weekly crons 05:00 and 11:00 run parts 0/2 and 1/2; the re-read runs whole; budget < job timeout', () => {
     assert.ok(/cron: '0 5 \* \* 1'/.test(y) && /cron: '0 11 \* \* 1'/.test(y), 'two weekly crons');
-    assert.ok(/'0 11 \* \* 1' && '1\/2'/.test(y) && /'30 3 \* \* \*' && '0\/1'/.test(y) && /\|\| '0\/2'\)/.test(y), 'part mapping');
+    assert.ok(/'0 11 \* \* 1' && '1\/2'\)/.test(y) && /\(inputs\.mode == 'reread' \|\| github\.event\.schedule == '30 3 \* \* \*'\) && '0\/1'\)/.test(y) && /\|\| '0\/2' \}\}/.test(y), 'part mapping');
+    // the reread clause comes FIRST, so a reread dispatch with any part choice still runs 0/1
+    const expr = /TE_PART: \$\{\{ (.*) \}\}/.exec(y)[1]; assert.ok(expr.indexOf("'reread'") < expr.indexOf('inputs.part'), expr);
     const budget = +(/TE_BUDGET_MIN: '(\d+)'/.exec(y) || [])[1], timeout = +(/timeout-minutes: (\d+)/.exec(y) || [])[1];
     assert.ok(budget > 0 && timeout > 0 && budget < timeout && timeout < 360, `budget ${budget} min, job timeout ${timeout} min, Actions limit 360`);
     assert.ok(/--part "\$TE_PART"/.test(y), 'the run passes its part');
@@ -359,6 +361,14 @@ check('TEN-449 rollout: te-refresh.dispatch-only.yml is the template minus its S
   });
 }
 
+// ── TEN-449 · a re-read is never a part of its slice ──────────────────────────────────────────────────────────────
+{
+  const d = repo(); const before = snapshot(d); const r = run(d, 'reread', {}, '2026-01-22T03:30:00Z', { args: ['--part', '0/2'] });
+  check('reread --part 0/2 is refused (exit 2, nothing fetched, store byte-identical)', () => {
+    assert.strictEqual(r.code, 2, r.out); assert.strictEqual(r.reqs.length, 0); assert.strictEqual(snapshot(d), before); assert.ok(/--part must be 0\/1/.test(r.out), r.out);
+  });
+}
+
 // ── TEN-449 · API_TENNIS_KEY is trimmed (the stored secret carries a trailing newline) ─────────────────────────────
 {
   const d = repo(); const r = run(d, 'weekly', {}, undefined, { env: { API_TENNIS_KEY: 'x \n' } });
@@ -383,8 +393,41 @@ function saasWorkflowsCallingTe(root) {
     const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (/\.(ya?ml|sh|m?js|py)$/.test(e.name) && TE_TOOLS.test(fs.readFileSync(f, 'utf8'))) hits.push(path.relative(root, f)); } };
   walk(gh); return hits;
 }
+// Best effort, one step further: the scripts those workflows run (node/python/bash <file>, and the local files those
+// scripts require or import) must not RUN or LOAD a TE tool — a mention in a comment is not a call.
+const TE_CALL = /(?:\bnode\s+\S*|import\(\s*['"`][^'"`]*|\bfrom\s+['"][^'"]*|require\(\s*['"][^'"]*|\b(?:exec|execFile|spawn|fork)(?:Sync)?\([^)]*)\b(te-scrape|te-refresh|te-set-repairs-refresh)\.mjs/;
+function pipelineScriptsCallingTe(root) {
+  const seen = new Set(), hits = [];
+  const add = (rel) => { const n = path.normalize(rel); if (!seen.has(n) && fs.existsSync(path.join(root, n)) && fs.statSync(path.join(root, n)).isFile()) seen.add(n); };
+  const gh = path.join(root, '.github');
+  const walk = (d) => { if (!fs.existsSync(d)) return; for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const f = path.join(d, e.name); if (e.isDirectory()) { walk(f); continue; } if (!/\.ya?ml$/.test(e.name)) continue;
+    for (const m of fs.readFileSync(f, 'utf8').matchAll(/\b(?:node|python3?|bash|sh)\s+(?:--?[\w-]+(?:[= ]\S+)?\s+)*((?:\.\/)?[\w./-]+\.(?:m?js|cjs|py|sh))\b/g)) add(m[1]);
+  } };
+  walk(gh);
+  for (const rel of [...seen]) {   // one level of local require/import from each script the workflows run
+    const src = fs.readFileSync(path.join(root, rel), 'utf8');
+    for (const m of src.matchAll(/(?:require\(|from\s+|import\()\s*['"](\.{1,2}\/[^'"]+)['"]/g)) add(path.join(path.dirname(rel), m[1]));
+  }
+  for (const rel of seen) if (TE_CALL.test(fs.readFileSync(path.join(root, rel), 'utf8'))) hits.push(rel);
+  return { scanned: seen.size, files: [...seen], hits };
+}
 check('TEN-449 source rule: no workflow, action or script under this repo\'s .github/ calls te-scrape.mjs or te-refresh.mjs', () => {
   const hits = saasWorkflowsCallingTe(path.join(HERE, '..')); assert.deepStrictEqual(hits, [], hits.join(', '));
+});
+check('TEN-449 source rule: no script a SAAS workflow runs (nor a local file it loads) runs or loads a TE tool', () => {
+  const r = pipelineScriptsCallingTe(path.join(HERE, '..'));
+  assert.ok(r.scanned >= 20, `only ${r.scanned} scripts found from the workflows — the scan is not seeing them`);
+  assert.ok(r.files.includes('run-pipeline.js') && r.files.includes('bsp-pipeline.js'), 'the nightly pipeline (run-pipeline.js -> bsp-pipeline.js) is not in the scan');
+  assert.deepStrictEqual(r.hits, [], r.hits.join(', '));
+});
+check('TEN-449 source rule, control: a workflow running a script that spawns te-refresh.mjs, or loads a file that imports te-scrape.mjs, is caught', () => {
+  const d = fs.mkdtempSync(path.join(os.tmpdir(), 'te-src2-')); fs.mkdirSync(path.join(d, '.github', 'workflows'), { recursive: true }); fs.mkdirSync(path.join(d, 'tools'));
+  fs.writeFileSync(path.join(d, '.github', 'workflows', 'p.yml'), 'steps:\n  - run: node --max-old-space-size=4096 tools/run.mjs\n  - run: node bsp.js\n');
+  fs.writeFileSync(path.join(d, 'tools', 'run.mjs'), "execFileSync('node', ['tools/te-refresh.mjs'])\n");
+  fs.writeFileSync(path.join(d, 'bsp.js'), "// mentions te-refresh.mjs in a comment only\nrequire('./lib.js')\n");
+  fs.writeFileSync(path.join(d, 'lib.js'), "await import('./tools/te-scrape.mjs')\n");
+  assert.deepStrictEqual(pipelineScriptsCallingTe(d).hits.sort(), ['lib.js', 'tools/run.mjs']);
 });
 check('TEN-449 source rule, control: a .github workflow that runs te-refresh.mjs or te-scrape.mjs is caught', () => {
   for (const tool of ['te-refresh.mjs', 'te-scrape.mjs']) {

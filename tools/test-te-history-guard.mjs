@@ -72,6 +72,11 @@ check('a nested git checkout (the store refresh\'s saas/) is not scanned; the sa
   fs.writeFileSync(path.join(d, 'saas', 'tools', 'w.mjs'), body);
   assert.strictEqual(checkWriters(d).ok, true, checkWriters(d).why.join('; '));
   assert.strictEqual(writerCase('saas/tools/w.mjs', body).ok, false, 'control: no .git, the writer must be named');
+  // only saas/ at the root: a nested checkout anywhere else, or saas/ one level down, is still scanned
+  for (const dir of ['vendor', 'tools/saas']) {
+    const d2 = store(); fs.mkdirSync(path.join(d2, dir, '.git'), { recursive: true }); fs.writeFileSync(path.join(d2, dir, 'w.mjs'), body);
+    assert.strictEqual(checkWriters(d2).ok, false, `${dir}/ with a .git was skipped`);
+  }
 });
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
 check('the repo: no script, workflow or action outside the builder writes te-history', () => { const w = checkWriters(ROOT); assert.strictEqual(w.ok, true, w.why.join('; ')); });
