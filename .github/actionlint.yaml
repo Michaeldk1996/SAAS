@@ -7,4 +7,6 @@ paths:
       # prints an empty deploy outcome, and "Fail the run if market-edge was not rebuilt" (if: steps.deploy.outcome ==
       # 'success') has NEVER run since then. Re-pointing them changes what can turn a data run red (and the pipeline-down
       # Telegram), so that is a founder call, not a lint fix. Ignored here for this file and this message only.
-      - 'property "deploy" is not defined in object type \{cacheday: .*trading_splits'
+      # Matches on the message only, not the step-id list actionlint prints after it, so adding or renaming an unrelated
+      # step can't bring it back (TEN-449 review).
+      - 'property "deploy" is not defined in object type \{'

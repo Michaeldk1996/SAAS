@@ -59,6 +59,22 @@ test('script: outside with: (an env var) and a job named `run` are not values; s
   assert.deepEqual(v.map((x) => [x.key, x.line]), [['run', 7]]);
 });
 
+test('run/script keys in forms the guard cannot measure fail closed (flow mapping, quoted key, space before colon)', () => {
+  const odd = {
+    'flow-mapping step': `      - { name: s, run: "${EXPR}" }`,
+    'flow-mapping with': `      - uses: actions/github-script@v7\n        with: { script: "${EXPR}" }`,
+    'double-quoted key': `      - "run": echo ${EXPR}`,
+    'single-quoted key': `      - 'run': echo ${EXPR}`,
+    'space before colon': `      - run : echo ${EXPR}`,
+  };
+  for (const [name, step] of Object.entries(odd)) {
+    const v = scanText(wf(step));
+    assert.ok(v.some((x) => x.unmeasured), `${name}: not flagged`);
+  }
+  // the plain block-style forms are measured, not flagged as unmeasured
+  assert.ok(!scanText(wf(`      - run: echo ${EXPR}`)).some((x) => x.unmeasured));
+});
+
 test('checkFiles flags a mutant file and names the line', () => {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'exprlen-'));
   try {
@@ -84,16 +100,18 @@ const cliFails = (text) => {
     fs.writeFileSync(f, text);
     const r = spawnSync(process.execPath, [path.join(ROOT, 'tools/test-workflow-expr-length.mjs'), f], { encoding: 'utf8' });
     assert.equal(r.status, 1, r.stdout + r.stderr);
-    assert.match(r.stderr, /run value with an inline expression is 2\d{4} chars/);
+    assert.match(r.stderr, /run value with an inline expression is \d{5} chars/);
   } finally { fs.rmSync(d, { recursive: true, force: true }); }
 };
 
 test("the incident's shape on today's pipeline.yml: an inline expression in its largest run block fails via the CLI", () => {
   const today = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
-  const big = scanText(today).sort((a, b) => b.len - a.len)[0];
-  assert.ok(big.len > HEADROOM && !big.expr, 'the largest run block is long and expression-free today');
+  const big = scanText(today).filter((v) => !v.expr).sort((a, b) => b.len - a.len)[0];
   const L = today.split('\n');
-  L[big.line] = L[big.line].replace(/^(\s*)/, `$1TE_INGEST='${EXPR}' `); // its first content line, as 893f7d43e did
+  const ind = L[big.line].match(/^(\s*)/)[1];
+  L[big.line] = `${ind}TE_INGEST='${EXPR}' ${L[big.line].slice(ind.length)}`; // its first content line, as 893f7d43e did
+  // if someone shrinks that block below the limit, pad it so the test still exercises the shape (TEN-449 review)
+  if (big.len <= HEADROOM) L.splice(big.line + 1, 0, `${ind}# ${pad(LONG - big.len)}`);
   cliFails(L.join('\n'));
 });
 
