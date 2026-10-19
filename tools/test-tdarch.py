@@ -257,5 +257,47 @@ check('lower feed: api-tennis Pinnacle over api-tennis Bet365 for one match; Bet
       sorted((r['eventKey'], r['source']) for r in lb) == [(2, T.APPROX_SOURCE), (4, T.B365_SOURCE)], lb)
 mut = T.lower_feed_rows([dict(r, source=T.APPROX_SOURCE if r['source'] == T.B365_SOURCE else T.B365_SOURCE) for r in cb])
 check('control: with the sources swapped the Bet365 row wins match 2 (the rank decides, not the order)', any(r['eventKey'] == 2 and r['source'] == T.APPROX_SOURCE and r['psw'] == 2.4 for r in mut), mut)
+# ── Tennis Explorer · Pinnacle (founder 2026-10-19, steps 0-3): a snapshot, never a close, behind TE_FEED_ON ─────────
+SHA = 'b' * 64
+TX = lambda ek, lvl='ch', pin={'p1': 1.36, 'p2': 2.9, 'p1Ts': '2026-09-28T09:18:00Z', 'p2Ts': None, 'open': {'p1': 1.38, 'p2': 2.9, 'p1Ts': '2026-09-27T05:48:00Z', 'p2Ts': None}, 'moves': [2, 0]}, st='joined', ka='11', kb='22': {
+    'ek': str(ek), 'level': lvl, 'date': '2026-09-28', 'a': 'A. One', 'b': 'B. Two', 'ka': ka, 'kb': kb, 'status': st, 'teId': '3338923', 'tour': 'Porto challenger',
+    'books': ['bet365', 'Pinnacle'], 'pageSha256': SHA, 'fetchedAt': '2026-10-20T03:00:00Z', 'pin': pin}
+tdocs = [{'batch': 'calib-01', 'source': T.TE_SOURCE, 'complete': True, 'rows': [
+    TX(31), TX(32, ka='22', kb='11'), TX(33, lvl='itf'), TX(34, st='ambiguous'), TX(35, pin=None), TX(36, pin={'p1': 1.005, 'p2': 9.0}),
+    TX(37), TX(38)]}]
+tfx = {'31': F(31, 'Challenger Men Singles', d='2026-09-28'), '32': F(32, 'Challenger Men Singles', win='Second Player', d='2026-09-28'),
+       '37': F(37, 'Challenger Men Singles', st='Walk Over', d='2026-09-28'), '38': None}
+te, terep = T.te_rows(tdocs, tfx.get)
+check('TE: a joined match with a Pinnacle pair is a "Tennis Explorer · Pinnacle" snapshot labelled "Pinnacle (approx.)", never a close',
+      [(r['event_key'], r['source'], r['label']) for r in te] == [(31, T.TE_SOURCE, 'Pinnacle (approx.)'), (32, T.TE_SOURCE, 'Pinnacle (approx.)')], (te, terep))
+check('TE: oriented to the winner — TE a / b = api-tennis first / second; a reversed target and a second-player win still read the right side',
+      (te[0]['winner'], te[0]['price_winner'], te[0]['price_loser']) == ('A. One', 1.36, 2.9) and (te[1]['winner'], te[1]['price_winner'], te[1]['price_loser']) == ('B. Two', 1.36, 2.9), te)
+check('TE: the later side change is price_ts, every side time and the opening price kept; page sha256 + TE id in detail, hover says not a confirmed close',
+      te[0]['price_ts'] == '2026-09-28T09:18:00Z' and te[0]['detail']['open']['first'] == 1.38 and te[0]['detail']['pageSha256'] == SHA
+      and te[0]['detail']['teMatchId'] == '3338923' and 'not a confirmed close' in te[0]['detail']['hover'] and te[0]['fetched_at'] == '2026-10-20T03:00:00Z', te[0])
+check('TE: ITF refused, ambiguous / no Pinnacle / a side below 1.01 / a walkover / an unreadable fixture = no row, each counted',
+      terep.get('level out of scope') == 1 and terep.get('ambiguous') == 1 and terep.get('joined, no Pinnacle on the page') == 1 and terep.get('a side below 1.01') == 1
+      and terep.get('walkover') == 1 and terep.get('api-tennis fixture unreadable') == 1, terep)
+tcur = [dict(r, id=40 + i) for i, r in enumerate(te)] + [dict(ar[1], id=50, event_key=31), dict(cur[2], id=51, event_key=32)]
+orig = T.TE_FEED_ON
+try:
+    T.TE_FEED_ON = False
+    off = T.lower_feed_rows(tcur)
+    check('TE_FEED_ON off: the feed carries no TE row — match 31 stays on api-tennis Pinnacle (nothing a page shows changes)',
+          sorted((r['eventKey'], r['source']) for r in off) == [(31, T.APPROX_SOURCE), (32, T.START10_SOURCE)], off)
+    T.TE_FEED_ON = True
+    on = T.lower_feed_rows(tcur)
+    check('TE_FEED_ON on: TE over api-tennis Pinnacle (match 31), start - 10 over TE (match 32); the TE row carries its change time',
+          sorted((r['eventKey'], r['source']) for r in on) == [(31, T.TE_SOURCE), (32, T.START10_SOURCE)]
+          and next(r for r in on if r['eventKey'] == 31)['priceTs'] == '2026-09-28T09:18:00Z', on)
+finally:
+    T.TE_FEED_ON = orig
+check('TE_FEED_ON is committed OFF until the founder approves the calibration', T.TE_FEED_ON is False)
+td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
+json.dump(tdocs[0], open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
+json.dump(dict(tdocs[0], batch='ch-01', complete=False), open(os.path.join(td, 'te-odds', 'ch-01.json'), 'w'))
+dd, sk = T.te_docs(td)
+check('TE import reads COMPLETE batch files only; a partial batch is skipped and named', [d['batch'] for d in dd] == ['calib-01'] and sk == ['ch-01'], (dd, sk))
+shutil.rmtree(td)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

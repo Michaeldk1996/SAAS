@@ -186,7 +186,7 @@ const result = await E(`(async () => {
       const c = { inc(f, b) { cs.forEach(o => { if (b) o.byBook[b] = (o.byBook[b] || 0) + 1; else o[f]++; }); } };
       c.inc('n');
       if (x.walkover) { c.inc('walkover'); return; }
-      if (v.price != null) { c.inc('priced'); c.inc(null, v.book === 'A' ? (v.src === 'od10' ? 'start-10' : 'api-tennis approx') : v.book === 'B' ? (v.src === 'cap' ? 'Bet365 (approx.)' : v.src === 'atb' ? 'api-tennis Bet365 (approx.)' : 'Bet365') : 'real close'); return; }
+      if (v.price != null) { c.inc('priced'); c.inc(null, v.book === 'A' ? (v.src === 'od10' ? 'start-10' : v.src === 'te' ? 'Tennis Explorer approx' : 'api-tennis approx') : v.book === 'B' ? (v.src === 'cap' ? 'Bet365 (approx.)' : v.src === 'atb' ? 'api-tennis Bet365 (approx.)' : 'Bet365') : 'real close'); return; }
       const why = sfDbNoPriceWhy(name, vs[i]);
       c.inc(why);
       const P = CV.players[k] = CV.players[k] || { name, unpriced: 0 }; P.unpriced++;
@@ -228,7 +228,7 @@ const result = await E(`(async () => {
     const meOf = x => { const d0 = Date.parse(x.date + 'T00:00:00Z'); let hit = null, n = 0;
       for (const dd of [0, -1, 1]) { const ds = new Date(d0 + dd * 864e5).toISOString().slice(0, 10), m = meBy.get(ds + '|' + (x.won ? 1 : 0) + '|' + surn(x.opponent)); if (m) { hit = m; n++; } }
       return n === 1 ? { price: hit.price, oppPrice: hit.oppPrice, book: hit.book === 'bet365-archive' ? 'B' : /approx/.test(hit.book) ? 'A' : 'P',
-        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : 'td',
+        src: hit.book === 'pinnacle-history' ? 'hist' : hit.book === 'pinnacle-capture' ? 'cap' : hit.book === 'pinnacle-approx-od10' ? 'od10' : hit.book === 'pinnacle-approx-te' ? 'te' : 'td',
         _id: { date: hit.date, opp: hit.opp, won: !!hit.won } } : null; };
     // the Form tab, called as the tab calls it, on this player's career rows (every window, every surface)
     const formAt = new Map();

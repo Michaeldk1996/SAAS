@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import
+        description: install | daily | verify-export | restore-check | inventory | approx-import | start10-dry-run | start10-import | lower-dry-run | lower-import | te-dry-run | te-import
         required: true
         default: daily
 permissions:
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https://([a-z0-9]+)\.supabase\.co.*#\1#')
-          for MIG in supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql supabase/migrations/20261019090000_historical_snapshot_bet365.sql; do
+          for MIG in supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql supabase/migrations/20261019090000_historical_snapshot_bet365.sql supabase/migrations/20261020090000_historical_snapshot_te.sql; do
             resp=$(jq -Rs '{query: .}' "$MIG" | curl -sS -w $'\n%{http_code}' -X POST \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @- \
               "https://api.supabase.com/v1/projects/$REF/database/query")
@@ -84,6 +84,22 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py lower-import --unpriced lower-unpriced.json ${{ env.MODE == 'lower-dry-run' && '--dry-run' || '' }}
+      # founder 2026-10-19 (steps 0-3): Tennis Explorer's Pinnacle, read on the Mac by stennisfy-ops tools/te-odds-batch.mjs into
+      # the private store's te-odds/ — imported insert-only as source 'Tennis Explorer · Pinnacle', label 'Pinnacle (approx.)',
+      # never a close. The store is read with its read-only token into .te-store/ (outside every published path). Whether a
+      # page reads these rows is tools/tdarch.py TE_FEED_ON (off until the founder approves the calibration).
+      - name: Tennis Explorer — check out the private store (read-only token)
+        if: env.MODE == 'te-import' || env.MODE == 'te-dry-run'
+        uses: actions/checkout@v4
+        with:
+          repository: michaeldk1996/stennisfy-te-store
+          token: ${{ secrets.TE_STORE_READ_TOKEN }}
+          path: .te-store
+      - name: Tennis Explorer — import the complete te-odds batches (insert-only; --dry-run counts)
+        if: env.MODE == 'te-import' || env.MODE == 'te-dry-run'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py te-import .te-store ${{ env.MODE == 'te-dry-run' && '--dry-run' || '' }}
       - name: lower levels — hand the unpriced reasons to the pipeline (founder ruling 2026-10-18 item 5)
         if: (env.MODE == 'lower-import' || env.MODE == 'daily') && hashFiles('lower-unpriced.json') != ''
         uses: actions/upload-artifact@v4

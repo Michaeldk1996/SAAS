@@ -35,6 +35,11 @@ Commands
                             pair at Oddspapi's trueStart - 10 min (the ruled sanity gate first), into the snapshot table with
                             its cut, price time, start and gap to start; reads the archive, the committed fixture index and
                             api-tennis get_fixtures (UTC); never a metered Oddspapi call. --dry-run counts, inserts nothing
+  te-import STORE [--dry-run]
+                            Pinnacle (approx.) from Tennis Explorer — founder 2026-10-19: every joined match with a
+                            Pinnacle pair in the private store's COMPLETE te-odds/ batch files (stennisfy-te-store), into the
+                            snapshot table as source 'Tennis Explorer · Pinnacle' (never a close); the result and names from
+                            the current api-tennis fixture; env API_TENNIS_KEY. --dry-run counts, inserts nothing
   approx-feed OUT.csv       the current snapshots as the Database builder's feed (build-database-yield.js), each row with
                             its source
 Env: SUPABASE_URL, SUPABASE_SECRET_KEY (service_role: SELECT + INSERT only)."""
@@ -908,7 +913,16 @@ def cmd_start10_import(dry_run=False):
 LOWER_FROM, LOWER_TO = '2021-01-01', '2026-09-16'
 NOT_TD_EVENT = re.compile(r'davis cup|united cup|atp cup|laver cup|hopman|olympic|next ?gen|asian games', re.I)
 LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'winnerKey', 'loserKey', 'psw', 'psl', 'eventKey',
-                   'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment']
+                   'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment', 'priceTs']
+# Tennis Explorer's Pinnacle price (founder 2026-10-19, steps 0-3): a fourth snapshot source, 'Pinnacle (approx.)', never a
+# close. TE_FEED_ON is THE switch for its place in the source order (founder: "ready to switch on after calibration"):
+# off, the feed never carries a TE row, so nothing any page shows changes; on, a TE row ranks after start - 10 and before
+# api-tennis's Pinnacle (close > start - 10 > TE > api-tennis Pinnacle > captured Bet365 > api-tennis Bet365). The import
+# (te-import) stores TE rows either way: the archive is evidence, the switch is the reading.
+TE_FEED_ON = False
+TE_SOURCE = 'Tennis Explorer · Pinnacle'
+TE_HOVER = 'Tennis Explorer, last listed pre-match price (changed HH:MM), not a confirmed close'
+TE_LEVELS = ('atp-q', 'atp-x', 'ch', 'ch-q')
 RESULT_STATUSES = ('Finished', 'Retired')
 
 
@@ -957,7 +971,9 @@ def lower_feed_rows(current):
         if not d.get('level'):
             continue
         k = r['event_key']
-        rank = 0 if r.get('source') == START10_SOURCE else 2 if r.get('source') == B365_SOURCE else 1
+        if r.get('source') == TE_SOURCE and not TE_FEED_ON:
+            continue
+        rank = 0 if r.get('source') == START10_SOURCE else 0.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE else 1
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
     out = []
@@ -968,7 +984,8 @@ def lower_feed_rows(current):
                     'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
                     'source': r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
                     'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s'],
-                    'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed'})
+                    'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed',
+                    'priceTs': (r.get('price_ts') or '') if r.get('source') == TE_SOURCE else ''})
     return out
 
 
@@ -1081,10 +1098,103 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
     return rows
 
 
+# ── Tennis Explorer · Pinnacle (founder 2026-10-19, steps 0-3) ───────────────────────────────────────────────────────
+def te_docs(store):
+    """The COMPLETE batch files of the private store's te-odds/ (te-odds-batch.mjs, stennisfy-ops). A partial batch is
+    skipped and counted (re-run on the Mac first); a file that does not read stops the import."""
+    docs, skipped = [], []
+    for f in sorted(glob.glob(os.path.join(store, 'te-odds', '*.json'))):
+        with open(f) as fh:
+            d = json.load(fh)
+        if d.get('source') != TE_SOURCE or not isinstance(d.get('rows'), list):
+            P.die(f'{f}: not a te-odds batch file (source {d.get("source")!r})')
+        (docs if d.get('complete') else skipped).append(d if d.get('complete') else d.get('batch') or os.path.basename(f))
+    return docs, skipped
+
+
+def te_rows(docs, fixture_of):
+    """Snapshot rows from the joined TE matches with a Pinnacle pair + a report. `fixture_of(ek)` = the CURRENT api-tennis
+    fixture (the result and the names; a match with no result, a walkover or an unreadable fixture -> no row). Prices
+    are oriented to the winner from TE's a / b (= api-tennis's first / second player). A side below 1.01 = no row. ITF is
+    out of scope: a TE row of any other level is refused, never stored."""
+    rows, rep = [], collections.Counter()
+    for d in docs:
+        for x in d['rows']:
+            if x.get('status') != 'joined':
+                rep[f"{x.get('status')}"] += 1; continue
+            p = x.get('pin')
+            if not p:
+                rep['joined, no Pinnacle on the page'] += 1; continue
+            if x.get('level') not in TE_LEVELS:
+                rep['level out of scope'] += 1; continue
+            p1, p2 = price(p.get('p1')), price(p.get('p2'))
+            if p1 is None or p2 is None:
+                rep['a side below 1.01'] += 1; continue
+            if not re.fullmatch(r'[0-9a-f]{64}', str(x.get('pageSha256') or '')) or not re.fullmatch(r'[0-9]+', str(x.get('teId') or '')):
+                rep['no page sha256 / TE id'] += 1; continue
+            f = fixture_of(str(x['ek']))
+            if not f:
+                rep['api-tennis fixture unreadable'] += 1; continue
+            st = str(f.get('event_status') or '')
+            if 'walk' in st.lower():
+                rep['walkover'] += 1; continue
+            if st not in RESULT_STATUSES or f.get('event_winner') not in ('First Player', 'Second Player'):
+                rep['no result'] += 1; continue
+            fw = f['event_winner'] == 'First Player'
+            a, b = f.get('event_first_player'), f.get('event_second_player')
+            ka, kb = str(f.get('first_player_key')), str(f.get('second_player_key'))
+            # TE's a / b are the target's a / b; the fixture must still name the same two players in that order
+            if {ka, kb} != {str(x.get('ka')), str(x.get('kb'))}:
+                rep['fixture names other players'] += 1; continue
+            same = str(x.get('ka')) == ka
+            pa, pb = (p1, p2) if same else (p2, p1)
+            pw, pl = (pa, pb) if fw else (pb, pa)
+            ts = [t for t in (p.get('p1Ts'), p.get('p2Ts')) if t]
+            pts = max(ts) if ts else None
+            tour = str(f.get('tournament_name') or '').strip()
+            rows.append({'dedupe_key': '|'.join(str(v) for v in (TE_SOURCE, f['event_date'], tour, a if fw else b, b if fw else a, x['ek'], pw, pl, x['pageSha256'])),
+                         'source': TE_SOURCE, 'label': APPROX_LABEL, 'match_date': f['event_date'], 'tournament': tour,
+                         'round': f.get('tournament_round') or None, 'winner': a if fw else b, 'loser': b if fw else a, 'event_key': int(x['ek']),
+                         'price_winner': pw, 'price_loser': pl, 'fetched_at': x.get('fetchedAt'), 'price_ts': pts,
+                         'detail': {'level': x['level'], 'round': f.get('tournament_round'), 'winnerKey': ka if fw else kb, 'loserKey': kb if fw else ka,
+                                    'status': st, 'teMatchId': str(x['teId']), 'pageSha256': x['pageSha256'], 'batch': d.get('batch'),
+                                    'teTournament': x.get('tour'), 'books': x.get('books') or [], 'moves': p.get('moves'),
+                                    'sideTs': {'first': p.get('p1Ts') if same else p.get('p2Ts'), 'second': p.get('p2Ts') if same else p.get('p1Ts')},
+                                    'open': {'first': (p.get('open') or {}).get('p1' if same else 'p2'), 'second': (p.get('open') or {}).get('p2' if same else 'p1'),
+                                             'firstTs': (p.get('open') or {}).get('p1Ts' if same else 'p2Ts'), 'secondTs': (p.get('open') or {}).get('p2Ts' if same else 'p1Ts')},
+                                    'firstPlayer': a, 'secondPlayer': b, 'winnerIsFirst': fw, 'hover': TE_HOVER}})
+            rep['stored'] += 1
+    return rows, dict(rep)
+
+
+def cmd_te_import(store, dry_run=False):
+    """Append the TE batches into the snapshot table (insert-only; a changed price for a held match is a new row that
+    supersedes the old one). Env SUPABASE_URL / SUPABASE_SECRET_KEY, API_TENNIS_KEY (the current fixture per event)."""
+    docs, skipped = te_docs(store)
+    if not docs:
+        P.die(f'{store}/te-odds: no complete batch file — nothing to import' + (f' (partial: {", ".join(skipped)})' if skipped else ''))
+    akey = os.environ.get('API_TENNIS_KEY') or P.die('API_TENNIS_KEY is not set')
+    eks = sorted({str(x['ek']) for d in docs for x in d['rows'] if x.get('status') == 'joined' and x.get('pin')})
+    fx = P.apitennis_fixture_fetcher(akey)(eks)
+    rows, rep = te_rows(docs, fx.get)
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
+    add = plan_snapshots(rows, held)
+    ids = []
+    if not dry_run:
+        for i in range(0, len(add), 500):
+            ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
+    print('### te-import', json.dumps({'dryRun': dry_run, 'batches': [d.get('batch') for d in docs], 'partialSkipped': skipped, 'report': rep,
+                                       'byLevel': collections.Counter(r['detail']['level'] for r in rows),
+                                       'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON}))
+    if not dry_run:
+        cmd_snapshot_counts('te-import')
+    return rows
+
+
 def cmd_approx_feed(out_csv, lower_csv=None):
     try:
         try:
-            held = P.select_all(SNAP, 'id,source,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes,cut_ts,gap_to_start_s,detail')
+            held = P.select_all(SNAP, 'id,source,match_date,tournament,winner,loser,event_key,price_winner,price_loser,supersedes,cut_ts,price_ts,gap_to_start_s,detail')
         except RuntimeError as e:                                    # the start - 10 columns not installed yet: api-tennis rows only
             if '42703' not in str(e) and 'does not exist' not in str(e):
                 raise
@@ -1180,6 +1290,8 @@ if __name__ == '__main__':
     elif a[0] == 'lower-import':
         cmd_lower_import('--dry-run' in a, a[a.index('--from') + 1] if '--from' in a else LOWER_FROM, a[a.index('--to') + 1] if '--to' in a else LOWER_TO,
                          a[a.index('--unpriced') + 1] if '--unpriced' in a else None)
+    elif a[0] == 'te-import':
+        cmd_te_import(a[1], '--dry-run' in a)
     elif a[0] == 'snapshot-counts':
         cmd_snapshot_counts(a[a.index('--record') + 1] if '--record' in a else None)
     else:
