@@ -7590,6 +7590,16 @@
     return {
       m: m,
       teOnly: rec ? recordSpine(p).filter(function (r) { return r.teOnly && win[String(r.year)]; }).length : 0,
+      // the tile's feed rows the record leaves out (not in Tennis Explorer, junior, duplicate, walkover, exhibition)
+      notInRecord: (function () {
+        var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
+        var ch = careerHistoryFor(p.key) || [];
+        if (!lay) return 0;
+        return (lay.out || []).filter(function (e) {
+          var r = ch[e[0]];
+          return r && typeof r.date === 'string' && win[r.date.slice(0, 4)];
+        }).length;
+      }()),
       // SIGNED (TEN-384 fx2 item 8; it used to be clamped at zero). If the dated store ever held MORE
       // in-window rows than the spine totals, the negative is a third, different defect: it is never
       // printed as this one (calResidualNote prints only > 0) and never hidden either —
@@ -7608,8 +7618,12 @@
         ' no dated match row');
     }
     if (r.teOnly > 0) {
-      parts.push(r.teOnly + (r.teOnly === 1 ? ' match comes' : ' matches come') +
-        ' from Tennis Explorer alone and is listed under Record by season, not in this calendar');
+      parts.push(r.teOnly + (r.teOnly === 1 ? ' match comes from Tennis Explorer alone and is' :
+        ' matches come from Tennis Explorer alone and are') + ' listed under Record by season, not in this calendar');
+    }
+    if (r.notInRecord > 0) {
+      parts.push(r.notInRecord + (r.notInRecord === 1 ? ' match in this calendar is' : ' matches in this calendar are') +
+        ' not in the career record (not in Tennis Explorer, a junior event, a duplicate, a walkover or an exhibition)');
     }
     if (r.outside > 0) {
       var span = r.from === r.to ? r.from : r.from + ENDASH + r.to;
