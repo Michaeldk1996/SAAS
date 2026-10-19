@@ -2,6 +2,7 @@
 import csv, json, sys, unicodedata, re, collections, datetime as dt
 cov = json.load(open(sys.argv[1]))
 dump = cov['dump']
+print('threwEx', cov.get('threwEx'), 'q1 errors', [x['q1'] for x in dump if isinstance(x.get('q1'), str)][:3])
 def nrm(s): return unicodedata.normalize('NFD', str(s or '').lower()).encode('ascii', 'ignore').decode().replace('-', ' ').replace("'", ' ')
 def our_sur(n):  # "C. Alcaraz" -> ['alcaraz']; "J. M. Del Potro" -> ['del','potro']
     t = re.sub(r'^([a-z]{1,3}\.\s*)+', '', nrm(n)).strip().split()
