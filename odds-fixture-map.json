@@ -4706,74 +4706,74 @@
     },
     "12172008": {
       "fixtureId": "id1200309775722436",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "D. Altmaier",
       "p2": "T. Droguet",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-20T08:00:00.000Z",
       "tournamentId": 3097
     },
     "12172009": {
       "fixtureId": "id1200309775722444",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "M. Arnaldi",
       "p2": "L. Musetti",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-19T14:30:00.000Z",
       "tournamentId": 3097
     },
     "12172010": {
       "fixtureId": "id1200309775722438",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "B. Bonzi",
       "p2": "C. Norrie",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-20T08:00:00.000Z",
       "tournamentId": 3097
     },
     "12172011": {
       "fixtureId": "id1200309775722440",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "J. Faria",
       "p2": "F. Balshaw",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-19T13:00:00.000Z",
       "tournamentId": 3097
     },
     "12172012": {
       "fixtureId": "id1200309775722442",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "U. Humbert",
       "p2": "C. Moutet",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-20T08:00:00.000Z",
       "tournamentId": 3097
     },
     "12172013": {
       "fixtureId": "id1200309775722448",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "H. Medjedovic",
       "p2": "B. Nakashima",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-20T08:00:00.000Z",
       "tournamentId": 3097
     },
     "12172014": {
       "fixtureId": "id1200309775722446",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "L. Sonego",
       "p2": "M. Kouame",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-19T16:00:00.000Z",
       "tournamentId": 3097
     },
     "12172015": {
       "fixtureId": "id1200309775722450",
-      "mappedAt": "2026-10-18T00:47:22Z",
+      "mappedAt": "2026-10-19T12:52:19Z",
       "orient": "same",
       "p1": "S. Wawrinka",
       "p2": "M. Landaluce",
-      "startTime": "2026-10-19T09:00:00.000Z",
+      "startTime": "2026-10-20T08:00:00.000Z",
       "tournamentId": 3097
     },
     "12172160": {
@@ -4901,6 +4901,24 @@
       "p2": "N. Budkov Kjaer",
       "startTime": "2026-10-19T11:10:00.000Z",
       "tournamentId": 3097
+    },
+    "12172316": {
+      "fixtureId": "id1204195975620046",
+      "mappedAt": "2026-10-19T12:52:19Z",
+      "orient": "same",
+      "p1": "J. Duckworth",
+      "p2": "L. Darderi",
+      "startTime": "2026-10-21T06:15:00.000Z",
+      "tournamentId": 41959
+    },
+    "12172317": {
+      "fixtureId": "id1204195975620042",
+      "mappedAt": "2026-10-19T12:52:19Z",
+      "orient": "same",
+      "p1": "A. Mannarino",
+      "p2": "A. Rublev",
+      "startTime": "2026-10-21T06:30:00.000Z",
+      "tournamentId": 41959
     }
   },
   "missAudit": {
@@ -4910,26 +4928,15 @@
       "missResolutionHoursP50": 38.23,
       "missResolutionsMeasured": 177,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.79,
+      "observedSpanDays": 18.78,
       "projectedTtlUnitsPerDay": 1.2,
       "runs": 400,
-      "spentRuns": 145,
+      "spentRuns": 146,
       "ttlBitRuns": 23,
       "ttlBitShare": 0.058,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-30T16:47:33Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 27
-      },
       {
         "at": "2026-09-30T18:02:31Z",
         "fixturesUnitsSpent": 0,
@@ -9318,9 +9325,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 34
+      },
+      {
+        "at": "2026-10-19T12:52:19Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 8,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 10,
+        "ttlBit": false,
+        "unmapped": 2,
+        "upcoming": 35
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-18T23:33:50Z"
+  "updatedAt": "2026-10-19T12:52:19Z"
 }
