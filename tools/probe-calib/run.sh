@@ -6,3 +6,4 @@ if [ ! -f .te-store/te-odds/calib-01.json ]; then echo "calib-01.json NOT in the
 node -e 'const d=require("./.te-store/te-odds/calib-01.json");console.log("batch",d.batch,"complete",d.complete,"targets",d.targets,"rows",d.rows.length, "keys", Object.keys(d).join(","))'
 echo "== report"; node tools/te-calibration-report.mjs .te-store/te-odds/calib-01.json --no-prices
 echo "== dry-run"; python3 tools/tdarch.py te-import .te-store --dry-run
+# check 2 2026-10-19T17:15:56Z
