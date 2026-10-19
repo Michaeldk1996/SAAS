@@ -10,8 +10,11 @@
 //     the point-by-point parser, and the match-stat store's hydrate/freeze/guards).
 //  2. Per-set backlog → the recent-form fetch queue is NEWEST FIRST and the cap is
 //     raised. Driven through build-point-by-point.js main() with a stubbed fetch.
-//  3. Market-edge crash goes red AFTER the deploy. The build step's real run block
-//     and the final step's real command are executed from pipeline.yml.
+//  3. Market-edge not rebuilt — REVISED by founder decision 19 Oct (TEN-449): ALERT
+//     ONLY, never blocks, one Telegram per streak. The build step's, the check step's
+//     and the alert step's real run blocks are executed from pipeline.yml (the alert
+//     against a fake GitHub API and a fake Telegram), each with a mutant that would
+//     block the run or alert every run.
 //  4. Split builds, option 1: if .github/workflows/ differs between the queued SHA
 //     and the tip, build the queued SHA. The real "Re-point" run block is executed
 //     against throwaway git repositories.
@@ -235,11 +238,11 @@ check('main() spends a capped budget on the NEWEST recent-form matches (real loo
   assert.deepStrictEqual(got, ['2002', '2001', '2003'], `fetched ${JSON.stringify(got)}\n${r.stdout}${r.stderr}`);
 });
 
-console.log('\n3 · market-edge not rebuilt → red AFTER the deploy\n');
+console.log('\n3 · market-edge not rebuilt → alert only (never blocks), one Telegram per streak\n');
 
 // Step helpers: the real text of a named step in pipeline.yml.
-function stepBlock(name) {
-  const lines = YML.split('\n');
+function stepBlock(name, yml = YML) {
+  const lines = yml.split('\n');
   const i = lines.findIndex(l => l.trim() === `- name: ${name}`);
   if (i < 0) return null;
   const ind = lines[i].indexOf('-');
@@ -249,8 +252,8 @@ function stepBlock(name) {
   while (j < lines.length && !(lines[j].trim() && lines[j].search(/\S/) <= ind)) j++;
   return { start: i, end: j, lines: lines.slice(i, j) };
 }
-function stepRun(name) {
-  const b = stepBlock(name); if (!b) return null;
+function stepRun(name, yml = YML) {
+  const b = stepBlock(name, yml); if (!b) return null;
   const k = b.lines.findIndex(l => /^\s+run: /.test(l));
   if (k < 0) return null;
   const m = /^(\s+)run: (.*)$/.exec(b.lines[k]);
@@ -260,10 +263,12 @@ function stepRun(name) {
   return body.map(l => l.slice(ind)).join('\n');
 }
 // the build job's steps (founder 2026-10-18: the separate fail-alert job after it is not the build job)
-const stepNames = YML.split('\n  fail-alert:')[0].split('\n').filter(l => /^      - name: /.test(l)).map(l => l.replace(/^      - name: /, '').trim());
+const buildSteps = (yml) => yml.split('\n  fail-alert:')[0].split('\n').filter(l => /^      - name: /.test(l)).map(l => l.replace(/^      - name: /, '').trim());
 
 const BUILD = 'Build market-edge shards (best-effort)';
-const RED = 'Fail the run if market-edge was not rebuilt (post-deploy, loud)';
+const CHECK = 'Market-edge rebuilt check (alert only, never blocks)';
+const ALERT = 'Alert — market-edge not rebuilt (Telegram, once per streak)';
+const UPLOAD = 'Upload the built site for publish.yml (site-data)';
 
 function runBuildStep(builderExit) {
   const dir = tmpdir('mebuild');
@@ -283,53 +288,109 @@ check('the build step never fails the job and records the builder exit status (c
   assert.match(good.env, /^MARKET_EDGE_BUILD_RC=0$/m);
 });
 
-check('the red step is the LAST step, after the deploy, and runs only when the deploy succeeded', () => {
-  assert.strictEqual(stepNames[stepNames.length - 1], RED, `last step is "${stepNames[stepNames.length - 1]}"`);
-  assert.ok(stepNames.indexOf('Deploy to GitHub Pages') < stepNames.indexOf(RED));
-  const b = stepBlock(RED).lines.join('\n');
-  assert.match(b, /\n\s+if: always\(\) && steps\.deploy\.outcome == 'success'\n/);
-  // The pre-deploy half stays a warning: "Assert site completeness" must not exit on staleness.
-  assert.ok(!/market-edge stale[^\n]*process\.exit/.test(YML), 'the pre-deploy stale check exits (would block the deploy)');
+// Wiring, as a list of problems so a mutant workflow can be shown to produce one.
+function wiringProblems(yml) {
+  const p = [];
+  const names = buildSteps(yml);
+  if (names[names.length - 2] !== CHECK || names[names.length - 1] !== ALERT) p.push(`the last two steps are not the check then the alert: ${names.slice(-2).join(' | ')}`);
+  if (!(names.indexOf(UPLOAD) >= 0 && names.indexOf(UPLOAD) < names.indexOf(CHECK))) p.push('the check does not run after the site-data upload');
+  const up = (stepBlock(UPLOAD, yml) || { lines: [] }).lines.join('\n');
+  if (!/\n\s+id: site_data\n/.test(up)) p.push('the site-data upload has no id: site_data');
+  const c = (stepBlock(CHECK, yml) || { lines: [] }).lines.join('\n');
+  if (!/\n\s+id: me_check\n/.test(c)) p.push('the check has no id: me_check');
+  // runs whenever this run handed its site to publish.yml — never on a step that does not exist in this job
+  if (!/\n\s+if: always\(\) && steps\.site_data\.outcome == 'success'\n/.test(c)) p.push(`the check's gate is not "always() && steps.site_data.outcome == 'success'"`);
+  if (/continue-on-error/.test(c)) p.push('the check relies on continue-on-error (chosen: it exits 0 by construction)');
+  const a = (stepBlock(ALERT, yml) || { lines: [] }).lines.join('\n');
+  if (!/\n\s+if: always\(\) && steps\.me_check\.outputs\.stale == 'true'\n/.test(a)) p.push('the alert is not gated on the check finding market-edge not rebuilt');
+  if (!/TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(a) || /\$\{\{/.test(stepRun(ALERT, yml) || '')) p.push('the alert must take its secrets through env:, never inline in run:');
+  if (/steps\.deploy\b/.test(yml)) p.push('pipeline.yml still reads steps.deploy (the deploy is publish.yml\'s since cf703d612)');
+  // the pre-upload half stays a warning: "Assert site completeness" must not exit on staleness
+  if (/market-edge stale[^\n]*process\.exit/.test(yml)) p.push('the pre-upload stale check exits');
+  return p;
+}
+
+check('wiring: the check and the alert are the last two build steps, after the site-data upload, gated on it (no steps.deploy)', () => {
+  assert.deepStrictEqual(wiringProblems(YML), []);
+});
+check('wiring mutants are caught: the dead steps.deploy gate, an ungated alert, an inline secret, continue-on-error', () => {
+  const mutants = {
+    'gate back on steps.deploy': YML.replace("if: always() && steps.site_data.outcome == 'success'", "if: always() && steps.deploy.outcome == 'success'"),
+    'alert every run': YML.replace("if: always() && steps.me_check.outputs.stale == 'true'", 'if: always()'),
+    'secret inline in run': YML.replace('run: node tools/market-edge-alert.mjs', 'run: TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }} node tools/market-edge-alert.mjs'),
+    'continue-on-error instead of exit 0': YML.replace('        id: me_check\n', '        id: me_check\n        continue-on-error: true\n'),
+  };
+  for (const [what, m] of Object.entries(mutants)) {
+    assert.notStrictEqual(m, YML, `${what}: mutant did not apply`);
+    assert.ok(wiringProblems(m).length > 0, `${what}: not caught`);
+  }
 });
 
-function runRedStep({ rc, start, index }) {
-  const dir = tmpdir('mered');
+const CHECK_SRC = fs.readFileSync(path.join(ROOT, 'tools', 'market-edge-rebuilt-check.js'), 'utf8');
+// Runs the check step's REAL run block over a scratch _site; `src` swaps in a mutant of the script.
+function runCheckStep({ rc, start, index }, src = CHECK_SRC) {
+  const dir = tmpdir('mecheck');
   fs.mkdirSync(path.join(dir, '_site'));
   fs.mkdirSync(path.join(dir, 'tools'));
-  fs.copyFileSync(path.join(ROOT, 'tools', 'market-edge-rebuilt-check.js'), path.join(dir, 'tools', 'market-edge-rebuilt-check.js'));
+  fs.writeFileSync(path.join(dir, 'tools', 'market-edge-rebuilt-check.js'), src);
   if (index !== undefined) fs.writeFileSync(path.join(dir, '_site', 'market-edge-index.json'), JSON.stringify(index));
-  const summary = path.join(dir, 'summary.md');
-  const env = Object.assign({}, process.env, { GITHUB_STEP_SUMMARY: summary });
+  const summary = path.join(dir, 'summary.md'), output = path.join(dir, 'output.txt');
+  const env = Object.assign({}, process.env, { GITHUB_STEP_SUMMARY: summary, GITHUB_OUTPUT: output });
   delete env.MARKET_EDGE_BUILD_RC; delete env.MARKET_EDGE_BUILD_START;
   if (rc !== undefined) env.MARKET_EDGE_BUILD_RC = rc;
   if (start !== undefined) env.MARKET_EDGE_BUILD_START = start;
-  const r = spawnSync('/bin/bash', ['-e', '-c', stepRun(RED)], { cwd: dir, encoding: 'utf8', env });
-  return { status: r.status, out: r.stdout + r.stderr, summary: fs.existsSync(summary) ? fs.readFileSync(summary, 'utf8') : '' };
+  const r = spawnSync('/bin/bash', ['-e', '-c', stepRun(CHECK)], { cwd: dir, encoding: 'utf8', env });
+  const read = (f) => fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+  return { status: r.status, out: r.stdout + r.stderr, summary: read(summary), output: read(output) };
 }
 const START = '2026-09-24T14:05:00Z';
 const fresh = { priceBasis: 'Pinnacle closing, else Bet365 closing', builtAt: '2026-09-24T14:05:03.120Z', builtFromCommit: 'abc' };
-
-check('rebuilt this run (rc 0, builtAt after the step start) → green', () => {
-  const r = runRedStep({ rc: '0', start: START, index: fresh });
-  assert.strictEqual(r.status, 0, r.out);
-  assert.ok(!/::error/.test(r.out));
-});
-for (const [what, args, want] of [
+const STALE_CASES = [
   ['builder crashed (rc 1)', { rc: '1', start: START, index: fresh }, /exited 1/],
   ['committed floor shipped (older builtAt)', { rc: '0', start: START, index: { ...fresh, builtAt: '2026-09-23T09:00:00.000Z' } }, /not built by this run/],
   ['committed floor shipped (pre-stamp index, no builtAt)', { rc: '0', start: START, index: { priceBasis: 'x' } }, /not built by this run/],
   ['build step never ran (no start)', { rc: '0', index: fresh }, /did not run/],
   ['no exit status recorded', { start: START, index: fresh }, /no exit status/],
   ['shipped index missing', { rc: '0', start: START }, /missing or unreadable/],
-]) {
-  check(`not rebuilt → red with the reason: ${what}`, () => {
-    const r = runRedStep(args);
-    assert.strictEqual(r.status, 1, `exit ${r.status}: ${r.out}`);
-    assert.match(r.out, /::error title=Market-edge was not rebuilt this run::/);
+];
+// "Never blocks" = the step exits 0 on every stale case, with the reason as a warning (never an ::error::).
+function blockingCases(src) {
+  return STALE_CASES.filter(([, args]) => runCheckStep(args, src).status !== 0).map(([what]) => what);
+}
+
+check('rebuilt this run (rc 0, builtAt after the step start) → green, silent, stale=false', () => {
+  const r = runCheckStep({ rc: '0', start: START, index: fresh });
+  assert.strictEqual(r.status, 0, r.out);
+  assert.ok(!/::(error|warning)/.test(r.out), r.out);
+  assert.match(r.output, /^stale=false$/m);
+});
+for (const [what, args, want] of STALE_CASES) {
+  check(`not rebuilt → exit 0 (never blocks), ::warning:: + summary + stale=true with the reason: ${what}`, () => {
+    const r = runCheckStep(args);
+    assert.strictEqual(r.status, 0, `exit ${r.status}: ${r.out}`);
+    assert.match(r.out, /::warning title=Market-edge was not rebuilt this run::/);
+    assert.ok(!/::error/.test(r.out), `an ::error:: annotation: ${r.out}`);
     assert.match(r.out, want);
-    assert.match(r.summary, /Market-edge was not rebuilt this run/);
+    assert.match(r.summary, /Market-edge was not rebuilt this run \(alert only\)/);
+    assert.match(r.output, /^stale=true$/m);
+    assert.match(r.output, new RegExp(`^reason=.*${want.source}`, 'm'));
   });
 }
+check('mutant: the pre-TEN-449 exit (red on not rebuilt) is caught as blocking on every stale case', () => {
+  const mutant = CHECK_SRC
+    .replace(/\n  return 0;\n}\n\n\/\/ Alert only/, '\n  return 1;\n}\n\n// Alert only')
+    .replace(/if \(require\.main === module\) \{[\s\S]*?\n\}\n/, 'if (require.main === module) process.exitCode = main();\n');
+  assert.notStrictEqual(mutant, CHECK_SRC, 'mutant did not apply');
+  assert.deepStrictEqual(blockingCases(CHECK_SRC), [], 'the shipped check blocks');
+  assert.deepStrictEqual(blockingCases(mutant), STALE_CASES.map(([w]) => w));
+});
+check('a crash inside the check still exits 0 (a throwing main), with a warning', () => {
+  const throwing = CHECK_SRC.replace("function main() {\n", "function main() {\n  throw new Error('boom');\n");
+  assert.notStrictEqual(throwing, CHECK_SRC);
+  const r = runCheckStep({ rc: '1', start: START, index: fresh }, throwing);
+  assert.strictEqual(r.status, 0, r.out);
+  assert.match(r.out, /::warning title=Market-edge check could not run::boom/);
+});
 
 console.log('\n4 · split builds (option 1): workflow change → build the queued SHA\n');
 
@@ -385,6 +446,128 @@ check('already at the tip → unchanged', () => {
   assert.match(s.out, /Already at the tip of main/);
 });
 
-for (const d of TMP) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }
-console.log(`\nten263-pipeline: ${pass} passed, ${fails.length} failed.`);
-if (fails.length) { console.log(`FAILED:\n  - ${fails.join('\n  - ')}`); process.exit(1); }
+// ── 5 · the alert: ONE Telegram per streak (async: fake GitHub API + fake Telegram in-process) ──────────────────
+const http = require('http');
+const { spawn } = require('child_process');
+async function acheck(name, fn) {
+  try { await fn(); pass++; console.log(`  ok  ${name}`); }
+  catch (e) { fails.push(name); console.log(`  FAIL ${name}\n       ${e.message}`); }
+}
+const ALERT_SRC = fs.readFileSync(path.join(ROOT, 'tools', 'market-edge-alert.mjs'), 'utf8');
+const SEND_SRC = fs.readFileSync(path.join(ROOT, 'tools', 'price-alert-send.mjs'), 'utf8');
+
+(async () => {
+  console.log('\n5 · market-edge alert: one Telegram per streak, never fails the step\n');
+  // RUNS: [{ id, n, min, steps: 'fresh' | 'stale' | 'none' }]; 'none' = the check did not run in that run
+  let RUNS = [], SENT = [], TG_STATUS = 200, GH_DOWN = false;
+  const stepsFor = (kind) => kind === 'none' ? [{ name: 'Checkout', conclusion: 'success' }, { name: CHECK, conclusion: 'skipped' }, { name: ALERT, conclusion: 'skipped' }]
+    : [{ name: 'Checkout', conclusion: 'success' }, { name: CHECK, conclusion: 'success' }, { name: ALERT, conclusion: kind === 'stale' ? 'success' : 'skipped' }];
+  const asRun = (r) => ({ id: r.id, run_number: r.n, status: r.status || 'completed', conclusion: r.conclusion || 'success',
+    created_at: new Date(Date.UTC(2026, 9, 19, 10, r.min)).toISOString(), html_url: `https://x/${r.id}` });
+  const srv = http.createServer((req, res) => {
+    let body = '';
+    req.on('data', (c) => { body += c; });
+    req.on('end', () => {
+      const u = new URL(req.url, 'http://x');
+      let m, out = null, code = 200;
+      if (/\/sendMessage$/.test(u.pathname)) { SENT.push(JSON.parse(body).text); code = TG_STATUS; out = { ok: code === 200 }; }
+      else if (GH_DOWN) { code = 502; out = {}; }
+      else if ((m = /\/actions\/runs\/(\d+)\/jobs$/.exec(u.pathname))) { const r = RUNS.find(x => String(x.id) === m[1]); out = { jobs: r && r.steps !== 'nojobs' ? [{ name: 'build-and-deploy', steps: stepsFor(r.steps) }] : [] }; }
+      else if ((m = /\/actions\/runs\/(\d+)$/.exec(u.pathname))) { const r = RUNS.find(x => String(x.id) === m[1]); out = r && asRun(r); }
+      else if (/\/actions\/workflows\/pipeline\.yml\/runs$/.test(u.pathname)) out = { workflow_runs: RUNS.filter(r => (r.status || 'completed') === 'completed').map(asRun) };
+      res.writeHead(out ? code : 404, { 'content-type': 'application/json' }); res.end(JSON.stringify(out || {}));
+    });
+  });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  const base = `http://127.0.0.1:${srv.address().port}`;
+  // Runs the alert step's REAL run command in a scratch dir holding the shipped (or a mutant) script.
+  function runAlertStep(runId, src = ALERT_SRC) {
+    const dir = tmpdir('mealert');
+    fs.mkdirSync(path.join(dir, 'tools'));
+    fs.writeFileSync(path.join(dir, 'tools', 'market-edge-alert.mjs'), src);
+    fs.writeFileSync(path.join(dir, 'tools', 'price-alert-send.mjs'), SEND_SRC);
+    const summary = path.join(dir, 'summary.md');
+    const env = Object.assign({}, process.env, { GITHUB_API_URL: base, TELEGRAM_API_URL: base, GITHUB_REPOSITORY: 'o/r', GITHUB_RUN_ID: String(runId),
+      GH_TOKEN: 't', TELEGRAM_BOT_TOKEN: 'bot-token-secret', TELEGRAM_CHAT_ID: '1', ME_REASON: 'build-market-edge.js exited 1 in this run', GITHUB_STEP_SUMMARY: summary });
+    return new Promise((resolve) => {
+      const c = spawn('/bin/bash', ['-e', '-c', stepRun(ALERT)], { cwd: dir, env });
+      let out = ''; c.stdout.on('data', d => { out += d; }); c.stderr.on('data', d => { out += d; });
+      c.on('close', (status) => resolve({ status, out, summary: fs.existsSync(summary) ? fs.readFileSync(summary, 'utf8') : '' }));
+    });
+  }
+  const me = (id, n, min) => ({ id, n, min, status: 'in_progress', conclusion: null });
+
+  await acheck('previous run rebuilt market-edge → this first stale run sends ONE message, with the reason', async () => {
+    RUNS = [{ id: 1, n: 10, min: 0, steps: 'fresh' }, me(2, 11, 10)]; SENT = [];
+    const r = await runAlertStep(2);
+    assert.strictEqual(r.status, 0, r.out);
+    assert.strictEqual(SENT.length, 1, r.out);
+    assert.match(SENT[0], /Market edge was not rebuilt in data run 11: build-market-edge\.js exited 1/);
+    assert.match(SENT[0], /One message per streak/);
+    assert.ok(!/bot-token-secret/.test(r.out), 'the bot token was printed');
+  });
+  await acheck('previous run already found it not rebuilt → no message (the streak already alerted)', async () => {
+    RUNS = [{ id: 1, n: 10, min: 0, steps: 'fresh' }, { id: 2, n: 11, min: 10, steps: 'stale' }, me(3, 12, 20)]; SENT = [];
+    const r = await runAlertStep(3);
+    assert.strictEqual(r.status, 0, r.out);
+    assert.strictEqual(SENT.length, 0, r.out);
+    assert.match(r.out, /already alerted/);
+  });
+  await acheck('runs that did not evaluate the check (cancelled while queued, failed before the upload) are looked past', async () => {
+    RUNS = [{ id: 1, n: 10, min: 0, steps: 'stale' }, { id: 2, n: 11, min: 10, steps: 'nojobs', conclusion: 'cancelled' }, { id: 3, n: 12, min: 20, steps: 'none', conclusion: 'failure' }, me(4, 13, 30)]; SENT = [];
+    let r = await runAlertStep(4);
+    assert.strictEqual(SENT.length, 0, `looked-past runs broke the streak: ${r.out}`);
+    RUNS[0].steps = 'fresh';
+    r = await runAlertStep(4);
+    assert.strictEqual(SENT.length, 1, r.out);
+  });
+  await acheck('no run in reach evaluated the check → one message (loud, not silent)', async () => {
+    RUNS = [{ id: 1, n: 10, min: 0, steps: 'none' }, me(2, 11, 10)]; SENT = [];
+    const r = await runAlertStep(2);
+    assert.strictEqual(SENT.length, 1, r.out);
+  });
+  // A whole day in miniature: S S S F S S F → two streaks of "not rebuilt" → exactly two messages.
+  async function streakMessages(src) {
+    const seq = ['stale', 'stale', 'stale', 'fresh', 'stale', 'stale', 'fresh'];
+    RUNS = [{ id: 100, n: 99, min: 0, steps: 'fresh' }]; SENT = [];
+    for (let i = 0; i < seq.length; i++) {
+      const id = 101 + i;
+      if (seq[i] === 'stale') { RUNS.push(me(id, 100 + i, 10 * (i + 1))); await runAlertStep(id, src); }
+      RUNS = RUNS.filter(r => r.id !== id).concat([{ id, n: 100 + i, min: 10 * (i + 1), steps: seq[i] }]);
+    }
+    return SENT.length;
+  }
+  await acheck('one Telegram per streak: S S S F S S F (10-minute runs) → exactly 2 messages', async () => {
+    assert.strictEqual(await streakMessages(ALERT_SRC), 2);
+  });
+  await acheck('mutant: without the streak de-dup it would alert every stale run (5) — caught', async () => {
+    const mutant = ALERT_SRC.replace(/return \{ alert: false, why: `run \$\{r\.run_number\} already found/, 'return { alert: true, text, why: `run ${r.run_number} already found');
+    assert.notStrictEqual(mutant, ALERT_SRC, 'mutant did not apply');
+    assert.strictEqual(await streakMessages(mutant), 5);
+  });
+  await acheck('Telegram refuses → exit 0, a ::warning:: and the message in the summary (never a red step)', async () => {
+    RUNS = [{ id: 1, n: 10, min: 0, steps: 'fresh' }, me(2, 11, 10)]; SENT = []; TG_STATUS = 500;
+    const r = await runAlertStep(2); TG_STATUS = 200;
+    assert.strictEqual(r.status, 0, r.out);
+    assert.match(r.out, /::warning title=Market-edge alert not sent::Telegram HTTP 500/);
+    assert.ok(!/::error/.test(r.out) && !/bot-token-secret/.test(r.out), r.out);
+    assert.match(r.summary, /Market-edge alert NOT sent/);
+  });
+  await acheck('GitHub unreadable → exit 0, a ::warning::, no message', async () => {
+    RUNS = [{ id: 1, n: 10, min: 0, steps: 'fresh' }, me(2, 11, 10)]; SENT = []; GH_DOWN = true;
+    const r = await runAlertStep(2); GH_DOWN = false;
+    assert.strictEqual(r.status, 0, r.out);
+    assert.strictEqual(SENT.length, 0);
+    assert.match(r.out, /::warning title=Market-edge alert::could not read the runs \(GitHub .*HTTP 502\)/);
+  });
+  await acheck('the step names the alert reads are the names in pipeline.yml', async () => {
+    const mod = await import(path.join(ROOT, 'tools', 'market-edge-alert.mjs'));
+    assert.strictEqual(mod.CHECK_STEP, CHECK);
+    assert.strictEqual(mod.ALERT_STEP, ALERT);
+  });
+  srv.close();
+
+  for (const d of TMP) { try { fs.rmSync(d, { recursive: true, force: true }); } catch (_) { /* best effort */ } }
+  console.log(`\nten263-pipeline: ${pass} passed, ${fails.length} failed.`);
+  if (fails.length) { console.log(`FAILED:\n  - ${fails.join('\n  - ')}`); process.exit(1); }
+})().catch((e) => { console.log(`ten263-pipeline: crashed: ${e && e.stack}`); process.exit(1); });

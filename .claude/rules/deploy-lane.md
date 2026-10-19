@@ -226,6 +226,17 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
   **Test:** `tools/test-pipeline-fail-alert.mjs` (fake GitHub + Telegram: second failure → one message; first and third
   → none; a cancelled run in between; the wiring).
 
+## Market-edge not rebuilt — alert only (founder decision 19 Oct, TEN-449)
+
+- **A data run whose market-edge was not rebuilt stays green and sends ONE Telegram per streak.** Not rebuilt = the builder
+  exited non-zero, the shipped `_site/market-edge-index.json` `builtAt` is older than this run's build step, or the build
+  step never ran. The check runs whenever the run uploaded `site-data`, writes the reason as a `::warning::` and in the
+  step summary, and exits 0 in every case; the alert step after it messages only when the previous run that evaluated
+  the check rebuilt market-edge (that run's alert step was skipped) — runs that never reached the check are looked past.
+  Supersedes "market-edge crash goes red" (2026-09-24), which had never run since the code/data split (its gate read the
+  deploy step that moved to `publish.yml`). **Test:** `tools/test-ten263-pipeline.js` (every not-rebuilt case exits 0 —
+  the old red exit is a caught mutant; S S S F S S F → 2 messages, 5 without the de-dup).
+
 ## Pipeline stall guard (TEN-396, founder ruling 2026-10-07)
 
 A `pipeline.yml` run stuck in GitHub's `waiting` state holds the single `bsp-pipeline`

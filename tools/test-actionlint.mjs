@@ -1,6 +1,6 @@
 // TEN-449 A — tools/actionlint.mjs: the pinned actionlint is obtained only with a matching checksum (fail closed
-// otherwise), its own rules catch what GitHub's parser rejects, and the one ignore in .github/actionlint.yaml is
-// scoped to one file and one message. The repo-wide run itself is the `node tools/actionlint.mjs` command in npm test.
+// otherwise), its own rules catch what GitHub's parser rejects, and .github/actionlint.yaml ignores nothing (the
+// steps.deploy baseline was fixed at the source, TEN-449). The repo-wide run itself is the `node tools/actionlint.mjs` command in npm test.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -99,17 +99,25 @@ for (const [what, text] of Object.entries(MUTANTS)) {
   });
 }
 
-test("the .github/actionlint.yaml ignore covers pipeline.yml's steps.deploy finding only: same text under another name still fails", () => {
+// TEN-449 review: the old ignore for 'property "deploy" is not defined' would also have hidden any NEW steps.deploy /
+// needs.deploy / inputs.deploy mistake. It is gone (pipeline.yml was fixed at the source); these lock that it stays gone.
+test('.github/actionlint.yaml carries no ignore for the "deploy is not defined" message', () => {
+  const cfg = fs.readFileSync(CONFIG, 'utf8').split('\n').filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.doesNotMatch(cfg, /deploy/, cfg);
+  assert.doesNotMatch(cfg, /ignore:/, cfg);
+});
+
+test("today's pipeline.yml lints clean under its own name, and a new steps.deploy reference in it is reported", () => {
   const pipeline = fs.readFileSync(path.join(path.dirname(CONFIG), 'workflows', 'pipeline.yml'), 'utf8');
   assert.equal(lintText(pipeline, 'pipeline.yml').code, 0);
-  const r = lintText(pipeline, 'copy.yml');
-  assert.equal(r.code, 1);
-  assert.match(r.output, /property "deploy" is not defined/);
-  // and any OTHER finding in pipeline.yml is still reported
+  // a new `${{ steps.deploy.outputs.url }}` in a run block of pipeline.yml (the class the old ignore would have hidden)
+  const anchor = 'run: node tools/market-edge-alert.mjs';
+  assert.ok(pipeline.includes(anchor), 'anchor step missing');
+  const r = lintText(pipeline.replace(anchor, 'run: echo "${{ steps.deploy.outputs.url }}" && node tools/market-edge-alert.mjs'), 'pipeline.yml');
+  assert.equal(r.code, 1, r.output);
+  assert.match(r.output, /pipeline\.yml:\d+:\d+: property "deploy" is not defined/);
+  // and any other step reference that does not exist is reported too
   const r2 = lintText(pipeline.replace("if: always() && steps.trading_splits.outcome", "if: always() && steps.trading_splitz.outcome"), 'pipeline.yml');
   assert.equal(r2.code, 1);
   assert.match(r2.output, /property "trading_splitz" is not defined/);
-  // an unrelated new step (which changes the step-id list actionlint prints) doesn't bring the ignored finding back
-  const r3 = lintText(pipeline.replace(/\n(\s*)- name: /, '\n$1- name: added\n$1  id: aaa_new\n$1  run: echo hi\n$1- name: '), 'pipeline.yml');
-  assert.equal(r3.code, 0, r3.output);
 });
