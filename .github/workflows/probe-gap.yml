@@ -10,6 +10,7 @@ jobs:
     timeout-minutes: 60
     env:
       GH_TOKEN: ${{ github.token }}
+      API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,4 +24,4 @@ jobs:
           CHROME_BIN=google-chrome node tools/probe-gap/pc.mjs --site live --coverage-out cov.json --sample 1000000 > pc.log 2>&1 || true
           grep '^### price-coverage' pc.log | cut -c1-3000
           tail -3 pc.log
-          cd tools/probe-gap && python3 classify.py ../../cov.json
+          cd tools/probe-gap && python3 classify.py ../../cov.json && python3 odds.py

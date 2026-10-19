@@ -43,7 +43,7 @@ for x in dump:
     elif TEAM.search(x['t'] or ''): cat = 'team event'
     else:
         m = td_match(x)
-        if not m: cat = 'no Tennis-Data row'
+        if not m: cat = 'no Tennis-Data row' + (' (qualifying by its own rows)' if x.get('q1') else '')
         else:
             p = [priced(r) for r in m]
             if not any(p): cat = 'Tennis-Data row, no price'
@@ -63,4 +63,14 @@ print('### join-miss causes'); cc = collections.Counter(re.sub(r"\(.*", '', x['c
 for x in jm[:400]: print('JM', json.dumps({k: x.get(k) for k in ('k','name','date','opp','ok','t','r','won','cause','td')}, ensure_ascii=False))
 nt = [x for x in res if x['cat'] == 'no Tennis-Data row' and x['lv'] == 'ATP main draw']
 print('### no-TD by tournament'); print(collections.Counter(x['t'] for x in nt).most_common(60))
-for x in nt[:150]: print('NT', json.dumps({k: x.get(k) for k in ('k','name','date','opp','t','r','won')}, ensure_ascii=False))
+for x in nt[:0]: print('NT', json.dumps({k: x.get(k) for k in ('k','name','date','opp','t','r','won')}, ensure_ascii=False))
+
+import re
+def ev(t):
+    for k, p in (('Davis Cup', 'davis'), ('United Cup', 'united'), ('ATP Cup', 'atp cup'), ('Olympics', 'olympi'), ('Laver Cup', 'laver'), ('Hopman', 'hopman'), ('Next Gen', 'next gen'), ('Asian Games', 'asian')):
+        if p in (t or '').lower(): return k
+    return 'other'
+E = collections.Counter((ev(x['t']), x['date'][:4]) for x in res if x['lv'] == 'ATP main draw' and x['cat'].startswith(('team', 'no Tennis')) and ev(x['t']) != 'other')
+print('### team/NextGen/Asian by event x year (player-rows)'); [print('EV', k, v) for k, v in sorted(E.items())]
+for x in res:
+    if x['lv'] == 'ATP main draw' and x['cat'] == 'no Tennis-Data row' and ev(x['t']) == 'other': print('NTX', json.dumps({k: x.get(k) for k in ('k','name','date','opp','t','r','won','ek')}, ensure_ascii=False))
