@@ -389,6 +389,89 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       assert.strictEqual(x.pairs.length, 0);
     });
   }
+  // TEN-449 Bucket D (founder 2026-10-19, report `bucket-d`): eight players joined on a NEAR-MISS DOB, by key
+  // (te-join.js NEAR_MISS_DOB). Each is a DOB-joined player — only TE's rows count (ruling 2A), never Svajda's
+  // no-DOB behaviour; the list cannot widen to a ninth key, in the pipeline or in the store builder.
+  {
+    const TJ = require('../te-join.js');
+    const BUCKET_D = { 702: ['tkemaladze', '20000604'], 12972: ['rocha-a46b1', '19991004'], 19461: ['munoz-1a9fc', '2005'],
+      52682: ['balshaw', '20060605'], 54221: ['bennaton', '2005'], 70760: ['ceban', '2009'], 78231: ['al-sulaiti-a86c2', '2007'], 78628: ['snoussi', '2007'] };
+    const rec = (key, slug, dob, rows) => ({ key, slug, dob, src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows });
+    const ours = (date, tournament, opponent, won, extra) => Object.assign({ year: date.slice(0, 4), surface: 'hard', level: 'chitf', date, tournament, round: 'R32', opponent, result: won ? '2 - 0' : '0 - 2', won, src: 'fixtures', indoor: false }, extra || {});
+    // one row both list, one only we list, one only TE lists
+    const shared = () => [ours('2025-05-05', 'M15 Antalya', 'A. Alpha', true), ours('2025-06-02', 'M15 Monastir', 'Q. Quux', true)];
+    const teRows = [R(2025, '2025-05-05', 'Futures 2025', 'ITF', '1R', 'hard', 'outdoor', 'Alpha A.', true, '6-1, 6-1'),
+      R(2025, '2025-07-07', 'Futures 2025', 'ITF qual', 'Q-1R', 'hard', 'outdoor', 'Beta B.', false, '6-3, 6-3')];
+    check('TEN-449 Bucket D · the list is exactly the eight keys the founder approved, each pinned to one TE page and DOB', () => {
+      assert.deepStrictEqual([...TJ.NEAR_MISS_DOB.keys()].sort(), Object.keys(BUCKET_D).sort());
+      for (const [k, [slug, dob]] of Object.entries(BUCKET_D)) assert.deepStrictEqual([TJ.NEAR_MISS_DOB.get(k).slug, TJ.NEAR_MISS_DOB.get(k).te], [slug, dob], k);
+      assert.ok(!TJ.NEAR_MISS_DOB.has('2986') && !TJ.NO_DOB_EXCEPTION.has('702'), 'the two exceptions stay apart');
+    });
+    for (const [k, [slug, dob]] of Object.entries(BUCKET_D)) {
+      check(`TEN-449 Bucket D · ${k} ${slug} (TE DOB ${dob}) joins and counts only TE's rows`, () => {
+        const rows = shared(), before = JSON.stringify(rows);
+        const m = TJ.applyTeHistory(rows, rec(k, slug, dob, teRows));
+        assert.strictEqual(JSON.stringify(rows), before, 'the shared rows moved');
+        assert.strictEqual(m.out.get(rows[1]), 'not-in-te', 'our row TE lacks must be listed, not counted (not Svajda\'s rule)');
+        assert.strictEqual(m.added.length, 1, 'the TE-only row is added');
+        assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows)[0].total), '1-1', 'counted = TE\'s two rows');
+        const L = TJ.recordLayer(rows, m); assert.deepStrictEqual(L.out, [[1, 'not-in-te']]);
+      });
+    }
+    check('TEN-449 Bucket D · a ninth near-miss key is refused: year-only, short, or swapped-DOB records, and a near-miss join in the cache', () => {
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '2004', teRows)), /not a full yyyymmdd/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '200406', teRows)), /not a full yyyymmdd/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', null, teRows)), /not a named exception/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'near-miss-dob' }), /not a named exception for this key/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: null, how: 'founder-exception' }), /not a named exception for this key/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'hand-edit' }), /not a DOB join/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob' }), null, 'an ordinary DOB join passes');
+    });
+    check('TEN-449 Bucket D · a named key joins only its own page and DOB (another page, or our DOB in place of TE\'s, stops)', () => {
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-021d4', '2005', teRows)), /NEAR_MISS_DOB/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-1a9fc', '20050122', teRows)), /NEAR_MISS_DOB/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-1a9fc', null, teRows)), /NEAR_MISS_DOB/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '19461', slug: 'munoz-1a9fc', dob: '2005', how: 'near-miss-dob' }), null);
+      assert.match(TJ.teIdentityRefusal({ key: '19461', slug: 'munoz-1a9fc', dob: '2005', how: 'founder-exception' }), /not a named exception for this key/);
+    });
+    check('TEN-449 Bucket D · Ceban (70760): his 16 junior Grand Slam rows stay out; the senior row pairs', () => {
+      const slams = ['Australian Open', 'French Open', 'Wimbledon', 'US Open'];
+      const rows = [ours('2025-06-23', 'Wimbledon', 'S. Senior', false, { level: 'atp', surface: 'grass', round: 'Qualifying' })];
+      for (let i = 0; i < 16; i++) rows.push(ours(`2025-0${1 + (i % 8)}-1${i % 10}`, slams[i % 4], `J. Junior${i}`, i % 2 === 0));
+      const m = TJ.applyTeHistory(rows, rec('70760', 'ceban', '2009', [R(2025, '2025-06-23', 'Wimbledon', 'ATP qual', 'Q-1R', 'grass', 'outdoor', 'Senior S.', false, '6-4, 6-4')]));
+      assert.strictEqual([...m.out.values()].filter((v) => v === 'junior').length, 16);
+      assert.strictEqual(m.diag.paired, 1);
+      assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows)[0].total), '0-1', 'only the senior row counts');
+    });
+    check('TEN-449 Bucket D · Tkemaladze (702): the Lo Chien match (27 Oct 2022) counts once — TE\'s copy, ours listed not counted', () => {
+      const rows = [ours('2022-10-27', 'M15 Sharm ElSheikh 15', 'H. Lo Chien', false, { round: '1/8-finals', result: '1 - 2', sets: [{ p: 6, o: 1 }, { p: 2, o: 6 }, { p: 6, o: 7 }] })];
+      const m = TJ.applyTeHistory(rows, rec('702', 'tkemaladze', '20000604', [R(2022, '2022-10-27', 'Futures 2022', 'ITF', 'R16', 'hard', 'outdoor', 'Lo C.', false, '1-6, 6-2, 7-6(4)')]));
+      assert.strictEqual(m.out.get(rows[0]), 'not-in-te');
+      const counted22 = m.rows.filter((r) => r.date === '2022-10-27');
+      assert.strictEqual(counted22.length, 1, 'one counted row on the day'); assert.strictEqual(counted22[0].src, 'te');
+      assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows).find((y) => y.year === '2022').total), '0-1');
+    });
+    check('TEN-449 Bucket D · the store builder refuses a cache join that is not a DOB join or a named key (and passes a named one)', () => {
+      const { spawnSync } = require('child_process');
+      const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-cache-')), out = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-out-'));
+      fs.mkdirSync(path.join(cache, 'html'));
+      fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['rotterdam'] }));
+      fs.writeFileSync(path.join(cache, 'players.json'), JSON.stringify({
+        9002: { slug: 'someone', how: 'near-miss-dob', dob: '20040506', years: [] },
+        9003: { slug: 'other', how: 'dob', dob: '2004', years: [] },
+        702: { slug: 'tkemaladze', how: 'near-miss-dob', dob: '20000604', years: [] } }));
+      const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'te-build-history.mjs'), '--cache', cache, '--out', out], { encoding: 'utf8' });
+      assert.strictEqual(r.status, 0, r.stderr);
+      const rep = JSON.parse(r.stdout);
+      assert.deepStrictEqual(rep.refusedJoin.map((x) => x.key).sort(), ['9002', '9003']);
+      assert.deepStrictEqual(rep.missingPages, ['702 profile'], 'the named key passes the gate (then needs its pages)');
+      assert.ok(!fs.existsSync(path.join(out, 'te-history', '9002.json')) && !fs.existsSync(path.join(out, 'te-history', '9003.json')));
+    });
+  }
+  // TEN-449 Bucket D, through the real pipeline: a year-only DOB on an unnamed key stops the run
+  let yearOnlyThrew = null;
+  try { await run(true, true, (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); j.dob = '1999'; fs.writeFileSync(f, JSON.stringify(j)); }); } catch (e) { yearOnlyThrew = e; }
+  check('TEN-449 Bucket D · writeCareerHistoryShards stops on a year-only TE DOB for a key not named in NEAR_MISS_DOB', () => assert.ok(yearOnlyThrew && /not a full yyyymmdd/.test(yearOnlyThrew.message), String(yearOnlyThrew)));
   load(false);
   console.log(`\nTEN-443 TE ingest: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

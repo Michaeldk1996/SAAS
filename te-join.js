@@ -160,6 +160,43 @@ const OTHER_COUNTED = new Set(['Pan American Games', 'African Games', 'World Uni
 // Players joined to TE without a DOB, by name in the founder's ruling (TEN-449, 2026-10-19): Z. Svajda only.
 const NO_DOB_EXCEPTION = new Set(['2986']);
 
+// Players joined to TE on a NEAR-MISS date of birth, by key, in the founder's ruling (TEN-449, 2026-10-19, report
+// `bucket-d`): TE's DOB has day and month swapped, is 10 days off, or is the year only (TE prints "1. 1. <year>"; the
+// store records the year alone). Each is pinned to ONE TE page and ONE TE DOB, as the store records it; ours is kept for
+// the record. Unlike Svajda they are DOB-joined players: the record counts only TE's rows (ruling 2A). Overlap the
+// founder ruled on (paired / our rows, 0 result disagreements): 216/217, 172/172, 32/32, 131/131, 7/7, 18/34 (16 junior
+// rows), 5/5, 15/15. Nobody else: any other key with a DOB that is not a full yyyymmdd stops the run.
+const NEAR_MISS_DOB = new Map([
+  ['702', { slug: 'tkemaladze', te: '20000604', ours: '20000406', why: 'day and month swapped' }],
+  ['12972', { slug: 'rocha-a46b1', te: '19991004', ours: '19990410', why: 'day and month swapped' }],
+  ['19461', { slug: 'munoz-1a9fc', te: '2005', ours: '20050122', why: 'TE has the year only' }],
+  ['52682', { slug: 'balshaw', te: '20060605', ours: '20060615', why: '10 days apart' }],
+  ['54221', { slug: 'bennaton', te: '2005', ours: '20050813', why: 'TE has the year only' }],
+  ['70760', { slug: 'ceban', te: '2009', ours: '20090313', why: 'TE has the year only' }],
+  ['78231', { slug: 'al-sulaiti-a86c2', te: '2007', ours: '20070730', why: 'TE has the year only' }],
+  ['78628', { slug: 'snoussi', te: '2007', ours: '20070707', why: 'TE has the year only' }],
+]);
+// How a cache players.json entry may have been joined (te-scrape.mjs resolve: 'dob' / 'age±1' — DOB equal by
+// construction), plus the two founder-named classes, each only for its own keys.
+const JOIN_HOW = { dob: null, 'age±1': null, 'founder-exception': NO_DOB_EXCEPTION, 'near-miss-dob': NEAR_MISS_DOB };
+
+// Why a TE store record (te-history/<key>.json) — or, with `how`, a cache players.json entry — may NOT be joined; null
+// when it may. Fail-closed: a full yyyymmdd DOB, or a key named above with exactly its page and DOB.
+function teIdentityRefusal(rec) {
+  const key = String(rec.key), dob = rec.dob == null || rec.dob === '' ? null : String(rec.dob);
+  if ('how' in rec) {
+    if (!(rec.how in JOIN_HOW)) return `${key}: join "${rec.how}" is not a DOB join or a named exception — refusing`;
+    const named = JOIN_HOW[rec.how];
+    if (named && !named.has(key)) return `${key}: join "${rec.how}" is not a named exception for this key — refusing a non-DOB join`;
+  }
+  const nm = NEAR_MISS_DOB.get(key);
+  if (nm) return rec.slug === nm.slug && dob === nm.te ? null
+    : `te-history/${key}.json is a named near-miss DOB join (NEAR_MISS_DOB) to ${nm.slug} with TE DOB ${nm.te}, but holds ${rec.slug} with DOB ${dob} — refusing`;
+  if (!dob) return NO_DOB_EXCEPTION.has(key) ? null : `te-history/${key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`;
+  if (!/^\d{8}$/.test(dob)) return `te-history/${key}.json has DOB "${dob}", not a full yyyymmdd, and is not a named exception (NEAR_MISS_DOB) — refusing a non-DOB join`;
+  return null;
+}
+
 // The career record is its OWN population (founder TEN-449): H2H, Lines, the model and every other reader of
 // career-history keep the feed rows exactly as built. So the merge never touches `rows`: it works on copies and returns
 //   rows   — the record's rows (copies of ours, TE-corrected, plus TE-only rows), which careerByYearFromRows counts;
@@ -214,10 +251,11 @@ function applyTeHistory(rows, teRec) {
   const pairedKey = new Set(pairs.map(({ ours: r }) => `${r.date}|${ourSurname(r.opponent)}|${!!r.won}`));
   // founder ruling TEN-449 (2026-10-19): for a player joined on his date of birth, the record counts only what TE lists;
   // our rows TE lacks stay visible in the drill, marked "not in Tennis Explorer, not counted". A player joined without a
-  // DOB (the named exception, Svajda) keeps counting them.
-  // The exception is by player key, never "any record without a DOB": a store record with no DOB for anyone else is
-  // a join the DOB rule forbids, and the run stops rather than count on it.
-  if (!teRec.dob && !NO_DOB_EXCEPTION.has(String(teRec.key))) throw new Error(`te-history/${teRec.key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`);
+  // DOB (the named exception, Svajda) keeps counting them. A near-miss DOB join (NEAR_MISS_DOB) is a DOB-joined player.
+  // The exceptions are by player key, never "any record without a DOB": a store record with no DOB, or a DOB short of
+  // yyyymmdd, for anyone else is a join the DOB rule forbids, and the run stops rather than count on it.
+  const refusal = teIdentityRefusal(teRec);
+  if (refusal) throw new Error(refusal);
   const teOnlyCounts = !!teRec.dob;
   for (const r of oursOnly) {
     if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
@@ -290,4 +328,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION };
+module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal };

@@ -28,6 +28,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { createRequire } from 'node:module';
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const CACHE = arg('--cache', process.env.TE_CACHE || path.join(os.homedir(), '.stennisfy', 'te-cache'));
@@ -243,9 +244,15 @@ function main() {
   const idx = { builtAt: new Date().toISOString(), source: 'tennisexplorer.com (licensed, Livesport agreement 2026-10-17)', players: { ...prev.players } };
   const report = { written: 0, kept: [], notReconciled: [], tableMismatch: [], unmatched: [], missingPages: [] };
   let oldestCurrent = null;
+  // TEN-449: only a DOB join, or a key the founder named (te-join.js NO_DOB_EXCEPTION / NEAR_MISS_DOB), becomes a store
+  // record; any other entry (a hand-edited join, a near-miss DOB not named) is refused and listed, never written
+  const { teIdentityRefusal } = createRequire(import.meta.url)('../te-join.js');
+  report.refusedJoin = [];
   for (const [key, p] of Object.entries(players)) {
     if (ONLY && !ONLY.has(key)) continue;
     if (!p.slug) { report.unmatched.push({ key, why: p.unmatched }); continue; }
+    const refusal = teIdentityRefusal({ key, slug: p.slug, dob: p.dob, how: p.how });
+    if (refusal) { report.refusedJoin.push({ key, slug: p.slug, why: refusal }); continue; }
     const mainF = cacheFile(`/player/${p.slug}/`);
     if (!fs.existsSync(mainF)) { report.missingPages.push(`${key} profile`); continue; }
     const mainHtml = fs.readFileSync(mainF, 'utf8');
