@@ -69,6 +69,7 @@ function teStore(dir) {
     R(2023, '2023-10-25', 'Pan American Games', 'Other', '1R', 'hard', 'outdoor', 'Rho R.', true, '6-2, 6-2'),   // TEN-449: counted class
     R(2023, '2023-05-01', 'UK Pro Series', 'Other', '1R', 'hard', 'outdoor', 'Sigma S.', true, '6-2, 6-2'),        // TEN-449: not counted
     R(2023, '2023-09-15', 'Davis Cup', 'Davis Cup', '', null, null, 'Tau T.', false, '4-6, 4-6'),                  // TE "Not set": Surface not known
+    R(2023, '2023-09-22', 'Laver Cup', 'Laver Cup', '', 'hard', 'indoor', 'Upsilon U.', true, '6-4, 6-4'),       // TEN-449: ATP tier
   ];
   fs.mkdirSync(path.join(dir, 'te-history'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'te-history', `${KEY}.json`), JSON.stringify({ key: KEY, slug: 'test', dob: '19990101', src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows }));
@@ -116,7 +117,11 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   const off = await run(false, true);
   const on = await run(true, true);
   // TEN-449: the same store with no DOB on the TE record (the Svajda exception)
-  const nodob = await run(true, true, (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; fs.writeFileSync(f, JSON.stringify(j)); });
+  // the named exception is by the record's player key (te-join.js NO_DOB_EXCEPTION: Svajda, 2986)
+  const noDob = (asKey) => (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; j.key = asKey; fs.writeFileSync(f, JSON.stringify(j)); };
+  const nodob = await run(true, true, noDob('2986'));
+  let noDobThrew = null;
+  try { await run(true, true, noDob(KEY)); } catch (e) { noDobThrew = e; }
   check('TE_INGEST off: the store is not read — season table and rows exactly as before', () => {
     assert.ok(!off.rows.some((r) => r.src === 'te' || r.te || r.conflicts), 'TE fields on an off run');
     assert.ok(!('record' in off.shard), 'no record overlay on an off run');
@@ -161,7 +166,15 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   check('TEN-449 · "Other": the Pan American Games count, the UK Pro Series does not', () => {
     assert.ok(on.rows.some((x) => x.tournament === 'Pan American Games' && x.level === 'chitf'));
     assert.ok(!on.rows.some((x) => x.tournament === 'UK Pro Series'));
-    assert.strictEqual(wl(yr(on.p, '2023').total), '1-1');   // Pan Am W + Davis Cup L
+    assert.strictEqual(wl(yr(on.p, '2023').total), '2-1');   // Pan Am W + Laver Cup W + Davis Cup L
+    assert.strictEqual(wl(yr(on.p, '2023').chitf.total), '1-0', 'the counted Other row is Challenger/ITF tier');
+  });
+  check('TEN-449 · Laver Cup stays in the ATP tier', () => {
+    assert.ok(on.rows.some((x) => x.tournament === 'Laver Cup' && x.level === 'atp'));
+    assert.strictEqual(wl(yr(on.p, '2023').atp.total), '1-1');   // Laver Cup W + Davis Cup L
+  });
+  check('TEN-449 · a TE record with no DOB that is not a named exception stops the run', () => {
+    assert.ok(noDobThrew && /not a named exception/.test(noDobThrew.message), String(noDobThrew));
   });
   check('a row TE files as an exhibition is paired, then dropped from rows and count', () => {
     assert.ok(!on.rows.some((x) => /Boodles/.test(x.tournament || '')));
@@ -195,7 +208,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     }
   });
   check('the index meta reports the ingest', () => {
-    const t = on.index.meta.te; assert.ok(t && t.players === 1 && t.added === 8 && t.duplicatesDropped === 1 && t.juniorsDropped === 1 && t.indoorOverrides === 1 && t.seasonMoves === 1 && t.otherCounted === 1 && t.otherSkipped === 1 && t.notInTeNotCounted === 1, JSON.stringify(t));
+    const t = on.index.meta.te; assert.ok(t && t.players === 1 && t.added === 9 && t.duplicatesDropped === 1 && t.juniorsDropped === 1 && t.indoorOverrides === 1 && t.seasonMoves === 1 && t.otherCounted === 1 && t.otherSkipped === 1 && t.notInTeNotCounted === 1, JSON.stringify(t));
   });
   check('the drill marks the disagreeing row: the 2024 Total drill paints a ≠ on Indian Wells and on no agreeing row', () => {
     const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: on.p } }, careerHistory: { [KEY]: on.matches },

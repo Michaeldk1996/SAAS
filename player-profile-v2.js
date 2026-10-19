@@ -3317,7 +3317,7 @@
   // Last 52 = Σ the Calendar's rows inside the window, and both blocks quote one undated figure.
   function last52Rows(p, tier) {
     var cut = last52Cutoff();
-    return calSpine(p).filter(function (r) {
+    return countedSpine(p).filter(function (r) {
       if (!(r.date && r.date >= cut)) return false;
       return !tier || tier === 'all' || r.tier === tier;
     });
@@ -3332,7 +3332,7 @@
     // Only the seasons that carry the tier split count (pre-2021 rows hold the season total alone).
     var win = {};
     spineYears(p).forEach(function (y) { if (tierRowOf(y, tier)) win[String(y.year)] = 1; });
-    var dated = calSpine(p).filter(function (r) { return r.tier === tier && win[String(r.year)]; }).length;
+    var dated = countedSpine(p).filter(function (r) { return r.tier === tier && win[String(r.year)]; }).length;
     // TEN-384 fx2 item 8 · NOT clamped. A negative count means the dated store holds MORE of this tier's
     // rows than the Career record counts — a reconciliation failure, not "0 undated". It is returned
     // signed so tools/test-ten384-figures-agree.js fails on it; the page prints the note only when > 0.
@@ -3501,7 +3501,7 @@
     if (!careerHistorySettled(p.key) && !calSpine(p).length) return null;
     var cut = last52Cutoff();
     var rows = last52Rows(p, tier);
-    var sp = calSpine(p), courts = seasonCourts(p);
+    var sp = countedSpine(p), courts = seasonCourts(p, sp);
     var out = { hard: null, grass: null, clay: null, indoors: null };
     var total = { won: 0, lost: 0 };
     rows.forEach(function (r) {
@@ -3566,9 +3566,9 @@
   // `tier` scopes like the Tier control: the rows of that feed scope, over the seasons whose row holds a split for
   // it (careerTierCells sums the same seasons). Newest first, like the spine.
   function drillScope(p, year, since, tier) {
-    // TEN-449 · the season table, career row and surface rows list the career record's own rows (recordSpine); the
-    // Last 52 window keeps the feed rows it counts.
-    var sp = since ? calSpine(p) : recordSpine(p), courts = seasonCourts(p, sp);
+    // TEN-449 · the season table, career row and surface rows list the career record's own rows (recordSpine), the
+    // not-counted ones marked; the Last 52 window lists the rows it counts (countedSpine).
+    var sp = since ? countedSpine(p) : recordSpine(p), courts = seasonCourts(p, sp);
     var t = tier && tier !== 'all' ? tier : null;
     var seasons = {};
     if (!since) {
@@ -3640,7 +3640,7 @@
       }
       var why = [];
       if (g.court) {
-        why.push(g.court + ' ' + (surf === 'indoors' ? '' : surf + ' ') + 'match' +
+        why.push(g.court + ' ' + (surf === 'indoors' || surf === 'unknown' ? '' : surf + ' ') + 'match' +
           (g.court === 1 ? ' has' : 'es have') + ' no court type on record yet');
       }
       if (g.surfaceless && surf) {
@@ -3685,7 +3685,8 @@
     var counted = scope.filter(function (r) { return !r.notCounted; });
     if (opts.surf) {
       counted.forEach(function (r) {
-        if (r.cell === COURT_UNKNOWN && (opts.surf === 'indoors' || r.surface === opts.surf)) gap.court++;
+        if (r.cell === COURT_UNKNOWN && (opts.surf === 'indoors' || r.surface === opts.surf ||
+            (opts.surf === 'unknown' && r.surface !== 'clay' && r.surface !== 'hard' && r.surface !== 'grass'))) gap.court++;
         else if ((r.cell === null || r.cell === 'unknown') && opts.surf !== 'indoors' && opts.surf !== 'unknown') gap.surfaceless++;
       });
     } else {
@@ -4582,7 +4583,7 @@
       // Davis Cup tie (a tie is played on the host's choice of court, so its event carries no surface). The count is
       // the player's own, never a constant.
       var nos = (!isL52 && careerHistorySettled(p.key))
-        ? drillScope(p, null, null, tier).filter(function (r) { return !r.surface; }) : null;
+        ? drillScope(p, null, null, tier).filter(function (r) { return !r.surface && !r.notCounted; }) : null;
       // Season by season, not in total: a stored no-surface row must sit in the season whose total counts it
       // (S. Kwon: the table's unsurfaced match is in 2019, the stored row in 2017 — not "listed under the year total").
       var listed = !!nos && nos.length === residN && spineYears(p).every(function (y) {
@@ -4640,8 +4641,9 @@
       // TEN-449 (founder 2026-10-19, option C): every season sums to its total
       { label: 'Surface not known', id: 'unknown' }
     ];
-    var unknownTip = 'Matches with no surface on record: Tennis Explorer lists most Davis Cup ties without one ' +
-      '("Not set"). Total less Clay, Hard, Indoors and Grass, so every season sums to its total.';
+    var unknownTip = 'Matches in no other column: no clay, hard or grass surface on record (Tennis Explorer lists most ' +
+      'Davis Cup ties as "Not set"; an outdoor carpet match lands here too). Total less Clay, Hard, Indoors and Grass, ' +
+      'so every season sums to its total.';
     var head = HEADS.map(function (h, i) {
       var tip = h.id === 'indoors' ? indoorTip : h.id === 'unknown' ? unknownTip : '';
       return '<div' + (tip ? ' title="' + esc(tip) + '"' : '') +
@@ -7244,6 +7246,15 @@
     var rows = recordRowsOf(p);
     return rows === careerHistoryFor(p.key) ? calSpine(p) : spineOver(p, rows, recordSpine, true);
   }
+  // The record's COUNTED rows (the not-counted ones out): the Last 52 window counts and lists these, and the
+  // undated-match notes compare the season table against them — one population, the one careerByYear counts.
+  function countedSpine(p) {
+    var sp = recordSpine(p);
+    if (countedSpine._sp === sp) return countedSpine._v;
+    var v = sp.some(function (r) { return r.notCounted; }) ? sp.filter(function (r) { return !r.notCounted; }) : sp;
+    countedSpine._sp = sp; countedSpine._v = v;
+    return v;
+  }
   // `memo` holds one spine per caller (calSpine, recordSpine); `rowYear`: the record's season is its row's own year
   // (TE's edition year — a late-December United Cup tie is next season's), not the date's.
   function spineOver(p, ch, memo, rowYear) {
@@ -7563,14 +7574,21 @@
   function calResidual(p) {
     var win = {};
     spineYears(p).forEach(function (y) { win[String(y.year)] = 1; });
-    var inWindow = 0, out = [];
+    var inWindow = 0, out = [], tile = 0;
+    // TEN-449 · "undated" compares the season table with the rows it counts (countedSpine); the Calendar tile itself
+    // paints the feed rows (calSpine), so the record rows it does not paint — Tennis Explorer's — are their own clause.
+    countedSpine(p).forEach(function (r) {
+      if (win[String(r.year)]) inWindow += 1;
+    });
     calSpine(p).forEach(function (r) {
-      if (win[String(r.year)]) inWindow += 1; else out.push(String(r.year));
+      if (win[String(r.year)]) tile += 1; else out.push(String(r.year));
     });
     out.sort();
     var m = spineTotal(p).n;
+    var rec = countedSpine(p) !== calSpine(p);
     return {
       m: m,
+      teOnly: rec ? recordSpine(p).filter(function (r) { return r.src === 'te' && win[String(r.year)]; }).length : 0,
       // SIGNED (TEN-384 fx2 item 8; it used to be clamped at zero). If the dated store ever held MORE
       // in-window rows than the spine totals, the negative is a third, different defect: it is never
       // printed as this one (calResidualNote prints only > 0) and never hidden either —
@@ -7587,6 +7605,10 @@
     if (r.undated > 0) {
       parts.push(r.undated + (r.undated === 1 ? ' match carries' : ' matches carry') +
         ' no dated match row');
+    }
+    if (r.teOnly > 0) {
+      parts.push(r.teOnly + (r.teOnly === 1 ? ' match comes' : ' matches come') +
+        ' from Tennis Explorer alone and is listed under Record by season, not in this calendar');
     }
     if (r.outside > 0) {
       var span = r.from === r.to ? r.from : r.from + ENDASH + r.to;
@@ -11692,6 +11714,8 @@
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift
     _internals: {
+      recordRowsOf: recordRowsOf,
+      countedSpine: countedSpine,
       // §5.3 tournament list order (pinned — see tournOrder)
       tournViews: tournViews,
       tournOrder: tournOrder,

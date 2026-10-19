@@ -2274,9 +2274,9 @@ check('the rendered grid shows the Indoors column and the dash, in the DOM', () 
     I.state.careerScope = 'career';
     const html = I.renderCareerModal(IND_PLAYER, { archetype: null });
     assert(html.includes('Indoors'), 'the header has no Indoors column');
-    // six columns now: auto + repeat(5)
-    assert(/repeat\(5,minmax\(0,1fr\)\)/.test(html),
-      'the grid track count did not widen to five data columns');
+    // seven columns now: auto + repeat(6) — TEN-449 added "Surface not known"
+    assert(/repeat\(6,minmax\(0,1fr\)\)/.test(html),
+      'the grid track count did not widen to six data columns');
     // the carved hard cell (7/7) must be painted, and the raw 11/9 must NOT be
     assert(html.includes('>7/7<'), 'the carved Hard cell is not in the DOM');
     assert(!html.includes('>11/9<'), 'the DOM still shows the uncarved Hard record');
@@ -3791,6 +3791,22 @@ const STORES = [
     },
     floor: 0.2,
   },
+  // TEN-449 · the career record's overlay (the shard's `record` block, bridged as window.careerRecord). Built by
+  // construction: one feed row TE re-dates, one row TE lacks (listed, not counted), one TE-only row.
+  { name: 'careerRecord', file: 'career-history/{key}.json · record', universe: () => 3, floor: 1,
+    resolve: () => {
+      const saved = { ch: global.window.careerHistory, cr: global.window.careerRecord };
+      try {
+        const K = '990449';
+        global.window.careerHistory = { [K]: [
+          { date: '2024-12-30', year: '2024', opponent: 'A. A', tournament: 'United Cup', won: true, result: '2 - 0' },
+          { date: '2024-05-01', year: '2024', opponent: 'B. B', tournament: 'M15 X', won: true, result: '2 - 0' }] };
+        global.window.careerRecord = { [K]: { v: 1, over: [[0, { year: '2025' }]], out: [[1, 'not-in-te']],
+          add: [{ date: '2024-06-01', year: '2024', opponent: 'C. C', tournament: 'Halle', won: true, result: '2 - 0', src: 'te' }] } };
+        const rows = I.recordRowsOf({ key: K });
+        return (rows[0].year === '2025' ? 1 : 0) + (rows[1].notCounted === 'not-in-te' ? 1 : 0) + (rows[2].src === 'te' ? 1 : 0);
+      } finally { global.window.careerHistory = saved.ch; global.window.careerRecord = saved.cr; }
+    } },
 ];
 
 for (const s of STORES) {

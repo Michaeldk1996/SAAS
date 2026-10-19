@@ -157,6 +157,9 @@ function teOnlyRow(t) {
 const OTHER_COUNTED = new Set(['Pan American Games', 'African Games', 'World University Games', 'Mediterranean Games',
   'Commonwealth Games', 'Rome - pre-qualification', 'AO Wildcard Playoff - Australia', 'AO WC Playoff - Asia-Pacific']);
 
+// Players joined to TE without a DOB, by name in the founder's ruling (TEN-449, 2026-10-19): Z. Svajda only.
+const NO_DOB_EXCEPTION = new Set(['2986']);
+
 // The career record is its OWN population (founder TEN-449): H2H, Lines, the model and every other reader of
 // career-history keep the feed rows exactly as built. So the merge never touches `rows`: it works on copies and returns
 //   rows   — the record's rows (copies of ours, TE-corrected, plus TE-only rows), which careerByYearFromRows counts;
@@ -212,6 +215,9 @@ function applyTeHistory(rows, teRec) {
   // founder ruling TEN-449 (2026-10-19): for a player joined on his date of birth, the record counts only what TE lists;
   // our rows TE lacks stay visible in the drill, marked "not in Tennis Explorer, not counted". A player joined without a
   // DOB (the named exception, Svajda) keeps counting them.
+  // The exception is by player key, never "any record without a DOB": a store record with no DOB for anyone else is
+  // a join the DOB rule forbids, and the run stops rather than count on it.
+  if (!teRec.dob && !NO_DOB_EXCEPTION.has(String(teRec.key))) throw new Error(`te-history/${teRec.key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`);
   const teOnlyCounts = !!teRec.dob;
   for (const r of oursOnly) {
     if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
@@ -284,4 +290,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED };
+module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION };
