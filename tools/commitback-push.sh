@@ -63,6 +63,46 @@ resolve_unmerged() {
   return 0
 }
 
+# Re-merge this run's ledger onto the newest main (founder 2026-10-19, after run 39191032806).
+# A run that builds a stale base (the split-build guard keeps the queued SHA when the tip changed
+# .github/workflows/) appended to a ledger another run had appended to since: the rebase of our own
+# commit conflicts. With COMMITBACK_REMERGE set, take main's copy of each file, run the command (it
+# must fold THIS run's rows into main's copy; this run's committed version of each file is under
+# $COMMITBACK_OURS), commit ONLY these files on top of main through a private index (the deployed
+# build output in the tree is never staged or touched), push; up to 3 times. Without it: exit 2.
+remerge() {
+  local ours tip tree c f i idx
+  ours="$(mktemp -d)"
+  for f in "$@"; do mkdir -p "$ours/$(dirname "$f")"; git show "HEAD:$f" > "$ours/$f" 2>/dev/null || rm -f "$ours/$f"; done
+  for i in 1 2 3; do
+    git fetch -q origin main || { echo "commitback-push: fetch failed (remerge attempt $i)."; continue; }
+    tip="$(git rev-parse FETCH_HEAD)"
+    for f in "$@"; do git show "$tip:$f" > "$f" 2>/dev/null || rm -f "$f"; done
+    if ! COMMITBACK_OURS="$ours" bash -c "$COMMITBACK_REMERGE"; then
+      echo "::error::commitback-push: the re-merge command failed for '$MSG'; nothing pushed."
+      return 2
+    fi
+    for f in "$@"; do
+      [ -s "$f" ] || { echo "::error::commitback-push: re-merge left $f missing or empty; nothing pushed."; return 2; }
+    done
+    idx="$(mktemp -d)/index"
+    GIT_INDEX_FILE="$idx" git read-tree "$tip" || return 1
+    GIT_INDEX_FILE="$idx" git update-index --add --remove -- "$@" || return 1
+    tree="$(GIT_INDEX_FILE="$idx" git write-tree)" || return 1
+    if [ "$tree" = "$(git rev-parse "$tip^{tree}")" ]; then
+      git reset -q "$tip"; echo "commitback-push: main already holds this run's rows after the re-merge - nothing to push."; return 0
+    fi
+    c="$(git commit-tree "$tree" -p "$tip" -m "$MSG")" || return 1
+    if git push -q origin "$c:main"; then
+      # HEAD to the pushed commit, index to its tree; the working tree (build output) is left as it is
+      git reset -q "$c"; echo "Pushed after re-merge (attempt $i)."; return 0
+    fi
+    echo "Push rejected after re-merge (attempt $i) - re-merging onto the new tip."
+  done
+  echo "::error::commitback-push: could not push the re-merged ledger after 3 attempts - $MSG"
+  return 1
+}
+
 for attempt in 1 2 3; do
   if git push -q origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
   echo "Push rejected (attempt $attempt) - rebasing."
@@ -70,6 +110,10 @@ for attempt in 1 2 3; do
   if [ -d "$(git rev-parse --git-path rebase-merge)" ] || [ -d "$(git rev-parse --git-path rebase-apply)" ]; then
     # The COMMIT itself conflicted - a concurrent writer committed our own ledger.
     git rebase --abort 2>/dev/null || true
+    if [ -n "${COMMITBACK_REMERGE:-}" ]; then
+      echo "commitback-push: the rebase of '$MSG' conflicted on its own ledger (this run built on a stale base); re-merging onto main."
+      remerge "$@"; exit $?
+    fi
     echo "::error::commitback-push: the rebase of '$MSG' itself conflicted; aborted it."
     exit 2
   fi
