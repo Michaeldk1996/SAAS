@@ -39,21 +39,24 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   - **Indoors = TE's court class** for the event; Hard is outdoor hard.
   - **Every season, pre-2021 included, equals the match count TE lists — up or down** (founder TEN-449,
     2026-10-19; replaces "a pre-2021 figure may rise to the match count"). Up: the provider aggregate
-    undercounts Challenger-era players (N. Borges 2019 counted 3, 21 on record). Down: 160 pre-2021 seasons
-    where the aggregate held more than TE lists (124 players, −916 matches). Every moved cell is reported to the
-    founder, old → new, before it goes live.
+    undercounts Challenger-era players (N. Borges 2019 counted 3, 21 on record). Down: a pre-2021 season where
+    the aggregate held more than TE lists. Every moved cell is reported to the founder, old → new, before it goes
+    live (TEN-449 doc `moved-cells`).
   - **For a player joined to TE on his date of birth, the record counts only the rows TE lists** (founder
     TEN-449, 2026-10-19). A row of ours TE does not list stays in his season drill, marked "not in Tennis
-    Explorer, not counted", and is in no cell. *Exception:* a player joined without a DOB (only Z. Svajda, below)
-    keeps counting our rows TE lacks.
+    Explorer, not counted", and is in no cell. *Exception:* a player joined without a DOB (only Z. Svajda, below;
+    `te-join.js` `NO_DOB_EXCEPTION`, by key) keeps counting our rows TE lacks. A store record without a DOB for any
+    other key stops the run.
   - **"Surface not known" column** (founder TEN-449, 2026-10-19, option C of the `set-repair-notset` report;
     replaces Option A of TEN-442): the Record-by-season table carries a sixth column = the season's Total less
     Clay, Hard, Indoors and Grass as shown, so every season (and Career) sums to its total; its drill lists the
-    season's rows with no surface outside Indoors (TE "Not set", mostly Davis Cup). No existing cell moves; a row
-    with a surface of ours that TE leaves "Not set" keeps ours.
+    season's rows with no clay, hard or grass surface outside Indoors (TE "Not set", mostly Davis Cup; an outdoor
+    carpet row too). No existing cell moves; a row with a surface of ours that TE leaves "Not set" keeps ours.
   - **The career record is its own population.** The TE merge never changes the career-history `matches` that
     H2H, Lines, the model and every other reader take: the record ships as the shard's `record` overlay
-    (`te-join.js` `recordLayer`), read only by the season table's drill.
+    (`te-join.js` `recordLayer`), read by the profile's career record only: the season table's drills, the Last 52
+    window, and the undated-match notes, which compare the season table with the record's counted rows. The
+    Calendar tile still paints the feed rows and names the record's Tennis-Explorer-only rows it does not paint.
   - *Exceptions:* the Match analysis **Tournament tab** W–L stays **main draw only** (TEN-312 N7,
     2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate
     sources, not forced to this rule.
