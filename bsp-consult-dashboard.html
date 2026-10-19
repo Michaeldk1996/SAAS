@@ -11580,7 +11580,7 @@ function ovPopHtml(M){
     // DESIGN GAP G22: the file's rows never retire; a retirement carries "ret." after its set scores (modal-overview.md item 1)
     scores: r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(', ') : FH_DASHC, ret: !!r.ret,
     price: r.price != null ? fhOdd(r.price) : FH_DASHC, oppPrice: r.oppPrice != null ? fhOdd(r.oppPrice) : FH_DASHC,
-    priceTip: r.book === 'B' ? (fhB365Approx(r) ? FH_B365_APPROX_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)') : null,
+    priceTip: r.book === 'B' ? (fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : fhSrcTitle(r) + ' (no Pinnacle close for this match)') : null,
     selected: _ov.sel === r.mid, click: ` onclick="ovOpenRow('${r.mid}')"`, attrs: ` data-ov-mid="${r.mid}"`,
   })) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
     grid: '50px 10px minmax(0,1.3fr) minmax(0,1fr) 34px 38px minmax(0,1.1fr) 42px 42px',
@@ -13345,7 +13345,7 @@ function fhTodayPair(m){
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
 // Row tooltip: which book and which source priced this row.
-function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : typeof sfNoPriceReason === 'function' ? sfNoPriceReason(r) : 'No source found yet'; }
+function fhSrcTitle(r){ return r && r.book === 'A' ? `${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ? `${FH_BOOK[r.book]} close · ${r.srcLabel || FH_SRC[r.src] || ''}` : typeof sfNoPriceReason === 'function' ? sfNoPriceReason(r) : 'No source found yet'; }
 // TEN-437 (founder 2026-10-16): a Bet365-priced H2H meeting keeps its close, its "B" marker, and this hover — on the
 // Match analysis H2H tab and the H2H page — until a Pinnacle source is found. H2H only: Form and every other surface keep
 // fhSrcTitle's source label.
@@ -13354,12 +13354,14 @@ const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';
 // start) is never called a close — every hover on it is this one line; the price is shown as before. Tennis-Data's own
 // Bet365 column (`td`) keeps its words (outside the close-label rule until ruled).
 const FH_B365_APPROX_HOVER = 'Bet365 (approx.) · not a confirmed close';
-function fhB365Approx(r){ return !!(r && r.book === 'B' && r.src === 'cap'); }
-function fhH2hSrcTitle(r){ return fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }
-function fhB365Tag(r, h2h){ return r && r.book === 'B' ? `<span title="${fhB365Approx(r) ? FH_B365_APPROX_HOVER : h2h ? FH_B365_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)'}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+// founder brief 2026-10-19 (item 3): api-tennis's stored Bet365 price (book 7), a snapshot with no time — its hover names it
+const FH_B365_AT_HOVER = 'Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close';
+function fhB365Approx(r){ return !!(r && r.book === 'B' && (r.src === 'cap' || r.src === 'atb')); }
+function fhH2hSrcTitle(r){ return fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book === 'B' ? FH_B365_HOVER : fhSrcTitle(r); }
+function fhB365Tag(r, h2h){ return r && r.book === 'B' ? `<span title="${fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : h2h ? FH_B365_HOVER : fhSrcTitle(r) + ' (no Pinnacle close for this match)'}" style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); border:1px solid var(--edge-6); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // TEN-402 r1 fix 3 (founder 2026-10-09): on a sheet opened from the Head to Head page the tag is part of the header's grey
 // mono meta line ("… · B365", the meta's own face, size and tone), not a caps chip.
-function fhB365Meta(r){ return r && r.book === 'B' ? `<span class="fh-b365" title="${fhB365Approx(r) ? FH_B365_APPROX_HOVER : FH_B365_HOVER}" style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">· B365</span>` : ''; }
+function fhB365Meta(r){ return r && r.book === 'B' ? `<span class="fh-b365" title="${fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : FH_B365_HOVER}" style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--text-label);">· B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 // Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
@@ -15196,7 +15198,7 @@ function meRowsFor(career, cl, selfKey, selfName){
 // is joined by opponent surname + result in the event window, exactly one candidate; none → a dash, not clickable.
 const ME_PROFILE_BOOK = { 'pinnacle-capture': ['P', 'cap'], pinnacle: ['P', 'td'], 'bet365-archive': ['B', 'td'], 'bet365-capture': ['B', 'cap'],
   // founder ruling 2026-10-17 (item 1): the builder prices a row the Database holds exactly as the Database does
-  'pinnacle-history': ['P', 'hist'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'] };
+  'pinnacle-history': ['P', 'hist'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'], 'bet365-approx-at': ['B', 'atb'] };
 const ME_TD_ROUND = { quarterfinals: 'QF', semifinals: 'SF', 'the final': 'F', 'round robin': 'RR' };
 function meWinnerRows(shard, career, selfKey, selfName){
   const byTd = {};
@@ -16161,7 +16163,7 @@ function trProfilePriceOf(key, name, t, m){
   const P = trProfileModel(key, name, t);
   if (!P || P.failed || !m) return null;
   const r = P.src.get(m);
-  return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? 'bet365-archive' : r.book === 'A' ? (r.src === 'od10' ? 'pinnacle-approx-od10' : 'pinnacle-approx')
+  return r ? { price: r.price, oppPrice: r.oppPrice, book: r.price != null ? (r.book === 'B' ? (r.src === 'atb' ? 'bet365-approx-at' : r.src === 'cap' ? 'bet365-capture' : 'bet365-archive') : r.book === 'A' ? (r.src === 'od10' ? 'pinnacle-approx-od10' : 'pinnacle-approx')
     : r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : null } : null;
 }
 window.trProfilePriceOf = trProfilePriceOf;
@@ -22470,7 +22472,7 @@ window.pp2CareerClose = function (key, x){
   if (r.wo || r.price == null || r.oppPrice == null) return null;
   // the profile's book names (SHEET_BOOK): Pinnacle (approx.) is never 'pinnacle', our archive's close keeps its source
   const book = r.book === 'A' ? (r.src === 'od10' ? 'pinnacle-approx-od10' : 'pinnacle-approx')
-    : r.book === 'P' ? (r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : 'bet365';
+    : r.book === 'P' ? (r.src === 'hist' ? 'pinnacle-history' : r.src === 'cap' ? 'pinnacle-capture' : 'pinnacle') : r.src === 'atb' ? 'bet365-approx-at' : 'bet365';
   return { price: r.price, oppPrice: r.oppPrice, book, src: r.src };
 };
 // TEN-384 · founder ruling (2026-10-05): the Market edge box and tiles draw COMPLETE on first
@@ -28065,8 +28067,13 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // differs — the archive and the feed disagree on a round (Lyon 2022: Tennis-Data "2nd Round", the feed QF) — only when
     // the date window, both players and the winner hold, the event is the same (trSameEvent: the page's one event test),
     // and it is the ONLY such row for that match and that match the only one for the row. Two candidates = a dash.
-    const evOk = (m, i) => typeof trSameEvent === 'function' && !!(m.x && m.x.tournament)
-      && trSameEvent(m.x.tournament, [db.meta && db.meta.tournaments ? db.meta.tournaments[db.rows[i][4]] : '']);
+    // founder brief 2026-10-19 (item 1): a Tennis-Data row names its event by its sponsor ("Adelaide International 2",
+    // "Grand Prix Hassan II"); the Database page's own name map gives its city ("Adelaide 2", "Marrakech"), so the feed's
+    // "Adelaide 2" meets it (Kwon's lucky-loser run, Adelaide 2 2023, filed "Qualifying" by api-tennis)
+    const evOk = (m, i) => { if (typeof trSameEvent !== 'function' || !(m.x && m.x.tournament)) return false;
+      const tn = db.meta && db.meta.tournaments ? db.meta.tournaments[db.rows[i][4]] : '';
+      const D = typeof window !== 'undefined' && window.DatabaseTab, city = D && typeof D.tdCity === 'function' ? D.tdCity(tn) : null;
+      return trSameEvent(m.x.tournament, city ? [tn, city] : [tn]); };
     const left = meet.map((m, j) => (M.doneL.has(j) ? -1 : j)).filter(j => j >= 0);
     if (left.length) {
       const T = dbPairs(left.map(j => meet[j]), M.usedR, true).filter(q => evOk(meet[left[q.l]], q.r));
@@ -28105,7 +28112,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       const bk = row[8];
       r.price = r.won ? winP : loseP; r.oppPrice = r.won ? loseP : winP; r.book = bk === 0 || bk === 3 || bk === 4 ? 'P' : bk === 2 || bk === 5 ? 'A' : 'B';
       // book 6 = our captured Bet365 at the lower levels (founder 2026-10-18 item 3): 'B' + 'cap' = "Bet365 (approx.) · not a confirmed close"
-      r.src = bk === 3 ? 'hist' : bk === 4 || bk === 6 ? 'cap' : bk === 5 ? 'od10' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
+      // book 7 = api-tennis's stored Bet365 (founder brief 2026-10-19 item 3): 'B' + 'atb' = its own approx. hover
+      r.src = bk === 3 ? 'hist' : bk === 4 || bk === 6 ? 'cap' : bk === 5 ? 'od10' : bk === 7 ? 'atb' : 'td'; r.srcLabel = bk === 3 ? FH_SRC.hist : bk === 4 ? FH_SRC.cap : undefined;
       n++;
     });
     return n;
@@ -28806,7 +28814,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // A price cell's hover: the book and source, or why it is a dash.
   function h2hPriceTitle(r) {
     if (r.price != null && r.book === 'A') return 'Pinnacle (approx.) · ' + (r.src === 'od10' ? SF_OD10_HOVER : SF_APPROX_HOVER);
-    if (r.price != null) return r.book === 'B' ? (typeof fhB365Approx === 'function' && fhB365Approx(r) ? FH_B365_APPROX_HOVER : FH_B365_HOVER) : r.src === 'cap' || r.src === 'hist' ? 'Pinnacle closing price · ' + (r.srcLabel || FH_SRC[r.src])
+    if (r.price != null) return r.book === 'B' ? (typeof fhB365Approx === 'function' && fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : FH_B365_HOVER) : r.src === 'cap' || r.src === 'hist' ? 'Pinnacle closing price · ' + (r.srcLabel || FH_SRC[r.src])
       : 'Pinnacle closing price · Database join (Tennis-Data)';
     if (_h2hDbSt === 'loading') return 'Loading closing prices…';
     if (_h2hDbSt === 'failed') return 'Closing prices could not be loaded';
@@ -34415,7 +34423,10 @@ window.DatabaseTab = (function(){
   var PRICE_JOIN = null;
   function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return loadX(); }).then(function(){ return loadQ(); })
     .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES, XDATA, QDATA)); }); }
-  return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows };
+  // the city the Database page groups a Tennis-Data event name under ("Adelaide International 2" → "Adelaide 2"), read by the
+  // price join's event test (founder brief 2026-10-19 item 1); null for a name it does not list
+  function tdCity(n){ return Object.prototype.hasOwnProperty.call(TOURN_SPLIT, n) ? TOURN_SPLIT[n] : Object.prototype.hasOwnProperty.call(TOURN_COMMON, n) ? TOURN_COMMON[n] : null; }
+  return { mount: mount, init: init, instanceCount: function(){ return INSTANCES.length; }, priceRows: priceRows, tdCity: tdCity };
 })();
 </script>
 

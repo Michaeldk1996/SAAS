@@ -43,6 +43,13 @@ take styling from it, structure from the rules below.
   header sentence ("Pinnacle closing, else Bet365, per match") is unchanged (the 120-character cap) — the footnote carries
   the disclosure. Market edge / Form / H2H tab closes (`FH_BOOK_ORDER`) do not read it. **Test:**
   `tools/test-approx-pinnacle.mjs` (start − 10 first, api-tennis fallback, the fold, each hover, an old feed refused).
+- **Book 7 = api-tennis's Bet365 snapshot; the join's event test reads the Database's own city map (founder brief 2026-10-19).**
+  A lower-level or `atp-x` era row priced on api-tennis's stored Bet365 carries `r[8] = 7`; the join reads it as book "B", src
+  `atb`, hover `FH_B365_AT_HOVER` ("Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close").
+  No Database figure reads it (era shard). The round-tolerance pass's event test also accepts the city `DatabaseTab.tdCity`
+  gives a Tennis-Data sponsor name ("Adelaide International 2" → "Adelaide 2"), so Kwon's lucky-loser run (Adelaide 2 2023,
+  filed "Qualifying" by api-tennis) meets its Tennis-Data rows. **Test:** `test-ten402-b.mjs` "round tolerance" (+ control),
+  `tools/test-approx-pinnacle.mjs`, `tools/test-close-label.py`.
 - **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
   (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
   in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of

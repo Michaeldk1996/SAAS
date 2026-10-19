@@ -239,5 +239,23 @@ lf = T.lower_feed_rows(cur)
 check('lower feed: one source per match, start - 10 over api-tennis; Tennis-Data snapshots (no level) are never in it',
       [(r['eventKey'], r['source'], r['psw']) for r in lf] == [(1, T.START10_SOURCE, 1.77), (2, T.APPROX_SOURCE, 2.6)], lf)
 check('lower feed: the columns build-database-yield.js reads', all(set(T.LOWER_FEED_COLS) <= set(r) for r in lf))
+# ── founder brief 2026-10-19: events Tennis-Data does not cover ('atp-x') and api-tennis's Bet365 as the next tier ───────────
+xf = [F(10, 'Atp Singles', tn='Davis Cup - World Group I', d='2024-09-14'), F(11, 'Atp Singles', tn='ATP Next Gen Finals - Jeddah', d='2024-12-18'),
+      F(12, 'Atp Singles', tn='Finals - Turin', d='2024-11-12'), F(13, 'Atp Singles', tn='United Cup', q='True', d='2025-01-02'), F(14, 'Atp Singles', tn='ATP Shanghai', d='2025-10-05')]
+xt, _ = T.lower_targets(xf)
+check("atp-x: Davis Cup and the Next Gen Finals are in; the ATP Finals (Tennis-Data's), a tour event and a qualifying row keep their level",
+      [(r['_f']['event_key'], r['_detail']['level']) for r in xt] == [(10, 'atp-x'), (11, 'atp-x'), (13, 'atp-q')], xt)
+check("atp-x is tdarch's only: pinarch's lower_level (its lower closes) never reads a team event", T.P.lower_level(xf[0]) is None and T.lower_level(xf[0]) == 'atp-x')
+check('the history window reaches back to 2021 (api-tennis keeps prices from 2022-23)', T.LOWER_FROM == '2021-01-01' and T.LOWER_TO == '2026-09-16')
+br, brep = T.approx_rows(tg, None, lambda ek: odds.get(ek), 'now', join=T._lower_join, book='bet365', source=T.B365_SOURCE, label=T.B365_LABEL, hover=T.B365_HOVER)
+check('api-tennis Bet365: its own source and label, oriented to the winner, never a Pinnacle label or a close',
+      [(r['event_key'], r['source'], r['label'], r['price_winner']) for r in br] == [(4, 'api-tennis Bet365', 'Bet365 (approx.)', 1.5)]
+      and br[0]['detail']['apiTennisBook'] == 'bet365' and 'not a confirmed close' in br[0]['detail']['hover'], (br, brep))
+cb = [dict(br[0], id=20), dict(br[0], id=21, event_key=2, source=T.B365_SOURCE, price_winner=2.4), dict(ar[1], id=22)]
+lb = T.lower_feed_rows(cb)
+check('lower feed: api-tennis Pinnacle over api-tennis Bet365 for one match; Bet365 alone where no Pinnacle source holds it',
+      sorted((r['eventKey'], r['source']) for r in lb) == [(2, T.APPROX_SOURCE), (4, T.B365_SOURCE)], lb)
+mut = T.lower_feed_rows([dict(r, source=T.APPROX_SOURCE if r['source'] == T.B365_SOURCE else T.B365_SOURCE) for r in cb])
+check('control: with the sources swapped the Bet365 row wins match 2 (the rank decides, not the order)', any(r['eventKey'] == 2 and r['source'] == T.APPROX_SOURCE and r['psw'] == 2.4 for r in mut), mut)
 print(f'\ntest-tdarch: {passed} passed, {failed} failed')
 sys.exit(1 if failed else 0)

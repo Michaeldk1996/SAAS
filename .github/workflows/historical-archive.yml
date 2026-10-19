@@ -19,7 +19,7 @@ concurrency:
 jobs:
   archive:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150   # the lower-level import reads every day from 2021 (founder brief 2026-10-19)
     env:
       MODE: ${{ github.event.inputs.mode || 'daily' }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https://([a-z0-9]+)\.supabase\.co.*#\1#')
-          for MIG in supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql; do
+          for MIG in supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql supabase/migrations/20261019090000_historical_snapshot_bet365.sql; do
             resp=$(jq -Rs '{query: .}' "$MIG" | curl -sS -w $'\n%{http_code}' -X POST \
               -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" --data @- \
               "https://api.supabase.com/v1/projects/$REF/database/query")
@@ -79,7 +79,7 @@ jobs:
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: python3 tools/tdarch.py start10-import ${{ env.MODE == 'start10-dry-run' && '--dry-run' || '' }}
-      - name: lower levels — ATP qualifying, Challenger, ITF snapshots (start − 10, api-tennis) 1 Jan – 16 Sep 2026 (founder ruling 2026-10-18 item 3; insert-only)
+      - name: lower levels — ATP qualifying, Challenger, ITF and the events Tennis-Data does not cover; snapshots (start − 10, api-tennis Pinnacle, api-tennis Bet365) 2021 – 16 Sep 2026 (founder ruling 2026-10-18 item 3, brief 2026-10-19; insert-only)
         if: env.MODE == 'lower-import' || env.MODE == 'lower-dry-run'
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}

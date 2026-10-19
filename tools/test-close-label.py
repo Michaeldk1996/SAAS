@@ -80,12 +80,13 @@ const fs = require('fs'); const h = fs.readFileSync(process.argv[1], 'utf8');
 const fn = n => { const i = h.indexOf('function ' + n + '('); if (i < 0) throw new Error('no ' + n); let d = 0, j = h.indexOf('{', i);
   for (let k = j; k < h.length; k++) { if (h[k] === '{') d++; else if (h[k] === '}' && --d === 0) return h.slice(i, k + 1); } };
 const cst = n => { const m = new RegExp('const ' + n + ' = (?:\'[^\']*\'|"[^"]*"|\\{[^}]*\\});').exec(h); if (!m) throw new Error('no ' + n); return m[0]; };
-const src = ['FH_BOOK', 'FH_SRC', 'FH_B365_HOVER', 'FH_B365_APPROX_HOVER', 'SF_APPROX_HOVER', 'SF_OD10_HOVER', 'FH_MONO'].map(cst).join('\n') + '\n' +
+const src = ['FH_BOOK', 'FH_SRC', 'FH_B365_HOVER', 'FH_B365_APPROX_HOVER', 'FH_B365_AT_HOVER', 'SF_APPROX_HOVER', 'SF_OD10_HOVER', 'FH_MONO'].map(cst).join('\n') + '\n' +
   ['fhB365Approx', 'fhSrcTitle', 'fhH2hSrcTitle', 'fhB365Tag', 'fhB365Meta'].map(fn).join('\n');
 const f = new Function(src + '; return { fhSrcTitle, fhH2hSrcTitle, fhB365Tag, fhB365Meta };')();
 const t = s => (/title="([^"]*)"/.exec(s) || [])[1];
-const cap = { book: 'B', src: 'cap', price: 1.8, oppPrice: 2.0 }, td = { book: 'B', src: 'td', price: 1.8, oppPrice: 2.0 };
+const cap = { book: 'B', src: 'cap', price: 1.8, oppPrice: 2.0 }, td = { book: 'B', src: 'td', price: 1.8, oppPrice: 2.0 }, atb = { book: 'B', src: 'atb', price: 1.8, oppPrice: 2.0 };
 console.log(JSON.stringify({ cap: [f.fhSrcTitle(cap), f.fhH2hSrcTitle(cap), t(f.fhB365Tag(cap, false)), t(f.fhB365Tag(cap, true)), t(f.fhB365Meta(cap))],
+  atb: [f.fhSrcTitle(atb), f.fhH2hSrcTitle(atb), t(f.fhB365Tag(atb, false)), t(f.fhB365Tag(atb, true)), t(f.fhB365Meta(atb))],
   td: [f.fhSrcTitle(td), f.fhH2hSrcTitle(td)] }));
 """
 def hovers_of(html_path):
@@ -99,9 +100,12 @@ check('our captured Bet365 price: every hover (source title, H2H title, B365 tag
 check('control: Tennis-Data\'s own Bet365 column keeps its words (outside the rule until ruled)',
       'td' in hv and hv['td'] == ['Bet365 close · Tennis-Data', 'Bet365 closing odds, Pinnacle not available'], hv)
 check('the Overview pop-up and the Head to Head page route a captured Bet365 price to the same line',
-      "priceTip: r.book === 'B' ? (fhB365Approx(r) ? FH_B365_APPROX_HOVER" in html and "fhB365Approx(r) ? FH_B365_APPROX_HOVER : FH_B365_HOVER) : " in html)
+      "priceTip: r.book === 'B' ? (fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER)" in html and "fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : FH_B365_HOVER) : " in html)
+WANT_AT = 'Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close'
+check('api-tennis\'s Bet365 snapshot (book 7, founder brief 2026-10-19): every hover names its source and says "not a confirmed close"',
+      'atb' in hv and all(x == WANT_AT for x in hv['atb']) and snapshot_ok(WANT_AT), hv)
 import tempfile
-mut = html.replace(" : fhB365Approx(r) ? FH_B365_APPROX_HOVER : r && r.book ? ", " : r && r.book ? ", 1)
+mut = html.replace(" : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ? ", " : r && r.book ? ", 1)
 with tempfile.NamedTemporaryFile('w', suffix='.html', delete=False, encoding='utf8') as fh: fh.write(mut); mp = fh.name
 mh = hovers_of(mp); os.unlink(mp)
 check('MUTANT (the captured-Bet365 branch removed from fhSrcTitle): the rule goes red', mut != html and 'cap' in mh and mh['cap'][0] != WANT, mh)

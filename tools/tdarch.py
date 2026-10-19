@@ -53,6 +53,11 @@ TABLES = (FILE, CLOSE, EXPORT, COUNT, SNAP, SNAPCOUNT)
 APPROX_SOURCE, APPROX_LABEL = 'api-tennis Pinnacle', 'Pinnacle (approx.)'
 APPROX_FROM, APPROX_TO = '2026-01-13', '2026-09-16'   # founder 2026-10-16: 12 Apr, widened to 16 Sep (round 3, item 3)
 APPROX_HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed close'
+# founder brief 2026-10-19 (item 3): the lower levels and the events Tennis-Data does not cover take api-tennis's stored Bet365
+# price where api-tennis has no Pinnacle pair — measured on 1,177 lower-level matches with a real close (17 Sep - 19 Oct):
+# api-tennis Pinnacle median no-vig gap 0.08pp (789 priced), api-tennis Bet365 1.47pp (802). A SNAPSHOT, never a close.
+B365_SOURCE, B365_LABEL = 'api-tennis Bet365', 'Bet365 (approx.)'
+B365_HOVER = 'Bet365 snapshot from api-tennis, no timestamp, not a confirmed close'
 APPROX_FEED_COLS = ['date', 'tournament', 'winner', 'loser', 'psw', 'psl', 'eventKey', 'snapshotId', 'source', 'cutTs', 'gapToStartS']
 # Founder ruling 2026-10-17 (item 2): for 13 Apr - 16 Sep ATP main draw the first Pinnacle (approx.) source is the Oddspapi
 # Pinnacle archive cut at Oddspapi's start - 10 min; api-tennis where the archive has no pre-cut pair; then Bet365; a dash.
@@ -640,7 +645,7 @@ def approx_join(r, by_day):
     return None, ('two fixtures' if c else 'no fixture')
 
 
-def approx_rows(targets, by_day, odds_of, fetched_at, join=None):
+def approx_rows(targets, by_day, odds_of, fetched_at, join=None, book='Pncl', source=None, label=None, hover=None):
     """Snapshot rows (Home = the fixture's first player) + a report. A side missing or below 1.01 = no row (Bet365 stays
     the fallback); nothing is filled from another book."""
     rows, rep = [], collections.Counter()
@@ -649,17 +654,18 @@ def approx_rows(targets, by_day, odds_of, fetched_at, join=None):
         if f is None:
             rep['join: ' + w] += 1; continue
         ha = odds_of(f['event_key']) or {}
-        h, a = (ha.get('Home') or {}).get('Pncl'), (ha.get('Away') or {}).get('Pncl')
+        h, a = (ha.get('Home') or {}).get(book), (ha.get('Away') or {}).get(book)
         ph, pa = price(h), price(a)
         if ph is None or pa is None:
-            rep['no Pinnacle pair on api-tennis'] += 1; continue
+            rep['no Pinnacle pair on api-tennis' if book == 'Pncl' else f'no {book} pair on api-tennis'] += 1; continue
         pw, pl = (ph, pa) if w else (pa, ph)
-        rows.append({'dedupe_key': '|'.join(str(x) for x in (APPROX_SOURCE, r['date'], r['tournament'], r['winner'], r['loser'], f['event_key'], pw, pl)),
-                     'source': APPROX_SOURCE, 'label': APPROX_LABEL, 'match_date': r['date'], 'tournament': r['tournament'],
+        src = source or APPROX_SOURCE
+        rows.append({'dedupe_key': '|'.join(str(x) for x in (src, r['date'], r['tournament'], r['winner'], r['loser'], f['event_key'], pw, pl)),
+                     'source': src, 'label': label or APPROX_LABEL, 'match_date': r['date'], 'tournament': r['tournament'],
                      'round': r.get('round') or None, 'winner': r['winner'], 'loser': r['loser'], 'event_key': int(f['event_key']),
                      'price_winner': pw, 'price_loser': pl, 'fetched_at': fetched_at,
                      'detail': dict({'home': h, 'away': a, 'firstPlayer': f.get('event_first_player'), 'secondPlayer': f.get('event_second_player'),
-                                     'winnerIsFirst': w, 'apiTennisBook': 'Pncl', 'hover': APPROX_HOVER}, **(r.get('_detail') or {}))})
+                                     'winnerIsFirst': w, 'apiTennisBook': book, 'hover': hover or APPROX_HOVER}, **(r.get('_detail') or {}))})
         rep['stored'] += 1
     return rows, dict(rep)
 
@@ -895,13 +901,25 @@ def cmd_start10_import(dry_run=False):
 # rows go into the same append-only snapshot table, each carrying its level, round and both api-tennis player keys in
 # `detail`; the feed (pinnacle-approx-lower.csv) hands them to build-database-yield.js, which puts them in the master's
 # lower-level shard — never a Database figure. From 17 Sep the archive's own closes price these levels (td-feed 'lower').
-LOWER_FROM, LOWER_TO = '2026-01-01', '2026-09-16'
+# founder brief 2026-10-19 (items 1 + 3): from 2021 — api-tennis keeps its stored prices back to 2022-23 (measured on the
+# unpriced career rows: ATP qualifying 2023 686 of 1,234 priced, 2025 1,182 of 1,241; 2021 none) — and, beside the lower
+# levels, the ATP events Tennis-Data does not cover ('atp-x': Davis Cup, United Cup, ATP Cup, Laver Cup, Hopman Cup, the
+# Olympics, the Next Gen Finals, the Asian Games), which the master holds behind its team flag.
+LOWER_FROM, LOWER_TO = '2021-01-01', '2026-09-16'
+NOT_TD_EVENT = re.compile(r'davis cup|united cup|atp cup|laver cup|hopman|olympic|next ?gen|asian games', re.I)
 LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'winnerKey', 'loserKey', 'psw', 'psl', 'eventKey',
                    'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment']
 RESULT_STATUSES = ('Finished', 'Retired')
 
 
-lower_level = P.lower_level
+def lower_level(f):
+    """pinarch's levels ('atp-q' | 'ch' | 'ch-q' | 'itf'), plus 'atp-x': an ATP singles main-draw match at an event Tennis-Data
+    does not carry (its own regex on api-tennis's tournament name). Read here only: pinarch's lower closes keep its own
+    levels, so a team event's archive close still travels the td-feed 'team' path, never twice."""
+    lv = P.lower_level(f)
+    if lv or f.get('event_type_type') != 'Atp Singles':
+        return lv
+    return 'atp-x' if NOT_TD_EVENT.search(str(f.get('tournament_name') or '')) else None
 
 
 def lower_targets(fixtures, frm=LOWER_FROM, to=LOWER_TO):
@@ -939,7 +957,7 @@ def lower_feed_rows(current):
         if not d.get('level'):
             continue
         k = r['event_key']
-        rank = 0 if r.get('source') == START10_SOURCE else 1
+        rank = 0 if r.get('source') == START10_SOURCE else 2 if r.get('source') == B365_SOURCE else 1
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
     out = []
@@ -962,7 +980,8 @@ def _lower_fixtures(frm, to):
         j = _at({'method': 'get_fixtures', 'date_start': d, 'date_stop': d, 'timezone': 'UTC'})
         if not isinstance(j.get('result'), list) and j.get('success') != 1:
             raise RuntimeError(f'get_fixtures {d}: no result list ({str(j)[:200]})')
-        return d, [f for f in (j.get('result') or []) if lower_level(f)]
+        # slim: the point-by-point, set scores and statistics are dropped (the 2021+ window holds ~2,100 days of fixtures)
+        return d, [{k: v for k, v in f.items() if not isinstance(v, (list, dict))} for f in (j.get('result') or []) if lower_level(f)]
     def odds(d):
         j = _at({'method': 'get_odds', 'date_start': d, 'date_stop': d})
         return d, j.get('result') if isinstance(j.get('result'), dict) else {}
@@ -1019,7 +1038,11 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
             return None, 'held payloads are another book only'
         return got
     s10_rows, srep = start10_rows(s10, None, od_of, fixtures, series_of, fetched, join=_lower_join)
-    rows = s10_rows + api_rows
+    # then api-tennis's Bet365 where neither Pinnacle source holds a pair (founder brief 2026-10-19 item 3)
+    have_pin = {r['event_key'] for r in s10_rows + api_rows}
+    b_rows, brep = approx_rows([r for r in targets if int(r['_f']['event_key']) not in have_pin], None, lambda ek: od.get(str(ek)) or {}, fetched,
+                               join=_lower_join, book='bet365', source=B365_SOURCE, label=B365_LABEL, hover=B365_HOVER)
+    rows = s10_rows + api_rows + b_rows
     # founder ruling 2026-10-18 (item 5): every played match we checked and could not price, with its reason — api-tennis
     # priced one player only ("one side only") or neither ("no bookmaker priced it"). Read by build-database-yield.js (the
     # dash's hover); a price from another source (our captured Bet365) wins over it there.
@@ -1030,7 +1053,7 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
         if ek in priced:
             continue
         ha = od.get(str(ek)) or {}
-        sides = sum(1 for side in ('Home', 'Away') if price((ha.get(side) or {}).get('Pncl')) is not None)
+        sides = max(sum(1 for side in ('Home', 'Away') if price((ha.get(side) or {}).get(bk)) is not None) for bk in ('Pncl', 'bet365'))
         d = r['_detail']
         unpriced.append([r['date'], P.td_name(r['winner']), P.td_name(r['loser']), 'one' if sides == 1 else 'nobook', d['winnerKey'], d['loserKey'], ek, d['level']])
     if unpriced_out:
@@ -1049,7 +1072,7 @@ def cmd_lower_import(dry_run=False, frm=LOWER_FROM, to=LOWER_TO, unpriced_out=No
     for r in rows:
         got[(r['detail']['level'], str(r['match_date'])[:7])].add(r['event_key'])
     print('### lower-import', json.dumps({'window': [frm, to], 'dryRun': dry_run, 'fixtures': len(fx), 'daysWithNoFixture': empty,
-                                          'targets': trep, 'apiTennis': arep, 'start10': srep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
+                                          'targets': trep, 'apiTennis': arep, 'start10': srep, 'apiTennisBet365': brep, 'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids),
                                           'pricedOfPlayed': {f'{lv} {m}': f'{len(got[(lv, m)])}/{n}' for (lv, m), n in sorted(lv_month.items())},
                                           'unpriced': dict(collections.Counter(u[3] for u in unpriced)),
                                           'oddspapiFixtureCalls': 0}))

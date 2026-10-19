@@ -68,6 +68,7 @@ file we hold is irreplaceable.
   pre-cut pair on both sides = no row (api-tennis then prices it). Written only by `tools/tdarch.py start10-import`
   (`historical-archive.yml` modes `start10-dry-run` / `start10-import`); supersedes are per source. **Test:**
   `tools/test-tdarch.py` (cut, orientation, never a post-cut entry, gate, claimed twice), `tools/test-historical-archive-sql.py`.
+- **api-tennis Bet365 — a third snapshot source** (founder brief 2026-10-19 item 3; migration `20261019090000_historical_snapshot_bet365.sql`): source `api-tennis Bet365`, label `Bet365 (approx.)` (a CHECK pairs each source with its own label, so it never carries a Pinnacle or a close label), no times; stored by `tdarch.py lower-import` only where api-tennis holds no Pinnacle pair, for the lower levels and the events Tennis-Data does not cover, 1 Jan 2021 – 16 Sep 2026. **Test:** `tools/test-historical-archive-sql.py` (negative controls), `tools/test-tdarch.py`.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).
