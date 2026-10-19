@@ -4937,6 +4937,53 @@
       "p2": "N. Basilashvili",
       "startTime": "2026-10-21T06:30:00.000Z",
       "tournamentId": 41959
+    },
+    "12172384": {
+      "fixtureId": "id1204593575621164",
+      "mappedAt": "2026-10-19T15:02:51Z",
+      "orient": "same",
+      "p1": "M. Damm",
+      "p2": "F. Cerundolo",
+      "startTime": "2026-10-21T09:30:00.000Z",
+      "tournamentId": 45935
+    },
+    "12172385": {
+      "fixtureId": "id1200309775800034",
+      "mappedAt": "2026-10-19T15:02:51Z",
+      "orient": "same",
+      "p1": "P. Herbert",
+      "p2": "S. Baez",
+      "startTime": "2026-10-20T10:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172386": {
+      "fixtureId": "id1200309775800016",
+      "mappedAt": "2026-10-19T15:02:51Z",
+      "orient": "same",
+      "p1": "A. Fery",
+      "p2": "B. Gojo",
+      "startTime": "2026-10-20T10:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172387": {
+      "fixtureId": "id1200309775800010",
+      "mappedAt": "2026-10-19T15:02:51Z",
+      "orient": "same",
+      "p1": "L. van Assche",
+      "p2": "C. Tabur",
+      "startTime": "2026-10-20T10:00:00.000Z",
+      "tournamentId": 3097
+    },
+    "12172388": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-19T15:02:51Z",
+      "missRuns": 1,
+      "missSince": "2026-10-19T15:02:51Z",
+      "orient": null,
+      "p1": "M. Berrettini",
+      "p2": "K. Jacquet",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -4949,23 +4996,12 @@
       "observedSpanDays": 18.79,
       "projectedTtlUnitsPerDay": 1.2,
       "runs": 400,
-      "spentRuns": 147,
+      "spentRuns": 148,
       "ttlBitRuns": 23,
       "ttlBitShare": 0.058,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-09-30T19:02:36Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 27
-      },
       {
         "at": "2026-09-30T20:02:27Z",
         "fixturesUnitsSpent": 0,
@@ -9354,9 +9390,20 @@
         "ttlBit": false,
         "unmapped": 2,
         "upcoming": 35
+      },
+      {
+        "at": "2026-10-19T15:02:51Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 5,
+        "ttlBit": false,
+        "unmapped": 5,
+        "upcoming": 40
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-19T14:03:05Z"
+  "updatedAt": "2026-10-19T15:02:51Z"
 }
