@@ -1,0 +1,10 @@
+# actionlint config (TEN-449), read by tools/actionlint.mjs (-config-file). Every ignore is narrow: one file, one message.
+paths:
+  .github/workflows/pipeline.yml:
+    ignore:
+      # Baseline finding on main, 2026-10-19 (lines ~1790 and ~1815): `steps.deploy` no longer exists — the deploy step
+      # moved to publish.yml in the code/data split (cf703d612). So "Re-raise Trading Report generator failure" always
+      # prints an empty deploy outcome, and "Fail the run if market-edge was not rebuilt" (if: steps.deploy.outcome ==
+      # 'success') has NEVER run since then. Re-pointing them changes what can turn a data run red (and the pipeline-down
+      # Telegram), so that is a founder call, not a lint fix. Ignored here for this file and this message only.
+      - 'property "deploy" is not defined in object type \{cacheday: .*trading_splits'
