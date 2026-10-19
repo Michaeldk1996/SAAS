@@ -2,7 +2,9 @@
 // TEN-443 · build set-repairs.json — the sets api-tennis dropped, repaired where Tennis Explorer AND Sackmann agree
 // (founder ruling 2026-10-17, comment b5b5ef00 item 1: "Repair from Tennis Explorer or Sackmann where both agree on
 // the full score, and flag every match where they don't or only one source has it. Check all … matches").
-// The ONLY writer of set-repairs.json; the pipeline applies it (set-repairs.js) behind SET_REPAIR=1.
+// Writes set-repairs.json whole (the 17 Oct build); after that, tools/te-set-repairs-refresh.mjs (the store repo's weekly
+// refresh, TEN-449) only ADDS entries for new short rows through build({ only }). The pipeline applies it (set-repairs.js)
+// behind SET_REPAIR=1.
 //
 //   node tools/build-set-repairs.mjs --shards <career-history dir> --te <te-history dir> --sackmann <csv dir>
 //        --sack-ids <json: our key -> Sackmann id> --names <json: our key -> {full, name}> --out set-repairs.json
@@ -90,7 +92,9 @@ const teFull = (t, mine) => (t.sets || []).filter((s) => s.w + s.l > 0)
   .map((s) => ((t.won ? mine : !mine) ? { p: s.w, o: s.l } : { p: s.l, o: s.w }));
 
 export { loadSackmann };
-export function build({ shards, teDir, sack, sids = SIDS0, names = NAMES0 }) {
+// `only(key, row)` (TEN-449, the weekly refresh): build entries only for the short rows it accepts — the rows not yet
+// in set-repairs.json; every other short row is left out of this output (its entry is frozen in the committed file)
+export function build({ shards, teDir, sack, sids = SIDS0, names = NAMES0, only = null }) {
   const rowsBy = {}; for (const f of fs.readdirSync(shards).filter((x) => x.endsWith('.json'))) {
     const j = readJson(path.join(shards, f), null); if (j && Array.isArray(j.matches)) rowsBy[String(j.key || f.replace(/\.json$/, ''))] = j.matches;
   }
@@ -105,7 +109,7 @@ export function build({ shards, teDir, sack, sids = SIDS0, names = NAMES0 }) {
   const tally = (k) => { out.counts[k] = (out.counts[k] || 0) + 1; };
   let short = 0;
   for (const [key, rows] of Object.entries(rowsBy)) for (const r of rows) {
-    if (!isShort(r)) continue; short++;
+    if (!isShort(r) || (only && !only(key, r))) continue; short++;
     // TE: his own page, else an opponent's page for the same match (flipped: the opponent won when we lost)
     let te = teBy.get(`${key}|${r.eventKey}`), teSide = 'own';
     let teList = te && teFull(te.t, true);

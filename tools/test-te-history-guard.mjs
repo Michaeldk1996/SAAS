@@ -64,6 +64,15 @@ for (const [name, rel, body] of [
   ['a .cjs script', 'tools/w.cjs', "require('fs').writeFileSync('te-history-index.json', '{}')\n"],
 ]) check(`writer: ${name} -> red`, () => assert.strictEqual(writerCase(rel, body).ok, false));
 check('a reader of the store stays green', () => assert.strictEqual(writerCase('bsp-r.js', "const TE_HISTORY_DIR = 'te-history';\nJSON.parse(fs.readFileSync(`${TE_HISTORY_DIR}/1.json`))\n").ok, true));
+// TEN-449: in the store repo the refresh checks SAAS out into saas/ (its own repository, guarded by its own CI); the
+// control — the same file with no .git beside it — is still a writer
+check('a nested git checkout (the store refresh\'s saas/) is not scanned; the same file outside a checkout is', () => {
+  const body = "fs.writeFileSync('te-history/1.json', '{}')\n";
+  const d = store(); fs.mkdirSync(path.join(d, 'saas', '.git'), { recursive: true }); fs.mkdirSync(path.join(d, 'saas', 'tools'));
+  fs.writeFileSync(path.join(d, 'saas', 'tools', 'w.mjs'), body);
+  assert.strictEqual(checkWriters(d).ok, true, checkWriters(d).why.join('; '));
+  assert.strictEqual(writerCase('saas/tools/w.mjs', body).ok, false, 'control: no .git, the writer must be named');
+});
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
 check('the repo: no script, workflow or action outside the builder writes te-history', () => { const w = checkWriters(ROOT); assert.strictEqual(w.ok, true, w.why.join('; ')); });
 if (fs.existsSync(path.join(ROOT, 'te-history-index.json'))) {

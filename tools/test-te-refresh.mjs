@@ -242,5 +242,154 @@ const te = (url) => url.includes('tennisexplorer');
     assert.ok(/--part "\$TE_PART"/.test(y), 'the run passes its part');
   });
 }
+
+// ── TEN-449 · the template against the store repo's REAL layout (plan §2) ──────────────────────────────────────────
+// The store repo's root holds only data — te-history/, te-history-index.json, te-atp-events.json, set-repairs.json —
+// and no tools/ (the first template ran `node tools/te-refresh.mjs` there and would have failed on its first step).
+// The tools come from a second checkout of the public SAAS repo into saas/.
+const TPL_DIR = path.join(HERE, 'te-store-repo');
+const tpl = fs.readFileSync(path.join(TPL_DIR, 'te-refresh.yml'), 'utf8');
+const STORE_LAYOUT = ['te-history', 'te-history-index.json', 'te-atp-events.json', 'set-repairs.json'];
+// a step's `run:` text by its name (a one-line run, or a `run: |` block)
+function stepRun(y, name) {
+  const lines = y.split('\n'); const i = lines.findIndex((l) => l.trim() === `- name: ${name}`);
+  if (i < 0) throw new Error(`no step "${name}"`);
+  for (let j = i + 1; j < lines.length && !/^\s*- (name|uses):/.test(lines[j]); j++) {
+    const m = /^(\s*)run: (.*)$/.exec(lines[j]); if (!m) continue;
+    if (m[2] !== '|') return m[2];
+    const body = []; for (let k = j + 1; k < lines.length && (lines[k].trim() === '' || lines[k].search(/\S/) > m[1].length); k++) body.push(lines[k]);
+    const ind = Math.min(...body.filter((l) => l.trim()).map((l) => l.search(/\S/))); return body.map((l) => l.slice(ind)).join('\n');
+  }
+  throw new Error(`step "${name}" has no run`);
+}
+const runs = [...tpl.matchAll(/^\s*run: (.*)$/gm)].map((m) => m[1]).join('\n') + '\n' + ['Commit the refreshed store', 'Fetch Sackmann at the pinned commit', 'Commit the set repairs', 'Alert on failure'].map((n) => stepRun(tpl, n)).join('\n');
+check('TEN-449 template: every tool it runs is saas/tools/<file> and the file exists in this repo; no bare tools/ path', () => {
+  const used = [...runs.matchAll(/(\S*)tools\/([\w.-]+)/g)];
+  assert.ok(used.length >= 4, `only ${used.length} tool references`);
+  for (const [, pre, f] of used) {
+    assert.strictEqual(pre, 'saas/', `"${pre}tools/${f}" — the store repo has no tools/; the tools are under saas/`);
+    assert.ok(fs.existsSync(path.join(HERE, f)), `saas/tools/${f} does not exist in SAAS`);
+  }
+  assert.ok(!/commitback-push/.test(tpl), 'commitback-push.sh lives in SAAS tools/, and one writer needs no rebase loop');
+});
+check('TEN-449 template: SAAS checked out into saas/ (public repo, main, no token); store checked out at the root; Node 22', () => {
+  assert.ok(/repository: michaeldk1996\/SAAS\n\s+ref: main\n\s+path: saas\n\s+persist-credentials: false/.test(tpl), 'the SAAS checkout');
+  assert.ok(!/^\s*token:/m.test(tpl), 'no token on any checkout');
+  assert.strictEqual((tpl.match(/uses: actions\/checkout@v4/g) || []).length, 2);
+  assert.ok(/node-version: '22'/.test(tpl) && !/node-version: '20'/.test(tpl));
+  assert.ok(/node saas\/tools\/te-refresh\.mjs --root \. --mode "\$TE_MODE" --part "\$TE_PART"/.test(tpl), 'the refresh runs against the store root');
+  assert.ok(/node saas\/tools\/te-history-guard\.mjs \. --prev-ref HEAD/.test(tpl), 'the guard runs against the store root');
+  assert.ok(/concurrency:\n\s+group: te-refresh\b[^\n]*\n\s+cancel-in-progress: false/.test(tpl), 'one writer');
+  assert.ok(/if: github\.ref == 'refs\/heads\/main'/.test(tpl), 'pushes to main only from main');
+});
+check('TEN-449 template: the commit steps add only store-layout files (plus the logs the tools write there)', () => {
+  const added = ['Commit the refreshed store', 'Commit the set repairs'].flatMap((n) => [...stepRun(tpl, n).matchAll(/git add -- ([^;\n]+)/g)].flatMap((m) => m[1].trim().split(/\s+/)));
+  assert.ok(added.length >= 4, added.join(' '));
+  for (const f of added) assert.ok(STORE_LAYOUT.includes(f) || /^(te-refresh|set-repairs)-log\.jsonl$/.test(f), `adds ${f}`);
+  assert.ok(!/git add (-A|--all|\.)/.test(tpl), 'never adds the whole tree (saas/ is in it)');
+});
+check('TEN-449 template: set repairs run only after a complete week, from Sackmann at the pinned commit 5b6263dc48, and stop on a wrong commit', () => {
+  assert.ok(/SACKMANN_COMMIT: 5b6263dc48/.test(tpl));
+  const gated = ['Fetch Sackmann at the pinned commit', 'Set repairs for new short rows (existing repairs and flags frozen)', 'Commit the set repairs'];
+  for (const n of gated) assert.ok(new RegExp(`- name: ${n.replace(/[()]/g, '\\$&')}\\n\\s+if: steps\\.week\\.outputs\\.complete == 'true'`).test(tpl), n);
+  assert.ok(/id: week\n\s+if: env\.TE_MODE == 'weekly'\n\s+run: node saas\/tools\/te-set-repairs-refresh\.mjs --store \. --week-complete/.test(tpl));
+  assert.ok(/"\$SACKMANN_COMMIT"\*\) echo[\s\S]*?\*\) echo "::error::[\s\S]*?exit 1/.test(stepRun(tpl, 'Fetch Sackmann at the pinned commit')));
+});
+check('TEN-449 template: dispatch inputs cover weekly 0/2 and 1/2, the re-read slice and the smoke 0/28', () => {
+  assert.ok(/options: \[weekly, reread\]/.test(tpl)); assert.ok(/options: \['0\/2', '1\/2', '0\/1', '0\/28'\]/.test(tpl));
+});
+check('TEN-449 template: the failure alert posts the run link to Telegram from secrets, never printing a secret', () => {
+  const a = stepRun(tpl, 'Alert on failure');
+  assert.ok(/- name: Alert on failure\n\s+if: failure\(\)/.test(tpl));
+  assert.ok(/TELEGRAM_BOT_TOKEN: \$\{\{ secrets\.TELEGRAM_BOT_TOKEN \}\}/.test(tpl) && /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/.test(tpl));
+  assert.ok(/actions\/runs\/\$\{\{ github\.run_id \}\}/.test(a), 'run link');
+  assert.ok(!/(echo|printf)[^\n]*\$\{?TELEGRAM_(BOT_TOKEN|CHAT_ID)/.test(a) && !/set -x/.test(tpl), 'a secret is echoed');
+  assert.ok(!/(echo|printf)[^\n]*\$\{?API_TENNIS_KEY/.test(tpl));
+});
+check('TEN-449 rollout: te-refresh.dispatch-only.yml is the template minus its SCHEDULE block — and has no schedule', () => {
+  const d = fs.readFileSync(path.join(TPL_DIR, 'te-refresh.dispatch-only.yml'), 'utf8');
+  const block = /^  # >>> SCHEDULE[^\n]*\n[\s\S]*?^  # <<< SCHEDULE\n/m;
+  assert.ok(block.test(tpl) && /schedule:\n(\s+- cron: [^\n]+\n){3}/.test(block.exec(tpl)[0]), 'the template holds the three crons inside the markers');
+  assert.strictEqual(d, tpl.replace(block, ''), 'the dispatch-only variant drifted from the template — regenerate it');
+  assert.ok(!/schedule:|cron:/.test(d.replace(/github\.event\.schedule/g, '')));
+});
+{
+  // EXECUTED: the template's own refresh, guard and commit commands, run in a workspace laid out like the store repo
+  // (a git repo whose root is the data, origin a bare repo) with saas/ = this repository
+  const ws = repo(); fs.rmSync(path.join(ws, 'roster.json'));
+  fs.writeFileSync(path.join(ws, 'set-repairs.json'), JSON.stringify({ v: 1, repairs: {}, flags: {} }));
+  const roster = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-r-')), 'roster.json');
+  fs.writeFileSync(roster, JSON.stringify({ players: { 1: { name: 'A. Alpha', country: 'Australia', age: 30, careerByYear: [{}] }, 2: { name: 'N. Newman', country: 'Australia', age: 26, careerByYear: [{}] } } }));
+  const origin = fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-o-'));
+  const gitEnv = { ...process.env, GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' };
+  const sh = (cmd, env = {}) => { try { return { code: 0, out: execFileSync('bash', ['-ec', cmd], { cwd: ws, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], env: { ...gitEnv, ...env } }) }; } catch (e) { return { code: e.status, out: String(e.stdout || '') + String(e.stderr || '') }; } };
+  sh(`git init -q --bare "${origin}" && git init -q -b main && git add -- ${STORE_LAYOUT.join(' ')} && git commit -q -m store && git remote add origin "${origin}" && git push -q origin HEAD:refs/heads/main`);
+  // saas/ as actions/checkout leaves it: a real directory holding its own git repository (not a symlink — a tool's
+  // `import.meta.url === argv[1]` main check would not fire through one, and the guard would pass vacuously)
+  fs.mkdirSync(path.join(ws, 'saas', 'tools'), { recursive: true });
+  for (const f of fs.readdirSync(HERE).filter((x) => x.endsWith('.mjs'))) fs.copyFileSync(path.join(HERE, f), path.join(ws, 'saas', 'tools', f));
+  fs.copyFileSync(path.join(HERE, '..', 'te-join.js'), path.join(ws, 'saas', 'te-join.js'));
+  execFileSync('git', ['init', '-q', path.join(ws, 'saas')], { env: gitEnv });
+  sh(stepRun(tpl, "Keep the tools checkout and the run report out of the store's commits"));
+  const aux = fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-a-'));   // the stub's pages and request log, outside the store
+  fs.writeFileSync(path.join(aux, 'pages.json'), JSON.stringify(pages()));
+  const env = { TE_MODE: 'weekly', TE_PART: '0/1', API_TENNIS_KEY: 'x', TE_DELAY_MS: '0', TE_STUB_PAGES: path.join(aux, 'pages.json'), TE_STUB_LOG: path.join(aux, 'requests.log'),
+    TE_ROSTER: roster, TE_NOW: '2026-10-19T05:00:00Z', TE_CACHE: fs.mkdtempSync(path.join(os.tmpdir(), 'te-c-')), TE_BUDGET_MIN: '270' };
+  const refreshCmd = stepRun(tpl, 'Refresh the Tennis Explorer store').replace(/^node /, `node --import ${STUB} `);
+  const rr = sh(refreshCmd, env);
+  const gr = sh(stepRun(tpl, 'Guard the refreshed store against the committed one'));
+  const cr = sh(stepRun(tpl, 'Commit the refreshed store'), env);
+  const pushed = execFileSync('git', ['--git-dir', origin, 'ls-tree', '-r', '--name-only', 'main'], { encoding: 'utf8', env: gitEnv }).trim().split('\n');
+  check('TEN-449 EXECUTED: the template\'s refresh command runs against the store-shaped root (exit 0, new player written)', () => {
+    assert.strictEqual(rr.code, 0, rr.out); assert.ok(fs.existsSync(path.join(ws, 'te-history', '2.json')));
+  });
+  check('TEN-449 EXECUTED: the template\'s guard runs and passes on the store root with the saas/ checkout beside it', () => {
+    assert.strictEqual(gr.code, 0, gr.out); assert.ok(/te-history guard ok · 2 players · 5 rows/.test(gr.out), gr.out);
+  });
+  check('TEN-449 EXECUTED: the commit step pushes the refreshed store — and nothing of saas/ or the run report', () => {
+    assert.strictEqual(cr.code, 0, cr.out);
+    assert.ok(pushed.includes('te-history/2.json') && pushed.includes('te-refresh-log.jsonl'), pushed.join(' '));
+    assert.ok(!pushed.some((f) => /^saas|te-refresh-report/.test(f)), pushed.join(' '));
+  });
+  const wk = sh(stepRun(tpl, 'Has every weekly part of this week completed?'), { GITHUB_OUTPUT: path.join(ws, '.gh-out') });
+  check('TEN-449 EXECUTED: the week gate step runs from saas/ and says "complete=true" after a whole-week (0/1) weekly run', () => {
+    assert.strictEqual(wk.code, 0, wk.out); assert.ok(/complete=true/.test(fs.readFileSync(path.join(ws, '.gh-out'), 'utf8')), wk.out);
+  });
+}
+
+// ── TEN-449 · API_TENNIS_KEY is trimmed (the stored secret carries a trailing newline) ─────────────────────────────
+{
+  const d = repo(); const r = run(d, 'weekly', {}, undefined, { env: { API_TENNIS_KEY: 'x \n' } });
+  check('API_TENNIS_KEY "x \\n" is trimmed: the lookup asks for APIkey=x (untrimmed it sends "x \\n")', () => {
+    assert.strictEqual(r.code, 0, r.out);
+    const api = r.reqs.filter((u) => /get_players/.test(u)); assert.ok(api.length >= 1, r.reqs.join(' '));
+    assert.ok(api.every((u) => /[?&]APIkey=x&/.test(u)), api.join(' '));
+  });
+  const d2 = repo(); const before2 = snapshot(d2); const r2 = run(d2, 'weekly', {}, undefined, { env: { API_TENNIS_KEY: ' \n' } });
+  check('an all-whitespace API_TENNIS_KEY is no key: exit 1 before any request, store byte-identical', () => {
+    assert.strictEqual(r2.code, 1, r2.out); assert.strictEqual(r2.reqs.length, 0); assert.strictEqual(snapshot(d2), before2);
+  });
+}
+
+// ── TEN-449 · source rule (.claude/rules/pipeline-records.md): no workflow in THIS public repo runs the TE tools ───────
+// TE pages are read only by te-scrape.mjs (the Mac) and te-refresh.mjs (the private store repo's Actions) — never from
+// the public SAAS repo, its CI or the nightly pipeline.
+const TE_TOOLS = /\b(te-scrape|te-refresh|te-set-repairs-refresh)\.mjs\b/;
+function saasWorkflowsCallingTe(root) {
+  const hits = []; const gh = path.join(root, '.github');
+  const walk = (d) => { if (!fs.existsSync(d)) return; for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+    const f = path.join(d, e.name); if (e.isDirectory()) walk(f); else if (/\.(ya?ml|sh|m?js|py)$/.test(e.name) && TE_TOOLS.test(fs.readFileSync(f, 'utf8'))) hits.push(path.relative(root, f)); } };
+  walk(gh); return hits;
+}
+check('TEN-449 source rule: no workflow, action or script under this repo\'s .github/ calls te-scrape.mjs or te-refresh.mjs', () => {
+  const hits = saasWorkflowsCallingTe(path.join(HERE, '..')); assert.deepStrictEqual(hits, [], hits.join(', '));
+});
+check('TEN-449 source rule, control: a .github workflow that runs te-refresh.mjs or te-scrape.mjs is caught', () => {
+  for (const tool of ['te-refresh.mjs', 'te-scrape.mjs']) {
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'te-src-')); fs.mkdirSync(path.join(d, '.github', 'workflows'), { recursive: true });
+    fs.writeFileSync(path.join(d, '.github', 'workflows', 'x.yml'), `steps:\n  - run: node tools/${tool} --mode weekly\n`);
+    assert.deepStrictEqual(saasWorkflowsCallingTe(d), ['.github/workflows/x.yml']);
+  }
+});
 console.log(`\nte-refresh: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

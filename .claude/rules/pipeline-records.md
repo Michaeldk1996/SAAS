@@ -74,16 +74,19 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   - *Exceptions:* the Match analysis **Tournament tab** W–L stays **main draw only** (TEN-312 N7,
     2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate
     sources, not forced to this rule.
-  - *Source (founder's call against TE's terms §2.2/§2.10/§2.11, risk reported):* TE pages come only from
-    `tools/te-scrape.mjs` — one request at a time ≥ 8 s apart, every page cached in `~/.stennisfy/te-cache`,
-    a past season never fetched twice, run on this Mac and never in CI or the nightly refresh; a player is
-    joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
+  - *Source (founder's call against TE's terms §2.2/§2.10/§2.11, risk reported; reworded founder TEN-449,
+    2026-10-19):* TE pages are read only by `tools/te-scrape.mjs` (this Mac, one-off backfills) and
+    `tools/te-refresh.mjs` (the private `stennisfy-te-store` repo's Actions, weekly and daily re-read). Both read one
+    request at a time, ≥ 8 s apart, and stop on any non-200 or challenge page. Never from the public SAAS repo, its CI
+    or the nightly pipeline. The refresh runs the tools from SAAS `main` (founder decision A, TEN-449, 2026-10-19). A
+    player is joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
     *Named exception (founder TEN-449, 2026-10-19):* Z. Svajda (key 2986) is joined to TE `svajda` with no DOB on
     TE, on 320 of 320 of our rows pairing with 0 result disagreements. It does not extend to any other player.
   **Test — holds now:** no junior, women's-event, walkover or exhibition row is in any count (`tools/test-ten444-juniors.js`,
   `tools/test-ten446-womens.js`);
   ATP Stuttgart (June) is grass (`tools/test-ten445-stuttgart.js`); nothing in `.github/` or the pipeline
-  requests tennisexplorer.com.
+  requests tennisexplorer.com, and no workflow, action or script under this repo's `.github/` runs
+  `te-scrape.mjs` or `te-refresh.mjs` (`tools/test-te-refresh.mjs`, "TEN-449 source rule", with a control).
   **Test — golden check (founder 2026-10-19), every CI run and every pipeline run:** turning the record on moves
   no H2H pair, Lines input or model output. CI: `tools/test-ten443-te-ingest.js` "GOLDEN" checks (the shared file
   byte-identical on and off; the h2h-core join, the Lines rows and `runModel` output identical; a mutant merge

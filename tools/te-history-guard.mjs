@@ -65,7 +65,9 @@ export function checkWriters(root) {
   const files = [];
   const walk = (d) => { for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) {
     const rel = path.join(d, e.name);
-    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github')) walk(rel); }
+    // TEN-449: a nested git checkout is another repository (the store repo's refresh checks the public SAAS repo out
+    // into saas/ for its tools) — its own CI guards it; scanning it from the store would name SAAS's own writers
+    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github') && !fs.existsSync(path.join(root, rel, '.git'))) walk(rel); }
     else if (/\.(m?js|cjs|ya?ml|sh|py)$/.test(e.name)) files.push(rel);
   } };
   walk('.');

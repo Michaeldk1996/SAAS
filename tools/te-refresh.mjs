@@ -52,10 +52,14 @@ const NOW = new Date(process.env.TE_NOW || Date.now());
 const YEAR = NOW.getUTCFullYear();
 const DAY = Math.floor((NOW - Date.UTC(YEAR, 0, 1)) / 864e5);
 
+// TEN-449: the key as stored in the store repo's secret carries a trailing newline (66 characters for a 64-hex key,
+// measured 19 Oct). Trimmed once, here, for every use; an all-whitespace key is no key.
+const apiKey = () => String(process.env.API_TENNIS_KEY || '').trim();
+
 async function apiTennisPlayer(key) {
   // TEN-449: a lookup that FAILS stops the run (all-or-nothing, alerted); only a player api-tennis holds no birthday for
   // stays unmatched. Degrading to null here left every new player silently unmatched when the key was missing.
-  const k = process.env.API_TENNIS_KEY;
+  const k = apiKey();
   if (!k) throw new Error('API_TENNIS_KEY is not set — a new player cannot be identified');
   const r = await fetch(`https://api.api-tennis.com/tennis/?method=get_players&APIkey=${k}&player_key=${key}`);
   if (!r.ok) throw new Error(`api-tennis get_players for player ${key}: HTTP ${r.status}`);
@@ -102,7 +106,7 @@ function diffRows(oldRows, newRows) {
 async function main() {
   const idxF = path.join(ROOT, G.INDEX);
   if (!fs.existsSync(idxF)) { console.log(`::error::${G.INDEX} is missing — the refresh never builds a store from nothing`); process.exit(1); }
-  if (!process.env.API_TENNIS_KEY) { console.log('::error::API_TENNIS_KEY is not set — a new player cannot be identified by date of birth; refusing to run'); process.exit(1); }
+  if (!apiKey()) { console.log('::error::API_TENNIS_KEY is not set — a new player cannot be identified by date of birth; refusing to run'); process.exit(1); }
   const idx = JSON.parse(fs.readFileSync(idxF, 'utf8'));
   // the new store starts as an exact copy of the committed one
   fs.cpSync(path.join(ROOT, G.STORE_DIR), path.join(OUT_DIR, G.STORE_DIR), { recursive: true });
