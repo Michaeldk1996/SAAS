@@ -194,7 +194,6 @@ const tieRaw = [];    // same shape as retRaw (+ isRet): ties kept for the price
 // [dateInt, level|null, surface, round, tournament, favPrice, dogPrice, favWon, bookIdx, winner, loser, flags] with flags
 // 'p' (before 2010) or 't' (team event), plus 'r' (a retirement) and 'e' (an exact price tie).
 const xRaw = [];
-const xTs = {};   // era-row index -> a Tennis Explorer row's last change (UTC ISO), founder 2026-10-19
 // …and every priced match of every set goes into the ONE master file (database-yield-master.json) with the attributes the
 // builders downstream need (series, court, best-of, comment): `att` is pushed beside each accepted row, same index.
 const rowsAtt = [], retAtt = [], tieAtt = [], xAtt = [];
@@ -474,11 +473,9 @@ function lowerOffer(r, book) {
 function lowerRead(file, bookOf, tag) {
   if (!fs.existsSync(file)) { console.log(`lower levels: no ${path.basename(file)} — no ${tag} rows`); lower.files[tag] = null; return; }
   const lines = fs.readFileSync(file, 'utf8').split(/\r?\n/).filter(Boolean);
-  // the snapshot feed may carry one more column, priceTs (a Tennis Explorer row's last change); nothing else is accepted
-  const hdr = lines[0].split(',');
-  if (lines[0] !== LOWER_COLS.join(',') && lines[0] !== LOWER_COLS.concat('priceTs').join(',')) { console.error(`${file}: unexpected header ${lines[0]}`); process.exit(1); }
+  if (lines[0] !== LOWER_COLS.join(',')) { console.error(`${file}: unexpected header ${lines[0]}`); process.exit(1); }
   lower.files[tag] = lines.length - 1;
-  for (const l of lines.slice(1)) { const c = l.split(','); const r = {}; hdr.forEach((k, i) => { r[k] = c[i]; }); const b = bookOf(r); if (b != null) lowerOffer(r, b); }
+  for (const l of lines.slice(1)) { const c = l.split(','); const r = {}; LOWER_COLS.forEach((k, i) => { r[k] = c[i]; }); const b = bookOf(r); if (b != null) lowerOffer(r, b); }
 }
 lowerRead(LOWER_CLOSES, r => ARCH_BOOK[(r.source || '').trim()], 'closes');
 lowerRead(LOWER_APPROX, r => (r.source === 'oddspapi Pinnacle (start − 10)' ? 5 : r.source === TE_SOURCE ? 8 : r.source === 'api-tennis Pinnacle' ? 2 : r.source === 'api-tennis Bet365' ? 7 : null), 'snapshots');
@@ -523,9 +520,6 @@ for (const r of lowerBest.values()) {
   const isRet = RETIRED.has((r.comment || '').trim());
   const tx = r.level === 'atp-x', series = tx ? '' : LOWER_LEVEL_NAME[r.level];
   xAtt.push([series, '', '', (r.comment || '').trim(), '', '']);
-  // a Tennis Explorer row's last change rides beside it (xTs, by era-row index): its hover names the time; '' = TE shows no
-  // change (the price never moved since TE first listed it) — never a guessed time
-  if (r.book === 8) xTs[xRaw.length] = r.priceTs || '';
   xRaw.push([dI, tx ? null : series, '', '', (r.tournament || '').trim(), Math.min(r.pw, r.pl), Math.max(r.pw, r.pl),
     r.pw <= r.pl ? 1 : 0, r.book, r.winner.trim(), r.loser.trim(), (tx ? 't' : 'l') + (isRet ? 'r' : '') + (r.pw === r.pl ? 'e' : '')]);
   lower.rows++; lower.byLevel[r.level] = (lower.byLevel[r.level] || 0) + 1; lower.byBook[r.book] = (lower.byBook[r.book] || 0) + 1;
@@ -719,8 +713,7 @@ const X_META = { schema: 1, rule: 'Priced completed matches the master holds but
   'codes as database-yield.json. Read by the price join only; no Database figure, tour baseline or ROI reads it.',
   counts: { all: xRaw.length, pre2010: xCount('p'), team: xCount('t'), lower: xCount('l'), retired: xCount('r'), ties: xCount('e'), teamDropped: feed.teamDropped }, lower };
 writeAtomic(OUT_X, JSON.stringify({ meta: X_META,
-  xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]), uRows: uRaw,
-  ...(Object.keys(xTs).length ? { xTs } : {}) }));
+  xRows: xRaw.map(x => [x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[11]]), xNames: xRaw.map(x => [x[9], x[10]]), uRows: uRaw }));
 // …and the ONE master file every builder downstream reads (build-market-edge.js): every priced completed match, one row
 // each, winner first, with its price pair, book code and set (db = a Database row, ret / tie = behind their flags, x = the
 // era shard). Built from the same rows as the page files above, so a price can never differ between them.

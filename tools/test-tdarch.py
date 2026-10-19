@@ -272,9 +272,9 @@ check('TE: a joined match with a Pinnacle pair is a "Tennis Explorer · Pinnacle
       [(r['event_key'], r['source'], r['label']) for r in te] == [(31, T.TE_SOURCE, 'Pinnacle (approx.)'), (32, T.TE_SOURCE, 'Pinnacle (approx.)')], (te, terep))
 check('TE: oriented to the winner — TE a / b = api-tennis first / second; a reversed target and a second-player win still read the right side',
       (te[0]['winner'], te[0]['price_winner'], te[0]['price_loser']) == ('A. One', 1.36, 2.9) and (te[1]['winner'], te[1]['price_winner'], te[1]['price_loser']) == ('B. Two', 1.36, 2.9), te)
-check('TE: the later side change is price_ts, every side time and the opening price kept; page sha256 + TE id in detail, hover says not a confirmed close',
+check('TE: the later side change is price_ts, every side time and the opening price kept; page sha256 + TE id in detail, hover is the one fixed text',
       te[0]['price_ts'] == '2026-09-28T09:18:00Z' and te[0]['detail']['open']['first'] == 1.38 and te[0]['detail']['pageSha256'] == SHA
-      and te[0]['detail']['teMatchId'] == '3338923' and 'not a confirmed close' in te[0]['detail']['hover'] and te[0]['fetched_at'] == '2026-10-20T03:00:00Z', te[0])
+      and te[0]['detail']['teMatchId'] == '3338923' and te[0]['detail']['hover'] == 'Tennis Explorer, last pre-match price, not a confirmed close' and te[0]['fetched_at'] == '2026-10-20T03:00:00Z', te[0])
 check('TE: ITF refused, ambiguous / no Pinnacle / a side below 1.01 / a walkover / an unreadable fixture = no row, each counted',
       terep.get('level out of scope') == 1 and terep.get('ambiguous') == 1 and terep.get('joined, no Pinnacle on the page') == 1 and terep.get('a side below 1.01') == 1
       and terep.get('walkover') == 1 and terep.get('api-tennis fixture unreadable') == 1, terep)
@@ -287,9 +287,9 @@ try:
           sorted((r['eventKey'], r['source']) for r in off) == [(31, T.APPROX_SOURCE), (32, T.START10_SOURCE)], off)
     T.TE_FEED_ON = True
     on = T.lower_feed_rows(tcur)
-    check('TE_FEED_ON on: TE over api-tennis Pinnacle (match 31), start - 10 over TE (match 32); the TE row carries its change time',
+    check('TE_FEED_ON on: TE over api-tennis Pinnacle (match 31), start - 10 over TE (match 32); the feed carries no time (the archive keeps it)',
           sorted((r['eventKey'], r['source']) for r in on) == [(31, T.TE_SOURCE), (32, T.START10_SOURCE)]
-          and next(r for r in on if r['eventKey'] == 31)['priceTs'] == '2026-09-28T09:18:00Z', on)
+          and 'priceTs' not in next(r for r in on if r['eventKey'] == 31), on)
 finally:
     T.TE_FEED_ON = orig
 check('TE_FEED_ON is committed OFF until the founder approves the calibration', T.TE_FEED_ON is False)

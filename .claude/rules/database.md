@@ -52,12 +52,12 @@ take styling from it, structure from the rules below.
   `tools/test-approx-pinnacle.mjs`, `tools/test-close-label.py`.
 - **Book 8 = Tennis Explorer's Pinnacle (founder 2026-10-19, steps 0-3) — wired, switched OFF until the founder approves the
   calibration.** A lower-level or `atp-x` row priced on a `Tennis Explorer · Pinnacle` snapshot carries `r[8] = 8`; the join
-  reads it as book "A", src `te`, its last change beside it (the era shard's `xTs`, by era-row index; `''` = TE recorded no
-  change); hover "Pinnacle (approx.) · Tennis Explorer, last listed pre-match price (changed HH:MM), not a confirmed close"
-  (`SF_TE_HOVER`, the member's zone; "(no change recorded)" for `''`; no time where a surface does not carry it — never a
-  guess). No Database figure reads it. The feed carries TE rows only when `tools/tdarch.py` `TE_FEED_ON` is true (committed
-  false): off, every page is unchanged. **Test:** `tools/test-approx-pinnacle.mjs` (hover, the join's time map),
-  `tools/test-lower-master.js` (book 8's rank, xTs, Database byte-identical, mutant), `tools/test-tdarch.py` (switch off / on).
+  reads it as book "A", src `te`. **One fixed hover, no time** (founder 2026-10-19): every Tennis Explorer price reads exactly
+  "Pinnacle (approx.) · Tennis Explorer, last pre-match price, not a confirmed close" (`SF_TE_HOVER`). The last-change time
+  stays in the archive (`price_ts`) and no page, feed or shard carries it. No Database figure reads book 8. The feed carries
+  TE rows only when `tools/tdarch.py` `TE_FEED_ON` is true (committed false): off, every page is unchanged. **Test:**
+  `tools/test-approx-pinnacle.mjs` (the exact words, no time anywhere on the page), `tools/test-lower-master.js` (book 8's rank,
+  Database byte-identical, the era shard's shape unchanged, mutant), `tools/test-tdarch.py` (switch off / on).
 - **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
   (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
   in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of

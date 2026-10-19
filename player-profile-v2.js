@@ -1233,7 +1233,7 @@
   function pxSrcHtml(m, v) {
     if (v == null) return DASH;
     var bk = SHEET_BOOK[String(m && m.book || '').toLowerCase()];
-    var t = bk && typeof window !== 'undefined' && typeof window.fhSrcTitle === 'function' ? window.fhSrcTitle({ book: bk[0], src: bk[1], priceTs: m && m.priceTs }) : null;
+    var t = bk && typeof window !== 'undefined' && typeof window.fhSrcTitle === 'function' ? window.fhSrcTitle({ book: bk[0], src: bk[1] }) : null;
     return t ? '<span data-pp2-px-src="1" title="' + esc(t) + '">' + oddsText(v) + '</span>' : oddsText(v);
   }
 

@@ -76,7 +76,7 @@ file we hold is irreplaceable.
   day, both names, one candidate both ways, else no row) into the private store `stennisfy-te-store/te-odds/`; stored only by
   `tdarch.py te-import` (`historical-archive.yml` modes `te-dry-run` / `te-import`) from COMPLETE batch files, the result and
   names from the current api-tennis fixture. A TE row carries `price_ts` = the later side's last change (null = TE shows no
-  change), `fetched_at` = when the page was read, and names its TE match and page sha256 (CHECKs); it claims no cut, start or
+  change; kept in the archive, shown on no page — founder 2026-10-19), `fetched_at` = when the page was read, and names its TE match and page sha256 (CHECKs); it claims no cut, start or
   Oddspapi fixture. ITF is out of scope (refused by the importer). **Test:** `tools/test-historical-archive-sql.py`
   (negative controls), `tools/test-tdarch.py`.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi

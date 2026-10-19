@@ -92,25 +92,25 @@ try { const M = build(FEEDS, mp); const m = M.x.xRows.map((x, i) => [x, M.x.xNam
 finally { fs.unlinkSync(mp); }
 ok(red, 'MUTANT (the sources ranked the other way round) turns the source-order checks red');
 // ── Tennis Explorer · Pinnacle (book 8, founder 2026-10-19): between start − 10 and api-tennis Pinnacle; its change time beside
-// the row (xTs). The feed carries TE rows only when tools/tdarch.py TE_FEED_ON is on — this is the feed as it would be then.
+// The feed carries TE rows only when tools/tdarch.py TE_FEED_ON is on — this is the feed as it would be then.
 const approx = fs.readFileSync(path.join(tmp, 'approx.csv'), 'utf8').split('\n').filter(Boolean);
-const TEC = (o) => L(o) + ',' + (o.priceTs == null ? '' : o.priceTs);
-fs.writeFileSync(path.join(tmp, 'approx-te.csv'), [COLS + ',priceTs'].concat(approx.slice(1).map(l => l + ','),
-  TEC({ date: '2026-05-20', level: 'ch-q', tournament: 'Challenger Bordeaux - Qualification', winner: 'Bergs Z.', loser: 'Herbert P.H.', winnerKey: '1', loserKey: '3', psw: 1.66, psl: 2.2, eventKey: 601, source: 'Tennis Explorer · Pinnacle', comment: 'Completed', priceTs: '2026-05-20T08:12:00Z' }),
-  TEC({ date: '2025-06-02', level: 'ch', tournament: 'Challenger Heilbronn', winner: 'Bergs Z.', loser: 'Loe L.', winnerKey: '1', loserKey: '9', psw: 1.4, psl: 2.9, eventKey: 606, source: 'Tennis Explorer · Pinnacle', comment: 'Completed', priceTs: '2025-06-02T09:30:00Z' }),
-  TEC({ date: '2026-03-10', level: 'itf', tournament: 'M25 Antalya', winner: 'Doe J.', loser: 'Roe R.', winnerKey: '4', loserKey: '5', psw: 2.1, psl: 1.7, eventKey: 602, source: 'Tennis Explorer · Pinnacle', comment: 'Retired', priceTs: '' }),
-  TEC({ date: '2025-09-13', level: 'atp-x', tournament: 'Davis Cup - World Group I', winner: 'Bergs Z.', loser: 'Joe J.', winnerKey: '1', loserKey: '10', psw: 1.33, psl: 3.4, eventKey: 607, source: 'Tennis Explorer · Pinnacle', comment: 'Completed', priceTs: '' }),
+const TEC = (o) => L(o);
+fs.writeFileSync(path.join(tmp, 'approx-te.csv'), [COLS].concat(approx.slice(1),
+  TEC({ date: '2026-05-20', level: 'ch-q', tournament: 'Challenger Bordeaux - Qualification', winner: 'Bergs Z.', loser: 'Herbert P.H.', winnerKey: '1', loserKey: '3', psw: 1.66, psl: 2.2, eventKey: 601, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2025-06-02', level: 'ch', tournament: 'Challenger Heilbronn', winner: 'Bergs Z.', loser: 'Loe L.', winnerKey: '1', loserKey: '9', psw: 1.4, psl: 2.9, eventKey: 606, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
+  TEC({ date: '2026-03-10', level: 'itf', tournament: 'M25 Antalya', winner: 'Doe J.', loser: 'Roe R.', winnerKey: '4', loserKey: '5', psw: 2.1, psl: 1.7, eventKey: 602, source: 'Tennis Explorer · Pinnacle', comment: 'Retired' }),
+  TEC({ date: '2025-09-13', level: 'atp-x', tournament: 'Davis Cup - World Group I', winner: 'Bergs Z.', loser: 'Joe J.', winnerKey: '1', loserKey: '10', psw: 1.33, psl: 3.4, eventKey: 607, source: 'Tennis Explorer · Pinnacle', comment: 'Completed' }),
 ).join('\n') + '\n');
 const E = build(Object.assign({}, FEEDS, { DB_YIELD_LOWER_APPROX: path.join(tmp, 'approx-te.csv') }));
-const ex = E.x.xRows.map((x, i) => ({ x, n: E.x.xNames[i], ts: (E.x.xTs || {})[i] }));
+const ex = E.x.xRows.map((x, i) => ({ x, n: E.x.xNames[i] }));
 const eBy = (w, l) => ex.find(o => o.n[0] === w && o.n[1] === l);
 ok(eBy('Bergs Z.', 'Herbert P.H.').x[8] === 5, 'TE: start − 10 still wins a match both price (601)');
-ok(eBy('Bergs Z.', 'Loe L.').x[8] === 8 && eBy('Bergs Z.', 'Loe L.').ts === '2025-06-02T09:30:00Z', 'TE: over api-tennis Bet365 (606), book 8, its change time beside the row');
-ok(eBy('Doe J.', 'Roe R.').x[8] === 8 && eBy('Doe J.', 'Roe R.').ts === '', 'TE: over api-tennis Pinnacle and captured Bet365 (602); "" = TE recorded no change (never a guessed time)');
+ok(eBy('Bergs Z.', 'Loe L.').x[8] === 8, 'TE: over api-tennis Bet365 (606), book 8');
+ok(eBy('Doe J.', 'Roe R.').x[8] === 8, 'TE: over api-tennis Pinnacle and captured Bet365 (602)');
 ok(eBy('Bergs Z.', 'Joe J.').x[8] === 8 && /t/.test(eBy('Bergs Z.', 'Joe J.').x[9]), 'TE: an atp-x match (Davis Cup) on TE stays behind the team flag t');
 ok(eBy('Bergs Z.', 'Moe M.').x[8] === 3, 'TE: our verified close still wins (from 17 Sep)');
 ok(E.base === B.base, 'TE: the Database files are byte-identical with TE rows in the feed (never a Database figure)');
-ok(A.x.xTs === undefined, 'TE: a feed with no TE row writes no xTs (the era shard is unchanged until TE rows exist)');
+ok(E.x.xTs === undefined && Object.keys(E.x).sort().join() === Object.keys(A.x).sort().join(), 'TE: the era shard carries no time (no new field: the shape is unchanged)');
 ok(E.master.meta.bookCodes[8] === 'Pinnacle (approx.) Tennis Explorer', 'TE: the master names book 8');
 const mp2 = path.join(ROOT, '.mutant-lower-yield-te.js');
 fs.writeFileSync(mp2, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 8: 2.5, 2: 2, 6: 3, 7: 4 };'));

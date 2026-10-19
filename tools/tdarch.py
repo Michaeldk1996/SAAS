@@ -913,7 +913,7 @@ def cmd_start10_import(dry_run=False):
 LOWER_FROM, LOWER_TO = '2021-01-01', '2026-09-16'
 NOT_TD_EVENT = re.compile(r'davis cup|united cup|atp cup|laver cup|hopman|olympic|next ?gen|asian games', re.I)
 LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'winnerKey', 'loserKey', 'psw', 'psl', 'eventKey',
-                   'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment', 'priceTs']
+                   'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment']
 # Tennis Explorer's Pinnacle price (founder 2026-10-19, steps 0-3): a fourth snapshot source, 'Pinnacle (approx.)', never a
 # close. TE_FEED_ON is THE switch for its place in the source order (founder: "ready to switch on after calibration"):
 # off, the feed never carries a TE row, so nothing any page shows changes; on, a TE row ranks after start - 10 and before
@@ -921,7 +921,7 @@ LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'w
 # (te-import) stores TE rows either way: the archive is evidence, the switch is the reading.
 TE_FEED_ON = False
 TE_SOURCE = 'Tennis Explorer · Pinnacle'
-TE_HOVER = 'Tennis Explorer, last listed pre-match price (changed HH:MM), not a confirmed close'
+TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed close'   # one fixed text, no time (the time stays in price_ts)
 TE_LEVELS = ('atp-q', 'atp-x', 'ch', 'ch-q')
 RESULT_STATUSES = ('Finished', 'Retired')
 
@@ -984,8 +984,7 @@ def lower_feed_rows(current):
                     'psw': r['price_winner'], 'psl': r['price_loser'], 'eventKey': r['event_key'], 'snapshotId': r['id'],
                     'source': r.get('source') or APPROX_SOURCE, 'cutTs': r.get('cut_ts') or '',
                     'gapToStartS': '' if r.get('gap_to_start_s') is None else r['gap_to_start_s'],
-                    'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed',
-                    'priceTs': (r.get('price_ts') or '') if r.get('source') == TE_SOURCE else ''})
+                    'comment': 'Retired' if d.get('status') == 'Retired' else 'Completed'})
     return out
 
 
