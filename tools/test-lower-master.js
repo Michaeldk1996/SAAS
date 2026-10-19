@@ -30,6 +30,11 @@ fs.writeFileSync(path.join(tmp, 'approx.csv'), [COLS,
   L({ date: '2026-05-20', level: 'ch-q', tournament: 'Challenger Bordeaux - Qualification', winner: 'Bergs Z.', loser: 'Herbert P.H.', winnerKey: '1', loserKey: '3', psw: 1.70, psl: 2.15, eventKey: 601, source: 'api-tennis Pinnacle', comment: 'Completed' }),
   L({ date: '2026-03-10', level: 'itf', tournament: 'M25 Antalya', winner: 'Doe J.', loser: 'Roe R.', winnerKey: '4', loserKey: '5', psw: 2.05, psl: 1.75, eventKey: 602, source: 'api-tennis Pinnacle', comment: 'Retired' }),
   L({ date: '2026-03-11', level: 'itf', tournament: 'M25 Antalya', winner: 'Doe J.', loser: 'Coe C.', winnerKey: '4', loserKey: '6', psw: 1.00, psl: 9, eventKey: 603, source: 'api-tennis Pinnacle', comment: 'Completed' }),
+  // founder brief 2026-10-19: api-tennis's Bet365 (book 7) — below api-tennis Pinnacle on 602, alone on 606
+  L({ date: '2026-03-10', level: 'itf', tournament: 'M25 Antalya', winner: 'Doe J.', loser: 'Roe R.', winnerKey: '4', loserKey: '5', psw: 2.2, psl: 1.6, eventKey: 602, source: 'api-tennis Bet365', comment: 'Retired' }),
+  L({ date: '2025-06-02', level: 'ch', tournament: 'Challenger Heilbronn', winner: 'Bergs Z.', loser: 'Loe L.', winnerKey: '1', loserKey: '9', psw: 1.44, psl: 2.75, eventKey: 606, source: 'api-tennis Bet365', comment: 'Completed' }),
+  // an ATP event Tennis-Data does not carry ('atp-x'): behind the team flag, never a lower-level ('l') row
+  L({ date: '2025-09-13', level: 'atp-x', tournament: 'Davis Cup - World Group I', winner: 'Bergs Z.', loser: 'Joe J.', winnerKey: '1', loserKey: '10', psw: 1.3, psl: 3.5, eventKey: 607, source: 'api-tennis Pinnacle', comment: 'Completed' }),
 ].join('\n') + '\n');
 // our captured Bet365: one on event 602 (api-tennis wins it), one on a Challenger match no other source prices
 const b3 = path.join(tmp, 'b365'); fs.mkdirSync(path.join(b3, 'bet365-history'), { recursive: true }); fs.mkdirSync(path.join(b3, 'career-history'));
@@ -57,7 +62,7 @@ const FEEDS = { DB_YIELD_LOWER_CLOSES: path.join(tmp, 'closes.csv'), DB_YIELD_LO
 const A = build(FEEDS), B = build({});
 const lrows = A.x.xRows.map((x, i) => ({ x, n: A.x.xNames[i] })).filter(o => String(o.x[9]).includes('l'));
 const by = (w, l) => lrows.find(o => o.n[0] === w && o.n[1] === l);
-ok(lrows.length === 4, `four lower-level matches priced (got ${lrows.length})`);
+ok(lrows.length === 5, `five lower-level matches priced (got ${lrows.length})`);
 const close = by('Bergs Z.', 'Moe M.');
 ok(close && close.x[8] === 3 && close.x[1] === 'Challenger', 'Challenger from 17 Sep: our archive close (book 3)');
 const s10 = by('Bergs Z.', 'Herbert P.H.');
@@ -68,14 +73,18 @@ const bc = by('Poe P.', 'Doe J.');
 ok(bc && bc.x[8] === 6 && bc.x[1] === 'Challenger', 'a Challenger match only our captured Bet365 prices: book 6, the result from the player\'s own career row (Poe won)');
 ok(!lrows.some(o => o.n.includes('Toe T.')), 'an ATP main-draw capture is never a lower-level row (Tennis-Data prices ATP main draw)');
 ok(!lrows.some(o => o.n.includes('Coe C.')), 'a price below 1.01 is no row (a dash)');
+const b7 = by('Bergs Z.', 'Loe L.');
+ok(b7 && b7.x[8] === 7 && b7.x[1] === 'Challenger', 'a Challenger match only api-tennis Bet365 prices: book 7 (the last tier before a dash)');
+const tx = A.x.xRows.map((x, i) => ({ x, n: A.x.xNames[i] })).find(o => o.n[1] === 'Joe J.');
+ok(tx && /t/.test(tx.x[9]) && !/l/.test(tx.x[9]) && tx.x[1] == null && tx.x[8] === 2, 'an atp-x (Davis Cup) snapshot rides behind the team flag t, series empty, book 2');
 ok(A.base === B.base, 'the Database files are byte-identical with and without the lower levels (never a Database figure)');
-ok(A.x.meta.counts.lower === 4 && A.master.meta.counts.x === B.master.meta.counts.x + 4, 'the era shard and the master count the lower rows');
+ok(A.x.meta.counts.lower === 5 && A.x.meta.counts.team === B.x.meta.counts.team + 1 && A.master.meta.counts.x === B.master.meta.counts.x + 6, 'the era shard and the master count the lower rows (and the atp-x row as team)');
 // mutant: the source order reversed (api-tennis over start − 10) → the source checks go red
 const src = fs.readFileSync(path.join(ROOT, 'build-database-yield.js'), 'utf8');
-const anchor = 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 2, 6: 3 };';
+const anchor = 'const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 2, 6: 3, 7: 4 };';
 ok(src.split(anchor).length === 2, 'the mutant anchor is found exactly once');
 const mp = path.join(ROOT, '.mutant-lower-yield.js');
-fs.writeFileSync(mp, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 2, 2: 1, 6: 0 };'));
+fs.writeFileSync(mp, src.replace(anchor, 'const LOWER_RANK = { 3: 0, 4: 0, 5: 2, 2: 1, 6: 0, 7: 0 };'));
 let red = false;
 try { const M = build(FEEDS, mp); const m = M.x.xRows.map((x, i) => [x, M.x.xNames[i]]).filter(([x]) => String(x[9]).includes('l'));
   const r1 = m.find(([, n]) => n[1] === 'Herbert P.H.'), r2 = m.find(([, n]) => n[1] === 'Roe R.');

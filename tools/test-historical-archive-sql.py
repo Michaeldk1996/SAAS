@@ -13,6 +13,7 @@ from _pinarch_pg import PG, MIG
 MIG2 = os.path.join(os.path.dirname(MIG), '20261016090000_historical_odds_archive.sql')
 MIG3 = os.path.join(os.path.dirname(MIG), '20261016150000_historical_snapshot.sql')
 MIG4 = os.path.join(os.path.dirname(MIG), '20261017090000_historical_snapshot_start10.sql')
+MIG5 = os.path.join(os.path.dirname(MIG), '20261019090000_historical_snapshot_bet365.sql')
 pg = PG()
 if not pg.available():
     print(f'SKIP  test-historical-archive-sql: {pg.why} — NOT A PASS (the code gate runs it)'); sys.exit(0)
@@ -111,6 +112,26 @@ try:
     rc, out = q(S.replace("'s1'", "'s9'"), 'service_role'); check('an api-tennis snapshot with no times is still accepted', rc == 0, out)
     rc, out = q('update public.historical_snapshot set cut_ts = cut_ts', 'service_role'); check('service_role UPDATE still refused', rc != 0 and 'permission denied' in out, out)
     rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the migration', out == 'true', out)
+    # ── api-tennis's stored Bet365 as a third SNAPSHOT source (founder brief 2026-10-19 item 3), its own label ──
+    for i in (1, 2):
+        rc, err = pg.file(MIG5); check(f'Bet365 snapshot migration applies (pass {i}: idempotent)', rc == 0, err)
+    n0 = q('select count(*) from public.historical_snapshot')[1]
+    B5 = ("insert into public.historical_snapshot (dedupe_key,source,label,match_date,tournament,winner,loser,event_key,price_winner,price_loser,fetched_at) "
+          "values ('b1','api-tennis Bet365','Bet365 (approx.)','2025-03-02','Davis Cup','A.','B.',9,1.5,2.6,now())")
+    check('service_role can store an api-tennis Bet365 snapshot', q(B5, 'service_role')[0] == 0)
+    rc, out = q(B5.replace("'b1'", "'b2'").replace("'Bet365 (approx.)'", "'Pinnacle (approx.)'"), 'service_role')
+    check('a Bet365 snapshot can never carry the Pinnacle label', rc != 0, out)
+    rc, out = q(B5.replace("'b1'", "'b3'").replace("'Bet365 (approx.)'", "'from Pinnacle history'"), 'service_role')
+    check('a Bet365 snapshot can never carry a close label', rc != 0, out)
+    rc, out = q(S.replace("'s1'", "'s10'").replace("'Pinnacle (approx.)'", "'Bet365 (approx.)'"), 'service_role')
+    check('control: a Pinnacle snapshot can never carry the Bet365 label', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t9'").replace("'oddspapi Pinnacle (start − 10)','Pinnacle (approx.)'", "'api-tennis Bet365','Bet365 (approx.)'"), 'service_role')
+    check('control: a Bet365 snapshot claiming times is refused', rc != 0, out)
+    rc, out = q(T10.replace("'t1'", "'t10'"), 'service_role'); check('a start − 10 snapshot is still accepted', rc == 0, out)
+    rc, out = q(S.replace("'s1'", "'s11'"), 'service_role'); check('an api-tennis Pinnacle snapshot is still accepted', rc == 0, out)
+    check('no stored snapshot lost by the migration', int(q('select count(*) from public.historical_snapshot')[1]) == int(n0) + 3)
+    rc, out = q('delete from public.historical_snapshot', 'service_role'); check('service_role DELETE still refused', rc != 0, out)
+    rc, out = q("select public.historical_snapshot_guard()->>'ok'"); check('snapshot guard ok after the Bet365 migration', out == 'true', out)
 finally:
     pg.close()
 print(f'\ntest-historical-archive-sql: {passed} passed, {failed} failed')

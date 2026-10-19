@@ -21,8 +21,8 @@ const HOVER = 'Pinnacle snapshot from api-tennis, no timestamp, not a confirmed 
 const OD10 = 'Pinnacle history, taken 10 minutes before the recorded start, not a confirmed close';  // founder 2026-10-17 item 2
 
 // the shared constants + source titles (Tournament tab, profile, sheets)
-const C = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'FH_B365_APPROX_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhSourceNote')}
-  return { FH_BOOK, SF_APPROX_HOVER, SF_OD10_HOVER, fhSrcTitle, fhSourceNote };`)();
+const C = new Function(`${constLine(html, 'FH_BOOK')}\n${constLine(html, 'FH_SRC')}\n${constLine(html, 'SF_APPROX_HOVER')}\n${constLine(html, 'SF_OD10_HOVER')}\n${constLine(html, 'FH_B365_APPROX_HOVER')}\n${constLine(html, 'FH_B365_AT_HOVER')}\n${fn(html, 'fhB365Approx')}\n${fn(html, 'fhSrcTitle')}\n${fn(html, 'fhSourceNote')}
+  return { FH_BOOK, SF_APPROX_HOVER, SF_OD10_HOVER, fhSrcTitle, fhSourceNote, fhB365Approx };`)();
 check('the hover is the ruled words', C.SF_APPROX_HOVER === HOVER);
 check('a Pinnacle (approx.) price hovers "Pinnacle (approx.) · <ruled words>" — never "Pinnacle close"',
   C.fhSrcTitle({ book: 'A', src: 'td' }) === 'Pinnacle (approx.) · ' + HOVER && !/close ·/.test(C.fhSrcTitle({ book: 'A', src: 'td' })));
@@ -38,10 +38,13 @@ check('control: without a snapshot the note is unchanged', C.fhSourceNote([{ boo
 const join2 = /r\.book = bk === 0 \|\| bk === 3 \|\| bk === 4 \? 'P' : bk === 2 \|\| bk === 5 \? 'A' : 'B';/.test(html);
 check('the price join maps the store\'s books 2 and 5 (the two snapshot sources) to "A" (never "B" or "P") and 3 / 4 (our archive) to "P"', join2);
 // founder 2026-10-16 (round 3, item 1): our archive's closes carry their own source on every surface, never "Tennis-Data"
-const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
+const join34 = /r\.src = bk === 3 \? 'hist' : bk === 4 \|\| bk === 6 \? 'cap' : bk === 5 \? 'od10' : bk === 7 \? 'atb' : 'td'; r\.srcLabel = bk === 3 \? FH_SRC\.hist : bk === 4 \? FH_SRC\.cap : undefined;/.test(html);
 check('the price join gives our archive\'s closes their own source: 3 → "from Pinnacle history", 4 → "captured", 5 → the start − 10 snapshot', join34);
 // founder 2026-10-18 (item 3): book 6 = our captured Bet365 at the lower levels — 'B' + 'cap', so it hovers as an approx, never a close
 check('the price join reads book 6 (our captured Bet365) as Bet365 with source "cap" → "Bet365 (approx.) · not a confirmed close"', join34 && join2 && C.fhSrcTitle({ book: 'B', src: 'cap' }) !== 'Bet365 close · captured');
+// founder brief 2026-10-19 (item 3): book 7 = api-tennis's stored Bet365 — 'B' + 'atb', an approx that names its source
+check('the price join reads book 7 (api-tennis Bet365) as Bet365 with source "atb", never a close', join34 && join2 && C.fhB365Approx({ book: 'B', src: 'atb' })
+  && C.fhSrcTitle({ book: 'B', src: 'atb' }) === 'Bet365 (approx.) · Bet365 snapshot from api-tennis, no timestamp, not a confirmed close');
 check('a Tournament-tab / sheet price from Pinnacle history reads "Pinnacle close · from Pinnacle history", a captured one "· captured"',
   C.fhSrcTitle({ book: 'P', src: 'hist', srcLabel: 'from Pinnacle history' }) === 'Pinnacle close · from Pinnacle history'
   && C.fhSrcTitle({ book: 'P', src: 'hist' }) === 'Pinnacle close · from Pinnacle history'
@@ -115,8 +118,8 @@ ${fn(html, 'fhB365Approx')}
     && px({ book: 'pinnacle-approx' }, 1.5).includes('Pinnacle (approx.) · ' + HOVER) && /title="Bet365 close · Tennis-Data"/.test(px({ book: 'bet365-archive' }, 1.5))
     && px({ book: 'pinnacle' }, null) === '—');
   check('profile: both price cells of a Record per tournament row print through pxSrcHtml', (pp.match(/pxAfterHtml\(m, t\) \|\| pxSrcHtml\(m, m\.(price|oppPrice)\)/g) || []).length === 2);
-  check('control: the Database join\'s Bet365 reaches the profile as Tennis-Data\'s (bet365-archive), never the ledger capture',
-    /r\.book === 'B' \? 'bet365-archive'/.test(fn(html, 'trProfilePriceOf')));
+  check('control: the Database join\'s Bet365 reaches the profile as Tennis-Data\'s (bet365-archive), a captured one as bet365-capture, api-tennis\'s as its own',
+    /r\.book === 'B' \? \(r\.src === 'atb' \? 'bet365-approx-at' : r\.src === 'cap' \? 'bet365-capture' : 'bet365-archive'\)/.test(fn(html, 'trProfilePriceOf')));
 }
 
 // Head to Head ledgers: hover + footnote

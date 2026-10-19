@@ -160,19 +160,30 @@ const result = await E(`(async () => {
   const CV = { byLevel: {}, byMonth2026: {}, players: {}, joinMiss: 0, joinMissEx: [], roundDisagree: 0, roundDisagreeEx: [] };
   const lvOf = x => x.level === 'atp' ? (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'ATP qualifying' : 'ATP main draw')
     : (/^(M|W)\\d{2,3}\\b|\\bITF\\b/.test(String(x.tournament || '')) ? 'ITF' : (x.qualifying || x._qual || /qualif/i.test(String(x.round || '') + ' ' + String(x.tournament || '')) ? 'Challenger qualifying' : 'Challenger main draw'));
+  // founder brief 2026-10-19 (item 1): api-tennis files a qualifying draw under the main-draw event with its own word rounds
+  // ("Semi-finals", "Final"); such a row is ATP qualifying, not main draw, when the player's own rows hold no main-draw round
+  // ("1/N-finals") at that event on or before it (h2h-core's D1 rule, read from one player's rows) — the report counted
+  // ~470 of them as ATP main draw (2021-22). A round-robin event (no rounds) and team events keep their level.
+  const WORD_RD = /^(quarter|semi|final)/i, FRAC_RD = /^1[/][0-9]+-finals$/i;
+  const ownQual = (x, career) => {
+    if (x.level !== 'atp' || !WORD_RD.test(String(x.round || '')) || /davis|united cup|atp cup|laver|hopman|olympi/i.test(String(x.tournament || ''))) return false;
+    const d0 = dn(x.date), at = career.filter(r => r && r.tournament === x.tournament && Math.abs(dn(r.date) - d0) <= 16);
+    if (at.some(r => /^(rr|round robin|)$/i.test(String(r.round || '').trim()))) return false;   // the Finals: no qualifying draw
+    return !at.some(r => FRAC_RD.test(String(r.round || '')) && dn(r.date) <= d0);
+  };
   const coverOf = (k, name, career) => {
     const rows = career.filter(x => x && x.date);
     const vs = rows.map(x => ({ date: x.walkover ? null : x.date, won: !!x.won, round: x.round, opp: x.opponent }));
     J(vs, { full: name }, null, db, null, career);
     rows.forEach((x, i) => {
-      const lv = lvOf(x), y = String(x.date).slice(0, 4), v = vs[i];
+      const lv = ownQual(x, career) ? 'ATP qualifying' : lvOf(x), y = String(x.date).slice(0, 4), v = vs[i];
       const nb = () => ({ n: 0, priced: 0, byBook: {}, walkover: 0, one: 0, nobook: 0, none: 0 });
       const cs = [((CV.byLevel[lv] = CV.byLevel[lv] || {})[y] = CV.byLevel[lv][y] || nb())];
       if (y === '2026') { const mo = String(x.date).slice(0, 7); cs.push(((CV.byMonth2026[lv] = CV.byMonth2026[lv] || {})[mo] = CV.byMonth2026[lv][mo] || nb())); }   // 2026 by month too
       const c = { inc(f, b) { cs.forEach(o => { if (b) o.byBook[b] = (o.byBook[b] || 0) + 1; else o[f]++; }); } };
       c.inc('n');
       if (x.walkover) { c.inc('walkover'); return; }
-      if (v.price != null) { c.inc('priced'); c.inc(null, v.book === 'A' ? (v.src === 'od10' ? 'start-10' : 'api-tennis approx') : v.book === 'B' ? (v.src === 'cap' ? 'Bet365 (approx.)' : 'Bet365') : 'real close'); return; }
+      if (v.price != null) { c.inc('priced'); c.inc(null, v.book === 'A' ? (v.src === 'od10' ? 'start-10' : 'api-tennis approx') : v.book === 'B' ? (v.src === 'cap' ? 'Bet365 (approx.)' : v.src === 'atb' ? 'api-tennis Bet365 (approx.)' : 'Bet365') : 'real close'); return; }
       const why = sfDbNoPriceWhy(name, vs[i]);
       c.inc(why);
       const P = CV.players[k] = CV.players[k] || { name, unpriced: 0 }; P.unpriced++;

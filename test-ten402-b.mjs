@@ -215,6 +215,18 @@ test('round tolerance (founder ruling 2026-10-17, ruling 2): ONE candidate with 
   assert.equal(run(other, career), null, 'a different event never joins');
   // the wrong winner never joins
   assert.equal(run({ meta: db.meta, rows: [[20220519, 0, 0, 0, 0, 1.70, 2.15, 1, 0]], names: [['Coria F.', 'Molcan A.']] }, career), null, 'the other winner: a dash');
+  // founder brief 2026-10-19 (item 1): Tennis-Data names the event by its sponsor ("Adelaide International 2"); the feed files
+  // Kwon's lucky-loser run as "Qualifying" at "Adelaide 2". The Database page's own city map (DatabaseTab.tdCity) joins them.
+  const kdb = { meta: { rounds: ['Quarterfinals'], tournaments: ['Adelaide International 2', 'Adelaide International 1'] },
+    rows: [[20230112, 0, 0, 0, 0, 1.75, 2.21, 0, 0]], names: [['Kwon S.W.', 'Ymer M.']] };
+  const kc = [{ date: '2023-01-12', won: true, opponent: 'M. Ymer', round: 'Qualifying', tournament: 'Adelaide 2', eventKey: 11806553 }];
+  const kRun = (d, city) => { const g = globalThis.window; globalThis.window = { DatabaseTab: city ? { tdCity: city } : {} };
+    try { const rows = [{ date: '2023-01-12', won: true, round: null }]; TOL(rows, { full: 'S. Kwon' }, { full: 'M. Ymer' }, fresh(d), null, fresh(kc)); return rows[0].price ?? null; }
+    finally { globalThis.window = g; } };
+  const CITY = n => ({ 'Adelaide International 2': 'Adelaide 2', 'Adelaide International 1': 'Adelaide 1' })[n] || null;
+  assert.equal(kRun(kdb, CITY), 2.21, 'Kwon d. Ymer, Adelaide 2 2023 QF: the sponsor name meets the feed\'s "Adelaide 2" through the city map');
+  assert.equal(kRun(kdb, null), null, 'control: without the city map the sponsor name never meets "Adelaide 2" (a dash, as before)');
+  assert.equal(kRun({ meta: kdb.meta, rows: [[20230112, 0, 0, 0, 1, 1.75, 2.21, 0, 0]], names: kdb.names }, CITY), null, 'Adelaide 1 never takes an Adelaide 2 match');
 });
 
 test('one source of truth (founder 2026-10-17): the era shard (before 2010 + team events) joins on a COPY of the dictionaries; out of step never prices', () => {
