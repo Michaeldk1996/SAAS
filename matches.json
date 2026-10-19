@@ -104826,7 +104826,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 7-6, 6-4",
+      "display": "1-6, 7-6(5), 6-4",
       "sets": [
         {
           "p1": 1,
@@ -112821,11 +112821,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "15 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/438_a-mannarino.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/360_a-vukic.jpg",
     "oddsMovement": {
@@ -113939,7 +113939,10 @@
       "edgeVsPinnacleP1": -0.0376,
       "edgeVsPinnacleP2": 0.0376,
       "ts": "2026-10-18T22:19:07.209Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12171888",
@@ -117361,7 +117364,31 @@
         "seenAt": "2026-10-19T06:22:29.637Z",
         "since": "2026-10-19T03:24:14.123Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(3), 1-6, 4-6",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12172188",
@@ -124348,11 +124375,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1748_p-herbert.jpg",
     "p2PhotoUrl": null,
     "oddsMovement": {
@@ -124643,7 +124676,10 @@
           }
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172165",
@@ -139458,7 +139494,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -145379,7 +145415,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "4-6, 6-7(4)",
+      "display": "4-6, 6-7",
       "sets": [
         {
           "p1": 4,
