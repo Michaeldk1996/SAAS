@@ -15,7 +15,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -26,7 +26,7 @@
         "price": 2.42,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -2532,7 +2532,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -2542,10 +2542,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -2553,9 +2553,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -2567,11 +2567,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -3066,6 +3066,10 @@
               [
                 "2026-10-20T06:31:42.324Z",
                 2.46
+              ],
+              [
+                "2026-10-20T07:31:09.055Z",
+                2.44
               ]
             ]
           },
@@ -3239,19 +3243,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -3384,55 +3388,55 @@
       "WilliamHill": {
         "p1": 1.62,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "bet365": {
         "p1": 1.57,
         "p2": 2.37,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Marathon": {
         "p1": 1.58,
         "p2": 2.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "Betfair": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "BetVictor": {
         "p1": 1.57,
         "p2": 2.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "Pncl": {
         "p1": 1.63,
         "p2": 2.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 1.55,
         "p2": 2.23,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.028Z"
       },
       "1xBet": {
         "p1": 1.6,
         "p2": 2.33,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "Betano": {
         "p1": 1.57,
         "p2": 2.42,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     },
@@ -3466,7 +3470,7 @@
       "p1": 1.2,
       "p2": 4.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -3477,7 +3481,7 @@
         "price": 4.5,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -5675,7 +5679,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -5685,10 +5689,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -5696,9 +5700,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -5710,11 +5714,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -6738,13 +6742,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -6819,7 +6823,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -6883,56 +6887,56 @@
       "WilliamHill": {
         "p1": 1.29,
         "p2": 3.6,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T17:58:54.671Z"
       },
       "bet365": {
         "p1": 1.2,
         "p2": 4.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "Marathon": {
         "p1": 1.25,
         "p2": 3.9,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betfair": {
         "p1": 1.22,
         "p2": 4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T18:19:20.628Z"
       },
       "BetVictor": {
         "p1": 1.22,
         "p2": 3.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "Pncl": {
         "p1": 1.26,
         "p2": 4.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.028Z"
       },
       "Sbo": {
         "p1": 1.21,
         "p2": 3.63,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.028Z"
       },
       "1xBet": {
         "p1": 1.26,
         "p2": 3.85,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betano": {
         "p1": 1.23,
         "p2": 4.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.028Z"
       }
     }
   },
@@ -6952,7 +6956,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -6963,7 +6967,7 @@
         "price": 2.46,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -9077,7 +9081,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -9087,10 +9091,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -9098,9 +9102,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -9112,11 +9116,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -10192,13 +10196,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -10273,7 +10277,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -10337,55 +10341,55 @@
       "WilliamHill": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "bet365": {
         "p1": 1.57,
         "p2": 2.37,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-17T13:42:11.489Z"
       },
       "Marathon": {
         "p1": 1.58,
         "p2": 2.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betfair": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "BetVictor": {
         "p1": 1.53,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.850Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "Pncl": {
         "p1": 1.61,
         "p2": 2.46,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 1.53,
         "p2": 2.28,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "1xBet": {
         "p1": 1.6,
         "p2": 2.33,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betano": {
         "p1": 1.57,
         "p2": 2.42,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       }
     },
@@ -10419,7 +10423,7 @@
       "p1": 3,
       "p2": 1.4,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -10430,7 +10434,7 @@
         "price": 1.44,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -12870,7 +12874,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -12880,10 +12884,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -12891,9 +12895,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -12905,11 +12909,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -14665,13 +14669,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -14746,7 +14750,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -14810,55 +14814,55 @@
       "WilliamHill": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "bet365": {
         "p1": 3,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Marathon": {
         "p1": 2.92,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Betfair": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 2.75,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T22:19:07.309Z"
       },
       "Pncl": {
         "p1": 2.98,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 2.69,
         "p2": 1.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "1xBet": {
         "p1": 2.9,
         "p2": 1.41,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Betano": {
         "p1": 3,
         "p2": 1.39,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     }
@@ -14879,7 +14883,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -14890,7 +14894,7 @@
         "price": 2.42,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -18476,7 +18480,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -18486,10 +18490,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -18497,9 +18501,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -18511,11 +18515,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -19338,6 +19342,10 @@
               [
                 "2026-10-20T05:16:01.544Z",
                 2.46
+              ],
+              [
+                "2026-10-20T07:30:59.095Z",
+                2.44
               ]
             ]
           },
@@ -19643,13 +19651,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -19724,7 +19732,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -19788,55 +19796,55 @@
       "WilliamHill": {
         "p1": 1.62,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "bet365": {
         "p1": 1.61,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "Marathon": {
         "p1": 1.59,
         "p2": 2.34,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Betfair": {
         "p1": 1.62,
         "p2": 2.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 1.57,
         "p2": 2.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Pncl": {
         "p1": 1.62,
         "p2": 2.42,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 1.53,
         "p2": 2.26,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "1xBet": {
         "p1": 1.61,
         "p2": 2.31,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Betano": {
         "p1": 1.6,
         "p2": 2.35,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       }
     },
@@ -19870,7 +19878,7 @@
       "p1": 1.28,
       "p2": 3.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -19881,7 +19889,7 @@
         "price": 3.81,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -22339,9 +22347,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 20.6,
+      "temperature": 20.9,
       "windSpeed": 2.7,
-      "humidity": 19,
+      "humidity": 18,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Oct 19 – 25, 2026",
@@ -22368,7 +22376,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": true,
           "available": true
         },
@@ -22377,11 +22385,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
           "wind": 11,
-          "humidity": 45,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -22390,7 +22398,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -22403,11 +22411,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -22415,12 +22423,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -22429,11 +22437,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -22754,6 +22762,10 @@
               [
                 "2026-10-20T06:24:27.264Z",
                 1.33
+              ],
+              [
+                "2026-10-20T07:29:49.046Z",
+                1.34
               ]
             ],
             "p2": [
@@ -23052,6 +23064,18 @@
               [
                 "2026-10-20T07:17:33.515Z",
                 3.8
+              ],
+              [
+                "2026-10-20T07:19:58.486Z",
+                3.85
+              ],
+              [
+                "2026-10-20T07:20:03.524Z",
+                3.8
+              ],
+              [
+                "2026-10-20T07:25:43.548Z",
+                3.85
               ]
             ]
           },
@@ -23887,13 +23911,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -24021,49 +24045,49 @@
       "WilliamHill": {
         "p1": 1.29,
         "p2": 3.6,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T18:19:20.628Z"
       },
       "bet365": {
         "p1": 1.28,
         "p2": 3.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T22:19:07.309Z"
       },
       "Marathon": {
         "p1": 1.28,
         "p2": 3.64,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betfair": {
         "p1": 1.3,
         "p2": 3.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 1.29,
         "p2": 3.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T18:19:20.628Z"
       },
       "Pncl": {
         "p1": 1.3,
         "p2": 3.81,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.965Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 1.25,
         "p2": 3.32,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "1xBet": {
         "p1": 1.3,
         "p2": 3.69,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       }
     },
@@ -24097,7 +24121,7 @@
       "p1": 1.22,
       "p2": 4.33,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -24108,7 +24132,7 @@
         "price": 4.5,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -26875,9 +26899,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 19.7,
+      "temperature": 20.1,
       "windSpeed": 2.2,
-      "humidity": 20,
+      "humidity": 19,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Oct 19 – 25, 2026",
@@ -26904,7 +26928,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": true,
           "available": true
         },
@@ -26913,11 +26937,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
           "wind": 11,
-          "humidity": 45,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -26926,7 +26950,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -26939,11 +26963,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -26951,12 +26975,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -26965,11 +26989,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -27174,6 +27198,14 @@
               [
                 "2026-10-20T06:28:12.260Z",
                 1.29
+              ],
+              [
+                "2026-10-20T07:27:33.554Z",
+                1.28
+              ],
+              [
+                "2026-10-20T07:29:24.051Z",
+                1.29
               ]
             ],
             "p2": [
@@ -27332,6 +27364,10 @@
               [
                 "2026-10-20T07:06:18.049Z",
                 4.4
+              ],
+              [
+                "2026-10-20T07:31:34.074Z",
+                4.3
               ]
             ]
           },
@@ -28163,13 +28199,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -28302,55 +28338,55 @@
       "WilliamHill": {
         "p1": 1.2,
         "p2": 4.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "bet365": {
         "p1": 1.22,
         "p2": 4.33,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Marathon": {
         "p1": 1.23,
         "p2": 4.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Betfair": {
         "p1": 1.25,
         "p2": 3.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T18:19:20.628Z"
       },
       "BetVictor": {
         "p1": 1.22,
         "p2": 3.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T13:13:13.075Z"
       },
       "Pncl": {
         "p1": 1.25,
         "p2": 4.31,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Sbo": {
         "p1": 1.19,
         "p2": 3.63,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "1xBet": {
         "p1": 1.25,
         "p2": 4.16,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Betano": {
         "p1": 1.23,
         "p2": 4.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     }
@@ -28371,7 +28407,7 @@
       "p1": 2.62,
       "p2": 1.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -28382,7 +28418,7 @@
         "price": 1.53,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -31849,13 +31885,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -31930,7 +31966,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -31994,55 +32030,55 @@
       "WilliamHill": {
         "p1": 2.6,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T22:19:07.309Z"
       },
       "bet365": {
         "p1": 2.62,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T07:34:16.750Z"
       },
       "Marathon": {
         "p1": 2.66,
         "p2": 1.47,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betfair": {
         "p1": 2.5,
         "p2": 1.53,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "BetVictor": {
         "p1": 2.6,
         "p2": 1.45,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.850Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "Pncl": {
         "p1": 2.82,
         "p2": 1.48,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 2.49,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "1xBet": {
         "p1": 2.65,
         "p2": 1.48,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 2.55,
         "p2": 1.52,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       }
     }
@@ -32063,7 +32099,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -32074,7 +32110,7 @@
         "price": 1.85,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -35890,6 +35926,10 @@
               [
                 "2026-10-20T07:07:18.054Z",
                 1.88
+              ],
+              [
+                "2026-10-20T07:23:13.550Z",
+                1.89
               ]
             ]
           },
@@ -36335,13 +36375,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -36416,7 +36456,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -36480,55 +36520,55 @@
       "WilliamHill": {
         "p1": 2,
         "p2": 1.8,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T06:55:05.163Z"
       },
       "bet365": {
         "p1": 2,
         "p2": 1.8,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T14:58:14.617Z"
       },
       "Marathon": {
         "p1": 2.02,
         "p2": 1.78,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betfair": {
         "p1": 2.1,
         "p2": 1.73,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 2,
         "p2": 1.73,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "Pncl": {
         "p1": 2.04,
         "p2": 1.85,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Sbo": {
         "p1": 1.91,
         "p2": 1.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "1xBet": {
         "p1": 2.02,
         "p2": 1.78,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 2.02,
         "p2": 1.8,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       }
     }
@@ -36549,7 +36589,7 @@
       "p1": 1.36,
       "p2": 3.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -36560,7 +36600,7 @@
         "price": 3.43,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -39630,6 +39670,10 @@
               [
                 "2026-10-20T07:14:26.431Z",
                 1.35
+              ],
+              [
+                "2026-10-20T07:18:42.057Z",
+                1.353
               ]
             ],
             "p2": [
@@ -39708,6 +39752,10 @@
               [
                 "2026-10-20T07:14:26.431Z",
                 3.46
+              ],
+              [
+                "2026-10-20T07:18:42.057Z",
+                3.45
               ]
             ]
           },
@@ -40013,19 +40061,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -40158,55 +40206,55 @@
       "WilliamHill": {
         "p1": 1.36,
         "p2": 3.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T14:58:14.617Z"
       },
       "bet365": {
         "p1": 1.36,
         "p2": 3.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T22:19:07.310Z"
       },
       "Marathon": {
         "p1": 1.36,
         "p2": 3.12,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betfair": {
         "p1": 1.33,
         "p2": 3.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "BetVictor": {
         "p1": 1.33,
         "p2": 3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "Pncl": {
         "p1": 1.35,
         "p2": 3.43,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 1.28,
         "p2": 2.96,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "1xBet": {
         "p1": 1.37,
         "p2": 3.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betano": {
         "p1": 1.34,
         "p2": 3.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       }
     },
@@ -40240,7 +40288,7 @@
       "p1": 3.2,
       "p2": 1.36,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -40251,7 +40299,7 @@
         "price": 1.38,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -42993,19 +43041,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -43138,55 +43186,55 @@
       "WilliamHill": {
         "p1": 3.1,
         "p2": 1.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "bet365": {
         "p1": 3.2,
         "p2": 1.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T07:34:16.750Z"
       },
       "Marathon": {
         "p1": 3.06,
         "p2": 1.37,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "Betfair": {
         "p1": 3,
         "p2": 1.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "BetVictor": {
         "p1": 2.9,
         "p2": 1.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Pncl": {
         "p1": 3.31,
         "p2": 1.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 2.81,
         "p2": 1.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "1xBet": {
         "p1": 3.04,
         "p2": 1.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "Betano": {
         "p1": 3.1,
         "p2": 1.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       }
     },
@@ -43201,7 +43249,7 @@
       "fairP2": 0.7804,
       "edgeVsPinnacleP1": -0.0746,
       "edgeVsPinnacleP2": 0.0746,
-      "ts": "2026-10-20T03:22:19.406Z"
+      "ts": "2026-10-20T03:03:21.307Z"
     }
   },
   {
@@ -43220,7 +43268,7 @@
       "p1": 3,
       "p2": 1.4,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -43231,7 +43279,7 @@
         "price": 1.41,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -45725,9 +45773,9 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 15.1,
+      "temperature": 14.8,
       "windSpeed": 5.3,
-      "humidity": 35,
+      "humidity": 36,
       "source": "Open-Meteo",
       "historical": false,
       "weekRange": "Oct 19 – 25, 2026",
@@ -45754,7 +45802,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": true,
           "available": true
         },
@@ -45763,11 +45811,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
           "wind": 11,
-          "humidity": 45,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -45776,7 +45824,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -45789,11 +45837,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -45801,12 +45849,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -45815,11 +45863,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -46534,6 +46582,14 @@
               [
                 "2026-10-20T06:26:47.339Z",
                 1.44
+              ],
+              [
+                "2026-10-20T07:21:23.530Z",
+                1.43
+              ],
+              [
+                "2026-10-20T07:21:43.530Z",
+                1.44
               ]
             ]
           },
@@ -46867,13 +46923,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -46948,7 +47004,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -47012,56 +47068,56 @@
       "WilliamHill": {
         "p1": 2.9,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "bet365": {
         "p1": 3,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "Marathon": {
         "p1": 2.92,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "Betfair": {
         "p1": 2.88,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T14:58:14.617Z"
       },
       "BetVictor": {
         "p1": 2.8,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.850Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "Pncl": {
         "p1": 3.18,
         "p2": 1.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 2.66,
         "p2": 1.33,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "1xBet": {
         "p1": 3.01,
         "p2": 1.41,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 3.05,
         "p2": 1.39,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       }
     }
   },
@@ -47081,7 +47137,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -47092,7 +47148,7 @@
         "price": 2.25,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -48982,7 +49038,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -48992,10 +49048,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -49003,9 +49059,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -49017,11 +49073,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -49945,19 +50001,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -50090,55 +50146,55 @@
       "WilliamHill": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "bet365": {
         "p1": 1.66,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T03:24:14.123Z"
       },
       "Marathon": {
         "p1": 1.67,
         "p2": 2.19,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betfair": {
         "p1": 1.73,
         "p2": 2.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "BetVictor": {
         "p1": 1.67,
         "p2": 2.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Pncl": {
         "p1": 1.71,
         "p2": 2.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 1.63,
         "p2": 2.07,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "1xBet": {
         "p1": 1.69,
         "p2": 2.17,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betano": {
         "p1": 1.65,
         "p2": 2.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       }
     }
@@ -50159,7 +50215,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -50170,7 +50226,7 @@
         "price": 2.3,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -52974,7 +53030,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -52984,10 +53040,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -52995,9 +53051,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -53009,11 +53065,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
           "wind": 30,
-          "humidity": 77,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -53298,6 +53354,14 @@
               [
                 "2026-10-20T04:21:49.943Z",
                 1.75
+              ],
+              [
+                "2026-10-20T07:26:53.553Z",
+                1.77
+              ],
+              [
+                "2026-10-20T07:28:54.044Z",
+                1.78
               ]
             ],
             "p2": [
@@ -53652,6 +53716,14 @@
               [
                 "2026-10-20T04:21:49.943Z",
                 2.32
+              ],
+              [
+                "2026-10-20T07:26:53.553Z",
+                2.28
+              ],
+              [
+                "2026-10-20T07:29:14.066Z",
+                2.26
               ]
             ]
           },
@@ -53820,6 +53892,10 @@
               [
                 "2026-10-20T03:39:25.830Z",
                 1.684
+              ],
+              [
+                "2026-10-20T07:27:05.182Z",
+                1.735
               ]
             ],
             "p2": [
@@ -53982,6 +54058,10 @@
               [
                 "2026-10-20T03:39:25.830Z",
                 2.27
+              ],
+              [
+                "2026-10-20T07:27:05.182Z",
+                2.18
               ]
             ]
           },
@@ -54142,6 +54222,10 @@
               [
                 "2026-10-20T03:38:58.762Z",
                 1.671
+              ],
+              [
+                "2026-10-20T07:26:40.495Z",
+                1.719
               ]
             ],
             "p2": [
@@ -54292,6 +54376,10 @@
               [
                 "2026-10-20T03:38:58.769Z",
                 2.27
+              ],
+              [
+                "2026-10-20T07:26:40.512Z",
+                2.18
               ]
             ]
           }
@@ -54301,13 +54389,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -54382,7 +54470,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -54446,55 +54534,55 @@
       "WilliamHill": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "bet365": {
         "p1": 1.61,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "Marathon": {
         "p1": 1.62,
         "p2": 2.28,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betfair": {
         "p1": 1.62,
         "p2": 2.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "BetVictor": {
         "p1": 1.6,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Pncl": {
         "p1": 1.68,
         "p2": 2.27,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 1.6,
         "p2": 2.14,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "1xBet": {
         "p1": 1.66,
         "p2": 2.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 1.65,
         "p2": 2.27,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     }
@@ -54515,7 +54603,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -54526,7 +54614,7 @@
         "price": 2.42,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -58205,6 +58293,18 @@
               [
                 "2026-10-20T07:08:33.020Z",
                 1.74
+              ],
+              [
+                "2026-10-20T07:18:48.508Z",
+                1.65
+              ],
+              [
+                "2026-10-20T07:19:08.553Z",
+                1.66
+              ],
+              [
+                "2026-10-20T07:28:54.044Z",
+                1.65
               ]
             ],
             "p2": [
@@ -58375,6 +58475,26 @@
               [
                 "2026-10-20T07:12:48.442Z",
                 2.32
+              ],
+              [
+                "2026-10-20T07:18:48.508Z",
+                2.5
+              ],
+              [
+                "2026-10-20T07:19:08.553Z",
+                2.48
+              ],
+              [
+                "2026-10-20T07:28:54.044Z",
+                2.5
+              ],
+              [
+                "2026-10-20T07:29:34.045Z",
+                2.52
+              ],
+              [
+                "2026-10-20T07:31:19.036Z",
+                2.5
               ]
             ]
           },
@@ -58491,6 +58611,30 @@
               [
                 "2026-10-20T06:49:40.157Z",
                 1.704
+              ],
+              [
+                "2026-10-20T07:18:46.666Z",
+                1.662
+              ],
+              [
+                "2026-10-20T07:18:46.976Z",
+                1.653
+              ],
+              [
+                "2026-10-20T07:18:49.125Z",
+                1.632
+              ],
+              [
+                "2026-10-20T07:19:26.441Z",
+                1.653
+              ],
+              [
+                "2026-10-20T07:19:28.503Z",
+                1.632
+              ],
+              [
+                "2026-10-20T07:28:49.965Z",
+                1.625
               ]
             ],
             "p2": [
@@ -58601,6 +58745,30 @@
               [
                 "2026-10-20T06:49:40.157Z",
                 2.26
+              ],
+              [
+                "2026-10-20T07:18:46.666Z",
+                2.34
+              ],
+              [
+                "2026-10-20T07:18:46.976Z",
+                2.36
+              ],
+              [
+                "2026-10-20T07:18:49.125Z",
+                2.4
+              ],
+              [
+                "2026-10-20T07:19:26.441Z",
+                2.36
+              ],
+              [
+                "2026-10-20T07:19:28.503Z",
+                2.4
+              ],
+              [
+                "2026-10-20T07:28:49.965Z",
+                2.42
               ]
             ]
           },
@@ -58888,19 +59056,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -59033,55 +59201,55 @@
       "WilliamHill": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "bet365": {
         "p1": 1.66,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "Marathon": {
         "p1": 1.65,
         "p2": 2.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betfair": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-19T18:19:20.629Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "BetVictor": {
         "p1": 1.67,
         "p2": 2.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "Pncl": {
         "p1": 1.68,
         "p2": 2.27,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 1.61,
         "p2": 2.12,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.156Z"
       },
       "1xBet": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 1.57,
         "p2": 2.42,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       }
     }
@@ -59102,7 +59270,7 @@
       "p1": 1.5,
       "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -59113,7 +59281,7 @@
         "price": 2.62,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -61890,6 +62058,10 @@
               [
                 "2026-10-20T00:55:19.150Z",
                 1.568
+              ],
+              [
+                "2026-10-20T07:22:00.834Z",
+                1.561
               ]
             ],
             "p2": [
@@ -61988,6 +62160,10 @@
               [
                 "2026-10-20T00:55:19.150Z",
                 2.53
+              ],
+              [
+                "2026-10-20T07:22:00.834Z",
+                2.54
               ]
             ]
           },
@@ -62211,19 +62387,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -62356,56 +62532,56 @@
       "WilliamHill": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "bet365": {
         "p1": 1.5,
         "p2": 2.62,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Marathon": {
         "p1": 1.55,
         "p2": 2.43,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betfair": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.157Z"
       },
       "BetVictor": {
         "p1": 1.53,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Pncl": {
         "p1": 1.57,
         "p2": 2.53,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 1.5,
         "p2": 2.35,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "1xBet": {
         "p1": 1.57,
         "p2": 2.4,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 1.53,
         "p2": 2.52,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T06:25:03.834Z"
       }
     },
     "pinnacleOpen": {
@@ -62438,7 +62614,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -62449,7 +62625,7 @@
         "price": 2.51,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -65532,19 +65708,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -65677,55 +65853,55 @@
       "WilliamHill": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "bet365": {
         "p1": 1.57,
         "p2": 2.37,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "Marathon": {
         "p1": 1.57,
         "p2": 2.39,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "Betfair": {
         "p1": 1.57,
         "p2": 2.38,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T18:19:20.629Z"
       },
       "BetVictor": {
         "p1": 1.53,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "Pncl": {
         "p1": 1.57,
         "p2": 2.51,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 1.5,
         "p2": 2.26,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "1xBet": {
         "p1": 1.59,
         "p2": 2.36,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "Betano": {
         "p1": 1.6,
         "p2": 2.37,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       }
     }
@@ -65746,7 +65922,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "bestOdds": {
       "p1": {
@@ -65757,7 +65933,7 @@
         "price": 2.3,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:42:21.415Z"
+      "seenAt": "2026-10-20T07:05:01.688Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -68907,19 +69083,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -69052,55 +69228,55 @@
       "WilliamHill": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "bet365": {
         "p1": 1.61,
         "p2": 2.3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Marathon": {
         "p1": 1.66,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betfair": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "BetVictor": {
         "p1": 1.67,
         "p2": 2.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "Pncl": {
         "p1": 1.71,
         "p2": 2.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.503Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Sbo": {
         "p1": 1.63,
         "p2": 2.07,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       },
       "1xBet": {
         "p1": 1.68,
         "p2": 2.18,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betano": {
         "p1": 1.67,
         "p2": 2.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T22:45:24.997Z"
       }
     },
@@ -69134,7 +69310,7 @@
       "p1": 1.4,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -69145,7 +69321,7 @@
         "price": 3.13,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -72092,7 +72268,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -72102,10 +72278,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -72113,9 +72289,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -72127,11 +72303,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 31,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -72547,19 +72723,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:00:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -72687,49 +72863,49 @@
       "WilliamHill": {
         "p1": 1.36,
         "p2": 3.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.851Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "bet365": {
         "p1": 1.4,
         "p2": 3,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-16T23:59:59.130Z"
       },
       "Marathon": {
         "p1": 1.39,
         "p2": 2.97,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betfair": {
         "p1": 1.4,
         "p2": 2.88,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 1.36,
         "p2": 2.88,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Pncl": {
         "p1": 1.41,
         "p2": 3.13,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T06:55:05.163Z"
       },
       "1xBet": {
         "p1": 1.4,
         "p2": 2.95,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Betano": {
         "p1": 1.37,
         "p2": 3.1,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     },
@@ -72763,7 +72939,7 @@
       "p1": 1.8,
       "p2": 2,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -72774,7 +72950,7 @@
         "price": 2,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -75217,8 +75393,8 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 16.4,
-      "windSpeed": 9.1,
+      "temperature": 16.3,
+      "windSpeed": 8.5,
       "humidity": 29,
       "source": "Open-Meteo",
       "historical": false,
@@ -75246,7 +75422,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -75255,11 +75431,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": true,
           "available": true
         },
@@ -75268,7 +75444,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -75281,11 +75457,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -75293,12 +75469,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -75307,11 +75483,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -76441,13 +76617,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -76580,55 +76756,55 @@
       "WilliamHill": {
         "p1": 1.85,
         "p2": 1.95,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "bet365": {
         "p1": 1.8,
         "p2": 2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Marathon": {
         "p1": 1.83,
         "p2": 1.96,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "Betfair": {
         "p1": 1.83,
         "p2": 1.91,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 1.8,
         "p2": 1.91,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "Pncl": {
         "p1": 1.89,
         "p2": 2,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Sbo": {
         "p1": 1.77,
         "p2": 1.89,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "1xBet": {
         "p1": 1.86,
         "p2": 1.99,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "Betano": {
         "p1": 1.83,
         "p2": 1.98,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     },
@@ -76662,7 +76838,7 @@
       "p1": 21,
       "p2": 1.01,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -76673,7 +76849,7 @@
         "price": 1.03,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -78021,8 +78197,8 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 16.4,
-      "windSpeed": 9.1,
+      "temperature": 16.3,
+      "windSpeed": 8.5,
       "humidity": 29,
       "source": "Open-Meteo",
       "historical": false,
@@ -78050,7 +78226,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -78059,11 +78235,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": true,
           "available": true
         },
@@ -78072,7 +78248,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -78085,11 +78261,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -78097,12 +78273,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -78111,11 +78287,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -78276,6 +78452,22 @@
               [
                 "2026-10-20T07:17:23.480Z",
                 13.5
+              ],
+              [
+                "2026-10-20T07:25:03.548Z",
+                17.5
+              ],
+              [
+                "2026-10-20T07:25:28.617Z",
+                13.5
+              ],
+              [
+                "2026-10-20T07:27:03.581Z",
+                17.5
+              ],
+              [
+                "2026-10-20T07:27:59.053Z",
+                13.5
               ]
             ],
             "p2": [
@@ -78317,13 +78509,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -78442,37 +78634,37 @@
       "WilliamHill": {
         "p1": 17,
         "p2": 1.02,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "bet365": {
         "p1": 21,
         "p2": 1.01,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-18T07:34:16.750Z"
       },
       "Marathon": {
         "p1": 14.75,
         "p2": 1.01,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T00:32:02.302Z"
       },
       "Betfair": {
         "p1": 12,
         "p2": 1.03,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.851Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "BetVictor": {
         "p1": 11,
         "p2": 1.02,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "1xBet": {
         "p1": 18.5,
         "p2": 1.01,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-20T00:32:02.302Z"
       }
     }
@@ -78493,7 +78685,7 @@
       "p1": 2.37,
       "p2": 1.57,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -78504,7 +78696,7 @@
         "price": 1.62,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -82345,13 +82537,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -82426,7 +82618,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -82490,55 +82682,55 @@
       "WilliamHill": {
         "p1": 2.38,
         "p2": 1.57,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T23:33:21.157Z"
       },
       "bet365": {
         "p1": 2.37,
         "p2": 1.57,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T03:24:14.123Z"
       },
       "Marathon": {
         "p1": 2.36,
         "p2": 1.58,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.851Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "Betfair": {
         "p1": 2.5,
         "p2": 1.53,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "BetVictor": {
         "p1": 2.3,
         "p2": 1.53,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "Pncl": {
         "p1": 2.41,
         "p2": 1.62,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "Sbo": {
         "p1": 2.21,
         "p2": 1.53,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T08:51:48.238Z"
       },
       "1xBet": {
         "p1": 2.33,
         "p2": 1.6,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.851Z"
+        "seenAt": "2026-10-20T07:07:40.692Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "Betano": {
         "p1": 2.45,
         "p2": 1.55,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.692Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     },
@@ -82572,7 +82764,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -82583,7 +82775,7 @@
         "price": 1.5,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -85725,7 +85917,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -85735,10 +85927,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -85746,9 +85938,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -85760,11 +85952,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 31,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -86484,13 +86676,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -86565,7 +86757,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -86629,55 +86821,55 @@
       "WilliamHill": {
         "p1": 2.6,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "bet365": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T06:55:05.163Z"
       },
       "Marathon": {
         "p1": 2.69,
         "p2": 1.46,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "Betfair": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T09:59:57.086Z"
       },
       "BetVictor": {
         "p1": 2.6,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Pncl": {
         "p1": 2.72,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "Sbo": {
         "p1": 2.47,
         "p2": 1.41,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-20T01:25:44.203Z"
       },
       "1xBet": {
         "p1": 2.68,
         "p2": 1.47,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Betano": {
         "p1": 2.72,
         "p2": 1.47,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
     }
@@ -86698,7 +86890,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -86709,7 +86901,7 @@
         "price": 1.85,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Almaty - 1/8-finals",
     "qualifying": false,
@@ -89691,8 +89883,8 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 16.4,
-      "windSpeed": 9.1,
+      "temperature": 16.3,
+      "windSpeed": 8.5,
       "humidity": 29,
       "source": "Open-Meteo",
       "historical": false,
@@ -89720,7 +89912,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -89729,11 +89921,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": true,
           "available": true
         },
@@ -89742,7 +89934,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -89755,11 +89947,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -89767,12 +89959,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -89781,11 +89973,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -90093,13 +90285,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -90175,7 +90367,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -90234,50 +90426,50 @@
       "WilliamHill": {
         "p1": 1.95,
         "p2": 1.85,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.504Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "bet365": {
         "p1": 2,
         "p2": 1.8,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T03:22:19.504Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T03:03:21.393Z"
       },
       "Marathon": {
         "p1": 2.01,
         "p2": 1.79,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betfair": {
         "p1": 2,
         "p2": 1.8,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "BetVictor": {
         "p1": 1.95,
         "p2": 1.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Sbo": {
         "p1": 1.98,
         "p2": 1.7,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.851Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T03:45:27.205Z"
       },
       "1xBet": {
         "p1": 2.04,
         "p2": 1.82,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 2.05,
         "p2": 1.78,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T04:13:33.851Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T03:45:27.205Z"
       }
     }
   },
@@ -90297,7 +90489,7 @@
       "p1": 4.33,
       "p2": 1.22,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -90308,7 +90500,7 @@
         "price": 1.33,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Almaty - 1/8-finals",
     "qualifying": false,
@@ -94263,8 +94455,8 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 16.4,
-      "windSpeed": 9.1,
+      "temperature": 16.3,
+      "windSpeed": 8.5,
       "humidity": 29,
       "source": "Open-Meteo",
       "historical": false,
@@ -94292,7 +94484,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -94301,11 +94493,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": true,
           "available": true
         },
@@ -94314,7 +94506,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -94327,11 +94519,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -94339,12 +94531,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -94353,11 +94545,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -94498,6 +94690,18 @@
               [
                 "2026-10-20T07:13:18.509Z",
                 3.0
+              ],
+              [
+                "2026-10-20T07:23:03.553Z",
+                2.66
+              ],
+              [
+                "2026-10-20T07:23:28.529Z",
+                2.92
+              ],
+              [
+                "2026-10-20T07:23:53.564Z",
+                3.15
               ]
             ],
             "p2": [
@@ -94692,6 +94896,22 @@
               [
                 "2026-10-20T07:13:18.509Z",
                 1.32
+              ],
+              [
+                "2026-10-20T07:18:28.516Z",
+                1.33
+              ],
+              [
+                "2026-10-20T07:23:03.553Z",
+                1.34
+              ],
+              [
+                "2026-10-20T07:26:33.541Z",
+                1.35
+              ],
+              [
+                "2026-10-20T07:31:34.074Z",
+                1.36
               ]
             ]
           }
@@ -94701,13 +94921,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -94783,7 +95003,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -94837,44 +95057,44 @@
       "WilliamHill": {
         "p1": 3.3,
         "p2": 1.33,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "bet365": {
         "p1": 4.33,
         "p2": 1.22,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T14:03:02.260Z"
       },
       "Marathon": {
         "p1": 4.1,
         "p2": 1.23,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T23:33:21.157Z"
       },
       "Betfair": {
         "p1": 3.75,
         "p2": 1.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Sbo": {
         "p1": 3.7,
         "p2": 1.18,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T18:19:20.629Z"
       },
       "1xBet": {
         "p1": 4.16,
         "p2": 1.25,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T23:33:21.157Z"
       },
       "Betano": {
         "p1": 3.95,
         "p2": 1.26,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       }
     }
   },
@@ -94894,7 +95114,7 @@
       "p1": 1.28,
       "p2": 3.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -94905,7 +95125,7 @@
         "price": 3.75,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Brussels - 1/8-finals",
     "qualifying": false,
@@ -97416,7 +97636,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -97426,10 +97646,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -97437,9 +97657,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -97451,11 +97671,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 31,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -97851,13 +98071,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -97933,7 +98153,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -97987,43 +98207,43 @@
       "WilliamHill": {
         "p1": 1.3,
         "p2": 3.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "bet365": {
         "p1": 1.28,
         "p2": 3.75,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "Marathon": {
         "p1": 1.27,
         "p2": 3.72,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "Betfair": {
         "p1": 1.29,
         "p2": 3.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "BetVictor": {
         "p1": 1.25,
         "p2": 3.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "1xBet": {
         "p1": 1.28,
         "p2": 3.68,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "Betano": {
         "p1": 1.29,
         "p2": 3.65,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       }
     }
@@ -98044,7 +98264,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -98055,7 +98275,7 @@
         "price": 1.51,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Almaty - 1/8-finals",
     "qualifying": false,
@@ -101244,8 +101464,8 @@
       "category": "Fast"
     },
     "weather": {
-      "temperature": 16.4,
-      "windSpeed": 9.1,
+      "temperature": 16.3,
+      "windSpeed": 8.5,
       "humidity": 29,
       "source": "Open-Meteo",
       "historical": false,
@@ -101273,7 +101493,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -101282,11 +101502,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": true,
           "available": true
         },
@@ -101295,7 +101515,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -101308,11 +101528,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -101320,12 +101540,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -101334,11 +101554,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -101485,6 +101705,10 @@
               [
                 "2026-10-19T18:06:14.824Z",
                 1.52
+              ],
+              [
+                "2026-10-20T07:21:23.530Z",
+                1.5
               ]
             ]
           }
@@ -101494,19 +101718,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -101630,44 +101854,44 @@
       "WilliamHill": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "bet365": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "Marathon": {
         "p1": 2.54,
         "p2": 1.51,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T21:23:11.272Z"
       },
       "Betfair": {
         "p1": 2.63,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T18:19:20.629Z"
       },
       "Sbo": {
         "p1": 2.44,
         "p2": 1.43,
-        "seenAt": "2026-10-20T06:44:31.209Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T19:10:49.314Z"
       },
       "1xBet": {
         "p1": 2.66,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       },
       "Betano": {
         "p1": 2.62,
         "p2": 1.5,
-        "seenAt": "2026-10-20T06:44:31.209Z",
-        "since": "2026-10-20T06:03:32.565Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T06:25:03.834Z"
       }
     }
   },
@@ -101687,7 +101911,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -101698,7 +101922,7 @@
         "price": 1.47,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Brussels - 1/8-finals",
     "qualifying": false,
@@ -104021,7 +104245,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -104031,10 +104255,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -104042,9 +104266,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -104056,11 +104280,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 31,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -104172,19 +104396,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -104313,49 +104537,49 @@
       "WilliamHill": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "bet365": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T18:19:20.629Z"
       },
       "Marathon": {
         "p1": 2.76,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T14:58:14.617Z"
       },
       "Betfair": {
         "p1": 2.75,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T16:39:10.138Z"
       },
       "BetVictor": {
         "p1": 2.63,
         "p2": 1.44,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T18:19:20.629Z"
       },
       "Sbo": {
         "p1": 2.47,
         "p2": 1.41,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T18:19:20.629Z"
       },
       "1xBet": {
         "p1": 2.75,
         "p2": 1.45,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T14:58:14.617Z"
       },
       "Betano": {
         "p1": 2.7,
         "p2": 1.47,
-        "seenAt": "2026-10-20T06:44:31.210Z",
+        "seenAt": "2026-10-20T07:07:40.693Z",
         "since": "2026-10-19T18:19:20.629Z"
       }
     }
@@ -104376,7 +104600,7 @@
       "p1": 3.4,
       "p2": 1.3,
       "bookmaker": "Betfair",
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "bestOdds": {
       "p1": {
@@ -104387,7 +104611,7 @@
         "price": 1.33,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:43:16.605Z"
+      "seenAt": "2026-10-20T07:06:11.163Z"
     },
     "tournamentRound": "ATP Lyon - 1/8-finals",
     "qualifying": false,
@@ -106420,13 +106644,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -106502,7 +106726,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-20T07:15:01.000Z"
+            "checkedAt": "2026-10-20T07:30:01.000Z"
           }
         }
       }
@@ -106533,26 +106757,26 @@
       "WilliamHill": {
         "p1": 3.3,
         "p2": 1.33,
-        "seenAt": "2026-10-20T06:44:31.210Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Marathon": {
         "p1": 3.42,
         "p2": 1.31,
-        "seenAt": "2026-10-20T06:44:31.210Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "Betfair": {
         "p1": 3.4,
         "p2": 1.3,
-        "seenAt": "2026-10-20T06:44:31.210Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T05:35:32.029Z"
       },
       "BetVictor": {
         "p1": 3.2,
         "p2": 1.3,
-        "seenAt": "2026-10-20T06:44:31.210Z",
-        "since": "2026-10-20T05:10:23.966Z"
+        "seenAt": "2026-10-20T07:07:40.693Z",
+        "since": "2026-10-20T05:35:32.029Z"
       }
     }
   },
@@ -106574,7 +106798,7 @@
       "p1": 1.28,
       "p2": 3.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:49.397Z"
+      "seenAt": "2026-10-20T07:06:45.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -106585,7 +106809,7 @@
         "price": 4.22,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:49.397Z"
+      "seenAt": "2026-10-20T07:06:45.291Z"
     },
     "tournamentRound": "ATP Shanghai - Semi-finals",
     "qualifying": false,
@@ -112023,7 +112247,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.265,
@@ -112067,7 +112291,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:49.397Z"
+      "seenAt": "2026-10-20T07:06:45.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -112078,7 +112302,7 @@
         "price": 1.56,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:49.397Z"
+      "seenAt": "2026-10-20T07:06:45.291Z"
     },
     "tournamentRound": "ATP Shanghai - Semi-finals",
     "qualifying": false,
@@ -116674,7 +116898,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 2.62,
@@ -116705,7 +116929,7 @@
       "p1": 2.1,
       "p2": 1.72,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:56.470Z"
+      "seenAt": "2026-10-20T07:06:52.250Z"
     },
     "bestOdds": {
       "p1": {
@@ -116716,7 +116940,7 @@
         "price": 1.79,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:56.470Z"
+      "seenAt": "2026-10-20T07:06:52.250Z"
     },
     "tournamentRound": "ATP Shanghai - Final",
     "qualifying": false,
@@ -119206,7 +119430,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 7-6, 6-4",
+      "display": "1-6, 7-6(5), 6-4",
       "sets": [
         {
           "p1": 1,
@@ -120507,7 +120731,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 2.18,
@@ -120551,7 +120775,7 @@
       "p1": 1.53,
       "p2": 2.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -120562,7 +120786,7 @@
         "price": 2.57,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -123898,7 +124122,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -123907,11 +124131,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -123920,7 +124144,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -123933,11 +124157,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -123945,12 +124169,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -123959,11 +124183,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -125690,7 +125914,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.591,
@@ -125721,7 +125945,7 @@
       "p1": 1.53,
       "p2": 2.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -125732,7 +125956,7 @@
         "price": 2.51,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -129830,7 +130054,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -129839,11 +130063,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -129852,7 +130076,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -129865,11 +130089,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -129877,12 +130101,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -129891,11 +130115,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -129909,7 +130133,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 6-3",
+      "display": "7-6(4), 4-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -131546,7 +131770,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.621,
@@ -131590,7 +131814,7 @@
       "p1": 1.3,
       "p2": 3.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -131601,7 +131825,7 @@
         "price": 3.76,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -133996,7 +134220,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -134005,11 +134229,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -134018,7 +134242,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -134031,11 +134255,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -134043,12 +134267,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -134057,11 +134281,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -134075,7 +134299,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 1-6, 4-6",
+      "display": "7-6(3), 1-6, 4-6",
       "sets": [
         {
           "p1": 7,
@@ -135872,7 +136096,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.33,
@@ -135916,7 +136140,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -135927,7 +136151,7 @@
         "price": 1.5,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -139313,7 +139537,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 2.78,
@@ -139357,7 +139581,7 @@
       "p1": 1.61,
       "p2": 2.3,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -139368,7 +139592,7 @@
         "price": 2.42,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -143159,7 +143383,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.666,
@@ -143203,7 +143427,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -143214,7 +143438,7 @@
         "price": 2.5,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Lyon - 1/16-finals",
     "qualifying": false,
@@ -145383,7 +145607,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 4-6",
+      "display": "6-7(2), 4-6",
       "sets": [
         {
           "p1": 6,
@@ -146974,7 +147198,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.574,
@@ -147018,7 +147242,7 @@
       "p1": 2.3,
       "p2": 1.61,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -147029,7 +147253,7 @@
         "price": 1.68,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -151054,7 +151278,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -151063,11 +151287,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -151076,7 +151300,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -151089,11 +151313,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -151101,12 +151325,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -151115,11 +151339,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -152957,7 +153181,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 2.33,
@@ -153001,7 +153225,7 @@
       "p1": 4,
       "p2": 1.25,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -153012,7 +153236,7 @@
         "price": 1.32,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Almaty - 1/16-finals",
     "qualifying": false,
@@ -156413,7 +156637,7 @@
           "lo": 6,
           "rain": 0,
           "wind": 7,
-          "humidity": 39,
+          "humidity": 38,
           "isMatch": false,
           "available": true
         },
@@ -156422,11 +156646,11 @@
           "dow": "Wed",
           "label": "Oct 21",
           "code": 45,
-          "hi": 17,
-          "lo": 6,
+          "hi": 16,
+          "lo": 7,
           "rain": 0,
-          "wind": 11,
-          "humidity": 45,
+          "wind": 10,
+          "humidity": 46,
           "isMatch": false,
           "available": true
         },
@@ -156435,7 +156659,7 @@
           "dow": "Thu",
           "label": "Oct 22",
           "code": 3,
-          "hi": 16,
+          "hi": 15,
           "lo": 3,
           "rain": 4,
           "wind": 11,
@@ -156448,11 +156672,11 @@
           "dow": "Fri",
           "label": "Oct 23",
           "code": 1,
-          "hi": 9,
+          "hi": 10,
           "lo": -1,
           "rain": 24,
           "wind": 9,
-          "humidity": 53,
+          "humidity": 52,
           "isMatch": false,
           "available": true
         },
@@ -156460,12 +156684,12 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 0,
+          "code": 1,
           "hi": 6,
           "lo": -4,
           "rain": 15,
           "wind": 9,
-          "humidity": 54,
+          "humidity": 50,
           "isMatch": false,
           "available": true
         },
@@ -156474,11 +156698,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 3,
-          "hi": 6,
-          "lo": -5,
+          "hi": 7,
+          "lo": -4,
           "rain": 0,
           "wind": 8,
-          "humidity": 56,
+          "humidity": 53,
           "isMatch": false,
           "available": true
         }
@@ -156492,7 +156716,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(4), 7-6(3)",
       "sets": [
         {
           "p1": 7,
@@ -159748,7 +159972,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 4.019,
@@ -159779,7 +160003,7 @@
       "p1": 3,
       "p2": 1.4,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -159790,7 +160014,7 @@
         "price": 1.4,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -162154,7 +162378,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -162164,10 +162388,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
           "wind": 43,
-          "humidity": 86,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -162175,9 +162399,9 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
           "wind": 38,
           "humidity": 78,
@@ -162189,11 +162413,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 31,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -163503,7 +163727,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 3.25,
@@ -163534,7 +163758,7 @@
       "p1": 1.8,
       "p2": 2,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -163545,7 +163769,7 @@
         "price": 2.04,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -166571,7 +166795,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -166581,10 +166805,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
-          "wind": 43,
-          "humidity": 86,
+          "wind": 40,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -166592,11 +166816,11 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
-          "wind": 38,
+          "wind": 33,
           "humidity": 78,
           "isMatch": false,
           "available": true
@@ -166606,11 +166830,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 36,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -168252,7 +168476,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 1.854,
@@ -168296,7 +168520,7 @@
       "p1": 4.33,
       "p2": 1.22,
       "bookmaker": "bet365",
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "bestOdds": {
       "p1": {
@@ -168307,7 +168531,7 @@
         "price": 1.25,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-10-20T06:43:59.480Z"
+      "seenAt": "2026-10-20T07:06:55.049Z"
     },
     "tournamentRound": "ATP Brussels - 1/16-finals",
     "qualifying": false,
@@ -170733,7 +170957,7 @@
           "lo": 8,
           "rain": 49,
           "wind": 28,
-          "humidity": 86,
+          "humidity": 87,
           "isMatch": false,
           "available": true
         },
@@ -170743,10 +170967,10 @@
           "label": "Oct 23",
           "code": 80,
           "hi": 13,
-          "lo": 9,
+          "lo": 8,
           "rain": 100,
-          "wind": 43,
-          "humidity": 86,
+          "wind": 40,
+          "humidity": 84,
           "isMatch": false,
           "available": true
         },
@@ -170754,11 +170978,11 @@
           "date": "2026-10-24",
           "dow": "Sat",
           "label": "Oct 24",
-          "code": 80,
-          "hi": 12,
-          "lo": 9,
+          "code": 53,
+          "hi": 11,
+          "lo": 8,
           "rain": 88,
-          "wind": 38,
+          "wind": 33,
           "humidity": 78,
           "isMatch": false,
           "available": true
@@ -170768,11 +170992,11 @@
           "dow": "Sun",
           "label": "Oct 25",
           "code": 80,
-          "hi": 12,
-          "lo": 6,
+          "hi": 13,
+          "lo": 8,
           "rain": 88,
-          "wind": 30,
-          "humidity": 77,
+          "wind": 36,
+          "humidity": 76,
           "isMatch": false,
           "available": true
         }
@@ -171974,7 +172198,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-10-20T06:44:31.210Z"
+      "seenAt": "2026-10-20T07:07:40.693Z"
     },
     "pinClose": {
       "p1": 4.46,
@@ -175527,7 +175751,7 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -179464,7 +179688,7 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -184663,7 +184887,7 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -192959,7 +193183,7 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-20T07:18:56.823Z"
+            "checkedAt": "2026-10-20T07:32:27.264Z"
           },
           "Bet105": {
             "source": "Kibl",
