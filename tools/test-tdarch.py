@@ -343,6 +343,22 @@ try:
     check('control: without the read-time rule the in-play row is fed', {r['eventKey'] for r in T.lower_feed_rows([rin, rok])} == {91, 92})
 finally:
     T.te_in_play = _tip
+# paging by id: a select that names no id still pages past 1,000 rows (te-import's closes read failed on the 1,001st row)
+P = T.P; _rest = P.rest
+try:
+    pages = []
+    def fake_rest(method, path, body=None, headers=None, **k):
+        import re as _re
+        sel = _re.search(r'select=([^&]+)', path).group(1); last = int(_re.search(r'id=gt\.(\d+)', path).group(1)); pages.append(sel)
+        ids = [i for i in range(1, 2501) if i > last][:1000]
+        return 200, [dict({'id': i} if 'id' in sel.split(',') else {}, event_key=i) for i in ids], {}
+    P.rest = fake_rest
+    got = P.select_all(P.CLOSE, 'event_key')
+    check('select_all pages past 1,000 rows when the select names no id (id added); 2,500 rows read', len(got) == 2500 and all(p.startswith('id,') for p in pages), (len(got), pages[:2]))
+    got2 = list(P.select_pages(P.CLOSE, 'event_key'))
+    check('select_pages too', sum(len(g) for g in got2) == 2500)
+finally:
+    P.rest = _rest
 # coverage gained: TE prices a match only where no close, start - 10 or api-tennis Pinnacle holds it
 crow = lambda ek, y, lv='ch': {'event_key': ek, 'match_date': f'{y}-05-01', 'detail': {'level': lv}}
 cov = T.te_coverage([crow(1, 2024), crow(2, 2024), crow(3, 2024), crow(4, 2023, 'atp-q'), crow(5, 2024)],

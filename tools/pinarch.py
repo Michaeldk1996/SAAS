@@ -95,8 +95,15 @@ def insert(table, rows, conflict):
     return ids
 
 
+def _with_id(select):
+    """Paging is by id: a select that names no id gets it added, so a table past one page never fails on rows[-1]['id']
+    (te-import's closes read named only event_key and stopped on the 1,001st row — 2026-10-20)."""
+    return select if select == '*' or 'id' in [c.strip() for c in select.split(',')] else 'id,' + select
+
+
 def select_pages(table, select, filt='', page=1000, after=0):
     """Rows in id order, one page at a time (a generator: the raw table never sits in memory whole)."""
+    select = _with_id(select)
     last = after
     while True:
         q = f'/rest/v1/{table}?select={select}&id=gt.{last}&order=id.asc&limit={page}' + (f'&{filt}' if filt else '')
@@ -109,6 +116,7 @@ def select_pages(table, select, filt='', page=1000, after=0):
 
 
 def select_all(table, select, filt='', page=1000):
+    select = _with_id(select)
     out, last = [], 0
     while True:
         q = f'/rest/v1/{table}?select={select}&id=gt.{last}&order=id.asc&limit={page}' + (f'&{filt}' if filt else '')
