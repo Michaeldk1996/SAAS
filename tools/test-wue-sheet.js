@@ -134,6 +134,8 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
   check('deploy copies wue-sheet.js into _site', yml.includes('cp wue-sheet.js _site/'));
   check('deploy asserts wue-sheet.js present', /h2h-core\.js wue-sheet\.js \\/.test(yml));
+  check('live publish lane copies wue-sheet.js (tools/site-code.sh)', fs.readFileSync(path.join(ROOT, 'tools', 'site-code.sh'), 'utf8').includes('cp wue-sheet.js "$SITE/"'));
+  check('live publish lane requires wue-sheet.js (publish-site.mjs CODE_REQUIRED)', /CODE_REQUIRED = \[[^\]]*'wue-sheet\.js'/.test(fs.readFileSync(path.join(ROOT, 'tools', 'publish-site.mjs'), 'utf8')));
   const pipe = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
   check('progression entry publishes matches[]', pipe.includes('matches: progressionSheetMatches(played, roundLabelByName),'));
 

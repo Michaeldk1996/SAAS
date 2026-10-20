@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const CODE_REQUIRED = ['index.html', 'bsp-consult-dashboard.html', 'auth.html', 'account.html', 'funnel.html', 'verify.html',
   'auth.js', 'analytics.js', 'house-ratings.js', 'live-tab.js', 'kibl-now-stream.js', 'price-history-box.js', 'holdbreak-heatmap.js',
-  'player-profile-v2.js', 'market-edge-core.js', 'tournament-identity.js', 'h2h-core.js', 'series.js', 'series.css', 'tokens.css', 'theme.js',
+  'player-profile-v2.js', 'market-edge-core.js', 'tournament-identity.js', 'h2h-core.js', 'wue-sheet.js', 'series.js', 'series.css', 'tokens.css', 'theme.js',
   'drops-page.js', 'drops-page.css', 'assets/logo-dark-transparent.png', 'assets/ring-transparent.png'];
 const DASH = ['index.html', 'bsp-consult-dashboard.html'];
 const ANCHOR = '<meta charset="UTF-8">';
