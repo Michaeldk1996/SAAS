@@ -1,0 +1,41 @@
+# Official ATP draws → draws.json (founder brief 2026-10-20, C; protennislive terms approved by Michael).
+# NOT LIVE: built and tested on claude/ten-draws; nothing here runs until Michael approves and it lands on main.
+#
+# Runs in GitHub's cloud, not on the Mac: a hosted runner fetched protennislive's draw PDFs (4 of 4 HTTP 200, real PDFs,
+# probe run 39433560197 on 2026-10-20), so the draw source no longer depends on a laptop being awake (C17).
+# Commits draws.json ONLY when its content changed (the file carries no run stamp). The staleness check runs every time
+# and fails the run visibly (F1–F4); pipeline-watchdog would own F5 (this workflow cannot report its own non-run).
+name: draws
+on:
+  schedule:
+    - cron: '17 */2 * * *'        # every 2 h; the job is a no-op outside active tournament weeks
+  workflow_dispatch:
+concurrency:
+  group: draws
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  draws:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - name: Install the draw-sheet parser (pymupdf, pinned)
+        run: python3 -m pip install --quiet --user --break-system-packages 'pymupdf==1.26.5'
+      - name: Our roster + board (the deployed site — our own files)
+        run: |
+          curl -sf -o player-index.json "https://michaeldk1996.github.io/SAAS/player-index.json?_=$(date +%s)"
+          curl -sf -o board.json "https://michaeldk1996.github.io/SAAS/matches.json?_=$(date +%s)"
+      - name: Build draws.json (fail-closed parser)
+        run: python3 tools/draws/build-draws.py --roster player-index.json
+      - name: Staleness check (F1–F4) — a red run, never a green badge on empty data
+        run: python3 tools/draws/check-draws.py --board board.json
+      - name: Commit draws.json on a content change only
+        run: |
+          git add draws.json 2>/dev/null || true
+          if git diff --cached --quiet -- draws.json; then echo "draws.json unchanged — nothing to commit"; exit 0; fi
+          git -c user.name='BSP Draws Bot' -c user.email='bot@bspconsult.local' commit -q -m "chore(draws): official draw content changed [skip ci]"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          echo "::error title=draws::could not push draws.json after 3 attempts"; exit 1

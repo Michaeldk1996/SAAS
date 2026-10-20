@@ -971,7 +971,7 @@ def lower_feed_rows(current):
         if not d.get('level'):
             continue
         k = r['event_key']
-        if r.get('source') == TE_SOURCE and not TE_FEED_ON:
+        if r.get('source') == TE_SOURCE and (not TE_FEED_ON or te_in_play(r)):
             continue
         # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365
         rank = 0 if r.get('source') == START10_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE else 1
@@ -1180,13 +1180,27 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None):
             pts = max(ts) if ts else None
             # the in-play rule (founder 2026-10-20): a price whose last change came after the start is dropped
             start, kind = te_start(x, f, flip_start)
+            bt = f"batch {d.get('batch')}: "
             if start is None:
-                rep['no start time to check (kept)'] += 1
+                rep['no start time to check (kept)'] += 1; rep[bt + 'kept, no start time'] += 1
             elif pts and _ts(pts) and _ts(pts) > start:
                 rep['dropped: last change after the start'] += 1
                 rep[f'dropped: last change after the start ({kind})'] += 1
                 rep[f"dropped in batch {d.get('batch')}"] += 1
                 continue
+            # kept, counted per batch (founder 2026-10-20: kept for these levels; the rule is applied again at read time, so it can
+            # be tightened later without touching the append-only table): no TE time, a change in the start's own minute (TE prints
+            # minutes), and the over-1pp share of the no-time group where the batch row carries our verified close
+            if not pts:
+                rep[bt + 'kept, no TE timestamp'] += 1
+            elif start is not None and _ts(pts) > start - dt.timedelta(minutes=1):
+                rep[bt + "kept, in the start's own minute"] += 1
+            c = x.get('close') or {}
+            if price(c.get('p1')) and price(c.get('p2')):
+                g = abs(1 / p1 / (1 / p1 + 1 / p2) - 1 / c['p1'] / (1 / c['p1'] + 1 / c['p2'])) * 100
+                grp = 'no TE timestamp' if not pts else 'with a TE timestamp'
+                rep[f'{bt}{grp}, with our close'] += 1
+                rep[f'{bt}{grp}, over 1pp vs our close'] += g > 1
             tour = str(f.get('tournament_name') or '').strip()
             rows.append({'dedupe_key': '|'.join(str(v) for v in (TE_SOURCE, f['event_date'], tour, a if fw else b, b if fw else a, x['ek'], pw, pl, x['pageSha256'])),
                          'source': TE_SOURCE, 'label': APPROX_LABEL, 'match_date': f['event_date'], 'tournament': tour,
@@ -1202,6 +1216,14 @@ def te_rows(docs, fixture_of, flip_start=lambda ek: None):
                                     'startChecked': start.isoformat().replace('+00:00', 'Z') if start else None, 'startKind': kind}})
             rep['stored'] += 1
     return rows, dict(rep)
+
+
+def te_in_play(r):
+    """The in-play rule at READ time (founder 2026-10-20): a stored TE row whose last change (price_ts) is after the start it was
+    checked against (detail.startChecked) is never fed. te-import applies the same rule; reading it here as well keeps the
+    rule in one place that can be tightened later without touching the append-only table. No time or no start: fed."""
+    t, s = _ts(r.get('price_ts')), _ts((r.get('detail') or {}).get('startChecked'))
+    return bool(t and s and t > s)
 
 
 def te_flip_starts(eks):

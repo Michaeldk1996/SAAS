@@ -4073,7 +4073,9 @@ window.EntryListsTab = (function(){
         + (advMeta.fetchStatus === 'stale' ? '  ·  COULD NOT UPDATE' : ''));
     }
     if(drawMeta){
-      parts.push('Draw source (protennislive) — last fetched by us: ' + fmtDateTime(drawMeta.generatedAt));
+      // B9 (founder brief 2026-10-20): when the draw CONTENT last changed (protennislive's own PDF date), never our fetch
+      // time — a daily fetch of unchanged two-week-old draws read as fresh.
+      parts.push('Draw source (protennislive) — content last changed: ' + fmtDateTime(drawMeta.sourcePublished));
     }
     // §2.3 footer. Item 6.4: `rank` is read verbatim from the acceptance list the source publishes
     // (build-entry-lists-advance.mjs, row[0]). TEN-401 r1 fix 5: where the list prints none (a protennislive draw
@@ -26574,22 +26576,36 @@ function tourxWueBarHtml(name){
   const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
   const rounds = t && Array.isArray(t.matches) ? window.WueSheet.sheetRounds(t) : [];
   const n = tourxEsc(name);
-  const items = [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
-    .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title.replace('ROUND', 'round'))}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')));
+  // A5 (founder brief 2026-10-20): never an error after the click. No rows yet → the button is disabled BEFORE the
+  // click with a plain line; rows in → the line says which rounds (matches per round, from the published rows).
+  const items = rounds.length
+    ? [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
+        .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title.replace('ROUND', 'round'))}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')))
+    : [tourxWueDisabledSeg('Download .xlsx')];
+  const note = rounds.length
+    ? 'In: ' + rounds.map(r => `${r.title.replace('ROUND', 'Round')} (${r.rows.length / 2} match${r.rows.length === 2 ? '' : 'es'})`).join(' · ')
+    : 'Available after the next data update.';
   return `<div style="margin-top:18px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
       ${tourxCapsLbl('W/UE sheet')}
       <div class="tx-segwrap">${items.join('')}</div>
-      <span id="tourxWueMsg" role="status" style="font-size:12px;color:var(--text-label);"></span>
+      <span id="tourxWueMsg" role="status" data-note="${tourxRpEsc(note)}" style="font-size:12px;color:var(--text-label);">${tourxRpEsc(note)}</span>
     </div>`;
 }
+// A disabled chip: no handler, aria-disabled, --text-label, not-allowed cursor — the page's own disabled segment (ma-seg).
+function tourxWueDisabledSeg(label){
+  return `<span class="tx-seg" aria-disabled="true" style="font-size:11.5px;padding:7px 11px;font-family:'Hanken Grotesk',sans-serif;cursor:not-allowed;color:var(--text-label);">${label}</span>`;
+}
 function tourxWueMsg(t){ const el = document.getElementById('tourxWueMsg'); if (el) el.textContent = t; }
+function tourxWueRestore(){ const el = document.getElementById('tourxWueMsg'); if (el) el.textContent = el.getAttribute('data-note') || ''; }
 function tourxWueDownload(name){
   tourxWueMsg('Fetching latest data…');
-  window.WueSheet.download(name).then(n => tourxWueMsg(`Downloaded · ${n} round tab${n === 1 ? '' : 's'}`), e => tourxWueMsg('Download failed: ' + e.message));
+  window.WueSheet.download(name).then(n => tourxWueMsg(`Downloaded · ${n} round tab${n === 1 ? '' : 's'}`),
+    () => { tourxWueMsg('Couldn’t reach the latest data — try again in a minute.'); setTimeout(tourxWueRestore, 6000); });
 }
 function tourxWueCopy(name, round){
   tourxWueMsg('Fetching latest data…');
-  window.WueSheet.copyRound(name, round).then(n => tourxWueMsg(`Copied ${n} player rows`), e => tourxWueMsg('Copy failed: ' + e.message));
+  window.WueSheet.copyRound(name, round).then(n => tourxWueMsg(`Copied ${n} player rows`),
+    () => { tourxWueMsg('Couldn’t copy — try again in a minute.'); setTimeout(tourxWueRestore, 6000); });
 }
 function renderTourxReports(){
   const el = document.getElementById('tourxReports');

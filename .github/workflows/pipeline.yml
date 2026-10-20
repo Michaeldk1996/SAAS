@@ -973,6 +973,9 @@ jobs:
           # regime). Committed but not copied = silent 404 and the tab loses discovery /
           # every upcoming tournament. Best-effort so an absent shard never blocks deploy.
           cp entry_lists_advance.json _site/ 2>/dev/null || true
+          # Official ATP draws (tools/draws/build-draws.py via draws.yml; founder approval 2026-10-20). Published as data
+          # only — no page reads it until the draw view / W/UE quarters are approved. Absent before draws.yml's first run.
+          cp draws.json _site/ 2>/dev/null || true
           # TEN-88 option B: per-player CAREER meeting shards + their index gate the
           # "vs this style" detail list on the Playing-style tab. The index gates the
           # fetch, so committed-but-not-copied = silent 404 and the list falls back to

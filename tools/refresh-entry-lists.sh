@@ -61,8 +61,15 @@ ps = sum(len(s.get('players',[])) for t in ts for s in t.get('sections',[]))
 print(len(ts), ps)
 ") || true
 
-if git diff --quiet -- entry_lists.json; then
-  echo "no change; nothing to publish"; STATUS="no-op"; exit 0
+# B10 (founder brief 2026-10-20): compare CONTENT, not bytes — generatedAt moves every run, so a byte diff committed a
+# timestamp-only change every day. Same content as the committed file -> restore it and stop.
+same_content_as() {  # <git-ref>: 0 if entry_lists.json matches that ref's copy minus generatedAt
+  git show "$1:entry_lists.json" > /tmp/bsp-entry-lists-ref.json 2>/dev/null || return 1
+  python3 tools/entry-lists/content-hash.py entry_lists.json /tmp/bsp-entry-lists-ref.json
+}
+if same_content_as HEAD; then
+  git checkout -- entry_lists.json
+  echo "no content change (generatedAt only); nothing to publish"; STATUS="no-op"; exit 0
 fi
 
 # race-safe publish: rebase our change onto latest main
@@ -72,7 +79,7 @@ for attempt in 1 2 3; do
   git fetch --quiet origin main
   git reset --quiet origin/main
   cp /tmp/bsp-entry-lists.json entry_lists.json
-  if git diff --quiet -- entry_lists.json; then echo "matched remote; no-op"; STATUS="no-op"; exit 0; fi
+  if same_content_as origin/main; then git checkout -- entry_lists.json; echo "matched remote content; no-op"; STATUS="no-op"; exit 0; fi
   git add entry_lists.json
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))
   HUMAN_NOW=$(printf '%dm%02ds' $(( ELAPSED_NOW / 60 )) $(( ELAPSED_NOW % 60 )))

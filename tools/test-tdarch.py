@@ -320,6 +320,45 @@ check('in-play rule: each kept row names the start it was checked against',
 nrows, _ = T.te_rows(idocs, ifx.get)
 check('control: without the live-flip start, 73 is checked against its schedule (11:00) and kept — the verified start decides',
       73 in [r['event_key'] for r in nrows])
+# founder 2026-10-20 (item 5 revised): kept and counted per batch — no TE time, a change in the start's own minute, no start;
+# the over-1pp share of the no-time group where the row carries our verified close
+crows, crep = T.te_rows([{'batch': 'calib-x', 'complete': True, 'rows': [
+    dict(TX(81, pin=PIN(None)), close={'startTs': '2026-09-28T10:00:00Z', 'p1': 1.50, 'p2': 2.60}),             # no time, gap 0
+    dict(TX(82, pin=PIN(None)), close={'startTs': '2026-09-28T10:00:00Z', 'p1': 1.30, 'p2': 3.50}),             # no time, gap > 1pp
+    dict(TX(83, pin=PIN('2026-09-28T10:00:00Z')), close={'startTs': '2026-09-28T10:00:30Z', 'p1': 1.50, 'p2': 2.60}),   # start's minute
+    dict(TX(84, pin=PIN('2026-09-28T09:58:00Z')), close={'startTs': '2026-09-28T10:00:30Z', 'p1': 1.50, 'p2': 2.60})]}],  # before it
+    {str(k): G(k, '2026-09-28') for k in (81, 82, 83, 84)}.get)
+check('item 5 revised: no-time and start-minute rows are KEPT and counted per batch, with the no-time over-1pp share',
+      sorted(r['event_key'] for r in crows) == [81, 82, 83, 84] and crep.get('batch calib-x: kept, no TE timestamp') == 2
+      and crep.get("batch calib-x: kept, in the start's own minute") == 1 and crep.get('batch calib-x: no TE timestamp, with our close') == 2
+      and crep.get('batch calib-x: no TE timestamp, over 1pp vs our close') == 1 and crep.get('batch calib-x: with a TE timestamp, with our close') == 2, crep)
+# the in-play rule at read time: a stored row whose price_ts is after its startChecked is never fed (even if an import let it in)
+rin = dict(te[0], id=90, event_key=91, price_ts='2026-09-28T10:05:00Z', detail=dict(te[0]['detail'], startChecked='2026-09-28T10:00:00Z'))
+rok = dict(te[0], id=91, event_key=92, price_ts=None, detail=dict(te[0]['detail'], startChecked='2026-09-28T10:00:00Z'))
+fed = {r['eventKey'] for r in T.lower_feed_rows([rin, rok])}
+check('read time: an in-play TE row (price_ts after startChecked) is not fed; a row with no time is', fed == {92}, fed)
+_tip = T.te_in_play
+try:
+    T.te_in_play = lambda r: False
+    check('control: without the read-time rule the in-play row is fed', {r['eventKey'] for r in T.lower_feed_rows([rin, rok])} == {91, 92})
+finally:
+    T.te_in_play = _tip
+# paging by id: a select that names no id still pages past 1,000 rows (te-import's closes read failed on the 1,001st row)
+P = T.P; _rest = P.rest
+try:
+    pages = []
+    def fake_rest(method, path, body=None, headers=None, **k):
+        import re as _re
+        sel = _re.search(r'select=([^&]+)', path).group(1); last = int(_re.search(r'id=gt\.(\d+)', path).group(1)); pages.append(sel)
+        ids = [i for i in range(1, 2501) if i > last][:1000]
+        return 200, [dict({'id': i} if 'id' in sel.split(',') else {}, event_key=i) for i in ids], {}
+    P.rest = fake_rest
+    got = P.select_all(P.CLOSE, 'event_key')
+    check('select_all pages past 1,000 rows when the select names no id (id added); 2,500 rows read', len(got) == 2500 and all(p.startswith('id,') for p in pages), (len(got), pages[:2]))
+    got2 = list(P.select_pages(P.CLOSE, 'event_key'))
+    check('select_pages too', sum(len(g) for g in got2) == 2500)
+finally:
+    P.rest = _rest
 # coverage gained: TE prices a match only where no close, start - 10 or api-tennis Pinnacle holds it
 crow = lambda ek, y, lv='ch': {'event_key': ek, 'match_date': f'{y}-05-01', 'detail': {'level': lv}}
 cov = T.te_coverage([crow(1, 2024), crow(2, 2024), crow(3, 2024), crow(4, 2023, 'atp-q'), crow(5, 2024)],
