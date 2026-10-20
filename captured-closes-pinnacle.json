@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-19T18:02:49.707Z",
+ "generatedAt": "2026-10-20T10:45:40.874Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "ce5d7293eba74709d31092956dcbc3fb0aafd4f4",
-  "at": "2026-10-19T17:47:51Z"
+  "commit": "25a0c55f4bcbae06f02172de16d3fab74a32b3ec",
+  "at": "2026-10-20T10:34:01Z"
  },
- "commitsScanned": 5400,
+ "commitsScanned": 5443,
  "lastRun": {
-  "from": "2026-10-19T11:49:49Z",
-  "snapshots": 27,
-  "added": 7,
+  "from": "2026-10-19T17:47:51Z",
+  "snapshots": 44,
+  "added": 6,
   "replaced": 0,
-  "series": 58,
-  "kept": 32,
+  "series": 59,
+  "kept": 36,
   "bySource": {
-   "api-tennis-live": 32
+   "api-tennis-live": 36
   },
   "byBook": {
-   "Pinnacle +30s": 32
+   "Pinnacle +30s": 36
   },
   "dropped": {
-   "noStart": 26
+   "noStart": 23
   }
  },
  "stats": {
@@ -9372,6 +9372,108 @@
    "round": null,
    "qualifying": false,
    "event": "ATP Lyon (France) - Qualification"
+  },
+  {
+   "eventKey": 12171790,
+   "date": "2026-10-20",
+   "p1Key": 427,
+   "p2Key": 56893,
+   "p1Name": "T. Griekspoor",
+   "p2Name": "M. Schoenhaus",
+   "p1": 1.271,
+   "p2": 4.13,
+   "at": "2026-10-20T08:23:37.798Z",
+   "trueStart": "2026-10-20T09:36:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12171791,
+   "date": "2026-10-20",
+   "p1Key": 949,
+   "p2Key": 388,
+   "p1Name": "M. Navone",
+   "p2Name": "J. M. Cerundolo",
+   "p1": 1.632,
+   "p2": 2.4,
+   "at": "2026-10-20T09:01:34.383Z",
+   "trueStart": "2026-10-20T09:36:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12171882,
+   "date": "2026-10-20",
+   "p1Key": 13091,
+   "p2Key": 3317,
+   "p1Name": "T. Atmane",
+   "p2Name": "R. Hijikata",
+   "p1": 2.06,
+   "p2": 1.84,
+   "at": "2026-10-20T04:21:33.140Z",
+   "trueStart": "2026-10-20T06:21:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12171889,
+   "date": "2026-10-20",
+   "p1Key": 1906,
+   "p2Key": 2978,
+   "p1Name": "S. Tsitsipas",
+   "p2Name": "A. Kovacevic",
+   "p1": 1.269,
+   "p2": 4.14,
+   "at": "2026-10-20T07:43:21.255Z",
+   "trueStart": "2026-10-20T08:06:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172164,
+   "date": "2026-10-20",
+   "p1Key": 9608,
+   "p2Key": 1057,
+   "p1Name": "S. Shimabukuro",
+   "p2Name": "R. Safiullin",
+   "p1": 6.2,
+   "p2": 1.148,
+   "at": "2026-10-20T05:54:14.549Z",
+   "trueStart": "2026-10-20T06:21:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172385,
+   "date": "2026-10-20",
+   "p1Key": 1748,
+   "p2Key": 1101,
+   "p1Name": "P. Herbert",
+   "p2Name": "S. Baez",
+   "p1": 1.617,
+   "p2": 2.44,
+   "at": "2026-10-20T09:41:47.085Z",
+   "trueStart": "2026-10-20T10:02:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
   }
  ]
 }
