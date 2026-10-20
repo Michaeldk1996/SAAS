@@ -130,7 +130,7 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   // ── 8 · wiring ──
   const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
   check('page loads wue-sheet.js', html.includes('<script src="wue-sheet.js"></script>'));
-  check('Reports card renders the W/UE bar', html.includes('${filterBar}${tourxWueBarHtml(tourxState.tour)}${viewBar}${body}'));
+  check('Reports card renders the W/UE bar', html.includes("${filterBar}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}"));
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
   check('deploy copies wue-sheet.js into _site', yml.includes('cp wue-sheet.js _site/'));
   check('deploy asserts wue-sheet.js present', /h2h-core\.js wue-sheet\.js \\/.test(yml));

@@ -26568,7 +26568,7 @@ function tourxCapsLbl(t, extra){ return `<span style="font-size:10.5px;letter-sp
 // W/UE sheet (founder brief 2026-10-20): a download + per-round copy for the selected tournament. The rounds offered
 // come from the copy the page loaded; the export itself re-reads tournament-progression.json at click time (wue-sheet.js).
 function tourxWueBarHtml(name){
-  if (typeof window.WueSheet === 'undefined') return '';
+  if (typeof window === 'undefined' || !window.WueSheet) return '';
   const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
   const rounds = t && Array.isArray(t.matches) ? window.WueSheet.sheetRounds(t) : [];
   const n = tourxEsc(name);
@@ -26631,7 +26631,7 @@ function renderTourxReports(){
   if (tourxState.view === 'player') body = tourxPlayerViewHtml(T);
   else if (tourxState.view === 'h2h') body = tourxH2HViewHtml(T);
   else body = tourxRoundViewHtml(T);
-  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${tourxWueBarHtml(tourxState.tour)}${viewBar}${body}</div>`;
+  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}</div>`;
   // Preserve focus + caret in the comparison player search across re-renders.
   const cmpInp = document.getElementById('tourxCmpSearch');
   if (cmpInp && tourxState.cmpOpen){ cmpInp.focus(); const v = cmpInp.value; cmpInp.setSelectionRange(v.length, v.length); }
