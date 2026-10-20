@@ -298,7 +298,7 @@ check('TEN-449 template: every push first rebases onto main (the odds batch also
   for (const n of ['Commit the refreshed store', 'Commit the set repairs']) {
     assert.ok(/git pull -q --rebase origin main\n\s*git push -q origin HEAD:refs\/heads\/main\s*$/.test(stepRun(tpl, n)), `${n}: no rebase right before its push`);
   }
-  assert.ok(!/git push[^\n]*(--force|-f\b)/.test(tpl), 'never a forced push');
+  assert.ok(!/git push[^\n]*(--force|-f\b|\s\+\S)/.test(tpl), 'never a forced push (no --force, -f or +refspec)');
 });
 check('TEN-449 template: SAAS checked out into saas/ (public repo, main, no token); store checked out at the root; Node 22', () => {
   assert.ok(/repository: michaeldk1996\/SAAS\n\s+ref: main\n\s+path: saas\n\s+persist-credentials: false/.test(tpl), 'the SAAS checkout');

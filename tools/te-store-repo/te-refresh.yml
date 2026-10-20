@@ -93,8 +93,9 @@ jobs:
         run: node saas/tools/te-history-guard.mjs . --prev-ref HEAD
       - name: Commit the refreshed store
         # te-history/ has one writer (this workflow, serialised by the te-refresh concurrency group); the odds batch also
-        # pushes to this repo, under te-odds/ only — so each push first rebases onto main (disjoint paths: no conflict;
-        # a conflict means a second te-history writer, and the step fails and alerts rather than overwrite it)
+        # pushes to this repo, under te-odds/ only — so each push first rebases onto main (disjoint paths: no conflict).
+        # A text conflict fails the step and alerts; a second te-history writer touching other lines would merge
+        # silently, so te-history/ must keep exactly one writer: this workflow
         run: |
           if [ -z "$(git status --porcelain -- te-history te-history-index.json te-refresh-log.jsonl)" ]; then
             echo "No change — nothing to commit."
