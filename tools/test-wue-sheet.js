@@ -68,7 +68,8 @@ process.env.API_TENNIS_KEY = process.env.API_TENNIS_KEY || 'test';
 const { progressionSheetMatches: psm } = require(path.join(ROOT, 'bsp-pipeline.js'));
 check('bsp-pipeline.js exports progressionSheetMatches', typeof psm === 'function');
 const progressionSheetMatches = typeof psm === 'function' ? psm : () => [];
-const st = (key, type, name, extra) => Object.assign({ stat_period: 'match', player_key: key, stat_type: type, stat_name: name }, extra);
+// stat_name arrives UPPER-cased here on purpose: the feed changes casing by season, and the reader must case-fold.
+const st = (key, type, name, extra) => Object.assign({ stat_period: 'match', player_key: key, stat_type: type, stat_name: String(name).toUpperCase() }, extra);
 const sheet = (k) => [
   st(k, 'Points', 'Winners', { stat_value: '20' }), st(k, 'Points', 'Unforced errors', { stat_value: '15' }),
   st(k, 'Points', 'Total Points Won', { stat_won: '70', stat_total: '140' }),

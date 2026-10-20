@@ -61,6 +61,7 @@ const FILES = [
   'tools/test-ten327-house-ratings.js',  // TEN-327: builds api-tennis statistics rows for the Live tab
   'tools/ten327-probe.mjs',              // TEN-327: same, in the deployed-page probe
   'test-ten417-live.mjs',                // TEN-417: drops one feed stat row from the Live fixture
+  'tools/test-wue-sheet.js',             // W/UE sheet: builds api-tennis statistics rows for progressionSheetMatches
 ];
 
 // A line is SAFE when it case-folds the name on the read side, either by
