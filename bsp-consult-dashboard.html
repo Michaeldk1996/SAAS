@@ -26702,7 +26702,7 @@ function tourxWueBarHtml(name){
     ? [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
         .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title)}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')))
     : [tourxWueDisabledSeg('Download .xlsx')];
-  const partial = tourxPartialText(name);
+  const partial = typeof tourxPartialText === 'function' ? tourxPartialText(name) : '';
   const note = (partial ? partial + ' · ' : '') + (rounds.length ? window.WueSheet.roundStatus(t, draw) : 'Available after the next data update.');
   return `<div style="margin-top:18px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
       ${tourxCapsLbl('W/UE sheet')}

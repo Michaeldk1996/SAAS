@@ -188,7 +188,9 @@ function roundStatus(entry, draw) {
   }).join(' · ');
 }
 
-const fmt = (v, i) => v == null ? DASH : typeof v === 'string' ? v : (i >= 3 ? v.toFixed(2) : String(v));   // values[3..6] are the ratios
+// Founder ruling 2026-10-21: every stat is a REAL NUMBER with 2 decimals (0.00), never text. Copy prints them with a
+// DOT decimal whatever the viewer's browser locale: Number#toFixed is locale-independent (never toLocaleString here).
+const fmt = (v) => v == null ? DASH : typeof v === 'string' ? v : v.toFixed(2);
 
 // Tab-separated rows for pasting into a Round tab (data rows only — no header,
 // so it never overwrites the tab's own header row).
@@ -214,7 +216,8 @@ function sheetXml(round) {
   round.rows.forEach((r, k) => {
     const n = k + 2;
     if (r.header) { rows.push(`<row r="${n}"><c r="A${n}" t="inlineStr" s="1"><is><t>${xmlEsc(r.header)}</t></is></c></row>`); return; }
-    rows.push(`<row r="${n}">${cell('A' + n, r.player)}${r.values.map((v, i) => cell(colName(i + 1) + n, v, i >= 3)).join('')}</row>`);
+    // every stat column carries the 0.00 number format (s="2"); the stored value is the number itself
+    rows.push(`<row r="${n}">${cell('A' + n, r.player)}${r.values.map((v, i) => cell(colName(i + 1) + n, v, true)).join('')}</row>`);
   });
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'

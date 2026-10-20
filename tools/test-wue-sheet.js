@@ -46,7 +46,7 @@ check('UE/P = UE ÷ TT (18/113 = 0.16)', d[4] === 0.16, d[4]);
 check('W/UE = W ÷ UE (27/18 = 1.50)', d[5] === 1.5, d[5]);
 check('DR from raw counts: 60/100 return, 50/100 serve → 60/(100−50) = 1.2',
   W.dominanceRatio({ won: 50, total: 100 }, { won: 60, total: 100 }) === 1.2);
-check('TSV prints ratios with 2 decimals', W.roundTsv(rounds[0]).split('\n')[0] === 'J. Duckworth\t27\t18\t113\t0.24\t0.16\t1.50\t1.21', W.roundTsv(rounds[0]).split('\n')[0]);
+check('TSV: every stat with 2 dot decimals (ruling 2026-10-21)', W.roundTsv(rounds[0]).split('\n')[0] === 'J. Duckworth\t27.00\t18.00\t113.00\t0.24\t0.16\t1.50\t1.21', W.roundTsv(rounds[0]).split('\n')[0]);
 
 // ── 3 · dashes vs zero ──
 const side = (o) => Object.assign({ name: 'X. Test', winners: null, unforcedErrors: null, totalPoints: null, servicePoints: null, returnPoints: null }, o);
@@ -134,12 +134,25 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   check('Reports card renders the W/UE bar', html.includes("${filterBar}${partialLine}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}"));
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
   check('deploy copies wue-sheet.js into _site', yml.includes('cp wue-sheet.js _site/'));
-  check('deploy asserts wue-sheet.js present', /h2h-core\.js wue-sheet\.js \\/.test(yml));
+  check('deploy asserts wue-sheet.js present', /h2h-core\.js wue-sheet\.js( draw-view\.js)? \\/.test(yml));
   check('live publish lane copies wue-sheet.js (tools/site-code.sh)', fs.readFileSync(path.join(ROOT, 'tools', 'site-code.sh'), 'utf8').includes('cp wue-sheet.js "$SITE/"'));
   check('live publish lane requires wue-sheet.js (publish-site.mjs CODE_REQUIRED)', /CODE_REQUIRED = \[[^\]]*'wue-sheet\.js'/.test(fs.readFileSync(path.join(ROOT, 'tools', 'publish-site.mjs'), 'utf8')));
   const pipe = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
   check('progression entry publishes matches[]', pipe.includes('matches: progressionSheetMatches(played, roundLabelByName),'));
 
-  console.log(`\n${pass} passed, ${fail} failed`);
+  // ruling 2026-10-21: every stat cell is a NUMBER (never text) with the 0.00 format, and Copy uses a dot decimal whatever
+// the viewer's locale — proven under a comma-decimal locale (de-DE) forced onto toLocaleString / Intl.
+{
+  const z2 = Buffer.from(W.buildXlsx(FX)).toString('latin1'), sd = z2.slice(z2.indexOf('<sheetData>'), z2.indexOf('</sheetData>'));
+  const nums = [...sd.matchAll(/<c r="([B-H])(\d+)"( s="(\d)")?><v>([^<]*)<\/v><\/c>/g)];
+  check('xlsx: every stat cell (W, UE, TT, W/P, UE/P, W/UE, DR) is a number with the 0.00 format (s=2); none is text', nums.length === 63 && nums.every(m => m[4] === '2' && /^-?\d+(\.\d+)?$/.test(m[5])) && !/<c r="[B-H]\d+" t="inlineStr"><is><t xml:space="preserve">\d/.test(sd), `${nums.length} numeric cells`);
+  const tl = Number.prototype.toLocaleString, NF = Intl.NumberFormat;
+  Number.prototype.toLocaleString = function () { return tl.call(this, 'de-DE', { minimumFractionDigits: 2 }); };
+  Intl.NumberFormat = function () { return new NF('de-DE'); };
+  const t = W.roundTsv(rounds[0]);
+  Number.prototype.toLocaleString = tl; Intl.NumberFormat = NF;
+  check('Copy under a comma-decimal locale still prints dot decimals ("27.00", "0.24"), never "27,00"', /\t27\.00\t/.test(t) && /\t0\.24\t/.test(t) && !/\d,\d/.test(t), t.split('\n')[0]);
+}
+console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
