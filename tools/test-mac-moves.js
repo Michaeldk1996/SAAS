@@ -76,5 +76,8 @@ const dy = wf('draws.yml');
 check('draws.yml rides the pipeline (workflow_run) — schedules are throttled on this repo', /workflow_run:[^\n]*\n\s*workflows: \['BSP data pipeline'\]/.test(dy) && /cron: '17 \*\/2 \* \* \*'/.test(dy));
 check('draws.yml cadence gate: measured from the last run that FETCHED (never a skipped run), >= 110 min (6600 s)', /-lt 6600/.test(dy) && /actions: read/.test(dy) && /tools\/draws\/last-fetch-run\.py/.test(dy) && !/runs\?status=success&per_page=1/.test(dy));
 check('draws.yml: every step after the gate is conditional on it', (() => { const steps = dy.split('\n      - ').slice(3); return steps.length >= 5 && steps.every(x => /if: steps\.gate\.outputs\.go == '1'/.test(x)); })());
+check('draws.yml: the gate\'s sparse checkout has its own path (.gate) — a root sparse checkout left the full checkout without build-draws.py (19:40/19:45Z runs)',
+  /path: \.gate, sparse-checkout: tools\/draws\/last-fetch-run\.py/.test(dy) && /python3 \.gate\/tools\/draws\/last-fetch-run\.py/.test(dy)
+  && (() => { const full = dy.split('\n      - ').filter(x => /uses: actions\/checkout@v4/.test(x) && !/path: \.gate/.test(x)); return full.length === 1 && !/sparse-checkout/.test(full[0]); })());
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

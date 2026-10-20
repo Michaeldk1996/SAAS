@@ -25,8 +25,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      # Its OWN path: a sparse checkout at the workspace root persisted into the full checkout below, which then had no
+      # tools/draws/build-draws.py (runs 39485399654 + 39486162721, 20 Oct 19:40/19:45Z — no request was sent).
       - uses: actions/checkout@v4
-        with: { ref: main, sparse-checkout: tools/draws/last-fetch-run.py, sparse-checkout-cone-mode: false }
+        with: { ref: main, path: .gate, sparse-checkout: tools/draws/last-fetch-run.py, sparse-checkout-cone-mode: false }
       - name: Cadence gate (a pipeline-triggered run goes only if the last successful draws run is >= 110 min old)
         id: gate
         env:
@@ -35,7 +37,7 @@ jobs:
           if [ "$GITHUB_EVENT_NAME" != "workflow_run" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
           # The clock runs from the last run that FETCHED (its build step succeeded) — never from a skipped run, which also
           # ends "success": measuring from those let a run every <110 min skip forever (20 Oct 18:00 / 18:07, fixed same day).
-          last=$(GH_TOKEN="$GH_TOKEN" python3 tools/draws/last-fetch-run.py "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
+          last=$(GH_TOKEN="$GH_TOKEN" python3 .gate/tools/draws/last-fetch-run.py "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
           if [ -n "$last" ] && [ $(( $(date +%s) - $(date -d "$last" +%s) )) -lt 6600 ]; then
             echo "last draws run that fetched started $last (< 110 min ago) — skip"; echo "go=0" >> "$GITHUB_OUTPUT"
           else echo "go=1 (last fetching run: ${last:-none found})"; echo "go=1" >> "$GITHUB_OUTPUT"; fi
