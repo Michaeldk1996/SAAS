@@ -22658,7 +22658,7 @@ function pp2LoadSplits(key){
   const load = loadCareerSplitsFor(k);
   load.then(() => pp2RepaintIfOpen(k));
   // Ruling 1: the tour file carries the build date "Data paused" reads (sfFeedPaused) — load it with his file.
-  if (!careerSplitsTour) loadCareerSplitsTour().then(t => { if (t) pp2RepaintIfOpen(k); });
+  if (typeof careerSplitsTour !== 'undefined' && !careerSplitsTour && typeof loadCareerSplitsTour === 'function') loadCareerSplitsTour().then(t => { if (t) pp2RepaintIfOpen(k); });
   return load;
 }
 function showPlayerProfileV2(key){
