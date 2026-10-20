@@ -77,7 +77,7 @@ file we hold is irreplaceable.
   `tdarch.py te-import` (`historical-archive.yml` modes `te-dry-run` / `te-import`) from COMPLETE batch files, the result and
   names from the current api-tennis fixture. A TE row carries `price_ts` = the later side's last change (null = TE shows no
   change; kept in the archive, shown on no page — founder 2026-10-19), `fetched_at` = when the page was read, and names its TE match and page sha256 (CHECKs); it claims no cut, start or
-  Oddspapi fixture. ITF is out of scope (refused by the importer). **Test:** `tools/test-historical-archive-sql.py`
+  Oddspapi fixture. ITF is out of scope (refused by the importer). **In-play rule (founder 2026-10-20):** a price whose last change (`price_ts`) is after the start is not stored — our verified start (the batch row's close start, else `live_flip_log`) where we have one, otherwise api-tennis's scheduled start (UTC); each stored row names the start it was checked against (`detail.startChecked` / `startKind`); the dropped count per batch is in the import report. **Test:** `tools/test-historical-archive-sql.py`
   (negative controls), `tools/test-tdarch.py`.
 - **Where it is used:** the Database join only (`database.md` "Pinnacle (approx.)"), never over a Tennis-Data or Oddspapi
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are

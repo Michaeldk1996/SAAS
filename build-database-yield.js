@@ -446,9 +446,10 @@ const LOWER_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', '
   'snapshotId', 'source', 'cutTs', 'gapToStartS', 'comment'];
 // founder brief 2026-10-19 (item 3), the measured order: close > start - 10 > api-tennis Pinnacle > our captured Bet365 >
 // api-tennis's Bet365 snapshot (7) > a dash
-// Tennis Explorer's Pinnacle (8, founder 2026-10-19): after start - 10, before api-tennis Pinnacle. Its rows reach the feed only
-// when tools/tdarch.py TE_FEED_ON is on (off until the founder approves the calibration), so with it off nothing here moves.
-const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 8: 1.5, 2: 2, 6: 3, 7: 4 };
+// Tennis Explorer's Pinnacle (8; founder 2026-10-20, after the calibration: median 0.10pp on 988): after api-tennis Pinnacle,
+// before our captured Bet365 — close > start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > captured Bet365 >
+// api-tennis Bet365 > a dash. Its rows reach the feed when tools/tdarch.py TE_FEED_ON is on.
+const LOWER_RANK = { 3: 0, 4: 0, 5: 1, 2: 1.5, 8: 1.75, 6: 3, 7: 4 };
 const TE_SOURCE = 'Tennis Explorer · Pinnacle';
 const LOWER_LEVEL_NAME = { 'atp-q': 'ATP Qualifying', ch: 'Challenger', 'ch-q': 'Challenger Qualifying', itf: 'ITF',
   // founder brief 2026-10-19 (item 1): an ATP main-draw match at an event Tennis-Data does not carry (Davis Cup, United Cup,

@@ -286,13 +286,47 @@ try:
     check('TE_FEED_ON off: the feed carries no TE row — match 31 stays on api-tennis Pinnacle (nothing a page shows changes)',
           sorted((r['eventKey'], r['source']) for r in off) == [(31, T.APPROX_SOURCE), (32, T.START10_SOURCE)], off)
     T.TE_FEED_ON = True
-    on = T.lower_feed_rows(tcur)
-    check('TE_FEED_ON on: TE over api-tennis Pinnacle (match 31), start - 10 over TE (match 32); the feed carries no time (the archive keeps it)',
-          sorted((r['eventKey'], r['source']) for r in on) == [(31, T.TE_SOURCE), (32, T.START10_SOURCE)]
-          and 'priceTs' not in next(r for r in on if r['eventKey'] == 31), on)
+    tcur2 = tcur + [dict(te[0], id=60, event_key=33), dict(te[0], id=61, event_key=34), dict(ar[1], id=62, event_key=34, source=T.B365_SOURCE)]
+    on = T.lower_feed_rows(tcur2)
+    # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365
+    check('TE_FEED_ON on (order of 2026-10-20): api-tennis Pinnacle over TE (31), start - 10 over TE (32), TE alone (33), TE over api-tennis Bet365 (34); no time in the feed',
+          sorted((r['eventKey'], r['source']) for r in on) == [(31, T.APPROX_SOURCE), (32, T.START10_SOURCE), (33, T.TE_SOURCE), (34, T.TE_SOURCE)]
+          and all('priceTs' not in r for r in on), on)
 finally:
     T.TE_FEED_ON = orig
-check('TE_FEED_ON is committed OFF until the founder approves the calibration', T.TE_FEED_ON is False)
+check('TE_FEED_ON is committed ON (founder 2026-10-20: the calibration passed)', T.TE_FEED_ON is True)
+# the in-play rule (founder 2026-10-20): a TE price whose last change came after the start is dropped; the start is our
+# verified start (the close's start in the batch row, else our live-flip), otherwise api-tennis's scheduled start (UTC)
+PIN = lambda ts: {'p1': 1.5, 'p2': 2.6, 'p1Ts': ts, 'p2Ts': None, 'open': {}, 'moves': [1, 0]}
+idocs = [{'batch': 'atp-q-01', 'complete': True, 'rows': [
+    dict(TX(71, pin=PIN('2026-09-28T10:05:00Z')), close={'startTs': '2026-09-28T10:00:00Z'}),        # after our close's start -> dropped
+    dict(TX(72, pin=PIN('2026-09-28T09:55:00Z')), close={'startTs': '2026-09-28T10:00:00Z'}),        # before it -> kept
+    TX(73, pin=PIN('2026-09-28T10:05:00Z')),                                                          # after our live-flip -> dropped
+    TX(74, pin=PIN('2024-03-01T12:31:00Z')),                                                          # after the scheduled 12:30 -> dropped
+    TX(75, pin=PIN('2024-03-01T12:29:00Z')),                                                          # before it -> kept
+    TX(76, pin=PIN('2024-03-01T12:31:00Z')),                                                          # no time on the fixture -> kept, counted
+    TX(77, pin=PIN(None))]}]                                                                         # no change recorded -> kept
+G = lambda ek, d, tm=None: dict(F(ek, 'Challenger Men Singles', d=d), **({'event_time': tm} if tm else {}))
+ifx = {'71': G(71, '2026-09-28'), '72': G(72, '2026-09-28'), '73': G(73, '2026-09-28', '11:00'), '74': G(74, '2024-03-01', '12:30'),
+       '75': G(75, '2024-03-01', '12:30'), '76': G(76, '2024-03-01'), '77': G(77, '2024-03-01', '12:30')}
+irows, irep = T.te_rows(idocs, ifx.get, {'73': '2026-09-28T10:00:00Z'}.get)
+check('in-play rule: dropped after our close start (71), after our live-flip although the schedule says 11:00 (73), after the scheduled start (74); kept before them (72, 75), with no change (77), and with no start time (76, counted)',
+      sorted(r['event_key'] for r in irows) == [72, 75, 76, 77] and irep.get('dropped: last change after the start') == 3
+      and irep.get('dropped in batch atp-q-01') == 3 and irep.get('no start time to check (kept)') == 1
+      and irep.get('dropped: last change after the start (scheduled)') == 1 and irep.get('dropped: last change after the start (verified (live-flip))') == 1, irep)
+check('in-play rule: each kept row names the start it was checked against',
+      [(r['event_key'], r['detail']['startKind']) for r in sorted(irows, key=lambda r: r['event_key'])]
+      == [(72, 'verified (our close)'), (75, 'scheduled'), (76, None), (77, 'scheduled')], irows)
+nrows, _ = T.te_rows(idocs, ifx.get)
+check('control: without the live-flip start, 73 is checked against its schedule (11:00) and kept — the verified start decides',
+      73 in [r['event_key'] for r in nrows])
+# coverage gained: TE prices a match only where no close, start - 10 or api-tennis Pinnacle holds it
+crow = lambda ek, y, lv='ch': {'event_key': ek, 'match_date': f'{y}-05-01', 'detail': {'level': lv}}
+cov = T.te_coverage([crow(1, 2024), crow(2, 2024), crow(3, 2024), crow(4, 2023, 'atp-q'), crow(5, 2024)],
+                    [{'event_key': 2, 'source': T.APPROX_SOURCE, 'supersedes': None}, {'event_key': 3, 'source': T.B365_SOURCE, 'supersedes': None},
+                     {'event_key': 5, 'source': T.TE_SOURCE, 'supersedes': None}], {'4'})
+check('coverage: newly priced (1, 5), over api-tennis Bet365 (3); none where api-tennis Pinnacle (2) or our close (4) holds it',
+      cov == {'teWins': {'ch': {'2024': 3}}, 'newlyPriced': {'ch': {'2024': 2}}, 'overB365': {'ch': {'2024': 1}}}, cov)
 td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
 json.dump(tdocs[0], open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
 json.dump(dict(tdocs[0], batch='ch-01', complete=False), open(os.path.join(td, 'te-odds', 'ch-01.json'), 'w'))

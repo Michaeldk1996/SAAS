@@ -919,7 +919,7 @@ LOWER_FEED_COLS = ['date', 'level', 'tournament', 'round', 'winner', 'loser', 'w
 # off, the feed never carries a TE row, so nothing any page shows changes; on, a TE row ranks after start - 10 and before
 # api-tennis's Pinnacle (close > start - 10 > TE > api-tennis Pinnacle > captured Bet365 > api-tennis Bet365). The import
 # (te-import) stores TE rows either way: the archive is evidence, the switch is the reading.
-TE_FEED_ON = False
+TE_FEED_ON = True    # founder 2026-10-20: calibration passed (median 0.10pp on 988) — switched on
 TE_SOURCE = 'Tennis Explorer · Pinnacle'
 TE_HOVER = 'Tennis Explorer, last pre-match price, not a confirmed close'   # one fixed text, no time (the time stays in price_ts)
 TE_LEVELS = ('atp-q', 'atp-x', 'ch', 'ch-q')
@@ -973,7 +973,8 @@ def lower_feed_rows(current):
         k = r['event_key']
         if r.get('source') == TE_SOURCE and not TE_FEED_ON:
             continue
-        rank = 0 if r.get('source') == START10_SOURCE else 0.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE else 1
+        # founder 2026-10-20: start - 10 > api-tennis Pinnacle > Tennis Explorer Pinnacle > api-tennis Bet365
+        rank = 0 if r.get('source') == START10_SOURCE else 1.5 if r.get('source') == TE_SOURCE else 2 if r.get('source') == B365_SOURCE else 1
         if k not in best or rank < best[k][0]:
             best[k] = (rank, r)
     out = []
@@ -1111,7 +1112,34 @@ def te_docs(store):
     return docs, skipped
 
 
-def te_rows(docs, fixture_of):
+def _ts(v):
+    """An ISO instant (Z or offset) -> aware UTC datetime; None when absent or unreadable."""
+    if not v:
+        return None
+    try:
+        t = dt.datetime.fromisoformat(str(v).replace('Z', '+00:00'))
+    except ValueError:
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=dt.timezone.utc)
+
+
+def te_start(x, f, flip_start):
+    """The start the in-play rule measures against (founder 2026-10-20): our VERIFIED start where we have one — the close's
+    start in the batch row (the calibration rows), else our live-flip (live_flip_log, from 17 Sep) — otherwise the SCHEDULED
+    start, api-tennis's event_date + event_time read in UTC (the fixture is asked with timezone=UTC). (start, kind)."""
+    v = _ts(((x.get('close') or {}).get('startTs')))
+    if v:
+        return v, 'verified (our close)'
+    v = _ts(flip_start(str(x.get('ek'))))
+    if v:
+        return v, 'verified (live-flip)'
+    d, t = str(f.get('event_date') or ''), str(f.get('event_time') or '')
+    if re.fullmatch(r'\d{4}-\d\d-\d\d', d) and re.fullmatch(r'\d\d:\d\d', t):
+        return dt.datetime.fromisoformat(f'{d}T{t}:00+00:00'), 'scheduled'
+    return None, None
+
+
+def te_rows(docs, fixture_of, flip_start=lambda ek: None):
     """Snapshot rows from the joined TE matches with a Pinnacle pair + a report. `fixture_of(ek)` = the CURRENT api-tennis
     fixture (the result and the names; a match with no result, a walkover or an unreadable fixture -> no row). Prices
     are oriented to the winner from TE's a / b (= api-tennis's first / second player). A side below 1.01 = no row. ITF is
@@ -1150,6 +1178,15 @@ def te_rows(docs, fixture_of):
             pw, pl = (pa, pb) if fw else (pb, pa)
             ts = [t for t in (p.get('p1Ts'), p.get('p2Ts')) if t]
             pts = max(ts) if ts else None
+            # the in-play rule (founder 2026-10-20): a price whose last change came after the start is dropped
+            start, kind = te_start(x, f, flip_start)
+            if start is None:
+                rep['no start time to check (kept)'] += 1
+            elif pts and _ts(pts) and _ts(pts) > start:
+                rep['dropped: last change after the start'] += 1
+                rep[f'dropped: last change after the start ({kind})'] += 1
+                rep[f"dropped in batch {d.get('batch')}"] += 1
+                continue
             tour = str(f.get('tournament_name') or '').strip()
             rows.append({'dedupe_key': '|'.join(str(v) for v in (TE_SOURCE, f['event_date'], tour, a if fw else b, b if fw else a, x['ek'], pw, pl, x['pageSha256'])),
                          'source': TE_SOURCE, 'label': APPROX_LABEL, 'match_date': f['event_date'], 'tournament': tour,
@@ -1161,9 +1198,42 @@ def te_rows(docs, fixture_of):
                                     'sideTs': {'first': p.get('p1Ts') if same else p.get('p2Ts'), 'second': p.get('p2Ts') if same else p.get('p1Ts')},
                                     'open': {'first': (p.get('open') or {}).get('p1' if same else 'p2'), 'second': (p.get('open') or {}).get('p2' if same else 'p1'),
                                              'firstTs': (p.get('open') or {}).get('p1Ts' if same else 'p2Ts'), 'secondTs': (p.get('open') or {}).get('p2Ts' if same else 'p1Ts')},
-                                    'firstPlayer': a, 'secondPlayer': b, 'winnerIsFirst': fw, 'hover': TE_HOVER}})
+                                    'firstPlayer': a, 'secondPlayer': b, 'winnerIsFirst': fw, 'hover': TE_HOVER,
+                                    'startChecked': start.isoformat().replace('+00:00', 'Z') if start else None, 'startKind': kind}})
             rep['stored'] += 1
     return rows, dict(rep)
+
+
+def te_flip_starts(eks):
+    """event key -> our live-flip start (live_flip_log.last_not_live_seen_at), for the events dated from 17 Sep."""
+    out = {}
+    eks = sorted(set(eks))
+    for i in range(0, len(eks), 150):
+        _, got, _ = P.rest('GET', '/rest/v1/live_flip_log?select=event_key,last_not_live_seen_at&event_key=in.(' + ','.join(eks[i:i + 150]) + ')')
+        for g in got or []:
+            if g.get('last_not_live_seen_at'):
+                out[str(g['event_key'])] = g['last_not_live_seen_at']
+    return out
+
+
+def te_coverage(rows, held, closed):
+    """Per level and year: the matches whose feed price becomes Tennis Explorer's (no close, no start - 10 and no
+    api-tennis Pinnacle snapshot for the event — those come first): newly priced (no snapshot before) or replacing an
+    api-tennis Bet365 snapshot. Our captured Bet365 (bet365-history/, not in this table) is not seen here."""
+    by = collections.defaultdict(set)
+    for h in held:
+        if h.get('source') != TE_SOURCE and h.get('supersedes') is None:
+            by[str(h.get('event_key'))].add(h.get('source'))
+    wins, newly, over = (collections.defaultdict(collections.Counter) for _ in range(3))
+    for r in rows:
+        ek, lv, y = str(r['event_key']), r['detail']['level'], str(r['match_date'])[:4]
+        src = by.get(ek, set())
+        if ek in closed or START10_SOURCE in src or APPROX_SOURCE in src:
+            continue
+        wins[lv][y] += 1
+        (over if B365_SOURCE in src else newly)[lv][y] += 1
+    return {'teWins': {k: dict(v) for k, v in wins.items()}, 'newlyPriced': {k: dict(v) for k, v in newly.items()},
+            'overB365': {k: dict(v) for k, v in over.items()}}
 
 
 def cmd_te_import(store, dry_run=False):
@@ -1175,16 +1245,24 @@ def cmd_te_import(store, dry_run=False):
     akey = os.environ.get('API_TENNIS_KEY') or P.die('API_TENNIS_KEY is not set')
     eks = sorted({str(x['ek']) for d in docs for x in d['rows'] if x.get('status') == 'joined' and x.get('pin')})
     fx = P.apitennis_fixture_fetcher(akey)(eks)
-    rows, rep = te_rows(docs, fx.get)
-    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes')
+    flip = te_flip_starts([ek for d in docs for x in d['rows'] if x.get('status') == 'joined' and x.get('pin') and str(x.get('date') or '') >= P.VERIFIED_START_FROM
+                           for ek in [str(x['ek'])]])
+    rows, rep = te_rows(docs, fx.get, flip.get)
+    held = P.select_all(SNAP, 'id,dedupe_key,source,match_date,tournament,winner,loser,supersedes,event_key')
     add = plan_snapshots(rows, held)
+    gained = te_coverage(rows, held, {str(r['event_key']) for r in P.select_all(P.CLOSE, 'event_key')})
     ids = []
     if not dry_run:
         for i in range(0, len(add), 500):
             ids += P.insert(SNAP, add[i:i + 500], 'dedupe_key')
     print('### te-import', json.dumps({'dryRun': dry_run, 'batches': [d.get('batch') for d in docs], 'partialSkipped': skipped, 'report': rep,
                                        'byLevel': collections.Counter(r['detail']['level'] for r in rows),
-                                       'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON}))
+                                       'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON,
+                                       'coverage': gained}))
+    for lv in sorted(gained['teWins']):
+        print(f"te-import coverage {lv}: " + ' · '.join(f"{y} {n} priced by TE ({gained['newlyPriced'][lv].get(y, 0)} with no snapshot before, "
+                                                         f"{gained['overB365'][lv].get(y, 0)} replacing an api-tennis Bet365 snapshot)"
+                                                         for y, n in sorted(gained['teWins'][lv].items())))
     if not dry_run:
         cmd_snapshot_counts('te-import')
     return rows
