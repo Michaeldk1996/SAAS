@@ -319,6 +319,29 @@ jobs:
             echo "TEN-449: set-repairs.json from the store at $(git -C .te-store rev-parse --short HEAD)."
           fi
 
+      # TEN-437 (founder 2026-10-20): "the model makes its prediction once, before the match. Once the match starts, that
+      # number never changes." The pre-match predictions live in model-prematch.json, keyed by event key, carried run to
+      # run by THIS cache: a new key every run (the run id), restored from the newest one (runs are serialised by the
+      # concurrency group, so that is the previous run's). The daily cache above restores only the day's first snapshot,
+      # and the published copy can lag the pipeline, so neither alone can hold an entry for a match that has left the board.
+      # Small (one entry per board event, 72 h retention); the stale ones are never read again and age out of the cache.
+      - name: Restore the model pre-match store
+        uses: actions/cache/restore@v4
+        with:
+          path: model-prematch.json
+          key: model-prematch-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            model-prematch-v1-
+
+      # The last published copy: a second source for the store (and the only one on the first run after this shipped).
+      # Fail-open: no copy = the store and the cache snapshot only, said in the step log.
+      - name: Fetch the published model output (pre-match freeze source)
+        run: |
+          if curl -sfL --retry 2 --max-time 60 -o model-output.published.json "https://michaeldk1996.github.io/SAAS/model-output.json?cb=$(date +%s)"; then
+            echo "published model-output.json: $(wc -c < model-output.published.json) bytes"
+          else
+            rm -f model-output.published.json; echo "::warning::no published model-output.json — started matches freeze from the cache snapshot only"
+          fi
       - name: Run pipeline (with retry + health tracking)
         env:
           # TEN-449: the two switches above, independent; unset = off
@@ -336,6 +359,14 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           DOTENV_CONFIG_QUIET: 'true'
         run: node run-pipeline.js github-actions
+
+      # TEN-437: saved even when a later step fails, so the next run never loses a pre-match prediction.
+      - name: Save the model pre-match store
+        if: ${{ always() && hashFiles('model-prematch.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: model-prematch.json
+          key: model-prematch-v1-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Backfill the stats + point logs behind the Overview / Career-record
       # drill-down, ONE call per tracked player (the player-keyed fixture window
@@ -715,6 +746,8 @@ jobs:
           # TEN-437: the ONE head-to-head meeting list (window.H2HCore). Not copied = 404 => every H2H surface
           # (Match analysis tab, Key factors, the Head to Head page) has no meetings. Required; asserted below.
           cp h2h-core.js _site/
+          # W/UE tournament sheet export (window.WueSheet). Not copied = 404 => the Reports W/UE buttons never render. Required; asserted below.
+          cp wue-sheet.js _site/
           # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
           # and the per-player market-edge shards + index (build-market-edge.js).
           # The shards also feed the full ledger's two closing-odds columns.
@@ -1075,7 +1108,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js \
+                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
                    points-at-risk.json \

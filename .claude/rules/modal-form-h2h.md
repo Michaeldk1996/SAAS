@@ -50,6 +50,11 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   other player's key. A row with no id is left out. Exception, until each cached profile rebuilds (14-day TTL): a feed
   row built before `oppKey` existed still uses the roster-unique-name rule. **Test:** "D3", golden pair
   Carreno-Busta–Z. Zhang (0–0: the Shanghai 2019 row is Ze Zhang).
+- **Two api-tennis keys are one player only by ruling** (founder 2026-10-20, TEN-437): a one-sided feed row whose `oppKey`
+  is in `H2HCore.API_KEY_ALIASES` is credited to the key it maps to (`canonKey`, in the one shared join). The table holds
+  exactly one pair: **34000 → 1735, D. E. Galan** (his opponents' 2021–22 rows; Bublik Miami 2022, Tsitsipas and
+  Davidovich Fokina US Open 2022). A key that is not in the table is never folded into another. **Test:** "key alias" in
+  `test-ten437-h2h.mjs` (the three meetings count once each; an unaliased key stays out; the table has one entry).
 - **Carpet is a surface; a blank surface is a dash** (founder 2026-10-16, D4): the archive builder keeps every TML match —
   carpet (indoor events to 2009) ships with `surface: 'carpet'`, a blank-surface match (some zonal Davis Cup ties) with
   `surface: null`; both are meetings; the surface chips stay All / Hard / Clay / Grass (a carpet meeting is in All and
@@ -309,14 +314,29 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
   exhibitions are removed by `H2H_NOT_ATP_RECORD` (the same list as `h2h-core.js`). It stays in matches.json (schema
   unchanged) and feeds the box-score prefetch (`build-point-by-point.js`); no screen and not the model reads it.
   **Test:** the set holds exactly these three singles types; `test-ten273-team-events.mjs`.
-- **A match never counts in its own H2H record** (ruling 2026-09-24), on every surface and in the model: the pipeline
-  drops the fixture's own eventKey at every H2H build site (`h2hExcludeOwn`) and again before `matches.json` is written
-  (`stripOwnFixtureFromH2H`). **Superseded on the screens by founder 2026-10-16 (TEN-437 ruling 1):** only the match's OWN
-  analysis leaves it out — the Match analysis tab opened on that match (`own = [eventKeyOfMatch(m)]`) and the model
-  (`modelH2hMatches`, `own = [ek(m)]`); the H2H page and every other surface count every meeting, this week's included
-  (`own = []`; `sfH2hOwnEks` is gone). Medvedev–Tsitsipas reads 11–5 / 16 on the H2H page while the Shanghai match's own
-  analysis reads 10–5 / 15. **Test:** "board-match exclusion" in `test-ten437-h2h.mjs`; a finished board match whose own
-  eventKey is in `h2h.matches` fails, and the record is recomputed without it.
+- **Where a match leaves its own H2H record** (rulings 2026-09-24, 2026-10-16): the api-tennis list in `matches.json` never
+  holds it — the pipeline drops the fixture's own eventKey at every H2H build site (`h2hExcludeOwn`) and again before
+  `matches.json` is written (`stripOwnFixtureFromH2H`). **On the screens (founder 2026-10-16, TEN-437 ruling 1 + same-day follow-up):** a match leaves
+  ONLY its own analysis, and only while it is upcoming or live — the Match analysis tab opened on it
+  (`own = m.finalScore ? [] : [eventKeyOfMatch(m)]`). Once finished, its own analysis counts it like every other surface
+  (Medvedev–Tsitsipas Shanghai: 10–5 / 15 in its tab before the match ended, 11–5 / 16 after). The H2H page and every other
+  surface count every meeting, this week's included (`own = []`). The model's H2H input never includes the match itself
+  (`modelH2hMatches`, `own = [ek(m)]`). **Test:** "board-match exclusion" (upcoming → 15, finished → 16, model → 15 either
+  way) in `test-ten437-h2h.mjs`.
+- **The model makes its prediction once, before the match; once the match starts, that number never changes** (founder
+  2026-10-20, TEN-437; replaces the 2026-10-16 freeze, which looked entries up by row id and never fired). Test, per
+  match: a match that has not started is computed and stamped (`preMatch: true`, `computedAt`). A started match
+  (`modelMatchStarted`: finished, live, interrupted with a score, or any finished-list `past-` row — a walkover has no
+  score) is **never** computed, and nor is any other board row with the same event key (`startedEks`): its entry is its frozen one
+  (`frozen: true`, `frozenAt`) — the first time, the latest pre-match entry on record, `ok: false` included (no
+  prediction before the start = a dash after it). Entries are found by **event key** (`modelEventKey`: the row id flips
+  `upcoming-<ek>` → `past-<ek>`). Sources: `model-prematch.json` (the run-to-run store, its own Actions cache restored
+  before and saved after "Run pipeline", so a live match that is on neither list keeps its entry; 72 h after last seen it
+  leaves), the last published `model-output.json`, the day's restored cache. A frozen entry is never replaced, not even by
+  a newer pre-match copy from a lagging source. Exceptions: an entry written before the flag existed counts as pre-match
+  only under an `upcoming-` id; a started match with nothing on record reads "no pre-match prediction on record" (not
+  stored, so a late copy can still fill it). **Test:** "model freeze" (a)–(c), the round trip, the legacy case and the edge cases in
+  `test-ten437-h2h.mjs`; "workflow: the model pre-match store"; mutants in `tools/test-ten437-mutants.js`.
 - **Who won a meeting is decided by player key, never surname** (ruling 2026-09-24):
   `h2hP1WasFirst` compares `first_player_key` / `second_player_key` with p1's key; a row that
   carries neither is not counted. **Test:** two same-surname players (Zhizhen Zhang 590, Ze

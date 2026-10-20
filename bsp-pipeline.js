@@ -2863,6 +2863,58 @@ function isSlamQualifyingLeak(f) {
   return Number.isFinite(winnerSets) && winnerSets < 3;
 }
 
+// W/UE tournament sheet (founder brief 2026-10-20) — one row per completed main-draw
+// fixture, in order of play, carrying the RAW per-player counts the sheet needs:
+// winners, unforced errors, total points played, and the service/return points
+// won/total pairs the Dominance Ratio is computed from. Raw counts, never derived
+// pcts, so the client computes W/P, UE/P, W/UE and DR from the published numbers.
+// Additive to the progression entry: unlike `players[].rounds` it keeps a completed
+// fixture with NO stat sheet (its stats publish as null → the sheet's dash), and it
+// stamps the feed's Retired / Walk Over status so those rows are flagged. W/UE
+// follow extractProgressionMetrics' source rule exactly (api-tennis, else the
+// reviewed @ATP_Entry OCR corpus, never mixed) and carry the same wueSource.
+function progressionSheetMatches(played, roundLabelByName) {
+  const won = (s) => { const n = parseInt(s && s.stat_won, 10); return Number.isFinite(n) ? n : null; };
+  const tot = (s) => { const n = parseInt(s && s.stat_total, 10); return Number.isFinite(n) && n > 0 ? n : null; };
+  const pair = (s) => (won(s) != null && tot(s) != null) ? { won: won(s), total: tot(s) } : null;
+  const side = (f, matchStats, key, name, oppName) => {
+    const out = { name, playerKey: key != null ? String(key) : null, winners: null, unforcedErrors: null, wueSource: null, totalPoints: null, servicePoints: null, returnPoints: null };
+    if (!matchStats) return out;
+    const w = parseCount((findMatchStat(matchStats, key, 'Points', 'Winners') || {}).stat_value);
+    const ue = parseCount((findMatchStat(matchStats, key, 'Points', 'Unforced errors') || {}).stat_value);
+    if (w != null && ue != null) { out.winners = w; out.unforcedErrors = ue; out.wueSource = 'api-tennis'; }
+    else {
+      const fb = lookupWue(f.tournament_name, name, oppName);
+      if (fb) { out.winners = fb.winners; out.unforcedErrors = fb.unforcedErrors; out.wueSource = 'ATP_Entry_OCR'; }
+    }
+    const tp = findMatchStat(matchStats, key, 'Points', 'Total Points Won');
+    out.totalPoints = tot(tp);                                        // total points PLAYED in the match
+    out.servicePoints = pair(findMatchStat(matchStats, key, 'Points', 'Service Points Won'));
+    out.returnPoints = pair(findMatchStat(matchStats, key, 'Points', 'Return Points Won'));
+    return out;
+  };
+  return [...played]
+    .sort((a, b) => {
+      const ka = `${a.event_date || ''} ${a.event_time || ''}`, kb = `${b.event_date || ''} ${b.event_time || ''}`;
+      if (ka !== kb) return ka < kb ? -1 : 1;
+      return Number(a.event_key) - Number(b.event_key);
+    })
+    .map(f => {
+      const ms = Array.isArray(f.statistics) ? f.statistics.filter(s => s.stat_period === 'match') : [];
+      const stats = ms.length ? ms : null;
+      return {
+        eventKey: f.event_key != null ? String(f.event_key) : null,
+        round: roundLabelByName[f.tournament_round] || f.tournament_round,
+        date: f.event_date || null,
+        time: f.event_time || null,
+        status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover' : 'finished',
+        winner: f.event_winner === 'First Player' ? 1 : 2,
+        p1: side(f, stats, f.first_player_key, f.event_first_player, f.event_second_player),
+        p2: side(f, stats, f.second_player_key, f.event_second_player, f.event_first_player),
+      };
+    });
+}
+
 async function buildTournamentProgression(tourName) {
   const bareName = tourName.replace(/^ATP\s+/, '').trim();
   // Names to match the feed's `tournament_name` against: for a sponsor-brand
@@ -2975,6 +3027,7 @@ async function buildTournamentProgression(tourName) {
     rounds: roundLabels,
     players,
     fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
+    matches: progressionSheetMatches(played, roundLabelByName),
   };
 }
 
@@ -7674,6 +7727,46 @@ async function runPipeline() {
 // cached by a SHA-1 of its model facts, so an API call is spent only when a
 // match's numbers actually change (this pipeline runs every 15 min).
 const MODEL_OUTPUT_PATH = 'model-output.json';
+const MODEL_OUTPUT_PUBLISHED_PATH = process.env.MODEL_OUTPUT_PUBLISHED_PATH || 'model-output.published.json';
+// TEN-437: a match has started once it is finished, live, or interrupted with a partial score (the feed's own flags) — or
+// once it is a finished-list row (past-<ek>) at all: a walkover or a finished fixture whose score did not format has no
+// finalScore, and must never be computed with its result known (review 20 Oct).
+function modelMatchStarted(m) {
+  return !!(m && (m.finalScore || m.live || (Array.isArray(m.liveScore) && m.liveScore.length) || (m.interrupted && m.partialScore)
+    || /^past-/.test(String(m.id || ''))));
+}
+// TEN-437 (founder 2026-10-20): the run-to-run store of pre-match predictions, keyed by EVENT KEY — the row id flips
+// upcoming-<ek> → past-<ek> when a match finishes, and a live match is on neither list. It has its own Actions cache,
+// saved every run (pipeline.yml "model pre-match store"), so a match that leaves the board keeps its entry. An entry not
+// seen on the board for MODEL_PREMATCH_KEEP_H hours leaves the store.
+const MODEL_PREMATCH_PATH = process.env.MODEL_PREMATCH_PATH || 'model-prematch.json';
+const MODEL_PREMATCH_KEEP_H = 72;
+function modelEventKey(id) { const s = String(id == null ? '' : id); const i = s.indexOf('-'); return i >= 0 ? s.slice(i + 1) : s; }
+// Every pre-match and frozen entry on record, by event key: the store, then the files (the last published copy, this
+// run's restored cache). A file's entry is pre-match when it says so or — written before the flag existed — when it sits
+// under an upcoming- id (computed while the match was still upcoming); a past- entry without the flag never is. Per event
+// key the frozen entry with the EARLIEST frozenAt wins (it never changes once written); else the pre-match entry with
+// the LATEST computedAt (the last prediction before the start). An entry with no time is not used.
+function modelPreMatchCandidates({ store, files }) {
+  const c = new Map();
+  const add = (ek, kind, entry, at, lastSeen) => {
+    if (!ek || !entry || !at) return;
+    const x = c.get(ek) || {};
+    if (kind === 'frozen') { if (!x.frozen || at < x.frozen.at) x.frozen = { entry, at, lastSeen: lastSeen || at }; }
+    else if (kind === 'pre') { if (!x.pre || at > x.pre.at) x.pre = { entry, at, lastSeen: lastSeen || at }; }
+    c.set(ek, x);
+  };
+  for (const [ek, e] of Object.entries((store && store.entries) || {})) if (e) add(String(ek), e.kind, e.entry, e.at, e.lastSeen);
+  for (const f of files || []) {
+    if (!f || !f.matches) continue;
+    for (const [id, e] of Object.entries(f.matches)) {
+      if (!e) continue;
+      if (e.frozen === true) add(modelEventKey(id), 'frozen', e, e.frozenAt || f.generatedAt, null);
+      else if (e.preMatch === true || (e.preMatch === undefined && /^upcoming-/.test(id))) add(modelEventKey(id), 'pre', e, e.computedAt || f.generatedAt, null);
+    }
+  }
+  return c;
+}
 
 // TEN-437 founder ruling 2026-10-14 (card edd72529, "move the model to the full ATP-rule list, keep today's age bands and
 // tiers"; measured first on the 26-match board: median shift 0pp, max 0.23pp, no value flag flipped). The model's H2H
@@ -7726,10 +7819,11 @@ async function buildModelOutput(matches) {
 
   // Prior output, so a summary whose facts are unchanged is reused rather than
   // regenerated — bounds Anthropic spend on the 15-min cron.
-  let prior = {};
+  let prior = {}, priorGen = null;
   try {
     const p = JSON.parse(fs.readFileSync(MODEL_OUTPUT_PATH, 'utf8'));
     prior = (p && p.matches) || {};
+    priorGen = (p && p.generatedAt) || null;
   } catch (_) { /* first run — no cache yet */ }
 
   const haveKey = Boolean(process.env.ANTHROPIC_API_KEY);
@@ -7737,11 +7831,31 @@ async function buildModelOutput(matches) {
     console.warn('  ANTHROPIC_API_KEY not set — engine output still written, AI summaries skipped (cached ones reused).');
   }
 
+  // TEN-437 (founder 2026-10-16 follow-up; 2026-10-20: "the model makes its prediction once, before the match. Once the
+  // match starts, that number never changes"). A match that has not started is computed and stamped (preMatch: true,
+  // computedAt). A started match is NEVER computed: it gets its frozen entry (frozen: true, frozenAt; the first time, the
+  // latest pre-match entry on record), an ok:false one included — no prediction before the start is a dash after it.
+  // With nothing on record it reads "no pre-match prediction on record" (not stored, so a copy that arrives late still
+  // fills it). A match with a frozen entry stays frozen even if the feed shows it upcoming again. Found by event key in
+  // the store, the last published copy (MODEL_OUTPUT_PUBLISHED_PATH) and this run's restored cache.
+  const readJ = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (_) { return null; } };
+  const nowIso = new Date().toISOString();
+  const cand = modelPreMatchCandidates({ store: readJ(MODEL_PREMATCH_PATH),
+    files: [readJ(MODEL_OUTPUT_PUBLISHED_PATH), { generatedAt: priorGen, matches: prior }] });
   const out = {};
-  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0;
+  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0, frozenNew = 0, frozenKept = 0, startedNoPre = 0;
   const h2hIn = modelH2hInputs(matches);   // TEN-437: the model's H2H = the screens' H2H
 
+  // an event key started on ANY board row is started on all of them (a stale upcoming- row beside its past- row)
+  const startedEks = new Set(matches.filter(modelMatchStarted).map(m => modelEventKey(m.id)));
   for (const m of matches) {
+    const ek = modelEventKey(m.id), c = cand.get(ek);
+    if (c && c.frozen) { out[m.id] = c.frozen.entry; frozenKept++; continue; }
+    if (startedEks.has(ek)) {
+      if (c && c.pre) { out[m.id] = Object.assign({}, c.pre.entry, { frozen: true, frozenAt: nowIso }); frozenNew++; }
+      else { out[m.id] = { ok: false, reason: 'no pre-match prediction on record', preMatch: false }; startedNoPre++; }
+      continue;
+    }
     let result;
     try {
       const mm = h2hIn && m.p1Key != null && m.p2Key != null
@@ -7749,7 +7863,7 @@ async function buildModelOutput(matches) {
       result = runModel(mm);
     } catch (e) {
       failed++;
-      out[m.id] = { ok: false, reason: `engine error: ${e.message}` };
+      out[m.id] = { ok: false, reason: `engine error: ${e.message}`, preMatch: true, computedAt: nowIso };
       continue;
     }
     if (!result.ok) {
@@ -7757,7 +7871,7 @@ async function buildModelOutput(matches) {
       // UI can show an honest "not enough data" state (never a fabricated read).
       failed++;
       out[m.id] = { ok: false, reason: result.reason || 'model could not run',
-        players: result.players || null };
+        players: result.players || null, preMatch: true, computedAt: nowIso };
       continue;
     }
     ran++;
@@ -7772,6 +7886,8 @@ async function buildModelOutput(matches) {
       stage2: result.stage2,
       stage3: result.stage3,
       generatedAt: result.meta && result.meta.generatedAt,
+      preMatch: true,
+      computedAt: nowIso,
       summary: null,
     };
 
@@ -7823,7 +7939,22 @@ async function buildModelOutput(matches) {
     count: Object.keys(out).length,
     matches: out,
   }, true);
-  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
+  // The store: every entry on record still seen within MODEL_PREMATCH_KEEP_H hours, then this run's board on top (a
+  // match with a frozen entry took the frozen path above, so a pre-match entry never replaces one).
+  const keepFrom = Date.now() - MODEL_PREMATCH_KEEP_H * 3600e3, entries = {};
+  for (const [ek, c] of cand) {
+    const e = c.frozen ? Object.assign({ kind: 'frozen' }, c.frozen) : Object.assign({ kind: 'pre' }, c.pre);
+    if (Date.parse(e.lastSeen || e.at) >= keepFrom) entries[ek] = e;
+  }
+  for (const m of matches) {
+    const ek = modelEventKey(m.id), e = out[m.id], c = cand.get(ek);
+    if (!ek || !e) continue;
+    if (e.frozen) entries[ek] = { kind: 'frozen', at: e.frozenAt || (c && c.frozen && c.frozen.at), lastSeen: nowIso, entry: e };
+    else if (e.preMatch === true) entries[ek] = { kind: 'pre', at: e.computedAt, lastSeen: nowIso, entry: e };
+    if (entries[ek] && !entries[ek].at) delete entries[ek];
+  }
+  writeJsonAtomic(MODEL_PREMATCH_PATH, { v: 1, savedAt: nowIso, keepHours: MODEL_PREMATCH_KEEP_H, entries }, true);
+  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run); started: ${frozenNew} newly frozen at their last pre-match prediction, ${frozenKept} kept frozen, ${startedNoPre} with no pre-match prediction on record (never computed after the start). Store: ${Object.keys(entries).length} event(s). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
   return out;
 }
 
@@ -7889,7 +8020,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

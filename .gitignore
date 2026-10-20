@@ -71,6 +71,9 @@ chall-cache/
 # it every run and publishes it straight to _site. Must never be committed: it
 # would churn on every run, and a keyless local build carries no AI summaries.
 model-output.json
+model-output.published.json
+# TEN-437: the model pre-match store (its own Actions cache, never committed)
+model-prematch.json
 
 # News feed + tournament entries: build-news-feed.js / build-tournament-entries.js
 # pull api-tennis on every pipeline run and publish straight to _site. Like

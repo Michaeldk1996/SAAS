@@ -26,12 +26,16 @@ const CORE_MUTANTS = [
   ['Laver Cup excluded from H2H (ATP counts it)', "  const ATP_RECORD_NOT_COUNTED = /hopman cup|", "  const ATP_RECORD_NOT_COUNTED = /laver cup|hopman cup|"],
   ['the join\'s list no longer the exported ATP list (H2H_NOT_COUNTED a copy)', "  const H2H_NOT_COUNTED = ATP_RECORD_NOT_COUNTED;", "  const H2H_NOT_COUNTED = new RegExp(ATP_RECORD_NOT_COUNTED.source, 'i');"],
   // TEN-437 reconciliation fixes (founder 2026-10-16)
+  // founder 2026-10-20: api-tennis key 34000 is D. E. Galan (1735)
+  ['key alias: 34000 not folded into 1735 (the three Galan meetings out)', "  const API_KEY_ALIASES = Object.freeze({ '34000': '1735' });", "  const API_KEY_ALIASES = Object.freeze({});"],
+  ['key alias: the join compares raw keys', "ck(r.oppKey) === ck(other.key)", "String(r.oppKey) === String(other.key)"],
+  ['key alias: every key folded into 1735', "return Object.prototype.hasOwnProperty.call(API_KEY_ALIASES, s) ? API_KEY_ALIASES[s] : s; }", "return '1735'; }"],
   ['D1: qualifying read from the first row\'s label alone (both rows and the main-draw date ignored)',
     "  function resolveQualifying(x, all) {\n    const tw = x._twin, rX = rnd(x), rT = rnd(tw);", "  function resolveQualifying(x, all) { return x;\n    const tw = x._twin, rX = rnd(x), rT = rnd(tw);"],
   ['D2: the Asian Games counted', "mubadala world tennis|asian games|", "mubadala world tennis|"],
   ['D2: Davis Cup Group III/IV counted', "|davis cup.*group (iii|iv)\\b|davis cup g[34]\\b/i;", "/i;"],
   ['D3: a one-sided archive row credited on its name', "      if (r.src === 'archive') return !!up(r.oppId) && up(r.oppId) === up(other.id);", "      if (r.src === 'archive') return uniq(nkOther);"],
-  ['D3: a feed row\'s api key ignored', "      if (r.oppKey != null && r.oppKey !== '') return other.key != null && String(r.oppKey) === String(other.key);", ""],
+  ['D3: a feed row\'s api key ignored', "      if (r.oppKey != null && r.oppKey !== '') return other.key != null && ck(r.oppKey) === ck(other.key);", ""],
   ['D5: a 0 - 0 retirement read as a walkover', "    if (x.retired) return false;", "    if (false) return false;"],
   ['D1: a same-day main-draw double read as qualifying (on-or-before instead of before)', "    if (md == null || d0 < md) return Object.assign({}, x, { qualifying: true });", "    if (md == null || d0 <= md) return Object.assign({}, x, { qualifying: true });"],
 ];
@@ -56,7 +60,8 @@ const PAGE_MUTANTS = [
   ['ruling 4: the Bet365 hover back to the source label', "const FH_B365_HOVER = 'Bet365 closing odds, Pinnacle not available';", "const FH_B365_HOVER = 'Bet365 close · Tennis-Data';"],
   ['item 4: the H2H page meeting rows lose the B marker', "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',", "            hTitle: h2hPriceTitle(r), aTitle: h2hPriceTitle(r), hMark: '',"],
   ['ruling 4: the H2H hover spreads to Form (fhSrcTitle)', "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book ?", "`${FH_BOOK.A} · ${r.src === 'od10' ? SF_OD10_HOVER : r.src === 'te' ? SF_TE_HOVER : SF_APPROX_HOVER}` : fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : r && r.book === 'B' ? FH_B365_HOVER : r && r.book ?"],
-  ['board exclusion: the tab counts its own match', "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
+  ['board exclusion: the tab counts its own match while upcoming / live', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [];"],
+  ['board exclusion: the tab still leaves its own match out once finished', "  const own = m.finalScore ? [] : [eventKeyOfMatch(m)].filter(x => x != null && x !== '');", "  const own = [eventKeyOfMatch(m)].filter(x => x != null && x !== '');"],
   ['board exclusion: the H2H page leaves out this week\'s board matches again', "      const nkF = fn('sfH2hNkCount');\n      const own = [];", "      const nkF = fn('sfH2hNkCount');\n      const own = (typeof matches !== 'undefined' ? matches : []).filter(x => x && x.finalScore).map(eventKeyOfMatch);"],
 ];
 // Mutants applied to a copy of career-backfill.js / bsp-pipeline.js written NEXT TO the original (so its relative
@@ -73,6 +78,35 @@ const PIPELINE_MUTANTS = [
   ['ruling 2 (corrected): the card\'s Form list wired to the H2H list', "\nconst FORM_NOT_ATP_RECORD = new RegExp('laver cup|' + FORM_EVENTS_NOT_COUNTED.source, 'i');\n", "\nconst FORM_NOT_ATP_RECORD = H2H_NOT_ATP_RECORD;\n"],
   ['ruling 2 (corrected): the pipeline\'s H2H list its own copy (the Form base — Asian Games counted)', "\nconst H2H_NOT_ATP_RECORD = require('./h2h-core.js').ATP_RECORD_NOT_COUNTED;\n", "\nconst H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\\buts\\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;\n"],
   ['board exclusion: the model counts its own match', "  const own = [ek(m)].filter(Boolean);", "  const own = [];"],
+  ['model freeze: the model\'s H2H takes its own match once finished', "  const own = [ek(m)].filter(Boolean);", "  const own = m.finalScore ? [] : [ek(m)].filter(Boolean);"],
+  // founder 2026-10-20: the freeze keyed by event key, a run-to-run store, ok:false frozen, nothing computed after the start
+  ['model freeze (a): the board looked up by row id (past-<ek> never finds upcoming-<ek>)', "    const ek = modelEventKey(m.id), c = cand.get(ek);", "    const ek = modelEventKey(m.id), c = cand.get(String(m.id));"],
+  ['model freeze (a): a file\'s pre-match entry filed under its row id', "add(modelEventKey(id), 'pre', e, e.computedAt || f.generatedAt, null);", "add(id, 'pre', e, e.computedAt || f.generatedAt, null);"],
+  ['model freeze (b): the store not read', "  const cand = modelPreMatchCandidates({ store: readJ(MODEL_PREMATCH_PATH),", "  const cand = modelPreMatchCandidates({ store: null,"],
+  ['model freeze (b): an entry off the board dropped from the store', "    if (Date.parse(e.lastSeen || e.at) >= keepFrom) entries[ek] = e;\n", ""],
+  ['model freeze (b): the store not written', "  writeJsonAtomic(MODEL_PREMATCH_PATH, { v: 1, savedAt: nowIso, keepHours: MODEL_PREMATCH_KEEP_H, entries }, true);\n", ""],
+  ['model freeze (b): a frozen entry re-frozen from a newer pre-match copy', "    if (c && c.frozen) { out[m.id] = c.frozen.entry; frozenKept++; continue; }\n", ""],
+  ['model freeze (c): a prediction computed after the start', "    if (startedEks.has(ek)) {", "    if (false) {"],
+  ['model freeze: a past- row with no score computed after its result', "\n    || /^past-/.test(String(m.id || ''))));", "));"],
+  ['model freeze: a stale upcoming- row beside its past- row computed', "    if (startedEks.has(ek)) {", "    if (modelMatchStarted(m)) {"],
+  ['model freeze: a frozen match shown upcoming again recomputed', "    if (c && c.frozen) { out[m.id] = c.frozen.entry; frozenKept++; continue; }", "    if (c && c.frozen && startedEks.has(ek)) { out[m.id] = c.frozen.entry; frozenKept++; continue; }"],
+  ['model freeze: the store never expires', "const MODEL_PREMATCH_KEEP_H = 72;", "const MODEL_PREMATCH_KEEP_H = 1e9;"],
+  ['model freeze: the LATEST frozenAt kept (a re-freeze replaces the first)', "if (!x.frozen || at < x.frozen.at)", "if (!x.frozen || at > x.frozen.at)"],
+  ['model freeze: an on-board frozen entry\'s lastSeen not refreshed', "entries[ek] = { kind: 'frozen', at: e.frozenAt || (c && c.frozen && c.frozen.at), lastSeen: nowIso, entry: e };", "entries[ek] = { kind: 'frozen', at: e.frozenAt || (c && c.frozen && c.frozen.at), lastSeen: e.frozenAt, entry: e };"],
+  ['model freeze (c): an ok:false pre-match entry not frozen', "      if (c && c.pre) {", "      if (c && c.pre && c.pre.entry.ok) {"],
+  ['model freeze (c): a failed run before the start not stamped', "players: result.players || null, preMatch: true, computedAt: nowIso };", "players: result.players || null, preMatch: true };"],
+  ['model freeze: an ok entry not stamped as pre-match', "      preMatch: true,\n      computedAt: nowIso,\n", ""],
+  ['model freeze: the EARLIEST pre-match entry frozen', "if (!x.pre || at > x.pre.at)", "if (!x.pre || at < x.pre.at)"],
+  ['model freeze: a pre-flag upcoming- entry not read', " || (e.preMatch === undefined && /^upcoming-/.test(id))", ""],
+  ['model freeze: a pre-flag past- entry read as pre-match', "&& /^upcoming-/.test(id))", "&& /^(upcoming|past)-/.test(id))"],
+];
+
+// Mutants applied to a copy of pipeline.yml, passed to the suite as TEN437_WORKFLOW (founder 2026-10-20: the store's cache).
+const WORKFLOW = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
+const WORKFLOW_MUTANTS = [
+  ['workflow: the model pre-match store never saved', "      - name: Save the model pre-match store\n", "      - name: Save a cache\n"],
+  ['workflow: the store saved only when every step passed', "        if: ${{ always() && hashFiles('model-prematch.json') != '' }}\n", "        if: ${{ hashFiles('model-prematch.json') != '' }}\n"],
+  ['workflow: the store restored from one fixed key (never the previous run\'s)', "          restore-keys: |\n            model-prematch-v1-\n", ""],
 ];
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten437-mut-'));
@@ -107,6 +141,14 @@ for (const [name, from, to] of PAGE_MUTANTS) {
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; }
   else console.log(`✔ caught: ${name}`);
 }
+for (const [name, from, to] of WORKFLOW_MUTANTS) {
+  if (WORKFLOW.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
+  const file = path.join(dir, 'pipeline.yml');
+  fs.writeFileSync(file, WORKFLOW.replace(from, to));
+  const r = run({ TEN437_WORKFLOW: file });
+  if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; }
+  else console.log(`✔ caught: ${name}`);
+}
 for (const [file, envName, list] of [['career-backfill.js', 'TEN437_BACKFILL', BACKFILL_MUTANTS], ['bsp-pipeline.js', 'TEN437_PIPELINE', PIPELINE_MUTANTS]]) {
   const SRC = fs.readFileSync(path.join(ROOT, file), 'utf8');
   for (const [name, from, to] of list) {
@@ -120,6 +162,6 @@ for (const [file, envName, list] of [['career-backfill.js', 'TEN437_BACKFILL', B
   }
 }
 fs.rmSync(dir, { recursive: true, force: true });
-const total = CORE_MUTANTS.length + PAGE_MUTANTS.length + BACKFILL_MUTANTS.length + PIPELINE_MUTANTS.length;
+const total = CORE_MUTANTS.length + PAGE_MUTANTS.length + WORKFLOW_MUTANTS.length + BACKFILL_MUTANTS.length + PIPELINE_MUTANTS.length;
 console.log(`mutants: ${total - survived} caught, ${survived} survived`);
 process.exit(survived ? 1 : 0);
