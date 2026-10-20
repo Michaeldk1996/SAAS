@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // TEN-443 step 2 · build the Tennis Explorer (TE) store the pipeline reads, from the raw page cache of te-scrape.mjs.
 //
-//   te-history/<profileKey>.json   one player: { key, slug, dob, name, builtAt, balance: {season: TE table row}, rows: [...] }
+//   te-history/<profileKey>.json   one player: { key, slug, dob, name, builtAt, readAt, balance: {season: TE table row}, rows: [...] }
+//                                  (readAt, TEN-449: when his TE current-season page was read; never goes backwards — the guard)
 //   te-history-index.json          { builtAt, players: {key: {slug, rows, seasons}}, totalRows, highWater: {totalRows, players} }
 //
 // Written ONLY by this tool, run on this Mac after a scrape (founder 2026-10-17: TE is licensed via the Livesport
@@ -28,6 +29,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { createRequire } from 'node:module';
 
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? process.argv[i + 1] : d; };
 const CACHE = arg('--cache', process.env.TE_CACHE || path.join(os.homedir(), '.stennisfy', 'te-cache'));
@@ -214,7 +216,8 @@ export function reconcileBalance(rows, balance) {
 
 // One player's record from his pages: the profile (table + injuries) and his season pages. Returns { rec } or
 // { refuse: why }. The same gate the Mac build and the Actions refresh both pass through.
-export function buildPlayerRecord({ key, slug, dob, name, mainHtml, seasonHtml, keepRows, builtAt }) {
+// `readAt` (TEN-449 provisional): when his TE current-season page was read — the merge counts api-tennis rows from that day on
+export function buildPlayerRecord({ key, slug, dob, name, mainHtml, seasonHtml, keepRows, builtAt, readAt }) {
   const balance = parseBalance(mainHtml); const inj = injuries(mainHtml);
   if (!balance) return { refuse: 'profile page has no season table' };
   let rows = (keepRows || []).slice();
@@ -231,17 +234,49 @@ export function buildPlayerRecord({ key, slug, dob, name, mainHtml, seasonHtml, 
   // A season whose mismatch exceeds 2 matches is a parse problem, not a TE slip: that player is not written.
   const gap = (b) => { const m = b.match(/rows (\d+)\/(\d+) vs table (\d+)\/(\d+)/); return m ? Math.abs(m[1] - m[3]) + Math.abs(m[2] - m[4]) : 99; };
   if (bad.some((b) => gap(b) > 2)) return { refuse: 'rows do not reconcile with TE\'s table', bad: bad.slice(0, 6) };
-  const rec = { key, slug, dob: dob || null, name: name || null, builtAt: builtAt || new Date().toISOString(), balance, rows, ...(bad.length ? { tableMismatch: bad } : {}) };
+  const rec = { key, slug, dob: dob || null, name: name || null, builtAt: builtAt || new Date().toISOString(), ...(readAt ? { readAt } : {}), balance, rows, ...(bad.length ? { tableMismatch: bad } : {}) };
   return { rec, bad };
+}
+
+// Our DOB for each key, as the scraper joined on it: its rosters (TE_CACHE/roster*.json, the DOB-checked Sackmann join)
+// and identity-verified.json (the age±1 joins, re-checked against api-tennis player_bday). Two sources that disagree on
+// a key leave it with no DOB of ours (refused, never a guess).
+export function ourDobs(cache) {
+  const dobs = new Map(), conflict = new Set();
+  const add = (k, d) => { k = String(k); if (!d) return; if (dobs.has(k) && dobs.get(k) !== String(d)) conflict.add(k); dobs.set(k, String(d)); };
+  for (const f of fs.readdirSync(cache).filter((x) => /^roster.*\.json$/.test(x)).sort()) {
+    const j = JSON.parse(fs.readFileSync(path.join(cache, f), 'utf8'));
+    for (const x of (Array.isArray(j) ? j : [])) add(x.key, x.dob);
+  }
+  const iv = path.join(cache, 'identity-verified.json');
+  if (fs.existsSync(iv)) for (const [k, v] of Object.entries(JSON.parse(fs.readFileSync(iv, 'utf8')).verified || {})) add(k, v.dob);
+  for (const k of conflict) dobs.set(k, null);
+  return dobs;
 }
 
 function main() {
   const players = JSON.parse(fs.readFileSync(path.join(CACHE, 'players.json'), 'utf8'));
+  // TEN-449: only a DOB join whose TE DOB equals ours, or a key the founder named (te-join.js NO_DOB_EXCEPTION /
+  // NEAR_MISS_DOB, each pinned to its page), becomes a store record. Any other entry — a hand-edited join, a near-miss or
+  // malformed DOB not named, a key with no DOB of ours — stops the build before a single file is written (exit 1).
+  const { teIdentityRefusal } = createRequire(import.meta.url)('../te-join.js');
+  const ours = ourDobs(CACHE);
+  const refusedJoin = [];
+  for (const [key, p] of Object.entries(players)) {
+    if ((ONLY && !ONLY.has(key)) || !p.slug) continue;
+    const refusal = teIdentityRefusal({ key, slug: p.slug, dob: p.dob, how: p.how, ourDob: ours.get(String(key)) ?? null });
+    if (refusal) refusedJoin.push({ key, slug: p.slug, why: refusal });
+  }
+  if (refusedJoin.length) {
+    console.log(JSON.stringify({ refusedJoin, written: 0 }, null, 1));
+    console.error(`te-build-history: ${refusedJoin.length} join(s) refused — nothing written`);
+    process.exit(1);
+  }
   const dir = path.join(OUT, 'te-history'); fs.mkdirSync(dir, { recursive: true });
   const idxF = path.join(OUT, 'te-history-index.json');
   const prev = fs.existsSync(idxF) ? JSON.parse(fs.readFileSync(idxF, 'utf8')) : { players: {}, highWater: { totalRows: 0, players: 0 } };
   const idx = { builtAt: new Date().toISOString(), source: 'tennisexplorer.com (licensed, Livesport agreement 2026-10-17)', players: { ...prev.players } };
-  const report = { written: 0, kept: [], notReconciled: [], tableMismatch: [], unmatched: [], missingPages: [] };
+  const report = { written: 0, kept: [], notReconciled: [], tableMismatch: [], unmatched: [], missingPages: [], refusedJoin };
   let oldestCurrent = null;
   for (const [key, p] of Object.entries(players)) {
     if (ONLY && !ONLY.has(key)) continue;
@@ -258,12 +293,25 @@ function main() {
       if (Number(y) === Math.max(...p.years.map(Number))) { const t = fs.statSync(f).mtimeMs; if (oldestCurrent === null || t < oldestCurrent) oldestCurrent = t; }
     }
     if (missing) { report.kept.push(key); continue; }
-    const built = buildPlayerRecord({ key, slug: p.slug, dob: p.dob, name: p.name, mainHtml, seasonHtml, builtAt: idx.builtAt });
+    // TEN-449 provisional: readAt = when we last saw TE's current state for him — the later of the cache's fetch times
+    // (mtime) of his latest season page and his profile page (the profile lists his seasons: read later and showing no
+    // newer season, nothing newer existed then; January case). A profile showing a season newer than any cached season
+    // page: no readAt (no provisional rows — under-count). Never earlier than the readAt already in the store.
+    const yMax = Math.max(...(p.years || []).map(Number));
+    const curF = cacheFile(`/player/${p.slug}/?annual=${yMax}`);
+    const curT = Number.isFinite(yMax) && fs.existsSync(curF) ? fs.statSync(curF).mtimeMs : null;
+    const newer = Object.keys(parseBalance(mainHtml) || {}).some((y) => /^\d{4}$/.test(y) && Number(y) > yMax);
+    let readAt = curT === null || newer ? null : new Date(Math.max(curT, fs.statSync(mainF).mtimeMs)).toISOString();
+    const prevF = path.join(dir, `${key}.json`);
+    const prevAt = fs.existsSync(prevF) ? (JSON.parse(fs.readFileSync(prevF, 'utf8')).readAt || null) : null;
+    if (prevAt && (!readAt || prevAt > readAt)) readAt = prevAt;
+    if (newer) report.noReadAt = (report.noReadAt || []).concat(key);
+    const built = buildPlayerRecord({ key, slug: p.slug, dob: p.dob, name: p.name, mainHtml, seasonHtml, builtAt: idx.builtAt, readAt });
     if (built.refuse) { report.notReconciled.push({ key, slug: p.slug, bad: built.bad || [built.refuse] }); continue; }
     const { rec, bad } = built; const rows = rec.rows;
     if (bad.length) report.tableMismatch.push({ key, slug: p.slug, cells: bad });
     fs.writeFileSync(path.join(dir, `${key}.json`), serialise(rec));
-    idx.players[key] = { slug: p.slug, dob: p.dob || null, rows: rows.length, seasons: (p.years || []).length };
+    idx.players[key] = { slug: p.slug, dob: p.dob || null, rows: rows.length, seasons: (p.years || []).length, readAt: rec.readAt };
     report.written++;
   }
   idx.totalRows = Object.values(idx.players).reduce((s, x) => s + x.rows, 0);

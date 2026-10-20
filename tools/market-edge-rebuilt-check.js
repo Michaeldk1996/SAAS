@@ -1,12 +1,16 @@
 #!/usr/bin/env node
 'use strict';
 // ─────────────────────────────────────────────────────────────────────────────
-// TEN-263 follow-up — founder ruling 2026-09-24: "Market-edge crash goes red, as
-// a post-deploy step." The site still deploys (the committed market-edge floor
-// ships); then the LAST step of pipeline.yml runs this and fails the run, with
-// the reason, when market-edge was not rebuilt by THIS run.
+// TEN-263 follow-up — founder ruling 2026-09-24 ("market-edge crash goes red"),
+// REVISED by founder decision 19 Oct (TEN-449): the check is ALERT ONLY. It must
+// never block the site or turn a data run red. pipeline.yml runs it after the
+// built site has been handed to publish.yml (the `site-data` upload); when
+// market-edge was not rebuilt by THIS run it writes the reason as a ::warning::
+// and into the step summary, sets the step outputs `evaluated=true`, `stale` (+ `reason`), and
+// exits 0. The one-Telegram-per-streak alert is the next step
+// (tools/market-edge-alert.mjs), gated on that output.
 //
-// Inputs (all recorded before the deploy, never failing it):
+// Inputs (all recorded by the build step, which never fails either):
 //   MARKET_EDGE_BUILD_START  UTC second the build step began (job env)
 //   MARKET_EDGE_BUILD_RC     build-market-edge.js exit status (job env)
 //   argv[2]                  the SHIPPED index (_site/market-edge-index.json)
@@ -48,21 +52,32 @@ function main() {
   let index = null;
   try { index = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (_) { index = null; }
   const v = verdict({ start: process.env.MARKET_EDGE_BUILD_START, rc: process.env.MARKET_EDGE_BUILD_RC, index });
-  if (v.ok) { console.log(v.reason); return 0; }
-  console.log(`::error title=Market-edge was not rebuilt this run::${v.reason}. The site deployed normally; Market edge is showing the previous build.`);
+  const reason = String(v.reason).replace(/[\r\n]+/g, ' ');
+  const output = (lines) => {
+    if (!process.env.GITHUB_OUTPUT) return;
+    try { fs.appendFileSync(process.env.GITHUB_OUTPUT, lines.join('\n') + '\n'); } catch (_) { /* the ::warning:: is the channel */ }
+  };
+  if (v.ok) { console.log(reason); output(['evaluated=true', 'stale=false']); return 0; }
+  console.log(`::warning title=Market-edge was not rebuilt this run::${reason}. The data still published; Market edge shows the previous build.`);
+  output(['evaluated=true', 'stale=true', `reason=${reason}`]);
   if (process.env.GITHUB_STEP_SUMMARY) {
     try {
       fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, [
-        '### Market-edge was not rebuilt this run', '',
-        `- ${v.reason}.`,
-        '- The **site deployed normally**; the Market edge block shows the previous build.',
+        '### ⚠️ Market-edge was not rebuilt this run (alert only)', '',
+        `- ${reason}.`,
+        '- The **data still published**; the Market edge block shows the previous build. This never turns the run red (founder, 19 Oct, TEN-449).',
+        '- One Telegram per streak: the next step sends it unless the previous run already alerted.',
         '- See the *Build market-edge shards* step log above.', '',
       ].join('\n'));
-    } catch (_) { /* the ::error line above is the channel that must not fail */ }
+    } catch (_) { /* the ::warning line above is the channel */ }
   }
-  return 1;
+  return 0;
 }
 
-if (require.main === module) process.exitCode = main();
+// Alert only: whatever happens in here, the step exits 0 (founder, 19 Oct, TEN-449).
+if (require.main === module) {
+  try { main(); } catch (e) { console.log(`::error title=Market-edge check could not run::${e && e.message} (alert only, the run stays green)`); }
+  process.exitCode = 0;
+}
 
 module.exports = { verdict };

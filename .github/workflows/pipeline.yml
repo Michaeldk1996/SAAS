@@ -324,6 +324,8 @@ jobs:
           # TEN-449: the two switches above, independent; unset = off
           TE_INGEST: ${{ vars.TE_INGEST == '1' && '1' || '0' }}
           SET_REPAIR: ${{ vars.SET_REPAIR == '1' && '1' || '0' }}
+          # TEN-449: provisional same-day counting (amends ruling 2A), its own switch; acts only inside the TE merge
+          PROVISIONAL: ${{ vars.PROVISIONAL == '1' && '1' || '0' }}
           TE_STORE_DIR: .te-store   # read in place from the private checkout; never copied into this one
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
           # Stage 4 of the Tennis Edge Model (h2h-model): pre-bakes the Claude AI
@@ -530,18 +532,18 @@ jobs:
       # then fails, so "Assert site completeness" fails the run closed rather than publish it.
       # The step records its own start (UTC, whole seconds) for the build-stamp assert in
       # "Assert site completeness": the shipped index must carry a builtAt at or after it.
-      # Founder ruling 2026-09-24: a crash no longer passes silently. The site still
-      # deploys (the committed shards ship), and the LAST step of the job fails the
-      # run with the reason ("Fail the run if market-edge was not rebuilt"). This step
-      # only records what happened — the exit status goes into the job env — and never
-      # fails itself, so nothing between here and the deploy is skipped.
+      # Founder ruling 2026-09-24, revised 19 Oct (TEN-449): a crash never passes silently, and never
+      # blocks either. The committed shards ship, and the "Market-edge rebuilt check" step at the end of
+      # the job warns with the reason and sends one Telegram per streak — alert only, the run stays green.
+      # This step only records what happened — the exit status goes into the job env — and never fails
+      # itself, so nothing between here and the site-data upload is skipped.
       - name: Build market-edge shards (best-effort)
         run: |
           echo "MARKET_EDGE_BUILD_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
           ME_RC=0
           node build-market-edge.js --quiet || ME_RC=$?
           echo "MARKET_EDGE_BUILD_RC=$ME_RC" >> "$GITHUB_ENV"
-          if [ "$ME_RC" -ne 0 ]; then echo "::warning::build-market-edge.js exited $ME_RC; the committed market-edge floor will ship and the run is failed after the deploy."; fi
+          if [ "$ME_RC" -ne 0 ]; then echo "::warning::build-market-edge.js exited $ME_RC; the committed market-edge floor will ship (alert only, the run stays green)."; fi
 
 
       # TEN-263 D-12: Elo name keys two feed players share (J. D. Silva / J. Reis Da Silva). The
@@ -1539,6 +1541,7 @@ jobs:
       # check above) is handed to publish.yml as the `site-data` artifact; publish.yml lays the newest GATED code
       # over it. include-hidden-files keeps the artifact byte-for-byte what Pages would get.
       - name: Upload the built site for publish.yml (site-data)
+        id: site_data
         uses: actions/upload-artifact@v4
         with:
           name: site-data
@@ -1779,41 +1782,60 @@ jobs:
 
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never
-      # blocks the core board's deploy. But an isolated failure must still be
-      # LOUD — never a green run. This runs last, AFTER the core deploy has
-      # already published, and turns the whole RUN red if the generator failed,
-      # writing the reason into the run summary. Loud failure, isolated failure:
-      # the core board is fresh; the run is red so the alarm is seen.
+      # blocks the data build or its site-data upload. But an isolated failure must
+      # still be LOUD — never a green run. This runs at the end of the job, after the
+      # upload, and turns the whole RUN red if the generator failed, writing the
+      # reason into the run summary. (The deploy is publish.yml's since the code/data
+      # split, cf703d612, so this step no longer reports a deploy outcome — TEN-449.)
       - name: Re-raise Trading Report generator failure (loud, non-blocking)
         if: always() && steps.trading_splits.outcome == 'failure'
         run: |
-          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
-          echo "::error title=Trading Report generator failed::build-trading-splits.js exited non-zero this run (core deploy outcome: ${DEPLOY_OUTCOME}). Trading shards were NOT refreshed."
+          echo "::error title=Trading Report generator failed::build-trading-splits.js exited non-zero this run. Trading shards were NOT refreshed."
           {
             echo "### ❌ Trading Report generator failed"
             echo ""
             echo "\`build-trading-splits.js\` exited non-zero this run."
             echo ""
-            if [ "$DEPLOY_OUTCOME" = "success" ]; then
-              echo "- The **core board deployed normally** — this failure is isolated and did not block the deploy."
-            else
-              echo "- ⚠️ The core deploy did **not** succeed this run (deploy outcome: \`${DEPLOY_OUTCOME}\`) — this run has more than one failure; check the deploy step too."
-            fi
             echo "- The **trading shards were not refreshed** this run."
             echo "- See the *Build Trading Report splits* step log above; re-run once fixed."
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
 
-      # Founder ruling 2026-09-24 (TEN-263 follow-up): market-edge is a per-run output.
-      # When THIS run did not rebuild it — the builder exited non-zero, or the shipped
-      # index's builtAt predates this run's build step (the committed floor shipped),
-      # or the build step never ran — the site has still deployed, and this step then
-      # fails the run with the reason. Last in the job and gated on a successful deploy,
-      # so it never costs a deploy or a commit-back, and a failed deploy is not
-      # double-reported as a stale market-edge. Locked by tools/test-ten263-pipeline.js.
-      - name: Fail the run if market-edge was not rebuilt (post-deploy, loud)
-        if: always() && steps.deploy.outcome == 'success'
-        run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json
+      # Founder ruling 2026-09-24 (TEN-263 follow-up), REVISED by founder decision 19 Oct (TEN-449): ALERT ONLY.
+      # market-edge is a per-run output. When THIS run did not rebuild it — the builder exited non-zero, the shipped
+      # index's builtAt predates this run's build step (the committed floor shipped), or the build step never ran —
+      # the check writes the reason as a ::warning:: and into the step summary, and the alert step after it sends ONE
+      # Telegram per streak (only when no earlier run of the streak DELIVERED one — the marker step records a 2xx from
+      # Telegram, so a failed send is retried next run). Every step exits 0 in every case — by construction, not
+      # continue-on-error, so they stay green in the UI and in the jobs API that the de-dup and fail-alert read — and
+      # each run line ends in `|| echo "::error::…"` so even a missing or broken script can't turn a data run red.
+      # Runs whenever this run handed its site to publish.yml (the site-data upload) — the successor of the old
+      # "deploy succeeded" gate, which pointed at a deploy step that moved to publish.yml (cf703d612), so the check
+      # never ran after the split. Locked by tools/test-ten263-pipeline.js.
+      - name: Market-edge rebuilt check (alert only, never blocks)
+        id: me_check
+        if: always() && steps.site_data.outcome == 'success'
+        run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json || echo "::error title=Market-edge check did not run::market-edge-rebuilt-check.js exited $? (alert only, the run stays green)"
+      # Streak reset: runs only when the check EVALUATED and found market-edge rebuilt. A broken check writes no outputs,
+      # so it never looks like "rebuilt" to the next run's de-dup (tools/market-edge-alert.mjs).
+      - name: Market-edge rebuilt (streak reset marker)
+        if: always() && steps.me_check.outputs.evaluated == 'true' && steps.me_check.outputs.stale == 'false'
+        run: echo "Market-edge rebuilt this run; a later not-rebuilt run starts a new streak."
+      - name: Alert — market-edge not rebuilt (Telegram, once per streak)
+        id: me_alert
+        if: always() && steps.me_check.outputs.stale == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ME_REASON: ${{ steps.me_check.outputs.reason }}
+        run: node tools/market-edge-alert.mjs || echo "::error title=Market-edge alert not sent::market-edge-alert.mjs exited $? (alert only, the run stays green)"
+      # "Streak already alerted": runs after Telegram answered 2xx (sent) or when an earlier run of the streak delivered
+      # (alerted — carried forward, so every quiet run of an alerted streak carries it). A failed send leaves it skipped,
+      # so the next stale run sends again (tools/market-edge-alert.mjs).
+      - name: Market-edge alert sent (streak marker)
+        if: always() && (steps.me_alert.outputs.sent == 'true' || steps.me_alert.outputs.alerted == 'true')
+        run: echo "Market-edge alert delivered for this streak; later runs of the streak stay quiet."
 
   # Founder ruling 2026-10-18 (pipeline-down alert): after two consecutive failed runs, ONE Telegram naming the failing
   # step in plain words (once per streak, at its second failure). Its own job so it sees every step of the build job,

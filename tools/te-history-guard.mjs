@@ -14,6 +14,7 @@ import { execFileSync } from 'node:child_process';
 export const STORE_DIR = 'te-history';
 export const INDEX = 'te-history-index.json';
 const BUILDER = 'tools/te-build-history.mjs';
+const SAAS_CHECKOUT = 'saas';   // the store repo's refresh checks SAAS out here (tools/te-store-repo/te-refresh.yml)
 // the two sanctioned writers: the Mac build, and the GitHub Actions refresh (all-or-nothing, guarded before it writes)
 const WRITERS = new Set([BUILDER, 'tools/te-refresh.mjs']);
 
@@ -40,6 +41,10 @@ export function checkStore(root, opts = {}) {
     total += n;
     if (n < (p.rows || 0)) why.push(`${STORE_DIR}/${key}.json holds ${n} rows, the index records ${p.rows}`);
     if (rec.src !== 'te' || (rec.rows || []).some((r) => !Array.isArray(r) && r.src !== 'te')) why.push(`${STORE_DIR}/${key}.json is not tagged src 'te'`);
+    // TEN-449 provisional: the file's readAt is its index entry's, and never in the future (a clock or a typo would count
+    // every api-tennis row from then on as read-day-or-later... and none before it)
+    if ((rec.readAt || null) !== (p.readAt || null)) why.push(`${STORE_DIR}/${key}.json readAt ${rec.readAt || 'missing'} differs from its index entry ${p.readAt || 'missing'}`);
+    if (rec.readAt && !(Date.parse(rec.readAt) <= (opts.now || Date.now()) + 3600e3)) why.push(`${STORE_DIR}/${key}.json readAt ${rec.readAt} is in the future or unreadable`);
   }
   const hw = idx.highWater || {};
   const nPlayers = Object.keys(players).length;
@@ -52,6 +57,15 @@ export function checkStore(root, opts = {}) {
     if (nPlayers < Math.max(pp, (prev.highWater || {}).players || 0)) why.push(`index lists ${nPlayers} players, the committed index listed ${pp}`);
     if (total < pr) why.push(`store holds ${total} rows, the committed store held ${pr}`);
     for (const [key, p] of Object.entries(prev.players || {})) if (!players[key]) why.push(`player ${key} dropped from the index`);
+    // TEN-449 provisional: a player's TE read time (readAt) never goes backwards — an earlier one would count api-tennis
+    // rows provisionally that TE was already read past. Checked on his file and on the index.
+    for (const [key, p] of Object.entries(prev.players || {})) {
+      if (!p.readAt || !players[key]) continue;
+      let rec = null; try { rec = JSON.parse(fs.readFileSync(path.join(root, STORE_DIR, `${key}.json`), 'utf8')); } catch (e) { continue; }
+      for (const [where, at] of [[`${STORE_DIR}/${key}.json`, rec.readAt], [`the index entry for ${key}`, players[key].readAt]]) {
+        if (!(Date.parse(at) >= Date.parse(p.readAt))) why.push(`${where}: readAt ${at || 'missing'} is before the committed ${p.readAt} — readAt never goes backwards`);
+      }
+    }
   }
   return { ok: why.length === 0, why, players: nPlayers, rows: total };
 }
@@ -65,7 +79,10 @@ export function checkWriters(root) {
   const files = [];
   const walk = (d) => { for (const e of fs.readdirSync(path.join(root, d), { withFileTypes: true })) {
     const rel = path.join(d, e.name);
-    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github')) walk(rel); }
+    // TEN-449: exactly one exception — saas/ at the root holding its own .git is the public SAAS repo, which the store
+    // repo's refresh checks out there for its tools; SAAS's CI guards it, and scanning it from the store would name
+    // SAAS's own writers. Any other directory, nested checkout or not, is scanned.
+    if (e.isDirectory()) { if (!['node_modules', '.git', STORE_DIR, 'career-history', 'tournament-history'].includes(e.name) && (!e.name.startsWith('.') || e.name === '.github') && !(rel === SAAS_CHECKOUT && fs.existsSync(path.join(root, rel, '.git')))) walk(rel); }
     else if (/\.(m?js|cjs|ya?ml|sh|py)$/.test(e.name)) files.push(rel);
   } };
   walk('.');

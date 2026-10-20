@@ -157,8 +157,88 @@ function teOnlyRow(t) {
 const OTHER_COUNTED = new Set(['Pan American Games', 'African Games', 'World University Games', 'Mediterranean Games',
   'Commonwealth Games', 'Rome - pre-qualification', 'AO Wildcard Playoff - Australia', 'AO WC Playoff - Asia-Pacific']);
 
-// Players joined to TE without a DOB, by name in the founder's ruling (TEN-449, 2026-10-19): Z. Svajda only.
-const NO_DOB_EXCEPTION = new Set(['2986']);
+// Players joined to TE without a DOB, by name in the founder's ruling (TEN-449, 2026-10-19): Z. Svajda only, pinned to
+// his TE page.
+const NO_DOB_EXCEPTION = new Map([['2986', { slug: 'svajda' }]]);
+
+// Players joined to TE on a NEAR-MISS date of birth, by key, in the founder's ruling (TEN-449, 2026-10-19, report
+// `bucket-d`): TE's DOB has day and month swapped, is 10 days off, or is the year only (TE prints "1. 1. <year>"; the
+// store records the year alone). Each is pinned to ONE TE page and ONE TE DOB, as the store records it; ours is kept for
+// the record. Unlike Svajda they are DOB-joined players: the record counts TE's rows (ruling 2A), plus provisional ones. Overlap the
+// founder ruled on (paired / our rows, 0 result disagreements): 216/217, 172/172, 32/32, 131/131, 7/7, 18/34 (16 junior
+// rows), 5/5, 15/15 (report of 19 Oct). Nobody else: any other key with a DOB that is not a valid full yyyymmdd stops the
+// run, and the store builder refuses any other key whose TE DOB differs from ours.
+const NEAR_MISS_DOB = new Map([
+  ['702', { slug: 'tkemaladze', te: '20000604', ours: '20000406', why: 'day and month swapped' }],
+  ['12972', { slug: 'rocha-a46b1', te: '19991004', ours: '19990410', why: 'day and month swapped' }],
+  ['19461', { slug: 'munoz-1a9fc', te: '2005', ours: '20050122', why: 'TE has the year only' }],
+  ['52682', { slug: 'balshaw', te: '20060605', ours: '20060615', why: '10 days apart' }],
+  ['54221', { slug: 'bennaton', te: '2005', ours: '20050813', why: 'TE has the year only' }],
+  ['70760', { slug: 'ceban', te: '2009', ours: '20090313', why: 'TE has the year only' }],
+  ['78231', { slug: 'al-sulaiti-a86c2', te: '2007', ours: '20070730', why: 'TE has the year only' }],
+  ['78628', { slug: 'snoussi', te: '2007', ours: '20070707', why: 'TE has the year only' }],
+]);
+// How a cache players.json entry may have been joined (te-scrape.mjs resolve: 'dob' / 'age±1' — DOB equal by
+// construction), plus the two founder-named classes, each only for its own keys.
+const JOIN_HOW = { dob: null, 'age±1': null, 'founder-exception': NO_DOB_EXCEPTION, 'near-miss-dob': NEAR_MISS_DOB };
+
+// a real calendar date, yyyymmdd (00000000, month 13, 31 Feb are not DOBs)
+const isFullDob = (d) => { if (!/^\d{8}$/.test(d)) return false; const y = +d.slice(0, 4), m = +d.slice(4, 6), dd = +d.slice(6);
+  const t = new Date(Date.UTC(y, m - 1, dd)); return y >= 1900 && m >= 1 && m <= 12 && dd >= 1 && dd <= 31 && t.getUTCMonth() === m - 1 && t.getUTCDate() === dd; };
+
+// Why a TE store record (te-history/<key>.json) — or, with `how`, a cache players.json entry — may NOT be joined; null
+// when it may. Fail-closed: a valid full yyyymmdd DOB, or a key named above with exactly its page (and DOB).
+// With `ourDob` in the argument (the store builder, which holds the DOB the scraper joined on), an unnamed key's TE DOB
+// must also EQUAL ours, and a near-miss key's ours must be the one the founder ruled on; ourDob null = not on record,
+// refused for an unnamed key.
+function teIdentityRefusal(rec) {
+  const key = String(rec.key), dob = rec.dob == null || rec.dob === '' ? null : String(rec.dob);
+  if ('how' in rec) {
+    if (!(rec.how in JOIN_HOW)) return `${key}: join "${rec.how}" is not a DOB join or a named exception — refusing`;
+    const named = JOIN_HOW[rec.how];
+    if (named && !named.has(key)) return `${key}: join "${rec.how}" is not a named exception for this key — refusing a non-DOB join`;
+  }
+  const nm = NEAR_MISS_DOB.get(key);
+  if (nm) {
+    if (rec.slug !== nm.slug || dob !== nm.te) return `te-history/${key}.json is a named near-miss DOB join (NEAR_MISS_DOB) to ${nm.slug} with TE DOB ${nm.te}, but holds ${rec.slug} with DOB ${dob} — refusing`;
+    if ('ourDob' in rec && rec.ourDob !== nm.ours) return `${key}: our DOB ${rec.ourDob} is not the ${nm.ours} the near-miss ruling (NEAR_MISS_DOB) was made on — refusing`;
+    return null;
+  }
+  const nd = NO_DOB_EXCEPTION.get(key);
+  if (nd && rec.slug !== nd.slug) return `te-history/${key}.json is the named no-DOB join (NO_DOB_EXCEPTION) to ${nd.slug}, but holds ${rec.slug} — refusing`;
+  if (!dob) return nd ? null : `te-history/${key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`;
+  if (!isFullDob(dob)) return `te-history/${key}.json has DOB "${dob}", not a valid full yyyymmdd, and is not a named exception (NEAR_MISS_DOB) — refusing a non-DOB join`;
+  if ('ourDob' in rec && !nd) {
+    if (!rec.ourDob) return `${key}: no DOB of ours on record to check TE's ${dob} against — refusing a non-DOB join`;
+    if (rec.ourDob !== dob) return `${key}: TE DOB ${dob} is not our DOB ${rec.ourDob}, and the key is not a named exception (NEAR_MISS_DOB) — refusing a non-DOB join`;
+  }
+  return null;
+}
+
+// TEN-449 provisional counting (founder ruling 2026-10-19, amends 2A; behind PROVISIONAL). A DOB-joined player's
+// api-tennis row TE does not list counts PROVISIONALLY when it is dated on or after the day we read his TE
+// current-season page (`readAt`, Berlin calendar day: api-tennis dates are Berlin wall dates). Exclusions first: a junior,
+// women's-event, walkover, exhibition, national-championship or pro-series row is never provisional. On the read day the
+// row counts only if TE has no unpaired row within ±3 days with the same result (TE may list it under a name we fail to
+// pair). A store record with no readAt has no provisional rows (fail-safe: today's behaviour).
+// Review 2026-10-20 (lean to under-counting): the read-day guard needs no result match (any unpaired TE row within ±3
+// days); a row counts only within PROVISIONAL_MAX_DAYS after the read day (a stalled refresh cannot keep rows counted);
+// exact duplicates (same day, opponent surname, result) count once. The event type is not on career-history rows —
+// isCountedSinglesFixture drops api-tennis "Exhibition"/women's/junior types before a row exists; the name test below
+// is the second line.
+const { berlinOffsetMs } = require('./berlin-time.js');
+const NEVER_PROVISIONAL = /\bwomen\b|\bW\d{2,3}\b|\bwta\b|exhibition|\bexh\b|\butr\b|pro (tennis )?series|boodles|hurlingham|adria tour|ultimate tennis showdown|diriyah|six kings|6 kings|kooyong|mubadala|tie break tens|bundesliga|interclub|\bliga\b|\bleague\b|championships?$|national/i;
+function readDayOf(readAt) {
+  const ms = Date.parse(readAt || '');
+  return Number.isFinite(ms) ? new Date(ms + berlinOffsetMs(ms)).toISOString().slice(0, 10) : null;
+}
+const PROVISIONAL_MAX_DAYS = 14;
+function isProvisional(r, readDay, teOnly) {
+  if (!readDay || r.src !== 'fixtures' || !r.date || r.date < readDay || days(r.date, readDay) > PROVISIONAL_MAX_DAYS) return false;
+  if (r.walkover || isJuniorRow(r) || NEVER_PROVISIONAL.test(r.tournament || '')) return false;
+  if (r.date === readDay && teOnly.some((t) => t.date && Math.abs(days(t.date, r.date)) <= 3)) return false;
+  return true;
+}
 
 // The career record is its OWN population (founder TEN-449): H2H, Lines, the model and every other reader of
 // career-history keep the feed rows exactly as built. So the merge never touches `rows`: it works on copies and returns
@@ -168,7 +248,7 @@ const NO_DOB_EXCEPTION = new Set(['2986']);
 //            'not-in-te' (a DOB-joined player's row TE does not list: shown in the drill, marked, never counted);
 //   added  — the TE-only rows.
 // recordLayer() turns these into the shard's `record` block once the feed rows are final.
-function applyTeHistory(rows, teRec) {
+function applyTeHistory(rows, teRec, opts = {}) {
   const diag = { paired: 0, added: 0, addedByCat: {}, juniorsDropped: 0, stuttgartFixed: 0, oursOnly: 0, seasonMoves: 0,
     indoorOverrides: 0, indoorSet: 0, surfaceFromTe: 0, resultFromTe: 0, conflicts: {}, exhibitionsSkipped: 0, walkoversSkipped: 0 };
   const out = new Map(), orig = new Map();
@@ -214,16 +294,23 @@ function applyTeHistory(rows, teRec) {
   const pairedKey = new Set(pairs.map(({ ours: r }) => `${r.date}|${ourSurname(r.opponent)}|${!!r.won}`));
   // founder ruling TEN-449 (2026-10-19): for a player joined on his date of birth, the record counts only what TE lists;
   // our rows TE lacks stay visible in the drill, marked "not in Tennis Explorer, not counted". A player joined without a
-  // DOB (the named exception, Svajda) keeps counting them.
-  // The exception is by player key, never "any record without a DOB": a store record with no DOB for anyone else is
-  // a join the DOB rule forbids, and the run stops rather than count on it.
-  if (!teRec.dob && !NO_DOB_EXCEPTION.has(String(teRec.key))) throw new Error(`te-history/${teRec.key}.json has no DOB and is not a named exception (NO_DOB_EXCEPTION) — refusing a non-DOB join`);
+  // DOB (the named exception, Svajda) keeps counting them. A near-miss DOB join (NEAR_MISS_DOB) is a DOB-joined player
+  // (provisional rows included, even with a year-only TE DOB).
+  // The exceptions are by player key, never "any record without a DOB": a store record with no DOB, or a DOB short of
+  // yyyymmdd, for anyone else is a join the DOB rule forbids, and the run stops rather than count on it.
+  const refusal = teIdentityRefusal(teRec);
+  if (refusal) throw new Error(refusal);
   const teOnlyCounts = !!teRec.dob;
+  const readDay = opts.provisional ? readDayOf(teRec.readAt) : null;   // TEN-449 provisional: off, or no readAt -> none
+  const provKeys = new Set();   // an exact duplicate of a provisional row (same day, opponent, result) counts once
   for (const r of oursOnly) {
     if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
     diag.oursOnly++;
     if (/\bwomen\b|\bW\d{2,3}\b/i.test(r.tournament || '')) diag.womensEventRows = (diag.womensEventRows || 0) + 1;
-    if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
+    // the flag is set on the record's COPY only (r is a copy): the shared row never carries it
+    const pk = `${r.date}|${ourSurname(r.opponent)}|${!!r.won}`;
+    if (teOnlyCounts && !provKeys.has(pk) && isProvisional(r, readDay, teOnly)) { provKeys.add(pk); r.provisional = readDay; diag.provisional = (diag.provisional || 0) + 1; }
+    else if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
   }
   for (const r of ours) {
     if (r.teWalkover) out.set(orig.get(r), 'walkover');
@@ -241,7 +328,8 @@ function applyTeHistory(rows, teRec) {
 //   out   [[i, reason]]  — matches[i] is not in the record (reasons above)
 //   add   [row]          — TE-only rows, in the career-history row shape (src 'te')
 // The page's season drill applies it (player-profile-v2.js recordRowsOf); nothing else reads it.
-const RECORD_FIELDS = ['year', 'surface', 'indoor', 'won', 'conflicts'];
+// `provisional` (TEN-449): the read day of a row counted provisionally — in the overlay only, never on a shared row
+const RECORD_FIELDS = ['year', 'surface', 'indoor', 'won', 'conflicts', 'provisional'];
 function recordLayer(matches, m) {
   const over = [], outL = [];
   matches.forEach((r, i) => {
@@ -290,4 +378,4 @@ function careerByYearFromRows(rows) {
   });
 }
 
-module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION };
+module.exports = { pairRows, conflictsOf, teRowsOf, applyTeHistory, recordLayer, careerByYearFromRows, teOnlyRow, isJuniorRow, ourSurname, teSurname, similar, OTHER_COUNTED, NO_DOB_EXCEPTION, NEAR_MISS_DOB, teIdentityRefusal, readDayOf, PROVISIONAL_MAX_DAYS };

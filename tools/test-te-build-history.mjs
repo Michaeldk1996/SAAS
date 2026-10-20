@@ -80,5 +80,47 @@ check('store round-trip: rows are written one per line and read back with src te
   const txt = B.serialise(rec); assert.ok(txt.split('\n').length >= 3);
   const back = B.rowsOf(JSON.parse(txt)); assert.strictEqual(back[0].src, 'te'); assert.strictEqual(back[0].won, true); assert.deepStrictEqual(back[0].sets, [{ w: 6, l: 3 }, { w: 6, l: 4 }]);
 });
+// TEN-449 provisional: the builder writes each player's readAt = the later of the cache's fetch times (mtime) of his
+// latest season page and his profile page; none when the profile shows a newer season than any cached page; and never
+// earlier than the readAt already in the store
+{
+  const { execFileSync } = await import('node:child_process');
+  const c2 = fs.mkdtempSync(path.join(os.tmpdir(), 'te-build-ra-')), out = fs.mkdtempSync(path.join(os.tmpdir(), 'te-build-out-'));
+  fs.mkdirSync(path.join(c2, 'html'));
+  const cf = (rel) => path.join(c2, 'html', rel.replace(/^\/+/, '').replace(/[^A-Za-z0-9._-]+/g, '_') + '.html');
+  const balRow = (y) => `<tr><td>${y}</td><td>1/0</td><td>-</td><td>1/0</td><td>-</td><td>-</td><td>-</td></tr>`;
+  const bal = (ys) => `<div id="balMenu-1-data"><table>${ys.map(balRow).join('')}</table></div>`;
+  const put = (rel, html, iso) => { fs.writeFileSync(cf(rel), html); const t = new Date(iso); fs.utimesSync(cf(rel), t, t); };
+  // [key, slug, season, season page read, profile read, seasons the profile shows]
+  const P = [['1', 'me', 2026, '2026-10-18T07:43:00Z', '2026-10-17T10:00:00Z', [2026]],     // season page later: its time
+    ['2', 'jan', 2025, '2025-12-20T09:00:00Z', '2026-01-08T10:00:00Z', [2025]],              // January: profile later, no 2026 -> profile
+    ['3', 'nw', 2025, '2026-10-18T09:00:00Z', '2026-10-18T10:00:00Z', [2026]],                // profile shows 2026, no page -> no readAt
+    ['4', 'kept', 2026, '2026-10-18T07:00:00Z', '2026-10-18T06:00:00Z', [2026]]];             // the store already holds a later read
+  const players = {};
+  for (const [key, slug, y, seasonAt, profAt, shows] of P) {
+    const who = `<a href="/player/${slug}/" class="notU"><strong>Me M.</strong></a>`;
+    put(`/player/${slug}/`, bal(shows.includes(y) ? shows : [...shows, y]).replace(balRow(2026), shows.includes(2026) && y !== 2026 ? '<tr><td>2026</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>' : balRow(2026)), profAt);
+    put(`/player/${slug}/?annual=${y}`, page(y, head('Brisbane', '/brisbane/') + row('05.01.', 'hard', who, opp('aa'), '1R', '6-1, 6-1')), seasonAt);
+    players[key] = { slug, years: [y], dob: '19920101', name: slug, how: 'dob' };
+  }
+  fs.writeFileSync(path.join(c2, 'players.json'), JSON.stringify(players));
+  // our DOB for each key (the builder refuses a join with no DOB of ours on record, TEN-449 Bucket D)
+  fs.writeFileSync(path.join(c2, 'roster.json'), JSON.stringify(P.map(([key]) => ({ key, dob: '19920101' }))));
+  fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['brisbane'] }));
+  fs.mkdirSync(path.join(out, 'te-history'));
+  fs.writeFileSync(path.join(out, 'te-history', '4.json'), JSON.stringify({ key: '4', readAt: '2026-10-19T05:00:00.000Z', rows: [] }));
+  let err = null;
+  try { execFileSync(process.execPath, [path.join(path.dirname(new URL(import.meta.url).pathname), 'te-build-history.mjs'), '--cache', c2, '--out', out], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, TE_CACHE: c2 } }); } catch (e) { err = String(e.stderr || e.message); }
+  const idx = err ? null : JSON.parse(fs.readFileSync(path.join(out, 'te-history-index.json'), 'utf8'));
+  const rec = (k) => JSON.parse(fs.readFileSync(path.join(out, 'te-history', `${k}.json`), 'utf8'));
+  const both = (k, want) => { assert.strictEqual(err, null, err); assert.strictEqual(rec(k).readAt, want, `file ${k}`); assert.strictEqual(idx.players[k] && idx.players[k].readAt, want, `index ${k}`); };
+  check('TEN-449 · readAt: the season page read after the profile -> the season page\'s time', () => both('1', '2026-10-18T07:43:00.000Z'));
+  check('TEN-449 · readAt: January — the profile read later, showing no newer season -> the profile\'s time', () => both('2', '2026-01-08T10:00:00.000Z'));
+  check('TEN-449 · readAt: the profile shows a season newer than any cached page -> no readAt (no provisional rows)', () => {
+    assert.strictEqual(err, null, err); assert.ok(idx.players['3'], 'the player is written (else this proves nothing)');
+    assert.strictEqual(idx.players['3'].readAt, undefined); assert.strictEqual(rec('3').readAt, undefined);
+  });
+  check('TEN-449 · readAt: never moved backwards against the record already in the store', () => both('4', '2026-10-19T05:00:00.000Z'));
+}
 console.log(`\nte-build-history: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

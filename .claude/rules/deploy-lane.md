@@ -226,6 +226,23 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
   **Test:** `tools/test-pipeline-fail-alert.mjs` (fake GitHub + Telegram: second failure → one message; first and third
   → none; a cancelled run in between; the wiring).
 
+## Market-edge not rebuilt — alert only (founder decision 19 Oct, TEN-449)
+
+- **A data run whose market-edge was not rebuilt stays green and sends ONE delivered Telegram per streak.** Not rebuilt =
+  the builder exited non-zero, the shipped `_site/market-edge-index.json` `builtAt` is older than this run's build step,
+  or the build step never ran. The check runs whenever the run uploaded `site-data` and writes the reason as a
+  `::warning::` and in the step summary. The alert step messages unless an earlier run of the same streak DELIVERED one:
+  the "streak marker" step runs after Telegram answered 2xx, and is carried forward by every quiet run of an alerted
+  streak, so a streak of any length stays at one message; a failed send, missing secrets or a GitHub error leaves it
+  unmarked (an `::error::`) and the next stale run tries again. A streak resets only at a run whose check EVALUATED and
+  found market-edge rebuilt (its own marker step; a broken check is never a reset). Cancelled runs and runs that never
+  reached the check are looked past; nothing decisive in 10 jobs reads → one message. The alert
+  is capped at 60 s. Every step exits 0, and each run line ends in `|| echo "::error::…"`, so even a missing script can't
+  turn the run red. Supersedes "market-edge crash goes red" (2026-09-24), which had never run since the code/data split
+  (its gate read the deploy step that moved to `publish.yml`). **Test:** `tools/test-ten263-pipeline.js` (the old red
+  exit and a bare run line are caught mutants; S S S F S S F → 2 messages, also when the first send fails; 5 without
+  the de-dup; a failed send on run N → run N+1 sends; 40 stale runs in a row → 1, more without the carry-forward).
+
 ## Pipeline stall guard (TEN-396, founder ruling 2026-10-07)
 
 A `pipeline.yml` run stuck in GitHub's `waiting` state holds the single `bsp-pipeline`

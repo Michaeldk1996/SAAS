@@ -1,0 +1,8 @@
+# actionlint config (TEN-449), read by tools/actionlint.mjs (-config-file). Any ignore added here must be narrow: one file,
+# one message, with a comment saying why.
+#
+# No ignores today. The one baseline finding (pipeline.yml read `steps.deploy`, a step that moved to publish.yml in the
+# code/data split, cf703d612) was fixed at the source by founder decision 19 Oct (TEN-449): the market-edge check is
+# alert-only and gated on the site-data upload, and the Trading Report re-raise no longer reports a deploy outcome.
+# tools/test-actionlint.mjs checks that a new `steps.deploy` reference in pipeline.yml is reported.
+paths: {}

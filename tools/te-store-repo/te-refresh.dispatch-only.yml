@@ -1,0 +1,151 @@
+name: TE store refresh (TEN-443)
+
+# TEN-449 (founder 2026-10-18/19): this runs in the PRIVATE repo michaeldk1996/stennisfy-te-store, never in the public
+# SAAS repo — it commits te-history/. This file is the template, committed there only after the founder has added
+# API_TENNIS_KEY, TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID to that repo. Its checkout paths assume that repo's layout:
+# the store repo's ROOT holds only data (te-history/, te-history-index.json, te-atp-events.json, set-repairs.json,
+# sackmann/) and no tools/, so the tools come from a second checkout of the PUBLIC SAAS repo's main into saas/ (founder
+# decision A,
+# TEN-449 plan §8, 19 Oct: the refresh runs the suite-gated code the pipeline reads with). tools/test-te-refresh.mjs
+# checks every path below against that layout.
+#
+# ROLLOUT (plan §7): step 2 commits te-refresh.dispatch-only.yml (this file without the SCHEDULE block, kept identical
+# by the test), as .github/workflows/te-refresh.yml; step 5 replaces it with this file, which adds the three crons.
+
+# Keeps te-history/ (the licensed Tennis Explorer store the pipeline reads for career records) current — founder
+# ruling 2026-10-17 (TEN-443, comment 49d2974c item 1): on GitHub Actions, never a laptop.
+#
+#   weekly  Monday, in TWO parts (05:00 and 11:00 UTC, `--part 0/2` and `1/2`) — every player's profile + current
+#           season (January: last season too), a TE correction's season, a new player's whole history. The roster is
+#           every profiled player (player-index.json hasProfile, 725 on 2026-10-17): ~1,450 pages ≈ 3.6 h whole, and
+#           ~2,180 ≈ 5.5 h in January, past the job timeout — hence the split (≈ 1.8 h / 2.7 h a part, measured
+#           9.02 s per page).
+#   reread  daily 03:30 UTC — every season of 1/28 of the players, so each player is fully re-read every 28 days
+#           (the monthly full re-read; one monthly job would be ~13 h, past the 6 h job limit)
+#   set repairs  after BOTH weekly parts of one Monday: set-repairs.json gains entries for NEW short rows only; the
+#           17 Oct entries and every repair are frozen, a refresh-written "no Tennis Explorer row" flag may upgrade to a
+#           repair (a change to anything else fails the step and writes nothing) — plan §4a
+#
+# Measured before this existed: an Actions runner reads TE (6/6 pages 200, parse, no challenge — 2026-10-17).
+# The refresh is ALL OR NOTHING and guarded before it writes: a block, a refused player or a short store exits non-zero
+# with the committed store untouched, and the alert step fires. It never blocks or slows the nightly pipeline, which
+# only reads the committed files. No step swallows a failure.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: weekly | reread
+        type: choice
+        options: [weekly, reread]
+        default: weekly
+      part:
+        description: "weekly only — i/n of the roster: 0/2 or 1/2 (Monday's two parts), 0/28 smoke (~26 players). A reread always runs 0/1 (the day's 1/28 slice)"
+        type: choice
+        options: ['0/2', '1/2', '0/1', '0/28']
+        default: '0/2'
+
+concurrency:
+  group: te-refresh          # weekly and re-read never overlap, and never race each other's push
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    # the job pushes to main: it runs only from main (a dispatch from another branch would push that branch's tree)
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      TE_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || (github.event.schedule == '30 3 * * *' && 'reread' || 'weekly') }}
+      # the weekly run is split in two (a roster this size does not fit one job in January); the re-read is ALWAYS whole
+      # (0/1, its day's 1/28 slice) — a re-read dispatch ignores the part choice, and te-refresh.mjs refuses any other
+      TE_PART: ${{ ((inputs.mode == 'reread' || github.event.schedule == '30 3 * * *') && '0/1') || (inputs.part != '' && inputs.part) || (github.event.schedule == '0 11 * * 1' && '1/2') || '0/2' }}
+    steps:
+      - name: Check out the store (this repo — data only)
+        uses: actions/checkout@v4
+      - name: Check out the tools (public SAAS main, no token)
+        uses: actions/checkout@v4
+        with:
+          repository: michaeldk1996/SAAS
+          ref: main
+          path: saas
+          persist-credentials: false
+      - name: Keep the tools checkout and the run report out of the store's commits
+        run: printf 'saas/\nte-refresh-report.json\n' >> .git/info/exclude
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Refresh the Tennis Explorer store
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          # the tool stops itself at this budget, before the job timeout above can kill a run mid-write
+          TE_BUDGET_MIN: '270'
+        run: node saas/tools/te-refresh.mjs --root . --mode "$TE_MODE" --part "$TE_PART"
+      - name: Guard the refreshed store against the committed one
+        run: node saas/tools/te-history-guard.mjs . --prev-ref HEAD
+      - name: Commit the refreshed store
+        # te-history/ has one writer (this workflow, serialised by the te-refresh concurrency group); the odds batch also
+        # pushes to this repo, under te-odds/ only — so each push first rebases onto main (disjoint paths: no conflict).
+        # A text conflict fails the step and alerts; a second te-history writer touching other lines would merge
+        # silently, so te-history/ must keep exactly one writer: this workflow
+        run: |
+          if [ -z "$(git status --porcelain -- te-history te-history-index.json te-refresh-log.jsonl)" ]; then
+            echo "No change — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-te-bot"
+          git config user.email "bsp-te-bot@users.noreply.github.com"
+          git add -- te-history te-history-index.json
+          if [ -f te-refresh-log.jsonl ]; then git add -- te-refresh-log.jsonl; fi
+          git commit -q -m "chore(te): Tennis Explorer store refresh ($TE_MODE $TE_PART) [skip ci]"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:refs/heads/main
+      - name: Has every weekly part of this week completed?
+        id: week
+        if: env.TE_MODE == 'weekly'
+        run: node saas/tools/te-set-repairs-refresh.mjs --store . --week-complete
+      # Sackmann = this repo's sackmann/ (the files the 17 Oct set-repairs.json was built from — sackmann/PROVENANCE.md;
+      # JeffSackmann/tennis_atp is no longer public). The tool checks every file against sackmann/SHA256SUMS first.
+      - name: Set repairs for new short rows (17 Oct entries and every repair frozen)
+        if: steps.week.outputs.complete == 'true'
+        run: node saas/tools/te-set-repairs-refresh.mjs --store . --sackmann sackmann
+      - name: Commit the set repairs
+        if: steps.week.outputs.complete == 'true'
+        run: |
+          if [ -z "$(git status --porcelain -- set-repairs.json set-repairs-log.jsonl)" ]; then
+            echo "No new short row — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-te-bot"
+          git config user.email "bsp-te-bot@users.noreply.github.com"
+          git add -- set-repairs.json set-repairs-log.jsonl
+          git commit -q -m "chore(te): set repairs for new short rows [skip ci]"
+          git pull -q --rebase origin main
+          git push -q origin HEAD:refs/heads/main
+      - name: Report
+        if: always()
+        run: |
+          if [ -f te-refresh-report.json ]; then
+            node -e 'const r=require("./te-refresh-report.json");const n=Object.values(r.changes).reduce((s,x)=>s+x.changes.length,0);console.log(`## TE refresh (${r.mode})\n\n${r.players} players · ${r.seasonsFetched} season pages · ${r.newPlayers.length} new · ${r.unmatched.length} unmatched · ${r.refused.length} refused · ${n} rows changed`)' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: te-refresh-report
+          path: te-refresh-report.json
+          if-no-files-found: warn
+      - name: Alert on failure
+        if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          # the message names the run and never a secret; the token goes only into the request URL
+          MSG="TE store refresh FAILED ($TE_MODE $TE_PART, TEN-449). The site keeps the last good store. Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
+            echo "::error::TE refresh failed and no Telegram secret is set — the alert has nowhere to go: $MSG"
+            exit 1
+          fi
+          curl -sf -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${MSG}"

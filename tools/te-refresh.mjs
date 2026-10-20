@@ -40,6 +40,8 @@ const SEC_PER_PAGE = Number(process.env.TE_SEC_PER_PAGE || 9.02);
 const NEW_PLAYER_PAGES = 17;   // name search + profile + ~15 seasons (the roster's mean career, measured 2026-10-17)
 const T0 = Date.now();
 if (!['weekly', 'reread'].includes(MODE)) { console.error(`unknown --mode ${MODE}`); process.exit(2); }
+// TEN-449 review: the re-read is already a 1/28 slice; a part of it would silently re-read half a slice
+if (MODE === 'reread' && PARTS !== 1) { console.log(`::error::--mode reread re-reads its whole day's slice; --part must be 0/1, not ${PART}/${PARTS}`); process.exit(2); }
 process.env.TE_CACHE = process.env.TE_CACHE || fs.mkdtempSync(path.join(os.tmpdir(), 'te-refresh-cache-'));
 const OUT_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'te-refresh-out-'));
 if (!process.argv.includes('--out')) process.argv.push('--out', ROOT);   // the builder reads the committed catalogue from the repo
@@ -52,10 +54,14 @@ const NOW = new Date(process.env.TE_NOW || Date.now());
 const YEAR = NOW.getUTCFullYear();
 const DAY = Math.floor((NOW - Date.UTC(YEAR, 0, 1)) / 864e5);
 
+// TEN-449: the key as stored in the store repo's secret carries a trailing newline (66 characters for a 64-hex key,
+// measured 19 Oct). Trimmed once, here, for every use; an all-whitespace key is no key.
+const apiKey = () => String(process.env.API_TENNIS_KEY || '').trim();
+
 async function apiTennisPlayer(key) {
   // TEN-449: a lookup that FAILS stops the run (all-or-nothing, alerted); only a player api-tennis holds no birthday for
   // stays unmatched. Degrading to null here left every new player silently unmatched when the key was missing.
-  const k = process.env.API_TENNIS_KEY;
+  const k = apiKey();
   if (!k) throw new Error('API_TENNIS_KEY is not set — a new player cannot be identified');
   const r = await fetch(`https://api.api-tennis.com/tennis/?method=get_players&APIkey=${k}&player_key=${key}`);
   if (!r.ok) throw new Error(`api-tennis get_players for player ${key}: HTTP ${r.status}`);
@@ -102,7 +108,7 @@ function diffRows(oldRows, newRows) {
 async function main() {
   const idxF = path.join(ROOT, G.INDEX);
   if (!fs.existsSync(idxF)) { console.log(`::error::${G.INDEX} is missing — the refresh never builds a store from nothing`); process.exit(1); }
-  if (!process.env.API_TENNIS_KEY) { console.log('::error::API_TENNIS_KEY is not set — a new player cannot be identified by date of birth; refusing to run'); process.exit(1); }
+  if (!apiKey()) { console.log('::error::API_TENNIS_KEY is not set — a new player cannot be identified by date of birth; refusing to run'); process.exit(1); }
   const idx = JSON.parse(fs.readFileSync(idxF, 'utf8'));
   // the new store starts as an exact copy of the committed one
   fs.cpSync(path.join(ROOT, G.STORE_DIR), path.join(OUT_DIR, G.STORE_DIR), { recursive: true });
@@ -155,6 +161,9 @@ async function main() {
     const old = fs.existsSync(f) ? JSON.parse(fs.readFileSync(f, 'utf8')) : null;
     const oldRows = old ? B.rowsOf(old) : [];
     const mainHtml = await S.page(`/player/${slug}/`);
+    // TEN-449 provisional: readAt = when his current-season page was read (the profile's, if TE lists no current season)
+    const readStamp = () => (process.env.TE_NOW ? NOW : new Date()).toISOString();
+    let readAt = readStamp();
     const facts = S.profileFacts(mainHtml);
     const fresh = B.parseBalance(mainHtml) || {};
     const want = new Set();
@@ -167,15 +176,16 @@ async function main() {
       }
     }
     const seasonHtml = {};
-    for (const y of facts.years.filter((y) => want.has(y))) { seasonHtml[y] = await S.page(`/player/${slug}/?annual=${y}`); report.seasonsFetched++; }
+    for (const y of facts.years.filter((y) => want.has(y))) { seasonHtml[y] = await S.page(`/player/${slug}/?annual=${y}`); report.seasonsFetched++; if (Number(y) === YEAR) readAt = readStamp(); }
+    if (old && old.readAt && old.readAt > readAt) readAt = old.readAt;   // never backwards (te-history-guard checks)
     const built = B.buildPlayerRecord({ key: p.key, slug, dob, name: (old && old.name) || p.name, mainHtml, seasonHtml,
-      keepRows: oldRows.filter((r) => !(String(r.season) in seasonHtml)), builtAt: NOW.toISOString() });
+      keepRows: oldRows.filter((r) => !(String(r.season) in seasonHtml)), builtAt: NOW.toISOString(), readAt });
     if (built.refuse) { report.refused.push({ key: p.key, name: p.name, why: built.refuse, bad: built.bad }); continue; }
     const changes = diffRows(oldRows, built.rec.rows);
     if (changes.length && !isNew) report.changes[p.key] = { name: p.name, changes };
     if (isNew) report.newPlayers.push({ key: p.key, name: p.name, slug, seasons: facts.years.length, rows: built.rec.rows.length });
     fs.writeFileSync(f, B.serialise(built.rec));
-    nextIdx.players[p.key] = { slug, dob: dob || null, rows: built.rec.rows.length, seasons: facts.years.length };
+    nextIdx.players[p.key] = { slug, dob: dob || null, rows: built.rec.rows.length, seasons: facts.years.length, readAt };
     report.players++;
   }
   nextIdx.builtAt = NOW.toISOString();
@@ -197,7 +207,7 @@ async function main() {
   fs.writeFileSync(path.join(ROOT, 'te-refresh-report.json'), JSON.stringify(report, null, 1));
 
   // a refused player keeps his previous file — but the run says so loudly and fails, so the alert fires
-  const guard = G.checkStore(OUT_DIR, { prev: idx });
+  const guard = G.checkStore(OUT_DIR, { prev: idx, now: Math.max(Date.now(), NOW.getTime()) });   // TEN-449: readAt stamps run past NOW
   if (!guard.ok || report.refused.length) {
     console.log(`::error::te-refresh refused to write: ${[...guard.why, ...report.refused.map((r) => `${r.key} ${r.name}: ${r.why}`)].join('; ')} — the last good store is unchanged`);
     process.exit(1);

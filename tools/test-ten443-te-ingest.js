@@ -84,13 +84,16 @@ const archive = () => ({ [KEY]: [
   { year: '2016', surface: 'clay', level: 'atp', date: '2016-03-04', tournament: 'Davis Cup G1: X vs Y', round: 'RR', opponent: 'M. Mu', result: '3 - 0', won: true },
   { year: '2021', surface: 'hard', level: 'atp', date: '2021-02-08', tournament: 'Rotterdam', round: 'R32', opponent: 'O. Omicron', result: '2 - 0', won: true },   // TML: outdoor; TE: indoor
 ] });
-async function run(on, withStore, edit, setRepair) {
+// `prov` (TEN-449 provisional): { on: PROVISIONAL switch, rows: extra feed rows on the cached profile }
+async function run(on, withStore, edit, setRepair, prov) {
+  if (prov && prov.on) process.env.PROVISIONAL = '1'; else delete process.env.PROVISIONAL;
   const P = load(on, setRepair);
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten443-'));
   if (withStore) teStore(tmp);
   if (edit) edit(tmp);
   const cwd = process.cwd(); process.chdir(tmp);
   const profiles = { [KEY]: profile() };
+  if (prov && prov.rows) profiles[KEY].careerMatches.push(...prov.rows.map((r) => ({ ...r })));
   const teYearly = new Map();
   try {
     await P.writeCareerHistoryShards(profiles, { archive: archive(), log: () => {}, currentYear: 2026, teYearly });
@@ -102,7 +105,7 @@ async function run(on, withStore, edit, setRepair) {
     const recFile = fs.existsSync(recF) ? JSON.parse(fs.readFileSync(recF, 'utf8')) : null;
     const recIndex = fs.existsSync(recIdxF) ? JSON.parse(fs.readFileSync(recIdxF, 'utf8')) : null;
     return { P, p: profiles[KEY], shard, shardBytes, recFile, recIndex, matches: shard.matches, rows: recordOf(shard, recFile), index, teYearly, tmp };
-  } finally { process.chdir(cwd); }
+  } finally { process.chdir(cwd); delete process.env.PROVISIONAL; }
 }
 // the record's rows as the page reads them (player-profile-v2.js recordRowsOf): matches + the record file's overlay
 function recordOf(shard, recFile) {
@@ -110,7 +113,7 @@ function recordOf(shard, recFile) {
   const over = new Map(L.over), out = new Map(L.out), rows = [];
   shard.matches.forEach((r, i) => {
     const why = out.get(i); if (why && why !== 'not-in-te') return;
-    rows.push(Object.assign({}, r, over.get(i) || {}, why ? { notCounted: why } : {}));
+    rows.push(Object.assign({}, r, over.get(i) || {}, why ? { notCounted: why } : {}));   // over carries `provisional`
   });
   return rows.concat(L.add);
 }
@@ -124,7 +127,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   const on = await run(true, true);
   // TEN-449: the same store with no DOB on the TE record (the Svajda exception)
   // the named exception is by the record's player key (te-join.js NO_DOB_EXCEPTION: Svajda, 2986)
-  const noDob = (asKey) => (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; j.key = asKey; fs.writeFileSync(f, JSON.stringify(j)); };
+  const noDob = (asKey) => (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); delete j.dob; j.key = asKey; if (asKey === '2986') j.slug = 'svajda'; fs.writeFileSync(f, JSON.stringify(j)); };
   const nodob = await run(true, true, noDob('2986'));
   let noDobThrew = null;
   try { await run(true, true, noDob(KEY)); } catch (e) { noDobThrew = e; }
@@ -387,6 +390,260 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       const x = TJ.pairRows([{ date: '2024-03-10', opp: 'Martinez P.', event: 'Futures 2024', won: true }],
         [{ date: '2024-03-04', opponent: 'A. Martin', tournament: 'Santiago Challenger', won: true, src: 'fixtures' }]);
       assert.strictEqual(x.pairs.length, 0);
+    });
+  }
+  // TEN-449 Bucket D (founder 2026-10-19, report `bucket-d`): eight players joined on a NEAR-MISS DOB, by key
+  // (te-join.js NEAR_MISS_DOB). Each is a DOB-joined player — only TE's rows count (ruling 2A; plus provisional ones), never Svajda's
+  // no-DOB behaviour; the list cannot widen to a ninth key, in the pipeline or in the store builder.
+  {
+    const TJ = require('../te-join.js');
+    const BUCKET_D = { 702: ['tkemaladze', '20000604'], 12972: ['rocha-a46b1', '19991004'], 19461: ['munoz-1a9fc', '2005'],
+      52682: ['balshaw', '20060605'], 54221: ['bennaton', '2005'], 70760: ['ceban', '2009'], 78231: ['al-sulaiti-a86c2', '2007'], 78628: ['snoussi', '2007'] };
+    const rec = (key, slug, dob, rows) => ({ key, slug, dob, src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows });
+    const ours = (date, tournament, opponent, won, extra) => Object.assign({ year: date.slice(0, 4), surface: 'hard', level: 'chitf', date, tournament, round: 'R32', opponent, result: won ? '2 - 0' : '0 - 2', won, src: 'fixtures', indoor: false }, extra || {});
+    // one row both list, one only we list, one only TE lists
+    const shared = () => [ours('2025-05-05', 'M15 Antalya', 'A. Alpha', true), ours('2025-06-02', 'M15 Monastir', 'Q. Quux', true)];
+    const teRows = [R(2025, '2025-05-05', 'Futures 2025', 'ITF', '1R', 'hard', 'outdoor', 'Alpha A.', true, '6-1, 6-1'),
+      R(2025, '2025-07-07', 'Futures 2025', 'ITF qual', 'Q-1R', 'hard', 'outdoor', 'Beta B.', false, '6-3, 6-3')];
+    check('TEN-449 Bucket D · the list is exactly the eight keys the founder approved, each pinned to one TE page and DOB', () => {
+      assert.deepStrictEqual([...TJ.NEAR_MISS_DOB.keys()].sort(), Object.keys(BUCKET_D).sort());
+      for (const [k, [slug, dob]] of Object.entries(BUCKET_D)) assert.deepStrictEqual([TJ.NEAR_MISS_DOB.get(k).slug, TJ.NEAR_MISS_DOB.get(k).te], [slug, dob], k);
+      assert.ok(!TJ.NEAR_MISS_DOB.has('2986') && !TJ.NO_DOB_EXCEPTION.has('702'), 'the two exceptions stay apart');
+    });
+    for (const [k, [slug, dob]] of Object.entries(BUCKET_D)) {
+      check(`TEN-449 Bucket D · ${k} ${slug} (TE DOB ${dob}) joins and counts only TE's rows`, () => {
+        const rows = shared(), before = JSON.stringify(rows);
+        const m = TJ.applyTeHistory(rows, rec(k, slug, dob, teRows));
+        assert.strictEqual(JSON.stringify(rows), before, 'the shared rows moved');
+        assert.strictEqual(m.out.get(rows[1]), 'not-in-te', 'our row TE lacks must be listed, not counted (not Svajda\'s rule)');
+        assert.strictEqual(m.added.length, 1, 'the TE-only row is added');
+        assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows)[0].total), '1-1', 'counted = TE\'s two rows');
+        const L = TJ.recordLayer(rows, m); assert.deepStrictEqual(L.out, [[1, 'not-in-te']]);
+      });
+    }
+    check('TEN-449 Bucket D · a ninth near-miss key is refused: year-only, short, impossible or missing DOB records, and a near-miss join in the cache', () => {
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '2004', teRows)), /not a valid full yyyymmdd/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', '200406', teRows)), /not a valid full yyyymmdd/);
+      for (const bad of ['00000000', '20041301', '20040000', '20040132', '20040231'])
+        assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', bad, teRows)), /not a valid full yyyymmdd/, bad);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('9002', 'someone', null, teRows)), /not a named exception/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'near-miss-dob' }), /not a named exception for this key/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: null, how: 'founder-exception' }), /not a named exception for this key/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'hand-edit' }), /not a DOB join/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob' }), null, 'an ordinary DOB join passes');
+    });
+    check('TEN-449 Bucket D · with our DOB on hand (the store builder), a ninth key whose full TE DOB is swapped or near ours is refused', () => {
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040605', how: 'dob', ourDob: '20040506' }), /is not our DOB 20040506/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040516', how: 'dob', ourDob: '20040506' }), /is not our DOB/);
+      assert.match(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob', ourDob: null }), /no DOB of ours on record/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '9002', slug: 'someone', dob: '20040506', how: 'dob', ourDob: '20040506' }), null, 'equal DOBs pass');
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '702', slug: 'tkemaladze', dob: '20000604', how: 'near-miss-dob', ourDob: '20000406' }), null, 'a named key with the DOB the ruling was made on passes');
+      assert.match(TJ.teIdentityRefusal({ key: '702', slug: 'tkemaladze', dob: '20000604', how: 'near-miss-dob', ourDob: '20000407' }), /not the 20000406 the near-miss ruling/);
+    });
+    check('TEN-449 · the no-DOB exception is pinned to Svajda\'s page: key 2986 on any other slug is refused', () => {
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '2986', slug: 'svajda', dob: null }), null);
+      assert.match(TJ.teIdentityRefusal({ key: '2986', slug: 'svajda-2', dob: null }), /NO_DOB_EXCEPTION/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('2986', 'someone', null, teRows)), /NO_DOB_EXCEPTION/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '2986', slug: 'svajda', dob: null, how: 'founder-exception', ourDob: '20021129' }), null, 'his entry in the cache passes the builder');
+    });
+    check('TEN-449 Bucket D · a named key joins only its own page and DOB (another page, or our DOB in place of TE\'s, stops)', () => {
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-021d4', '2005', teRows)), /NEAR_MISS_DOB/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-1a9fc', '20050122', teRows)), /NEAR_MISS_DOB/);
+      assert.throws(() => TJ.applyTeHistory(shared(), rec('19461', 'munoz-1a9fc', null, teRows)), /NEAR_MISS_DOB/);
+      assert.strictEqual(TJ.teIdentityRefusal({ key: '19461', slug: 'munoz-1a9fc', dob: '2005', how: 'near-miss-dob' }), null);
+      assert.match(TJ.teIdentityRefusal({ key: '19461', slug: 'munoz-1a9fc', dob: '2005', how: 'founder-exception' }), /not a named exception for this key/);
+    });
+    // a near-miss player (year-only TE DOB included) gets provisional rows like any DOB-joined player; Svajda never does
+    for (const [k, [slug, dob]] of Object.entries(BUCKET_D)) {
+      check(`TEN-449 Bucket D · provisional · ${k} ${slug} (TE DOB ${dob}): a row after his read day counts with PROVISIONAL on, not with it off`, () => {
+        const merge = (on) => { const rows = [ours('2026-10-19', 'Almaty', 'M. Cilic', true)];
+          const m = TJ.applyTeHistory(rows, Object.assign(rec(k, slug, dob, []), { readAt: '2026-10-18T07:43:00Z' }), { provisional: on });
+          const c = m.copyOf.get(rows[0]); return m.out.get(rows[0]) || (c && c.provisional ? 'prov:' + c.provisional : 'counted'); };
+        assert.strictEqual(merge(true), 'prov:2026-10-18');
+        assert.strictEqual(merge(false), 'not-in-te');
+      });
+    }
+    check('TEN-449 Bucket D · Ceban (70760): his 16 junior Grand Slam rows stay out; the senior row pairs', () => {
+      const slams = ['Australian Open', 'French Open', 'Wimbledon', 'US Open'];
+      const rows = [ours('2025-06-23', 'Wimbledon', 'S. Senior', false, { level: 'atp', surface: 'grass', round: 'Qualifying' })];
+      for (let i = 0; i < 16; i++) rows.push(ours(`2025-0${1 + (i % 8)}-1${i % 10}`, slams[i % 4], `J. Junior${i}`, i % 2 === 0));
+      const m = TJ.applyTeHistory(rows, rec('70760', 'ceban', '2009', [R(2025, '2025-06-23', 'Wimbledon', 'ATP qual', 'Q-1R', 'grass', 'outdoor', 'Senior S.', false, '6-4, 6-4')]));
+      assert.strictEqual([...m.out.values()].filter((v) => v === 'junior').length, 16);
+      assert.strictEqual(m.diag.paired, 1);
+      assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows)[0].total), '0-1', 'only the senior row counts');
+    });
+    check('TEN-449 Bucket D · Tkemaladze (702): the Lo Chien match (27 Oct 2022) counts once — TE\'s copy, ours listed not counted', () => {
+      const rows = [ours('2022-10-27', 'M15 Sharm ElSheikh 15', 'H. Lo Chien', false, { round: '1/8-finals', result: '1 - 2', sets: [{ p: 6, o: 1 }, { p: 2, o: 6 }, { p: 6, o: 7 }] })];
+      const m = TJ.applyTeHistory(rows, rec('702', 'tkemaladze', '20000604', [R(2022, '2022-10-27', 'Futures 2022', 'ITF', 'R16', 'hard', 'outdoor', 'Lo C.', false, '1-6, 6-2, 7-6(4)')]));
+      assert.strictEqual(m.out.get(rows[0]), 'not-in-te');
+      const counted22 = m.rows.filter((r) => r.date === '2022-10-27');
+      assert.strictEqual(counted22.length, 1, 'one counted row on the day'); assert.strictEqual(counted22[0].src, 'te');
+      assert.strictEqual(wl(TJ.careerByYearFromRows(m.rows).find((y) => y.year === '2022').total), '0-1');
+    });
+    check('TEN-449 Bucket D · the store builder stops (exit 1, nothing written) on any refused cache join, and builds a named key', () => {
+      const { spawnSync } = require('child_process');
+      const build = (players, roster) => {
+        const cache = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-cache-')), out = fs.mkdtempSync(path.join(os.tmpdir(), 'ten449-bd-out-'));
+        fs.mkdirSync(path.join(cache, 'html'));
+        fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['rotterdam'] }));
+        fs.writeFileSync(path.join(cache, 'players.json'), JSON.stringify(players));
+        fs.writeFileSync(path.join(cache, 'roster.json'), JSON.stringify(roster));
+        const r = spawnSync(process.execPath, [path.join(ROOT, 'tools', 'te-build-history.mjs'), '--cache', cache, '--out', out], { encoding: 'utf8' });
+        return { r, out, rep: JSON.parse(r.stdout) };
+      };
+      const tk = { slug: 'tkemaladze', how: 'near-miss-dob', dob: '20000604', years: [] };
+      const bad = build({ 702: tk,
+        9002: { slug: 'someone', how: 'near-miss-dob', dob: '20040506', years: [] },
+        9003: { slug: 'other', how: 'dob', dob: '2004', years: [] },
+        9004: { slug: 'swapped', how: 'dob', dob: '20040605', years: [] },
+        9005: { slug: 'unknown', how: 'dob', dob: '20040506', years: [] } },
+      [{ key: '702', dob: '20000406' }, { key: '9004', dob: '20040506' }]);
+      assert.strictEqual(bad.r.status, 1, 'a refused join must stop the build');
+      assert.deepStrictEqual(bad.rep.refusedJoin.map((x) => x.key).sort(), ['9002', '9003', '9004', '9005']);
+      assert.ok(!fs.existsSync(path.join(bad.out, 'te-history')) && !fs.existsSync(path.join(bad.out, 'te-history-index.json')), 'nothing written');
+      const good = build({ 702: tk }, [{ key: '702', dob: '20000406' }]);
+      assert.strictEqual(good.r.status, 0, good.r.stderr);
+      assert.deepStrictEqual(good.rep.refusedJoin, []);
+      assert.deepStrictEqual(good.rep.missingPages, ['702 profile'], 'the named key passes the gate (then needs its pages)');
+    });
+  }
+  // TEN-449 Bucket D, through the real pipeline: a year-only DOB on an unnamed key stops the run
+  let yearOnlyThrew = null;
+  try { await run(true, true, (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); j.dob = '1999'; fs.writeFileSync(f, JSON.stringify(j)); }); } catch (e) { yearOnlyThrew = e; }
+  check('TEN-449 Bucket D · writeCareerHistoryShards stops on a year-only TE DOB for a key not named in NEAR_MISS_DOB', () => assert.ok(yearOnlyThrew && /not a valid full yyyymmdd/.test(yearOnlyThrew.message), String(yearOnlyThrew)));
+  // ── TEN-449 PROVISIONAL (founder 2026-10-19, amends ruling 2A): a DOB-joined player's api-tennis row TE does not list
+  // counts provisionally from the day we read his TE current-season page (readAt), flagged in the record file only.
+  {
+    const READ = '2026-10-18T07:43:00Z';   // Basilashvili's read, 18 Oct 07:43Z
+    const fx = (date, opp, tournament, won, extra) => Object.assign({ year: date.slice(0, 4), surface: 'hard', level: 'atp', date, tournament, round: 'R32',
+      opponent: opp, result: won ? '2 - 0' : '0 - 2', won, src: 'fixtures', indoor: true, sets: won ? [{ p: 6, o: 2 }, { p: 7, o: 5 }] : [{ p: 2, o: 6 }, { p: 5, o: 7 }] }, extra || {});
+    const NEW = [fx('2026-10-19', 'M. Cilic', 'Almaty', true), fx('2026-10-18', 'A. Walton', 'Almaty', true), fx('2026-10-10', 'B. Before', 'Brussels', false),
+      fx('2026-10-19', 'W. Woman', 'ITF W15 Monastir', true, { level: 'chitf' }), fx('2026-10-19', 'J. Junior', 'US Open', true, { level: 'chitf' }),
+      fx('2026-10-19', 'E. Exhib', 'UTR Pro Tennis Series', true)];
+    const withRead = (at) => (d) => { const f = path.join(d, 'te-history', `${KEY}.json`); const j = JSON.parse(fs.readFileSync(f, 'utf8')); if (at) j.readAt = at; else delete j.readAt; fs.writeFileSync(f, JSON.stringify(j)); };
+    const pOff = await run(true, true, withRead(READ), false, { on: false, rows: NEW });
+    const pOn = await run(true, true, withRead(READ), false, { on: true, rows: NEW });
+    const pNoRead = await run(true, true, withRead(null), false, { on: true, rows: NEW });
+    const pPlain = await run(true, true, withRead(null), false, { on: false, rows: NEW });
+    // golden mutant: a merge that writes the provisional flag onto a SHARED row must stop the run
+    let provMutant = null;
+    try {
+      await run(true, true, (d) => { withRead(READ)(d); const TJ = require('../te-join.js'), orig = TJ.applyTeHistory;
+        TJ.applyTeHistory = (rows, rec, o) => { const m = orig(rows, rec, o); const r = rows.find((x) => x.opponent === 'M. Cilic'); if (r) r.provisional = '2026-10-18'; return m; }; }, false, { on: true, rows: NEW });
+    } catch (e) { provMutant = e; }
+    const rowOf = (x, opp) => x.rows.find((r) => r.opponent === opp);
+    check('TEN-449 provisional · PROVISIONAL off: exactly the record without it (same file as a store with no readAt), no flag', () => {
+      assert.deepStrictEqual(pOff.recFile, pPlain.recFile);
+      assert.ok(!JSON.stringify(pOff.recFile).includes('provisional'));
+      assert.strictEqual(rowOf(pOff, 'M. Cilic').notCounted, 'not-in-te'); assert.strictEqual(yr(pOff.p, '2026'), undefined);
+    });
+    check('TEN-449 provisional · a store record with no readAt: no provisional row (fail-safe), switch on', () => {
+      assert.deepStrictEqual(pNoRead.recFile, pPlain.recFile); assert.deepStrictEqual(pNoRead.p.careerByYear, pPlain.p.careerByYear);
+    });
+    check('TEN-449 provisional · on: the rows on/after the read day count, flagged with it; an earlier row does not', () => {
+      assert.strictEqual(rowOf(pOn, 'M. Cilic').provisional, '2026-10-18'); assert.ok(!rowOf(pOn, 'M. Cilic').notCounted);
+      assert.strictEqual(rowOf(pOn, 'A. Walton').provisional, '2026-10-18');
+      assert.strictEqual(rowOf(pOn, 'B. Before').notCounted, 'not-in-te'); assert.ok(!rowOf(pOn, 'B. Before').provisional);
+      assert.strictEqual(wl(yr(pOn.p, '2026').total), '2-0'); assert.strictEqual(wl(yr(pOn.p, '2026').indoor.total), '2-0');
+      assert.strictEqual(pOn.index.meta.te.provisional, 2);
+    });
+    check('TEN-449 provisional · exclusions first: women\'s event, junior, exhibition/pro series are never provisional', () => {
+      assert.strictEqual(rowOf(pOn, 'W. Woman').notCounted, 'not-in-te');
+      assert.ok(!rowOf(pOn, 'J. Junior'), 'the junior row is out of the record');
+      assert.strictEqual(rowOf(pOn, 'E. Exhib').notCounted, 'not-in-te');
+    });
+    check('TEN-449 provisional · GOLDEN: the shared file is byte-identical on and off and carries no flag', () => {
+      assert.strictEqual(pOn.shardBytes, pOff.shardBytes); assert.strictEqual(pOn.shardBytes, pPlain.shardBytes);
+      assert.ok(!pOn.shardBytes.includes('provisional'));
+    });
+    check('TEN-449 provisional · GOLDEN mutant: a merge writing the provisional flag onto a shared row is caught', () => {
+      assert.ok(provMutant && /changed .*shared career-history rows/.test(provMutant.message), String(provMutant));
+    });
+    check('TEN-449 provisional · page: the drill marks each provisional row; the hover counts them (only when N > 0)', () => {
+      const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: pOn.p } }, careerHistory: { [KEY]: pOn.matches },
+        careerRecord: { [KEY]: pOn.recFile.record }, careerRecordMeta: { asOf: '2026-10-17', refreshedAt: null }, TournamentIdentity: require('../tournament-identity.js') };
+      global.window = sb;
+      new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sb);
+      const I = sb.PlayerProfileV2._internals;
+      I.resetState(); I.state.careerTab = 'record'; I.state.careerScope = 'career'; I.state.careerTier = 'all';
+      I.state.careerDrill = { kind: 'cell', year: '2026', surf: '' };
+      const html = I.renderCareerModal(Object.assign({ key: KEY }, pOn.p));
+      assert.strictEqual((html.match(/data-pp2-provisional="1"/g) || []).length, 2, 'two provisional marks');
+      assert.ok(html.includes('· provisional · api-tennis, not yet in Tennis Explorer (read 18 Oct)'), 'the mark text');
+      const NOTE = 'Counted as Tennis Explorer counts, minus exhibitions, club matches, national championships and pro series.';
+      assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE + ' Tennis Explorer data as of 17 Oct. Includes 2 matches since 18 Oct from api-tennis, provisional until Tennis Explorer lists them.');
+      sb.careerRecordMeta = { asOf: '2026-10-17', refreshedAt: '2026-10-26T05:00:00.000Z' };
+      assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE + ' Includes 2 matches since 18 Oct from api-tennis, provisional until Tennis Explorer lists them.');
+      sb.careerRecord[KEY] = pOff.recFile.record;
+      assert.strictEqual(I.recordSourceNote({ key: KEY }), NOTE, 'N = 0: no clause');
+    });
+  }
+  // TEN-449 provisional · the merge itself, case by case (te-join.js applyTeHistory with { provisional: true })
+  {
+    const TJ = require('../te-join.js');
+    const fx = (date, opp, tournament, won, extra) => Object.assign({ year: date.slice(0, 4), surface: 'hard', level: 'atp', date, tournament, round: 'R32',
+      opponent: opp, result: won ? '2 - 0' : '0 - 2', won, src: 'fixtures', indoor: true }, extra || {});
+    const rec = (rows, readAt, key) => ({ key: key || KEY, dob: key === '2986' ? null : '19990101', ...(key === '2986' ? { slug: 'svajda' } : {}), ...(readAt ? { readAt } : {}), cols: COLS, rows });
+    const merge = (ours, teRows, readAt, key, on = true) => { const m = TJ.applyTeHistory(ours, rec(teRows, readAt, key), { provisional: on }); return { m, ours,
+      st: (opp) => { const r = ours.find((x) => x.opponent === opp); const c = m.copyOf.get(r); return m.out.get(r) || (c ? (c.provisional ? 'prov:' + c.provisional : 'counted') : 'absent'); },
+      on: (date) => m.rows.filter((x) => x.date === date) }; };
+    const CILIC = () => fx('2026-10-19', 'M. Cilic', 'Almaty', true);
+    check('provisional · a row on/after readAt counts and is flagged; the same row before it does not', () => {
+      assert.strictEqual(merge([CILIC()], [], '2026-10-18T07:43:00Z').st('M. Cilic'), 'prov:2026-10-18');
+      assert.strictEqual(merge([CILIC()], [], '2026-10-19T07:43:00Z').st('M. Cilic'), 'prov:2026-10-19', 'dated on the read day');
+      assert.strictEqual(merge([CILIC()], [], '2026-10-20T06:00:00Z').st('M. Cilic'), 'not-in-te');
+    });
+    check('provisional · the read day is the Berlin calendar day (api-tennis dates are Berlin wall dates)', () => {
+      assert.strictEqual(TJ.readDayOf('2026-10-18T21:59:00Z'), '2026-10-18'); assert.strictEqual(TJ.readDayOf('2026-10-18T22:30:00Z'), '2026-10-19');
+      assert.strictEqual(TJ.readDayOf(undefined), null);
+    });
+    check('provisional · off, or no readAt: today\'s rule', () => {
+      assert.strictEqual(merge([CILIC()], [], '2026-10-18T07:43:00Z', null, false).st('M. Cilic'), 'not-in-te');
+      assert.strictEqual(merge([CILIC()], [], null).st('M. Cilic'), 'not-in-te');
+    });
+    check('provisional · a refresh that lists it under another spelling pairs it: counted once, TE\'s, no flag', () => {
+      const x = merge([CILIC()], [R(2026, '2026-10-19', 'Almaty', 'ATP', '1R', 'hard', 'indoor', 'Čilić M.', true, '6-2, 7-5')], '2026-10-26T05:00:00Z');
+      assert.strictEqual(x.st('M. Cilic'), 'counted'); assert.strictEqual(x.m.added.length, 0); assert.strictEqual(x.on('2026-10-19').length, 1);
+      assert.ok(x.on('2026-10-19')[0].te, 'the row carries TE\'s values');
+    });
+    check('provisional · a refresh that does not list it sends it back to not counted', () => {
+      const x = merge([CILIC()], [], '2026-10-26T05:00:00Z'); assert.strictEqual(x.st('M. Cilic'), 'not-in-te'); assert.strictEqual(x.on('2026-10-19').length, 0);
+    });
+    check('provisional · a refresh that lists it but fails to pair counts it once, from TE', () => {
+      const x = merge([CILIC()], [R(2026, '2026-10-19', 'Kazakhstan Open', 'ATP', '1R', 'hard', 'indoor', 'Unrelated Q.', true, '6-2, 7-5')], '2026-10-26T05:00:00Z');
+      assert.strictEqual(x.st('M. Cilic'), 'not-in-te'); assert.strictEqual(x.on('2026-10-19').length, 1); assert.strictEqual(x.on('2026-10-19')[0].src, 'te');
+    });
+    check('provisional · read-day guard: on the read day, ANY unpaired TE row within ±3 days keeps it out (review 2026-10-20)', () => {
+      const WALTON = () => fx('2026-10-18', 'A. Walton', 'Almaty', true);
+      const teWin = [R(2026, '2026-10-17', 'Kazakhstan Open', 'ATP qual', 'Q-2R', 'hard', 'indoor', 'Smith Z.', true, '6-4, 7-6')];
+      const teLoss = [R(2026, '2026-10-17', 'Kazakhstan Open', 'ATP qual', 'Q-2R', 'hard', 'indoor', 'Smith Z.', false, '4-6, 6-7')];
+      assert.strictEqual(merge([WALTON()], teWin, '2026-10-18T07:43:00Z').st('A. Walton'), 'not-in-te', 'same result nearby: guarded');
+      assert.strictEqual(merge([WALTON()], teLoss, '2026-10-18T07:43:00Z').st('A. Walton'), 'not-in-te', 'other result: guarded too');
+      assert.strictEqual(merge([CILIC()], teWin, '2026-10-18T07:43:00Z').st('M. Cilic'), 'prov:2026-10-18', 'the day after the read day: no guard');
+      const far = [R(2026, '2026-10-14', 'Kazakhstan Open', 'ATP qual', 'Q-2R', 'hard', 'indoor', 'Smith Z.', true, '6-4, 7-6')];
+      assert.strictEqual(merge([WALTON()], far, '2026-10-18T07:43:00Z').st('A. Walton'), 'prov:2026-10-18', '4 days away: counts');
+    });
+    check('provisional · age cap: counts up to 14 days after the read day, not after (a stalled refresh reverts it)', () => {
+      assert.strictEqual(TJ.PROVISIONAL_MAX_DAYS, 14);
+      assert.strictEqual(merge([fx('2026-11-01', 'M. Cilic', 'Paris', true)], [], '2026-10-18T07:43:00Z').st('M. Cilic'), 'prov:2026-10-18', '14 days');
+      assert.strictEqual(merge([fx('2026-11-02', 'M. Cilic', 'Paris', true)], [], '2026-10-18T07:43:00Z').st('M. Cilic'), 'not-in-te', '15 days');
+    });
+    check('provisional · an exact duplicate api-tennis row (same day, opponent, result) counts once', () => {
+      const a = fx('2026-10-19', 'A. Aubriot', 'Almaty', true), b = fx('2026-10-19', 'A. Aubriot', 'Almaty', true, { round: 'Qualifying' });
+      const x = TJ.applyTeHistory([a, b], rec([], '2026-10-18T07:43:00Z'), { provisional: true });
+      assert.strictEqual(x.diag.provisional, 1);
+      assert.ok(x.copyOf.get(a) && x.copyOf.get(a).provisional, 'the first counts'); assert.strictEqual(x.out.get(b), 'not-in-te', 'the second does not');
+    });
+    check('provisional · a junior, women\'s, walkover, exhibition, national-championship or pro-series row is never provisional', () => {
+      const x = merge([fx('2026-10-19', 'J. Junior', 'Australian Open', true, { level: 'chitf' }), fx('2026-10-19', 'W. Woman', 'Itf W35 Lyon Women', true, { level: 'chitf' }),
+        fx('2026-10-19', 'K. Kick', 'Almaty', true, { walkover: true }), fx('2026-10-19', 'E. Exhib', 'Exhibition Six Kings Slam', true),
+        fx('2026-10-19', 'N. Nat', 'German Championships', true), fx('2026-10-19', 'P. Pro', 'UK Pro Series', true)], [], '2026-10-18T07:43:00Z');
+      assert.strictEqual(x.st('J. Junior'), 'junior');
+      for (const o of ['W. Woman', 'K. Kick', 'E. Exhib', 'N. Nat', 'P. Pro']) assert.strictEqual(x.st(o), 'not-in-te', o);
+      assert.ok(!x.m.diag.provisional);
+    });
+    check('provisional · Svajda (joined without a DOB) unchanged: his rows TE lacks count, never flagged', () => {
+      assert.strictEqual(merge([CILIC()], [], '2026-10-18T07:43:00Z', '2986').st('M. Cilic'), 'counted');
     });
   }
   load(false);

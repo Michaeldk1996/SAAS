@@ -47,6 +47,31 @@ check('an empty index {"players":{}} against the committed index -> red', () => 
   const d = store((dd, idx) => { idx.players = {}; idx.totalRows = 0; idx.highWater = {}; });
   assert.strictEqual(checkStore(d, { prev: { players: { 1: {}, 2: {} }, totalRows: 5 } }).ok, false);
 });
+// TEN-449 provisional: readAt (when his TE current-season page was read) never goes backwards against the committed index,
+// equals its index entry, and is never in the future
+check('TEN-449 · readAt: later or equal passes; earlier, or dropped, against the committed index -> red, naming it', () => {
+  const T0 = '2026-10-18T07:43:00.000Z', NOW = Date.parse('2026-10-20T12:00:00Z');
+  const prev = { players: { 1: { rows: 3, readAt: T0 }, 2: { rows: 2 } }, totalRows: 5, highWater: { totalRows: 5, players: 2 } };
+  const at = (fileAt, idxAt) => store((d, idx) => { fs.writeFileSync(path.join(d, 'te-history', '1.json'), JSON.stringify({ src: 'te', ...(fileAt ? { readAt: fileAt } : {}), rows: [row(1), row(2), row(3)] })); if (idxAt) idx.players[1].readAt = idxAt; });
+  const L = '2026-10-19T05:00:00.000Z';
+  assert.strictEqual(checkStore(at(L, L), { prev, now: NOW }).ok, true, why(at(L, L), { prev, now: NOW }));
+  assert.strictEqual(checkStore(at(T0, T0), { prev, now: NOW }).ok, true, 'equal is not backwards');
+  const back = checkStore(at('2026-10-17T09:00:00.000Z', '2026-10-17T09:00:00.000Z'), { prev, now: NOW });
+  assert.ok(!back.ok && back.why.length === 2 && back.why.every((w) => /never goes backwards/.test(w)) && /1\.json: readAt/.test(back.why[0]) && /index entry for 1/.test(back.why[1]), back.why.join(' | '));
+  const gone = checkStore(at(null, null), { prev, now: NOW });
+  assert.ok(!gone.ok && gone.why.length === 2 && gone.why.every((w) => /readAt missing/.test(w)), gone.why.join(' | '));
+  assert.strictEqual(checkStore(at(null, null), { prev: { ...prev, players: { 1: { rows: 3 }, 2: { rows: 2 } } }, now: NOW }).ok, true, 'a committed store with no readAt: nothing to compare');
+});
+check('TEN-449 · readAt: a file whose readAt differs from its index entry -> red (and only that)', () => {
+  const d = store((dd, idx) => { fs.writeFileSync(path.join(dd, 'te-history', '1.json'), JSON.stringify({ src: 'te', readAt: '2026-10-19T05:00:00.000Z', rows: [row(1), row(2), row(3)] })); idx.players[1].readAt = '2026-10-18T05:00:00.000Z'; });
+  only(d, /1\.json readAt 2026-10-19T05:00:00\.000Z differs from its index entry 2026-10-18T05:00:00\.000Z/, { now: Date.parse('2026-10-20T12:00:00Z') });
+});
+check('TEN-449 · readAt: more than an hour in the future -> red (and only that); within the hour passes', () => {
+  const mk = (at) => store((dd, idx) => { fs.writeFileSync(path.join(dd, 'te-history', '1.json'), JSON.stringify({ src: 'te', readAt: at, rows: [row(1), row(2), row(3)] })); idx.players[1].readAt = at; });
+  const NOW = Date.parse('2026-10-20T12:00:00Z');
+  only(mk('2026-10-20T13:30:00.000Z'), /readAt 2026-10-20T13:30:00\.000Z is in the future/, { now: NOW });
+  assert.strictEqual(checkStore(mk('2026-10-20T12:30:00.000Z'), { now: NOW }).ok, true);
+});
 function writerCase(rel, body) {
   const d = store(); fs.mkdirSync(path.dirname(path.join(d, rel)), { recursive: true }); fs.writeFileSync(path.join(d, rel), body);
   return checkWriters(d);
@@ -64,6 +89,20 @@ for (const [name, rel, body] of [
   ['a .cjs script', 'tools/w.cjs', "require('fs').writeFileSync('te-history-index.json', '{}')\n"],
 ]) check(`writer: ${name} -> red`, () => assert.strictEqual(writerCase(rel, body).ok, false));
 check('a reader of the store stays green', () => assert.strictEqual(writerCase('bsp-r.js', "const TE_HISTORY_DIR = 'te-history';\nJSON.parse(fs.readFileSync(`${TE_HISTORY_DIR}/1.json`))\n").ok, true));
+// TEN-449: in the store repo the refresh checks SAAS out into saas/ (its own repository, guarded by its own CI); the
+// control — the same file with no .git beside it — is still a writer
+check('a nested git checkout (the store refresh\'s saas/) is not scanned; the same file outside a checkout is', () => {
+  const body = "fs.writeFileSync('te-history/1.json', '{}')\n";
+  const d = store(); fs.mkdirSync(path.join(d, 'saas', '.git'), { recursive: true }); fs.mkdirSync(path.join(d, 'saas', 'tools'));
+  fs.writeFileSync(path.join(d, 'saas', 'tools', 'w.mjs'), body);
+  assert.strictEqual(checkWriters(d).ok, true, checkWriters(d).why.join('; '));
+  assert.strictEqual(writerCase('saas/tools/w.mjs', body).ok, false, 'control: no .git, the writer must be named');
+  // only saas/ at the root: a nested checkout anywhere else, or saas/ one level down, is still scanned
+  for (const dir of ['vendor', 'tools/saas']) {
+    const d2 = store(); fs.mkdirSync(path.join(d2, dir, '.git'), { recursive: true }); fs.writeFileSync(path.join(d2, dir, 'w.mjs'), body);
+    assert.strictEqual(checkWriters(d2).ok, false, `${dir}/ with a .git was skipped`);
+  }
+});
 const ROOT = path.join(path.dirname(new URL(import.meta.url).pathname), '..');
 check('the repo: no script, workflow or action outside the builder writes te-history', () => { const w = checkWriters(ROOT); assert.strictEqual(w.ok, true, w.why.join('; ')); });
 if (fs.existsSync(path.join(ROOT, 'te-history-index.json'))) {
