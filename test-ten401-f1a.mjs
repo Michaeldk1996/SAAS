@@ -22,7 +22,10 @@ import { dirname, join } from 'node:path';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SRC = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
 const QUOTES = JSON.parse(readFileSync(join(HERE, 'tournament-quotes.json'), 'utf8')).tournaments;
-const SHARDS = ['entry_lists_advance.json', 'entry_lists.json'].map(f => JSON.parse(readFileSync(join(HERE, f), 'utf8')));
+// C18 (founder brief 2026-10-20): f1.3 / f1.4 read a PINNED real snapshot (entry_lists.json @ 3bda62e37 + entry_lists_advance.json
+// @ a062e5a1b, 7 Oct), never the live shards — the old read of the committed entry_lists.json passed only because that file
+// had gone stale (China Open, a 28 Sep event, was still in it on 20 Oct). A fresh shard can no longer turn this red or green.
+const PIN = JSON.parse(readFileSync(join(HERE, 'tools', 'fixtures', 'ten401-f1a', 'entry-lists-2026-10-07.json'), 'utf8'));
 
 // Cut `function name(...)` out of a source by plain brace counting (the test-ten401-b slicer: the sliced functions carry
 // regex literals with quote marks, which a string-aware slicer misreads; their braces are balanced).
@@ -165,7 +168,7 @@ function rangeApi(src) {
 function checkRanges(src) {
   const api = rangeApi(src);
   const keys = new Set();
-  for (const sh of SHARDS) for (const t of sh.tournaments || []) if (t.weekStart) keys.add(t.weekStart);
+  for (const k of PIN.weekStarts) keys.add(k);
   // the four chips at clocks that cross months / years
   const RD = Date;
   for (const iso of ['2026-10-08T10:00:00Z', '2026-10-27T10:00:00Z', '2026-12-29T10:00:00Z', '2027-03-30T10:00:00Z']) {
@@ -202,8 +205,8 @@ function playersApi(src) {
 const countryCells = html => [...html.matchAll(/<span class="el-pcountry" style="([^"]*)">([^<]*)<\/span>/g)].map(m => ({ style: m[1], text: m[2] }));
 function checkCountry(src) {
   const render = playersApi(src);
-  const china = (SHARDS[1].tournaments || []).find(t => t.name === 'China Open');
-  if (!china) return 'China Open is gone from entry_lists.json';
+  const china = PIN.chinaOpen;
+  if (!china || china.name !== 'China Open') return 'the pinned China Open snapshot is missing';
   const players = china.sections.flatMap(s => s.players);
   const noFlag = players.filter(p => p.status !== 'BYE' && !p.country).map(p => p.name);
   for (const n of ['MEDVEDEV', 'RUBLEV', 'KHACHANOV', 'SAFIULLIN']) if (!noFlag.some(x => x.startsWith(n))) return 'vacuous: ' + n + ' carries a country now';

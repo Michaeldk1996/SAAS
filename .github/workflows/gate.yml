@@ -52,6 +52,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Draw source (founder brief 2026-10-20, C): tools/test-draws.py parses the official draw-sheet PDFs with pymupdf.
+      # Pinned; --user keeps the runner's system python3 for every other python suite.
+      - name: Install the draw-sheet parser (pymupdf, pinned)
+        run: python3 -m pip install --quiet --user --break-system-packages 'pymupdf==1.26.5'
+
       - name: Run this shard of every npm test command
         run: node tools/gate-run.mjs --shards "$GATE_SHARDS" --shard ${{ matrix.shard }}
 

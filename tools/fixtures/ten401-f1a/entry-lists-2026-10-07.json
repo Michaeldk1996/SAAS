@@ -1,0 +1,365 @@
+{
+ "_note": "Pinned real snapshot (founder brief 2026-10-20 C18): entry_lists.json @ 3bda62e37 + entry_lists_advance.json @ a062e5a1b. test-ten401-f1a reads THIS, not the live shards, so it can no longer pass only because the committed file is stale.",
+ "weekStarts": [
+  "2026-09-21",
+  "2026-09-28",
+  "2026-10-12",
+  "2026-10-19",
+  "2026-10-26",
+  "2026-11-02"
+ ],
+ "chinaOpen": {
+  "tour": "ATP",
+  "tournamentId": "747",
+  "name": "China Open",
+  "city": "Beijing",
+  "country": "China",
+  "week_label": "30 September — 6 October 2026",
+  "startDate": "2026-09-30",
+  "endDate": "2026-10-06",
+  "weekStart": "2026-09-28",
+  "tier": "ATP 500",
+  "surface": "Hard",
+  "status": "active",
+  "sourcePublished": "2026-10-06T13:01:56Z",
+  "counts": {
+   "MD": 31,
+   "Q": 15,
+   "ALT": 1
+  },
+  "sections": [
+   {
+    "title": "Main Draw",
+    "players": [
+     {
+      "name": "ZVEREV, Alexander",
+      "rank": 2,
+      "country": "GER",
+      "status": "SEED",
+      "playerKey": "1980"
+     },
+     {
+      "name": "NORRIE, Cameron",
+      "rank": null,
+      "country": "GBR",
+      "status": "DA",
+      "playerKey": "1103"
+     },
+     {
+      "name": "SHANG, Juncheng",
+      "rank": null,
+      "country": "CHN",
+      "status": "WC",
+      "playerKey": "2413"
+     },
+     {
+      "name": "BAEZ, Sebastian",
+      "rank": null,
+      "country": "ARG",
+      "status": "DA",
+      "playerKey": "1101"
+     },
+     {
+      "name": "CERUNDOLO, Juan M…",
+      "rank": null,
+      "country": "ARG",
+      "status": "DA",
+      "playerKey": null
+     },
+     {
+      "name": "BU, Yunchaokete",
+      "rank": null,
+      "country": "CHN",
+      "status": "WC",
+      "playerKey": "796"
+     },
+     {
+      "name": "BORGES, Nuno",
+      "rank": null,
+      "country": "POR",
+      "status": "DA",
+      "playerKey": "358"
+     },
+     {
+      "name": "DJOKOVIC, Novak",
+      "rank": 12,
+      "country": "SRB",
+      "status": "SEED",
+      "playerKey": "1905"
+     },
+     {
+      "name": "MEDVEDEV, Daniil",
+      "rank": 6,
+      "country": null,
+      "status": "SEED",
+      "playerKey": "1093"
+     },
+     {
+      "name": "CARRENO BUSTA, Pablo",
+      "rank": null,
+      "country": "ESP",
+      "status": "Q",
+      "playerKey": null
+     },
+     {
+      "name": "STRUFF, Jan-Lennard",
+      "rank": null,
+      "country": "GER",
+      "status": "DA",
+      "playerKey": null
+     },
+     {
+      "name": "TIRANTE, Thiago Agustin",
+      "rank": null,
+      "country": "ARG",
+      "status": "DA",
+      "playerKey": null
+     },
+     {
+      "name": "CERUNDOLO, Francisco",
+      "rank": null,
+      "country": "ARG",
+      "status": "Q",
+      "playerKey": "1104"
+     },
+     {
+      "name": "BUBLIK, Alexander",
+      "rank": null,
+      "country": "KAZ",
+      "status": "DA",
+      "playerKey": "1895"
+     },
+     {
+      "name": "MENSIK, Jakub",
+      "rank": 15,
+      "country": "CZE",
+      "status": "SEED",
+      "playerKey": "902"
+     },
+     {
+      "name": "DE MINAUR, Alex",
+      "rank": 9,
+      "country": "AUS",
+      "status": "SEED",
+      "playerKey": "1106"
+     },
+     {
+      "name": "NAVONE, Mariano",
+      "rank": null,
+      "country": "ARG",
+      "status": "DA",
+      "playerKey": "949"
+     },
+     {
+      "name": "BUSE, Ignacio",
+      "rank": null,
+      "country": "PER",
+      "status": "DA",
+      "playerKey": "9514"
+     },
+     {
+      "name": "HALYS, Quentin",
+      "rank": null,
+      "country": "FRA",
+      "status": "DA",
+      "playerKey": "1925"
+     },
+     {
+      "name": "GRIEKSPOOR, Tallon",
+      "rank": null,
+      "country": "NED",
+      "status": "DA",
+      "playerKey": "427"
+     },
+     {
+      "name": "RUBLEV, Andrey",
+      "rank": null,
+      "country": null,
+      "status": "DA",
+      "playerKey": "2847"
+     },
+     {
+      "name": "SAFIULLIN, Roman",
+      "rank": null,
+      "country": null,
+      "status": "SE",
+      "playerKey": "1057"
+     },
+     {
+      "name": "COBOLLI, Flavio",
+      "rank": 7,
+      "country": "ITA",
+      "status": "SEED",
+      "playerKey": "372"
+     },
+     {
+      "name": "TIEN, Learner",
+      "rank": 13,
+      "country": "USA",
+      "status": "WC",
+      "playerKey": "10520"
+     },
+     {
+      "name": "HURKACZ, Hubert",
+      "rank": null,
+      "country": "POL",
+      "status": "DA",
+      "playerKey": "2841"
+     },
+     {
+      "name": "ZHANG, Zhizhen",
+      "rank": null,
+      "country": "CHN",
+      "status": "WC",
+      "playerKey": "590"
+     },
+     {
+      "name": "GEA, Arthur",
+      "rank": null,
+      "country": "FRA",
+      "status": "Q",
+      "playerKey": "9210"
+     },
+     {
+      "name": "MOLCAN, Alex",
+      "rank": null,
+      "country": "SVK",
+      "status": "Q",
+      "playerKey": "436"
+     },
+     {
+      "name": "MACHAC, Tomas",
+      "rank": null,
+      "country": "CZE",
+      "status": "LL",
+      "playerKey": "2981"
+     },
+     {
+      "name": "KHACHANOV, Karen",
+      "rank": null,
+      "country": null,
+      "status": "DA",
+      "playerKey": "435"
+     },
+     {
+      "name": "Auger-Aliassime, Felix",
+      "rank": 5,
+      "country": "CAN",
+      "status": "SEED",
+      "playerKey": "2073"
+     }
+    ]
+   },
+   {
+    "title": "Qualifying",
+    "players": [
+     {
+      "name": "ROYER, Valentin",
+      "rank": null,
+      "country": "FRA",
+      "status": "DA",
+      "playerKey": "954"
+     },
+     {
+      "name": "CUI, Jie",
+      "rank": null,
+      "country": "CHN",
+      "status": "WC",
+      "playerKey": "1274"
+     },
+     {
+      "name": "ALTMAIER, Daniel",
+      "rank": 67,
+      "country": "GER",
+      "status": "SEED",
+      "playerKey": "1099"
+     },
+     {
+      "name": "HANFMANN, Yannick",
+      "rank": 54,
+      "country": "GER",
+      "status": "SEED",
+      "playerKey": "1764"
+     },
+     {
+      "name": "MACHAC, Tomas",
+      "rank": null,
+      "country": "CZE",
+      "status": "DA",
+      "playerKey": "2981"
+     },
+     {
+      "name": "TE, Rigele",
+      "rank": null,
+      "country": "CHN",
+      "status": "WC",
+      "playerKey": "663"
+     },
+     {
+      "name": "GEA, Arthur",
+      "rank": null,
+      "country": "FRA",
+      "status": "ALT",
+      "playerKey": "9210"
+     },
+     {
+      "name": "KECMANOVIC, Miomir",
+      "rank": 60,
+      "country": "SRB",
+      "status": "SEED",
+      "playerKey": "2848"
+     },
+     {
+      "name": "MANNARINO, Adrian",
+      "rank": null,
+      "country": "FRA",
+      "status": "DA",
+      "playerKey": "438"
+     },
+     {
+      "name": "ZHOU, Yi",
+      "rank": null,
+      "country": "CHN",
+      "status": "WC",
+      "playerKey": "39862"
+     },
+     {
+      "name": "Carreno Busta, Pablo",
+      "rank": 69,
+      "country": "ESP",
+      "status": "SEED",
+      "playerKey": null
+     },
+     {
+      "name": "LANDALUCE, Martin",
+      "rank": 62,
+      "country": "ESP",
+      "status": "SEED",
+      "playerKey": "39864"
+     },
+     {
+      "name": "TRUNGELLITI, Marco",
+      "rank": null,
+      "country": "ARG",
+      "status": "DA",
+      "playerKey": "395"
+     },
+     {
+      "name": "MOLCAN, Alex",
+      "rank": null,
+      "country": "SVK",
+      "status": "DA",
+      "playerKey": "436"
+     },
+     {
+      "name": "KOPRIVA, Vit",
+      "rank": 71,
+      "country": "CZE",
+      "status": "SEED",
+      "playerKey": "1083"
+     }
+    ]
+   }
+  ]
+ }
+}
