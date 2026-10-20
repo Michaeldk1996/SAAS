@@ -393,7 +393,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     });
   }
   // TEN-449 Bucket D (founder 2026-10-19, report `bucket-d`): eight players joined on a NEAR-MISS DOB, by key
-  // (te-join.js NEAR_MISS_DOB). Each is a DOB-joined player — only TE's rows count (ruling 2A), never Svajda's
+  // (te-join.js NEAR_MISS_DOB). Each is a DOB-joined player — only TE's rows count (ruling 2A; plus provisional ones), never Svajda's
   // no-DOB behaviour; the list cannot widen to a ninth key, in the pipeline or in the store builder.
   {
     const TJ = require('../te-join.js');
@@ -453,6 +453,16 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       assert.strictEqual(TJ.teIdentityRefusal({ key: '19461', slug: 'munoz-1a9fc', dob: '2005', how: 'near-miss-dob' }), null);
       assert.match(TJ.teIdentityRefusal({ key: '19461', slug: 'munoz-1a9fc', dob: '2005', how: 'founder-exception' }), /not a named exception for this key/);
     });
+    // a near-miss player (year-only TE DOB included) gets provisional rows like any DOB-joined player; Svajda never does
+    for (const [k, [slug, dob]] of Object.entries(BUCKET_D)) {
+      check(`TEN-449 Bucket D · provisional · ${k} ${slug} (TE DOB ${dob}): a row after his read day counts with PROVISIONAL on, not with it off`, () => {
+        const merge = (on) => { const rows = [ours('2026-10-19', 'Almaty', 'M. Cilic', true)];
+          const m = TJ.applyTeHistory(rows, Object.assign(rec(k, slug, dob, []), { readAt: '2026-10-18T07:43:00Z' }), { provisional: on });
+          const c = m.copyOf.get(rows[0]); return m.out.get(rows[0]) || (c && c.provisional ? 'prov:' + c.provisional : 'counted'); };
+        assert.strictEqual(merge(true), 'prov:2026-10-18');
+        assert.strictEqual(merge(false), 'not-in-te');
+      });
+    }
     check('TEN-449 Bucket D · Ceban (70760): his 16 junior Grand Slam rows stay out; the senior row pairs', () => {
       const slams = ['Australian Open', 'French Open', 'Wimbledon', 'US Open'];
       const rows = [ours('2025-06-23', 'Wimbledon', 'S. Senior', false, { level: 'atp', surface: 'grass', round: 'Qualifying' })];

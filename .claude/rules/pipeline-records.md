@@ -100,16 +100,17 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     other page is refused) is joined with no DOB on TE, on 320 of 320 of our rows pairing with 0 result disagreements. It does not extend to any other player.
     *Named exception (founder TEN-449, 2026-10-19, report `bucket-d`):* eight players are joined on a near-miss DOB,
     each to one TE page with TE's DOB as the store records it (`te-join.js` `NEAR_MISS_DOB`), counted as DOB-joined
-    players (only TE's rows count). Paired / our rows as measured for the report on 19 Oct 2026 (live files, build
+    players (TE's rows count, plus provisional rows, as for every DOB-joined player). Paired / our rows as measured for the report on 19 Oct 2026 (live files, build
     `ce98253e7`), 0 result disagreements each: 702 Z. Tkemaladze `tkemaladze`
     (TE 4 Jun 2000, ours 6 Apr: swapped) 216/217 — the one unpaired row, Lo Chien 27 Oct 2022, counts once as TE's
     copy; 12972 F. Rocha `rocha-a46b1` (TE 4 Oct 1999, ours 10 Apr: swapped) 172/172; 19461 E. Munoz `munoz-1a9fc`
     (TE 2005 only; both search pages read, no other E. Munoz) 32/32; 52682 F. Balshaw `balshaw` (TE 5 Jun 2006, ours
     15 Jun) 131/131 (a later live file adds his 19 Oct Lyon qualifying match, played after TE's page was read: 131/132
-    until the TE refresh lists it); 54221 G. Bennaton `bennaton` (TE 2005 only) 7/7; 70760 M. Ceban `ceban` (TE 2009 only) 18/34, the
+    until the TE refresh lists it; with `PROVISIONAL` on it counts provisionally meanwhile); 54221 G. Bennaton `bennaton` (TE 2005 only) 7/7; 70760 M. Ceban `ceban` (TE 2009 only) 18/34, the
     16 unpaired all junior Slam rows, which stay out; 78231 G. Al-Sulaiti `al-sulaiti-a86c2` (TE 2007 only) 5/5;
     78628 I. Snoussi `snoussi` (TE 2007 only) 15/15. It does not extend to any other player.
-    **Test:** `tools/test-ten443-te-ingest.js` "Bucket D": each of the eight joins and counts only TE's rows. Refused,
+    **Test:** `tools/test-ten443-te-ingest.js` "Bucket D": each of the eight joins and counts only TE's rows, plus
+    provisional ones with `PROVISIONAL` on ("Bucket D · provisional"). Refused,
     and the run stops: in the pipeline (`applyTeHistory`), a store record for any other key with no DOB or a DOB that
     is not a valid yyyymmdd date (year-only, short, `00000000`, month 13, 31 Feb), and a named key on another page or
     DOB; in the store build (`te-build-history.mjs`, exit 1 and nothing written), additionally any cache join whose TE

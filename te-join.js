@@ -164,7 +164,7 @@ const NO_DOB_EXCEPTION = new Map([['2986', { slug: 'svajda' }]]);
 // Players joined to TE on a NEAR-MISS date of birth, by key, in the founder's ruling (TEN-449, 2026-10-19, report
 // `bucket-d`): TE's DOB has day and month swapped, is 10 days off, or is the year only (TE prints "1. 1. <year>"; the
 // store records the year alone). Each is pinned to ONE TE page and ONE TE DOB, as the store records it; ours is kept for
-// the record. Unlike Svajda they are DOB-joined players: the record counts only TE's rows (ruling 2A). Overlap the
+// the record. Unlike Svajda they are DOB-joined players: the record counts TE's rows (ruling 2A), plus provisional ones. Overlap the
 // founder ruled on (paired / our rows, 0 result disagreements): 216/217, 172/172, 32/32, 131/131, 7/7, 18/34 (16 junior
 // rows), 5/5, 15/15 (report of 19 Oct). Nobody else: any other key with a DOB that is not a valid full yyyymmdd stops the
 // run, and the store builder refuses any other key whose TE DOB differs from ours.
@@ -294,7 +294,8 @@ function applyTeHistory(rows, teRec, opts = {}) {
   const pairedKey = new Set(pairs.map(({ ours: r }) => `${r.date}|${ourSurname(r.opponent)}|${!!r.won}`));
   // founder ruling TEN-449 (2026-10-19): for a player joined on his date of birth, the record counts only what TE lists;
   // our rows TE lacks stay visible in the drill, marked "not in Tennis Explorer, not counted". A player joined without a
-  // DOB (the named exception, Svajda) keeps counting them. A near-miss DOB join (NEAR_MISS_DOB) is a DOB-joined player.
+  // DOB (the named exception, Svajda) keeps counting them. A near-miss DOB join (NEAR_MISS_DOB) is a DOB-joined player
+  // (provisional rows included, even with a year-only TE DOB).
   // The exceptions are by player key, never "any record without a DOB": a store record with no DOB, or a DOB short of
   // yyyymmdd, for anyone else is a join the DOB rule forbids, and the run stops rather than count on it.
   const refusal = teIdentityRefusal(teRec);
