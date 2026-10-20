@@ -1,0 +1,17 @@
+name: probe-te
+on:
+  push:
+    branches: ['claude/probe-*']
+    paths: [tools/probe-te/**]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/probe-te/run.sh
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
