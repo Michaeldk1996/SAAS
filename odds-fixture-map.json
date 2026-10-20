@@ -4544,8 +4544,8 @@
     },
     "12171793": {
       "fixtureId": null,
-      "mappedAt": "2026-10-20T01:03:54Z",
-      "missRuns": 3,
+      "mappedAt": "2026-10-20T03:03:31Z",
+      "missRuns": 4,
       "missSince": "2026-10-19T22:31:19Z",
       "orient": null,
       "p1": "H. Rune",
@@ -4807,16 +4807,16 @@
     },
     "12172163": {
       "fixtureId": "id1204195975754904",
-      "mappedAt": "2026-10-18T14:17:39Z",
+      "mappedAt": "2026-10-20T03:03:31Z",
       "orient": "same",
       "p1": "R. Sakamoto",
       "p2": "K. Khachanov",
-      "startTime": "2026-10-20T06:30:00.000Z",
+      "startTime": "2026-10-20T14:30:00.000Z",
       "tournamentId": 41959
     },
     "12172164": {
       "fixtureId": "id1204195975754906",
-      "mappedAt": "2026-10-18T14:17:39Z",
+      "mappedAt": "2026-10-20T03:03:31Z",
       "orient": "same",
       "p1": "S. Shimabukuro",
       "p2": "R. Safiullin",
@@ -5008,23 +5008,12 @@
       "observedSpanDays": 18.79,
       "projectedTtlUnitsPerDay": 1.4,
       "runs": 400,
-      "spentRuns": 151,
+      "spentRuns": 152,
       "ttlBitRuns": 26,
       "ttlBitShare": 0.065,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-01T07:00:41Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 25
-      },
       {
         "at": "2026-10-01T08:00:48Z",
         "fixturesUnitsSpent": 0,
@@ -9413,9 +9402,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 33
+      },
+      {
+        "at": "2026-10-20T03:03:31Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 2,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 33
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-20T01:03:54Z"
+  "updatedAt": "2026-10-20T03:03:31Z"
 }
