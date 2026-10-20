@@ -69,5 +69,12 @@ check('entry-lists-advance.yml: daily, commits on a content change only, red whe
 check('playing-styles.yml: daily, API_TENNIS_KEY from secrets, runs the gated script', /cron: '30 22 \* \* \*'/.test(wf('playing-styles.yml')) && /secrets\.API_TENNIS_KEY/.test(wf('playing-styles.yml')) && /bash tools\/refresh-playing-styles\.sh/.test(wf('playing-styles.yml')));
 check('feed-freshness.yml: scheduled, read-only, runs the check', /schedule:/.test(wf('feed-freshness.yml')) && /contents: read/.test(wf('feed-freshness.yml')) && /check-feed-freshness\.mjs/.test(wf('feed-freshness.yml')));
 check('content hash ignores the advance shard\'s run stamps (generatedAt, fetchedAt)', /VOLATILE = \("generatedAt", "fetchedAt"\)/.test(fs.readFileSync(path.join(ROOT, 'tools', 'entry-lists', 'content-hash.py'), 'utf8')));
+// first cloud run follow-ups (2026-10-20)
+check('playing-styles in Actions: published → exit 0 BEFORE the Mac-only `git credential fill` dispatch (run 39461054433 went red there)',
+  (() => { const t = fs.readFileSync(path.join(ROOT, 'tools', 'refresh-playing-styles.sh'), 'utf8'); const i = t.indexOf('if [ "${GITHUB_ACTIONS:-}" = "true" ]; then echo "published'), j = t.indexOf("TOKEN=$(printf"); return i > 0 && j > i; })());
+const dy = wf('draws.yml');
+check('draws.yml rides the pipeline (workflow_run) — schedules are throttled on this repo', /workflow_run:[^\n]*\n\s*workflows: \['BSP data pipeline'\]/.test(dy) && /cron: '17 \*\/2 \* \* \*'/.test(dy));
+check('draws.yml cadence gate: a pipeline-triggered run goes only when the last successful draws run is >= 110 min old (6600 s)', /-lt 6600/.test(dy) && /actions: read/.test(dy));
+check('draws.yml: every step after the gate is conditional on it', (() => { const steps = dy.split('\n      - ').slice(2); return steps.length >= 5 && steps.every(x => /if: steps\.gate\.outputs\.go == '1'/.test(x)); })());
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -175,6 +175,10 @@ done
 [ "$pushed" = 1 ] || { echo "ERROR: could not push after 3 attempts"; exit 1; }
 
 # redeploy Pages (pipeline.yml has no push trigger)
+# In GitHub Actions there is no keychain credential to dispatch with (and none is needed: the pipeline's own schedule
+# copies the committed files). On the Mac this block ran `git credential fill`, which exits 128 on a runner under
+# set -e -o pipefail — the first cloud run (39461054433) published, then went red right here.
+if [ "${GITHUB_ACTIONS:-}" = "true" ]; then echo "published; the pipeline's schedule picks it up (no dispatch from Actions)"; STATUS="published"; exit 0; fi
 TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill 2>/dev/null | sed -n 's/^password=//p')
 if [ -n "${TOKEN:-}" ]; then
   curl -s -o /dev/null -w "pipeline dispatch -> HTTP %{http_code}\n" \
