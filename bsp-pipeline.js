@@ -3218,7 +3218,11 @@ function _shapeApiTennisOdds(entry, fetchedAt, eventKey) {
 // prefixed only when it does not (TEN-273: the subheader read "ATP ATP Laver Cup").
 function tourLabelOf(fixture) {
   if (fixture.tournament_round) return fixture.tournament_round.split(' - ')[0].trim();
-  const name = String(fixture.tournament_name || '').trim();
+  // A6 (founder brief 2026-10-20): api-tennis files a whole event under one name that can carry a vendor suffix —
+  // Lyon 2026 is "Lyon (France) - Qualification" (key 14763) for its MAIN draw too. Its rounds say "ATP Lyon - …", so
+  // a fixture whose round is still null (a freshly created next-round fixture) fell back to the raw name and split the
+  // event ("ATP Lyon (France) - Qualification" → a duplicate Reports tournament). Strip that suffix + "(Country)".
+  const name = String(fixture.tournament_name || '').trim().replace(/\s+-\s+Qualification$/i, '').replace(/\s*\([^()]*\)$/, '');
   return /^ATP\s/i.test(name) ? name : `ATP ${name}`;
 }
 
@@ -3420,6 +3424,37 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
 // odds-driven match with no markets yet, see buildMatchObject). No
 // finalScore/matchStats since the match hasn't been played.
 // =================================================================
+// B8 (founder brief 2026-10-20): since The Odds API was retired (2026-10-16) the fixture path is the ONLY card
+// builder, and it skipped every in-play fixture (`event_live === '1'`) — so a match vanished from matches.json
+// for as long as it was being played (measured 20 Oct 13:4xZ: 3 of 3 live ATP main-draw matches absent, 0 of 45
+// cards live). The old odds-driven builder was what carded live matches; this restores that, on the fixture.
+// Stateless half of the upcoming filter: a fixture that may be carded as not-yet-decided (scheduled OR in play).
+function isCardableFixture(f) {
+  if (RECORD_STATUSES.includes(f.event_status)) return false;   // TEN-437: "Awarded" is decided, never upcoming
+  if (isCancelledFixture(f)) return false;
+  // An interrupted match is built by the completed-match builder (partial score + stats), never here.
+  if (isInterruptedFixture(f)) return false;
+  if (f.event_qualification === 'True') return false;
+  if (f.event_winner === 'First Player' || f.event_winner === 'Second Player') return false;
+  // A not-yet-assigned player (TBD / awaiting-qualifier slot) has no key, so no enrichment can run.
+  if (!f.first_player_key || !f.second_player_key) return false;
+  return true;
+}
+// Live state for a fixture-built card (p1 = the fixture's first player). Guard A (TEN-107, founder 2026-09-03), as in
+// buildMatchObject: a terminal status beats a lagging event_live flag, so a decided match never strands as LIVE.
+function fixtureLiveState(fixture) {
+  const live = fixture.event_live === '1' && !RECORD_STATUSES.includes(fixture.event_status);
+  return {
+    live,
+    liveStatus: live ? fixture.event_status : null,
+    liveScore: live && Array.isArray(fixture.scores)
+      ? fixture.scores.map(sc => ({ set: Number(sc.score_set), p1: Number(sc.score_first), p2: Number(sc.score_second) }))
+      : null,
+    liveGameScore: live ? (fixture.event_game_result || null) : null,
+    liveServer: live ? (fixture.event_serve === 'First Player' ? 'p1' : fixture.event_serve === 'Second Player' ? 'p2' : null) : null,
+  };
+}
+
 async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   const surface = fixtureSurface(fixture, surfaceMap) || 'hard';
   const tour = tourLabelOf(fixture);
@@ -3473,11 +3508,7 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     venue: null,
     courtSpeed: null,
     weather: null,
-    live: false,
-    liveStatus: null,
-    liveScore: null,
-    liveGameScore: null,
-    liveServer: null,
+    ...fixtureLiveState(fixture),   // B8: an in-play fixture is carded live, not dropped
     p1PhotoUrl: fixture.event_first_player_logo || null,
     p2PhotoUrl: fixture.event_second_player_logo || null,
   };
@@ -6359,19 +6390,7 @@ async function runPipeline() {
   const oddsMatchKeys = new Set(matches.map(m => pairKey(m.p1, m.p2)));
   const seenUpcomingKeys = new Set();
   const upcomingFixtures = apiTennisFixtures.filter(f => {
-    if (RECORD_STATUSES.includes(f.event_status)) return false;   // TEN-437: "Awarded" is decided, never upcoming
-    if (isCancelledFixture(f)) return false;
-    // An interrupted match is already in play — it's built by the completed-match
-    // builder below (with its partial score + stats), so it must not also be
-    // surfaced here as a still-scheduled fixture.
-    if (isInterruptedFixture(f)) return false;
-    if (f.event_live === '1') return false;
-    if (f.event_qualification === 'True') return false;
-    if (f.event_winner === 'First Player' || f.event_winner === 'Second Player') return false;
-    // A fixture with a not-yet-assigned player (TBD / awaiting-qualifier slot)
-    // has no player key, so none of the per-player enrichment can run — skip it
-    // until both players are set.
-    if (!f.first_player_key || !f.second_player_key) return false;
+    if (!isCardableFixture(f)) return false;   // B8: scheduled OR in play (in-play was dropped since 2026-10-16)
     if (oddsMatchKeys.has(pairKey(f.event_first_player, f.event_second_player))) return false;
     const key = String(f.event_key);
     if (seenUpcomingKeys.has(key)) return false;
@@ -8020,7 +8039,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
