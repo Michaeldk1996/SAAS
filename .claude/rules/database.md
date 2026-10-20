@@ -50,6 +50,14 @@ take styling from it, structure from the rules below.
   gives a Tennis-Data sponsor name ("Adelaide International 2" → "Adelaide 2"), so Kwon's lucky-loser run (Adelaide 2 2023,
   filed "Qualifying" by api-tennis) meets its Tennis-Data rows. **Test:** `test-ten402-b.mjs` "round tolerance" (+ control),
   `tools/test-approx-pinnacle.mjs`, `tools/test-close-label.py`.
+- **Book 8 = Tennis Explorer's Pinnacle (founder 2026-10-19, steps 0-3; switched ON 2026-10-20 after the calibration: median 0.10pp on 988).** A lower-level or `atp-x` row priced on a `Tennis Explorer · Pinnacle` snapshot carries `r[8] = 8`; the join
+  reads it as book "A", src `te`. It prices a match only where no close, start − 10 or api-tennis Pinnacle snapshot does (founder
+  2026-10-20 order). **One fixed hover, no time** (founder 2026-10-19): every Tennis Explorer price reads exactly
+  "Pinnacle (approx.) · Tennis Explorer, last pre-match price, not a confirmed close" (`SF_TE_HOVER`). The last-change time
+  stays in the archive (`price_ts`) and no page, feed or shard carries it. A price whose last change came after the start is
+  never stored (`odds.md`, in-play rule). No Database figure reads book 8. **Test:**
+  `tools/test-approx-pinnacle.mjs` (the exact words, no time anywhere on the page), `tools/test-lower-master.js` (book 8's rank,
+  Database byte-identical, the era shard's shape unchanged, mutant), `tools/test-tdarch.py` (switch on, order, in-play rule).
 - **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
   (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
   in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of

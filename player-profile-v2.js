@@ -9905,7 +9905,7 @@
   // the book ids the ledger rows carry -> the sheet's { book, src } (the host's ME_PROFILE_BOOK, plus the
   // ledger's own bet365 pre-match capture, which it labels 'bet365')
   var SHEET_BOOK = { pinnacle: ['P', 'td'], 'pinnacle-capture': ['P', 'cap'], 'bet365-archive': ['B', 'td'],
-    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'bet365-approx-at': ['B', 'atb'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'],
+    'bet365-capture': ['B', 'cap'], bet365: ['B', 'cap'], 'bet365-approx-at': ['B', 'atb'], 'pinnacle-approx': ['A', 'td'], 'pinnacle-approx-od10': ['A', 'od10'], 'pinnacle-approx-te': ['A', 'te'],
     'pinnacle-history': ['P', 'hist'] };   // hist: our Pinnacle archive, 'from Pinnacle history' (founder 2026-10-16, round 3 item 1)   // A: Pinnacle (approx.), a snapshot (founder 2026-10-16)
   function sheetPayload(p, ctx, id) {
     var x = sheetRowFor(p, ctx, id);
