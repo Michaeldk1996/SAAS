@@ -3883,6 +3883,32 @@ window.EntryListsTab = (function(){
   // then a tolerant containment fallback. `used` tracks matched draw objects by
   // reference so a tournament is never emitted twice (no duplicate cards).
   function cityKey(t){ return norm(t.city || t.name); }
+  // Ruling 1 (founder 2026-10-20): the draw regime reads draws.json (official ATP sheets, refreshed in GitHub's cloud
+  // by draws.yml) in place of entry_lists.json, whose Mac job is retired (stuck on three September events since 6 Oct).
+  // Converted to the shard shape this tab already renders; nothing is filled that the sheet did not print.
+  function drawsToEntryShard(d){
+    if(!d || !d.tournaments) return null;
+    var monday = function(iso){ var t = new Date(iso + 'T00:00:00Z'); var k = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - k); return t.toISOString().slice(0,10); };
+    var players = function(sh){ return (sh.slots || []).map(function(s){
+      return s.bye ? { name:'Bye', rank:null, country:null, status:'BYE', playerKey:null }
+        : { name:s.name, rank:s.seedRank != null ? s.seedRank : null, country:s.ioc || null,
+            status:s.entry || (s.seed != null ? 'SEED' : 'DA'), playerKey:s.playerKey || null };
+    }); };
+    var out = [], latest = null;
+    Object.keys(d.tournaments).forEach(function(k){
+      var e = d.tournaments[k], m = e.main || {}, q = e.qualifying || {};
+      if(m.status !== 'posted' || !e.startDate) return;
+      var hdr = e.sheetHeader || {}, sections = [{ title:'Main Draw', players:players(m) }];
+      if(q.status === 'posted') sections.push({ title:'Qualifying', players:players(q) });
+      if(e.contentChangedAt && (!latest || e.contentChangedAt > latest)) latest = e.contentChangedAt;
+      out.push({ tour:'ATP', tournamentId:String(e.atpId), name:hdr.name || e.city, city:e.city, country:null,
+        week_label:hdr.weekLabel || null, startDate:e.startDate, endDate:e.endDate, weekStart:monday(e.startDate),
+        tier:e.category || null, surface:hdr.surface || null, status:'active', sourcePublished:e.contentChangedAt || null,
+        counts:{ MD:m.size, Q:q.status === 'posted' ? q.size : null, ALT:(m.alternatesLuckyLosers || []).length },
+        sections:sections });
+    });
+    return { generatedAt:latest, sourcePublished:latest, tournaments:out };
+  }
   function mergeShards(adv, draw){
     var draws = ((draw && draw.tournaments) || []).slice();
     var used = [];
@@ -4105,7 +4131,7 @@ window.EntryListsTab = (function(){
         .then(function(r){ return r.ok ? r.json() : null; })
         .catch(function(){ return null; });
     };
-    loadP = Promise.all([ getJson('entry_lists_advance.json'), getJson('entry_lists.json') ])
+    loadP = Promise.all([ getJson('entry_lists_advance.json'), getJson('draws.json').then(drawsToEntryShard) ])
       .then(function(res){
         var adv = res[0], draw = res[1];
         loadP = null;
@@ -20153,6 +20179,22 @@ function loadCareerSplitsTour(){
   })();
   return _careerSplitsTourLoad;
 }
+// Ruling 1 (founder 2026-10-20): a feed that can only be built on the Mac (career-splits: Tennis Abstract refuses
+// GitHub's runners, 403) and stops updating says so wherever it appears — "Data paused", with the date of its last
+// build — never frozen numbers read as current. The date is the build's own (career-splits-tour.json fetchedAt,
+// YYYYMMDD of the run). A daily build is PAUSED once 2+ days have passed (one missed run + margin). No date = no claim.
+const SF_FEED_PAUSE_DAYS = 2;
+function sfFeedPaused(name){
+  if (name !== 'careerSplits') return null;
+  const f = careerSplitsTour && careerSplitsTour.fetchedAt;
+  if (!f || !/^\d{8}$/.test(String(f))) return null;
+  const at = Date.UTC(+String(f).slice(0, 4), +String(f).slice(4, 6) - 1, +String(f).slice(6, 8));
+  const ageDays = Math.floor((Date.now() - at) / 86400000);
+  const d = new Date(at);
+  const label = d.getUTCDate() + ' ' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getUTCMonth()] + ' ' + d.getUTCFullYear();
+  return { paused: ageDays >= SF_FEED_PAUSE_DAYS, ageDays, asOfLabel: label, text: 'Data paused · last updated ' + label };
+}
+window.sfFeedPaused = sfFeedPaused;
 // The legacy Key insights engine's input: the tour pool with this player's own
 // full record over his slim row (the same M / W, so the tour sums are unmoved).
 // Null until both have landed -> the engine falls back to the pipeline insights
@@ -21394,8 +21436,10 @@ function ppCareerSplitsHtml(p){
   // comparison used rather than leaving the reader to infer it.
   const tier = ppSplitTier(s.rank);
   const vsTier = tier ? ` · Win% vs the median player ${tier.label}` : '';
-  const career = s.career && Object.keys(s.career).length ? ppSplitCard('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches${vsTier}`, tier) : '';
-  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitCard('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches${vsTier}`, tier) : '';
+  const paused = typeof sfFeedPaused === 'function' ? sfFeedPaused('careerSplits') : null;   // ruling 1
+  const pausedNote = paused && paused.paused ? ` · ${paused.text}` : '';
+  const career = s.career && Object.keys(s.career).length ? ppSplitCard('Career splits', 'career', s.career, `Every tour match on record · ${s.matchesParsed} matches${vsTier}${pausedNote}`, tier) : '';
+  const last52 = s.last52 && Object.keys(s.last52).length ? ppSplitCard('Last 52 weeks', 'last52', s.last52, `Rolling 12-month form · ${s.last52Count} matches${vsTier}${pausedNote}`, tier) : '';
   if (!career && !last52) return '';
   // Twin-column: Career (left) and Last 52 weeks (right) side by side.
   return `<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;">
@@ -22613,6 +22657,8 @@ function pp2LoadSplits(key){
   if (Object.prototype.hasOwnProperty.call(careerSplits, k)) return Promise.resolve(careerSplits[k]);
   const load = loadCareerSplitsFor(k);
   load.then(() => pp2RepaintIfOpen(k));
+  // Ruling 1: the tour file carries the build date "Data paused" reads (sfFeedPaused) — load it with his file.
+  if (!careerSplitsTour) loadCareerSplitsTour().then(t => { if (t) pp2RepaintIfOpen(k); });
   return load;
 }
 function showPlayerProfileV2(key){

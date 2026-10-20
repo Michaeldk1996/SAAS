@@ -969,19 +969,16 @@ jobs:
           cp holdbreak.json _site/ 2>/dev/null || true
           # TEN-206 item 3 Situational rows (build-situational.js, daily styles job).
           cp situational.json _site/ 2>/dev/null || true
-          # Entry Lists shard (TEN-150): per-tournament acceptance lists scraped daily by
-          # tools/entry-lists/build-entry-lists.py via launchd cron. Committed but not
-          # copied = silent 404 (Entry Lists tab shows "unavailable"). Best-effort so an
-          # absent shard (first-boot, before the cron runs) never blocks the deploy.
-          cp entry_lists.json _site/ 2>/dev/null || true
+          # entry_lists.json (protennislive draw half, Mac cron) is RETIRED — founder ruling 2026-10-20: the Entry list
+          # tab's draw regime reads draws.json (below). The committed file stays as history; it is no longer served.
           # Entry Lists ADVANCE shard (TEN-150): upcoming-week acceptance lists scraped
-          # daily from ticktocktennis by tools/entry-lists/build-entry-lists-advance.mjs.
-          # The Entry Lists tab merges this (advance regime) with entry_lists.json (draw
+          # daily from ticktocktennis by tools/entry-lists/build-entry-lists-advance.mjs — in GitHub's cloud since
+          # 2026-10-20 (entry-lists-advance.yml). The Entry Lists tab merges this (advance regime) with draws.json (draw
           # regime). Committed but not copied = silent 404 and the tab loses discovery /
           # every upcoming tournament. Best-effort so an absent shard never blocks deploy.
           cp entry_lists_advance.json _site/ 2>/dev/null || true
-          # Official ATP draws (tools/draws/build-draws.py via draws.yml; founder approval 2026-10-20). Published as data
-          # only — no page reads it until the draw view / W/UE quarters are approved. Absent before draws.yml's first run.
+          # Official ATP draws (tools/draws/build-draws.py via draws.yml; founder approval 2026-10-20). Read by the W/UE
+          # export (quarters, ruling 7) and the Entry list tab's draw regime (ruling 1). Absent before draws.yml's first run.
           cp draws.json _site/ 2>/dev/null || true
           # TEN-88 option B: per-player CAREER meeting shards + their index gate the
           # "vs this style" detail list on the Playing-style tab. The index gates the

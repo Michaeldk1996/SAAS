@@ -1564,6 +1564,10 @@
   // selected (its modal open) --edge-24.
   var TILE_EDGE = 'var(--edge-7)';
   var TILE_EDGE_SELECTED = 'var(--edge-24)';
+  // Ruling 1 (founder 2026-10-20): career-splits (Draw record) can only be built on the Mac; when it stops updating the
+  // host's sfFeedPaused says so and the tile's support line + the modal header carry "Data paused · last updated …".
+  function splitsPaused() { var f = typeof window !== 'undefined' && window.sfFeedPaused ? window.sfFeedPaused('careerSplits') : null; return f && f.paused ? f : null; }
+  function splitsPausedSuffix() { var f = splitsPaused(); return f ? ' ' + MIDDOT + ' ' + f.text : ''; }
   function renderBoxes(ctx) {
     var vals = ctx.boxVals;
     var cards = BOXES.map(function (b) {
@@ -1599,7 +1603,7 @@
           (v.headline == null ? DASH_COLOUR : 'var(--text)') + ';line-height:1;white-space:nowrap;' +
           'font-size:' + sz + 'px;">' + (blankFig ? '&nbsp;' : esc(head) + esc(suffix)) + '</div>' +
         '<div' + (pend || v.supportPending ? ' data-pp2-pending="support"' : '') + ' style="font-size:11.5px;color:var(--text-label);line-height:1.4;margin-top:auto;">' +
-          (pend || v.supportPending ? '&nbsp;' : esc(v.support == null ? DASH : v.support)) + '</div>' +
+          (pend || v.supportPending ? '&nbsp;' : esc(b.key === 'splits' && splitsPaused() ? splitsPaused().text : (v.support == null ? DASH : v.support))) + '</div>' +
         '</div>';
     }).join('');
 
@@ -2893,7 +2897,8 @@
       // v7 §5.1 drops "surface" from this list; §5.7 drops the group from the
       // body. Both halves are applied — the header and the body still describe
       // each other.
-      case 'splits': return 'Record and win rate by level, format, round and opponent';
+      // Ruling 1 (founder 2026-10-20): frozen career-splits never read as current — the header says it is paused.
+      case 'splits': return 'Record and win rate by level, format, round and opponent' + splitsPausedSuffix();
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
       case 'speed': return 'Win rate by court pace band';
       // TEN-228 item 5 · the file's own BOXES subtitle, verbatim and static

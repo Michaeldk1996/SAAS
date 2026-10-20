@@ -29,9 +29,15 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."                       # repo root of the clone
-LOG_DIR="$HOME/.bsp-splits-cron"; mkdir -p "$LOG_DIR"
+# MOVED (founder ruling 2026-10-20): playing-styles runs in GitHub Actions (playing-styles.yml) — the Mac's GitHub token
+# expires 25 Oct. Every source answers a GitHub runner (raw.githubusercontent TML + MCP: 206 real CSV, probe run
+# 39449256066; api-tennis: the pipeline's own daily key). On the Mac this now logs and exits; in Actions it runs.
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  mkdir -p "$HOME/.bsp-splits-cron"; echo "$(date -u +%FT%TZ) MOVED to GitHub Actions (playing-styles.yml), founder ruling 2026-10-20" >> "$HOME/.bsp-splits-cron/styles-refresh.retired.log"; exit 0
+fi
+LOG_DIR="${RUNNER_TEMP:-$HOME/.bsp-splits-cron}"; mkdir -p "$LOG_DIR"
 export LOG_DIR
-exec >> "$LOG_DIR/styles-refresh.log" 2>&1
+# (Actions: the run log is the log — no redirect.)
 
 START_EPOCH=$(date +%s)
 START_ISO=$(date -u +%FT%TZ)

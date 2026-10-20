@@ -192,7 +192,8 @@ check("calendar: non-empty (>= 40 events with an id)", len(calj["tournaments"]) 
 shipped = [f for f in subprocess.run(["git", "ls-files", "-z", "*.html", "*.js"], cwd=ROOT, capture_output=True, text=True).stdout.split("\0") if f]
 readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/", ".")) and os.path.isfile(os.path.join(ROOT, f))
            and "draws.json" in open(os.path.join(ROOT, f), encoding="utf-8", errors="ignore").read()]
-check("draws.json has exactly one shipped reader, wue-sheet.js (W/UE quarters, ruling 7); no draw view yet", readers == ["wue-sheet.js"], readers)
+check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7) + the Entry list tab (ruling 1)",
+      sorted(readers) == ["bsp-consult-dashboard.html", "wue-sheet.js"], readers)
 
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

@@ -1,0 +1,20 @@
+# Mac-only feeds must fail VISIBLY when their output stops updating (founder ruling 2026-10-20). career-splits is the one
+# Mac job that cannot move to GitHub Actions (Tennis Abstract answers GitHub's runners 403). The site shows "Data paused"
+# for it by the same rule (2+ days since its last build). This workflow never touches data — it only goes red.
+name: feed-freshness
+on:
+  schedule:
+    - cron: '45 */6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  career-splits:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, sparse-checkout: "career-splits-tour.json\ntools/check-feed-freshness.mjs", sparse-checkout-cone-mode: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: node tools/check-feed-freshness.mjs

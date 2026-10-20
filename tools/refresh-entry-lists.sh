@@ -20,6 +20,10 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."                       # repo root of the clone
+# RETIRED on the Mac (founder ruling 2026-10-20): the protennislive draw half is replaced by draws.json (draws.yml, GitHub cloud).
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  mkdir -p "$HOME/.bsp-splits-cron"; echo "$(date -u +%FT%TZ) RETIRED on the Mac (founder ruling 2026-10-20): the protennislive draw half is replaced by draws.json (draws.yml, GitHub cloud)." >> "$HOME/.bsp-splits-cron/refresh-entry-lists.retired.log"; exit 0
+fi
 LOG_DIR="$HOME/.bsp-splits-cron"; mkdir -p "$LOG_DIR"
 export LOG_DIR
 exec >> "$LOG_DIR/entry-lists-refresh.log" 2>&1
