@@ -6391,6 +6391,7 @@ async function runPipeline() {
   const seenUpcomingKeys = new Set();
   const upcomingFixtures = apiTennisFixtures.filter(f => {
     if (!isCardableFixture(f)) return false;   // B8: scheduled OR in play (in-play was dropped since 2026-10-16)
+    if (isCancelledFixture(f)) return false;   // (also inside isCardableFixture; kept here for the TEN-270 C guard)
     if (oddsMatchKeys.has(pairKey(f.event_first_player, f.event_second_player))) return false;
     const key = String(f.event_key);
     if (seenUpcomingKeys.has(key)) return false;
