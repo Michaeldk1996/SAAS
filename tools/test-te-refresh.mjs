@@ -351,7 +351,7 @@ check('TEN-449 rollout: te-refresh.dispatch-only.yml is the template minus its S
   // `import.meta.url === argv[1]` main check would not fire through one, and the guard would pass vacuously)
   fs.mkdirSync(path.join(ws, 'saas', 'tools'), { recursive: true });
   for (const f of fs.readdirSync(HERE).filter((x) => x.endsWith('.mjs'))) fs.copyFileSync(path.join(HERE, f), path.join(ws, 'saas', 'tools', f));
-  fs.copyFileSync(path.join(HERE, '..', 'te-join.js'), path.join(ws, 'saas', 'te-join.js'));
+  for (const f of ['te-join.js', 'berlin-time.js']) fs.copyFileSync(path.join(HERE, '..', f), path.join(ws, 'saas', f));   // te-join.js requires berlin-time.js
   execFileSync('git', ['init', '-q', path.join(ws, 'saas')], { env: gitEnv });
   sh(stepRun(tpl, "Keep the tools checkout and the run report out of the store's commits"));
   const aux = fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-a-'));   // the stub's pages and request log, outside the store

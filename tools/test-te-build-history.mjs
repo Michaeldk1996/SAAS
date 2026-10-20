@@ -101,9 +101,11 @@ check('store round-trip: rows are written one per line and read back with src te
     const who = `<a href="/player/${slug}/" class="notU"><strong>Me M.</strong></a>`;
     put(`/player/${slug}/`, bal(shows.includes(y) ? shows : [...shows, y]).replace(balRow(2026), shows.includes(2026) && y !== 2026 ? '<tr><td>2026</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>' : balRow(2026)), profAt);
     put(`/player/${slug}/?annual=${y}`, page(y, head('Brisbane', '/brisbane/') + row('05.01.', 'hard', who, opp('aa'), '1R', '6-1, 6-1')), seasonAt);
-    players[key] = { slug, years: [y], dob: '19920101', name: slug };
+    players[key] = { slug, years: [y], dob: '19920101', name: slug, how: 'dob' };
   }
   fs.writeFileSync(path.join(c2, 'players.json'), JSON.stringify(players));
+  // our DOB for each key (the builder refuses a join with no DOB of ours on record, TEN-449 Bucket D)
+  fs.writeFileSync(path.join(c2, 'roster.json'), JSON.stringify(P.map(([key]) => ({ key, dob: '19920101' }))));
   fs.writeFileSync(path.join(out, 'te-atp-events.json'), JSON.stringify({ names: ['brisbane'] }));
   fs.mkdirSync(path.join(out, 'te-history'));
   fs.writeFileSync(path.join(out, 'te-history', '4.json'), JSON.stringify({ key: '4', readAt: '2026-10-19T05:00:00.000Z', rows: [] }));
