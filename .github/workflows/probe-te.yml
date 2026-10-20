@@ -1,0 +1,17 @@
+name: probe-te
+on:
+  push:
+    branches: ['claude/probe-*']
+    paths: [tools/probe-te/**]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash tools/probe-te/run.sh
+        env:
+          TE_STORE_READ_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
