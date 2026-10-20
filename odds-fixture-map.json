@@ -4544,8 +4544,8 @@
     },
     "12171793": {
       "fixtureId": null,
-      "mappedAt": "2026-10-20T21:32:14Z",
-      "missRuns": 16,
+      "mappedAt": "2026-10-20T23:02:18Z",
+      "missRuns": 17,
       "missSince": "2026-10-19T22:31:19Z",
       "orient": null,
       "p1": "H. Rune",
@@ -5120,22 +5120,11 @@
       "projectedTtlUnitsPerDay": 1.8,
       "runs": 400,
       "spentRuns": 150,
-      "ttlBitRuns": 33,
-      "ttlBitShare": 0.083,
+      "ttlBitRuns": 34,
+      "ttlBitShare": 0.085,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-02T03:15:13Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 1,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 16,
-        "ttlBit": false,
-        "unmapped": 15,
-        "upcoming": 17
-      },
       {
         "at": "2026-10-02T04:45:18Z",
         "fixturesUnitsSpent": 1,
@@ -9524,9 +9513,20 @@
         "ttlBit": false,
         "unmapped": 2,
         "upcoming": 26
+      },
+      {
+        "at": "2026-10-20T23:02:18Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 1,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 25
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-20T21:32:14Z"
+  "updatedAt": "2026-10-20T23:02:18Z"
 }
