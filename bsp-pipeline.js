@@ -7728,9 +7728,12 @@ async function runPipeline() {
 // match's numbers actually change (this pipeline runs every 15 min).
 const MODEL_OUTPUT_PATH = 'model-output.json';
 const MODEL_OUTPUT_PUBLISHED_PATH = process.env.MODEL_OUTPUT_PUBLISHED_PATH || 'model-output.published.json';
-// TEN-437: a match has started once it is finished, live, or interrupted with a partial score (the feed's own flags).
+// TEN-437: a match has started once it is finished, live, or interrupted with a partial score (the feed's own flags) — or
+// once it is a finished-list row (past-<ek>) at all: a walkover or a finished fixture whose score did not format has no
+// finalScore, and must never be computed with its result known (review 20 Oct).
 function modelMatchStarted(m) {
-  return !!(m && (m.finalScore || m.live || (Array.isArray(m.liveScore) && m.liveScore.length) || (m.interrupted && m.partialScore)));
+  return !!(m && (m.finalScore || m.live || (Array.isArray(m.liveScore) && m.liveScore.length) || (m.interrupted && m.partialScore)
+    || /^past-/.test(String(m.id || ''))));
 }
 // TEN-437 (founder 2026-10-20): the run-to-run store of pre-match predictions, keyed by EVENT KEY — the row id flips
 // upcoming-<ek> → past-<ek> when a match finishes, and a live match is on neither list. It has its own Actions cache,
@@ -7843,10 +7846,12 @@ async function buildModelOutput(matches) {
   let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0, frozenNew = 0, frozenKept = 0, startedNoPre = 0;
   const h2hIn = modelH2hInputs(matches);   // TEN-437: the model's H2H = the screens' H2H
 
+  // an event key started on ANY board row is started on all of them (a stale upcoming- row beside its past- row)
+  const startedEks = new Set(matches.filter(modelMatchStarted).map(m => modelEventKey(m.id)));
   for (const m of matches) {
-    const c = cand.get(modelEventKey(m.id));
+    const ek = modelEventKey(m.id), c = cand.get(ek);
     if (c && c.frozen) { out[m.id] = c.frozen.entry; frozenKept++; continue; }
-    if (modelMatchStarted(m)) {
+    if (startedEks.has(ek)) {
       if (c && c.pre) { out[m.id] = Object.assign({}, c.pre.entry, { frozen: true, frozenAt: nowIso }); frozenNew++; }
       else { out[m.id] = { ok: false, reason: 'no pre-match prediction on record', preMatch: false }; startedNoPre++; }
       continue;

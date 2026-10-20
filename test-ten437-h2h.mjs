@@ -784,6 +784,43 @@ test('workflow: the model pre-match store is restored before and saved after Run
   assert.match(readFileSync(join(HERE, '.gitignore'), 'utf8'), /^model-prematch\.json$/m, 'never committed');
 });
 
+// Review cases (20 Oct). Mutations: a past- row without a score computed; a stale upcoming- row beside its past- row
+// computed; a frozen match shown upcoming again recomputed; the 72 h retention gone; the latest frozenAt kept instead of
+// the first; an on-board frozen entry's lastSeen not refreshed.
+test('model freeze: edge cases — no-score past- row, stale upcoming- twin, back to upcoming, retention, first freeze, lastSeen', async () => {
+  const T = minAgo => new Date(Date.now() - minAgo * 60e3).toISOString();
+  const res = odds => ({ ok: true, match: {}, players: null, stage1: { baseState: { state: 1 } }, stage2: null, stage3: { fair: { p1: { odds } } }, meta: { generatedAt: 'g' } });
+  const calls = []; const eng = m => { calls.push(m.id); return res(9.99); };
+  const pre = frzPre(`upcoming-${FRZ_EK}`, { p1: { odds: 1.55 } }, T(120));
+  const st = (kind, entry, at, lastSeen) => ({ [FRZ_EK]: { kind, at, lastSeen: lastSeen || at, entry } });
+  // a finished-list row with no score (a walkover, or a score that did not format) is started
+  let r = await frzRun({ 'model-prematch.json': { v: 1, entries: st('pre', pre, pre.computedAt) } }, [frzMatch(`past-${FRZ_EK}`), frzMatch('past-12170302', { p1: 'G. Seven', p2: 'H. Eight' })], eng);
+  assert.deepEqual(calls, [], 'a past- row is never computed');
+  assert.deepEqual([r.out[`past-${FRZ_EK}`].frozen, r.out[`past-${FRZ_EK}`].stage3], [true, pre.stage3]);
+  assert.equal(r.out['past-12170302'].reason, 'no pre-match prediction on record');
+  // a stale upcoming- row beside its own past- row: both read the frozen entry, the store keeps it frozen
+  r = await frzRun({ 'model-prematch.json': { v: 1, entries: st('pre', pre, pre.computedAt) } }, [frzMatch(`upcoming-${FRZ_EK}`), frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })], eng);
+  assert.deepEqual(calls, [], 'the stale upcoming twin is not computed');
+  assert.deepEqual([r.out[`upcoming-${FRZ_EK}`].frozen, r.out[`upcoming-${FRZ_EK}`].stage3], [true, pre.stage3]);
+  assert.equal(r.store.entries[FRZ_EK].kind, 'frozen');
+  // frozen, then the feed shows it upcoming again (no score): it stays frozen
+  const frozen = Object.assign({}, pre, { frozen: true, frozenAt: T(60) });
+  r = await frzRun({ 'model-prematch.json': { v: 1, entries: st('frozen', frozen, frozen.frozenAt) } }, [frzMatch(`upcoming-${FRZ_EK}`)], eng);
+  assert.deepEqual(calls, [], 'never recomputed once frozen');
+  assert.deepEqual(r.out[`upcoming-${FRZ_EK}`], frozen);
+  assert.ok(Date.parse(r.store.entries[FRZ_EK].lastSeen) >= Date.now() - 60e3, 'seen on the board this run: lastSeen refreshed');
+  // the FIRST freeze is kept: a later-frozen copy elsewhere never replaces it
+  const later = Object.assign({}, pre, { stage3: { fair: { p1: { odds: 1.7 } } }, frozen: true, frozenAt: T(30) });
+  r = await frzRun({ 'model-prematch.json': { v: 1, entries: st('frozen', frozen, frozen.frozenAt) },
+    'model-output.published.json': { generatedAt: T(30), matches: { [`past-${FRZ_EK}`]: later } } }, [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })], eng);
+  assert.deepEqual(r.out[`past-${FRZ_EK}`], frozen, 'the first frozen entry');
+  // retention: an off-board entry last seen 73 h ago leaves; one seen 71 h ago stays
+  r = await frzRun({ 'model-prematch.json': { v: 1, entries: {
+    '12170401': { kind: 'pre', at: T(73 * 60), lastSeen: T(73 * 60), entry: frzPre('upcoming-12170401', {}, T(73 * 60)) },
+    '12170402': { kind: 'pre', at: T(71 * 60), lastSeen: T(71 * 60), entry: frzPre('upcoming-12170402', {}, T(71 * 60)) } } } }, [], eng);
+  assert.deepEqual(Object.keys(r.store.entries).sort(), ['12170402'], '72 h after last seen it leaves the store');
+});
+
 // ── 18 · api-tennis key alias: 34000 is D. E. Galan (1735) — founder ruling 2026-10-20 ─────────────────────────────────
 // His opponents' 2021–22 feed rows carry oppKey 34000; his own shard (1735) does not hold those matches, so each is a
 // one-sided row credited on identity (D3) — and 34000 ≠ 1735 left all three out. Real rows from the live shards
