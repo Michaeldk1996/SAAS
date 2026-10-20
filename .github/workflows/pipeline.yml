@@ -72,7 +72,9 @@ permissions:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # Founder ruling 2026-10-20: 30 → 45. On 20 Oct 4 of 25 executed jobs hit 30 min and were cancelled (11:10, 11:40,
+    # 13:30, 14:00Z) while successful jobs took 19–28.5 min; the "Run pipeline" step alone ranged 8.8–20.1 min.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -359,6 +361,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           DOTENV_CONFIG_QUIET: 'true'
         run: node run-pipeline.js github-actions
+
+      # Ruling 4 (founder 2026-10-20): api-tennis shows main-draw matches in play but matches.json has 0 live cards →
+      # this run fails visibly and publishes nothing (the site keeps the last good build). Same fetch, no race.
+      - name: Live-card check (in-play matches must be carded)
+        run: node tools/check-live-cards.mjs
 
       # TEN-437: saved even when a later step fails, so the next run never loses a pre-match prediction.
       - name: Save the model pre-match store

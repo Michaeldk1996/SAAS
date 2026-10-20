@@ -187,12 +187,12 @@ check("calendar: no id is ever guessed — events without one are listed, not fi
       "2026 Stockholm Open" in calj["articlesWithoutId"] and not any("Stockholm" in (t["article"] or "") for t in calj["tournaments"]))
 check("calendar: non-empty (>= 40 events with an id)", len(calj["tournaments"]) >= 40, len(calj["tournaments"]))
 
-# ── founder condition (2026-10-20): draws.json publishes, but NO page reads it until the draw view / W/UE quarters
-#    are approved. Approval flips this check deliberately; until then a reader appearing in shipped code is a failure.
+# ── founder rulings 2026-10-20: draws.json published as data only, then the W/UE quarters + BYE rows APPROVED (ruling
+#    7). So exactly ONE shipped reader: wue-sheet.js. The draw view is not approved yet — any other reader is a failure.
 shipped = [f for f in subprocess.run(["git", "ls-files", "-z", "*.html", "*.js"], cwd=ROOT, capture_output=True, text=True).stdout.split("\0") if f]
 readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/", ".")) and os.path.isfile(os.path.join(ROOT, f))
            and "draws.json" in open(os.path.join(ROOT, f), encoding="utf-8", errors="ignore").read()]
-check("no shipped page or script reads draws.json yet (awaiting the founder's UI approval)", readers == [], readers)
+check("draws.json has exactly one shipped reader, wue-sheet.js (W/UE quarters, ruling 7); no draw view yet", readers == ["wue-sheet.js"], readers)
 
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

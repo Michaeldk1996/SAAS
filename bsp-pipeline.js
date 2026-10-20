@@ -2678,6 +2678,30 @@ const PROGRESSION_DERIVED_METRIC_KEYS = [
 // match's already stat_period==='match'-filtered statistics list. Shared
 // by the per-player round loop and the per-round field-average aggregator
 // below so both use exactly the same derivation logic.
+// Ruling 3 (founder 2026-10-20): the ONE place the per-player W/UE sheet counts are read. The Reports tab's metrics
+// (extractProgressionMetrics → winnersPct / unforcedErrorsPct / winnersUnforcedRatio) and the W/UE export rows
+// (progressionSheetMatches → winners / unforcedErrors / totalPoints) both derive from this, so they cannot drift.
+// W/UE source rule (Layer #8, never mixed): api-tennis when it sends BOTH; else the reviewed @ATP_Entry OCR corpus;
+// else null. totalPoints = total points PLAYED (Total Points Won's total). Raw counts only — callers derive rates.
+function extractSheetCounts(matchStats, playerKey, fallbackCtx) {
+  const won = (st) => { const n = parseInt(st && st.stat_won, 10); return Number.isFinite(n) ? n : null; };
+  const tot = (st) => { const n = parseInt(st && st.stat_total, 10); return Number.isFinite(n) && n > 0 ? n : null; };
+  const pair = (st) => (won(st) != null && tot(st) != null) ? { won: won(st), total: tot(st) } : null;
+  const out = { winners: null, unforcedErrors: null, wueSource: null, totalPoints: null, servicePoints: null, returnPoints: null };
+  if (!matchStats) return out;
+  const w = parseCount((findMatchStat(matchStats, playerKey, 'Points', 'Winners') || {}).stat_value);
+  const ue = parseCount((findMatchStat(matchStats, playerKey, 'Points', 'Unforced errors') || {}).stat_value);
+  if (w != null && ue != null) { out.winners = w; out.unforcedErrors = ue; out.wueSource = 'api-tennis'; }
+  else if (fallbackCtx) {
+    const fb = lookupWue(fallbackCtx.tour, fallbackCtx.playerName, fallbackCtx.opponentName);
+    if (fb) { out.winners = fb.winners; out.unforcedErrors = fb.unforcedErrors; out.wueSource = 'ATP_Entry_OCR'; }
+  }
+  out.totalPoints = tot(findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won'));
+  out.servicePoints = pair(findMatchStat(matchStats, playerKey, 'Points', 'Service Points Won'));
+  out.returnPoints = pair(findMatchStat(matchStats, playerKey, 'Points', 'Return Points Won'));
+  return out;
+}
+
 function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
   const metrics = {};
   for (const def of PROGRESSION_METRIC_DEFS) {
@@ -2702,20 +2726,17 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
   // field-average line empty. When (and only when) api-tennis has neither value
   // for this player, fall back to the reviewed @ATP_Entry OCR corpus, honouring
   // the same strict priority + never-mix rule as attachWue(). Flagged wueSource.
-  let wueSource = (metrics.winners != null && metrics.unforcedErrors != null) ? 'api-tennis' : null;
-  if (wueSource == null && fallbackCtx) {
-    const fb = lookupWue(fallbackCtx.tour, fallbackCtx.playerName, fallbackCtx.opponentName);
-    if (fb) { metrics.winners = fb.winners; metrics.unforcedErrors = fb.unforcedErrors; wueSource = 'ATP_Entry_OCR'; }
-  }
+  // Ruling 3: winners / UE / source come from the ONE extraction (extractSheetCounts) the export rows read too.
+  const counts = extractSheetCounts(matchStats, playerKey, fallbackCtx);
+  metrics.winners = counts.winners;
+  metrics.unforcedErrors = counts.unforcedErrors;
+  const wueSource = counts.wueSource;
 
   // winnersPct / unforcedErrorsPct need total points played as the denominator.
   // That row (Total Points Won) is on every stat sheet even for fixtures missing
   // W/UE, so it is available for OCR-sourced matches too. It is a point count,
   // not a W/UE stat, so pairing it with OCR winners/UE does not mix W/UE sources.
-  const totalPoints = metrics.winners != null && metrics.unforcedErrors != null
-    ? findMatchStat(matchStats, playerKey, 'Points', 'Total Points Won')
-    : null;
-  const totalPointsPlayed = totalPoints && totalPoints.stat_total > 0 ? totalPoints.stat_total : null;
+  const totalPointsPlayed = metrics.winners != null && metrics.unforcedErrors != null ? counts.totalPoints : null;
   // Raw serve counts for the Layer #9 in-tournament serve tier's three
   // now-observable components (hold% / ace% / df%). Confirmed live on the
   // api-tennis per-match sheet: `Games:Service games won` carries a real
@@ -2873,26 +2894,22 @@ function isSlamQualifyingLeak(f) {
 // stamps the feed's Retired / Walk Over status so those rows are flagged. W/UE
 // follow extractProgressionMetrics' source rule exactly (api-tennis, else the
 // reviewed @ATP_Entry OCR corpus, never mixed) and carry the same wueSource.
+// The feed's own round text → the round's name ("ATP Almaty - 1/16-finals" → R32). 1/N-finals is the round with 2N
+// players. Anything else (round-robin, unknown text) → null: shown as a dash, never guessed from position or date.
+function feedRoundCode(round) {
+  const r = String(round || '').toLowerCase();
+  const m = r.match(/1\/(\d+)-finals?/);
+  if (m) return `R${Number(m[1]) * 2}`;
+  if (/semi[-\s]?finals?/.test(r)) return 'SF';
+  if (/quarter[-\s]?finals?/.test(r)) return 'QF';
+  if (/(^|[^a-z])final$/.test(r.trim()) || /- final$/.test(r.trim())) return 'F';
+  return null;
+}
+
 function progressionSheetMatches(played, roundLabelByName) {
-  const won = (s) => { const n = parseInt(s && s.stat_won, 10); return Number.isFinite(n) ? n : null; };
-  const tot = (s) => { const n = parseInt(s && s.stat_total, 10); return Number.isFinite(n) && n > 0 ? n : null; };
-  const pair = (s) => (won(s) != null && tot(s) != null) ? { won: won(s), total: tot(s) } : null;
-  const side = (f, matchStats, key, name, oppName) => {
-    const out = { name, playerKey: key != null ? String(key) : null, winners: null, unforcedErrors: null, wueSource: null, totalPoints: null, servicePoints: null, returnPoints: null };
-    if (!matchStats) return out;
-    const w = parseCount((findMatchStat(matchStats, key, 'Points', 'Winners') || {}).stat_value);
-    const ue = parseCount((findMatchStat(matchStats, key, 'Points', 'Unforced errors') || {}).stat_value);
-    if (w != null && ue != null) { out.winners = w; out.unforcedErrors = ue; out.wueSource = 'api-tennis'; }
-    else {
-      const fb = lookupWue(f.tournament_name, name, oppName);
-      if (fb) { out.winners = fb.winners; out.unforcedErrors = fb.unforcedErrors; out.wueSource = 'ATP_Entry_OCR'; }
-    }
-    const tp = findMatchStat(matchStats, key, 'Points', 'Total Points Won');
-    out.totalPoints = tot(tp);                                        // total points PLAYED in the match
-    out.servicePoints = pair(findMatchStat(matchStats, key, 'Points', 'Service Points Won'));
-    out.returnPoints = pair(findMatchStat(matchStats, key, 'Points', 'Return Points Won'));
-    return out;
-  };
+  // Ruling 3: the same extraction the Reports metrics read (extractSheetCounts) — one derivation, no drift.
+  const side = (f, matchStats, key, name, oppName) => ({ name, playerKey: key != null ? String(key) : null,
+    ...extractSheetCounts(matchStats, key, { tour: f.tournament_name, playerName: name, opponentName: oppName }) });
   return [...played]
     .sort((a, b) => {
       const ka = `${a.event_date || ''} ${a.event_time || ''}`, kb = `${b.event_date || ''} ${b.event_time || ''}`;
@@ -2905,6 +2922,9 @@ function progressionSheetMatches(played, roundLabelByName) {
       return {
         eventKey: f.event_key != null ? String(f.event_key) : null,
         round: roundLabelByName[f.tournament_round] || f.tournament_round,
+        // Ruling 6 (founder 2026-10-20): the ACTUAL round, read from the feed's own round text — never from position.
+        roundCode: feedRoundCode(f.tournament_round),
+        hasStats: !!stats,
         date: f.event_date || null,
         time: f.event_time || null,
         status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover' : 'finished',
@@ -3442,6 +3462,17 @@ function isCardableFixture(f) {
 }
 // Live state for a fixture-built card (p1 = the fixture's first player). Guard A (TEN-107, founder 2026-09-03), as in
 // buildMatchObject: a terminal status beats a lagging event_live flag, so a decided match never strands as LIVE.
+// Ruling 4 (founder 2026-10-20): the in-play gap (B8) must never return silently. From the SAME fixture fetch the
+// cards were built from: which ATP main-draw singles api-tennis reports in play, and how many live cards the board got.
+// Not ok = api-tennis shows ≥1 match in play and the board has 0 live cards (tools/check-live-cards.mjs fails the run).
+function liveCardCheck(fixtures, matches) {
+  const apiLive = (fixtures || []).filter(f => f.event_live === '1' && !RECORD_STATUSES.includes(f.event_status)
+    && f.event_qualification !== 'True' && !isCancelledFixture(f) && !isInterruptedFixture(f))
+    .map(f => ({ eventKey: String(f.event_key), players: `${f.event_first_player} v ${f.event_second_player}`, status: f.event_status, tournament: f.tournament_name }));
+  const cardsLive = (matches || []).filter(m => m.live).length;
+  return { apiLive, apiLiveCount: apiLive.length, cardsLive, ok: !(apiLive.length > 0 && cardsLive === 0) };
+}
+
 function fixtureLiveState(fixture) {
   const live = fixture.event_live === '1' && !RECORD_STATUSES.includes(fixture.event_status);
   return {
@@ -7573,6 +7604,11 @@ async function runPipeline() {
   console.log(`H2H: removed ${ownH2HRemoved} own-fixture row(s) from the board's H2H records.`);
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
+  {
+    const lc = liveCardCheck(apiTennisFixtures, matches);
+    writeJsonAtomic('live-check.json', { checkedAt: new Date().toISOString(), ...lc });
+    console.log(`Live-card check: api-tennis shows ${lc.apiLiveCount} main-draw match(es) in play; matches.json has ${lc.cardsLive} live card(s) → ${lc.ok ? 'ok' : 'GAP'}`);
+  }
   const enriched = matches.filter(m => m.h2h !== null).length;
   console.log(`${enriched}/${matches.length} matches got real H2H/stats data (rest had no API-Tennis fixture match).`);
 
@@ -8040,7 +8076,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

@@ -26574,17 +26574,18 @@ function tourxCapsLbl(t, extra){ return `<span style="font-size:10.5px;letter-sp
 function tourxWueBarHtml(name){
   if (typeof window === 'undefined' || !window.WueSheet) return '';
   const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
-  const rounds = t && Array.isArray(t.matches) ? window.WueSheet.sheetRounds(t) : [];
+  // Rulings 6 + 7 (founder 2026-10-20): tabs by the actual round (R32 … F) as soon as one match has stats; the status
+  // line lists every started round against the official draw's total ("R32: 11 of 12 · R16: 3 of 8").
+  const draw = window.WueSheet.cachedDraw ? window.WueSheet.cachedDraw(name) : null;
+  const rounds = t && Array.isArray(t.matches) ? window.WueSheet.sheetRounds(t, draw) : [];
   const n = tourxEsc(name);
   // A5 (founder brief 2026-10-20): never an error after the click. No rows yet → the button is disabled BEFORE the
   // click with a plain line; rows in → the line says which rounds (matches per round, from the published rows).
   const items = rounds.length
     ? [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
-        .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title.replace('ROUND', 'round'))}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')))
+        .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title)}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')))
     : [tourxWueDisabledSeg('Download .xlsx')];
-  const note = rounds.length
-    ? 'In: ' + rounds.map(r => `${r.title.replace('ROUND', 'Round')} (${r.rows.length / 2} match${r.rows.length === 2 ? '' : 'es'})`).join(' · ')
-    : 'Available after the next data update.';
+  const note = rounds.length ? window.WueSheet.roundStatus(t, draw) : 'Available after the next data update.';
   return `<div style="margin-top:18px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
       ${tourxCapsLbl('W/UE sheet')}
       <div class="tx-segwrap">${items.join('')}</div>
