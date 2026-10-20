@@ -141,6 +141,12 @@
       && !H2H_NOT_COUNTED.test(String(x.tournament || ''));
   }
 
+  // api-tennis keys that are one player (founder 2026-10-20, TEN-437): a one-sided feed row whose oppKey is an alias is
+  // credited to the player it names. D. E. Galan: his opponents' 2021–22 rows carry 34000, his own shard is 1735 (Bublik
+  // Miami 2022, Tsitsipas and Davidovich Fokina US Open 2022). Add a pair only on a founder ruling.
+  const API_KEY_ALIASES = Object.freeze({ '34000': '1735' });
+  function canonKey(k) { if (k == null || k === '') return null; const s = String(k); return Object.prototype.hasOwnProperty.call(API_KEY_ALIASES, s) ? API_KEY_ALIASES[s] : s; }
+
   // A-oriented career rows for the pair (TEN-402's join, unchanged; TEN-437 moved it here from the H2H page and added
   // `dedupe` and the ATP population). A meeting = a row in A's file that names B (or carries an eventKey B's file
   // holds), paired with B's row for the same match: the same eventKey, else the same date, opposite results and each
@@ -152,13 +158,13 @@
   // falls back to the roster-unique-name rule (TEN-263) until that profile rebuilds; an archive row never does.
   // a / b: { full, short, key, id } (names as the roster prints them; key = api-tennis key; id = the shard's TML/ATP id).
   function joinMeetings(a, b, chA, chB, nkCount, ownEks) {
-    const nk = nameKey, nkA = nk(a.full), nkB = nk(b.full);
+    const nk = nameKey, nkA = nk(a.full), nkB = nk(b.full), ck = canonKey;
     const uniq = k => !!k && ((nkCount || {})[k] || 0) <= 1;
     const up = v => (v == null || v === '' ? null : String(v).toUpperCase());
     // Is this one-sided row (from the owner's file) about `other`? Identity first; the name rule only for a legacy feed row.
     const isAbout = (r, other, nkOther) => {
       if (r.src === 'archive') return !!up(r.oppId) && up(r.oppId) === up(other.id);
-      if (r.oppKey != null && r.oppKey !== '') return other.key != null && String(r.oppKey) === String(other.key);
+      if (r.oppKey != null && r.oppKey !== '') return other.key != null && ck(r.oppKey) === ck(other.key);
       return uniq(nkOther);
     };
     const A = Array.isArray(chA) ? chA : [], B = Array.isArray(chB) ? chB : [];
@@ -211,7 +217,7 @@
   function played(rows) { return (rows || []).filter(x => !isWalkover(x)); }
   function record(rows) { const p = played(rows), a = p.filter(x => x.won).length; return { a, b: p.length - a, n: p.length }; }
 
-  const api = { H2H_LEVELS, ATP_RECORD_NOT_COUNTED, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, inPopulation, joinMeetings, isWalkover, played, record };
+  const api = { H2H_LEVELS, ATP_RECORD_NOT_COUNTED, H2H_NOT_COUNTED, H2H_DEDUPE_WINDOW, API_KEY_ALIASES, canonKey, nameKey, nameCounts, eventId, roundCode, dedupe, resolveQualifying, inPopulation, joinMeetings, isWalkover, played, record };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.H2HCore = api;
 })(typeof window !== 'undefined' ? window : this);

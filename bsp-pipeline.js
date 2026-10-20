@@ -7732,6 +7732,38 @@ const MODEL_OUTPUT_PUBLISHED_PATH = process.env.MODEL_OUTPUT_PUBLISHED_PATH || '
 function modelMatchStarted(m) {
   return !!(m && (m.finalScore || m.live || (Array.isArray(m.liveScore) && m.liveScore.length) || (m.interrupted && m.partialScore)));
 }
+// TEN-437 (founder 2026-10-20): the run-to-run store of pre-match predictions, keyed by EVENT KEY — the row id flips
+// upcoming-<ek> → past-<ek> when a match finishes, and a live match is on neither list. It has its own Actions cache,
+// saved every run (pipeline.yml "model pre-match store"), so a match that leaves the board keeps its entry. An entry not
+// seen on the board for MODEL_PREMATCH_KEEP_H hours leaves the store.
+const MODEL_PREMATCH_PATH = process.env.MODEL_PREMATCH_PATH || 'model-prematch.json';
+const MODEL_PREMATCH_KEEP_H = 72;
+function modelEventKey(id) { const s = String(id == null ? '' : id); const i = s.indexOf('-'); return i >= 0 ? s.slice(i + 1) : s; }
+// Every pre-match and frozen entry on record, by event key: the store, then the files (the last published copy, this
+// run's restored cache). A file's entry is pre-match when it says so or — written before the flag existed — when it sits
+// under an upcoming- id (computed while the match was still upcoming); a past- entry without the flag never is. Per event
+// key the frozen entry with the EARLIEST frozenAt wins (it never changes once written); else the pre-match entry with
+// the LATEST computedAt (the last prediction before the start). An entry with no time is not used.
+function modelPreMatchCandidates({ store, files }) {
+  const c = new Map();
+  const add = (ek, kind, entry, at, lastSeen) => {
+    if (!ek || !entry || !at) return;
+    const x = c.get(ek) || {};
+    if (kind === 'frozen') { if (!x.frozen || at < x.frozen.at) x.frozen = { entry, at, lastSeen: lastSeen || at }; }
+    else if (kind === 'pre') { if (!x.pre || at > x.pre.at) x.pre = { entry, at, lastSeen: lastSeen || at }; }
+    c.set(ek, x);
+  };
+  for (const [ek, e] of Object.entries((store && store.entries) || {})) if (e) add(String(ek), e.kind, e.entry, e.at, e.lastSeen);
+  for (const f of files || []) {
+    if (!f || !f.matches) continue;
+    for (const [id, e] of Object.entries(f.matches)) {
+      if (!e) continue;
+      if (e.frozen === true) add(modelEventKey(id), 'frozen', e, e.frozenAt || f.generatedAt, null);
+      else if (e.preMatch === true || (e.preMatch === undefined && /^upcoming-/.test(id))) add(modelEventKey(id), 'pre', e, e.computedAt || f.generatedAt, null);
+    }
+  }
+  return c;
+}
 
 // TEN-437 founder ruling 2026-10-14 (card edd72529, "move the model to the full ATP-rule list, keep today's age bands and
 // tiers"; measured first on the 26-match board: median shift 0pp, max 0.23pp, no value flag flipped). The model's H2H
@@ -7784,10 +7816,11 @@ async function buildModelOutput(matches) {
 
   // Prior output, so a summary whose facts are unchanged is reused rather than
   // regenerated — bounds Anthropic spend on the 15-min cron.
-  let prior = {};
+  let prior = {}, priorGen = null;
   try {
     const p = JSON.parse(fs.readFileSync(MODEL_OUTPUT_PATH, 'utf8'));
     prior = (p && p.matches) || {};
+    priorGen = (p && p.generatedAt) || null;
   } catch (_) { /* first run — no cache yet */ }
 
   const haveKey = Boolean(process.env.ANTHROPIC_API_KEY);
@@ -7795,25 +7828,29 @@ async function buildModelOutput(matches) {
     console.warn('  ANTHROPIC_API_KEY not set — engine output still written, AI summaries skipped (cached ones reused).');
   }
 
-  // TEN-437 (founder 2026-10-16 follow-up): a match's model output is FROZEN at its pre-match state once the match has
-  // started — never recomputed with its own result (or anything learnt since) in it. An entry computed before the start
-  // carries preMatch: true; a started match reuses that entry unchanged (frozen: true), from this run's restored cache or
-  // the last published copy (the workflow fetches it to MODEL_OUTPUT_PUBLISHED_PATH; absent = none). A started match with
-  // no pre-match entry on record is computed as before (its own match excluded from the H2H input) and counted.
-  let published = {};
-  try {
-    const p = JSON.parse(fs.readFileSync(MODEL_OUTPUT_PUBLISHED_PATH, 'utf8'));
-    published = (p && p.matches) || {};
-  } catch (_) { /* no published copy this run */ }
+  // TEN-437 (founder 2026-10-16 follow-up; 2026-10-20: "the model makes its prediction once, before the match. Once the
+  // match starts, that number never changes"). A match that has not started is computed and stamped (preMatch: true,
+  // computedAt). A started match is NEVER computed: it gets its frozen entry (frozen: true, frozenAt; the first time, the
+  // latest pre-match entry on record), an ok:false one included — no prediction before the start is a dash after it.
+  // With nothing on record it reads "no pre-match prediction on record" (not stored, so a copy that arrives late still
+  // fills it). A match with a frozen entry stays frozen even if the feed shows it upcoming again. Found by event key in
+  // the store, the last published copy (MODEL_OUTPUT_PUBLISHED_PATH) and this run's restored cache.
+  const readJ = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (_) { return null; } };
+  const nowIso = new Date().toISOString();
+  const cand = modelPreMatchCandidates({ store: readJ(MODEL_PREMATCH_PATH),
+    files: [readJ(MODEL_OUTPUT_PUBLISHED_PATH), { generatedAt: priorGen, matches: prior }] });
   const out = {};
-  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0, frozenN = 0, startedNoPre = 0;
+  let ran = 0, failed = 0, sumNew = 0, sumCached = 0, sumSkipped = 0, frozenNew = 0, frozenKept = 0, startedNoPre = 0;
   const h2hIn = modelH2hInputs(matches);   // TEN-437: the model's H2H = the screens' H2H
 
   for (const m of matches) {
-    const started = modelMatchStarted(m);
-    const pre = started ? [prior[m.id], published[m.id]].find(e => e && e.ok && e.preMatch === true) : null;
-    if (pre) { out[m.id] = Object.assign({}, pre, { frozen: true }); frozenN++; continue; }
-    if (started) startedNoPre++;
+    const c = cand.get(modelEventKey(m.id));
+    if (c && c.frozen) { out[m.id] = c.frozen.entry; frozenKept++; continue; }
+    if (modelMatchStarted(m)) {
+      if (c && c.pre) { out[m.id] = Object.assign({}, c.pre.entry, { frozen: true, frozenAt: nowIso }); frozenNew++; }
+      else { out[m.id] = { ok: false, reason: 'no pre-match prediction on record', preMatch: false }; startedNoPre++; }
+      continue;
+    }
     let result;
     try {
       const mm = h2hIn && m.p1Key != null && m.p2Key != null
@@ -7821,7 +7858,7 @@ async function buildModelOutput(matches) {
       result = runModel(mm);
     } catch (e) {
       failed++;
-      out[m.id] = { ok: false, reason: `engine error: ${e.message}`, preMatch: !started };
+      out[m.id] = { ok: false, reason: `engine error: ${e.message}`, preMatch: true, computedAt: nowIso };
       continue;
     }
     if (!result.ok) {
@@ -7829,7 +7866,7 @@ async function buildModelOutput(matches) {
       // UI can show an honest "not enough data" state (never a fabricated read).
       failed++;
       out[m.id] = { ok: false, reason: result.reason || 'model could not run',
-        players: result.players || null, preMatch: !started };
+        players: result.players || null, preMatch: true, computedAt: nowIso };
       continue;
     }
     ran++;
@@ -7844,7 +7881,8 @@ async function buildModelOutput(matches) {
       stage2: result.stage2,
       stage3: result.stage3,
       generatedAt: result.meta && result.meta.generatedAt,
-      preMatch: !started,
+      preMatch: true,
+      computedAt: nowIso,
       summary: null,
     };
 
@@ -7896,7 +7934,22 @@ async function buildModelOutput(matches) {
     count: Object.keys(out).length,
     matches: out,
   }, true);
-  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run); ${frozenN} started match(es) frozen at their pre-match output, ${startedNoPre} started with no pre-match output on record. Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
+  // The store: every entry on record still seen within MODEL_PREMATCH_KEEP_H hours, then this run's board on top (a
+  // match with a frozen entry took the frozen path above, so a pre-match entry never replaces one).
+  const keepFrom = Date.now() - MODEL_PREMATCH_KEEP_H * 3600e3, entries = {};
+  for (const [ek, c] of cand) {
+    const e = c.frozen ? Object.assign({ kind: 'frozen' }, c.frozen) : Object.assign({ kind: 'pre' }, c.pre);
+    if (Date.parse(e.lastSeen || e.at) >= keepFrom) entries[ek] = e;
+  }
+  for (const m of matches) {
+    const ek = modelEventKey(m.id), e = out[m.id], c = cand.get(ek);
+    if (!ek || !e) continue;
+    if (e.frozen) entries[ek] = { kind: 'frozen', at: e.frozenAt || (c && c.frozen && c.frozen.at), lastSeen: nowIso, entry: e };
+    else if (e.preMatch === true) entries[ek] = { kind: 'pre', at: e.computedAt, lastSeen: nowIso, entry: e };
+    if (entries[ek] && !entries[ek].at) delete entries[ek];
+  }
+  writeJsonAtomic(MODEL_PREMATCH_PATH, { v: 1, savedAt: nowIso, keepHours: MODEL_PREMATCH_KEEP_H, entries }, true);
+  console.log(`Wrote model-output.json — engine ran on ${ran}/${matches.length} (${failed} could not run); started: ${frozenNew} newly frozen at their last pre-match prediction, ${frozenKept} kept frozen, ${startedNoPre} with no pre-match prediction on record (never computed after the start). Store: ${Object.keys(entries).length} event(s). Summaries: ${sumNew} new, ${sumCached} cached, ${sumSkipped} skipped.`);
   return out;
 }
 
@@ -7962,7 +8015,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

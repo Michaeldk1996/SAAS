@@ -2139,3 +2139,20 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
 - **Gap at ruling time:** of the three readers, only the store refresh sends a Telegram alert (`te-refresh.yml`; the
   rule's *Holds now* note says so). `te-scrape.mjs` (idle, backfill done) and `te-odds-batch.mjs` (odds agent, `stennisfy-ops`) stop on a block but do
   not alert.
+
+## TEN-437 · The model freeze that never fired; the Galan key alias (2026-10-20)
+- **Ruling (founder, 2026-10-20):** "the model makes its prediction once, before the match. Once the match starts, that
+  number never changes." ok:false before the start stays a dash; nothing is computed after the start. Galan alias
+  34000 → 1735 approved. Rule text: `.claude/rules/modal-form-h2h.md`.
+- **Why the 16 Oct freeze did nothing:** it looked the pre-match entry up by row id, and the id flips
+  `upcoming-<ek>` → `past-<ek>` when a match finishes, so a finished match never found its entry and was recomputed
+  (its own result could reach Elo and form). Its test keyed the cached entry `past-1`, an id no real pre-match entry has.
+  Found by the clean-context review of the rebase (20 Oct), confirmed on the live file (26 `upcoming-`, 17 `past-` keys).
+- **Why a store of its own:** a live match is on neither list, so the next run writes no entry for it; the daily cache
+  holds only the day's first snapshot; and the published copy can run behind the pipeline (28 min measured 20 Oct), so a
+  lagging copy could freeze a match on an older prediction and a later run on a newer one. `model-prematch.json` gets a
+  per-run Actions cache (runs are serialised), and a frozen entry wins over any pre-match copy.
+- **Transition:** live entries written before the flag existed count as pre-match only under an `upcoming-` id
+  (computed while the match was upcoming); a `past-` one never does.
+- **Alias scope:** H2H join only (`h2h-core.js`), the one table, one pair. 7374f71ab already treats 34000/1735 as one
+  person inside the Tennis-Data price identity gate; that gate is unchanged.

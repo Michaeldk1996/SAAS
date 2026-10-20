@@ -643,37 +643,167 @@ test('H2H page: no captured step — every meeting reads the master\'s join only
   assert.match(slice('h2hPriceTitle'), /r\.src === 'cap' \|\| r\.src === 'hist' \? 'Pinnacle closing price · ' \+ \(r\.srcLabel \|\| FH_SRC\[r\.src\]\)/);
 });
 
-// ── 17 · a started match's model output is frozen at its pre-match state (founder 2026-10-16 follow-up) ────────────────
-// "The model's H2H input and price stay frozen at the pre-match state for that match; don't recompute a finished match's
-// model output with its own result in it." buildModelOutput, run for real in a scratch directory: a started match with a
-// pre-match entry on record (this run's cache, else the last published copy) gets that entry back unchanged; an
-// unstarted one is computed and marked preMatch. Mutations: the freeze dropped; the published copy not read.
-test('model output: a finished match keeps its pre-match entry (cache or published); an upcoming one is recomputed', async () => {
-  const { mkdtempSync, writeFileSync, readFileSync: rf, rmSync } = await import('node:fs');
+// ── 17 · the model's prediction is made once, before the match, and never changes after the start ─────────────────────
+// Founder ruling 2026-10-16 follow-up, made precise 2026-10-20: "the model makes its prediction once, before the match.
+// Once the match starts, that number never changes." (a) pre-match entries are keyed by EVENT KEY — the row id flips
+// upcoming-<ek> → past-<ek> when a match finishes; (b) an entry survives the match leaving the board (live matches are on
+// neither list) through the run-to-run store (model-prematch.json, its own Actions cache); (c) an ok:false pre-match entry
+// stays ok:false — no prediction is ever computed after the start. buildModelOutput runs for real in a scratch
+// directory; the engine cannot run on the made-up players, so a COMPUTED entry always carries the engine's own reason and
+// a frozen one carries the stored entry byte for byte. Real ids: Medvedev–Tsitsipas, Shanghai 2026 R16 (eventKey 12170285).
+const FRZ_EK = '12170285';
+const frzPre = (id, fair, at) => ({ ok: true, match: { id }, players: null, stage1: null, stage2: null, stage3: { fair },
+  generatedAt: at, computedAt: at, preMatch: true, summary: { ok: false, reason: 'x' } });
+// engine: optional (m) => runModel result — stubbed in require.cache for this run only, so the computed (ok) path runs too
+async function frzRun(files, ms, engine) {
+  const { mkdtempSync, writeFileSync, readFileSync: rf, rmSync, existsSync: ex } = await import('node:fs');
   const { tmpdir } = await import('node:os');
   const P = require(PIPELINE_PATH);
-  const pre = (id, fair) => ({ ok: true, match: { id }, players: null, stage1: null, stage2: null, stage3: { fair }, generatedAt: '2026-10-14T05:00:00Z', preMatch: true, summary: { ok: false, reason: 'x' } });
+  const pr = createRequire(PIPELINE_PATH), stubs = [];
+  if (engine) for (const [mod, exp] of [['./h2h-model/model', { runModel: engine }], ['./h2h-model/summary', { generateSummary: async () => ({ ok: false, reason: 'stub' }), buildFacts: () => ({}) }]]) {
+    const f = pr.resolve(mod); stubs.push([f, require.cache[f]]); require.cache[f] = { id: f, filename: f, loaded: true, exports: exp };
+  }
   const dir = mkdtempSync(join(tmpdir(), 'ten437-frz-')), cwd = process.cwd(), env = process.env.ANTHROPIC_API_KEY;
   try {
     process.chdir(dir); delete process.env.ANTHROPIC_API_KEY;
-    writeFileSync('model-output.json', JSON.stringify({ matches: { 'past-1': pre('past-1', { p1: { odds: 1.55 } }) } }));
-    writeFileSync('model-output.published.json', JSON.stringify({ matches: { 'past-2': pre('past-2', { p1: { odds: 2.1 } }) } }));
-    const ms = [
-      { id: 'past-1', p1: 'A. One', p2: 'B. Two', finalScore: '2-0' },                    // finished, pre-match entry in the cache
-      { id: 'past-2', p1: 'C. Three', p2: 'D. Four', finalScore: '0-2' },                 // finished, pre-match entry only published
-      { id: 'live-3', p1: 'E. Five', p2: 'F. Six', live: true, liveScore: [[3, 2]] },     // live, no entry: computed, not preMatch
-      { id: 'upcoming-4', p1: 'G. Seven', p2: 'H. Eight' },                               // upcoming: computed
-    ];
+    for (const [f, j] of Object.entries(files)) writeFileSync(f, JSON.stringify(j));
     await P.buildModelOutput(ms);
-    const out = JSON.parse(rf('model-output.json', 'utf8')).matches;
-    assert.deepEqual(out['past-1'], Object.assign(pre('past-1', { p1: { odds: 1.55 } }), { frozen: true }), 'cache pre-match entry, unchanged');
-    assert.deepEqual(out['past-2'], Object.assign(pre('past-2', { p1: { odds: 2.1 } }), { frozen: true }), 'published pre-match entry, unchanged');
-    assert.deepEqual([out['live-3'].frozen, out['live-3'].preMatch], [undefined, false], 'a started match is never written as a pre-match entry');
-    assert.deepEqual([out['upcoming-4'].frozen, out['upcoming-4'].preMatch], [undefined, true], 'an upcoming match is computed, marked pre-match');
-    assert.deepEqual([P.modelMatchStarted(ms[0]), P.modelMatchStarted(ms[2]), P.modelMatchStarted(ms[3])], [true, true, false]);
-    // the engine's ok entry is flagged the same way (the made-up players above cannot run the engine)
-    assert.match(readFileSync(PIPELINE_PATH, 'utf8'), /generatedAt: result\.meta && result\.meta\.generatedAt,\n\s*preMatch: !started,/, 'an ok entry records preMatch: !started');
+    return { P, out: JSON.parse(rf('model-output.json', 'utf8')).matches,
+      store: ex('model-prematch.json') ? JSON.parse(rf('model-prematch.json', 'utf8')) : null };
   } finally {
     process.chdir(cwd); if (env != null) process.env.ANTHROPIC_API_KEY = env; rmSync(dir, { recursive: true, force: true });
+    for (const [f, c] of stubs) { if (c) require.cache[f] = c; else delete require.cache[f]; }
   }
+}
+const frzMatch = (id, extra) => Object.assign({ id, p1: 'D. Medvedev', p2: 'S. Tsitsipas', date: '2026-10-14' }, extra || {});
+
+// (a) Mutation: the lookup by row id (the 16 Oct code: past-<ek> never finds upcoming-<ek>).
+test('model freeze (a): the real upcoming-<ek> → past-<ek> change keeps the pre-match entry', async () => {
+  const pre = frzPre(`upcoming-${FRZ_EK}`, { p1: { odds: 1.55 } }, '2026-10-14T05:00:00.000Z');
+  const { out } = await frzRun({ 'model-output.published.json': { generatedAt: '2026-10-14T05:00:00.000Z', matches: { [`upcoming-${FRZ_EK}`]: pre } } },
+    [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })]);
+  const e = out[`past-${FRZ_EK}`];
+  assert.ok(e && e.ok === true && e.frozen === true, `the finished match was not frozen: ${JSON.stringify(e && { ok: e.ok, frozen: e.frozen, reason: e.reason })}`);
+  assert.deepEqual(e.stage3, pre.stage3, 'the frozen entry is the pre-match entry');
+  assert.equal(e.computedAt, pre.computedAt, 'computed before the start, never after');
+});
+
+// (b) Mutations: the store not written for a match off the board; the store not read.
+test('model freeze (b): a match that drops off the board (live) keeps its frozen entry until it is back as finished', async () => {
+  const T = minAgo => new Date(Date.now() - minAgo * 60e3).toISOString();   // inside the store's 72 h window
+  const pre = frzPre(`upcoming-${FRZ_EK}`, { p1: { odds: 1.55 } }, T(120));
+  // run 1 — the match is live: on neither list, and the published copy it read already lost it; the store still holds it
+  const r1 = await frzRun({ 'model-prematch.json': { v: 1, entries: { [FRZ_EK]: { kind: 'pre', at: pre.computedAt, lastSeen: pre.computedAt, entry: pre } } },
+    'model-output.published.json': { generatedAt: T(90), matches: {} } }, [frzMatch('upcoming-12170999', { p1: 'A. Other', p2: 'B. Other' })]);
+  assert.ok(r1.store && r1.store.entries[FRZ_EK], 'the off-board match left the store');
+  assert.deepEqual(r1.store.entries[FRZ_EK].entry.stage3, pre.stage3, 'carried unchanged');
+  // run 2 — finished; nothing but the store (written by run 1) remembers the prediction
+  const r2 = await frzRun({ 'model-prematch.json': r1.store, 'model-output.published.json': { generatedAt: T(30), matches: {} } },
+    [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })]);
+  const e = r2.out[`past-${FRZ_EK}`];
+  assert.ok(e && e.ok === true && e.frozen === true, `not frozen after dropping off the board: ${JSON.stringify(e && { ok: e.ok, reason: e.reason })}`);
+  assert.deepEqual(e.stage3, pre.stage3);
+  assert.equal(r2.store.entries[FRZ_EK].kind, 'frozen', 'the store records the frozen entry');
+  // run 3 — a lagging published copy shows a NEWER pre-match entry: the frozen number never changes
+  const later = frzPre(`upcoming-${FRZ_EK}`, { p1: { odds: 1.61 } }, T(60));
+  const r3 = await frzRun({ 'model-prematch.json': r2.store, 'model-output.published.json': { generatedAt: T(60), matches: { [`upcoming-${FRZ_EK}`]: later } } },
+    [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })]);
+  assert.deepEqual(r3.out[`past-${FRZ_EK}`], e, 'the frozen entry is byte-identical one run later');
+});
+
+// (c) Mutations: an ok:false pre-match entry not frozen (recomputed after the start); a started match with no entry
+// on record computed.
+test('model freeze (c): ok:false before the start stays ok:false; nothing is computed after the start', async () => {
+  const noPre = { ok: false, reason: 'model could not run: no Elo for p2', players: null, preMatch: true, computedAt: '2026-10-14T05:00:00.000Z' };
+  const { out } = await frzRun({ 'model-output.published.json': { generatedAt: '2026-10-14T05:00:00.000Z', matches: { [`upcoming-${FRZ_EK}`]: noPre } } },
+    [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' }),
+     frzMatch('past-12170300', { p1: 'C. Three', p2: 'D. Four', finalScore: '0-2' }),     // finished, nothing on record
+     frzMatch('upcoming-12170301', { p1: 'E. Five', p2: 'F. Six' })]);                   // upcoming: computed
+  const e = out[`past-${FRZ_EK}`];
+  assert.deepEqual([e.ok, e.reason, e.frozen, e.computedAt], [false, noPre.reason, true, noPre.computedAt], 'the no-prediction entry, frozen as it was');
+  const n = out['past-12170300'];
+  assert.deepEqual([n.ok, n.reason, n.preMatch, !!n.frozen], [false, 'no pre-match prediction on record', false, false], 'never computed after the start');
+  const u = out['upcoming-12170301'];
+  assert.equal(u.preMatch, true, 'an upcoming match is computed, marked pre-match');
+  assert.ok(u.computedAt, 'stamped when computed');
+  assert.notEqual(u.reason, 'no pre-match prediction on record', 'an upcoming match is computed, not skipped');
+});
+
+// The source order: the latest pre-match entry wins over an older one; a frozen entry wins over any pre-match one;
+// modelMatchStarted reads the feed's own flags. Mutation: the earliest pre-match entry chosen.
+test('model freeze: the latest pre-match entry is the one frozen; started = finished, live or interrupted with a score', async () => {
+  const old = frzPre(`upcoming-${FRZ_EK}`, { p1: { odds: 1.50 } }, '2026-10-14T03:00:00.000Z');
+  const neu = frzPre(`upcoming-${FRZ_EK}`, { p1: { odds: 1.58 } }, '2026-10-14T05:40:00.000Z');
+  const { P, out } = await frzRun({ 'model-output.json': { generatedAt: '2026-10-14T03:00:00.000Z', matches: { [`upcoming-${FRZ_EK}`]: old } },
+    'model-output.published.json': { generatedAt: '2026-10-14T05:40:00.000Z', matches: { [`upcoming-${FRZ_EK}`]: neu } } },
+    [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })]);
+  assert.deepEqual(out[`past-${FRZ_EK}`].stage3, neu.stage3, 'the last prediction before the start');
+  assert.deepEqual([{ finalScore: '2-0' }, { live: true }, { liveScore: [[3, 2]] }, { interrupted: true, partialScore: '1-0' }, {}, { interrupted: true }].map(P.modelMatchStarted),
+    [true, true, true, true, false, false]);
+});
+
+// The whole path with the engine running (stubbed): computed while upcoming (ok, preMatch, computedAt, in the store),
+// then frozen once finished — the engine is NOT called for it again, and a different engine answer changes nothing.
+// Mutations: the ok entry not stamped; the started match computed.
+test('model freeze: computed while upcoming, then frozen once finished — the engine never runs on it again', async () => {
+  const res = odds => ({ ok: true, match: {}, players: null, stage1: { baseState: { state: 1 } }, stage2: null, stage3: { fair: { p1: { odds } } }, meta: { generatedAt: 'g' } });
+  const calls = [];
+  const r1 = await frzRun({}, [frzMatch(`upcoming-${FRZ_EK}`)], m => { calls.push(m.id); return res(1.55); });
+  const e1 = r1.out[`upcoming-${FRZ_EK}`];
+  assert.deepEqual([e1.ok, e1.preMatch, typeof e1.computedAt, e1.stage3.fair.p1.odds], [true, true, 'string', 1.55], 'computed and stamped');
+  assert.equal(r1.store.entries[FRZ_EK].kind, 'pre', 'in the store');
+  calls.length = 0;
+  const r2 = await frzRun({ 'model-prematch.json': r1.store }, [frzMatch(`past-${FRZ_EK}`, { finalScore: '2-0' })], m => { calls.push(m.id); return res(9.99); });
+  assert.deepEqual(calls, [], 'the engine never runs on a started match');
+  assert.deepEqual(r2.out[`past-${FRZ_EK}`], Object.assign({}, e1, { frozen: true, frozenAt: r2.out[`past-${FRZ_EK}`].frozenAt }), 'the pre-match entry, unchanged');
+});
+
+// Entries written before the flag existed (every entry on the live site on 20 Oct): one under an upcoming- id was
+// computed while the match was upcoming, so it is a pre-match prediction; one under a past- id never is.
+// Mutations: the legacy rule dropped; past- entries read as pre-match.
+test('model freeze: a pre-flag entry under upcoming-<ek> freezes; one under past-<ek> is never used', async () => {
+  const legacy = { ok: true, match: {}, players: null, stage1: null, stage2: null, stage3: { fair: { p1: { odds: 2.2 } } }, summary: null };
+  const { out } = await frzRun({ 'model-output.published.json': { generatedAt: '2026-10-20T10:44:56.350Z', matches: {
+    'upcoming-12170286': legacy, 'past-12170287': Object.assign({}, legacy, { stage3: { fair: { p1: { odds: 3.3 } } } }) } } },
+    [frzMatch('past-12170286', { finalScore: '2-0' }), frzMatch('past-12170287', { finalScore: '0-2' })]);
+  assert.deepEqual([out['past-12170286'].frozen, out['past-12170286'].stage3], [true, legacy.stage3], 'upcoming- legacy entry frozen');
+  assert.equal(out['past-12170286'].frozenAt != null, true);
+  assert.equal(out['past-12170287'].reason, 'no pre-match prediction on record', 'a past- entry was computed after the start');
+});
+
+// The store is carried by its own Actions cache: restored before "Run pipeline" from the newest key, saved after it on a
+// key of its own every run, even when a later step fails. Mutations: the save step dropped; the save not always().
+test('workflow: the model pre-match store is restored before and saved after Run pipeline, every run', () => {
+  const wf = readFileSync(process.env.TEN437_WORKFLOW || join(HERE, '.github/workflows/pipeline.yml'), 'utf8');
+  const at = n => wf.indexOf(`- name: ${n}`);
+  const [rs, run, sv] = [at('Restore the model pre-match store'), at('Run pipeline (with retry + health tracking)'), at('Save the model pre-match store')];
+  assert.ok(rs > 0 && run > rs && sv > run, `order restore < run < save: ${rs} ${run} ${sv}`);
+  const step = i => wf.slice(i, wf.indexOf('\n      - name:', i + 1));
+  assert.match(step(rs), /uses: actions\/cache\/restore@v4[\s\S]*path: model-prematch\.json[\s\S]*key: model-prematch-v1-\$\{\{ github\.run_id \}\}[\s\S]*restore-keys: \|\n\s+model-prematch-v1-\n/);
+  assert.match(step(sv), /if: \$\{\{ always\(\) && hashFiles\('model-prematch\.json'\) != '' \}\}[\s\S]*uses: actions\/cache\/save@v4[\s\S]*path: model-prematch\.json[\s\S]*key: model-prematch-v1-\$\{\{ github\.run_id \}\}/);
+  assert.match(readFileSync(join(HERE, '.gitignore'), 'utf8'), /^model-prematch\.json$/m, 'never committed');
+});
+
+// ── 18 · api-tennis key alias: 34000 is D. E. Galan (1735) — founder ruling 2026-10-20 ─────────────────────────────────
+// His opponents' 2021–22 feed rows carry oppKey 34000; his own shard (1735) does not hold those matches, so each is a
+// one-sided row credited on identity (D3) — and 34000 ≠ 1735 left all three out. Real rows from the live shards
+// (20 Oct). Mutations: the alias removed; the alias applied to every key (an unrelated key credited).
+test('key alias: Galan 34000 → 1735 — Bublik Miami 2022, Tsitsipas and Davidovich Fokina US Open 2022 each count once', () => {
+  const G = { full: 'D. E. Galan', short: 'D. E. Galan', key: '1735', id: 'GE33' };
+  const row = (date, tournament, round, won, result, eventKey, oppKey) =>
+    ({ date, tournament, round, opponent: 'D. E. Galan', oppKey, won, result, level: 'atp', eventKey, src: 'fixtures' });
+  const cases = [
+    [{ full: 'A. Bublik', short: 'A. Bublik', key: '1895', id: 'BK92' }, row('2022-03-25', 'Miami', '1/32-finals', true, '2 - 1', 9205003, '34000'), [0, 1]],
+    [{ full: 'S. Tsitsipas', short: 'S. Tsitsipas', key: '1906', id: 'TE51' }, row('2022-08-30', 'US Open', '1/64-finals', false, '1 - 3', 11687057, '34000'), [1, 0]],
+    [{ full: 'A. Davidovich Fokina', short: 'A. Davidovich Fokina', key: '2842', id: 'DH50' }, row('2022-09-02', 'US Open', '1/16-finals', true, '3 - 1', 11687124, '34000'), [0, 1]],
+  ];
+  for (const [O, r, [ga, oa]] of cases) {
+    const rec = H2HCore.record(H2HCore.joinMeetings(G, O, [], [r], {}, []));
+    assert.deepEqual([rec.a, rec.b, rec.n], [ga, oa, 1], `${O.full} v Galan`);
+  }
+  assert.equal(H2HCore.canonKey(34000), '1735');
+  // control: a key with no ruling is never folded into another player
+  const stranger = row('2022-03-25', 'Miami', '1/32-finals', true, '2 - 1', 9205003, '34001');
+  assert.equal(H2HCore.joinMeetings(G, cases[0][0], [], [stranger], {}, []).length, 0, 'an unaliased key stays out');
+  assert.deepEqual(Object.keys(H2HCore.API_KEY_ALIASES), ['34000'], 'one alias, by ruling');
 });
