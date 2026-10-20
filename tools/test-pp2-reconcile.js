@@ -4017,7 +4017,10 @@ check('the all-stores table covers every data store the module reads', () => {
     'pp2DrawNeed', 'pp2DrawMatches', 'pp2DrawJoin', 'pp2HasProfile', 'pp2OpenProfile',
     // founder 2026-10-16 (round 3, item 1): the host's one source wording for a price (fhSrcTitle, the Match analysis
     // Tournament tab's words) — Record per tournament's H / A hover reads it; a display function, no rows
-    'fhSrcTitle']);
+    'fhSrcTitle',
+    // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
+    // career-splits-tour.json build date the page already loaded) — logic, no rows
+    'sfFeedPaused']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);

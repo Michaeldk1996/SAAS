@@ -1566,7 +1566,7 @@
   var TILE_EDGE_SELECTED = 'var(--edge-24)';
   // Ruling 1 (founder 2026-10-20): career-splits (Draw record) can only be built on the Mac; when it stops updating the
   // host's sfFeedPaused says so and the tile's support line + the modal header carry "Data paused · last updated …".
-  function splitsPaused() { var f = typeof window !== 'undefined' && window.sfFeedPaused ? window.sfFeedPaused('careerSplits') : null; return f && f.paused ? f : null; }
+  function splitsPaused() { var f = typeof window !== 'undefined' && typeof window.sfFeedPaused === 'function' ? window.sfFeedPaused('careerSplits') : null; return f && f.paused ? f : null; }
   function splitsPausedSuffix() { var f = splitsPaused(); return f ? ' ' + MIDDOT + ' ' + f.text : ''; }
   function renderBoxes(ctx) {
     var vals = ctx.boxVals;
