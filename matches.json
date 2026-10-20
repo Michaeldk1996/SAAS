@@ -2577,11 +2577,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "30 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/12951_j-fearnley.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
     "oddsMovement": {
@@ -3770,7 +3781,10 @@
       "edgeVsPinnacleP1": -0.0733,
       "edgeVsPinnacleP2": 0.0733,
       "ts": "2026-10-19T06:55:05.048Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12171794",
@@ -11306,11 +11320,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "40 - A",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1099_d-altmaier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/8926_t-droguet.jpg",
     "oddsMovement": {
@@ -12490,7 +12510,10 @@
         "seenAt": "2026-10-20T13:10:25.975Z",
         "since": "2026-10-20T13:10:25.975Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172010",
@@ -22835,11 +22858,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/37897_r-sakamoto.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
     "oddsMovement": {
@@ -24391,7 +24420,10 @@
         "seenAt": "2026-10-20T13:10:25.976Z",
         "since": "2026-10-20T13:10:25.976Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172182",
@@ -84304,13 +84336,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.45,
+      "p2": 1.55,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.51,
+        "bookmaker": "Marathon"
+      },
+      "p2": {
+        "price": 1.55,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -87064,13 +87102,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 4.16,
+      "p2": 1.23,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 4.2,
+        "bookmaker": "Marathon"
+      },
+      "p2": {
+        "price": 1.23,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Lyon - 1/8-finals",
     "qualifying": false,
@@ -194197,7 +194241,27 @@
       "edgeVsPinnacleP1": -0.0348,
       "edgeVsPinnacleP2": 0.0348,
       "ts": "2026-10-19T18:19:20.522Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-6(3), 7-6(3)",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 6
+        },
+        {
+          "p1": 7,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12172012",
@@ -197205,11 +197269,27 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 7,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1105_u-humbert.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2674_c-moutet.jpg",
     "oddsMovement": {
@@ -198016,7 +198096,10 @@
       "edgeVsPinnacleP1": -0.0392,
       "edgeVsPinnacleP2": 0.0392,
       "ts": "2026-10-19T03:24:14.005Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172184",
@@ -202748,7 +202831,27 @@
         "seenAt": "2026-10-20T10:58:47.294Z",
         "since": "2026-10-20T10:58:47.294Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "1-6, 4-6",
+      "sets": [
+        {
+          "p1": 1,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12172386",
@@ -206312,7 +206415,27 @@
       "edgeVsPinnacleP1": 0.0171,
       "edgeVsPinnacleP2": -0.0171,
       "ts": "2026-10-19T23:33:21.006Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 6-7(2)",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12172188",
@@ -222593,7 +222716,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 6-7(6), 6-7(4)",
+      "display": "6-3, 6-7, 6-7",
       "sets": [
         {
           "p1": 6,
@@ -225522,7 +225645,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-2, 7-6(3)",
+      "display": "6-2, 7-6",
       "sets": [
         {
           "p1": 6,
@@ -228545,7 +228668,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -234466,7 +234589,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "4-6, 6-7(4)",
+      "display": "4-6, 6-7",
       "sets": [
         {
           "p1": 4,
@@ -236854,7 +236977,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7(4)",
+      "display": "3-6, 6-7",
       "sets": [
         {
           "p1": 3,
@@ -245865,7 +245988,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 7-6(2), 5-7",
+      "display": "6-7, 7-6, 5-7",
       "sets": [
         {
           "p1": 6,
@@ -251699,7 +251822,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "6-7(2), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -258156,7 +258279,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 2-6, 7-6(0)",
+      "display": "6-4, 2-6, 7-6",
       "sets": [
         {
           "p1": 6,
