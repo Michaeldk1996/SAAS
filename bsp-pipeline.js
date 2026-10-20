@@ -2863,6 +2863,58 @@ function isSlamQualifyingLeak(f) {
   return Number.isFinite(winnerSets) && winnerSets < 3;
 }
 
+// W/UE tournament sheet (founder brief 2026-10-20) — one row per completed main-draw
+// fixture, in order of play, carrying the RAW per-player counts the sheet needs:
+// winners, unforced errors, total points played, and the service/return points
+// won/total pairs the Dominance Ratio is computed from. Raw counts, never derived
+// pcts, so the client computes W/P, UE/P, W/UE and DR from the published numbers.
+// Additive to the progression entry: unlike `players[].rounds` it keeps a completed
+// fixture with NO stat sheet (its stats publish as null → the sheet's dash), and it
+// stamps the feed's Retired / Walk Over status so those rows are flagged. W/UE
+// follow extractProgressionMetrics' source rule exactly (api-tennis, else the
+// reviewed @ATP_Entry OCR corpus, never mixed) and carry the same wueSource.
+function progressionSheetMatches(played, roundLabelByName) {
+  const won = (s) => { const n = parseInt(s && s.stat_won, 10); return Number.isFinite(n) ? n : null; };
+  const tot = (s) => { const n = parseInt(s && s.stat_total, 10); return Number.isFinite(n) && n > 0 ? n : null; };
+  const pair = (s) => (won(s) != null && tot(s) != null) ? { won: won(s), total: tot(s) } : null;
+  const side = (f, matchStats, key, name, oppName) => {
+    const out = { name, playerKey: key != null ? String(key) : null, winners: null, unforcedErrors: null, wueSource: null, totalPoints: null, servicePoints: null, returnPoints: null };
+    if (!matchStats) return out;
+    const w = parseCount((findMatchStat(matchStats, key, 'Points', 'Winners') || {}).stat_value);
+    const ue = parseCount((findMatchStat(matchStats, key, 'Points', 'Unforced errors') || {}).stat_value);
+    if (w != null && ue != null) { out.winners = w; out.unforcedErrors = ue; out.wueSource = 'api-tennis'; }
+    else {
+      const fb = lookupWue(f.tournament_name, name, oppName);
+      if (fb) { out.winners = fb.winners; out.unforcedErrors = fb.unforcedErrors; out.wueSource = 'ATP_Entry_OCR'; }
+    }
+    const tp = findMatchStat(matchStats, key, 'Points', 'Total Points Won');
+    out.totalPoints = tot(tp);                                        // total points PLAYED in the match
+    out.servicePoints = pair(findMatchStat(matchStats, key, 'Points', 'Service Points Won'));
+    out.returnPoints = pair(findMatchStat(matchStats, key, 'Points', 'Return Points Won'));
+    return out;
+  };
+  return [...played]
+    .sort((a, b) => {
+      const ka = `${a.event_date || ''} ${a.event_time || ''}`, kb = `${b.event_date || ''} ${b.event_time || ''}`;
+      if (ka !== kb) return ka < kb ? -1 : 1;
+      return Number(a.event_key) - Number(b.event_key);
+    })
+    .map(f => {
+      const ms = Array.isArray(f.statistics) ? f.statistics.filter(s => s.stat_period === 'match') : [];
+      const stats = ms.length ? ms : null;
+      return {
+        eventKey: f.event_key != null ? String(f.event_key) : null,
+        round: roundLabelByName[f.tournament_round] || f.tournament_round,
+        date: f.event_date || null,
+        time: f.event_time || null,
+        status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover' : 'finished',
+        winner: f.event_winner === 'First Player' ? 1 : 2,
+        p1: side(f, stats, f.first_player_key, f.event_first_player, f.event_second_player),
+        p2: side(f, stats, f.second_player_key, f.event_second_player, f.event_first_player),
+      };
+    });
+}
+
 async function buildTournamentProgression(tourName) {
   const bareName = tourName.replace(/^ATP\s+/, '').trim();
   // Names to match the feed's `tournament_name` against: for a sponsor-brand
@@ -2975,6 +3027,7 @@ async function buildTournamentProgression(tourName) {
     rounds: roundLabels,
     players,
     fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
+    matches: progressionSheetMatches(played, roundLabelByName),
   };
 }
 
@@ -7889,7 +7942,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { olympicSurface, fixtureSurface, modelH2hMatches, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

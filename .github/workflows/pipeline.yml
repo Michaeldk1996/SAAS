@@ -715,6 +715,8 @@ jobs:
           # TEN-437: the ONE head-to-head meeting list (window.H2HCore). Not copied = 404 => every H2H surface
           # (Match analysis tab, Key factors, the Head to Head page) has no meetings. Required; asserted below.
           cp h2h-core.js _site/
+          # W/UE tournament sheet export (window.WueSheet). Not copied = 404 => the Reports W/UE buttons never render. Required; asserted below.
+          cp wue-sheet.js _site/
           # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
           # and the per-player market-edge shards + index (build-market-edge.js).
           # The shards also feed the full ledger's two closing-odds columns.
@@ -1075,7 +1077,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js \
+                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
                    points-at-risk.json \

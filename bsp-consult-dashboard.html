@@ -26565,6 +26565,30 @@ function tourxReportYear(){
 }
 // One caps label (Hanken 10.5 / 700 / 0.10em / --text-label).
 function tourxCapsLbl(t, extra){ return `<span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);font-family:var(--font-words);${extra || ''}">${t}</span>`; }
+// W/UE sheet (founder brief 2026-10-20): a download + per-round copy for the selected tournament. The rounds offered
+// come from the copy the page loaded; the export itself re-reads tournament-progression.json at click time (wue-sheet.js).
+function tourxWueBarHtml(name){
+  if (typeof window.WueSheet === 'undefined') return '';
+  const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
+  const rounds = t && Array.isArray(t.matches) ? window.WueSheet.sheetRounds(t) : [];
+  const n = tourxEsc(name);
+  const items = [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
+    .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title.replace('ROUND', 'round'))}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')));
+  return `<div style="margin-top:18px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
+      ${tourxCapsLbl('W/UE sheet')}
+      <div class="tx-segwrap">${items.join('')}</div>
+      <span id="tourxWueMsg" role="status" style="font-size:12px;color:var(--text-label);"></span>
+    </div>`;
+}
+function tourxWueMsg(t){ const el = document.getElementById('tourxWueMsg'); if (el) el.textContent = t; }
+function tourxWueDownload(name){
+  tourxWueMsg('Fetching latest data…');
+  window.WueSheet.download(name).then(n => tourxWueMsg(`Downloaded · ${n} round tab${n === 1 ? '' : 's'}`), e => tourxWueMsg('Download failed: ' + e.message));
+}
+function tourxWueCopy(name, round){
+  tourxWueMsg('Fetching latest data…');
+  window.WueSheet.copyRound(name, round).then(n => tourxWueMsg(`Copied ${n} player rows`), e => tourxWueMsg('Copy failed: ' + e.message));
+}
 function renderTourxReports(){
   const el = document.getElementById('tourxReports');
   const available = (tournamentProgression && tournamentProgression.tournaments) ? Object.keys(tournamentProgression.tournaments) : [];
@@ -26607,7 +26631,7 @@ function renderTourxReports(){
   if (tourxState.view === 'player') body = tourxPlayerViewHtml(T);
   else if (tourxState.view === 'h2h') body = tourxH2HViewHtml(T);
   else body = tourxRoundViewHtml(T);
-  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${viewBar}${body}</div>`;
+  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${tourxWueBarHtml(tourxState.tour)}${viewBar}${body}</div>`;
   // Preserve focus + caret in the comparison player search across re-renders.
   const cmpInp = document.getElementById('tourxCmpSearch');
   if (cmpInp && tourxState.cmpOpen){ cmpInp.focus(); const v = cmpInp.value; cmpInp.setSelectionRange(v.length, v.length); }
@@ -34629,6 +34653,8 @@ window.DatabaseTab = (function(){
   })();
 </script>
 <script src="series.js" defer></script>
+<!-- W/UE tournament sheet export (window.WueSheet) — Tournaments → Reports. -->
+<script src="wue-sheet.js"></script>
 <!-- TEN-294 Dropping Odds. FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 = off) is read inside the file. -->
 <script src="drops-page.js" defer></script>
 

@@ -1,0 +1,328 @@
+{
+ "_note": "Real api-tennis Almaty 2026 R1, built by bsp-pipeline.js progressionSheetMatches on 2026-10-20 (live feed). Pinned for the W/UE sheet acceptance test.",
+ "rounds": [
+  "R1"
+ ],
+ "matches": [
+  {
+   "eventKey": "12171884",
+   "round": "R1",
+   "date": "2026-10-19",
+   "time": "08:40",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "M. Kecmanovic",
+    "playerKey": "2848",
+    "winners": 15,
+    "unforcedErrors": 15,
+    "wueSource": "api-tennis",
+    "totalPoints": 113,
+    "servicePoints": {
+     "won": 33,
+     "total": 54
+    },
+    "returnPoints": {
+     "won": 19,
+     "total": 59
+    }
+   },
+   "p2": {
+    "name": "J. Duckworth",
+    "playerKey": "1900",
+    "winners": 27,
+    "unforcedErrors": 18,
+    "wueSource": "api-tennis",
+    "totalPoints": 113,
+    "servicePoints": {
+     "won": 40,
+     "total": 59
+    },
+    "returnPoints": {
+     "won": 21,
+     "total": 54
+    }
+   }
+  },
+  {
+   "eventKey": "12171888",
+   "round": "R1",
+   "date": "2026-10-19",
+   "time": "08:40",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "T. A. Tirante",
+    "playerKey": "366",
+    "winners": 32,
+    "unforcedErrors": 39,
+    "wueSource": "api-tennis",
+    "totalPoints": 186,
+    "servicePoints": {
+     "won": 60,
+     "total": 97
+    },
+    "returnPoints": {
+     "won": 22,
+     "total": 89
+    }
+   },
+   "p2": {
+    "name": "F. Diaz Acosta",
+    "playerKey": "2002",
+    "winners": 26,
+    "unforcedErrors": 24,
+    "wueSource": "api-tennis",
+    "totalPoints": 186,
+    "servicePoints": {
+     "won": 67,
+     "total": 89
+    },
+    "returnPoints": {
+     "won": 37,
+     "total": 97
+    }
+   }
+  },
+  {
+   "eventKey": "12171885",
+   "round": "R1",
+   "date": "2026-10-19",
+   "time": "10:05",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "A. Mannarino",
+    "playerKey": "438",
+    "winners": 34,
+    "unforcedErrors": 37,
+    "wueSource": "api-tennis",
+    "totalPoints": 205,
+    "servicePoints": {
+     "won": 69,
+     "total": 92
+    },
+    "returnPoints": {
+     "won": 41,
+     "total": 113
+    }
+   },
+   "p2": {
+    "name": "A. Vukic",
+    "playerKey": "360",
+    "winners": 33,
+    "unforcedErrors": 36,
+    "wueSource": "api-tennis",
+    "totalPoints": 205,
+    "servicePoints": {
+     "won": 72,
+     "total": 113
+    },
+    "returnPoints": {
+     "won": 23,
+     "total": 92
+    }
+   }
+  },
+  {
+   "eventKey": "12172160",
+   "round": "R1",
+   "date": "2026-10-19",
+   "time": "12:55",
+   "status": "finished",
+   "winner": 2,
+   "p1": {
+    "name": "M. Cilic",
+    "playerKey": "2167",
+    "winners": 16,
+    "unforcedErrors": 30,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 35,
+     "total": 65
+    },
+    "returnPoints": {
+     "won": 20,
+     "total": 57
+    }
+   },
+   "p2": {
+    "name": "N. Basilashvili",
+    "playerKey": "424",
+    "winners": 26,
+    "unforcedErrors": 20,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 37,
+     "total": 57
+    },
+    "returnPoints": {
+     "won": 30,
+     "total": 65
+    }
+   }
+  },
+  {
+   "eventKey": "12172161",
+   "round": "R1",
+   "date": "2026-10-19",
+   "time": "16:40",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "M. Kukushkin",
+    "playerKey": "2970",
+    "winners": 24,
+    "unforcedErrors": 30,
+    "wueSource": "api-tennis",
+    "totalPoints": 176,
+    "servicePoints": {
+     "won": 57,
+     "total": 91
+    },
+    "returnPoints": {
+     "won": 34,
+     "total": 85
+    }
+   },
+   "p2": {
+    "name": "S. Sakellaridis",
+    "playerKey": "742",
+    "winners": 29,
+    "unforcedErrors": 44,
+    "wueSource": "api-tennis",
+    "totalPoints": 176,
+    "servicePoints": {
+     "won": 51,
+     "total": 85
+    },
+    "returnPoints": {
+     "won": 34,
+     "total": 91
+    }
+   }
+  },
+  {
+   "eventKey": "12172164",
+   "round": "R1",
+   "date": "2026-10-20",
+   "time": "08:35",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "S. Shimabukuro",
+    "playerKey": "9608",
+    "winners": 34,
+    "unforcedErrors": 25,
+    "wueSource": "api-tennis",
+    "totalPoints": 199,
+    "servicePoints": {
+     "won": 70,
+     "total": 104
+    },
+    "returnPoints": {
+     "won": 30,
+     "total": 95
+    }
+   },
+   "p2": {
+    "name": "R. Safiullin",
+    "playerKey": "1057",
+    "winners": 43,
+    "unforcedErrors": 31,
+    "wueSource": "api-tennis",
+    "totalPoints": 199,
+    "servicePoints": {
+     "won": 65,
+     "total": 95
+    },
+    "returnPoints": {
+     "won": 34,
+     "total": 104
+    }
+   }
+  },
+  {
+   "eventKey": "12171882",
+   "round": "R1",
+   "date": "2026-10-20",
+   "time": "08:40",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "T. Atmane",
+    "playerKey": "13091",
+    "winners": 26,
+    "unforcedErrors": 25,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 46,
+     "total": 58
+    },
+    "returnPoints": {
+     "won": 22,
+     "total": 64
+    }
+   },
+   "p2": {
+    "name": "R. Hijikata",
+    "playerKey": "3317",
+    "winners": 11,
+    "unforcedErrors": 17,
+    "wueSource": "api-tennis",
+    "totalPoints": 122,
+    "servicePoints": {
+     "won": 42,
+     "total": 64
+    },
+    "returnPoints": {
+     "won": 12,
+     "total": 58
+    }
+   }
+  },
+  {
+   "eventKey": "12171889",
+   "round": "R1",
+   "date": "2026-10-20",
+   "time": "10:20",
+   "status": "finished",
+   "winner": 1,
+   "p1": {
+    "name": "S. Tsitsipas",
+    "playerKey": "1906",
+    "winners": 33,
+    "unforcedErrors": 27,
+    "wueSource": "api-tennis",
+    "totalPoints": 188,
+    "servicePoints": {
+     "won": 64,
+     "total": 86
+    },
+    "returnPoints": {
+     "won": 33,
+     "total": 102
+    }
+   },
+   "p2": {
+    "name": "A. Kovacevic",
+    "playerKey": "2978",
+    "winners": 39,
+    "unforcedErrors": 28,
+    "wueSource": "api-tennis",
+    "totalPoints": 188,
+    "servicePoints": {
+     "won": 69,
+     "total": 102
+    },
+    "returnPoints": {
+     "won": 22,
+     "total": 86
+    }
+   }
+  }
+ ]
+}
