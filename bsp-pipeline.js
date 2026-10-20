@@ -2812,6 +2812,7 @@ function average(nums) {
 // Returns null only if EVERY chunk failed (so the caller can bail); an empty
 // array means "queried fine, no fixtures".
 const _progressionFixturesCache = new Map();
+const PROGRESSION_CHUNK_RETRY_MS = process.env.PROGRESSION_CHUNK_RETRY_MS ? JSON.parse(process.env.PROGRESSION_CHUNK_RETRY_MS) : [0, 5000, 15000];   // first try + two retries per failed 7-day chunk (env override: tests)
 async function fetchProgressionFixtures(windowStart, today) {
   const dateStr = d => d.toISOString().split('T')[0];
   const cacheKey = `${dateStr(windowStart)}|${dateStr(today)}`;
@@ -2819,24 +2820,37 @@ async function fetchProgressionFixtures(windowStart, today) {
   const CHUNK_MS = 7 * 86400000; // API hard limit: 7-day max range per call
   const byKey = new Map();
   let anySuccess = false;
+  // Founder ruling 2026-10-20 (item 5): a chunk that fails must never be published as if the window were complete —
+  // on 20 Oct the 05..12 Oct chunk "fetch failed" and Shanghai published 15 of its 95 matches as a full draw. Each
+  // chunk is retried twice (5 s, 15 s); a chunk that still fails is recorded on the result as `failedRanges`, and
+  // buildTournamentProgression marks every tournament built from that fetch `partial` (shown on screen).
+  const failedRanges = [];
   for (let s = new Date(windowStart); s < today; s = new Date(s.getTime() + CHUNK_MS + 86400000)) {
     const e = new Date(Math.min(s.getTime() + CHUNK_MS, today.getTime()));
     const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${dateStr(s)}&date_stop=${dateStr(e)}&event_type_key=265`;
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      if (Array.isArray(data.result)) {
-        sanitizeFixtures(data.result);
-        anySuccess = true;
-        for (const f of data.result) if (f && f.event_key != null) byKey.set(f.event_key, f);
-      } else {
+    let ok = false, why = null;
+    for (const waitMs of PROGRESSION_CHUNK_RETRY_MS) {
+      if (waitMs) await new Promise(r => setTimeout(r, waitMs));
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (Array.isArray(data.result)) {
+          sanitizeFixtures(data.result);
+          anySuccess = true; ok = true;
+          for (const f of data.result) if (f && f.event_key != null) byKey.set(f.event_key, f);
+          break;
+        }
+        why = 'returned non-array: ' + JSON.stringify(data.result).slice(0, 80);
         console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} returned non-array:`, JSON.stringify(data.result).slice(0, 80));
+      } catch (err) {
+        why = 'failed: ' + err.message;
+        console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} failed:`, err.message);
       }
-    } catch (err) {
-      console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} failed:`, err.message);
     }
+    if (!ok) failedRanges.push({ from: dateStr(s), to: dateStr(e), reason: why });
   }
   const merged = anySuccess ? [...byKey.values()] : null;
+  if (merged) merged.failedRanges = failedRanges;
   _progressionFixturesCache.set(cacheKey, merged);
   return merged;
 }
@@ -3042,13 +3056,17 @@ async function buildTournamentProgression(tourName) {
   for (const f of played) feedNameCounts[f.tournament_name] = (feedNameCounts[f.tournament_name] || 0) + 1;
   const feedName = Object.keys(feedNameCounts).sort((a, b) => feedNameCounts[b] - feedNameCounts[a])[0] || bareName;
 
-  return {
+  const out = {
     feedName,
     rounds: roundLabels,
     players,
     fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
     matches: progressionSheetMatches(played, roundLabelByName),
   };
+  // Item 5: a fetch with a failed chunk is published as PARTIAL, never as complete. Which tournament the missing days
+  // belonged to cannot be known from the data that did arrive, so every tournament built from that fetch is marked.
+  if (fixtures.failedRanges && fixtures.failedRanges.length) out.partial = { failedRanges: fixtures.failedRanges };
+  return out;
 }
 
 // Task 4: api-tennis' get_odds carries real per-book Home/Away prices for BOTH

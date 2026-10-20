@@ -103,7 +103,10 @@ ix = B.build_roster_index(roster)
 check("hyphenated given name: STRUFF, Jan-Lennard → 2831", B.resolve_key(ix, "STRUFF, Jan-Lennard", "GER") == ("2831", "surname+given"))
 check("truncated given name as a prefix: CERUNDOLO, Juan Ma… → 388 (not Francisco)", B.resolve_key(ix, "CERUNDOLO, Juan Ma…", "ARG")[0] == "388")
 check("fully truncated given name: a UNIQUE surname only", B.resolve_key(ix, "VAN DE ZANDSCHULP, …", "NED") == ("2972", "surname-only"))
-check("a spelling variant is not bridged (Aleksandr ≠ Alexander) → None", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "KAZ")[0] is None)
+check("approved alias: SHEVCHENKO, Aleksandr + KAZ → 566 (keyMatch 'alias')", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "KAZ") == ("566", "alias"))
+check("the alias is exact: the same name with another country is NOT bridged → None", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "RUS")[0] is None)
+check("a spelling variant without an approved alias is still not bridged (Aleksandrov ≠ Alexandrov) → None",
+      B.resolve_key(B.build_roster_index({"players": [{"key": "1", "name": "Ivan Alexandrov", "country": "X"}]}), "ALEKSANDROV, Ivan", None)[0] is None)
 check("comma-less cut surname: 'GUEYMARD WAYENBUR…' → the unique Gueymard Wayenburg", B.resolve_key(B.build_roster_index({"players": [
     {"key": "77", "name": "Sascha Gueymard Wayenburg", "country": "France"}, {"key": "78", "name": "Ugo Gueymard", "country": "France"}]}),
     "GUEYMARD WAYENBUR…", None) == ("77", "surname-prefix"))

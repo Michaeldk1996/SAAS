@@ -107,6 +107,15 @@ function drawRoundTotals(draw) {
   return out;
 }
 
+// ── Winners only (founder ruling 2026-10-20, item 1) ──────────────────────────────────────────────────────────────
+// A round tab lists the players who ADVANCED from that round, with the stats of the match they won. With the official
+// draw, it is one row per MATCH SLOT in draw order (R32: 4 per quarter, R16: 2, QF: 1), so it lines up with Michael's
+// sheet: a finished match → its winner; a first-round bye → "BYE" for the player advancing; a match not yet played →
+// "TBD (A v B)" with blank stats (a side not decided yet is "TBD" — never a guessed name); finished without stats →
+// the winner, dashes, flagged [NO STATS]. A match is placed by its two players' OWN draw positions — never inferred.
+const TBD = 'TBD';
+function winnerSide(m) { return m.winner === 1 ? m.p1 : m.winner === 2 ? m.p2 : null; }
+
 function sheetRounds(entry, draw) {
   if (!entry || !Array.isArray(entry.matches)) return [];
   const withDraw = draw && draw.main && draw.main.status === 'posted' && Array.isArray(draw.main.slots);
@@ -115,55 +124,54 @@ function sheetRounds(entry, draw) {
   // A tab exists once one of its matches finished WITH stats.
   const tabs = [...byRound.keys()].filter(r => byRound.get(r).some(m => m.hasStats !== false)).sort((a, b) => roundRank(a) - roundRank(b));
   if (!withDraw) {
-    return tabs.map(r => ({ round: r, title: r, rows: byRound.get(r).flatMap(m => [playerRow(m.p1, m.status, m.hasStats), playerRow(m.p2, m.status, m.hasStats)]) }));
+    return tabs.map(r => ({ round: r, title: r, rows: byRound.get(r).map(m => { const w = winnerSide(m); return w ? playerRow(w, m.status, m.hasStats) : null; }).filter(Boolean) }));
   }
   return roundsWithDraw(byRound, tabs, draw);
 }
 
 function roundsWithDraw(byRound, tabs, draw) {
-  const main = draw.main, size = main.size, per = size / 4, order = drawRounds(size);
-  const quarter = pos => 1 + Math.floor((pos - 1) / per);
-  const slotByKey = new Map(main.slots.filter(s => s.playerKey).map(s => [String(s.playerKey), s]));
-  const winnerKey = m => String((m.winner === 1 ? m.p1 : m.p2).playerKey);
-  const group = (items) => {                      // [{slot, row}] → rows with Q headers in draw order, then UNPLACED
-    const placed = items.filter(x => x.slot).sort((a, b) => a.slot.pos - b.slot.pos);
-    const rows = []; let q = 0;
-    for (const x of placed) { const qq = quarter(x.slot.pos); if (qq !== q) { q = qq; rows.push({ header: `Q${q}` }); } rows.push(x.row); }
-    const un = items.filter(x => !x.slot);
-    if (un.length) { rows.push({ header: 'UNPLACED' }); un.forEach(x => rows.push(x.row)); }
-    return rows;
-  };
-  // Who is KNOWN to play each round: round 1 = every slot; later = previous-round winners + (round 2) bye recipients.
-  const known = {}; let prev = null;
+  const main = draw.main, size = main.size, slots = main.slots, order = drawRounds(size);
+  const quarterOfPos = pos => 1 + Math.floor((pos - 1) / (size / 4));
+  const posByKey = new Map(slots.filter(s => s.playerKey).map(s => [String(s.playerKey), s.pos]));
+  const nameOf = (side) => side ? side.name : TBD;
+  // decided[k][j] = the side object that won match slot j of round k (null = not decided yet). Round k's slot j covers
+  // draw positions j*2^(k+1)+1 … (j+1)*2^(k+1). A completed match lands in the slot holding BOTH players' positions.
+  const decided = order.map((_, k) => new Array(size / Math.pow(2, k + 1)).fill(null));
+  const matchAt = order.map((_, k) => new Array(size / Math.pow(2, k + 1)).fill(null));
+  const unplaced = {};
   order.forEach((r, k) => {
-    if (k === 0) { known[r] = null; prev = r; return; }
-    const set = new Set((byRound.get(prev) || []).map(winnerKey));
-    if (k === 1) for (let p = 0; p < size; p += 2) {
-      const a = main.slots[p], b = main.slots[p + 1];
-      if (a.bye && b.playerKey) set.add(String(b.playerKey)); if (b.bye && a.playerKey) set.add(String(a.playerKey));
+    const span = Math.pow(2, k + 1);
+    for (const m of byRound.get(r) || []) {
+      const a = posByKey.get(String(m.p1.playerKey)), b = posByKey.get(String(m.p2.playerKey));
+      const ja = a ? Math.floor((a - 1) / span) : null, jb = b ? Math.floor((b - 1) / span) : null;
+      if (ja == null || jb == null || ja !== jb || matchAt[k][ja]) { (unplaced[r] = unplaced[r] || []).push(m); continue; }
+      matchAt[k][ja] = m; decided[k][ja] = winnerSide(m);
     }
-    known[r] = set; prev = r;
+    if (k === 0) for (let j = 0; j < size / 2; j++) {            // a first-round bye: the player advances, no match
+      const x = slots[2 * j], y = slots[2 * j + 1];
+      if (!matchAt[0][j] && (x.bye || y.bye)) decided[0][j] = { bye: true, name: slotName(x.bye ? y : x) };
+    }
   });
-  return tabs.map(r => {
-    const ms = byRound.get(r) || [], items = [], seen = new Set();
-    for (const m of ms) for (const side of [m.p1, m.p2]) {
-      const key = String(side.playerKey); seen.add(key);
-      items.push({ slot: slotByKey.get(key) || null, row: playerRow(side, m.status, m.hasStats) });
-    }
-    if (r === order[0]) {
-      for (let p = 0; p < size; p += 2) {
-        const a = main.slots[p], b = main.slots[p + 1];
-        for (const [x, o] of [[a, b], [b, a]]) {
-          if (x.bye || (x.playerKey && seen.has(String(x.playerKey)))) continue;
-          items.push({ slot: x, row: { player: slotName(x), flag: null, values: o.bye ? BYE_ROW.slice() : Array(7).fill(BLANK) } });
-        }
+  // who plays in round k slot j: the two winners feeding it (or the two draw slots in the first round)
+  const sidesOf = (k, j) => k === 0
+    ? [slots[2 * j].bye ? null : { name: slotName(slots[2 * j]) }, slots[2 * j + 1].bye ? null : { name: slotName(slots[2 * j + 1]) }]
+    : [decided[k - 1][2 * j], decided[k - 1][2 * j + 1]];
+  return tabs.filter(r => order.includes(r) || unplaced[r]).map(r => {
+    const k = order.indexOf(r), rows = [];
+    if (k >= 0) {
+      const n = size / Math.pow(2, k + 1), perQ = n / 4;
+      for (let j = 0; j < n; j++) {
+        if (perQ >= 1 && j % perQ === 0) rows.push({ header: `Q${quarterOfPos(j * Math.pow(2, k + 1) + 1)}` });
+        else if (n === 2) rows.push({ header: j === 0 ? 'TOP HALF' : 'BOTTOM HALF' });   // SF: one row per half; F: no header
+        const m = matchAt[k][j];
+        if (m) { const w = winnerSide(m); rows.push(w ? playerRow(w, m.status, m.hasStats) : { player: DASH, flag: null, values: Array(7).fill(null) }); continue; }
+        if (k === 0 && decided[0][j] && decided[0][j].bye) { rows.push({ player: decided[0][j].name, flag: null, values: BYE_ROW.slice() }); continue; }
+        const [p, q] = sidesOf(k, j);
+        rows.push({ player: `${TBD} (${nameOf(p && p.bye ? { name: p.name } : p)} v ${nameOf(q && q.bye ? { name: q.name } : q)})`, flag: null, values: Array(7).fill(BLANK) });
       }
-    } else if (known[r]) {
-      for (const key of known[r]) if (!seen.has(key) && slotByKey.has(key)) {
-        items.push({ slot: slotByKey.get(key), row: { player: slotName(slotByKey.get(key)), flag: null, values: Array(7).fill(BLANK) } });
-      }
     }
-    return { round: r, title: r, quarters: true, rows: group(items) };
+    if (unplaced[r]) { rows.push({ header: 'UNPLACED' }); for (const m of unplaced[r]) { const w = winnerSide(m); if (w) rows.push(playerRow(w, m.status, m.hasStats)); } }
+    return { round: r, title: r, quarters: true, rows };
   });
 }
 

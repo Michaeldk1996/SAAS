@@ -26617,6 +26617,16 @@ function tourxReportYear(){
 function tourxCapsLbl(t, extra){ return `<span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);font-family:var(--font-words);${extra || ''}">${t}</span>`; }
 // W/UE sheet (founder brief 2026-10-20): a download + per-round copy for the selected tournament. The rounds offered
 // come from the copy the page loaded; the export itself re-reads tournament-progression.json at click time (wue-sheet.js).
+// Item 5 (founder 2026-10-20): a tournament built from a fetch with a failed chunk is PARTIAL — say so in plain words,
+// never present it as complete. "" when the entry is complete.
+function tourxPartialText(name){
+  const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
+  const fr = t && t.partial && Array.isArray(t.partial.failedRanges) ? t.partial.failedRanges : [];
+  if (!fr.length) return '';
+  const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const d = iso => { const x = new Date(iso + 'T00:00:00Z'); return x.getUTCDate() + ' ' + M[x.getUTCMonth()]; };
+  return 'Partial data: the score feed did not answer for ' + fr.map(r => d(r.from) + '–' + d(r.to)).join(', ') + ' — matches played on those days are missing here';
+}
 function tourxWueBarHtml(name){
   if (typeof window === 'undefined' || !window.WueSheet) return '';
   const t = tournamentProgression && tournamentProgression.tournaments && tournamentProgression.tournaments[name];
@@ -26631,7 +26641,8 @@ function tourxWueBarHtml(name){
     ? [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
         .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title)}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')))
     : [tourxWueDisabledSeg('Download .xlsx')];
-  const note = rounds.length ? window.WueSheet.roundStatus(t, draw) : 'Available after the next data update.';
+  const partial = tourxPartialText(name);
+  const note = (partial ? partial + ' · ' : '') + (rounds.length ? window.WueSheet.roundStatus(t, draw) : 'Available after the next data update.');
   return `<div style="margin-top:18px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
       ${tourxCapsLbl('W/UE sheet')}
       <div class="tx-segwrap">${items.join('')}</div>
@@ -26696,7 +26707,9 @@ function renderTourxReports(){
   if (tourxState.view === 'player') body = tourxPlayerViewHtml(T);
   else if (tourxState.view === 'h2h') body = tourxH2HViewHtml(T);
   else body = tourxRoundViewHtml(T);
-  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}</div>`;
+  const partialLine = typeof tourxPartialText === 'function' && tourxPartialText(tourxState.tour)
+    ? `<div role="status" style="margin-top:14px;font-size:12.5px;color:var(--text-label);">${tourxRpEsc(tourxPartialText(tourxState.tour))}.</div>` : '';
+  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${partialLine}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}</div>`;
   // Preserve focus + caret in the comparison player search across re-renders.
   const cmpInp = document.getElementById('tourxCmpSearch');
   if (cmpInp && tourxState.cmpOpen){ cmpInp.focus(); const v = cmpInp.value; cmpInp.setSelectionRange(v.length, v.length); }
