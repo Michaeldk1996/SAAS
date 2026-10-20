@@ -1,12 +1,12 @@
 set -uo pipefail
-# rerun 2: wait for the 16:00Z data run (first built after the import)
+# rerun 3: read the live site now (stale since 15:01Z; timeout 45 landed)
 # read-only: wait for a publish whose DATA run started after the calib-01 import (15:08:22Z), then count TE prices on the live site
 SITE=https://michaeldk1996.github.io/SAAS
-for i in $(seq 1 60); do
+for i in $(seq 1 3); do
   curl -sS -m 30 "$SITE/build-info.json?cb=$RANDOM" -o bi.json || true
   d=$(python3 -c 'import json;b=json.load(open("bi.json"));d=b.get("data") or {};print(d.get("builtAt") or d.get("startedAt") or "")' 2>/dev/null)
   echo "$(date -u +%H:%M:%S) data built $d"
-  [[ "$d" > "2026-10-20T16:05" ]] && break
+  [[ "$d" > "2026-10-20T15:09" ]] && break
   sleep 60
 done
 cat bi.json; echo
