@@ -2920,6 +2920,30 @@ function feedRoundCode(round) {
   return null;
 }
 
+// Per-set games [[p1, p2], …] from the feed's own `scores` (null when it sent none). Never derived from the result line.
+function feedSetScores(f) {
+  if (!Array.isArray(f && f.scores) || !f.scores.length) return null;
+  const sets = [...f.scores].sort((a, b) => Number(a.score_set) - Number(b.score_set))
+    .map(x => [parseInt(x.score_first, 10), parseInt(x.score_second, 10)]);
+  return sets.every(([a, b]) => Number.isFinite(a) && Number.isFinite(b)) ? sets : null;
+}
+
+// Draw view: a fixture's two sides as {name, playerKey}, plus where/when it stands — for the qualifying results and the
+// day's scheduled matches the bracket shows. Placement on the bracket is by the players' own draw slots, client-side.
+function drawFixtureRow(f) {
+  return {
+    eventKey: f.event_key != null ? String(f.event_key) : null,
+    roundText: f.tournament_round || null,
+    date: f.event_date || null, time: f.event_time || null,
+    status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover'
+      : (f.event_winner === 'First Player' || f.event_winner === 'Second Player') ? 'finished' : f.event_live === '1' ? 'live' : 'scheduled',
+    winner: f.event_winner === 'First Player' ? 1 : f.event_winner === 'Second Player' ? 2 : null,
+    p1: { name: f.event_first_player || null, playerKey: f.first_player_key != null ? String(f.first_player_key) : null },
+    p2: { name: f.event_second_player || null, playerKey: f.second_player_key != null ? String(f.second_player_key) : null },
+    score: feedSetScores(f),
+  };
+}
+
 function progressionSheetMatches(played, roundLabelByName) {
   // Ruling 3: the same extraction the Reports metrics read (extractSheetCounts) — one derivation, no drift.
   const side = (f, matchStats, key, name, oppName) => ({ name, playerKey: key != null ? String(key) : null,
@@ -2939,6 +2963,8 @@ function progressionSheetMatches(played, roundLabelByName) {
         // Ruling 6 (founder 2026-10-20): the ACTUAL round, read from the feed's own round text — never from position.
         roundCode: feedRoundCode(f.tournament_round),
         hasStats: !!stats,
+        // Draw view (founder ruling 2026-10-20 item 2): the set score as the feed sent it, p1/p2 games per set.
+        score: feedSetScores(f),
         date: f.event_date || null,
         time: f.event_time || null,
         status: f.event_status === 'Retired' ? 'retired' : f.event_status === 'Walk Over' ? 'walkover' : 'finished',
@@ -3062,6 +3088,13 @@ async function buildTournamentProgression(tourName) {
     players,
     fieldAverage: { rounds: roundLabels, metrics: fieldAverageMetrics, sampleSize: fieldSampleSize },
     matches: progressionSheetMatches(played, roundLabelByName),
+    // Draw view (item 2): this event's qualifying results and today's not-yet-finished fixtures (both draws), from the
+    // SAME fetch. Additive — nothing above changes.
+    qualifying: fixtures.filter(f => f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm))
+      && f.event_qualification === 'True' && (f.event_winner === 'First Player' || f.event_winner === 'Second Player')).map(drawFixtureRow),
+    scheduled: fixtures.filter(f => f.tournament_name && matchNames.some(nm => f.tournament_name.includes(nm))
+      && !(f.event_winner === 'First Player' || f.event_winner === 'Second Player') && !isCancelledFixture(f)
+      && f.first_player_key && f.second_player_key).map(drawFixtureRow),
   };
   // Item 5: a fetch with a failed chunk is published as PARTIAL, never as complete. Which tournament the missing days
   // belonged to cannot be known from the data that did arrive, so every tournament built from that fetch is marked.
@@ -8094,7 +8127,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
