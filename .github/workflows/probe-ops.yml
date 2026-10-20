@@ -1,0 +1,17 @@
+name: probe-ops
+on:
+  push:
+    branches: [claude/ops-te-blocked]
+    paths: [tools/probe-ops/**]
+jobs:
+  put:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: bash tools/probe-ops/put.sh
+        env:
+          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
