@@ -292,7 +292,13 @@ check('TEN-449 template: every tool it runs is saas/tools/<file> and the file ex
     assert.strictEqual(pre, 'saas/', `"${pre}tools/${f}" — the store repo has no tools/; the tools are under saas/`);
     assert.ok(fs.existsSync(path.join(HERE, f)), `saas/tools/${f} does not exist in SAAS`);
   }
-  assert.ok(!/commitback-push/.test(tpl), 'commitback-push.sh lives in SAAS tools/, and one writer needs no rebase loop');
+  assert.ok(!/commitback-push/.test(tpl), 'commitback-push.sh lives in SAAS tools/, and the store repo has no tools/');
+});
+check('TEN-449 template: every push first rebases onto main (the odds batch also pushes to the store repo, under te-odds/)', () => {
+  for (const n of ['Commit the refreshed store', 'Commit the set repairs']) {
+    assert.ok(/git pull -q --rebase origin main\n\s*git push -q origin HEAD:refs\/heads\/main\s*$/.test(stepRun(tpl, n)), `${n}: no rebase right before its push`);
+  }
+  assert.ok(!/git push[^\n]*(--force|-f\b)/.test(tpl), 'never a forced push');
 });
 check('TEN-449 template: SAAS checked out into saas/ (public repo, main, no token); store checked out at the root; Node 22', () => {
   assert.ok(/repository: michaeldk1996\/SAAS\n\s+ref: main\n\s+path: saas\n\s+persist-credentials: false/.test(tpl), 'the SAAS checkout');
@@ -361,6 +367,9 @@ check('TEN-449 rollout: te-refresh.dispatch-only.yml is the template minus its S
   const refreshCmd = stepRun(tpl, 'Refresh the Tennis Explorer store').replace(/^node /, `node --import ${STUB} `);
   const rr = sh(refreshCmd, env);
   const gr = sh(stepRun(tpl, 'Guard the refreshed store against the committed one'));
+  // another writer (the odds batch) pushes te-odds/ to the store repo while the refresh runs
+  const other = fs.mkdtempSync(path.join(os.tmpdir(), 'te-ws-x-'));
+  execFileSync('bash', ['-ec', `git clone -q -b main "${origin}" . && mkdir te-odds && echo '{}' > te-odds/calib-01.json && git add -- te-odds && git commit -q -m odds && git push -q origin HEAD:refs/heads/main`], { cwd: other, env: gitEnv, stdio: 'ignore' });
   const cr = sh(stepRun(tpl, 'Commit the refreshed store'), env);
   const pushed = execFileSync('git', ['--git-dir', origin, 'ls-tree', '-r', '--name-only', 'main'], { encoding: 'utf8', env: gitEnv }).trim().split('\n');
   check('TEN-449 EXECUTED: the template\'s refresh command runs against the store-shaped root (exit 0, new player written)', () => {
@@ -373,6 +382,10 @@ check('TEN-449 rollout: te-refresh.dispatch-only.yml is the template minus its S
     assert.strictEqual(cr.code, 0, cr.out);
     assert.ok(pushed.includes('te-history/2.json') && pushed.includes('te-refresh-log.jsonl'), pushed.join(' '));
     assert.ok(!pushed.some((f) => /^saas|te-refresh-report/.test(f)), pushed.join(' '));
+  });
+  check('TEN-449 EXECUTED: a te-odds/ push landing mid-run does not fail the commit step, and both writers\' files are on main', () => {
+    assert.strictEqual(cr.code, 0, cr.out);
+    assert.ok(pushed.includes('te-odds/calib-01.json') && pushed.includes('te-history/2.json'), pushed.join(' '));
   });
   const wk = sh(stepRun(tpl, 'Has every weekly part of this week completed?'), { GITHUB_OUTPUT: path.join(ws, '.gh-out') });
   check('TEN-449 EXECUTED: the week gate step runs from saas/ and says "complete=true" after a whole-week (0/1) weekly run', () => {

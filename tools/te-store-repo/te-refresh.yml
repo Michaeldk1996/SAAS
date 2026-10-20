@@ -92,7 +92,9 @@ jobs:
       - name: Guard the refreshed store against the committed one
         run: node saas/tools/te-history-guard.mjs . --prev-ref HEAD
       - name: Commit the refreshed store
-        # one writer: this workflow, serialised by the te-refresh concurrency group — a plain commit and push
+        # te-history/ has one writer (this workflow, serialised by the te-refresh concurrency group); the odds batch also
+        # pushes to this repo, under te-odds/ only — so each push first rebases onto main (disjoint paths: no conflict;
+        # a conflict means a second te-history writer, and the step fails and alerts rather than overwrite it)
         run: |
           if [ -z "$(git status --porcelain -- te-history te-history-index.json te-refresh-log.jsonl)" ]; then
             echo "No change — nothing to commit."
@@ -103,6 +105,7 @@ jobs:
           git add -- te-history te-history-index.json
           if [ -f te-refresh-log.jsonl ]; then git add -- te-refresh-log.jsonl; fi
           git commit -q -m "chore(te): Tennis Explorer store refresh ($TE_MODE $TE_PART) [skip ci]"
+          git pull -q --rebase origin main
           git push -q origin HEAD:refs/heads/main
       - name: Has every weekly part of this week completed?
         id: week
@@ -124,6 +127,7 @@ jobs:
           git config user.email "bsp-te-bot@users.noreply.github.com"
           git add -- set-repairs.json set-repairs-log.jsonl
           git commit -q -m "chore(te): set repairs for new short rows [skip ci]"
+          git pull -q --rebase origin main
           git push -q origin HEAD:refs/heads/main
       - name: Report
         if: always()
