@@ -74,7 +74,7 @@ check('playing-styles in Actions: published → exit 0 BEFORE the Mac-only `git 
   (() => { const t = fs.readFileSync(path.join(ROOT, 'tools', 'refresh-playing-styles.sh'), 'utf8'); const i = t.indexOf('if [ "${GITHUB_ACTIONS:-}" = "true" ]; then echo "published'), j = t.indexOf("TOKEN=$(printf"); return i > 0 && j > i; })());
 const dy = wf('draws.yml');
 check('draws.yml rides the pipeline (workflow_run) — schedules are throttled on this repo', /workflow_run:[^\n]*\n\s*workflows: \['BSP data pipeline'\]/.test(dy) && /cron: '17 \*\/2 \* \* \*'/.test(dy));
-check('draws.yml cadence gate: a pipeline-triggered run goes only when the last successful draws run is >= 110 min old (6600 s)', /-lt 6600/.test(dy) && /actions: read/.test(dy));
-check('draws.yml: every step after the gate is conditional on it', (() => { const steps = dy.split('\n      - ').slice(2); return steps.length >= 5 && steps.every(x => /if: steps\.gate\.outputs\.go == '1'/.test(x)); })());
+check('draws.yml cadence gate: measured from the last run that FETCHED (never a skipped run), >= 110 min (6600 s)', /-lt 6600/.test(dy) && /actions: read/.test(dy) && /tools\/draws\/last-fetch-run\.py/.test(dy) && !/runs\?status=success&per_page=1/.test(dy));
+check('draws.yml: every step after the gate is conditional on it', (() => { const steps = dy.split('\n      - ').slice(3); return steps.length >= 5 && steps.every(x => /if: steps\.gate\.outputs\.go == '1'/.test(x)); })());
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

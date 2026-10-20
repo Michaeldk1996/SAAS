@@ -195,5 +195,15 @@ readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/",
 check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7) + the Entry list tab (ruling 1)",
       sorted(readers) == ["bsp-consult-dashboard.html", "wue-sheet.js"], readers)
 
+# ── draws.yml cadence clock (fixed 2026-10-20): the last run that FETCHED, never a skipped run ──
+spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))
+LFR = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(LFR)
+runs = [{"id": 9, "run_started_at": "T3"}, {"id": 3, "run_started_at": "T2"}, {"id": 2, "run_started_at": "T1"}, {"id": 1, "run_started_at": "T0"}]
+st = {9: "skipped", 3: "skipped", 2: "skipped", 1: "success"}
+jobs = lambda r: [{"steps": [{"name": "Cadence gate", "conclusion": "success"}, {"name": "Build draws.json (fail-closed parser)", "conclusion": st[r["id"]]}]}]
+check("cadence clock: three skipped runs after a fetch → the FETCH's start time (skips never reset it)", LFR.last_fetch(runs, jobs) == "T0")
+check("cadence clock: the current run is excluded", LFR.last_fetch([{"id": 1, "run_started_at": "T0"}], jobs, exclude=1) == "")
+check("cadence clock: no fetching run on record → '' (the gate then goes)", LFR.last_fetch(runs[:3], jobs) == "")
+
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)

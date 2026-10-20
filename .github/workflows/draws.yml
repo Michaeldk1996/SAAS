@@ -25,17 +25,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, sparse-checkout: tools/draws/last-fetch-run.py, sparse-checkout-cone-mode: false }
       - name: Cadence gate (a pipeline-triggered run goes only if the last successful draws run is >= 110 min old)
         id: gate
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           if [ "$GITHUB_EVENT_NAME" != "workflow_run" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
-          last=$(curl -s -H "Authorization: Bearer $GH_TOKEN" "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/workflows/draws.yml/runs?status=success&per_page=1" \
-            | python3 -c 'import json,sys; r=json.load(sys.stdin).get("workflow_runs") or []; print(r[0]["run_started_at"] if r else "")')
+          # The clock runs from the last run that FETCHED (its build step succeeded) — never from a skipped run, which also
+          # ends "success": measuring from those let a run every <110 min skip forever (20 Oct 18:00 / 18:07, fixed same day).
+          last=$(GH_TOKEN="$GH_TOKEN" python3 tools/draws/last-fetch-run.py "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID")
           if [ -n "$last" ] && [ $(( $(date +%s) - $(date -d "$last" +%s) )) -lt 6600 ]; then
-            echo "last successful draws run started $last (< 110 min ago) — skip"; echo "go=0" >> "$GITHUB_OUTPUT"
-          else echo "go=1" >> "$GITHUB_OUTPUT"; fi
+            echo "last draws run that fetched started $last (< 110 min ago) — skip"; echo "go=0" >> "$GITHUB_OUTPUT"
+          else echo "go=1 (last fetching run: ${last:-none found})"; echo "go=1" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/checkout@v4
         if: steps.gate.outputs.go == '1'
         with: { ref: main }
