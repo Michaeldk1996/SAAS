@@ -2124,3 +2124,18 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
   Placement on the Tournament tab (a fifth header meta cell) is DESIGN GAP G43: the design draws the rate only on Key factors.
 - **Q21.** The design draws one heat flag, at watch ("Heat — high"). Concern keeps the same words; the colour differs.
 
+
+## TEN-449 · One Tennis Explorer stream per machine (2026-10-20)
+
+- **Ruling (founder, 2026-10-20):** one TE stream per machine, each polite (one request at a time, ≥ 8 s apart, stop on
+  any block, Telegram alert); overlap between the Mac and GitHub Actions is accepted. Rule text:
+  `.claude/rules/pipeline-records.md` → *Source*.
+- **Scope wording:** the *Source* clause's "TE pages are read only by" now says "TE pages for the career record",
+  so naming the odds agent's reader (match pages for odds, its own ticket) does not contradict it; the ruling is unchanged.
+- **Why:** turning the store refresh schedule on (store `f5ac53f`: Mon 05:00/11:00 UTC weekly parts, daily 03:30 UTC
+  re-read) put a GitHub Actions reader alongside the odds agent's `te-odds-batch.mjs --queue`, which reads TE from the
+  Mac around the clock. The earlier instruction (one TE stream across all agents, never written into a rules file)
+  would have barred the schedule. The two readers come from different IPs and each one is paced and stops on a block on its own.
+- **Gap at ruling time:** of the three readers, only the store refresh sends a Telegram alert (`te-refresh.yml`; the
+  rule's *Holds now* note says so). `te-scrape.mjs` (idle, backfill done) and `te-odds-batch.mjs` (odds agent, `stennisfy-ops`) stop on a block but do
+  not alert.

@@ -91,10 +91,16 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     2026-09-28). Provider-aggregate stats (career/surface win %) and Tennis-Abstract career splits are separate
     sources, not forced to this rule.
   - *Source (founder's call against TE's terms §2.2/§2.10/§2.11, risk reported; reworded founder TEN-449,
-    2026-10-19):* TE pages are read only by `tools/te-scrape.mjs` (this Mac, one-off backfills) and
-    `tools/te-refresh.mjs` (the private `stennisfy-te-store` repo's Actions, weekly and daily re-read). Both read one
-    request at a time, ≥ 8 s apart, and stop on any non-200 or challenge page. Never from the public SAAS repo, its CI
-    or the nightly pipeline. The refresh runs the tools from SAAS `main` (founder decision A, TEN-449, 2026-10-19). A
+    2026-10-19):* TE pages for the career record are read only by `tools/te-scrape.mjs` (this Mac, one-off backfills) and
+    `tools/te-refresh.mjs` (the private `stennisfy-te-store` repo's Actions, weekly and daily re-read). Never from the
+    public SAAS repo, its CI or the nightly pipeline. The refresh runs the tools from SAAS `main` (founder decision A,
+    TEN-449, 2026-10-19).
+    **One Tennis Explorer stream per machine, each polite** (founder TEN-449, 2026-10-20): every TE reader (these two,
+    and the odds agent's `te-odds-batch.mjs`) reads one request at a time, ≥ 8 s apart, stops on any block (non-200 or
+    challenge page) and sends a Telegram alert. Overlap between the Mac and GitHub Actions is accepted. **Test:** on
+    the Mac, before a TE read, `pgrep -fl 'node .*te-(scrape|odds-batch|refresh)\.mjs'` lists no other reader.
+    *Holds now (2026-10-20):* only the store refresh alerts on Telegram; `te-scrape.mjs` and `te-odds-batch.mjs` stop
+    on a block but do not alert yet. A
     player is joined to a TE page only on his date of birth (age ± 1 where no DOB is on record), never on a name alone.
     *Named exception (founder TEN-449, 2026-10-19):* Z. Svajda (key 2986, pinned to TE `svajda`: the key on any
     other page is refused) is joined with no DOB on TE, on 320 of 320 of our rows pairing with 0 result disagreements. It does not extend to any other player.
