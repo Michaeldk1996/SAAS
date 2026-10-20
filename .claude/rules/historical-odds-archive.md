@@ -83,6 +83,14 @@ file we hold is irreplaceable.
   close; Bet365 stays the fallback where api-tennis has no pair. The private CSV export does NOT carry it (its columns are
   closes).
 
+## The install runs each migration once (founder 2026-10-20, item 9)
+- `historical-archive.yml` mode `install` runs `tools/archive_install.py`: each listed migration is applied ONCE and recorded in
+  `archive_migrations` (name, sha256, how; append-only like the archive) in the same transaction; a recorded file is skipped,
+  a recorded file whose bytes changed stops the install ("add a new migration instead"), a failed new file records nothing.
+  The archive installed before the ledger was recorded at bootstrap (never re-run). Replaces PR #63's 23514 tolerance.
+  **Test:** `tools/test-archive-ledger.py` (a real throwaway Postgres; controls: the old re-run fails, a half-installed
+  archive is not bootstrapped).
+
 ## Same-day re-runs (founder ruling 2026-10-16, round 3 item 5)
 - A second daily run on a day already written skips that day's export / backup with the log line "day already written,
   skipped" — **only when the day is complete**: its `manifest.json` reads and every file it lists is there with its sha256
