@@ -5005,6 +5005,17 @@
       "p2": "S. Shimabukuro",
       "startTime": "2026-10-21T06:30:00.000Z",
       "tournamentId": 41959
+    },
+    "12172807": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-20T13:03:25Z",
+      "missRuns": 1,
+      "missSince": "2026-10-20T13:03:25Z",
+      "orient": null,
+      "p1": "S. Tsitsipas",
+      "p2": "M. Kukushkin",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -5023,17 +5034,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-01T17:45:28Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 15,
-        "ttlBit": false,
-        "unmapped": 15,
-        "upcoming": 17
-      },
       {
         "at": "2026-10-01T18:45:29Z",
         "fixturesUnitsSpent": 1,
@@ -9422,9 +9422,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 31
+      },
+      {
+        "at": "2026-10-20T13:03:25Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 1,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 29
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-20T12:04:34Z"
+  "updatedAt": "2026-10-20T13:03:25Z"
 }
