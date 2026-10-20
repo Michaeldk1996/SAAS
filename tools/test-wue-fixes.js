@@ -52,7 +52,7 @@ if (parts.every(Boolean)) {
   const some = bar(FX);
   check('rows in → Download is live', /onclick="tourxWueDownload\('T'\)"/.test(some));
   check('rows in → one Copy per round with rows', (some.match(/onclick="tourxWueCopy/g) || []).length === 1);
-  check('rows in → says which rounds are in, with match counts', some.includes('In: Round 1 (8 matches)'), some.slice(some.indexOf('role="status"'), some.indexOf('role="status"') + 160));
+  check('rows in → the status lists every started round (ruling 6): "R32: 9 of —" without a draw', some.includes('>R32: 9 of —<'), some.slice(some.indexOf('role="status"'), some.indexOf('role="status"') + 160));
 }
 const dl = fnSrc('tourxWueDownload') || '', cp = fnSrc('tourxWueCopy') || '';
 check('a failed click never prints the raw error text', !/e\.message/.test(dl + cp) && /try again/.test(dl) && /try again/.test(cp));

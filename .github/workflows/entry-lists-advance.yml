@@ -1,0 +1,39 @@
+# Upcoming-week entry lists (ticktocktennis) → entry_lists_advance.json. Moved off the Mac (founder ruling 2026-10-20: the
+# Mac's GitHub token expires 25 Oct and is not renewed until January). Evidence it can run here: a GitHub-hosted runner
+# fetched https://entries.ticktocktennis.com/atp → HTTP 200, the same 180,226-byte page the Mac gets, entry content present,
+# no challenge (probe run 39449494331, 2026-10-20). Commits only on a CONTENT change (run stamps ignored). A fetch
+# failure carries the last list forward flagged stale (the tab says it could not update) AND turns this run red.
+name: entry-lists-advance
+on:
+  schedule:
+    - cron: '0 23 * * *'          # the Mac's slot (07:00 UTC+8)
+  workflow_dispatch:
+concurrency:
+  group: entry-lists-advance
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  advance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - name: Build entry_lists_advance.json (fail-closed QA in the builder)
+        run: node tools/entry-lists/build-entry-lists-advance.mjs
+      - name: Commit on a content change only
+        run: |
+          git show HEAD:entry_lists_advance.json > /tmp/adv-prev.json 2>/dev/null || echo '{}' > /tmp/adv-prev.json
+          if python3 tools/entry-lists/content-hash.py entry_lists_advance.json /tmp/adv-prev.json; then
+            git checkout -- entry_lists_advance.json; echo "no content change — nothing to commit"; exit 0
+          fi
+          git add entry_lists_advance.json
+          git -c user.name='BSP Entry Lists Bot' -c user.email='bot@bspconsult.local' commit -q -m "chore(entry-lists): advance refresh (cloud) [skip ci]"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          echo "::error title=entry-lists-advance::could not push after 3 attempts"; exit 1
+      - name: Fail visibly when the source could not be read (the list on screen is flagged stale)
+        run: |
+          node -e 'const d=require("./entry_lists_advance.json"); if (d.fetchStatus && d.fetchStatus !== "ok") { console.log("::error title=entry-lists-advance::ticktocktennis fetch " + d.fetchStatus + " — " + (d.fetchError || "") + " — showing the list from " + d.generatedAt + " flagged stale"); process.exit(1); } console.log("fetch ok · " + (d.tournaments || []).length + " tournaments")'

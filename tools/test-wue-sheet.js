@@ -29,14 +29,14 @@ const FX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'wue-shee
 
 // ── 1 · acceptance (founder's hand-entered rows; reported as match/mismatch, never adjusted) ──
 const rounds = W.sheetRounds(FX);
-check('fixture is non-empty: 1 round, 8 matches → 16 rows', rounds.length === 1 && rounds[0].rows.length === 16, JSON.stringify(rounds.map(r => r.rows.length)));
+check('fixture is non-empty: 1 round, 9 matches → 18 rows', rounds.length === 1 && rounds[0].rows.length === 18, JSON.stringify(rounds.map(r => r.rows.length)));
 const row = (n) => rounds[0].rows.find(r => r.player === n);
 for (const [name, w, ue, tt, dr] of [['F. Diaz Acosta', 26, 24, 186, 1.54], ['A. Mannarino', 34, 37, 205, 1.45], ['J. Duckworth', 27, 18, 113, 1.21]]) {
   const r = row(name);
   check(`acceptance ${name} ${w}/${ue}/${tt}/${dr}`, r && r.values[0] === w && r.values[1] === ue && r.values[2] === tt && r.values[6] === dr,
     r ? JSON.stringify(r.values) : 'row missing');
 }
-check('tab title is ROUND 1', rounds[0].title === 'ROUND 1', rounds[0].title);
+check('tab is named by the actual round (R32), never "ROUND 1"', rounds[0].title === 'R32', rounds[0].title);
 check('rows follow order of play (first match 08:40 Kecmanovic–Duckworth)', rounds[0].rows[0].player === 'M. Kecmanovic' && rounds[0].rows[1].player === 'J. Duckworth');
 
 // ── 2 · formulas ──
@@ -97,8 +97,9 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   const calls = [];
   global.fetch = async (url, opts) => { calls.push({ url, opts }); return { ok: true, json: async () => ({ fetchedAt: '2026-10-20T11:00:00Z', tournaments: { Almaty: FX } }) }; };
   const got = await W.fetchLatest('Almaty');
-  check('fetches tournament-progression.json cache-busted + no-store',
-    calls.length === 1 && /^\.\/tournament-progression\.json\?_=\d+$/.test(calls[0].url) && calls[0].opts.cache === 'no-store', JSON.stringify(calls));
+  check('fetches tournament-progression.json then draws.json, both cache-busted + no-store (ruling 7: quarters at click time)',
+    calls.length === 2 && /^\.\/tournament-progression\.json\?_=\d+$/.test(calls[0].url) && /^\.\/draws\.json\?_=\d+$/.test(calls[1].url)
+    && calls.every(c => c.opts.cache === 'no-store'), JSON.stringify(calls));
   check('returns the fetched entry', got.entry === FX);
   let err = null;
   global.fetch = async () => ({ ok: true, json: async () => ({ tournaments: { Almaty: { rounds: ['R1'], players: [] } } }) });
@@ -119,9 +120,9 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   else check('every CRC verifies (module crc32 vs stored)', entries.every(e => W.crc32(e.data) === e.crc));
   check('end-of-central-directory record present', z.readUInt32LE(z.length - 22) === 0x06054b50 && z.readUInt16LE(z.length - 12) === entries.length);
   const wb = entries.find(e => e.name === 'xl/workbook.xml').data.toString();
-  check('one tab named ROUND 1', /<sheet name="ROUND 1" sheetId="1"/.test(wb) && (wb.match(/<sheet /g) || []).length === 1);
+  check('one tab named R32', /<sheet name="R32" sheetId="1"/.test(wb) && (wb.match(/<sheet /g) || []).length === 1);
   const ws = entries.find(e => e.name === 'xl/worksheets/sheet1.xml').data.toString();
-  check('header + 16 player rows', (ws.match(/<row /g) || []).length === 17);
+  check('header + 18 player rows', (ws.match(/<row /g) || []).length === 19);
   check('header columns in brief order', W.COLUMNS.join('|') === 'Player|W|UE|TT points|W/P|UE/P|Ratio W/UE|Dominance Ratio' && W.COLUMNS.every(c => ws.includes(`<t>${c}</t>`)));
   check('ratios carry the 0.00 number format', /<c r="E2" s="2"><v>0.13<\/v><\/c>/.test(ws), ws.slice(ws.indexOf('<row r="2"'), ws.indexOf('<row r="2"') + 200));
   const empty = W.workbookFiles(W.sheetRounds({ rounds: [], matches: [] }));

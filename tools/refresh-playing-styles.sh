@@ -29,9 +29,15 @@
 set -euo pipefail
 
 cd "$(dirname "$0")/.."                       # repo root of the clone
-LOG_DIR="$HOME/.bsp-splits-cron"; mkdir -p "$LOG_DIR"
+# MOVED (founder ruling 2026-10-20): playing-styles runs in GitHub Actions (playing-styles.yml) — the Mac's GitHub token
+# expires 25 Oct. Every source answers a GitHub runner (raw.githubusercontent TML + MCP: 206 real CSV, probe run
+# 39449256066; api-tennis: the pipeline's own daily key). On the Mac this now logs and exits; in Actions it runs.
+if [ "${GITHUB_ACTIONS:-}" != "true" ]; then
+  mkdir -p "$HOME/.bsp-splits-cron"; echo "$(date -u +%FT%TZ) MOVED to GitHub Actions (playing-styles.yml), founder ruling 2026-10-20" >> "$HOME/.bsp-splits-cron/styles-refresh.retired.log"; exit 0
+fi
+LOG_DIR="${RUNNER_TEMP:-$HOME/.bsp-splits-cron}"; mkdir -p "$LOG_DIR"
 export LOG_DIR
-exec >> "$LOG_DIR/styles-refresh.log" 2>&1
+# (Actions: the run log is the log — no redirect.)
 
 START_EPOCH=$(date +%s)
 START_ISO=$(date -u +%FT%TZ)
@@ -169,6 +175,10 @@ done
 [ "$pushed" = 1 ] || { echo "ERROR: could not push after 3 attempts"; exit 1; }
 
 # redeploy Pages (pipeline.yml has no push trigger)
+# In GitHub Actions there is no keychain credential to dispatch with (and none is needed: the pipeline's own schedule
+# copies the committed files). On the Mac this block ran `git credential fill`, which exits 128 on a runner under
+# set -e -o pipefail — the first cloud run (39461054433) published, then went red right here.
+if [ "${GITHUB_ACTIONS:-}" = "true" ]; then echo "published; the pipeline's schedule picks it up (no dispatch from Actions)"; STATUS="published"; exit 0; fi
 TOKEN=$(printf 'protocol=https\nhost=github.com\n\n' | git credential fill 2>/dev/null | sed -n 's/^password=//p')
 if [ -n "${TOKEN:-}" ]; then
   curl -s -o /dev/null -w "pipeline dispatch -> HTTP %{http_code}\n" \

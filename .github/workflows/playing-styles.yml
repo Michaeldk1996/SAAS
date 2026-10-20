@@ -1,0 +1,32 @@
+# Playing styles + matchup matrix + hold/break + situational → committed JSON. Moved off the Mac (founder ruling
+# 2026-10-20: the Mac's GitHub token expires 25 Oct, not renewed until January). Sources, all reachable from a hosted
+# runner: raw.githubusercontent.com TML-Database + MatchChartingProject (probe run 39449256066: 206, real CSV),
+# api-tennis (API_TENNIS_KEY, the pipeline's own daily source), and our own deployed site.
+# Runs COLD each day (no actions/cache): the Mac's caches are ~630 MB and the repo's 10 GB cache ceiling is shared with
+# the pipeline. tools/refresh-playing-styles.sh's own regression gates (total ≥ 95% of yesterday, ≥ 190 tour, ≥ 700
+# Challenger, ≥ 200 labelled) refuse to publish a short cold run — the run goes red and yesterday's files stay.
+name: playing-styles
+on:
+  schedule:
+    - cron: '30 22 * * *'         # the Mac's slot (06:30 UTC+8)
+  workflow_dispatch:
+concurrency:
+  group: playing-styles
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  styles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24', cache: 'npm' }
+      - run: npm ci
+      - name: Refresh playing styles (gated; commits + pushes only on a change)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          DOTENV_CONFIG_QUIET: 'true'
+        run: bash tools/refresh-playing-styles.sh

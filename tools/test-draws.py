@@ -187,12 +187,23 @@ check("calendar: no id is ever guessed — events without one are listed, not fi
       "2026 Stockholm Open" in calj["articlesWithoutId"] and not any("Stockholm" in (t["article"] or "") for t in calj["tournaments"]))
 check("calendar: non-empty (>= 40 events with an id)", len(calj["tournaments"]) >= 40, len(calj["tournaments"]))
 
-# ── founder condition (2026-10-20): draws.json publishes, but NO page reads it until the draw view / W/UE quarters
-#    are approved. Approval flips this check deliberately; until then a reader appearing in shipped code is a failure.
+# ── founder rulings 2026-10-20: draws.json published as data only, then the W/UE quarters + BYE rows APPROVED (ruling
+#    7). So exactly ONE shipped reader: wue-sheet.js. The draw view is not approved yet — any other reader is a failure.
 shipped = [f for f in subprocess.run(["git", "ls-files", "-z", "*.html", "*.js"], cwd=ROOT, capture_output=True, text=True).stdout.split("\0") if f]
 readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/", ".")) and os.path.isfile(os.path.join(ROOT, f))
            and "draws.json" in open(os.path.join(ROOT, f), encoding="utf-8", errors="ignore").read()]
-check("no shipped page or script reads draws.json yet (awaiting the founder's UI approval)", readers == [], readers)
+check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7) + the Entry list tab (ruling 1)",
+      sorted(readers) == ["bsp-consult-dashboard.html", "wue-sheet.js"], readers)
+
+# ── draws.yml cadence clock (fixed 2026-10-20): the last run that FETCHED, never a skipped run ──
+spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))
+LFR = importlib.util.module_from_spec(spec3); spec3.loader.exec_module(LFR)
+runs = [{"id": 9, "run_started_at": "T3"}, {"id": 3, "run_started_at": "T2"}, {"id": 2, "run_started_at": "T1"}, {"id": 1, "run_started_at": "T0"}]
+st = {9: "skipped", 3: "skipped", 2: "skipped", 1: "success"}
+jobs = lambda r: [{"steps": [{"name": "Cadence gate", "conclusion": "success"}, {"name": "Build draws.json (fail-closed parser)", "conclusion": st[r["id"]]}]}]
+check("cadence clock: three skipped runs after a fetch → the FETCH's start time (skips never reset it)", LFR.last_fetch(runs, jobs) == "T0")
+check("cadence clock: the current run is excluded", LFR.last_fetch([{"id": 1, "run_started_at": "T0"}], jobs, exclude=1) == "")
+check("cadence clock: no fetching run on record → '' (the gate then goes)", LFR.last_fetch(runs[:3], jobs) == "")
 
 print(f"\n{P} passed, {F} failed")
 sys.exit(1 if F else 0)
