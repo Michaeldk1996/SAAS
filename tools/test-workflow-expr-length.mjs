@@ -66,9 +66,9 @@ export function scanText(text) {
 }
 
 export function defaultFiles(root = ROOT) {
-  const dir = path.join(root, '.github', 'workflows');
-  return [...fs.readdirSync(dir).filter((x) => /\.ya?ml$/.test(x)).sort().map((f) => path.join(dir, f)),
-    path.join(root, 'tools', 'te-store-repo', 'te-refresh.yml')];
+  // .github/workflows, and the store repo's workflow templates kept in tools/te-store-repo/ (GitHub parses them the same way)
+  const yml = (dir) => fs.readdirSync(dir).filter((x) => /\.ya?ml$/.test(x)).sort().map((f) => path.join(dir, f));
+  return [...yml(path.join(root, '.github', 'workflows')), ...yml(path.join(root, 'tools', 'te-store-repo'))];
 }
 
 // → { checked, fails: [message] }
