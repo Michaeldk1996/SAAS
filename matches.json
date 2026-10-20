@@ -5736,11 +5736,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/427_t-griekspoor.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/56893_m-schoenhaus.jpg",
     "oddsMovement": {
@@ -7082,7 +7088,10 @@
         "seenAt": "2026-10-20T09:14:03.490Z",
         "since": "2026-10-20T09:14:03.490Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12171791",
@@ -9270,11 +9279,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/949_m-navone.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/388_j-m-cerundolo.jpg",
     "oddsMovement": {
@@ -10665,7 +10680,10 @@
       "edgeVsPinnacleP1": -0.0607,
       "edgeVsPinnacleP2": 0.0607,
       "ts": "2026-10-18T13:29:41.819Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12171794",
@@ -182154,11 +182172,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2978_a-kovacevic.jpg",
     "oddsMovement": {
@@ -183608,7 +183626,10 @@
         "seenAt": "2026-10-20T07:51:23.908Z",
         "since": "2026-10-19T21:23:11.272Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172188",
