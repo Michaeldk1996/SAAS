@@ -141,3 +141,23 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
     flag; a Bye stays blank. **Test:** `test-ten401-f1a.mjs` f1.4.
   - **Footnote** reads "… a dash = not listed in the feed. Acceptance order, not seeding." (founder 634ea470: the dash
     marks a missing rank or a missing country). **Test:** `test-ten401-f1a.mjs` "footnote".
+
+## Draw (founder rulings 2026-10-20 item 2; 2026-10-21 items 8–13)
+- **Positions come only from `draws.json`** (the ATP Supervisor's sheet). A result is placed by its two players' own draw
+  slots (meet round = highest differing bit of (p−1) XOR (q−1)); an undecided slot is an empty placeholder, never a
+  guessed name. **Test:** `tools/test-draw-view.js`.
+- **A bye is a muted box in its first round** (Flashscore style): the seed, then "(Bye)" in `--text-label`; transparent
+  fill, `--edge-6`; no score, not clickable, never counted in the round's "x of n" (Almaty R32 reads "of 12"). Every
+  next-round slot has two feeders. *Supersedes the 2026-10-21 morning "no bye card" ruling.*
+- **Every player row carries a photo** from the profile chain (`photoCandidatesFor`: ATP headshot, then the Wikimedia
+  override), lazy; initials sit underneath, so a missing or failed photo shows initials — never a placeholder face.
+- **NEU** marks a blank country only on a sheet that prints countries for most of its field; on a sheet with no country
+  column (Brussels / Lyon qualifying) a blank is "not read" and gets no marker.
+- **A finished main-draw match opens an overlay** (`--backdrop` + blur, Esc / outside click / × close) with the box score
+  we hold: aces, double faults, 1st serve in, 1st / 2nd serve points won, break points saved / converted, winners, UE,
+  total points, W/UE, Dominance. **Test:** absent → "—", a feed 0 → `0`; the pipeline's `progressionBoxScore` reads
+  the feed's own match-period rows and never derives a value.
+- **A match in progress** shows the board's live set score and game score under a LIVE label, oriented to the card; it is
+  not clickable and not counted as played.
+- **Status line names both clocks:** "Results: {n} min ago" (progression `fetchedAt`) · "Draw sheet: {time}" (when the
+  sheet's content last changed, not when it was last checked).
