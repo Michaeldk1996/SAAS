@@ -253,7 +253,7 @@ test('C · all 12 nav glyphs are the design paths, element for element', () => {
 // (Night) carries the foundation values.
 const TOKENS_CSS = read('tokens.css');
 const FOUNDATION = { page: '#090B12', card: '#10131D', inner: '#171B28', selected: '#1B2031', 'tile-hover': '#141824',
-  text: '#FFFFFF', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
+  text: '#E7E9EE', 'text-soft': '#DDE0EA', 'text-label': '#A3AABE', bar: '#007AFF', 'bar-2': 'rgba(0,122,255,0.45)', link: '#6A9AF8',
   pro: '#2F52D6', 'pro-text': '#F2F3F7', pos: '#5CCB84', neg: '#E06266', 'serve-ball': '#EAF928',
   'edge-6': 'rgba(255,255,255,0.06)', 'edge-7': 'rgba(255,255,255,0.07)', 'edge-10': 'rgba(255,255,255,0.10)', 'edge-16': 'rgba(255,255,255,0.16)',
   'edge-24': 'rgba(255,255,255,0.24)', line: 'rgba(255,255,255,0.05)', track: 'rgba(255,255,255,0.06)', 'open-card': 'rgba(106,154,248,0.30)',

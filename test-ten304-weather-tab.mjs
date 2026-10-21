@@ -460,7 +460,7 @@ const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--te
   chipBd: 'var(--edge-16)', unavail: 'color-mix(in srgb, var(--text) 15%, transparent)',
   match: 'var(--text)', matchFill: 'var(--inner)', matchBd: 'var(--edge-24)', badgeInk: 'var(--text-soft)', badgeBd: 'var(--edge-16)' };
 // tokens.css Night values the roles above must resolve to
-const WX_NIGHT = { text: '#FFFFFF', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
+const WX_NIGHT = { text: '#E7E9EE', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
   bd: 'RGBA(255,255,255,0.06)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)', inner: '#171B28',
   dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#FFFFFF',
   amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
