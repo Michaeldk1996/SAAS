@@ -19,8 +19,8 @@ const early = [fx(1, '2026-10-07', '1/64-finals'), fx(2, '2026-10-09', '1/32-fin
 const late = [fx(4, '2026-10-13', '1/8-finals'), fx(5, '2026-10-15', 'Quarter-finals'), fx(6, '2026-10-17', 'Semi-finals'), fx(7, '2026-10-18', 'Final')];
 function harness(failEarly) {   // failEarly: how many times the first chunk fails before answering
   let earlyCalls = 0; const calls = [];
-  global.fetch = async (url) => {
-    calls.push(url);
+  global.fetch = async (url, opts) => {
+    calls.push(url); calls.opts = (calls.opts || []).concat([opts]);
     const start = /date_start=([\d-]+)/.exec(url)[1];
     if (start < '2026-10-13') { earlyCalls++; if (earlyCalls <= failEarly) throw new Error('fetch failed', { cause: Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' }) }); return { json: async () => ({ success: 1, result: JSON.parse(JSON.stringify(early)) }) }; }
     return { json: async () => ({ success: 1, result: JSON.parse(JSON.stringify(late)) }) };
@@ -42,6 +42,23 @@ function harness(failEarly) {   // failEarly: how many times the first chunk fai
   h = harness(0);
   t = await h.P.buildTournamentProgression('ATP Shanghai');
   check('a clean fetch: no partial key at all (the published shape is unchanged)', t && t.matches.length === 7 && !('partial' in t));
+  // A4 (founder 2026-10-21): the progression requests go out on a FRESH connection pool — a new Agent built from Node's
+  // global dispatcher class — never the pooled socket left idle through the ~9 min synchronous shard build (EPIPE).
+  const SYM = Symbol.for('undici.globalDispatcher.1'), had = globalThis[SYM];
+  let built = 0, closed = 0;
+  class FakeAgent { constructor() { built++; } close() { closed++; return Promise.resolve(); } }
+  globalThis[SYM] = new FakeAgent(); built = 0;
+  h = harness(0);
+  t = await h.P.buildTournamentProgression('ATP Shanghai');
+  const ds = (h.calls.opts || []).map(o => o && o.dispatcher);
+  check('every progression request carries ONE fresh dispatcher (a new Agent, not the global one), closed afterwards',
+    t && t.matches.length === 7 && ds.length >= 2 && ds.every(d => d instanceof FakeAgent && d !== globalThis[SYM] && d === ds[0]) && built === 1 && closed === 1,
+    `${ds.length} calls, built ${built}, closed ${closed}`);
+  globalThis[SYM] = undefined;
+  h = harness(0);
+  t = await h.P.buildTournamentProgression('ATP Shanghai');
+  check('no reachable global dispatcher → plain fetch (no options), the fetch still completes', t && t.matches.length === 7 && (h.calls.opts || []).every(o => o === undefined));
+  globalThis[SYM] = had;
   global.Date = RD;
   // ── on screen ──
   const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');

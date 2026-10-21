@@ -2813,6 +2813,16 @@ function average(nums) {
 // array means "queried fine, no fixtures".
 const _progressionFixturesCache = new Map();
 const PROGRESSION_CHUNK_RETRY_MS = process.env.PROGRESSION_CHUNK_RETRY_MS ? JSON.parse(process.env.PROGRESSION_CHUNK_RETRY_MS) : [0, 5000, 15000];   // first try + two retries per failed 7-day chunk (env override: tests)
+// Founder ruling 2026-10-21 (A4). The first progression chunk failed "fetch failed (cause: EPIPE write EPIPE)" in every
+// run once the cause was logged: it is the first api-tennis request after ~9 min of synchronous work (career-history
+// shards), and fetch hands it a pooled keep-alive socket the far end has already closed. The retry recovered every time;
+// this removes the dependence on it — the progression requests go out on a NEW connection pool (a fresh undici Agent,
+// the same class as Node's global dispatcher; Node ships undici but does not export it). If the global dispatcher is not
+// reachable the requests fall back to plain fetch, and the retry still covers them.
+function freshDispatcher() {
+  const G = globalThis[Symbol.for('undici.globalDispatcher.1')];
+  try { return G && typeof G.constructor === 'function' ? new G.constructor() : undefined; } catch (e) { return undefined; }
+}
 async function fetchProgressionFixtures(windowStart, today) {
   const dateStr = d => d.toISOString().split('T')[0];
   const cacheKey = `${dateStr(windowStart)}|${dateStr(today)}`;
@@ -2825,6 +2835,8 @@ async function fetchProgressionFixtures(windowStart, today) {
   // chunk is retried twice (5 s, 15 s); a chunk that still fails is recorded on the result as `failedRanges`, and
   // buildTournamentProgression marks every tournament built from that fetch `partial` (shown on screen).
   const failedRanges = [];
+  const fresh = freshDispatcher();
+  console.log(`Progression fixtures: ${fresh ? 'fresh connection pool' : 'shared connection pool (no fresh dispatcher available)'}`);
   for (let s = new Date(windowStart); s < today; s = new Date(s.getTime() + CHUNK_MS + 86400000)) {
     const e = new Date(Math.min(s.getTime() + CHUNK_MS, today.getTime()));
     const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&date_start=${dateStr(s)}&date_stop=${dateStr(e)}&event_type_key=265`;
@@ -2832,7 +2844,7 @@ async function fetchProgressionFixtures(windowStart, today) {
     for (const waitMs of PROGRESSION_CHUNK_RETRY_MS) {
       if (waitMs) await new Promise(r => setTimeout(r, waitMs));
       try {
-        const res = await fetch(url);
+        const res = await fetch(url, fresh ? { dispatcher: fresh } : undefined);
         const data = await res.json();
         if (Array.isArray(data.result)) {
           sanitizeFixtures(data.result);
@@ -2853,6 +2865,7 @@ async function fetchProgressionFixtures(windowStart, today) {
     }
     if (!ok) failedRanges.push({ from: dateStr(s), to: dateStr(e), reason: why });
   }
+  if (fresh) fresh.close().catch(() => {});
   const merged = anySuccess ? [...byKey.values()] : null;
   if (merged) merged.failedRanges = failedRanges;
   _progressionFixturesCache.set(cacheKey, merged);
