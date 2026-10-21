@@ -16,7 +16,7 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors, 
 
 | Layer | Detail |
 |---|---|
-| Frontend | Served live from the repo at `michaeldk1996.github.io/SAAS/`. The old single-file `bsp-consult-dashboard.html` is no longer the frontend — read the repo for the current entry point, don't assume |
+| Frontend | `bsp-consult-dashboard.html` is the live dashboard frontend, plus the scripts it loads (`player-profile-v2.js`, `esc-nav.js`, `live-tab.js`, …). `tools/site-code.sh` publishes it as the site's `index.html` at `michaeldk1996.github.io/SAAS/` |
 | Pipeline | `bsp-pipeline.js` (Node.js) — GitHub Actions cron `*/15 * * * *` |
 | Data files | `matches.json`, `tournament-profiles.json`, `tournament-progression.json`, `player-profiles.json` |
 | Odds | OddsAPI + Oddsapi (250s, broader coverage) + kibl + bet105 (The Odds API retired 2026-10-16) |
