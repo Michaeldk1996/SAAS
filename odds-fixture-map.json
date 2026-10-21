@@ -4544,8 +4544,8 @@
     },
     "12171793": {
       "fixtureId": null,
-      "mappedAt": "2026-10-21T18:31:06Z",
-      "missRuns": 29,
+      "mappedAt": "2026-10-21T19:31:14Z",
+      "missRuns": 30,
       "missSince": "2026-10-19T22:31:19Z",
       "orient": null,
       "p1": "H. Rune",
@@ -5167,6 +5167,24 @@
       "p2": "S. Wawrinka",
       "startTime": "2026-10-22T17:00:00.000Z",
       "tournamentId": 3097
+    },
+    "12173359": {
+      "fixtureId": "id1204593575621158",
+      "mappedAt": "2026-10-21T19:31:14Z",
+      "orient": "same",
+      "p1": "C. Chidekh",
+      "p2": "F. Cerundolo",
+      "startTime": "2026-10-23T09:45:00.000Z",
+      "tournamentId": 45935
+    },
+    "12173374": {
+      "fixtureId": "id1204195975620038",
+      "mappedAt": "2026-10-21T19:31:14Z",
+      "orient": "same",
+      "p1": "S. Tsitsipas",
+      "p2": "J. Duckworth",
+      "startTime": "2026-10-23T06:15:00.000Z",
+      "tournamentId": 41959
     }
   },
   "missAudit": {
@@ -5179,23 +5197,12 @@
       "observedSpanDays": 18.76,
       "projectedTtlUnitsPerDay": 2.2,
       "runs": 400,
-      "spentRuns": 152,
+      "spentRuns": 153,
       "ttlBitRuns": 42,
       "ttlBitShare": 0.105,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-03T00:16:26Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 13
-      },
       {
         "at": "2026-10-03T01:16:27Z",
         "fixturesUnitsSpent": 0,
@@ -9584,9 +9591,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 18
+      },
+      {
+        "at": "2026-10-21T19:31:14Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 2,
+        "upcoming": 19
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-21T18:31:06Z"
+  "updatedAt": "2026-10-21T19:31:14Z"
 }
