@@ -269,6 +269,19 @@ What the live build carries, for anything reading it directly: `build-info.json`
 
 ---
 
+## Merging your own PRs (founder standing rule, 2026-10-20)
+
+Replaces "nothing is merged without my approval". You may merge your own PR into main without asking when **all** hold:
+- it only implements something the founder has already approved or ruled on;
+- the full suite passes in a fresh clone (EXIT=0), `tools/clobber-check.sh` is clear, and the PR has no conflicts;
+- it changes no business or methodology decision (pricing, thresholds, labels, scoring, what data is shown or hidden)
+  beyond what was ruled.
+
+After every merge, tell the founder in one line: the PR number, what it does, and the commit.
+**Ask first** for: anything not approved, a failing or skipped check, deleting or rewriting archive data, or changes to
+secrets, payments or access. If the permission system blocks the merge, name once the exact setting the founder must
+change to allow it.
+
 ## Where the rest lives
 
 Surface-specific rulings moved out of this file so they load only when relevant:
