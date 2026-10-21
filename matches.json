@@ -3023,12 +3023,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 4,
+        "p2": 3
       }
     ],
     "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10869_d-prizmic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1079_d-dzumhur.jpg",
     "oddsMovement": {
@@ -4550,7 +4550,10 @@
       "edgeVsPinnacleP1": 0.0338,
       "edgeVsPinnacleP2": -0.0338,
       "ts": "2026-10-18T11:57:04.542Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12171887",
@@ -6083,17 +6086,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 5
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": null,
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2981_t-machac.jpg",
     "oddsMovement": {
@@ -7407,7 +7404,27 @@
         "seenAt": "2026-10-21T09:22:41.932Z",
         "since": "2026-10-21T08:21:58.720Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "2-6, 0-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 0,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12172015",
@@ -20713,11 +20730,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/438_a-mannarino.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2847_a-rublev.jpg",
     "oddsMovement": {
@@ -22025,7 +22048,10 @@
         "seenAt": "2026-10-21T09:22:41.932Z",
         "since": "2026-10-21T08:21:58.720Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172375",
@@ -25344,16 +25370,21 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 2
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveGameScore": "15 - 30",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2002_f-diaz-acosta.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "oddsMovement": {
@@ -27106,7 +27137,10 @@
       "edgeVsPinnacleP1": 0.001,
       "edgeVsPinnacleP2": -0.001,
       "ts": "2026-10-20T10:58:47.194Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172384",
@@ -29508,12 +29542,12 @@
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 4,
+        "p2": 5
       }
     ],
-    "liveGameScore": "0 - 0",
-    "liveServer": null,
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1317_m-damm.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1104_f-cerundolo.jpg",
     "oddsMovement": {
@@ -31082,7 +31116,10 @@
       "edgeVsPinnacleP1": -0.0633,
       "edgeVsPinnacleP2": 0.0633,
       "ts": "2026-10-20T20:54:18.248Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172581",
