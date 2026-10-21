@@ -6297,8 +6297,11 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     profiles[key].insights = buildPlayerInsights(profiles[key], tourAverage);
   }
 
-  fs.writeFileSync(PLAYER_PROFILE_CACHE_PATH,
-    JSON.stringify({ fetchedAt: new Date().toISOString(), players: cachedPlayers }, null, 2));
+  // Atomic (founder ruling 2026-10-21, A2): the cache file is saved to the Actions cache by its own step now — a
+  // half-written file must never be what a later run restores.
+  writeJsonAtomic(PLAYER_PROFILE_CACHE_PATH, { fetchedAt: new Date().toISOString(), players: cachedPlayers });
+  // tools/cache-save-decision.mjs reads this to decide whether the run's caches are worth saving
+  writeJsonAtomic('profile-build-stats.json', { builtAt: new Date().toISOString(), opponentsBuilt: built, reused, noStats: skippedNull, wrongSchema: wrongSchemaRejections });
   console.log(`Player profiles: ${Object.keys(seedProfiles).length} seed, `
     + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}, `
     + `wrong-schema ${wrongSchemaRejections}] `

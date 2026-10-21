@@ -107,6 +107,7 @@ trading-splits-divergence.json
 # bsp-pipeline.js reads/writes. Tracking them uncompressed is how the 57.4 MB
 # July-2026 v7 copy sat in the repo for 56 days as the silent cache-miss floor.
 player-profiles-cache.json
+profile-build-stats.json
 player-tournament-history.json
 
 # TEN-206 founder ruling 2026-09-18 (Q2): historical-match-stats.json joins them.
