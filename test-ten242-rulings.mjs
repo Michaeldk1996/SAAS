@@ -705,7 +705,8 @@ test('TEN-401 item 7: every overlay is a pop-up sheet over a content-area scrim;
   assert.match(sh, /class="tourx-closebtn"[^>]*background:var\(--inner\)/);
   assert.ok(!/border:1px solid var\(--edge-6\)/.test(sh), 'the sheet or its Close button still carries the old 6% panel edge');
   // Esc + outside click + the sidebar closer
-  assert.match(DASH, /if \(e\.key === 'Escape'\) tourxCloseOverlays\(\);/);
+  // Esc: a layer in the one handler (esc-nav.js, ESC brief 2026-10-21), open while any panel is
+  assert.match(DASH, /\{ id: 'tourx-overlay', z: \d+, isOpen: function\(\)\{ return !!\(tourxState\.speedPanel \|\| tourxState\.quotesPanel \|\| tourxState\.roiPanel\); \}, close: function\(\)\{ tourxCloseOverlays\(\); \} \}/);
   assert.match(DASH, /if \(scrim && e\.target === scrim\) tourxCloseOverlays\(\);/);
   assert.match(DASH, /\(\) => \{ if \(typeof tourxCloseOverlays === 'function'\) tourxCloseOverlays\(\); \}/);
   // quote avatars: initials grey on --inner, no edge

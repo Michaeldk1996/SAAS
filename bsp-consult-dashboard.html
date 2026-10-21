@@ -13,7 +13,7 @@
 <script src="./house-ratings.js"></script>
 <!-- TEN-437: the ONE head-to-head meeting list (window.H2HCore) — every H2H surface builds its meetings through it. -->
 <script src="./h2h-core.js"></script>
-<!-- ESC brief: the ONE Escape handler (window.SfEsc) and the detail-view origin stack (window.SfNav). -->
+<!-- ESC brief: the ONE Escape handler (window.SfEsc) and the detail-view origin stack (globalThis.SfNav). -->
 <script src="./esc-nav.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
@@ -2404,7 +2404,7 @@
     if (menu.classList.contains('open') && !menu.contains(e.target) && !chip.contains(e.target)) set(false);
   }, true);
   // Esc: one layer in the global handler (esc-nav.js). It hands focus back itself, so ownFocus.
-  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'acct-menu', z: 90, isOpen: function () { return menu.classList.contains('open'); }, close: function () {
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'acct-menu', z: 90, isOpen: function () { return menu.classList.contains('open'); }, close: function () {
       set(false);
       // a refocus after a mouse open would match :focus-visible and hold the rail open (review)
       if (kbOpen) chip.focus(); else if (menu.contains(document.activeElement) || chip.contains(document.activeElement)) document.activeElement.blur();
@@ -4812,8 +4812,8 @@ function sfCloseOverlays(){ (window.sfOverlayClosers || []).forEach(fn => { try 
   () => { const lv = document.getElementById('lvClose'); if (lv) lv.click(); },   // the Live tab modal's own ✕
   () => { if (typeof aOddsTipHide === 'function') aOddsTipHide(); });
 // ESC brief: the two page-level modals had no Esc; they join the one handler in esc-nav.js.
-(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'analysis-modal', z: 74, isOpen: () => !!document.getElementById('analysisModal')?.classList.contains('open'), close: () => closeAnalysisModal() });
-(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'fav-modal', z: 74, isOpen: () => !!document.getElementById('favModal')?.classList.contains('open'), close: () => closeModal() });
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'analysis-modal', z: 74, isOpen: () => !!document.getElementById('analysisModal')?.classList.contains('open'), close: () => closeAnalysisModal() });
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'fav-modal', z: 74, isOpen: () => !!document.getElementById('favModal')?.classList.contains('open'), close: () => closeModal() });
 // The poll loops a tab owns — started on entry, stopped on leaving. Shared by the sidebar and by SfNav's return.
 function sfSetTabLoops(tab){
   // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
@@ -4844,7 +4844,7 @@ function sfAnalysisModalState(){
   const t = document.querySelector('#aTabs .asidenav-item.active[data-atab]');
   return { id: _aOdds.m.id, tab: t ? t.dataset.atab : null };
 }
-window.sfNavHooks = {
+globalThis.sfNavHooks = {
   activeTab: sfActiveTab,
   subView(){
     const lv = document.getElementById('playerListView');
@@ -4857,12 +4857,12 @@ window.sfNavHooks = {
   reopenModal(s){ if (matches.some(x => x.id === s.id)) openAnalysisModal(s.id, s.tab); }
 };
 // The profile's on-screen Back link: the same return as Esc; with no recorded origin, the player list as before.
-function sfDetailBack(){ if (window.SfNav && SfNav.canBack()) SfNav.back(); else showPlayerList(); }
+function sfDetailBack(){ if (globalThis.SfNav && SfNav.canBack()) SfNav.back(); else showPlayerList(); }
 document.getElementById('mainNav').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
-  if (e.isTrusted) { sfCloseOverlays(); if (window.SfNav) SfNav.clear(); }   // the reader's own click starts a fresh trail
-  else if (window.SfNav) SfNav.preNav();   // the app's own jump: remember where it jumped from, before the tab changes
+  if (e.isTrusted) { sfCloseOverlays(); if (globalThis.SfNav) SfNav.clear(); }   // the reader's own click starts a fresh trail
+  else if (globalThis.SfNav) SfNav.preNav();   // the app's own jump: remember where it jumped from, before the tab changes
   // TEN-384 fx2 item 2: leaving the page cancels a profile mount still waiting on its first paint.
   if (typeof pp2CancelPendingMount === 'function') pp2CancelPendingMount();
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
@@ -5284,7 +5284,7 @@ document.addEventListener('click', ev => {
     if (open){ const s = d.querySelector('.sf-dd-row.sel'); if (s) s.scrollIntoView({ block: 'nearest' }); } return; }
   sfDdClose();
 });
-(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'sf-dd', z: 90, isOpen: () => !!document.querySelector('.sf-dd.open'), close: () => sfDdClose() });   // Esc: esc-nav.js
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'sf-dd', z: 90, isOpen: () => !!document.querySelector('.sf-dd.open'), close: () => sfDdClose() });   // Esc: esc-nav.js
 document.addEventListener('keydown', ev => {
   const d = document.querySelector('.sf-dd.open'); if (!d) return;
   const rows = [...d.querySelectorAll('.sf-dd-row')]; let i = rows.findIndex(r => r.classList.contains('kb'));
@@ -5502,7 +5502,7 @@ function newsTourRegistryKey(k){
 }
 function newsOpenTournament(key){
   if (typeof tourxState === 'undefined') return;
-  if (window.SfNav) SfNav.push('tournaments');
+  if (globalThis.SfNav) SfNav.push('tournaments');
   tourxState.section = 'overview'; tourxState.tsSel = key; tourxState.tsQ = ''; tourxState.tsOpen = false;
   const b = document.querySelector('#mainNav button[data-tab="tournaments"]');
   if (b) b.click();
@@ -8489,7 +8489,7 @@ function openPlayerProfileFromMatch(key){
 // reads as a dead click — then opens the Edge Model page for this exact match.
 function openEdgeModelFromMatch(id){
   if (id == null) return;
-  if (window.SfNav) SfNav.push('edge');   // before the modal closes, so the return re-opens it
+  if (globalThis.SfNav) SfNav.push('edge');   // before the modal closes, so the return re-opens it
   if (typeof closeAnalysisModal === 'function') closeAnalysisModal();
   if (typeof openEdgeModel === 'function') openEdgeModel(id);
 }
@@ -13009,7 +13009,7 @@ function maSeg(style, items, o){
 //      variant ('std' | 'mv', below), enter (false = no entrance: a re-render of an open frame), label (aria-label),
 //      stop (the box stops click propagation), titleAttrs / xAttrs (raw attributes on the title / ✕) }.
 // The overlay fades in (120ms, .ma-fade); the box enters with sigIn (200ms, .ma-sigin). Outside click =
-// a click whose target is the overlay itself; Esc = maPopEscKey (one listener, the topmost frame).
+// a click whose target is the overlay itself; Esc = maPopEscKey via the ma-pop layer (esc-nav.js), the topmost frame.
 // The file draws two frame geometries; each is one variant key (TEN-366, DoD item 8: variant geometry is a parameter,
 // never a second renderer). std = README §4.4 / DF L1485–1560 (Overview, Market edge). mv = the Odds movement pop-up,
 // DF L1906–1915: centred, 1080 wide, radius 18, raised surface + shadow, the box scrolls (not the scrim), an 18px title
@@ -13039,12 +13039,15 @@ function maPopFrame(o){
 }
 // Esc closes the topmost frame through its own ✕. Bubble phase: while the stats sheet is open on top, its
 // capture-phase handler closes the sheet and stops the event, so one Escape never closes both.
-function maPopTopX(){
+function maPopEscKey(ev){
+  if (!ev || ev.key !== 'Escape') return;
   const all = document.querySelectorAll('.ma-pop-overlay');
   const top = all && all.length ? all[all.length - 1] : null;
-  return top && top.querySelector('.ma-pop-x');
+  const x = top && top.querySelector('.ma-pop-x');
+  if (x) x.click();
 }
-(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'ma-pop', z: 78, isOpen: () => !!maPopTopX(), close: () => { const x = maPopTopX(); if (x) x.click(); } });   // Esc: esc-nav.js
+// Bound through the one Esc handler (esc-nav.js), below the stats sheet (fh-sheet, z 80) and above the modal.
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'ma-pop', z: 78, isOpen: () => !!document.querySelector('.ma-pop-overlay .ma-pop-x'), close: () => maPopEscKey({ key: 'Escape' }) });
 // A re-render of a frame that is already open (a scope switch inside it) must not replay the entrance.
 function maPopNoReplay(host){ if (host) host.querySelectorAll('.ma-sigin, .ma-fade').forEach(el => el.classList.remove('ma-sigin', 'ma-fade')); }
 
@@ -15326,7 +15329,7 @@ function fhSheetInit(e, r, slot){
   });
 }
 
-(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'fh-sheet', z: 80, isOpen: () => typeof _fh !== 'undefined' && !!(_fh && _fh.sheet), close: () => fhCloseSheet() });   // Esc: esc-nav.js — above the pop-ups and the modal
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'fh-sheet', z: 80, isOpen: () => typeof _fh !== 'undefined' && !!(_fh && _fh.sheet), close: () => fhCloseSheet() });   // Esc: esc-nav.js — above the pop-ups and the modal
 
 // =====================================================================
 // TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB. Design: handoff/Market Edge (`Market Edge Tab.dc.html`,
@@ -17583,7 +17586,7 @@ function initAOddsTips(){
   // stopped (TEN-335): with a tooltip ON SCREEN, one Esc closes only the tooltip; the next reaches the Odds pop-up
   // (maPopEscKey). A pending tip, or one inside a closed modal, is hidden but never swallows the Esc.
   // Folded into esc-nav.js: `always` hides a pending tip on every press without taking it.
-  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'ao-tip', z: 100, isOpen: () => { const t = document.getElementById('aoddsTip'); return !!(_aoTipFor && t && t.style.display === 'block' && t.getClientRects().length); }, close: () => aOddsTipHide(), always: () => { if (_aoTipFor) aOddsTipHide(); } });
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'ao-tip', z: 100, isOpen: () => { const t = document.getElementById('aoddsTip'); return !!(_aoTipFor && t && t.style.display === 'block' && t.getClientRects().length); }, close: () => aOddsTipHide(), always: () => { if (_aoTipFor) aOddsTipHide(); } });
 }
 
 // Interaction handlers — each re-renders the section (state lives in _aOdds).
@@ -19553,7 +19556,7 @@ function printAnalysisReport(){
 
 // Closing leaves no layer behind: the stats sheet and any Market edge pop-up go too (a hidden pop-up would keep
 // answering Esc anywhere on the site — review 2026-09-28).
-function closeAnalysisModal(){ if (window.SfNav) SfNav.noteModalClosed(sfAnalysisModalState()); document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
+function closeAnalysisModal(){ if (globalThis.SfNav) SfNav.noteModalClosed(sfAnalysisModalState()); document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
 function setActiveButton(groupEl, clickedBtn){
   groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');
@@ -21634,7 +21637,7 @@ function ensurePpSplitDrawer(){
     </aside>`;
   document.body.appendChild(el);
   // One document-level Esc listener; it no-ops unless the drawer is open.
-  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'pp-split-drawer', z: 72, isOpen: () => !!ppSplitDrawerState.open, close: () => closePpSplitDrawer() });   // Esc: esc-nav.js
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'pp-split-drawer', z: 72, isOpen: () => !!ppSplitDrawerState.open, close: () => closePpSplitDrawer() });   // Esc: esc-nav.js
   return el;
 }
 function closePpSplitDrawer(){
@@ -22808,7 +22811,7 @@ function showPlayerProfile(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return;
   // ESC brief: remember the view this profile was opened from (not for a re-open of the profile already showing).
-  if (window.SfNav && !(ppState.key === String(key) && document.getElementById('playerListView').style.display === 'none')) SfNav.push('players');
+  if (globalThis.SfNav && !(ppState.key === String(key) && document.getElementById('playerListView').style.display === 'none')) SfNav.push('players');
   // v2 first; a false return (module absent, key unknown) falls through to the
   // legacy renderer rather than leaving the reader on a blank page.
   if (pp2FlagOn() && showPlayerProfileV2(key)) return;
@@ -25860,7 +25863,7 @@ function tourxRoiPanelHtml(){
 // click that started inside the panel). Bound once, at document level, because
 // the overlay markup is re-rendered on every state change.
 (function tourxBindOverlayDismissal(){
-  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'tourx-overlay', z: 75, isOpen: function(){ return !!(tourxState.speedPanel || tourxState.quotesPanel || tourxState.roiPanel); }, close: function(){ tourxCloseOverlays(); } });   // Esc: esc-nav.js
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'tourx-overlay', z: 75, isOpen: function(){ return !!(tourxState.speedPanel || tourxState.quotesPanel || tourxState.roiPanel); }, close: function(){ tourxCloseOverlays(); } });   // Esc: esc-nav.js
   document.addEventListener('mousedown', function(e){
     const scrim = e.target.closest && e.target.closest('[data-tourx-scrim]');
     if (scrim && e.target === scrim) tourxCloseOverlays();
@@ -27909,7 +27912,7 @@ function tourxMatchSheetHtml(T, name, idx){
     </div>`;
 }
 (function tourxBindMatchSheetDismissal(){
-  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'tourx-ms', z: 76, isOpen: function(){ return !!tourxState.msSheet; }, close: function(){ tourxCloseMatchSheet(); } });   // Esc: esc-nav.js
+  (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'tourx-ms', z: 76, isOpen: function(){ return !!tourxState.msSheet; }, close: function(){ tourxCloseMatchSheet(); } });   // Esc: esc-nav.js
   document.addEventListener('mousedown', function(e){
     const scrim = e.target.closest && e.target.closest('[data-tourx-ms-scrim]');
     if (scrim && e.target === scrim) tourxCloseMatchSheet();
@@ -29364,7 +29367,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (w && w.contains(e.target)) return;
       setState({ tourOpen: false, tourQuery: '' });
     });
-    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'db-tour-picker', z: 90, isOpen: () => !!state.tourOpen, close: () => setState({ tourOpen: false, tourQuery: '' }) });   // Esc: esc-nav.js
+    (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'db-tour-picker', z: 90, isOpen: () => !!state.tourOpen, close: () => setState({ tourOpen: false, tourQuery: '' }) });   // Esc: esc-nav.js
   }
   const cCap1 = s => (s ? String(s).charAt(0).toUpperCase() + String(s).slice(1).toLowerCase() : '');
   // the catalog's 'ATP 1000' reads 'Masters 1000' — the word the ledgers' event meta (psTourMeta) and the reference use
@@ -29833,7 +29836,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (state.bOpen && !inB) { state.bOpen = false; state.bQuery = ''; ch = true; }
       if (ch && !(t && t.closest('#h2hRoot [data-hid]'))) render();
     }, true);
-    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'h2h-picker', z: 90, isOpen: () => { if (!state.aOpen && !state.bOpen) return false; const root = rootEl(); return !!(root && root.offsetParent); }, close: () => setState({ aOpen: false, bOpen: false, aQuery: '', bQuery: '' }) });   // Esc: esc-nav.js
+    (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'h2h-picker', z: 90, isOpen: () => { if (!state.aOpen && !state.bOpen) return false; const root = rootEl(); return !!(root && root.offsetParent); }, close: () => setState({ aOpen: false, bOpen: false, aQuery: '', bQuery: '' }) });   // Esc: esc-nav.js
   }
 
   // TEN-402 Data 7 / L-default H5 — Suggested matchups = real pairs from this week's draws: the board's ATP main-draw
@@ -34562,7 +34565,7 @@ window.DatabaseTab = (function(){
         if(prev) use(prev);
       };
       document.addEventListener('click', dismiss);
-      (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'db-filter-menu', z: 90, isOpen: function(){ return INSTANCES.some(function(i2){ return i2.root && document.contains(i2.root) && (i2.state.menu!==null || i2.state.tq || i2.state.pq || i2.state.ratQ || i2.state.lnQ); }); }, close: function(){ dismiss(); } });   // Esc: esc-nav.js
+      (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'db-filter-menu', z: 90, isOpen: function(){ return INSTANCES.some(function(i2){ return i2.root && document.contains(i2.root) && (i2.state.menu!==null || i2.state.tq || i2.state.pq || i2.state.ratQ || i2.state.lnQ); }); }, close: function(){ dismiss(); } });   // Esc: esc-nav.js
     }
   }
 
@@ -35858,7 +35861,7 @@ ${modalHtml}`;
 }
 
 // Esc closes the open sheet (TEN-417).
-(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'live-sheet', z: 76, isOpen: ()=>ST.sel!=null&&!!document.getElementById('lvOverlay'), close: ()=>setState({sel:null}) });   // Esc: esc-nav.js
+(globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'live-sheet', z: 76, isOpen: ()=>ST.sel!=null&&!!document.getElementById('lvOverlay'), close: ()=>setState({sel:null}) });   // Esc: esc-nav.js
 
 // ── init ──────────────────────────────────────────────────────────────────────
 // This is an INLINE script, so it runs during parse — before the deferred

@@ -70,6 +70,8 @@ function boot(opts = {}) {
   // The canonical event table is tested where it lives (TEN-402); here it is the two names this fixture needs.
   vm.runInContext(`const SF_TEST = { Shanghai: 'Shanghai Masters' }; function sfEventName(raw){ return SF_TEST[raw] || raw; }\n${HELPERS}`, ctx);
   if (opts.rail) vm.runInContext(RAIL, ctx);
+  // ESC brief 2026-10-21: Esc is the page's ONE handler (esc-nav.js); the sheet registers a layer on it.
+  vm.runInContext(readFileSync(join(HERE, 'esc-nav.js'), 'utf8'), ctx);
   vm.runInContext(LIVE_BLOCK, ctx);
   vm.runInContext(readFileSync(join(HERE, 'live-tab.js'), 'utf8'), ctx);
   const LF = window.LiveFeed;
@@ -85,7 +87,7 @@ function boot(opts = {}) {
     open(ek) { handlers.cards[ek](); },
     click(attr, val) { handlers.overlay({ target: target(attr, val) }); },
     backdrop() { handlers.overlay({ target: null, get _() { return 0; } }); },
-    esc() { handlers.keydown.forEach(f => f({ key: 'Escape' })); },
+    esc() { handlers.keydown.forEach(f => f({ key: 'Escape', preventDefault() {}, stopImmediatePropagation() {} })); },
   };
 }
 const text = h => h.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();

@@ -218,4 +218,4 @@
     root.document.addEventListener('keydown', onTrigger, true);
   }
   if (typeof module !== 'undefined' && module.exports) module.exports = { SfEsc: SfEsc, SfNav: SfNav };
-})(typeof window !== 'undefined' ? window : globalThis);
+})(typeof globalThis !== 'undefined' ? globalThis : window);   // the page registers on globalThis (=== window in a browser)

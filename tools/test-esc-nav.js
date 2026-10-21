@@ -232,12 +232,29 @@ const HTML_FILE = 'bsp-consult-dashboard.html';
 const HTML = fs.readFileSync(path.join(ROOT, HTML_FILE), 'utf8');
 const scripts = [...HTML.matchAll(/<script src="\.?\/?([^"]+\.js)"/g)].map(m => m[1]);
 t('F1 no surface binds its own Escape listener', () => {
+  // A listener is any keydown binding (addEventListener or an inline onkeydown) whose handler mentions Escape / 27 —
+  // inline, or by name (the named function's body). A function that only CLOSES a layer (maPopEscKey, onKey kept for
+  // a harness) is not a listener as long as nothing binds it.
+  const ESC = /['"]Escape['"]|\b27\b/;
   const hits = [];
   for (const f of [HTML_FILE, ...new Set(scripts)].filter(f => f !== 'esc-nav.js')) {
-    fs.readFileSync(path.join(ROOT, f), 'utf8').split('\n').forEach((line, i) => {
-      if (/(key|keyCode|which)\s*[!=]==?\s*(['"]Escape['"]|27\b)/.test(line)
-        && !/function onKey\(e\) \{ if \(e && e\.key === 'Escape'\) escStep\(\); \}/.test(line)) hits.push(`${f}:${i + 1}`);
-    });
+    const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+    const lineOf = i => src.slice(0, i).split('\n').length;
+    for (const m of src.matchAll(/addEventListener\(\s*['"]keydown['"]\s*,\s*/g)) {
+      const at = m.index + m[0].length;
+      const named = /^([A-Za-z_$][\w$]*)\s*[,)]/.exec(src.slice(at, at + 80));
+      let body = src.slice(at, at + 500);
+      if (named) {
+        const def = src.search(new RegExp(`function ${named[1].replace(/\$/g, '\\$')}\\s*\\(`));
+        body = def >= 0 ? src.slice(def, def + 500) : '';
+      } else {
+        // an inline handler: up to its own closing `});` (or the window), so a neighbour's Escape is not counted
+        const end = body.search(/\n\s*\}\s*(,\s*true\s*)?\);/);
+        if (end > 0) body = body.slice(0, end);
+      }
+      if (ESC.test(body)) hits.push(`${f}:${lineOf(m.index)}`);
+    }
+    for (const m of src.matchAll(/onkeydown="[^"]*"/g)) if (/Escape|Esc'/.test(m[0])) hits.push(`${f}:${lineOf(m.index)} (onkeydown)`);
   }
   assert.deepStrictEqual(hits, [], 'Escape is handled only in esc-nav.js');
 });

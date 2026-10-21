@@ -15,7 +15,7 @@ const MUTANTS = [
   ['card: dead hover (edge inline again)', "<div class=\"lvcard\" data-open=\"${e(m.ek)}\" style=\"background:var(--card);", "<div class=\"lvcard\" data-open=\"${e(m.ek)}\" style=\"background:var(--card);border:1px solid transparent;"],
   ['sheet: opens on Stats', "setState({sel:ek,tab:'Ratings',scope:'MATCH',pset:1,hb:'HOLD'});", "setState({sel:ek,tab:'Stats',scope:'MATCH',pset:1,hb:'HOLD'});"],
   ['sheet: state carried between opens', "setState({sel:ek,tab:'Ratings',scope:'MATCH',pset:1,hb:'HOLD'});", "setState({sel:ek});"],
-  ['sheet: no Esc', "if(ev.key==='Escape'&&ST.sel!=null", "if(ev.key==='Esc'&&ST.sel!=null"],
+  ['sheet: no Esc', "isOpen: ()=>ST.sel!=null&&!!document.getElementById('lvOverlay')", "isOpen: ()=>false&&ST.sel!=null&&!!document.getElementById('lvOverlay')"],
   ['sheet: "· serving" while interrupted', "(m.serving===side&&liveM?' · serving':'')", "(m.serving===side?' · serving':'')"],
   ['stats: only MATCH + the current set', ".concat(m.sets.map((_,i)=>({id:i+1,per:'set'+(i+1),label:'SET '+(i+1),name:'Set '+(i+1)})))", ".concat([{id:m.sets.length,per:'set'+m.sets.length,label:'SET '+m.sets.length,name:'Set '+m.sets.length}])"],
   ['stats: lead colour inverted', "aColor:aNull?MISS:(aLead?INK:'var(--text-soft)')", "aColor:aNull?MISS:(aLead?'var(--text-soft)':INK)"],

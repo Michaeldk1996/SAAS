@@ -3975,6 +3975,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // (TEN-310) is the Market edge compute both surfaces share; HouseRatings (TEN-327) is the one
   // Serve / Return rating helper every surface shares.
   // sfOverlayClosers (TEN-376 S1): the shell's list of overlay-close functions a sidebar click runs — functions, no rows.
+  // sfEscLayers (ESC brief 2026-10-21): the same kind of list for the one Esc handler (esc-nav.js) — functions, no rows.
   // TEN-384 fx2: TournamentIdentity is the builders' canonical-name table (logic, no rows); marketEdgePending is
   // the host's in-flight flag per market-edge shard (a loading state, no rows — the shard itself is marketEdge).
   // TEN-384 fx5: tourHistPending is the same in-flight flag for the tournament-history shard (the rows land on
@@ -3982,7 +3983,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // TEN-391: careerSplitsPending is the same in-flight flag for a player's career-splits file (the rows land on
   // careerSplits[key]).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
-    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending']);
+    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending', 'sfEscLayers']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call
@@ -3995,7 +3996,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // Next match (pp2NextMatchFor, today's fixture feed) and the avatar photo chain (photoCandidatesFor) are host
   // logic, not data stores. TEN-384 fx4: pp2LiveRank is the host's live-standings read (pp2LiveRankOf over
   // player-index.json) — the SAME function the Players card ranks with, so the header and the card agree.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'sfDetailBack', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
     'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank',
     // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
     'pp2ClosesOf', 'pp2CareerClose',

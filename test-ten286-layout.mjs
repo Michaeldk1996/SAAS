@@ -378,7 +378,8 @@ test('no colour value is hard-coded in a style attribute (was: the 12a tokeniser
 test('S1: a trusted sidebar click runs every registered overlay closer; each overlay module registers one', () => {
   const dash = readFileSync(new URL('./bsp-consult-dashboard.html', import.meta.url), 'utf8');
   const nav = dash.slice(dash.indexOf("document.getElementById('mainNav').addEventListener('click'"));
-  assert.match(nav.slice(0, 400), /if \(!btn\) return;\s*if \(e\.isTrusted\) sfCloseOverlays\(\);/, 'the nav handler closes overlays on trusted clicks only');
+  // ESC brief 2026-10-21: the same trusted click also clears the Esc return trail (SfNav), still inside the trusted branch
+  assert.match(nav.slice(0, 400), /if \(!btn\) return;\s*if \(e\.isTrusted\) \{ sfCloseOverlays\(\);/, 'the nav handler closes overlays on trusted clicks only');
   assert.ok(!/data-sf-theme-switch/.test(dash.slice(dash.indexOf('<nav class="sf-nav" id="mainNav">'), dash.indexOf('</nav>', dash.indexOf('<nav class="sf-nav" id="mainNav">')))),
     'the theme switch is outside #mainNav, so it leaves the modal open');
   const REG = '(window.sfOverlayClosers = window.sfOverlayClosers || []).push(';

@@ -178,7 +178,9 @@ ok('sheet CSS: --card + 1px --edge-10 + --shadow-modal; scrim --backdrop + blur(
    /\.tourx-mssheet\{[^}]*background:var\(--card\);[^}]*border:1px solid var\(--edge-10\);[^}]*box-shadow:var\(--shadow-modal\)/.test(css)
    && /inset:0 0 0 var\(--sf-side, 0px\);[^}]*background:var\(--backdrop\); backdrop-filter:blur\(3px\);[^}]*clip-path:inset\(0\)/.test(css));
 ok('the sheet registers its closer on window.sfOverlayClosers and closes on Esc',
-   /sfOverlayClosers = window\.sfOverlayClosers \|\| \[\]\)\.push\(tourxCloseMatchSheet\)/.test(html) && /if \(e\.key === 'Escape'\) tourxCloseMatchSheet\(\);/.test(html));
+   /sfOverlayClosers = window\.sfOverlayClosers \|\| \[\]\)\.push\(tourxCloseMatchSheet\)/.test(html)
+   // Esc: a layer in the one handler (esc-nav.js, ESC brief 2026-10-21), open while a match sheet is set
+   && /\{ id: 'tourx-ms', z: \d+, isOpen: function\(\)\{ return !!tourxState\.msSheet; \}, close: function\(\)\{ tourxCloseMatchSheet\(\); \} \}/.test(html));
 
 // ---- Player progression heat cells ----
 console.log('=== TEN-401 item 9: Player progression heat cells ===');

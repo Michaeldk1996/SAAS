@@ -420,7 +420,7 @@ test('"may start later" note on every match that is not first on court that day'
   assert.deepEqual(note(Object.assign({}, M, { time: '10:00' })), [], 'a tie with the first slot is first on court');
 });
 
-// Mutation: drop the Escape keydown listener from initAOddsTips (the shared TEN-303 tooltip).
+// Mutation: the shared TEN-303 tooltip's Esc layer closes nothing (registered in initAOddsTips, run by esc-nav.js).
 test('Escape closes the shared tooltip (open or pending)', () => {
   const T = buildTips(); T.api.initAOddsTips();
   const el = T.mkEl({ 'data-aotip': '<b>x</b>', tabindex: '0' });
@@ -431,12 +431,14 @@ test('Escape closes the shared tooltip (open or pending)', () => {
   T.fire('focusin', T.mkEl({ 'data-aotip': '<b>z</b>' })); T.key('Enter'); T.tick(250); assert.ok(T.tip(), 'other keys do nothing');
 });
 
-// TEN-335. Mutations: the tooltip's Esc listener in the bubble phase, or not stopped — one Esc would close the tooltip
-// AND the Odds pop-up under it (maPopEscKey, bubble phase), losing the layered dismissal; or stopped while the tooltip is
-// only pending / in a hidden modal (an Esc meant for the page is swallowed).
-test('Escape with a tooltip up is consumed by the tooltip (capture phase, stopped); with none it passes on', () => {
+// TEN-335. Mutations: the tooltip's Esc layer ranked at or below the pop-up, or never taking the press — one Esc would
+// close the tooltip AND the Odds pop-up under it (ma-pop, z 78), losing the layered dismissal; or taking it while the
+// tooltip is only pending / in a hidden modal (an Esc meant for the page is swallowed). Since the ESC brief (2026-10-21)
+// every layer goes through esc-nav.js, which acts on ONE layer per press and stops the event only when it acts.
+test('Escape with a tooltip up is consumed by the tooltip (ranked above the pop-up, stopped); with none it passes on', () => {
   const T = buildTips(); T.api.initAOddsTips();
-  assert.deepEqual(T.keyCapture(), [true], 'the tooltip listens in the capture phase, ahead of maPopEscKey');
+  assert.deepEqual(T.keyCapture(), [], 'no keydown listener of its own: Esc is the one handler in esc-nav.js');
+  assert.ok(T.layer('ao-tip') && T.layer('ao-tip').z > 78, 'the tooltip layer ranks above the pop-up frame (ma-pop, z 78)');
   T.fire('mouseover', T.mkEl({ 'data-aotip': '<b>x</b>' })); T.tick(250);
   assert.equal(T.key('Escape').stopped, true, 'an open tooltip stops the Esc');
   assert.equal(T.tip(), null, 'and closes');
