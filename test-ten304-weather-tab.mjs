@@ -462,9 +462,9 @@ const WX_ROLE = { text: 'var(--text)', sub: 'var(--text-soft)', muted: 'var(--te
 // tokens.css Night values the roles above must resolve to
 const WX_NIGHT = { text: '#E7E9EE', sub: '#DDE0EA', muted: '#DDE0EA', dim: '#A3AABE', faint: '#A3AABE', card: '#10131D', lead: '#10131D',
   bd: 'RGBA(255,255,255,0.06)', box: 'RGBA(255,255,255,0.05)', rule: 'RGBA(255,255,255,0.05)', ruleFx: 'RGBA(255,255,255,0.05)', inner: '#171B28',
-  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#FFFFFF',
-  amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(255,255,255,0.15)',
-  match: '#FFFFFF', matchFill: '#171B28', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#DDE0EA', badgeBd: 'RGBA(255,255,255,0.16)' };
+  dashBd: 'RGBA(255,255,255,0.1)', tagBd: 'RGBA(255,255,255,0.1)', bar: 'RGBA(255,255,255,0.06)', amber: '#DDE0EA', red: '#E7E9EE',
+  amberBd: 'RGBA(255,255,255,0.06)', redBd: 'RGBA(255,255,255,0.06)', chipBd: 'RGBA(255,255,255,0.16)', unavail: 'RGBA(231,233,238,0.15)',
+  match: '#E7E9EE', matchFill: '#171B28', matchBd: 'RGBA(255,255,255,0.24)', badgeInk: '#DDE0EA', badgeBd: 'RGBA(255,255,255,0.16)' };
 test('Weather colours are foundation role tokens (no literal), resolving to the tokens.css Night values; borders 1px', () => {
   const C = build({}).WX_C, n = v => String(v).replace(/\s/g, '');
   assert.deepEqual(Object.keys(C).sort(), Object.keys(WX_ROLE).concat(['hw', 'hw1']).sort(), 'every colour is locked');
