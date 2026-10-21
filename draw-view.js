@@ -7,8 +7,8 @@
 // (matches[] main draw, qualifying[]); times of matches not yet played: matches.json first (refreshed every run), then
 // the progression's `scheduled` (both api-tennis, Central-European wall clock → shown in the viewer's zone by the
 // page's own apiStartMs). Clicking a finished match opens the site's one Match Analysis (openAnalysisModal, landing on
-// Match Stats → Key stats) — only when the board holds that match (`past-<eventKey>`); otherwise the card is not
-// clickable (founder 2026-10-21 round 3: one stats view on the site, never a second pop-up).
+// Match Stats → Key stats) — when the board or the draw store (draw-matches.json, all week) holds that match
+// (`past-<eventKey>`); otherwise the card is not clickable (founder 2026-10-21 round 3: one stats view, no pop-up).
 // Round 2 (founder 2026-10-21): bye boxes are back in R32 (muted, "(Bye)", never counted), every card carries the
 // profile photo chain's thumbnail (initials when there is none), a neutral athlete gets a NEU marker, a match in
 // progress shows the board's live score, and the status line says how fresh the results and the draw sheet are.
@@ -138,12 +138,15 @@ function sideRow(s, won, lost, games) {
     + `${avatarHtml(s)}${ioc}<span class="dv-name">${esc(shortName(s.name))}</span>${seed}${mark}`
     + `<span class="dv-sets">${sets}</span></div>`;
 }
-// The board row the Match Analysis opens for a finished draw match: matches.json keeps every finished match as
-// `past-<eventKey>` (4-day window, main draw only), so this is an exact key, never a name match. null → not clickable.
+// The id the Match Analysis opens for a finished draw match — an exact key, never a name match: the board's scored
+// `past-<eventKey>` row (matches.json, 4-day window, main draw only), else the draw store's copy of it (draw-matches.json,
+// kept all week — founder 2026-10-21 round 3). Neither → not clickable.
 function analysisIdFor(m) {
   if (!m || m.eventKey == null) return null;
   const id = `past-${m.eventKey}`;
-  return (S.board || []).some(b => b && b.id === id && b.finalScore) ? id : null;
+  if ((S.board || []).some(b => b && b.id === id && b.finalScore)) return id;
+  const e = S.drawStore && S.drawStore.matches && S.drawStore.matches[id];
+  return e && e.match && e.match.finalScore ? id : null;
 }
 function cardHtml(c, tz, kind) {
   const [A, B] = c.sides;
@@ -174,7 +177,7 @@ function fmtChanged(iso, tz) {
 }
 
 // state + data the page hands in
-const S = { city: null, kind: 'main', from: null, draws: null, prog: null, board: null, tz: undefined, el: null };
+const S = { city: null, kind: 'main', from: null, draws: null, prog: null, board: null, drawStore: null, tz: undefined, el: null };
 function cities() { return S.draws ? Object.values(S.draws.tournaments || {}).filter(t => t.main && t.main.status === 'posted').map(t => t.city).sort() : []; }
 function drawOf(city) { return Object.values((S.draws && S.draws.tournaments) || {}).find(t => t.city === city) || null; }
 function entryOf(city) { const t = S.prog && S.prog.tournaments; if (!t) return null; return t[city] || Object.values(t).find(e => e.feedName === city) || null; }

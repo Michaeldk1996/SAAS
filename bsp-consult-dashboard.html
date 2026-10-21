@@ -4846,7 +4846,7 @@ globalThis.sfNavHooks = {
   leave(dest){ sfCloseOverlays(); if (dest === 'players') showPlayerList(); },
   activateTab: sfActivateTabRaw,
   showSub(sub){ if (sub.kind === 'player') showPlayerProfile(sub.key); },
-  reopenModal(s){ if (matches.some(x => x.id === s.id)) openAnalysisModal(s.id, s.tab); }
+  reopenModal(s){ if (matchById(s.id)) openAnalysisModal(s.id, s.tab); }
 };
 // The profile's on-screen Back link: the same return as Esc; with no recorded origin, the player list as before.
 function sfDetailBack(){ if (globalThis.SfNav && SfNav.canBack()) SfNav.back(); else showPlayerList(); }
@@ -6448,6 +6448,7 @@ function psWireGridHover(card){
 // local server instead, e.g.: python3 -m http.server, then visit
 // http://localhost:8000/bsp-consult-dashboard.html
 let matches = [];
+let _drawMatchStore = null, _drawMatchStoreLoad = null;   // draw-matches.json (round 3): declared with the board, read by matchById
 let dataLoadedAt = null;
 let matchesLoadedOnce = false;
 
@@ -18473,7 +18474,9 @@ function kfModelCard(m){
   const C = KF_C, M = FH_MONO;
   const idAttr = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
   const surf = fhSurfName(m.surface);
-  const mo = typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches ? modelOutput.matches[m.id] : null;
+  // a finished draw match off the board: model-output.json no longer holds it, its draw-store copy does (round 3)
+  const ds = _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[m.id];
+  const mo = (typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches ? modelOutput.matches[m.id] : null) || (ds && ds.model) || null;
   const net = mo && mo.ok && mo.stage2 && mo.stage2.totalDeltaP1 != null ? Number(mo.stage2.totalDeltaP1) * 100 : null;
   const strong = (t, mono) => `<span style="${mono ? M : ''} font-weight:600; color:${C.text};">${t}</span>`;
   const netTxt = net == null ? `Net adjustment ${strong(FH_DASHC, true)}`
@@ -19435,8 +19438,16 @@ function maApplyTheme(){ return window.sfTheme ? window.sfTheme.apply() : 'night
 function maSetTheme(mode){ return window.sfTheme ? window.sfTheme.set(mode) : 'night'; }
 // `tab` (optional, an explicit link) opens on that tab; otherwise every open starts on Key factors — no last-used-tab
 // memory (founder Q26, 2026-09-30). Nothing else is built first.
+// The match a Match Analysis opens: the board's row, else the draw store's copy of a finished draw match the board has
+// dropped (round 3, founder 2026-10-21). null → nothing opens.
+function matchById(id){
+  const b = matches.find(x => x.id === id);
+  if (b) return b;
+  const e = _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[id];
+  return e && e.match && e.match.finalScore ? e.match : null;
+}
 function openAnalysisModal(matchId, tab){
-  const m = matches.find(x => x.id === matchId);
+  const m = matchById(matchId);
   if (!m) return;
 
   // Header (DF L87–109). The matchup strip is for not-completed matches only; a completed match leaves the
@@ -25664,11 +25675,22 @@ function tourxSetSection(v){ tourxState.section = v; renderTournamentsTab(); }
 // Item 2 (founder 2026-10-20): the Draw section. draws.json (official sheets, refreshed by draws.yml) + the page's own
 // tournament-progression.json (results, set scores, qualifying, today's fixtures) + matches.json (start times).
 let _tourxDraws = null, _tourxDrawsLoad = null;
+// Round 3 (founder 2026-10-21): draw-matches.json — every finished main-draw match's board row + model entry, kept after
+// the board's 4-day window, so a draw card still opens its Match Analysis all week. Loaded once, beside the draw; a
+// failed load leaves only the board's matches clickable (never an error on the page).
+function loadDrawMatchStore(){
+  if (_drawMatchStore || _drawMatchStoreLoad) return _drawMatchStoreLoad || Promise.resolve(_drawMatchStore);
+  _drawMatchStoreLoad = fetch('./draw-matches.json?_=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null)
+    .then(s => { _drawMatchStore = s && s.matches ? s : null; _drawMatchStoreLoad = null; return _drawMatchStore; });
+  return _drawMatchStoreLoad;
+}
 function tourxRenderDraw(){
   const el = document.getElementById('tourxDraw');
   if (!el || !window.DrawView) return;
   const mount = () => window.DrawView.mount(el, { draws: _tourxDraws, prog: (typeof tournamentProgression !== 'undefined' ? tournamentProgression : null),
-    board: (typeof matches !== 'undefined' ? matches : []), tz: (typeof newsTz === 'function' ? newsTz() : undefined) });
+    board: (typeof matches !== 'undefined' ? matches : []), drawStore: _drawMatchStore, tz: (typeof newsTz === 'function' ? newsTz() : undefined) });
+  // the store arriving after the draw re-mounts, so its cards become clickable (the draw itself never waits for it)
+  if (!_drawMatchStore) loadDrawMatchStore().then(s => { if (s && _tourxDraws && document.getElementById('tourxDraw') === el) mount(); });
   if (_tourxDraws) return mount();
   el.innerHTML = '<div class="dv-empty">Loading the official draw…</div>';
   _tourxDrawsLoad = _tourxDrawsLoad || fetch('./draws.json?_=' + Date.now(), { cache: 'no-store' }).then(r => (r.ok ? r.json() : null)).catch(() => null);

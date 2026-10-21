@@ -7843,6 +7843,72 @@ async function runPipeline() {
       }
     }
   }
+
+  // Draw matches store (founder 2026-10-21 round 3): LAST, after matches.json is final (the valueSnapshot patch above).
+  writeDrawMatchesStore(progressionTournaments, modelOut);
+}
+
+// ---- Draw matches store (founder 2026-10-21 round 3: "Yes" — keep finished draw matches openable all week) ----------
+// The board (matches.json) keeps a finished match for 4 days (founder 2026-08-08, Results rail), so a draw card's Match
+// Analysis would disappear mid-tournament. draw-matches.json keeps, per finished MAIN-DRAW match of this run's
+// progression, the board row exactly as matches.json published it plus its model entry (model-output.json drops a match
+// with the board; the Key factors card reads it). While the match is on the board the entry is refreshed every run; once
+// it leaves, the last copy is kept unchanged. An entry leaves the store DRAW_MATCHES_KEEP_DAYS after its match date
+// (a Slam fortnight fits). Two prior sources, merged — its own Actions cache (saved every run, pipeline.yml "draw
+// matches store") and the last published copy — newest savedAt per match wins. Nothing here calls an API.
+const DRAW_MATCHES_PATH = process.env.DRAW_MATCHES_PATH || 'draw-matches.json';
+const DRAW_MATCHES_PUBLISHED_PATH = 'draw-matches.published.json';
+const DRAW_MATCHES_KEEP_DAYS = 16;
+function buildDrawMatchesStore({ files, board, model, progression, nowIso }) {
+  const prior = new Map();
+  for (const f of files || []) {
+    for (const [id, e] of Object.entries((f && f.matches) || {})) {
+      if (!e || !e.match || !e.savedAt) continue;
+      const p = prior.get(id);
+      if (!p || Date.parse(e.savedAt) > Date.parse(p.savedAt)) prior.set(id, e);
+    }
+  }
+  const byId = new Map((board || []).filter(r => r && r.id && r.finalScore).map(r => [r.id, r]));
+  const out = {};
+  let fresh = 0, kept = 0;
+  for (const [tour, t] of Object.entries(progression || {})) {
+    for (const m of (t && t.matches) || []) {
+      if (!(m.winner === 1 || m.winner === 2) || m.eventKey == null) continue;
+      const id = `past-${m.eventKey}`, row = byId.get(id), p = prior.get(id);
+      if (row) {
+        const md = model && model[id];
+        out[id] = { id, eventKey: String(m.eventKey), tour, date: row.date || null, savedAt: nowIso, match: row,
+          model: md || (p && p.model) || null };
+        fresh++;
+      } else if (p) { out[id] = p; kept++; }
+    }
+  }
+  // a match no longer in this run's progression (its tournament ended, or this run's fetch missed it) keeps its entry
+  // until it ages out — never dropped because one run did not see it
+  const keepFrom = Date.parse(nowIso) - DRAW_MATCHES_KEEP_DAYS * 86400e3;
+  let aged = 0;
+  for (const [id, e] of prior) {
+    if (out[id]) continue;
+    const d = Date.parse((e.date || '') + 'T00:00:00Z');
+    if (Number.isFinite(d) && d >= keepFrom) { out[id] = e; kept++; } else aged++;
+  }
+  return { store: { v: 1, savedAt: nowIso, keepDays: DRAW_MATCHES_KEEP_DAYS, matches: out }, fresh, kept, aged };
+}
+function writeDrawMatchesStore(progression, modelOut) {
+  const read = f => { try { return JSON.parse(fs.readFileSync(f, 'utf8')); } catch (e) { return null; } };
+  const files = [read(DRAW_MATCHES_PATH), read(DRAW_MATCHES_PUBLISHED_PATH)];
+  try {
+    const board = read('matches.json') || [];
+    const { store, fresh, kept, aged } = buildDrawMatchesStore({ files, board, model: modelOut || {},
+      progression, nowIso: new Date().toISOString() });
+    writeJsonAtomic(DRAW_MATCHES_PATH, store, true);
+    console.log(`Wrote ${DRAW_MATCHES_PATH} — ${Object.keys(store.matches).length} finished draw match(es): ${fresh} from this run's board, ${kept} kept from earlier runs, ${aged} aged out (> ${DRAW_MATCHES_KEEP_DAYS} days). Prior sources: cache ${files[0] ? 'yes' : 'no'}, published ${files[1] ? 'yes' : 'no'}.`);
+  } catch (e) {
+    // never publish an empty store over a good one: carry the newest prior copy forward unchanged
+    const keep = files.filter(Boolean).sort((a, b) => Date.parse(b.savedAt || 0) - Date.parse(a.savedAt || 0))[0];
+    writeJsonAtomic(DRAW_MATCHES_PATH, keep || { v: 1, savedAt: null, keepDays: DRAW_MATCHES_KEEP_DAYS, matches: {} }, true);
+    console.warn(`${DRAW_MATCHES_PATH} not rebuilt (${e.message}) — ${keep ? 'the previous copy is published unchanged' : 'no previous copy: an empty store is published'}.`);
+  }
 }
 
 // ---- Tennis Edge Model: per-match model output + pre-baked AI summary ------
@@ -8147,7 +8213,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

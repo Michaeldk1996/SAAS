@@ -341,6 +341,24 @@ jobs:
           restore-keys: |
             model-prematch-v1-
 
+      # Draw matches store (founder 2026-10-21 round 3): every finished main-draw match's board row + model entry, kept
+      # after the board drops it (4 days) so a draw card still opens its Match Analysis. Same two sources as the model
+      # store: its own cache (saved every run, below) and the last published copy (next step).
+      - name: Restore the draw matches store
+        uses: actions/cache/restore@v4
+        with:
+          path: draw-matches.json
+          key: draw-matches-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            draw-matches-v1-
+      - name: Fetch the published draw matches store
+        run: |
+          if curl -sfL --retry 2 --max-time 60 -o draw-matches.published.json "https://michaeldk1996.github.io/SAAS/draw-matches.json?cb=$(date +%s)"; then
+            echo "published draw-matches.json: $(wc -c < draw-matches.published.json) bytes"
+          else
+            rm -f draw-matches.published.json; echo "::warning::no published draw-matches.json — the store carries the cache snapshot only"
+          fi
+
       # The last published copy: a second source for the store (and the only one on the first run after this shipped).
       # Fail-open: no copy = the store and the cache snapshot only, said in the step log.
       - name: Fetch the published model output (pre-match freeze source)
@@ -372,6 +390,14 @@ jobs:
       # this run fails visibly and publishes nothing (the site keeps the last good build). Same fetch, no race.
       - name: Live-card check (in-play matches must be carded)
         run: node tools/check-live-cards.mjs
+
+      # Round 3 (founder 2026-10-21): saved even when a later step fails, so a match off the board is never lost.
+      - name: Save the draw matches store
+        if: ${{ always() && hashFiles('draw-matches.json') != '' }}
+        uses: actions/cache/save@v4
+        with:
+          path: draw-matches.json
+          key: draw-matches-v1-${{ github.run_id }}-${{ github.run_attempt }}
 
       # TEN-437: saved even when a later step fails, so the next run never loses a pre-match prediction.
       - name: Save the model pre-match store
@@ -813,7 +839,7 @@ jobs:
           node tools/build-event-stat-coverage.js
           cp match-stat-event-coverage.json _site/
           cp admin.html admin-config.js _site/ 2>/dev/null || true
-          cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
+          cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json draw-matches.json _site/
           # TEN-391: career splits are ONE FILE PER PLAYER (career-splits/<key>.json, fetched
           # when a profile / the H2H page shows him) + the small tour file. Committed by the
           # local splits refresh (TA-sourced; CI can't fetch it). The old single
