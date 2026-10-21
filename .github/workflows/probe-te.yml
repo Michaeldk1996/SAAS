@@ -8,10 +8,10 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 70
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - run: bash tools/probe-te/run.sh
+      - run: python3 tools/probe-te/queue.py
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          OPS_TOKEN: ${{ secrets.WORKFLOW_PAT }}
+          STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
