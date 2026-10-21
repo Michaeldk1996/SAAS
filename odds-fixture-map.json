@@ -5134,6 +5134,26 @@
       "p2": "K. Khachanov",
       "startTime": "2026-10-22T08:00:00.000Z",
       "tournamentId": 41959
+    },
+    "12173221": {
+      "fixtureId": null,
+      "mappedAt": "2026-10-21T14:03:57Z",
+      "missRuns": 1,
+      "missSince": "2026-10-21T14:03:57Z",
+      "orient": null,
+      "p1": "D. Dzumhur",
+      "p2": "Z. Bergs",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12173254": {
+      "fixtureId": "id1204195975620036",
+      "mappedAt": "2026-10-21T14:03:57Z",
+      "orient": "same",
+      "p1": "N. Basilashvili",
+      "p2": "A. Mannarino",
+      "startTime": "2026-10-23T06:30:00.000Z",
+      "tournamentId": 41959
     }
   },
   "missAudit": {
@@ -5146,23 +5166,12 @@
       "observedSpanDays": 18.76,
       "projectedTtlUnitsPerDay": 2.1,
       "runs": 400,
-      "spentRuns": 148,
+      "spentRuns": 149,
       "ttlBitRuns": 40,
       "ttlBitShare": 0.1,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-02T18:46:38Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 13
-      },
       {
         "at": "2026-10-02T19:46:46Z",
         "fixturesUnitsSpent": 0,
@@ -9551,9 +9560,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 22
+      },
+      {
+        "at": "2026-10-21T14:03:57Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 2,
+        "upcoming": 22
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-21T13:05:33Z"
+  "updatedAt": "2026-10-21T14:03:57Z"
 }
