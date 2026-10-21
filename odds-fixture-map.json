@@ -4544,8 +4544,8 @@
     },
     "12171793": {
       "fixtureId": null,
-      "mappedAt": "2026-10-21T07:32:11Z",
-      "missRuns": 23,
+      "mappedAt": "2026-10-21T10:05:49Z",
+      "missRuns": 24,
       "missSince": "2026-10-19T22:31:19Z",
       "orient": null,
       "p1": "H. Rune",
@@ -4990,11 +4990,11 @@
     },
     "12172581": {
       "fixtureId": "id1200309775620272",
-      "mappedAt": "2026-10-19T21:32:40Z",
+      "mappedAt": "2026-10-21T10:05:49Z",
       "orient": "same",
       "p1": "M. Kouame",
       "p2": "L. Musetti",
-      "startTime": "2026-10-21T10:00:00.000Z",
+      "startTime": "2026-10-21T17:00:00.000Z",
       "tournamentId": 3097
     },
     "12172778": {
@@ -5134,17 +5134,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-02T14:15:17Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 11,
-        "ttlBit": false,
-        "unmapped": 11,
-        "upcoming": 13
-      },
       {
         "at": "2026-10-02T15:45:20Z",
         "fixturesUnitsSpent": 1,
@@ -9533,9 +9522,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 25
+      },
+      {
+        "at": "2026-10-21T10:05:49Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 23
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-21T07:32:11Z"
+  "updatedAt": "2026-10-21T10:05:49Z"
 }
