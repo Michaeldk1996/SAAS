@@ -9,6 +9,9 @@
 //                       sub-view, the modal, scroll; a return never records a new origin; a reader's sidebar click
 //                       clears the trail; a trail for a tab the reader has left is dropped, never replayed
 //   E · focus           the element that opened a layer gets focus back when Esc closes it
+//   G · Back label      the profile's Back link names its real destination per origin — Matches, Tournaments, Players,
+//                       any sidebar page; "Back" for a profile origin or an unnamed tab, never a wrong page name;
+//                       "Back to Players" only with no trail (the link then really goes to the list)
 //   F · the fold        no surface binds its own Escape listener any more; every layer is registered; the handler
 //                       loads in <head> before every other script; both Back links go through sfDetailBack; no
 //                       pushState anywhere (browser Back unchanged)
@@ -243,6 +246,54 @@ t('E2 a layer that returns focus itself (ownFocus) is left alone', async () => {
   assert.strictEqual(W.document.activeElement, inner);
 });
 
+// ── G · Back label ──────────────────────────────────────────────────────────────────────────────────────────────
+const NAMES = { matches: 'Matches', tournaments: 'Tournaments', players: 'Players', news: 'News', edge: 'Stennisfy Model' };
+const fromTab = (tab, extra = {}) => {
+  const W = world();
+  const H = hooks(W, Object.assign({ tab }, extra));
+  W.win.SfNav.push('players'); H.state.tab = 'players';
+  return { W, H };
+};
+for (const [tab, want] of [['matches', 'Back to Matches'], ['tournaments', 'Back to Tournaments'], ['players', 'Back to Players'],
+  ['news', 'Back to News'], ['edge', 'Back to Stennisfy Model']]) {
+  t(`G1 origin ${tab} → "${want}"`, () => assert.strictEqual(fromTab(tab).W.win.SfNav.backLabel(NAMES), want));
+}
+t('G2 origin a player profile → "Back" (a profile is not a page)', () => {
+  const { W } = fromTab('players', { sub: { kind: 'player', key: 'A' } });
+  assert.strictEqual(W.win.SfNav.backLabel(NAMES), 'Back');
+});
+t('G3 origin a tab with no known name → "Back", never a guessed page', () => {
+  assert.strictEqual(fromTab('mystery').W.win.SfNav.backLabel(NAMES), 'Back');
+  assert.strictEqual(fromTab('matches').W.win.SfNav.backLabel(null), 'Back');
+});
+t('G4 no trail → null (the caller names its own fallback); a stale trail is dropped, not named', () => {
+  const W = world(); hooks(W, { tab: 'players' });
+  assert.strictEqual(W.win.SfNav.backLabel(NAMES), null);
+  const { W: W2, H } = fromTab('matches'); H.state.tab = 'styles';
+  assert.strictEqual(W2.win.SfNav.backLabel(NAMES), null);
+});
+t('G5 the dashboard label: sidebar names per origin; "Back to Players" only with no trail', () => {
+  const H = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+  const at = H.indexOf('\nfunction sfDetailBackLabel(){');
+  assert.ok(at > 0, 'sfDetailBackLabel defined');
+  const src = H.slice(at, H.indexOf('\n}\n', at) + 3);
+  const nav = Object.entries(NAMES).map(([tab, n]) => ({ dataset: { tab }, getAttribute: k => (k === 'aria-label' ? n : null) }));
+  const run = SfNav => new Function('document', 'globalThis', 'SfNav', src + '\nreturn sfDetailBackLabel();')(
+    { querySelectorAll: s => (s === '#mainNav button[data-tab]' ? nav : []) }, { SfNav }, SfNav);
+  assert.strictEqual(run(fromTab('matches').W.win.SfNav), 'Back to Matches');
+  assert.strictEqual(run(fromTab('tournaments').W.win.SfNav), 'Back to Tournaments');
+  const W0 = world(); hooks(W0, { tab: 'players' });
+  assert.strictEqual(run(W0.win.SfNav), 'Back to Players', 'no trail: the link goes to the list');
+  assert.strictEqual(run(undefined), 'Back to Players', 'no SfNav at all: same fallback');
+});
+t('G6 both Back links print the label (escaped), not a fixed page name', () => {
+  const H = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+  assert.ok(/<span onclick="sfDetailBack\(\)"[^>]*>[\s\S]{0,200}\$\{escapeHtml\(sfDetailBackLabel\(\)\)\}<\/span>/.test(H), 'legacy link');
+  const v2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const body = v2.slice(v2.indexOf('function renderBackLink()'), v2.indexOf('function renderBackLink()') + 700);
+  assert.ok(/esc\(backLabel\(\)\) \+ '<\/a>'/.test(body) && !/'Back to Players<\/a>'/.test(body), 'v2 link');
+});
+
 // ── F · the fold, on the shipped files ─────────────────────────────────────────────────────────────────────────
 const HTML_FILE = 'bsp-consult-dashboard.html';
 const HTML = fs.readFileSync(path.join(ROOT, HTML_FILE), 'utf8');
@@ -289,7 +340,7 @@ t('F3 esc-nav.js loads in <head>, before every other script that registers a key
   assert.ok(at < HTML.indexOf('document.addEventListener(\'keydown\''), 'before the first inline keydown listener');
 });
 t('F4 both Back links go through sfDetailBack; no pushState (browser Back unchanged)', () => {
-  assert.ok(/<span onclick="sfDetailBack\(\)"[^>]*>[\s\S]{0,200}Back to Players/.test(HTML), 'legacy Back link');
+  assert.ok(/<span onclick="sfDetailBack\(\)"[^>]*>[\s\S]{0,200}sfDetailBackLabel\(\)/.test(HTML), 'legacy Back link');
   const v2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   assert.ok(/kind === 'back'\) \{[\s\S]{0,300}window\.sfDetailBack\(\)/.test(v2), 'v2 Back link');
   for (const f of [HTML_FILE, ...new Set(scripts)]) {

@@ -752,7 +752,13 @@
       'color:var(--text-label);align-self:flex-start;text-decoration:none;">' +
       '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
       'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>' +
-      'Back to Players</a>';
+      esc(backLabel()) + '</a>';
+  }
+  // The words name where the link really goes: the host's label (its Esc return trail, sfDetailBackLabel); with no host
+  // the click falls back to showPlayerList, so "Back to Players" is then the truth.
+  function backLabel() {
+    var l = typeof window.sfDetailBackLabel === 'function' ? window.sfDetailBackLabel() : null;
+    return l || 'Back to Players';
   }
 
   // §2 Header

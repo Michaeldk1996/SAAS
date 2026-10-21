@@ -4850,6 +4850,13 @@ globalThis.sfNavHooks = {
 };
 // The profile's on-screen Back link: the same return as Esc; with no recorded origin, the player list as before.
 function sfDetailBack(){ if (globalThis.SfNav && SfNav.canBack()) SfNav.back(); else showPlayerList(); }
+// Its label: the destination sfDetailBack will really go to. Page names are the sidebar's own labels; with no trail the
+// link falls back to the player list, so that is what it says.
+function sfDetailBackLabel(){
+  const names = {};
+  document.querySelectorAll('#mainNav button[data-tab]').forEach(b => { const n = b.getAttribute('aria-label'); if (n) names[b.dataset.tab] = n; });
+  return (globalThis.SfNav && SfNav.backLabel(names)) || 'Back to Players';
+}
 document.getElementById('mainNav').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
@@ -24048,7 +24055,7 @@ function buildPlayerProfileHtml(p){
 
   return `
   <div style="margin-bottom:16px;">
-    <span onclick="sfDetailBack()" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-label);cursor:pointer;"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.back}</span> Back to Players</span>
+    <span onclick="sfDetailBack()" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-label);cursor:pointer;"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.back}</span> ${escapeHtml(sfDetailBackLabel())}</span>
   </div>
   <style>
     @media (max-width: 1000px){

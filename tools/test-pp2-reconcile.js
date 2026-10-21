@@ -3996,7 +3996,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // Next match (pp2NextMatchFor, today's fixture feed) and the avatar photo chain (photoCandidatesFor) are host
   // logic, not data stores. TEN-384 fx4: pp2LiveRank is the host's live-standings read (pp2LiveRankOf over
   // player-index.json) — the SAME function the Players card ranks with, so the header and the card agree.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'sfDetailBack', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'sfDetailBack', 'sfDetailBackLabel', 'onPp2MatchPageOpen', 'trProfileBacking', 'trProfilePriceOf',
     'pp2OpenMatchSheet', 'pp2CloseMatchSheet', 'pp2EloFor', 'photoCandidatesFor', 'pp2NextMatchFor', 'pp2LiveRank',
     // fx6 item 6: the host's match-closes join (meRowFromCareer -> fhCloseFor over the page's own closes cache) — logic
     'pp2ClosesOf', 'pp2CareerClose',
@@ -4594,6 +4594,18 @@ function ledgerHtmlFor(p) {
 check('item 1 · the back link reads "Back to Players"', () => {
   const html = I.renderBackLink();
   assert(/>\s*Back to Players<\/a>/.test(html), `back link is: ${html.slice(-40)}`);
+});
+// ESC follow-ups brief: the words follow the host's return trail (sfDetailBackLabel), escaped; no host = the list.
+check('item 1 · the back link names the host\'s real destination, escaped', () => {
+  const had = Object.prototype.hasOwnProperty.call(global.window, 'sfDetailBackLabel'), prev = global.window.sfDetailBackLabel;
+  try {
+    global.window.sfDetailBackLabel = () => 'Back to Matches';
+    assert(/>\s*Back to Matches<\/a>/.test(I.renderBackLink()), 'Matches origin');
+    global.window.sfDetailBackLabel = () => 'Back';
+    assert(/<\/svg>Back<\/a>/.test(I.renderBackLink()), 'unknown origin reads plain Back');
+    global.window.sfDetailBackLabel = () => 'Back to <b>';
+    assert(/Back to &lt;b&gt;<\/a>/.test(I.renderBackLink()), 'escaped');
+  } finally { if (had) global.window.sfDetailBackLabel = prev; else delete global.window.sfDetailBackLabel; }
 });
 mustFail('the back-link check would catch the old one-word label', () => {
   assert(/>\s*Back to Players<\/a>/.test('<a>Players</a>'), 'back link is wrong');

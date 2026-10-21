@@ -208,6 +208,17 @@
       (root.requestAnimationFrame || setTimeout)(settle);
       return true;
     },
+    // The Back link's words name where it really goes (ESC follow-ups brief): "Back to <page>" from the trail's top,
+    // the page name being the caller's (the sidebar's own labels). A player profile is not a page, and a tab with no
+    // name is unknown: both read plain "Back" — never a wrong page name. No trail → null: the caller knows its own
+    // fallback destination.
+    backLabel: function (names) {
+      if (!this.canBack()) return null;
+      var s = stack[stack.length - 1];
+      if (s.sub) return 'Back';
+      var n = names && names[s.tab];
+      return n ? 'Back to ' + n : 'Back';
+    },
     depth: function () { return stack.length; }
   };
 
