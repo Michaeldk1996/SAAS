@@ -61,14 +61,20 @@
     var before = {};
     layers().forEach(function (L) { before[L.id] = openOf(L); });
     var assign = function () {
-      layers().forEach(function (L) { if (!before[L.id] && openOf(L) && !openers[L.id]) openers[L.id] = t; });
+      // the element AND a stable selector: a live board re-renders its cards, replacing the one that was pressed
+      layers().forEach(function (L) { if (!before[L.id] && openOf(L) && !openers[L.id]) openers[L.id] = { el: t, sel: selectorFor(t) }; });
     };
     setTimeout(assign, 0);
     setTimeout(assign, 400);   // a layer that waits on a fetch
   }
   function visible(el) { return !!(el && el.isConnected && el.getClientRects && el.getClientRects().length); }
   function refocus(el, sel) {
-    if (!visible(el) && sel) { try { el = document.querySelector(sel); } catch (_) { el = null; } }
+    if (!visible(el) && sel) {
+      // first VISIBLE match: the same id can also sit on a hidden copy (a mini card, another view)
+      var all = []; try { all = document.querySelectorAll(sel); } catch (_) {}
+      el = null;
+      for (var i = 0; i < all.length && !el; i++) if (visible(all[i])) el = all[i];
+    }
     // an opener that cannot take focus (a link with no href, a plain div) hands it to its nearest focusable ancestor
     var host = el && el.closest && el.closest('a[href],button,input,select,textarea,[tabindex]:not([tabindex="-1"])');
     if (host) el = host;
@@ -107,7 +113,7 @@
       var opener = openers[top.id];
       delete openers[top.id];
       try { top.close(); } catch (err) { console.error('sfEsc close', top.id, err); }
-      if (!top.ownFocus && opener && !openOf(top)) refocus(opener);
+      if (!top.ownFocus && opener && !openOf(top)) refocus(opener.el, opener.sel);
       act = (top.z >= Z.menu ? 'menu:' : 'layer:') + top.id;
     } else if (field) {
       var clearable = field.tagName !== 'SELECT' && !field.isContentEditable && field.value !== '';

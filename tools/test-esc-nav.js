@@ -216,6 +216,22 @@ t('E1 the element that opened a layer gets focus back', async () => {
   W.press();
   assert.strictEqual(W.document.activeElement, card);
 });
+t('E1b the opener was re-rendered (a live board): focus goes to its visible replacement', async () => {
+  const W = world();
+  global.CSS = { escape: s => String(s) }; W.win.CSS = global.CSS;
+  const L = W.layer('modal', 74, { open: false });
+  const attrs = { 'data-id': 'm42' };
+  const card = W.el('ARTICLE', { getAttribute: k => attrs[k] ?? null, closest(sel) { return /data-id/.test(sel) || /tabindex/.test(sel) ? this : null; } });
+  W.listeners.pointerdown.forEach(fn => fn({ type: 'pointerdown', target: card }));
+  L.open = true; await tick();
+  card.isConnected = false;                                          // the board re-rendered
+  const hidden = W.el('ARTICLE', { getClientRects: () => [], closest() { return this; } });
+  const fresh = W.el('ARTICLE', { closest() { return this; } });
+  W.document.querySelectorAll = sel => (sel === '[data-id="m42"]' ? [hidden, fresh] : []);
+  W.document.activeElement = W.el('BUTTON');
+  W.press();
+  assert.strictEqual(W.document.activeElement, fresh);
+});
 t('E2 a layer that returns focus itself (ownFocus) is left alone', async () => {
   const W = world();
   const L = W.layer('series', 76, { open: false, ownFocus: true });
