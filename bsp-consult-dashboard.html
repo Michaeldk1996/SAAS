@@ -2878,7 +2878,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
   [data-page="styles"] .ps-arow.open .ps-arow-panel{ grid-template-columns:1fr; gap:22px; padding-left:0; }
 }
 /* Item 2 (founder 2026-10-20): Draw view (draw-view.js). Tokens only; connectors in --line; the winner reads by weight,
-   never by colour (no stat is "better" coloured). Bracket cells divide one fixed column height so rounds align. */
+   never by colour (no stat is "better" coloured). Bracket cells divide one fixed column height so rounds align.
+   A column is never narrower than its widest card (max-content): a long name + seed + three sets overflowed the 186px
+   phone column on 21 Oct (Shevchenko [3] 6 6 7), and names are never truncated — the bracket scrolls sideways instead. */
 #tourxDraw{ padding:18px 20px 22px; }
 #tourxDraw .dv-head{ display:flex; flex-wrap:wrap; gap:10px 14px; align-items:center; }
 #tourxDraw .dv-from{ margin-top:12px; display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; }
@@ -2886,7 +2888,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 #tourxDraw .dv-stale{ margin-top:10px; font-family:var(--font-words); font-size:12px; color:var(--text-label); }
 #tourxDraw .dv-empty{ font-family:var(--font-words); font-size:13.5px; color:var(--text-label); padding:8px 0; }
 #tourxDraw .dv-scroll{ overflow-x:auto; margin-top:16px; padding-bottom:8px; -webkit-overflow-scrolling:touch; }
-#tourxDraw .dv-bracket{ display:grid; grid-template-columns:repeat(var(--dv-cols), minmax(212px, 1fr)); column-gap:30px; min-width:calc(var(--dv-cols) * 242px - 30px); }
+#tourxDraw .dv-bracket{ display:grid; grid-template-columns:repeat(var(--dv-cols), minmax(max-content, 1fr)); column-gap:30px; min-width:calc(var(--dv-cols) * 242px - 30px); }
 #tourxDraw .dv-colhead{ display:flex; justify-content:space-between; align-items:baseline; padding:0 2px 9px; margin-bottom:6px; border-bottom:1px solid var(--line);
   font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
 #tourxDraw .dv-count{ font-family:var(--font-nums); font-size:11px; letter-spacing:0; text-transform:none; }
@@ -2920,7 +2922,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 #tourxDraw .dv-stats td{ text-align:right; padding:5px 6px; border-top:1px solid var(--line); }
 #tourxDraw .dv-stats td.dv-st-name{ text-align:left; font-family:var(--font-words); }
 #tourxDraw .dv-note{ margin-top:8px; font-family:var(--font-words); font-size:12px; color:var(--text-label); }
-@media (max-width:640px){ #tourxDraw{ padding:14px 12px 18px; } #tourxDraw .dv-bracket{ grid-template-columns:repeat(var(--dv-cols), minmax(186px, 1fr)); min-width:calc(var(--dv-cols) * 212px - 26px); column-gap:26px; } }
+@media (max-width:640px){ #tourxDraw{ padding:14px 12px 18px; } #tourxDraw .dv-bracket{ grid-template-columns:repeat(var(--dv-cols), minmax(max-content, 1fr)); min-width:calc(var(--dv-cols) * 212px - 26px); column-gap:26px; } }
 </style>
 <div class="tabpage" data-page="tournaments">
   <div class="pagewrap">

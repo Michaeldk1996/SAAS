@@ -68,6 +68,11 @@ check('stats panel: W, UE, W/UE, Dominance for both players (Duckworth 27 / 18 /
 // ── page + deploy wiring ──
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 check('Tournaments gets a "Draw" section, its container, loader and script', html.includes("[['draw', 'Draw']]") && html.includes('id="tourxDraw"') && html.includes('function tourxRenderDraw(){') && html.includes('<script src="draw-view.js"></script>'));
+// 21 Oct: at 375px a long name + seed + three sets ("A. Shevchenko [3] 6 6 7") ran past the 186px card. Names are never
+// truncated (CLAUDE.md), so every bracket column — desktop and phone — is at least as wide as its widest card.
+const gridRules = html.match(/#tourxDraw \.dv-bracket\{[^}]*grid-template-columns:[^;]*;/g) || [];
+check('every bracket column is at least its widest card (minmax(max-content, …)) on desktop AND phone — no fixed px minimum that a long name overflows',
+  gridRules.length === 2 && gridRules.every(r => /minmax\(max-content, 1fr\)/.test(r)), gridRules.join(' | '));
 const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8'), sc = fs.readFileSync(path.join(ROOT, 'tools', 'site-code.sh'), 'utf8'), ps = fs.readFileSync(path.join(ROOT, 'tools', 'publish-site.mjs'), 'utf8');
 check('draw-view.js ships on both deploy lanes and is required', /cp draw-view\.js _site\//.test(yml) && /wue-sheet\.js draw-view\.js \\/.test(yml) && sc.includes('cp draw-view.js "$SITE/"') && /'draw-view\.js'/.test(ps));
 console.log(`\n${pass} passed, ${fail} failed`);
