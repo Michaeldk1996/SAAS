@@ -103,7 +103,10 @@ ix = B.build_roster_index(roster)
 check("hyphenated given name: STRUFF, Jan-Lennard → 2831", B.resolve_key(ix, "STRUFF, Jan-Lennard", "GER") == ("2831", "surname+given"))
 check("truncated given name as a prefix: CERUNDOLO, Juan Ma… → 388 (not Francisco)", B.resolve_key(ix, "CERUNDOLO, Juan Ma…", "ARG")[0] == "388")
 check("fully truncated given name: a UNIQUE surname only", B.resolve_key(ix, "VAN DE ZANDSCHULP, …", "NED") == ("2972", "surname-only"))
-check("a spelling variant is not bridged (Aleksandr ≠ Alexander) → None", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "KAZ")[0] is None)
+check("approved alias: SHEVCHENKO, Aleksandr + KAZ → 566 (keyMatch 'alias')", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "KAZ") == ("566", "alias"))
+check("the alias is exact: the same name with another country is NOT bridged → None", B.resolve_key(ix, "SHEVCHENKO, Aleksandr", "RUS")[0] is None)
+check("a spelling variant without an approved alias is still not bridged (Aleksandrov ≠ Alexandrov) → None",
+      B.resolve_key(B.build_roster_index({"players": [{"key": "1", "name": "Ivan Alexandrov", "country": "X"}]}), "ALEKSANDROV, Ivan", None)[0] is None)
 check("comma-less cut surname: 'GUEYMARD WAYENBUR…' → the unique Gueymard Wayenburg", B.resolve_key(B.build_roster_index({"players": [
     {"key": "77", "name": "Sascha Gueymard Wayenburg", "country": "France"}, {"key": "78", "name": "Ugo Gueymard", "country": "France"}]}),
     "GUEYMARD WAYENBUR…", None) == ("77", "surname-prefix"))
@@ -192,8 +195,8 @@ check("calendar: non-empty (>= 40 events with an id)", len(calj["tournaments"]) 
 shipped = [f for f in subprocess.run(["git", "ls-files", "-z", "*.html", "*.js"], cwd=ROOT, capture_output=True, text=True).stdout.split("\0") if f]
 readers = [f for f in shipped if not f.startswith(("tools/", "test", ".github/", ".")) and os.path.isfile(os.path.join(ROOT, f))
            and "draws.json" in open(os.path.join(ROOT, f), encoding="utf-8", errors="ignore").read()]
-check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7) + the Entry list tab (ruling 1)",
-      sorted(readers) == ["bsp-consult-dashboard.html", "wue-sheet.js"], readers)
+check("draws.json's shipped readers are exactly wue-sheet.js (W/UE quarters, ruling 7), the Entry list tab (ruling 1) + the Draw view (ruling 2, 20 Oct)",
+      sorted(readers) == ["bsp-consult-dashboard.html", "draw-view.js", "wue-sheet.js"], readers)
 
 # ── draws.yml cadence clock (fixed 2026-10-20): the last run that FETCHED, never a skipped run ──
 spec3 = importlib.util.spec_from_file_location("lfr", os.path.join(ROOT, "tools", "draws", "last-fetch-run.py"))

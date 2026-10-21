@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T16:53:07.411Z",
+  "generatedAt": "2026-10-21T00:44:23.980Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1840,7 +1840,7 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 1,
-      "win_pct": 63.3,
+      "win_pct": 61.3,
       "clay_wr": 62,
       "hard_wr": 69,
       "grass_wr": 0,
@@ -2296,7 +2296,7 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 2,
-      "win_pct": 60.6,
+      "win_pct": 61.8,
       "clay_wr": 56,
       "hard_wr": 56,
       "grass_wr": 80,
@@ -3040,7 +3040,7 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 57.1,
+      "win_pct": 54.5,
       "clay_wr": 58,
       "hard_wr": 25,
       "grass_wr": 67,
@@ -4091,7 +4091,7 @@
       "source": "challenger"
     },
     {
-      "name": "Alexander Ritschard",
+      "name": "A. Ritschard",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4100,7 +4100,8 @@
       "hard_wr": 51,
       "grass_wr": 0,
       "matches": 246,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "408"
     },
     {
       "name": "Emilio Gomez",
@@ -4502,7 +4503,7 @@
       "source": "challenger"
     },
     {
-      "name": "D. Ajdukovic",
+      "name": "Duje Ajdukovic",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4511,8 +4512,7 @@
       "hard_wr": 58,
       "grass_wr": 0,
       "matches": 210,
-      "source": "challenger",
-      "player_key": "392"
+      "source": "challenger"
     },
     {
       "name": "Nikola Milojevic",
@@ -6283,7 +6283,7 @@
       "source": "challenger"
     },
     {
-      "name": "Carlos Sanchez Jover",
+      "name": "C. Sanchez Jover",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -6292,7 +6292,8 @@
       "hard_wr": 42,
       "grass_wr": null,
       "matches": 118,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "584"
     },
     {
       "name": "L. Neumayer",
@@ -10126,7 +10127,7 @@
       "source": "challenger"
     },
     {
-      "name": "Guido Ivan Justo",
+      "name": "G. I. Justo",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -10135,7 +10136,8 @@
       "hard_wr": null,
       "grass_wr": null,
       "matches": 43,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "7249"
     },
     {
       "name": "G. Den Ouden",
@@ -11796,7 +11798,7 @@
       "source": "challenger"
     },
     {
-      "name": "Anton Matusevich",
+      "name": "A. Matusevich",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -11805,7 +11807,8 @@
       "hard_wr": 33,
       "grass_wr": 50,
       "matches": 27,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "6886"
     },
     {
       "name": "Patrick Maloney",

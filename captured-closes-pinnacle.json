@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-20T17:23:27.053Z",
+ "generatedAt": "2026-10-21T00:28:08.222Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "2c68d5a2cce87514beb478619814f2901cc3da1c",
-  "at": "2026-10-20T17:01:42Z"
+  "commit": "37aef047e1cce7c85466428368fc8f59a5318f7f",
+  "at": "2026-10-20T23:47:32Z"
  },
- "commitsScanned": 5472,
+ "commitsScanned": 5504,
  "lastRun": {
-  "from": "2026-10-20T10:34:01Z",
-  "snapshots": 29,
-  "added": 8,
-  "replaced": 0,
-  "series": 64,
-  "kept": 44,
+  "from": "2026-10-20T22:17:37Z",
+  "snapshots": 8,
+  "added": 0,
+  "replaced": 1,
+  "series": 70,
+  "kept": 50,
   "bySource": {
-   "api-tennis-live": 44
+   "api-tennis-live": 50
   },
   "byBook": {
-   "Pinnacle +30s": 44
+   "Pinnacle +30s": 50
   },
   "dropped": {
    "noStart": 20
@@ -9425,6 +9425,23 @@
    "event": "ATP Brussels"
   },
   {
+   "eventKey": 12171794,
+   "date": "2026-10-20",
+   "p1Key": 15184,
+   "p2Key": 1064,
+   "p1Name": "T. Samuel",
+   "p2Name": "Z. Bergs",
+   "p1": 2.86,
+   "p2": 1.471,
+   "at": "2026-10-20T15:17:57.139Z",
+   "trueStart": "2026-10-20T16:03:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
    "eventKey": 12171795,
    "date": "2026-10-20",
    "p1Key": 2831,
@@ -9510,6 +9527,23 @@
    "event": "ATP Lyon"
   },
   {
+   "eventKey": 12172010,
+   "date": "2026-10-20",
+   "p1Key": 1771,
+   "p2Key": 1103,
+   "p1Name": "B. Bonzi",
+   "p2Name": "C. Norrie",
+   "p1": 2.05,
+   "p2": 1.847,
+   "at": "2026-10-20T13:44:25.737Z",
+   "trueStart": "2026-10-20T15:54:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
    "eventKey": 12172012,
    "date": "2026-10-20",
    "p1Key": 1105,
@@ -9520,6 +9554,23 @@
    "p2": 3.61,
    "at": "2026-10-20T11:55:34.231Z",
    "trueStart": "2026-10-20T12:06:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12172013,
+   "date": "2026-10-20",
+   "p1Key": 2677,
+   "p2Key": 2838,
+   "p1Name": "H. Medjedovic",
+   "p2Name": "B. Nakashima",
+   "p1": 3.33,
+   "p2": 1.371,
+   "at": "2026-10-20T19:24:46.556Z",
+   "trueStart": "2026-10-20T20:15:03.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",
@@ -9559,6 +9610,23 @@
    "round": "ATP Almaty - 1/16-finals",
    "qualifying": false,
    "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172182,
+   "date": "2026-10-20",
+   "p1Key": 15270,
+   "p2Key": 825,
+   "p1Name": "N. Basavareddy",
+   "p2Name": "R. Collignon",
+   "p1": 1.787,
+   "p2": 2.13,
+   "at": "2026-10-20T17:04:19.259Z",
+   "trueStart": "2026-10-20T17:40:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
   },
   {
    "eventKey": 12172184,
@@ -9605,6 +9673,40 @@
    "p2": 2.57,
    "at": "2026-10-20T11:27:40.459Z",
    "trueStart": "2026-10-20T12:05:24.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12172387,
+   "date": "2026-10-20",
+   "p1Key": 1066,
+   "p2Key": 1762,
+   "p1Name": "L. van Assche",
+   "p2Name": "C. Tabur",
+   "p1": 1.598,
+   "p2": 2.48,
+   "at": "2026-10-20T16:43:59.821Z",
+   "trueStart": "2026-10-20T17:08:19.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12172388,
+   "date": "2026-10-20",
+   "p1Key": 2844,
+   "p2Key": 1335,
+   "p1Name": "M. Berrettini",
+   "p2Name": "K. Jacquet",
+   "p1": 1.917,
+   "p2": 1.97,
+   "at": "2026-10-20T17:30:06.648Z",
+   "trueStart": "2026-10-20T18:06:05.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/16-finals",

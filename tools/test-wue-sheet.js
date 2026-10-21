@@ -29,7 +29,7 @@ const FX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'wue-shee
 
 // ── 1 · acceptance (founder's hand-entered rows; reported as match/mismatch, never adjusted) ──
 const rounds = W.sheetRounds(FX);
-check('fixture is non-empty: 1 round, 9 matches → 18 rows', rounds.length === 1 && rounds[0].rows.length === 18, JSON.stringify(rounds.map(r => r.rows.length)));
+check('fixture is non-empty: 1 round, 9 matches → 9 winner rows (winners only, ruling 2026-10-20)', rounds.length === 1 && rounds[0].rows.length === 9, JSON.stringify(rounds.map(r => r.rows.length)));
 const row = (n) => rounds[0].rows.find(r => r.player === n);
 for (const [name, w, ue, tt, dr] of [['F. Diaz Acosta', 26, 24, 186, 1.54], ['A. Mannarino', 34, 37, 205, 1.45], ['J. Duckworth', 27, 18, 113, 1.21]]) {
   const r = row(name);
@@ -37,7 +37,7 @@ for (const [name, w, ue, tt, dr] of [['F. Diaz Acosta', 26, 24, 186, 1.54], ['A.
     r ? JSON.stringify(r.values) : 'row missing');
 }
 check('tab is named by the actual round (R32), never "ROUND 1"', rounds[0].title === 'R32', rounds[0].title);
-check('rows follow order of play (first match 08:40 Kecmanovic–Duckworth)', rounds[0].rows[0].player === 'M. Kecmanovic' && rounds[0].rows[1].player === 'J. Duckworth');
+check('winners in order of play, losers removed (08:40 Kecmanovic–Duckworth → Duckworth first; no Kecmanovic row)', rounds[0].rows[0].player === 'J. Duckworth' && !rounds[0].rows.some(r => r.player === 'M. Kecmanovic'));
 
 // ── 2 · formulas ──
 const d = row('J. Duckworth').values;
@@ -46,7 +46,7 @@ check('UE/P = UE ÷ TT (18/113 = 0.16)', d[4] === 0.16, d[4]);
 check('W/UE = W ÷ UE (27/18 = 1.50)', d[5] === 1.5, d[5]);
 check('DR from raw counts: 60/100 return, 50/100 serve → 60/(100−50) = 1.2',
   W.dominanceRatio({ won: 50, total: 100 }, { won: 60, total: 100 }) === 1.2);
-check('TSV prints ratios with 2 decimals', W.roundTsv(rounds[0]).split('\n')[1] === 'J. Duckworth\t27\t18\t113\t0.24\t0.16\t1.50\t1.21', W.roundTsv(rounds[0]).split('\n')[1]);
+check('TSV: every stat with 2 dot decimals (ruling 2026-10-21)', W.roundTsv(rounds[0]).split('\n')[0] === 'J. Duckworth\t27.00\t18.00\t113.00\t0.24\t0.16\t1.50\t1.21', W.roundTsv(rounds[0]).split('\n')[0]);
 
 // ── 3 · dashes vs zero ──
 const side = (o) => Object.assign({ name: 'X. Test', winners: null, unforcedErrors: null, totalPoints: null, servicePoints: null, returnPoints: null }, o);
@@ -122,24 +122,37 @@ check('round label resolved', out[0] && out[0].round === 'R1');
   const wb = entries.find(e => e.name === 'xl/workbook.xml').data.toString();
   check('one tab named R32', /<sheet name="R32" sheetId="1"/.test(wb) && (wb.match(/<sheet /g) || []).length === 1);
   const ws = entries.find(e => e.name === 'xl/worksheets/sheet1.xml').data.toString();
-  check('header + 18 player rows', (ws.match(/<row /g) || []).length === 19);
+  check('header + 9 winner rows', (ws.match(/<row /g) || []).length === 10);
   check('header columns in brief order', W.COLUMNS.join('|') === 'Player|W|UE|TT points|W/P|UE/P|Ratio W/UE|Dominance Ratio' && W.COLUMNS.every(c => ws.includes(`<t>${c}</t>`)));
-  check('ratios carry the 0.00 number format', /<c r="E2" s="2"><v>0.13<\/v><\/c>/.test(ws), ws.slice(ws.indexOf('<row r="2"'), ws.indexOf('<row r="2"') + 200));
+  check('ratios carry the 0.00 number format', /<c r="E2" s="2"><v>0.24<\/v><\/c>/.test(ws), ws.slice(ws.indexOf('<row r="2"'), ws.indexOf('<row r="2"') + 200));
   const empty = W.workbookFiles(W.sheetRounds({ rounds: [], matches: [] }));
   check('no completed match → one explicit "NO COMPLETED MATCHES" tab, no rows invented', /name="NO COMPLETED MATCHES"/.test(empty[2][1]) && (empty[5][1].match(/<row /g) || []).length === 1);
 
   // ── 8 · wiring ──
   const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
   check('page loads wue-sheet.js', html.includes('<script src="wue-sheet.js"></script>'));
-  check('Reports card renders the W/UE bar', html.includes("${filterBar}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}"));
+  check('Reports card renders the W/UE bar', html.includes("${filterBar}${partialLine}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}"));
   const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
   check('deploy copies wue-sheet.js into _site', yml.includes('cp wue-sheet.js _site/'));
-  check('deploy asserts wue-sheet.js present', /h2h-core\.js wue-sheet\.js \\/.test(yml));
+  check('deploy asserts wue-sheet.js present', /h2h-core\.js wue-sheet\.js( draw-view\.js)? \\/.test(yml));
   check('live publish lane copies wue-sheet.js (tools/site-code.sh)', fs.readFileSync(path.join(ROOT, 'tools', 'site-code.sh'), 'utf8').includes('cp wue-sheet.js "$SITE/"'));
   check('live publish lane requires wue-sheet.js (publish-site.mjs CODE_REQUIRED)', /CODE_REQUIRED = \[[^\]]*'wue-sheet\.js'/.test(fs.readFileSync(path.join(ROOT, 'tools', 'publish-site.mjs'), 'utf8')));
   const pipe = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
   check('progression entry publishes matches[]', pipe.includes('matches: progressionSheetMatches(played, roundLabelByName),'));
 
-  console.log(`\n${pass} passed, ${fail} failed`);
+  // ruling 2026-10-21: every stat cell is a NUMBER (never text) with the 0.00 format, and Copy uses a dot decimal whatever
+// the viewer's locale — proven under a comma-decimal locale (de-DE) forced onto toLocaleString / Intl.
+{
+  const z2 = Buffer.from(W.buildXlsx(FX)).toString('latin1'), sd = z2.slice(z2.indexOf('<sheetData>'), z2.indexOf('</sheetData>'));
+  const nums = [...sd.matchAll(/<c r="([B-H])(\d+)"( s="(\d)")?><v>([^<]*)<\/v><\/c>/g)];
+  check('xlsx: every stat cell (W, UE, TT, W/P, UE/P, W/UE, DR) is a number with the 0.00 format (s=2); none is text', nums.length === 63 && nums.every(m => m[4] === '2' && /^-?\d+(\.\d+)?$/.test(m[5])) && !/<c r="[B-H]\d+" t="inlineStr"><is><t xml:space="preserve">\d/.test(sd), `${nums.length} numeric cells`);
+  const tl = Number.prototype.toLocaleString, NF = Intl.NumberFormat;
+  Number.prototype.toLocaleString = function () { return tl.call(this, 'de-DE', { minimumFractionDigits: 2 }); };
+  Intl.NumberFormat = function () { return new NF('de-DE'); };
+  const t = W.roundTsv(rounds[0]);
+  Number.prototype.toLocaleString = tl; Intl.NumberFormat = NF;
+  check('Copy under a comma-decimal locale still prints dot decimals ("27.00", "0.24"), never "27,00"', /\t27\.00\t/.test(t) && /\t0\.24\t/.test(t) && !/\d,\d/.test(t), t.split('\n')[0]);
+}
+console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });

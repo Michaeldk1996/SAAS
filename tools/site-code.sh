@@ -27,6 +27,7 @@ cp market-edge-core.js "$SITE/"
 cp tournament-identity.js "$SITE/"
 cp h2h-core.js "$SITE/"
 cp wue-sheet.js "$SITE/"
+cp draw-view.js "$SITE/"
 cp admin.html admin-config.js "$SITE/" 2>/dev/null || true
 cp trading-report.js "$SITE/" 2>/dev/null || true
 cp series.js series.css "$SITE/" 2>/dev/null || true
