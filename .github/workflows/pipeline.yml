@@ -1126,7 +1126,8 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js esc-nav.js \
+                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js \
+                   esc-nav.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
                    points-at-risk.json \
