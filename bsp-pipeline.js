@@ -2843,8 +2843,12 @@ async function fetchProgressionFixtures(windowStart, today) {
         why = 'returned non-array: ' + JSON.stringify(data.result).slice(0, 80);
         console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} returned non-array:`, JSON.stringify(data.result).slice(0, 80));
       } catch (err) {
-        why = 'failed: ' + err.message;
-        console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} failed:`, err.message);
+        // undici reports every network-level failure as the bare "fetch failed"; the real error (ECONNRESET,
+        // UND_ERR_SOCKET "other side closed", ETIMEDOUT, …) is on err.cause. 65 straight runs logged only the
+        // bare message (19–20 Oct) and the identical request succeeds off the runner, so print the cause.
+        const c = err.cause;
+        why = 'failed: ' + err.message + (c ? ` (cause: ${[c.code, c.message].filter(Boolean).join(' ')})` : '');
+        console.error(`Progression fixtures ${dateStr(s)}..${dateStr(e)} ${why}`);
       }
     }
     if (!ok) failedRanges.push({ from: dateStr(s), to: dateStr(e), reason: why });

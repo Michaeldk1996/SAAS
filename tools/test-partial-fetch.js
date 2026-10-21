@@ -22,7 +22,7 @@ function harness(failEarly) {   // failEarly: how many times the first chunk fai
   global.fetch = async (url) => {
     calls.push(url);
     const start = /date_start=([\d-]+)/.exec(url)[1];
-    if (start < '2026-10-13') { earlyCalls++; if (earlyCalls <= failEarly) throw new Error('fetch failed'); return { json: async () => ({ success: 1, result: JSON.parse(JSON.stringify(early)) }) }; }
+    if (start < '2026-10-13') { earlyCalls++; if (earlyCalls <= failEarly) throw new Error('fetch failed', { cause: Object.assign(new Error('other side closed'), { code: 'UND_ERR_SOCKET' }) }); return { json: async () => ({ success: 1, result: JSON.parse(JSON.stringify(early)) }) }; }
     return { json: async () => ({ success: 1, result: JSON.parse(JSON.stringify(late)) }) };
   };
   delete require.cache[require.resolve(path.join(ROOT, 'bsp-pipeline.js'))];
@@ -34,6 +34,7 @@ function harness(failEarly) {   // failEarly: how many times the first chunk fai
   let t = await h.P.buildTournamentProgression('ATP Shanghai');
   check('the 20 Oct failure (chunk 1 never answers): the first chunk is tried 3 times', h.earlyCalls() === 3, h.earlyCalls());
   check('…the tournament is published PARTIAL with the failed range and reason', t && t.partial && t.partial.failedRanges.length === 1 && t.partial.failedRanges[0].from === '2026-10-05' && /fetch failed/.test(t.partial.failedRanges[0].reason), JSON.stringify(t && t.partial));
+  check('…the reason carries undici\'s real error (err.cause), not just the bare "fetch failed"', t && t.partial && /UND_ERR_SOCKET other side closed/.test(t.partial.failedRanges[0].reason), JSON.stringify(t && t.partial));
   check('…and it holds only what arrived (4 of 7 here) — the partial flag, not a guess, tells the reader', t.matches.length === 4);
   h = harness(1);
   t = await h.P.buildTournamentProgression('ATP Shanghai');
