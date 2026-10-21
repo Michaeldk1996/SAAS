@@ -1,0 +1,7 @@
+# read-only: the private store's te-odds/ files and its latest commits (the queue pushes each completed batch there)
+import json, os, urllib.request
+H = {'Authorization': 'Bearer ' + os.environ['STORE_TOKEN'], 'Accept': 'application/vnd.github+json'}
+get = lambda u: json.loads(urllib.request.urlopen(urllib.request.Request(u, headers=H), timeout=60).read())
+R = 'https://api.github.com/repos/Michaeldk1996/stennisfy-te-store'
+print('te-odds/:', [(x['name'], x['size']) for x in get(R + '/contents/te-odds')])
+for c in get(R + '/commits?per_page=8'): print(c['commit']['committer']['date'], c['sha'][:9], c['commit']['message'].splitlines()[0][:110])
