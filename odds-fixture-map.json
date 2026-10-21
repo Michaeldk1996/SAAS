@@ -4544,8 +4544,8 @@
     },
     "12171793": {
       "fixtureId": null,
-      "mappedAt": "2026-10-21T22:01:29Z",
-      "missRuns": 32,
+      "mappedAt": "2026-10-21T23:01:30Z",
+      "missRuns": 33,
       "missSince": "2026-10-19T22:31:19Z",
       "orient": null,
       "p1": "H. Rune",
@@ -5194,6 +5194,15 @@
       "p2": "A. Michelsen",
       "startTime": "2026-10-22T12:40:00.000Z",
       "tournamentId": 45935
+    },
+    "12173428": {
+      "fixtureId": "id1200309775620254",
+      "mappedAt": "2026-10-21T23:01:30Z",
+      "orient": "same",
+      "p1": "C. Moutet",
+      "p2": "T. Paul",
+      "startTime": "2026-10-23T09:00:00.000Z",
+      "tournamentId": 3097
     }
   },
   "missAudit": {
@@ -5206,23 +5215,12 @@
       "observedSpanDays": 18.72,
       "projectedTtlUnitsPerDay": 2.3,
       "runs": 400,
-      "spentRuns": 155,
+      "spentRuns": 156,
       "ttlBitRuns": 43,
       "ttlBitShare": 0.107,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-03T04:46:17Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 12
-      },
       {
         "at": "2026-10-03T05:46:05Z",
         "fixturesUnitsSpent": 1,
@@ -9611,9 +9609,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 18
+      },
+      {
+        "at": "2026-10-21T23:01:30Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 18
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-21T22:01:29Z"
+  "updatedAt": "2026-10-21T23:01:30Z"
 }
