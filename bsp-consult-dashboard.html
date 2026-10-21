@@ -2895,6 +2895,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 #tourxDraw .dv-col:not(.dv-col--last) .dv-cell::after{ content:''; position:absolute; right:-15px; width:15px; top:50%; border-top:1px solid var(--line); }
 #tourxDraw .dv-col:not(.dv-col--last) .dv-cell--a::before{ content:''; position:absolute; right:-15px; top:50%; height:50%; border-right:1px solid var(--line); }
 #tourxDraw .dv-col:not(.dv-col--last) .dv-cell--b::before{ content:''; position:absolute; right:-15px; top:0; height:50%; border-right:1px solid var(--line); }
+#tourxDraw .dv-col:not(.dv-col--last) .dv-cell--bye::after, #tourxDraw .dv-col:not(.dv-col--last) .dv-cell--bye::before{ content:none; }
 #tourxDraw .dv-col + .dv-col .dv-card::before{ content:''; position:absolute; left:-16px; width:15px; top:50%; border-top:1px solid var(--line); }
 #tourxDraw .dv-card{ position:relative; width:100%; box-sizing:border-box; background:var(--card); border:1px solid var(--edge-6); border-radius:10px; padding:6px 9px; }
 #tourxDraw .dv-card--done{ cursor:pointer; transition:border-color .12s ease; }
@@ -2903,7 +2904,7 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 #tourxDraw .dv-when{ font-family:var(--font-nums); font-size:11px; color:var(--text-label); margin-bottom:3px; }
 #tourxDraw .dv-row{ display:flex; align-items:center; gap:6px; min-height:22px; font-family:var(--font-words); font-size:12.5px; font-weight:500; color:var(--text); white-space:nowrap; }
 #tourxDraw .dv-row--won{ font-weight:700; }
-#tourxDraw .dv-row--bye .dv-name, #tourxDraw .dv-row--tbd .dv-name{ color:var(--text-label); }
+#tourxDraw .dv-row--tbd .dv-name{ color:var(--text-label); }
 #tourxDraw .dv-ioc{ flex:none; min-width:28px; font-family:var(--font-nums); font-size:9.5px; font-weight:700; text-align:center; color:var(--text-label); background:var(--inner); border:1px solid var(--edge-6); border-radius:4px; padding:1px 3px; }
 #tourxDraw .dv-ioc:empty{ visibility:hidden; }
 #tourxDraw .dv-name{ flex:1 1 auto; }

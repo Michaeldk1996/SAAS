@@ -93,8 +93,7 @@ function startLabel(when, tz) {
   try { return new Date(ms).toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }); }
   catch (e) { return new Date(ms).toLocaleString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false }); }
 }
-function sideRow(s, won, lost, games, isBye) {
-  if (isBye) return `<div class="dv-row dv-row--bye"><span class="dv-ioc"></span><span class="dv-name">Bye</span></div>`;
+function sideRow(s, won, lost, games) {
   if (!s) return `<div class="dv-row dv-row--tbd"><span class="dv-ioc"></span><span class="dv-name">&nbsp;</span></div>`;
   const mark = s.entry && s.entry !== 'SEED' ? `<span class="dv-mark">${esc(s.entry)}</span>` : '';
   const seed = s.seed != null ? `<span class="dv-seed">[${esc(s.seed)}]</span>` : '';
@@ -105,10 +104,9 @@ function sideRow(s, won, lost, games, isBye) {
 }
 function cardHtml(c, tz, kind) {
   const [A, B] = c.sides;
-  if (c.bye) {
-    const s = A || B;
-    return `<div class="dv-card dv-card--bye">${sideRow(s, false, false, null, false)}${sideRow(null, false, false, null, true)}</div>`;
-  }
+  // Founder 2026-10-21: "Byes go straight to R16. No fake R32 match card for a bye." The slot keeps its height (the
+  // bracket stays aligned) but draws nothing; the seed first appears in R16, reached through the partner match's connector.
+  if (c.bye) return '';
   if (!A && !B && !c.match) return `<div class="dv-card dv-card--empty" aria-label="not decided yet">${sideRow(null)}${sideRow(null)}</div>`;
   const m = c.match;
   const wA = m && A && String(A.playerKey) === m.winnerKey, wB = m && B && String(B.playerKey) === m.winnerKey;
@@ -164,7 +162,7 @@ function render() {
   const picker = `<div class="dv-from"><span class="dv-cap">From</span>${chips(pick.map(n => ({ label: n, on: n === S.from, onclick: `DrawView.set('from','${n}')` })), 'From round')}</div>`;
   const vis = M.rounds.slice(names.indexOf(S.from));
   const cols = vis.map((r, ci) => `<div class="dv-col${ci === vis.length - 1 ? ' dv-col--last' : ''}"><div class="dv-colhead"><span>${esc(r.name)}</span><span class="dv-count">${r.done} of ${r.total}</span></div>`
-    + `<div class="dv-cells">${r.cells.map(c => `<div class="dv-cell${c.j % 2 ? ' dv-cell--b' : ' dv-cell--a'}">${cardHtml(c, S.tz, M.kind)}</div>`).join('')}</div></div>`).join('');
+    + `<div class="dv-cells">${r.cells.map(c => `<div class="dv-cell${c.j % 2 ? ' dv-cell--b' : ' dv-cell--a'}${c.bye ? ' dv-cell--bye' : ''}">${cardHtml(c, S.tz, M.kind)}</div>`).join('')}</div></div>`).join('');
   const opened = S.open && M.rounds.flatMap(r => r.cells).find(c => c.match && c.match.eventKey === S.open);
   el.innerHTML = head + picker
     + `<div class="dv-stale">Draw updated: ${esc(fmtChanged(M.changedAt, S.tz))}</div>`

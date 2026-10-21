@@ -51,7 +51,16 @@ const el = { innerHTML: '' };
 DV.mount(el, { draws, prog: { tournaments: { Almaty: entry } }, board: [], tz: 'UTC' });
 const h = el.innerHTML;
 check('renders: tournament chips, Main draw / Qualifying, From picker, "Draw updated: …", round heads with "9 of 12"', /Almaty/.test(h) && /Main draw/.test(h) && /From/.test(h) && /Draw updated: /.test(h) && /9 of 12/.test(h) && /0 of 8/.test(h));
-check('renders seeds in brackets, Q / WC markers, byes, and placeholders — and never "undefined" / "null"', /\[1\]/.test(h) && /dv-mark">Q</.test(h) && /dv-mark">WC</.test(h) && />Bye</.test(h) && /dv-card--empty/.test(h) && !/undefined|>null</.test(h));
+check('renders seeds in brackets, Q / WC markers, and placeholders — and never "undefined" / "null"', /\[1\]/.test(h) && /dv-mark">Q</.test(h) && /dv-mark">WC</.test(h) && /dv-card--empty/.test(h) && !/undefined|>null</.test(h));
+// Founder 2026-10-21: "Byes go straight to R16. No fake R32 match card for a bye." The R32 column draws 12 cards in 16
+// cells (the 4 bye cells are empty and carry no connector); each bye seed's first card is its R16 one.
+const colAt = [...h.matchAll(/<div class="dv-col(?: dv-col--last)?">/g)].map(m => m.index);
+const r32Col = h.slice(colAt[0], colAt[1]);
+const byeCells = r32Col.match(/<div class="dv-cell[^"]*dv-cell--bye">(.*?)<\/div>/g) || [];
+check('no bye card: R32 shows 12 cards in 16 cells; the 4 bye cells are empty; no "Bye" text anywhere',
+  (r32Col.match(/class="dv-card/g) || []).length === 12 && byeCells.length === 4 && byeCells.every(c => !/dv-card/.test(c)) && !/>Bye</.test(h),
+  `${(r32Col.match(/class="dv-card/g) || []).length} cards, ${byeCells.length} bye cells`);
+check('a bye seed\'s first card is in R16 (Medvedev [1] not in the R32 column, present in R16)', !/MEDVEDEV|Medvedev/.test(r32Col) && /Medvedev/.test(h));
 check('a finished main-draw match is clickable to OUR stats', /data-dv-ev="12171884"/.test(h));
 DV.openStats('12171884');
 check('stats panel: W, UE, W/UE, Dominance for both players (Duckworth 27 / 18 / 1.50 / 1.21)', /Match stats/.test(el.innerHTML) && /J\. Duckworth<\/td><td>27<\/td><td>18<\/td><td>1\.50<\/td><td>1\.21/.test(el.innerHTML), el.innerHTML.slice(el.innerHTML.indexOf('dv-stats'), el.innerHTML.indexOf('dv-stats') + 400));
