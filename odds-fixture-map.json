@@ -4771,11 +4771,11 @@
     },
     "12172015": {
       "fixtureId": "id1200309775722450",
-      "mappedAt": "2026-10-19T12:52:19Z",
+      "mappedAt": "2026-10-21T01:02:17Z",
       "orient": "same",
       "p1": "S. Wawrinka",
       "p2": "M. Landaluce",
-      "startTime": "2026-10-20T08:00:00.000Z",
+      "startTime": "2026-10-21T12:00:00.000Z",
       "tournamentId": 3097
     },
     "12172160": {
@@ -4906,20 +4906,20 @@
     },
     "12172316": {
       "fixtureId": "id1204195975620046",
-      "mappedAt": "2026-10-19T12:52:19Z",
+      "mappedAt": "2026-10-21T01:02:17Z",
       "orient": "same",
       "p1": "J. Duckworth",
       "p2": "L. Darderi",
-      "startTime": "2026-10-21T06:15:00.000Z",
+      "startTime": "2026-10-21T06:30:00.000Z",
       "tournamentId": 41959
     },
     "12172317": {
       "fixtureId": "id1204195975620042",
-      "mappedAt": "2026-10-19T12:52:19Z",
+      "mappedAt": "2026-10-21T01:02:17Z",
       "orient": "same",
       "p1": "A. Mannarino",
       "p2": "A. Rublev",
-      "startTime": "2026-10-21T06:30:00.000Z",
+      "startTime": "2026-10-21T08:50:00.000Z",
       "tournamentId": 41959
     },
     "12172364": {
@@ -5107,6 +5107,15 @@
       "p2": "J. Lehecka",
       "startTime": "2026-10-22T09:30:00.000Z",
       "tournamentId": 45935
+    },
+    "12173106": {
+      "fixtureId": "id1200309775620268",
+      "mappedAt": "2026-10-21T01:02:17Z",
+      "orient": "same",
+      "p1": "K. Jacquet",
+      "p2": "B. Nakashima",
+      "startTime": "2026-10-22T10:00:00.000Z",
+      "tournamentId": 3097
     }
   },
   "missAudit": {
@@ -5125,17 +5134,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-02T05:45:21Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 14,
-        "ttlBit": false,
-        "unmapped": 14,
-        "upcoming": 16
-      },
       {
         "at": "2026-10-02T06:45:25Z",
         "fixturesUnitsSpent": 1,
@@ -9524,9 +9522,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 24
+      },
+      {
+        "at": "2026-10-21T01:02:17Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 3,
+        "missExpired": 0,
+        "openMisses": 1,
+        "stale": 4,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 25
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-21T00:02:21Z"
+  "updatedAt": "2026-10-21T01:02:17Z"
 }
