@@ -826,7 +826,7 @@
       _overlay.innerHTML = `<div class="ltm" role="dialog" aria-modal="true"></div>`;
       _overlay.addEventListener('click', (e) => { if (e.target === _overlay) close(); });
       document.body.appendChild(_overlay);
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && _ek) close(); });
+      (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'live-modal', z: 76, isOpen: () => !!_ek, close: () => close() });   // Esc: esc-nav.js
       return _overlay;
     }
 

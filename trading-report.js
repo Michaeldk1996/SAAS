@@ -1187,11 +1187,10 @@ window.SfCountryIoc = (function () {
       if (e.target && e.target.id === 'trSearch') { S.q = e.target.value; render(); }
     });
 
-    // Escape and a document click close any open menu.
-    document.addEventListener('keydown', function (e) {
-      if (e.key !== 'Escape') return;
-      if (S.menu || S.surfOpen || S.tourOpen) { S.menu = null; S.surfOpen = false; S.tourOpen = false; render(); }
-    });
+    // Escape (esc-nav.js) and a document click close any open menu.
+    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'trading-menu', z: 90,
+      isOpen: function () { return !!(_active && (S.menu || S.surfOpen || S.tourOpen)); },
+      close: function () { S.menu = null; S.surfOpen = false; S.tourOpen = false; render(); } });
     document.addEventListener('click', function () {
       if (!_active) return;
       if (S.menu || S.surfOpen || S.tourOpen) { S.menu = null; S.surfOpen = false; S.tourOpen = false; render(); }

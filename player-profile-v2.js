@@ -11568,7 +11568,9 @@
 
     if (kind === 'back') {
       e.preventDefault();
-      if (typeof window.showPlayerList === 'function') window.showPlayerList();
+      // ESC brief: back to the view the profile was opened from — the same return as Esc (sfDetailBack).
+      if (typeof window.sfDetailBack === 'function') window.sfDetailBack();
+      else if (typeof window.showPlayerList === 'function') window.showPlayerList();
       return;
     }
 
@@ -11726,10 +11728,14 @@
     state.matchPage = null; state.sheet = null; state.heat = false; state.modal = null; state.careerDrill = null; state.drawDrill = null;
     repaint();
   });
-  function onKey(e) {
-    if (e.key !== 'Escape') return;
-    // The step-3 sheet sits above everything and closes itself on Escape (capture phase, propagation
-    // stopped), so this handler only ever sees the layers below it.
+  // Esc is one layer in the global handler (esc-nav.js); each press closes one step, top first.
+  // The step-3 sheet is its own, higher layer (fh-sheet), so this only ever sees the layers below it.
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'pp2-layers', z: 72,
+    isOpen: function () { return !!(mounted && mounted.isConnected && mounted.offsetParent && (state.matchPage || state.heat || state.modal)); },
+    close: escStep });
+  // Not bound to the document any more; kept as the harness entry (tools/test-draw-record-drill.js).
+  function onKey(e) { if (e && e.key === 'Escape') escStep(); }
+  function escStep() {
     if (state.matchPage) { state.matchPage = null; repaint(); return; }
     if (state.heat) { state.heat = false; repaint(); return; }
     // Founder 2026-10-13 · Esc in the Draw record drill returns to the summary (Career / Last 52 kept).
@@ -11754,7 +11760,6 @@
       // capture:true — `scroll` does not bubble, so a delegated listener on the
       // container never fires without it. This is what feeds the drill pager.
       container.addEventListener('scroll', onDrillScroll, true);
-      if (!mount._key) { document.addEventListener('keydown', onKey); mount._key = true; }
       mounted = container;
     }
     resetState(key);

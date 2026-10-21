@@ -13,6 +13,8 @@
 <script src="./house-ratings.js"></script>
 <!-- TEN-437: the ONE head-to-head meeting list (window.H2HCore) — every H2H surface builds its meetings through it. -->
 <script src="./h2h-core.js"></script>
+<!-- ESC brief: the ONE Escape handler (window.SfEsc) and the detail-view origin stack (window.SfNav). -->
+<script src="./esc-nav.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=block" rel="stylesheet">
 <!-- TEN-168 Series page: separate stylesheet (not inline) so JS/CSS-only edits
@@ -2401,13 +2403,12 @@
   document.addEventListener('click', function (e) {
     if (menu.classList.contains('open') && !menu.contains(e.target) && !chip.contains(e.target)) set(false);
   }, true);
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && menu.classList.contains('open')) {
+  // Esc: one layer in the global handler (esc-nav.js). It hands focus back itself, so ownFocus.
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'acct-menu', z: 90, isOpen: function () { return menu.classList.contains('open'); }, close: function () {
       set(false);
       // a refocus after a mouse open would match :focus-visible and hold the rail open (review)
       if (kbOpen) chip.focus(); else if (menu.contains(document.activeElement) || chip.contains(document.activeElement)) document.activeElement.blur();
-    }
-  });
+    }, ownFocus: true });
   var out = document.getElementById('acctSignout');
   if (out) out.addEventListener('click', function () {
     if (window.BSP && BSP.signOut) BSP.signOut().then(function () { location.href = 'auth.html'; });
@@ -4810,10 +4811,58 @@ function sfCloseOverlays(){ (window.sfOverlayClosers || []).forEach(fn => { try 
   () => { if (typeof ppSplitDrawerState === 'object' && ppSplitDrawerState.open) closePpSplitDrawer(); },
   () => { const lv = document.getElementById('lvClose'); if (lv) lv.click(); },   // the Live tab modal's own ✕
   () => { if (typeof aOddsTipHide === 'function') aOddsTipHide(); });
+// ESC brief: the two page-level modals had no Esc; they join the one handler in esc-nav.js.
+(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'analysis-modal', z: 74, isOpen: () => !!document.getElementById('analysisModal')?.classList.contains('open'), close: () => closeAnalysisModal() });
+(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'fav-modal', z: 74, isOpen: () => !!document.getElementById('favModal')?.classList.contains('open'), close: () => closeModal() });
+// The poll loops a tab owns — started on entry, stopped on leaving. Shared by the sidebar and by SfNav's return.
+function sfSetTabLoops(tab){
+  // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
+  // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
+  if (window.LiveTab) window.LiveTab.setActive(tab === 'live');
+  // TEN-151: Trading Report owns its own poll loop — start on entry, stop on
+  // leaving. No-op unless FEATURE_TRADING_REPORT loaded trading-report.js.
+  if (window.TradingReport) window.TradingReport.setActive(tab === 'trading');
+  // TEN-168: Series page loads its cards on entry. No poll loop (static daily
+  // artifact). No-op unless FEATURE_SERIES loaded series.js.
+  if (window.SeriesPage) window.SeriesPage.setActive(tab === 'series');
+  // TEN-294: Dropping Odds polls its endpoint only while shown. No-op unless drops-page.js loaded.
+  if (window.DropsPage) window.DropsPage.setActive(tab === 'drops');
+}
+// Return to a tab exactly as it was left: no per-tab reset (a sidebar click re-opens Matches on Upcoming/today and
+// Players on the list; a return must not). The hash is put back with replaceState — no history entry, no hashchange.
+function sfActivateTabRaw(tab, hash){
+  if (tab !== 'players' && typeof pp2CancelPendingMount === 'function') pp2CancelPendingMount();
+  document.querySelectorAll('#mainNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === tab));
+  try { if (hash != null && location.hash !== hash) history.replaceState(null, '', location.pathname + location.search + hash); } catch (_) {}
+  sfSetTabLoops(tab);
+}
+function sfActiveTab(){ const b = document.querySelector('#mainNav button.active'); return b ? b.dataset.tab : null; }
+function sfAnalysisModalState(){
+  const el = document.getElementById('analysisModal');
+  if (!el || !el.classList.contains('open') || typeof _aOdds !== 'object' || !_aOdds || !_aOdds.m) return null;
+  const t = document.querySelector('#aTabs .asidenav-item.active[data-atab]');
+  return { id: _aOdds.m.id, tab: t ? t.dataset.atab : null };
+}
+window.sfNavHooks = {
+  activeTab: sfActiveTab,
+  subView(){
+    const lv = document.getElementById('playerListView');
+    return sfActiveTab() === 'players' && lv && lv.style.display === 'none' && ppState.key ? { kind: 'player', key: ppState.key } : null;
+  },
+  modalState: sfAnalysisModalState,
+  leave(dest){ sfCloseOverlays(); if (dest === 'players') showPlayerList(); },
+  activateTab: sfActivateTabRaw,
+  showSub(sub){ if (sub.kind === 'player') showPlayerProfile(sub.key); },
+  reopenModal(s){ if (matches.some(x => x.id === s.id)) openAnalysisModal(s.id, s.tab); }
+};
+// The profile's on-screen Back link: the same return as Esc; with no recorded origin, the player list as before.
+function sfDetailBack(){ if (window.SfNav && SfNav.canBack()) SfNav.back(); else showPlayerList(); }
 document.getElementById('mainNav').addEventListener('click', e => {
   const btn = e.target.closest('button[data-tab]');
   if (!btn) return;
-  if (e.isTrusted) sfCloseOverlays();
+  if (e.isTrusted) { sfCloseOverlays(); if (window.SfNav) SfNav.clear(); }   // the reader's own click starts a fresh trail
+  else if (window.SfNav) SfNav.preNav();   // the app's own jump: remember where it jumped from, before the tab changes
   // TEN-384 fx2 item 2: leaving the page cancels a profile mount still waiting on its first paint.
   if (typeof pp2CancelPendingMount === 'function') pp2CancelPendingMount();
   document.querySelectorAll('#mainNav button').forEach(b => b.classList.remove('active'));
@@ -4860,17 +4909,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'database') { if (window.DatabaseTab) window.DatabaseTab.init(); }
   if (tab === 'entry-lists') { showTournamentList(); tourxSetSection('entry'); }
   if (tab === 'h2h') { if (window.H2HPage) window.H2HPage.ensureInit(true); }   // a visit (TEN-402 R3 fix 1: retries a failed Database join)
-  // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
-  // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
-  if (window.LiveTab) window.LiveTab.setActive(tab === 'live');
-  // TEN-151: Trading Report owns its own poll loop — start on entry, stop on
-  // leaving. No-op unless FEATURE_TRADING_REPORT loaded trading-report.js.
-  if (window.TradingReport) window.TradingReport.setActive(tab === 'trading');
-  // TEN-168: Series page loads its cards on entry. No poll loop (static daily
-  // artifact). No-op unless FEATURE_SERIES loaded series.js.
-  if (window.SeriesPage) window.SeriesPage.setActive(tab === 'series');
-  // TEN-294: Dropping Odds polls its endpoint only while shown. No-op unless drops-page.js loaded.
-  if (window.DropsPage) window.DropsPage.setActive(tab === 'drops');
+  sfSetTabLoops(tab);
 });
 
 // TEN-151: resolve a #trading deep-link on load. Runs on DOMContentLoaded, which
@@ -5245,10 +5284,10 @@ document.addEventListener('click', ev => {
     if (open){ const s = d.querySelector('.sf-dd-row.sel'); if (s) s.scrollIntoView({ block: 'nearest' }); } return; }
   sfDdClose();
 });
+(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'sf-dd', z: 90, isOpen: () => !!document.querySelector('.sf-dd.open'), close: () => sfDdClose() });   // Esc: esc-nav.js
 document.addEventListener('keydown', ev => {
   const d = document.querySelector('.sf-dd.open'); if (!d) return;
   const rows = [...d.querySelectorAll('.sf-dd-row')]; let i = rows.findIndex(r => r.classList.contains('kb'));
-  if (ev.key === 'Escape'){ sfDdClose(); return; }
   if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp'){ ev.preventDefault(); if (i < 0) i = rows.findIndex(r => r.classList.contains('sel'));
     i = Math.max(0, Math.min(rows.length - 1, i + (ev.key === 'ArrowDown' ? 1 : -1))); rows.forEach(r => r.classList.remove('kb')); rows[i].classList.add('kb'); rows[i].scrollIntoView({ block: 'nearest' }); }
   if (ev.key === 'Enter' && i >= 0){ ev.preventDefault(); sfDdPick(d, rows[i].getAttribute('data-v')); }
@@ -5463,6 +5502,7 @@ function newsTourRegistryKey(k){
 }
 function newsOpenTournament(key){
   if (typeof tourxState === 'undefined') return;
+  if (window.SfNav) SfNav.push('tournaments');
   tourxState.section = 'overview'; tourxState.tsSel = key; tourxState.tsQ = ''; tourxState.tsOpen = false;
   const b = document.querySelector('#mainNav button[data-tab="tournaments"]');
   if (b) b.click();
@@ -8449,6 +8489,7 @@ function openPlayerProfileFromMatch(key){
 // reads as a dead click — then opens the Edge Model page for this exact match.
 function openEdgeModelFromMatch(id){
   if (id == null) return;
+  if (window.SfNav) SfNav.push('edge');   // before the modal closes, so the return re-opens it
   if (typeof closeAnalysisModal === 'function') closeAnalysisModal();
   if (typeof openEdgeModel === 'function') openEdgeModel(id);
 }
@@ -12998,14 +13039,12 @@ function maPopFrame(o){
 }
 // Esc closes the topmost frame through its own ✕. Bubble phase: while the stats sheet is open on top, its
 // capture-phase handler closes the sheet and stops the event, so one Escape never closes both.
-function maPopEscKey(ev){
-  if (!ev || ev.key !== 'Escape') return;
+function maPopTopX(){
   const all = document.querySelectorAll('.ma-pop-overlay');
   const top = all && all.length ? all[all.length - 1] : null;
-  const x = top && top.querySelector('.ma-pop-x');
-  if (x) x.click();
+  return top && top.querySelector('.ma-pop-x');
 }
-document.addEventListener('keydown', maPopEscKey);
+(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'ma-pop', z: 78, isOpen: () => !!maPopTopX(), close: () => { const x = maPopTopX(); if (x) x.click(); } });   // Esc: esc-nav.js
 // A re-render of a frame that is already open (a scope switch inside it) must not replay the entrance.
 function maPopNoReplay(host){ if (host) host.querySelectorAll('.ma-sigin, .ma-fade').forEach(el => el.classList.remove('ma-sigin', 'ma-fade')); }
 
@@ -15287,7 +15326,7 @@ function fhSheetInit(e, r, slot){
   });
 }
 
-document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);
+(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'fh-sheet', z: 80, isOpen: () => typeof _fh !== 'undefined' && !!(_fh && _fh.sheet), close: () => fhCloseSheet() });   // Esc: esc-nav.js — above the pop-ups and the modal
 
 // =====================================================================
 // TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB. Design: handoff/Market Edge (`Market Edge Tab.dc.html`,
@@ -17543,12 +17582,8 @@ function initAOddsTips(){
   // Escape closes an open (or pending) tooltip — TEN-304, founder-approved for the shared tooltip. Capture phase +
   // stopped (TEN-335): with a tooltip ON SCREEN, one Esc closes only the tooltip; the next reaches the Odds pop-up
   // (maPopEscKey). A pending tip, or one inside a closed modal, is hidden but never swallows the Esc.
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Escape' || !_aoTipFor) return;
-    const t = document.getElementById('aoddsTip');
-    if (t && t.style.display === 'block' && t.getClientRects().length) e.stopPropagation();
-    aOddsTipHide();
-  }, true);
+  // Folded into esc-nav.js: `always` hides a pending tip on every press without taking it.
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'ao-tip', z: 100, isOpen: () => { const t = document.getElementById('aoddsTip'); return !!(_aoTipFor && t && t.style.display === 'block' && t.getClientRects().length); }, close: () => aOddsTipHide(), always: () => { if (_aoTipFor) aOddsTipHide(); } });
 }
 
 // Interaction handlers — each re-renders the section (state lives in _aOdds).
@@ -19518,7 +19553,7 @@ function printAnalysisReport(){
 
 // Closing leaves no layer behind: the stats sheet and any Market edge pop-up go too (a hidden pop-up would keep
 // answering Esc anywhere on the site — review 2026-09-28).
-function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
+function closeAnalysisModal(){ if (window.SfNav) SfNav.noteModalClosed(sfAnalysisModalState()); document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
 function setActiveButton(groupEl, clickedBtn){
   groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');
@@ -20173,9 +20208,7 @@ async function selectSearchedPlayer(key){
   showPlayerProfile(key);
 }
 document.getElementById('playerSearch').addEventListener('input', e => renderPlayerSearch(e.target.value));
-document.getElementById('playerSearch').addEventListener('keydown', e => {
-  if (e.key === 'Escape'){ e.target.value = ''; renderPlayerSearch(''); }
-});
+// Esc in the search box: esc-nav.js clears it (the input listener above re-renders), then blurs on a second press.
 // Dismiss the dropdown when clicking anywhere outside the search box.
 document.addEventListener('click', e => {
   if (!e.target.closest('.playersearchwrap')){
@@ -21601,7 +21634,7 @@ function ensurePpSplitDrawer(){
     </aside>`;
   document.body.appendChild(el);
   // One document-level Esc listener; it no-ops unless the drawer is open.
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && ppSplitDrawerState.open) closePpSplitDrawer(); });
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'pp-split-drawer', z: 72, isOpen: () => !!ppSplitDrawerState.open, close: () => closePpSplitDrawer() });   // Esc: esc-nav.js
   return el;
 }
 function closePpSplitDrawer(){
@@ -22774,6 +22807,8 @@ function pp2MountNow(key){
 function showPlayerProfile(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return;
+  // ESC brief: remember the view this profile was opened from (not for a re-open of the profile already showing).
+  if (window.SfNav && !(ppState.key === String(key) && document.getElementById('playerListView').style.display === 'none')) SfNav.push('players');
   // v2 first; a false return (module absent, key unknown) falls through to the
   // legacy renderer rather than leaving the reader on a blank page.
   if (pp2FlagOn() && showPlayerProfileV2(key)) return;
@@ -24007,7 +24042,7 @@ function buildPlayerProfileHtml(p){
 
   return `
   <div style="margin-bottom:16px;">
-    <span onclick="showPlayerList()" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-label);cursor:pointer;"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.back}</span> Back to Players</span>
+    <span onclick="sfDetailBack()" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-label);cursor:pointer;"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.back}</span> Back to Players</span>
   </div>
   <style>
     @media (max-width: 1000px){
@@ -25825,9 +25860,7 @@ function tourxRoiPanelHtml(){
 // click that started inside the panel). Bound once, at document level, because
 // the overlay markup is re-rendered on every state change.
 (function tourxBindOverlayDismissal(){
-  document.addEventListener('keydown', function(e){
-    if (e.key === 'Escape') tourxCloseOverlays();
-  });
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'tourx-overlay', z: 75, isOpen: function(){ return !!(tourxState.speedPanel || tourxState.quotesPanel || tourxState.roiPanel); }, close: function(){ tourxCloseOverlays(); } });   // Esc: esc-nav.js
   document.addEventListener('mousedown', function(e){
     const scrim = e.target.closest && e.target.closest('[data-tourx-scrim]');
     if (scrim && e.target === scrim) tourxCloseOverlays();
@@ -27876,7 +27909,7 @@ function tourxMatchSheetHtml(T, name, idx){
     </div>`;
 }
 (function tourxBindMatchSheetDismissal(){
-  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') tourxCloseMatchSheet(); });
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'tourx-ms', z: 76, isOpen: function(){ return !!tourxState.msSheet; }, close: function(){ tourxCloseMatchSheet(); } });   // Esc: esc-nav.js
   document.addEventListener('mousedown', function(e){
     const scrim = e.target.closest && e.target.closest('[data-tourx-ms-scrim]');
     if (scrim && e.target === scrim) tourxCloseMatchSheet();
@@ -29331,7 +29364,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (w && w.contains(e.target)) return;
       setState({ tourOpen: false, tourQuery: '' });
     });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.tourOpen) setState({ tourOpen: false, tourQuery: '' }); });
+    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'db-tour-picker', z: 90, isOpen: () => !!state.tourOpen, close: () => setState({ tourOpen: false, tourQuery: '' }) });   // Esc: esc-nav.js
   }
   const cCap1 = s => (s ? String(s).charAt(0).toUpperCase() + String(s).slice(1).toLowerCase() : '');
   // the catalog's 'ATP 1000' reads 'Masters 1000' — the word the ledgers' event meta (psTourMeta) and the reference use
@@ -29800,11 +29833,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       if (state.bOpen && !inB) { state.bOpen = false; state.bQuery = ''; ch = true; }
       if (ch && !(t && t.closest('#h2hRoot [data-hid]'))) render();
     }, true);
-    document.addEventListener('keydown', e => {
-      if (e.key !== 'Escape' || (!state.aOpen && !state.bOpen)) return;
-      const root = rootEl(); if (!root || !root.offsetParent) return;
-      setState({ aOpen: false, bOpen: false, aQuery: '', bQuery: '' });
-    });
+    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'h2h-picker', z: 90, isOpen: () => { if (!state.aOpen && !state.bOpen) return false; const root = rootEl(); return !!(root && root.offsetParent); }, close: () => setState({ aOpen: false, bOpen: false, aQuery: '', bQuery: '' }) });   // Esc: esc-nav.js
   }
 
   // TEN-402 Data 7 / L-default H5 — Suggested matchups = real pairs from this week's draws: the board's ATP main-draw
@@ -34533,7 +34562,7 @@ window.DatabaseTab = (function(){
         if(prev) use(prev);
       };
       document.addEventListener('click', dismiss);
-      document.addEventListener('keydown', function(e){ if(e.key==='Escape') dismiss(); });
+      (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'db-filter-menu', z: 90, isOpen: function(){ return INSTANCES.some(function(i2){ return i2.root && document.contains(i2.root) && (i2.state.menu!==null || i2.state.tq || i2.state.pq || i2.state.ratQ || i2.state.lnQ); }); }, close: function(){ dismiss(); } });   // Esc: esc-nav.js
     }
   }
 
@@ -35829,7 +35858,7 @@ ${modalHtml}`;
 }
 
 // Esc closes the open sheet (TEN-417).
-document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&ST.sel!=null&&document.getElementById('lvOverlay')) setState({sel:null}); });
+(window.sfEscLayers = window.sfEscLayers || []).push({ id: 'live-sheet', z: 76, isOpen: ()=>ST.sel!=null&&!!document.getElementById('lvOverlay'), close: ()=>setState({sel:null}) });   // Esc: esc-nav.js
 
 // ── init ──────────────────────────────────────────────────────────────────────
 // This is an INLINE script, so it runs during parse — before the deferred

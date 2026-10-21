@@ -1008,7 +1008,9 @@
     panel.style.setProperty('--sr-score', scoreTrackPx(c.streak) + 'px');
     panel.innerHTML = popupHtml(c);
   }
-  function onOvKey(e) { if (e.key === 'Escape') { e.stopPropagation(); closeOverlay(); } }
+  // Esc is one layer in the global handler (esc-nav.js); closeOverlay hands focus back to the card itself.
+  (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'series-overlay', z: 76,
+    isOpen: function () { return !!(_ov && !_ov.hasAttribute('hidden')); }, close: function () { closeOverlay(); }, ownFocus: true });
   function openOverlay(idxStr) {
     var idx = Number(idxStr);
     if (!_view || !isFinite(idx) || !_view[idx]) return;
@@ -1020,7 +1022,6 @@
     _ovReturnFocus = document.querySelector('.sr-card[data-card-idx="' + idxStr + '"]');
     back.removeAttribute('hidden');
     document.body.classList.add('sr-ov-open');
-    document.addEventListener('keydown', onOvKey, true);
     var panel = back.querySelector('.sr-ov');
     if (panel && panel.focus) panel.focus();
   }
@@ -1031,7 +1032,6 @@
     _ov.setAttribute('hidden', '');
     _ovCard = null;
     document.body.classList.remove('sr-ov-open');
-    document.removeEventListener('keydown', onOvKey, true);
     if (_ovReturnFocus && _ovReturnFocus.focus) _ovReturnFocus.focus();
     _ovReturnFocus = null;
   }

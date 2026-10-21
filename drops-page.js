@@ -1202,7 +1202,6 @@
     st.S.q = e.target.value; render();
   }
   function onKey(e) {
-    if (e.key === 'Escape' && st.drawer) closeModal();
     // the box's book rows and "Back to" are keyboard-reachable (role=button, tabindex=0)
     var act = e.target.closest && e.target.closest('.do-ov [role="button"][data-act]');
     if (act && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); act.click(); return; }
@@ -1228,6 +1227,7 @@
     el.addEventListener('click', onClick);
     el.addEventListener('input', onInput);
     document.addEventListener('keydown', onKey);
+    (window.sfEscLayers = window.sfEscLayers || []).push({ id: 'drops-drawer', z: 76, isOpen: function () { return !!st.drawer; }, close: closeModal });   // Esc: esc-nav.js
     document.addEventListener('click', function (e) { if (e.target.closest && e.target.closest('.do-ov')) onClick(e); });
     var page = el.closest('.tabpage');
     if (page && page.classList.contains('active')) setActive(true);
