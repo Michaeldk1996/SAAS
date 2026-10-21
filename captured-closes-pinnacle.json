@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-10-21T15:50:47.339Z",
+ "generatedAt": "2026-10-21T17:14:13.574Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "ab652b9f73eb9bc5a2606fcf72f138fe88d3f2f3",
-  "at": "2026-10-21T15:31:33Z"
+  "commit": "2a6a839808b098a22ec5efeedf83696959fafa36",
+  "at": "2026-10-21T16:46:43Z"
  },
- "commitsScanned": 5574,
+ "commitsScanned": 5581,
  "lastRun": {
-  "from": "2026-10-21T11:19:18Z",
-  "snapshots": 20,
-  "added": 5,
-  "replaced": 0,
+  "from": "2026-10-21T15:31:33Z",
+  "snapshots": 8,
+  "added": 0,
+  "replaced": 1,
   "series": 68,
   "kept": 52,
   "bySource": {
@@ -9907,9 +9907,9 @@
    "p2Key": 52682,
    "p1Name": "C. Moutet",
    "p2Name": "F. Balshaw",
-   "p1": 1.943,
-   "p2": 1.943,
-   "at": "2026-10-21T12:11:14.579Z",
+   "p1": 1.884,
+   "p2": 2.009,
+   "at": "2026-10-21T15:14:21.110Z",
    "trueStart": "2026-10-21T15:15:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
