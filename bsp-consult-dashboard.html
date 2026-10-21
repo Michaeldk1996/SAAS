@@ -463,9 +463,9 @@
   /* TEN-179 q1 — overflow:hidden removed here too; see the note on .match-card. This is
      the rule that was actually clipping the Completed journey, silently. */
   [data-page="matches"] .match-card.cmpl{ padding:0; overflow:visible; }
-  /* TEN-179 item 4 (founder task 2026-09-11) — the whole completed card opens Match Stats,
-     so it needs the affordance. Scoped to .cmpl: upcoming cards are not click targets. */
-  [data-page="matches"] .match-card.cmpl{ cursor:pointer; }
+  /* TEN-179 item 4 (founder task 2026-09-11) — the whole completed card opens Match Stats; whole-card click
+     (2026-10-22) — the whole upcoming card opens the analysis, as "See full analysis" does. Both need the affordance. */
+  [data-page="matches"] .match-card.mx-match{ cursor:pointer; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
   /* §3+§5 (PASS 5) — the row carries NO horizontal padding: the .match-card's own
      16px/18px padding already insets the row, and the export's player row sits flush to
@@ -9878,7 +9878,7 @@ function renderMatches(){
         </div>`;
     return `
     ${dividerHtml}
-    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}"${isCompleted ? ' role="button" tabindex="0" aria-label="Match stats — ' + psEsc(m.p1) + ' v ' + psEsc(m.p2) + '"' : ''}>
+    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="${isCompleted ? 'Match stats' : 'Match analysis'} — ${psEsc(m.p1)} v ${psEsc(m.p2)}">
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
@@ -19694,6 +19694,20 @@ function mxOpenCardStats(card){
   if (!id) return;
   openAnalysisModal(id, 'matchstats');
 }
+// Whole-card click (2026-10-22): an Upcoming card opens the analysis exactly as its "See full analysis" link
+// does (openAnalysisModal(id), no tab); a Completed card keeps TEN-179's Match Stats landing.
+function mxOpenCard(card){
+  if (card && card.classList.contains('cmpl')) { mxOpenCardStats(card); return; }
+  const id = card && card.dataset.id;
+  if (id) openAnalysisModal(id);
+}
+// Whole-card click (2026-10-22): an Upcoming card opens the analysis exactly as its "See full analysis" link
+// does (openAnalysisModal(id), no tab); a Completed card keeps TEN-179's Match Stats landing.
+function mxOpenCard(card){
+  if (card && card.classList.contains('cmpl')) { mxOpenCardStats(card); return; }
+  const id = card && card.dataset.id;
+  if (id) openAnalysisModal(id);
+}
 // True when this click should be left to something else on the card.
 function mxCardClickInert(e, card){
   // Real controls keep their own behaviour: the Market Signal chip (a <button>, which
@@ -19718,20 +19732,19 @@ function mxCardClickInert(e, card){
   return false;
 }
 document.getElementById('matchlist').addEventListener('click', e => {
-  const card = e.target.closest('.match-card.cmpl');
+  const card = e.target.closest('.match-card.mx-match');
   if (!card || mxCardClickInert(e, card)) return;
-  mxOpenCardStats(card);
+  mxOpenCard(card);
 });
-// Keyboard parity. The card is the primary action on Completed now, and its only other
+// Keyboard parity. The card is the primary action on both views, and its only other
 // route into the modal ("See full analysis") is an <a> with no href, so it is not focusable
-// either — without this the tab there is unreachable from the keyboard. Scoped to .cmpl, so
-// Upcoming cards add no tab stop and their tab order is unchanged.
+// either — without this the modal is unreachable from the keyboard.
 document.getElementById('matchlist').addEventListener('keydown', e => {
   if (e.key !== 'Enter' && e.key !== ' ') return;
-  const card = e.target.closest('.match-card.cmpl');
+  const card = e.target.closest('.match-card.mx-match');
   if (!card || e.target !== card) return;    // a control inside the card keeps its own keys
   e.preventDefault();
-  mxOpenCardStats(card);
+  mxOpenCard(card);
 });
 
 window.addEventListener('hashchange', mxApplyHash);
@@ -36139,7 +36152,8 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   [data-page="matches"] .mx-hstats{ display:contents; }
 
   /* ── TEN-377 README §7: Completed card ("2b Inset tile" rows, "7a" score, Open → Close · Move) ── */
-  [data-page="matches"] .match-card.cmpl:hover{ border-color:var(--edge-16); }
+  [data-page="matches"] .match-card.mx-match:not(.sig-open):hover{ border-color:var(--edge-16); }   /* whole-card click: both cards */
+  [data-page="matches"] .match-card.mx-match:focus-visible{ outline:2px solid var(--edge-16); outline-offset:2px; }
   [data-page="matches"] .match-card.cmpl.sig-open{ border-color:var(--open-card); }
   [data-page="matches"] .match-card.cmpl .mc-head{ padding:12px 18px 10px; border-bottom:none; }
   [data-page="matches"] .match-card.cmpl .mc-surface{ font-weight:600; color:var(--text-soft); }   /* founder Q1: README, surfaces neutral */
