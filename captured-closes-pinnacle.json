@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-21T00:28:08.222Z",
+ "generatedAt": "2026-10-21T10:42:16.947Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "37aef047e1cce7c85466428368fc8f59a5318f7f",
-  "at": "2026-10-20T23:47:32Z"
+  "commit": "5d9f5c17040a8c74fb716c551d3def30ea9a90c6",
+  "at": "2026-10-21T10:20:13Z"
  },
- "commitsScanned": 5504,
+ "commitsScanned": 5549,
  "lastRun": {
-  "from": "2026-10-20T22:17:37Z",
-  "snapshots": 8,
-  "added": 0,
-  "replaced": 1,
-  "series": 70,
-  "kept": 50,
+  "from": "2026-10-20T23:47:32Z",
+  "snapshots": 46,
+  "added": 7,
+  "replaced": 0,
+  "series": 64,
+  "kept": 49,
   "bySource": {
-   "api-tennis-live": 50
+   "api-tennis-live": 49
   },
   "byBook": {
-   "Pinnacle +30s": 50
+   "Pinnacle +30s": 49
   },
   "dropped": {
-   "noStart": 20
+   "noStart": 15
   }
  },
  "stats": {
@@ -9712,6 +9712,125 @@
    "round": "ATP Lyon - 1/16-finals",
    "qualifying": false,
    "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12171792,
+   "date": "2026-10-21",
+   "p1Key": 10869,
+   "p2Key": 1079,
+   "p1Name": "D. Prizmic",
+   "p2Name": "D. Dzumhur",
+   "p1": 1.442,
+   "p2": 2.98,
+   "at": "2026-10-21T07:31:13.631Z",
+   "trueStart": "2026-10-21T09:18:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12171883,
+   "date": "2026-10-21",
+   "p1Key": 2112,
+   "p2Key": 1777,
+   "p1Name": "M. Bellucci",
+   "p2Name": "T. M. Etcheverry",
+   "p1": 1.751,
+   "p2": 2.18,
+   "at": "2026-10-21T06:06:43.518Z",
+   "trueStart": "2026-10-21T06:16:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12171887,
+   "date": "2026-10-21",
+   "p1Key": 78981,
+   "p2Key": 2981,
+   "p1Name": "Z. Nurlanuly",
+   "p2Name": "T. Machac",
+   "p1": 14.76,
+   "p2": 1.038,
+   "at": "2026-10-21T04:40:32.780Z",
+   "trueStart": "2026-10-21T08:32:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172316,
+   "date": "2026-10-21",
+   "p1Key": 1900,
+   "p2Key": 8781,
+   "p1Name": "J. Duckworth",
+   "p2Name": "L. Darderi",
+   "p1": 2,
+   "p2": 1.892,
+   "at": "2026-10-21T04:49:15.957Z",
+   "trueStart": "2026-10-21T06:16:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172317,
+   "date": "2026-10-21",
+   "p1Key": 438,
+   "p2Key": 2847,
+   "p1Name": "A. Mannarino",
+   "p2Name": "A. Rublev",
+   "p1": 3.78,
+   "p2": 1.308,
+   "at": "2026-10-21T07:29:26.115Z",
+   "trueStart": "2026-10-21T10:00:26.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172375,
+   "date": "2026-10-21",
+   "p1Key": 2002,
+   "p2Key": 424,
+   "p1Name": "F. Diaz Acosta",
+   "p2Name": "N. Basilashvili",
+   "p1": 2.96,
+   "p2": 1.446,
+   "at": "2026-10-21T07:11:52.213Z",
+   "trueStart": "2026-10-21T09:12:00.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12172384,
+   "date": "2026-10-21",
+   "p1Key": 1317,
+   "p2Key": 1104,
+   "p1Name": "M. Damm",
+   "p2Name": "F. Cerundolo",
+   "p1": 2.43,
+   "p2": 1.621,
+   "at": "2026-10-21T08:36:22.486Z",
+   "trueStart": "2026-10-21T09:18:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
   }
  ]
 }
