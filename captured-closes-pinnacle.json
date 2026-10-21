@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-21T17:14:13.574Z",
+ "generatedAt": "2026-10-21T19:47:14.103Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "2a6a839808b098a22ec5efeedf83696959fafa36",
-  "at": "2026-10-21T16:46:43Z"
+  "commit": "da13ce785bdda0b5b4349627a097c4c3aeb4651d",
+  "at": "2026-10-21T19:31:21Z"
  },
- "commitsScanned": 5581,
+ "commitsScanned": 5594,
  "lastRun": {
-  "from": "2026-10-21T15:31:33Z",
-  "snapshots": 8,
-  "added": 0,
-  "replaced": 1,
-  "series": 68,
-  "kept": 52,
+  "from": "2026-10-21T16:46:43Z",
+  "snapshots": 14,
+  "added": 4,
+  "replaced": 0,
+  "series": 70,
+  "kept": 55,
   "bySource": {
-   "api-tennis-live": 52
+   "api-tennis-live": 55
   },
   "byBook": {
-   "Pinnacle +30s": 52
+   "Pinnacle +30s": 55
   },
   "dropped": {
-   "noStart": 16
+   "noStart": 15
   }
  },
  "stats": {
@@ -9782,6 +9782,23 @@
    "event": "ATP Lyon"
   },
   {
+   "eventKey": 12172183,
+   "date": "2026-10-21",
+   "p1Key": 2385,
+   "p2Key": 1212,
+   "p1Name": "D. Goffin",
+   "p2Name": "R. Bertola",
+   "p1": 2.59,
+   "p2": 1.555,
+   "at": "2026-10-21T15:13:56.587Z",
+   "trueStart": "2026-10-21T15:53:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/16-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
    "eventKey": 12172316,
    "date": "2026-10-21",
    "p1Key": 1900,
@@ -9850,6 +9867,23 @@
    "event": "ATP Brussels"
   },
   {
+   "eventKey": 12172581,
+   "date": "2026-10-21",
+   "p1Key": 68751,
+   "p2Key": 2849,
+   "p1Name": "M. Kouame",
+   "p2Name": "L. Musetti",
+   "p1": 4.05,
+   "p2": 1.278,
+   "at": "2026-10-21T16:30:54.371Z",
+   "trueStart": "2026-10-21T16:54:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
    "eventKey": 12172807,
    "date": "2026-10-21",
    "p1Key": 1906,
@@ -9884,6 +9918,23 @@
    "event": "ATP Brussels"
   },
   {
+   "eventKey": 12172858,
+   "date": "2026-10-21",
+   "p1Key": 818,
+   "p2Key": 2831,
+   "p1Name": "G. Onclin",
+   "p2Name": "J-L. Struff",
+   "p1": 3.57,
+   "p2": 1.334,
+   "at": "2026-10-21T16:57:04.127Z",
+   "trueStart": "2026-10-21T18:32:25.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
    "eventKey": 12172931,
    "date": "2026-10-21",
    "p1Key": 7102,
@@ -9911,6 +9962,23 @@
    "p2": 2.009,
    "at": "2026-10-21T15:14:21.110Z",
    "trueStart": "2026-10-21T15:15:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12173013,
+   "date": "2026-10-21",
+   "p1Key": 1771,
+   "p2Key": 1894,
+   "p1Name": "B. Bonzi",
+   "p2Name": "T. Paul",
+   "p1": 3.16,
+   "p2": 1.403,
+   "at": "2026-10-21T17:52:05.999Z",
+   "trueStart": "2026-10-21T19:16:00.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - 1/8-finals",
