@@ -45,22 +45,9 @@ jobs:
           CHECKS="select conname, pg_get_constraintdef(oid) as def from pg_constraint where conrelid = 'public.historical_snapshot'::regclass and contype = 'c' order by conname"
           echo "== snapshot CHECKs before (read-only)"; printf '%s' "$CHECKS" | q | sed '$d' | head -c 3000; echo
           MIGS=(supabase/migrations/20261016090000_historical_odds_archive.sql supabase/migrations/20261016150000_historical_snapshot.sql supabase/migrations/20261017090000_historical_snapshot_start10.sql supabase/migrations/20261019090000_historical_snapshot_bet365.sql supabase/migrations/20261020090000_historical_snapshot_te.sql)
-          LAST=${MIGS[${#MIGS[@]}-1]}
-          for MIG in "${MIGS[@]}"; do
-            resp=$(q < "$MIG")
-            code=$(printf '%s' "$resp" | tail -n1); body=$(printf '%s' "$resp" | sed '$d')
-            echo "$MIG http $code: $body" | head -c 800; echo
-            # a snapshot migration restates the whole source / label / times CHECK set; once a LATER source holds rows an
-            # earlier set is violated (23514) and its one transaction rolls back untouched — the later migration in this
-            # list restates the set that holds. Every other failure, and any failure of the last one, stops the job.
-            if [ "$code" != "200" ] && [ "$code" != "201" ]; then
-              if [ "$MIG" != "$LAST" ] && printf '%s' "$body" | grep -q '23514: check constraint' && printf '%s' "$body" | grep -q 'historical_snapshot_'; then
-                echo "::warning::$MIG: an earlier CHECK set no longer holds (rows of a later source); rolled back, the later migration restates it"; continue
-              fi
-              echo "::error::migration http $code"; exit 1
-            fi
-            if printf '%s' "$body" | jq -e 'type=="object" and (has("message") or has("error"))' >/dev/null 2>&1; then echo "::error::migration failed"; exit 1; fi
-          done
+          # founder 2026-10-20 (item 9): each file once, recorded in the archive's migration ledger in the same transaction; an
+          # edited applied file stops the install; an archive installed before the ledger is recorded at bootstrap (never re-run)
+          python3 tools/archive_install.py "${MIGS[@]}"
           echo "== snapshot CHECKs after"; after=$(printf '%s' "$CHECKS" | q | sed '$d'); printf '%s' "$after" | head -c 3000; echo
           printf '%s' "$after" | grep -q 'Tennis Explorer · Pinnacle' || { echo "::error::the source CHECK does not name Tennis Explorer · Pinnacle"; exit 1; }
           sleep 15                                                  # PostgREST reloads its schema cache
