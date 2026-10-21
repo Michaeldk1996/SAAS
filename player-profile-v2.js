@@ -3525,7 +3525,10 @@
       date: r.date, year: r.year, surface: r.surface, event: r.event, round: r.round, opp: r.opp,
       won: r.won, sets: r.sets, setScores: r.score, price: r.price, oppPrice: r.oppPrice,
       retired: r.retired, wo: r.wo, tier: r.tier, level: r.level || null, src: 'career', sheetId: r.sheetId, m: null,
-      conflicts: r.conflicts || null
+      conflicts: r.conflicts || null,
+      // Derived lines read their population off this list (lineCoverage): the per-set games, the Market edge close
+      // (`cents`: the favourite / underdog role) and the feed's event name (NextGen).
+      setGames: r.setGames || null, cents: r.cents != null ? r.cents : null, tournament: r.tournament || null
     };
   }
 
@@ -3718,12 +3721,6 @@
                 ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
     var GRID = 'display:grid;grid-template-columns:46px 12px minmax(0,1.15fr) 38px 40px ' +
       'minmax(0,1.35fr) 48px 48px;gap:0 10px;align-items:center;';
-    var head = HEAD.map(function (h) {
-      return '<div style="position:sticky;top:0;background:var(--card);font-family:var(--font-words);' +
-        'font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);' +
-        'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
-    }).join('');
-
     // The pager reuses THIS builder for every appended page, so a scrolled-in row
     // is byte-identical to a first-page one. `pg.lastEvent` carries the event
     // grouping across the page boundary — reset it and the first row of page two
@@ -3737,26 +3734,38 @@
       multiYear: !opts.year
     });
 
-    // TEN-384 C6 · the drill is a panel (--card + --edge-6, r11, 15/17), title 14/700, the record mono 12,
-    // the note mono 10.5, and a caps CLOSE (Hanken 10.5/700/0.10em — caps labels are never mono).
-    return '<div style="grid-column:1 / -1;background:var(--card);' +
+    return drillPanelHtml({
+      title: opts.title, record: recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' + cellN + ' matches',
+      note: note, close: 'career-drill-close', grid: GRID, head: HEAD, body: body, hasRows: shown.length > 0
+    });
+  }
+  // TEN-384 C6 · the drill is a panel (--card + --edge-6, r11, 15/17), title 14/700, the record mono 12,
+  // the note mono 10.5, and a caps CLOSE (Hanken 10.5/700/0.10em — caps labels are never mono).
+  // One panel for every drill card: the Career record's (renderDrill) and a Derived line's (renderLineDrill).
+  // `controls` (optional) sits between the header and the list.
+  function drillPanelHtml(o) {
+    var head = o.head.map(function (h) {
+      return '<div style="position:sticky;top:0;background:var(--card);font-family:var(--font-words);' +
+        'font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);' +
+        'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
+    }).join('');
+    return '<div ' + (o.attr || '') + 'style="grid-column:1 / -1;background:var(--card);' +
       'border:1px solid var(--edge-6);border-radius:11px;' +
       'padding:15px 17px;margin:10px 0 14px;">' +
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
-        '<div style="font-size:14px;font-weight:700;white-space:nowrap;">' + esc(opts.title) + '</div>' +
+        '<div style="font-size:14px;font-weight:700;white-space:nowrap;">' + esc(o.title) + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);' +
-          'white-space:nowrap;">' + esc(recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' +
-          cellN + ' matches') + '</div>' +
+          'white-space:nowrap;">' + esc(o.record) + '</div>' +
         '<div data-pp2-drill-note="1" style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
           'color:var(--text-label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;">' +
-          esc(note) + '</div>' +
-        '<button type="button" data-pp2="career-drill-close" style="margin-left:auto;background:none;' +
+          esc(o.note) + '</div>' +
+        '<button type="button" data-pp2="' + o.close + '" style="margin-left:auto;background:none;' +
           'border:0;padding:1px 6px;color:var(--text-label);font-family:var(--font-words);font-size:10.5px;' +
           'font-weight:700;letter-spacing:0.10em;text-transform:uppercase;cursor:pointer;flex:none;">Close</button>' +
-      '</div>' +
-      (shown.length
+      '</div>' + (o.controls || '') +
+      (o.hasRows
         ? '<div data-pp2-drill-scroll="1" style="max-height:340px;overflow-y:auto;">' +
-            '<div data-pp2-drill-grid="1" style="' + GRID + '">' + head + body + '</div></div>'
+            '<div data-pp2-drill-grid="1" style="' + o.grid + '">' + head + o.body + '</div></div>'
         : '') +
       '</div>';
   }
@@ -3823,10 +3832,12 @@
              ';padding:5px 0;', esc(r.sets || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
              'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r) + provisionalMark(r)) +
+        // A Derived line's drill swaps the two price columns for its own (lineDrillTail): margin and result.
+        (pg.tail ? pg.tail(r, cell) :
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
              'text-align:right;padding:5px 0;', oddsText(r.price)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
-             'text-align:right;padding:5px 0;', oddsText(r.oppPrice));
+             'text-align:right;padding:5px 0;', oddsText(r.oppPrice)));
     }).join('');
   }
 
@@ -3845,7 +3856,7 @@
     grid.insertAdjacentHTML('beforeend', drillBodyHtml(pg.rows, pg.next, to, pg));
     pg.next = to;
     var noteEl = sc.parentNode && sc.parentNode.querySelector('[data-pp2-drill-note]');
-    if (noteEl) noteEl.textContent = drillNote(pg.rows.length, pg.next, pg.cellN, pg.surf, pg.gap);
+    if (noteEl) noteEl.textContent = pg.noteFn ? pg.noteFn(pg) : drillNote(pg.rows.length, pg.next, pg.cellN, pg.surf, pg.gap);
   }
   // "2024 · Clay · ATP" under the event group row. Only stated where held — the
   // design's example reads "Australian Open · Hard · Grand Slam", but the level
@@ -6304,8 +6315,11 @@
       label: 'best of 3', setsToWin: 2,
       groups: [
         ['Games handicap', [
-          ['−4.5 games', 'gh', 4.5, -1], ['−2.5 games', 'gh', 2.5, -1],
-          ['+2.5 games', 'gh', 2.5, 1], ['+4.5 games', 'gh', 4.5, 1]]],
+          // Founder brief 2026-10-21 · ±3.5 and ±3 join the family, in this order. ±3 is a whole line: a match
+          // decided by exactly 3 games is a VOID on it (lineCoverage), out of the rate and counted on its own.
+          ['−4.5 games', 'gh', 4.5, -1], ['−3.5 games', 'gh', 3.5, -1], ['−3 games', 'gh', 3, -1],
+          ['−2.5 games', 'gh', 2.5, -1], ['+2.5 games', 'gh', 2.5, 1], ['+3 games', 'gh', 3, 1],
+          ['+3.5 games', 'gh', 3.5, 1], ['+4.5 games', 'gh', 4.5, 1]]],
         ['Set handicap', [['−1.5 sets', 'sh', 1.5, -1], ['+1.5 sets', 'sh', 1.5, 1]]],
         ['Total games', [
           ['over 22.5', 'tg', 22.5, 1], ['under 22.5', 'tg', 22.5, -1],
@@ -6404,36 +6418,84 @@
   var LC_ROLES = [['all', 'All matches'], ['fav', 'As favourite'], ['dog', 'As underdog']];
   var LC_HOT = 65;
 
+  // ── Founder brief 2026-10-21 · Derived lines: population, ±3.5 / ±3, Window + Tier, line drill ──────────
+  // POPULATION. Lines read the CAREER RECORD's own counted rows — drillScope(), the list every record drill reads —
+  // with every tier and every year, so a line can never count a match the record does not (Altmaier: the feed rows
+  // alone gave 379 of his 766). The Window and Tier controls cut that list exactly as the record's own drill cuts it
+  // (same tier assignment, Last 52 weeks = the record's 364-day line). A line needs no price: nothing is left out for
+  // want of one. Out, each counted by reason, so record = in + out reconciles on the page:
+  //   no score       a walkover, or no set count on file
+  //   retired        retired or abandoned — the existing retirement rule (a games line off a match stopped at 3-3
+  //                  is not a handicap result)
+  //   format         NextGen short sets (a set won on fewer than 6 games), or in a best-of-3 a match-tiebreak
+  //                  decider stored as a set (13-11, 10-8 — points, not games)
+  //   level          a set count that decides no match shape (fx6 item 2)
+  //   other format   the other toggle's matches (best of 5 under Best of 3, and the reverse)
+  // The games lines additionally need per-set games; every row still states its own denominator.
+  var LC_WINDOWS = [['career', 'Career'], ['l24', 'Last 24 months'], ['l52', 'Last 52 weeks']];
+  function lcWindowOf(v) { return v === 'l24' || v === 'l52' ? v : 'career'; }
+  function lcTierOf(v) { return v === 'atp' || v === 'chitf' ? v : 'all'; }
+  // Both rolling windows count back from today: Last 52 weeks is the Career record's own cutoff (last52Cutoff),
+  // Last 24 months the same calendar day two years back.
+  function last24Cutoff() {
+    var d = new Date();
+    d.setUTCFullYear(d.getUTCFullYear() - 2);
+    return d.toISOString().slice(0, 10);
+  }
+  function lcSinceOf(win) { return win === 'l52' ? last52Cutoff() : win === 'l24' ? last24Cutoff() : null; }
+  var LC_WINDOW_WORD = { career: 'career', l24: 'last 24 months', l52: 'last 52 weeks' };
+
+  /** A non-standard format: NextGen short sets, or a best-of-3 decided on a match tiebreak stored as a set. */
+  function lineAltFormat(r, sc) {
+    if (/next ?gen/i.test(String(r.tournament || '') + ' ' + String(r.event || ''))) return true;
+    if (sc.partial) return false;            // a list short of (or junk beyond) the result: its games are not read
+    var list = sc.sets || r.setGames || [];
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (s.p == null || s.o == null || +s.p === +s.o) continue;
+      var hi = Math.max(+s.p, +s.o);
+      if (hi < 6) return true;
+      if (Math.max(sc.w, sc.l) === 2 && hi > 7) return true;
+    }
+    return false;
+  }
+
   /**
-   * The Derived-lines model for one format and one role.
+   * The Derived-lines model for one format and one role, under the Window and Tier controls
+   * (`opts.win` career | l24 | l52, `opts.tier` all | atp | chitf; both default to the widest).
    *
    * Every row states its OWN denominator: a set handicap needs only the set
    * count, a games line needs the per-set games, so the two can differ.
    */
-  function lineCoverage(p, fmt, role) {
+  function lineCoverage(p, fmt, role, opts) {
+    var o = opts || {};
     var def = LINE_DEFS[fmt] || LINE_DEFS.bo3;
-    var spine = calSpine(p) || [];
-    var excluded = 0, noScore = 0, unshaped = 0, pool = [];
-    for (var i = 0; i < spine.length; i++) {
-      var r = spine[i];
-      if (r.retired || r.wo) { excluded++; continue; }
+    var win = lcWindowOf(o.win), tier = lcTierOf(o.tier), since = lcSinceOf(win);
+    var scope = drillScope(p, null, since, tier).filter(function (r) { return !r.notCounted; });
+    var why = { noScore: 0, retired: 0, format: 0, unshaped: 0, otherFmt: 0 };
+    var pool = [];
+    // TEN-310: favourite = price under 2.00 (the Market edge rule).
+    var MEC = window.MarketEdgeCore;
+    for (var i = 0; i < scope.length; i++) {
+      var r = scope[i];
+      if (r.wo) { why.noScore++; continue; }
+      if (r.retired) { why.retired++; continue; }
       var sc = lineSetCount(r);
-      if (!sc) { noScore++; continue; }
+      if (!sc) { why.noScore++; continue; }
+      // fx6 item 2 · a count that decides no shape stays out of All and the note says so,
+      // so the Match shape rows always sum to All matches.
+      if (sc.w === sc.l) { why.unshaped++; continue; }
       // Format from the scoreline itself, not from the tier: the winner of a
       // best-of-5 took three sets.
       var need = Math.max(sc.w, sc.l);
-      if (need !== def.setsToWin) continue;
-      // fx6 item 2 · a count that decides no shape (2–2 in this format) stays out of All and the note says so,
-      // so the Match shape rows always sum to All matches.
-      if (sc.w === sc.l) { unshaped++; continue; }
+      if ((need !== 2 && need !== 3) || lineAltFormat(r, sc)) { why.format++; continue; }
+      if (need !== def.setsToWin) { why.otherFmt++; continue; }
       var g = sc.partial ? null : lineGames(r, sc.sets);
-      // TEN-310: favourite = price under 2.00 (the Market edge rule).
-      var MEC = window.MarketEdgeCore;
       // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
       // shows as H / A but is not a close, so the row counts as unpriced here and in the note.
       var rl = (r.cents != null && r.price != null && r.price >= 1.01)
         ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : null;
-      pool.push({ sc: sc, g: g, role: rl });
+      pool.push({ sc: sc, g: g, role: rl, r: r });
     }
     var all = pool.length;
     var favN = pool.filter(function (m) { return m.role === 'fav'; }).length;
@@ -6443,29 +6505,28 @@
     var withGames = sub.filter(function (m) { return !!m.g; }).length;
     var setMissing = sub.filter(function (m) { return !!m.sc.setMissing; }).length;
 
-    function hits(m, kind, arg, dir) {
-      if (kind === 'ms') return m.sc.w === arg[0] && m.sc.l === arg[1];
-      if (kind === 'sh') {
-        var sm = m.sc.w - m.sc.l;
-        return dir < 0 ? sm > arg : sm > -arg;
-      }
-      if (!m.g) return null;               // games lines need per-set games
-      if (kind === 'gh') {
-        var gm = m.g.f - m.g.a;
-        return dir < 0 ? gm > arg : gm > -arg;
-      }
-      var tot = m.g.f + m.g.a;
-      return dir > 0 ? tot > arg : tot < arg;
+    // One match on one line: 'cover' | 'miss' | 'void', or null where the line cannot be read off it. A line is
+    // the match's own figure plus the handicap: above zero covers, below fails, exactly zero (a whole line only,
+    // e.g. ±3 decided by 3 games) is a void.
+    function lineResult(m, kind, arg, dir) {
+      if (kind === 'ms') return m.sc.w === arg[0] && m.sc.l === arg[1] ? 'cover' : 'miss';
+      var x;
+      if (kind === 'sh') x = (m.sc.w - m.sc.l) + (dir < 0 ? -arg : arg);
+      else if (!m.g) return null;            // games lines need per-set games
+      else if (kind === 'gh') x = (m.g.f - m.g.a) + (dir < 0 ? -arg : arg);
+      else x = dir > 0 ? (m.g.f + m.g.a) - arg : arg - (m.g.f + m.g.a);
+      return x > 0 ? 'cover' : x < 0 ? 'miss' : 'void';
     }
     function tally(kind, arg, dir) {
-      var n = 0, hit = 0;
+      var t = { n: 0, hit: 0, voids: 0, voidable: kind !== 'ms' && arg % 1 === 0, members: [] };
       for (var j = 0; j < sub.length; j++) {
-        var h = hits(sub[j], kind, arg, dir);
+        var h = lineResult(sub[j], kind, arg, dir);
         if (h === null) continue;          // not evaluable -> out of this row's n
-        n++;
-        if (h) hit++;
+        t.n++;
+        if (h === 'cover') t.hit++; else if (h === 'void') t.voids++;
+        t.members.push({ m: sub[j], res: h });
       }
-      return { n: n, hit: hit };
+      return t;
     }
     var groups = def.groups.map(function (gr) {
       var rows = gr[1].map(function (spec) {
@@ -6481,24 +6542,46 @@
     groups.forEach(function (g) {
       g.rows.forEach(function (r) { r.vs = (r.rate != null && avg != null) ? r.rate - avg : null; });
     });
+    // The Career record's figure for the same window and tier: Career = the record's total for the tier (its
+    // undated matches, if any, sit in it with no row to list); a rolling window = the dated rows it lists.
+    // Under ATP or Challenger & ITF a Career season the record holds with no tier split (a pre-2021 feed season,
+    // CAREER_NO_SPLIT) is not in the scope, exactly as the record's own Tier control dashes it: its matches count
+    // under All only. Counted, so the note can say how many.
+    var noSplit = 0;
+    if (tier !== 'all' && win === 'career') {
+      var split = {};
+      spineYears(p).forEach(function (y) { if (tierRowOf(y, tier)) split[String(y.year)] = 1; });
+      noSplit = countedSpine(p).filter(function (r) { return r.tier === tier && !split[r.year]; }).length;
+    }
+    var recN = scope.length;
+    if (win === 'career') {
+      var tot = careerTierCells(p, tier).total;
+      recN = tot ? (tot.won || 0) + (tot.lost || 0) : 0;
+    }
     return {
       // TEN-384 fix 5 · All = As favourite + As underdog + unpriced, by construction; the note states the
       // unpriced count so the three tiles reconcile on the page.
       groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel,
-      withGames: withGames, setMissing: setMissing, excluded: excluded, noScore: noScore, unshaped: unshaped, fmtLabel: def.label, avg: avg
+      withGames: withGames, setMissing: setMissing, fmtLabel: def.label, avg: avg,
+      win: win, tier: tier, since: since, scopeN: scope.length, recordN: recN, undated: recN - scope.length, why: why, noSplit: noSplit,
+      // kept for the readers that predate the reasons split
+      excluded: why.retired, noScore: why.noScore, unshaped: why.unshaped
     };
   }
 
-  /** One ledger row's figures, on the sample gate (n < 5 dash, 5–9 small sample). */
+  /** One ledger row's figures, on the sample gate (n < 5 dash, 5–9 small sample). A whole line's voids sit
+   *  outside the rate and its gate: rate = covered / (covered + not covered). */
   function lineRow(label, t) {
-    var n = t.n, hit = t.hit;
-    var g = n === 0 ? 'zero' : n < 5 ? 'hard' : n < 10 ? 'soft' : 'full';
-    var rate = (g === 'full' || g === 'soft') ? hit / n * 100 : null;
+    var n = t.n, hit = t.hit, v = t.voids || 0, rn = n - v;
+    var g = rn === 0 ? 'zero' : rn < 5 ? 'hard' : rn < 10 ? 'soft' : 'full';
+    var rate = (g === 'full' || g === 'soft') ? hit / rn * 100 : null;
     return {
-      label: label, n: n, hit: hit, gate: g, rate: rate,
+      label: label, n: n, hit: hit, voids: v, miss: rn - hit, voidable: !!t.voidable, gate: g, rate: rate,
       hot: g === 'full' && rate >= LC_HOT,
-      mark: g === 'soft' ? smallSampleText(n) : (g === 'hard' ? 'n < 5' : ''),
-      record: n ? (hit + ENDASH + (n - hit)) : DASH
+      mark: g === 'soft' ? smallSampleText(rn) : (g === 'hard' ? 'n < 5' : ''),
+      // ±3 reads covered–void–not covered (210–34–144); a half line covered–not covered
+      record: n ? (t.voidable ? hit + ENDASH + v + ENDASH + (rn - hit) : hit + ENDASH + (n - hit)) : DASH,
+      members: t.members || []
     };
   }
 
@@ -6545,11 +6628,18 @@
   function renderLinesTab(p) {
     var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
     var role = state.lcRole === 'fav' || state.lcRole === 'dog' ? state.lcRole : 'all';
-    var d = lineCoverage(p, fmt, role);
+    var win = lcWindowOf(state.lcWin), tier = lcTierOf(state.lcTier);
+    var d = lineCoverage(p, fmt, role, { win: win, tier: tier });
     var roleWord = role === 'fav' ? 'as favourite' : role === 'dog' ? 'as underdog' : 'all matches';
-    var head = '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;min-height:32px;">' +
-      '<span style="' + MK_CAPS + '">Coverage by line ' + MIDDOT + ' ' + esc(d.fmtLabel) + ' ' + MIDDOT + ' ' + roleWord + '</span>' +
-      mkSeg('lc-fmt', [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], fmt) + '</div>';
+    // Brief 2026-10-21 · Window and Tier sit beside Best of 3 | Best of 5, on the same darker-track segment; the
+    // Tier labels are the Career record's own (CAREER_TIERS).
+    var scopeWord = (win === 'career' ? '' : ' ' + MIDDOT + ' ' + LC_WINDOW_WORD[win]) +
+      (tier === 'all' ? '' : ' ' + MIDDOT + ' ' + careerTierWord(tier));
+    var head = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-bottom:12px;min-height:32px;">' +
+      '<span style="' + MK_CAPS + '">Coverage by line ' + MIDDOT + ' ' + esc(d.fmtLabel) + esc(scopeWord) + ' ' + MIDDOT + ' ' + roleWord + '</span>' +
+      '<span style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">' +
+        mkSeg('lc-win', LC_WINDOWS, win) + mkSeg('lc-tier', CAREER_TIERS, tier) +
+        mkSeg('lc-fmt', [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], fmt) + '</span></div>';
 
     function pctOf(n) { return d.all ? Math.round(100 * n / d.all) + '% of ' + d.all.toLocaleString('en-US') : DASH; }
     var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
@@ -6568,12 +6658,13 @@
       }).join('') + '</div>';
 
     if (!d.n) {
+      var inScope = scopeWord ? ' in this window and tier' : '';
       return head + tiles +
         '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
           'text-align:center;font-size:13px;color:var(--text-label);">' +
           (d.all
-            ? 'No completed ' + esc(d.fmtLabel) + ' match ' + roleWord + ' carries a scoreline and a closing price.'
-            : 'No completed ' + esc(d.fmtLabel) + ' match on record carries a scoreline to derive a line from.') +
+            ? 'No completed ' + esc(d.fmtLabel) + ' match ' + roleWord + inScope + ' carries a scoreline and a closing price.'
+            : 'No completed ' + esc(d.fmtLabel) + ' match' + inScope + ' on record carries a scoreline to derive a line from.') +
         '</div>';
     }
 
@@ -6599,8 +6690,11 @@
         var rateInk = r.rate == null ? DASH_COLOUR : r.hot ? 'var(--pos)' : r.gate === 'soft' ? 'var(--text-label)' : 'var(--text)';
         var vsR = r.vs == null ? null : Math.round(r.vs * 10) / 10;
         var softRow = r.gate === 'soft';
-        return '<div data-lc-line="' + esc(r.label) + '" style="' + GRID + (softRow ? 'align-items:start;' : 'align-items:center;') +
-          'padding:9px 4px;border-top:1px solid var(--line);">' +
+        // Brief 2026-10-21 · every line with a match behind it opens its matches (renderLineDrill).
+        var open = state.lcDrill === r.label;
+        var click = r.n ? 'data-pp2="lc-line" data-v="' + esc(r.label) + '" role="button" aria-expanded="' + (open ? 'true' : 'false') + '" ' : '';
+        return '<div ' + click + 'data-lc-line="' + esc(r.label) + '" style="' + GRID + (softRow ? 'align-items:start;' : 'align-items:center;') +
+          (r.n ? 'cursor:pointer;' : '') + 'padding:9px 4px;border-top:1px solid var(--line);">' +
           fam +
           '<span style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
             '<span style="font-size:13px;font-weight:600;color:' + (r.n ? 'var(--text)' : DASH_COLOUR) + ';overflow:hidden;' +
@@ -6612,13 +6706,13 @@
           '</span>' +
           (softRow ? '<span style="display:block;margin-top:6px;">' + bar + '</span>' : bar) +
           (softRow
-            ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n) + '</span>'
+            ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n - r.voids) + '</span>'
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
           '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
           '<span style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;color:' +
             (vsR == null ? DASH_COLOUR : vsR > 0 ? 'var(--pos)' : vsR < 0 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
             (vsR == null ? DASH : (vsR > 0 ? '+' : vsR < 0 ? MINUS : '') + Math.abs(vsR).toFixed(1) + 'pp') + '</span>' +
-        '</div>';
+        '</div>' + (open && r.n ? renderLineDrill(p, d, g, r) : '');
       }).join('');
     }).join('');
 
@@ -6629,20 +6723,85 @@
       'same line means a different bet in each. The tick on every bar marks ' + LC_HOT + '% cover. ' +
       'Vs avg pp is this line’s cover rate minus the average cover rate across all lines in this format and role' +
       (d.avg == null ? '' : ' (' + d.avg.toFixed(1) + '%)') + ', in points. ' +
-      'Click All matches, As favourite or As underdog to switch the table.';
+      'Click All matches, As favourite or As underdog to switch the table, and a line to list its matches.';
+    if (fmt === 'bo3') {
+      note += ' On ±3 games a match decided by exactly 3 games is a void: the record reads covered' + ENDASH + 'void' +
+        ENDASH + 'not covered, and the rate leaves voids out.';
+    }
     note += ' As favourite and As underdog use the Market edge closing price (Pinnacle, else Bet365): ' +
       d.favN + ' + ' + d.dogN + (d.unpriced
         ? ' of ' + d.all + '; the other ' + d.unpriced + (d.unpriced === 1 ? ' carries' : ' carry') +
           ' no closing price and count under All matches only.'
         : ' = all ' + d.all + '.');
-    if (d.excluded) note += ' ' + d.excluded + ' retired or abandoned ' + (d.excluded === 1 ? 'match is' : 'matches are') + ' excluded.';
-    if (d.unshaped) note += ' ' + d.unshaped + (d.unshaped === 1 ? ' match is' : ' matches are') +
-      ' excluded because the set score on file is level and decides no match shape.';
+    // Brief 2026-10-21 · the population reconciles on the page: the Career record's matches for this window and
+    // tier = this table + the other format + every match out, by reason.
+    var w = d.why, other = fmt === 'bo3' ? 'best of 5' : 'best of 3';
+    var outs = [];
+    function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+    if (w.noScore) outs.push(plural(w.noScore, 'with no score (walkover)', 'with no score (walkovers)'));
+    if (w.retired) outs.push(w.retired + ' retired or abandoned');
+    if (w.format) outs.push(w.format + ' in a non-standard format (NextGen short sets, match-tiebreak deciders)');
+    if (w.unshaped) outs.push(w.unshaped + ' whose set score on file is level and decides no match shape');
+    if (d.undated > 0) outs.push(plural(d.undated, 'with no dated match row', 'with no dated match rows'));
+    note += ' Career record' + (scopeWord ? ' (' + LC_WINDOW_WORD[win] + (tier === 'all' ? '' : ', ' + careerTierWord(tier)) + ')' : '') +
+      ': ' + d.recordN.toLocaleString('en-US') + ' matches = ' + d.all + ' ' + d.fmtLabel + ' + ' + w.otherFmt + ' ' + other +
+      (outs.length ? ' + ' + outs.join(' + ') : '') + '.';
+    if (d.noSplit) {
+      note += ' ' + plural(d.noSplit, careerTierWord(tier) + ' match sits', careerTierWord(tier) + ' matches sit') +
+        ' in seasons the Career record holds without a tier split (before 2021) and count under All only.';
+    }
     if (d.withGames < d.n) note += ' Games lines rest on the ' + d.withGames + ' of ' + d.n + ' with per-set games' +
       // TEN-443: the matches whose feed list lacks a set, named until they are repaired (0 = the clause drops)
       (d.setMissing ? '; ' + d.setMissing + ' with a set missing in the feed' : '') + '.';
     return head + tiles + colHead + body +
       '<div data-lc="note" style="font-size:11.5px;line-height:18.4px;color:var(--text-label);margin-top:16px;">' + esc(note) + '</div>';
+  }
+
+  // ── Brief 2026-10-21 · a line's matches ───────────────────────────────────
+  // The Career record's drill card (drillPanelHtml + drillBodyHtml: the same panel, event groups, pager and match
+  // sheet hook), listing the matches behind one line under every active control (Window, Tier, format, role).
+  // Covered / Not covered / Void (whole lines only) split the list; each count is the row's own, so the three add
+  // to its record by construction. The two price columns give way to the game margin and the result on this line:
+  // no odds here.
+  var LC_RES = [['cover', 'Covered'], ['miss', 'Not covered'], ['void', 'Void']];
+  var LC_RES_WORD = { cover: 'Covered', miss: 'Not covered', void: 'Void' };
+  function lcMarginText(m) {
+    if (m == null) return DASH;
+    return m > 0 ? '+' + m : m < 0 ? MINUS + Math.abs(m) : '0';
+  }
+  function lineDrillTail(r, cell) {
+    return cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
+             'text-align:right;padding:5px 0;', esc(lcMarginText(r.lineMargin)), 'data-pp2-lc-margin="' + (r.lineMargin == null ? '' : r.lineMargin) + '" ') +
+      cell('font-size:11.5px;color:' + (r.lineRes === 'cover' ? 'var(--text)' : 'var(--text-label)') + ';' +
+           'text-align:right;white-space:nowrap;padding:5px 0;', esc(LC_RES_WORD[r.lineRes] || DASH), 'data-pp2-lc-res="' + r.lineRes + '" ');
+  }
+  function lineDrillNote(pg) {
+    return pg.next < pg.rows.length
+      ? 'Showing ' + pg.next + ' of ' + pg.rows.length + ' ' + MIDDOT + ' scroll for more'
+      : 'All ' + pg.rows.length + ' match' + (pg.rows.length === 1 ? '' : 'es');
+  }
+  function renderLineDrill(p, d, g, row) {
+    var res = state.lcDrillRes === 'miss' || (state.lcDrillRes === 'void' && row.voidable) ? state.lcDrillRes : 'cover';
+    var count = { cover: row.hit, miss: row.miss, void: row.voids };
+    var rows = row.members.filter(function (x) { return x.res === res; }).map(function (x) {
+      return Object.assign({}, x.m.r, { lineMargin: x.m.g ? x.m.g.f - x.m.g.a : null, lineRes: x.res });
+    });
+    var shown = rows.slice(0, DRILL_PAGE);
+    var pg = drillPager = { rows: rows, next: shown.length, lastEvent: null, multiYear: true, tail: lineDrillTail, noteFn: lineDrillNote };
+    var body = drillBodyHtml(rows, 0, shown.length, pg);
+    var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
+                ['Sets', 'left'], ['Set scores', 'left'], ['Margin', 'right'], ['Line', 'right']];
+    var chips = mkSeg('lc-drill-res', LC_RES.filter(function (t) { return t[0] !== 'void' || row.voidable; })
+      .map(function (t) { return [t[0], t[1] + ' ' + count[t[0]]]; }), res);
+    return drillPanelHtml({
+      attr: 'data-pp2-lc-drill="' + esc(row.label) + '" ',
+      title: g.title + ' ' + MIDDOT + ' ' + row.label,
+      record: row.record + ' ' + MIDDOT + ' ' + row.n + ' matches',
+      note: lineDrillNote(pg), close: 'lc-drill-close',
+      controls: '<div style="margin-bottom:11px;">' + chips + '</div>',
+      grid: 'display:grid;grid-template-columns:46px 12px minmax(0,1.15fr) 38px 40px minmax(0,1.35fr) 48px 84px;gap:0 10px;align-items:center;',
+      head: HEAD, body: body, hasRows: shown.length > 0
+    });
   }
 
   // ── Q8 · the tour baselines are the DATABASE's Tour aggregates ─────────────
@@ -11401,6 +11560,9 @@
     // reason as the Career modal's two axes: switching tab must not reset the
     // format, and switching format must not throw you back to Match winner.
     marketTab: 'winner', lcFmt: 'bo3', lcRole: 'all',
+    // Brief 2026-10-21 · the Derived-lines Window (career | l24 | l52) and Tier (all | atp | chitf), the open line's
+    // label (its drill; null = none) and the drill's Covered / Not covered / Void filter.
+    lcWin: 'career', lcTier: 'all', lcDrill: null, lcDrillRes: 'cover',
     // §5.7 Splits. The scope switch (Career / Last 52 weeks) and the tab switch
     // (Results / Sets & Games / Service) are independent axes of the same table —
     // changing scope must not reset the tab, so they are separate state.
@@ -11512,6 +11674,7 @@
     state.surfaces = []; state.priceFilters = []; state.modal = null;
     state.careerScope = 'career'; state.careerDrill = null; state.careerTab = 'record'; state.careerTier = 'all';
     state.splitScope = 'career'; state.marketRole = 'all'; state.lcRole = 'all';
+    state.lcWin = 'career'; state.lcTier = 'all'; state.lcDrill = null; state.lcDrillRes = 'cover';
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
@@ -11584,7 +11747,7 @@
     }
     else if (kind === 'ledger-price') toggleIn(state.priceFilters, v);
     else if (kind === 'box') { state.modal = el.getAttribute('data-box'); state.drawDrill = null; if (state.modal === 'tourn') tournNeedJoin(); }
-    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; }
+    else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; state.drawDrill = null; state.lcDrill = null; }
     else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
     else if (kind === 'career-tier') { state.careerTier = v; state.careerDrill = null; }
     // The tab switch keeps the window (`careerScope`) — one control drives both
@@ -11597,6 +11760,16 @@
     else if (kind === 'lc-fmt') { state.lcFmt = v; }
     // TEN-384 · the Derived-lines role tiles filter the ledger.
     else if (kind === 'lc-role') { state.lcRole = (v === 'fav' || v === 'dog') ? v : 'all'; }
+    // Brief 2026-10-21 · Window and Tier re-cut every figure on the tab; an open line drill stays open and follows.
+    else if (kind === 'lc-win') { state.lcWin = lcWindowOf(v); }
+    else if (kind === 'lc-tier') { state.lcTier = lcTierOf(v); }
+    // A line opens its matches (Covered first); the same line again, or Close, shuts it.
+    else if (kind === 'lc-line') {
+      state.lcDrill = state.lcDrill === v ? null : v;
+      state.lcDrillRes = 'cover';
+    }
+    else if (kind === 'lc-drill-res') { state.lcDrillRes = v === 'miss' || v === 'void' ? v : 'cover'; }
+    else if (kind === 'lc-drill-close') state.lcDrill = null;
     // §5.2A — a surface row toggles its own drill; opening one closes the other.
     else if (kind === 'career-surf') {
       state.careerDrill = (state.careerDrill && state.careerDrill.kind === 'surface' &&
