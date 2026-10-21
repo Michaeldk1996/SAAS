@@ -188,14 +188,16 @@ function roundStatus(entry, draw) {
   }).join(' · ');
 }
 
-// Founder ruling 2026-10-21: every stat is a REAL NUMBER with 2 decimals (0.00), never text. Copy prints them with a
-// DOT decimal whatever the viewer's browser locale: Number#toFixed is locale-independent (never toLocaleString here).
-const fmt = (v) => v == null ? DASH : typeof v === 'string' ? v : v.toFixed(2);
+// Founder rulings 2026-10-21: every stat is a REAL NUMBER, never text. The counts W, UE and TT points are whole numbers
+// (format 0: "34"); W/P, UE/P, W/UE and Dominance carry 2 decimals (0.00). Copy prints them with a DOT decimal whatever
+// the viewer's browser locale: Number#toFixed is locale-independent (never toLocaleString here).
+const COUNT_COLS = 3;                                       // values[0..2] = W, UE, TT points
+const fmt = (v, i) => v == null ? DASH : typeof v === 'string' ? v : v.toFixed(i < COUNT_COLS ? 0 : 2);
 
 // Tab-separated rows for pasting into a Round tab (data rows only — no header,
 // so it never overwrites the tab's own header row).
 function roundTsv(round) {
-  return round.rows.map(r => r.header ? r.header : [r.player].concat(r.values.map(fmt)).join('\t')).join('\n');
+  return round.rows.map(r => r.header ? r.header : [r.player].concat(r.values.map((v, i) => fmt(v, i))).join('\t')).join('\n');
 }
 
 // ---------------------------------------------------------------- xlsx writer
@@ -205,19 +207,19 @@ const colName = (i) => String.fromCharCode(65 + i);   // 8 columns: A..H
 const sheetName = (s) => String(s).replace(/[:\\/?*[\]]/g, ' ').slice(0, 31);
 
 function sheetXml(round) {
-  // s="1" header (bold) · s="2" ratio (0.00) · s="3" right-aligned dash
-  const cell = (ref, v, ratio) => {
+  // s="1" header (bold) · s="2" ratio (0.00) · s="3" right-aligned dash · s="4" count (0)
+  const cell = (ref, v, style) => {
     if (v == null) return `<c r="${ref}" t="inlineStr" s="3"><is><t>${DASH}</t></is></c>`;
     if (v === BLANK) return '';                                                      // unplayed: an empty cell
-    if (typeof v === 'number') return `<c r="${ref}"${ratio ? ' s="2"' : ''}><v>${v}</v></c>`;
+    if (typeof v === 'number') return `<c r="${ref}"${style ? ` s="${style}"` : ''}><v>${v}</v></c>`;
     return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
   };
   const rows = [`<row r="1">${COLUMNS.map((h, i) => `<c r="${colName(i)}1" t="inlineStr" s="1"><is><t>${xmlEsc(h)}</t></is></c>`).join('')}</row>`];
   round.rows.forEach((r, k) => {
     const n = k + 2;
     if (r.header) { rows.push(`<row r="${n}"><c r="A${n}" t="inlineStr" s="1"><is><t>${xmlEsc(r.header)}</t></is></c></row>`); return; }
-    // every stat column carries the 0.00 number format (s="2"); the stored value is the number itself
-    rows.push(`<row r="${n}">${cell('A' + n, r.player)}${r.values.map((v, i) => cell(colName(i + 1) + n, v, true)).join('')}</row>`);
+    // counts (W, UE, TT) carry the 0 format (s="4"), the four ratios 0.00 (s="2"); the stored value is the number itself
+    rows.push(`<row r="${n}">${cell('A' + n, r.player)}${r.values.map((v, i) => cell(colName(i + 1) + n, v, i < COUNT_COLS ? '4' : '2')).join('')}</row>`);
   });
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
     + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
@@ -256,10 +258,11 @@ function workbookFiles(rounds) {
     + '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>'
     + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
     + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
-    + '<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+    + '<cellXfs count="5"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
     + '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>'
     + '<xf numFmtId="2" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>'
-    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf></cellXfs>'
+    + '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="right"/></xf>'
+    + '<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>'
     + '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>'
     + '</styleSheet>']);
   sheets.forEach((s, i) => files.push([`xl/worksheets/sheet${i + 1}.xml`, sheetXml(s)]));

@@ -70,6 +70,6 @@ check('unresolved key → that match\'s winner under UNPLACED; its slot stays TB
   && players(rr).some(x => x.player === 'TBD (M. Kecmanovic v J. Duckworth)'));
 // ── Copy per tab = exactly the tab's rows ──
 const tsv = W.roundTsv(r32).split('\n');
-check('Copy R32 = exactly the tab: 4 quarter lines + 16 rows; BYE / TBD / winners as shown', tsv.length === 20 && tsv[0] === 'Q1' && tsv[1] === 'D. Medvedev\tBYE\t\t\t\t\t\t' && tsv.includes('TBD (M. Bellucci v T. M. Etcheverry)\t\t\t\t\t\t\t') && tsv.includes('J. Duckworth\t27.00\t18.00\t113.00\t0.24\t0.16\t1.50\t1.21'), tsv.slice(0, 3).join(' | '));
+check('Copy R32 = exactly the tab: 4 quarter lines + 16 rows; BYE / TBD / winners as shown', tsv.length === 20 && tsv[0] === 'Q1' && tsv[1] === 'D. Medvedev\tBYE\t\t\t\t\t\t' && tsv.includes('TBD (M. Bellucci v T. M. Etcheverry)\t\t\t\t\t\t\t') && tsv.includes('J. Duckworth\t27\t18\t113\t0.24\t0.16\t1.50\t1.21'), tsv.slice(0, 3).join(' | '));
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -46,7 +46,7 @@ check('UE/P = UE ÷ TT (18/113 = 0.16)', d[4] === 0.16, d[4]);
 check('W/UE = W ÷ UE (27/18 = 1.50)', d[5] === 1.5, d[5]);
 check('DR from raw counts: 60/100 return, 50/100 serve → 60/(100−50) = 1.2',
   W.dominanceRatio({ won: 50, total: 100 }, { won: 60, total: 100 }) === 1.2);
-check('TSV: every stat with 2 dot decimals (ruling 2026-10-21)', W.roundTsv(rounds[0]).split('\n')[0] === 'J. Duckworth\t27.00\t18.00\t113.00\t0.24\t0.16\t1.50\t1.21', W.roundTsv(rounds[0]).split('\n')[0]);
+check('TSV: counts whole (27, 18, 113), ratios 2 dot decimals (rulings 2026-10-21)', W.roundTsv(rounds[0]).split('\n')[0] === 'J. Duckworth\t27\t18\t113\t0.24\t0.16\t1.50\t1.21', W.roundTsv(rounds[0]).split('\n')[0]);
 
 // ── 3 · dashes vs zero ──
 const side = (o) => Object.assign({ name: 'X. Test', winners: null, unforcedErrors: null, totalPoints: null, servicePoints: null, returnPoints: null }, o);
@@ -145,13 +145,14 @@ check('round label resolved', out[0] && out[0].round === 'R1');
 {
   const z2 = Buffer.from(W.buildXlsx(FX)).toString('latin1'), sd = z2.slice(z2.indexOf('<sheetData>'), z2.indexOf('</sheetData>'));
   const nums = [...sd.matchAll(/<c r="([B-H])(\d+)"( s="(\d)")?><v>([^<]*)<\/v><\/c>/g)];
-  check('xlsx: every stat cell (W, UE, TT, W/P, UE/P, W/UE, DR) is a number with the 0.00 format (s=2); none is text', nums.length === 63 && nums.every(m => m[4] === '2' && /^-?\d+(\.\d+)?$/.test(m[5])) && !/<c r="[B-H]\d+" t="inlineStr"><is><t xml:space="preserve">\d/.test(sd), `${nums.length} numeric cells`);
+  check('xlsx: every stat cell is a number, none is text; W, UE, TT (B-D) carry 0 (s=4), W/P, UE/P, W/UE, DR (E-H) carry 0.00 (s=2)', nums.length === 63 && nums.every(m => m[4] === ('BCD'.includes(m[1]) ? '4' : '2') && /^-?\d+(\.\d+)?$/.test(m[5])) && !/<c r="[B-H]\d+" t="inlineStr"><is><t xml:space="preserve">\d/.test(sd), `${nums.length} numeric cells`);
+  check('xlsx styles: xf 4 = built-in numFmt 1 ("0"), xf 2 = built-in numFmt 2 ("0.00")', /<cellXfs count="5">/.test(z2) && /<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"\/><\/cellXfs>/.test(z2));
   const tl = Number.prototype.toLocaleString, NF = Intl.NumberFormat;
   Number.prototype.toLocaleString = function () { return tl.call(this, 'de-DE', { minimumFractionDigits: 2 }); };
   Intl.NumberFormat = function () { return new NF('de-DE'); };
   const t = W.roundTsv(rounds[0]);
   Number.prototype.toLocaleString = tl; Intl.NumberFormat = NF;
-  check('Copy under a comma-decimal locale still prints dot decimals ("27.00", "0.24"), never "27,00"', /\t27\.00\t/.test(t) && /\t0\.24\t/.test(t) && !/\d,\d/.test(t), t.split('\n')[0]);
+  check('Copy under a comma-decimal locale still prints whole counts and dot decimals ("27", "0.24"), never "0,24"', /\t27\t/.test(t) && /\t0\.24\t/.test(t) && !/\d,\d/.test(t), t.split('\n')[0]);
 }
 console.log(`\n${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
