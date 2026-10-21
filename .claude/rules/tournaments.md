@@ -153,10 +153,14 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
   override), lazy; initials sit underneath, so a missing or failed photo shows initials — never a placeholder face.
 - **NEU** marks a blank country only on a sheet that prints countries for most of its field; on a sheet with no country
   column (Brussels / Lyon qualifying) a blank is "not read" and gets no marker.
-- **A finished main-draw match opens an overlay** (`--backdrop` + blur, Esc / outside click / × close) with the box score
-  we hold: aces, double faults, 1st serve in, 1st / 2nd serve points won, break points saved / converted, winners, UE,
-  total points, W/UE, Dominance. **Test:** absent → "—", a feed 0 → `0`; the pipeline's `progressionBoxScore` reads
-  the feed's own match-period rows and never derives a value.
+- **A finished match opens the one Match Analysis** (`openAnalysisModal(id, 'matchstats')`, landing on Match Stats →
+  Key stats) — never a second stats pop-up. **Test:** a card is clickable iff the board holds the match as a scored
+  `past-<eventKey>` row (exact key, no name match); otherwise it is not clickable. Today that is every finished main-draw
+  match inside the board's 4-day window and no qualifying match (the board carries none). *Supersedes the 2026-10-21
+  round-2 box-score overlay.*
+- **The W/UE sheet lives on the Draw tab only**, beside the tournament selector: "Download W/UE sheet", one "Copy {round}"
+  per round with rows, and the round status ("R32: 11 of 12 · R16: 3 of 8") — for the selected tournament. Reports
+  does not carry it.
 - **A match in progress** shows the board's live set score and game score under a LIVE label, oriented to the card; it is
   not clickable and not counted as played.
 - **Status line names both clocks:** "Results: {n} min ago" (progression `fetchedAt`) · "Draw sheet: {time}" (when the

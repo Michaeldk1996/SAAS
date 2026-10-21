@@ -78,23 +78,31 @@ const LQ = lyonDraw && lyonDraw.qualifying && lyonDraw.qualifying.status === 'po
 const lqSides = LQ ? LQ.rounds[0].cells.flatMap(c => c.sides).filter(Boolean) : [];
 check(`item 11: a sheet with no country column (Lyon qualifying: ${lqSides.filter(s => !s.ioc).length} of ${lqSides.length} blank) marks nobody neutral`, lqSides.length > 0 && lqSides.every(s => !s.ioc && s.neutral === false), `${lqSides.length} sides`);
 check('item 11: Almaty main — exactly the 4 no-country players are neutral (Medvedev, Safiullin, Khachanov, Rublev)', M.rounds[0].cells.flatMap(c => c.sides).filter(s => s && s.neutral).map(s => s.name.split(',')[0]).sort().join() === 'KHACHANOV,MEDVEDEV,RUBLEV,SAFIULLIN');
-// Item 10: clickable → full box score overlay; dashes where missing, a real 0 stays 0.
-check('item 10: a finished main-draw match is clickable (role=button, keyboard, title) to OUR stats', /role="button" tabindex="0" title="Open match stats" data-dv-ev="12171884"/.test(h));
-DV.openStats('12171884');
+// Round 3 (founder 2026-10-21): a finished match opens the site's ONE Match Analysis (openAnalysisModal, landing on Match
+// Stats → Key stats) — only when the board holds it as `past-<eventKey>`; otherwise the card is not clickable. No pop-up.
+check('round 3: with no board row, a finished match is NOT clickable (nothing to open; never a second stats view)', !/data-dv-ev|role="button"|dv-card--done/.test(h));
+const boardRow = { id: 'past-12171884', finalScore: { display: '4-6, 3-6' } };
+DV.mount(el, { draws, prog, board: [boardRow, { id: 'past-99999999' }], tz: 'UTC' });
 let sp = el.innerHTML;
-check('item 10: the stats open in an overlay dialog (visible wherever the card was clicked), with a close control', /class="dv-overlay"/.test(sp) && /role="dialog"/.test(sp) && /class="dv-x" aria-label="Close"/.test(sp));
-check('item 10: 12 stat rows — aces … break points converted, winners, UE, total points, W/UE, Dominance', ['Aces', 'Double faults', '1st serve in', '1st serve points won', '2nd serve points won', 'Break points saved', 'Break points converted', 'Winners', 'Unforced errors', 'Total points played', 'W/UE', 'Dominance'].every(l => sp.includes(`<td class="dv-st-name">${l}</td>`)));
-check('item 10: the pinned entry predates the box score → those rows are dashes, never 0; the held stats print (Duckworth 27 / 18 / 1.50 / 1.21)',
-  /<td class="dv-st-name">Aces<\/td><td>—<\/td><td>—<\/td>/.test(sp) && /Winners<\/td><td>15<\/td><td>27</.test(sp) && /W\/UE<\/td><td>1\.00<\/td><td>1\.50</.test(sp) && /Dominance<\/td><td>0\.83<\/td><td>1\.21</.test(sp), sp.slice(sp.indexOf('<tbody>'), sp.indexOf('<tbody>') + 300));
-const withBox = JSON.parse(JSON.stringify(entry)); const km = withBox.matches.find(m => m.eventKey === '12171884');
-km.p1.box = { aces: 4, doubleFaults: 0, firstServeInPct: 69, firstServeWon: { won: 26, total: 37 }, secondServeWon: { won: 7, total: 17 }, bpSaved: { won: 1, total: 4 }, bpConverted: null };
-km.p2.box = { aces: 6, doubleFaults: 2, firstServeInPct: 66, firstServeWon: { won: 28, total: 39 }, secondServeWon: { won: 12, total: 20 }, bpSaved: { won: 2, total: 3 }, bpConverted: { won: 3, total: 4 } };
-DV.mount(el, { draws, prog: { fetchedAt: prog.fetchedAt, tournaments: { Almaty: withBox } }, board: [], tz: 'UTC' }); DV.openStats('12171884'); sp = el.innerHTML;
-check('item 10: box values print as held — counts, %, won/total · % — a genuine 0 stays 0, a missing one is a dash',
-  /Aces<\/td><td>4<\/td><td>6</.test(sp) && /Double faults<\/td><td>0<\/td><td>2</.test(sp) && /1st serve in<\/td><td>69%<\/td><td>66%</.test(sp)
-  && /1st serve points won<\/td><td>26\/37 · 70%<\/td><td>28\/39 · 72%</.test(sp) && /Break points converted<\/td><td>—<\/td><td>3\/4 · 75%</.test(sp), sp.slice(sp.indexOf('<tbody>'), sp.indexOf('<tbody>') + 500));
-DV.openStats(null);
-check('item 10: closing removes the overlay', !/dv-overlay/.test(el.innerHTML));
+check('round 3: the board holds it (past-12171884, scored) → clickable: role=button, keyboard, "Open match analysis"', /class="dv-card dv-card--done" role="button" tabindex="0" title="Open match analysis" data-dv-ev="12171884" onclick="DrawView\.openAnalysis\('past-12171884'\)"/.test(sp), (sp.match(/<div class="dv-card dv-card--done"[^>]*>/) || [''])[0]);
+check('round 3: exactly the board-held match is clickable — 1 of the 9 finished R32 matches here; an unscored board row opens nothing', (sp.match(/role="button"/g) || []).length === 1 && DV.analysisIdFor({ eventKey: '99999999' }) === null);
+let opened = null; global.window.openAnalysisModal = (id, tab) => { opened = [id, tab]; };
+DV.openAnalysis('past-12171884');
+check('round 3: opening lands on the Match Stats tab (its sheet opens on Key stats)', JSON.stringify(opened) === '["past-12171884","matchstats"]', JSON.stringify(opened));
+const dvSrc = fs.readFileSync(path.join(ROOT, 'draw-view.js'), 'utf8');
+check('round 3: the draw\'s own stats pop-up is gone — no overlay, no openStats, no Esc layer for it', !/dv-overlay|openStats|statsPanel|draw-stats/.test(dvSrc) && !/#tourxDraw \.dv-(overlay|stats)/.test(fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8')));
+const qb = DV.model({ draw, entry, upcoming: [], kind: 'qualifying' });
+DV.set('kind', 'qualifying'); sp = el.innerHTML;
+check(`round 3: qualifying — the board never holds a qualifying match, so none of its ${qb.rounds.reduce((a, r) => a + r.done, 0)} finished matches is clickable`, /class="dv-set"/.test(sp) && !/role="button"|dv-card--done/.test(sp));   // results shown, none clickable
+DV.set('kind', 'main');
+// Round 3: the W/UE sheet sits beside the tournament selector, for the selected tournament (the page's own bar).
+const barCalls = []; global.window.tourxWueBarHtml = (n) => { barCalls.push(n); return `<div data-wue="${n}">R32: 9 of 12</div>`; };
+DV.mount(el, { draws, prog, board: [], tz: 'UTC' }); sp = el.innerHTML;
+const headHtml = sp.slice(sp.indexOf('<div class="dv-head">'), sp.indexOf('<div class="dv-from">'));
+check('round 3: the W/UE bar renders inside the header row (beside Almaty / Main draw), for Almaty, with its round status', /<div class="dv-wue"><div data-wue="Almaty">R32: 9 of 12<\/div><\/div><\/div>$/.test(headHtml) && barCalls[barCalls.length - 1] === 'Almaty', headHtml.slice(-160));
+DV.mount(el, { draws, prog: { fetchedAt: prog.fetchedAt, tournaments: {} }, board: [], tz: 'UTC' });
+check('round 3: no progression entry for the tournament → no W/UE bar (never a bar for data we do not hold)', !/dv-wue/.test(el.innerHTML));
+delete global.window.tourxWueBarHtml; delete global.window.openAnalysisModal;
 // Item 12: a match in progress shows the board's live score, oriented to the card, marked LIVE.
 const bk = [bell.sides[0].playerKey, bell.sides[1].playerKey];
 DV.mount(el, { draws, prog, tz: 'UTC', board: [{ tour: 'ATP Almaty', p1Key: bk[1], p2Key: bk[0], date: '2026-10-21', time: '08:30', live: true, liveScore: [{ set: 1, p1: 4, p2: 6 }, { set: 2, p1: 3, p2: 2 }], liveGameScore: '30 - 15' }] });
@@ -104,25 +112,6 @@ check('item 12: the live card is marked LIVE with the game score, sets oriented 
 check('item 12: a live card is not clickable to stats and not counted as played (R32 still 9 of 12)', !/data-dv-ev/.test(lc) && /9 of 12/.test(el.innerHTML));
 global.Date = RD;
 
-// ── item 10, pipeline side: the box score each progression side carries (progressionBoxScore) ──
-// Rows copied from the real api-tennis match-period sheet of 12171884 (Kecmanovic v Duckworth, Almaty R32, 19 Oct).
-{
-  process.env.API_TENNIS_KEY = process.env.API_TENNIS_KEY || 'test';
-  const P = require(path.join(ROOT, 'bsp-pipeline.js'));
-  const r = (pk, type, name, value, won, total) => ({ stat_period: 'match', player_key: pk, stat_type: type, stat_name: String(name).toUpperCase(), stat_value: value, stat_won: won, stat_total: total });
-  const K = 2848;
-  const rows = [r(K, 'Service', 'Aces', '4', null, null), r(K, 'Service', 'Double Faults', '3', null, null), r(K, 'Service', '1st serve percentage', '69%', null, null),
-    r(K, 'Service', '1st serve points won', '70%', '26', '37'), r(K, 'Service', '2nd serve points won', '41%', '7', '17'), r(K, 'Service', 'Break Points Saved', '25%', '1', '4'),
-    r(K, 'Return', 'Break Points Converted', '33%', '1', '3')];   // upper-cased names: the feed's casing varies by season
-  const b = P.progressionBoxScore(rows, K);
-  check('pipeline: the box score reads the feed\'s own rows (4 aces, 3 DF, 69%, 26/37, 7/17, BP saved 1/4, converted 1/3)',
-    JSON.stringify(b) === JSON.stringify({ aces: 4, doubleFaults: 3, firstServeInPct: 69, firstServeWon: { won: 26, total: 37 }, secondServeWon: { won: 7, total: 17 }, bpSaved: { won: 1, total: 4 }, bpConverted: { won: 1, total: 3 } }), JSON.stringify(b));
-  const z = P.progressionBoxScore([r(K, 'Service', 'Aces', '0', null, null)], K);
-  check('pipeline: a genuine 0 from the feed stays 0; a row the feed did not send is null (a dash), never 0', z.aces === 0 && z.doubleFaults === null && z.firstServeWon === null && z.bpConverted === null);
-  check('pipeline: no stat sheet → no box at all (null)', P.progressionBoxScore(null, K) === null);
-  const src = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
-  check('pipeline: every progression side carries box: progressionBoxScore(matchStats, key)', src.includes('box: progressionBoxScore(matchStats, key) });'));
-}
 
 // ── page + deploy wiring ──
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');

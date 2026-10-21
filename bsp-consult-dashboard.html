@@ -2925,17 +2925,9 @@ window.sfPlanLocks(null);   // locked until the account says Edge / Pro: no unlo
 #tourxDraw .dv-name{ flex:1 1 auto; }
 #tourxDraw .dv-seed{ font-family:var(--font-nums); font-size:11px; font-weight:600; color:var(--text-label); }
 #tourxDraw .dv-mark{ font-family:var(--font-words); font-size:9.5px; font-weight:700; letter-spacing:0.06em; color:var(--text-label); }
+#tourxDraw .dv-wue{ flex:0 1 auto; min-width:0; }
 #tourxDraw .dv-sets{ margin-left:auto; display:flex; gap:7px; font-family:var(--font-nums); font-size:12px; }
 #tourxDraw .dv-tag{ display:block; margin-top:2px; font-family:var(--font-words); font-size:10.5px; font-weight:700; color:var(--text-label); }
-#tourxDraw .dv-overlay{ position:fixed; inset:0; z-index:60; background:var(--backdrop); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); display:flex; align-items:center; justify-content:center; padding:16px; }
-#tourxDraw .dv-stats{ background:var(--card); border:1px solid var(--edge-10); border-radius:12px; padding:12px 14px; width:100%; max-width:520px; max-height:calc(100vh - 32px); overflow:auto; box-sizing:border-box; }
-#tourxDraw .dv-stats-head{ display:flex; justify-content:space-between; align-items:center; font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:var(--text-label); }
-#tourxDraw .dv-x{ background:var(--wash-5); border:1px solid var(--line); border-radius:8px; color:var(--text-label); width:28px; height:28px; cursor:pointer; font-size:16px; line-height:1; }
-#tourxDraw .dv-stats table{ width:100%; margin-top:8px; border-collapse:collapse; font-family:var(--font-nums); font-size:12.5px; color:var(--text); }
-#tourxDraw .dv-stats th{ text-align:right; font-family:var(--font-words); font-size:11.5px; font-weight:600; color:var(--text); padding:4px 6px; }
-#tourxDraw .dv-stats td{ text-align:right; padding:5px 6px; border-top:1px solid var(--line); }
-#tourxDraw .dv-stats td.dv-st-name{ text-align:left; font-family:var(--font-words); }
-#tourxDraw .dv-note{ margin-top:8px; font-family:var(--font-words); font-size:12px; color:var(--text-label); }
 @media (max-width:640px){ #tourxDraw{ padding:14px 12px 18px; } #tourxDraw .dv-bracket{ grid-template-columns:repeat(var(--dv-cols), minmax(max-content, 1fr)); min-width:calc(var(--dv-cols) * 212px - 26px); column-gap:26px; } }
 </style>
 <div class="tabpage" data-page="tournaments">
@@ -26752,8 +26744,9 @@ function tourxReportYear(){
 }
 // One caps label (Hanken 10.5 / 700 / 0.10em / --text-label).
 function tourxCapsLbl(t, extra){ return `<span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);font-family:var(--font-words);${extra || ''}">${t}</span>`; }
-// W/UE sheet (founder brief 2026-10-20): a download + per-round copy for the selected tournament. The rounds offered
-// come from the copy the page loaded; the export itself re-reads tournament-progression.json at click time (wue-sheet.js).
+// W/UE sheet (founder brief 2026-10-20): a download + per-round copy for the selected tournament. Round 3 (founder
+// 2026-10-21): its one place is the Draw tab, beside the tournament selector (draw-view.js renders this bar); Reports
+// no longer carries it. The rounds offered come from the copy the page loaded; the export itself re-reads tournament-progression.json at click time (wue-sheet.js).
 // Item 5 (founder 2026-10-20): a tournament built from a fetch with a failed chunk is PARTIAL — say so in plain words,
 // never present it as complete. "" when the entry is complete.
 function tourxPartialText(name){
@@ -26775,12 +26768,12 @@ function tourxWueBarHtml(name){
   // A5 (founder brief 2026-10-20): never an error after the click. No rows yet → the button is disabled BEFORE the
   // click with a plain line; rows in → the line says which rounds (matches per round, from the published rows).
   const items = rounds.length
-    ? [tourxSegItem(false, 'Download .xlsx', `tourxWueDownload('${n}')`, 'chip')]
+    ? [tourxSegItem(false, 'Download W/UE sheet', `tourxWueDownload('${n}')`, 'chip')]
         .concat(rounds.map(r => tourxSegItem(false, `Copy ${tourxRpEsc(r.title)}`, `tourxWueCopy('${n}','${tourxEsc(r.round)}')`, 'chip')))
-    : [tourxWueDisabledSeg('Download .xlsx')];
+    : [tourxWueDisabledSeg('Download W/UE sheet')];
   const partial = typeof tourxPartialText === 'function' ? tourxPartialText(name) : '';
   const note = (partial ? partial + ' · ' : '') + (rounds.length ? window.WueSheet.roundStatus(t, draw) : 'Available after the next data update.');
-  return `<div style="margin-top:18px;display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
+  return `<div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;">
       ${tourxCapsLbl('W/UE sheet')}
       <div class="tx-segwrap">${items.join('')}</div>
       <span id="tourxWueMsg" role="status" data-note="${tourxRpEsc(note)}" style="font-size:12px;color:var(--text-label);">${tourxRpEsc(note)}</span>
@@ -26846,7 +26839,7 @@ function renderTourxReports(){
   else body = tourxRoundViewHtml(T);
   const partialLine = typeof tourxPartialText === 'function' && tourxPartialText(tourxState.tour)
     ? `<div role="status" style="margin-top:14px;font-size:12.5px;color:var(--text-label);">${tourxRpEsc(tourxPartialText(tourxState.tour))}.</div>` : '';
-  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${partialLine}${typeof tourxWueBarHtml === 'function' ? tourxWueBarHtml(tourxState.tour) : ''}${viewBar}${body}</div>`;
+  el.innerHTML = `<div class="tourx-rpcard">${filterBar}${partialLine}${viewBar}${body}</div>`;   // W/UE sheet: Draw tab only (round 3)
   // Preserve focus + caret in the comparison player search across re-renders.
   const cmpInp = document.getElementById('tourxCmpSearch');
   if (cmpInp && tourxState.cmpOpen){ cmpInp.focus(); const v = cmpInp.value; cmpInp.setSelectionRange(v.length, v.length); }

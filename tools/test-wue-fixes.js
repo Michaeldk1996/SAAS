@@ -46,7 +46,7 @@ function bar(entry) {
 }
 if (parts.every(Boolean)) {
   const none = bar({ rounds: ['R1'], players: [] });
-  check('no sheet rows → Download is disabled before the click (no handler)', /aria-disabled="true"[^>]*>Download \.xlsx</.test(none) && !/onclick="tourxWueDownload/.test(none), none);
+  check('no sheet rows → Download is disabled before the click (no handler)', /aria-disabled="true"[^>]*>Download W\/UE sheet</.test(none) && !/onclick="tourxWueDownload/.test(none), none);
   check('no sheet rows → plain "Available after the next data update."', none.includes('>Available after the next data update.<'));
   check('no sheet rows → no Copy buttons', !/Copy round/.test(none));
   const some = bar(FX);

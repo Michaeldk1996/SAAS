@@ -2961,37 +2961,10 @@ function drawFixtureRow(f) {
   };
 }
 
-// Draw view, full match stats (founder ruling 2026-10-21 item 10): the box score the feed sends per player, read from the
-// same match-period rows. A stat the feed did not send is null (shown as a dash) — never 0, never derived.
-//   count rows (Aces, Double Faults)            → the integer in stat_value
-//   percentage-only row (1st serve percentage)  → the integer percent in stat_value ("69%" → 69)
-//   won/total rows (serve points, break points) → { won, total }
-function progressionBoxScore(matchStats, key) {
-  if (!matchStats || key == null) return null;
-  const row = (type, name) => findMatchStat(matchStats, key, type, name);
-  const int = (v) => { const m = /^\s*(\d+)\s*%?\s*$/.exec(String(v == null ? '' : v)); return m ? Number(m[1]) : null; };
-  const count = (type, name) => { const r = row(type, name); return r ? int(r.stat_value) : null; };
-  const wonTotal = (type, name) => {
-    const r = row(type, name); if (!r) return null;
-    const won = int(r.stat_won), total = int(r.stat_total);
-    return won != null && total != null ? { won, total } : null;
-  };
-  return {
-    aces: count('Service', 'Aces'),
-    doubleFaults: count('Service', 'Double Faults'),
-    firstServeInPct: count('Service', '1st serve percentage'),
-    firstServeWon: wonTotal('Service', '1st serve points won'),
-    secondServeWon: wonTotal('Service', '2nd serve points won'),
-    bpSaved: wonTotal('Service', 'Break Points Saved'),
-    bpConverted: wonTotal('Return', 'Break Points Converted'),
-  };
-}
-
 function progressionSheetMatches(played, roundLabelByName) {
   // Ruling 3: the same extraction the Reports metrics read (extractSheetCounts) — one derivation, no drift.
   const side = (f, matchStats, key, name, oppName) => ({ name, playerKey: key != null ? String(key) : null,
-    ...extractSheetCounts(matchStats, key, { tour: f.tournament_name, playerName: name, opponentName: oppName }),
-    box: progressionBoxScore(matchStats, key) });
+    ...extractSheetCounts(matchStats, key, { tour: f.tournament_name, playerName: name, opponentName: oppName }) });
   return [...played]
     .sort((a, b) => {
       const ka = `${a.event_date || ''} ${a.event_time || ''}`, kb = `${b.event_date || ''} ${b.event_time || ''}`;
@@ -8174,7 +8147,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { progressionBoxScore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

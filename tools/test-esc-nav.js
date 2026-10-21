@@ -278,7 +278,7 @@ t('F2 every layer is registered', () => {
   const all = [HTML_FILE, ...new Set(scripts)].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
   const want = ['ao-tip', 'acct-menu', 'sf-dd', 'trading-menu', 'h2h-picker', 'db-tour-picker', 'db-filter-menu',
     'fh-sheet', 'ma-pop', 'series-overlay', 'live-modal', 'live-sheet', 'drops-drawer', 'tourx-ms', 'tourx-overlay',
-    'analysis-modal', 'fav-modal', 'pp-split-drawer', 'pp2-layers', 'draw-stats'];
+    'analysis-modal', 'fav-modal', 'pp-split-drawer', 'pp2-layers'];   // 'draw-stats' retired with the draw's own pop-up (founder 2026-10-21 round 3: the draw opens the Match Analysis)
   const missing = want.filter(id => !all.includes(`id: '${id}'`));
   assert.deepStrictEqual(missing, []);
 });

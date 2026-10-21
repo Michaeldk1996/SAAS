@@ -6,11 +6,13 @@
 // not decided yet is an empty placeholder, never a guessed name. Results + set scores: tournament-progression.json
 // (matches[] main draw, qualifying[]); times of matches not yet played: matches.json first (refreshed every run), then
 // the progression's `scheduled` (both api-tennis, Central-European wall clock → shown in the viewer's zone by the
-// page's own apiStartMs). Clicking a finished main-draw match opens OUR full match stats (the box score the feed sent,
-// plus W/UE and Dominance) — dashes where the feed sent none.
+// page's own apiStartMs). Clicking a finished match opens the site's one Match Analysis (openAnalysisModal, landing on
+// Match Stats → Key stats) — only when the board holds that match (`past-<eventKey>`); otherwise the card is not
+// clickable (founder 2026-10-21 round 3: one stats view on the site, never a second pop-up).
 // Round 2 (founder 2026-10-21): bye boxes are back in R32 (muted, "(Bye)", never counted), every card carries the
 // profile photo chain's thumbnail (initials when there is none), a neutral athlete gets a NEU marker, a match in
 // progress shows the board's live score, and the status line says how fresh the results and the draw sheet are.
+// Round 3: the W/UE sheet (download + per-round copy + round status) sits beside the tournament selector.
 // =================================================================
 (function () {
 'use strict';
@@ -136,6 +138,13 @@ function sideRow(s, won, lost, games) {
     + `${avatarHtml(s)}${ioc}<span class="dv-name">${esc(shortName(s.name))}</span>${seed}${mark}`
     + `<span class="dv-sets">${sets}</span></div>`;
 }
+// The board row the Match Analysis opens for a finished draw match: matches.json keeps every finished match as
+// `past-<eventKey>` (4-day window, main draw only), so this is an exact key, never a name match. null → not clickable.
+function analysisIdFor(m) {
+  if (!m || m.eventKey == null) return null;
+  const id = `past-${m.eventKey}`;
+  return (S.board || []).some(b => b && b.id === id && b.finalScore) ? id : null;
+}
 function cardHtml(c, tz, kind) {
   const [A, B] = c.sides;
   // Founder 2026-10-21 round 2 (reverses the same morning's no-card ruling): a bye is a muted box, Flashscore style —
@@ -149,8 +158,9 @@ function cardHtml(c, tz, kind) {
   const flag = m && m.status === 'retired' ? '<span class="dv-tag">Ret.</span>' : m && m.status === 'walkover' ? '<span class="dv-tag">W/O</span>' : '';
   const top = m ? '' : live ? `<div class="dv-when dv-when--live"><span class="dv-live">LIVE</span>${c.when.game ? `<span class="dv-game">${esc(c.when.game)}</span>` : ''}</div>`
     : `<div class="dv-when">${esc(startLabel(c.when, tz))}</div>`;
-  const click = m && kind === 'main' ? ` role="button" tabindex="0" title="Open match stats" data-dv-ev="${esc(m.eventKey)}" onclick="DrawView.openStats('${esc(m.eventKey)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();DrawView.openStats('${esc(m.eventKey)}')}"` : '';
-  return `<div class="dv-card${m ? ' dv-card--done' : ''}${live ? ' dv-card--live' : ''}"${click}>${top}${sideRow(A, wA, m && !wA, gA)}${sideRow(B, wB, m && !wB, gB)}${flag}</div>`;
+  const aid = m ? analysisIdFor(m) : null;
+  const click = aid ? ` role="button" tabindex="0" title="Open match analysis" data-dv-ev="${esc(m.eventKey)}" onclick="DrawView.openAnalysis('${esc(aid)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();DrawView.openAnalysis('${esc(aid)}')}"` : '';
+  return `<div class="dv-card${aid ? ' dv-card--done' : ''}${live ? ' dv-card--live' : ''}"${click}>${top}${sideRow(A, wA, m && !wA, gA)}${sideRow(B, wB, m && !wB, gB)}${flag}</div>`;
 }
 const ago = (iso) => {
   const t = Date.parse(iso); if (!isFinite(t)) return DASH;
@@ -164,46 +174,12 @@ function fmtChanged(iso, tz) {
 }
 
 // state + data the page hands in
-const S = { city: null, kind: 'main', from: null, open: null, draws: null, prog: null, board: null, tz: undefined, el: null };
+const S = { city: null, kind: 'main', from: null, draws: null, prog: null, board: null, tz: undefined, el: null };
 function cities() { return S.draws ? Object.values(S.draws.tournaments || {}).filter(t => t.main && t.main.status === 'posted').map(t => t.city).sort() : []; }
 function drawOf(city) { return Object.values((S.draws && S.draws.tournaments) || {}).find(t => t.city === city) || null; }
 function entryOf(city) { const t = S.prog && S.prog.tournaments; if (!t) return null; return t[city] || Object.values(t).find(e => e.feedName === city) || null; }
+function entryName(city) { const t = S.prog && S.prog.tournaments; if (!t) return null; return t[city] ? city : (Object.keys(t).find(k => t[k] && t[k].feedName === city) || null); }
 function boardOf(city) { return (S.board || []).filter(m => String(m.tour || '').replace(/^ATP /, '') === city && !m.finalScore); }
-
-// Item 10: the full box score we hold for the match (progression matches[].p1/p2 + .box), one row per stat, both players.
-// A value the feed did not send is a dash — never 0; a genuine 0 from the feed prints 0. Percentages are the feed's
-// own won/total, shown beside the counts.
-function statRows(m) {
-  const ws = typeof window !== 'undefined' && window.WueSheet;
-  const n = v => (v == null ? DASH : String(v));
-  const wt = o => (o && o.total != null && o.won != null ? `${o.won}/${o.total}${o.total ? ` · ${Math.round(100 * o.won / o.total)}%` : ''}` : DASH);
-  const pct = v => (v == null ? DASH : `${v}%`);
-  const box = s => s.box || {};
-  const ratio = s => (s.winners != null && s.unforcedErrors ? (s.winners / s.unforcedErrors).toFixed(2) : DASH);
-  const dom = s => { const d = ws && ws.dominanceRatio ? ws.dominanceRatio(s.servicePoints, s.returnPoints) : null; return d != null ? d.toFixed(2) : DASH; };
-  return [
-    ['Aces', s => n(box(s).aces)], ['Double faults', s => n(box(s).doubleFaults)], ['1st serve in', s => pct(box(s).firstServeInPct)],
-    ['1st serve points won', s => wt(box(s).firstServeWon)], ['2nd serve points won', s => wt(box(s).secondServeWon)],
-    ['Break points saved', s => wt(box(s).bpSaved)], ['Break points converted', s => wt(box(s).bpConverted)],
-    ['Winners', s => n(s.winners)], ['Unforced errors', s => n(s.unforcedErrors)], ['Total points played', s => n(s.totalPoints)],
-    ['W/UE', ratio], ['Dominance', dom],
-  ].map(([label, f]) => [label, f(m.p1), f(m.p2)]);
-}
-function statsPanel(c) {
-  const m = c.match.raw, [A, B] = c.sides;
-  // the card's own orientation (A on top) — the feed's p1 may be our B
-  const flip = A && String(A.playerKey) !== String(m.p1.playerKey);
-  const top = flip ? m.p2 : m.p1, bot = flip ? m.p1 : m.p2;
-  const rows = statRows({ p1: top, p2: bot });
-  const sc = c.match.score ? c.match.score.map(([a, b]) => `${a}-${b}`).join(' ') : '';
-  return `<div class="dv-overlay" onclick="if(event.target===this)DrawView.openStats(null)">`
-    + `<div class="dv-stats" role="dialog" aria-modal="true" aria-label="Match stats"><div class="dv-stats-head"><span>Match stats · ${esc(c.round)}${sc ? ` · ${esc(sc)}` : ''}</span>`
-    + `<button type="button" class="dv-x" aria-label="Close" onclick="DrawView.openStats(null)">×</button></div>`
-    + `<table><thead><tr><th></th><th>${esc(top.name)}</th><th>${esc(bot.name)}</th></tr></thead><tbody>`
-    + rows.map(([l, a, b]) => `<tr><td class="dv-st-name">${esc(l)}</td><td>${esc(a)}</td><td>${esc(b)}</td></tr>`).join('')
-    + `</tbody></table>`
-    + (m.hasStats === false ? '<div class="dv-note">The feed sent no stat sheet for this match.</div>' : '') + '</div></div>';
-}
 
 function render() {
   const el = S.el; if (!el) return;
@@ -217,6 +193,11 @@ function render() {
   const head = `<div class="dv-head">`
     + chips(list.map(c => ({ label: esc(c), on: c === S.city, onclick: `DrawView.set('city','${esc(c)}')` })), 'Tournament')
     + chips([['main', 'Main draw'], ['qualifying', 'Qualifying']].map(([v, l]) => ({ label: l, on: S.kind === v, disabled: v === 'qualifying' && !(d.qualifying && d.qualifying.status === 'posted'), onclick: `DrawView.set('kind','${v}')` })), 'Draw')
+    // Round 3: the one place for the W/UE sheet — the page's own bar (download, per-round copy, "R32: 11 of 12 · …")
+    // beside the tournament selector, for the selected tournament. No progression entry for it → nothing (the bar
+    // itself says when rows are not in yet).
+    + (() => { const n = entryName(S.city), f = typeof window !== 'undefined' && window.tourxWueBarHtml;
+        return n && typeof f === 'function' ? `<div class="dv-wue">${f(n)}</div>` : ''; })()
     + `</div>`;
   if (!M) { el.innerHTML = head + '<div class="dv-empty">This draw is not posted yet.</div>'; return; }
   const names = M.rounds.map(r => r.name);
@@ -226,24 +207,19 @@ function render() {
   const vis = M.rounds.slice(names.indexOf(S.from));
   const cols = vis.map((r, ci) => `<div class="dv-col${ci === vis.length - 1 ? ' dv-col--last' : ''}"><div class="dv-colhead"><span>${esc(r.name)}</span><span class="dv-count">${r.done} of ${r.total}</span></div>`
     + `<div class="dv-cells">${r.cells.map(c => `<div class="dv-cell${c.j % 2 ? ' dv-cell--b' : ' dv-cell--a'}${c.bye ? ' dv-cell--bye' : ''}">${cardHtml(c, S.tz, M.kind)}</div>`).join('')}</div></div>`).join('');
-  const opened = S.open && M.rounds.flatMap(r => r.cells).find(c => c.match && c.match.eventKey === S.open);
   el.innerHTML = head + picker
     // Item 13: two clocks, said separately — results come from the pipeline's progression fetch; the draw sheet's time
     // is when its CONTENT last changed (it is re-checked about every 2 h; an unchanged sheet keeps its time).
     + `<div class="dv-stale">Results: ${esc(S.prog && S.prog.fetchedAt ? ago(S.prog.fetchedAt) : DASH)} · Draw sheet: ${esc(fmtChanged(M.changedAt, S.tz))}</div>`
-    + (opened ? statsPanel(opened) : '')
     + `<div class="dv-scroll"><div class="dv-bracket" style="--dv-cols:${vis.length};--dv-rows:${vis[0].cells.length}">${cols}</div></div>`;
 }
 
-// Esc closes the match-stats panel: a layer in the one Esc handler (esc-nav.js, ESC brief 2026-10-21), open while a
-// match is open and the draw is on screen.
-if (typeof globalThis !== 'undefined') (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'draw-stats', z: 76,
-  isOpen: () => !!(S.open && S.el && S.el.isConnected && S.el.offsetParent), close: () => DrawView.openStats(null) });
 const DrawView = {
-  model, mainRoundNames, qualRoundNames, shortName, meetRound, initials, statRows,
+  model, mainRoundNames, qualRoundNames, shortName, meetRound, initials, analysisIdFor,
   mount(el, data) { S.el = el; Object.assign(S, data || {}); render(); },
-  set(k, v) { S[k] = v; if (k !== 'open') S.open = null; if (k === 'city' || k === 'kind') S.from = null; render(); },
-  openStats(ev) { S.open = ev; render(); },
+  set(k, v) { S[k] = v; if (k === 'city' || k === 'kind') S.from = null; render(); },
+  // Lands on Match Stats, whose sheet opens on Key stats (Match · Key stats · Set N · Point by point).
+  openAnalysis(id) { if (typeof window !== 'undefined' && typeof window.openAnalysisModal === 'function') window.openAnalysisModal(id, 'matchstats'); },
 };
 if (typeof module !== 'undefined' && module.exports) module.exports = DrawView;
 if (typeof window !== 'undefined') window.DrawView = DrawView;
