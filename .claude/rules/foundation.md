@@ -39,7 +39,7 @@ column draws a 7px `--pos` live dot before its clock (`app-shell.md` "Page heade
   hover `--inner`; active = white icon + words on a white radial glow (no tile, no outline); a Pro-locked icon
   `--nav-locked`. Night · Day · Auto (avatar menu): track `--card` + `--edge-6`; idle option `--text-label`; selected
   `--inner` + `--edge-10`, white. Full rules: `.claude/rules/app-shell.md`.
-- **Text = three greys** (founder Q2.1): `--text` #FFF (titles, names, odds, key figures, selected tab, toggle words),
+- **Text = three greys** (founder Q2.1; `--text` value founder 2026-10-21): `--text` #E7E9EE (titles, names, odds, key figures, selected tab, toggle words),
   `--text-soft` #DDE0EA (anything you *read*: header-card subtitles, article / card body, the second player's line
   value in pop-up headers, the losing player's name on Completed cards), `--text-label` #A3AABE (anything that
   *labels*: caps labels, column heads, meta, support lines, idle tabs inside pages, placeholders, mono meta, the header

@@ -32,7 +32,7 @@
   --page-bg: radial-gradient(ellipse 1500px 640px at 720px -120px, var(--glow) 0%, rgba(52,70,170,0) 100%) no-repeat, var(--page);
 
   /* Text — same in night and day */
-  --text:        #FFFFFF;   /* titles, names, odds, key figures */
+  --text:        #E7E9EE;   /* titles, names, odds, key figures — founder 2026-10-21: the design-system value, was #FFFFFF */
   --text-soft:   #DDE0EA;   /* descriptions, second-level names */
   --text-label:  #A3AABE;   /* caps labels, column heads, meta, idle tabs, placeholders */
 
