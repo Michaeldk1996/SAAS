@@ -154,10 +154,14 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 - **NEU** marks a blank country only on a sheet that prints countries for most of its field; on a sheet with no country
   column (Brussels / Lyon qualifying) a blank is "not read" and gets no marker.
 - **A finished match opens the one Match Analysis** (`openAnalysisModal(id, 'matchstats')`, landing on Match Stats →
-  Key stats) — never a second stats pop-up. **Test:** a card is clickable iff the board holds the match as a scored
-  `past-<eventKey>` row (exact key, no name match); otherwise it is not clickable. Today that is every finished main-draw
-  match inside the board's 4-day window and no qualifying match (the board carries none). *Supersedes the 2026-10-21
-  round-2 box-score overlay.*
+  Key stats) — never a second stats pop-up. **Test:** a card is clickable iff the board (`matches.json`) or the draw
+  store (`draw-matches.json`) holds the match as a scored `past-<eventKey>` row (exact key, no name match); otherwise it
+  is not clickable. No qualifying match is clickable (neither carries one). *Supersedes the 2026-10-21 round-2 box-score
+  overlay.*
+- **Finished draw matches stay openable all week** (founder 2026-10-21, "Yes"): `draw-matches.json` keeps every finished
+  main-draw match's board row + model entry after the board's 4-day window. **Test:** refreshed every run while on the
+  board, frozen at its last copy once off it (its tabs read as of that run), kept 16 days from the match date; the
+  board's copy always wins when both exist. **Test:** `tools/test-draw-matches-store.js`.
 - **The W/UE sheet lives on the Draw tab only**, beside the tournament selector: "Download W/UE sheet", one "Copy {round}"
   per round with rows, and the round status ("R32: 11 of 12 · R16: 3 of 8") — for the selected tournament. Reports
   does not carry it.
