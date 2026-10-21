@@ -1,18 +1,18 @@
 {
- "generatedAt": "2026-10-20T22:49:44.665Z",
+ "generatedAt": "2026-10-21T00:28:08.222Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "87b6feb728f2c5cfa4209ce3774c2e225e8cf1a4",
-  "at": "2026-10-20T22:17:37Z"
+  "commit": "37aef047e1cce7c85466428368fc8f59a5318f7f",
+  "at": "2026-10-20T23:47:32Z"
  },
- "commitsScanned": 5496,
+ "commitsScanned": 5504,
  "lastRun": {
-  "from": "2026-10-20T17:01:42Z",
-  "snapshots": 25,
-  "added": 6,
-  "replaced": 0,
-  "series": 69,
+  "from": "2026-10-20T22:17:37Z",
+  "snapshots": 8,
+  "added": 0,
+  "replaced": 1,
+  "series": 70,
   "kept": 50,
   "bySource": {
    "api-tennis-live": 50
@@ -21,7 +21,7 @@
    "Pinnacle +30s": 50
   },
   "dropped": {
-   "noStart": 19
+   "noStart": 20
   }
  },
  "stats": {
@@ -9567,9 +9567,9 @@
    "p2Key": 2838,
    "p1Name": "H. Medjedovic",
    "p2Name": "B. Nakashima",
-   "p1": 3.4,
-   "p2": 1.359,
-   "at": "2026-10-20T18:42:43.743Z",
+   "p1": 3.33,
+   "p2": 1.371,
+   "at": "2026-10-20T19:24:46.556Z",
    "trueStart": "2026-10-20T20:15:03.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
