@@ -22,7 +22,9 @@ for (const t of Object.keys(before)) {
   ocr += before[t] ? before[t].players.flatMap(p => p.rounds).filter(r => r.metrics.wueSource === 'ATP_Entry_OCR').length : 0;
   check(`${t}: Reports view (players · rounds · metrics · field average) byte-identical to before`, view(now[t]) === view(before[t]));
   // ruling 6 adds two fields to each export row (roundCode, hasStats); everything else is unchanged
-  const strip = ms => ms && ms.map(({ roundCode, hasStats, score, ...rest }) => rest);   // + the draw view's set score (item 2)
+  // + the draw view's set score (item 2) and its per-side box score (ruling 2026-10-21 item 10) — additive fields only
+  const side = ({ box, ...s }) => s;
+  const strip = ms => ms && ms.map(({ roundCode, hasStats, score, p1, p2, ...rest }) => ({ ...rest, p1: side(p1), p2: side(p2) }));
   check(`${t}: export matches[] byte-identical to before (ruling 6's roundCode / hasStats aside)`, JSON.stringify(strip(now[t] && now[t].matches)) === JSON.stringify(before[t] && before[t].matches));
 }
 check(`non-vacuous: ${pr} player-rounds compared, ${ocr} through the OCR fallback`, pr >= 40 && ocr >= 2, `${pr} / ${ocr}`);

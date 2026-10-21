@@ -46,24 +46,83 @@ check('without a posted draw the model is null (nothing drawn from guesses)', DV
 check('qualifying depth unknown (no main draw) → only Q1 is shown', DV.qualRoundNames(16, 0).join() === 'Q1');
 
 // ── render smoke (no DOM: the module renders into an object with innerHTML) ──
-global.window = { DrawView: null, WueSheet: require(path.join(ROOT, 'wue-sheet.js')) };   // the page loads both; Dominance = WueSheet's one formula
+// The page loads wue-sheet.js (Dominance = WueSheet's one formula) and defines photoCandidatesFor (the profile's photo
+// chain). Here: Medvedev has a photo candidate, everyone else none.
+const MED = String(draw.main.slots.find(s => /^MEDVEDEV/.test(s.name)).playerKey);
+global.window = { DrawView: null, WueSheet: require(path.join(ROOT, 'wue-sheet.js')), photoCandidatesFor: (k) => (k === MED ? ['https://example.test/med.png', 'https://example.test/med2.png'] : []) };
+const RD = Date; global.Date = class extends RD { constructor(...a) { super(...(a.length ? a : ['2026-10-20T12:12:00Z'])); } static now() { return new RD('2026-10-20T12:12:00Z').getTime(); } };
 const el = { innerHTML: '' };
-DV.mount(el, { draws, prog: { tournaments: { Almaty: entry } }, board: [], tz: 'UTC' });
+const prog = { fetchedAt: '2026-10-20T12:00:00Z', tournaments: { Almaty: entry } };
+DV.mount(el, { draws, prog, board: [], tz: 'UTC' });
 const h = el.innerHTML;
-check('renders: tournament chips, Main draw / Qualifying, From picker, "Draw updated: …", round heads with "9 of 12"', /Almaty/.test(h) && /Main draw/.test(h) && /From/.test(h) && /Draw updated: /.test(h) && /9 of 12/.test(h) && /0 of 8/.test(h));
+check('renders: tournament chips, Main draw / Qualifying, From picker, round heads with "9 of 12"', /Almaty/.test(h) && /Main draw/.test(h) && /From/.test(h) && /9 of 12/.test(h) && /0 of 8/.test(h));
+check('item 13: the status line names both clocks — "Results: 12 min ago · Draw sheet: <content-change time>"', /Results: 12 min ago · Draw sheet: \d{1,2} Oct, \d\d:\d\d/.test(h), (h.match(/<div class="dv-stale">[^<]*/) || [''])[0]);
 check('renders seeds in brackets, Q / WC markers, and placeholders — and never "undefined" / "null"', /\[1\]/.test(h) && /dv-mark">Q</.test(h) && /dv-mark">WC</.test(h) && /dv-card--empty/.test(h) && !/undefined|>null</.test(h));
-// Founder 2026-10-21: "Byes go straight to R16. No fake R32 match card for a bye." The R32 column draws 12 cards in 16
-// cells (the 4 bye cells are empty and carry no connector); each bye seed's first card is its R16 one.
+// Item 8 (round 2, reverses the no-card ruling): a bye is a muted box — the seed, then "(Bye)" — no score, not clickable,
+// not counted (R32 stays "x of 12"), so every R16 slot has two feeders.
 const colAt = [...h.matchAll(/<div class="dv-col(?: dv-col--last)?">/g)].map(m => m.index);
 const r32Col = h.slice(colAt[0], colAt[1]);
-const byeCells = r32Col.match(/<div class="dv-cell[^"]*dv-cell--bye">(.*?)<\/div>/g) || [];
-check('no bye card: R32 shows 12 cards in 16 cells; the 4 bye cells are empty; no "Bye" text anywhere',
-  (r32Col.match(/class="dv-card/g) || []).length === 12 && byeCells.length === 4 && byeCells.every(c => !/dv-card/.test(c)) && !/>Bye</.test(h),
-  `${(r32Col.match(/class="dv-card/g) || []).length} cards, ${byeCells.length} bye cells`);
-check('a bye seed\'s first card is in R16 (Medvedev [1] not in the R32 column, present in R16)', !/MEDVEDEV|Medvedev/.test(r32Col) && /Medvedev/.test(h));
-check('a finished main-draw match is clickable to OUR stats', /data-dv-ev="12171884"/.test(h));
+const byeCards = r32Col.match(/<div class="dv-card dv-card--bye"[\s\S]*?\(Bye\)<\/span><\/div><\/div>/g) || [];
+check('item 8: R32 draws 16 boxes for 16 slots — 12 matches + 4 muted bye boxes (every R16 slot has two feeders)', (r32Col.match(/class="dv-card[ "]/g) || []).length === 16 && byeCards.length === 4, `${(r32Col.match(/class="dv-card[ "]/g) || []).length} boxes, ${byeCards.length} bye`);
+check('item 8: a bye box = the seed then "(Bye)" — Medvedev [1] first; no score, not clickable', /Medvedev<\/span><span class="dv-seed">\[1\]/.test(byeCards[0] || '') && byeCards.every(b => !/class="dv-set"|data-dv-ev|role="button"/.test(b)));
+check('item 8: the bye boxes never count — R32 "9 of 12", R16 "0 of 8"', /R32<\/span><span class="dv-count">9 of 12/.test(h));
+// Item 9: photos from the profile chain, lazy, initials underneath; no photo → initials only.
+const medRow = (r32Col.match(/<div class="dv-row"><span class="dv-av"[^]*?Medvedev/) || [''])[0];
+check('item 9: a player with a photo: lazy <img> from the profile chain, the rest of the chain as fallback, initials underneath', /<span class="dv-ini">DM<\/span><img src="https:\/\/example\.test\/med\.png" alt="" loading="lazy"/.test(medRow) && /data-fb="https:\/\/example\.test\/med2\.png"/.test(medRow), medRow.slice(0, 300));
+check('item 9: a player without a photo: initials only, never an <img> placeholder face', /<span class="dv-av" aria-hidden="true"><span class="dv-ini">SS<\/span><\/span><span class="dv-ioc">JPN<\/span><span class="dv-name">S\. Shimabukuro/.test(h));
+check('item 9: initials from the official name ("DIAZ ACOSTA, Facundo" → FD; one-word name → its letter)', DV.initials('DIAZ ACOSTA, Facundo') === 'FD' && DV.initials('Nadal') === 'N' && DV.initials('') === '');
+// Item 11: neutral marker only where the sheet prints countries for most of the field.
+check('item 11: Medvedev (no country on a sheet that prints them) gets the NEU marker, not an empty box', /dv-ioc dv-ioc--neu" title="Neutral athlete: no country on the official draw">NEU</.test(medRow));
+const lyonDraw = Object.values(draws.tournaments).find(t => t.city === 'Lyon');
+const LQ = lyonDraw && lyonDraw.qualifying && lyonDraw.qualifying.status === 'posted' ? DV.model({ draw: lyonDraw, entry: null, upcoming: [], kind: 'qualifying' }) : null;
+const lqSides = LQ ? LQ.rounds[0].cells.flatMap(c => c.sides).filter(Boolean) : [];
+check(`item 11: a sheet with no country column (Lyon qualifying: ${lqSides.filter(s => !s.ioc).length} of ${lqSides.length} blank) marks nobody neutral`, lqSides.length > 0 && lqSides.every(s => !s.ioc && s.neutral === false), `${lqSides.length} sides`);
+check('item 11: Almaty main — exactly the 4 no-country players are neutral (Medvedev, Safiullin, Khachanov, Rublev)', M.rounds[0].cells.flatMap(c => c.sides).filter(s => s && s.neutral).map(s => s.name.split(',')[0]).sort().join() === 'KHACHANOV,MEDVEDEV,RUBLEV,SAFIULLIN');
+// Item 10: clickable → full box score overlay; dashes where missing, a real 0 stays 0.
+check('item 10: a finished main-draw match is clickable (role=button, keyboard, title) to OUR stats', /role="button" tabindex="0" title="Open match stats" data-dv-ev="12171884"/.test(h));
 DV.openStats('12171884');
-check('stats panel: W, UE, W/UE, Dominance for both players (Duckworth 27 / 18 / 1.50 / 1.21)', /Match stats/.test(el.innerHTML) && /J\. Duckworth<\/td><td>27<\/td><td>18<\/td><td>1\.50<\/td><td>1\.21/.test(el.innerHTML), el.innerHTML.slice(el.innerHTML.indexOf('dv-stats'), el.innerHTML.indexOf('dv-stats') + 400));
+let sp = el.innerHTML;
+check('item 10: the stats open in an overlay dialog (visible wherever the card was clicked), with a close control', /class="dv-overlay"/.test(sp) && /role="dialog"/.test(sp) && /class="dv-x" aria-label="Close"/.test(sp));
+check('item 10: 12 stat rows — aces … break points converted, winners, UE, total points, W/UE, Dominance', ['Aces', 'Double faults', '1st serve in', '1st serve points won', '2nd serve points won', 'Break points saved', 'Break points converted', 'Winners', 'Unforced errors', 'Total points played', 'W/UE', 'Dominance'].every(l => sp.includes(`<td class="dv-st-name">${l}</td>`)));
+check('item 10: the pinned entry predates the box score → those rows are dashes, never 0; the held stats print (Duckworth 27 / 18 / 1.50 / 1.21)',
+  /<td class="dv-st-name">Aces<\/td><td>—<\/td><td>—<\/td>/.test(sp) && /Winners<\/td><td>15<\/td><td>27</.test(sp) && /W\/UE<\/td><td>1\.00<\/td><td>1\.50</.test(sp) && /Dominance<\/td><td>0\.83<\/td><td>1\.21</.test(sp), sp.slice(sp.indexOf('<tbody>'), sp.indexOf('<tbody>') + 300));
+const withBox = JSON.parse(JSON.stringify(entry)); const km = withBox.matches.find(m => m.eventKey === '12171884');
+km.p1.box = { aces: 4, doubleFaults: 0, firstServeInPct: 69, firstServeWon: { won: 26, total: 37 }, secondServeWon: { won: 7, total: 17 }, bpSaved: { won: 1, total: 4 }, bpConverted: null };
+km.p2.box = { aces: 6, doubleFaults: 2, firstServeInPct: 66, firstServeWon: { won: 28, total: 39 }, secondServeWon: { won: 12, total: 20 }, bpSaved: { won: 2, total: 3 }, bpConverted: { won: 3, total: 4 } };
+DV.mount(el, { draws, prog: { fetchedAt: prog.fetchedAt, tournaments: { Almaty: withBox } }, board: [], tz: 'UTC' }); DV.openStats('12171884'); sp = el.innerHTML;
+check('item 10: box values print as held — counts, %, won/total · % — a genuine 0 stays 0, a missing one is a dash',
+  /Aces<\/td><td>4<\/td><td>6</.test(sp) && /Double faults<\/td><td>0<\/td><td>2</.test(sp) && /1st serve in<\/td><td>69%<\/td><td>66%</.test(sp)
+  && /1st serve points won<\/td><td>26\/37 · 70%<\/td><td>28\/39 · 72%</.test(sp) && /Break points converted<\/td><td>—<\/td><td>3\/4 · 75%</.test(sp), sp.slice(sp.indexOf('<tbody>'), sp.indexOf('<tbody>') + 500));
+DV.openStats(null);
+check('item 10: closing removes the overlay', !/dv-overlay/.test(el.innerHTML));
+// Item 12: a match in progress shows the board's live score, oriented to the card, marked LIVE.
+const bk = [bell.sides[0].playerKey, bell.sides[1].playerKey];
+DV.mount(el, { draws, prog, tz: 'UTC', board: [{ tour: 'ATP Almaty', p1Key: bk[1], p2Key: bk[0], date: '2026-10-21', time: '08:30', live: true, liveScore: [{ set: 1, p1: 4, p2: 6 }, { set: 2, p1: 3, p2: 2 }], liveGameScore: '30 - 15' }] });
+const lc = (el.innerHTML.match(/<div class="dv-card dv-card--live"[\s\S]*?<\/div><\/div><\/div>/) || [''])[0];
+check('item 12: the live card is marked LIVE with the game score, sets oriented to the card (board p1 = our B: 6-4 2-3 for Bellucci)',
+  /<span class="dv-live">LIVE<\/span><span class="dv-game">15 - 30<\/span>/.test(lc) && /Bellucci<\/span><span class="dv-sets"><span class="dv-set">6<\/span><span class="dv-set">2<\/span>/.test(lc) && /Etcheverry<\/span><span class="dv-seed">\[6\]<\/span><span class="dv-sets"><span class="dv-set">4<\/span><span class="dv-set">3<\/span>/.test(lc), lc.slice(0, 600));
+check('item 12: a live card is not clickable to stats and not counted as played (R32 still 9 of 12)', !/data-dv-ev/.test(lc) && /9 of 12/.test(el.innerHTML));
+global.Date = RD;
+
+// ── item 10, pipeline side: the box score each progression side carries (progressionBoxScore) ──
+// Rows copied from the real api-tennis match-period sheet of 12171884 (Kecmanovic v Duckworth, Almaty R32, 19 Oct).
+{
+  process.env.API_TENNIS_KEY = process.env.API_TENNIS_KEY || 'test';
+  const P = require(path.join(ROOT, 'bsp-pipeline.js'));
+  const r = (pk, type, name, value, won, total) => ({ stat_period: 'match', player_key: pk, stat_type: type, stat_name: String(name).toUpperCase(), stat_value: value, stat_won: won, stat_total: total });
+  const K = 2848;
+  const rows = [r(K, 'Service', 'Aces', '4', null, null), r(K, 'Service', 'Double Faults', '3', null, null), r(K, 'Service', '1st serve percentage', '69%', null, null),
+    r(K, 'Service', '1st serve points won', '70%', '26', '37'), r(K, 'Service', '2nd serve points won', '41%', '7', '17'), r(K, 'Service', 'Break Points Saved', '25%', '1', '4'),
+    r(K, 'Return', 'Break Points Converted', '33%', '1', '3')];   // upper-cased names: the feed's casing varies by season
+  const b = P.progressionBoxScore(rows, K);
+  check('pipeline: the box score reads the feed\'s own rows (4 aces, 3 DF, 69%, 26/37, 7/17, BP saved 1/4, converted 1/3)',
+    JSON.stringify(b) === JSON.stringify({ aces: 4, doubleFaults: 3, firstServeInPct: 69, firstServeWon: { won: 26, total: 37 }, secondServeWon: { won: 7, total: 17 }, bpSaved: { won: 1, total: 4 }, bpConverted: { won: 1, total: 3 } }), JSON.stringify(b));
+  const z = P.progressionBoxScore([r(K, 'Service', 'Aces', '0', null, null)], K);
+  check('pipeline: a genuine 0 from the feed stays 0; a row the feed did not send is null (a dash), never 0', z.aces === 0 && z.doubleFaults === null && z.firstServeWon === null && z.bpConverted === null);
+  check('pipeline: no stat sheet → no box at all (null)', P.progressionBoxScore(null, K) === null);
+  const src = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
+  check('pipeline: every progression side carries box: progressionBoxScore(matchStats, key)', src.includes('box: progressionBoxScore(matchStats, key) });'));
+}
 
 // ── page + deploy wiring ──
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');

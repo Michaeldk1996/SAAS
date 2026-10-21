@@ -63,6 +63,7 @@ const FILES = [
   'test-ten417-live.mjs',                // TEN-417: drops one feed stat row from the Live fixture
   'tools/test-wue-sheet.js',             // W/UE sheet: builds api-tennis statistics rows for progressionSheetMatches
   'tools/test-partial-fetch.js',         // item 5: builds api-tennis statistics rows for buildTournamentProgression
+  'tools/test-draw-view.js',             // item 10 (21 Oct): builds api-tennis match-period rows for progressionBoxScore
 ];
 
 // A line is SAFE when it case-folds the name on the read side, either by
