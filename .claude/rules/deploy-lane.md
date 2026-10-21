@@ -216,6 +216,19 @@ Supersedes TEN-178's tick-only deploy (the push trigger stays off; nothing here 
 - **Tests:** `tools/test-publish-split.js` (resolve, assemble, workflow wiring, lane), `tools/test-ten351-gate-run.js`
   (`--shard`, W1–W4), `tools/test-ten329-built-store-gate.js` (the reconcile runs before the `site-data` upload).
 
+## Pre-push gate for main (founder ruling 2026-10-21)
+After 1a935c1b9 reached main with `npm test` red. The **Code gate** (`gate.yml` → `publish.yml` publishes only the newest
+gated commit) stays the enforced backstop against *deploying* a red commit; the pre-push hook stops it being *pushed*
+from this Mac. Installed once per repository by `tools/install-git-hooks.sh` (copies `tools/git-hooks/` into the shared
+git dir, absolute `core.hooksPath`: the checkout and every worktree). Re-run the installer when the hook changes.
+- **Test:** a push that moves `main` needs (1) `tools/land-check.sh <commit>` — full suite in a CI-shaped clone, EXIT=0,
+  recorded in `<git-common-dir>/land-checks.ok` — for the pushed commit or a tested commit that differs from it in data
+  files only, and (2) `tools/clobber-check.sh` clear for every file the push changes.
+- **Exempt:** a push whose every new commit says `[skip ci]` and changes data only (`.json` / `.jsonl` / `.gz` outside
+  `tools/` and `.github/`, never `package*.json`) — the Mac's daily refresh jobs. Other branches are never checked.
+  Deleting `main` is refused. `--no-verify` bypasses the hook, never the Code gate.
+- **Test:** `tools/test-pre-push-hook.js` (real git, throwaway repositories, no-hook control).
+
 ## Pipeline-down alert (founder ruling 2026-10-18)
 
 - **Two failed `pipeline.yml` runs in a row → ONE Telegram naming the failing step in plain words** (the step name

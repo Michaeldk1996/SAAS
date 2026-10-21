@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# Pre-push gate for main (founder ruling 2026-10-21, after 1a935c1b9 reached main with npm test red).
+# Installed by tools/install-git-hooks.sh (core.hooksPath — shared by the checkout and every worktree).
+#
+# A push that moves refs/heads/main is refused unless BOTH hold for the commit being pushed:
+#   1. a full-suite pass is recorded for it by tools/land-check.sh (CI-shaped clone, npm test EXIT=0) — or for a
+#      tested commit that differs from it in data files only (main gains [skip ci] data commits every few minutes;
+#      a code-identical rebase must not need a new 15-minute run);
+#   2. tools/clobber-check.sh is clear for every file the push changes against origin/main.
+# Exempt: a push whose every new commit says [skip ci] and changes data files only (the Mac's daily refresh jobs —
+# career splits, entry lists, playing styles). Other refs are never checked. Deleting main is refused.
+# The Code gate (gate.yml) stays the enforced backstop: `git push --no-verify` bypasses this hook, never the gate.
+set -u
+Z40=0000000000000000000000000000000000000000
+COMMON="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
+TOP="$(git rev-parse --show-toplevel)"
+refuse() { printf '\npre-push: REFUSED push to main — %s\n' "$1" >&2; exit 1; }
+# data = never code: json / jsonl / gz outside tools/ and .github/, and not package.json / package-lock.json
+is_data() {
+  case "$1" in
+    tools/*|.github/*|package.json|package-lock.json) return 1 ;;
+    *.json|*.jsonl|*.json.gz|*.gz) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+only_data() { local f; while IFS= read -r f; do [ -z "$f" ] && continue; is_data "$f" || return 1; done; return 0; }
+
+while read -r LREF LSHA RREF RSHA; do
+  [ "$RREF" = "refs/heads/main" ] || continue
+  [ "$LSHA" = "$Z40" ] && refuse "deleting main."
+  NEW="$(git rev-list "$LSHA" --not --remotes=origin 2>/dev/null)"
+  [ -z "$NEW" ] && continue                                   # nothing new to land
+  # exemption: every new commit is a [skip ci] data-only commit
+  EXEMPT=1
+  for c in $NEW; do
+    git log -1 --format=%B "$c" | grep -qF '[skip ci]' || { EXEMPT=0; break; }
+    git diff-tree --no-commit-id --name-only -r --root "$c" | only_data || { EXEMPT=0; break; }
+  done
+  if [ "$EXEMPT" = 1 ]; then echo "pre-push: [skip ci] data-only push to main — no suite needed."; continue; fi
+
+  # 1. a recorded full-suite pass for this commit, or for an earlier one with only data changed since
+  OKFILE="${COMMON}/land-checks.ok"
+  PASSED=""
+  if [ -f "$OKFILE" ]; then
+    while read -r OK _; do
+      git cat-file -e "${OK}^{commit}" 2>/dev/null || continue
+      # not an ancestry test: a tested commit rebased onto new data commits has a new id but the same code
+      if [ "$OK" = "$LSHA" ] || git diff --name-only "$OK" "$LSHA" | only_data; then PASSED="$OK"; break; fi
+    done < <(tail -r "$OKFILE" 2>/dev/null || tac "$OKFILE")
+  fi
+  [ -n "$PASSED" ] || refuse "no full-suite pass recorded for $(git rev-parse --short "$LSHA") (nor for a tested commit that differs from it in data files only).
+  Run:  tools/land-check.sh $(git rev-parse --short "$LSHA")     (CI-shaped clone, npm test; ~15 min)
+  then push again. The Code gate would refuse to deploy it anyway; this keeps a red commit off main."
+  echo "pre-push: suite EXIT=0 recorded for $(git rev-parse --short "$PASSED")$([ "$PASSED" = "$LSHA" ] || echo ' (differs from the pushed commit in data files only)')."
+
+  # 2. the clobber check, against origin/main, for every file this push changes
+  git fetch -q origin || refuse "git fetch failed — cannot check against origin/main."
+  BASE="$(git merge-base "$LSHA" origin/main)"
+  FILES=()
+  while IFS= read -r f; do [ -n "$f" ] && FILES+=("$f"); done < <(git diff --name-only "$BASE" "$LSHA")
+  if [ "${#FILES[@]}" -gt 0 ]; then
+    bash "${TOP}/tools/clobber-check.sh" "$BASE" "${FILES[@]}" >&2 || refuse "the clobber check is not clear (above). Rebase onto origin/main, re-run tools/land-check.sh if code moved, push again."
+  fi
+done
+exit 0
