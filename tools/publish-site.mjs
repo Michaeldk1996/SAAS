@@ -33,8 +33,9 @@ export function publish({ code, site, env = process.env }) {
   if (!fs.existsSync(path.join(site, 'matches.json'))) fail(`${site} holds no pipeline data (matches.json missing)`);
   const dataInfo = fs.existsSync(dataInfoFile) ? JSON.parse(fs.readFileSync(dataInfoFile, 'utf8')) : {};
 
-  // 1. code over data
-  execFileSync('bash', [path.join(ROOT, 'tools', 'site-code.sh'), code, site], { stdio: 'inherit' });
+  // 1. code over data — with the GATED checkout's own file list (founder 2026-10-21). The tip's list named draw-view.js
+  // while the gated code (e3cc5f0dd) predated it: every publish failed "cp: cannot stat" until the gate caught up.
+  execFileSync('bash', [path.join(code, 'tools', 'site-code.sh'), code, site], { stdio: 'inherit' });
 
   // 2. public Supabase config (placeholders stay when the secrets are absent, as pipeline.yml does)
   if (env.SUPABASE_URL && env.SUPABASE_PUBLISHABLE_KEY) {
