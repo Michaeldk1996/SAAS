@@ -15,6 +15,8 @@
 //   P · population: the Career record's figure for the window and tier = this format + the other format + every
 //       match out, by reason (and the note prints that sum).
 //   W · the windows count back from the pinned day: Last 52 weeks = the Career record's own 364-day cutoff.
+//   S · (founder 2026-10-22) the title is fixed, the Window order is Last 52 weeks / Last 24 months / Career with Career
+//       the default, and every control button reserves its selected width, in every state.
 //
 // WHAT BREAKS IT: the drill listing matches from anywhere but the row's own tally — re-filtering the pool under a
 // different rule (voids read as covered or not covered, the role or a filter dropped, a different population) moves
@@ -235,6 +237,29 @@ function shapeChecks(A, shape) {
     const careerTot = I.careerTierCells(p, 'all').total;
     assert.strictEqual(c.recordN, careerTot.won + careerTot.lost, 'Career = the record\'s own total');
     return k + ' scopes · Career ' + c.recordN + ' = ' + c.all + ' + ' + c.why.otherFmt + ' + out ' + JSON.stringify(c.why) + ' + undated ' + c.undated;
+  });
+
+  if (shape === 'feed') H.check(tag('S · the title and every control are the same in every state (founder 2026-10-22)'), () => {
+    // Fixed title; Window order Last 52 weeks / Last 24 months / Career (Career pressed by default); every control
+    // button carries its 700-weight label as a hidden width reserve, so selecting it cannot change its width.
+    // Positions themselves are measured in a browser (54 states × 4 widths), not here.
+    const seen = new Set();
+    let n = 0;
+    WINS.forEach((win) => TIERS.forEach((tier) => FMTS.forEach((f) => ROLES.forEach((role) => {
+      const h = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: null }, () => I.renderLinesTab(p));
+      const title = /data-lc="title"[^>]*>([^<]*)</.exec(h);
+      assert(title && title[1] === 'Coverage by line', win + '/' + tier + '/' + f + '/' + role + ' title: ' + (title && title[1]));
+      const btns = h.match(/<button[^>]*data-pp2="lc-(?:win|tier|fmt)"[\s\S]*?<\/button>/g) || [];
+      assert.strictEqual(btns.length, 8, 'controls ' + btns.length);
+      btns.forEach((b) => assert(/visibility:hidden;">[^<]+<\/span><\/span><\/button>$/.test(b) && /font-weight:700;visibility:hidden/.test(b), 'no width reserve: ' + b.slice(0, 120)));
+      // the label text and order, stripped of state: one signature in every state
+      seen.add(btns.map((b) => /data-v="(\w+)"/.exec(b)[1]).join(','));
+      n++;
+    }))));
+    assert.deepStrictEqual([...seen], ['l52,l24,career,all,atp,chitf,bo3,bo5']);
+    const def = withState(I, { key: p.key, marketTab: 'lines', lcWin: undefined }, () => I.renderLinesTab(p));
+    assert(/data-pp2="lc-win" data-v="career" aria-pressed="true"/.test(def), 'Career is not the default');
+    return n + ' states · one title · order ' + [...seen][0];
   });
 
   H.check(tag('W · Last 52 weeks is the Career record\'s cutoff; Last 24 months is two years back from the pinned day'), () => {

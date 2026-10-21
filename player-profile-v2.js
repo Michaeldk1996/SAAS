@@ -6438,7 +6438,8 @@
   //   level          a set count that decides no match shape (fx6 item 2)
   //   other format   the other toggle's matches (best of 5 under Best of 3, and the reverse)
   // The games lines additionally need per-set games; every row still states its own denominator.
-  var LC_WINDOWS = [['career', 'Career'], ['l24', 'Last 24 months'], ['l52', 'Last 52 weeks']];
+  // Founder 2026-10-22: Last 52 weeks / Last 24 months / Career, in that order; Career stays the default.
+  var LC_WINDOWS = [['l52', 'Last 52 weeks'], ['l24', 'Last 24 months'], ['career', 'Career']];
   function lcWindowOf(v) { return v === 'l24' || v === 'l52' ? v : 'career'; }
   function lcTierOf(v) { return v === 'atp' || v === 'chitf' ? v : 'all'; }
   // Both rolling windows count back from today: Last 52 weeks is the Career record's own cutoff (last52Cutoff),
@@ -6596,7 +6597,9 @@
   // edge tab row and the Bo3 | Bo5 control: track --card + --edge-6, radius 9,
   // pad 2, gap 3; item pad 5/12, Hanken 11; selected --inner + --edge-10, white
   // 700; idle --text-label 600, no edge.
-  function mkSeg(hook, items, active) {
+  // `steady` (Derived lines filters, founder 2026-10-22): every item is as wide as its selected (700) label, so a
+  // selection never changes a button's width and nothing beside or after it moves.
+  function mkSeg(hook, items, active, steady) {
     return '<span data-pp2-seg="' + hook + '" style="display:inline-flex;flex:none;gap:3px;padding:2px;' +
       'background:var(--card);border:1px solid var(--edge-6);border-radius:9px;">' +
       items.map(function (t) {
@@ -6608,7 +6611,10 @@
           'color:' + (on ? 'var(--text)' : 'var(--text-label)') + ';' +
           'background:' + (on ? 'var(--inner)' : 'transparent') + ';' +
           'border:1px solid ' + (on ? 'var(--edge-10)' : 'transparent') + ';">' +
-          esc(t[1]) + '</button>';
+          (steady
+            ? '<span style="display:inline-grid;"><span style="grid-area:1 / 1;">' + esc(t[1]) + '</span>' +
+              '<span aria-hidden="true" style="grid-area:1 / 1;font-weight:700;visibility:hidden;">' + esc(t[1]) + '</span></span>'
+            : esc(t[1])) + '</button>';
       }).join('') + '</span>';
   }
   /** The tab row: Match winner | Derived lines, with an optional right-hand slot. */
@@ -6642,10 +6648,12 @@
     var scopeWord = (win === 'career' ? '' : ' ' + MIDDOT + ' ' + LC_WINDOW_WORD[win]) +
       (tier === 'all' ? '' : ' ' + MIDDOT + ' ' + careerTierWord(tier));
     var head = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-bottom:12px;min-height:32px;">' +
-      '<span style="' + MK_CAPS + '">Coverage by line ' + MIDDOT + ' ' + esc(d.fmtLabel) + esc(scopeWord) + ' ' + MIDDOT + ' ' + roleWord + '</span>' +
+      // Founder 2026-10-22: a fixed title (the selected card and buttons already say what is selected), and controls of
+      // fixed width, so no filter or card click moves anything on the row, at any width.
+      '<span data-lc="title" style="' + MK_CAPS + '">Coverage by line</span>' +
       '<span style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">' +
-        mkSeg('lc-win', LC_WINDOWS, win) + mkSeg('lc-tier', CAREER_TIERS, tier) +
-        mkSeg('lc-fmt', [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], fmt) + '</span></div>';
+        mkSeg('lc-win', LC_WINDOWS, win, true) + mkSeg('lc-tier', CAREER_TIERS, tier, true) +
+        mkSeg('lc-fmt', [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], fmt, true) + '</span></div>';
 
     function pctOf(n) { return d.all ? Math.round(100 * n / d.all) + '% of ' + d.all.toLocaleString('en-US') : DASH; }
     var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
