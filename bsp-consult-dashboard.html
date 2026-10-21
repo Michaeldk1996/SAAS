@@ -18475,7 +18475,7 @@ function kfModelCard(m){
   const idAttr = String(m.id == null ? '' : m.id).replace(/'/g, "\\'");
   const surf = fhSurfName(m.surface);
   // a finished draw match off the board: model-output.json no longer holds it, its draw-store copy does (round 3)
-  const ds = _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[m.id];
+  const ds = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[m.id];
   const mo = (typeof modelOutput !== 'undefined' && modelOutput && modelOutput.matches ? modelOutput.matches[m.id] : null) || (ds && ds.model) || null;
   const net = mo && mo.ok && mo.stage2 && mo.stage2.totalDeltaP1 != null ? Number(mo.stage2.totalDeltaP1) * 100 : null;
   const strong = (t, mono) => `<span style="${mono ? M : ''} font-weight:600; color:${C.text};">${t}</span>`;
@@ -19443,7 +19443,7 @@ function maSetTheme(mode){ return window.sfTheme ? window.sfTheme.set(mode) : 'n
 function matchById(id){
   const b = matches.find(x => x.id === id);
   if (b) return b;
-  const e = _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[id];
+  const e = typeof _drawMatchStore !== 'undefined' && _drawMatchStore && _drawMatchStore.matches && _drawMatchStore.matches[id];
   return e && e.match && e.match.finalScore ? e.match : null;
 }
 function openAnalysisModal(matchId, tab){

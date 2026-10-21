@@ -199,6 +199,8 @@ function modalVM(opts = {}) {
     ${objSrc('const A_TAB_REVISIT')}
     ${slice('aBuildForReport')}
     ${slice('aShowTab')}
+    let _drawMatchStore = null;   // round 3 (2026-10-21): openAnalysisModal finds its match through matchById (board, then the draw store)
+    ${slice('matchById')}
     ${slice('openAnalysisModal')}
     return { openAnalysisModal, aShowTab, aBuildForReport, built: () => [..._aBuilt] };`;
   const api = new Function('document', 'matches', ...names, body)(document, [{ id: 'a', p1: 'J. Sinner', p2: 'C. Alcaraz' }, { id: 'b', p1: 'X', p2: 'Y' }], ...names.map(n => stubs[n]));
