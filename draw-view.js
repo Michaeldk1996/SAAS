@@ -235,7 +235,10 @@ function render() {
     + `<div class="dv-scroll"><div class="dv-bracket" style="--dv-cols:${vis.length};--dv-rows:${vis[0].cells.length}">${cols}</div></div>`;
 }
 
-if (typeof document !== 'undefined') document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.open) DrawView.openStats(null); });
+// Esc closes the match-stats panel: a layer in the one Esc handler (esc-nav.js, ESC brief 2026-10-21), open while a
+// match is open and the draw is on screen.
+if (typeof globalThis !== 'undefined') (globalThis.sfEscLayers = globalThis.sfEscLayers || []).push({ id: 'draw-stats', z: 76,
+  isOpen: () => !!(S.open && S.el && S.el.isConnected && S.el.offsetParent), close: () => DrawView.openStats(null) });
 const DrawView = {
   model, mainRoundNames, qualRoundNames, shortName, meetRound, initials, statRows,
   mount(el, data) { S.el = el; Object.assign(S, data || {}); render(); },
