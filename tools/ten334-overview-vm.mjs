@@ -1,6 +1,19 @@
 // TEN-334 — TEST-ONLY sandbox for the Match analysis Overview tab: slices the REAL builder (bsp-consult-dashboard.html) and
 // the shared helpers it calls (sample gate, segmented control, shade tokens) and executes them against a fixture. Used by
 // test-ten324-overview-spine.mjs and test-ten334-overview.mjs. Never loaded by the page. Regenerates nothing.
+import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
+const require = createRequire(import.meta.url);
+// The Overview's counts are the profile module's (ovRecApi -> PlayerProfileV2._internals), so the sandbox loads the REAL
+// player-profile-v2.js into a window shim over the same profiles map, exactly as the page does — never a stub of it.
+export function profileWindow(profiles = {}, extra = {}) {
+  const win = Object.assign({ FEATURE_PP2: true, playerProfiles: { players: profiles },
+    TournamentIdentity: require('../tournament-identity.js') }, extra);
+  // eslint-disable-next-line no-new-func
+  new Function('window', readFileSync(new URL('../player-profile-v2.js', import.meta.url), 'utf8'))(win);
+  if (!win.PlayerProfileV2) throw new Error('player-profile-v2.js did not export PlayerProfileV2');
+  return win;
+}
 export function fnSrc(name, src) {
   const start = src.indexOf(`\nfunction ${name}(`);
   if (start < 0) throw new Error(`${name} not found`);
@@ -20,23 +33,24 @@ export function lineSrc(decl, src) {
   if (!m) throw new Error(`${decl} not found`);
   return m[0];
 }
-const FNS = ['cellForTier', 'sumCellsTier', 'alignYearlyPair', 'ovCareerByYear', 'ensureOverviewProfiles', 'ovPaint', 'buildYearlyTables',
+const FNS = ['ovRecApi', 'alignYearlyPair', 'ovCareerByYear', 'ensureOverviewProfiles', 'ovPaint', 'buildYearlyTables',
   'setOverviewTier', 'ovStateFor', 'ovListable', 'ovRec', 'ovCellHtml', 'ovColumnHtml',
   'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maSmallNote', 'maRateHtml', 'maGateBar', 'maSeg', 'fhEsc'];
-const LINES = ['const _ovProfileSettled', 'const MA_GREY', 'const MA_SMALL_NOTE', 'const OV_TIERS', 'const OV_SURFS', 'const OV_GRID', 'const OV_MONO',
-  'const OV_NO_LIST', 'const ovSeasonYear', 'let _ov'];
+const LINES = ['const _ovProfileSettled', 'const MA_GREY', 'const MA_SMALL_NOTE', 'const OV_TIERS', 'const OV_SURFS', 'const OV_COLS', 'const OV_GRID', 'const OV_MONO',
+  'const OV_NO_LIST', 'const OV_NO_KEY', 'const OV_NO_SPLIT', 'const ovSeasonYear', 'let _ov'];
 const OBJS = ['const OV_C', 'const MA_SEG', 'const A_TAB_BUILD'];
 // profiles = the playerProfiles map; shard(k) models ensurePlayerProfile (may add a profile, resolves true/false);
 // built(m, tab) models aBuilt. Returns the builder API plus `painted` (aPaint by id) and `_ov` (the tab's state).
 export function overviewVM(src, { profiles = {}, shard = () => Promise.resolve(false), built = () => true } = {}) {
   const painted = {};
   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  const api = new Function('playerProfiles', 'ensurePlayerProfile', 'loadCareerHistory', 'fhLoadCloses', 'escapeHtml', 'aPaint', 'aBuilt', 'ovRenderPop', `
+  const api = new Function('window', 'playerProfiles', 'ensurePlayerProfile', 'loadCareerHistory', 'fhLoadCloses', 'escapeHtml', 'aPaint', 'aBuilt', 'ovRenderPop', `
     ${LINES.map(l => lineSrc(l, src)).join('')}
     ${OBJS.map(o => objSrc(o, src)).join('\n')}
     ${FNS.map(f => fnSrc(f, src)).join('\n')}
-    return { buildYearlyTables, setOverviewTier, A_TAB_BUILD, ovColumnHtml, cellForTier, get _ov(){ return _ov; } };`)(
-    profiles, k => shard(String(k)), () => Promise.resolve([]), () => Promise.resolve(null), esc,
+    const ovCol = (i, n, pk, rows, real, tier) => ovColumnHtml(i, n, pk, rows, real, tier, ovRecApi());   // the builder's own api argument
+    return { buildYearlyTables, setOverviewTier, A_TAB_BUILD, ovColumnHtml: ovCol, get _ov(){ return _ov; } };`)(
+    profileWindow(profiles), profiles, k => shard(String(k)), () => Promise.resolve([]), () => Promise.resolve(null), esc,
     (id, html) => { painted[id] = html; }, (m, tab) => built(m, tab), () => {});
   return Object.assign(api, { painted });
 }

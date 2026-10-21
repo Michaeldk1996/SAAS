@@ -11,7 +11,7 @@ Read this instead of exploring. If something here is wrong or missing, fix this 
 
 | Thing | Where | Notes |
 |---|---|---|
-| Frontend | **`<FILL IN>`** | The old single-file `bsp-consult-dashboard.html` is no longer the frontend. Served live at `michaeldk1996.github.io/SAAS/` |
+| Frontend | `bsp-consult-dashboard.html` + the scripts it loads (`player-profile-v2.js` = the player profile, `live-tab.js`, …) | `tools/site-code.sh` copies it to the site as `index.html`, so it IS the served app. The repo-root `index.html` is an unused redirect. Served live at `michaeldk1996.github.io/SAAS/` |
 | Data pipeline | `bsp-pipeline.js` | Node. Runs every 15 min via GitHub Actions |
 | Pipeline config | `.github/workflows/` | Cron `*/15 * * * *` |
 | Design source | `design-export/` | Canonical. See the `design-handoff` skill |
@@ -44,6 +44,7 @@ These are pipeline output. Editing them directly is always wrong; fix the pipeli
 
 ## Things worth knowing before you start
 
-**<FILL IN — a few lines that would have saved you an hour the first time.>**
+- **The committed `player-profiles.json` is a fossil.** The pipeline publishes the store to Pages and never commits it back; measure against the deployed one (`tools/deployed-store.js`).
+- **Tests run the page's real code in a sandbox.** Dashboard functions are sliced and executed (`tools/ten334-overview-vm.mjs` `closure`); the profile module loads into a window shim (`profileWindow`). New shared logic is exported on `PlayerProfileV2._internals`, not copied.
 
 Candidates: which module owns player name matching; where the schema-version guards live and what bumping one triggers; which caches rebuild on their own and which need forcing; anything that looks broken but isn't.

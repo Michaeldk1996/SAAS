@@ -76,7 +76,7 @@ const MUTANTS = [
   ['Market edge: band Won ungated', "${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}", "${mePct0(b.won)}"],
   ['Market edge: win bar drawn at any n', "const bar = maGateBar(b.w, n, meLeadFill(b.won, ob ? ob.won : null)), edge", "const bar = { w: n ? b.w / n * 100 : 0, color: ME_C.wbar, mode: 'full' }, edge"],
   ['Market edge: pop-up rate box loses its note', "big, R.mode === 'small'); };", "big, false); };"],
-  ['Overview: season rate ungated', "    const rate = maRateHtml(c ? c.won : 0, n, { nopct: '', note: 'title', color: OV_C.text });", "    const rate = `<span class=\"ma-rate\">${Math.round(c.won / n * 100)}%</span>`;"],
+  ['Overview: season rate ungated', "    const rate = maRateHtml(c ? c.won : 0, n, { text: n ? api.rateText(c.won, c.lost) : null, nopct: '', note: 'title', color: OV_C.text });", "    const rate = `<span class=\"ma-rate\">${Math.round(c.won / n * 100)}%</span>`;"],
   // (TEN-340: the two Playing style gate mutants moved to tools/test-ten340-mutants.js with the rebuilt tab.)
   // ---- test-ten314-components.mjs (shared components) ----
   ['seg: sheet item radius 8', "item: 'padding:5px 12px; border-radius:7px; font-size:11px;', tb:", "item: 'padding:5px 12px; border-radius:8px; font-size:11px;', tb:"],

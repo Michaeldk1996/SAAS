@@ -163,7 +163,7 @@ const MUTANTS = [
   ['a dropped profile stays "settled"', "    if (!ovCareerByYear(k)) _ovProfileSettled.delete(String(k));", ''],
   ['no shard fetch', 'Promise.resolve(ensurePlayerProfile(k))', 'Promise.resolve(false)'],
   ['no still-loading guard', "  if ([[m.p1Key, y1], [m.p2Key, y2]].some(([k, y]) => !y && k != null && !_ovProfileSettled.has(String(k)))) {", '  if (false) {'],
-  ['tier toggle ignores tier', "  if (tier === 'all') return r[surf] || null;", '  return r[surf] || null;'],
+  ['tier toggle ignores tier', "api.careerTierCells({ careerByYear: real }, tier)", "api.careerTierCells({ careerByYear: real }, 'all')"],
 ];
 test(`mutants: ${MUTANTS.length} applied, every one caught`, async () => {
   const survived = [];

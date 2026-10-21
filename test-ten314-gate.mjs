@@ -124,8 +124,8 @@ test('Overview this season by surface: 0 "—", 3 W–L only, 7 greyed (hover no
   const rows = season(0, 3, 7);
   assert.ok(text('<' + rows[0]).includes('—') && !NEVER.test(text('<' + rows[0])), 'n = 0');
   assert.ok(!/%/.test(text('<' + rows[1])) && text('<' + rows[1]).includes('2-1'), 'n = 3: W–L only');
-  assert.match(rows[2], /class="ma-rate" data-ma-gate="small" title="small sample · n=7"[^>]*>57%/);
-  assert.match(season(12, 0, 0)[0], /class="ma-rate" data-ma-gate="full"[^>]*>75%/);
+  assert.match(rows[3], /class="ma-rate" data-ma-gate="small" title="small sample · n=7"[^>]*>57\.1%/);   // rows: clay, hard, indoors, grass
+  assert.match(season(12, 0, 0)[0], /class="ma-rate" data-ma-gate="full"[^>]*>75\.0%/);
 });
 
 // Playing style (TEN-340): the tab's record, rate, tug and meetings header run through this gate; the checks (n 0 / 3 / 7 / 12)

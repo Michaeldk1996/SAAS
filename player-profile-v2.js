@@ -11919,7 +11919,7 @@
       calScope: calScope,
       calResidual: calResidual,
       // TEN-384 fix 1 + 2 · the Last-52 window over the Calendar's rows
-      last52Rows: last52Rows, seasonCourts: seasonCourts, tierGridCells: tierGridCells, knownCourtOf: knownCourtOf,
+      last52Rows: last52Rows, seasonCourts: seasonCourts, tierGridCells: tierGridCells, drillScope: drillScope, knownCourtOf: knownCourtOf,
       COURT_KNOWN_INDOOR: COURT_KNOWN_INDOOR, COURT_KNOWN_OUTDOOR: COURT_KNOWN_OUTDOOR, careerTierCells: careerTierCells, last52GridCells: last52GridCells, last52Cutoff: last52Cutoff, undatedFor: undatedFor,
       calResidualNote: calResidualNote,
       renderCalDrill: renderCalDrill,

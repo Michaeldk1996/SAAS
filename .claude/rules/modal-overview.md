@@ -41,5 +41,17 @@ found at restore time are marked inline.
   marked "ret." after its set scores — loss red when the player retired, neutral when his opponent did (DF L1997).
   A count that opens nothing says why on hover (no player id, a pre-2021 aggregate, no tier split before 2021). **Test:** `test-ten334-overview.mjs` (N2, N8, R8, D2, retirement, sheet).
 
+- **The career record is the profile's Career record (founder 2026-10-21).** Every count on the tab — career W–L and
+  win %, the surface bars, This season · by surface, the year table and its Total row — is the player profile's own
+  calculation (`player-profile-v2.js` `tierGridCells` / `careerTierCells` / `rateText`, called through
+  `PlayerProfileV2._internals`, never copied), and the pop-up behind a count lists the rows the profile's drill places in
+  that cell (`drillScope`). So Indoors is its own surface (carved out of Hard / Clay / Grass), the year table carries a
+  **Surface not known** column (total less the other four, every row sums to its total), the card footnote counts
+  "N matches with no surface on record", and every rate prints to one decimal by the profile's formula. The W–L
+  separator stays the Overview's "22-30" (the profile's is "22/30") until ruled. With the profile module off (`?pp2=0`)
+  the tab says so rather than computing a second record.
+  **Test:** `tools/test-overview-profile-parity.mjs` renders both pages and finds 0 differing figures for every
+  deployed player under All / ATP / Challenger & ITF.
+
 See also: `modal-analysis.md` "Overview career spine (N3)" (the Overview reads `careerByYear`) and "Match stats sheet —
 every tab" (the sheet a pop-up row opens).
