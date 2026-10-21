@@ -1941,22 +1941,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "40 - 40",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/68751_m-kouame.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "oddsMovement": {
@@ -3245,7 +3234,27 @@
         "seenAt": "2026-10-21T18:39:43.220Z",
         "since": "2026-10-21T01:41:09.712Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 4-6",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12172858",
@@ -6580,15 +6589,20 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 0,
-        "p2": 0
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 1
       }
     ],
-    "liveGameScore": "0 - 0",
+    "liveGameScore": "40 - 40",
     "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/818_g-onclin.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2831_j-l-struff.jpg",
@@ -7513,7 +7527,10 @@
         "seenAt": "2026-10-21T18:39:43.220Z",
         "since": "2026-10-21T11:27:31.995Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173013",
@@ -10869,11 +10886,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1771_b-bonzi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1894_t-paul.jpg",
     "oddsMovement": {
@@ -12013,7 +12036,10 @@
         "seenAt": "2026-10-21T18:39:43.221Z",
         "since": "2026-10-21T14:45:06.603Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12172778",
@@ -68354,7 +68380,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "1-6, 7-6(5), 6-4",
+      "display": "1-6, 7-6, 6-4",
       "sets": [
         {
           "p1": 1,
@@ -94591,7 +94617,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(2), 4-6",
+      "display": "6-7, 4-6",
       "sets": [
         {
           "p1": 6,
@@ -127932,7 +127958,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 6-7(5), 7-5",
+      "display": "7-6, 6-7, 7-5",
       "sets": [
         {
           "p1": 7,
@@ -132116,7 +132142,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(10), 6-2",
+      "display": "7-6, 6-2",
       "sets": [
         {
           "p1": 7,
@@ -136522,7 +136548,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7(3)",
+      "display": "3-6, 6-7",
       "sets": [
         {
           "p1": 3,
@@ -142884,7 +142910,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 7-6(3)",
+      "display": "7-6, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -147535,7 +147561,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(5), 6-2",
+      "display": "7-6, 6-2",
       "sets": [
         {
           "p1": 7,
@@ -151895,7 +151921,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-5, 7-6(4)",
+      "display": "7-5, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -157111,7 +157137,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(9), 3-6, 6-3",
+      "display": "7-6, 3-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -162067,7 +162093,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 7-6(4), 7-6(3)",
+      "display": "5-7, 7-6, 7-6",
       "sets": [
         {
           "p1": 5,
@@ -172247,7 +172273,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "2-6, 7-6(5), 6-7(4)",
+      "display": "2-6, 7-6, 6-7",
       "sets": [
         {
           "p1": 2,
@@ -176121,7 +176147,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 7-6(4), 2-6",
+      "display": "6-7, 7-6, 2-6",
       "sets": [
         {
           "p1": 6,
@@ -185161,7 +185187,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 6-4, 6-4",
+      "display": "6-7, 6-4, 6-4",
       "sets": [
         {
           "p1": 6,
@@ -204021,7 +204047,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7(2)",
+      "display": "3-6, 6-7",
       "sets": [
         {
           "p1": 3,
@@ -208300,7 +208326,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(3), 6-3",
+      "display": "7-6, 6-3",
       "sets": [
         {
           "p1": 7,
@@ -212447,7 +212473,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7(4), 5-7",
+      "display": "6-7, 5-7",
       "sets": [
         {
           "p1": 6,
