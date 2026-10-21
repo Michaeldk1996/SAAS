@@ -8,10 +8,10 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
-      - run: python3 tools/probe-te/queue.py
-        env:
-          OPS_TOKEN: ${{ secrets.WORKFLOW_PAT }}
-          STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: bash tools/probe-te/bergs.sh
