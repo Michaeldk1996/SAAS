@@ -109,6 +109,12 @@ const RECHECK_DAYS = Number(process.env.PBP_RECHECK_DAYS || 7);
 const RECHECK_MIN = Number(process.env.PBP_RECHECK_MIN || 60);
 const RECHECK_MAX = Number(process.env.PBP_RECHECK_MAX || 500);
 const failingLog = e => integrity.check(e).some(i => i.kind !== 'header');
+// FRESHLY FINISHED (brief item 5). The provider keeps revising a match after it reports Finished: measured 2026-10-22
+// on 12 ATP/Challenger matches, the point log changed after Finished in 11 (last change +2..+16 min; 5 of the 12 gained
+// points that the first Finished copy lacked, and that copy passed the check), the statistics in 11 (last +4..+57 min).
+// So a board match is re-asked on EVERY run for PBP_FRESH_MIN minutes after the board stamped it finished
+// (m.finishedAt), whether or not its log fails the check, and its box score is refreshed from the same response.
+const FRESH_MIN = Number(process.env.PBP_FRESH_MIN || 120);
 const realGames = sets => sets.reduce((a, s) => a + ((s && s.games) || []).filter(integrity.isGame).length, 0);
 const tiebreakSets = sets => new Set(sets.filter(s => ((s && s.games) || []).filter(integrity.isTbRow).length >= tbFloor.MIN_TB_ROWS).map(s => String(s.set)));
 // Put the provider's log `fresh` ({ sets }) in place of the entry's own. Returns 'replaced', 'same' (identical already),
@@ -414,6 +420,7 @@ async function main() {
   const out = {};
   let fetched = 0, reused = 0, skipped = 0;
   const windowDate = new Map();   // event key -> match date, for the integrity re-fetch below
+  const finishedAt = new Map();   // event key -> when the board first saw it finished (ms), for the fresh-finish re-ask
   const adoptCounts = { replaced: 0, same: 0, shorter: 0, none: 0 };   // every fetch's adoptFeedLog verdict, for the run log and the cache-save decision
 
   // Resolve one event key to { p1, p2, sets }, from cache when possible.
@@ -451,6 +458,7 @@ async function main() {
     const ek = eventKeyOf(m.id);
     if (!ek) { skipped++; continue; }
     if (m.date) windowDate.set(ek, String(m.date));
+    if (m.finishedAt) finishedAt.set(ek, Date.parse(m.finishedAt));
 
     let compact;
     const before = fetched;
@@ -558,9 +566,11 @@ async function main() {
   const dateOf = ek => windowDate.get(ek) || formRowDate.get(ek) || '';
   const recentEnough = ek => { const t = Date.parse(dateOf(ek)); return Number.isFinite(t) && nowMs - t <= (RECHECK_DAYS + 1) * 864e5; };
   const due = (ek, e) => !e.pbpRecheckAt || (recentEnough(ek) && nowMs - Date.parse(e.pbpRecheckAt) >= RECHECK_MIN * 6e4);
+  const fresh = ek => { const t = finishedAt.get(ek); return Number.isFinite(t) && nowMs - t <= FRESH_MIN * 6e4; };
   const recheck = Object.keys(cache)
-    .filter(ek => { const e = cache[ek]; return e && e.p1 && e.sets && e.sets.length && due(ek, e) && failingLog(e); })
-    .sort((a, b) => dateOf(b).localeCompare(dateOf(a)) || Number(b) - Number(a));
+    .filter(ek => { const e = cache[ek]; return e && e.p1 && e.sets && e.sets.length && (fresh(ek) || (due(ek, e) && failingLog(e))); })
+    .sort((a, b) => (fresh(b) - fresh(a)) || dateOf(b).localeCompare(dateOf(a)) || Number(b) - Number(a));
+  let freshAsked = 0;
   let rechecked = 0, recheckFailed = 0;
   for (const ek of recheck.slice(0, RECHECK_MAX)) {
     const e = cache[ek];
@@ -571,6 +581,12 @@ async function main() {
       e.pbpRecheckAt = nowIso;
       const r = adoptFeedLog(e, got ? compactPbp(got.raw) : null, nowIso);
       adoptCounts[r]++;
+      if (fresh(ek)) {
+        freshAsked++;
+        // the provider's latest box score too (it was still changing up to +57 min after Finished); never blanked by a miss
+        if (got && got.stats) e.stats = got.stats;
+        if (got && got.matchStats) e.matchStats = got.matchStats;
+      }
       if (r === 'replaced' && out[ek]) out[ek].sets = e.sets;
       if (r === 'shorter') console.log(`pbp-storage: ${ek} — the provider's log is shorter than ours (a game or tiebreak missing); ours kept.`);
     } catch (err) {
@@ -578,7 +594,8 @@ async function main() {
       console.error(`pbp-storage: re-fetch failed for ${ek}: ${err.message}`);
     }
   }
-  console.log(`pbp-storage: ${recheck.length} stored log(s) fail the check and are due; ${rechecked} re-fetched — ${adoptCounts.replaced} replaced by the provider's latest, ${adoptCounts.same} already identical, ${adoptCounts.shorter} kept (provider's shorter), ${adoptCounts.none} no log${recheckFailed ? `, ${recheckFailed} fetch error(s)` : ''}${recheck.length > RECHECK_MAX ? `, ${recheck.length - RECHECK_MAX} deferred (budget)` : ''}.`);
+  console.log(`pbp-storage: ${freshAsked} freshly finished match(es) re-asked (within ${FRESH_MIN} min of Finished).`);
+  console.log(`pbp-storage: ${recheck.length} stored log(s) due (failing the check, or freshly finished); ${rechecked} re-fetched — ${adoptCounts.replaced} replaced by the provider's latest, ${adoptCounts.same} already identical, ${adoptCounts.shorter} kept (provider's shorter), ${adoptCounts.none} no log${recheckFailed ? `, ${recheckFailed} fetch error(s)` : ''}${recheck.length > RECHECK_MAX ? `, ${recheck.length - RECHECK_MAX} deferred (budget)` : ''}.`);
 
   // Set-stats backfill for matches cached before the set filter existed. This
   // cache is permanent, so those entries are never re-resolved above and would

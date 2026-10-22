@@ -229,6 +229,18 @@ check('builder · re-ask schedule: an old failing log is asked once, then not ag
   const later = await runBuilder({ cache: { [EK]: storedEntry({ pbpRecheckAt: new Date(Date.now() - 90 * 6e4).toISOString() }) }, matches: windowMatch(daysAgo(1)), feed: () => FEED() });
   assert.deepStrictEqual(later.calls, [EK], 'a recent failing log was not re-asked after the hour');
 });
+check('builder · a freshly finished match is re-asked every run for two hours, even when its log passes (provider still adding points)', async () => {
+  // the first copy at Finished: the provider's log less the last point of set 3 game 9 — it passes the check
+  const early = FEED_SETS(); const g = early.find(s => s.set === 3).games.find(x => x.g === 9); g.points = g.points.slice(0, -1);
+  assert.deepStrictEqual(P.check({ sets: early }).filter(i => i.kind !== 'header'), [], 'the early copy must pass, or the scenario is vacuous');
+  const entry = { ...storedEntry(), sets: early, pbpRecheckAt: new Date(Date.now() - 20 * 6e4).toISOString() };
+  const board = finished => [{ ...windowMatch(daysAgo(0))[0], finishedAt: new Date(Date.now() - finished * 6e4).toISOString() }];
+  const r = await runBuilder({ cache: { [EK]: JSON.parse(JSON.stringify(entry)) }, matches: board(30), feed: () => FEED() });
+  assert.deepStrictEqual(r.calls, [EK], 'a match finished 30 min ago was not re-asked');
+  assert.deepStrictEqual(shape(r.shard.sets), shape(FEED_SETS()), 'the provider\'s later log was not adopted');
+  const late = await runBuilder({ cache: { [EK]: JSON.parse(JSON.stringify(entry)) }, matches: board(180), feed: () => FEED() });
+  assert.deepStrictEqual(late.calls, [], 'a passing log finished 3 h ago was re-asked');
+});
 check('cache save · a run that replaced stored logs asks for a save; one that did not, does not', async () => {
   const { decide } = await import(path.join(ROOT, 'tools', 'cache-save-decision.mjs'));
   assert.strictEqual(decide({ stats: { opponentsBuilt: 0 }, todayCount: 2, pbp: { replaced: 3 } }).save, true);
