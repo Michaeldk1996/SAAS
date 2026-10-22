@@ -6201,6 +6201,11 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   const shardStart = Date.now();
   for (const [key, name] of shardOrder) {
     const cached = cachedPlayers[key];
+    // The floor's exemption signal counts here too (2026-10-22): after a schema bump the opponent pass converges first,
+    // and the stale entries left are all shard-pool players. Counted only in pass 2, a run met 127 of them (deferred or
+    // rebuilt), reported "wrong-schema 0", lost the ratio exemption mid-convergence and failed every run on 544 of 731,
+    // and a failed run saves no cache, so it could never converge.
+    if (cached && cached.v !== PROFILE_SCHEMA_VERSION) wrongSchemaRejections++;
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS)
