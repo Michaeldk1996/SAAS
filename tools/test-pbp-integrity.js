@@ -171,11 +171,12 @@ check('page · the loader logs the match id of a log that still fails the check'
 
 // ── 4. BUILDER: build-point-by-point.js main(), stubbed feed ────────────────────
 const realFetch = global.fetch;
-async function runBuilder({ cache, matches, feed }) {
+async function runBuilder({ cache, matches, feed, prev = null }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbp-integrity-'));
   const cwd = process.cwd();
   fs.writeFileSync(path.join(dir, 'matches.json'), JSON.stringify({ matches }));
   fs.writeFileSync(path.join(dir, 'point-by-point-cache.json'), JSON.stringify(cache));
+  if (prev) fs.writeFileSync(path.join(dir, '.pbp-prev-cache.json'), JSON.stringify(prev));
   const calls = [], logs = [];
   global.fetch = async url => { const ek = /match_key=(\d+)/.exec(url)[1]; calls.push(ek); return { ok: true, status: 200, json: async () => ({ success: 1, result: [feed(ek)] }) }; };
   const log = console.log; console.log = (...a) => logs.push(a.join(' '));
@@ -183,7 +184,7 @@ async function runBuilder({ cache, matches, feed }) {
   finally { process.chdir(cwd); global.fetch = realFetch; console.log = log; }
   const read = f => fs.existsSync(path.join(dir, f)) ? JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')) : null;
   return { calls, logs, cache: read('point-by-point-cache.json'), shard: read(`pbp/${EK}.json`), out: read('point-by-point.json'),
-    repairs: read('pbp-repairs.json'), stats: read('pbp-build-stats.json') };
+    repairs: read('pbp-repairs.json'), stats: read('pbp-build-stats.json'), index: read('pbp-index.json') };
 }
 const daysAgo = n => new Date(Date.now() - n * 864e5).toISOString().slice(0, 10);
 const storedEntry = (extra = {}) => { const s = STORED(); return { p1: s.p1, p2: s.p2, sets: s.sets, p1Key: 1, p2Key: 2, stats: null, matchStats: null, ...extra }; };
@@ -240,6 +241,72 @@ check('builder · a freshly finished match is re-asked every run for two hours, 
   assert.deepStrictEqual(shape(r.shard.sets), shape(FEED_SETS()), 'the provider\'s later log was not adopted');
   const late = await runBuilder({ cache: { [EK]: JSON.parse(JSON.stringify(entry)) }, matches: board(180), feed: () => FEED() });
   assert.deepStrictEqual(late.calls, [], 'a passing log finished 3 h ago was re-asked');
+});
+check('version bump · a store reset to a few entries gets every log of the previous version back (never smaller)', async () => {
+  // the 2026-10-22 shape: the current store is the small committed copy; the previous version held many logs
+  const named = n => ({ p1: 'A. One', p2: 'B. Two', sets: [{ set: 1, games: [{ g: 1, score: '1 - 0', winner: 'p1', points: pts('15 - 0', '30 - 0', '40 - 0') }] }], p1Key: 1, p2Key: 2, stats: null, matchStats: null, pbpRecheckAt: new Date().toISOString(), pbpFeedAt: new Date().toISOString(), n });
+  const prev = {}; for (let i = 0; i < 40; i++) prev[String(11000000 + i)] = named(i);
+  const cache = { '10000001': named(-1) };   // the committed copy: one log the previous version does not hold
+  const r = await runBuilder({ cache, prev, matches: [], feed: () => null });   // the provider answers nothing: the restore alone must hold
+  assert.strictEqual(r.calls.length, 40, `every restored log is re-asked once (asked ${r.calls.length})`);
+  assert.strictEqual(r.index.length, 41, `published ${r.index.length} shards; the previous version held 40 and the store 1`);
+  assert.ok(Object.keys(prev).every(k => r.index.includes(k)), 'a previous-version log is missing from the index');
+  assert.strictEqual(r.stats.restored, 40, 'pbp-build-stats.json does not report the restore (no cache save would follow)');
+  assert.ok(r.logs.some(l => /::notice title=pbp fallback::previous version held 40 named logs; 40 added/.test(l)), 'no public notice of the restore');
+  // a log the current store holds always wins over the previous version's copy
+  const both = await runBuilder({ cache: { [EK]: { ...storedEntry(), pbpRecheckAt: new Date().toISOString(), pbpFeedAt: new Date().toISOString(), sets: FEED_SETS() } },
+    prev: { [EK]: storedEntry() }, matches: [], feed: () => FEED() });
+  assert.deepStrictEqual(shape(both.shard.sets), shape(FEED_SETS()), 'the previous version overwrote a log the current store holds');
+});
+check('version bump · restored logs are "stored", counted as failing before repair, re-asked before the backlog; the ledger carries the target', async () => {
+  // previous version: the appended Bonzi copy, provider-confirmed marks and all (they must not survive the restore)
+  const prev = { [EK]: storedEntry({ pbpFeedAt: '2026-10-01T00:00:00Z', pbpRecheckAt: '2026-10-01T00:00:00Z' }) };
+  // the current store: one OLDER failing log never asked, which would come first by date without the restore priority
+  const other = '12999999';   // sorts AHEAD of 12172010 by key, so only the restore priority can put the restored log first
+  const cache = { [other]: { ...storedEntry(), p1: 'X. Old', p2: 'Y. Older' } };
+  const key = process.env.PBP_RECHECK_MAX; process.env.PBP_RECHECK_MAX = '1';
+  delete require.cache[require.resolve(path.join(ROOT, 'build-point-by-point.js'))];
+  const b2 = require(path.join(ROOT, 'build-point-by-point.js'));
+  const saved = builder.main; builder.main = b2.main;
+  try {
+    const r = await runBuilder({ cache, prev, matches: [], feed: () => FEED() });
+    assert.deepStrictEqual(r.calls, [EK], `the restored log must be re-asked first (asked: ${r.calls})`);
+    assert.ok(r.logs.some(l => /1 of the 1 restored fail the validator before repair/.test(l)), r.logs.filter(l => /fallback/.test(l)).join(' | '));
+    assert.strictEqual(r.repairs.fallback.target, 1, 'target = the previous version\'s named logs');
+    assert.strictEqual(r.repairs.fallback.storeBeforeMerge, 1, 'store size before the merge');
+    assert.strictEqual(r.repairs.fallback.restored, 1);
+    // a restored log that the provider has not yet answered is tagged 'stored' (here the budget went to it, so check the other path)
+    const r2 = await runBuilder({ cache: {}, prev, matches: [], feed: () => { throw new Error('no feed'); } });
+    assert.strictEqual(r2.repairs.byRuleSource['replayed-game:stored'], 26, `restored log not tagged stored: ${JSON.stringify(r2.repairs.byRuleSource)}`);
+  } finally { builder.main = saved; if (key == null) delete process.env.PBP_RECHECK_MAX; else process.env.PBP_RECHECK_MAX = key; }
+  // no previous file this run: the target travels from the deployed ledger via PBP_FALLBACK_TARGET
+  process.env.PBP_FALLBACK_TARGET = '72551';
+  try {
+    const r3 = await runBuilder({ cache: { [EK]: storedEntry({ pbpRecheckAt: new Date().toISOString() }) }, matches: [], feed: () => FEED() });
+    assert.strictEqual(r3.repairs.fallback.target, 72551, 'the target was not carried forward');
+    assert.strictEqual(r3.repairs.fallback.storeBeforeMerge, 1);
+  } finally { delete process.env.PBP_FALLBACK_TARGET; }
+});
+check('version bump · pipeline.yml restores the previous version (vprev) before the real restore and keeps ONLY its point-by-point store', () => {
+  const y = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
+  assert.ok(/echo "vprev=\$\(\(V - 1\)\)" >> "\$GITHUB_OUTPUT"/.test(y), 'the schema step does not publish vprev');
+  const i = y.indexOf('id: prevpbp'), j = y.indexOf('- name: Restore pipeline caches');
+  assert.ok(i > 0 && j > i, 'the fallback restore must run BEFORE the real restore');
+  const step = y.slice(i, j);
+  assert.ok(step.includes('restore-keys: |\n            bsp-caches-v${{ steps.schema.outputs.vprev }}-'), 'the fallback is not keyed on the previous version');
+  assert.ok(step.includes('mv point-by-point-cache.json .pbp-prev-cache.json'), 'the previous store is not set aside');
+  assert.ok(step.includes('git checkout -- player-profiles.json point-by-point-cache.json tournament-profiles.json'), 'a previous-version profile file could leak into this run');
+  assert.ok(/rm -rf player-profiles-cache\.json player-tournament-history\.json tml-cache model-output\.json news-feed\.json tournament-entries\.json/.test(step), 'a previous-version cache file could leak into this run');
+});
+check('ledger · a replayed game is tagged by source: our stored copy, or the provider\'s own (checked) log', async () => {
+  const stored = await runBuilder({ cache: { [EK]: { ...storedEntry(), pbpRecheckAt: new Date().toISOString() } }, matches: [], feed: () => FEED() });
+  assert.deepStrictEqual(stored.calls, [], 'scenario must not re-ask');
+  assert.strictEqual(stored.repairs.byRuleSource['replayed-game:stored'], 26, JSON.stringify(stored.repairs.byRuleSource));
+  const bad = () => { const f = FEED(); const g = f.pointbypoint.find(x => x.set_number === 'Set 1' && x.number_game === '9');
+    g.points = ['15 - 0', '30 - 0', '40 - 0', '30 - 0', '40 - 0'].map((s, i) => ({ number_point: String(i + 1), score: s })); return f; };
+  const prov = await runBuilder({ cache: { [EK]: storedEntry() }, matches: windowMatch(daysAgo(1)), feed: bad });
+  assert.strictEqual(prov.repairs.byRuleSource['replayed-game:provider'], 1, JSON.stringify(prov.repairs.byRuleSource));
+  assert.ok(!prov.repairs.byRuleSource['replayed-game:stored'], 'a provider-checked log was tagged as our stored copy');
 });
 check('cache save · a run that replaced stored logs asks for a save; one that did not, does not', async () => {
   const { decide } = await import(path.join(ROOT, 'tools', 'cache-save-decision.mjs'));

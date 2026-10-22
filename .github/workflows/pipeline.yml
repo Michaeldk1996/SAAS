@@ -192,6 +192,7 @@ jobs:
             exit 1
           fi
           echo "v=$V" >> "$GITHUB_OUTPUT"
+          echo "vprev=$((V - 1))" >> "$GITHUB_OUTPUT"   # the point-by-point fallback below restores the previous version's store
           echo "PROFILE_SCHEMA_VERSION = $V"
 
       # Persist the heavy derived caches + TML archive between runs so each run
@@ -203,6 +204,61 @@ jobs:
       # phase median 5.1 min (0.7 min on 19 Oct). Each run now has its OWN key (day + run id + attempt): restore takes
       # the newest of today's entries, else the newest of the schema; the explicit "Save pipeline caches" step after the
       # site-data upload stores this run's work only when tools/cache-save-decision.mjs says it is worth an entry.
+      # POINT-BY-POINT FALLBACK ACROSS A VERSION BUMP (founder brief 2026-10-23). The key below carries
+      # PROFILE_SCHEMA_VERSION and deliberately never restores an older version: a stale profile cache stalled
+      # the pipeline once. But point-by-point-cache.json rides the same entry, and its logs do not depend on that
+      # schema. The 15 -> 16 bump (ba97e451a, 2026-10-22) restored nothing, the store fell back to the 52-entry
+      # committed copy, and 23,490 logs left the site. So the PREVIOUS version's newest entry is restored first,
+      # ONLY its point-by-point-cache.json is kept (as .pbp-prev-cache.json, merged under the current store by
+      # build-point-by-point.js: a log the current store holds always wins), and every other file it restored is
+      # put back exactly as the checkout had it before the real restore below runs. Same path list as the save,
+      # or the entry's version hash does not match and nothing restores.
+      # Only until this version's store has caught up: the deployed repair ledger carries the previous version's
+      # store size (target) and the size this version's restore delivered before any merge. Once that reaches the
+      # target the download stops. A missing or unreadable ledger means "not known yet": the fallback runs.
+      - name: Does the point-by-point store still need the previous version?
+        id: pbpneed
+        run: |
+          curl -4 -s -f --max-time 60 -o .pbp-ledger.json "https://michaeldk1996.github.io/SAAS/pbp-repairs.json?cb=$GITHUB_RUN_ID" || rm -f .pbp-ledger.json
+          node -e '
+            let f = null; try { f = JSON.parse(require("fs").readFileSync(".pbp-ledger.json", "utf8")).fallback || null; } catch (e) {}
+            const t = f && Number.isInteger(f.target) ? f.target : null, cur = f && Number.isInteger(f.storeBeforeMerge) ? f.storeBeforeMerge : null;
+            const need = !(t != null && cur != null && cur >= t);
+            require("fs").appendFileSync(process.env.GITHUB_OUTPUT, `need=${need}\ntarget=${t == null ? "" : t}\n`);
+            console.log(`::notice title=pbp fallback::${need ? "previous version needed" : "not needed"} (store before merge ${cur == null ? "unknown" : cur}, target ${t == null ? "unknown" : t})`);
+          '
+          rm -f .pbp-ledger.json
+
+      - name: Restore the previous cache version's point-by-point store (fallback across a bump)
+        id: prevpbp
+        if: steps.pbpneed.outputs.need == 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            player-profiles-cache.json
+            player-profiles.json
+            player-tournament-history.json
+            tournament-profiles.json
+            point-by-point-cache.json
+            tml-cache
+            model-output.json
+            news-feed.json
+            tournament-entries.json
+          key: bsp-caches-v${{ steps.schema.outputs.vprev }}-none
+          restore-keys: |
+            bsp-caches-v${{ steps.schema.outputs.vprev }}-
+
+      - name: Keep only the previous version's point-by-point store
+        run: |
+          if [ -f point-by-point-cache.json ] && [ "${{ steps.prevpbp.outputs.cache-matched-key }}" != "" ]; then
+            mv point-by-point-cache.json .pbp-prev-cache.json
+            echo "::notice title=pbp fallback::restored point-by-point-cache.json from ${{ steps.prevpbp.outputs.cache-matched-key }} ($(wc -c < .pbp-prev-cache.json) bytes)"
+          else
+            echo "::notice title=pbp fallback::${{ steps.pbpneed.outputs.need == 'true' && format('no bsp-caches-v{0}- entry to fall back on', steps.schema.outputs.vprev) || 'skipped: this version''s store has reached the previous size' }}"
+          fi
+          git checkout -- player-profiles.json point-by-point-cache.json tournament-profiles.json
+          rm -rf player-profiles-cache.json player-tournament-history.json tml-cache model-output.json news-feed.json tournament-entries.json
+
       - name: Restore pipeline caches
         uses: actions/cache/restore@v4
         with:
@@ -427,6 +483,7 @@ jobs:
       # failure here leaves the previous point-by-point.json (from cache) or none.
       - name: Build point-by-point sidecar (best-effort)
         env:
+          PBP_FALLBACK_TARGET: ${{ steps.pbpneed.outputs.target }}
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
           t0=$(date +%s); rc=0

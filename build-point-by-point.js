@@ -51,6 +51,9 @@ const OUT_PATH = 'point-by-point.json';
 const CACHE_PATH = 'point-by-point-cache.json';
 const SHARD_DIR = 'pbp';
 const INDEX_PATH = 'pbp-index.json';
+// The previous cache version's store, restored by pipeline.yml beside the current one (a version bump must never
+// wipe the logs). Merged UNDER the current cache: an entry the current store holds always wins.
+const PREV_CACHE_PATH = '.pbp-prev-cache.json';
 const REPAIRS_PATH = 'pbp-repairs.json';   // the repair ledger, published beside the shards
 // Per-set box scores ride the same shard-plus-index shape as the point log, and
 // for the same reason: ~3.5 KB of set stats per match across ~730 recent-form
@@ -122,7 +125,7 @@ const tiebreakSets = sets => new Set(sets.filter(s => ((s && s.games) || []).fil
 function adoptFeedLog(e, fresh, now = new Date().toISOString()) {
   if (!e || !fresh || !Array.isArray(fresh.sets) || !fresh.sets.length) return 'none';
   const held = Array.isArray(e.sets) ? e.sets : [];
-  if (JSON.stringify(fresh.sets) === JSON.stringify(held)) return 'same';
+  if (JSON.stringify(fresh.sets) === JSON.stringify(held)) { e.pbpFeedAt = now; return 'same'; }
   if (realGames(fresh.sets) < realGames(held)) return 'shorter';
   const ft = tiebreakSets(fresh.sets);
   for (const s of tiebreakSets(held)) if (!ft.has(s)) return 'shorter';
@@ -303,6 +306,9 @@ function emitEntry(ek, e, index, setIndex, matchIndex) {
     // The provider's log less its provable duplicates (pbp-integrity.js repair: deletion only, every removal logged). The
     // cache keeps the log exactly as received; only the shard the page reads is repaired.
     const { sets, repairs } = integrity.repair(e);
+    // 'provider': this log is the provider's latest (replaced by it, or found identical); 'stored': our copy, not yet
+    // checked against the provider, so its duplicates may be our own old appends (founder brief 2026-10-23 item 4).
+    for (const r of repairs) r.src = e.pbpFeedAt ? 'provider' : 'stored';
     writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets }));
     index.push(ek);
     const remaining = integrity.check({ sets }).filter(i => i.kind !== 'header');
@@ -398,6 +404,25 @@ async function main() {
   // the whole-match sheet and the per-set sheets. A cached match is never
   // refetched, so the correction is applied to the stored shape here; the setstats/
   // shards below are rewritten from it on this same run.
+  // Fallback across a cache version bump: every log the previous version held and this store lacks comes back.
+  let prevLogs = 0, prevAdded = 0, prevFailing = 0, prevSeen = false;
+  const namedLog = e => !!(e && e.p1 && e.sets && e.sets.length);
+  const storeBeforeMerge = Object.values(cache).filter(namedLog).length;
+  if (fs.existsSync(PREV_CACHE_PATH)) {
+    prevSeen = true;
+    let prev = null;
+    try { prev = JSON.parse(fs.readFileSync(PREV_CACHE_PATH, 'utf8')); } catch (e) { console.log(`::error title=pbp fallback::${PREV_CACHE_PATH} unreadable: ${e.message}`); }
+    for (const [ek, pe] of Object.entries(prev || {})) {
+      const named = !!(pe && pe.p1 && pe.sets && pe.sets.length);
+      if (named) prevLogs++;
+      const held = cache[ek];
+      // A restored log is a pre-fix copy (it may carry our old appended replays): never provider-confirmed, re-asked first.
+      const restore = e => { delete e.pbpFeedAt; delete e.pbpRecheckAt; e.pbpRestoredAt = new Date().toISOString(); if (failingLog(e)) prevFailing++; return e; };
+      if (!held) { cache[ek] = named ? restore({ ...pe }) : pe; if (named) prevAdded++; continue; }
+      if (named && !(held.p1 && held.sets && held.sets.length)) { cache[ek] = restore(mergeEntry({ ...pe }, held)); prevAdded++; }
+    }
+    console.log(`::notice title=pbp fallback::previous version held ${prevLogs} named logs; ${prevAdded} added to this store (which held ${storeBeforeMerge} and now holds ${Object.values(cache).filter(namedLog).length}); ${prevFailing} of the ${prevAdded} restored fail the validator before repair.`);
+  }
   const placeholderSheets = sanitizePbpCache(cache);
   if (placeholderSheets) console.log(`set-stats: ${placeholderSheets} cached sheet(s) carried the untracked W/UE placeholder (all four 0) — now null.`);
 
@@ -567,9 +592,10 @@ async function main() {
   const recentEnough = ek => { const t = Date.parse(dateOf(ek)); return Number.isFinite(t) && nowMs - t <= (RECHECK_DAYS + 1) * 864e5; };
   const due = (ek, e) => !e.pbpRecheckAt || (recentEnough(ek) && nowMs - Date.parse(e.pbpRecheckAt) >= RECHECK_MIN * 6e4);
   const fresh = ek => { const t = finishedAt.get(ek); return Number.isFinite(t) && nowMs - t <= FRESH_MIN * 6e4; };
+  const restoredPending = e => !!(e && e.pbpRestoredAt && !e.pbpRecheckAt);   // restored from the previous version, not yet re-asked
   const recheck = Object.keys(cache)
-    .filter(ek => { const e = cache[ek]; return e && e.p1 && e.sets && e.sets.length && (fresh(ek) || (due(ek, e) && failingLog(e))); })
-    .sort((a, b) => (fresh(b) - fresh(a)) || dateOf(b).localeCompare(dateOf(a)) || Number(b) - Number(a));
+    .filter(ek => { const e = cache[ek]; return e && e.p1 && e.sets && e.sets.length && (fresh(ek) || restoredPending(e) || (due(ek, e) && failingLog(e))); })
+    .sort((a, b) => (fresh(b) - fresh(a)) || (restoredPending(cache[b]) - restoredPending(cache[a])) || dateOf(b).localeCompare(dateOf(a)) || Number(b) - Number(a));
   let freshAsked = 0;
   let rechecked = 0, recheckFailed = 0;
   for (const ek of recheck.slice(0, RECHECK_MAX)) {
@@ -701,7 +727,9 @@ async function main() {
   writeAtomic(OUT_PATH, JSON.stringify(out));
   // Read by tools/cache-save-decision.mjs: a run that replaced stored logs asks for a cache save, or the next run would
   // restore the old copies (the cache otherwise saves only on a day's first run or a large profile build).
-  writeAtomic('pbp-build-stats.json', JSON.stringify({ builtAt: new Date().toISOString(), ...adoptCounts }));
+  writeAtomic('pbp-build-stats.json', JSON.stringify({ builtAt: new Date().toISOString(), ...adoptCounts, restored: prevAdded }));
+  // A version bump must never shrink the published store: say so loudly if it did (the publish still runs).
+  if (prevLogs && index.length < prevLogs) console.log(`::error title=pbp store shrank::${index.length} shards published, the previous cache version held ${prevLogs} named logs.`);
   const kb = (fs.statSync(OUT_PATH).size / 1024).toFixed(0);
   console.log(`point-by-point: ${Object.keys(out).length} matches with point logs (${fetched} fetched, ${reused} cached, ${skipped} skipped) -> ${OUT_PATH} (${kb} KB)`);
   console.log(`point-by-point: ${index.length} shards -> ${SHARD_DIR}/ (${formResolved} recent-form rows resolved this run)`);
@@ -710,13 +738,19 @@ async function main() {
   if (archived.files) console.log(`box-score archive: ${archived.entries} archived matches in ${archived.files} week file(s) — ${archived.added} not in the cache, ${archived.completed} cache entries completed (shards only; the cache is unchanged).`);
   {
     const listed = new Set(index);   // the final index: a key re-emitted from the archive is listed there once
-    const ledger = { builtAt: new Date().toISOString(), shards: index.length, byRule: {}, repaired: 0, unrepaired: 0, matches: {} };
+    const ledger = { builtAt: new Date().toISOString(), shards: index.length, byRule: {}, byRuleSource: {}, repaired: 0, unrepaired: 0, matches: {},
+      // read back by pipeline.yml: the previous-version download stops once storeBeforeMerge reaches target
+      fallback: { target: prevSeen && prevLogs ? prevLogs : (/^\d+$/.test(process.env.PBP_FALLBACK_TARGET || '') ? Number(process.env.PBP_FALLBACK_TARGET) : null),
+        storeBeforeMerge, restored: prevAdded, restoredFailing: prevFailing } };
     for (const [ek, v] of emitIntegrity) {
       if (!listed.has(ek)) continue;
       ledger.matches[ek] = v;
       if (v.repairs.length) ledger.repaired++;
       if (v.remaining.length) ledger.unrepaired++;
-      for (const r of v.repairs) ledger.byRule[r.rule] = (ledger.byRule[r.rule] || 0) + 1;
+      for (const r of v.repairs) {
+        ledger.byRule[r.rule] = (ledger.byRule[r.rule] || 0) + 1;
+        const k = `${r.rule}:${r.src}`; ledger.byRuleSource[k] = (ledger.byRuleSource[k] || 0) + 1;
+      }
     }
     // Published with the site: every repair (what was removed, by which rule) and every log still failing, shown as received.
     writeAtomic(REPAIRS_PATH, JSON.stringify(ledger));

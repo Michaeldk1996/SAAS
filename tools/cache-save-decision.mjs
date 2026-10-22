@@ -20,6 +20,7 @@ export function decide({ stats, todayCount, pbp = null }) {
   if (todayCount >= MAX_PER_DAY) return { save: false, reason: `safety valve: ${todayCount} entries already saved today (max ${MAX_PER_DAY})` };
   if (todayCount === 0) return { save: true, reason: 'first entry of the day' };
   // build-point-by-point.js replaced stored point logs with the provider's latest: unsaved, the next run restores the old ones
+  if (pbp && Number.isInteger(pbp.restored) && pbp.restored > 0) return { save: true, reason: `restored ${pbp.restored} point log(s) from the previous cache version` };
   if (pbp && Number.isInteger(pbp.replaced) && pbp.replaced > 0) return { save: true, reason: `replaced ${pbp.replaced} stored point log(s) with the provider's latest` };
   const built = stats && Number.isInteger(stats.opponentsBuilt) ? stats.opponentsBuilt : null;
   if (built == null) return { save: false, reason: 'no profile-build stats from this run' };
