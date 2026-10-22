@@ -279,7 +279,7 @@ test('population constants are ATP\'s (report B, 2026-10-14) and the excluded-ev
   assert.ok(!H2HCore.inPopulation({ level: 'chitf', tournament: 'Bergamo' }), 'Challenger');
   assert.ok(!H2HCore.inPopulation({ level: 'atp', tournament: 'Wimbledon', round: 'Qualifying' }), 'qualifying');
   assert.deepEqual(H2HCore.record([{ won: true, walkover: true }, { won: true, result: '0 - 0' }, { won: false, retired: true, result: '1 - 0', sets: [{ p: 6, o: 4 }, { p: 1, o: 0 }] }]),
-    { a: 0, b: 1, n: 1 }, 'walkovers (flag or no set played) listed, never counted; a retirement counts');
+    { a: 1, b: 1, n: 2 }, 'ruling 3 (2026-10-22): the FLAGGED walkover is listed, never counted; an unflagged 0 - 0 is a meeting (no inference); a retirement counts');
 });
 
 // ── 6 · the pipeline reconciliation (tools/h2h-reconcile.mjs, run on the store each pipeline run builds) ─────────────────
@@ -346,7 +346,9 @@ test('defaults: an "Awarded" fixture is a flagged history row, counted in the ye
   assert.equal(fm.length, 1, 'the no-winner fixture is not a form row (Bacaloni–Tepmahc, Monastir 2022)');
   assert.equal(fm[0].defaulted, true);
   assert.equal(H2HCore.isWalkover({ result: '0 - 0', defaulted: true }), false, 'a 0 - 0 default is a meeting');
-  assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), true, 'control: a 0 - 0 row with no flag is still a walkover');
+  // ruling 3 (founder 2026-10-22): only the explicit flag makes a walkover; a 0 - 0 score with no flag is not one
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), false, 'an unflagged 0 - 0 is not a walkover (no inference)');
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0', walkover: true }), true, 'control: the flag makes one');
   const fr = { date: '2023-05-24', tournament: 'ATP Lyon', round: '1/8-finals', opponent: 'M. Ymer', won: true, result: '0 - 0', level: 'atp', eventKey: 11865152, defaulted: true };
   assert.deepEqual(H2HCore.record(H2HCore.joinMeetings({ full: 'A. Fils', short: 'A. Fils' }, { full: 'M. Ymer', short: 'M. Ymer' }, [fr],
     [Object.assign({}, fr, { opponent: 'A. Fils', won: false })], {}, [])), { a: 1, b: 0, n: 1 }, 'Fils–M. Ymer = ATP 1–0');
@@ -462,7 +464,8 @@ test('D4: a carpet or blank-surface archive match ships (surface "carpet" / none
 test('D5: a retirement before the first set finished (0 - 0, no set scores) is a meeting, not a walkover', () => {
   assert.deepEqual(goldenRecord(golden('D5: ')), { a: 1, b: 3, n: 4 }, 'Lajovic–Fritz with Cincinnati 2023 ret. 0-5 (ATP 1–3)');
   assert.equal(H2HCore.isWalkover({ result: '0 - 0', retired: true }), false);
-  assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), true, 'control: an unflagged 0 - 0 is still a walkover');
+  assert.equal(H2HCore.isWalkover({ walkover: true }), true, 'control: a flagged walkover is one');
+  assert.equal(H2HCore.isWalkover({ result: '0 - 0' }), false, 'ruling 3: an unflagged 0 - 0 is not inferred to be one');
   const r = new Function(`${slice('fhSetDone')}; ${slice('fhBestOf')}; const FH_SLAMS = new Set(); const psNormTour = s => s; ${slice('fhFinishRow')}; return fhFinishRow;`)()({ result: '0 - 0', ret: true, wo: false, def: false, won: false, sets: null, tourn: 'Cincinnati' });
   assert.equal(r.wo, false, 'the page does not read it as a walkover');
 });
