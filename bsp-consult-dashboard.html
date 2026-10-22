@@ -13,6 +13,8 @@
 <script src="./house-ratings.js"></script>
 <!-- TEN-437: the ONE head-to-head meeting list (window.H2HCore) — every H2H surface builds its meetings through it. -->
 <script src="./h2h-core.js"></script>
+<!-- Point-by-point integrity: the ONE per-game check (window.PbpIntegrity), stamped onto every pbp shard in loadPbpShard. -->
+<script src="./pbp-integrity.js"></script>
 <!-- ESC brief: the ONE Escape handler (window.SfEsc) and the detail-view origin stack (globalThis.SfNav). -->
 <script src="./esc-nav.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11080,6 +11082,14 @@ function loadPbpIndex(){
     .catch(err => { console.warn('pbp-index.json load failed:', err.message); _pbpIndex = new Set(); return _pbpIndex; });
   return _pbpIndexPromise;
 }
+// The integrity verdict (pbp-integrity.js) is stamped onto the shard's rows here, once, so every renderer reads the same
+// flags: g.pbpBad (the game's points are not drawn), g.pbpHdrBad (nor its running set score), set.pbpTbBad (nor its
+// tiebreak rows). A failing game is logged with the match id. Nothing is repaired: the feed's rows stay as stored.
+function pbpStampIntegrity(ek, shard){
+  if (!shard || typeof PbpIntegrity === 'undefined') return;
+  const issues = PbpIntegrity.annotate(shard);
+  if (issues.length) console.warn(`pbp ${ek}: ${issues.length} game(s) fail the integrity check — not drawn`, issues);
+}
 // One match's point log. Resolves to null when there is no shard — the caller
 // shows nothing rather than inventing a log.
 function loadPbpShard(eventKey){
@@ -11089,7 +11099,7 @@ function loadPbpShard(eventKey){
   if (_pbpShardPromises[ek]) return _pbpShardPromises[ek];
   _pbpShardPromises[ek] = fetch(`./pbp/${ek}.json`, { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => { _pbpShards[ek] = d || null; return _pbpShards[ek]; })
+    .then(d => { pbpStampIntegrity(ek, d); _pbpShards[ek] = d || null; return _pbpShards[ek]; })
     .catch(err => { console.warn(`pbp shard ${ek} load failed:`, err.message); _pbpShards[ek] = null; return null; });
   return _pbpShardPromises[ek];
 }
@@ -11437,6 +11447,8 @@ function pbpRowHtml(cls, server, winner, a, b, leftTags, rightTags, pointsHtml){
     + `</div>`;
 }
 const PBP_LOST_TAG = '<span class="pbp-tag lost">LOST SERVE</span>';
+// A game whose stored points fail pbp-integrity.js: a dash and the reason, never the sequence (and never a guessed part of it).
+const PBP_UNAVAILABLE_HTML = '<span class="pbp-pt pbp-unavail" style="color:var(--text-label);">— Point-by-point unavailable for this game</span>';
 // Flashscore-style point-by-point: centered per-game rows (server = tennis-ball
 // icon on that player's side, point sequence beneath) and, for tiebreak sets, a
 // dedicated "TIEBREAK · SET n" section with one row per point — running score,
@@ -11483,11 +11495,12 @@ function buildPointByPointHtml(m, entry, setNo){
     // Normal games.
     for (const g of real){
       const broken = g.winner && g.server && g.winner !== g.server;   // serve lost
-      const sc = pbpParseScore(g.score) || ['', ''];
+      const sc = g.pbpHdrBad ? ['—', '—'] : (pbpParseScore(g.score) || ['', '']);
       html += pbpRowHtml('pbp-grow', g.server, g.winner, sc[0], sc[1],
         (broken && g.server === 'p1') ? PBP_LOST_TAG : '',
         (broken && g.server === 'p2') ? PBP_LOST_TAG : '',
-        (g.points && g.points.length) ? `<div class="pbp-gpts">${pbpPointList(g.points)}</div>` : '');
+        g.pbpBad ? `<div class="pbp-gpts">${PBP_UNAVAILABLE_HTML}</div>`
+          : (g.points && g.points.length) ? `<div class="pbp-gpts">${pbpPointList(g.points)}</div>` : '');
     }
     // Tiebreak section.
     if (tbPts.length){
@@ -11496,7 +11509,8 @@ function buildPointByPointHtml(m, entry, setNo){
       const label = isLastSet ? 'MP' : 'SP';
       const badgeCls = isLastSet ? 'mp' : 'sp';
       html += `<div class="pbp-tbhdr">Tiebreak · Set ${escapeHtml(s.set)}</div>`;
-      for (const p of tbPts){
+      if (s.pbpTbBad) html += `<div class="pbp-gpts">${PBP_UNAVAILABLE_HTML}</div>`;
+      else for (const p of tbPts){
         const lost = p.winner && p.server && p.winner !== p.server;   // mini-break
         const mx = Math.max(p.a, p.b), mn = Math.min(p.a, p.b);
         const pending = mx >= target - 1 && mx > mn && mx < target;   // set/match point on next serve
@@ -15266,11 +15280,11 @@ function fhPbpSetModel(st, ctx){
     // the games as this game started (its score less the game it records), for "winning this game wins the set"
     const pre = sc[0] != null && (g.winner === 'p1' || g.winner === 'p2') ? [sc[0] - (g.winner === 'p1' ? 1 : 0), sc[1] - (g.winner === 'p2' ? 1 : 0)] : null;
     const setPt = s => { if (!pre) return false; const own = s === 'p1' ? pre[0] + 1 : pre[1] + 1, oth = s === 'p1' ? pre[1] : pre[0]; return own >= 6 && own - oth >= 2; };
-    return Object.assign({ gA: sc[0], gB: sc[1], points: (g.points || []).map(p => { const s = gpSide(p.s);
+    return Object.assign({ gA: g.pbpHdrBad ? null : sc[0], gB: g.pbpHdrBad ? null : sc[1], bad: !!g.pbpBad, points: g.pbpBad ? [] : (g.points || []).map(p => { const s = gpSide(p.s);
       return { txt: String(p.s || '').replace(/\s*-\s*/, ':'), bp: !!p.bp, mp: !!s && setPt(s) && isMp(s) === true }; }) }, side(g, g.winner)); });
   let tb = null;
   if (tbPts.length){
-    tb = { label: 'Tiebreak · Set ' + st.set, pts: tbPts.map(p => {
+    tb = { label: 'Tiebreak · Set ' + st.set, bad: !!st.pbpTbBad, pts: st.pbpTbBad ? [] : tbPts.map(p => {
       const hi = Math.max(p.a, p.b), lo = Math.min(p.a, p.b), over = hi >= T && hi - lo >= 2;
       const sp = !over && p.a !== p.b && hi >= T - 1 && hi + 1 - lo >= 2;
       const mp = sp ? isMp(p.a > p.b ? 'p1' : 'p2') : null;
@@ -15306,6 +15320,8 @@ function fhSheetPbpHtml(M){
   // MP (TEN-349) is drawn in the file's SP chip: the design has no MP of its own
   const chip = t => `<span style="font-size:8.5px; font-weight:700; color:${hi}; background:var(--inner); border:1px solid var(--line); border-radius:4px; padding:2px 6px;">${t}</span>`;
   const sp = chip('SP'), mp = chip('MP');
+  // A game / tiebreak whose stored points fail pbp-integrity.js: a dash and the reason in the label tone, never the sequence.
+  const unavail = `<span class="ma-pbp-unavail" style="${FH_MONO} font-size:12.5px; color:${dim};">${FH_DASHC} Point-by-point unavailable for this game</span>`;
   const num = (v, c, fs) => `<span style="${FH_MONO} font-size:${fs}px; font-weight:700; color:${c};">${v == null ? FH_DASHC : v}</span>`;
   const games = M.games.map(g => `<div class="ma-pbp-game" style="max-width:600px; margin:0 auto; padding:18px 4px; border-bottom:1px solid var(--line);">
         <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:11px;">
@@ -15313,10 +15329,10 @@ function fhSheetPbpHtml(M){
           <span style="display:flex; align-items:center; justify-content:center; gap:9px;">${num(g.gA, g.aWon ? hi : dim, 20)}<span style="color:${dim}; font-size:16px;">·</span>${num(g.gB, g.bWon ? hi : dim, 20)}</span>
           <span style="display:flex; justify-content:flex-start; align-items:center; gap:8px;">${g.serverB ? ball : ''}${g.bLost ? lost : ''}</span>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">${g.points.map(p => `<span style="display:inline-flex; align-items:center; gap:5px; ${FH_MONO} font-size:12.5px; color:${hi};">${fhEsc(p.txt)}${p.bp ? bp : ''}${p.mp ? mp : ''}</span>`).join('')}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">${g.bad ? unavail : g.points.map(p => `<span style="display:inline-flex; align-items:center; gap:5px; ${FH_MONO} font-size:12.5px; color:${hi};">${fhEsc(p.txt)}${p.bp ? bp : ''}${p.mp ? mp : ''}</span>`).join('')}</div>
       </div>`).join('');
   const tb = !M.tb ? '' : `<div class="ma-pbp-tbhead" style="background:var(--page); border:1px solid var(--line); border-radius:9px; text-align:center; font-size:10px; letter-spacing:0.16em; color:${dim}; padding:9px; margin:12px 0 4px;">${fhEsc(M.tb.label)}</div>
-      <div style="display:flex; flex-direction:column;">${M.tb.pts.map(p => `<div class="ma-pbp-tb" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid color-mix(in srgb, var(--text) 3.5%, transparent);">
+      ${M.tb.bad ? `<div style="display:flex; justify-content:center; padding:11px 4px;">${unavail}</div>` : ''}<div style="display:flex; flex-direction:column;">${M.tb.pts.map(p => `<div class="ma-pbp-tb" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid color-mix(in srgb, var(--text) 3.5%, transparent);">
           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">${p.aLost ? lost : ''}${p.spA ? sp : p.mpA ? mp : ''}${p.serverA ? ball : ''}</div>
           <div style="display:flex; align-items:center; justify-content:center; gap:9px;">${num(p.a, p.aWon ? hi : mut, 18)}<span style="color:${dim}; font-size:15px;">·</span>${num(p.b, p.bWon ? hi : mut, 18)}</div>
           <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">${p.serverB ? ball : ''}${p.spB ? sp : p.mpB ? mp : ''}${p.bLost ? lost : ''}</div>

@@ -10323,6 +10323,8 @@
   // it is one row of a spec'd layout, not a whole group, and the ticket's first
   // rule is to reproduce the layout. Never a zero, never a plausible default.
 
+  var MP_PBP_UNAVAILABLE = '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:' + DASH_COLOUR + ';">' +
+    DASH + ' Point-by-point unavailable for this game</span>';
   var MP_TABS = [
     { id: 'summary', label: 'Summary' },
     { id: 'stats', label: 'Stats' },
@@ -10700,6 +10702,7 @@
       var parts = String(g.score || '').split('-');
       var g1 = String(parts[0] || '').trim(), g2 = String(parts[1] || '').trim();
       var gA = subjIsP1 ? g1 : g2, gB = subjIsP1 ? g2 : g1;
+      if (g.pbpHdrBad) { gA = DASH; gB = DASH; }   // pbp-integrity.js: the running set score does not follow the last game
       var serverIsSubject = (g.server === 'p1') === subjIsP1;
       var winnerIsSubject = (g.winner === 'p1') === subjIsP1;
       // "LOST SERVE" is the server losing his own game — the export's own badge.
@@ -10712,7 +10715,9 @@
         'letter-spacing:0.10em;color:var(--neg);background:color-mix(in srgb, var(--neg) 10%, transparent);' +
         'border:1px solid color-mix(in srgb, var(--neg) 34%, transparent);border-radius:5px;padding:3px 8px;' +
         'white-space:nowrap;">LOST SERVE</span>';
-      var pts = (g.points || []).map(function (pt, i, all) {
+      // pbp-integrity.js (stamped in the host's loadPbpShard): a game whose stored points step backwards is not drawn —
+      // a dash and the reason, never the sequence and never a guessed part of it.
+      var pts = g.pbpBad ? MP_PBP_UNAVAILABLE : (g.points || []).map(function (pt, i, all) {
         // The running score is written from p1's side; flip it for the reader
         // whose page this is, so the left-hand number is always his.
         var sp = String(pt.s || '').split('-');
@@ -10760,14 +10765,14 @@
         (tbPts != null ? ' ' + MIDDOT + ' ' + esc(String(tbPts)) + ' to the loser' : '') + '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;' +
         'padding:0 4px 14px;">' +
-        split.tb.map(function (t, i) {
+        (st.pbpTbBad ? MP_PBP_UNAVAILABLE : split.tb.map(function (t, i) {
           var sp2 = String(t.score || '').split('-');
           var txt = subjIsP1 ? String(t.score || '')
             : (String(sp2[1] || '').trim() + ' - ' + String(sp2[0] || '').trim());
           return '<span style="display:inline-flex;align-items:center;gap:5px;' +
             'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);">' + esc(txt) +
             (i < split.tb.length - 1 ? '<span style="color:var(--text-label);">,</span>' : '') + '</span>';
-        }).join('') +
+        }).join('')) +
       '</div>') : '';
     return mpSeg(segs, 'mp-point-set', sel) +
       '<div style="background:var(--card);border:1px solid var(--edge-6);border-radius:9px;' +
