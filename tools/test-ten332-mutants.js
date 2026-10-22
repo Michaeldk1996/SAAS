@@ -9,7 +9,7 @@ const MUTANTS = [
   ['N6: a synthesised Withdrawal edition renders', "function trEditionsOf(hist){ return ((hist && hist.years) || []).filter(y => !y.withdrew); }", "function trEditionsOf(hist){ return ((hist && hist.years) || []); }"],
   ['result: a won final not "Won"', "    else if (last.won && lastRd === 'F') result = 'Won';", "    else if (false) result = 'Won';"],
   ['result: an in-progress edition labelled by its last round', "    else if (String(y.year) === mYear) result = 'In progress';", "    else if (String(y.year) === mYear && !m.finalScore) result = 'In progress';"],
-  ['N2: a set-less history row read as a walkover', "  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true;", "  if (false){ r.wo = false; r.ret = true; r.retSettle = true;"],
+  ['2026-10-22: trRowOf classifies a flagged walkover as a retirement again', "  if (isWo){ r.wo = true; r.ret = false; r.retSettle = false;", "  if (isWo){ r.wo = false; r.ret = true; r.retSettle = true;"],
   ["join: the season + opponent fallback takes another event's row", "      && trSameEvent(c.tournament, names)\n", ""],
   ['rows: group meta loses the W–L', "meta: e.result + ' · ' + e.won + '–' + e.lost,", "meta: e.result,"],
   ['gate: the W–L % ungated (0% at n 0, % below n 5)', "  const wlRate = maRateHtml(P.W, P.n, { note: 'title', nopct: '' });", "  const wlRate = (P.n ? Math.round(P.W / P.n * 100) : 0) + '%';"],
@@ -55,7 +55,8 @@ MUTANTS.push(
   ['TEN-402 r2: the after-archive reason dropped', "  if (r.pxAfter) return trPxAfterTitle();", "  if (false) return trPxAfterTitle();"],
   ['TEN-402 r2: the tab never loads the Database rows', "  if (_sfDbJoinSt !== 'ready') loads.push(sfDbJoinLoad().catch(() => null).then(paint));\n", ''],
   ['TEN-402 r2: the tab fetches the closes shard again', "    loads.push(Promise.resolve(loadCareerHistory(key)).then(ch => {", "    loads.push(Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch]) => {"],
-  ["TEN-402 r2: a joined row meets the join on the history's match day", "date: r.chDate || r.date, won: r.won,", "date: r.date, won: r.won,"],
+  ["TEN-402 r2: a joined row meets the join on the history's match day", "date: r.wo ? null : (r.chDate || r.date), won: r.won,", "date: r.wo ? null : r.date, won: r.won,"],
+  ['2026-10-22: a walkover row meets the join on its date (and takes a price)', "date: r.wo ? null : (r.chDate || r.date), won: r.won,", "date: (r.chDate || r.date), won: r.won,"],
 );
 MUTANTS.push(
   ['Q2: the court-speed gradient back', 'background:var(--white-bar); margin-top:18px;', 'background:linear-gradient(90deg,var(--inner),var(--text-label),var(--bar)); margin-top:18px;'],

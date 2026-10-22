@@ -198,8 +198,21 @@ test('Backing (N5 + D6 + TEN-325): the Database join\'s closes, retirements sett
   assert.ok(t4.includes('+0.5u') && t4.includes('4 priced') && !/vs market/.test(t4.replace('vs market needs', '')), t4);
 });
 
-// Mutation 'N2: a set-less history row read as a walkover' (the pipeline history carries no walkovers — TEN-313 drops
-// them — so a "0 - 0" row with no set is a match stopped in set 1: a retirement, played, settled at the close)
+// Founder 2026-10-22 · the pipeline history now LISTS walkovers (flagged). Mutation 'trRowOf: a flagged walkover is a
+// retirement again' → the row reads ret, is priced and counted.
+test('2026-10-22: a flagged walkover history row is listed as a walkover — never a retirement, a price or a count', () => {
+  const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
+  S.tr.data[0].ch[0].sets = []; S.tr.data[0].ch[0].result = '-'; S.tr.data[0].ch[0].walkover = true;
+  Object.assign(m.p1TournamentHistory.years[0].matches[0], { result: null, walkover: true });
+  m.p1TournamentHistory.years[0].won = 0; m.p1TournamentHistory.years[0].lost = 0; m.p1TournamentHistory.years[0].matchCount = 0;
+  const P = S.trModelFor(m, 0);
+  assert.ok(P.all[0].wo && !P.all[0].ret && !P.all[0].retSettle, 'a walkover, not a retirement');
+  assert.equal(P.all[0].price, null, 'no price');
+  assert.equal(P.priced.length, 0); assert.equal(P.W + P.L, 0);
+  assert.equal(P.played.length, 0, 'an edition left only by a walkover is listed, not played');
+});
+// (the pipeline history used to carry no walkovers — TEN-313 dropped them — so a "0 - 0" row with no set is a match stopped
+// in set 1: a retirement, played, settled at the close)
 test('N2 + TEN-325: a set-less "0 - 0" history row is a first-set retirement — counted and settled at its close', () => {
   const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
   S.tr.data[0].ch[0].sets = []; S.tr.data[0].ch[0].result = '0 - 0'; m.p1TournamentHistory.years[0].matches[0].result = '0 - 0';

@@ -11761,6 +11761,14 @@ function ovCloseCell(){
   if (S.m && aBuilt(S.m, 'overview')) aPaint('aSectionOverview', buildYearlyTables(S.m));
 }
 // The pop-up model for the open cell, or null while its shards load. state: 'ready' | 'loading' | 'failed'.
+// The Overview pop-up's walkover / unconfirmed rows as table rows (founder 2026-10-22): listed, no price, no sheet.
+function ovListedRowsOf(M){
+  return (M.listed || []).map(d => ({ _date: d.date, date: fhDDMM(d.date) + '.', dateSub: d.wo ? 'WO' : '',
+    dateSubTitle: 'Walkover: not a match played, counted in no record', won: d.unconf ? null : !!d.won, noMark: !!d.unconf,
+    opp: d.opp || FH_DASHC, event: d.event || FH_DASHC, eventSub: M.surf === 'total' && d.surface ? d.surface : '', rd: d.round || FH_DASHC,
+    sets: FH_DASHC, setsColor: 'var(--text-label)', scores: d.unconf ? 'unconfirmed, not counted' : FH_DASHC, price: FH_DASHC, oppPrice: FH_DASHC,
+    attrs: d.wo ? ' data-ov-wo="1"' : ' data-ov-unconfirmed="1"' }));
+}
 function ovPopModel(){
   const S = _ov, m = S.m; if (!m || !S.cell) return null;
   const [pi, yk, surf] = S.cell.split('|'), i = +pi, key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1;
@@ -11821,11 +11829,6 @@ function ovPopHtml(M){
     + meRateBox('Win rate', w, n, null, OV_C.text, true)
     + meStatBox('Avg price', avg == null ? '—' : avg.toFixed(2), OV_C.text, true)
     + ovFlatBox(np, n, pl, priced, pl >= 0 ? up : dn) + '</div>';
-  const listedRows = (M.listed || []).map(d => ({ _date: d.date, date: fhDDMM(d.date) + '.', dateSub: d.wo ? 'WO' : '',
-    dateSubTitle: 'Walkover: not a match played, counted in no record', won: d.unconf ? null : !!d.won, noMark: !!d.unconf,
-    opp: d.opp || FH_DASHC, event: d.event || FH_DASHC, eventSub: M.surf === 'total' && d.surface ? d.surface : '', rd: d.round || FH_DASHC,
-    sets: FH_DASHC, setsColor: 'var(--text-label)', scores: d.unconf ? 'unconfirmed, not counted' : FH_DASHC, price: FH_DASHC, oppPrice: FH_DASHC,
-    attrs: d.wo ? ' data-ov-wo="1"' : ' data-ov-unconfirmed="1"' }));
   const table = maMatchRowsHtml([{ title: null, rows: rows.map(r => ({
     _date: r.date, date: fhDDMM(r.date) + '.', won: r.won, opp: r.opp || FH_DASHC,
     event: r.tourn || FH_DASHC, eventSub: M.surf === 'total' && r.surface ? r.surface : '',
@@ -11835,7 +11838,7 @@ function ovPopHtml(M){
     price: r.price != null ? fhOdd(r.price) : FH_DASHC, oppPrice: r.oppPrice != null ? fhOdd(r.oppPrice) : FH_DASHC,
     priceTip: r.book === 'B' ? (fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : fhSrcTitle(r) + ' (no Pinnacle close for this match)') : null,
     selected: _ov.sel === r.mid, click: ` onclick="ovOpenRow('${r.mid}')"`, attrs: ` data-ov-mid="${r.mid}"`,
-  })).concat(listedRows).sort((a, b) => String(b._date || '').localeCompare(String(a._date || ''))) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
+  })).concat(ovListedRowsOf(M)).sort((a, b) => String(b._date || '').localeCompare(String(a._date || ''))) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
     grid: '50px 10px minmax(0,1.3fr) minmax(0,1fr) 34px 38px minmax(0,1.1fr) 42px 42px',
     labels: ['Date', '', 'Opponent', 'Event', 'Rd', 'Sets', 'Set scores', 'Price', 'Opp'], inset: 22,
     empty: 'No matches on file for this selection.' });
@@ -16392,7 +16395,8 @@ window.trPxAfterOfEdition = trPxAfterOfEdition;
 function trDbJoinPx(name, ch){
   return all => {
     const J = typeof window !== 'undefined' && window.H2HPage && window.H2HPage.priceJoin;
-    const js = all.map(r => ({ date: r.chDate || r.date, won: r.won, round: r.round, opp: r.opp }));   // a joined row: its career date
+    // a joined row: its career date; a walkover row joins nothing (no date) and is never priced (founder 2026-10-22)
+    const js = all.map(r => ({ date: r.wo ? null : (r.chDate || r.date), won: r.won, round: r.round, opp: r.opp }));
     if (typeof J === 'function' && _sfDbJoin) J(js, { full: name }, null, _sfDbJoin, null, ch);
     all.forEach((r, j) => { const x = js[j], ok = x.price != null;
       r.price = ok ? x.price : null; r.oppPrice = ok ? x.oppPrice : null; r.book = ok ? x.book : null; r.src = ok ? (x.src || 'td') : null;

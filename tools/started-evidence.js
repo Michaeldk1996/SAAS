@@ -107,7 +107,6 @@ function build(root) {
       if (!rows) return { key, says: null, why: 'no career-history shard' };
       const oppK = keyFromArchiveName(oppArchive);
       const hits = rows.filter(x => {
-        if (x.walkover || x.unconfirmed) return false;   // a listed walkover row is never a Tennis-Data match's candidate
         const dx = day(x.date); if (d == null || dx == null) return false;
         const dd = dx - d; if (dd < WINDOW[0] || dd > WINDOW[1]) return false;
         if (!!x.won !== won) return false;
