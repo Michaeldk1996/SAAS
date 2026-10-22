@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-22T17:49:07.008Z",
+ "generatedAt": "2026-10-22T22:57:40.375Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "74884a3e66cb9b891cb07482ae5ea64d2bcdbd70",
-  "at": "2026-10-22T17:15:43Z"
+  "commit": "ebb02df035cc5a3764a0de67318627316facb5df",
+  "at": "2026-10-22T22:43:55Z"
  },
- "commitsScanned": 5654,
+ "commitsScanned": 5679,
  "lastRun": {
-  "from": "2026-10-21T21:16:49Z",
-  "snapshots": 52,
-  "added": 10,
+  "from": "2026-10-22T17:15:43Z",
+  "snapshots": 26,
+  "added": 2,
   "replaced": 0,
-  "series": 69,
-  "kept": 59,
+  "series": 76,
+  "kept": 61,
   "bySource": {
-   "api-tennis-live": 59
+   "api-tennis-live": 61
   },
   "byBook": {
-   "Pinnacle +30s": 59
+   "Pinnacle +30s": 61
   },
   "dropped": {
-   "noStart": 10
+   "noStart": 15
   }
  },
  "stats": {
@@ -10088,6 +10088,23 @@
    "event": "ATP Brussels"
   },
   {
+   "eventKey": 12173106,
+   "date": "2026-10-22",
+   "p1Key": 1335,
+   "p2Key": 2838,
+   "p1Name": "K. Jacquet",
+   "p2Name": "B. Nakashima",
+   "p1": 2.58,
+   "p2": 1.558,
+   "at": "2026-10-22T16:59:33.805Z",
+   "trueStart": "2026-10-22T18:21:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
    "eventKey": 12173186,
    "date": "2026-10-22",
    "p1Key": 13091,
@@ -10137,6 +10154,23 @@
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
    "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12173288,
+   "date": "2026-10-22",
+   "p1Key": 372,
+   "p2Key": 2168,
+   "p1Name": "F. Cobolli",
+   "p2Name": "S. Wawrinka",
+   "p1": 1.363,
+   "p2": 3.38,
+   "at": "2026-10-22T16:30:56.723Z",
+   "trueStart": "2026-10-22T16:45:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - 1/8-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
   },
   {
    "eventKey": 12173394,
