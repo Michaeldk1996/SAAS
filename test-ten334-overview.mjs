@@ -81,11 +81,13 @@ const stat = (h, l) => { const i = h.indexOf(`data-me-stat="${l}"`); return text
 const rowsOf = h => [...h.matchAll(/data-ov-mid="([^"]+)"/g)].map(x => x[1]);
 
 const CHECKS = {
-  // Mutation: the pop-up keeps walkovers (drop `if (r.wo) return;` — flagged and score-inferred walkovers alike).
-  'N2: a walkover is not a row, a win or a price in the pop-up'(src) {
+  // Founder 2026-10-22: the walkover is LISTED (WO under the date, no price, no sheet) and is not a match: not in Mo.rows,
+  // not in the record, not priced. Mutation: count M.listed into Mo.rows → 9 rows and a 6–3 record.
+  'N2 + 2026-10-22: a walkover is listed in the pop-up, never a match, a win or a price'(src) {
     const { Mo, html } = pop(src, `0|season|clay`);
-    assert.equal(Mo.rows.length, 8, '5 ATP + 3 Challenger matches, the walkover out');
-    assert.ok(!/W\. Walker/.test(html));
+    assert.equal(Mo.rows.length, 8, '5 ATP + 3 Challenger matches, the walkover not one of them');
+    assert.ok(/data-ov-wo="1"/.test(html) && /W\. Walker/.test(html), 'the walkover row is listed');
+    assert.ok(/class="ma-row-datesub"[^>]*>WO</.test(html), 'WO under the date');
     assert.equal(stat(html, 'Record'), '5–3');
   },
   // Founder ruling 2026-10-18 (item 3; supersedes N8): a Challenger / ITF row takes the master join's price only — the
@@ -148,9 +150,9 @@ const CHECKS = {
   'DoD item 8: pop-up rows are maMatchRowsHtml rows and every row opens the one sheet'(src) {
     const { V, html } = pop(src, `0|season|clay`);
     assert.match(html, /class="ma-rows ma-rows-table"/, 'the shared table variant');
-    assert.equal((html.match(/class="seg ma-row"/g) || []).length, 8);
+    assert.equal((html.match(/class="seg ma-row"/g) || []).length, 9, '8 matches + the listed walkover');
     const mids = rowsOf(html);
-    assert.equal(mids.length, 8);
+    assert.equal(mids.length, 8, 'every match opens the sheet; the walkover row carries no sheet');
     for (const mid of mids) assert.match(html, new RegExp(`onclick="ovOpenRow\\('${mid}'\\)"`));
     V.ovOpenRow(mids[0]);
     assert.deepEqual(V.opened, [mids[0]], 'fhOpenSheet(mid)');
@@ -218,7 +220,7 @@ test('DoD item 8: the old Overview row / drill / tooltip renderers are deleted',
 });
 
 const MUTANTS = [
-  ['walkovers kept', "    if (r.wo) return;                                         // N2: a walkover is not a match played\n", ''],
+  ['walkover dropped from the pop-up list (2026-10-22)', "{ M.listed.push(d); return; }", '{ return; }'],
   ['ATP row back on the closes shard', "  if (!r.wo && typeof sfDbPxRows === 'function'){   // founder ruling 2026-10-18 (item 3): every level, qualifying included", "  if (false){"],
   ['1u ungated', "  const R = maRate(0, np, { text: fhSigned(pl, 1, 'u').replace(/^(?=\\d)/, '±'), nopct: '—' });", "  const R = { mode: 'full', txt: fhSigned(pl, 1, 'u') };"],
   ['win rate ungated', "    + meRateBox('Win rate', w, n, null, OV_C.text, true)", "    + meStatBox('Win rate', n ? Math.round(w / n * 100) + '%' : '0%', OV_C.text, true)"],

@@ -277,7 +277,9 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   assert.equal(core.lineDefs(true, 'Test')[5][1](rows[1]), true, '7-6 is a tiebreak');
   assert.equal(core.whyNotBo3(rows[2]), 'set scores incomplete', '"2 - 0" with one stored set');
   assert.equal(core.whyNotPriced(rows[2]), '', 'its result still settles the match-winner bet');
-  assert.equal(core.whyNotPriced(rows[3]), 'walkover');
+  // founder 2026-10-22: a walkover row is listed elsewhere and is in no Market edge population (meRowsFor drops it)
+  assert.equal(rows.length, 3); assert.ok(!rows.some(r => r.wo));
+  assert.equal(core.whyNotPriced({ wo: true, price: 2, oppPrice: 1.8, book: 'P' }), 'walkover');
   assert.equal(rows[0].price, 2.0); assert.equal(core.bandOf(rows[0].price), 4, '2.00 sits in the underdog ladder');
   // render: thin samples, n = 0 bands, one player with no priced matches, no header price
   const empty = Object.assign([], { notTour: 0 });
