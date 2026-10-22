@@ -133,7 +133,16 @@ const levelOfCat = (cat) => (/^(Challenger|ITF)/.test(cat || '') ? 'chitf' : 'at
 // TE "Van De Zandschulp B." -> our "B. Van De Zandschulp"
 const ourName = (te) => { const t = String(te || '').trim().split(/\s+/); if (t.length > 1 && /\.$/.test(t[t.length - 1])) { const i = t.pop(); return `${i} ${t.join(' ')}`; } return t.join(' '); };
 
-function teOnlyRow(t) {
+function teOnlyRow(t, flag) {
+  if (flag) {
+    // ruling 6: a walkover (Sackmann W/O) or an unconfirmed empty score — listed, no score (–), counted nowhere
+    const r = { year: String(t.season), surface: t.surface || null, level: t.cat === 'Other' ? 'chitf' : levelOfCat(t.cat), date: t.date, tournament: t.event,
+      round: t.round || null, opponent: ourName(t.opp), result: '-', won: !!t.won, src: 'te', teCat: t.cat,
+      indoor: t.court === 'indoor' ? true : t.court === 'outdoor' ? false : null, incomplete: true, ...flag };
+    if (t.teMatchId) r.teMatchId = t.teMatchId;
+    if (t.dateAmbiguous) r.dateAmbiguous = true;
+    return r;
+  }
   const sets = (t.sets || []).map((s) => (t.won ? { p: s.w, o: s.l } : { p: s.l, o: s.w })).filter((x) => x.p + x.o > 0);
   const won = sets.filter((x) => x.p > x.o).length, lost = sets.filter((x) => x.p < x.o).length;
   // a counted TE "Other" event (multi-sport games, play-offs) is not tour level: Challenger/ITF tier (TEN-449)
@@ -274,19 +283,32 @@ function applyTeHistory(rows, teRec, opts = {}) {
     }
     if (t.court === 'outdoor' && t.surface && t.surface !== r.surface) { r.surface = t.surface; diag.surfaceFromTe++; }
     if (!t.wo && !!t.won !== !!r.won) { r.won = !!t.won; diag.resultFromTe++; }
-    if (t.wo && !r.walkover) r.teWalkover = true;     // TE calls it a walkover: flagged, counted out below
+    // TE's `wo` is an empty score, not a walkover (founder 2026-10-22, ruling 3): our row's explicit status stands — a
+    // played row of ours counts (Gasquet d. Verdasco, Buenos Aires 2004), a walkover of ours stays a walkover row. The
+    // disagreement stays on the row as a 'walkover' conflict.
     if (t.cat === 'Exhibition') r.teExhibition = true;
     // an 'Other' TE event that pairs with an api-tennis or archive row: the official source proves the event; kept,
     // counted and flagged (`teOther`) so the classification gap is visible
     if (t.cat === 'Other') { r.teOther = t.event; diag.otherKeptByPair = (diag.otherKeptByPair || 0) + 1; }
   }
   const added = [];
+  // ruling 6 (founder 2026-10-22): a TE-only empty-score row is resolved against Sackmann (opts.resolveEmpty, te-resolve.js):
+  // played -> counted with Sackmann's sets; walkover -> a walkover row; unresolved -> an `unconfirmed` row, listed with
+  // score – and counted nowhere. No resolver (no store copy, a test) = every such row unconfirmed. Exhibitions and
+  // uncounted 'Other' events are decided first, whatever their score.
+  const resolveEmpty = typeof opts.resolveEmpty === 'function' ? opts.resolveEmpty : () => ({ verdict: null });
   for (const t of teOnly) {
-    if (t.wo) { diag.walkoversSkipped++; continue; }
     if (t.cat === 'Exhibition') { diag.exhibitionsSkipped++; continue; }
     // 'Other': counted only for a class the founder ruled in (OTHER_COUNTED); every other one is listed, not counted
     if (t.cat === 'Other' && OTHER_COUNTED.has(t.event)) diag.otherCounted = (diag.otherCounted || 0) + 1;
     else if (t.cat === 'Other') { diag.otherSkipped = (diag.otherSkipped || 0) + 1; (diag.otherEvents = diag.otherEvents || {})[t.event] = ((diag.otherEvents || {})[t.event] || 0) + 1; continue; }
+    if (t.wo) {
+      const v = resolveEmpty(t) || { verdict: null };
+      if (v.verdict === 'walkover') { added.push(teOnlyRow(t, { walkover: true })); diag.emptyWalkover = (diag.emptyWalkover || 0) + 1; continue; }
+      if (v.verdict === 'played') { added.push(teOnlyRow({ ...t, wo: false, sets: v.sets || [] })); diag.emptyPlayed = (diag.emptyPlayed || 0) + 1; diag.added++; continue; }
+      added.push(teOnlyRow(t, { unconfirmed: true })); diag.emptyUnconfirmed = (diag.emptyUnconfirmed || 0) + 1;
+      continue;
+    }
     added.push(teOnlyRow(t)); diag.added++; diag.addedByCat[t.cat] = (diag.addedByCat[t.cat] || 0) + 1;
   }
   // one match = one row: an unpaired row of ours that repeats a paired row (same day, opponent, result) is a duplicate
@@ -305,6 +327,7 @@ function applyTeHistory(rows, teRec, opts = {}) {
   const provKeys = new Set();   // an exact duplicate of a provisional row (same day, opponent, result) counts once
   for (const r of oursOnly) {
     if (pairedKey.has(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`)) { out.set(orig.get(r), 'duplicate'); diag.duplicatesDropped = (diag.duplicatesDropped || 0) + 1; continue; }
+    if (r.walkover) continue;   // a walkover row of ours: listed in the record, counted nowhere (careerByYearFromRows)
     diag.oursOnly++;
     if (/\bwomen\b|\bW\d{2,3}\b/i.test(r.tournament || '')) diag.womensEventRows = (diag.womensEventRows || 0) + 1;
     // the flag is set on the record's COPY only (r is a copy): the shared row never carries it
@@ -313,8 +336,7 @@ function applyTeHistory(rows, teRec, opts = {}) {
     else if (teOnlyCounts) { out.set(orig.get(r), 'not-in-te'); diag.notInTeNotCounted = (diag.notInTeNotCounted || 0) + 1; }
   }
   for (const r of ours) {
-    if (r.teWalkover) out.set(orig.get(r), 'walkover');
-    else if (r.teExhibition) out.set(orig.get(r), 'exhibition');
+    if (r.teExhibition) out.set(orig.get(r), 'exhibition');
   }
   const kept = ours.filter((r) => !out.has(orig.get(r)));
   const copyOf = new Map(kept.map((c) => [orig.get(c), c]));
@@ -349,14 +371,15 @@ function recordLayer(matches, m) {
 
 // The season table rebuilt from the merged rows — cells and lists from ONE set of rows (TEN-442). Every season row
 // carries the tier split and the indoor split (TE's court class), pre-2021 included; a cell with no matches is null
-// (the page prints a dash), never 0–0. Walkovers and alternate formats were already kept out of the row set's counts
-// by the caller's rules; here every row counts.
+// (the page prints a dash), never 0–0. A walkover or unconfirmed row is skipped here (listed, never counted); alternate
+// formats were already kept out by the caller's rules.
 function careerByYearFromRows(rows) {
   const blank = () => ({ won: 0, lost: 0 });
   const split = () => ({ total: blank(), clay: blank(), hard: blank(), grass: blank(), indoor: { total: blank(), clay: blank(), hard: blank(), grass: blank() } });
   const by = {};
   for (const r of rows) {
     const y = String(r.year || ''); if (!/^\d{4}$/.test(y)) continue;
+    if (r.walkover || r.unconfirmed) continue;   // listed, never counted (founder 2026-10-22, rulings 1 + 6)
     const b = by[y] || (by[y] = { all: split(), atp: split(), chitf: split(), rows: 0, atpOnly: true });
     const wl = r.won ? 'won' : 'lost';
     b.rows++; if (r.src !== 'archive') b.atpOnly = false;

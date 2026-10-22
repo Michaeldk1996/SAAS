@@ -114,6 +114,11 @@ const FORM = [
     const g = P.recentFormFromFixtures(FORM, '2', new Map());
     assert.ok(!g.matches.some((m) => m.walkover)); assert.strictEqual(g.matches.length, 2);
   });
+  // Founder 2026-10-22: the walkovers are LISTED, in their own array (no form count reads it).
+  // Mutation: return `walkovers: []` from recentFormFromFixtures → both rows vanish from the Form list.
+  check('2026-10-22 form: both walkovers ride in `walkovers`, flagged, given = L and received = W', () => {
+    assert.deepStrictEqual(f.walkovers.map((m) => [m.eventKey, m.walkover, m.won]), [[1, true, false], [2, true, true]]);
+  });
 }
 
 // ── N2 · careerByYear and its row twin, built fresh (buildAllTierYearly / playerMatchHistory) ──
@@ -126,10 +131,13 @@ const FORM = [
     const r = rows.find((x) => x.year === yr);
     assert.deepStrictEqual([r.total, r.atp.total], [wl(1, 1), wl(1, 1)]);
   });
-  // Mutation: drop `if (isWalkover(f)) continue;` in playerMatchHistory → 3 rows, one a walkover.
-  check('N2 career-history rows: the row twin carries no walkover either (2 rows = the 1-1 above)', () => {
+  // Founder 2026-10-22: the row twin LISTS both walkovers, flagged; its counted rows are still the 1-1 above.
+  // Mutation: re-add `if (isWalkover(f)) continue;` in playerMatchHistory → 2 rows, no walkover row listed.
+  check('2026-10-22 career-history rows: both walkovers are rows, flagged; the counted rows are the 1-1 above', () => {
     const rows = P.playerMatchHistory(F, '1', new Date().getFullYear(), new Map([['10', 'clay']]));
-    assert.deepStrictEqual([rows.length, rows.some((m) => m.walkover)], [2, false]);
+    assert.deepStrictEqual(rows.filter((m) => m.walkover).map((m) => [m.eventKey, m.won]).sort(), [[1, false], [2, true]]);
+    const played = rows.filter((m) => !m.walkover);
+    assert.deepStrictEqual([played.filter((m) => m.won).length, played.filter((m) => !m.won).length], [1, 1]);
   });
 }
 
@@ -175,12 +183,15 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
   check('N2 tournament: a W/O given is not a loss (2026 1-0, reached R16 where he withdrew)', () => {
     assert.deepStrictEqual([y('2026').won, y('2026').lost, y('2026').matchCount], [1, 0, 1]);
     assert.strictEqual(y('2026').roundReached, '1/8-finals');
-    assert.ok(!y('2026').matches.some((m) => m.round === '1/8-finals'));
+    // founder 2026-10-22: the W/O given is LISTED, flagged, with no score. Mutation: drop `.concat(woRows)` → not listed.
+    assert.deepStrictEqual(y('2026').matches.filter((m) => m.round === '1/8-finals').map((m) => [m.walkover, m.won, m.result]), [[true, false, null]]);
   });
-  // Mutation: drop `|| woOnlyGiven[season]` → a 2027 0-0 row appears.
-  check('N6: an edition whose only match was a W/O given gets NO row (no synthesised Withdrawal)', () => {
-    assert.strictEqual(y('2027'), undefined);
-    assert.ok(!h.years.some((x) => x.withdrew && x.year === '2027'));
+  // Founder 2026-10-22 (N6 reversed): an edition left only by a W/O given IS listed — 0-0, the round reached, its row.
+  // Mutation: restore `|| woOnlyGiven[season]` → the 2027 edition vanishes (Vienna 2025 = QF would not show).
+  check('2026-10-22 N6 reversed: an edition left by a W/O given is listed, 0-0, round reached, its walkover row', () => {
+    assert.deepStrictEqual([y('2027').won, y('2027').lost, y('2027').matchCount, y('2027').roundReached], [0, 0, 0, '1/16-finals']);
+    assert.deepStrictEqual(y('2027').matches.map((m) => [m.walkover, m.won]), [[true, false]]);
+    assert.ok(!h.years.some((x) => x.withdrew));
   });
   check('N2 tournament: totals count the retirement as a loss and NOT the W/O received — 1-1', () => {
     assert.deepStrictEqual([h.totalWon, h.totalLost], [1, 1]);
@@ -208,9 +219,9 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     const t = _internal.finalizeTournament('Rome', { 2019: [{ res: 'W', round: 'SF', opp: 'A' }, { res: 'W', round: 'F', opp: 'B', walkover: true }] });
     assert.deepStrictEqual([t.won, t.lost, t.titles], [1, 0, 1]);
   });
-  // Mutation: drop `.filter((m) => !m.walkover)` in buildEmbeddedHistory → 2019 reads 2-1.
-  // Mutation: drop the only-given `continue` → a 2017 0-0 row appears (N6).
-  check('N2 board tournament history (TML backfill): walkovers leave the W-L; an only-given edition gets no row', () => {
+  // Mutation: count walkover rows in buildEmbeddedHistory → 2019 reads 2-1.
+  // Mutation: re-add the only-given `continue` → the 2017 edition vanishes (N6 reversed 2026-10-22).
+  check('N2 board tournament history (TML backfill): walkovers leave the W-L; an only-given edition is listed', () => {
     const { _internal } = require('../career-backfill.js');
     const { history } = _internal.buildEmbeddedHistory(null, [
       { year: 2019, round: 'R32', oppName: 'A', won: true, score: '6-3 6-4' },
@@ -219,7 +230,8 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       { year: 2017, round: 'R32', oppName: 'D', won: false, walkover: true, score: 'W/O' }]);
     const y19 = history.years.find((y) => y.year === '2019'), y17 = history.years.find((y) => y.year === '2017');
     assert.deepStrictEqual([y19.won, y19.lost, y19.matchCount], [1, 1, 2]);
-    assert.strictEqual(y17, undefined);
+    assert.deepStrictEqual(y19.matches.filter((m) => m.walkover).map((m) => [m.opponent, m.won, m.result]), [['B', true, null]]);
+    assert.deepStrictEqual([y17.won, y17.lost, y17.matchCount, y17.matches.map((m) => m.walkover)], [0, 0, 0, [true]]);
   });
   // Mutation: drop `.filter(m => !isWalkover(m))` from fetchH2H's officialH2H → a walkover is a meeting again.
   check('N2 H2H: fetchH2H keeps walkovers out of the meeting list (source)', () => {
@@ -245,8 +257,8 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       tml({ year: '2021', date: '2021-02-08', tournament: 'Rotterdam', opponent: 'G. H', won: true, _indoor: true }),
       tml({ year: '2021', date: '2021-03-22', tournament: 'Miami Masters', opponent: 'I. J', won: false, walkover: true, result: '0 - 0' }),      // W/O given in the hole
     ] };
-    // careerMatches as a profile CACHED before the rule carries it: a 2022 W/O received
-    // still in the rows, and its careerByYear counting it (2022: 2-1 incl. the W/O).
+    // careerMatches as a fresh (v16) profile carries it: a 2022 W/O received in the rows, flagged, and its
+    // careerByYear NOT counting it (buildAllTierYearly skips it): 2022 is 1-1.
     const profiles = { 7: { name: 'P. Seven', careerMatches: [
         { year: '2021', surface: 'clay', level: 'chitf', date: '2021-06-01', tournament: 'Lyon Challenger', opponent: 'K. L', result: '2 - 0', won: true, src: 'fixtures' },
         { year: '2022', surface: 'hard', level: 'atp', date: '2022-03-10', tournament: 'Indian Wells', opponent: 'M. N', result: '0 - 0', won: true, walkover: true, src: 'fixtures' },
@@ -254,24 +266,29 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
         { year: '2022', surface: 'clay', level: 'chitf', date: '2022-05-01', tournament: 'Rome Challenger', opponent: 'Q. R', result: '0 - 2', won: false, src: 'fixtures' },
       ],
       careerByYear: [
-        { year: '2022', allTier: true, total: wl(2, 1), clay: wl(0, 1), hard: wl(2, 0), grass: null, indoor: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null },
-          atp: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null, indoor: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null } }, chitf: { total: wl(0, 1), clay: wl(0, 1), hard: null, grass: null, indoor: null } },
+        { year: '2022', allTier: true, total: wl(1, 1), clay: wl(0, 1), hard: wl(1, 0), grass: null, indoor: { total: wl(1, 0), clay: null, hard: wl(1, 0), grass: null },
+          atp: { total: wl(1, 0), clay: null, hard: wl(1, 0), grass: null, indoor: { total: wl(1, 0), clay: null, hard: wl(1, 0), grass: null } }, chitf: { total: wl(0, 1), clay: wl(0, 1), hard: null, grass: null, indoor: null } },
         { year: '2021', allTier: true, total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null, atp: null, chitf: { total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null } },
         { year: '2019', allTier: false, total: wl(1, 0), clay: null, hard: wl(1, 0), grass: null, indoor: null, atp: null, chitf: null },
       ] } };
     const tallies = new Map();
     await P.writeCareerHistoryShards(profiles, { archive, log: () => {}, currentYear: 2026, yearTallies: tallies });
     const shard = JSON.parse(fs.readFileSync(path.join(tmp, 'career-history', '7.json'), 'utf8'));
-    // Mutation: drop the `.filter(r => !r.walkover)` on tmlAll → three archive walkovers ship and tally.
-    // Mutation: drop the `fixtureWo.length ? … : fixtureAll` filter → the cached 2022 W/O ships.
-    check('N2 writer: no walkover (either side, either half) reaches the shard', () => assert.ok(!shard.matches.some((m) => m.walkover)));
-    // Mutation: delete the `subtractYearTally(...)` call → 2022 stays 2-1 with atp 2-0.
-    check('N2 writer: a cached year row loses its W/O-received win, tiers too (2022 1-1, atp 1-0, chitf 0-1)', () => {
+    // Founder 2026-10-22: both halves ship their flagged walkovers as rows, stamped incomplete. The 2021 hole's
+    // W/O given is NOT offered to the fill (a walkover proves no edition was played) and the feed half has its own.
+    // Mutation: filter walkovers out of tmlAll again → the two 2019 archive rows vanish.
+    check('2026-10-22 writer: the flagged walkovers of both halves are shard rows, incomplete', () => {
+      const wo = shard.matches.filter((m) => m.walkover);
+      assert.deepStrictEqual(wo.map((m) => [m.tournament, m.src, m.incomplete]).sort(),
+        [['Indian Wells', 'fixtures', true], ['Madrid Masters', 'archive', true], ['Monte Carlo Masters', 'archive', true]]);
+    });
+    // Mutation: drop `if (r.walkover) continue;` in tallyCareerYears → 2022 rows 3 (a walkover counted as a match).
+    check('2026-10-22 writer: no year row counts a walkover row (2022 stays 1-1, rows 2; tiers sum)', () => {
       const r22 = profiles[7].careerByYear[0];
       assert.deepStrictEqual([r22.total, r22.hard, r22.atp.total, r22.chitf.total, r22.rows], [wl(1, 1), wl(1, 0), wl(1, 0), wl(0, 1), 2]);
       assert.deepStrictEqual(tiersSum(r22), r22.total);
-      // Mutation: drop the `row.indoor = null` lines in subtractYearTally → a stale indoor survives.
-      assert.deepStrictEqual([r22.indoor, r22.atp.indoor], [null, null]);
+      const t22 = tallies.get('7')['2022'];
+      assert.deepStrictEqual([t22.rows, t22.total], [2, wl(1, 1)]);
     });
     check('N3 writer: _indoor is a build-time carrier, never written to a shard', () => assert.ok(!shard.matches.some((m) => '_indoor' in m)));
     // TEN-442 · Mutation: drop `if (r.holeFill) r.indoor = !!r._indoor;` → the Rotterdam hole row ships no court flag and

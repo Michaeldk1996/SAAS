@@ -4,7 +4,9 @@
 // shard plus the rebuilt season table are read back. One case per cause on the founder's moved-cell list:
 //   juniors removed · Stuttgart to grass · pre-2021 aggregate replaced by the row count · TE matches added ·
 //   indoor overrides · edition-year season moves · seasons appearing before 2015
-// plus: exhibitions and walkovers stay out, a duplicate of ours is dropped (one match = one row), every disagreement
+// plus: exhibitions stay out; a TE empty score is resolved against Sackmann (founder 2026-10-22, rulings 3 + 6: a
+// walkover is listed and never counted, a played match counts, an unresolved one is listed `unconfirmed`, never counted,
+// and a run with TE_INGEST on and no verified Sackmann copy stops); a duplicate of ours is dropped (one match = one row), every disagreement
 // is kept on the row, TE rows carry src 'te', cells equal the rows listed, TE_INGEST off changes nothing, and with it
 // on a missing store stops the run.
 // TEN-449 (founder 2026-10-19): the record is its own population — `matches` is byte-identical with TE_INGEST on and
@@ -58,7 +60,9 @@ function teStore(dir) {
     R(2024, '2024-03-08', 'Indian Wells', 'ATP', '1R', 'hard', 'outdoor', 'Delta D.', false, '6-4, 7-5'),          // pair · score conflict
     R(2024, '2024-06-20', 'Halle', 'ATP qual', 'Q-1R', 'grass', 'outdoor', 'Eps E.', true, '7-6(4), 6-3'),        // TE only · added
     R(2024, '2024-06-28', 'Boodles Tennis Challenge', 'Exhibition', '', 'grass', 'outdoor', 'Zeta Z.', true, '6-1, 6-1'),  // skipped
-    R(2024, '2024-07-02', 'Wimbledon', 'ATP', '1R', 'grass', 'outdoor', 'Eta E.', true, '', { wo: true }),          // walkover · skipped
+    R(2024, '2024-07-02', 'Wimbledon', 'ATP', '1R', 'grass', 'outdoor', 'Eta E.', true, '', { wo: true }),          // empty score · Sackmann W/O -> walkover row
+    R(2019, '2019-05-10', 'Futures 2019', 'ITF', '1R', 'clay', 'outdoor', 'Chi C.', true, '', { wo: true }),       // empty score · Sackmann 6-3 6-4 -> counted
+    R(2018, '2018-05-10', 'Futures 2018', 'ITF qual', 'Q-1R', 'clay', 'outdoor', 'Psi P.', false, '', { wo: true }), // empty score · no Sackmann row -> unconfirmed
     R(2016, '2016-03-01', 'Futures 2016', 'ITF', '1R', 'hard', 'outdoor', 'Theta T.', true, '6-2, 6-2'),
     R(2016, '2016-03-02', 'Futures 2016', 'ITF', 'R16', 'hard', 'outdoor', 'Iota I.', false, '6-2, 6-2'),
     R(2016, '2016-10-03', 'Futures 2016', 'ITF', '1R', null, 'indoor', 'Kappa K.', true, '6-4, 6-4'),
@@ -73,7 +77,17 @@ function teStore(dir) {
     R(2023, '2023-09-22', 'Laver Cup', 'Laver Cup', '', 'hard', 'indoor', 'Upsilon U.', true, '6-4, 6-4'),       // TEN-449: ATP tier
   ];
   fs.mkdirSync(path.join(dir, 'te-history'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'te-history', `${KEY}.json`), JSON.stringify({ key: KEY, slug: 'test', dob: '19990101', src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows }));
+  fs.writeFileSync(path.join(dir, 'te-history', `${KEY}.json`), JSON.stringify({ key: KEY, slug: 'test', name: 'Player, Test', dob: '19990101', src: 'te', format: 'te-history/1', cols: COLS, balance: {}, rows }));
+  // the store's pinned Sackmann copy (ruling 6), checksummed as the real one is
+  const sk = path.join(dir, 'sackmann'); fs.mkdirSync(sk, { recursive: true });
+  const H = 'tourney_id,tourney_name,surface,draw_size,tourney_level,tourney_date,match_num,winner_id,winner_seed,winner_entry,winner_name,loser_id,loser_name,score';
+  const files = {
+    'atp_matches_2024.csv': H + '\n2024-540,Wimbledon,Grass,128,G,20240701,1,1,,,Test Player,2,Eta Eta,W/O\n',
+    'atp_matches_futures_2019.csv': H + '\n2019-F1,M15 X,Clay,32,15,20190506,1,1,,,Test Player,3,Chi Chi,6-3 6-4\n',
+  };
+  const crypto = require('crypto');
+  for (const [f, body] of Object.entries(files)) fs.writeFileSync(path.join(sk, f), body);
+  fs.writeFileSync(path.join(sk, 'SHA256SUMS'), Object.entries(files).map(([f, body]) => crypto.createHash('sha256').update(body).digest('hex') + '  ' + f).join('\n') + '\n');
   fs.writeFileSync(path.join(dir, 'te-history-index.json'), JSON.stringify({ players: { [KEY]: { rows: rows.length } }, totalRows: rows.length, highWater: { totalRows: rows.length, players: 1 } }));
 }
 // the TML archive as buildArchiveHistories hands it over: tournament-WEEK dates, a Davis Cup rubber listed twice, and a
@@ -117,7 +131,8 @@ function recordOf(shard, recFile) {
   });
   return rows.concat(L.add);
 }
-const counted = (rows) => rows.filter((r) => !r.notCounted);
+// counted = what a cell counts: not marked out, not a walkover, not unconfirmed (founder 2026-10-22; the page's countedSpine)
+const counted = (rows) => rows.filter((r) => !r.notCounted && !r.walkover && !r.unconfirmed);
 const carved = (y, s) => { const v = y[s], i = y.indoor && y.indoor[s]; if (!v) return '–'; const w = v.won - (i ? i.won : 0), l = v.lost - (i ? i.lost : 0); return w + l ? `${w}-${l}` : '–'; };
 const wl = (c) => (c ? `${c.won}-${c.lost}` : '–');
 const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
@@ -131,6 +146,10 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   const nodob = await run(true, true, noDob('2986'));
   let noDobThrew = null;
   try { await run(true, true, noDob(KEY)); } catch (e) { noDobThrew = e; }
+  // ruling 6: the Sackmann copy missing, or changed after it was checksummed — the run stops
+  let noSack = null, badSack = null;
+  try { await run(true, true, (d) => fs.rmSync(path.join(d, 'sackmann'), { recursive: true })); } catch (e) { noSack = e; }
+  try { await run(true, true, (d) => fs.appendFileSync(path.join(d, 'sackmann', 'atp_matches_2024.csv'), 'x\n')); } catch (e) { badSack = e; }
   // TEN-449: the store's freshness fields reach the record index
   const stamp = (fields) => (d) => { const f = path.join(d, 'te-history-index.json'); fs.writeFileSync(f, JSON.stringify(Object.assign(JSON.parse(fs.readFileSync(f, 'utf8')), fields))); };
   const fresh = await run(true, true, stamp({ asOf: '2026-10-18', refreshedAt: null }));
@@ -263,10 +282,32 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     const r = on.rows.find((x) => x.tournament === 'United Cup'); assert.strictEqual(r.year, '2025');
     assert.strictEqual(wl(yr(on.p, '2025').total), '1-0');
   });
-  check('TE match added: the Halle qualifying win is a src te row and counts; exhibition and walkover stay out', () => {
+  check('TE match added: the Halle qualifying win is a src te row and counts; the exhibition stays out', () => {
     const r = on.rows.find((x) => x.tournament === 'Halle'); assert.ok(r && r.src === 'te' && r.won && r.level === 'atp');
-    assert.ok(!on.rows.some((x) => /Boodles/.test(x.tournament) || x.opponent === 'E. Eta'));
+    assert.ok(!on.rows.some((x) => /Boodles/.test(x.tournament)));
     assert.strictEqual(wl(yr(on.p, '2024').total), '4-1');    // Rotterdam W, Stuttgart W, Halle Q W, Halle R16 W, Indian Wells L
+  });
+  // Founder 2026-10-22, rulings 3 + 6. Mutation: resolveEmpty always { verdict: null } -> Eta is unconfirmed, Chi not counted.
+  check('ruling 6 · a TE empty score Sackmann calls W/O is a walkover row: listed, no score, counted nowhere (2024 stays 4-1)', () => {
+    const r = on.rows.find((x) => x.opponent === 'E. Eta');
+    assert.ok(r && r.walkover === true && !r.unconfirmed && r.result === '-' && !r.sets, JSON.stringify(r));
+    assert.strictEqual(wl(yr(on.p, '2024').total), '4-1');
+  });
+  check('ruling 6 · a TE empty score Sackmann has a score for counts, with Sackmann\'s sets (2019 1-0)', () => {
+    const r = on.rows.find((x) => x.opponent === 'C. Chi');
+    assert.ok(r && !r.walkover && !r.unconfirmed && r.won, JSON.stringify(r));
+    assert.deepStrictEqual(r.sets, [{ p: 6, o: 3 }, { p: 6, o: 4 }]);
+    assert.strictEqual(wl(yr(on.p, '2019').total), '1-0');
+  });
+  // Mutation: drop `|| r.unconfirmed` in careerByYearFromRows -> a 2018 season 0-1 appears.
+  check('ruling 6 · an unresolved TE empty score is listed `unconfirmed`, score –, and in no count (no 2018 season)', () => {
+    const r = on.rows.find((x) => x.opponent === 'P. Psi');
+    assert.ok(r && r.unconfirmed === true && !r.walkover && r.result === '-', JSON.stringify(r));
+    assert.strictEqual(yr(on.p, '2018'), undefined);
+  });
+  check('ruling 6 · TE_INGEST on with no verified Sackmann copy: the run stops (fail-closed)', () => {
+    assert.ok(noSack && /te-resolve: .*SHA256SUMS missing/.test(noSack.message), String(noSack));
+    assert.ok(badSack && /does not match SHA256SUMS/.test(badSack.message), String(badSack));
   });
   check('TEN-449 · a DOB-joined player\'s row TE lacks is listed, marked "not-in-te", and in no count', () => {
     const r = on.rows.find((x) => x.opponent === 'Q. Quux');
@@ -322,7 +363,7 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
     }
   });
   check('the index meta reports the ingest', () => {
-    const t = on.index.meta.te; assert.ok(t && t.players === 1 && t.added === 9 && t.duplicatesDropped === 1 && t.juniorsDropped === 1 && t.indoorOverrides === 1 && t.seasonMoves === 1 && t.otherCounted === 1 && t.otherSkipped === 1 && t.notInTeNotCounted === 1, JSON.stringify(t));
+    const t = on.index.meta.te; assert.ok(t && t.players === 1 && t.added === 10 && t.emptyWalkover === 1 && t.emptyPlayed === 1 && t.emptyUnconfirmed === 1 && t.duplicatesDropped === 1 && t.juniorsDropped === 1 && t.indoorOverrides === 1 && t.seasonMoves === 1 && t.otherCounted === 1 && t.otherSkipped === 1 && t.notInTeNotCounted === 1, JSON.stringify(t));
   });
   check('the drill marks the disagreeing row: the 2024 Total drill paints a ≠ on Indian Wells and on no agreeing row', () => {
     const sb = { FEATURE_PP2: true, playerProfiles: { players: { [KEY]: on.p } }, careerHistory: { [KEY]: on.matches },
@@ -639,7 +680,11 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
         fx('2026-10-19', 'K. Kick', 'Almaty', true, { walkover: true }), fx('2026-10-19', 'E. Exhib', 'Exhibition Six Kings Slam', true),
         fx('2026-10-19', 'N. Nat', 'German Championships', true), fx('2026-10-19', 'P. Pro', 'UK Pro Series', true)], [], '2026-10-18T07:43:00Z');
       assert.strictEqual(x.st('J. Junior'), 'junior');
-      for (const o of ['W. Woman', 'K. Kick', 'E. Exhib', 'N. Nat', 'P. Pro']) assert.strictEqual(x.st(o), 'not-in-te', o);
+      for (const o of ['W. Woman', 'E. Exhib', 'N. Nat', 'P. Pro']) assert.strictEqual(x.st(o), 'not-in-te', o);
+      // founder 2026-10-22: our walkover row stays in the record as a walkover row — listed, never provisional, never counted
+      const k = x.m.copyOf.get(x.ours.find((r) => r.opponent === 'K. Kick'));
+      assert.ok(k && k.walkover && !k.provisional, JSON.stringify(k));
+      assert.ok(!TJ.careerByYearFromRows(x.m.rows).some((y) => y.year === '2026'), 'the walkover row is in no season count');
       assert.ok(!x.m.diag.provisional);
     });
     check('provisional · Svajda (joined without a DOB) unchanged: his rows TE lacks count, never flagged', () => {
