@@ -170,6 +170,7 @@ export const DATA_FILES = new Set([
   'te-history-index.json', 'te-refresh-log.jsonl',                               // te-refresh.yml (TEN-443)
 ]);
 export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304); career-splits/: refresh-career-splits.sh (TEN-391)
+DATA_FILES.add('draws.json');   // draws.yml commit-back, BSP Draws Bot (bot@bspconsult.local): its only output. Missing, it refused a land on 2026-10-22 (66cbec83)
 DATA_DIRS.push('te-history/');   // te-history/: te-refresh.yml commit-back (TEN-443); a separate line so the TEN-261 mutant anchors above stay exact
 const CODE_FILE = /\.(js|mjs|cjs|py|sh|ya?ml|html|css)$/i;
 export function isDataPath(f) {

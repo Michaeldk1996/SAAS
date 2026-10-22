@@ -37,7 +37,7 @@
 const fs = require('fs');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
 const { fetchRecentSinglesFixtures, isCountedSinglesFixture } = require('./bsp-pipeline.js');
-const { buildCacheEntry, parseFixture, mergeEntry } = require('./build-point-by-point.js');
+const { buildCacheEntry, parseFixture, mergeEntry, adoptFeedLog, compactPbp } = require('./build-point-by-point.js');
 
 const HISTORIES_DIR = 'career-history';
 const CACHE_PATH = 'point-by-point-cache.json';
@@ -122,7 +122,7 @@ async function main() {
   const batch = ranked.slice(0, MAX_PLAYERS_PER_RUN);
   console.log(`history-backfill: ${ranked.length} player(s) with unbacked rows; doing ${batch.length} this run (${MAX_PLAYERS_PER_RUN}/run cap).`);
 
-  let calls = 0, added = 0, filled = 0, skipped = 0, failed = 0;
+  let calls = 0, added = 0, filled = 0, skipped = 0, failed = 0, replaced = 0;
   for (const p of batch) {
     let fixtures;
     try {
@@ -140,7 +140,11 @@ async function main() {
       if (!FINAL_STATUSES.includes(f.event_status)) continue;
       const ek = f.event_key == null ? null : String(f.event_key);
       if (!ek) continue;
-      if (resolved(ek)) { skipped++; continue; }
+      if (resolved(ek)) {
+        // Every fetch replaces the stored point log with the provider's latest (build-point-by-point.js adoptFeedLog).
+        if (cache[ek].p1 && cache[ek].sets && cache[ek].sets.length && adoptFeedLog(cache[ek], compactPbp(f.pointbypoint)) === 'replaced') replaced++;
+        skipped++; continue;
+      }
       const had = !!cache[ek];
       // Parsed with the same reader the per-match path uses: these are the same
       // fixture objects, so they must not be interpreted two different ways.
@@ -153,10 +157,11 @@ async function main() {
   writeAtomic(CACHE_PATH, JSON.stringify(cache));
 
   const stillPending = ranked.length - batch.length;
-  console.log(`history-backfill: ${calls} call(s) -> ${added} new cache entries, ${filled} existing entries completed, ${skipped} already done${failed ? `, ${failed} failed` : ''}.`);
+  console.log(`history-backfill: ${calls} call(s) -> ${added} new cache entries, ${filled} existing entries completed, ${skipped} already done (${replaced} of their point logs replaced by the provider's latest)${failed ? `, ${failed} failed` : ''}.`);
   console.log(`history-backfill: cache now ${Object.keys(cache).length} matches (shards are written by build-point-by-point.js, which runs next and needs no fetch for these).`);
   // Say partial coverage out loud rather than letting a capped run read as complete.
   if (stillPending) console.log(`history-backfill: ${stillPending} player(s) deferred to later runs (cap ${MAX_PLAYERS_PER_RUN}/run; cache is persistent).`);
 }
 
-main().catch(e => { console.error('history-backfill: unexpected error —', e.message); process.exit(0); });
+// Non-zero: the step is best-effort (`|| rc=$?`) so this never blocks the deploy, but step-check reports a crash.
+main().catch(e => { console.error('history-backfill: unexpected error —', e.message); process.exit(1); });

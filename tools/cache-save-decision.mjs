@@ -15,10 +15,12 @@ import fs from 'fs';
 export const MIN_BUILT = 25;
 export const MAX_PER_DAY = 6;
 
-export function decide({ stats, todayCount }) {
+export function decide({ stats, todayCount, pbp = null }) {
   if (!Number.isInteger(todayCount) || todayCount < 0) return { save: false, reason: `today's entry count is unknown (${todayCount}) — not saving blind` };
   if (todayCount >= MAX_PER_DAY) return { save: false, reason: `safety valve: ${todayCount} entries already saved today (max ${MAX_PER_DAY})` };
   if (todayCount === 0) return { save: true, reason: 'first entry of the day' };
+  // build-point-by-point.js replaced stored point logs with the provider's latest: unsaved, the next run restores the old ones
+  if (pbp && Number.isInteger(pbp.replaced) && pbp.replaced > 0) return { save: true, reason: `replaced ${pbp.replaced} stored point log(s) with the provider's latest` };
   const built = stats && Number.isInteger(stats.opponentsBuilt) ? stats.opponentsBuilt : null;
   if (built == null) return { save: false, reason: 'no profile-build stats from this run' };
   return built >= MIN_BUILT
@@ -31,7 +33,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   let stats = null;
   try { stats = JSON.parse(fs.readFileSync(arg('--stats'), 'utf8')); } catch (e) { stats = null; }
   const raw = arg('--today');
-  const d = decide({ stats, todayCount: /^\d+$/.test(String(raw)) ? Number(raw) : NaN });
+  let pbp = null;
+  try { pbp = arg('--pbp-stats') ? JSON.parse(fs.readFileSync(arg('--pbp-stats'), 'utf8')) : null; } catch (e) { pbp = null; }
+  const d = decide({ stats, pbp, todayCount: /^\d+$/.test(String(raw)) ? Number(raw) : NaN });
   console.log(`save=${d.save}`);
   console.log(`reason=${d.reason}`);
 }

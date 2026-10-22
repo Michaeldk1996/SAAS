@@ -131,13 +131,14 @@ function absorb(floor, cache) {
 // replaced), so point-by-point.json, which shares these arrays, gets them too. An
 // entry with no log (absent, or a cached negative) is left alone; the floor keeps
 // its rows until the match's log is held again. Returns { entries, rows } restored.
-function restore(cache, floor) {
+function restore(cache, floor, { skip = null } = {}) {
   let entries = 0, rows = 0;
   for (const ek of Object.keys(floor || {})) {
     const e = cache && cache[ek];
     if (!e || !Array.isArray(e.sets) || !e.sets.length) continue;
     let touched = false;
     for (const [setNo, frows] of Object.entries(floor[ek])) {
+      if (skip && skip(ek, e, setNo)) continue;   // the provider's own latest log covers this tiebreak (build-point-by-point.js adoptFeedLog)
       let s = e.sets.find(x => x && String(x.set) === String(setNo));
       if (!s) { s = { set: Number(setNo), games: [] }; e.sets.push(s); e.sets.sort((a, b) => a.set - b.set); }
       if (!Array.isArray(s.games)) s.games = [];

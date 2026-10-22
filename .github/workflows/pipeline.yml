@@ -433,7 +433,7 @@ jobs:
           node build-point-by-point.js || rc=$?
           # --fresh, not --exists: both files ride the Actions cache, so an early exit (no key, no matches.json) left last
           # run's copies in place and the check read them as success. Every completed run rewrites both.
-          node tools/step-check.mjs --step "Build point-by-point sidecar (best-effort)" --rc "$rc" --since "$t0" --fresh point-by-point.json --fresh pbp-index.json
+          node tools/step-check.mjs --step "Build point-by-point sidecar (best-effort)" --rc "$rc" --since "$t0" --fresh point-by-point.json --fresh pbp-index.json --fresh pbp-repairs.json
 
       # News feed (TEN-8): pull the api-tennis get_news window and store every
       # article verbatim in news-feed.json for the dashboard's News page. Uses the
@@ -949,6 +949,7 @@ jobs:
           cp -r career-record _site/ 2>/dev/null || true
           cp point-by-point.json _site/ 2>/dev/null || true
           cp pbp-index.json _site/ 2>/dev/null || true
+          cp pbp-repairs.json _site/ 2>/dev/null || true
           cp -r pbp _site/ 2>/dev/null || true
           cp setstats-index.json _site/ 2>/dev/null || true
           cp matchstats-index.json _site/ 2>/dev/null || true
@@ -1644,7 +1645,7 @@ jobs:
           PREFIX: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-
         run: |
           TODAY="$(gh api "repos/$GITHUB_REPOSITORY/actions/caches?key=$PREFIX&per_page=100" --jq '.total_count' 2>/dev/null || true)"
-          node tools/cache-save-decision.mjs --stats profile-build-stats.json --today "$TODAY" | tee -a "$GITHUB_OUTPUT"
+          node tools/cache-save-decision.mjs --stats profile-build-stats.json --today "$TODAY" --pbp-stats pbp-build-stats.json | tee -a "$GITHUB_OUTPUT"
 
       - name: Save pipeline caches
         if: success() && steps.cachesave.outputs.save == 'true'
