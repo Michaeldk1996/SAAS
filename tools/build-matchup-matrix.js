@@ -619,7 +619,7 @@ function main() {
   for (const k of Object.keys(byPlayer)) {
     const agg = byPlayer[k].vs, det = (meetings[k] && meetings[k].vs) || {};
     for (const opp of Object.keys(agg)) {
-      const want = agg[opp].w + agg[opp].l, got = (det[opp] || []).length;
+      const want = agg[opp].w + agg[opp].l, got = (det[opp] || []).filter((r) => !r.walkover).length;
       if (want !== got) { console.error(`RECONCILE MISMATCH ${k} vs ${opp}: byPlayer=${want} rows=${got}`); mism++; }
     }
   }

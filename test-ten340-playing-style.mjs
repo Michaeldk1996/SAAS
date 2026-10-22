@@ -125,15 +125,20 @@ test('lean: under 2 points reads as a coin-flip on style', () => {
 });
 
 // Mutation: the walkover filter removed from ps2Record (a W/O counted as a win / loss, N2).
-test('personal record (N2): walkovers excluded from the W–L, n, the list and the "Showing k of n" count; a retirement counts', () => {
+// Founder 2026-10-22 (N6 reversed): the walkover is LISTED in Career meetings — WO under the date, "– " scores and prices —
+// and counted in no W–L, n or rate; the "Showing k of N" counts the listed rows and says how many are walkovers.
+test('personal record (N2 + 2026-10-22): a walkover is listed, never in the W–L or n; a retirement counts', () => {
   setup(); S.STY['A. Aa'] = { archetype_label: CP }; S.STY['B. Bb'] = { archetype_label: AB };
   const extra = [{ won: true, opponent: 'W O', surface: 'hard', tournament: 'Chengdu', result: 'W/O', date: '2026-01-05', round: 'R16', oddsSelf: null, oddsOpp: null },
     { won: true, opponent: 'R T', surface: 'hard', tournament: 'Chengdu', result: '6-4 3-1 RET', date: '2026-01-04', round: 'R32', oddsSelf: 1.4, oddsOpp: 3 }];
   const m = match('A. Aa', 'B. Bb', { p1StyleMeetings: { [AB]: rows(8, 4, extra) }, p2StyleMeetings: { [CP]: [] } });
   const R = S.ps2Record(m, 0);
   assert.equal(R.w, 9); assert.equal(R.l, 4); assert.equal(R.n, 13);
-  assert.ok(!R.rows.some(r => /w\/o/i.test(r.result)), 'the walkover row is not listed');
-  assert.match(text(S.buildStyleSection(m)), /Aa vs Attacking Baseliners W9–L4 69% n=13 .*\+5 wins .*Matrix avg 52% \+17 .*Career meetings Showing 6 of 13/);
+  assert.ok(!R.rows.some(r => /w\/o/i.test(r.result)), 'the counted rows hold no walkover');
+  assert.equal(R.listRows.filter(r => /w\/o/i.test(r.result)).length, 1, 'the listed rows do');
+  const html = S.buildStyleSection(m);
+  assert.match(text(html), /Aa vs Attacking Baseliners W9–L4 69% n=13 .*\+5 wins .*Matrix avg 52% \+17 .*Career meetings Showing 6 of 14 · 1 walkover, not counted/);
+  assert.match(html, /data-ps2-wo="1"/, 'the walkover row is painted');
   S.ps2StateFor(m).moreA = true;
   assert.match(S.buildStyleSection(m), /6-4, 3-1<span class="ma-ret"[^>]*>ret\.<\/span>/, 'the shared scores cell marks the retirement');
 });
@@ -356,7 +361,8 @@ test('DoD 8: no tab-local row or tooltip renderer; the old renderers are deleted
 });
 
 // Mutation: the TML walkover skip removed from the builder (a "W/O" counted in the matrix, the record and the shard).
-test('build-matchup-matrix.js (N2): a TML walkover enters no cell, no record and no meeting row', () => {
+// Founder 2026-10-22: the walkover is a LISTED meeting row (flagged), never in a cell or a record.
+test('build-matchup-matrix.js (N2 + 2026-10-22): a TML walkover enters no cell and no record; it is a flagged meeting row', () => {
   const root = mkdtempSync(join(tmpdir(), 'ten340-mm-'));
   try {
     mkdirSync(join(root, 'tools')); mkdirSync(join(root, 'tml-cache'));
@@ -372,7 +378,8 @@ test('build-matchup-matrix.js (N2): a TML walkover enters no cell, no record and
     assert.equal(M.matrix[CP][AB].n, 2, 'the cell counts the two played matches');
     assert.deepEqual(M.byPlayer['alpha|a'].vs[AB], { w: 1, l: 1 });
     const shard = JSON.parse(readFileSync(join(root, 'style-meetings', 'alpha-a.json'), 'utf8'));
-    assert.equal(shard.vs[AB].length, 2); assert.ok(!shard.vs[AB].some(x => /W\/O/.test(x.result)));
+    assert.equal(shard.vs[AB].filter(x => !x.walkover).length, 2, 'the two played matches');
+    assert.deepEqual(shard.vs[AB].filter(x => x.walkover).map(x => x.result), ['W/O'], 'the walkover, listed and flagged');
     assert.equal(M.tmlWalkoverExcluded, 1);
     // the api supplement carries the same Basel walkover as a finished row (±1 day): the TML pair + date still dedup it
     writeFileSync(join(root, 'tml-cache', 'apitennis-2026.json'), JSON.stringify({ fixtures: [{ status: 'Finished', winner: '1', date: '2025-10-21', p1: 'Adam Alpha', p2: 'Bob Beta',
