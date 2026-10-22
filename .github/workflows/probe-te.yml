@@ -14,3 +14,4 @@ jobs:
       - run: python3 tools/probe-te/store.py
         env:
           STORE_TOKEN: ${{ secrets.TE_STORE_READ_TOKEN }}
+      - run: python3 tools/probe-te/site.py
