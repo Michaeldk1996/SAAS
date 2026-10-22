@@ -7900,7 +7900,7 @@
     var rec = countedSpine(p) !== calSpine(p);
     return {
       m: m,
-      teOnly: rec ? recordSpine(p).filter(function (r) { return r.teOnly && win[String(r.year)]; }).length : 0,
+      teOnly: rec ? recordSpine(p).filter(function (r) { return r.teOnly && !r.wo && !r.unconf && win[String(r.year)]; }).length : 0,
       // the tile's feed rows the record leaves out (not in Tennis Explorer, junior, duplicate, walkover, exhibition)
       notInRecord: (function () {
         var lay = ((typeof window !== 'undefined' && window.careerRecord) || {})[String(p.key)] || null;
@@ -12243,6 +12243,7 @@
       calMarketRows: calMarketRows,
       calNoRowsWhy: calNoRowsWhy,
       calSpine: calSpine,
+      calSpineAll: calSpineAll,
       calSpineFiltered: calSpineFiltered,
       calNameMap: calNameMap,
       calGrid: calGrid,

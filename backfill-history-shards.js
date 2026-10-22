@@ -84,7 +84,8 @@ async function main() {
     if (!file.endsWith('.json')) continue;
     try {
       const shard = JSON.parse(fs.readFileSync(`${HISTORIES_DIR}/${file}`, 'utf8'));
-      histories[file.replace(/\.json$/, '')] = (shard.matches || []).filter(r => r && r.src !== 'archive');
+      // a walkover row has no box score to fetch (founder 2026-10-22: listed, not played)
+      histories[file.replace(/\.json$/, '')] = (shard.matches || []).filter(r => r && r.src !== 'archive' && !r.walkover);
     } catch (e) { /* a half-written shard is skipped, not fatal */ }
   }
   const cache = fs.existsSync(CACHE_PATH) ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8')) : {};

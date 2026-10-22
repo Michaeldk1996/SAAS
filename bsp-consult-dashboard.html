@@ -11107,6 +11107,7 @@ function loadPbpShard(eventKey){
 // two cards sharing a player share one fetch.
 let _formIndex = null, _formIndexPromise = null;
 const _formShards = {}, _formShardPromises = {};
+const _formWalkovers = {};   // founder 2026-10-22: a form shard's `walkovers` — listed in Recent matches, never a Form match
 
 // Same deal for the per-book odds timelines: 34.6k price points across a full
 // board, read only when someone opens one match's Odds tab. Sharded per match,
@@ -11233,7 +11234,9 @@ function loadFormShard(playerKey){
     .then(idx => idx.has(pk)
       ? fetch(`./form/${pk}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null)
       : null)
-    .then(d => { _formShards[pk] = (d && Array.isArray(d.matches)) ? d.matches : null; return _formShards[pk]; })
+    .then(d => { _formShards[pk] = (d && Array.isArray(d.matches)) ? d.matches : null;
+      _formWalkovers[pk] = (d && Array.isArray(d.walkovers)) ? d.walkovers : [];
+      return _formShards[pk]; })
     .catch(err => { console.warn(`form shard ${pk} load failed:`, err.message); _formShards[pk] = null; return null; });
   return _formShardPromises[pk];
 }
@@ -11247,6 +11250,8 @@ function ensureFormRows(m){
   return Promise.all([loadFormShard(m.p1Key), loadFormShard(m.p2Key)]).then(([p1, p2]) => {
     m.p1RecentFormMatches = p1;
     m.p2RecentFormMatches = p2;
+    m.p1RecentFormWalkovers = _formWalkovers[String(m.p1Key || '')] || [];
+    m.p2RecentFormWalkovers = _formWalkovers[String(m.p2Key || '')] || [];
     m._formLoaded = true;
     return m;
   });
@@ -11727,13 +11732,27 @@ function ovBridgeLoad(key){
 // ones it lists but does not count, plus Tennis Explorer's own rows (idx 'te<j>'). No overlay (not joined to TE, or
 // TE_INGEST off): the career-history rows themselves. The same reading as the profile's recordRowsOf / countedSpine, so
 // a count the season table shows and the rows listed behind it are one set. null until both files have answered.
+// The record's rows the season count counts, [row, idx]. Founder 2026-10-22: a walkover / unconfirmed row is listed and
+// counted nowhere, so it is never one of these (careerRecordListedRows hands them to the lists). Self-contained on purpose:
+// tools/test-career-history-cache.js lifts this function out of the page by name.
 function careerRecordCountedRows(k){
   if (!(k in _careerHistoryShards) || !(k in _careerRecordLayers)) return null;
   const ch = _careerHistoryShards[k] || [], lay = _careerRecordLayers[k];
-  if (!lay) return ch.map((x, idx) => [x, idx]);
+  const listed = x => !!(x && (x.walkover || x.unconfirmed));
+  if (!lay) return ch.map((x, idx) => [x, idx]).filter(([x]) => !listed(x));
   const over = new Map(lay.over || []), out = new Map(lay.out || []), rows = [];
-  ch.forEach((x, idx) => { if (out.has(idx)) return; rows.push([over.has(idx) ? Object.assign({}, x, over.get(idx)) : x, idx]); });
-  (lay.add || []).forEach((x, j) => rows.push([x, 'te' + j]));
+  ch.forEach((x, idx) => { if (out.has(idx) || listed(x)) return; rows.push([over.has(idx) ? Object.assign({}, x, over.get(idx)) : x, idx]); });
+  (lay.add || []).forEach((x, j) => { if (!listed(x)) rows.push([x, 'te' + j]); });
+  return rows;
+}
+// The record's walkover / unconfirmed rows, [row, idx] (founder 2026-10-22): listed beside the counted rows, counted nowhere.
+function careerRecordListedRows(k){
+  if (!(k in _careerHistoryShards) || !(k in _careerRecordLayers)) return [];
+  const ch = _careerHistoryShards[k] || [], lay = _careerRecordLayers[k], rows = [];
+  const listed = x => !!(x && (x.walkover || x.unconfirmed));
+  const out = lay ? new Map(lay.out || []) : new Map();
+  ch.forEach((x, idx) => { if (!out.has(idx) && listed(x)) rows.push([x, idx]); });
+  if (lay) (lay.add || []).forEach((x, j) => { if (listed(x)) rows.push([x, 'te' + j]); });
   return rows;
 }
 function ovCloseCell(){
@@ -11747,7 +11766,7 @@ function ovPopModel(){
   const [pi, yk, surf] = S.cell.split('|'), i = +pi, key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1;
   const year = yk === 'season' ? ovSeasonYear() : yk, tier = S.tier;
   const k = String(key);
-  const M = { i, key, name, year, surf, tier, rows: [], state: 'ready' };
+  const M = { i, key, name, year, surf, tier, rows: [], listed: [], state: 'ready' };
   const bridged = !!(window.careerHistory && Object.prototype.hasOwnProperty.call(window.careerHistory, k));
   const answered = k in _careerHistoryShards && k in _careerRecordLayers && k in _fhCl && bridged;
   // not answered: still loading, or a load failed (not cached — a second click on the count retries)
@@ -11760,7 +11779,10 @@ function ovPopModel(){
   // opponent and result, one for one, for the price chain below.
   const want = new Map(), rk = (dt, opp, won) => dt + '|' + (opp || '') + '|' + (won ? 1 : 0);
   api.drillScope(prof, year, null, tier).forEach(d => {
-    if (d.notCounted || (surf !== 'total' && d.cell !== surf)) return;
+    if (surf !== 'total' && d.cell !== surf) return;
+    // founder 2026-10-22 · the cell's walkover / unconfirmed rows: listed, counted in none of the figures above the table
+    if (d.notCounted === 'walkover' || d.notCounted === 'unconfirmed') { M.listed.push(d); return; }
+    if (d.notCounted) return;
     const q = rk(d.date, d.opp, d.won); want.set(q, (want.get(q) || 0) + 1);
   });
   careerRecordCountedRows(k).forEach(([x, idx]) => {
@@ -11799,8 +11821,13 @@ function ovPopHtml(M){
     + meRateBox('Win rate', w, n, null, OV_C.text, true)
     + meStatBox('Avg price', avg == null ? '—' : avg.toFixed(2), OV_C.text, true)
     + ovFlatBox(np, n, pl, priced, pl >= 0 ? up : dn) + '</div>';
+  const listedRows = (M.listed || []).map(d => ({ _date: d.date, date: fhDDMM(d.date) + '.', dateSub: d.wo ? 'WO' : '',
+    dateSubTitle: 'Walkover: not a match played, counted in no record', won: d.unconf ? null : !!d.won, noMark: !!d.unconf,
+    opp: d.opp || FH_DASHC, event: d.event || FH_DASHC, eventSub: M.surf === 'total' && d.surface ? d.surface : '', rd: d.round || FH_DASHC,
+    sets: FH_DASHC, setsColor: 'var(--text-label)', scores: d.unconf ? 'unconfirmed, not counted' : FH_DASHC, price: FH_DASHC, oppPrice: FH_DASHC,
+    attrs: d.wo ? ' data-ov-wo="1"' : ' data-ov-unconfirmed="1"' }));
   const table = maMatchRowsHtml([{ title: null, rows: rows.map(r => ({
-    date: fhDDMM(r.date) + '.', won: r.won, opp: r.opp || FH_DASHC,
+    _date: r.date, date: fhDDMM(r.date) + '.', won: r.won, opp: r.opp || FH_DASHC,
     event: r.tourn || FH_DASHC, eventSub: M.surf === 'total' && r.surface ? r.surface : '',
     rd: r.round || FH_DASHC, sets: r.pS != null ? `${r.pS} - ${r.oS}` : FH_DASHC,
     // DESIGN GAP G22: the file's rows never retire; a retirement carries "ret." after its set scores (modal-overview.md item 1)
@@ -11808,7 +11835,7 @@ function ovPopHtml(M){
     price: r.price != null ? fhOdd(r.price) : FH_DASHC, oppPrice: r.oppPrice != null ? fhOdd(r.oppPrice) : FH_DASHC,
     priceTip: r.book === 'B' ? (fhB365Approx(r) ? (r.src === 'atb' ? FH_B365_AT_HOVER : FH_B365_APPROX_HOVER) : fhSrcTitle(r) + ' (no Pinnacle close for this match)') : null,
     selected: _ov.sel === r.mid, click: ` onclick="ovOpenRow('${r.mid}')"`, attrs: ` data-ov-mid="${r.mid}"`,
-  })) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
+  })).concat(listedRows).sort((a, b) => String(b._date || '').localeCompare(String(a._date || ''))) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
     grid: '50px 10px minmax(0,1.3fr) minmax(0,1fr) 34px 38px minmax(0,1.1fr) 42px 42px',
     labels: ['Date', '', 'Opponent', 'Event', 'Rd', 'Sets', 'Set scores', 'Price', 'Opp'], inset: 22,
     empty: 'No matches on file for this selection.' });
@@ -12617,10 +12644,11 @@ const formPanelCtx = {};
 // match cannot be lost from level or ahead on sets, and cannot have a blank score.
 function careerRowEnding(m){
   if (m.defaulted) return 'def.';   // TEN-437: a default (api-tennis "Awarded"; TML "DEF") — a played match ATP counts
-  if (m.walkover) return 'w/o';
+  if (m.walkover) return 'WO';
+  if (m.unconfirmed) return 'unconfirmed';
   if (m.retired) return 'ret.';
   const parts = String(m.result || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
-  if (!parts) return 'w/o';
+  if (!parts) return '';   // founder 2026-10-22: no score is not a walkover — only the explicit flag above makes one
   const mine = +parts[1], theirs = +parts[2];
   return (m.won ? mine <= theirs : mine >= theirs) ? 'ret.' : '';
 }
@@ -13123,8 +13151,8 @@ function maMatchRowsHtml(groups, opts){
     ? `<span class="ma-row-opp" style="min-width:0; font-size:12.5px; overflow-wrap:anywhere;"><span${r.oppAttrs || ''}${t(r.oppTitle)}>${esc(r.opp)}</span>${tagSlot(r)}</span>`
     : `<span${r.oppAttrs || ''}${t(r.oppTitle)} style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(r.opp)}</span>`);
   const row = r => `<div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="display:grid; grid-template-columns:${COLS}; gap:${GAP}; align-items:center; padding:6px; border-radius:6px; background:${r.selected ? 'var(--selected)' : 'transparent'}; cursor:pointer;">`
-      + `<span style="${mono} font-size:11px; color:var(--text-label);">${esc(r.date)}</span>`
-      + `<span style="width:8px; height:8px; border-radius:2px; background:${wl(r)};"></span>`
+      + `<span style="${mono} font-size:11px; color:var(--text-label);">${esc(r.date)}${r.dateSub ? `<span class="ma-row-datesub"${t(r.dateSubTitle)} style="display:block; font-size:10px; font-weight:700;">${esc(r.dateSub)}</span>` : ''}</span>`
+      + `<span style="width:8px; height:8px; border-radius:2px; background:${r.noMark ? 'transparent' : wl(r)};"></span>`
       + oppCell(r)
       + `<span style="${mono} font-size:10.5px; color:var(--text-label);">${esc(r.rd)}</span>`
       + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.setsColor || wl(r)}; white-space:nowrap;">${esc(r.sets)}</span>`
@@ -13143,8 +13171,8 @@ function maMatchRowsHtml(groups, opts){
 // maMatchRowsHtml's pop-up table variant (o.cols): one cell per key, in the file's own sizes and shades (DF L1499–1590,
 // the Overview / Market edge pop-up rows). right = the column's header and cell align right.
 const MA_ROW_CELLS = {
-  date: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${'var(--text-label)'};">${x.esc(r.date)}</span>` },
-  sq: { cell: (r, x) => `<span style="width:8px; height:8px; border-radius:2px; background:${x.wl(r)};"></span>` },
+  date: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${'var(--text-label)'};">${x.esc(r.date)}${r.dateSub ? `<span class="ma-row-datesub"${x.t(r.dateSubTitle)} style="display:block; font-size:10px; font-weight:700;">${x.esc(r.dateSub)}</span>` : ''}</span>` },
+  sq: { cell: (r, x) => `<span style="width:8px; height:8px; border-radius:2px; background:${r.noMark ? 'transparent' : x.wl(r)};"></span>` },
   opp: { cell: (r, x) => `<span${r.oppAttrs || ''}${x.t(r.oppTitle)} style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.opp)}</span>` },
   event: { cell: (r, x) => `<span style="font-size:11.5px; color:${'var(--text-soft)'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.event)}${r.eventSub ? `<span style="color:${'var(--text-label)'};"> · ${x.esc(r.eventSub)}</span>` : ''}</span>` },
   rd: { cell: (r, x) => `<span style="${x.mono} font-size:10px; color:${'var(--text-label)'};">${x.esc(r.rd)}</span>` },
@@ -13425,9 +13453,9 @@ function fhFinishRow(r){
     }
   };
   count();
-  // no set played = walkover — but a default is not (TEN-437), and neither is a retirement before the first set finished
-  // (TEN-437 D5: Lajovic v Fritz, Cincinnati 2023, ret. at 0-5 — ATP counts it)
-  if (!r.wo && !r.def && !r.ret && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;
+  // Founder 2026-10-22 (ruling 3): a walkover is the row's EXPLICIT flag (api-tennis 'Walk Over', Sackmann/TML W/O) and
+  // nothing else — never inferred from an empty score (TE's empty score read Ultimate Tennis Showdown and a played
+  // Gasquet–Verdasco as walkovers). A default is not one (TEN-437), nor a retirement before the first set finished.
   r.bo = ng ? 5 : fhBestOf(r);
   // A retirement the flags missed: the winner stopped short of the sets a
   // completed match needs. Completeness comes from the score, never the flag alone.
@@ -13815,11 +13843,16 @@ function fhRefDay(m){ const d = fhDayNum(m.date); if (d != null) return d; const
 // fields from his career-history shard (every level, newest first), capped at the pipeline's form-row cap so
 // "on record" means the same population on both sources. opponentKey / tier / matchStats are not in that shard.
 const FH_FORM_ROW_CAP = 40;                // = RECENT_FORM_ROW_CAP (bsp-pipeline.js)
-function fhFormRowsFromCareer(ch){
-  return (Array.isArray(ch) ? ch : []).filter(x => x && x.date).slice(0, FH_FORM_ROW_CAP).map(x => ({
+// The cap counts played rows (as the pipeline's form shards do): a walkover row is split off first and listed on its own.
+const fhCareerFormRow = x => ({
     opponent: x.opponent, opponentKey: null, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface,
     result: x.result, won: !!x.won, sets: x.sets, retired: !!x.retired, walkover: !!x.walkover, defaulted: !!x.defaulted,
-    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey }));
+    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey });
+function fhFormRowsFromCareer(ch){
+  return (Array.isArray(ch) ? ch : []).filter(x => x && x.date && !x.walkover).slice(0, FH_FORM_ROW_CAP).map(fhCareerFormRow);
+}
+function fhFormWalkoversFromCareer(ch){
+  return (Array.isArray(ch) ? ch : []).filter(x => x && x.date && x.walkover).map(fhCareerFormRow);
 }
 function fhEnsureFormData(m){
   // A keyed side left without a source may be a failed fetch (loadCareerHistory answers [] on one): the next open retries.
@@ -13834,6 +13867,8 @@ function fhEnsureFormData(m){
   }).then(([c1, c2]) => {
     m._fhFormSrc = [m.p1RecentFormMatches ? 'form' : (c1 && c1.length ? 'career' : null), m.p2RecentFormMatches ? 'form' : (c2 && c2.length ? 'career' : null)];
     m._fhFormRows = [m.p1RecentFormMatches || fhFormRowsFromCareer(c1), m.p2RecentFormMatches || fhFormRowsFromCareer(c2)];
+    m._fhFormWo = [m.p1RecentFormMatches ? (m.p1RecentFormWalkovers || []) : fhFormWalkoversFromCareer(c1),
+      m.p2RecentFormMatches ? (m.p2RecentFormWalkovers || []) : fhFormWalkoversFromCareer(c2)];
     m._fhFormRetry = [m.p1Key, m.p2Key].some((k, i) => k != null && k !== '' && !m._fhFormSrc[i]);
     m._fhFormData = true; return m;
   });
@@ -13926,8 +13961,17 @@ function fhFormPlayer(m, idx, st){
   // Recent matches list (export entries/divider logic, verbatim).
   const list = shown.slice(0, NWIN + 6), showAll = !!S.more[idx];
   const vis = showAll ? list : list.slice(0, NWIN);
+  // Founder 2026-10-22 · the walkovers inside the span the list shows (oldest shown row → today), under the surface and
+  // window filters; a role filter shows none (a walkover has no price). Listed only: no slot of the window, no bar, no
+  // count, no price, no line, no sheet.
+  const oldestShown = vis.length ? vis[vis.length - 1].date : null;
+  const woVis = (favOn || dogOn || !oldestShown) ? [] : (((m._fhFormWo || [])[idx]) || []).map((x, i) => fhRowFromForm(Object.assign({}, x, { walkover: true }), key, name, idx * 1000 + 900 + i))
+    .filter(r => { const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
+      return r.ago != null && r.ago >= 0 && r.date >= oldestShown && (SURFSEL === 'all' || r.surface === SURFSEL) && (DWIN == null || r.ago <= DWIN); });
+  const seq = vis.map((r, i) => ({ r, i })).concat(woVis.map(r => ({ r, i: -1 })))
+    .sort((a, b) => (a.r.date < b.r.date ? 1 : a.r.date > b.r.date ? -1 : (a.i < 0) - (b.i < 0)));
   const entries = []; let cur = null;
-  vis.forEach((r, i) => {
+  seq.forEach(({ r, i }) => {
     if (i === NWIN){ entries.push({ isDiv: true }); cur = null; }
     if (cur !== r.tourn){
       cur = r.tourn;
@@ -14000,6 +14044,11 @@ function fhEloText(e){
 // A Recent-matches row as the shared helper's data (maMatchRowsHtml — DoD item 8: no Form row renderer). The Elo slot
 // is visible after the name (TEN-350); the name's hover is the full name only.
 function fhFormRowData(r, P){
+  // Founder 2026-10-22 · a walkover row: WO under the date, the W / L marker, – for sets, scores and prices, no sheet.
+  if (r.wo) return { date: fhDDMM(r.date) + '.', dateSub: 'WO', dateSubTitle: 'Walkover: not a match played, counted in no record',
+    won: r.won, opp: fhOppFmt(r.opp), rd: r.round, sets: FH_DASHC, setsColor: FH_DASH, scores: FH_DASHC, h: FH_DASHC, a: FH_DASHC,
+    oppTitle: fhFullName(r.opp, r.oppKey), oppAttrs: ' class="fh-opp"', wrapCls: 'fh-fm fm' + P.idx, cls: 'fh-frow fh-wo',
+    attrs: ` data-fh-wo="1"`, click: '', selected: false };
   const covMap = P.hot.sc ? P.hot.sc.covMap : {};
   return { date: fhDDMM(r.date) + '.', won: r.won, opp: fhOppFmt(r.opp), rd: r.round, sets: r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS,
     setsColor: r.pS == null ? FH_DASH : null, scores: fhFormSetScores(r), scoresTitle: fhFormSetScores(r),
@@ -15417,7 +15466,7 @@ function meRowsFor(career, cl, selfKey, selfName){
   const rows = [];
   let notTour = 0;
   (career || []).forEach((x, i) => {
-    if (!x) return;
+    if (!x || x.walkover || x.unconfirmed) return;   // founder 2026-10-22: a listed walkover row is in no Market edge population
     const r = meRowFromCareer(x, cl, selfKey, selfName, i);
     if (r.level !== 'ATP'){ notTour++; return; }
     rows.push(r);
@@ -16105,9 +16154,11 @@ function trRowOf(x, season, d, key, name, idx, tourn, names){
       ek: x.eventKey != null ? x.eventKey : null, selfKey: String(key), selfName: name, price: null, oppPrice: null, book: null, src: null };
     fhFinishRow(r);
   }
-  // The history carries no walkovers (buildTournamentHistory drops them, TEN-313): a row fhFinishRow read as one (no set,
-  // "0 - 0") is a match stopped in the first set — a retirement, a match played, settled on the ATP result (TEN-325).
-  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true; r.complete = false; r.pS = r.pS || 0; r.oS = r.oS || 0; }
+  // Founder 2026-10-22 · a walkover is the history's (or its career row's) EXPLICIT flag and stays one: listed, never a
+  // retirement, never priced or settled. fhFinishRow infers nothing from an empty score any more.
+  const isWo = !!(x.walkover || (ci >= 0 && ch[ci] && ch[ci].walkover));
+  if (isWo){ r.wo = true; r.ret = false; r.retSettle = false; r.complete = false; r.price = null; r.oppPrice = null; r.book = null; r.src = null; }
+  else if (r.wo){ r.wo = false; }
   r.round = fhRoundCode(x.round, false);   // the history's main-draw round (N7)
   if (tourn) r.tourn = (typeof sfEventName === 'function' ? sfEventName(tourn) : tourn) + ' ' + season;   // the sheet's meta line names the edition (DF L2609: "Washington 2025"; r1 fix 2: the one event name)
   r.won = !!x.won; r.date = x.date || r.date || null;
@@ -16166,7 +16217,7 @@ function trModelOf(hist, d, key, name, clean, names, mYear, state){
   });
   let sW = 0, sT = 0;
   eds.forEach(e => e.rows.forEach(r => { if (r.pS != null && !r.wo){ sW += r.pS; sT += r.pS + r.oS; } }));   // finished sets only (rule e)
-  const played = eds.filter(e => e.rows.length);
+  const played = eds.filter(e => e.rows.some(r => !r.wo));   // an edition left only by walkovers is listed, not played
   const all = eds.flatMap(e => e.rows);
   // TEN-402 (founder 2026-10-08 + 2026-10-09): the caller prices the rows before the tiles are struck — the profile / Head
   // to Head per-event model (trProfileModel) and the Match analysis tab (trModelFor) both pass the Database join (trDbJoinPx).
@@ -18964,7 +19015,8 @@ const ps2Plural = lab => lab + 's';
 // A walkover is not a match played (N2): it never enters the record, the list or the counts. The meetings shard writes
 // it as a bare "W/O" score (190 of 32,274 rows on 2026-09-29; tools/build-matchup-matrix.js drops them at source from
 // its next run).
-function ps2IsWalkover(r){ const s = String(r && r.result || ''); return /w\/o/i.test(s) || !/\d+-\d+/.test(s); }
+// Founder 2026-10-22 (ruling 3): explicit only — the row's flag or the source's own "W/O" score, never an empty score.
+function ps2IsWalkover(r){ return !!(r && (r.walkover || /^\s*w\/o\s*$/i.test(String(r.result || '')))); }
 // A finished set: someone reached 6 with a two-game lead, or 7 (7-5 / 7-6), or won a tiebreak at any score (a final-set
 // tiebreak at 12-12: "13-12(3)"); a match tiebreak [10-8] to 10 by two.
 function ps2SetDone(a, b, mtb, tb){ const hi = Math.max(a, b), d = Math.abs(a - b); return mtb ? hi >= 10 && d >= 2 : (hi >= 6 && d >= 2) || hi === 7 || (tb && hi >= 7 && d === 1); }
@@ -19003,6 +19055,7 @@ function ps2Record(m, side){
   if (!oppLab || !ownLab) return { state: 'unclassified', name, other, oppLab: oppLab || null, self: !ownLab };
   const raw = m._styleMeetLoaded ? styleMeetRowsFor(m, side ? 'p2' : 'p1', oppLab, name) : null;
   if (raw == null) return { state: 'loading', name, other, oppLab };
+  // the record counts played meetings; the list (listRows) shows the walkovers beside them, marked (founder 2026-10-22)
   const rows = raw.filter(r => !ps2IsWalkover(r));
   const w = rows.filter(r => r.won).length, n = rows.length;
   let avg = null;
@@ -19010,7 +19063,7 @@ function ps2Record(m, side){
     const i = psArchIndex(ownLab), j = psArchIndex(oppLab);
     if (i >= 0 && j >= 0){ const c = i === j ? { pct: 50 } : psCellFor(i, j); avg = c && c.pct != null ? c.pct : null; }
   }
-  return { state: 'ready', name, other, oppLab, rows, w, l: n - w, n, avg };
+  return { state: 'ready', name, other, oppLab, rows, listRows: raw, w, l: n - w, n, avg };
 }
 // The population a DNA percentile ranks in (TEN-319 `_meta.percentiles` / `eloPercentiles`): its words and its size.
 function ps2Pop(scope, surface, key){
@@ -19153,20 +19206,23 @@ function ps2MeetCard(m, side, R, more){
     const hint = R.state === 'loading' ? 'Loading career meetings…' : R.state === 'unclassified' ? (R.self ? `${sur}'s playing style is not classified` : 'Playing style not classified') : 'No career meetings on record';
     return box('', `<span class="ps2-meet-empty" style="padding:6px 0 10px; font-size:12px; color:${C.t3};">${fhEsc(hint)}</span>`);
   }
-  const all = R.rows, list = more ? all : all.slice(0, PS2_ROWS_SHOWN);
+  const all = R.listRows || R.rows, list = more ? all : all.slice(0, PS2_ROWS_SHOWN);
   const od = v => (v == null ? FH_DASHC : Number(v).toFixed(2));
   // founder ruling 2026-10-17 (ruling 5): each meeting's H / A = the master's join (sfDbPxRows: Pinnacle closing, else
   // Bet365 closing, per match, the hover's source with it) — never the shard's oddsSelf / oddsOpp. Join still loading = a
   // blank cell (no price yet, never another); failed or no row = a dash (fix 4).
   const jst = typeof _sfDbJoinSt !== 'undefined' ? _sfDbJoinSt : null;
   const px = jst === 'ready' && typeof sfDbPxRows === 'function'
-    ? sfDbPxRows(key, R.name, list.map(r => ({ date: r.date, won: !!r.won, round: psRoundAbbr(r.round) || null, opp: r.opponent }))) : list.map(() => null);
+    ? sfDbPxRows(key, R.name, list.map(r => ({ date: ps2IsWalkover(r) ? null : r.date, won: !!r.won, round: psRoundAbbr(r.round) || null, opp: r.opponent }))) : list.map(() => null);
   const pxOf = new Map(list.map((r, i) => [r, px[i]]));
   const cell = (r, side2) => { if (jst !== 'ready' && jst !== 'failed') return ''; const d = pxOf.get(r); return d ? od(side2 ? d.oppPrice : d.price) : FH_DASHC; };
   const groups = psGroupMeetings(list).map(g => {
     const meta = psTourMeta(g.tournament), surf = g.rows[0].surface;
     const sd = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '';
     return { title: g.tournament, meta: [sd, meta && meta.tier].filter(Boolean).join(' · '), rows: g.rows.map(r => {
+      if (ps2IsWalkover(r)) return { date: psFmtMeetDate(r.date), dateSub: 'WO', dateSubTitle: 'Walkover: not a match played, counted in no record',
+        won: !!r.won, opp: r.opponent, rd: psRoundAbbr(r.round) || FH_DASHC, sets: FH_DASHC, setsColor: 'var(--text-label)', scores: FH_DASHC,
+        scoresColor: 'var(--text-label)', h: FH_DASHC, oppPrice: FH_DASHC, attrs: ` data-ps2-row="${side ? 'b' : 'a'}" data-ps2-wo="1"` };
       const x = ps2Meeting(r);
       return { date: psFmtMeetDate(r.date), won: !!r.won, opp: r.opponent, rd: psRoundAbbr(r.round) || FH_DASHC, sets: x.sets, scores: x.scores, scoresTitle: x.scores + (x.ret ? ' ret.' : ''), ret: x.ret, scoresColor: 'var(--text-label)',
         h: cell(r, false), oppPrice: cell(r, true), hTitle: pxOf.get(r) && typeof fhSrcTitle === 'function' ? fhSrcTitle(pxOf.get(r)) : undefined, attrs: ` data-ps2-row="${side ? 'b' : 'a'}"`,
@@ -19177,7 +19233,8 @@ function ps2MeetCard(m, side, R, more){
   });
   const rest = all.length - PS2_ROWS_SHOWN;
   const moreCtl = rest > 0 ? `<span class="seg ps2-more" onclick="ps2Set({${side ? 'moreB' : 'moreA'}: !_ps2.${side ? 'moreB' : 'moreA'}})" style="align-self:center; font-size:12px; font-weight:600; color:${C.text}; cursor:pointer; padding:4px 0 2px;">${more ? 'Show fewer' : `Show ${rest} more ${rest === 1 ? 'match' : 'matches'}`}</span>` : '';   // DESIGN GAP G18
-  return box(`<span class="ps2-showing" style="${M} font-size:10px; color:${C.t3}; white-space:nowrap;">Showing ${list.length} of ${all.length}</span>`,
+  const woN = all.filter(ps2IsWalkover).length;
+  return box(`<span class="ps2-showing" style="${M} font-size:10px; color:${C.t3}; white-space:nowrap;">Showing ${list.length} of ${all.length}${woN ? ` · ${woN} walkover${woN === 1 ? '' : 's'}, not counted` : ''}</span>`,
     `<div style="margin:0 -18px;">${maMatchRowsHtml(groups, { cols: PS2_MEET_COLS, grid: PS2_MEET_GRID, labels: ['Date', '', 'Opponent', 'Rd', 'Sets', 'Scores', 'H', 'A'],
         headPad: '7px 24px 6px', groupPad: '10px 24px 4px', rowPad: '0 18px', cellPad: '5px 6px', rowLine: false })}</div>${moreCtl}`);
 }
@@ -23321,6 +23378,10 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
   const pool = careerRecordCountedRows(key).map(([x]) => x);
   const profile = playerProfiles[key] || {};
   const surf = String(surface || 'all').toLowerCase();
+  // founder 2026-10-22 · the season's walkover / unconfirmed rows: listed after the count's matches, counted nowhere
+  const listedOnly = careerRecordListedRows(key).map(([x]) => x)
+    .filter(m => String(m.year || String(m.date || '').slice(0, 4)) === String(year))
+    .filter(m => surf === 'all' || String(m.surface || '').toLowerCase() === surf);
   const list = pool
     .filter(m => String(m.year || String(m.date || '').slice(0, 4)) === String(year))
     .filter(m => surf === 'all' || String(m.surface || '').toLowerCase() === surf)
@@ -23329,6 +23390,7 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
   const surfLabel = surf === 'all' ? 'All surfaces' : surf.charAt(0).toUpperCase() + surf.slice(1);
   const won = list.filter(m => m.won).length, lost = list.length - won;
   const closeBtn = `<span class="yr-drill-close" onclick="ppShowYearSurface('${year}','${surface}')" title="Close">✕</span>`;
+  const shownRows = listedOnly.length ? list.concat(listedOnly).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))) : list;
   // Inside the fixture window the count and the list are two views of one set of
   // matches, so there is nothing to explain and no note is drawn. Outside it the
   // rows are ATP tour-level only against an all-tier count — say which, so a
@@ -23353,8 +23415,15 @@ async function ppShowYearSurface(year, surface, expWon, expLost){
   const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
   if (container.dataset.token !== token) return;
   const playerName = profile.name || '';
-  const rows = list.map((m, i) => {
+  const rows = shownRows.map((m, i) => {
     const w = m.won;
+    // a walkover / unconfirmed row: listed, never opened (no stats), its W / L kept on a walkover, none on an unconfirmed
+    if (m.walkover || m.unconfirmed) return `<div class="yr-drill-row"${m.walkover ? ' data-yr-wo="1"' : ''}>
+        <span class="yr-drill-wl ${m.unconfirmed ? '' : w ? 'win' : 'loss'}">${m.unconfirmed ? '—' : w ? 'W' : 'L'}</span>
+        <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
+        ${careerScoreHtml(m)}
+        <span class="yr-drill-meta">${escapeHtml([m.tournament || '', m.round || ''].filter(Boolean).join(' · '))}${m.date ? ' · ' + formatShortDate(new Date(m.date + 'T00:00:00')) : ''}</span>
+      </div>`;
     const meta = [m.tournament || '', m.round || ''].filter(Boolean).join(' · ');
     const dateStr = m.date ? formatShortDate(new Date(m.date + 'T00:00:00')) : '';
     const ek = String(m.eventKey || '');
@@ -28411,6 +28480,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     (Array.isArray(career) ? career : []).forEach(x => {
       const d = x && typeof x.won === 'boolean' ? fhDayNum(x.date) : null;
       if (d == null || !x.opponent) return;
+      if (x.walkover || x.unconfirmed) return;   // founder 2026-10-22: a walkover is not a priced match — never a candidate
       const k = key(x.opponent), id = d + '|' + k.s + '|' + x.won + '|' + (x.round || '');
       if (mSeen.has(id)) return;                                     // one match listed twice is one match
       mSeen.add(id);
@@ -32834,6 +32904,7 @@ window.DatabaseTab = (function(){
   function lnPartition(rows, surf, scope){
     var cut = scope==='l52' ? lnCutoff() : null;
     var scoped = rows.filter(function(r){
+      if (r && (r.walkover || r.unconfirmed)) return false;   // founder 2026-10-22: listed elsewhere, never a Lines match
       if (cut && !(r.date && String(r.date) >= cut)) return false;
       if (surf==='All') return true;
       return String(r.surface||'').toLowerCase() === surf.toLowerCase();

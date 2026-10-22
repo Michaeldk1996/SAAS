@@ -46,10 +46,12 @@ function buildIdentityGate(root, rosterNames) {
   const person = (id) => { if (!P.has(id)) P.set(id, { id, lo: Infinity, hi: -Infinity, names: new Set(), nameN: new Map(), keys: new Set(), own: false, tml: String(id).startsWith('tml:') }); return P.get(id); };
   const seeName = (e, n) => { if (!n) return; e.names.add(n); e.nameN.set(n, (e.nameN.get(n) || 0) + 1); };
   const seeDate = (e, d) => { if (d == null) return; if (d < e.lo) e.lo = d; if (d > e.hi) e.hi = d; };
-  for (const [k, d] of shards) { const e = person(personOf.get(k)); e.own = true; e.keys.add(k); d.matches.forEach((r) => seeDate(e, day(r.date))); }
+  // a listed walkover row is not a match played: no date evidence, no opponent observation (founder 2026-10-22)
+  const played = (d) => (d.matches || []).filter((r) => !r.walkover && !r.unconfirmed);
+  for (const [k, d] of shards) { const e = person(personOf.get(k)); e.own = true; e.keys.add(k); played(d).forEach((r) => seeDate(e, day(r.date))); }
   // opponent observations: api-tennis key (oppKey) or Tennis Abstract id (oppId)
   const oppOnly = new Map(); // api-tennis key with no shard -> [{ date, observer }]
-  for (const [k, d] of shards) for (const r of d.matches) {
+  for (const [k, d] of shards) for (const r of played(d)) {
     const dd = day(r.date);
     if (r.oppKey != null && r.oppKey !== '') {
       const ok = String(r.oppKey);
@@ -64,7 +66,7 @@ function buildIdentityGate(root, rosterNames) {
   // a key seen only as an opponent: the same person as a shard key when each of its matches is a row of that key's
   // own shard against the same observer (±1 day) — the same match filed under two api-tennis keys
   const ownRowsOn = new Map(); // `${person}|${opp observer key}|${day}` from the shard's own rows
-  for (const [k, d] of shards) for (const r of d.matches) {
+  for (const [k, d] of shards) for (const r of played(d)) {
     const pid = personOf.get(k), dd = day(r.date);
     if (r.oppKey != null && r.oppKey !== '') for (const o of [-1, 0, 1]) ownRowsOn.set(`${pid}|${r.oppKey}|${dd + o}`, true);
   }
