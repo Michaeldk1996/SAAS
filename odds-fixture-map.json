@@ -4544,8 +4544,8 @@
     },
     "12171793": {
       "fixtureId": null,
-      "mappedAt": "2026-10-22T08:01:36Z",
-      "missRuns": 40,
+      "mappedAt": "2026-10-22T09:01:37Z",
+      "missRuns": 41,
       "missSince": "2026-10-19T22:31:19Z",
       "orient": null,
       "p1": "H. Rune",
@@ -5083,11 +5083,11 @@
     },
     "12173006": {
       "fixtureId": "id1200309775620270",
-      "mappedAt": "2026-10-20T20:32:09Z",
+      "mappedAt": "2026-10-22T09:01:37Z",
       "orient": "same",
       "p1": "V. Vacherot",
       "p2": "L. van Assche",
-      "startTime": "2026-10-22T10:00:00.000Z",
+      "startTime": "2026-10-22T12:00:00.000Z",
       "tournamentId": 3097
     },
     "12173013": {
@@ -5221,17 +5221,6 @@
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-03T15:00:59Z",
-        "fixturesUnitsSpent": 1,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 1,
-        "ttlBit": false,
-        "unmapped": 1,
-        "upcoming": 9
-      },
       {
         "at": "2026-10-03T16:01:18Z",
         "fixturesUnitsSpent": 0,
@@ -9620,9 +9609,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 18
+      },
+      {
+        "at": "2026-10-22T09:01:37Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 18
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-22T08:01:36Z"
+  "updatedAt": "2026-10-22T09:01:37Z"
 }
