@@ -2705,11 +2705,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2838_b-nakashima.jpg",
     "oddsMovement": {
@@ -4746,7 +4752,10 @@
       "edgeVsPinnacleP1": -0.0693,
       "edgeVsPinnacleP2": 0.0693,
       "ts": "2026-10-22T06:38:30.013Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173288",
@@ -8197,17 +8206,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 3,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "40 - 30",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/372_f-cobolli.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2168_s-wawrinka.jpg",
     "oddsMovement": {
@@ -9622,7 +9625,27 @@
       "edgeVsPinnacleP1": 0.0099,
       "edgeVsPinnacleP2": -0.0099,
       "ts": "2026-10-22T17:29:48.274Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-2, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12173254",
@@ -43849,13 +43872,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 5.0,
+      "p2": 1.16,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 6.0,
+        "bookmaker": "WilliamHill"
+      },
+      "p2": {
+        "price": 1.18,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": null,
     "qualifying": false,
