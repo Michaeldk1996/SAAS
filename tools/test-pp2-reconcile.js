@@ -1946,8 +1946,12 @@ check('real shards: Σ grid cells = subtitle M, and the priced set is a subset',
     for (const k of keys.slice(0, 40)) {
       const p = PLAYERS[k];
       const rows = I.calSpineFiltered(p);
-      const dated = CAREER_HIST[k].filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)));
+      const datedAll = CAREER_HIST[k].filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)));
+      // founder 2026-10-22 · walkover and unconfirmed rows are listed, never counted: the played spine excludes exactly
+      // them, and the listed spine (calSpineAll) carries every dated row
+      const dated = datedAll.filter(r => !r.walkover && !r.unconfirmed);
       assert.strictEqual(rows.length, dated.length, `${k}: spine dropped rows`);
+      assert.strictEqual(I.calSpineAll(p).length, datedAll.length, `${k}: the listed spine dropped a walkover/unconfirmed row`);
       let total = 0;
       I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { total += c.won + c.lost; }));
       assert.strictEqual(total, I.calScope(p).n, `${k}: Σ cells != subtitle M`);
@@ -1973,7 +1977,7 @@ check('cal-2 · the Calendar spine is the CAREER rows, never the priced archive 
       if (!p) continue;
       const rows = I.calSpineFiltered(p);
       assert.strictEqual(rows.length, (CAREER_HIST[k] || [])
-        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date))).length,
+        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)) && !r.walkover && !r.unconfirmed).length,
         `${k}: the Calendar spine is not the career match rows`);
       if (rows.length) {
         assert.notStrictEqual(rows.length, I.calMarketRows(p).length,
