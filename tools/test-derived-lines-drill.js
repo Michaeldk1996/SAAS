@@ -15,6 +15,8 @@
 //   P · population: the Career record's figure for the window and tier = this format + the other format + every
 //       match out, by reason (and the note prints that sum).
 //   W · the windows count back from the pinned day: Last 52 weeks = the Career record's own 364-day cutoff.
+//   B · (founder 2026-10-23) bettable side per card; N · no sample text, thin rates dimmed; O · a drill opens on its first
+//       non-empty tab, an empty tab says "No matches"; V · no provisional source label on a line drill row.
 //   S · (founder 2026-10-22) the title is fixed, the Window order is Last 52 weeks / Last 24 months / Career with Career
 //       the default, and every control button reserves its selected width, in every state.
 //
@@ -51,7 +53,9 @@ const EXTRA = [
   row('2026-05-05', 'chitf', 'Challenger Golf', 'G. Walkover', ' - ', true, []),
   row('2026-05-06', 'chitf', 'Challenger Hotel', 'H. Retired', '1 - 0', true, S([[6, 2], [2, 1]]), { retired: true }),
   row('2025-12-15', 'atp', 'Next Gen Finals - Jeddah', 'I. Short', '3 - 1', true, S([[4, 2], [3, 4], [4, 1], [4, 2]])),
-  row('2025-09-20', 'atp', 'ATP Laver Cup', 'J. Tiebreak', '2 - 1', true, S([[6, 3], [4, 6], [10, 8]]))
+  row('2025-09-20', 'atp', 'ATP Laver Cup', 'J. Tiebreak', '2 - 1', true, S([[6, 3], [4, 6], [10, 8]])),
+  // an indoor hard court (the record's cell is Indoors, its raw surface Hard): the Surface filter must read the cell
+  row('2025-10-21', 'atp', 'ATP Kilo Indoors', 'K. Indoor', '2 - 0', true, S([[6, 4], [7, 5]]), { indoor: true })
 ];
 
 // Two shapes of the same player. FEED: the fixture as pinned (no Tennis Explorer join): seasons before 2021 hold the
@@ -67,7 +71,8 @@ function mod(src, shape) {
   const extra = {};
   if (shape === 'te') {
     const wo = ch.findIndex((r) => !/\d/.test(r.result));
-    extra.careerRecord = { [FX.key]: { v: 1, over: [], out: [[wo, 'walkover']], add: [] } };
+    const prov = ch.findIndex((r) => r.opponent === 'A. Void');   // a counted Bo3 row, provisional in the record
+    extra.careerRecord = { [FX.key]: { v: 1, over: [[prov, { provisional: '2026-08-05' }]], out: [[wo, 'walkover']], add: [] } };
     p.careerByYear = TJ.careerByYearFromRows(ch.filter((r, i) => i !== wo));
   } else {
     const byYear = {};
@@ -202,10 +207,116 @@ function shapeChecks(A, shape) {
     return k + ' line memberships checked';
   });
 
+  H.check(tag('U · Surface: Hard + Indoors + Clay + Grass + surface not known = All, every line and result, every format × role × Window × Tier (founder 2026-10-23)'), () => {
+    const SURF = ['hard', 'indoors', 'clay', 'grass'];
+    let k = 0;
+    each((f, role, win, tier) => {
+      const all = I.lineCoverage(p, f, role, { win, tier });
+      const by = {}; SURF.forEach((x) => { by[x] = I.lineCoverage(p, f, role, { win, tier, surf: x }); });
+      rowsOf(all).forEach((r) => {
+        // each surface's table holds exactly All's members whose career-record cell is that surface
+        const want = {}; SURF.concat(['none']).forEach((x) => { want[x] = { cover: 0, miss: 0, void: 0, retired: 0 }; });
+        r.members.forEach((m) => { want[SURF.indexOf(m.m.r.cell) >= 0 ? m.m.r.cell : 'none'][m.res]++; });
+        SURF.forEach((x) => {
+          const q = rowsOf(by[x]).find((y) => y.label === r.label);
+          const got = { cover: q.hit, miss: q.miss, void: q.voids, retired: q.retired };
+          assert.deepStrictEqual(got, want[x], [f, role, win, tier, x, r.label].join('/'));
+        });
+        k++;
+      });
+    });
+    return k + ' lines partitioned by surface';
+  });
+
+  H.check(tag('B · the bettable side: As favourite shows only − handicaps, As underdog only +, All every line (founder 2026-10-23)'), () => {
+    let k = 0;
+    each((f, role, win, tier) => {
+      const c = I.lineCoverage(p, f, role, { win, tier });
+      const all = I.lineCoverage(p, f, 'all', { win, tier });
+      ['Games handicap', 'Set handicap'].forEach((fam) => {
+        const labels = c.groups.find((g) => g.title === fam).rows.map((r) => r.label);
+        const allLabels = all.groups.find((g) => g.title === fam).rows.map((r) => r.label);
+        const ctx = [f, role, win, tier, fam].join('/');
+        if (role === 'fav') assert(labels.length && labels.every((l) => l[0] === '−'), ctx + ': ' + labels.join(' '));
+        else if (role === 'dog') assert(labels.length && labels.every((l) => l[0] === '+'), ctx + ': ' + labels.join(' '));
+        else assert(labels.some((l) => l[0] === '−') && labels.some((l) => l[0] === '+'), ctx + ': All lost a side');
+        // the shown side is exactly All's lines of that sign, in All's order
+        if (role !== 'all') assert.deepStrictEqual(labels, allLabels.filter((l) => l[0] === (role === 'fav' ? '−' : '+')), ctx);
+      });
+      ['Total games', 'Match shape'].forEach((fam) => assert.deepStrictEqual(
+        c.groups.find((g) => g.title === fam).rows.map((r) => r.label), all.groups.find((g) => g.title === fam).rows.map((r) => r.label)));
+      // a hidden line is gone from the page, not dashed
+      const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: null }, () => I.renderLinesTab(p));
+      const shown = (html.match(/data-lc-line="([^"]+)"/g) || []).map((x) => x.slice(14, -1));
+      assert.deepStrictEqual(shown, c.n ? rowsOf(c).map((r) => r.label) : [], [f, role, win, tier].join('/') + ' rendered lines');   // no match: the empty-state box, no table
+      k++;
+    });
+    return k + ' tables';
+  });
+
+  H.check(tag('N · no sample text anywhere; a thin line shows its real rate, dimmed; zero matches is a dash (founder 2026-10-23)'), () => {
+    let thin = 0, zero = 0;
+    each((f, role, win, tier) => {
+      const c = I.lineCoverage(p, f, role, { win, tier });
+      const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: null }, () => I.renderLinesTab(p));
+      assert(!/small sample|n\s*[<=]\s*\d|data-pp2-small=|data-pp2-ratemark=/i.test(T(html) + html), [f, role, win, tier].join('/') + ': sample text on the page');
+      rowsOf(c).forEach((r) => {
+        const ctx = [f, role, win, tier, r.label].join('/');
+        const rn = r.hit + r.miss;
+        if (!rn) { assert.strictEqual(r.rate, null, ctx + ': zero matches must dash'); zero++; return; }
+        assert(Math.abs(r.rate - 100 * r.hit / rn) < 1e-9, ctx + ': rate');
+        assert.strictEqual(r.thin, rn < 10, ctx + ': thin flag');
+        if (r.thin) {
+          thin++;
+          const row = html.slice(html.indexOf('data-lc-line="' + r.label + '"'));
+          const cell = row.slice(0, row.indexOf('</div>'));
+          assert(cell.includes(r.rate.toFixed(1) + '%') && /opacity:0\.4/.test(cell) && !/var\(--pos\)|var\(--neg\)/.test(cell), ctx + ': thin row not dimmed');
+        }
+      });
+    });
+    assert(thin > 0 && zero >= 0, 'no thin line in the fixture');
+    return thin + ' thin lines dimmed · ' + zero + ' zero-match lines dashed';
+  });
+
+  H.check(tag('O · a line opens on the first tab that holds a match; an empty tab says "No matches" (founder 2026-10-23)'), () => {
+    let k = 0, empties = 0;
+    each((f, role, win, tier) => {
+      rowsOf(I.lineCoverage(p, f, role, { win, tier })).forEach((r) => {
+        if (!r.n) return;
+        const st = { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: r.label, lcDrillRes: null };
+        const html = withState(I, st, () => I.renderLinesTab(p));
+        const on = /data-pp2="lc-drill-res" data-v="(\w+)" aria-pressed="true"/.exec(html)[1];
+        const count = { cover: r.hit, miss: r.miss, void: r.voids, retired: r.retired };
+        const order = ['cover', 'miss'].concat(r.voidable ? ['void'] : []).concat(['retired']);
+        const want = order.find((x) => count[x] > 0);
+        assert.strictEqual(on, want, [f, role, win, tier, r.label].join('/') + ': opened on ' + on + ' (' + JSON.stringify(count) + ')');
+        // a picked empty tab: one muted line, not a blank panel
+        order.filter((x) => count[x] === 0).forEach((x) => {
+          const h = withState(I, Object.assign({}, st, { lcDrillRes: x }), () => I.renderLinesTab(p));
+          assert(/data-pp2-lc-empty="1"[^>]*>No matches</.test(h), [f, role, win, tier, r.label, x].join('/') + ': empty tab is blank');
+          empties++;
+        });
+        k++;
+      });
+    });
+    return k + ' lines opened · ' + empties + ' empty tabs say "No matches"';
+  });
+
+  if (shape === 'te') H.check(tag('V · no provisional source label on a line drill row (the field stays on the row)'), () => {
+    const c = I.lineCoverage(p, 'bo3', 'all');
+    const row = byLabel(c, '+3 games');
+    const m = row.members.find((x) => x.m.r.opp === 'A. Void' || x.m.r.opponent === 'A. Void');
+    assert(m && m.m.r.provisional, 'the fixture\'s provisional row is not on the line');
+    const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcDrill: '+3 games', lcDrillRes: m.res }, () => I.renderLinesTab(p));
+    assert(html.includes('A. Void'), 'the provisional row is not listed');
+    assert(!/data-pp2-provisional|provisional ·|not yet in Tennis Explorer/.test(html), 'the provisional label shows on a line drill');
+    return 'A. Void (provisional ' + m.m.r.provisional + ') listed on +3 ' + m.res + ' with no source label';
+  });
+
   H.check(tag('H · ±3.5 / ±3 / ±2.5 identities, every format × role × Window × Tier'), () => {
     let k = 0;
     each((f, role, win, tier) => {
-      if (f !== 'bo3') return;
+      if (f !== 'bo3' || role !== 'all') return;   // the identities read both sides: the All card shows every line
       const c = I.lineCoverage(p, f, role, { win, tier }), g = (l) => byLabel(c, l);
       const ctx = [role, win, tier].join('/');
       ['−4.5 games', '−3.5 games', '−2.5 games', '+2.5 games', '+3.5 games', '+4.5 games'].forEach((l) => {
@@ -322,6 +433,42 @@ function mutants() {
     fs.writeFileSync(f, SRC_TEXT.replace(from, to));
     try { return mod(f, 'te'); } finally { fs.unlinkSync(f); }
   }
+  H.mustFail('a Surface filter that reads the raw feed surface instead of the record\'s cell is caught', () => {
+    const m = mutant("return !r.notCounted && (surf === 'all' || r.cell === surf);", "return !r.notCounted && (surf === 'all' || r.surface === surf);");
+    const c = m.I.lineCoverage(m.p, 'bo3', 'all');
+    ['hard', 'indoors', 'clay', 'grass'].forEach((sf) => {
+      const x = m.I.lineCoverage(m.p, 'bo3', 'all', { surf: sf });
+      const want = c.groups[0].rows[0].members.filter((y) => y.m.r.cell === sf).length;
+      assert.strictEqual(x.groups[0].rows[0].members.length, want, sf);
+    });
+  });
+  H.mustFail('a + line under As favourite (the bettable-side filter removed) is caught', () => {
+    const m = mutant("return sel === 'fav' ? spec[3] < 0 : spec[3] > 0;", "return true;");
+    const c = m.I.lineCoverage(m.p, 'bo3', 'fav');
+    assert(c.groups[0].rows.every((r) => r.label[0] === '−'));
+  });
+  H.mustFail('sample text under a thin rate (rateOverMark back) is caught', () => {
+    const m = mutant("var softRow = false;", "var softRow = r.gate === 'soft';");
+    each((f, role, win, tier) => {
+      const html = withState(m.I, { key: m.p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: null }, () => m.I.renderLinesTab(m.p));
+      assert(!/small sample/i.test(T(html)));
+    });
+  });
+  H.mustFail('a drill opening on Covered when Covered is empty is caught', () => {
+    const m = mutant("var res = order.indexOf(want) >= 0 ? want : (order.filter(function (k) { return count[k] > 0; })[0] || 'cover');",
+      "var res = order.indexOf(want) >= 0 ? want : 'cover';");
+    each((f, role, win, tier) => rowsOf(m.I.lineCoverage(m.p, f, role, { win, tier })).forEach((r) => {
+      if (!r.n || r.hit) return;
+      const html = withState(m.I, { key: m.p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: r.label, lcDrillRes: null }, () => m.I.renderLinesTab(m.p));
+      assert(!/data-v="cover" aria-pressed="true"/.test(html.slice(html.indexOf('lc-drill-res'))));
+    }));
+  });
+  H.mustFail('the provisional label back on a line drill row is caught', () => {
+    const m = mutant("(pg.neutral ? '' : provisionalMark(r))", "provisionalMark(r)");
+    const html = withState(m.I, { key: m.p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all', lcDrill: '+3 games', lcDrillRes: 'cover' }, () => m.I.renderLinesTab(m.p));
+    const html2 = withState(m.I, { key: m.p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all', lcDrill: '+3 games', lcDrillRes: 'void' }, () => m.I.renderLinesTab(m.p));
+    assert(!/data-pp2-provisional/.test(html + html2));
+  });
   H.mustFail('a tally that reads a void as covered (the list still says Void) is caught', () => {
     const m = mutant("if (h === 'cover') t.hit++; else if (h === 'void') t.voids++;", "if (h === 'cover' || h === 'void') t.hit++;");
     drillEqualsRecord(m.I, m.p);
