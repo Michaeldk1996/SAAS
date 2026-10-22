@@ -45,7 +45,7 @@ const MUTANTS = [
   ['R2 fix 2: BP back to the feed flag', "bp:(()=>{ const st=ptState(pt); if(!st||!(aServ||bServ)) return false;", "bp:pt.break_point!=null&&String(pt.break_point).trim()!=='',bpX:(()=>{ const st=ptState(pt); if(!st||!(aServ||bServ)) return false;"],
   ['R2 fix 2: BP on deuce too', "return rc===4||(rc===3&&sv<=2); })(),", "return rc===4||(rc===3&&sv<=3); })(),"],
   ['R2 fix 4: no 0:0 chip', "const pts=(!isTbGame(gm)&&dec.length&&ptReach([0,0],ptState(dec[0])))?[{score:'0 - 0'}].concat(dec):dec;", "const pts=dec;"],
-  ['photos back on the cards', "    ${avaHtml(lvIni(m.names[side]),30,11)}\n", "    <img src=\"x\" alt=\"\">\n"],
+  ['photos gone from the cards', "    ${avaHtml(lvIni(m.names[side]),30,11,m.keys&&m.keys[side],m.names[side])}\n", "    ${avaHtml(lvIni(m.names[side]),30,11)}\n"],
 ];
 const SUITES = ['test-ten417-live.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env), encoding: 'utf8', timeout: 60000 });

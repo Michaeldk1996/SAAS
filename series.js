@@ -677,6 +677,10 @@
       fonts.addEventListener('loadingdone', function () { if (_active && _data) render(); });
     }
   }
+  // Founder 2026-10-22: the player's photo over the initials, by player ID through the dashboard's one resolver.
+  function photoOf(key, name) {
+    return (key != null && typeof playerPhotoImg === 'function') ? playerPhotoImg(String(key), name) : '';   // eslint-disable-line no-undef
+  }
   function cardHtml(c, idx) {
     var p = c.player, st = c.streak;
     var name = displayName(p.key, p.name || (p.upcoming && p.upcoming.playerName) || '');
@@ -693,7 +697,7 @@
     };
     return '<article class="sr-card' + (hasDetail ? ' sr-has-detail' : '') + '" data-count="' + esc(String(st.count)) + '"' + clickAttrs + '>' +
       '<div class="sr-chead">' +
-        '<span class="sr-ava">' + esc(initialsOf(name)) + '</span>' +
+        '<span class="sr-ava">' + esc(initialsOf(name)) + photoOf(p.key, name) + '</span>' +
         '<span class="sr-who">' +
           '<span class="sr-nameline"><span class="sr-pname">' + (name ? esc(name) : DASH) + '</span> ' +
             '<span class="sr-prank">' + rankTxt + '</span></span>' +

@@ -162,6 +162,13 @@
   .signalbanner button:hover{ color:var(--text); border-color:var(--text-label); }
 
   .avatar{ width:36px; height:36px; border-radius:50%; object-fit:cover; flex-shrink:0; background:var(--inner); }
+  /* The one player-photo layer (playerPhotoImg, founder 2026-10-22): covers its monogram circle with one face-centred
+     crop on every surface; once loaded (.sf-on) the circle's own fill sits behind the transparent PNG so the monogram never
+     shows through it, and until then the monogram shows. */
+  .sf-ph{ position:absolute; inset:0; width:100%; height:100%; box-sizing:border-box; border-radius:50%; object-fit:cover; object-position:50% 50%; display:block; }
+  .sf-ph.sf-on{ background:inherit; }
+  [data-page="trading"] .tr-ava, .db-av, #h2hRoot .h2h-av, .em-av{ position:relative; overflow:hidden; }
+  .playercard .pc-avatar .sf-ph.sf-on{ background:var(--selected); }
   .avatar-fallback{ width:36px; height:36px; border-radius:50%; flex-shrink:0; background:var(--inner); color:var(--text); display:flex; align-items:center; justify-content:center; font-family:var(--font-words); font-weight:700; font-size:12px; }
 
   /* ============ MATCHES TAB — "1b" redesign (scoped to this tab only) ============ */
@@ -1312,7 +1319,7 @@
   /* Not-completed matches only (DF L92–104); a completed match leaves an empty centre cell (DF L105). */
   .modal-analysis .amatchup-center{ display:flex; flex-direction:column; align-items:center; gap:10px; }
   .modal-analysis .amatchuprow{ display:flex; align-items:center; gap:13px; }
-  /* D5: ATP photo from player-atp-aliases.json (photoCandidatesFor), monogram fallback — the design's 40px ring. */
+  /* D5: ATP photo from player-atp-aliases.json (playerPhotoUrl, the one resolver), monogram fallback — the design's 40px ring. */
   .modal-analysis .aavatar{ display:inline-flex; flex:none; }
   .modal-analysis .aavatar img,
   .modal-analysis .aavatar .avatar-fallback{ width:40px; height:40px; flex-shrink:0; border-radius:50%; border:1px solid; box-sizing:border-box; object-fit:cover;
@@ -6564,9 +6571,6 @@ async function loadMatches(){
   // (awaited so an open Edge Model re-render sees fresh numbers) but never
   // allowed to throw — loadModelOutput swallows its own errors.
   await loadModelOutput();
-  // Photo overrides (TEN-97) must be present before the first card paints, else
-  // a wrong api-tennis face flashes and never corrects. Tiny file, loaded once.
-  await loadPlayerPhotoOverrides();
   // ATP alias headshots (TEN-136), same critical-path timing. Tiny file, loaded once.
   await loadPlayerAtpAliases();
   // TEN-225 Part 3 — Open / Now / Close. AWAITED and on the critical path, for
@@ -8453,8 +8457,8 @@ function formDotsHtml(recentMatches){
   const last5 = (recentMatches || []).slice(0, 5).reverse();
   return last5.map(x => `<span class="formdot ${x.won ? 'win' : 'loss'}" title="${x.won ? 'Win' : 'Loss'} vs ${x.opponent || 'opponent'} (${x.date || 'date unknown'})"></span>`).join('');
 }
-// Real headshot from API-Tennis (m.p1PhotoUrl/p2PhotoUrl) when available; falls
-// back to an initials circle (never a broken image) — same simple 1-2 letter
+// The monogram every avatar falls back to (no photo, or a photo that failed to load; never a
+// broken image) — same simple 1-2 letter
 // generator convention as tournamentInitials(), applied to a player's real name.
 function playerInitials(name){
   const words = (name || '').trim().split(/\s+/).filter(Boolean);
@@ -8504,80 +8508,21 @@ function profileLinkAttrs(playerKey, name){
     ? ` onclick="event.stopPropagation();openPlayerProfileFromMatch('${playerKey}')" style="cursor:pointer;" title="View ${name} profile"`
     : '';
 }
-function playerAvatarHtml(photoUrl, name, playerKey){
+function playerAvatarHtml(name, playerKey){
   const initials = playerInitials(name);
   // The onclick lives on BOTH branches because avatarFallback() swaps the
   // <img> for a <div> on load error and doesn't copy attributes. (T2)
   const attrs = profileLinkAttrs(playerKey, name);
-  // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
-  // Order defined once in photoCandidatesFor() so every surface reads the same chain.
-  const cands = photoCandidatesFor(playerKey, photoUrl);
-  if (!cands.length) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
-  const src = cands[0];
-  const fb = cands.slice(1).join('|');
-  return `<img class="avatar"${attrs} src="${src}" alt="${name}" loading="lazy" referrerpolicy="no-referrer" data-fb="${fb}" onerror="if(!avatarChainNext(this))avatarFallback(this,'${initials}')">`;
-}
-
-// Player headshot URL for the profile hero, CONSTRUCTED from key + name so it
-// resolves for the whole roster (not just players in the currently-loaded feed).
-// Slug format matches api-tennis' logo host: "{key}_{firstInitials}-{surname}.jpg"
-// e.g. "A. Bublik" -> 1895_a-bublik, "J-L. Struff" -> 2831_j-l-struff.
-// Any miss (wrong slug / 404 / missing) falls back SILENTLY to the initials
-// circle via the same avatarFallback() the match modal uses — no broken image.
-// NOTE (licensing): these are api-tennis-hosted assets (api.api-tennis.com/logo-tennis/…),
-// the same unresolved licensing question as the news content — flagged, not resolved.
-function resolveProfilePhotoUrl(playerKey, name){
-  if (playerKey == null || playerKey === '' || !name) return null;
-  const toks = String(name).trim().split(/\s+/);
-  if (toks.length < 2) return null;                 // need at least initial + surname
-  const initLetters = [];
-  let i = 0;
-  for (; i < toks.length - 1; i++){                 // never consume the last token as an initial
-    if (toks[i].indexOf('.') !== -1){
-      toks[i].replace(/\./g, '').split('-').forEach(part => { if (part) initLetters.push(part[0]); });
-    } else break;
-  }
-  if (!initLetters.length) return null;
-  const surname = toks.slice(i).join('-');
-  const slug = (initLetters.join('-') + '-' + surname)
-    .toLowerCase()
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // strip accents
-    .replace(/[^a-z0-9-]/g, '')                          // drop apostrophes etc.
-    .replace(/-+/g, '-').replace(/^-|-$/g, '');
-  if (!slug) return null;
-  return `https://api.api-tennis.com/logo-tennis/${playerKey}_${slug}.jpg`;
-}
-
-// Key-based photo override (player-photos.json). The api-tennis logo assets are
-// occasionally the WRONG player: e.g. key 2002 (Facundo Díaz Acosta) served the
-// byte-identical file for key 391 (Juan Pablo Varillas) — a member-visible wrong
-// face on the card (TEN-97). enrich-player-photos.py resolves a correct,
-// freely-licensed Wikimedia headshot keyed by api-tennis player_key. As of TEN-151
-// (founder ruling 2026-09-06) this is the FILLER layer: it wins over the api-tennis
-// logo but sits BELOW the ATP official alias (player-atp-aliases.json is the
-// site-wide source of truth for photos). Loaded once and awaited on the matches
-// critical path. Absence is harmless — we simply fall back to the api-tennis URL,
-// so coverage is never reduced.
-let playerPhotoOverrides = {};
-let _photoOverridesLoaded = false;
-function photoOverrideFor(playerKey){
-  if (playerKey == null || playerKey === '') return null;
-  const e = playerPhotoOverrides[String(playerKey)];
-  return (e && e.photo) ? e.photo : null;
-}
-async function loadPlayerPhotoOverrides(){
-  if (_photoOverridesLoaded) return;
-  try {
-    const res = await fetch('./player-photos.json', { cache: 'no-cache' });
-    if (res.ok){ const d = await res.json(); playerPhotoOverrides = d || {}; _photoOverridesLoaded = true; }
-  } catch (e) { /* additive; absence just falls back to the api-tennis logo URL */ }
+  // The one photo source (founder 2026-10-22): the ATP headshot by player ID, else the monogram.
+  const src = playerPhotoUrl(playerKey);
+  if (!src) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
+  return `<img class="avatar"${attrs} src="${src}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
 }
 
 // TEN-136 / TEN-151: ATP official headshot by api-tennis player_key, via the
-// committed alias map (player-atp-aliases.json: {player_key: ATP_ALIAS}). This is
-// the PRIMARY photo layer site-wide (founder ruling 2026-09-06) — tried FIRST, above
-// the Wikimedia override and the api-tennis logo — because ATP headshots are uniform
-// current portraits and consistency beats coverage. Falls through on error.
+// committed alias map (player-atp-aliases.json: {player_key: ATP_ALIAS}). Since
+// 2026-10-22 it is the ONLY photo source site-wide (founder: "one player, one photo,
+// on every surface"): the Wikimedia override and the api-tennis logo are retired.
 // Map written by no job (hand-committed); safe from the 15-min player-profiles
 // regeneration.
 //
@@ -8606,31 +8551,20 @@ async function loadPlayerAtpAliases(){
   try {
     const res = await fetch('./player-atp-aliases.json', { cache: 'no-cache' });
     if (res.ok){ const d = await res.json(); playerAtpAliases = d || {}; _atpAliasesLoaded = true; }
-  } catch (e) { /* additive; absence just falls back to the api-tennis logo URL */ }
+  } catch (e) { /* additive; absence = every avatar shows its monogram */ }
 }
 
-// TEN-151 (founder ruling 2026-09-06): the SINGLE ordered photo-source chain used
-// by EVERY avatar renderer on every surface — match cards, Players page, profile
-// hero, Trading Report. player-atp-aliases.json is the site-wide source of truth
-// for photos, so the ATP official headshot is tried FIRST (uniform, current
-// portraits — consistency beats coverage in a dense avatar). Then the Wikimedia
-// override (player-photos.json) as FILLER where no alias exists, then the caller's
-// constructed api-tennis logo URL, then the caller's own monogram/initials fallback.
-// The order lives here and ONLY here: every avatar site builds its candidate list
-// through this function so there is one chain, in one order, across the whole site.
-function photoCandidatesFor(playerKey, fallbackUrl){
-  return [atpPhotoFor(playerKey), photoOverrideFor(playerKey), fallbackUrl].filter(Boolean);
-}
-
-// TEN-136: ordered photo-source fallback. data-fb carries the remaining candidate
-// URLs ('|' separated, e.g. api-tennis after ATP). On <img> load error, advance to
-// the next URL; when the list is exhausted, return false so the caller degrades to
-// its own initials fallback (avatarFallback / mcAvatarFail / hide). Guarantees a
-// failed ATP headshot falls through to api-tennis, never a broken image.
-function avatarChainNext(img){
-  const rest = (img.getAttribute('data-fb') || '').split('|').filter(Boolean);
-  if (rest.length){ img.setAttribute('data-fb', rest.slice(1).join('|')); img.src = rest[0]; return true; }
-  return false;
+// The ONE player-photo resolver (founder 2026-10-22). A player ID resolves to the ATP headshot
+// through player-atp-aliases.json, else null — never a display name, never a second source.
+// Every avatar on every surface asks this function and nothing else (.claude/rules/player-photos.md).
+function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey); }
+// The photo layer every monogram circle shares: lazy, alt = the player's name, one face-centred
+// cover crop (.sf-ph). Once loaded (.sf-on) it carries the circle's own fill behind the transparent
+// PNG so the monogram never shows through it; until then the monogram shows. A failed load removes
+// the photo and the monogram underneath shows — never a broken-image icon. '' when there is no photo.
+function playerPhotoImg(playerKey, name){
+  const src = playerPhotoUrl(playerKey);
+  return src ? `<img class="sf-ph" src="${escapeHtml(src)}" alt="${escapeHtml(name || '')}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.classList.add('sf-on')" onerror="this.remove()">` : '';
 }
 
 // Implied win probability from a decimal odds price, rounded to a whole
@@ -8641,19 +8575,14 @@ function impliedPct(price){
 
 // ---- Today's Matches card builders (stennisfy design-layer port) ----
 // Same data bindings as the legacy table card — only the presentation changed.
-// 32px identity avatar: real headshot when we have one, colour-coded initials
-// fallback (A = brand tint, B = neutral) otherwise. Profile-link attrs preserved.
-function mcAvatarHtml(photoUrl, name, playerKey, side){
+// 32px identity avatar: the player's photo (playerPhotoImg, the one resolver) over the
+// colour-coded initials (A = brand tint, B = neutral). Profile-link attrs preserved.
+function mcAvatarHtml(name, playerKey, side){
   const initials = playerInitials(name);
   const attrs = profileLinkAttrs(playerKey, name);
-  // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
-  const cands = photoCandidatesFor(playerKey, photoUrl);
-  if (cands.length){ const src = cands[0]; const fb = cands.slice(1).join('|');
-    // TEN-179 item 6 — initials sit in the wrapper UNDER the photo, so the circle is
-    // never blank: not while the dead ATP hop times out, not while api-tennis loads,
-    // not if every candidate fails. Same initials treatment as the Series page (mono,
-    // centred, neutral/brand-tinted circle) — mcAvatarFail keeps working unchanged.
-    return `<span class="mc-avwrap ${side}" data-init="${initials}"><img class="mc-av ${side}"${attrs} src="${src}" alt="${name}" referrerpolicy="no-referrer" data-fb="${fb}" onerror="if(!avatarChainNext(this))mcAvatarFail(this,'${initials}','${side}')"></span>`; }
+  const img = playerPhotoImg(playerKey, name);
+  // TEN-179 item 6 — initials sit in the wrapper UNDER the photo, so the circle is never blank.
+  if (img) return `<span class="mc-avwrap ${side}"${attrs} data-init="${initials}">${img}</span>`;
   return `<div class="mc-av ${side}"${attrs}>${initials}</div>`;
 }
 // A failed headshot becomes a properly design-styled identity circle (A brand
@@ -9848,13 +9777,13 @@ function renderMatches(){
     const playersHtml = isCompleted
       ? `<div class="mc-players cmpl">
           <div class="mc-row a${p1IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${(m.retired || m.walkover || m.defaulted) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1') })}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
-            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${(m.retired || m.walkover || m.defaulted) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
             ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2') })}
@@ -9862,7 +9791,7 @@ function renderMatches(){
         </div>`
       : `<div class="mc-players up${mxDriftView() ? ' mv' : ''}">
           <div class="mc-row a">
-            <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p1'), mcDriftRight('p1'), openAnchorOnly,
                             { openTitle: _openTitle('p1'), nowTitle: _nowTitleFor('p1'), paired: mcPairedDrift, nowOlder: mcNowIsOlderClose })
@@ -9870,7 +9799,7 @@ function renderMatches(){
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
-            <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
+            <span class="mc-id">${mcAvatarHtml(m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p2'), mcDriftRight('p2'), openAnchorOnly,
                             { openTitle: _openTitle('p2'), nowTitle: _nowTitleFor('p2'), paired: mcPairedDrift, nowOlder: mcNowIsOlderClose })
@@ -10527,7 +10456,7 @@ function edgeMatchHeadHtml(m, e){
     const style = edgeStyleName(name, key);
     const elo = P.eloAll != null ? `<span class="em-mono">Elo ${edgeEsc(P.eloAll)}</span>` : '';
     const sub = s === 'p1' ? [elo, style ? edgeEsc(style) : ''].filter(Boolean).join(' · ') : [style ? edgeEsc(style) : '', elo].filter(Boolean).join(' · ');
-    const av = `<span class="em-av">${edgeEsc(playerInitials(name))}</span>`;
+    const av = `<span class="em-av">${edgeEsc(playerInitials(name))}${typeof playerPhotoImg === 'function' ? playerPhotoImg(key, name) : ''}</span>`;
     const txt = `<span class="em-mh-txt"><span class="em-mh-nm">${edgeNameHtml(name, key)}</span><span class="em-mh-sub">${sub || '—'}</span></span>`;
     return `<div class="em-mh-p ${s === 'p1' ? 'a' : 'b'}">${s === 'p1' ? av + txt : txt + av}</div>`;
   };
@@ -19498,12 +19427,12 @@ function aShowTab(tab){
 }
 
 // D5 (TEN-312, founder 2026-09-28): the modal's avatars are the ATP headshot from player-atp-aliases.json and
-// otherwise the monogram — never the api-tennis logo or a Wikimedia override (those are the board's chain).
+// otherwise the monogram — never the api-tennis logo or a Wikimedia override (both retired site-wide 2026-10-22).
 // A headshot that fails to load degrades to the same monogram. Used by the header and the match stats sheet.
 function aAvatarHtml(name, key){
-  const initials = playerInitials(name), attrs = profileLinkAttrs(key, name), src = atpPhotoFor(key);
+  const initials = playerInitials(name), attrs = profileLinkAttrs(key, name), src = playerPhotoUrl(key);
   return src
-    ? `<img class="avatar"${attrs} src="${src}" alt="${escapeHtml(name)}" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`
+    ? `<img class="avatar"${attrs} src="${src}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`
     : `<div class="avatar-fallback"${attrs}>${initials}</div>`;
 }
 // TEN-314 (TEN-312 D1): the Night / Day / Auto mode — now the one site theme (theme.js, TEN-376).
@@ -19928,7 +19857,7 @@ function getPlayersFromMatches(){
     // DIFFERENT keys for the same human, they stay split here — that is an
     // upstream player_key-resolution problem, not a card-render bug.
     const id = (p.key != null && p.key !== '') ? 'k:' + p.key : 'n:' + p.name;
-    if (!map.has(id)) map.set(id, { name:p.name, key:p.key, photo:p.photo || null, rank:null,
+    if (!map.has(id)) map.set(id, { name:p.name, key:p.key, rank:null,
                                     tour:ev.tour, surface:ev.surface, category:ev.category, odds:null });
     const rec = map.get(id);
     // One name format: prefer the canonical profile name, else the fuller of the
@@ -19936,7 +19865,6 @@ function getPlayersFromMatches(){
     const canon = canonOf(p.key);
     if (canon) rec.name = canon;
     else if (p.name && p.name.length > (rec.name || '').length) rec.name = p.name;
-    if (!rec.photo && p.photo) rec.photo = p.photo;
     // Rank for the card's "#N": live standings (player-index.json) first, then the match
     // row's rank, else the profile's. The profile rank is frozen per build and reused for
     // up to 14 days, so it carried duplicates (Darderi / Paul both #19) — TEN-384 fix.
@@ -19957,8 +19885,8 @@ function getPlayersFromMatches(){
     // pipeline. No usable start instant → still pre-match (never a guess).
     const startMs = cardStartMs(m);
     const pre = !(m.live || m.finalScore != null) && !(isFinite(startMs) && nowMs >= startMs);
-    [{name:m.p1, key:m.p1Key, photo:m.p1PhotoUrl, odds:m.bestOdds?.p1 || null, rank:m.p1Rank},
-     {name:m.p2, key:m.p2Key, photo:m.p2PhotoUrl, odds:m.bestOdds?.p2 || null, rank:m.p2Rank}].forEach(p => {
+    [{name:m.p1, key:m.p1Key, odds:m.bestOdds?.p1 || null, rank:m.p1Rank},
+     {name:m.p2, key:m.p2Key, odds:m.bestOdds?.p2 || null, rank:m.p2Rank}].forEach(p => {
       const rec = upsert(p, ev);
       if (pre && !rec.odds && p.odds && p.odds.price) rec.odds = p.odds;
     });
@@ -19984,7 +19912,7 @@ function getPlayersFromMatches(){
       });
     }
     if (!ev) return;
-    players.forEach(pl => { if (pl && pl.name) upsert({ name:pl.name, key:pl.playerKey, photo:null, rank:null }, ev); });
+    players.forEach(pl => { if (pl && pl.name) upsert({ name:pl.name, key:pl.playerKey, rank:null }, ev); });
   });
   return Array.from(map.values());
 }
@@ -20133,13 +20061,9 @@ function renderPlayers(filter){
     // TEN-384: the book name in the house style (mxBookLabel), never the feed's key ("Pncl", "WilliamHill").
     const book = priced ? (odds.bookmaker ? `<span class="pc-book">${pesc(mxBookLabel(odds.bookmaker))}</span>` : '')
                         : '<span class="pc-book">no price</span>';
-    // Real headshot layered over the initials fallback (same source as match rows,
-    // m.pNPhotoUrl); the photo hides itself on error and the initials show through.
-    // Photo-source chain (TEN-151): ATP alias -> Wikimedia override -> api-tennis -> initials.
-    const pcCands = photoCandidatesFor(p.key, p.photo);
-    const photo = pcCands.length
-      ? `<img class="pc-avatar-img" src="${pesc(pcCands[0])}" alt="${pesc(p.name)}" referrerpolicy="no-referrer" data-fb="${pesc(pcCands.slice(1).join('|'))}" onerror="if(!avatarChainNext(this))this.style.display='none'">`
-      : '';
+    // The player's photo (playerPhotoImg, the one resolver) over the initials; a failed load
+    // removes it and the initials show through.
+    const photo = playerPhotoImg(p.key, p.name);
     return `
     <div class="playercard" data-clickable="${hasProfile ? 1 : 0}"${hasProfile ? ` onclick="showPlayerProfile('${p.key}')"` : ''}>
       <div class="pc-id">
@@ -24169,7 +24093,7 @@ function buildPlayerProfileHtml(p){
     <!-- HERO -->
     <div style="padding:20px 26px 26px;display:flex;align-items:flex-start;gap:26px;border-bottom:1px solid var(--line);flex-wrap:wrap;">
       <div class="pp-hero-av" style="position:relative;flex:none;">
-        ${playerAvatarHtml(resolveProfilePhotoUrl(p.key, p.name), p.name, p.key)}
+        ${playerAvatarHtml(p.name, p.key)}
         <span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);min-width:30px;height:24px;padding:0 8px;border-radius:999px;background:var(--bar);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text);font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
       </div>
       <div style="min-width:0;flex:1;">
@@ -28903,7 +28827,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
 
   // TEN-402 item 1: a picked player = a nested panel (--card + 1px --edge-6, radius 13); "Change" = Hanken 10.5 caps
-  // grey, white on hover; the avatar = initials on the --selected tone (the reference); RANK / ELO in Plex.
+  // grey, white on hover; the avatar = the player's photo over initials on the --selected tone; RANK / ELO in Plex.
   function pickedCardA(v) {
     return `<div class="h2h-pcard">
       <button type="button" class="h2h-change" data-hid="${v.hAChange}">Change</button>
@@ -28911,12 +28835,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         <div class="h2h-pname"><span class="h2h-ctry">${E(h2hIoc(v.a.ctry))}</span><span class="h2h-nm">${E(v.a.full)}</span></div>
         <div class="h2h-pmeta"><span>RANK <b>${E(v.a.rankTxt)}</b></span><span>ELO <b>${E(v.a.eloTxt)}</b></span></div>
       </div>
-      <span class="h2h-av">${E(v.a.mono)}</span>
+      <span class="h2h-av">${E(v.a.mono)}${v.a.key != null && typeof playerPhotoImg === 'function' ? playerPhotoImg(String(v.a.key), v.a.full) : ''}</span>
     </div>`;
   }
   function pickedCardB(v) {
     return `<div class="h2h-pcard">
-      <span class="h2h-av">${E(v.b.mono)}</span>
+      <span class="h2h-av">${E(v.b.mono)}${v.b.key != null && typeof playerPhotoImg === 'function' ? playerPhotoImg(String(v.b.key), v.b.full) : ''}</span>
       <div class="h2h-pinfo">
         <div class="h2h-pname"><span class="h2h-nm">${E(v.b.full)}</span><span class="h2h-ctry">${E(h2hIoc(v.b.ctry))}</span></div>
         <div class="h2h-pmeta"><span>RANK <b>${E(v.b.rankTxt)}</b></span><span>ELO <b>${E(v.b.eloTxt)}</b></span></div>
@@ -32297,8 +32221,10 @@ window.DatabaseTab = (function(){
     if(p.length===1) return p[0].slice(0,2).toUpperCase();
     return (p[0][0]+p[p.length-1][0]).toUpperCase();
   }
-  function ratAvatar(name, small){
-    return '<span class="db-av'+(small?' db-av26':'')+'">'+esc(ratInitials(name))+'</span>';
+  // Founder 2026-10-22: the row's player ID (surface-ratings.json key) -> the one photo resolver; no ID = monogram.
+  function ratAvatar(p, small){
+    var ph=(p && p.key!=null && typeof playerPhotoImg==='function') ? playerPhotoImg(String(p.key), p.name) : '';
+    return '<span class="db-av'+(small?' db-av26':'')+'">'+esc(ratInitials(p && p.name))+ph+'</span>';
   }
   // Field median over the WHOLE field at the current slice - README: "The median
   // always runs over the whole field at the current slice, never over the picked
@@ -32516,7 +32442,7 @@ window.DatabaseTab = (function(){
       var r=function(){ return el('div','db-rrow'); };
       var c0=r(); c0.appendChild(el('div','db-rnum'+(i<3?' top':''),String(i+1))); g.appendChild(c0);
       var c1=r();
-      var pl=el('div','db-rplayer', ratAvatar(p.name,true));
+      var pl=el('div','db-rplayer', ratAvatar(p,true));
       var nm=el('a','db-rname',esc(p.name));
       nm.href='#'; nm.title=p.name;
       nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
@@ -32609,7 +32535,7 @@ window.DatabaseTab = (function(){
     blk.rows.forEach(function(p,i){
       var c0=el('div','db-rrow'); c0.appendChild(el('div','db-rnum'+(blk.ranked && i<3?' top':''), blk.ranked ? String(i+1) : '—')); g.appendChild(c0);
       var c1=el('div','db-rrow');
-      var pl=el('div','db-rplayer', ratAvatar(p.name,true));
+      var pl=el('div','db-rplayer', ratAvatar(p,true));
       var nm=el('a','db-rname',esc(p.name)); nm.href='#'; nm.title=p.name;
       nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
       pl.appendChild(nm);
@@ -32697,7 +32623,7 @@ window.DatabaseTab = (function(){
       // Avatar CENTRED ABOVE the name; name, ATP rank and × share one baseline.
       var h=el('div','db-cmphead');
       h.style.gridColumn='span 3';
-      h.innerHTML=ratAvatar(p.name);
+      h.innerHTML=ratAvatar(p);
       var line=el('div','db-cmpline');
       var nm=el('a','db-cmpname',esc(p.name)); nm.href='#';
       nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
@@ -35537,7 +35463,7 @@ function renderVals(){
     isEmpty:false,
     modalOpen:true,
     modal:{
-      title:m.title,aName:A,bName:B,aIni:lvIni(A),bIni:lvIni(B),
+      title:m.title,aName:A,bName:B,aIni:lvIni(A),bIni:lvIni(B),aKey:m.keys&&m.keys[0],bKey:m.keys&&m.keys[1],
       aScore:scoreCells(0),bScore:scoreCells(1),aPt:m.point[0],bPt:m.point[1],
       setHead:m.sets.map((_,i)=>({t:'S'+(i+1),cur:i===m.sets.length-1})),nSets:m.sets.length,
       aSub:subOf(0),bSub:subOf(1),
@@ -35557,8 +35483,8 @@ function renderVals(){
       :'Cell colour is the gap to the player’s own global break rate for that bucket: green above it, red below, neutral within ±3 points. The gap is printed under the rate; hover for the count.',
     heatGates:'n≥10 full size · n 5–9 smaller and greyed · n<5 raw count only, no percentage · n=0 a dash.',
     heatPlayers:[
-      {name:A,ini:lvIni(A),globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
-      {name:B,ini:lvIni(B),globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
+      {name:A,key:m.keys&&m.keys[0],ini:lvIni(A),globalLabel:heatA.globalLabel,rows:heatA.rows,setCols},
+      {name:B,key:m.keys&&m.keys[1],ini:lvIni(B),globalLabel:heatB.globalLabel,rows:heatB.rows,setCols},
     ],
   });
 }
@@ -35639,9 +35565,10 @@ function momentumHtml(d){
   return `<div style="display:grid;grid-template-columns:${cols};gap:12px;align-items:stretch;margin-top:14px;">${setsHtml}</div>`;
 }
 
-// Initials avatar (TEN-417 override: no photos anywhere on Live) — --inner, a 10% white edge, white 700.
-function avaHtml(ini, size, fs){
-  return `<span style="width:${size}px;height:${size}px;border-radius:50%;background:var(--inner);border:1px solid var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;letter-spacing:0.02em;color:var(--text);flex:none;">${e(ini)}</span>`;
+// Player avatar: initials on --inner, a 10% white edge, white 700, with the player's photo over them
+// (founder 2026-10-22 reverses TEN-417's "no photos on Live": one player, one photo, on every surface).
+function avaHtml(ini, size, fs, key, name){
+  return `<span style="position:relative;overflow:hidden;width:${size}px;height:${size}px;border-radius:50%;background:var(--inner);border:1px solid var(--edge-10);display:flex;align-items:center;justify-content:center;font-size:${fs}px;font-weight:700;letter-spacing:0.02em;color:var(--text);flex:none;">${e(ini)}${key!=null&&typeof playerPhotoImg==='function'?playerPhotoImg(String(key),name):''}</span>`;
 }
 
 function heatPlayerHtml(hp){
@@ -35684,7 +35611,7 @@ function heatPlayerHtml(hp){
   return `
 <div>
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-    ${avaHtml(hp.ini,30,11)}
+    ${avaHtml(hp.ini,30,11,hp.key,hp.name)}
     <span style="font-size:14px;font-weight:700;color:var(--text);">${e(hp.name)}</span>
     <span style="margin-left:auto;${MONO}font-size:10.5px;font-weight:700;letter-spacing:0.1em;color:var(--text-soft);background:var(--inner);border:1px solid transparent;border-radius:6px;padding:4px 9px;white-space:nowrap;">${e(hp.globalLabel)}</span>
   </div>
@@ -35725,7 +35652,7 @@ function render(){
     const playersHtml=[0,1].map(side=>`
 <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:0 12px;padding:9px 16px 11px;">
   <span style="display:flex;align-items:center;gap:10px;min-width:0;">
-    ${avaHtml(lvIni(m.names[side]),30,11)}
+    ${avaHtml(lvIni(m.names[side]),30,11,m.keys&&m.keys[side],m.names[side])}
     <span style="font-size:14px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(m.names[side])}</span>
     <span style="width:8px;height:8px;border-radius:50%;background:${m.serving===side&&live?'var(--serve-ball)':'transparent'};flex:none;"></span>
   </span>
@@ -35894,7 +35821,7 @@ ${sectionsHtml}`;
     </div>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:20px;padding:12px 22px 16px;flex:none;">
       <span style="display:flex;align-items:center;gap:12px;min-width:0;">
-        ${avaHtml(mm.aIni,42,13)}
+        ${avaHtml(mm.aIni,42,13,mm.aKey,mm.aName)}
         <span style="display:flex;flex-direction:column;gap:3px;min-width:0;">
           <span style="display:flex;align-items:center;gap:8px;min-width:0;"><span style="font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.aName)}</span>${mm.aServes?dot:''}</span>
           <span style="${subCss}">${e(mm.aSub)}</span>
@@ -35906,7 +35833,7 @@ ${sectionsHtml}`;
           <span style="display:flex;align-items:center;gap:8px;min-width:0;">${mm.bServes?dot:''}<span style="font-size:16px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${e(mm.bName)}</span></span>
           <span style="${subCss}">${e(mm.bSub)}</span>
         </span>
-        ${avaHtml(mm.bIni,42,13)}
+        ${avaHtml(mm.bIni,42,13,mm.bKey,mm.bName)}
       </span>
     </div>
     <div style="padding:0 22px 14px;flex:none;"><div style="display:grid;grid-template-columns:repeat(${d.tabs.length},1fr);gap:3px;padding:3px;border-radius:10px;background:var(--inner);">${tabsHtml}</div></div>

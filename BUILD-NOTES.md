@@ -2171,3 +2171,21 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
   +29.66u; bet365 2, +1.40u) and 13 with no stored set scores lose their units (+1.36u).
 - **Targets:** our counting (TEN-449) stands; Tennis Explorer decides which matches exist, not what TEN-449 excludes.
   The brief's first targets (465–302 / 33–25) were TE's own balance, which counts Bundesliga club matches.
+
+## Player photos: one resolver, ATP headshot by player ID (2026-10-22)
+- **Why one source:** eleven surfaces read photos three ways (ATP alias -> Wikimedia -> api-tennis logo; ATP -> monogram;
+  initials only), so one player could show three faces, and the api-tennis logo is where a wrong face shipped (TEN-97).
+  The founder ruled one player, one photo, everywhere: the ATP headshot by ID, else the monogram.
+- **Why the Trading Report, Live, Series, Ratings and H2H changed back to photos:** their "no photos" overrides
+  (TEN-421, TEN-417, TEN-427) predate the ruling; the founder reversed them deliberately on 2026-10-22.
+- **Why a manifest, not a runtime check:** ATP serves its silhouette with HTTP 200, so an image error never fires; and ATP
+  answers 403 to the command line, so CI cannot fetch the files. A browser probe records each code's bytes + sha1 and ATP
+  record; CI checks the map against it (placeholder hash, shared bytes, birth year). The 2026-10-22 audit of all 184
+  codes found two wrong people (D214 Damm Sr. on Damm Jr.; H346 a 1977-born Mexican on a 21-year-old Venezuelan) and two
+  silhouettes (H346, TA12). Six other codes differ from the profile only in the country label (TPE vs Taiwan; neutral
+  Russians shown as World) — not mismatches.
+- **Why the photo layer paints the circle's fill:** ATP headshots are transparent PNGs (17–58% transparent pixels, n=5),
+  so a monogram drawn underneath shows through around the head unless the photo carries the circle's own fill.
+- **Not built (report-first):** Drops (the drops service links 264 of 339 rows to an api-tennis fixture but drops the
+  player keys; upcoming rows are linked only after a live sighting) and Tournament quotes (surname vs that edition's
+  entrants: 155 of 180 dated notes unique, 3 ambiguous Cerundolo, 9 unmatched spellings, 13 with no entrant list).

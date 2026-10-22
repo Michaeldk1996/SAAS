@@ -659,9 +659,11 @@ window.SfCountryIoc = (function () {
   }
 
   // ─── player identity cell ───────────────────────────────────────────────────
-  // Initials avatar (override: no photos), as on Live, Model and the shell.
+  // The player's photo over the initials (founder 2026-10-22, deliberately overriding TEN-421's "no photos"): the
+  // row's player ID -> the dashboard's one resolver (playerPhotoImg); no ID or no photo = the initials alone.
   function avatarHtml(row) {
-    return '<span class="tr-ava">' + esc(playerInitials(row.name)) + '</span>';
+    var ph = (row.key && typeof playerPhotoImg === 'function') ? playerPhotoImg(String(row.key), row.name) : '';   // eslint-disable-line no-undef
+    return '<span class="tr-ava">' + esc(playerInitials(row.name)) + ph + '</span>';
   }
   // The tag says which matches the figures read: TOUR = ATP main tour (qualifying included), CHAL = Challenger
   // (qualifying included). One tag — the tier the row reads; the other tier is never blended in.

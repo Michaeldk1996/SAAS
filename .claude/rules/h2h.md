@@ -16,7 +16,7 @@ no day work, checks or screenshots on this page until the founder reopens it.
   across every metric." + the coverage line as the grey `.sfh__tail`, reading "· a dash means not covered" (founder R1
   nit 2026-10-09, replaces "· Data honesty · em dash means not covered"); no caps line, no stats) → pickers → Surface /
   Format strip, all in the one card. Sticky with its shadow; the page owns only that shadow (`#h2hRoot .h2h-head`), no
-  header type/padding rule. Search box `--inner`, no edge; avatars = initials; "Change" Hanken 10.5 caps
+  header type/padding rule. Search box `--inner`, no edge; avatars = the player's photo by ID over initials (`playerPhotoImg`, founder 2026-10-22); "Change" Hanken 10.5 caps
   `--text-label`, white on hover. **Test:** `test-ten403-header.mjs` (H2H check + mutants), `test-ten402-a.mjs`.
 - **Nothing shows above the sticky header** (founder r4 fix 1, 2026-10-09): the window scrolls and the header sticks 30px
   down; the strip above it is page tone at every scroll position — a sticky page-wide band in `.h2h-page`'s own top

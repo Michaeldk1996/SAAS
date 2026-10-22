@@ -28,7 +28,7 @@ const MUTANTS = [
   ['report: the Odds load no longer awaited', "    return ensureOddsMovement(m).then(() => { if (_aOdds.m === m && aBuilt(m, 'odds')) renderOddsSection(); });", "    ensureOddsMovement(m).then(() => { if (_aOdds.m === m && aBuilt(m, 'odds')) renderOddsSection(); });"],
   ['report: a throwing builder stops the print', "    loads.push(new Promise(r => r(A_TAB_BUILD[t](_aM))).catch(", "    loads.push(Promise.resolve(A_TAB_BUILD[t](_aM)).catch("],
   ['report: Market edge built into the report', "    if (t === 'marketedge' || _aBuilt.has(t)) return;", "    if (_aBuilt.has(t)) return;"],
-  ['D5: the board chain (api-tennis / Wikimedia) in the modal', "src = atpPhotoFor(key);\n  return src", "src = photoCandidatesFor(key, null)[0];\n  return src"],
+  ['D5: a retired source behind the one resolver in the modal', "src = playerPhotoUrl(key);\n  return src", "src = playerPhotoUrl(key) || photoOverrideFor(key);\n  return src"],
   ['lazy: every tab built at modal open', "  aShowTab(first);\n", "  aShowTab(first); Object.keys(A_TAB_BUILD).forEach(t => { _aBuilt.add(t); A_TAB_BUILD[t](m); });\n"],
   ['lazy: Key factors pre-loads the Overview season rows (no box shows them)', 'kfEnsureNews(m), kfEnsureMarketEdge(m)]', 'kfEnsureNews(m), kfEnsureMarketEdge(m), ensureOverviewProfiles(m)]'],
   ['lazy: a revisit rebuilds', '  if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }', '  if (true) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }'],

@@ -152,8 +152,8 @@ match-winner closes (Home / Away) and no P&L.
   no example; **Test:** "Fix 2" pins both sides; the file's "(best-of-3)" stays off the
   handicap card — standing ruling handicap-bestof (a), TEN-194 — and on the pop-up) · "Won the opening set" / "Won the
   2nd set" / … · "First set under 9.5 games". N = the card's (as-of-start) count.
-- Cards (2b): `--card` + `--top-light`, no outline, radius 16, hover 1px `--edge-16`; initials avatar 44px (`fhIni`,
-  `--inner`, 1px `--edge-10`, white 700); name 16/800 + mono rank grey; count tile `--inner` + 1px `--edge-6` (the
+- Cards (2b): `--card` + `--top-light`, no outline, radius 16, hover 1px `--edge-16`; avatar 44px — the player's photo by ID
+  (`playerPhotoImg`, founder 2026-10-22) over the initials (`fhIni`, `--inner`, 1px `--edge-10`, white 700); name 16/800 + mono rank grey; count tile `--inner` + 1px `--edge-6` (the
   reference's), mono 30/800 white, caps "in a row" grey; claim 16/700, "type · direction" 12 grey (Winning run / Losing
   run / Neutral — a word, never green / red); three rows on `--edge-6` hairlines, caps label, mono value, Avg price 700.
 - Filters: Type = tab row on a `--line` rule, active white 700 + 2px white underline, counts mono 11 grey; segments =

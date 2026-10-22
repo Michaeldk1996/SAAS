@@ -106,6 +106,8 @@ function boot(opts = {}) {
     window: { FEATURE_SERIES: true }, document, Date: FakeDate, Intl, fetch, console: { warn() {}, log() {}, error() {} },
     localStorage: { getItem: k => (k in store ? store[k] : null), setItem() {} },
     setTimeout: pageSetTimeout, clearTimeout: pageClearTimeout, WeakMap, matches: fix.board, playerProfiles: fix.profiles,
+    // founder 2026-10-22: the host's one photo resolver; here every even player ID has a photo
+    playerPhotoImg: (k, n) => (/^\d*[02468]$/.test(String(k)) ? `<img class="sf-ph" data-k="${k}" alt="${n}">` : ''), 
     _sfDbJoin: { meta: { dateRange: ['2010-01-04', fix.dbEnd] } },
     sfDbJoinLoad: () => (opts.joinFails ? Promise.reject(new Error('down')) : Promise.resolve({})),
     loadCareerHistory: () => Promise.resolve([]),
@@ -631,10 +633,13 @@ test('Filters: the Type tab counts follow every other filter, ignore Type, and A
 });
 
 // ── card 2b ───────────────────────────────────────────────────────────────────────────────────────────────────────
-test('Card 2b: initials avatar, name + mono rank, count tile, claim + "type · direction", Started / Last / Avg price; no photo, no colour', async () => {
+test('Card 2b: the photo by player ID over the initials, name + mono rank, count tile, claim + "type · direction", Started / Last / Avg price; no colour', async () => {
   const b = await start();
   const page = b.html();
-  assert.ok(!/<img|randomuser|photoCandidatesFor|resolveProfilePhotoUrl|avatarChainNext/.test(page + SRC), 'a photo chain is back');
+  assert.ok(!/randomuser|photoCandidatesFor|resolveProfilePhotoUrl|avatarChainNext|photoOverrideFor/.test(page + SRC), 'a retired photo source is back');
+  const avas = [...page.matchAll(/<span class="sr-ava">([^<]*)(<img [^>]*>)?<\/span>/g)];
+  assert.ok(avas.length > 0 && avas.some(a => a[2]) && avas.every(a => !a[2] || /^<img class="sf-ph" data-k="\d*[02468]"/.test(a[2])), 'the photo by player ID over the initials');   // mutant: photo gone
+  assert.equal((page.match(/<img /g) || []).length, avas.filter(a => a[2]).length, 'every <img> is an avatar photo');
   const fhIni = vm.runInContext('fhIni', b.ctx), nm = vm.runInContext('newsPlayerName', b.ctx);
   const cards = cardsOf(page), view = b.view();
   const DIR = { win: 'Winning run', loss: 'Losing run', neutral: 'Neutral' };

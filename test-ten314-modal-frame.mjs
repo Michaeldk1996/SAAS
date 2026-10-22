@@ -143,13 +143,13 @@ test('Download report: aBuildForReport settles only after every tab load, and su
 
 // ---- D5: avatars ----
 function avatar() {
-  return new Function('playerInitials', 'profileLinkAttrs', 'atpPhotoFor', 'escapeHtml', 'photoCandidatesFor',
+  return new Function('playerInitials', 'profileLinkAttrs', 'playerPhotoUrl', 'escapeHtml', 'photoOverrideFor',
     `${slice('aAvatarHtml')}; return aAvatarHtml;`)(
     n => n.split(/\s+/).map(w => w[0]).join('').toUpperCase(), () => '',
     k => ({ 206173: 'https://www.atptour.com/-/media/alias/player-headshot/S0AG' })[k] || null,
     s => String(s), () => ['https://api.api-tennis.com/logo-tennis/x.jpg']);
 }
-// Mutation: aAvatarHtml reads photoCandidatesFor (the board's chain: ATP → Wikimedia → api-tennis) instead of atpPhotoFor.
+// Mutation: aAvatarHtml falls back to a retired source (photoOverrideFor) behind the one resolver (playerPhotoUrl).
 test('D5: an aliased player renders the ATP headshot; a player without an alias renders the monogram, never another source', () => {
   const a = avatar();
   const withAlias = a('J. Sinner', 206173), none = a('C. Alcaraz', 999);

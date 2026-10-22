@@ -46,10 +46,10 @@ check('without a posted draw the model is null (nothing drawn from guesses)', DV
 check('qualifying depth unknown (no main draw) → only Q1 is shown', DV.qualRoundNames(16, 0).join() === 'Q1');
 
 // ── render smoke (no DOM: the module renders into an object with innerHTML) ──
-// The page loads wue-sheet.js (Dominance = WueSheet's one formula) and defines photoCandidatesFor (the profile's photo
-// chain). Here: Medvedev has a photo candidate, everyone else none.
+// The page loads wue-sheet.js (Dominance = WueSheet's one formula) and defines playerPhotoUrl (the site's one photo
+// resolver, founder 2026-10-22). Here: Medvedev has a photo, everyone else none.
 const MED = String(draw.main.slots.find(s => /^MEDVEDEV/.test(s.name)).playerKey);
-global.window = { DrawView: null, WueSheet: require(path.join(ROOT, 'wue-sheet.js')), photoCandidatesFor: (k) => (k === MED ? ['https://example.test/med.png', 'https://example.test/med2.png'] : []) };
+global.window = { DrawView: null, WueSheet: require(path.join(ROOT, 'wue-sheet.js')), playerPhotoUrl: (k) => (k === MED ? 'https://example.test/med.png' : null) };
 const RD = Date; global.Date = class extends RD { constructor(...a) { super(...(a.length ? a : ['2026-10-20T12:12:00Z'])); } static now() { return new RD('2026-10-20T12:12:00Z').getTime(); } };
 const el = { innerHTML: '' };
 const prog = { fetchedAt: '2026-10-20T12:00:00Z', tournaments: { Almaty: entry } };
@@ -68,7 +68,7 @@ check('item 8: a bye box = the seed then "(Bye)" — Medvedev [1] first; no scor
 check('item 8: the bye boxes never count — R32 "9 of 12", R16 "0 of 8"', /R32<\/span><span class="dv-count">9 of 12/.test(h));
 // Item 9: photos from the profile chain, lazy, initials underneath; no photo → initials only.
 const medRow = (r32Col.match(/<div class="dv-row"><span class="dv-av"[^]*?Medvedev/) || [''])[0];
-check('item 9: a player with a photo: lazy <img> from the profile chain, the rest of the chain as fallback, initials underneath', /<span class="dv-ini">DM<\/span><img src="https:\/\/example\.test\/med\.png" alt="" loading="lazy"/.test(medRow) && /data-fb="https:\/\/example\.test\/med2\.png"/.test(medRow), medRow.slice(0, 300));
+check('item 9: a player with a photo: lazy <img> from the one resolver, alt = the name, a failed load removes it, initials underneath', /<span class="dv-ini">DM<\/span><img src="https:\/\/example\.test\/med\.png" alt="[^"]*MEDVEDEV[^"]*" loading="lazy"[^>]*onerror="this\.remove\(\)"/.test(medRow) && !/data-fb=/.test(medRow), medRow.slice(0, 300));
 check('item 9: a player without a photo: initials only, never an <img> placeholder face', /<span class="dv-av" aria-hidden="true"><span class="dv-ini">SS<\/span><\/span><span class="dv-ioc">JPN<\/span><span class="dv-name">S\. Shimabukuro/.test(h));
 check('item 9: initials from the official name ("DIAZ ACOSTA, Facundo" → FD; one-word name → its letter)', DV.initials('DIAZ ACOSTA, Facundo') === 'FD' && DV.initials('Nadal') === 'N' && DV.initials('') === '');
 // Item 11: neutral marker only where the sheet prints countries for most of the field.

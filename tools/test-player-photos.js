@@ -1,0 +1,114 @@
+// Player photos (founder rulings 2026-10-22, .claude/rules/player-photos.md): ONE player, ONE photo, on every surface.
+// A player ID resolves to the ATP headshot through player-atp-aliases.json, else the monogram. This suite holds:
+//   1. the alias map: every code has a probed headshot (player-photo-manifest.json); no code serves a known placeholder
+//      (ATP's grey silhouette, HTTP 200) and no two codes share one file; the ATP record's birth year agrees with the
+//      api-tennis profile for that ID (the Damm Sr. photo on Damm Jr. was a 31-year gap);
+//   2. the resolver: the dashboard's playerPhotoUrl / playerPhotoImg (ID in, ATP URL or nothing out);
+//   3. every avatar surface asks that resolver and no retired source survives (Wikimedia, the api-tennis logo).
+// Each check is also run against a manufactured bad state, so a pass is never a pass on an empty set.
+// Run: node tools/test-player-photos.js
+'use strict';
+const fs = require('fs'); const path = require('path'); const vm = require('vm');
+const ROOT = path.resolve(__dirname, '..');
+const J = (f) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+let pass = 0, fail = 0;
+const check = (l, c, d) => { if (c) { pass++; console.log(`  ok   ${l}`); } else { fail++; console.log(`  FAIL ${l}${d ? `\n       ${d}` : ''}`); } };
+
+// ── 1. the alias map against the probe manifest ─────────────────────────────────────────────────────────────────
+function aliasProblems(aliases, manifest, profiles, year) {
+  const out = [];
+  const ph = new Set((manifest.placeholders || []).map((p) => p.sha1_16));
+  const bySha = {};
+  const codes = Object.values(aliases);
+  if (new Set(codes).size !== codes.length) out.push('two IDs share one ATP code');
+  for (const [key, code] of Object.entries(aliases)) {
+    if (!/^\d+$/.test(key)) out.push(`key ${key} is not a player ID`);
+    const m = manifest.photos[code];
+    if (!m) { out.push(`${key} -> ${code}: not in the manifest (run tools/atp-photo-probe.browser.js)`); continue; }
+    if (m.status !== 200) out.push(`${key} -> ${code}: headshot status ${m.status}`);
+    if (ph.has(m.sha1_16)) out.push(`${key} -> ${code}: serves a known placeholder (${m.sha1_16})`);
+    (bySha[m.sha1_16] = bySha[m.sha1_16] || []).push(code);
+    const p = profiles && profiles[key];
+    const by = parseInt(String(m.atpBirth || '').slice(0, 4), 10);
+    // api-tennis age is computed from player_bday on the pipeline's run day: the birth year is year-age or year-age-1
+    // (one extra year of slack for a profile file regenerated across New Year).
+    if (p && p.age != null && isFinite(by) && !(by >= year - p.age - 2 && by <= year - p.age)) {
+      out.push(`${key} -> ${code}: ATP's ${m.atpName} was born ${by}; the api-tennis profile ${p.name} is ${p.age}`);
+    }
+  }
+  for (const [sha, cs] of Object.entries(bySha)) if (cs.length > 1) out.push(`codes ${cs.join(', ')} share one file (${sha})`);
+  return out;
+}
+const aliases = J('player-atp-aliases.json');
+const manifest = J('player-photo-manifest.json');
+const profiles = (() => { try { return J('player-profiles.json').players; } catch (e) { return null; } })();
+const YEAR = new Date().getUTCFullYear();
+console.log('Player photos — alias map, resolver, surfaces');
+check(`player-atp-aliases.json: ${Object.keys(aliases).length} IDs, every code probed, no placeholder, no shared file, birth years agree`,
+  aliasProblems(aliases, manifest, profiles, YEAR).length === 0, aliasProblems(aliases, manifest, profiles, YEAR).join('\n       '));
+check('manifest carries no code the map no longer uses (regenerated with the map)',
+  Object.keys(manifest.photos).every((c) => Object.values(aliases).includes(c)), Object.keys(manifest.photos).filter((c) => !Object.values(aliases).includes(c)).join(', '));
+check('profiles present for the birth-year check (skip is reported, never a silent pass)', !!profiles, 'player-profiles.json missing: birth-year limb did not run');
+check('ruling 3: the silhouette aliases are gone (1307 A. Hernandez, 2672 S. Travaglia)', !('1307' in aliases) && !('2672' in aliases));
+check('ruling 4: 1317 M. Damm is Martin Damm b. 2003 (D0DT), not his father (D214)', aliases['1317'] === 'D0DT' && manifest.photos.D0DT && manifest.photos.D0DT.atpBirth.startsWith('2003'));
+
+// controls: the same check against manufactured bad maps must FAIL
+const SIL = manifest.placeholders[0].sha1_16;
+const fakeManifest = JSON.parse(JSON.stringify(manifest));
+fakeManifest.photos.TA12 = { status: 200, bytes: 4729, sha1_16: SIL, atpName: 'Stefano Travaglia', atpBirth: '1991-12-28', atpNat: 'ITA' };
+fakeManifest.photos.H346 = { status: 200, bytes: 4729, sha1_16: SIL, atpName: 'Alejandro Hernandez', atpBirth: '1977-10-01', atpNat: 'MEX' };
+fakeManifest.photos.D214 = { status: 200, bytes: 33096, sha1_16: '2e8a044f02ff00ac', atpName: 'Martin Damm', atpBirth: '1972-08-01', atpNat: 'CZE' };
+const pre = Object.assign({}, aliases, { 2672: 'TA12', 1307: 'H346', 1317: 'D214' });
+const preProblems = aliasProblems(pre, fakeManifest, profiles || { 1317: { name: 'M. Damm', age: 22 } }, YEAR);
+check('control: the pre-fix map (silhouettes + Damm Sr.) is rejected — placeholder x2, shared file, birth year',
+  preProblems.filter((p) => /placeholder/.test(p)).length === 2 && preProblems.some((p) => /share one file/.test(p)) && preProblems.some((p) => /^1317 .*1972/.test(p)),
+  preProblems.join('\n       '));
+check('control: an unprobed code is rejected', aliasProblems({ 1: 'ZZZZ' }, manifest, null, YEAR).some((p) => /not in the manifest/.test(p)));
+
+// ── 2. the resolver (extracted from the dashboard, run as shipped) ──────────────────────────────────────────────────
+const DASH = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+const fn = (name) => { const i = DASH.indexOf(`function ${name}(`); if (i < 0) throw new Error('missing ' + name); const j = DASH.indexOf('\n}\n', i); return DASH.slice(i, j + 2); };
+const oneLine = (name) => { const i = DASH.indexOf(`function ${name}(`); return DASH.slice(i, DASH.indexOf('\n', i)); };
+const ctx = { playerAtpAliases: aliases };
+vm.createContext(ctx);
+vm.runInContext([oneLine('escapeHtml'), fn('atpPhotoFor'), oneLine('playerPhotoUrl'), fn('playerPhotoImg')].join('\n'), ctx);
+const anyKey = Object.keys(aliases)[0];
+check(`playerPhotoUrl(ID) = the ATP headshot for that ID's code (${anyKey} -> ${aliases[anyKey]})`,
+  ctx.playerPhotoUrl(anyKey) === `https://www.atptour.com/-/media/alias/player-headshot/${aliases[anyKey]}` && ctx.playerPhotoUrl(Number(anyKey)) === ctx.playerPhotoUrl(anyKey));
+check('playerPhotoUrl: an ID without an alias, null, empty, or a NAME = null (a monogram, never a guess)',
+  [999999999, null, '', 'J. Sinner', 'Jannik Sinner', '1307', '2672'].every((k) => ctx.playerPhotoUrl(k) === null));
+const img = ctx.playerPhotoImg(anyKey, `O'Brien <x>`);
+check('playerPhotoImg: one shared layer — class sf-ph, lazy, decoding async, alt = the escaped name, failed load removes itself',
+  /^<img class="sf-ph" /.test(img) && /loading="lazy"/.test(img) && /decoding="async"/.test(img) && /alt="O&#39;Brien &lt;x&gt;"/.test(img) && /onload="this\.classList\.add\('sf-on'\)"/.test(img) && /onerror="this\.remove\(\)"/.test(img));
+check('playerPhotoImg: no photo = "" (the surface\'s own monogram stays)', ctx.playerPhotoImg('999999999', 'X') === '');
+check('.sf-ph: one cover crop, centred; the circle\'s own fill behind the PNG only once loaded (the monogram shows until then)',
+  /\.sf-ph\{[^}]*position:absolute;[^}]*border-radius:50%;[^}]*object-fit:cover;[^}]*object-position:50% 50%;[^}]*\}/.test(DASH) && !/\.sf-ph\{[^}]*background/.test(DASH) && /\.sf-ph\.sf-on\{ background:inherit; \}/.test(DASH));
+
+// ── 3. every surface asks the resolver; no retired source survives ──────────────────────────────────────────────
+const FRONT = ['bsp-consult-dashboard.html', 'trading-report.js', 'series.js', 'draw-view.js', 'player-profile-v2.js', 'live-tab.js'];
+const RETIRED = ['photoCandidatesFor', 'photoOverrideFor', 'player-photos.json', 'resolveProfilePhotoUrl', 'avatarChainNext(', '_player_logo',
+  'p1PhotoUrl', 'p2PhotoUrl', 'logo-tennis', 'wikimedia', 'Special:FilePath'];
+const hits = [];
+for (const f of FRONT) { const s = fs.readFileSync(path.join(ROOT, f), 'utf8'); RETIRED.forEach((r) => { if (s.includes(r)) hits.push(`${f}: ${r}`); }); }
+check('no retired photo source anywhere in the frontend (Wikimedia, player-photos.json, the api-tennis logo, the old chain)', hits.length === 0, hits.join('; '));
+const USES = [
+  ['Today\'s Matches cards', 'bsp-consult-dashboard.html', 'const img = playerPhotoImg(playerKey, name);'],
+  ['legacy profile hero', 'bsp-consult-dashboard.html', 'const src = playerPhotoUrl(playerKey);'],
+  ['Players page cards', 'bsp-consult-dashboard.html', 'const photo = playerPhotoImg(p.key, p.name);'],
+  ['Match analysis header + Form/H2H rows', 'bsp-consult-dashboard.html', 'attrs = profileLinkAttrs(key, name), src = playerPhotoUrl(key);'],
+  ['Ratings board', 'bsp-consult-dashboard.html', "playerPhotoImg(String(p.key), p.name)"],
+  ['Stennisfy Model head', 'bsp-consult-dashboard.html', "playerPhotoImg(key, name) : ''}</span>`;"],
+  ['H2H picked cards', 'bsp-consult-dashboard.html', 'playerPhotoImg(String(v.a.key), v.a.full)'],
+  ['Live page', 'bsp-consult-dashboard.html', "playerPhotoImg(String(key),name):''}</span>"],
+  ['Trading Report', 'trading-report.js', 'playerPhotoImg(String(row.key), row.name)'],
+  ['Series cards', 'series.js', "playerPhotoImg(String(key), name)"],
+  ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],
+  ['Player Profile (V2)', 'player-profile-v2.js', 'window.playerPhotoUrl(p.key)'],
+];
+const missing = USES.filter(([, f, t]) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes(t)).map(([l]) => l);
+check(`every avatar surface reads the one resolver (${USES.length} surfaces)`, missing.length === 0, 'missing: ' + missing.join(', '));
+const mutant = DASH.replace('function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey); }', 'function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey) || photoOverrideFor(playerKey); }');
+check('control: a second source slipped into the resolver is caught by the retired-source scan', RETIRED.some((r) => mutant.includes(r)));
+
+console.log(`\n${pass} passed, ${fail} failed`);
+process.exit(fail ? 1 : 0);

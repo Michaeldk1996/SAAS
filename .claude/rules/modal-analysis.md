@@ -95,7 +95,7 @@ this file wins.
   the link blue, and the header's player-B name and price read `--text` (`test-ten303-colours.mjs`).
 - **Avatars = ATP photos from `player-atp-aliases.json`, monogram fallback**, in the header and the match stats
   sheet, **inside the design's ring and size geometry** (header 40px, sheet 56px, ring as designed).
-  **Test:** a player with an alias renders an `<img>` from the alias chain at the design's size and ring; one
+  **Test:** a player with an alias renders an `<img>` from the one resolver (`playerPhotoUrl`) at the design's size and ring; one
   without renders the monogram in the same ring.
 
 ## Opening tab (founder step 3, TEN-380 README §1, 2026-10-03; replaces Q26 "always opens on Key factors")

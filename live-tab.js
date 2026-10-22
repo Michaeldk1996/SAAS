@@ -763,10 +763,12 @@
       return head + rows;
     }
     // One side-by-side player block: avatar + name + recomputed aggregate pill.
-    function hbPlayerBlock(pd, name, logo, metric) {
+    // Founder 2026-10-22: the player's photo by ID through the dashboard's one resolver (never the api-tennis logo).
+    function hbPlayerBlock(pd, name, key, metric) {
       const node = pd && (metric === 'hold' ? (pd.serve && pd.serve.all) : (pd.return && pd.return.all));
-      const av = logo
-        ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--card);flex-shrink:0;">`
+      const src = key != null && typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(String(key)) : null;
+      const av = src
+        ? `<img src="${esc(src)}" alt="${esc(name || '')}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--card);flex-shrink:0;">`
         : `<span style="width:30px;height:30px;border-radius:50%;background:var(--card);flex-shrink:0;display:inline-block;"></span>`;
       const pillLbl = metric === 'hold' ? 'HOLD' : 'BREAK';
       let pill = '—';
@@ -810,8 +812,8 @@
       return `<div class="ltm-section" style="padding:16px;">
         ${head}
         <div style="display:flex;gap:24px;flex-wrap:wrap;">
-          ${hbPlayerBlock(pa, fix.event_first_player, fix['event_first_player_logo'], metric)}
-          ${hbPlayerBlock(pb, fix.event_second_player, fix['event_second_player_logo'], metric)}
+          ${hbPlayerBlock(pa, fix.event_first_player, fix.first_player_key, metric)}
+          ${hbPlayerBlock(pb, fix.event_second_player, fix.second_player_key, metric)}
         </div>
       </div>`;
     }
@@ -839,8 +841,11 @@
       const tn = esc(fix.tournament_name || '');
       const rnd = shortRound(fix);
       const av = (which) => {
-        const logo = fix[`event_${which === 1 ? 'first' : 'second'}_player_logo`] || '';
-        return logo ? `<img class="ltm-av" src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="ltm-av"></span>`;
+        // the player's photo by ID through the dashboard's one resolver (founder 2026-10-22), never the api-tennis logo
+        const key = fix[which === 1 ? 'first_player_key' : 'second_player_key'];
+        const nm = fix[which === 1 ? 'event_first_player' : 'event_second_player'] || '';
+        const src = key != null && typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(String(key)) : null;
+        return src ? `<img class="ltm-av" src="${esc(src)}" alt="${esc(nm)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : `<span class="ltm-av"></span>`;
       };
       const scores = Array.isArray(fix.scores) ? fix.scores : [];
       const gr = String(fix.event_game_result || '').split('-').map(s => s.trim());

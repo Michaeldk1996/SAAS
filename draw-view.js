@@ -116,14 +116,14 @@ function initials(full) {
   const a = String(given || '').trim()[0] || '', b = String(sur || '').trim()[0] || '';
   return (a + b).toUpperCase() || '';
 }
-// Item 9: the profile section's photo chain (window.photoCandidatesFor: ATP headshot, then the Wikimedia override) —
-// the same candidates the Player Profile hero uses, no api-tennis logo. Initials sit UNDER the image, so a missing or
+// Item 9: the player's photo by ID through the dashboard's one resolver (window.playerPhotoUrl, founder 2026-10-22) —
+// the photo the Player Profile hero shows, no other source. Initials sit UNDER the image, so a missing or
 // failed photo leaves the initials, never a broken image or someone else's face.
 function avatarHtml(s) {
   const ini = esc(initials(s.name));
-  const cands = s.playerKey && typeof window !== 'undefined' && typeof window.photoCandidatesFor === 'function' ? (window.photoCandidatesFor(String(s.playerKey)) || []) : [];
-  const img = cands.length
-    ? `<img src="${esc(cands[0])}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-fb="${esc(cands.slice(1).join('|'))}" onerror="if(!(window.avatarChainNext&&avatarChainNext(this)))this.remove()">`
+  const src = s.playerKey && typeof window !== 'undefined' && typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(String(s.playerKey)) : null;
+  const img = src
+    ? `<img src="${esc(src)}" alt="${esc(s.name || '')}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`
     : '';
   return `<span class="dv-av" aria-hidden="true"><span class="dv-ini">${ini}</span>${img}</span>`;
 }

@@ -72,10 +72,10 @@ renderer on the shipped `live-tab.js` with a real-feed fixture (`tools/fixtures/
 - Grid `repeat(auto-fill, minmax(430px, 1fr))`, gap 12, cards top-aligned. Card = `--card`, no outline (1px transparent
   edge in `.lvcard`, so the hover `--edge-16` fires — supersedes TEN-190 D1), radius 14. Head 10×16 on `--line`: event
   11.5 grey; status mono 9.5 / 700 / 0.12em ("SET 3", white, 5px dot pulsing 1.6s) or Hanken caps 10.5 / 800
-  "INTERRUPTED" in `--amber`, no pulse. S1…Sn 26px mono 9 + PTS 40px (caps label). Rows 9×16 / 11: initials avatar 30,
+  "INTERRUPTED" in `--amber`, no pulse. S1…Sn 26px mono 9 + PTS 40px (caps label). Rows 9×16 / 11: avatar 30 (photo over initials),
   name 14 / 700, lime serve dot 8 **only while live** (founder R1: none on an interrupted card, as on the sheet); sets
   mono 15 (won white 700, lost grey 500, current white 700); PTS white 700.
-- **No photos anywhere (override):** initials avatars (`fhIni`) — `--inner`, 1px `--edge-10`, white 700 (30 / 42 / 30).
+- **Avatars (founder 2026-10-22, reverses TEN-417's "no photos" override):** the player's photo by the feed's player key (`playerPhotoImg`, `player-photos.md`) over the initials (`fhIni`) — `--inner`, 1px `--edge-10`, white 700 (30 / 42 / 30). **Test:** `test-ten417-live.mjs` Cards + Break/Hold (mutant: photos gone).
 - Sheet: scrim `--backdrop` + blur 3 from `--sf-side`; sheet `--card` + `--edge-10`, radius 16, max-width 940,
   max-height 88vh, `--shadow-modal`, body scrolls under the fixed head. Backdrop click, ✕ and Esc close it; a rail click
   closes it (sfOverlayClosers). Opening a card resets to **Ratings · Match · Set 1 · Hold**.

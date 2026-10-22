@@ -169,7 +169,7 @@ control renders enabled with two players picked. Locked by `test-ten262.mjs` (5 
 - Compare panel = nested panel, `--card` + 1px `--edge-6`. The scope column (sub-head and
   cells) is a **4% white wash** (`--wash-4`) — never blue, never `--inner`. Δ keeps the
   three-way sign colour (`--pos` / `--neg`, `--text-label` at zero or a dash).
-- Avatars: initials, white mono, on `--inner` — no gradient, no blue ink.
+- Avatars: the player's photo by the row's player ID (`surface-ratings.json` `key`, founder 2026-10-22; `player-photos.md`) over initials, white mono, on `--inner` — no gradient, no blue ink. A row without an ID = initials, never a name-matched photo.
 - Sortable heads: `--text-label` idle, `--text` (white) on the sort column; the ↑/↓ arrow
   is white, never blue, and carries no inline colour.
 - Field-median row: a **2.5% white wash** (`--text` at 2.5%).

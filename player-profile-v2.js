@@ -875,11 +875,11 @@
   var AVATAR_TONE = 'var(--selected)';
   var RANK_TONE = 'var(--selected)';
   function renderAvatar(p, rank) {
-    var photos = typeof window.photoCandidatesFor === 'function' ? (window.photoCandidatesFor(p.key) || []) : [];
-    var img = photos.length
-      ? '<img src="' + esc(photos[0]) + '" alt="" referrerpolicy="no-referrer" data-fb="' + esc(photos.slice(1).join('|')) + '" ' +
-        // the host's own photo chain (defined beside photoCandidatesFor, as on the Players cards)
-        'onerror="if(!avatarChainNext(this))this.style.display=\'none\'" ' +
+    // the dashboard's one resolver (playerPhotoUrl): the ATP headshot by player ID, else the initials alone
+    var photo = typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(p.key) : null;
+    var img = photo
+      ? '<img src="' + esc(photo) + '" alt="' + esc(p.name || '') + '" loading="lazy" referrerpolicy="no-referrer" ' +
+        'onerror="this.style.display=\'none\'" ' +
         'style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;">'
       : '';
     return '' +

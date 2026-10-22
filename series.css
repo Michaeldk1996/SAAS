@@ -79,6 +79,7 @@
 [data-page="series"] .sr-chead { display: flex; align-items: center; gap: 12px; min-width: 0; }
 /* initials avatar (override): inner tone, 1px 10% edge, white 700 */
 [data-page="series"] .sr-ava {
+  position: relative; overflow: hidden;
   width: 44px; height: 44px; flex: none; border-radius: 50%; box-sizing: border-box;
   background: var(--inner); border: 1px solid var(--edge-10);
   display: flex; align-items: center; justify-content: center;

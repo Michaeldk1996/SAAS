@@ -149,8 +149,8 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 - **A bye is a muted box in its first round** (Flashscore style): the seed, then "(Bye)" in `--text-label`; transparent
   fill, `--edge-6`; no score, not clickable, never counted in the round's "x of n" (Almaty R32 reads "of 12"). Every
   next-round slot has two feeders. *Supersedes the 2026-10-21 morning "no bye card" ruling.*
-- **Every player row carries a photo** from the profile chain (`photoCandidatesFor`: ATP headshot, then the Wikimedia
-  override), lazy; initials sit underneath, so a missing or failed photo shows initials — never a placeholder face.
+- **Every player row carries a photo** from the one resolver (`playerPhotoUrl`: the ATP headshot by player ID,
+  `player-photos.md`), lazy; initials sit underneath, so a missing or failed photo shows initials — never a placeholder face.
 - **NEU** marks a blank country only on a sheet that prints countries for most of its field; on a sheet with no country
   column (Brussels / Lyon qualifying) a blank is "not read" and gets no marker.
 - **A finished match opens the one Match Analysis** (`openAnalysisModal(id, 'matchstats')`, landing on Match Stats →

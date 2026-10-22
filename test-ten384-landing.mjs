@@ -57,7 +57,7 @@ function runLanding(matches, profiles, progression = { tournaments: {} }, indexR
     ${indexRows ? 'const playerIndex = ' + JSON.stringify(indexRows) + ';' : ''}
     let pgLookupsLoaded = true;
     const cardStartMs = () => NaN;
-    const photoCandidatesFor = () => [];
+    const playerPhotoImg = () => '';
     const pgArchetypeFor = () => 'All Court Elite';
     const pgEloFor = () => 2141;
     const loadPlayerCardLookups = () => {};
