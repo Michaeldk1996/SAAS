@@ -1258,6 +1258,15 @@ def te_coverage(rows, held, closed):
             'overB365': {k: dict(v) for k, v in over.items()}}
 
 
+def te_coverage_lines(gained):
+    """One line per level: per year, the matches TE now prices, split into newly priced / replacing an api-tennis Bet365
+    snapshot. A level with nothing in one split reads 0 there (atp-x on 22 Oct: no api-tennis Bet365 to replace)."""
+    return [f"te-import coverage {lv}: " + ' · '.join(f"{y} {n} priced by TE ({gained['newlyPriced'].get(lv, {}).get(y, 0)} with no snapshot before, "
+                                                     f"{gained['overB365'].get(lv, {}).get(y, 0)} replacing an api-tennis Bet365 snapshot)"
+                                                     for y, n in sorted(gained['teWins'][lv].items()))
+            for lv in sorted(gained['teWins'])]
+
+
 def cmd_te_import(store, dry_run=False):
     """Append the TE batches into the snapshot table (insert-only; a changed price for a held match is a new row that
     supersedes the old one). Env SUPABASE_URL / SUPABASE_SECRET_KEY, API_TENNIS_KEY (the current fixture per event)."""
@@ -1281,10 +1290,8 @@ def cmd_te_import(store, dry_run=False):
                                        'byLevel': collections.Counter(r['detail']['level'] for r in rows),
                                        'wouldAdd' if dry_run else 'added': len(add) if dry_run else len(ids), 'feedOn': TE_FEED_ON,
                                        'coverage': gained}))
-    for lv in sorted(gained['teWins']):
-        print(f"te-import coverage {lv}: " + ' · '.join(f"{y} {n} priced by TE ({gained['newlyPriced'][lv].get(y, 0)} with no snapshot before, "
-                                                         f"{gained['overB365'][lv].get(y, 0)} replacing an api-tennis Bet365 snapshot)"
-                                                         for y, n in sorted(gained['teWins'][lv].items())))
+    for line in te_coverage_lines(gained):
+        print(line)
     if not dry_run:
         cmd_snapshot_counts('te-import')
     return rows

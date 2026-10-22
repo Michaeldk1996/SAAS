@@ -366,6 +366,10 @@ cov = T.te_coverage([crow(1, 2024), crow(2, 2024), crow(3, 2024), crow(4, 2023, 
                      {'event_key': 5, 'source': T.TE_SOURCE, 'supersedes': None}], {'4'})
 check('coverage: newly priced (1, 5), over api-tennis Bet365 (3); none where api-tennis Pinnacle (2) or our close (4) holds it',
       cov == {'teWins': {'ch': {'2024': 3}}, 'newlyPriced': {'ch': {'2024': 2}}, 'overB365': {'ch': {'2024': 1}}}, cov)
+cl = T.te_coverage_lines({'teWins': {'atp-x': {'2021': 82, '2024': 161}}, 'newlyPriced': {'atp-x': {'2021': 82, '2024': 161}}, 'overB365': {}})
+check('coverage lines: a level with no api-tennis Bet365 to replace reads 0 there, never a KeyError (te-import 22 Oct, atp-x)',
+      cl == ['te-import coverage atp-x: 2021 82 priced by TE (82 with no snapshot before, 0 replacing an api-tennis Bet365 snapshot) · '
+             '2024 161 priced by TE (161 with no snapshot before, 0 replacing an api-tennis Bet365 snapshot)'], cl)
 td = tempfile.mkdtemp(); os.makedirs(os.path.join(td, 'te-odds'))
 json.dump(tdocs[0], open(os.path.join(td, 'te-odds', 'calib-01.json'), 'w'))
 json.dump(dict(tdocs[0], batch='ch-01', complete=False), open(os.path.join(td, 'te-odds', 'ch-01.json'), 'w'))
