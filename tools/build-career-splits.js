@@ -407,10 +407,12 @@ const CATEGORIES = [
   ['vs. Top 10', m => m.oppRank != null && m.oppRank <= 10],
 ];
 
+// A walkover, by the source's own score ("W/O"): listed in the per-match file, counted in no split (founder 2026-10-22).
+const isWalkoverScore = (m) => /^\s*W\/?O\s*$/i.test(String((m && m.score) || ''));
 function splits(matches) {
   const rows = {};
   for (const [label, pred] of CATEGORIES) {
-    const sub = matches.filter(pred);
+    const sub = matches.filter((m) => pred(m) && !isWalkoverScore(m));
     if (!sub.length) continue; // zero-match categories dropped (dashboard hides)
     let W = 0, setW = 0, setL = 0, gameW = 0, gameL = 0, tbW = 0, tbL = 0;
     // The games columns have their OWN population: M minus the matches played on

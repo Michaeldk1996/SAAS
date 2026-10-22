@@ -1343,6 +1343,16 @@
       // gets two headers — which is what the export shows.
       var ordered = rows.slice().reverse();
       var shown = state.ledgerExpanded ? ordered : ordered.slice(0, LEDGER_CAP);
+      // Founder 2026-10-22 · the walkovers between the oldest row shown and today, under the same surface filter (a
+      // price filter shows none: a walkover has no price). Listed only — every record and rate here reads `rows`.
+      var oldest = shown.length ? shown[shown.length - 1].m.date : '';
+      var woRows = state.priceFilters.length ? [] : ((p.recentForm && p.recentForm.walkovers) || []).filter(function (m) {
+        return m && m.date && m.date >= oldest && m.date <= todayISO() &&
+          (!state.surfaces.length || state.surfaces.indexOf(String(m.surface || '').toLowerCase()) >= 0);
+      }).map(function (m) { return { m: m, price: null, oppPrice: null, role: null, book: null, basis: null }; });
+      if (woRows.length) {
+        shown = shown.concat(woRows).sort(function (a, b) { return a.m.date < b.m.date ? 1 : a.m.date > b.m.date ? -1 : 0; });
+      }
       var groups = [];
       shown.forEach(function (x) {
         var ev = eventName(x.m, p);
@@ -1424,9 +1434,10 @@
     return '<div class="pp2-ledger-row" ' + sheetHook(id) +
       'style="' + LEDGER_GRID + 'padding:7px 8px;border-top:1px solid var(--line);border-radius:6px;' +
       (open ? 'background:' + LEDGER_OPEN_TONE + ';' : '') + sheetCursor() + '">' +
-      '<span style="' + MONO + 'font-size:11.5px;color:var(--text-label);">' + esc(fmtDotDate(m.date)) + '</span>' +
+      '<span ' + (m.walkover ? 'data-pp2-wo-row="1" ' : '') + 'style="' + MONO + 'font-size:11.5px;color:var(--text-label);">' +
+        woDateHtml(m, fmtDotDate(m.date)) + '</span>' +
       '<span class="pp2-wl" style="width:8px;height:8px;border-radius:2px;background:' +
-        (w ? 'var(--pos)' : 'var(--neg)') + ';"></span>' +
+        markerFill(m) + ';"></span>' +
       '<span style="font-size:12.5px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;' +
         'text-overflow:ellipsis;white-space:nowrap;">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
       // Item 9: nowrap as well as the short code — a wrapped row is the defect.
@@ -1484,11 +1495,26 @@
   }
   function scoreWithStatus(m, text) {
     var st = matchStatus(m);
-    if (st === 'wo') return 'w/o';
+    // Founder 2026-10-22 (Flashscore pattern): a walkover's set scores read "–"; its WO sits under the date
+    // (woDateHtml). An unconfirmed row has no score either.
+    if (st === 'wo' || (m && (m.unconf || m.unconfirmed))) return DASH;
     var base = (text == null || text === '') ? DASH : String(text);
     if (st !== 'ret') return base;
     // A retirement with no scoreline on record is still a retirement.
     return base === DASH ? 'ret.' : base + ' ret.';
+  }
+
+  // Founder 2026-10-22 · the date cell of a walkover row carries "WO" under the date, as Flashscore prints it. `text` is
+  // the date already formatted for the list; returns HTML.
+  function woDateHtml(m, text) {
+    if (!m || !(m.wo || m.walkover)) return esc(text);
+    return esc(text) + '<span data-pp2-wo="1" title="Walkover: not a match played, counted in no record" ' +
+      'style="display:block;font-size:10px;font-weight:700;letter-spacing:0.04em;">WO</span>';
+  }
+  // The result marker's fill: a walkover keeps W / L (L for the player who withdrew); an unconfirmed row has none.
+  function markerFill(m) {
+    if (m && (m.unconf || m.unconfirmed)) return 'transparent';
+    return m && m.won ? 'var(--pos)' : 'var(--neg)';
   }
 
   function setScoreText(m, sep) {
@@ -3582,7 +3608,7 @@
   function drillScope(p, year, since, tier) {
     // TEN-449 · the season table, career row and surface rows list the career record's own rows (recordSpine), the
     // not-counted ones marked; the Last 52 window lists the rows it counts (countedSpine).
-    var sp = since ? countedSpine(p) : recordSpine(p), courts = seasonCourts(p, sp);
+    var sp = since ? windowSpine(p) : recordSpine(p), courts = seasonCourts(p, sp);
     var t = tier && tier !== 'all' ? tier : null;
     var seasons = {};
     if (!since) {
@@ -3601,6 +3627,8 @@
       } else if (!seasons[r.year] && !(r.notCounted && !year && !t)) return;   // TEN-449: Career lists every not-counted row
       var row = last52DrillRow(r);
       if (r.notCounted) row.notCounted = r.notCounted;
+      if (r.wo) row.wo = true;
+      if (r.unconf) row.unconf = true;
       if (r.provisional) row.provisional = r.provisional;
       row.court = courts[i] || null;
       row.cell = seasonCellOf(r, courts[i], !since && !!seasons[r.year] && seasons[r.year].carved);
@@ -3609,6 +3637,16 @@
       out.push(row);
     });
     return out.reverse();
+  }
+  // The Last 52 window lists the rows it counts (countedSpine) and, founder 2026-10-22, the walkover / unconfirmed rows
+  // inside it, marked and counted nowhere. One array per pair of inputs, so seasonCourts() keeps its memo.
+  function windowSpine(p) {
+    var c = countedSpine(p), all = recordSpine(p);
+    if (windowSpine._c === c && windowSpine._a === all) return windowSpine._v;
+    var l = all.filter(function (r) { return r.notCounted === 'walkover' || r.notCounted === 'unconfirmed'; });
+    var v = l.length ? c.concat(l).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }) : c;
+    windowSpine._c = c; windowSpine._a = all; windowSpine._v = v;
+    return v;
   }
   function drillRows(p, surf, year, since, tier) {
     var rows = drillScope(p, year, since, tier);
@@ -3639,7 +3677,10 @@
     var more = paintedN < listN ? ' ' + MIDDOT + ' showing ' + paintedN + ' ' + MIDDOT + ' scroll for more' : '';
     // TEN-449 · the list may hold rows TE does not list: shown, counted nowhere, so every comparison uses the rest
     var nc = g.notCounted || 0, rowsN = listN - nc;
-    if (nc) more = ' ' + MIDDOT + ' ' + nc + ' not in Tennis Explorer, not counted' + more;
+    var ncTe = nc - (g.walkovers || 0) - (g.unconfirmed || 0);
+    if (ncTe) more = ' ' + MIDDOT + ' ' + ncTe + ' not in Tennis Explorer, not counted' + more;
+    if (g.unconfirmed) more = ' ' + MIDDOT + ' ' + g.unconfirmed + ' unconfirmed, not counted' + more;
+    if (g.walkovers) more = ' ' + MIDDOT + ' ' + g.walkovers + ' walkover' + (g.walkovers === 1 ? '' : 's') + ', not counted' + more;
     // A Total lists its unresolved-court rows (they sit in exactly one of Indoors or their surface) and says so.
     var unk = !surf && g.court ? ' ' + MIDDOT + ' ' + g.court + ' ha' + (g.court === 1 ? 's' : 've') +
       ' no court type on record yet' : '';
@@ -3666,8 +3707,10 @@
         (why.length ? ' ' + MIDDOT + ' ' + why.join(' ' + MIDDOT + ' ') : '') + unk + more;
     }
     if (paintedN < listN && rowsN === cellN) {
-      return 'Showing ' + paintedN + ' of ' + listN + ' ' + MIDDOT + ' scroll for more' + (nc ? ' ' + MIDDOT + ' ' + nc +
-        ' not in Tennis Explorer, not counted' : '') + unk;
+      return 'Showing ' + paintedN + ' of ' + listN + ' ' + MIDDOT + ' scroll for more' + (ncTe ? ' ' + MIDDOT + ' ' + ncTe +
+        ' not in Tennis Explorer, not counted' : '') + (g.walkovers ? ' ' + MIDDOT + ' ' + g.walkovers + ' walkover' +
+        (g.walkovers === 1 ? '' : 's') + ', not counted' : '') + (g.unconfirmed ? ' ' + MIDDOT + ' ' + g.unconfirmed +
+        ' unconfirmed, not counted' : '') + unk;
     }
     if (rowsN > cellN) {
       // OVERFLOW — the list holds MORE than the record it sits under.
@@ -3696,7 +3739,9 @@
     // TEN-449 · a row TE does not list (a DOB-joined player) is listed, marked, and counted nowhere: `notCounted`
     // keeps it out of every comparison with the cell.
     var gap = { court: 0, surfaceless: 0, pre: 0, preYear: PRE_ARCHIVE_YEAR(),
-      notCounted: rows.filter(function (r) { return r.notCounted; }).length };
+      notCounted: rows.filter(function (r) { return r.notCounted; }).length,
+      walkovers: rows.filter(function (r) { return r.notCounted === 'walkover'; }).length,
+      unconfirmed: rows.filter(function (r) { return r.notCounted === 'unconfirmed'; }).length };
     var counted = scope.filter(function (r) { return !r.notCounted; });
     if (opts.surf) {
       counted.forEach(function (r) {
@@ -3782,6 +3827,12 @@
   // TEN-449 · a row Tennis Explorer does not list (DOB-joined player): shown, counted in no cell, and says so.
   function notCountedMark(r) {
     if (!r || !r.notCounted) return '';
+    // Founder 2026-10-22: a walkover says WO under its date and carries no extra words; an unconfirmed row says why.
+    if (r.notCounted === 'walkover') return '';
+    if (r.notCounted === 'unconfirmed') {
+      return ' <span data-pp2-notcounted="unconfirmed" title="Tennis Explorer lists this match with no score, and neither ' +
+        'api-tennis nor Sackmann confirms it: not counted" style="color:var(--text-label);">' + MIDDOT + ' unconfirmed, not counted</span>';
+    }
     return ' <span data-pp2-notcounted="1" title="Not in Tennis Explorer, not counted in this record" ' +
       'style="color:var(--text-label);">' + MIDDOT + ' not in Tennis Explorer, not counted</span>';
   }
@@ -3828,13 +3879,14 @@
       };
       return grp +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);padding:5px 0;',
-             esc(r.date ? fmtDotDate(r.date) + '.' : DASH), 'data-pp2-drill-row="' + (r.won ? 'W' : 'L') + '" ') +
-        cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
+             woDateHtml(r, r.date ? fmtDotDate(r.date) + '.' : DASH), 'data-pp2-drill-row="' + (r.unconf ? 'U' : r.wo ? 'WO' : r.won ? 'W' : 'L') + '"' +
+             (r.wo ? ' data-pp2-wo-row="1"' : '') + ' ') +
+        cell('width:8px;height:8px;border-radius:2px;background:' + markerFill(r) + ';', '') +
         cell('font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;' +
              'white-space:nowrap;padding:5px 0;', esc(r.opp ? initialSurname(r.opp) : DASH)) +   // fx3 D12: drills read "I. M. Surname"
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);padding:5px 0;',
              esc(r.round || DASH)) +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + (r.sets ? wl : DASH_COLOUR) +
              ';padding:5px 0;', esc(r.sets || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
              'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r) + provisionalMark(r)) +
@@ -5631,9 +5683,9 @@
         };
         return '' +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);padding:5px 0;',
-               m.date ? esc(fmtDotDate(m.date) + '.') : DASH) +
+               woDateHtml(m, m.date ? fmtDotDate(m.date) + '.' : DASH)) +
           cell('display:flex;align-items:center;align-self:stretch;',
-               '<span style="width:8px;height:8px;border-radius:2px;background:' + wl + ';"></span>') +
+               '<span ' + (m.walkover ? 'data-pp2-wo-row="1" ' : '') + 'style="width:8px;height:8px;border-radius:2px;background:' + markerFill(m) + ';"></span>') +
           // ⚠️ NAME FORM — the export contradicts itself and the file wins here.
           // `Player Profile.dc.html`:838 writes the LEDGER's opponent surname-
           // first ("Shelton B."), which is what correction-pass items 4/8 ruled
@@ -5647,14 +5699,15 @@
                esc(m.opp ? initialSurname(m.opp) : DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);padding:5px 0;',
                esc(m.round || DASH)) +
-          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + wl +
-               ';padding:5px 0;', m.sets ? esc(m.sets) : (m.rawSets ? esc(m.rawSets) : DASH)) +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + (m.walkover ? DASH_COLOUR : wl) +
+               ';padding:5px 0;', m.walkover ? DASH : m.sets ? esc(m.sets) : (m.rawSets ? esc(m.rawSets) : DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);white-space:nowrap;' +
-               'padding:5px 0;', m.setScores ? esc(m.setScores) : DASH) +
+               'padding:5px 0;', m.walkover ? DASH : m.setScores ? esc(m.setScores) : DASH) +
+          // a walkover is not a priced match: – in H and A, never a price, never units
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-soft);text-align:right;' +
-               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.price)) +
+               'padding:5px 0;', m.walkover ? DASH : t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.price)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);text-align:right;' +
-               'padding:5px 0;', t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.oppPrice));
+               'padding:5px 0;', m.walkover ? DASH : t.backingPending ? BACKING_PEND_HTML : pxAfterHtml(m, t) || pxSrcHtml(m, m.oppPrice));
       }).join('');
     }).join('');
 
@@ -6113,8 +6166,10 @@
     out.rows = all.rows.filter(function (r) {
       return pred(r.m) && (scope !== 'last52' || String(r.m.d) >= String(cut));
     }).sort(function (a, b) { return a.m.d < b.m.d ? 1 : a.m.d > b.m.d ? -1 : a.i - b.i; });   // newest first, file order within an event
-    out.w = out.rows.filter(function (r) { return r.won; }).length;
-    out.l = out.rows.length - out.w;
+    // Founder 2026-10-22 · a walkover (the file's own "W/O") is listed and counted in no W–L.
+    out.wo = out.rows.filter(function (r) { return r.sc.wo; }).length;
+    out.w = out.rows.filter(function (r) { return r.won && !r.sc.wo; }).length;
+    out.l = out.rows.length - out.wo - out.w;
     var priced = out.rows.filter(function (r) { return r.cents != null; });
     out.priced = priced.length;
     out.cents = priced.reduce(function (a, r) { return a + r.cents; }, 0);
@@ -6168,7 +6223,7 @@
     if (M.st === 'failed') return wrap(line('The match list could not be loaded. Go back and open the row again to retry'));
 
     var pend = M.join === 'pending', failed = M.join === 'failed';
-    var listN = M.rows.length;
+    var listN = M.rows.length - (M.wo || 0);   // matches played; the walkover rows are listed beside them, not counted
     // P&L with its denominator, always: "P&L +4.12u over 38 of 44 priced matches" (founder wording).
     var pl = pend ? '<span data-pp2-pending="draw-pl">&nbsp;</span>'
       : failed ? 'P&amp;L ' + DASH + ' ' + MIDDOT + ' prices unavailable'
@@ -6189,14 +6244,15 @@
 
     var filt = state.drawFilter === 'W' || state.drawFilter === 'L' ? state.drawFilter : 'all';
     var chips = drawSeg('draw-filter', 'data-v', [['all', 'All ' + listN], ['W', 'Wins ' + M.w], ['L', 'Losses ' + M.l]], filt);
-    var shown = M.rows.filter(function (r) { return filt === 'all' || (filt === 'W') === r.won; });
+    // the walkover rows sit in All only: they are neither a win nor a loss
+    var shown = M.rows.filter(function (r) { return filt === 'all' || (!r.sc.wo && (filt === 'W') === r.won); });
     var pages = Math.max(1, Math.ceil(shown.length / DRAW_PAGE));
     var pg = Math.min(Math.max(0, state.drawPage | 0), pages - 1);
     var from = pg * DRAW_PAGE, to = Math.min(shown.length, from + DRAW_PAGE);
     var body = shown.slice(from, to).map(function (r) {
       var c = r.careerMatch, st = r.sc.wo ? 'wo' : r.sc.ret ? 'ret' : null;
       return mlRowHtml({
-        hook: 'data-pp2="draw-sheet" data-v="' + r.i + '" ', won: r.won,
+        hook: 'data-pp2="draw-sheet" data-v="' + r.i + '" ', won: r.won, wo: st === 'wo',
         date: c && /^\d{4}-\d{2}-\d{2}/.test(String(c.date || '')) ? String(c.date).slice(0, 10) : r.date,
         oppHtml: drawOppHtml(r),
         event: tournDisplayName(r.m.t, null) || DASH, round: r.m.rd || DASH,
@@ -7427,6 +7483,8 @@
     return null;
   }
   function calSpine(p) { return spineOver(p, careerHistoryFor(p.key), calSpine, false); }
+  // The played spine plus the listed-only rows (walkover, unconfirmed), marked `notCounted`: for LISTS only.
+  function calSpineAll(p) { calSpine(p); return calSpine._all || calSpine(p); }
   // TEN-449 (founder 2026-10-19) · THE CAREER RECORD'S OWN ROWS. The record is a separate population from H2H, Lines
   // and the model, so career-history's `matches` stay the feed rows and the record is an overlay on them in its own
   // lazy file (payload B: career-record/<key>.json, te-join.js recordLayer, bridged as window.careerRecord): each row
@@ -7457,11 +7515,17 @@
   }
   function recordSpine(p) {
     var rows = recordRowsOf(p);
-    return rows === careerHistoryFor(p.key) ? calSpine(p) : spineOver(p, rows, recordSpine, true);
+    // Founder 2026-10-22: the record's rows include its listed-only rows (marked `notCounted`), as its drills list them.
+    if (rows === careerHistoryFor(p.key)) return calSpineAll(p);
+    spineOver(p, rows, recordSpine, true);
+    return recordSpine._all;
   }
   // The record's COUNTED rows (the not-counted ones out): the Last 52 window counts and lists these, and the
   // undated-match notes compare the season table against them — one population, the one careerByYear counts.
   function countedSpine(p) {
+    // No record overlay: the counted rows ARE the played feed spine — the same array, so `countedSpine(p) !== calSpine(p)`
+    // still means "the record differs from the feed" and nothing else.
+    if (recordRowsOf(p) === careerHistoryFor(p.key)) return calSpine(p);
     var sp = recordSpine(p);
     if (countedSpine._sp === sp) return countedSpine._v;
     var v = sp.some(function (r) { return r.notCounted; }) ? sp.filter(function (r) { return !r.notCounted; }) : sp;
@@ -7480,9 +7544,15 @@
       return memo._v;
     }
     var alias = calNameMap(p);
-    var rows = (ch || []).filter(function (r) {
+    var dated = (ch || []).filter(function (r) {
       return r && typeof r.date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(r.date);
     });
+    // Founder 2026-10-22 · a walkover (explicit flag only) and an unconfirmed Tennis Explorer empty score are LISTED and
+    // counted nowhere. They never reach the played spine (`rows`, memo._v — what every counter reads) nor the price join:
+    // an extra date+opponent or year+opponent key would make a played meeting's pairing ambiguous and drop its price.
+    // They ride in memo._all, marked `notCounted`, for the lists (calSpineAll, recordSpine).
+    var rows = dated.filter(function (r) { return !r.walkover && !r.unconfirmed; });
+    var listedOnly = dated.filter(function (r) { return r.walkover || r.unconfirmed; });
     var mrows = (mk && mk.matches) || [];
     function evOf(r) { return alias[r.tournament] || calEventClean(r.tournament); }
     var mkByDate = pairKeyIndex(mrows, function (r) { return r.date + '|' + oppKeyOf(r.opp); });
@@ -7622,16 +7692,43 @@
         // once already, so every P&L here is accumulated in whole cents and
         // divided only at the point it is printed.
         cents: pin ? Math.round(pin.pl * 100) : null,
-        // Item 27 · WALKOVERS. career-history carries no walkover flag; the one
-        // marker it has is an EMPTY result string (" - ") where no set was ever
-        // played. recentForm does carry `walkover`, so it is preferred wherever
-        // the ±0-day join reaches (66 of Zverev's 775 rows). Either signal sets
-        // this flag; scoreWithStatus() prints it as "w/o".
-        wo: !!(rf && rf.walkover) || !/\d/.test(String(r.result || '')),
+        // Item 27 · WALKOVERS (founder 2026-10-22): the row's own explicit flag, never an empty score. A played row is
+        // never one; the walkover rows are built below, outside the join.
+        wo: !!r.walkover,
         sheetId: r.date + '|' + (r.opponent || '')
       };
-    }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
+    });
+    var byDate = function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; };
+    out.sort(byDate);
+    // The listed-only rows: no join, so no price, no units, no tier and no court of the join's — the row's own court
+    // flag (TEN-395) places it, as the season table's Indoors does.
+    var listed = listedOnly.map(function (r) {
+      var y = String(r.date).slice(0, 4);
+      return {
+        date: r.date, year: rowYear && /^\d{4}$/.test(String(r.year || '')) ? String(r.year) : y,
+        mon: parseInt(r.date.slice(5, 7), 10) - 1,
+        won: !!r.won,
+        notCounted: r.notCounted || (r.walkover ? 'walkover' : 'unconfirmed'),
+        provisional: null,
+        teOnly: r.src === 'te',
+        surface: r.surface ? String(r.surface).toLowerCase() : null,
+        court: r.indoor === true ? 'Indoor' : r.indoor === false ? 'Outdoor' : null,
+        seasonIndoor: rowYear ? r.indoor === true : typeof r.indoor === 'boolean' ? r.indoor : null,
+        conflicts: Array.isArray(r.conflicts) && r.conflicts.length ? r.conflicts : null,
+        event: evOf(r), level: null, tournament: r.tournament || null,
+        round: roundLabel({ round: r.round, date: r.date, tournament: r.tournament }),
+        opp: r.opponent || null,
+        setGames: null, score: DASH, sets: null, retired: false,
+        price: null, oppPrice: null, priceBasis: null, book: null, role: null,
+        dateKind: r.src === 'archive' ? 'start' : 'match', mkWon: null, mkRet: null, mkDate: null,
+        tier: r.level === 'atp' ? 'atp' : r.level ? 'chitf' : null,
+        cents: null,
+        wo: !!r.walkover, unconf: !!r.unconfirmed,
+        sheetId: r.date + '|' + (r.opponent || '')
+      };
+    });
     memo._k = p.key; memo._ch = ch; memo._mk = mk; memo._b = b365; memo._cl = cl; memo._v = out;
+    memo._all = listed.length ? out.concat(listed).sort(byDate) : out;
     return out;
   }
   /**
@@ -8381,6 +8478,12 @@
     var dy = parts[0], dm = parseInt(parts[1], 10);
     var cell = rows.filter(function (r) { return r.year === dy && r.mon === dm; });
     if (!cell.length) return '';
+    // Founder 2026-10-22 · the month's walkover / unconfirmed rows, in the segment's surface: listed, counted nowhere.
+    var calSurf = state.calSurface || 'all';
+    var listed = calSurf === 'indoors' ? [] : calSpineAll(p).filter(function (r) {
+      return (r.wo || r.unconf) && r.year === dy && r.mon === dm && (calSurf === 'all' || r.surface === calSurf);
+    });
+    var woN = listed.filter(function (r) { return r.wo; }).length, unN = listed.length - woN;
     var won = 0, cents = 0, priced = 0;
     cell.forEach(function (r) {
       if (r.won) won++;
@@ -8390,7 +8493,7 @@
     var pct = priced ? cents / priced : null;
     var sign = cents > 0 ? 'var(--pos)' : cents < 0 ? 'var(--neg)' : 'var(--text-label)';
     var order = [], groups = {};
-    cell.forEach(function (r) {
+    cell.concat(listed).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; }).forEach(function (r) {
       var ev = r.event || DASH;
       if (order.indexOf(ev) < 0) { order.push(ev); groups[ev] = []; }
       groups[ev].push(r);
@@ -8423,8 +8526,11 @@
           return '<div ' + sheetHook(r.sheetId) + 'style="' + ROW_TRACK +
             'align-items:center;padding:6px 0;border-top:1px solid var(--line);' +
             sheetCursor() + '">' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;' +
-              'color:' + (r.won ? 'var(--pos)' : 'var(--neg)') + ';">' + (r.won ? 'W' : 'L') + '</span>' +
+            // a walkover keeps its W / L with "WO" under it; an unconfirmed row has no marker (founder 2026-10-22)
+            '<span ' + (r.wo ? 'data-pp2-wo-row="1" ' : '') + 'style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;' +
+              'color:' + (r.unconf ? DASH_COLOUR : r.won ? 'var(--pos)' : 'var(--neg)') + ';">' +
+              (r.unconf ? DASH : r.won ? 'W' : 'L') + (r.wo ? '<span data-pp2-wo="1" title="Walkover: not a match played, counted in no record" ' +
+              'style="display:block;font-size:10px;">WO</span>' : '') + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--text-label);">' +
               esc(r.round || DASH) + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);' +
@@ -8450,7 +8556,8 @@
         // K6 · the reference titles the drill with the short month ("Apr 2026").
         '<span style="font-size:13px;font-weight:700;">' + esc(MON3[dm] + ' ' + dy) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-label);white-space:nowrap;">' +
-          recordText(won, cell.length - won) + '</span>' +
+          recordText(won, cell.length - won) + (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') +
+          (unN ? ' ' + MIDDOT + ' ' + unN + ' unconfirmed, not counted' : '') + '</span>' +
         '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:15px;' +
           'font-weight:700;white-space:nowrap;color:' + (priced ? sign : DASH_COLOUR) + ';">' +
           (dPend ? '&nbsp;' : esc(totalLine)) + '</span>' +
@@ -8784,26 +8891,39 @@
     return (mk && mk.matches) ? mk.matches : [];
   }
 
+  function speedRowOf(r) {
+    var info = speedInfoFor(r.event, r.tournament, r.surface, r.court);
+    return {
+      date: r.date, year: r.year, won: r.won, surface: r.surface, court: r.court,
+      event: r.event, level: r.level, round: r.round, opp: r.opp,
+      sets: r.sets, score: r.score, retired: r.retired, wo: r.wo, unconf: !!r.unconf,
+      price: r.price, oppPrice: r.oppPrice, cents: r.cents,
+      venue: info ? info.venue : null,
+      speed: info ? info.speed : null,
+      ratingYear: info ? info.ratingYear : null,
+      sheetId: r.sheetId
+    };
+  }
   function speedRows(p) {
     var spine = calSpine(p);
     var map = (typeof window !== 'undefined') ? window.courtSpeedMap : null;
     if (speedRows._k === p.key && speedRows._s === spine && speedRows._m === map && speedRows._v) {
       return speedRows._v;
     }
-    var out = spine.map(function (r) {
-      var info = speedInfoFor(r.event, r.tournament, r.surface, r.court);
-      return {
-        date: r.date, year: r.year, won: r.won, surface: r.surface, court: r.court,
-        event: r.event, level: r.level, round: r.round, opp: r.opp,
-        sets: r.sets, score: r.score, retired: r.retired, wo: r.wo,
-        price: r.price, oppPrice: r.oppPrice, cents: r.cents,
-        venue: info ? info.venue : null,
-        speed: info ? info.speed : null,
-        ratingYear: info ? info.ratingYear : null,
-        sheetId: r.sheetId
-      };
-    });
+    var out = spine.map(speedRowOf);
     speedRows._k = p.key; speedRows._s = spine; speedRows._m = map; speedRows._v = out;
+    return out;
+  }
+  // Founder 2026-10-22 · the walkover / unconfirmed rows, banded like any row, for the band LISTS only: no band count,
+  // rate, unit or "best band" reads them (speedBands keeps them in `listed`, apart from `rows`).
+  function speedRowsListed(p) {
+    var all = calSpineAll(p);
+    var map = (typeof window !== 'undefined') ? window.courtSpeedMap : null;
+    if (speedRowsListed._k === p.key && speedRowsListed._s === all && speedRowsListed._m === map && speedRowsListed._v) {
+      return speedRowsListed._v;
+    }
+    var out = all.filter(function (r) { return r.wo || r.unconf; }).map(speedRowOf);
+    speedRowsListed._k = p.key; speedRowsListed._s = all; speedRowsListed._m = map; speedRowsListed._v = out;
     return out;
   }
 
@@ -8825,7 +8945,7 @@
   function speedBands(p) {
     var surf = state.speedSurf || 'all';
     var agg = {};
-    SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0, cents: 0, priced: 0, rows: [] }; });
+    SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0, cents: 0, priced: 0, rows: [], listed: [] }; });
     var unbanded = 0, scoped = 0;
     speedRows(p).forEach(function (m) {
       if (!speedSurfaceMatch(m, surf)) return;
@@ -8841,6 +8961,11 @@
       // Summing units over the banded count instead is the error the design guards
       // against with its own "on N listed" label.
       if (m.cents != null) { a.cents += m.cents; a.priced += 1; }
+    });
+    speedRowsListed(p).forEach(function (m) {
+      if (!speedSurfaceMatch(m, surf)) return;
+      var b = speedBandForRow(m);
+      if (b) agg[b.id].listed.push(m);
     });
     // TEN-384 Q5 · slowest to fastest (Slow · Medium · Fast), the order the reference lays its tiles
     // out in under "Slower courts … Faster courts" (README §5.5's order too). The win-rate sort the
@@ -9005,7 +9130,11 @@
     // §8.11 · the header states the band's record, rate and n, then how much of it is on screen.
     var sn = sel.won + sel.lost;
     var srate = (gateFor(sn) === GATE.NONE || gateFor(sn) === GATE.THIN) ? DASH : Math.round(100 * sel.won / sn) + '%';
-    var shown = sel.rows.length;
+    var shown = sel.rows.length, woN = (sel.listed || []).filter(function (m) { return m.wo; }).length,
+      unN = (sel.listed || []).length - woN;
+    // Founder 2026-10-22 · listed, counted nowhere, and the header says so beside the match count.
+    var listedNote = (woN ? ' ' + MIDDOT + ' ' + woN + ' walkover' + (woN === 1 ? '' : 's') + ', not counted' : '') +
+      (unN ? ' ' + MIDDOT + ' ' + unN + ' unconfirmed, not counted' : '');
     var head = '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 12px;">' +
       '<span style="display:flex;align-items:baseline;gap:10px;min-width:0;">' +
         recCaps(esc(sel.band.label) + ' courts ' + MIDDOT + ' career', 'white-space:nowrap;') +
@@ -9013,7 +9142,7 @@
           recordText(sel.won, sel.lost) + ' ' + MIDDOT + ' ' + srate + ' ' + MIDDOT + ' ' + sn + ' matches</span></span>' +
       '<span style="display:flex;align-items:baseline;gap:10px;flex:none;">' +
         '<span style="' + MONO + 'font-size:11px;color:var(--text-label);white-space:nowrap;">' +
-          (shown < sn ? 'Showing ' + shown + ' of ' + sn : 'All ' + shown + ' matches') + '</span>' +
+          (shown < sn ? 'Showing ' + shown + ' of ' + sn : 'All ' + shown + ' matches') + listedNote + '</span>' +
         '<span style="' + MONO + 'font-size:12.5px;font-weight:700;white-space:nowrap;color:' +
           (sel.priced ? (sel.cents >= 0 ? 'var(--pos)' : 'var(--neg)') : DASH_COLOUR) + ';">' +
           (spPend ? '&nbsp;' : sel.priced ? signed(sel.cents / 100, 1, 'u') : DASH) + '</span></span>' +
@@ -9021,8 +9150,11 @@
 
     // Newest first, grouped by event — the design groups a run of matches under the
     // tournament they were played at rather than repeating the event on every row.
-    var rows = sel.rows.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
+    var rows = sel.rows.concat(sel.listed || []).sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
     var out = '', lastGroup = null;
+    // a walkover row carries no join, so no tier: the group's meta takes the tier any of its played rows holds
+    var groupLevel = {};
+    rows.forEach(function (m) { var g = m.event + '|' + m.date.slice(0, 4); if (m.level && !groupLevel[g]) groupLevel[g] = m.level; });
     rows.forEach(function (m) {
       var g = m.event + '|' + m.date.slice(0, 4);
       if (g !== lastGroup) {
@@ -9038,18 +9170,19 @@
           '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
             esc(tournDisplayName(m.event, null) + ' ' + m.date.slice(0, 4)) + '</span>' +
           '<span style="' + MONO + 'font-size:10.5px;color:var(--text-label);white-space:nowrap;">' +
-            esc([surfWord, m.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
+            esc([surfWord, m.level || groupLevel[g]].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
         '</div>';
       }
       var hook = sheetHook(m.sheetId || (m.date + '|' + m.opp));
       var cell = 'cursor:pointer;padding:6px 0;border-top:1px solid var(--line);';
       out +=
-        '<span ' + hook + 'style="' + cell + MONO + 'font-size:11px;' +
-          'color:var(--text-label);">' + esc(shortDate(m.date)) + '</span>' +
-        // §8.14 · a coloured square, not a "W"/"L" letter.
+        '<span ' + hook + (m.wo ? 'data-pp2-wo-row="1" ' : '') + 'style="' + cell + MONO + 'font-size:11px;' +
+          'color:var(--text-label);">' + woDateHtml(m, shortDate(m.date)) + '</span>' +
+        // §8.14 · a coloured square, not a "W"/"L" letter. A walkover keeps it (L withdrew, W advanced); an
+        // unconfirmed row has none (founder 2026-10-22).
         '<span ' + hook + 'style="' + cell + 'display:flex;align-items:center;align-self:stretch;">' +
           '<span style="width:8px;height:8px;border-radius:2px;background:' +
-          (m.won ? 'var(--pos)' : 'var(--neg)') + ';"></span></span>' +
+          markerFill(m) + ';"></span></span>' +
         // §8.15 · the opponent is the page's sans face, not mono.
         '<span ' + hook + 'style="' + cell + 'font-size:12.5px;overflow:hidden;text-overflow:ellipsis;' +
           'white-space:nowrap;">' + esc(m.opp ? initialSurname(m.opp) : DASH) + '</span>' +   // fx5 item 4: the drills' name rule
@@ -9274,7 +9407,7 @@
     }
     var agg = {};
     STYLE_AXIS.forEach(function (a) {
-      agg[a.label] = { axis: a, won: 0, lost: 0, cents: 0, priced: 0, rows: [] };
+      agg[a.label] = { axis: a, won: 0, lost: 0, cents: 0, priced: 0, rows: [], listed: [] };
     });
     var unlabelled = 0;
     spine.forEach(function (m) {
@@ -9287,6 +9420,12 @@
       // set by calSpine() only where the join landed a Market edge CLOSING price (Pinnacle, else Bet365 —
       // founder TEN-384 B8); a bet365 pre-match snapshot never reaches it.
       if (m.cents != null) { a.cents += m.cents; a.priced += 1; }
+    });
+    // Founder 2026-10-22 · the walkover / unconfirmed rows, by archetype, for the LIST only.
+    calSpineAll(p).forEach(function (m) {
+      if (!m.wo && !m.unconf) return;
+      var a = agg[styleArchetypeOf(m.opp)];
+      if (a) a.listed.push(m);
     });
     var out = STYLE_AXIS.map(function (a) { return agg[a.label]; });
     out.sort(function (x, y) {
@@ -9640,10 +9779,10 @@
     var pxt = !priced && !x.pend && x.pxTitle ? ' title="' + esc(x.pxTitle) + '"' : '';
     return '' +
       '<span ' + hook + 'style="' + cur + cell + 'display:flex;align-items:center;">' +
-        '<span title="' + (x.won ? 'Won' : 'Lost') + '" style="width:8px;height:8px;border-radius:2px;background:' +
-        (x.won ? 'var(--pos)' : 'var(--neg)') + ';"></span></span>' +
-      '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;color:var(--text-label);">' +
-        esc(styleMonthYear(x.date)) + '</span>' +
+        '<span title="' + (x.unconf ? 'Unconfirmed: not counted' : (x.won ? 'Won' : 'Lost') + (x.wo ? ' by walkover: not counted' : '')) +
+        '" style="width:8px;height:8px;border-radius:2px;background:' + markerFill(x) + ';"></span></span>' +
+      '<span ' + hook + (x.wo ? 'data-pp2-wo-row="1" ' : '') + 'style="' + cur + cell + mono + 'font-size:11px;color:var(--text-label);">' +
+        woDateHtml(x, styleMonthYear(x.date)) + '</span>' +
       '<span ' + hook + 'style="' + cur + cell + 'font-size:12.5px;color:var(--text);overflow:hidden;' +
         'text-overflow:ellipsis;white-space:nowrap;">' +
         x.oppHtml + '</span>' +
@@ -9677,12 +9816,12 @@
       : DASH + ' ' + MIDDOT + ' 0 priced';
     var plColour = r.priced ? (r.cents >= 0 ? 'var(--pos)' : 'var(--neg)') : 'var(--text-label)';
 
-    var body = r.rows.slice().sort(function (a, b) {
+    var body = r.rows.concat(r.listed || []).sort(function (a, b) {
       return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
     }).map(function (m) {
       var s = perSetScore(m);
       return mlRowHtml({
-        hook: sheetHook(m.sheetId || (m.date + '|' + m.opp)), won: m.won, date: m.date,
+        hook: sheetHook(m.sheetId || (m.date + '|' + m.opp)), won: m.won, date: m.date, wo: !!m.wo, unconf: !!m.unconf,
         oppHtml: esc(m.opp ? styleOppName(m.opp) : DASH),
         event: tournDisplayName(m.event, null) || DASH, round: m.round || DASH,
         // Set scores where recentForm reaches, space-separated ("4-6 3-6"); the
@@ -9700,7 +9839,7 @@
           '<span style="' + STYLE_CAPS + 'white-space:nowrap;">' + esc(r.axis.label) + ' ' + MIDDOT + ' career</span>' +
           '<span style="' + mono + 'font-size:11.5px;color:var(--text-label);white-space:nowrap;">' +
             recordText(r.won, r.lost) + ' ' + MIDDOT + ' ' + (n ? Math.round(100 * r.won / n) + '%' : DASH) +
-            ' ' + MIDDOT + ' ' + n + ' matches</span>' +
+            ' ' + MIDDOT + ' ' + n + ' matches' + listedClause(r.listed) + '</span>' +
         '</span>' +
         '<span style="' + mono + 'font-size:12.5px;font-weight:700;white-space:nowrap;color:' +
           plColour + ';">' + plText + '</span>' +
@@ -9709,6 +9848,12 @@
         '<div style="' + ML_GRID + '">' + mlHeadsHtml() + body + '</div>' +
       '</div>' +
     '</div>';
+  }
+  // " · 1 walkover, not counted · 1 unconfirmed, not counted" beside a list's match count (founder 2026-10-22).
+  function listedClause(listed) {
+    var wo = (listed || []).filter(function (m) { return m.wo; }).length, un = (listed || []).length - wo;
+    return (wo ? ' ' + MIDDOT + ' ' + wo + ' walkover' + (wo === 1 ? '' : 's') + ', not counted' : '') +
+      (un ? ' ' + MIDDOT + ' ' + un + ' unconfirmed, not counted' : '');
   }
   /** The file's detail date: "Oct 2026" (`styleMatches()` -> `MONS[mi] + ' ' + yr`). */
   var STYLE_MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
