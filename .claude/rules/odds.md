@@ -312,8 +312,8 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
 - **A match that started is played and priced; only a true walkover is a dash** (founder ruling 2026-10-17, odds master
   close-out item 1). A match counts as played and shows its price once play began — retired, defaulted, or marked
   "Awarded" / "Disqualified" / any other non-result after the first ball. Only a match where no ball was played (a true
-  walkover) stays a dash. Sources: both players' career-history rows (`walkover: true` = no ball; a set score with a game
-  won = started), our archive's close (cut only at a verified live start = api-tennis showed it in play), and
+  walkover) stays a dash. Sources: both players' career-history rows (a set score with a game won = started; a listed walkover row is never
+  read — rule below), our archive's close (cut only at a verified live start = api-tennis showed it in play), and
   Tennis-Data's own comment ("Walkover" claims no ball). **A career row speaks only for its OWN match** (founder ruling 2026-10-18, walkover join fix): a feed row (eventKey) within ±1 day of Tennis-Data's date; an archive row (dated at its event's start) never after the match and with no round that contradicts Tennis-Data's (`sameMatch`). Measured: only the 4 walkovers that had paired a neighbouring real meeting (Federer v Kyrgios IW 2017, Rublev v Fucsovics Doha 2021, Rublev v Monfils Madrid 2025, Wawrinka v Pospisil AO 2014) move disagree → walkover; every other verdict and every price is unchanged. **Where the sources disagree, the match is flagged and keeps the
   dash** — never picked. `tools/started-evidence.js` (verdict, run in `pipeline.yml` after the career-history store is
   written) → `build-database-yield.js` (`startedOf`, `meta.started`); the td-feed passes an api-tennis "Awarded" with an
@@ -327,6 +327,12 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   `tools/test-started-priced.js` (a started "Awarded" priced, a true walkover a dash, disagreeing sources a dash, a
   played-out "Sched" a Database row; two mutants — the started rule removed, a played-out match kept behind the flag —
   go red).
+- **A listed career walkover row is never Database evidence** (founder ruling 2026-10-23; replaces the 22 Oct hold).
+  Career-history lists every flagged walkover (`walkover: true`, pipeline-records.md "Walkovers") so the match lists can
+  show it; `tools/started-evidence.js` skips those rows when it decides whether a Tennis-Data match started. A true
+  walkover still reaches the Database as a dash through Tennis-Data's own "Walkover" comment. No archive-gate override
+  is pending or wanted. **Test:** does a career walkover row change any started-evidence verdict? It must not —
+  `tools/test-started-priced.js` (Dee v Gee: a played row and a walkover row → `started`, the walkover row unread).
 - **The archive gate: nothing empty or partial publishes** (founder ruling 2026-10-17, close-out item 3). The archive
   export, the snapshot export, the Database feed, the evidence step and the Database build are fail-closed in
   `pipeline.yml` (no `|| true`, no fallback to a partial Database); after them `tools/archive-gate.mjs` fails the run when

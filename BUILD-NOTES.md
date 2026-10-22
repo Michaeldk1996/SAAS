@@ -2169,6 +2169,10 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
 - **Why Pinnacle rules for retirements:** founder ruling; settles every book's price the same way. Measured 22 Oct over
   477 players' ledgers (player-side rows): 186 retirements before the first set was complete become void (Pinnacle 184,
   +29.66u; bet365 2, +1.40u) and 13 with no stored set scores lose their units (+1.36u).
+- **Why walkover rows are not Database evidence (founder 2026-10-23):** read by `started-evidence.js`, the new rows moved
+  Database rows from "started" (priced) to a dash and the archive gate stopped every pipeline run (xRows 80,581 < 80,582,
+  22 Oct). The 22 Oct hotfix held them out pending a measured override; the founder made that permanent instead: the
+  rows exist for the match lists, and Tennis-Data's own "Walkover" comment already carries a true walkover to its dash.
 - **Targets:** our counting (TEN-449) stands; Tennis Explorer decides which matches exist, not what TEN-449 excludes.
   The brief's first targets (465–302 / 33–25) were TE's own balance, which counts Bundesliga club matches.
 

@@ -153,6 +153,7 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
   Every builder and reader keeps them out of every count on the flag (`r.walkover`), never on the score. A tournament
   history edition left by a walkover given is listed with the round reached. **Test:** a `Walk Over` fixture adds 0 to
   won and 0 to lost for both players on every record surface, and its row is in the player's career-history file.
+  A listed walkover row is never Database evidence (odds.md, founder 2026-10-23).
 - **Explicit flags only; Tennis Explorer empty scores are resolved (founder 2026-10-22).** TE's `wo` (an empty score)
   is never a walkover by itself. `te-join.js` resolves each such row against our own rows (api-tennis status, TML
   `W/O`) and the pinned Sackmann copy in the store (`sackmann/`, main + qual_chall + futures, checksummed): played →

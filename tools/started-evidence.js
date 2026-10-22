@@ -115,10 +115,8 @@ function build(root) {
       if (!rows) return { key, says: null, why: 'no career-history shard' };
       const oppK = keyFromArchiveName(oppArchive);
       const hits = rows.filter(x => {
-        // HOLD (2026-10-22): career-history now carries every flagged walkover as a row (founder ruling 2026-10-22). Read as
-        // evidence, they move Database rows from "started" (priced) to a dash — correct by the 2026-10-17 rule, but a drop
-        // the archive gate refuses until it is measured and approved (tools/archive-gate.mjs accept). Until then the
-        // evidence is what it was before those rows existed: a walkover row is not read.
+        // Founder ruling 2026-10-23 (odds.md): a listed career walkover row is never Database evidence. The rows exist for the
+        // match lists; a true walkover reaches its Database dash through Tennis-Data's own "Walkover" comment.
         if (x.walkover) return false;
         const dx = day(x.date); if (d == null || dx == null) return false;
         const dd = dx - d; if (dd < WINDOW[0] || dd > WINDOW[1]) return false;
