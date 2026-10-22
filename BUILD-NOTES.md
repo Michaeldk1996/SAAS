@@ -2156,3 +2156,18 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
   (computed while the match was upcoming); a `past-` one never does.
 - **Alias scope:** H2H join only (`h2h-core.js`), the one table, one pair. 7374f71ab already treats 34000/1735 as one
   person inside the Tennis-Data price identity gate; that gate is unchanged.
+
+## Walkovers visible, retirements on Pinnacle rules (2026-10-22)
+- **Why walkovers became rows:** Griekspoor's Vienna 2025 QF walkover to Zverev (api-tennis 12081982, status `Walk Over`)
+  was missing from every match list. `playerMatchHistory` skipped every walkover on status and the shard writer stripped
+  any that reached it, so 0 of 870 api-tennis walkover player-sides (2021 →, profiled players) reached a career-history
+  file and Court speed / Calendar / Streaks could not list them. Counting was already right (N2); only the rows were lost.
+- **Why explicit flags only:** Tennis Explorer's `wo` is an empty score. Of its 1,709 empty-score rows (631 players), 82
+  are exhibitions (51 Ultimate Tennis Showdown in 2025, scored in quarters), 38 were played (Sackmann score; Gasquet d.
+  Verdasco, Buenos Aires 2004, was left out of his record), 1,261 are walkovers and 328 stay unconfirmed (mostly ITF
+  qualifying, which neither api-tennis nor Sackmann carries).
+- **Why Pinnacle rules for retirements:** founder ruling; settles every book's price the same way. Measured 22 Oct over
+  477 players' ledgers (player-side rows): 186 retirements before the first set was complete become void (Pinnacle 184,
+  +29.66u; bet365 2, +1.40u) and 13 with no stored set scores lose their units (+1.36u).
+- **Targets:** our counting (TEN-449) stands; Tennis Explorer decides which matches exist, not what TEN-449 excludes.
+  The brief's first targets (465–302 / 33–25) were TE's own balance, which counts Bundesliga club matches.

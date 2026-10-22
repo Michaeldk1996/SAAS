@@ -32,7 +32,7 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   `trProfilePriceOf`): the event's main-draw rows (walkovers and qualifying out) resolved to career-history and priced on
   the **Database join** — `database-yield.json` rows plus the retirements behind its flag (`DatabaseTab.priceRows()`),
   Pinnacle closing, else Bet365 closing, per match, through the Head to Head page's `h2hPriceJoin` — flat 1u, **a
-  retirement settled on the official ATP result**. Never the closes shard (`match-closes/`), never the market-edge
+  retirement settled on Pinnacle rules** (founder 2026-10-22). Never the closes shard (`match-closes/`), never the market-edge
   shard's attribution or price. A row the join lacks (no career-history row, no archive row) is `—`; an exact price tie is priced at the tie since the
   founder ruling of 2026-10-16 (`tieRows`, `database.md` "Price join").
   The Head to Head page's Tournament card reads the same model, so both print the identical figure (Alcaraz, US Open
@@ -176,11 +176,10 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
     R64 + R128 (no RR / BR); Other Tours = the source's level A (ATP 250 / 500, plus Laver Cup, United Cup, ATP Cup, the
     Olympics and the 2023 Tour Finals the source codes A).
   - **Prices (founder: "confirm")** = the site's ONE join: the Database archive, Pinnacle closing, else Bet365 closing, per
-    match (`H2HPage.priceJoin` via `window.pp2DrawJoin`, with his career-history), a retirement settled on the official ATP
-    result (`RET_SETTLE_NOTE` in the footnote). P&L = 1u flat on him at his price. Missing price = "—", never 0.
-  - **Walkovers (founder: "yes")** are listed "w/o" with no price and no P&L; they stay in the W–L the Draw record already
-    shows. Whether the Draw record should count them at all (the site rule says a walkover is never a win or a loss) is
-    an OPEN founder question — figures untouched until ruled.
+    match (`H2HPage.priceJoin` via `window.pp2DrawJoin`, with his career-history), a retirement settled on Pinnacle rules
+    (`RET_SETTLE_NOTE` in the footnote; founder 2026-10-22). P&L = 1u flat on him at his price. Missing price = "—", never 0.
+  - **Walkovers** are listed as walkover rows with no price and no P&L, and are in no W–L — the Draw record
+    included (founder 2026-10-22 closes the open question: a walkover is never a win or a loss).
   - **Date** = the tournament's month (the source dates every match at its event start; founder: "yes").
   - **Every row opens the step-3 stats sheet (founder: required):** on the career-history match the join met for it
     (`careerMatch`, event key → the full sheet), else on the row's own date, score and event (the sheet's "Match stats not

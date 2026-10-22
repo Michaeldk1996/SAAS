@@ -62,7 +62,8 @@ take styling from it, structure from the rules below.
   (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
   in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of
   1,850 on 8 Oct 2026), read ONLY by the site's one price join (`DatabaseTab.priceRows()` → `dbPriceJoinRows`: the Head
-  to Head ledgers and the Player Profile per-event Backing), which settles them on the official ATP result. No Database
+  to Head ledgers and the Player Profile per-event Backing), which settles them on Pinnacle rules (founder 2026-10-22,
+  `modal-analysis.md` "Retirements in price figures"). No Database
   figure, `tour-baselines.json` or `tournament-market.json` reads them: before = after on Tour All (40,972; Favourites
   −1.78% · Underdogs −6.96%). Size: +44 KB raw / +10 KB gz (`database-yield.json`), +37 KB / +8 KB (names shard).
   **Test:** `test-ten402-b.mjs` "the store keeps retirements BEHIND A FLAG" (rows = used, parallel arrays, each flagged

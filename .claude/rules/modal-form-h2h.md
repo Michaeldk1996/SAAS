@@ -178,8 +178,11 @@ rule, and the TEN-263 "api-tennis ∪ career-history eventKey join".
 - **Shared helpers only** (DoD item 8): Recent-matches rows are `maMatchRowsHtml` rows (`fhFormRowData`; head
   `10px 14px 8px`, groups `11px 14px 5px`, `inset: 8`), each bar is a `maTipHtml` tooltip (`popStyle: bottom:20px`), and every
   row / bar opens the shared sheet. Form has no row or tooltip renderer of its own.
-- **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
-  the form shards; the tab drops any that reach it (career-history rows included).
+- **A walkover is a Form row, never a Form match** (founder 2026-10-22, reversing "never becomes a Form row"): it is
+  listed in Recent matches as a walkover row (`WO` under the date, `–` scores, W/L marker, `–` prices, no units) and
+  is not one of the last-10 matches: no bar, no W–L, no v market, no hot line, no count — the next played match fills
+  the window. The form shards and the career-history fallback carry it flagged (`walkover: true`); the 40-row cap
+  counts played rows. An unconfirmed row (TE empty score, `unconfirmed: true`) is treated the same, with no marker.
 - **A Laver Cup match never becomes a Form row** (founder TEN-380, 2026-10-04 07:33Z; kept by TEN-437 2026-10-16: "Form
   keeps its current rules, unchanged" — ATP's rules are H2H only): not in the last 10, the W–L, v market, the hot lines or
   Key factors' Recent form — the next match slides in. Hopman Cup and exhibitions are out too; Davis Cup, United Cup,
