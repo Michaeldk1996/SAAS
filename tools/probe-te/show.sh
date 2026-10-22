@@ -1,11 +1,15 @@
 set -uo pipefail
-# read-only: one 2024 team-event match Tennis Explorer prices, shown through the page's own functions on the LIVE site
+# read-only: one 2024 ATP qualifying match Tennis Explorer prices (book 8, not a team event), through the page's own functions on the LIVE site; then Bergs' coverage
 SITE=https://michaeldk1996.github.io/SAAS
 git fetch -q origin main && git worktree add -q m origin/main && cd m
+curl -sS -m 60 "$SITE/build-info.json" | python3 -c 'import json,sys;b=json.load(sys.stdin);print("data built",b["data"]["builtAt"])'
 curl -sS -m 120 "$SITE/database-yield-x.json" -o x.json; curl -sS -m 60 "$SITE/player-index.json" -o pi.json
 python3 - <<'PY' > pick.txt
 import json, unicodedata
-x = json.load(open('x.json')); pi = json.load(open('pi.json')); rows = pi.get('players', pi)
+x = json.load(open('x.json'))
+import collections, sys
+print('book 8 by flag', dict(collections.Counter(''.join(r[9:]) if len(r) > 9 else '' for r in x['xRows'] if r[8] == 8)), file=sys.stderr)
+pi = json.load(open('pi.json')); rows = pi.get('players', pi)
 it = rows.values() if isinstance(rows, dict) else rows
 norm = lambda s: unicodedata.normalize('NFD', s).encode('ascii', 'ignore').decode().lower()
 idx = {}
@@ -14,7 +18,7 @@ for v in it:
     parts = norm(v['name']).split(); idx.setdefault((parts[-1], parts[0][0]), []).append(v)
 out = []
 for r, nm in zip(x['xRows'], x['xNames']):
-    if r[8] != 8 or not str(r[0]).startswith('2024'): continue
+    if r[8] != 8 or not str(r[0]).startswith('2024') or 't' in ''.join(r[9:]): continue
     w, l = nm
     ws = norm(w).replace('.', '').split(); ls = norm(l).replace('.', '').split()
     c = idx.get((ws[0], ws[-1][0])) if len(ws) > 1 else None
@@ -28,3 +32,16 @@ L=$(sed -n 2p pick.txt); KEY=$(echo "$L" | cut -d'|' -f1); MON=$(echo "$L" | cut
 echo "picked: $L"
 CHROME_BIN=google-chrome timeout 900 node tools/price-consistency.mjs --base "$SITE" --only "$KEY" --pick "$KEY|$MON|$OPP" > pc.log 2>&1; echo "exit $?"
 grep -E '^SHOW|### price-consistency' pc.log | head -12
+
+echo "== Bergs (1064)"
+CHROME_BIN=google-chrome timeout 900 node tools/price-consistency.mjs --base "$SITE" --only 1064 --coverage-out bergs.json > pcb.log 2>&1; echo "exit $?"
+python3 - <<'PY'
+import json
+c = json.load(open('bergs.json'))
+tot = {'n': 0, 'p': 0}; allv = {'n': 0, 'p': 0}
+for lv, ys in c['byLevel'].items():
+    for y, v in sorted(ys.items()):
+        allv['n'] += v['n']; allv['p'] += v['priced']
+        if '2021' <= y <= '2024': tot['n'] += v['n']; tot['p'] += v['priced']; print(f"  {lv} {y}: {v['priced']} of {v['n']} {v['byBook']}")
+print('2021-24 priced', tot['p'], 'of', tot['n'], '· whole record', allv['p'], 'of', allv['n'])
+PY
