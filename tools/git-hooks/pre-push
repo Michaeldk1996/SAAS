@@ -7,36 +7,36 @@
 #      tested commit that differs from it in data files only (main gains [skip ci] data commits every few minutes;
 #      a code-identical rebase must not need a new 15-minute run);
 #   2. tools/clobber-check.sh is clear for every file the push changes against origin/main.
-# Exempt: a push whose every new commit says [skip ci] and changes data files only (the Mac's daily refresh jobs —
-# career splits, entry lists, playing styles). Other refs are never checked. Deleting main is refused.
+# Exempt: a push whose every new commit is a DATA-BOT commit by the deploy lane's one definition (tools/deploy-lane.mjs
+# isDataCommit: the skip marker in the subject, a data-bot author, every file one a data bot really writes) — the
+# Mac's daily refresh jobs. The FILES decide, never the marker (founder 2026-10-22); a merge is judged by what it brings.
+# Refused even with a suite pass: a non-data commit whose message carries a skip marker anywhere, or a push whose tip
+# carries one while the push holds code — GitHub would run no workflow for it, so the Code gate would never see it
+# (a7fcdc55f, 2026-10-21). Other refs are never checked. Deleting main is refused.
 # The Code gate (gate.yml) stays the enforced backstop: `git push --no-verify` bypasses this hook, never the gate.
 set -u
 Z40=0000000000000000000000000000000000000000
 COMMON="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
 TOP="$(git rev-parse --show-toplevel)"
 refuse() { printf '\npre-push: REFUSED push to main — %s\n' "$1" >&2; exit 1; }
-# data = never code: json / jsonl / gz outside tools/ and .github/, and not package.json / package-lock.json
-is_data() {
-  case "$1" in
-    tools/*|.github/*|package.json|package-lock.json) return 1 ;;
-    *.json|*.jsonl|*.json.gz|*.gz) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-only_data() { local f; while IFS= read -r f; do [ -z "$f" ] && continue; is_data "$f" || return 1; done; return 0; }
+CLASSIFY="$(cd "$(dirname "$0")" && pwd)/push-classify.mjs"
+[ -f "$CLASSIFY" ] && [ -f "${TOP}/tools/deploy-lane.mjs" ] || refuse "the hook's classifier or tools/deploy-lane.mjs is missing — rebase onto origin/main and re-run tools/install-git-hooks.sh."
 
 while read -r LREF LSHA RREF RSHA; do
   [ "$RREF" = "refs/heads/main" ] || continue
   [ "$LSHA" = "$Z40" ] && refuse "deleting main."
   NEW="$(git rev-list "$LSHA" --not --remotes=origin 2>/dev/null)"
   [ -z "$NEW" ] && continue                                   # nothing new to land
-  # exemption: every new commit is a [skip ci] data-only commit
-  EXEMPT=1
-  for c in $NEW; do
-    git log -1 --format=%B "$c" | grep -qF '[skip ci]' || { EXEMPT=0; break; }
-    git diff-tree --no-commit-id --name-only -r --root "$c" | only_data || { EXEMPT=0; break; }
-  done
-  if [ "$EXEMPT" = 1 ]; then echo "pre-push: [skip ci] data-only push to main — no suite needed."; continue; fi
+  # classify every new commit by its FILES (first-parent diff) — the deploy lane's data-bot definition
+  CLS="$(node "$CLASSIFY" "$TOP" commits $NEW)" || refuse "could not classify the pushed commits (node / tools/deploy-lane.mjs)."
+  if ! printf '%s\n' "$CLS" | grep -q '"data":false'; then echo "pre-push: data-bot push to main (every commit's files are data) — no suite needed."; continue; fi
+  # a skip marker on a commit that carries code — or on the tip of a push that holds code — means GitHub runs no
+  # workflow for the push: the Code gate would never check it
+  BAD="$(printf '%s\n' "$CLS" | grep '"data":false' | grep '"marker":true' | head -1)"
+  [ -z "$BAD" ] || refuse "commit $(printf '%s' "$BAD" | sed 's/.*"sha":"\([0-9a-f]\{9\}\).*/\1/') changes code (e.g. $(printf '%s' "$BAD" | sed 's/.*"codeFiles":\[\([^]]*\)\].*/\1/')) but its message carries a skip marker — GitHub would run no workflow, so the Code gate would never check it. Reword the message (write skip-ci without brackets) and push again."
+  # (the classifier's one marker definition; the tip is always among the new commits here)
+  printf '%s\n' "$CLS" | grep "\"sha\":\"$(git rev-parse "$LSHA")\"" | grep -q '"marker":true' \
+    && refuse "the push's last commit $(git rev-parse --short "$LSHA") carries a skip marker while the push holds code — GitHub decides from the tip, so the Code gate would skip the whole push. Push the code commits on their own first."
 
   # 1. a recorded full-suite pass for this commit, or for an earlier one with only data changed since
   OKFILE="${COMMON}/land-checks.ok"
@@ -45,7 +45,7 @@ while read -r LREF LSHA RREF RSHA; do
     while read -r OK _; do
       git cat-file -e "${OK}^{commit}" 2>/dev/null || continue
       # not an ancestry test: a tested commit rebased onto new data commits has a new id but the same code
-      if [ "$OK" = "$LSHA" ] || git diff --name-only "$OK" "$LSHA" | only_data; then PASSED="$OK"; break; fi
+      if [ "$OK" = "$LSHA" ] || node "$CLASSIFY" "$TOP" datadiff "$OK" "$LSHA"; then PASSED="$OK"; break; fi
     done < <(tail -r "$OKFILE" 2>/dev/null || tac "$OKFILE")
   fi
   [ -n "$PASSED" ] || refuse "no full-suite pass recorded for $(git rev-parse --short "$LSHA") (nor for a tested commit that differs from it in data files only).

@@ -224,9 +224,15 @@ git dir, absolute `core.hooksPath`: the checkout and every worktree). Re-run the
 - **Test:** a push that moves `main` needs (1) `tools/land-check.sh <commit>` — full suite in a CI-shaped clone, EXIT=0,
   recorded in `<git-common-dir>/land-checks.ok` — for the pushed commit or a tested commit that differs from it in data
   files only, and (2) `tools/clobber-check.sh` clear for every file the push changes.
-- **Exempt:** a push whose every new commit says `[skip ci]` and changes data only (`.json` / `.jsonl` / `.gz` outside
-  `tools/` and `.github/`, never `package*.json`) — the Mac's daily refresh jobs. Other branches are never checked.
-  Deleting `main` is refused. `--no-verify` bypasses the hook, never the Code gate.
+- **Exempt — the files decide, never the marker (founder 2026-10-22):** a push whose every new commit is a data-bot
+  commit by this file's one definition (`isDataCommit` in `tools/deploy-lane.mjs`: the marker in the subject, a
+  `DATA_BOT_AUTHORS` author, every file on `DATA_FILES` / `DATA_DIRS`) — the Mac's daily refresh jobs. A commit's files
+  are its first-parent diff, so a merge is judged by what it brings in. Other branches are never checked. Deleting
+  `main` is refused. `--no-verify` bypasses the hook, never the Code gate.
+- **Test:** code never rides under a skip marker. Refused even with a suite pass: a non-data commit whose message holds
+  any GitHub skip token anywhere (`[skip ci]` `[ci skip]` `[no ci]` `[skip actions]` `[actions skip]`, a
+  `skip-checks: true` trailer), or a push whose tip holds one while the push holds code — GitHub would run no workflow,
+  so the Code gate would never see it (a7fcdc55f, 2026-10-21).
 - **Test:** `tools/test-pre-push-hook.js` (real git, throwaway repositories, no-hook control).
 
 ## Pipeline-down alert (founder ruling 2026-10-18)

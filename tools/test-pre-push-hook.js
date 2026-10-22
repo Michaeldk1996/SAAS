@@ -14,7 +14,9 @@ const env = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EM
 const git = (cwd, ...a) => execFileSync('git', a, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const push = (cwd, ...a) => { const r = spawnSync('git', ['push', ...a], { cwd, env, encoding: 'utf8' }); return { ok: r.status === 0, out: (r.stdout || '') + (r.stderr || '') }; };
 const write = (cwd, f, t) => { fs.mkdirSync(path.dirname(path.join(cwd, f)), { recursive: true }); fs.writeFileSync(path.join(cwd, f), t); };
-const commit = (cwd, msg, files) => { for (const [f, t] of Object.entries(files)) write(cwd, f, t); git(cwd, 'add', '-A'); git(cwd, 'commit', '-q', '-m', msg); return git(cwd, 'rev-parse', 'HEAD'); };
+const commit = (cwd, msg, files, author) => { for (const [f, t] of Object.entries(files)) write(cwd, f, t); git(cwd, 'add', '-A');
+  git(cwd, 'commit', '-q', '-m', msg, ...(author ? ['--author', `Bot <${author}>`] : [])); return git(cwd, 'rev-parse', 'HEAD'); };
+const BOT = 'bot@bspconsult.local';   // a data-bot author (tools/deploy-lane.mjs DATA_BOT_AUTHORS: the Mac's refresh-*.sh jobs)
 const record = (cwd, sha) => fs.appendFileSync(path.join(cwd, '.git', 'land-checks.ok'), `${sha} 2026-10-21T00:00:00Z\n`);
 
 function setup(withHook) {
@@ -26,6 +28,8 @@ function setup(withHook) {
   write(work, 'tools/clobber-check.sh', fs.readFileSync(path.join(ROOT, 'tools', 'clobber-check.sh'), 'utf8'));
   write(work, 'tools/git-hooks/pre-push', fs.readFileSync(path.join(ROOT, 'tools', 'git-hooks', 'pre-push'), 'utf8'));
   fs.chmodSync(path.join(work, 'tools/git-hooks/pre-push'), 0o755);
+  write(work, 'tools/git-hooks/push-classify.mjs', fs.readFileSync(path.join(ROOT, 'tools', 'git-hooks', 'push-classify.mjs'), 'utf8'));
+  write(work, 'tools/deploy-lane.mjs', fs.readFileSync(path.join(ROOT, 'tools', 'deploy-lane.mjs'), 'utf8'));
   commit(work, 'init', { 'app.js': 'v1\n', 'data.json': '{"n":1}\n' });
   git(work, 'push', '-q', '--no-verify', 'origin', 'main');
   if (withHook) git(work, 'config', 'core.hooksPath', 'tools/git-hooks');
@@ -53,7 +57,7 @@ try {
   const tested = commit(B.work, 'feat: code', { 'app.js': 'v3\n' });
   record(B.work, tested);
   const other = path.join(B.dir, 'other'); git(B.dir, 'clone', '-q', B.origin, other);
-  commit(other, 'chore(odds): tick [skip ci]', { 'odds/tick.json': '{"t":1}\n' });
+  commit(other, 'chore(odds): tick [skip ci]', { 'matches.json': '{"t":1}\n' }, 'bsp-odds-bot@users.noreply.github.com');
   git(other, 'push', '-q', '--no-verify', 'origin', 'main');
   git(B.work, 'fetch', '-q', 'origin'); git(B.work, 'rebase', '-q', 'origin/main');
   const rebased = git(B.work, 'rev-parse', 'HEAD');
@@ -75,20 +79,60 @@ try {
 
   // exemptions and scope
   const D = setup(true);
-  commit(D.work, 'chore(splits): daily refresh [skip ci]', { 'career-splits/1.json': '{}\n', 'style-meetings/a.json': '{}\n', 'x.jsonl': '{}\n' });
+  commit(D.work, 'chore(splits): daily refresh [skip ci]', { 'career-splits/1.json': '{}\n', 'style-meetings/a.json': '{}\n', 'splits-matches-index.json': '{}\n' }, BOT);
   r = push(D.work, 'origin', 'main');
-  check('a [skip ci] data-only push (the Mac\'s daily refresh jobs) needs no suite → pushed', r.ok && /data-only push to main/.test(r.out), r.out);
-  commit(D.work, 'chore: sneak code [skip ci]', { 'app.js': 'sneaky\n' });
+  check('a data-bot push (the Mac\'s daily refresh jobs: bot author, marker, files on the lane\'s data list) needs no suite → pushed', r.ok && /data-bot push to main/.test(r.out), r.out);
+  commit(D.work, 'chore: sneak code [skip ci]', { 'app.js': 'sneaky\n' }, BOT);
   r = push(D.work, 'origin', 'main');
-  check('[skip ci] does not exempt a commit that changes code → refused', !r.ok, r.out);
+  check('the marker does not exempt a commit that changes code → refused', !r.ok, r.out);
   git(D.work, 'reset', '-q', '--hard', 'origin/main');
-  commit(D.work, 'chore: tooling json [skip ci]', { 'package.json': '{"scripts":{}}\n' });
+  commit(D.work, 'chore: tooling json [skip ci]', { 'package.json': '{"scripts":{}}\n' }, BOT);
   r = push(D.work, 'origin', 'main');
-  check('package.json is code, never data → refused even with [skip ci]', !r.ok, r.out);
+  check('package.json is code, never data → refused even with the marker', !r.ok, r.out);
   git(D.work, 'reset', '-q', '--hard', 'origin/main');
-  commit(D.work, 'chore: data without the marker', { 'data.json': '{"n":2}\n' });
+  commit(D.work, 'chore: hand-curated config [skip ci]', { 'court-speed-map.json': '{}\n' }, BOT);
   r = push(D.work, 'origin', 'main');
-  check('a data-only commit WITHOUT [skip ci] is not exempt (it would run the Code gate) → refused', !r.ok, r.out);
+  check('a .json the code reads but no bot writes (court-speed-map.json) is not data → refused even as a bot with the marker', !r.ok, r.out);
+  git(D.work, 'reset', '-q', '--hard', 'origin/main');
+  commit(D.work, 'chore: data by hand [skip ci]', { 'matches.json': '{"n":3}\n' });
+  r = push(D.work, 'origin', 'main');
+  check('data files + marker but NOT a data-bot author → not exempt; and its marker would skip the gate → refused', !r.ok, r.out);
+  git(D.work, 'reset', '-q', '--hard', 'origin/main');
+  commit(D.work, 'chore: data without the marker', { 'matches.json': '{"n":2}\n' }, BOT);
+  r = push(D.work, 'origin', 'main');
+  check('a data-only commit WITHOUT the marker is not exempt (it would run the Code gate) → refused', !r.ok, r.out);
+  git(D.work, 'reset', '-q', '--hard', 'origin/main');
+
+  // founder 2026-10-22: the FILES decide, never the marker — and a suite pass never lets code ride under a marker
+  const F = setup(true);
+  const body = commit(F.work, 'feat(land): a code change\n\nExempt: [skip ci] data-only pushes (prose in the body)', { 'app.js': 'v9\n' });
+  record(F.work, body);
+  r = push(F.work, 'origin', 'main');
+  check('a code commit whose BODY names [skip ci] (the a7fcdc55f shape) is refused even WITH a suite pass — GitHub would skip the gate', !r.ok && /carries a skip marker/.test(r.out) && /app\.js/.test(r.out), r.out);
+  git(F.work, 'reset', '-q', '--hard', 'origin/main');
+  for (const tok of ['[ci skip]', '[no ci]', '[skip actions]', '[actions skip]', 'skip-checks: true']) {
+    const s = commit(F.work, `feat: code\n\n${tok}`, { 'app.js': `v-${tok}\n` });
+    record(F.work, s);
+    const rr = push(F.work, 'origin', 'main');
+    check(`every GitHub skip token is caught on a code commit: "${tok}" → refused`, !rr.ok && /carries a skip marker/.test(rr.out), rr.out);
+    git(F.work, 'reset', '-q', '--hard', 'origin/main');
+  }
+  const code = commit(F.work, 'feat: real code', { 'app.js': 'v10\n' });
+  const tip = commit(F.work, 'chore(odds): tick [skip ci]', { 'matches.json': '{"x":1}\n' }, 'bsp-odds-bot@users.noreply.github.com');
+  record(F.work, tip); record(F.work, code);
+  r = push(F.work, 'origin', 'main');
+  check('a data-bot commit as the TIP of a push that holds code → refused (GitHub decides from the tip: the whole push would skip the gate)', !r.ok && /last commit .* carries a skip marker while the push holds code/.test(r.out), r.out);
+  git(F.work, 'reset', '-q', '--hard', 'origin/main');
+  git(F.work, 'checkout', '-q', '-b', 'side'); commit(F.work, 'feat: code on a side branch', { 'lib/side.js': 's\n' });
+  git(F.work, 'push', '-q', 'origin', 'side'); git(F.work, 'checkout', '-q', 'main');   // the side branch is already on origin: the merge is the ONLY new commit
+  execFileSync('git', ['merge', '-q', '--no-ff', 'side', '-m', 'chore: merge [skip ci]'], { cwd: F.work, env: Object.assign({}, env, { GIT_AUTHOR_NAME: 'Bot', GIT_AUTHOR_EMAIL: BOT }), stdio: 'ignore' });
+  r = push(F.work, 'origin', 'main');
+  check('a MERGE carrying the marker, the only new commit (its branch already on origin), that brings code in is judged by its first-parent diff → not exempt, refused', !r.ok && /REFUSED/.test(r.out) && !/data-bot push/.test(r.out), r.out);
+  git(F.work, 'reset', '-q', '--hard', 'origin/main');
+  const ok2 = commit(F.work, 'feat: clean code commit', { 'app.js': 'v11\n' });
+  record(F.work, ok2);
+  r = push(F.work, 'origin', 'main');
+  check('control: the same code with a clean message and a suite pass → pushed', r.ok, r.out);
   git(D.work, 'checkout', '-q', '-b', 'feature');
   r = push(D.work, 'origin', 'feature');
   check('a push to any other branch is never checked → pushed', r.ok, r.out);
