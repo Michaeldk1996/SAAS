@@ -69,7 +69,8 @@ H.check('A1 · pinned Zverev: every row, Career and Last 52, lists exactly its W
     I.state.drawDrill = k;
     const a = aggOf(FX.splits[scope], k) || { W: 0, L: 0 };
     const M = I.drawDrillModel(P, FX.splits[scope], scope);
-    assert.strictEqual(M.rows.length, a.W + a.L, `${scope} ${k}: ${M.rows.length} listed v ${a.W + a.L}`);
+    // founder 2026-10-22: the walkover rows are listed beside the matches and counted in no W–L
+    assert.strictEqual(M.rows.length - (M.wo || 0), a.W + a.L, `${scope} ${k}: ${M.rows.length - (M.wo || 0)} matches listed v ${a.W + a.L}`);
     assert.strictEqual(M.w, a.W, `${scope} ${k}: wins ${M.w} v ${a.W}`);
     assert.strictEqual(M.l, a.L, `${scope} ${k}: losses ${M.l} v ${a.L}`);
     if (scope === 'career' && /Semi|Early|Righties|Lefties/.test(k)) out.push(`${k} ${a.W}–${a.L}`);
@@ -109,7 +110,7 @@ H.check('A3 · every player in the committed store (career-splits/ + splits-matc
         I.state.drawDrill = r;
         const M = I.drawDrillModel(p, sc, scope);
         rows++;
-        assert.strictEqual(M.rows.length + ':' + M.w, (a.W + a.L) + ':' + a.W, `${k} ${splits.fullName} ${scope} ${r}`);
+        assert.strictEqual((M.rows.length - (M.wo || 0)) + ':' + M.w, (a.W + a.L) + ':' + a.W, `${k} ${splits.fullName} ${scope} ${r}`);
       });
     });
   });
@@ -183,19 +184,22 @@ H.check('C6 · opened from Last 52, the list is that window only (= the Last 52 
   I.state.drawDrill = 'Best of 3';
   const M = I.drawDrillModel(P, FX.splits.last52, 'last52');
   const a = FX.splits.last52['Best of 3'];
-  assert.strictEqual(M.rows.length, a.W + a.L);
+  assert.strictEqual(M.rows.length - (M.wo || 0), a.W + a.L);   // the Vienna 2025 walkover is listed, not counted
   assert(M.rows.every(r => r.m.d >= FX.file.cutoff52), 'a row before the cutoff');
   assert(/Last 52/.test(T(drill(I, 'Best of 3', { splitScope: 'last52' }))), 'scope named');
 });
-H.check('C7 · a walkover is listed w/o with no price and no P&L, and stays in the W–L', () => {
+// Founder 2026-10-22 (ruling 1 closes the TEN-391 open question): listed, never a win or a loss.
+H.check('C7 · a walkover is listed (WO under the date) with no price and no P&L, and is in no W–L', () => {
   const { I } = load();
   I.state.drawDrill = 'Quarter-finals';
   const M = I.drawDrillModel(P, FX.splits.career, 'career');
   const wo = M.rows.filter(r => r.sc.wo);
   assert.strictEqual(wo.length, 2, 'Vienna 2025 v Griekspoor + Acapulco 2021 v Ruud');
   wo.forEach(r => { assert.strictEqual(r.price, null); assert.strictEqual(r.cents, null); });
+  assert.strictEqual(M.w + M.l, M.rows.length - 2, 'the two walkovers are in no W–L');
+  const a = FX.splits.career['Quarter-finals']; assert.strictEqual(M.w + '–' + M.l, a.W + '–' + a.L, 'the row\'s own W–L');
   const h = drill(I, 'Quarter-finals');
-  assert(/>w\/o</.test(h), 'w/o printed');
+  assert.strictEqual((h.match(/data-pp2-wo-row="1"/g) || []).length, 2, 'both painted, WO under the date');
   assert(/title="Walkover: not a match played, no price"/.test(h), 'reason on hover');
 });
 H.check('C8 · a loss reads from the player\'s side ("6-3 6-4" on a loss → "3-6 4-6"); tiebreaks and RET kept', () => {

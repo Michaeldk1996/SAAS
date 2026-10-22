@@ -2737,21 +2737,22 @@ mustFail('the SETS check would catch a score written from the wrong side', () =>
 // skip the fourth, and the miss would look exactly like a match with no flag.
 check('item 27 · the status helper reads BOTH store field names', () => {
   assert.strictEqual(I.scoreWithStatus({ retired: true }, '6-3, 2-1'), '6-3, 2-1 ret.');
-  assert.strictEqual(I.scoreWithStatus({ wo: true }, ''), 'w/o', 'spine rows flag walkovers as `wo`');
-  assert.strictEqual(I.scoreWithStatus({ walkover: true }, ''), 'w/o', 'recentForm rows flag them as `walkover`');
-  // A walkover REPLACES the score; it never trails a dash.
-  assert.strictEqual(I.scoreWithStatus({ wo: true }, '6-3'), 'w/o');
+  // founder 2026-10-22 (Flashscore pattern): a walkover's set scores read "—" — its WO sits under the date (woDateHtml)
+  assert.strictEqual(I.scoreWithStatus({ wo: true }, ''), '\u2014', 'spine rows flag walkovers as `wo`');
+  assert.strictEqual(I.scoreWithStatus({ walkover: true }, ''), '\u2014', 'recentForm rows flag them as `walkover`');
+  // A walkover REPLACES the score; it never trails one.
+  assert.strictEqual(I.scoreWithStatus({ wo: true }, '6-3'), '\u2014');
   // A clean match is untouched, and a missing score stays a dash — not "ret.".
   assert.strictEqual(I.scoreWithStatus({}, '6-3, 6-4'), '6-3, 6-4');
   assert.strictEqual(I.scoreWithStatus({}, ''), '\u2014');
   // A retirement with nothing on record is still declared.
   assert.strictEqual(I.scoreWithStatus({ retired: true }, ''), 'ret.');
   // wo wins over ret on a row carrying both — nothing was played.
-  assert.strictEqual(I.scoreWithStatus({ wo: true, retired: true }, '6-3'), 'w/o');
+  assert.strictEqual(I.scoreWithStatus({ wo: true, retired: true }, '6-3'), '\u2014');
 });
 mustFail('[neg] the status check would catch a helper that ignored `walkover`', () => {
-  const half = (m, t) => (m.wo ? 'w/o' : String(t || '\u2014'));
-  assert.strictEqual(half({ walkover: true }, ''), 'w/o');
+  const half = (m, t) => (m.wo ? '\u2014' : String(t || '6-3'));
+  assert.strictEqual(half({ walkover: true }, '6-3'), '\u2014');
 });
 
 // The helper existing proves nothing — the render sites have to CALL it, and a
