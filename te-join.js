@@ -340,8 +340,23 @@ function applyTeHistory(rows, teRec, opts = {}) {
   }
   const kept = ours.filter((r) => !out.has(orig.get(r)));
   const copyOf = new Map(kept.map((c) => [orig.get(c), c]));
-  const merged = kept.concat(added).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
-  return { rows: merged, copyOf, out, added, diag };
+  // one match = one row, TE's side (founder 2026-10-23): a TE-only row on the same day against the same opponent as a
+  // row TE already paired with ours is TE listing that match twice — Arevalo v Romero, Davis Cup 2008-04-11: an L paired
+  // with our archive row, plus an empty-score W the resolver read as played. Dropped and counted, whatever its result;
+  // the paired row (ours, with TE's disagreement on it) stands.
+  // A qualifying match and a main-draw match against the same opponent in one week are two matches (a lucky loser:
+  // Stakhovsky, Marseille 2019; Arguello, Buenos Aires 2013 — archive rows carry the event's start date), so a TE-only row
+  // whose round is qualifying while the paired row's is not (or the reverse) is never this duplicate.
+  const isQual = (round) => /^Q\b|^Q-|qualif/i.test(String(round || ''));
+  const pairedDay = new Map(pairs.map(({ ours: r }) => [`${r.date}|${ourSurname(r.opponent)}`, r]));
+  const addedOnce = added.filter((r) => {
+    const twin = pairedDay.get(`${r.date}|${ourSurname(r.opponent)}`);
+    if (!twin || isQual(r.round) !== isQual(twin.round)) return true;
+    diag.teDuplicatesDropped = (diag.teDuplicatesDropped || 0) + 1;
+    return false;
+  });
+  const merged = kept.concat(addedOnce).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  return { rows: merged, copyOf, out, added: addedOnce, diag };
 }
 
 // The shard's `record` block, from the FINAL feed rows (call after every later pass has run on them):

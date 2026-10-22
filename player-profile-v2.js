@@ -6527,6 +6527,13 @@
   var LC_SURFACES = [['all', 'All'], ['hard', 'Hard'], ['indoors', 'Indoors'], ['clay', 'Clay'], ['grass', 'Grass']];
   var LC_SURF_CELL = { hard: 1, indoors: 1, clay: 1, grass: 1 };
   function lcSurfOf(v) { return LC_SURF_CELL[v] ? v : 'all'; }
+  // Founder 2026-10-23 · Court speed: exactly the Court speed record's band (speedBandForRow(speedRowOf(r)) — the
+  // dashboard's courtSpeedCategory on its rated-venue index, no cut-off of this module's own). A match at a venue with
+  // no rating is Unrated, under every tier: never a band inferred from surface or event name.
+  var LC_SPEEDS = [['all', 'All']].concat(SPEED_BANDS.map(function (b) { return [b.id, b.label]; })).concat([['unrated', 'Unrated']]);
+  function lcSpeedOf(v) { return v === 'unrated' || bandById(v) ? v : 'all'; }
+  function bandById(id) { for (var i = 0; i < SPEED_BANDS.length; i++) if (SPEED_BANDS[i].id === id) return SPEED_BANDS[i]; return null; }
+  function lcSpeedBucket(r) { var b = speedBandForRow(speedRowOf(r)); return b ? b.id : 'unrated'; }
 
   /** A format the lines do not read (founder rulings 2026-10-22: NextGen and match-tiebreak matches are out of
    *  every derived line), or null for a standard one:
@@ -6577,9 +6584,9 @@
   function lineCoverage(p, fmt, role, opts) {
     var o = opts || {};
     var def = LINE_DEFS[fmt] || LINE_DEFS.bo3;
-    var win = lcWindowOf(o.win), tier = lcTierOf(o.tier), since = lcSinceOf(win), surf = lcSurfOf(o.surf);
+    var win = lcWindowOf(o.win), tier = lcTierOf(o.tier), since = lcSinceOf(win), surf = lcSurfOf(o.surf), speed = lcSpeedOf(o.speed);
     var scope = drillScope(p, null, since, tier).filter(function (r) {
-      return !r.notCounted && (surf === 'all' || r.cell === surf);
+      return !r.notCounted && (surf === 'all' || r.cell === surf) && (speed === 'all' || lcSpeedBucket(r) === speed);
     });
     // Founder rulings 2026-10-22: a retirement is SHOWN (every line's Retired tab, its table's count per family) and
     // never counted; NextGen and match-tiebreak matches are out of every line.
@@ -6663,14 +6670,9 @@
       var needsGames = /Games handicap|Total games/.test(gr[0]);
       return { title: gr[0], n: needsGames ? withGames : sub.length, retired: retSub.length, rows: rows };
     });
-    // The table's own average cover rate (the Vs avg pp baseline).
-    var rated = [];
-    // the baseline keeps its rule: rows of n >= 5 (a thin row's rate is shown dimmed, but does not move the mean)
-    groups.forEach(function (g) { g.rows.forEach(function (r) { if (r.rate != null && r.gate !== 'hard') rated.push(r.rate); }); });
-    var avg = rated.length ? rated.reduce(function (a, b) { return a + b; }, 0) / rated.length : null;
-    groups.forEach(function (g) {
-      g.rows.forEach(function (r) { r.vs = (r.rate != null && avg != null) ? r.rate - avg : null; });
-    });
+    // Founder ruling 2026-10-23 · "Vs avg pp" (a line against the player's own other lines, so an easy line like +4.5
+    // always read as an edge) is withdrawn: not computed, not shown, until a Field baseline (the same line across the
+    // database's players, same filters) is approved.
     // The Career record's figure for the same window and tier: Career = the record's total for the tier (its
     // undated matches, if any, sit in it with no row to list); a rolling window = the dated rows it lists.
     // Under ATP or Challenger & ITF a Career season the record holds with no tier split (a pre-2021 feed season,
@@ -6683,7 +6685,8 @@
       noSplit = countedSpine(p).filter(function (r) { return r.tier === tier && !split[r.year]; }).length;
     }
     var recN = scope.length;
-    if (win === 'career') {
+    // the record holds no court-speed cell: under a speed filter its figure is the filtered list's own count
+    if (win === 'career' && speed === 'all') {
       var tot = careerTierCells(p, tier)[surf === 'all' ? 'total' : surf];
       recN = tot ? (tot.won || 0) + (tot.lost || 0) : 0;
     }
@@ -6691,8 +6694,8 @@
       // TEN-384 fix 5 · All = As favourite + As underdog + unpriced, by construction; the note states the
       // unpriced count so the three tiles reconcile on the page.
       groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel,
-      withGames: withGames, setMissing: setMissing, fmtLabel: def.label, avg: avg, retiredHere: retSub.length,
-      win: win, tier: tier, surf: surf, since: since, scopeN: scope.length, recordN: recN, undated: recN - scope.length, why: why, noSplit: noSplit,
+      withGames: withGames, setMissing: setMissing, fmtLabel: def.label, retiredHere: retSub.length,
+      win: win, tier: tier, surf: surf, speed: speed, since: since, scopeN: scope.length, recordN: recN, undated: recN - scope.length, why: why, noSplit: noSplit,
       // kept for the readers that predate the reasons split
       excluded: why.retired, noScore: why.noScore, unshaped: why.unshaped
     };
@@ -6764,14 +6767,15 @@
   function renderLinesTab(p) {
     var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
     var role = state.lcRole === 'fav' || state.lcRole === 'dog' ? state.lcRole : 'all';
-    var win = lcWindowOf(state.lcWin), tier = lcTierOf(state.lcTier), surf = lcSurfOf(state.lcSurf);
-    var d = lineCoverage(p, fmt, role, { win: win, tier: tier, surf: surf });
+    var win = lcWindowOf(state.lcWin), tier = lcTierOf(state.lcTier), surf = lcSurfOf(state.lcSurf), speed = lcSpeedOf(state.lcSpeed);
+    var d = lineCoverage(p, fmt, role, { win: win, tier: tier, surf: surf, speed: speed });
     var roleWord = role === 'fav' ? 'as favourite' : role === 'dog' ? 'as underdog' : 'all matches';
     // Brief 2026-10-21 · Window and Tier sit beside Best of 3 | Best of 5, on the same darker-track segment; the
     // Tier labels are the Career record's own (CAREER_TIERS).
     var scopeWord = (win === 'career' ? '' : ' ' + MIDDOT + ' ' + LC_WINDOW_WORD[win]) +
       (tier === 'all' ? '' : ' ' + MIDDOT + ' ' + careerTierWord(tier)) +
-      (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf.charAt(0).toUpperCase() + surf.slice(1));
+      (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf.charAt(0).toUpperCase() + surf.slice(1)) +
+      (speed === 'all' ? '' : ' ' + MIDDOT + ' ' + (speed === 'unrated' ? 'Unrated courts' : bandById(speed).label + ' courts'));
     var head = '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;margin-bottom:12px;min-height:32px;">' +
       // Founder 2026-10-22: a fixed title (the selected card and buttons already say what is selected), and controls of
       // fixed width, so no filter or card click moves anything on the row, at any width.
@@ -6782,7 +6786,7 @@
           mkSeg('lc-win', LC_WINDOWS, win, true) + mkSeg('lc-tier', CAREER_TIERS, tier, true) +
           mkSeg('lc-fmt', [['bo3', 'Best of 3'], ['bo5', 'Best of 5']], fmt, true) + '</span>' +
         '<span style="display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;">' +
-          mkSeg('lc-surf', LC_SURFACES, surf, true) + '</span></span></div>';
+          mkSeg('lc-surf', LC_SURFACES, surf, true) + mkSeg('lc-speed', LC_SPEEDS, speed, true) + '</span></span></div>';
 
     function pctOf(n) { return d.all ? Math.round(100 * n / d.all) + '% of ' + d.all.toLocaleString('en-US') : DASH; }
     var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
@@ -6818,9 +6822,9 @@
         '</div>';
     }
 
-    var GRID = 'display:grid;grid-template-columns:92px 150px minmax(0,1fr) 64px 64px 92px;gap:0 12px;';
+    var GRID = 'display:grid;grid-template-columns:92px 150px minmax(0,1fr) 64px 100px;gap:0 12px;';
     var colHead = '<div data-lc="table" style="' + GRID + 'align-items:end;padding:0 4px 8px;border-bottom:1px solid var(--line);">' +
-      ['Family', 'Line', 'Cover rate', 'Rate', 'Record', 'Vs avg pp'].map(function (c, i) {
+      ['Family', 'Line', 'Cover rate', 'Rate', 'Record'].map(function (c, i) {
         return '<span style="' + MK_CAPS + (i > 2 ? 'text-align:right;' : '') + '">' + esc(c) + '</span>';
       }).join('') + '</div>';
 
@@ -6839,7 +6843,6 @@
           fill + '<span style="position:absolute;left:' + LC_HOT + '%;top:-4px;bottom:-4px;width:1px;background:var(--bar-2);"></span></span>';
         var rateTxt = r.rate == null ? DASH : r.rate.toFixed(1) + '%';
         var rateInk = r.rate == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : r.hot ? 'var(--pos)' : 'var(--text)';
-        var vsR = r.vs == null ? null : Math.round(r.vs * 10) / 10;
         var softRow = false;
         // Brief 2026-10-21 · every line with a match behind it opens its matches (renderLineDrill).
         var open = state.lcDrill === r.label;
@@ -6857,20 +6860,14 @@
             ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n - r.voids) + '</span>'
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
           '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
-          '<span style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;color:' +
-            (vsR == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : vsR > 0 ? 'var(--pos)' : vsR < 0 ? 'var(--neg)' : 'var(--text-label)') + ';">' +
-            (vsR == null ? DASH : (vsR > 0 ? '+' : vsR < 0 ? MINUS : '') + Math.abs(vsR).toFixed(1) + 'pp') + '</span>' +
         '</div>' + (open && r.n ? renderLineDrill(p, d, g, r) : '');
       }).join('');
     }).join('');
 
-    // The reference's note, with this table's real counts and the Vs avg pp
-    // baseline it states.
+    // The reference's note, with this table's real counts.
     var note = 'Lines are derived from set scores, not from settled markets ' + EMDASH + ' these are ' +
       'coverage rates, not results against a priced line. Bo3 and Bo5 are counted separately because the ' +
       'same line means a different bet in each. The tick on every bar marks ' + LC_HOT + '% cover. ' +
-      'Vs avg pp is this line’s cover rate minus the average cover rate across all lines in this format and role' +
-      (d.avg == null ? '' : ' (' + d.avg.toFixed(1) + '%)') + ', in points. ' +
       'Click All matches, As favourite or As underdog to switch the table, and a line to list its matches.';
     if (fmt === 'bo3') {
       note += ' On ±3 games a match decided by exactly 3 games is a void: the record reads covered' + ENDASH + 'void' +
@@ -6894,7 +6891,7 @@
     if (w.unshaped) outs.push(w.unshaped + ' whose set score on file is level and decides no match shape');
     if (d.undated > 0) outs.push(plural(d.undated, 'with no dated match row', 'with no dated match rows'));
     note += ' Career record' + (scopeWord ? ' (' + LC_WINDOW_WORD[win] + (tier === 'all' ? '' : ', ' + careerTierWord(tier)) +
-      (surf === 'all' ? '' : ', ' + surf) + ')' : '') +
+      (surf === 'all' ? '' : ', ' + surf) + (speed === 'all' ? '' : ', ' + (speed === 'unrated' ? 'unrated' : bandById(speed).label.toLowerCase()) + ' courts') + ')' : '') +
       ': ' + d.recordN.toLocaleString('en-US') + ' matches = ' + d.all + ' ' + d.fmtLabel + ' + ' + w.otherFmt + ' ' + other +
       (outs.length ? ' + ' + outs.join(' + ') : '') + '.';
     if (d.noSplit) {
@@ -11827,7 +11824,7 @@
     marketTab: 'winner', lcFmt: 'bo3', lcRole: 'all',
     // Brief 2026-10-21 · the Derived-lines Window (career | l24 | l52) and Tier (all | atp | chitf), the open line's
     // label (its drill; null = none) and the drill's Covered / Not covered / Void filter.
-    lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcDrill: null, lcDrillRes: null,
+    lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null, lcDrillRes: null,
     // §5.7 Splits. The scope switch (Career / Last 52 weeks) and the tab switch
     // (Results / Sets & Games / Service) are independent axes of the same table —
     // changing scope must not reset the tab, so they are separate state.
@@ -11939,7 +11936,7 @@
     state.surfaces = []; state.priceFilters = []; state.modal = null;
     state.careerScope = 'career'; state.careerDrill = null; state.careerTab = 'record'; state.careerTier = 'all';
     state.splitScope = 'career'; state.marketRole = 'all'; state.lcRole = 'all';
-    state.lcWin = 'career'; state.lcTier = 'all'; state.lcSurf = 'all'; state.lcDrill = null; state.lcDrillRes = null;
+    state.lcWin = 'career'; state.lcTier = 'all'; state.lcSurf = 'all'; state.lcSpeed = 'all'; state.lcDrill = null; state.lcDrillRes = null;
     state.drawDrill = null; state.drawFilter = 'all'; state.drawPage = 0;
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.cal26Month = null;
@@ -12029,6 +12026,7 @@
     else if (kind === 'lc-win') { state.lcWin = lcWindowOf(v); }
     else if (kind === 'lc-tier') { state.lcTier = lcTierOf(v); }
     else if (kind === 'lc-surf') { state.lcSurf = lcSurfOf(v); }
+    else if (kind === 'lc-speed') { state.lcSpeed = lcSpeedOf(v); }
     // A line opens its matches (Covered first); the same line again, or Close, shuts it.
     else if (kind === 'lc-line') {
       state.lcDrill = state.lcDrill === v ? null : v;

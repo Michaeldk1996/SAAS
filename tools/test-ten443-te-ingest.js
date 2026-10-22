@@ -343,6 +343,32 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
   check('one match = one row: the archive listing a Davis Cup rubber twice yields one row', () => {
     assert.strictEqual(on.rows.filter((x) => /Mu$/.test(x.opponent || '')).length, 1);
   });
+  check('one match = one row, TE side: TE listing a paired match twice (Arevalo v Romero, Davis Cup 2008-04-11) yields one row', () => {
+    // our archive row L, TE's paired L, and TE's second listing of the same day and opponent: an empty-score W the
+    // resolver reads as played. Before the guard both counted (2 rows, opposite results).
+    const ours = [{ year: '2008', surface: 'hard', level: 'atp', date: '2008-04-11', tournament: 'Davis Cup G2 PO: VEN vs ESA', round: 'RR',
+      opponent: 'Y. Romero', result: '2 - 2', won: false, sets: [{ p: 6, o: 4 }, { p: 2, o: 6 }, { p: 4, o: 6 }, { p: 4, o: 2 }], retired: true, src: 'archive' }];
+    const teRec = { dob: '19870101', rows: [
+      { date: '2008-04-11', season: 2008, opp: 'Romero Y.', event: 'Davis Cup', cat: 'Davis Cup', won: false, sets: [{ w: 6, l: 2 }, { w: 6, l: 2 }] },
+      { date: '2008-04-11', season: 2008, opp: 'Romero Y.', event: 'Davis Cup', cat: 'Davis Cup', won: true, wo: true, sets: [] }] };
+    const TJ = require('../te-join.js');
+    const m = TJ.applyTeHistory(ours, teRec, { resolveEmpty: () => ({ verdict: 'played', sets: [{ w: 6, l: 4 }] }) });
+    const rs = m.rows.filter((x) => /Romero/.test(x.opponent || ''));
+    assert.strictEqual(rs.length, 1, rs.map((x) => x.src + ' ' + x.won).join(' | '));
+    assert.strictEqual(rs[0].src, 'archive', 'the paired row stands');
+    assert.strictEqual(m.diag.teDuplicatesDropped, 1);
+    // a genuinely different TE-only match (another day) is still added
+    const m2 = TJ.applyTeHistory(ours, { dob: '19870101', rows: teRec.rows.concat([{ date: '2008-07-18', season: 2008, opp: 'Romero Y.', event: 'Davis Cup', cat: 'Davis Cup', won: true, sets: [{ w: 6, l: 3 }, { w: 6, l: 3 }] }]) },
+      { resolveEmpty: () => ({ verdict: 'played', sets: [{ w: 6, l: 4 }] }) });
+    assert.strictEqual(m2.rows.filter((x) => /Romero/.test(x.opponent || '')).length, 2);
+    // a qualifying win and a main-draw loss to the same opponent in one (week-dated) week are two matches: both stay
+    const q = [{ year: '2019', surface: 'hard', level: 'atp', date: '2019-02-18', tournament: 'Marseille', round: 'R32', opponent: 'S. Stakhovsky',
+      result: '1 - 2', won: false, sets: [{ p: 6, o: 4 }, { p: 4, o: 6 }, { p: 3, o: 6 }], src: 'archive' }];
+    const m3 = TJ.applyTeHistory(q, { dob: '19870101', rows: [
+      { date: '2019-02-18', season: 2019, opp: 'Stakhovsky S.', event: 'Marseille', cat: 'ATP', round: 'R32', won: false, sets: [{ w: 4, l: 6 }, { w: 6, l: 4 }, { w: 6, l: 3 }] },
+      { date: '2019-02-18', season: 2019, opp: 'Stakhovsky S.', event: 'Marseille', cat: 'ATP qual', round: 'Q-QF', won: true, sets: [{ w: 6, l: 4 }, { w: 3, l: 6 }, { w: 6, l: 3 }] }] }, {});
+    assert.strictEqual(m3.rows.filter((x) => /Stakhovsky/.test(x.opponent || '')).length, 2, 'the qualifying match was dropped');
+  });
   check('2021 hole-fill: the paired row keeps TE indoor and Indoors counts it ONCE (no holeIndoor on top)', () => {
     const r = on.rows.find((x) => x.opponent === 'O. Omicron'); assert.strictEqual(r.indoor, true);
     const y = yr(on.p, '2021'); assert.strictEqual(wl(y.total), '1-0'); assert.strictEqual(wl(y.indoor.total), '1-0');

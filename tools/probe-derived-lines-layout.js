@@ -32,29 +32,37 @@ const css = fs.readFileSync(path.join(L.ROOT, 'tokens.css'), 'utf8');
 const widths = process.argv.slice(2).map(Number).filter(Boolean);
 const WIDTHS = widths.length ? widths : [1000, 760, 560, 400, 340];
 const states = [];
-// founder 2026-10-23 · the Surface filter joins the states (Window × Tier × format × card × Surface = 270)
-['career', 'l24', 'l52'].forEach((w) => ['all', 'atp', 'chitf'].forEach((t) => ['bo3', 'bo5'].forEach((f) => ['all', 'fav', 'dog'].forEach((r) =>
-  ['all', 'hard', 'indoors', 'clay', 'grass'].forEach((sf) => states.push([w, t, f, r, sf]))))));
+// founder 2026-10-23 · Surface and Court speed join the states: Window × Tier × format × card × Surface (270), the
+// same × each Court speed band and Unrated (216), and every Surface × speed pair on each card at Career · All (48) — 534 per width
+const SURFS = ['all', 'hard', 'indoors', 'clay', 'grass'], SPEEDS = ['all', 'slow', 'med', 'fast', 'unrated'];
+['career', 'l24', 'l52'].forEach((w) => ['all', 'atp', 'chitf'].forEach((t) => ['bo3', 'bo5'].forEach((f) => ['all', 'fav', 'dog'].forEach((r) => {
+  SURFS.forEach((sf) => states.push([w, t, f, r, sf, 'all']));
+  SPEEDS.filter((sp) => sp !== 'all').forEach((sp) => states.push([w, t, f, r, 'all', sp]));
+}))));
+['all', 'fav', 'dog'].forEach((r) => SURFS.forEach((sf) => SPEEDS.forEach((sp) => { if (sf !== 'all' && sp !== 'all') states.push(['career', 'all', 'bo3', r, sf, sp]); })));
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'dl-layout-'));
 const page = path.join(tmp, 'm.html');
 const MEASURE = `const q=(s)=>[...document.querySelectorAll(s)];const R=(e)=>{if(!e)return null;const b=e.getBoundingClientRect();return [b.left,b.top,b.width,b.height].map(v=>Math.round(v*10)/10)};
   const cards=q('[data-pp2="lc-role"]');const title=document.querySelector('[data-lc="title"]')||document.querySelector('[data-pp2-seg="lc-fmt"]').parentNode.previousElementSibling;
-  const o={title:[title.textContent,R(title)],btns:q('[data-pp2="lc-win"],[data-pp2="lc-tier"],[data-pp2="lc-fmt"],[data-pp2="lc-surf"]').map(b=>b.dataset.v+':'+R(b)),
+  const o={title:[title.textContent,R(title)],btns:q('[data-pp2="lc-win"],[data-pp2="lc-tier"],[data-pp2="lc-fmt"],[data-pp2="lc-surf"],[data-pp2="lc-speed"]').map(b=>b.dataset.v+':'+R(b)),
     cards:cards.map(R),table:R(document.querySelector('[data-lc="table"]')||cards[0].parentNode.nextElementSibling).slice(0,2)};   // its top edge (left, top): an empty table is a shorter box
   document.getElementById('o').textContent='@@'+JSON.stringify(o)+'@@';`;
 let bad = 0;
 try {
   for (const width of WIDTHS) {
     const layouts = {};
-    for (const [w, t, f, r, sf] of states) {
-      Object.assign(I.state, { key: p.key, modal: 'market', marketTab: 'lines', lcFmt: f, lcRole: r, lcWin: w, lcTier: t, lcSurf: sf, lcDrill: null });
+    for (const [w, t, f, r, sf, sp] of states) {
+      Object.assign(I.state, { key: p.key, modal: 'market', marketTab: 'lines', lcFmt: f, lcRole: r, lcWin: w, lcTier: t, lcSurf: sf, lcSpeed: sp, lcDrill: null });
       fs.writeFileSync(page, `<!doctype html><html><head><meta charset="utf-8"><style>${css} body{margin:0;padding:16px;font-family:var(--font-words,sans-serif)} .wrap{box-sizing:border-box;width:${width - 32}px}</style></head>` +
         `<body><div class="wrap">${I.renderMarketModal(p)}</div><pre id="o"></pre><script>${MEASURE}</script></body></html>`);
-      let dom;
-      try { dom = execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--virtual-time-budget=2000', `--window-size=${width},1400`, '--dump-dom', 'file://' + page], { stdio: ['ignore', 'pipe', 'ignore'] }).toString(); }
-      catch (e) { dom = String(e.stdout || ''); }
+      // a headless Chrome call can hang (one sat 63 min, 2026-10-23): each gets 60 s and one retry
+      let dom = '';
+      for (let attempt = 0; attempt < 2 && !dom.includes('@@'); attempt++) {
+        try { dom = execFileSync(CHROME, ['--headless=new', '--disable-gpu', '--virtual-time-budget=2000', `--window-size=${width},1400`, '--dump-dom', 'file://' + page], { stdio: ['ignore', 'pipe', 'ignore'], timeout: 60000, killSignal: 'SIGKILL' }).toString(); }
+        catch (e) { dom = String(e.stdout || ''); }
+      }
       const m = dom.split('@@')[1];
-      if (!m) throw new Error('no measurement for ' + [w, t, f, r, sf].join('/') + ' at ' + width);
+      if (!m) throw new Error('no measurement for ' + [w, t, f, r, sf, sp].join('/') + ' at ' + width);
       const key = m.replace(/&amp;/g, '&');
       (layouts[key] = layouts[key] || []).push([w, t, f, r].join("/")); if (process.env.DUMP) console.log([w,t,f,r].join("/"), key);
     }

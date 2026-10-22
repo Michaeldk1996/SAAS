@@ -228,6 +228,41 @@ function shapeChecks(A, shape) {
     return k + ' lines partitioned by surface';
   });
 
+  H.check(tag('Z · Court speed: Slow + Medium + Fast + Unrated = All, every line and result; each bucket is the Court speed record\'s own band (founder 2026-10-23)'), () => {
+    const B = ['slow', 'med', 'fast', 'unrated'];
+    let k = 0; const seen = {};
+    each((f, role, win, tier) => {
+      const all = I.lineCoverage(p, f, role, { win, tier });
+      const by = {}; B.forEach((x) => { by[x] = I.lineCoverage(p, f, role, { win, tier, speed: x }); });
+      rowsOf(all).forEach((r) => {
+        const want = {}; B.forEach((x) => { want[x] = { cover: 0, miss: 0, void: 0, retired: 0 }; });
+        r.members.forEach((m) => {
+          const b = I.speedBandForRow(I.speedRowOf(m.m.r)); const x = b ? b.id : 'unrated';
+          want[x][m.res]++; seen[x] = 1;
+        });
+        B.forEach((x) => {
+          const q = rowsOf(by[x]).find((y) => y.label === r.label);
+          assert.deepStrictEqual({ cover: q.hit, miss: q.miss, void: q.voids, retired: q.retired }, want[x], [f, role, win, tier, x, r.label].join('/'));
+        });
+        k++;
+      });
+    });
+    assert(seen.unrated && Object.keys(seen).length >= 2, 'the fixture holds no rated and unrated mix: ' + Object.keys(seen).join(','));
+    return k + ' lines partitioned by speed · buckets seen: ' + Object.keys(seen).join(', ');
+  });
+
+  H.check(tag('A · "vs avg" appears nowhere on the tab, in any state (founder 2026-10-23)'), () => {
+    let k = 0;
+    each((f, role, win, tier) => {
+      const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: tier, lcDrill: null }, () => I.renderLinesTab(p));
+      assert(!/vs\.?\s*avg|average cover rate/i.test(T(html)), [f, role, win, tier].join('/') + ': vs avg on the page');
+      k++;
+    });
+    const c = I.lineCoverage(p, 'bo3', 'all');
+    assert(c.avg === undefined && rowsOf(c).every((r) => r.vs === undefined), 'vs avg still computed');
+    return k + ' states';
+  });
+
   H.check(tag('B · the bettable side: As favourite shows only − handicaps, As underdog only +, All every line (founder 2026-10-23)'), () => {
     let k = 0;
     each((f, role, win, tier) => {
@@ -441,6 +476,12 @@ function mutants() {
       const want = c.groups[0].rows[0].members.filter((y) => y.m.r.cell === sf).length;
       assert.strictEqual(x.groups[0].rows[0].members.length, want, sf);
     });
+  });
+  H.mustFail('a speed filter that reads no band as Slow (an inferred band) is caught', () => {
+    const m = mutant("function lcSpeedBucket(r) { var b = speedBandForRow(speedRowOf(r)); return b ? b.id : 'unrated'; }",
+      "function lcSpeedBucket(r) { var b = speedBandForRow(speedRowOf(r)); return b ? b.id : 'slow'; }");
+    const c = m.I.lineCoverage(m.p, 'bo3', 'all'), u = m.I.lineCoverage(m.p, 'bo3', 'all', { speed: 'unrated' });
+    assert.strictEqual(u.groups[0].rows[0].members.length, c.groups[0].rows[0].members.filter((x) => !m.I.speedBandForRow(m.I.speedRowOf(x.m.r))).length);
   });
   H.mustFail('a + line under As favourite (the bettable-side filter removed) is caught', () => {
     const m = mutant("return sel === 'fav' ? spec[3] < 0 : spec[3] > 0;", "return true;");
