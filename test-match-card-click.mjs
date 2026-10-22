@@ -80,7 +80,7 @@ function harness(){
     String,
   };
   vm.createContext(ctx);
-  vm.runInContext([fnSrc('mxOpenCardStats'), fnSrc('mxOpenCard'), fnSrc('mxCardClickInert'),
+  vm.runInContext([fnSrc('mxOpenCompletedCard'), fnSrc('mxOpenCard'), fnSrc('mxCardClickInert'),
                    listenerSrc('click'), listenerSrc('keydown')].join('\n'), ctx);
   const ev = (target, extra = {}) => ({ target, preventDefault(){ this.dp = true; }, ...extra });
   return {
@@ -105,10 +105,13 @@ test('Upcoming: a click on the price and on the players block opens it too', () 
   h.click(find(UP, '.mc-odds')); h.click(find(UP, '.mc-players'));
   assert.deepEqual(h.opens, [['u1'], ['u1']]);
 });
-test('Completed: a card click still lands on Match Stats (TEN-179)', () => {
+test('Completed: a card click opens on Key factors (founder 2026-10-22, replaces TEN-179 Match Stats)', () => {
   const h = harness();
   h.click(find(DONE, '.mc-players'));
-  assert.deepEqual(h.opens, [['c1', 'matchstats']]);
+  assert.deepEqual(h.opens, [['c1', 'key']]);
+});
+test('source: each card handler is defined once (a re-run patch once doubled mxOpenCard)', () => {
+  for (const f of ['mxOpenCard', 'mxOpenCompletedCard', 'mxCardClickInert']) assert.equal(SRC.split('function ' + f + '(').length - 1, 1, f);
 });
 test('two cards: each click opens its own match', () => {
   const h = harness();
@@ -145,10 +148,10 @@ test('a drag-selection is not a click; a collapsed one is', () => {
 test('keyboard: Enter on the focused card opens it; Enter on a control inside does not', () => {
   const h = harness();
   h.key(UP, 'Enter'); h.key(DONE, 'Enter'); h.key(find(UP, '.mc-star'), 'Enter'); h.key(UP, 'a');
-  assert.deepEqual(h.opens, [['u1'], ['c1', 'matchstats']]);
+  assert.deepEqual(h.opens, [['u1'], ['c1', 'key']]);
 });
 test('template: every card is focusable with a button role and a label (not Completed only)', () => {
-  assert.ok(SRC.includes(`data-ek="\${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="\${isCompleted ? 'Match stats' : 'Match analysis'} — \${psEsc(m.p1)} v \${psEsc(m.p2)}">`));
+  assert.ok(SRC.includes(`data-ek="\${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="Match analysis — \${psEsc(m.p1)} v \${psEsc(m.p2)}">`));
 });
 test('template: the card\'s own controls are the ones the inert rule covers', () => {
   // Any new onclick/button/link on the card must be added to the fake card above and to mxCardClickInert.

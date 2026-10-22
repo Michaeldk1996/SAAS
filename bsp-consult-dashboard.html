@@ -463,7 +463,7 @@
   /* TEN-179 q1 — overflow:hidden removed here too; see the note on .match-card. This is
      the rule that was actually clipping the Completed journey, silently. */
   [data-page="matches"] .match-card.cmpl{ padding:0; overflow:visible; }
-  /* TEN-179 item 4 (founder task 2026-09-11) — the whole completed card opens Match Stats; whole-card click
+  /* TEN-179 item 4 (founder task 2026-09-11) — the whole completed card opens Key factors (2026-10-22); whole-card click
      (2026-10-22) — the whole upcoming card opens the analysis, as "See full analysis" does. Both need the affordance. */
   [data-page="matches"] .match-card.mx-match{ cursor:pointer; }
   /* §1 (PASS 4) — card row vertical padding is 13px, read from the export source. */
@@ -9878,7 +9878,7 @@ function renderMatches(){
         </div>`;
     return `
     ${dividerHtml}
-    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="${isCompleted ? 'Match stats' : 'Match analysis'} — ${psEsc(m.p1)} v ${psEsc(m.p2)}">
+    <article class="match-card mx-match${isCompleted ? ' cmpl' : ''}" data-id="${m.id}" data-ek="${eventKeyOfMatch(m)}" role="button" tabindex="0" aria-label="Match analysis — ${psEsc(m.p1)} v ${psEsc(m.p2)}">
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
@@ -19681,30 +19681,18 @@ document.getElementById('mxModeToggle').addEventListener('click', e => {
   setMatchesView(btn.dataset.view);
 });
 
-// TEN-179 item 4 (founder task 2026-09-11) — a COMPLETED card is itself the hit target and
-// opens on Match Stats, which is where a settled match's detail actually lives. Upcoming
-// cards are deliberately unchanged: nothing was asked for them, and "what happened" has no
-// counterpart before a match is played.
-//
-// The Match analysis modal is NOT modified (TEN-179 DO-NOT-CHANGE list): this opens it
-// exactly as the "See full analysis" link does, then drives its own tab switcher aGoTab(),
-// the same call the Key Factors cards already use to route between tabs.
-function mxOpenCardStats(card){
+// TEN-179 item 4 (founder task 2026-09-11) — a COMPLETED card is itself the hit target. It opens on Key factors
+// (founder 2026-10-22, replaces TEN-179's Match Stats landing), through openAnalysisModal's own tab argument, so
+// Key factors is the only tab built on open. The Match analysis modal itself is not modified.
+function mxOpenCompletedCard(card){
   const id = card && card.dataset.id;
   if (!id) return;
-  openAnalysisModal(id, 'matchstats');
+  openAnalysisModal(id, 'key');
 }
 // Whole-card click (2026-10-22): an Upcoming card opens the analysis exactly as its "See full analysis" link
-// does (openAnalysisModal(id), no tab); a Completed card keeps TEN-179's Match Stats landing.
+// does (openAnalysisModal(id), no tab); a Completed card opens on Key factors.
 function mxOpenCard(card){
-  if (card && card.classList.contains('cmpl')) { mxOpenCardStats(card); return; }
-  const id = card && card.dataset.id;
-  if (id) openAnalysisModal(id);
-}
-// Whole-card click (2026-10-22): an Upcoming card opens the analysis exactly as its "See full analysis" link
-// does (openAnalysisModal(id), no tab); a Completed card keeps TEN-179's Match Stats landing.
-function mxOpenCard(card){
-  if (card && card.classList.contains('cmpl')) { mxOpenCardStats(card); return; }
+  if (card && card.classList.contains('cmpl')) { mxOpenCompletedCard(card); return; }
   const id = card && card.dataset.id;
   if (id) openAnalysisModal(id);
 }

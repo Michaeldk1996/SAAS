@@ -17,6 +17,13 @@ except where a ruling below says otherwise. Colours are foundation tokens (`foun
 - **Upcoming card:** both names `--text` (FAV badge carries the favourite); both form bars `--viz-lead`; surfaces neutral;
   head/foot hairlines and the column divider are white 3.5% (founder Q1, reference). Market Signal drawer = `--card` on a
   `--edge-6` rule, fav % white, bars `--viz-lead` + `--viz-second`.
+- **Whole-card click (founder 2026-10-22; replaces TEN-179's Match Stats landing):** clicking anywhere on a card opens
+  the Match analysis modal — an **Upcoming** card exactly as its "See full analysis" link does (Odds), a **Completed** card
+  on **Key factors**. Not a click: the star, the Market Signal chip and anything in its open drawer, "See full analysis"
+  (its own onclick — one open), names/avatars (profile route), any other button/link, a drag-selection. Every card is
+  `role="button"` `tabindex="0"`, Enter/Space opens it, `--edge-16` hover edge (an open drawer keeps `--open-card`)
+  and focus ring. The modal has no URL, so Cmd/Ctrl- and middle-click open nothing new. "See full analysis" stays as a
+  secondary cue (its removal is Michael's call). **Test:** `test-match-card-click.mjs`.
 - **Completed card:** inset tiles (winner white 3.5% + 3px `--pos` 90% pill; loser name `--text-label` 600, never red).
   Surface `--text-soft`; round chip `--inner` + 10% inset edge, white (Q1). Score = sets-won tile (winner white 9% + 10% inset
   edge, white; loser white 4.5%, grey, no edge — Q1, README 7a) · 1px divider · one 24px cell per played set (won white 8% /

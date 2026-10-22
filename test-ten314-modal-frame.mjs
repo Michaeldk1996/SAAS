@@ -275,12 +275,13 @@ test('revisit: Weather re-reads and Market edge retries on every visit; other ta
   assert.deepEqual(log, ['load:weather', 'load:marketedge']);
 });
 
-// Mutation: mxOpenCardStats back to openAnalysisModal(id) + aGoTab('matchstats') (Key factors built and fetched first).
+// Mutation: mxOpenCompletedCard back to openAnalysisModal(id) + aGoTab('key') (Odds built and fetched first).
 test('a named tab opens directly: nothing else is built first', async () => {
   const { api, log } = modalVM();
   api.openAnalysisModal('a', 'matchstats'); await flush();
   assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:matchstats']);
-  assert.ok(slice('mxOpenCardStats').includes("openAnalysisModal(id, 'matchstats');") && !slice('mxOpenCardStats').includes('aGoTab('));
+  // the completed card's landing (Key factors, founder 2026-10-22) goes through the same tab argument
+  assert.ok(slice('mxOpenCompletedCard').includes("openAnalysisModal(id, 'key');") && !slice('mxOpenCompletedCard').includes('aGoTab('));
 });
 
 // Mutation: drop `return` from the h2h or form builder (live 2026-09-28: the report printed H2H's loading line, 21 chars).

@@ -36,7 +36,7 @@ const MUTANTS = [
   ['frame: a LATER rule turns the height back into a max (review: first-rule reads missed it)', '  .modal-analysis{ background:var(--card);', '  .modal-analysis{ height:auto; max-height:88vh; background:var(--page);'],
   ['lazy: a late shard of the previous match repaints the new one', 'function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }', 'function aBuilt(m, tab){ return _aBuilt.has(tab); }'],
   ['revisit: Weather / Market edge hooks only on the first open', "  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();\n", ''],
-  ['direct tab: the completed-card path builds Key factors first', "  openAnalysisModal(id, 'matchstats');\n}", "  openAnalysisModal(id);\n  aGoTab('matchstats');\n}"],
+  ['direct tab: the completed-card path builds Odds first', "  openAnalysisModal(id, 'key');\n}", "  openAnalysisModal(id);\n  aGoTab('key');\n}"],
   ['sheet: a Key stats row dropped', "    row('Winners / unforced errors', M.wue[0], M.wue[1], 'ratio'),\n", ''],
   ['sheet: W / total points over own points won', "  const tp = [tpw.a, tpw.b].map(c => c.total).find(t => t > 0) || null;", "  const tp = tpw.a.won || null;"],
   ['sheet: no stats back to the message-only state', "  const M = fhSheetModel(joined || null);\n  const head = fhSheetSectionHead;", "  if (!joined) return `<div>${fhEsc(emptyMsg)}</div>`;\n  const M = fhSheetModel(joined || null);\n  const head = fhSheetSectionHead;"],
