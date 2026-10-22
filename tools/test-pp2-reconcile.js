@@ -1218,6 +1218,9 @@ const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet
 const meIsApprox = (m) => String(m.book).startsWith('pinnacle-approx');
 const meIsPinnacle = (m) => String(m.book).startsWith('pinnacle') && !meIsApprox(m);
 const meApproxN = (h) => (h.book && h.book.approx) || 0;
+// ruling 4 (founder 2026-10-22): a retirement before the first set is complete is void, and one with no set scores has no
+// units; both keep their book and price on the row, carry pl null, and sit off the basis — counted in no figure
+const meUnsettled = (m) => m.settle === 'void' || m.settle === 'no-sets';
 check('per-row book counts sum to the headline, and the label is never blended', () => {
   let captured = 0;
   for (const k of MK_KEYS) {
@@ -1226,11 +1229,12 @@ check('per-row book counts sum to the headline, and the label is never blended',
       `${k}: book mix does not sum to the priced count`);
     const rows = s.matches.filter(m => !ME_BOOKS.has(m.book));
     assert.strictEqual(rows.length, 0, `${k}: ${rows.length} rows carry no book label`);
-    assert.strictEqual(s.matches.filter(meIsPinnacle).length, s.headline.book.pinnacle,
+    const settled = s.matches.filter(m => !meUnsettled(m));
+    assert.strictEqual(settled.filter(meIsPinnacle).length, s.headline.book.pinnacle,
       `${k}: row-level Pinnacle count disagrees with the summary`);
-    assert.strictEqual(s.matches.filter(meIsApprox).length, meApproxN(s.headline),
+    assert.strictEqual(settled.filter(meIsApprox).length, meApproxN(s.headline),
       `${k}: row-level Pinnacle (approx.) count disagrees with the summary`);
-    assert.strictEqual(s.matches.filter(m => !meIsPinnacle(m) && !meIsApprox(m)).length, s.headline.book.bet365,
+    assert.strictEqual(settled.filter(m => !meIsPinnacle(m) && !meIsApprox(m)).length, s.headline.book.bet365,
       `${k}: row-level Bet365 count disagrees with the summary`);
     captured += s.matches.filter(m => /-capture$/.test(m.book)).length;
   }
@@ -1257,12 +1261,29 @@ check('TEN-310 · Bet365 fallback rows are inside the headline basis, and the bo
   for (const k of MK_KEYS) {
     const h = MARKET[k].headline;
     assert.strictEqual(h.book.pinnacle + h.book.bet365 + meApproxN(h), h.n, `${k}: book mix ${JSON.stringify(h.book)} does not add to n=${h.n}`);
-    const off = (MARKET[k].matches || []).filter(m => m.book && !m.inBasis);
+    const off = (MARKET[k].matches || []).filter(m => m.book && !m.inBasis && !meUnsettled(m));
     assert.strictEqual(off.length, 0, `${k}: ${off.length} priced rows left out of the basis`);
   }
   console.log(`        headline basis: ${p} Pinnacle + ${b} Bet365 rows across ${MK_KEYS.length} shards, every priced row counted`);
 });
 
+check('ruling 4 · a void or set-less retirement is off the basis with no units, and only a retirement is', () => {
+  let unsettled = 0;
+  for (const k of MK_KEYS) {
+    for (const m of MARKET[k].matches || []) {
+      if (!meUnsettled(m)) continue;
+      unsettled++;
+      assert(m.ret, `${k} ${m.date}: a row settled '${m.settle}' is not a retirement`);
+      assert(!m.inBasis && m.pl == null, `${k} ${m.date}: a '${m.settle}' retirement is on the basis or carries units`);
+      assert(m.book && m.price != null, `${k} ${m.date}: a '${m.settle}' retirement lost its own price`);
+    }
+  }
+  console.log(`        ${unsettled} void / no-set-scores retirement rows across ${MK_KEYS.length} shards, every one off the basis`);
+});
+mustFail('the ruling-4 lock would catch a void retirement left on the basis', () => {
+  const m = { ret: true, settle: 'void', inBasis: true, pl: 0.5, book: 'pinnacle', price: 1.5 };
+  assert(!m.inBasis && m.pl == null, 'X: a void retirement is on the basis or carries units');
+});
 mustFail('the TEN-310 check would catch the Pinnacle-only build coming back', () => {
   const shards = [{ headline: { book: { pinnacle: 300, bet365: 0 } } }];
   assert(shards.reduce((a, s) => a + s.headline.book.bet365, 0) > 0, 'Pinnacle-only build not caught');
