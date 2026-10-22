@@ -34391,7 +34391,9 @@ window.DatabaseTab = (function(){
   }
   function tcProfit(r, side){
     var f = r[7] ? (r[5]-1) : -1, d = r[7] ? -1 : (r[6]-1);
-    return side==='fav' ? f : side==='dog' ? d : f+d;
+    // All matches: both sides of ONE match, averaged, so each match counts once (founder 2026-10-23; design
+    // Database.dc.html yieldOf: (e.fav + e.dog) / 2). The f + d sum counted every match twice.
+    return side==='fav' ? f : side==='dog' ? d : (f+d)/2;
   }
   function renderCompare(body){
     var picks=tournPicks().slice(0,TC_MAX), side=state.tcSide||'all';

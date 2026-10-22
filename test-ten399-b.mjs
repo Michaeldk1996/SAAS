@@ -257,13 +257,32 @@ function checkCompare(src) {
   return null;
 }
 
-const RULES = { checkSideFlip, checkSharedAxes, checkRoleCards, checkClay, checkTournRow, checkCompare };
+// founder 2026-10-23: "All matches" counts each match ONCE — the legend's end units are Σ (fav + dog) / 2 over the event's
+// rows, recomputed here from the rows (not from tcProfit), and never the both-sides sum that counted every match twice.
+function checkCompareOnce(src) {
+  const api = cmpHarness(src, ['Australian Open']);
+  const body = api.doc.createElement('div');
+  api.renderCompare(body);
+  const leg = body.all('db-tcmp')[0].all('db-tcleg')[0];
+  const m = /<b style="color:[^"]+">((?:−|\+)?[\d,]+)u<\/b>/.exec(leg.children[0].innerHTML);
+  if (!m) return 'no legend end value';
+  const shown = Number(m[1].replace('−', '-').replace(/,/g, ''));
+  const rows = api.filteredRows(['Australian Open']);
+  let once = 0, twice = 0;
+  for (const r of rows) { const fv = r[7] ? r[5] - 1 : -1, dv = r[7] ? -1 : r[6] - 1; once += (fv + dv) / 2; twice += fv + dv; }
+  if (Math.round(once) === Math.round(twice)) return 'the fixture cannot tell once from twice';
+  if (shown !== Math.round(once)) return 'All matches end ' + shown + 'u != each match once ' + Math.round(once) + 'u (both-sides sum ' + Math.round(twice) + 'u)';
+  return null;
+}
+
+const RULES = { checkSideFlip, checkSharedAxes, checkRoleCards, checkClay, checkTournRow, checkCompare, checkCompareOnce };
 test('TEN-399 b · Player: Side flips every figure, note and curve', () => assert.equal(checkSideFlip(SRC), null));
 test('TEN-399 b · Player: three charts share one y-domain and one tick set, 2013 … 2026', () => assert.equal(checkSharedAxes(SRC), null));
 test('TEN-399 b · Player: role cards — gap row only, neutral baseline, split one convention', () => assert.equal(checkRoleCards(SRC), null));
 test('TEN-399 b · Player: Surface = Clay — recompute (as built) and the — path under the gate', () => assert.equal(checkClay(SRC), null));
 test('TEN-399 b · Tournament: tour comparison inline, no event name in the band header', () => assert.equal(checkTournRow(SRC), null));
 test('TEN-399 b · Compare events: max 4, series colours by pick order, legend end values only', () => assert.equal(checkCompare(SRC), null));
+test('Compare events · All matches counts each match once (founder 2026-10-23)', () => assert.equal(checkCompareOnce(SRC), null));
 
 const MUTANTS = {
   checkSideFlip: s => s.replace("price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;", "price=v.p, won=v.w;"),
@@ -273,6 +292,7 @@ const MUTANTS = {
   checkClay: s => s.replace("if(PLAYER_BASELINE_SCOPE==='gate' && ", "if(false && "),
   checkTournRow: s => s.replace("row.appendChild(el('div','db-tourcell'+(bs?'':' none'), bs?fmtPct(bs.yield):'—'));",
     "row.appendChild(el('div',null,'')); g.appendChild(row); row=el('div','db-gr'); row.appendChild(el('div','db-tourcell'+(bs?'':' none'), bs?fmtPct(bs.yield):'—'));"),
+  checkCompareOnce: s => s.replace("side==='dog' ? d : (f+d)/2;", "side==='dog' ? d : f+d;"),
   checkCompare: s => s.replace("{ stroke:'var(--viz-tick)',       w:2,   dash:null },", "{ stroke:'var(--viz-amber)',      w:2,   dash:null },"),
 };
 test('CONTROL: every TEN-399 b ruling goes red on its mutant', () => {

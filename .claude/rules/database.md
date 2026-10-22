@@ -131,6 +131,10 @@ take styling from it, structure from the rules below.
   events; series 1 `--viz-lead` 2.4px, 2 `--viz-white-lead`, 3 `--viz-tick`, 4 `--viz-white-lead` dashed `6 5`; no
   categorical hue; end values in the legend only (no plates, no end dots). Series 2 is solid white (founder card ff586600
   "series2" = solid; the chart rule's "second line white 45%" applies to two-series charts only). `test-ten399-b.mjs`.
+- **Compare events · "All matches" counts each match once** (founder 2026-10-23). The cumulative-profit curve and its
+  legend units add `(fav + dog) / 2` per match, as the design's `yieldOf`; the both-sides sum counted every match twice
+  (Australian Open −457u → −228u on the 22 Oct store). **Test:** is the All-matches end value Σ (fav + dog) / 2 over the
+  event's rows? `test-ten399-b.mjs` "counts each match once" (mutant: the sum → red).
 
 ## Player
 - **Test:** Side = Backing him / Fading him flips every figure, note and curve.
