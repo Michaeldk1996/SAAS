@@ -3881,13 +3881,17 @@
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);padding:5px 0;',
              woDateHtml(r, r.date ? fmtDotDate(r.date) + '.' : DASH), 'data-pp2-drill-row="' + (r.unconf ? 'U' : r.wo ? 'WO' : r.won ? 'W' : 'L') + '"' +
              (r.wo ? ' data-pp2-wo-row="1"' : '') + ' ') +
-        cell('width:8px;height:8px;border-radius:2px;background:' + markerFill(r) + ';', '') +
+        // a Derived line's drill (pg.neutral) has no W/L square: the LINE badge is its row's only colour
+        (pg.neutral ? '' : cell('width:8px;height:8px;border-radius:2px;background:' + markerFill(r) + ';', '')) +
         cell('font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;' +
              'white-space:nowrap;padding:5px 0;', esc(r.opp ? initialSurname(r.opp) : DASH)) +   // fx3 D12: drills read "I. M. Surname"
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-label);padding:5px 0;',
              esc(r.round || DASH)) +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + (r.sets ? wl : DASH_COLOUR) +
-             ';padding:5px 0;', esc(r.sets || DASH)) +
+        (pg.neutral
+          ? cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text);white-space:nowrap;padding:5px 0;',
+              esc((r.won ? 'W ' : 'L ') + (r.sets ? String(r.sets).replace(/\s*-\s*/, '-') : DASH)))
+          : cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + (r.sets ? wl : DASH_COLOUR) +
+             ';padding:5px 0;', esc(r.sets || DASH))) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-label);' +
              'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores)) + conflictMark(r) + notCountedMark(r) + provisionalMark(r)) +
         // A Derived line's drill swaps the two price columns for its own (lineDrillTail): margin and result.
@@ -6508,19 +6512,43 @@
   function lcSinceOf(win) { return win === 'l52' ? last52Cutoff() : win === 'l24' ? last24Cutoff() : null; }
   var LC_WINDOW_WORD = { career: 'career', l24: 'last 24 months', l52: 'last 52 weeks' };
 
-  /** A non-standard format: NextGen short sets, or a best-of-3 decided on a match tiebreak stored as a set. */
-  function lineAltFormat(r, sc) {
-    if (/next ?gen/i.test(String(r.tournament || '') + ' ' + String(r.event || ''))) return true;
-    if (sc.partial) return false;            // a list short of (or junk beyond) the result: its games are not read
-    var list = sc.sets || r.setGames || [];
-    for (var i = 0; i < list.length; i++) {
-      var s = list[i];
-      if (s.p == null || s.o == null || +s.p === +s.o) continue;
-      var hi = Math.max(+s.p, +s.o);
-      if (hi < 6) return true;
-      if (Math.max(sc.w, sc.l) === 2 && hi > 7) return true;
+  /** A format the lines do not read (founder rulings 2026-10-22: NextGen and match-tiebreak matches are out of
+   *  every derived line), or null for a standard one:
+   *    'nextgen'  NextGen (by name, or every set a first-to-4 set)
+   *    'mtb'      a best-of-3 decided by a match tiebreak (to 10) in place of a final set, stored as a set: the decider
+   *               is won on 10+ (10-5, 13-11 — see below) or is a one-point set (1-0)
+   *    'format'   any other short set, or a set count no best-of-3 / best-of-5 ends on */
+  function lineFormatOf(r, sc) {
+    if (/next ?gen/i.test(String(r.tournament || '') + ' ' + String(r.event || ''))) return 'nextgen';
+    var need = Math.max(sc.w, sc.l);
+    if (need !== 2 && need !== 3) return 'format';
+    if (sc.partial) return null;             // a list short of (or junk beyond) the result: its games are not read
+    var list = (sc.sets || r.setGames || []).filter(function (x) { return x.p != null && x.o != null && +x.p !== +x.o; });
+    if (!list.length) return null;
+    var his = list.map(function (x) { return Math.max(+x.p, +x.o); });
+    if (his.every(function (h) { return h === 4; })) return 'nextgen';
+    // A match tiebreak is first to 10 by 2: a decider won on 9 (9-7) is a real advantage set (Wimbledon qualifying before
+    // 2019). Won on 10+ by 3 or more it can only be a match tiebreak (10-5); by exactly 2 (10-8, 13-11) it is one
+    // unless the event played advantage final sets (a Slam, the Davis Cup, the Olympics).
+    var lastSet = list[list.length - 1], last = his[his.length - 1];
+    var lo = Math.min(+lastSet.p, +lastSet.o);
+    if (need === 2 && list.length === 3) {
+      if (last < 6) return 'mtb';                               // a one-point set (1-0)
+      if (last >= 10 && (last - lo >= 3 || !/\b(australian open|french open|roland[- ]garros|wimbledon|us open|davis cup|olympic)/i.test(
+        String(r.tournament || '') + ' ' + String(r.event || '')))) return 'mtb';
     }
-    return false;
+    if (his.some(function (h) { return h < 6; })) return 'format';
+    return null;
+  }
+  // A retirement's format, for the table that lists it (its set count cannot say: it stopped). A Grand Slam main draw
+  // and a Davis Cup tie through 2018 are best of 5, as is any match where a side already holds 3 sets; else best of 3.
+  var LC_SLAM = /\b(australian open|french open|roland[- ]garros|wimbledon|us open)\b/i;
+  function lineRetiredFormat(r, sc) {
+    if (sc && Math.max(sc.w, sc.l) >= 3) return 'bo5';
+    var t = String(r.tournament || '') + ' ' + String(r.event || '');
+    if (LC_SLAM.test(t) && !/^Q/i.test(String(r.round || '')) && !/qualif/i.test(t)) return 'bo5';
+    if (/davis cup/i.test(t) && +String(r.date || '').slice(0, 4) <= 2018) return 'bo5';
+    return 'bo3';
   }
 
   /**
@@ -6535,30 +6563,38 @@
     var def = LINE_DEFS[fmt] || LINE_DEFS.bo3;
     var win = lcWindowOf(o.win), tier = lcTierOf(o.tier), since = lcSinceOf(win);
     var scope = drillScope(p, null, since, tier).filter(function (r) { return !r.notCounted; });
-    var why = { noScore: 0, retired: 0, format: 0, unshaped: 0, otherFmt: 0 };
-    var pool = [];
+    // Founder rulings 2026-10-22: a retirement is SHOWN (every line's Retired tab, its table's count per family) and
+    // never counted; NextGen and match-tiebreak matches are out of every line.
+    var why = { noScore: 0, retired: 0, nextgen: 0, mtb: 0, format: 0, unshaped: 0, otherFmt: 0 };
+    var pool = [], retPool = [];
     // TEN-310: favourite = price under 2.00 (the Market edge rule).
     var MEC = window.MarketEdgeCore;
+    // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
+    // shows as H / A but is not a close, so the row counts as unpriced here and in the note.
+    function roleOf(r) {
+      return (r.cents != null && r.price != null && r.price >= 1.01)
+        ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : null;
+    }
     for (var i = 0; i < scope.length; i++) {
       var r = scope[i];
       if (r.wo) { why.noScore++; continue; }
-      if (r.retired) { why.retired++; continue; }
       var sc = lineSetCount(r);
+      if (r.retired) {
+        why.retired++;
+        if (lineRetiredFormat(r, sc) === fmt) retPool.push({ sc: sc, g: null, role: roleOf(r), r: r });
+        continue;
+      }
       if (!sc) { why.noScore++; continue; }
       // fx6 item 2 · a count that decides no shape stays out of All and the note says so,
       // so the Match shape rows always sum to All matches.
       if (sc.w === sc.l) { why.unshaped++; continue; }
+      var alt = lineFormatOf(r, sc);
+      if (alt) { why[alt]++; continue; }
       // Format from the scoreline itself, not from the tier: the winner of a
       // best-of-5 took three sets.
-      var need = Math.max(sc.w, sc.l);
-      if ((need !== 2 && need !== 3) || lineAltFormat(r, sc)) { why.format++; continue; }
-      if (need !== def.setsToWin) { why.otherFmt++; continue; }
+      if (Math.max(sc.w, sc.l) !== def.setsToWin) { why.otherFmt++; continue; }
       var g = sc.partial ? null : lineGames(r, sc.sets);
-      // A role needs a CLOSING price on the Market edge basis (`cents` set); a ledger pre-match capture
-      // shows as H / A but is not a close, so the row counts as unpriced here and in the note.
-      var rl = (r.cents != null && r.price != null && r.price >= 1.01)
-        ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : null;
-      pool.push({ sc: sc, g: g, role: rl, r: r });
+      pool.push({ sc: sc, g: g, role: roleOf(r), r: r });
     }
     var all = pool.length;
     var favN = pool.filter(function (m) { return m.role === 'fav'; }).length;
@@ -6567,6 +6603,8 @@
     var sub = sel === 'all' ? pool : pool.filter(function (m) { return m.role === sel; });
     var withGames = sub.filter(function (m) { return !!m.g; }).length;
     var setMissing = sub.filter(function (m) { return !!m.sc.setMissing; }).length;
+    // this table's retirements (format, role, Window, Tier): listed on every line, counted on none
+    var retSub = sel === 'all' ? retPool : retPool.filter(function (m) { return m.role === sel; });
 
     // One match on one line: 'cover' | 'miss' | 'void', or null where the line cannot be read off it. A line is
     // the match's own figure plus the handicap: above zero covers, below fails, exactly zero (a whole line only,
@@ -6589,6 +6627,9 @@
         if (h === 'cover') t.hit++; else if (h === 'void') t.voids++;
         t.members.push({ m: sub[j], res: h });
       }
+      // retirements ride along on the drill only: never in n, hit, voids or the rate
+      t.retired = retSub.length;
+      retSub.forEach(function (m) { t.members.push({ m: m, res: 'retired' }); });
       return t;
     }
     var groups = def.groups.map(function (gr) {
@@ -6596,7 +6637,7 @@
         return lineRow(spec[0], tally(spec[1], spec[2], spec[3]));
       });
       var needsGames = /Games handicap|Total games/.test(gr[0]);
-      return { title: gr[0], n: needsGames ? withGames : sub.length, rows: rows };
+      return { title: gr[0], n: needsGames ? withGames : sub.length, retired: retSub.length, rows: rows };
     });
     // The table's own average cover rate (the Vs avg pp baseline).
     var rated = [];
@@ -6625,7 +6666,7 @@
       // TEN-384 fix 5 · All = As favourite + As underdog + unpriced, by construction; the note states the
       // unpriced count so the three tiles reconcile on the page.
       groups: groups, n: sub.length, all: all, favN: favN, dogN: dogN, unpriced: all - favN - dogN, role: sel,
-      withGames: withGames, setMissing: setMissing, fmtLabel: def.label, avg: avg,
+      withGames: withGames, setMissing: setMissing, fmtLabel: def.label, avg: avg, retiredHere: retSub.length,
       win: win, tier: tier, since: since, scopeN: scope.length, recordN: recN, undated: recN - scope.length, why: why, noSplit: noSplit,
       // kept for the readers that predate the reasons split
       excluded: why.retired, noScore: why.noScore, unshaped: why.unshaped
@@ -6639,7 +6680,7 @@
     var g = rn === 0 ? 'zero' : rn < 5 ? 'hard' : rn < 10 ? 'soft' : 'full';
     var rate = (g === 'full' || g === 'soft') ? hit / rn * 100 : null;
     return {
-      label: label, n: n, hit: hit, voids: v, miss: rn - hit, voidable: !!t.voidable, gate: g, rate: rate,
+      label: label, n: n, hit: hit, voids: v, miss: rn - hit, retired: t.retired || 0, voidable: !!t.voidable, gate: g, rate: rate,
       hot: g === 'full' && rate >= LC_HOT,
       mark: g === 'soft' ? smallSampleText(rn) : (g === 'hard' ? 'n < 5' : ''),
       // ±3 reads covered–void–not covered (210–34–144); a half line covered–not covered
@@ -6719,18 +6760,25 @@
         var sub = t[0] === 'all' ? d.fmtLabel + ' ' + MIDDOT + ' set scores on record'
           : t[0] === 'fav' ? pctOf(d.favN) + ' ' + MIDDOT + ' closed under 2.00'
           : pctOf(d.dogN) + ' ' + MIDDOT + ' closed 2.00 or longer';
+        // Founder 2026-10-22 · a card's height never follows its numbers: the subtitle shares its cell with a hidden
+        // widest-case copy (every count at 4 digits, the rate at 100%), so a "—" subtitle takes the room of a full
+        // one and no filter state moves the table, at any width.
+        var reserve = t[0] === 'all' ? d.fmtLabel + ' ' + MIDDOT + ' set scores on record'
+          : '100% of 9,999 ' + MIDDOT + (t[0] === 'fav' ? ' closed under 2.00' : ' closed 2.00 or longer');
         return mkTile('lc-role', 'data-v', t[0], on,
           '<span style="' + MK_CAPS + '">' + esc(t[1]) + '</span>' +
           '<span style="' + MK_MONO + 'font-size:24px;font-weight:700;line-height:24px;color:' +
             (on ? 'var(--text)' : 'var(--text-soft)') + ';">' + n.toLocaleString('en-US') + '</span>' +
-          '<span style="font-size:11px;color:var(--text-label);">' + esc(sub) + '</span>',
+          '<span style="display:grid;font-size:11px;color:var(--text-label);">' +
+            '<span style="grid-area:1 / 1;">' + esc(sub) + '</span>' +
+            '<span aria-hidden="true" style="grid-area:1 / 1;visibility:hidden;">' + esc(reserve) + '</span></span>',
           '14px 16px', 7);
       }).join('') + '</div>';
 
     if (!d.n) {
       var inScope = scopeWord ? ' in this window and tier' : '';
       return head + tiles +
-        '<div style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
+        '<div data-lc="table" style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
           'text-align:center;font-size:13px;color:var(--text-label);">' +
           (d.all
             ? 'No completed ' + esc(d.fmtLabel) + ' match ' + roleWord + inScope + ' carries a scoreline and a closing price.'
@@ -6739,7 +6787,7 @@
     }
 
     var GRID = 'display:grid;grid-template-columns:92px 150px minmax(0,1fr) 64px 64px 92px;gap:0 12px;';
-    var colHead = '<div style="' + GRID + 'align-items:end;padding:0 4px 8px;border-bottom:1px solid var(--line);">' +
+    var colHead = '<div data-lc="table" style="' + GRID + 'align-items:end;padding:0 4px 8px;border-bottom:1px solid var(--line);">' +
       ['Family', 'Line', 'Cover rate', 'Rate', 'Record', 'Vs avg pp'].map(function (c, i) {
         return '<span style="' + MK_CAPS + (i > 2 ? 'text-align:right;' : '') + '">' + esc(c) + '</span>';
       }).join('') + '</div>';
@@ -6750,7 +6798,10 @@
           : '<span style="min-width:0;display:flex;flex-direction:column;">' +
               '<span style="' + MK_CAPS + 'font-weight:800;line-height:1.3;">' + esc(g.title) + '</span>' +
               '<span style="' + MK_MONO + 'font-size:10.5px;color:var(--text-label);margin-top:2px;">' +
-                g.n.toLocaleString('en-US') + ' matches</span></span>';
+                g.n.toLocaleString('en-US') + ' matches</span>' +
+              // founder 2026-10-22 · the table's retirements, set aside (listed on each line's Retired tab)
+              (g.retired ? '<span data-lc-retired="' + g.retired + '" style="' + MK_MONO + 'font-size:10.5px;color:var(--text-label);">' +
+                g.retired + ' retired, not counted</span>' : '') + '</span>';
         var fill = r.rate == null ? '' :
           '<span style="position:absolute;left:0;top:0;bottom:0;width:' + Math.max(0, Math.min(100, r.rate)).toFixed(1) +
           '%;background:var(--bar);border-radius:3px;"></span>';
@@ -6809,8 +6860,10 @@
     var outs = [];
     function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
     if (w.noScore) outs.push(plural(w.noScore, 'with no score (walkover)', 'with no score (walkovers)'));
-    if (w.retired) outs.push(w.retired + ' retired or abandoned');
-    if (w.format) outs.push(w.format + ' in a non-standard format (NextGen short sets, match-tiebreak deciders)');
+    if (w.retired) outs.push(w.retired + ' retired (shown on each line, not counted)');
+    if (w.nextgen) outs.push(w.nextgen + ' NextGen');
+    if (w.mtb) outs.push(plural(w.mtb, 'decided by a match tiebreak', 'decided by a match tiebreak'));
+    if (w.format) outs.push(w.format + ' in another non-standard format');
     if (w.unshaped) outs.push(w.unshaped + ' whose set score on file is level and decides no match shape');
     if (d.undated > 0) outs.push(plural(d.undated, 'with no dated match row', 'with no dated match rows'));
     note += ' Career record' + (scopeWord ? ' (' + LC_WINDOW_WORD[win] + (tier === 'all' ? '' : ', ' + careerTierWord(tier)) + ')' : '') +
@@ -6833,43 +6886,56 @@
   // Covered / Not covered / Void (whole lines only) split the list; each count is the row's own, so the three add
   // to its record by construction. The two price columns give way to the game margin and the result on this line:
   // no odds here.
-  var LC_RES = [['cover', 'Covered'], ['miss', 'Not covered'], ['void', 'Void']];
-  var LC_RES_WORD = { cover: 'Covered', miss: 'Not covered', void: 'Void' };
+  // Founder 2026-10-22: the LINE badge is the row's only colour — Covered green, Not covered red, Void grey (±3 only),
+  // Retired grey with its own words (never "void": void is the ±3 push alone). The match result goes neutral ("W 2-0",
+  // no W/L square), the margin keeps its sign. A Retired tab (every line) lists the table's retirements: shown, never
+  // counted — the tabs add to the line's matches plus its retirements. The header is the record and its matches,
+  // the same on every tab; the tabs carry the split.
+  var LC_RES = [['cover', 'Covered'], ['miss', 'Not covered'], ['void', 'Void'], ['retired', 'Retired']];
+  var LC_RES_WORD = { cover: 'Covered', miss: 'Not covered', void: 'Void', retired: 'Retired ' + EMDASH + ' not counted' };
+  var LC_RES_INK = { cover: 'var(--pos)', miss: 'var(--neg)', void: 'var(--text-label)', retired: 'var(--text-label)' };
   function lcMarginText(m) {
     if (m == null) return DASH;
     return m > 0 ? '+' + m : m < 0 ? MINUS + Math.abs(m) : '0';
   }
-  function lineDrillTail(r, cell) {
-    return cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
-             'text-align:right;padding:5px 0;', esc(lcMarginText(r.lineMargin)), 'data-pp2-lc-margin="' + (r.lineMargin == null ? '' : r.lineMargin) + '" ') +
-      cell('font-size:11.5px;color:' + (r.lineRes === 'cover' ? 'var(--text)' : 'var(--text-label)') + ';' +
-           'text-align:right;white-space:nowrap;padding:5px 0;', esc(LC_RES_WORD[r.lineRes] || DASH), 'data-pp2-lc-res="' + r.lineRes + '" ');
+  // the export's own badge form (LOST SERVE: caps 10.5/700/0.10em, a 10% fill and a 34% edge of its ink, r5)
+  function lcBadge(res) {
+    var ink = LC_RES_INK[res] || 'var(--text-label)';
+    return '<span data-pp2-lc-badge="' + res + '" style="display:inline-block;font-family:var(--font-words);text-transform:uppercase;' +
+      'font-size:10.5px;font-weight:700;letter-spacing:0.10em;line-height:14px;color:' + ink + ';' +
+      'background:color-mix(in srgb, ' + ink + ' 10%, transparent);border:1px solid color-mix(in srgb, ' + ink + ' 34%, transparent);' +
+      'border-radius:5px;padding:2px 7px;white-space:nowrap;">' + esc(LC_RES_WORD[res] || DASH) + '</span>';
   }
-  function lineDrillNote(pg) {
-    return pg.next < pg.rows.length
-      ? 'Showing ' + pg.next + ' of ' + pg.rows.length + ' ' + MIDDOT + ' scroll for more'
-      : 'All ' + pg.rows.length + ' match' + (pg.rows.length === 1 ? '' : 'es');
+  function lineDrillTail(r, cell) {
+    return cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text);' +
+             'text-align:right;padding:5px 0;', esc(lcMarginText(r.lineMargin)), 'data-pp2-lc-margin="' + (r.lineMargin == null ? '' : r.lineMargin) + '" ') +
+      cell('text-align:right;white-space:nowrap;padding:3px 0;', lcBadge(r.lineRes), 'data-pp2-lc-res="' + r.lineRes + '" ');
   }
   function renderLineDrill(p, d, g, row) {
-    var res = state.lcDrillRes === 'miss' || (state.lcDrillRes === 'void' && row.voidable) ? state.lcDrillRes : 'cover';
-    var count = { cover: row.hit, miss: row.miss, void: row.voids };
+    var want = state.lcDrillRes;
+    var res = want === 'miss' || want === 'retired' || (want === 'void' && row.voidable) ? want : 'cover';
+    var count = { cover: row.hit, miss: row.miss, void: row.voids, retired: row.retired };
     var rows = row.members.filter(function (x) { return x.res === res; }).map(function (x) {
-      return Object.assign({}, x.m.r, { lineMargin: x.m.g ? x.m.g.f - x.m.g.a : null, lineRes: x.res });
+      // a retirement's games are an unfinished match's: no margin is read off them
+      return Object.assign({}, x.m.r, { lineMargin: x.res !== 'retired' && x.m.g ? x.m.g.f - x.m.g.a : null, lineRes: x.res });
     });
     var shown = rows.slice(0, DRILL_PAGE);
-    var pg = drillPager = { rows: rows, next: shown.length, lastEvent: null, multiYear: true, tail: lineDrillTail, noteFn: lineDrillNote };
+    // the pager appends silently on scroll; the header carries no paging or tab text
+    var pg = drillPager = { rows: rows, next: shown.length, lastEvent: null, multiYear: true, tail: lineDrillTail,
+      neutral: true, noteFn: function () { return ''; } };
     var body = drillBodyHtml(rows, 0, shown.length, pg);
-    var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
+    var HEAD = [['Date', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
                 ['Sets', 'left'], ['Set scores', 'left'], ['Margin', 'right'], ['Line', 'right']];
     var chips = mkSeg('lc-drill-res', LC_RES.filter(function (t) { return t[0] !== 'void' || row.voidable; })
       .map(function (t) { return [t[0], t[1] + ' ' + count[t[0]]]; }), res);
     return drillPanelHtml({
-      attr: 'data-pp2-lc-drill="' + esc(row.label) + '" ',
+      attr: 'data-pp2-lc-drill="' + esc(row.label) + '" data-pp2-lc-listed="' + rows.length + '" ',
       title: g.title + ' ' + MIDDOT + ' ' + row.label,
-      record: row.record + ' ' + MIDDOT + ' ' + row.n + ' matches',
-      note: lineDrillNote(pg), close: 'lc-drill-close',
+      record: row.record + ' ' + MIDDOT + ' ' + row.n + ' matches' +
+        (row.retired ? ' ' + MIDDOT + ' ' + row.retired + ' retired, not counted' : ''),
+      note: '', close: 'lc-drill-close',
       controls: '<div style="margin-bottom:11px;">' + chips + '</div>',
-      grid: 'display:grid;grid-template-columns:46px 12px minmax(0,1.15fr) 38px 40px minmax(0,1.35fr) 48px 84px;gap:0 10px;align-items:center;',
+      grid: 'display:grid;grid-template-columns:46px minmax(0,1.15fr) 38px 48px minmax(0,1.35fr) 48px 168px;gap:0 10px;align-items:center;',
       head: HEAD, body: body, hasRows: shown.length > 0
     });
   }
@@ -11932,7 +11998,7 @@
       state.lcDrill = state.lcDrill === v ? null : v;
       state.lcDrillRes = 'cover';
     }
-    else if (kind === 'lc-drill-res') { state.lcDrillRes = v === 'miss' || v === 'void' ? v : 'cover'; }
+    else if (kind === 'lc-drill-res') { state.lcDrillRes = v === 'miss' || v === 'void' || v === 'retired' ? v : 'cover'; }
     else if (kind === 'lc-drill-close') state.lcDrill = null;
     // §5.2A — a surface row toggles its own drill; opening one closes the other.
     else if (kind === 'career-surf') {
@@ -12132,7 +12198,7 @@
       earlyRoundsRow: earlyRoundsRow,
       drawGrainHtml: drawGrainHtml,
       // §5.8 Derived lines
-      lineCoverage: lineCoverage,
+      lineCoverage: lineCoverage, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat,
       renderLinesTab: renderLinesTab,
       lineSetCount: lineSetCount,
       lineGames: lineGames,

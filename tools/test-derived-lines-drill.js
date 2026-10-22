@@ -102,10 +102,18 @@ function readDrill(I, p, st, label, res) {
   assert(i >= 0, 'no drill rendered for ' + label);
   const drill = html.slice(i);
   const t = T(drill);
-  const chip = (w) => { const m = new RegExp(w + ' (\\d+)').exec(t); return m ? +m[1] : null; };
-  const listed = (/All (\d+) match(?:es)?|Showing \d+ of (\d+)/.exec(t) || []).slice(1).find((x) => x != null);
+  // the tab chips are the drill's segmented control: read them off its own buttons
+  const chips = {};
+  (drill.match(/data-pp2="lc-drill-res" data-v="(\w+)"[\s\S]*?<\/button>/g) || []).forEach((b) => {
+    const m = /data-v="(\w+)"[\s\S]*?>([^<>]*?) (\d+)</.exec(b); if (m) chips[m[1]] = +m[3];
+  });
+  const listed = /data-pp2-lc-listed="(\d+)"/.exec(drill);
   const tags = (drill.match(/data-pp2-lc-res="([a-z]+)"/g) || []).map((x) => x.replace(/.*="|"/g, ''));
-  return { cover: chip('Covered'), miss: chip('Not covered'), void: chip('Void'), listed: listed == null ? null : +listed, tags };
+  // the drill panel alone (up to the next ledger row): its colour, the header's text
+  const panel = drill.slice(0, drill.search(/<div data-pp2="lc-line"|<div data-lc-line=|data-lc="note"/) > 0 ? drill.search(/<div data-pp2="lc-line"|<div data-lc-line=|data-lc="note"/) : drill.length);
+  const head = T(panel.slice(panel.indexOf('>') + 1, panel.indexOf('data-pp2-seg="lc-drill-res"')));   // the visible header, not its tag
+  return { cover: chips.cover == null ? null : chips.cover, miss: chips.miss == null ? null : chips.miss, void: chips.void == null ? null : chips.void,
+    retired: chips.retired == null ? null : chips.retired, listed: listed ? +listed[1] : null, tags, panel, head };
 }
 
 function drillEqualsRecord(I, p) {
@@ -118,16 +126,30 @@ function drillEqualsRecord(I, p) {
       if (!r.n) return;
       const ctx = [f, role, win, tier, r.label].join(' / ');
       assert.strictEqual(r.hit + r.miss + r.voids, r.n, ctx + ': record does not add to n');
-      ['cover', 'miss'].concat(r.voidable ? ['void'] : []).forEach((res) => {
-        const want = res === 'cover' ? r.hit : res === 'miss' ? r.miss : r.voids;
-        // a filter with nothing behind it lists nothing; only one with matches is opened and counted
+      // a retirement is never in the record: the row's retired count is the table's, and every one of them is tagged
+      assert.strictEqual(r.retired, c.retiredHere, ctx + ': retired ' + r.retired + ' ≠ the table\'s ' + c.retiredHere);
+      assert(r.members.filter((x) => x.res === 'retired').every((x) => x.m.r.retired), ctx + ': a non-retired match on the Retired tab');
+      assert(r.members.filter((x) => x.res !== 'retired').every((x) => !x.m.r.retired), ctx + ': a retired match in the record');
+      let headText = null;
+      ['cover', 'miss', 'retired'].concat(r.voidable ? ['void'] : []).forEach((res) => {
+        const want = res === 'cover' ? r.hit : res === 'miss' ? r.miss : res === 'void' ? r.voids : r.retired;
         const d = readDrill(I, p, st, r.label, res);
         assert.strictEqual(d.cover, r.hit, ctx + ': Covered chip ' + d.cover + ' ≠ record ' + r.hit);
         assert.strictEqual(d.miss, r.miss, ctx + ': Not covered chip ' + d.miss + ' ≠ record ' + r.miss);
         assert.strictEqual(d.void, r.voidable ? r.voids : null, ctx + ': Void chip ' + d.void + ' (voidable ' + r.voidable + ')');
-        assert.strictEqual(d.listed, want, ctx + ' [' + res + ']: list holds ' + d.listed + ', record says ' + want);
+        assert.strictEqual(d.retired, r.retired, ctx + ': Retired chip ' + d.retired + ' ≠ ' + r.retired);
+        // the tabs add to the line's matches plus its retirements
+        assert.strictEqual(d.cover + d.miss + (d.void || 0) + d.retired, r.n + r.retired, ctx + ': tabs do not add to n + retired');
+        assert.strictEqual(d.listed, want, ctx + ' [' + res + ']: list holds ' + d.listed + ', the tab says ' + want);
         assert(d.tags.length === Math.min(want, 150) && d.tags.every((x) => x === res), ctx + ' [' + res + ']: painted rows ' +
           d.tags.length + ' tagged ' + Array.from(new Set(d.tags)).join(','));
+        // the badge is the row's only colour: no green / red anywhere in the panel outside a LINE badge
+        const bare = d.panel.replace(/<span data-pp2-lc-badge="[^"]*"[^>]*>[^<]*<\/span>/g, '');
+        assert(!/var\(--pos\)|var\(--neg\)/.test(bare), ctx + ' [' + res + ']: green or red outside the LINE badge');
+        assert(d.tags.length === (d.panel.match(/data-pp2-lc-badge="/g) || []).length, ctx + ': a row without its badge');
+        // one header on every tab: the record and its matches (and its retirements), no tab or paging text
+        if (headText == null) headText = d.head; else assert.strictEqual(d.head, headText, ctx + ': the header changes with the tab: ' + JSON.stringify([headText.slice(0,300), d.head.slice(0,300)]));
+        assert(d.head.includes(r.record + ' · ' + r.n + ' matches') && !/All \d+ match|Showing/.test(d.head), ctx + ': header ' + d.head);
         opened++;
       });
     });
@@ -156,7 +178,8 @@ function shapeChecks(A, shape) {
     assert(base.n > 0, 'no Challenger & ITF row in Last 52 weeks');
     assert(I.lineCoverage(p, 'bo3', 'all', { win: 'l24', tier: 'atp' }).n > 0, 'no ATP row in Last 24 months');
     // a TE record holds no walkover (recordLayer leaves it out), so "no score" is a feed-shape case
-    (shape === 'feed' ? ['noScore', 'retired', 'format'] : ['retired', 'format']).forEach((k) => assert(c.why[k] > 0, 'no "' + k + '" exclusion'));
+    (shape === 'feed' ? ['noScore', 'retired', 'nextgen', 'mtb'] : ['retired', 'nextgen', 'mtb']).forEach((k) => assert(c.why[k] > 0, 'no "' + k + '" exclusion'));
+    assert(c.retiredHere > 0, 'no retirement in the Bo3 table');
     if (shape === 'te') assert.strictEqual(c.why.noScore, 0, 'the walkover the record leaves out was counted');
     return `bo3 ${c.n} · −3 ${m3.record} · +3 ${p3.record} · out ${JSON.stringify(c.why)} · L52 CH ${base.n}`;
   });
@@ -165,6 +188,18 @@ function shapeChecks(A, shape) {
     const r = drillEqualsRecord(I, p);
     assert(r.opened > 100, 'only ' + r.opened + ' drills opened');
     return r.lines + ' lines, ' + r.opened + ' drill filters opened and reconciled';
+  });
+
+  H.check(tag('X · NextGen and match-tiebreak matches are in no line, no tab, under any filter (founder 2026-10-22)'), () => {
+    let k = 0;
+    each((f, role, win, tier) => {
+      rowsOf(I.lineCoverage(p, f, role, { win, tier })).forEach((r) => r.members.forEach((x) => {
+        const t = String(x.m.r.tournament || '') + ' ' + String(x.m.r.event || '');
+        assert(!/next ?gen|laver cup/i.test(t), [f, role, win, tier, r.label].join('/') + ': ' + t + ' listed');
+        k++;
+      }));
+    });
+    return k + ' line memberships checked';
   });
 
   H.check(tag('H · ±3.5 / ±3 / ±2.5 identities, every format × role × Window × Tier'), () => {
@@ -226,7 +261,9 @@ function shapeChecks(A, shape) {
       const b3 = I.lineCoverage(p, 'bo3', 'all', { win, tier }), b5 = I.lineCoverage(p, 'bo5', 'all', { win, tier });
       const w = b3.why;
       assert.strictEqual(b3.why.otherFmt, b5.all, win + '/' + tier + ': Bo3 other = Bo5');
-      assert.strictEqual(b3.recordN, b3.all + w.otherFmt + w.noScore + w.retired + w.format + w.unshaped + b3.undated, win + '/' + tier);
+      assert.strictEqual(b3.recordN, b3.all + w.otherFmt + w.noScore + w.retired + w.nextgen + w.mtb + w.format + w.unshaped + b3.undated, win + '/' + tier);
+      // every retirement sits in exactly one format's table
+      assert.strictEqual(b3.retiredHere + b5.retiredHere, w.retired, win + '/' + tier + ': retirements split across the tables');
       assert(b3.undated >= 0, win + '/' + tier + ' undated ' + b3.undated);
       const note = withState(I, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: win, lcTier: tier }, () => T(I.renderLinesTab(p)));
       assert(note.includes(': ' + b3.recordN.toLocaleString('en-US') + ' matches = ' + b3.all + ' best of 3 + ' + w.otherFmt + ' best of 5'),
@@ -257,6 +294,11 @@ function shapeChecks(A, shape) {
       n++;
     }))));
     assert.deepStrictEqual([...seen], ['l52,l24,career,all,atp,chitf,bo3,bo5']);
+    // the three cards hold a hidden widest-case subtitle in the same cell (their height never follows the numbers)
+    const card = withState(I, { key: p.key, marketTab: 'lines', lcWin: 'l52', lcTier: 'chitf', lcFmt: 'bo5' }, () => I.renderLinesTab(p));
+    const cards = card.match(/data-pp2="lc-role"[\s\S]*?<\/span><\/span><\/div>/g) || [];
+    assert.strictEqual(cards.length, 3, 'cards ' + cards.length);
+    cards.forEach((c) => assert(/aria-hidden="true" style="grid-area:1 \/ 1;visibility:hidden;">(?:best of|100% of 9,999)/.test(c), 'a card without its height reserve'));
     const def = withState(I, { key: p.key, marketTab: 'lines', lcWin: undefined }, () => I.renderLinesTab(p));
     assert(/data-pp2="lc-win" data-v="career" aria-pressed="true"/.test(def), 'Career is not the default');
     return n + ' states · one title · order ' + [...seen][0];
@@ -286,6 +328,15 @@ function mutants() {
   });
   H.mustFail('a drill listing the role\'s whole pool (role filter dropped) is caught', () => {
     const m = mutant('t.members.push({ m: sub[j], res: h });', 't.members.push({ m: sub[j], res: h }); if (j === 0 && sub !== pool) pool.forEach(function (q) { var hh = lineResult(q, kind, arg, dir); if (hh !== null && sub.indexOf(q) < 0) t.members.push({ m: q, res: hh }); });');
+    drillEqualsRecord(m.I, m.p);
+  });
+  H.mustFail('a retirement counted in the record (the old exclusion path removed) is caught', () => {
+    const m = mutant("        if (lineRetiredFormat(r, sc) === fmt) retPool.push({ sc: sc, g: null, role: roleOf(r), r: r });\n        continue;",
+      "        if (lineRetiredFormat(r, sc) === fmt) retPool.push({ sc: sc, g: null, role: roleOf(r), r: r });\n        if (!sc) continue;");
+    drillEqualsRecord(m.I, m.p);
+  });
+  H.mustFail('a drill that paints the match result green / red again is caught', () => {
+    const m = mutant("(pg.neutral ? '' : cell(", "(pg.neutral ? cell('background:' + wl + ';', '') : cell(");
     drillEqualsRecord(m.I, m.p);
   });
   H.mustFail('a Tier filter that drops Challenger & ITF rows from the drill scope (tier ignored) breaks ATP + CH = All', () => {
