@@ -10,7 +10,7 @@ COMMON="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
 DEST="${COMMON}/stennisfy-hooks"
 mkdir -p "$DEST"
 cp "${TOP}/tools/git-hooks/"* "$DEST/"
-chmod +x "$DEST/"* "${TOP}/tools/land-check.sh"
+chmod +x "$DEST/"*
 git config core.hooksPath "$DEST"
 echo "core.hooksPath = $(git config --get core.hooksPath) — shared by every worktree of ${COMMON}"
 ls -1 "$DEST" | sed 's/^/  installed: /'

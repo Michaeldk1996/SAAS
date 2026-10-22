@@ -1,6 +1,7 @@
-// Pre-push gate for main (founder ruling 2026-10-21, after 1a935c1b9 reached main with npm test red).
+// Pre-push gate for main (founder ruling 2026-10-21, after 1a935c1b9 reached main with npm test red; 2026-10-22: the hook
+// enforces the deploy lane — one suite record, the lane's ci-suite.sh receipt — and the files decide the data exemption).
 // Real git, throwaway repositories: a bare "origin", a clone with the repository's own hook + clobber check installed
-// through core.hooksPath, and real `git push` calls. Control: the same pushes with no hook all go through.
+// through core.hooksPath, a lane file + receipts dir of its own, and real `git push` calls. Control: no hook → all go through.
 // Run: node tools/test-pre-push-hook.js
 'use strict';
 const fs = require('fs'); const path = require('path'); const os = require('os'); const { execFileSync, spawnSync } = require('child_process');
@@ -10,14 +11,24 @@ const check = (l, c, d) => { if (c) { pass++; console.log(`  ok   ${l}`); } else
 console.log('Pre-push gate for main — real git, throwaway repositories');
 
 const TMP = fs.mkdtempSync(path.join(os.tmpdir(), 'prepush-'));
-const env = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_NOSYSTEM: '1', HOME: TMP });
+const LANE = path.join(TMP, 'deploy-lane.json'), RECEIPTS = path.join(TMP, 'suite-receipts');
+fs.mkdirSync(RECEIPTS);
+const env = Object.assign({}, process.env, { GIT_AUTHOR_NAME: 't', GIT_AUTHOR_EMAIL: 't@t', GIT_COMMITTER_NAME: 't', GIT_COMMITTER_EMAIL: 't@t', GIT_CONFIG_NOSYSTEM: '1', HOME: TMP,
+  DEPLOY_LANE_FILE: LANE, SUITE_RECEIPTS_DIR: RECEIPTS });
+delete env.STENNISFY_LANE_PUSH;
 const git = (cwd, ...a) => execFileSync('git', a, { cwd, env, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-const push = (cwd, ...a) => { const r = spawnSync('git', ['push', ...a], { cwd, env, encoding: 'utf8' }); return { ok: r.status === 0, out: (r.stdout || '') + (r.stderr || '') }; };
+const pushWith = (extra) => (cwd, ...a) => { const r = spawnSync('git', ['push', ...a], { cwd, env: Object.assign({}, env, extra), encoding: 'utf8' }); return { ok: r.status === 0, out: (r.stdout || '') + (r.stderr || '') }; };
+const push = pushWith({});                                     // a raw `git push`
+const lanePush = pushWith({ STENNISFY_LANE_PUSH: 'TEN-1' });   // what tools/deploy-batch.mjs does for the holder TEN-1
 const write = (cwd, f, t) => { fs.mkdirSync(path.dirname(path.join(cwd, f)), { recursive: true }); fs.writeFileSync(path.join(cwd, f), t); };
 const commit = (cwd, msg, files, author) => { for (const [f, t] of Object.entries(files)) write(cwd, f, t); git(cwd, 'add', '-A');
   git(cwd, 'commit', '-q', '-m', msg, ...(author ? ['--author', `Bot <${author}>`] : [])); return git(cwd, 'rev-parse', 'HEAD'); };
 const BOT = 'bot@bspconsult.local';   // a data-bot author (tools/deploy-lane.mjs DATA_BOT_AUTHORS: the Mac's refresh-*.sh jobs)
-const record = (cwd, sha) => fs.appendFileSync(path.join(cwd, '.git', 'land-checks.ok'), `${sha} 2026-10-21T00:00:00Z\n`);
+// a green (or red) ci-suite.sh receipt, as the lane writes it; the lane held by TEN-1 for `sha` (or expired / someone else's)
+const receipt = (sha, exit = 0) => fs.writeFileSync(path.join(RECEIPTS, `${sha}.json`), JSON.stringify({ sha, tree: 'x', exit, startedAt: 'x', finishedAt: 'x', log: 'x' }));
+const hold = (sha, { ticket = 'TEN-1', expired = false } = {}) => fs.writeFileSync(LANE, JSON.stringify({ version: 2, claim: { ticket, sha, reviewed: true,
+  takenAt: new Date().toISOString(), expiresAt: new Date(Date.now() + (expired ? -60e3 : 30 * 60e3)).toISOString() }, waiters: {}, queue: [], landed: {}, history: [] }));
+const record = (cwd, sha) => { receipt(sha); hold(sha); };
 
 function setup(withHook) {
   const dir = fs.mkdtempSync(path.join(TMP, 'r-'));
@@ -40,17 +51,24 @@ try {
   // ── the gate ──
   const A = setup(true);
   let sha = commit(A.work, 'feat: code change', { 'app.js': 'v2\n' });
-  let r = push(A.work, 'origin', 'main');
-  check('a code commit with NO recorded suite pass is refused, with the command to run', !r.ok && /REFUSED push to main/.test(r.out) && /tools\/land-check\.sh/.test(r.out), r.out);
+  fs.rmSync(LANE, { force: true });
+  let r = lanePush(A.work, 'origin', 'main');
+  check('nobody holds the lane → refused, saying to claim it', !r.ok && /REFUSED push to main/.test(r.out) && /nobody holds the deploy lane/.test(r.out), r.out);
   check('…and main on origin did not move', git(A.work, 'rev-parse', 'origin/main') !== sha);
-  fs.writeFileSync(path.join(A.work, '.git', 'land-checks.ok'), '');
-  const failedLog = path.join(A.work, '.git', 'land-checks'); fs.mkdirSync(failedLog, { recursive: true });
-  fs.writeFileSync(path.join(failedLog, `${sha}.log`), 'EXIT=1\n');
-  r = push(A.work, 'origin', 'main');
-  check('a red run (a log with EXIT=1, nothing recorded as passed) is still refused', !r.ok);
   record(A.work, sha);
   r = push(A.work, 'origin', 'main');
-  check('with the suite pass recorded for that commit and the clobber check clear → pushed', r.ok && git(A.work, 'ls-remote', 'origin', 'refs/heads/main').startsWith(sha), r.out);
+  check('a RAW git push of code is refused even with the lane held and a green receipt (only deploy-batch pushes code)', !r.ok && /a raw push: code reaches main only through tools\/deploy-batch\.mjs/.test(r.out), r.out);
+  r = pushWith({ STENNISFY_LANE_PUSH: 'TEN-2' })(A.work, 'origin', 'main');
+  check('a batch for a ticket that does not hold the lane is refused', !r.ok && /the lane is held by TEN-1, not TEN-2/.test(r.out), r.out);
+  hold(sha, { expired: true });
+  r = lanePush(A.work, 'origin', 'main');
+  check('an expired claim does not count → refused', !r.ok && /expired/.test(r.out), r.out);
+  hold(sha); receipt(sha, 1);
+  r = lanePush(A.work, 'origin', 'main');
+  check('a RED receipt (exit 1) is no receipt → refused, with the command to run', !r.ok && /no green ci-suite receipt/.test(r.out) && /tools\/ci-suite\.sh/.test(r.out), r.out);
+  receipt(sha);
+  r = lanePush(A.work, 'origin', 'main');
+  check('the lane holder\'s batch, a green receipt for that commit, the clobber check clear → pushed', r.ok && git(A.work, 'ls-remote', 'origin', 'refs/heads/main').startsWith(sha), r.out);
 
   // a tested commit rebased onto new data commits: same code, new id → accepted on the earlier pass
   const B = setup(true);
@@ -61,11 +79,11 @@ try {
   git(other, 'push', '-q', '--no-verify', 'origin', 'main');
   git(B.work, 'fetch', '-q', 'origin'); git(B.work, 'rebase', '-q', 'origin/main');
   const rebased = git(B.work, 'rev-parse', 'HEAD');
-  r = push(B.work, 'origin', 'main');
-  check('tested, then rebased onto a [skip ci] data commit (new id, same code) → accepted on the earlier pass', rebased !== tested && r.ok && /differs from the pushed commit in data files only/.test(r.out), r.out);
+  r = lanePush(B.work, 'origin', 'main');
+  check('receipted, then replayed onto a data-bot commit (new id, same code) → accepted on the claimed commit\'s receipt', rebased !== tested && r.ok && /data-only difference/.test(r.out), r.out);
   commit(B.work, 'feat: more code', { 'lib/x.js': 'x\n' });
-  r = push(B.work, 'origin', 'main');
-  check('code changed since the last pass → refused (a pass covers its code, never later code)', !r.ok && /no full-suite pass recorded/.test(r.out), r.out);
+  r = lanePush(B.work, 'origin', 'main');
+  check('code changed since the receipt → refused (a receipt covers its code, never later code)', !r.ok && /no green ci-suite receipt/.test(r.out), r.out);
 
   // the clobber check: someone else moved the same file on main since the base
   const C = setup(true);
@@ -74,14 +92,17 @@ try {
   commit(c2, 'feat: their edit to app', { 'app.js': 'theirs\n' });
   git(c2, 'push', '-q', '--no-verify', 'origin', 'main');
   record(C.work, mine);
-  r = push(C.work, 'origin', 'main', '--force');   // force: the case the clobber check exists for (a whole-file blob over their commit)
-  check('suite passed but the clobber check is NOT clear (their commit moved app.js) → refused, naming the file', !r.ok && /CONFLICT\s+app\.js/.test(r.out) && /clobber check is not clear/.test(r.out), r.out);
+  r = lanePush(C.work, 'origin', 'main', '--force');   // force: the case the clobber check exists for (a whole-file blob over their commit)
+  check('lane + receipt but the clobber check is NOT clear (their commit moved app.js) → refused, naming the file', !r.ok && /CONFLICT\s+app\.js/.test(r.out) && /clobber check is not clear/.test(r.out), r.out);
 
   // exemptions and scope
   const D = setup(true);
   commit(D.work, 'chore(splits): daily refresh [skip ci]', { 'career-splits/1.json': '{}\n', 'style-meetings/a.json': '{}\n', 'splits-matches-index.json': '{}\n' }, BOT);
   r = push(D.work, 'origin', 'main');
-  check('a data-bot push (the Mac\'s daily refresh jobs: bot author, marker, files on the lane\'s data list) needs no suite → pushed', r.ok && /data-bot push to main/.test(r.out), r.out);
+  check('a data-bot push (the Mac\'s daily refresh jobs: bot author, marker, files on the lane\'s data list) needs no lane, no suite → pushed', r.ok && /data-bot push to main/.test(r.out), r.out);
+  commit(D.work, 'chore(draws): official draw content changed [skip ci]', { 'draws.json': '{"d":1}\n' }, BOT);
+  r = push(D.work, 'origin', 'main');
+  check('founder 2026-10-22 (3a): the official-draws bot commit (draws.json) is a data-bot commit → exempt, pushed', r.ok && /data-bot push to main/.test(r.out), r.out);
   commit(D.work, 'chore: sneak code [skip ci]', { 'app.js': 'sneaky\n' }, BOT);
   r = push(D.work, 'origin', 'main');
   check('the marker does not exempt a commit that changes code → refused', !r.ok, r.out);
@@ -107,20 +128,20 @@ try {
   const F = setup(true);
   const body = commit(F.work, 'feat(land): a code change\n\nExempt: [skip ci] data-only pushes (prose in the body)', { 'app.js': 'v9\n' });
   record(F.work, body);
-  r = push(F.work, 'origin', 'main');
-  check('a code commit whose BODY names [skip ci] (the a7fcdc55f shape) is refused even WITH a suite pass — GitHub would skip the gate', !r.ok && /carries a skip marker/.test(r.out) && /app\.js/.test(r.out), r.out);
+  r = lanePush(F.work, 'origin', 'main');
+  check('a code commit whose BODY names [skip ci] (the a7fcdc55f shape) is refused even WITH the lane and a green receipt — GitHub would skip the gate', !r.ok && /carries a skip marker/.test(r.out) && /app\.js/.test(r.out), r.out);
   git(F.work, 'reset', '-q', '--hard', 'origin/main');
   for (const tok of ['[ci skip]', '[no ci]', '[skip actions]', '[actions skip]', 'skip-checks: true']) {
     const s = commit(F.work, `feat: code\n\n${tok}`, { 'app.js': `v-${tok}\n` });
     record(F.work, s);
-    const rr = push(F.work, 'origin', 'main');
+    const rr = lanePush(F.work, 'origin', 'main');
     check(`every GitHub skip token is caught on a code commit: "${tok}" → refused`, !rr.ok && /carries a skip marker/.test(rr.out), rr.out);
     git(F.work, 'reset', '-q', '--hard', 'origin/main');
   }
   const code = commit(F.work, 'feat: real code', { 'app.js': 'v10\n' });
   const tip = commit(F.work, 'chore(odds): tick [skip ci]', { 'matches.json': '{"x":1}\n' }, 'bsp-odds-bot@users.noreply.github.com');
   record(F.work, tip); record(F.work, code);
-  r = push(F.work, 'origin', 'main');
+  r = lanePush(F.work, 'origin', 'main');
   check('a data-bot commit as the TIP of a push that holds code → refused (GitHub decides from the tip: the whole push would skip the gate)', !r.ok && /last commit .* carries a skip marker while the push holds code/.test(r.out), r.out);
   git(F.work, 'reset', '-q', '--hard', 'origin/main');
   git(F.work, 'checkout', '-q', '-b', 'side'); commit(F.work, 'feat: code on a side branch', { 'lib/side.js': 's\n' });
@@ -131,8 +152,8 @@ try {
   git(F.work, 'reset', '-q', '--hard', 'origin/main');
   const ok2 = commit(F.work, 'feat: clean code commit', { 'app.js': 'v11\n' });
   record(F.work, ok2);
-  r = push(F.work, 'origin', 'main');
-  check('control: the same code with a clean message and a suite pass → pushed', r.ok, r.out);
+  r = lanePush(F.work, 'origin', 'main');
+  check('control: the same code with a clean message, the lane and a green receipt → pushed', r.ok, r.out);
   git(D.work, 'checkout', '-q', '-b', 'feature');
   r = push(D.work, 'origin', 'feature');
   check('a push to any other branch is never checked → pushed', r.ok, r.out);
@@ -146,27 +167,22 @@ try {
   const E = setup(false);
   commit(E.work, 'feat: code change', { 'app.js': 'v2\n' });
   r = push(E.work, 'origin', 'main');
-  check('control: without the hook the same untested code push goes through (the checks above are not vacuous)', r.ok, r.out);
+  check('control: without the hook the same raw, unreceipted code push goes through (the checks above are not vacuous)', r.ok, r.out);
 
-  // land-check.sh: records a pass only on EXIT=0
-  for (const [label, script, want] of [['passing', 'exit 0', true], ['failing', 'exit 1', false]]) {
-    const L = setup(false);
-    write(L.work, 'tools/land-check.sh', fs.readFileSync(path.join(ROOT, 'tools', 'land-check.sh'), 'utf8'));
-    const s = commit(L.work, `test: ${label}`, { 'package.json': JSON.stringify({ name: 'x', version: '1.0.0', scripts: { test: script } }) + '\n',
-      'package-lock.json': JSON.stringify({ name: 'x', version: '1.0.0', lockfileVersion: 3, requires: true, packages: { '': { name: 'x', version: '1.0.0' } } }) + '\n' });
-    const lr = spawnSync('bash', ['tools/land-check.sh'], { cwd: L.work, env: Object.assign({}, env, { TMPDIR: TMP }), encoding: 'utf8' });
-    const ok = path.join(L.work, '.git', 'land-checks.ok');
-    const recorded = fs.existsSync(ok) && fs.readFileSync(ok, 'utf8').includes(s);
-    const log = fs.readFileSync(path.join(L.work, '.git', 'land-checks', `${s}.log`), 'utf8');
-    check(`land-check.sh, ${label} suite: exit ${want ? 0 : 'non-zero'}, log ends EXIT=${want ? 0 : 1}, ${want ? 'recorded' : 'NOT recorded'}`,
-      (lr.status === 0) === want && log.includes(`EXIT=${want ? 0 : 1}`) && recorded === want, lr.stdout + lr.stderr + log);
+  // ── the lane's data list (founder 2026-10-22, item 3a) ──
+  {
+    const { execFileSync: ef } = require('child_process');
+    const lane = ef(process.execPath, ['--input-type=module', '-e', `import {isDataPath,isDataCommit} from ${JSON.stringify(require('url').pathToFileURL(path.join(ROOT, 'tools', 'deploy-lane.mjs')).href)};
+      console.log(JSON.stringify([isDataPath('draws.json'), isDataCommit({ subject: 'chore(draws): official draw content changed [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['draws.json'] }),
+        isDataCommit({ subject: 'feat: draws by hand', authorEmail: 'x@y', files: ['draws.json'] }), isDataPath('draw-view.js')]))`], { encoding: 'utf8' });
+    check('deploy-lane.mjs: draws.json is a data path; the draws bot commit is a data-bot commit; a human commit or draw-view.js is not', lane.trim() === '[true,true,false,false]', lane);
   }
 
   // ── wiring ──
   const inst = fs.readFileSync(path.join(ROOT, 'tools', 'install-git-hooks.sh'), 'utf8');
   // the installer itself, in a throwaway repo with a worktree on an OLDER commit that has no tools/git-hooks/
   const I = setup(false);
-  write(I.work, 'tools/install-git-hooks.sh', inst); write(I.work, 'tools/land-check.sh', fs.readFileSync(path.join(ROOT, 'tools', 'land-check.sh'), 'utf8'));
+  write(I.work, 'tools/install-git-hooks.sh', inst);
   const old = git(I.work, 'rev-list', '--max-parents=0', 'HEAD');
   commit(I.work, 'tooling', { 'x.txt': 'x\n' });
   const wt = path.join(I.dir, 'oldwt'); git(I.work, 'worktree', 'add', '-q', '--detach', wt, old);
@@ -174,9 +190,11 @@ try {
   const hp = git(I.work, 'config', '--get', 'core.hooksPath');
   check('the installer copies the hook into the shared git dir and sets an ABSOLUTE core.hooksPath', path.isAbsolute(hp) && fs.existsSync(path.join(hp, 'pre-push')) && git(wt, 'config', '--get', 'core.hooksPath') === hp, hp);
   commit(wt, 'feat: code from an old worktree', { 'app.js': 'old-wt\n' });
-  r = push(wt, 'origin', 'HEAD:main');
+  r = lanePush(wt, 'origin', 'HEAD:main');
   check('…so a worktree on an older commit (no tools/git-hooks/ in its checkout) is gated too → refused', !r.ok && /REFUSED push to main/.test(r.out), r.out);
-  check('hook + runner are executable in the repository', (fs.statSync(path.join(ROOT, 'tools', 'git-hooks', 'pre-push')).mode & 0o111) && (fs.statSync(path.join(ROOT, 'tools', 'land-check.sh')).mode & 0o111));
+  check('the hook is executable in the repository; the separate land-check.sh is retired (one suite record: the lane\'s receipt)', (fs.statSync(path.join(ROOT, 'tools', 'git-hooks', 'pre-push')).mode & 0o111) && !fs.existsSync(path.join(ROOT, 'tools', 'land-check.sh')));
+  const batch = fs.readFileSync(path.join(ROOT, 'tools', 'deploy-batch.mjs'), 'utf8');
+  check('deploy-batch.mjs names its lane ticket to the hook around its push, and only there', /process\.env\.STENNISFY_LANE_PUSH = me\.ticket;[^\n]*\n\s*const pushedAt = [^\n]*\n\s*const p = W\(\['push', '-q', 'origin', `\$\{b\.head\}:refs\/heads\/main`\]\);\n\s*delete process\.env\.STENNISFY_LANE_PUSH;/.test(batch) && (batch.match(/STENNISFY_LANE_PUSH/g) || []).length === 2);
 } finally {
   fs.rmSync(TMP, { recursive: true, force: true });
 }

@@ -221,9 +221,11 @@ After 1a935c1b9 reached main with `npm test` red. The **Code gate** (`gate.yml` 
 gated commit) stays the enforced backstop against *deploying* a red commit; the pre-push hook stops it being *pushed*
 from this Mac. Installed once per repository by `tools/install-git-hooks.sh` (copies `tools/git-hooks/` into the shared
 git dir, absolute `core.hooksPath`: the checkout and every worktree). Re-run the installer when the hook changes.
-- **Test:** a push that moves `main` needs (1) `tools/land-check.sh <commit>` — full suite in a CI-shaped clone, EXIT=0,
-  recorded in `<git-common-dir>/land-checks.ok` — for the pushed commit or a tested commit that differs from it in data
-  files only, and (2) `tools/clobber-check.sh` clear for every file the push changes.
+- **Test — the hook enforces the lane (founder 2026-10-22, supersedes the separate `land-check.sh` record):** a push that
+  moves `main` must be `tools/deploy-batch.mjs` pushing for the current, unexpired lane holder (it sets
+  `STENNISFY_LANE_PUSH` to its ticket for the push only), with a green `tools/ci-suite.sh` receipt for the pushed commit
+  or a receipted commit that differs from it in data files only — ONE suite record, the lane's — and
+  `tools/clobber-check.sh` clear for every file the push changes. A raw `git push` of code is refused.
 - **Exempt — the files decide, never the marker (founder 2026-10-22):** a push whose every new commit is a data-bot
   commit by this file's one definition (`isDataCommit` in `tools/deploy-lane.mjs`: the marker in the subject, a
   `DATA_BOT_AUTHORS` author, every file on `DATA_FILES` / `DATA_DIRS`) — the Mac's daily refresh jobs. A commit's files
@@ -234,6 +236,19 @@ git dir, absolute `core.hooksPath`: the checkout and every worktree). Re-run the
   `skip-checks: true` trailer), or a push whose tip holds one while the push holds code — GitHub would run no workflow,
   so the Code gate would never see it (a7fcdc55f, 2026-10-21).
 - **Test:** `tools/test-pre-push-hook.js` (real git, throwaway repositories, no-hook control).
+
+## Suite runs and disk (founder 2026-10-22)
+- **Test:** `tools/ci-suite.sh` refuses below 3 GB free (`CI_SUITE_MIN_FREE_KB`) BEFORE cloning — exit 4, "low disk: N MB
+  free, need 3072 MB — nothing ran", no receipt — and checks again before `npm test`. A full disk otherwise fails a suite
+  mid-way, in different tests each time, and reads like a code failure.
+- **Test:** `npm test` runs in its own process group with `TMPDIR` inside the throwaway clone; EXIT / INT / TERM stop the
+  whole test run and remove the clone. A killed runner never leaves an orphaned `npm test` or a 1.3 GB clone, and test
+  temp folders never pile up in the shared TMPDIR. **Test:** `test-ten273-deploy-batch.mjs` (real runs + mutants).
+- **The daily space report** (`tools/prune-agent-space.sh`, installed by `tools/install-prune-agent.sh` as the
+  `com.stennisfy.prune-report` LaunchAgent, 06:30 local) is **report-only** until the founder approves deletion. Safe =
+  idle (7 days; TMPDIR test folders 48 h), no open files, and for a worktree clean and fully pushed — a worktree holding
+  work is listed, never removed. Never: the main checkout, tool caches, Paperclip's own data. **Test:**
+  `tools/test-prune-agent-space.js`.
 
 ## Pipeline-down alert (founder ruling 2026-10-18)
 

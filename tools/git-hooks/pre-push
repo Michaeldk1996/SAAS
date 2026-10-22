@@ -3,9 +3,9 @@
 # Installed by tools/install-git-hooks.sh (core.hooksPath — shared by the checkout and every worktree).
 #
 # A push that moves refs/heads/main is refused unless BOTH hold for the commit being pushed:
-#   1. a full-suite pass is recorded for it by tools/land-check.sh (CI-shaped clone, npm test EXIT=0) — or for a
-#      tested commit that differs from it in data files only (main gains [skip ci] data commits every few minutes;
-#      a code-identical rebase must not need a new 15-minute run);
+#   1. the deploy lane (founder 2026-10-22): it is tools/deploy-batch.mjs pushing for the current, unexpired lane holder,
+#      on a green tools/ci-suite.sh receipt for the commit — or for a receipted commit that differs from it in data files
+#      only (main gains data-bot commits every few minutes). A raw `git push` of code is refused;
 #   2. tools/clobber-check.sh is clear for every file the push changes against origin/main.
 # Exempt: a push whose every new commit is a DATA-BOT commit by the deploy lane's one definition (tools/deploy-lane.mjs
 # isDataCommit: the skip marker in the subject, a data-bot author, every file one a data bot really writes) — the
@@ -16,7 +16,6 @@
 # The Code gate (gate.yml) stays the enforced backstop: `git push --no-verify` bypasses this hook, never the gate.
 set -u
 Z40=0000000000000000000000000000000000000000
-COMMON="$(cd "$(git rev-parse --git-common-dir)" && pwd)"
 TOP="$(git rev-parse --show-toplevel)"
 refuse() { printf '\npre-push: REFUSED push to main — %s\n' "$1" >&2; exit 1; }
 CLASSIFY="$(cd "$(dirname "$0")" && pwd)/push-classify.mjs"
@@ -38,20 +37,12 @@ while read -r LREF LSHA RREF RSHA; do
   printf '%s\n' "$CLS" | grep "\"sha\":\"$(git rev-parse "$LSHA")\"" | grep -q '"marker":true' \
     && refuse "the push's last commit $(git rev-parse --short "$LSHA") carries a skip marker while the push holds code — GitHub decides from the tip, so the Code gate would skip the whole push. Push the code commits on their own first."
 
-  # 1. a recorded full-suite pass for this commit, or for an earlier one with only data changed since
-  OKFILE="${COMMON}/land-checks.ok"
-  PASSED=""
-  if [ -f "$OKFILE" ]; then
-    while read -r OK _; do
-      git cat-file -e "${OK}^{commit}" 2>/dev/null || continue
-      # not an ancestry test: a tested commit rebased onto new data commits has a new id but the same code
-      if [ "$OK" = "$LSHA" ] || node "$CLASSIFY" "$TOP" datadiff "$OK" "$LSHA"; then PASSED="$OK"; break; fi
-    done < <(tail -r "$OKFILE" 2>/dev/null || tac "$OKFILE")
-  fi
-  [ -n "$PASSED" ] || refuse "no full-suite pass recorded for $(git rev-parse --short "$LSHA") (nor for a tested commit that differs from it in data files only).
-  Run:  tools/land-check.sh $(git rev-parse --short "$LSHA")     (CI-shaped clone, npm test; ~15 min)
-  then push again. The Code gate would refuse to deploy it anyway; this keeps a red commit off main."
-  echo "pre-push: suite EXIT=0 recorded for $(git rev-parse --short "$PASSED")$([ "$PASSED" = "$LSHA" ] || echo ' (differs from the pushed commit in data files only)')."
+  # 1. the deploy lane (founder 2026-10-22, item 4): the push is tools/deploy-batch.mjs acting for the current, unexpired
+  #    lane holder (it sets STENNISFY_LANE_PUSH to its ticket for the push), on a green ci-suite.sh receipt for the pushed
+  #    commit or a receipted one that differs from it in data files only. ONE suite record: the lane's.
+  WHY="$(node "$CLASSIFY" "$TOP" lane "${DEPLOY_LANE_FILE:-$HOME/.stennisfy/deploy-lane.json}" "${SUITE_RECEIPTS_DIR:-$HOME/.stennisfy/suite-receipts}" "$(git rev-parse "$LSHA")" "${STENNISFY_LANE_PUSH:-}")" \
+    || refuse "$WHY"
+  echo "pre-push: lane held by ${STENNISFY_LANE_PUSH}; ${WHY}."
 
   # 2. the clobber check, against origin/main, for every file this push changes
   git fetch -q origin || refuse "git fetch failed — cannot check against origin/main."
@@ -59,7 +50,7 @@ while read -r LREF LSHA RREF RSHA; do
   FILES=()
   while IFS= read -r f; do [ -n "$f" ] && FILES+=("$f"); done < <(git diff --name-only "$BASE" "$LSHA")
   if [ "${#FILES[@]}" -gt 0 ]; then
-    bash "${TOP}/tools/clobber-check.sh" "$BASE" "${FILES[@]}" >&2 || refuse "the clobber check is not clear (above). Rebase onto origin/main, re-run tools/land-check.sh if code moved, push again."
+    bash "${TOP}/tools/clobber-check.sh" "$BASE" "${FILES[@]}" >&2 || refuse "the clobber check is not clear (above). Rebase onto origin/main, re-run tools/ci-suite.sh if code moved, claim again."
   fi
 done
 exit 0
