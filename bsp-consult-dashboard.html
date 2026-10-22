@@ -13843,16 +13843,14 @@ function fhRefDay(m){ const d = fhDayNum(m.date); if (d != null) return d; const
 // fields from his career-history shard (every level, newest first), capped at the pipeline's form-row cap so
 // "on record" means the same population on both sources. opponentKey / tier / matchStats are not in that shard.
 const FH_FORM_ROW_CAP = 40;                // = RECENT_FORM_ROW_CAP (bsp-pipeline.js)
-// The cap counts played rows (as the pipeline's form shards do): a walkover row is split off first and listed on its own.
-const fhCareerFormRow = x => ({
+// The cap counts played rows (as the pipeline's form shards do): a walkover row is split off first and listed on its own
+// (`walkovers` true: the walkover rows, uncapped). Self-contained: the Form suites lift this function out by name.
+function fhFormRowsFromCareer(ch, walkovers){
+  const rows = (Array.isArray(ch) ? ch : []).filter(x => x && x.date && !!x.walkover === !!walkovers);
+  return (walkovers ? rows : rows.slice(0, FH_FORM_ROW_CAP)).map(x => ({
     opponent: x.opponent, opponentKey: null, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface,
     result: x.result, won: !!x.won, sets: x.sets, retired: !!x.retired, walkover: !!x.walkover, defaulted: !!x.defaulted,
-    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey });
-function fhFormRowsFromCareer(ch){
-  return (Array.isArray(ch) ? ch : []).filter(x => x && x.date && !x.walkover).slice(0, FH_FORM_ROW_CAP).map(fhCareerFormRow);
-}
-function fhFormWalkoversFromCareer(ch){
-  return (Array.isArray(ch) ? ch : []).filter(x => x && x.date && x.walkover).map(fhCareerFormRow);
+    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey }));
 }
 function fhEnsureFormData(m){
   // A keyed side left without a source may be a failed fetch (loadCareerHistory answers [] on one): the next open retries.
@@ -13867,8 +13865,8 @@ function fhEnsureFormData(m){
   }).then(([c1, c2]) => {
     m._fhFormSrc = [m.p1RecentFormMatches ? 'form' : (c1 && c1.length ? 'career' : null), m.p2RecentFormMatches ? 'form' : (c2 && c2.length ? 'career' : null)];
     m._fhFormRows = [m.p1RecentFormMatches || fhFormRowsFromCareer(c1), m.p2RecentFormMatches || fhFormRowsFromCareer(c2)];
-    m._fhFormWo = [m.p1RecentFormMatches ? (m.p1RecentFormWalkovers || []) : fhFormWalkoversFromCareer(c1),
-      m.p2RecentFormMatches ? (m.p2RecentFormWalkovers || []) : fhFormWalkoversFromCareer(c2)];
+    m._fhFormWo = [m.p1RecentFormMatches ? (m.p1RecentFormWalkovers || []) : fhFormRowsFromCareer(c1, true),
+      m.p2RecentFormMatches ? (m.p2RecentFormWalkovers || []) : fhFormRowsFromCareer(c2, true)];
     m._fhFormRetry = [m.p1Key, m.p2Key].some((k, i) => k != null && k !== '' && !m._fhFormSrc[i]);
     m._fhFormData = true; return m;
   });

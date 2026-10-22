@@ -125,8 +125,11 @@ test('a player without a form shard reads career-history, capped at the form-row
   assert.equal(rows.length, 40, 'capped at FH_FORM_ROW_CAP');
   assert.equal(rows[1].qualifying, true, 'a "Qualifying" round is a qualifying row');
   assert.equal(rows[1].tier, 'chitf', 'Challenger / ITF rows stay (recent form is never ATP-only)');
+  // founder 2026-10-22: the cap counts PLAYED rows (the walkover is split off first and listed on its own)
+  assert.ok(rows.every(r => !r.walkover), 'no walkover among the capped Form rows');
+  assert.deepEqual(S.fhFormRowsFromCareer(ch, true).map(r => r.opponent), ['Q. Opp0'], 'the walkover row, for the list');
   const P = player(match({ _fhFormRows: [rows, []], _fhFormSrc: ['career', null], _fhCloses: [null, null] }));
-  assert.ok(P.win.every(r => !r.wo) && P.shown.length === 39, 'the walkover row is dropped; 39 played matches on record');
+  assert.ok(P.win.every(r => !r.wo) && P.shown.length === 40, '40 played matches on record; the walkover is in none of them');
 });
 
 // Mutation: the group header meta dropped, or the tooltip/rows back to the double-space score join, or Form back on the
