@@ -93,10 +93,18 @@ function build(root) {
   const surnameOf = n => { const c = ourCandidateKeys(n); return c.length ? c.map(x => x.surname) : []; };
 
   const files = fs.readdirSync(path.join(root, 'odds-archive')).filter(f => /^\d{4}\.csv$/.test(f)).sort();
-  const out = [];
+  const out = [], retired = [];
+  // ruling 4 (founder 2026-10-22): a retired row's first set, from the career rows that speak; they must agree
+  const { firstSetState } = require('../market-edge-core.js');
+  const fsOf = (...looks) => {
+    const st = looks.filter((x) => x && x.row).map((x) => firstSetState(x.row.sets)).filter((s) => s !== 'missing');
+    if (!st.length || st.some((s) => s !== st[0])) return 'm';
+    return st[0] === 'complete' ? 'c' : 'i';
+  };
   for (const f of files) for (const r of readCsv(path.join(root, 'odds-archive', f))) {
     const comment = String(r.comment || '').trim();
-    if (PLAYED_COMMENTS.has(comment)) continue;
+    const isRet = comment === 'Retired' || comment === 'Rrtired';
+    if (PLAYED_COMMENTS.has(comment) && !isRet) continue;
     const priced = (price(r.psw) && price(r.psl)) || (price(r.b365w) && price(r.b365l));
     if (!priced) continue;                     // nothing to price either way
     const d = day(r.date);
@@ -124,13 +132,16 @@ function build(root) {
         walkover: !!h.walkover, retired: !!h.retired, defaulted: !!h.defaulted, src: h.src || (h.eventKey != null ? 'fixtures' : 'archive') } };
     };
     const w = look(keyW, true, r.loser), l = look(keyL, false, r.winner);
+    if (isRet) { retired.push({ date: r.date, tournament: r.tournament, winner: r.winner, loser: r.loser, fs: fsOf(w, l) }); continue; }
     out.push({ date: r.date, tournament: r.tournament, round: r.round, winner: r.winner, loser: r.loser, comment,
       says: [w.says, l.says], verdict: verdictOf(comment, [w.says, l.says]), winnerRow: w, loserRow: l });
   }
   const counts = {};
   out.forEach(x => { const k = `${x.comment}|${x.verdict}`; counts[k] = (counts[k] || 0) + 1; });
   return { rule: 'started = a career row shows a game played, none shows a walkover, and Tennis-Data does not say Walkover (founder 2026-10-17); completed = every career row that speaks shows it played out (founder 2026-10-18)',
-    builtAt: new Date().toISOString(), rows: out.length, counts, matches: out };
+    builtAt: new Date().toISOString(), rows: out.length, counts, matches: out,
+    // ruling 4: every priced retired Tennis-Data row, fs = its first set from the career rows ('c' complete, 'i' not, 'm' none)
+    retired, retiredFirstSet: { c: retired.filter((x) => x.fs === 'c').length, i: retired.filter((x) => x.fs === 'i').length, m: retired.filter((x) => x.fs === 'm').length } };
 }
 
 module.exports = { sameMatch, build, rowSays, verdictOf, PLAYED_COMMENTS };
@@ -141,5 +152,5 @@ if (require.main === module) {
   if (!r) { console.log('started-evidence: no career-history/ in ' + root + ' — no evidence written (every non-result row keeps its dash)'); process.exit(0); }
   const tmp = outPath + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(r, null, 1)); fs.renameSync(tmp, outPath);
-  console.log(`started-evidence: ${r.rows} non-result priced Tennis-Data rows · ${JSON.stringify(r.counts)}`);
+  console.log(`started-evidence: ${r.rows} non-result priced Tennis-Data rows · ${JSON.stringify(r.counts)} · retired first set ${JSON.stringify(r.retiredFirstSet)}`);
 }

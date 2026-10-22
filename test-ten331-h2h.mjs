@@ -187,7 +187,7 @@ test('price range: book actually used, n = 1 / 2 carry their count, the pop-up i
   assert.match(three, /<div class="elotip fh-prtip" style="position:relative; display:block; display:grid;/, 'the shared tooltip wraps the figures');
   assert.ok(three.includes('every priced close') && three.includes('class="elotip-pop"'));
   assert.ok(!/fh-elotip/.test(html), 'no tab-local tooltip class anywhere');
-  assert.ok(three.includes('Retirements settled on the official ATP result.'), 'TEN-325 note on the price range');
+  assert.ok(three.includes('Retirements settle on Pinnacle rules for all rows.'), 'TEN-325 note on the price range');
 });
 // Mutations 'DoD 8: an H2H-local row renderer again', 'rows: group meta loses the level', 'rows: a row stops opening the sheet'
 test('DoD 8: meetings are the shared helper\'s rows, grouped by year with an Event column, each opening the sheet', () => {

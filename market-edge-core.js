@@ -49,10 +49,33 @@
   }
   const isFavPrice = (price) => price != null && milli(price) < 2000;
 
-  /** TEN-325 (founder 2026-09-28, TEN-314 comment 70fb039e): a retirement settles on the ATP result — the player the
-   *  ATP credits with the win is the winner, at his listed close; bookmaker rules do not apply. Every surface that
-   *  counts retirements in profit (Market edge, Form, H2H, Tournament Backing) prints this one line. */
-  const RET_SETTLE_NOTE = 'Retirements settled on the official ATP result.';
+  /** Founder ruling 2026-10-22 (ruling 4; replaces TEN-325's "settled on the official ATP result"): every priced
+   *  retirement settles on Pinnacle's rule, whichever book supplied the price. Every surface that counts retirements in
+   *  profit (Market edge, Form, H2H, Tournament Backing, the profile ledger) prints this one line. */
+  const RET_SETTLE_NOTE = 'Retirements settle on Pinnacle rules for all rows.';
+
+  /** The first set of a stored set list: 'complete' (6-0 … 6-4, 7-5, 7-6), 'incomplete' (anything short of that — 6-5,
+   *  and 6-6, a retirement during the first-set tiebreak) or 'missing' (no list, an empty list, a non-numeric game).
+   *  Takes every set shape the stores carry: [a, b], { p, o }, { a, b }, { w, l }. Order-free: completeness is symmetric. */
+  function firstSetState(sets) {
+    if (!Array.isArray(sets) || !sets.length || sets[0] == null) return 'missing';
+    const s = sets[0];
+    const a = Array.isArray(s) ? s[0] : s.p != null ? s.p : s.a != null ? s.a : s.w;
+    const b = Array.isArray(s) ? s[1] : s.o != null ? s.o : s.b != null ? s.b : s.l;
+    const x = Number(a), y = Number(b);
+    if (!Number.isFinite(x) || !Number.isFinite(y) || a === '' || b === '' || a == null || b == null) return 'missing';
+    const hi = Math.max(x, y), lo = Math.min(x, y);
+    return (hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6)) ? 'complete' : 'incomplete';
+  }
+  /** A row's retirement settlement: null (not a retirement), 'stands' (first set completed), 'void' (not completed) or
+   *  'no-sets' (no stored set scores: no units, listed by name in the build report — never guessed). A precomputed
+   *  `fs` ('c' / 'i' / 'm', the Market edge shard's own) wins over the row's sets. */
+  function retSettlement(r) {
+    if (!r || r.wo || !(r.retSettle || r.retired || r.ret)) return null;
+    const st = r.fs === 'c' ? 'complete' : r.fs === 'i' ? 'incomplete' : r.fs === 'm' ? 'missing'
+      : firstSetState(r.sets || r.setGames || null);
+    return st === 'complete' ? 'stands' : st === 'incomplete' ? 'void' : 'no-sets';
+  }
 
   /** Flat 1u P&L of one row in integer cents (a decimal price is exact in cents). */
   function plCents(r) { return r.won ? Math.round(Number(r.price) * 100) - 100 : -100; }
@@ -67,6 +90,10 @@
     if (r.wo) return 'walkover';
     if (r.price == null || r.oppPrice == null || !r.book) return 'unpriced';
     if (bandOf(r.price) < 0) return 'unpriced';
+    // ruling 4: a retirement before the first set was completed is void; one with no stored set scores carries no units
+    const rs = retSettlement(r);
+    if (rs === 'void') return 'void';
+    if (rs === 'no-sets') return 'retired, no set scores';
     return '';
   }
   const inWinner = (r) => whyNotPriced(r) === '';
@@ -245,7 +272,7 @@
     return { bo3: true, reason: 'atp-tour' };
   }
 
-  const api = { matchFormat, RET_SETTLE_NOTE, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
+  const api = { matchFormat, RET_SETTLE_NOTE, firstSetState, retSettlement, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
     inScope, summarise, needsCandidates, roundRank, byDate, playerModel, lineDefs, lineModel, chartModel };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MarketEdgeCore = api;

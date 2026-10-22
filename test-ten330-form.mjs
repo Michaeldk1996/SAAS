@@ -222,9 +222,9 @@ test('a career-history row (no opponent key) is priced by name against a keyed a
 });
 
 // Mutation: the settlement note dropped from the v-market pill or the Flat 1u value (TEN-325, founder 70fb039e).
-test('profit figures that count retirements carry "Retirements settled on the official ATP result." (one constant)', () => {
+test('profit figures that count retirements carry "Retirements settle on Pinnacle rules for all rows." (one constant)', () => {
   const NOTE = globalThis.MarketEdgeCore.RET_SETTLE_NOTE;
-  assert.equal(NOTE, 'Retirements settled on the official ATP result.');
+  assert.equal(NOTE, 'Retirements settle on Pinnacle rules for all rows.');
   const many = Array.from({ length: 6 }, (_, i) => row(`2026-07-${String(18 - i).padStart(2, '0')}`, 'P. ' + ['Alpha', 'Bravo', 'Carlo', 'Delta', 'Echo', 'Foxtrot'][i], i % 2 === 0, [[6, 4], [6, 3]]));
   const cl = { rows: many.map(r => ({ date: r.date, opp: r.opponent, won: r.won, P: [1.7, 2.2], B: null, ret: false, oppKey: null })), cap: [] };
   const m = match({ _fhFormRows: [many, many], _fhFormSrc: ['form', 'form'], _fhCloses: [cl, cl] });

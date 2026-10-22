@@ -208,7 +208,10 @@ const DB_BOOK = {
   3: ['pinnacle-history', 'Pinnacle (from Pinnacle history)'], 4: ['pinnacle-capture', 'Pinnacle (our capture)'],
   5: ['pinnacle-approx-od10', 'Pinnacle (approx., start − 10)'],
 };
-const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0;
+// ruling 4 (founder 2026-10-22): a retirement is on the basis only when its first set was completed (Pinnacle's rule) —
+// void, or no set scores, leaves every aggregate (player, band, curve, tour)
+const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0 && core.retSettlement(side) !== 'void' &&
+  core.retSettlement(side) !== 'no-sets';
 
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row
@@ -378,7 +381,16 @@ function main() {
   const ci = {}; MC.forEach((c, i) => { ci[c] = i; });
   const tour = { all: emptyAgg(), level: {}, season: {} };
   const perPlayer = new Map();
-  const stats = { rows: 0, retired: 0, team: 0, sides: 0, joined: 0, ties: 0, latest: '' };
+  const stats = { rows: 0, retired: 0, team: 0, sides: 0, joined: 0, ties: 0, latest: '', retStands: 0, retVoid: 0, retNoSets: 0 };
+  // ruling 4: each retired Tennis-Data row's first set (tools/started-evidence.js, written earlier in the same run). No file
+  // = no evidence: every retirement then carries no units — never guessed — and the log says so.
+  const EV_PATH = process.env.DB_YIELD_STARTED || path.join(ROOT, 'started-evidence.json');
+  const retFs = new Map();
+  if (fs.existsSync(EV_PATH)) {
+    const ev = JSON.parse(fs.readFileSync(EV_PATH, 'utf8'));
+    (ev.retired || []).forEach((x) => retFs.set([x.date, x.tournament, x.winner, x.loser].join('|'), x.fs));
+  } else log(`ruling 4: ${EV_PATH} absent — every retirement carries no units this run`);
+  const noSetsRows = [];
   const pinnacleEnd = {};
   const bet365End = {};
 
@@ -408,6 +420,11 @@ function main() {
     const season = String(row.date).slice(0, 4);
     const retired = isRetiredComment(row.comment);
     if (retired) stats.retired += 1;
+    const fsv = retired ? (retFs.get([row.date, row.tournament, row.winner, row.loser].join('|')) || 'm') : null;
+    if (retired) {
+      if (fsv === 'c') stats.retStands += 1; else if (fsv === 'i') stats.retVoid += 1;
+      else { stats.retNoSets += 1; noSetsRows.push(`${row.date} ${row.tournament}: ${row.winner} d. ${row.loser}`); }
+    }
     const level = LEVEL_ALIASES[row.series] || null;
     const L = level || row.series;
     if (/^pinnacle(-history|-capture)?$/.test(bk[0]) && (!pinnacleEnd[L] || row.date > pinnacleEnd[L])) pinnacleEnd[L] = row.date;
@@ -424,7 +441,7 @@ function main() {
         // Court type (Indoor/Outdoor), carried in the master from Tennis-Data's court column (the feed's for added
         // matches): what the Calendar modal's Indoors segment reads. Scope: ATP tour MAIN DRAW only.
         court: (row.court || '').trim() || null,
-        round: row.round, season, ret: retired,
+        round: row.round, season, ret: retired, ...(retired ? { fs: fsv } : {}),
         speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
         oppArchetype: archetypeOf(b.opp, row.date),
         opp: b.opp, won: b.won, p, price, oppPrice,
@@ -544,11 +561,12 @@ function main() {
         book: s.book, role: s.role,
         // The band this row was counted in (= core.bandOf(price) now that price keeps 3 decimals).
         band: bandFor(s.price) ? bandFor(s.price).band.id : null,
-        // Per-row P&L in units, struck in cents (the shared core's formula).
-        pl: core.plCents(s) / 100,
+        // Per-row P&L in units, struck in cents (the shared core's formula). Ruling 4: a void retirement, or one with no
+        // set scores, carries its prices and NO units (pl null), with the reason in `settle`.
+        pl: core.retSettlement(s) === 'void' || core.retSettlement(s) === 'no-sets' ? null : core.plCents(s) / 100,
         inBasis: isYieldBasis(s),
-        // Ruling A: a retired match, settled at its close like any other (the tab marks it "ret.").
         ret: !!s.ret,
+        ...(s.ret ? { fs: s.fs, settle: core.retSettlement(s) } : {}),
       })),
     };
 
@@ -567,10 +585,13 @@ function main() {
     // founder ruling 2026-10-17: built from the master; the publish guard compares these two (a lag fails the upload)
     identityGate: idGate ? { stats: idGate.stats, merged: idGate.merged } : null,
     source: 'database-yield-master.json', latestMatch: stats.latest, masterLatest: master.meta.latest || null,
+    // ruling 4 (founder 2026-10-22): how the master's retirements settled, and every one left without units for want of set scores
+    retirements: { stands: stats.retStands, void: stats.retVoid, noSets: stats.retNoSets, noSetsRows },
     players: index,
   }, null, 1));
 
-  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired kept (ruling A), ${stats.team} team-event matches left out`);
+  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired (Pinnacle rules: ${stats.retStands} stand, ${stats.retVoid} void, ${stats.retNoSets} no set scores), ${stats.team} team-event matches left out`);
+  if (noSetsRows.length) log(`ruling 4 · retired with no set scores (no units): ${noSetsRows.join(' · ')}`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}, latest match ${stats.latest} (master ${master.meta.latest})`);
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
@@ -580,4 +601,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };
+module.exports = { pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };

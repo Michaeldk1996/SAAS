@@ -213,13 +213,16 @@ test('2026-10-22: a flagged walkover history row is listed as a walkover — nev
 });
 // (the pipeline history used to carry no walkovers — TEN-313 dropped them — so a "0 - 0" row with no set is a match stopped
 // in set 1: a retirement, played, settled at the close)
-test('N2 + TEN-325: a set-less "0 - 0" history row is a first-set retirement — counted and settled at its close', () => {
+// Ruling 4 (founder 2026-10-22): a retirement with no stored set scores carries no units — its price stays on the row,
+// it leaves the priced figures; never guessed. (An unflagged empty score is never a walkover: ruling 3.)
+test('N2 + ruling 4: a set-less "0 - 0" history row is a retirement with no set scores — listed, priced, no units', () => {
   const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
   S.tr.data[0].ch[0].sets = []; S.tr.data[0].ch[0].result = '0 - 0'; m.p1TournamentHistory.years[0].matches[0].result = '0 - 0';
   const P = S.trModelFor(m, 0);
-  assert.equal(P.priced.length, 1);
   assert.ok(P.all[0].ret && !P.all[0].wo);
-  assert.equal(Math.round(P.units * 100), 50);
+  assert.equal(P.all[0].price, 1.5, 'its price is shown');
+  assert.equal(P.priced.length, 0, 'no units: no first set on record');
+  assert.equal(Math.round(P.units * 100), 0);
 });
 
 // Mutation 'join: the season + opponent fallback takes another event's row'

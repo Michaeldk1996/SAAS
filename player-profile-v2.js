@@ -1398,6 +1398,9 @@
         '</div>' +
         // the column heads head rows; an empty filter result shows the message alone
         (rows.length ? heads : '') + body + foot +
+        // ruling 4 (founder 2026-10-22) · the ledger footnote names the settlement rule, from the one constant
+        (window.MarketEdgeCore && window.MarketEdgeCore.RET_SETTLE_NOTE ? '<div data-ret-note="ledger" style="font-size:11px;' +
+          'color:var(--text-label);padding-top:12px;">' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '</div>' : '') +
       '</div>';
   }
 
@@ -6151,7 +6154,10 @@
     var st = typeof window.pp2DrawJoin === 'function' ? window.pp2DrawJoin(p.key, p.name, rows) : 'failed';
     if (st === 'ready') rows.forEach(function (r) {
       if (r.sc.wo) { r.price = null; r.oppPrice = null; r.book = null; }   // a walkover is not a priced match
-      r.cents = r.price != null ? (r.won ? Math.round(Number(r.price) * 100) - 100 : -100) : null;
+      // ruling 4 · a retirement settles on Pinnacle's rule: void before the first set was completed, no units without sets
+      var MEC = window.MarketEdgeCore;
+      r.settle = r.sc.ret && MEC && typeof MEC.retSettlement === 'function' ? MEC.retSettlement({ ret: true, sets: r.sc.sets }) : null;
+      r.cents = r.price != null && r.settle !== 'void' && r.settle !== 'no-sets' ? (r.won ? Math.round(Number(r.price) * 100) - 100 : -100) : null;
     });
     _drawRowsMemo = { key: p.key, d: d, st: st, rows: rows };
     return _drawRowsMemo;
@@ -6263,7 +6269,7 @@
         score: scoreWithStatus({ wo: st === 'wo', retired: st === 'ret' }, r.sc.text || null),
         scoreOn: !!(r.sc.text || st), scoreWrap: true,
         price: r.price != null ? Number(r.price) : null, oppPrice: r.oppPrice != null ? Number(r.oppPrice) : null,
-        cents: r.cents != null ? r.cents : null, pend: pend,
+        cents: r.cents != null ? r.cents : null, settle: r.settle || null, pend: pend,
         pxTitle: r.sc.wo ? 'Walkover: not a match played, no price'
           : failed ? 'Prices unavailable'
           : (typeof window.trPxAfterOf === 'function' && window.trPxAfterOf(r.date)) || 'No closing price on record for this match'
@@ -7658,6 +7664,9 @@
       // Market edge box over the same matches.
       var pin = (hit && hit.inBasis !== false && hit.price != null &&
         hit.pl != null && isFinite(hit.pl)) ? hit : null;
+      // ruling 4 · a retirement the shard settled void (first set not completed) or left without units (no set scores):
+      // its own close stays on the row — prices shown, no units — never replaced by another source's price
+      var vd = !pin && hit && hit.price != null && (hit.settle === 'void' || hit.settle === 'no-sets') ? hit : null;
       var rf = rfByDate[kd] || null;
       // TEN-384 fix 6 · where the Market edge shard holds no close, the bet365 pre-match capture (the
       // ledger's second source, b365PriceFor) prices the row for DISPLAY only (H / A): it carries no
@@ -7669,8 +7678,9 @@
       // already held four of the five. Between the two, the row now takes the price EVERY other surface reads for
       // it — the Match analysis join (meRowFromCareer -> fhCloseFor, R8 book order), bridged as
       // window.pp2CareerClose. Display only, like the capture: no P&L, never a yield, unit or role basis.
-      var cc = !pin && cl && typeof window.pp2CareerClose === 'function' ? window.pp2CareerClose(p.key, r) : null;
-      var lr = pin ? null : (cc || (masterClass(r) ? null : b365PriceFor(p.name, { date: r.date, opponent: r.opponent })));
+      var cc = !pin && !vd && cl && typeof window.pp2CareerClose === 'function' ? window.pp2CareerClose(p.key, r) : null;
+      var lr = pin ? null : vd ? { price: vd.price, oppPrice: vd.oppPrice != null ? vd.oppPrice : null, book: vd.book || null }
+        : (cc || (masterClass(r) ? null : b365PriceFor(p.name, { date: r.date, opponent: r.opponent })));
       return {
         date: r.date, year: rowYear && /^\d{4}$/.test(String(r.year || '')) ? String(r.year) : y,
         mon: parseInt(r.date.slice(5, 7), 10) - 1,
@@ -7744,7 +7754,8 @@
         // Which source priced the row: 'close' = the Market edge basis (carries `cents`), 'prematch' =
         // the ledger's bet365 capture (H / A only), null = unpriced.
         // fx6: 'closes' = the page's match-closes join (H / A only, no P&L).
-        priceBasis: pin ? 'close' : (lr && lr.price != null ? (lr === cc ? 'closes' : 'prematch') : null),
+        priceBasis: pin || vd ? 'close' : (lr && lr.price != null ? (lr === cc ? 'closes' : 'prematch') : null),
+        settle: vd ? vd.settle : null,   // ruling 4: 'void' | 'no-sets' — prices shown, units none
         book: pin ? (pin.book || null) : (lr ? lr.book : null),
         role: pin ? (pin.role || null) : null,
         // The Market edge row's own result and retirement flag, kept so the join can be audited
@@ -8586,7 +8597,7 @@
     var body = order.map(function (ev) {
       return '<div style="display:flex;flex-direction:column;gap:1px;">' +
         groups[ev].map(function (r) {
-          var pl = dPend ? '&nbsp;' : r.cents == null ? DASH : signed(r.cents / 100, 2);
+          var pl = dPend ? '&nbsp;' : r.settle === 'void' ? 'void' : r.cents == null ? DASH : signed(r.cents / 100, 2);
           var plCol = r.cents == null ? DASH_COLOUR
             : r.cents > 0 ? 'var(--pos)' : r.cents < 0 ? 'var(--neg)' : 'var(--text-label)';
           return '<div ' + sheetHook(r.sheetId) + 'style="' + ROW_TRACK +
@@ -9871,7 +9882,7 @@
       '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11.5px;font-weight:700;' +
         'text-align:right;color:' +
         (x.cents == null ? DASH_COLOUR : (x.cents >= 0 ? 'var(--pos)' : 'var(--neg)')) + ';">' +
-        (x.pend ? '&nbsp;' : x.cents == null ? DASH : signed(x.cents / 100, 2)) + '</span>';
+        (x.pend ? '&nbsp;' : x.settle === 'void' ? 'void' : x.cents == null ? DASH : signed(x.cents / 100, 2)) + '</span>';
   }
   function renderStyleDetail(r) {
     var n = r.won + r.lost;
@@ -9893,7 +9904,7 @@
         // Set scores where recentForm reaches, space-separated ("4-6 3-6"); the
         // retired/walkover marker either way; an honest dash outside that window.
         score: scoreWithStatus(m, s ? s.replace(/,\s*/g, ' ') : s), scoreOn: !!(s || matchStatus(m)),
-        price: m.price, oppPrice: m.oppPrice, cents: m.cents, pend: STYLE_PEND
+        price: m.price, oppPrice: m.oppPrice, cents: m.cents, settle: m.settle || null, pend: STYLE_PEND
       });
     }).join('');
     var mono = STYLE_MONO;

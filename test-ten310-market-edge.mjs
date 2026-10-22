@@ -78,8 +78,11 @@ function load(ui) {
 // Independent oracle for the mutation check: its own band edges and its own P&L, from the rows.
 const EDGES = [1.01, 1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0, Infinity];
 function oracle(rows, scope, refDay) {
+  // ruling 4 (2026-10-22), the oracle's OWN copy of Pinnacle's rule: a retirement counts only when its first set finished
+  const firstDone = (r) => { const s = r.fs ? null : (r.sets || [])[0]; if (r.fs) return r.fs === 'c'; if (!s) return false;
+    const hi = Math.max(+s[0], +s[1]), lo = Math.min(+s[0], +s[1]); return (hi === 6 && lo <= 4) || (hi === 7 && lo >= 5); };
   const pr = rows.filter((r) => r.day != null && r.day < refDay && (scope === 'career' || r.day >= refDay - 364)
-    && !r.wo && r.book && r.price != null && r.oppPrice != null && r.price >= 1.01);   // TEN-312 ruling A: retirements settle
+    && !r.wo && r.book && r.price != null && r.oppPrice != null && r.price >= 1.01 && (!(r.retSettle || r.ret) || firstDone(r)));
   const bands = EDGES.slice(0, -1).map(() => ({ w: 0, l: 0, cents: 0 }));
   pr.forEach((r) => { const p = Math.round(r.price * 1000) / 1000; const i = EDGES.findIndex((e, k) => p >= e && p < EDGES[k + 1]);
     const b = bands[i]; if (r.won) b.w++; else b.l++; b.cents += r.won ? Math.round(r.price * 100) - 100 : -100; });
@@ -189,9 +192,14 @@ function settlementChecks(ui) {
   assert.equal(core.whyNotBo3(rows[0]), 'retired');
   // the Match winner view reads the profile rows: a profile row marked ret is settled and keeps its mark
   const win = ui.meWinnerRows({ matches: [{ date: '2026-03-01', event: 'Doha', surface: 'Hard', round: '1st Round', opp: 'Alpha X.', won: true, price: 1.5, oppPrice: 2.6,
-    book: 'pinnacle', inBasis: true, ret: true }] }, rows, '9', 'A. Test');
+    book: 'pinnacle', inBasis: true, ret: true, fs: 'c' }] }, rows, '9', 'A. Test');
   assert.equal(win[0].retSettle, true, 'the profile row keeps its retirement mark');
-  assert.equal(core.playerModel(rows, { scope: 'career', refDay: day('2026-04-01'), winnerRows: win }).priced.length, 1, 'and is settled');
+  assert.equal(core.playerModel(rows, { scope: 'career', refDay: day('2026-04-01'), winnerRows: win }).priced.length, 1, 'and stands (first set completed)');
+  // ruling 4 (founder 2026-10-22): the shard's own first set decides — not completed → void: its price shown, no units
+  const vd = ui.meWinnerRows({ matches: [{ date: '2026-03-01', event: 'Doha', surface: 'Hard', round: '1st Round', opp: 'Alpha X.', won: true, price: 1.5, oppPrice: 2.6,
+    book: 'pinnacle', inBasis: false, pl: null, ret: true, fs: 'i', settle: 'void' }] }, rows, '9', 'A. Test');
+  // off the basis: never a Market edge row (its price shows on the ledger / Calendar, units "void")
+  assert.equal(core.playerModel(rows, { scope: 'career', refDay: day('2026-04-01'), winnerRows: vd }).priced.length, 0, 'a void retirement carries no units');
 }
 
 function runChecks(src) {
@@ -238,7 +246,8 @@ test('§6 check 7: one-line mutants of the band bucketing / P&L make checks 1–
     ['P&L: loss costs nothing', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : -100;', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : 0;'],
     ['record: wins counted as losses', 'rows.forEach((r) => { if (r.won) w++;', 'rows.forEach((r) => { if (!r.won) w++;'],
     // TEN-312 retirement ruling A (TEN-325): a retirement settles the match-winner bet, never the derived lines
-    ['settlement: retirements unsettled again', "    if (bandOf(r.price) < 0) return 'unpriced';\n    return '';", "    if (r.retSettle) return 'retired';\n    if (bandOf(r.price) < 0) return 'unpriced';\n    return '';"],
+    ['settlement: retirements unsettled again', "    if (rs === 'void') return 'void';", "    if (rs) return 'void';"],
+    ['settlement: Pinnacle rules off (every retirement settles at the close again)', "    if (rs === 'void') return 'void';\n    if (rs === 'no-sets') return 'retired, no set scores';", ""],
     ['derived lines: retirements admitted', "    if (r.retSettle) return 'retired';\n    if (r.alt) return 'format';", "    if (r.alt) return 'format';"],
   ];
   const dir = mkdtempSync(join(tmpdir(), 'ten310-mut-'));
@@ -350,8 +359,11 @@ test('pinned headline figures on the frozen fixtures (Career / Last 52 weeks, re
   // [priced, Pinnacle, Bet365, Bo3, units×100, 1.01–1.20 W, L] — recomputed independently by the TEN-310 review.
   // TEN-312 retirement ruling A (TEN-325): the career-row path now settles its 11 / 11 / 1 / 0 priced retirements
   // (was Sinner 382 · +22.40u, Alcaraz 330 · +23.55u, Sinner L52 59 · +2.35u); Bo3 (Derived lines) is unchanged.
-  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'career', refDay })), [393, 341, 52, 269, 1608, 196, 11]);
-  assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'career', refDay })), [341, 303, 38, 226, 2319, 166, 20]);
+  // Ruling 4 (founder 2026-10-22, Pinnacle rules): of those retirements, the ones stopped before the first set was completed
+  // are void and the ones with no stored set scores carry no units — career Sinner 393 → 389 (+16.08u → +18.94u), Alcaraz
+  // 341 → 338 (+23.19u → +22.18u); Last 52 unchanged (no such retirement in the window).
+  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'career', refDay })), [389, 337, 52, 269, 1894, 195, 10]);
+  assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'career', refDay })), [338, 300, 38, 226, 2218, 166, 19]);
   assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'l52', refDay })).slice(0, 5), [60, 13, 47, 48, 135]);
   assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'l52', refDay })).slice(0, 5), [38, 8, 30, 27, -279]);
 });
@@ -461,10 +473,13 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
   // what the stats sheet reads (set counts) comes with the join — never "— – —" on a joined row
   assert.ok(joined.every((r) => r.pS != null && r.oS != null), 'joined rows carry the set counts');
   assert.ok(sin.every((r) => r.wo === false && r.profile), 'the profile settles its rows');
-  // TEN-312 ruling A: the profile keeps Tennis-Data "Retired" rows, marked ret, and the tab carries the mark
+  // Ruling 4 (2026-10-22): of Sinner's 13 retirements on the profile, 7 stand (first set completed), 3 are void and 3 have
+  // no set scores — those 6 leave the basis; the tab carries the same 7, marked
   const sinRet = prof[0].matches.filter((x) => x.inBasis && x.ret);
-  assert.equal(sinRet.length, 13, 'Sinner: 13 retirements settled on the profile (414 → 427, TEN-325)');
-  assert.equal(sin.filter((r) => r.retSettle).length, sinRet.length, 'the tab marks the same 13 rows');
+  assert.equal(prof[0].matches.filter((x) => x.ret).length, 13, 'Sinner: 13 retirements on the profile');
+  assert.equal(sinRet.length, 7, 'Sinner: 7 stand on Pinnacle rules');
+  assert.deepEqual(prof[0].matches.filter((x) => x.ret && !x.inBasis).map((x) => x.settle).sort(), ['no-sets', 'no-sets', 'no-sets', 'void', 'void', 'void']);
+  assert.equal(sin.filter((r) => r.retSettle).length, sinRet.length, 'the tab marks the same 7 rows');
   // a profile row with no career counterpart keeps dashes and no eventKey (never a guessed join)
   const lone = ui.meWinnerRows({ matches: [{ date: '2026-05-02', event: 'X Open', surface: 'Clay', round: '1st Round', opp: 'Nobody Z.', won: true,
     price: 1.3, oppPrice: 3.4, book: 'bet365-capture', inBasis: true }] }, rows[0], '2072', M.p1)[0];
@@ -478,7 +493,7 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
 test('TEN-325: the price-band and profit-chart footnotes say retirements settle on the ATP result', () => {
   const ui = buildUI(), rows = load(ui);
   const note = ui.core.RET_SETTLE_NOTE;
-  assert.equal(note, 'Retirements settled on the official ATP result.');
+  assert.equal(note, 'Retirements settle on Pinnacle rules for all rows.');
   for (const scope of ['career', 'l52']) {
     const html = ui.render(M, { meView: 'winner', meScope: scope }, rows).html;
     const band = html.slice(0, html.indexOf('class="me-card me-chart"')), chart = html.slice(html.indexOf('class="me-card me-chart"'));

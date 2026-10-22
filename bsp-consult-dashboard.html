@@ -11759,7 +11759,8 @@ function ovPopHtml(M){
       body: `<div class="ov-pop-${M.state}" style="padding:28px 16px; text-align:center; font-size:12.5px; color:${OV_C.m2};">${msg}</div>` });
   }
   const rows = M.rows, n = rows.length, w = rows.filter(r => r.won).length;
-  const priced = rows.filter(r => r.price != null), np = priced.length;
+  const C4 = globalThis.MarketEdgeCore;   // ruling 4: a void retirement / one with no set scores is in no priced figure
+  const priced = rows.filter(r => r.price != null && !(C4 && C4.retSettlement && ['void', 'no-sets'].indexOf(C4.retSettlement(r)) >= 0)), np = priced.length;
   const pl = priced.reduce((a, r) => a + (r.won ? r.price - 1 : -1), 0);
   const avg = np ? priced.reduce((a, r) => a + r.price, 0) / np : null;
   const up = 'var(--pos)', dn = 'var(--neg)';
@@ -13849,7 +13850,10 @@ function fhFormPlayer(m, idx, st){
     && (!(favOn || dogOn) || (r.price != null && ((favOn && r.price < r.oppPrice) || (dogOn && r.price > r.oppPrice)))));
   const win = shown.slice(0, NWIN), n = win.length, thin = n < FH_THIN;
   const wins = win.filter(r => r.won).length;
-  const priced = win.filter(r => r.price != null), np = priced.length;
+  // ruling 4 (founder 2026-10-22): a retirement before the first set was completed is void, one with no set scores carries
+  // no units — both keep their prices on the row and leave every priced figure
+  const fhSettles = r => { const C = globalThis.MarketEdgeCore, s = C && C.retSettlement ? C.retSettlement(r) : null; return s !== 'void' && s !== 'no-sets'; };
+  const priced = win.filter(r => r.price != null && fhSettles(r)), np = priced.length;
   const fair = r => (1 / r.price) / (1 / r.price + 1 / r.oppPrice);
   const expW = priced.reduce((s, r) => s + fair(r), 0), winsP = priced.filter(r => r.won).length;
   const mktOk = !thin && np >= FH_THIN;
@@ -15451,8 +15455,9 @@ function meWinnerRows(shard, career, selfKey, selfName){
     out.push(Object.assign(base, {
       mid: fhSafeId('mw' + selfKey + '_' + i + '_' + x.date), date: x.date, day: fhDayNum(x.date), won: !!x.won,
       price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1], srcLabel: undefined,   // the SHARD's source, never the career row's label
-      // TEN-312 ruling A: the profile keeps Tennis-Data "Retired" rows (`ret`), settled at the close like any other.
-      wo: false, retSettle: !!x.ret, profile: true,
+      // Tennis-Data "Retired" rows (`ret`) settle on Pinnacle rules (ruling 4, 2026-10-22) on the SHARD's own first set
+      // (`fs`, the builder's evidence) — the tab and the profile settle one match one way
+      wo: false, retSettle: !!x.ret, profile: true, ...(x.ret ? { fs: x.fs || 'm' } : {}),
     }));
   });
   return out;
