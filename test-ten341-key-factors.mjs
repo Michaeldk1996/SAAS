@@ -334,7 +334,7 @@ test('DNA: below the 10-match floor an axis is a dash, never a 0; only Surface E
 function h2hMatch(rows, over){
   const extra = new Map(((over && over._fhCh && over._fhCh[0]) || []).filter(x => x.eventKey != null).map(x => [x.eventKey, x]));
   const ch = rows.map(r => Object.assign({ date: r.date, tournament: r.tournament, round: r.round, surface: r.surface, opponent: 'C. Alcaraz', won: r.p1Won,
-    result: r.result, level: r.level === 'ATP' ? 'atp' : 'chitf', eventKey: r.eventKey }, extra.get(r.eventKey) || {}));
+    result: r.result, level: r.level === 'ATP' ? 'atp' : 'chitf', eventKey: r.eventKey, ...(r.walkover ? { walkover: true } : {}) }, extra.get(r.eventKey) || {}));
   return match(Object.assign({ _fhH2hData: true, _fhCloses: [null, null], _fhElo: null }, over || {}, { _fhCh: [ch, []] }));
 }
 const mt = (date, won, extra) => Object.assign({ date, tournament: 'Ev', round: 'R16', surface: 'Hard', p1Won: won, result: won ? '2 - 1' : '1 - 2', level: 'ATP', eventKey: null }, extra || {});
@@ -343,7 +343,7 @@ const mt = (date, won, extra) => Object.assign({ date, tournament: 'Ev', round: 
 // a record never carries a level mix. Mutation: Challenger rows back in the population.
 test('Head to head: the H2H tab\'s record — walkovers out (N2), a retirement counts, the tug toward the leader, Challengers out (ATP rule)', () => {
   setup();
-  const h = S.kfH2HCard(h2hMatch([mt('2023-03-01', true), mt('2024-05-10', false, { tournament: 'Munich' }), mt('2025-01-20', true, { result: '0 - 0', tournament: 'Ghost' }),
+  const h = S.kfH2HCard(h2hMatch([mt('2023-03-01', true), mt('2024-05-10', false, { tournament: 'Munich' }), mt('2025-01-20', true, { result: '0 - 0', tournament: 'Ghost', walkover: true }),
     mt('2024-11-02', true, { result: '1 - 0', tournament: 'Paris', surface: 'Clay' }), mt('2022-06-01', false, { tournament: 'Heilbronn', level: 'CH' })]));
   assert.match(head(h), /^Head to head 3 meetings ›$/);
   assert.doesNotMatch(text(h), /Heilbronn|incl\./, 'the Challenger meeting is not in the record');
