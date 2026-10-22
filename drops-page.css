@@ -166,6 +166,7 @@
 [data-page="drops"] .do-who { min-width: 0; display: flex; align-items: center; gap: 14px; }
 /* initials avatar (TEN-427 override): Trading Report's, at the row's 40px */
 [data-page="drops"] .do-av {
+  position: relative; overflow: hidden;
   width: 40px; height: 40px; border-radius: 50%; background: var(--inner); border: 1px solid var(--edge-10); flex: none; box-sizing: border-box;
   display: flex; align-items: center; justify-content: center; font-family: var(--font-words); font-size: 13px; font-weight: 700; letter-spacing: .02em; color: var(--text);
 }

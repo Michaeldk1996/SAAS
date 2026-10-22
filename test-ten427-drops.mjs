@@ -125,8 +125,9 @@ test('Data 1/2 — every row is a real alert from the drops endpoint: two books,
   // start, Martinez is in play, Fery and D'agostino finished)
   assert.equal(n(/class="do-row"/g), 4);
   assert.deepEqual([...h.matchAll(/data-act="row" data-v="([^"]+)"/g)].map((m) => m[1]).sort(), ['bet105-2161', 'superbet-3590', 'superbet-3634', 'superbet-3647']);
-  // no seeded data, no placeholder copy, no photo
-  for (const bad of ['Book A', 'hsh(', ' D()', 'illustrative', 'Illustrative', 'ILLUSTRATIVE', 'Placeholder', 'placeholder names', 'randomuser', '<img']) assert.ok(!h.includes(bad), bad);
+  // no seeded data, no placeholder copy; the only <img> is a player photo by ID (founder 2026-10-23)
+  for (const bad of ['Book A', 'hsh(', ' D()', 'illustrative', 'Illustrative', 'ILLUSTRATIVE', 'Placeholder', 'placeholder names', 'randomuser']) assert.ok(!h.includes(bad), bad);
+  assert.ok(!/<img(?! class="sf-ph")/.test(h), 'every <img> is the shared photo layer');
   assert.doesNotMatch(SRC, /function D\(|function hsh|Book [A-G]\b|randomuser|resolveProfilePhotoUrl|photoCandidatesFor/);
 });
 

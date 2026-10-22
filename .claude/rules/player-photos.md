@@ -26,7 +26,20 @@ Applies to any task that renders a player avatar, headshot or monogram. Rational
 
 Today's Matches cards, Players page cards, Player Profile (V2 and legacy), Match analysis header + Form/H2H rows,
 Draw view, Trading Report, Series cards, Ratings board, H2H picked cards, Live page (cards, sheet, Break/Hold),
-Stennisfy Model head.
+Stennisfy Model head, Dropping Odds rows, Tournament quotes.
+
+## Name -> ID joins (founder 2026-10-23) — the only places a name becomes an ID
+
+- **Dropping Odds** (`drops-page.js` `photoKeyFor`): the row joins its Today's Matches fixture by the Kibl rule — both
+  players either order; the card's full surname is the tail of the feed name, its first initial any of the feed's given
+  names; a trailing Jr / Sr / II / III / IV dropped first; card start within ±24 h of the row's; exactly one card. The ID
+  is that card's key for the row's side. Challenger / ITF rows have no card: initials. **Test:**
+  `tools/test-player-photos.js` §4 (Jr, middle names, compound surname, window, two cards, no card).
+- **Tournament quotes** (`tourxQuoteSpeakerKey`): the speaker's surname against that tournament's entrants for the
+  quote's season (`tournament-profiles.json` `allEditionMatches`; Roland Garros = the French Open profile). Several
+  same-surname entrants: the initial counts only when it leaves exactly one. No initial, still several, none, or no
+  edition on record = initials, and the row is reported. **Test:** `tools/test-player-photos.js` §5.
+- **Parked:** Challenger / ITF Drops IDs from the drops service's own api-tennis fixture link (follow-up ticket).
 
 ## Map corrections (2026-10-22)
 
@@ -35,8 +48,7 @@ Stennisfy Model head.
   player (Venezuela, 21) has no ATP code in the 2,279-player ATP singles ranking, so no headshot could be found.
 - `1317` M. Damm: `D214` (Martin Damm Sr., b. 1972) -> `D0DT` (Martin Damm, b. 2003, USA).
 
-## Open — awaiting founder rulings (do not resolve alone)
+## Removed (founder 2026-10-23)
 
-- **Drops** and **Tournament quotes** photos: the ID joins are reported, not built (Drops: the drops service's fixture
-  link; quotes: surname against that tournament's entrants). Until ruled, both stay initials-only (`drops.md`,
-  `tournaments.md`).
+- `player-photos.json` (the Wikimedia map), `enrich-player-photos.py` and `validate-player-photos.js` are deleted and
+  the pipeline no longer publishes the map. **Test:** `tools/test-player-photos.js` §6.

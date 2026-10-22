@@ -615,6 +615,43 @@
     return key == null ? null : { key: String(key), photoName: nameSig(m.p1) === s ? m.p1 : m.p2, card: m,
       cardSide: nameSig(m.p1) === s ? 'p1' : 'p2' };
   }
+  // Founder 2026-10-23 (Drops ruling 1): the avatar's player ID. A row joins its Today's Matches fixture by the Kibl rule
+  // (kibl-stream/card_join.py): both players, either order; a player matches when the card's FULL surname is the tail of
+  // the feed's name (compound surnames whole) and the card's first initial is ANY of the feed's given names (extra given
+  // names never block); a trailing Jr / Sr / II / III / IV is dropped first, as the drops service's sk() does; the card's
+  // start within 24 h of the row's (clock time is not a condition; an unmeasurable start is no candidate); exactly one
+  // card, else no ID. The ID is the matched card's own key for the row's side. Today's Matches carries ATP fixtures, so
+  // a Challenger or ITF row finds no card and keeps the monogram. (boardKeyFor, the prices / event join, is unchanged.)
+  function kiblToks(n) {
+    var t = canonToks(n).map(function (x) { return String(x).toLowerCase(); });
+    while (t.length > 1 && /^(jr|sr|ii|iii|iv)$/.test(t[t.length - 1])) t.pop();
+    return t;
+  }
+  function kiblSame(card, feed) {
+    var c = kiblToks(card), i = 0;
+    while (i < c.length - 1 && c[i].length === 1) i++;
+    var ini = c.slice(0, i), sur = c.slice(i), k = kiblToks(feed);
+    if (!sur.length || k.length < sur.length || k.slice(k.length - sur.length).join(' ') !== sur.join(' ')) return false;
+    var giv = k.slice(0, k.length - sur.length);
+    if (!ini.length || !giv.length) return true;
+    return giv.some(function (g) { return g[0] === ini[0][0]; });
+  }
+  function photoKeyFor(r, board, startOf) {
+    var st = Date.parse(r && r.start);
+    if (!isFinite(st) || typeof startOf !== 'function') return null;
+    var hits = (board || []).filter(function (m) {
+      if (!m || !m.p1 || !m.p2) return false;
+      var both = (kiblSame(m.p1, r.playerA) && kiblSame(m.p2, r.playerB)) || (kiblSame(m.p1, r.playerB) && kiblSame(m.p2, r.playerA));
+      if (!both) return false;
+      var cs = null;
+      try { cs = startOf(m); } catch (e) { cs = null; }
+      return cs != null && isFinite(cs) && Math.abs(cs - st) <= 24 * H;
+    });
+    if (hits.length !== 1) return null;
+    var m = hits[0];
+    var k = kiblSame(m.p1, r.side) ? m.p1Key : kiblSame(m.p2, r.side) ? m.p2Key : null;
+    return k == null ? null : String(k);
+  }
   // r2 fix 8: a feed name -> its search-index entry (player-index.json, the site's player search), on the canon's words in
   // any order (api-tennis scrambles name order: "Luis Hernandez Ramirez Sergio"); a name two keys share is no key
   function nameIndex(idx) {
@@ -695,7 +732,8 @@
     seriesPoints: seriesPoints, marginOf: marginOf, MIN_SPAN_MS: MIN_SPAN_MS, BOOK_ORDER: BOOK_ORDER,
     boxChart: boxChart, endOf: endOf, shardHoles: shardHoles, bookSplit: bookSplit, dropCell: dropCell, startLine: startLine,
     bookCls: bookCls, dropOf: dropOf, dayBands: dayBands, clock: clock, phSeries: phSeries, phAgrees: phAgrees, rowMeta: rowMeta, surfLabel: surfLabel,
-    isUpcoming: isUpcoming, houseOf: houseOf, nameIndex: nameIndex, indexHit: indexHit, shortName: shortName, canonToks: canonToks };
+    isUpcoming: isUpcoming, houseOf: houseOf, nameIndex: nameIndex, indexHit: indexHit, shortName: shortName, canonToks: canonToks,
+    kiblSame: kiblSame, photoKeyFor: photoKeyFor };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
 
@@ -764,6 +802,7 @@
       var cs = null;
       try { cs = m.card && typeof cardStartMs === 'function' ? cardStartMs(m.card) : null; } catch (e) { cs = null; }   // eslint-disable-line no-undef
       r.cardStart = cs != null && isFinite(cs) ? cs : null;
+      r.photoKey = photoKeyFor(r, b, typeof cardStartMs === 'function' ? cardStartMs : null);   // eslint-disable-line no-undef
     });
   }
 
@@ -945,7 +984,8 @@
       '<span class="do-cols-r">' + openHelp('do-help', 'do-tip') + ' → NOW</span></div>';
   }
 
-  // TEN-427 Data 8 (override): initials avatars (fhIni, as on Live, Model, Trading Report and the shell); no photos, no ring
+  // Avatars: initials (fhIni) with the player's photo over them when the row joined its fixture (photoKeyFor, founder
+  // 2026-10-23) — the dashboard's one resolver (playerPhotoImg) by that ID; no ID or no photo = the initials alone. No ring.
   function initials(name) {
     if (typeof fhIni === 'function') return fhIni(name);   // eslint-disable-line no-undef
     var w = String(name || '').replace(/\./g, ' ').trim().split(/\s+/).filter(Boolean);
@@ -953,7 +993,8 @@
     return w.length === 1 ? w[0].slice(0, 2).toUpperCase() : (w[0][0] + w[w.length - 1][0]).toUpperCase();
   }
   function avatarHtml(r) {
-    return '<span class="do-av" aria-hidden="true">' + esc(initials(r.dSide || r.side)) + '</span>';
+    var ph = (r.photoKey && typeof playerPhotoImg === 'function') ? playerPhotoImg(r.photoKey, r.dSide || r.side) : '';   // eslint-disable-line no-undef
+    return '<span class="do-av" aria-hidden="true">' + esc(initials(r.dSide || r.side)) + ph + '</span>';
   }
 
   // every listed row is upcoming (r2 ruling): no status badge, no cut — "moved Xm ago"

@@ -85,7 +85,7 @@ check('.sf-ph: one cover crop, centred; the circle\'s own fill behind the PNG on
   /\.sf-ph\{[^}]*position:absolute;[^}]*border-radius:50%;[^}]*object-fit:cover;[^}]*object-position:50% 50%;[^}]*\}/.test(DASH) && !/\.sf-ph\{[^}]*background/.test(DASH) && /\.sf-ph\.sf-on\{ background:inherit; \}/.test(DASH));
 
 // ── 3. every surface asks the resolver; no retired source survives ──────────────────────────────────────────────
-const FRONT = ['bsp-consult-dashboard.html', 'trading-report.js', 'series.js', 'draw-view.js', 'player-profile-v2.js', 'live-tab.js'];
+const FRONT = ['bsp-consult-dashboard.html', 'trading-report.js', 'series.js', 'draw-view.js', 'player-profile-v2.js', 'live-tab.js', 'drops-page.js'];
 const RETIRED = ['photoCandidatesFor', 'photoOverrideFor', 'player-photos.json', 'resolveProfilePhotoUrl', 'avatarChainNext(', '_player_logo',
   'p1PhotoUrl', 'p2PhotoUrl', 'logo-tennis', 'wikimedia', 'Special:FilePath'];
 const hits = [];
@@ -104,11 +104,50 @@ const USES = [
   ['Series cards', 'series.js', "playerPhotoImg(String(key), name)"],
   ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],
   ['Player Profile (V2)', 'player-profile-v2.js', 'window.playerPhotoUrl(p.key)'],
+  ['Dropping Odds', 'drops-page.js', 'playerPhotoImg(r.photoKey, r.dSide || r.side)'],
+  ['Tournament quotes', 'bsp-consult-dashboard.html', 'tourxQuoteSpeakerKey(qt, c.name)'],
 ];
 const missing = USES.filter(([, f, t]) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes(t)).map(([l]) => l);
 check(`every avatar surface reads the one resolver (${USES.length} surfaces)`, missing.length === 0, 'missing: ' + missing.join(', '));
 const mutant = DASH.replace('function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey); }', 'function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey) || photoOverrideFor(playerKey); }');
 check('control: a second source slipped into the resolver is caught by the retired-source scan', RETIRED.some((r) => mutant.includes(r)));
+
+// ── 4. Drops: a row's ID only through its one Today's Matches fixture (founder 2026-10-23, Kibl rule) ──────────────
+const DROPS = require(path.join(ROOT, 'drops-page.js'));
+const T0 = Date.parse('2026-10-22T18:00:00Z');
+const at = (h) => new Date(T0 + h * 3600e3).toISOString();
+const card = (p1, p1Key, p2, p2Key, h) => ({ p1, p1Key, p2, p2Key, _start: T0 + h * 3600e3 });
+const startOf = (m) => m._start;
+const BOARD = [card('D. Altmaier', 1099, 'T. Fritz', 1500, 0), card('M. Damm', 1317, 'F. Cerundolo', 1104, 2), card('C. Ugo Carabelli', 11, 'D. Vallejo', 12, 1)];
+const row = (a, b, side, h) => ({ playerA: a, playerB: b, side, start: at(h) });
+const K = (r, board) => DROPS.photoKeyFor(r, board || BOARD, startOf);
+check('Drops: both names, either order, the side\'s own card key (Altmaier v Fritz -> 1099; Fritz side -> 1500)',
+  K(row('Daniel Altmaier', 'Taylor Fritz', 'Daniel Altmaier', 0.5)) === '1099' && K(row('Taylor Fritz', 'Daniel Altmaier', 'Taylor Fritz', 0)) === '1500');
+check('Drops: a trailing Jr / Sr is dropped (Martin Damm Jr -> 1317)', K(row('Martin Damm Jr', 'Francisco Cerundolo', 'Martin Damm Jr', 2)) === '1317');
+check('Drops: extra given names never block (Adolfo Daniel Vallejo = D. Vallejo)', K(row('Camilo Ugo Carabelli', 'Adolfo Daniel Vallejo', 'Adolfo Daniel Vallejo', 1)) === '12');
+check('Drops: compound surnames whole — Carlos Carabelli is not C. Ugo Carabelli (no ID)', K(row('Carlos Carabelli', 'Adolfo Daniel Vallejo', 'Carlos Carabelli', 1)) === null);
+check('Drops: a start more than 24 h from the card = no candidate; an unmeasurable start = no candidate', K(row('Daniel Altmaier', 'Taylor Fritz', 'Daniel Altmaier', 25)) === null && K({ playerA: 'Daniel Altmaier', playerB: 'Taylor Fritz', side: 'Daniel Altmaier', start: null }) === null);
+check('Drops: two qualifying cards = no ID, never a pick', K(row('Daniel Altmaier', 'Taylor Fritz', 'Daniel Altmaier', 0), BOARD.concat([card('D. Altmaier', 9, 'T. Fritz', 10, 3)])) === null);
+check('Drops: a Challenger / ITF row (no Today\'s Matches card) = no ID, the monogram', K(row('Diego Dedura', 'Felipe Meligeni Alves', 'Diego Dedura', 0)) === null);
+
+// ── 5. Quotes: surname against that season's entrants; the initial only when it leaves exactly one ────────────────
+const qctx = { tournamentProfiles: {
+  Madrid: { allEditionMatches: [{ season: '2026', matches: [{ p1: 'F. Cerundolo', p1Key: 1104, p2: 'J. M. Cerundolo', p2Key: 388 }, { p1: 'C. Alcaraz', p1Key: 2382, p2: 'T. Daniel', p2Key: 2406 }] }] },
+  'French Open': { allEditionMatches: [{ season: '2025', matches: [{ p1: 'J. Sinner', p1Key: 2072, p2: 'A. Zverev', p2Key: 1980 }] }] },
+  'Roland Garros': null } };
+vm.createContext(qctx);
+vm.runInContext(fn('tourxQuoteSpeakerKey').replace(/^function/, "const TOURX_QUOTE_PROFILE_ALIAS = { 'Roland Garros': 'French Open' };\nfunction"), qctx);
+const QK = (player, ev, year) => qctx.tourxQuoteSpeakerKey({ player, year }, ev);
+check('Quotes: a unique surname among that season\'s entrants -> its ID (T. Daniel, Madrid 2026 -> 2406)', QK('T. Daniel', 'Madrid', 2026) === '2406');
+check('Quotes: the initial separates same-surname entrants (F. Cerundolo -> Francisco 1104; J. M. Cerundolo -> 388)', QK('F. Cerundolo', 'Madrid', 2026) === '1104' && QK('J. M. Cerundolo', 'Madrid', 2026) === '388');
+check('Quotes: no initial with two same-surname entrants, or an initial that fits neither = monogram (null)', QK('Cerundolo', 'Madrid', 2026) === null && QK('X. Cerundolo', 'Madrid', 2026) === null);
+check('Quotes: no edition on record for that season, or no entrant of that surname = monogram (null)', QK('T. Daniel', 'Madrid', 2021) === null && QK('D. Rincon', 'Madrid', 2026) === null);
+check('Quotes: Roland Garros reads the French Open profile (J. Sinner 2025 -> 2072)', QK('J. Sinner', 'Roland Garros', 2025) === '2072');
+
+// ── 6. The Wikimedia map is out of the pipeline (founder 2026-10-23) ───────────────────────────────────────────────
+const PIPE = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
+check('player-photos.json: not published, and the map, its generator and its validator are gone',
+  !PIPE.includes('player-photos.json') && !['player-photos.json', 'enrich-player-photos.py', 'validate-player-photos.js'].some((f) => fs.existsSync(path.join(ROOT, f))));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

@@ -2193,3 +2193,17 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
 - **Not built (report-first):** Drops (the drops service links 264 of 339 rows to an api-tennis fixture but drops the
   player keys; upcoming rows are linked only after a live sighting) and Tournament quotes (surname vs that edition's
   entrants: 155 of 180 dated notes unique, 3 ambiguous Cerundolo, 9 unmatched spellings, 13 with no entrant list).
+
+## Player photos round 2: Drops and quotes by ID, the Wikimedia map deleted (2026-10-23)
+- **Why the Drops join is the Kibl rule and not boardKeyFor:** the founder ruled the Kibl rule (full compound surname,
+  initial against any given name, Jr/Sr dropped, ±24 h, exactly one). boardKeyFor (first initial + last token, 36 h)
+  still joins prices and events, unchanged — scope. Measured 23 Oct on 378 live rows: 99 of 101 ATP rows join, 0
+  ambiguous; Challenger / ITF 0 of 277 (Today's Matches carries ATP fixtures only). Option 2 (the drops service keeps
+  the api-tennis player keys it already has, 78% of rows across tiers) is parked as a follow-up ticket.
+- **Why the quote initial is a tie-break only:** the founder ruled surname first; the initial counts only when it leaves
+  exactly one entrant (F. Cerundolo = Francisco). On the 165 shipped notes: 151 resolve, 0 ambiguous, 14 do not (13 with
+  no edition on record for that season — tournament-profiles.json keeps the last five editions and has no 2026 Kitzbuhel /
+  Washington / Los Cabos — and D. Rincon, not in Madrid 2023's main draw).
+- **Why player-photos.json could go:** nothing read it after 5456dee9d. Its only consumers were its own generator (run by
+  no job) and validate-player-photos.js (in no suite or workflow, and already failing on main since it required the
+  retired photoOverrideFor); the pipeline copy was `|| true` and outside the required-file asserts.

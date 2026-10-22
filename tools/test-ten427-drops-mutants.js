@@ -36,7 +36,7 @@ const MUTANTS = [
   ['js', 'Data 7: the list stops polling', "  var POLL_MS = 30000;", "  var POLL_MS = 0;"],
   ['js', 'header: the old subtitle', "Prices that have shortened since we first recorded them, each within one bookmaker. Biggest drops first.", "Prices that have shortened since we first recorded them, across every bookmaker we track. Biggest drops first."],
   ['js', 'header: no Updated stat', "      v('Updated', upd, 'updated') +\n", ""],
-  ['js', 'avatars: a photo back', "    return '<span class=\"do-av\" aria-hidden=\"true\">' + esc(initials(r.dSide || r.side)) + '</span>';", "    return '<img class=\"do-av\" src=\"x\" alt=\"\">';"],
+  ['js', 'avatars: a photo back', "    return '<span class=\"do-av\" aria-hidden=\"true\">' + esc(initials(r.dSide || r.side)) + ph + '</span>';", "    return '<img class=\"do-av\" src=\"x\" alt=\"\">';"],
   ['js', 'time axis 1a: the date back in the tick label', "tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: hm(t) };", "tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: dayOf(t) + ', ' + hm(t) };"],
   ['js', 'time axis 1a: no day bands', "    var db = single ? { bands: [{ w: '100%', label: dayOf(last.t) }], splits: [] } : dayBands(a0, a1);", "    var db = { bands: [], splits: [] };"],
   ['js', 'copy: the empty state without its full stop', "'No moves above your threshold in this window.';", "'No moves above your threshold in this window';"],
