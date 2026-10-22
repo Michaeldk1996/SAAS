@@ -61,7 +61,10 @@ ok(rowSays({ won: true, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }] }, 5) === 'starte
 ok(verdictOf('Sched', ['completed', 'live']) === 'completed' && verdictOf('Sched', ['started', 'live']) === 'started', 'our live-flip says it started, nothing about its end');
 ok(v('Cee C.') === 'started', 'Ace v Cee (Awarded, both rows played) → started');
 ok(v('Eff E.') === 'walkover', 'Dee v Eff (Walkover, a walkover row) → walkover');
-ok(v('Gee G.') === 'disagree', 'Dee v Gee (Disqualified, one row played, one walkover) → disagree');
+// HOLD (2026-10-22): a career walkover row is not read as evidence until its Database drop is measured and approved
+// (tools/started-evidence.js) — the one row that speaks here is the played one. verdictOf still rules a played row and a
+// walkover row "disagree" (above); only the reading of career walkover rows is held.
+ok(v('Gee G.') === 'started', 'Dee v Gee (Disqualified, one row played, one walkover row — held, not read) → started');
 ok(v('Hay H.') === 'disagree', 'Ace v Hay (Tennis-Data Walkover, a played row) → disagree');
 // --- the same match, not a neighbouring meeting (founder 2026-10-18) -------------------------------------------------
 ok(sameMatch({ eventKey: 9, round: 'SF' }, 'Semifinals', 1) && !sameMatch({ eventKey: 9 }, 'Semifinals', 2) && !sameMatch({ eventKey: 9 }, 'Semifinals', -2),
@@ -121,9 +124,9 @@ function buildChecks(script, label) {
     [b.meta && b.meta.started && b.meta.started.completed === 1 && b.meta.started.completedByComment.Sched === 1, 'meta.started counts 1 completed ("Sched")'],
     [retPairs.some(p => /Ace A\. v Cee C\.|Cee C\. v Ace A\./.test(p)), 'the started Awarded match is priced behind the retired flag'],
     [!retPairs.some(p => /Eff E\./.test(p)), 'the true walkover stays a dash'],
-    [!retPairs.some(p => /Gee G\./.test(p)), 'the Disqualified match whose sources disagree stays a dash'],
+    [retPairs.some(p => /Gee G\./.test(p)), 'HOLD 2026-10-22: the Disqualified match with only its played row read is priced behind the flag'],
     [!retPairs.some(p => /Hay H\./.test(p)), 'Tennis-Data Walkover v a played career row stays a dash'],
-    [b.meta && b.meta.started && b.meta.started.priced === 2, 'meta.started counts 2 priced behind the flag'],
+    [b.meta && b.meta.started && b.meta.started.priced === 3, 'meta.started counts 3 priced behind the flag (HOLD 2026-10-22: Gee included)'],
   ];
   return { checks, label };
 }
