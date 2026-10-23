@@ -572,7 +572,7 @@ function main() {
         { name: row.loser, won: false, p: pLose, price: al, best: bestL, fav: al < aw, oppRank: wr, oppPrice: aw, oppP: pWin },
       ].forEach((side) => {
         const hit0 = resolve(side.name);
-        const player = hit0 && idGate && !idGate.allow(hit0.key, side.name, row.date) ? null : hit0;
+        const player = hit0 && idGate && !idGate.allow(hit0.key, side.name, row.date, side.name === row.winner ? row.loser : row.winner) ? null : hit0;
         if (!player) return;
         stats.matchedSides += 1;
         const b = bucketsFor(player.key);
@@ -723,6 +723,7 @@ function main() {
       },
       sides: ordered.map(sideRow),
     };
+    shard.identityHidden = idGate && idGate.hidden ? idGate.hidden(playerKey) : 0;   // rows dashed: identity unverified (gate rule 4)
     fs.writeFileSync(path.join(OUT_DIR, `${playerKey}.json`), JSON.stringify(shard));
     index[playerKey] = { matches: overall.matches, vsMarket: overall.vsMarket, roi: overall.roi };
     shipped += 1;

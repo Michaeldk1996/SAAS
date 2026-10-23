@@ -179,6 +179,19 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
 
 ---
 
+## Archive identity (Tennis-Data names) — founder 2026-10-22, containment
+Tennis-Data names a player only "Surname I.". One gate (`td-identity.js`) decides every join, for market edge, match
+closes, odds performance and started-evidence.
+- **Test:** a name that more than one real player ever fit (our store, or `ambiguous-archive-names.json.gz` built from
+  Tennis Abstract by `tools/build-ambiguous-archive-names.js`) takes a row only when the key's OWN career-history shard
+  holds that match: a played row within 3 days, against that opponent. Tennis Abstract can veto: when its match that
+  week against that opponent was a namesake's with a spelled-out, different first name, the row is refused. An
+  abbreviated name ("A. Hernandez") is never vetoed. A wrong number is worse than a missing one: anything unverified is
+  a dash.
+- **Test:** each shard publishes `identityHidden` (unique rows dashed); the profile's Market edge line and the Market
+  edge tab say "N rows hidden: identity unverified". **Test:** `tools/test-td-identity.js` (fixtures, the real closes
+  builder, a mutant with the rule off).
+
 ## Close rules
 
 **Close = last price before the *actual* start.**

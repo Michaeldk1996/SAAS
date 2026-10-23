@@ -2398,14 +2398,16 @@
     // loads with the profile data), never the shard's own `tour.all`.
     var mk = marketFor(p.key);
     var tourAllBox = tourBaselineFor('all');
+    // founder 2026-10-22 (containment): rows the identity gate dashed for an ambiguous archive name are said, with their count
+    var idHidden = mk && mk.identityHidden > 0 ? ' ' + MIDDOT + ' ' + mk.identityHidden + (mk.identityHidden === 1 ? ' row' : ' rows') + ' hidden: identity unverified' : '';
     v.market = marketPending(p.key) && !mk ? { headline: null, support: null, pending: true }
       : mk && mk.headline && mk.headline.yield != null
       ? { headline: neg(mk.headline.yield, 2, '%'),
           // fx2 item 3 (founder: "the tour line hidden until the data arrives, with no dash and no layout
           // shift"): no baseline yet -> the clause is left out (the line keeps its one-line box), never "tour —".
           support: 'flat-stake yield ' + MIDDOT + ' ' + mk.headline.n + ' priced' +
-            (tourAllBox == null ? '' : ' ' + MIDDOT + ' tour ' + neg(tourAllBox, 2, '%')) }
-      : { headline: null, support: 'no priced matches on record' };
+            (tourAllBox == null ? '' : ' ' + MIDDOT + ' tour ' + neg(tourAllBox, 2, '%')) + idHidden }
+      : { headline: null, support: 'no priced matches on record' + idHidden };
 
     // 8 · Live trading (was "Playing profile") — the headline CHANGES SUBJECT,
     // and this is the second half of RULING 2's fix. It used to print the season

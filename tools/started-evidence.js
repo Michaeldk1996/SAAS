@@ -108,7 +108,7 @@ function build(root) {
     const priced = (price(r.psw) && price(r.psl)) || (price(r.b365w) && price(r.b365l));
     if (!priced) continue;                     // nothing to price either way
     const d = day(r.date);
-    const keyW = res.archive(r.winner, r.date), keyL = res.archive(r.loser, r.date);
+    const keyW = res.archive(r.winner, r.date, r.loser), keyL = res.archive(r.loser, r.date, r.winner);
     const look = (key, won, oppArchive) => {
       if (!key) return { key: null, says: null, why: 'name not joined' };
       const rows = shard(key);

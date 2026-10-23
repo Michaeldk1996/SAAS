@@ -15539,6 +15539,7 @@ function meLoad(m){
       else {
         const rows = meRowsFor(ch, cl, String(key), name);
         rows.win = meWinnerRows(ms, rows, String(key), name);                          // ruling B
+        rows.idHidden = (ms && ms.identityHidden) || 0;   // founder 2026-10-22: rows the identity gate dashed (ambiguous archive name)
         E.state[i] = 'ready'; E.data[i] = rows;
       }
       meRender();
@@ -15806,7 +15807,10 @@ function buildMarketEdgeSection(m){
   const top = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;"><div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><div style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">${view}</div></div>`
     + `${mePill(MM)}</div>`;
   const cards = S.meView === 'winner' ? mePriceCard(E, MM) + meChartCard(E, MM) : meCoverCard(E, MM) + meLinesCard(E, MM);
-  return `<div class="me-pane" style="font-family:'Hanken Grotesk',system-ui,sans-serif; color:${ME_C.text};"><div style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto;">${top}<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px; align-items:start;">${cards}</div></div></div>`;
+  // founder 2026-10-22 (containment): rows the identity gate dashed for an ambiguous archive name, said with their count
+  const idNote = [0, 1].map(i => { const n = E.data && E.data[i] && E.data[i].idHidden; return n ? `${fhEsc(i ? m.p2 : m.p1)}: ${n} ${n === 1 ? 'row' : 'rows'} hidden: identity unverified` : ''; }).filter(Boolean).join(' · ');
+  const idLine = idNote ? `<div class="me-id-hidden" style="font-size:12px; color:var(--text-label);">${idNote}</div>` : '';
+  return `<div class="me-pane" style="font-family:'Hanken Grotesk',system-ui,sans-serif; color:${ME_C.text};"><div style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto;">${top}<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px; align-items:start;">${cards}</div>${idLine}</div></div>`;
 }
 
 // ---- §5 / §6 pop-ups (mounted on the modal card, like the stats sheet) ----
@@ -15860,7 +15864,9 @@ function meBandPopHtml(E, MM){
   if (!M || M.state !== 'ready' || !M.bands[bi] || !M.bands[bi].n) return '';
   const b = M.bands[bi], core = window.MarketEdgeCore, name = i ? E.m.p2 : E.m.p1, key = String(i ? E.m.p2Key : E.m.p1Key);
   const chip = bi === M.tb ? `<span style="font-family:var(--font-words); font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${ME_C.blue}; background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.chipBd}; border-radius:6px; padding:3px 8px;">TODAY'S BAND</span>` : '';
-  const sub = [b.gk === 'fav' ? 'As favourite' : 'As underdog', meScopeLbl(E.S), 'closing odds', meBookNote(b.rows)].filter(Boolean).join(' · ');
+  const idh = E.data && E.data[i] && E.data[i].idHidden;
+  const sub = [b.gk === 'fav' ? 'As favourite' : 'As underdog', meScopeLbl(E.S), 'closing odds', meBookNote(b.rows),
+    idh ? `${idh} ${idh === 1 ? 'row' : 'rows'} hidden: identity unverified` : ''].filter(Boolean).join(' · ');
   // TEN-380: four tiles with sub-lines — Record / n priced · Won / needs · Edge (won − needs, pp) · At 1u flat / yield
   const edge = b.won == null || b.needs == null ? null : (b.won - b.needs) * 100;
   const yieldTxt = b.yield == null ? '—' : meSg(b.yield * 100, 1, '%');

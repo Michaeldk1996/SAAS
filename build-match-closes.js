@@ -79,10 +79,10 @@ function makeResolver(players, gate) {
     return ks.length === 1 ? ks[0] : null;
   };
   return {
-    archive(name, date) {                    // "Sinner J." (+ the row's date: the identity gate, td-identity.js)
+    archive(name, date, opp) {               // "Sinner J." (+ the row's date and other side: the identity gate, td-identity.js)
       const ov = archiveOverride(name);
       const k = ov ? (ov.block ? null : (keys.has(String(ov.key)) ? String(ov.key) : null)) : fromKey(keyFromArchiveName(name));
-      return k && gate && date && !gate.allow(k, name, date) ? null : k;
+      return k && gate && date && !gate.allow(k, name, date, opp) ? null : k;
     },
   };
 }
@@ -303,7 +303,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
       if (comment.startsWith('walkover') || comment === 'w/o') { stats.walkovers++; return; }
       const ret = comment && comment !== 'completed' ? 1 : 0;
       const P = pair(r.psw, r.psl), B = pair(r.b365w, r.b365l);
-      const kw = td.archive(r.winner, r.date), kl = td.archive(r.loser, r.date);
+      const kw = td.archive(r.winner, r.date, r.loser), kl = td.archive(r.loser, r.date, r.winner);
       [[kw, r.loser, kl, 1, 0, 1], [kl, r.winner, kw, 0, 1, 0]].forEach(([key, opp, oppKey, won, i, j]) => {
         if (!key) return;
         stats.sides++;
@@ -331,7 +331,7 @@ function build(root = ROOT, outDir = OUT_DIR, indexPath = INDEX) {
   for (const key of new Set([...rows.keys(), ...cap.keys()])) {
     const list = (rows.get(key) || []).sort(byDate), cl = (cap.get(key) || []).sort(byDate);
     const tmp = path.join(outDir, `.${key}.json.tmp`);
-    fs.writeFileSync(tmp, JSON.stringify({ key, through: latest,
+    fs.writeFileSync(tmp, JSON.stringify({ key, through: latest, identityHidden: idGate && idGate.hidden ? idGate.hidden(key) : 0,
       cols: ['date', 'opp', 'won', 'pin', 'pinOpp', 'b365', 'b365Opp', 'ret', 'oppKey'], rows: list,
       capCols: ['date', 'oppKey', 'pin', 'pinOpp', 'b365', 'b365Opp', 'eventKey', 'pinLabel'], cap: cl }));
     fs.renameSync(tmp, path.join(outDir, `${key}.json`));

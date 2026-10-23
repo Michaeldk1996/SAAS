@@ -340,7 +340,7 @@ function main() {
   // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
   const idGate = buildIdentityGate(ROOT, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
   log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
-  const resolveAt = (archiveName, date) => { const h = resolve(archiveName); return h && idGate && date && !idGate.allow(h.key, archiveName, date) ? null : h; };
+  const resolveAt = (archiveName, date, opp) => { const h = resolve(archiveName); return h && idGate && date && !idGate.allow(h.key, archiveName, date, opp) ? null : h; };   // opp: the row's other side (gate rule 4)
 
   /**
    * TEN-206 §5.6 — the OPPONENT's archetype, stamped per row.
@@ -409,7 +409,7 @@ function main() {
     const row = { date: m[ci.date], tournament: m[ci.tournament], series: m[ci.series], surface: m[ci.surface], court: m[ci.court],
       round: m[ci.round], winner: m[ci.winner], loser: m[ci.loser], comment: m[ci.comment] };
     const quarantined = (qDb.size || qMe.size) && (qDb.has(`${String(row.date).replace(/-/g, '')}|${row.winner}|${row.loser}`)
-      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolveAt(nm, row.date); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
+      || [[row.winner, row.loser, 1], [row.loser, row.winner, 0]].some(([nm, opp, w]) => { const h = resolveAt(nm, row.date, opp); return h && qMe.has(`${h.key}|${row.date}|${opp}|${w}`); }));
     const flags = String(m[ci.flags] || '');
     if (flags.includes('t')) { stats.team += 1; return; }   // a team event: in the master, never in Market edge (as the Database)
     if (flags.includes('l')) { stats.lower = (stats.lower || 0) + 1; return; }   // ATP qualifying / Challenger / ITF (founder 2026-10-18): the join's, never Market edge's
@@ -456,7 +456,7 @@ function main() {
         tour.season[season] = tour.season[season] || emptyAgg();
         addTo(tour.season[season], side);
       }
-      const hit = resolveAt(b.name, row.date);
+      const hit = resolveAt(b.name, row.date, b.opp);
       if (!hit) return;
       // the player keeps a shard (rewritten without the match), so an old copy that priced it never stays behind
       if (quarantined) { stats.quarantined += 1; if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] }); return; }
@@ -570,6 +570,7 @@ function main() {
       })),
     };
 
+    out.identityHidden = idGate && idGate.hidden ? idGate.hidden(key) : 0;   // rows dashed: identity unverified (gate rule 4)
     fs.writeFileSync(path.join(OUT_DIR, `${key}.json`), JSON.stringify(out));
     index[key] = { n: out.headline.n, yield: out.headline.yield, pinnacle: out.headline.book.pinnacle, bet365: out.headline.book.bet365 };
     shipped += 1;
