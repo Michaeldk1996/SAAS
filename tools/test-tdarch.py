@@ -399,6 +399,9 @@ try:
     out = os.path.join(td, 'lines.txt')
     check('te-import-new: every store batch already held -> no import and an empty lines file',
           T.cmd_te_import_new(td, out) == [] and calls == [] and open(out).read() == '', calls)
+    json.dump(dict(tdocs[0], batch='atp-x-02', rows=[dict(x, pin=None) for x in tdocs[0]['rows']]), open(os.path.join(td, 'te-odds', 'atp-x-02.json'), 'w'))
+    check('te-import-new: a batch with no joined Pinnacle pair is never new (atp-x-02, 23 Oct: it was re-sent every run)',
+          T.cmd_te_import_new(td, out) == [] and calls == [], calls)
     T.te_imported_batches = lambda: {'calib-01'}
     got = T.cmd_te_import_new(td, out)
     check('te-import-new: a batch the archive holds no row of -> one import, its line in the file (control: the held batch has none)',

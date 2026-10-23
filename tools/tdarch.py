@@ -1342,7 +1342,9 @@ def cmd_te_import_new(store, out_path):
     alert. Nothing new: the file is left empty and nothing is written to the archive (no count row)."""
     docs, skipped = te_docs(store)
     have = te_imported_batches()
-    new = [d.get('batch') for d in docs if d.get('batch') not in have]
+    # a batch with no joined Pinnacle pair can never store a row (atp-x-02: 74 joined, 0 with Pinnacle): never "new"
+    storable = lambda d: any(x.get('status') == 'joined' and x.get('pin') for x in d['rows'])
+    new = [d.get('batch') for d in docs if d.get('batch') not in have and storable(d)]
     print('### te-import-new', json.dumps({'storeBatches': [d.get('batch') for d in docs], 'partial': skipped, 'imported': sorted(have), 'new': new}))
     lines = []
     if new:
