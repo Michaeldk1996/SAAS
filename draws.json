@@ -7,15 +7,281 @@
    "atpId": 328,
    "category": "ATP 500",
    "city": "Basel",
-   "contentChangedAt": "2026-10-20T14:51:26Z",
-   "contentHash": "dcaf9877a700238c",
+   "contentChangedAt": "2026-10-23T19:10:27Z",
+   "contentHash": "22d24ad35be02a7b",
    "endDate": "2026-11-01",
    "idVerified": false,
    "main": {
     "status": "not_posted"
    },
    "qualifying": {
-    "status": "not_posted"
+    "alternatesLuckyLosers": [],
+    "halves": false,
+    "lastDirectAcceptance": "G. Mpetshi-Perricard - 108",
+    "releasedLocal": "10/23/2026 19:35:17",
+    "seeded": [
+     {
+      "inDraw": true,
+      "name": "Baez, Sebastian",
+      "rank": 49,
+      "seed": 1
+     },
+     {
+      "inDraw": true,
+      "name": "Cerundolo, Juan Manuel",
+      "rank": 53,
+      "seed": 2
+     },
+     {
+      "inDraw": true,
+      "name": "Faria, Jaime",
+      "rank": 56,
+      "seed": 3
+     },
+     {
+      "inDraw": true,
+      "name": "Kecmanovic, Miomir",
+      "rank": 57,
+      "seed": 4
+     },
+     {
+      "inDraw": true,
+      "name": "Hanfmann, Yannick",
+      "rank": 59,
+      "seed": 6
+     },
+     {
+      "inDraw": true,
+      "name": "Altmaier, Daniel",
+      "rank": 65,
+      "seed": 7
+     },
+     {
+      "inDraw": true,
+      "name": "Duckworth, James",
+      "rank": 73,
+      "seed": 8
+     }
+    ],
+    "size": 16,
+    "slots": [
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "BAEZ, Sebastian",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1101",
+      "pos": 1,
+      "seed": 1,
+      "seedRank": 49
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname-only",
+      "name": "MPETSHI PERRICARD, …",
+      "nameSource": "sheet",
+      "nameTruncated": true,
+      "playerKey": "9222",
+      "pos": 2,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "KOVACEVIC, Aleksandar",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2978",
+      "pos": 3,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "DUCKWORTH, James",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1900",
+      "pos": 4,
+      "seed": 8,
+      "seedRank": 73
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "CERUNDOLO, Juan Manuel",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "388",
+      "pos": 5,
+      "seed": 2,
+      "seedRank": 53
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "SVAJDA, Zachary",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2986",
+      "pos": 6,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "BERNET, Henry",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "57540",
+      "pos": 7,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "ALTMAIER, Daniel",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1099",
+      "pos": 8,
+      "seed": 7,
+      "seedRank": 65
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "FARIA, Jaime",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "824",
+      "pos": 9,
+      "seed": 3,
+      "seedRank": 56
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "BRUNOLD, Mika",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "37882",
+      "pos": 10,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "BERTOLA, Remy",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1212",
+      "pos": 11,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "no-name",
+      "name": "Player Competing",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": null,
+      "pos": 12,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "KECMANOVIC, Miomir",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2848",
+      "pos": 13,
+      "seed": 4,
+      "seedRank": 57
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "HIJIKATA, Rinky",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "3317",
+      "pos": 14,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "GIRON, Marcos",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1766",
+      "pos": 15,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": null,
+      "keyMatch": "surname+given",
+      "name": "HANFMANN, Yannick",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1764",
+      "pos": 16,
+      "seed": 6,
+      "seedRank": 59
+     }
+    ],
+    "status": "posted",
+    "withdrawals": []
+   },
+   "sheetHeader": {
+    "city": "Basel",
+    "name": "Swiss Indoors Basel",
+    "surface": "Hard",
+    "weekLabel": "26 October — 1 November 2026"
    },
    "startDate": "2026-10-26"
   },
@@ -24,15 +290,287 @@
    "atpId": 337,
    "category": "ATP 500 tournaments",
    "city": "Vienna",
-   "contentChangedAt": "2026-10-20T14:51:26Z",
-   "contentHash": "5b27ba8b1c55749f",
+   "contentChangedAt": "2026-10-23T19:10:27Z",
+   "contentHash": "3ecd82c9834c5e4b",
    "endDate": "2026-11-01",
    "idVerified": false,
    "main": {
     "status": "not_posted"
    },
    "qualifying": {
-    "status": "not_posted"
+    "alternatesLuckyLosers": [],
+    "halves": false,
+    "lastDirectAcceptance": "Fearnley, Jacob - 96",
+    "releasedLocal": "10/23/2026 18:36:48",
+    "seeded": [
+     {
+      "inDraw": true,
+      "name": "Tirante, Thiago Agustin",
+      "rank": 50,
+      "seed": 1
+     },
+     {
+      "inDraw": true,
+      "name": "Vallejo, Adolfo Daniel",
+      "rank": 54,
+      "seed": 2
+     },
+     {
+      "inDraw": true,
+      "name": "Marozsan, Fabian",
+      "rank": 64,
+      "seed": 3
+     },
+     {
+      "inDraw": true,
+      "name": "Kopriva, Vit",
+      "rank": 66,
+      "seed": 4
+     },
+     {
+      "inDraw": true,
+      "name": "Droguet, Titouan",
+      "rank": 69,
+      "seed": 5
+     },
+     {
+      "inDraw": true,
+      "name": "Machac, Tomas",
+      "rank": 72,
+      "seed": 6
+     },
+     {
+      "inDraw": true,
+      "name": "Carreno Busta, Pablo",
+      "rank": 74,
+      "seed": 7
+     },
+     {
+      "inDraw": true,
+      "name": "Medjedovic, Hamad",
+      "rank": 76,
+      "seed": 8
+     }
+    ],
+    "size": 16,
+    "slots": [
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ARG",
+      "keyMatch": "surname+given",
+      "name": "TIRANTE, Thiago Agustin",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "366",
+      "pos": 1,
+      "seed": 1,
+      "seedRank": 50
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "MANNARINO, Adrian",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "438",
+      "pos": 2,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "SVK",
+      "keyMatch": "surname+given",
+      "name": "MOLCAN, Alex",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "436",
+      "pos": 3,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "SRB",
+      "keyMatch": "surname+given",
+      "name": "MEDJEDOVIC, Hamad",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2677",
+      "pos": 4,
+      "seed": 8,
+      "seedRank": 76
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "PAR",
+      "keyMatch": "surname+given",
+      "name": "VALLEJO, Adolfo Daniel",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "9217",
+      "pos": 5,
+      "seed": 2,
+      "seedRank": 54
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ITA",
+      "keyMatch": "surname+given",
+      "name": "SONEGO, Lorenzo",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2843",
+      "pos": 6,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "GBR",
+      "keyMatch": "surname+given",
+      "name": "FEARNLEY, Jacob",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "12951",
+      "pos": 7,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "ESP",
+      "keyMatch": "surname+given",
+      "name": "CARRENO BUSTA, Pablo",
+      "nameSource": "seeded-table",
+      "nameTruncated": false,
+      "playerKey": "434",
+      "pos": 8,
+      "seed": 7,
+      "seedRank": 74
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "HUN",
+      "keyMatch": "surname+given",
+      "name": "MAROZSAN, Fabian",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "10148",
+      "pos": 9,
+      "seed": 3,
+      "seedRank": 64
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "AUT",
+      "keyMatch": "surname+given",
+      "name": "SORGER, Sebastian",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "22921",
+      "pos": 10,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "MOUTET, Corentin",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2674",
+      "pos": 11,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "CZE",
+      "keyMatch": "surname+given",
+      "name": "MACHAC, Tomas",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2981",
+      "pos": 12,
+      "seed": 6,
+      "seedRank": 72
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "CZE",
+      "keyMatch": "surname+given",
+      "name": "KOPRIVA, Vit",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "1083",
+      "pos": 13,
+      "seed": 4,
+      "seedRank": 66
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "AUT",
+      "keyMatch": "surname+given",
+      "name": "NEUMAYER, Lukas",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "2022",
+      "pos": 14,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": "WC",
+      "ioc": "AUT",
+      "keyMatch": "surname+given",
+      "name": "SCHWAERZLER, Joel",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "32558",
+      "pos": 15,
+      "seed": null,
+      "seedRank": null
+     },
+     {
+      "bye": false,
+      "entry": null,
+      "ioc": "FRA",
+      "keyMatch": "surname+given",
+      "name": "DROGUET, Titouan",
+      "nameSource": "sheet",
+      "nameTruncated": false,
+      "playerKey": "8926",
+      "pos": 16,
+      "seed": 5,
+      "seedRank": 69
+     }
+    ],
+    "status": "posted",
+    "withdrawals": []
+   },
+   "sheetHeader": {
+    "city": "Vienna",
+    "name": "Erste Bank Open",
+    "surface": "Hard",
+    "weekLabel": "26 October — 1 November 2026"
    },
    "startDate": "2026-10-26"
   },
@@ -41,15 +579,15 @@
    "atpId": 496,
    "category": "ATP 250",
    "city": "Lyon",
-   "contentChangedAt": "2026-10-23T17:13:36Z",
-   "contentHash": "512c73d3ed1a0ddc",
+   "contentChangedAt": "2026-10-23T19:10:27Z",
+   "contentHash": "87826920f19b2b0d",
    "endDate": "2026-10-25",
    "idVerified": true,
    "main": {
     "alternatesLuckyLosers": [],
     "halves": false,
     "lastDirectAcceptance": "BONZI, Benjamin - 90",
-    "releasedLocal": "10/23/2026 16:56:12",
+    "releasedLocal": "10/23/2026 18:41:29",
     "seeded": [
      {
       "inDraw": true,
@@ -804,8 +1342,8 @@
    "atpId": 7485,
    "category": "ATP 250",
    "city": "Brussels",
-   "contentChangedAt": "2026-10-23T17:13:36Z",
-   "contentHash": "c21879689e04f24e",
+   "contentChangedAt": "2026-10-23T19:10:27Z",
+   "contentHash": "7a45e29ae12ba22d",
    "endDate": "2026-10-25",
    "idVerified": true,
    "main": {
@@ -816,7 +1354,7 @@
     ],
     "halves": false,
     "lastDirectAcceptance": "Dzumhur, Damir (100)",
-    "releasedLocal": "10/23/2026 18:28:21",
+    "releasedLocal": "10/23/2026 20:44:14",
     "seeded": [
      {
       "inDraw": true,
@@ -1297,7 +1835,7 @@
     "alternatesLuckyLosers": [],
     "halves": false,
     "lastDirectAcceptance": "Coppejans, Kimmer (229)",
-    "releasedLocal": "10/23/2026 18:28:21",
+    "releasedLocal": "10/23/2026 20:44:14",
     "seeded": [
      {
       "inDraw": true,
@@ -1575,15 +2113,15 @@
    "atpId": 9410,
    "category": "ATP 250",
    "city": "Almaty",
-   "contentChangedAt": "2026-10-23T17:13:36Z",
-   "contentHash": "900136e60aad85c6",
+   "contentChangedAt": "2026-10-23T19:10:27Z",
+   "contentHash": "6e2f2dcecfa2ffad",
    "endDate": "2026-10-25",
    "idVerified": true,
    "main": {
     "alternatesLuckyLosers": [],
     "halves": false,
     "lastDirectAcceptance": "Shimabukoro, Sho - 93",
-    "releasedLocal": "10/23/2026 22:06:00",
+    "releasedLocal": "10/23/2026 22:08:59",
     "seeded": [
      {
       "inDraw": true,
@@ -2060,7 +2598,7 @@
     "alternatesLuckyLosers": [],
     "halves": false,
     "lastDirectAcceptance": "Bar Biryukov, Petr - 281",
-    "releasedLocal": "10/23/2026 15:54:49",
+    "releasedLocal": "10/23/2026 22:08:59",
     "seeded": [
      {
       "inDraw": true,
