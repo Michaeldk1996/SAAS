@@ -213,6 +213,48 @@ const DB_BOOK = {
 const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0 && core.retSettlement(side) !== 'void' &&
   core.retSettlement(side) !== 'no-sets';
 
+// Ruling 4 · item 1 (founder 2026-10-23): the first set of a retirement from the PLAYERS' OWN career rows, when
+// tools/started-evidence.js left it unknown. The evidence join is narrower than the page's (measured 23 Oct: 30 of the 1,282
+// profile-ledger retirements with units settled "no set scores" though both career rows held the first set):
+//   8 had no Tennis-Data row (2026 matches priced from our own archive, which the evidence file never reads);
+//   7 met an earlier meeting of the same pair inside the -16..+3 day window and refused to pick;
+//   5 were archive rows dated at the event's Monday start, one day "after" Tennis-Data's Sunday first round;
+//   6 had Tennis-Data's winner as our row's loser (the first set does not depend on who won);
+//   4 had an opponent name the evidence resolver could not key.
+// So: each side's player (the builder's own resolveAt), his career rows against that opponent's SURNAME dated -16..+1 days
+// from the match (archive rows carry the event start), the latest such meeting only (one row on that day, or no answer),
+// and the two players' rows must agree. 'c' complete, 'i' incomplete, 'm' unknown — never guessed.
+const sameSurname = (x, y) => {
+  const t = (v) => String(v || '').replace(/(jr|sr|ii|iii)$/, '');
+  const p = t(x), q = t(y);
+  if (!p || !q) return false;
+  return p === q || (Math.min(p.length, q.length) >= 4 && (p.endsWith(q) || q.endsWith(p)));
+};
+function careerFirstSet(row, resolveAt, rowsOf) {
+  const dayN = (x) => Date.parse(String(x).slice(0, 10)) / 864e5;
+  const d = dayN(row.date);
+  if (!Number.isFinite(d)) return 'm';
+  const states = [];
+  for (const [me, opp] of [[row.winner, row.loser], [row.loser, row.winner]]) {
+    const h = resolveAt(me, row.date);
+    const ok = keyFromArchiveName(opp);
+    if (!h || !ok) continue;
+    const near = (rowsOf(h.key) || []).filter((x) => {
+      if (!x || x.walkover || x.unconfirmed) return false;
+      const dd = dayN(x.date) - d;
+      return dd >= -16 && dd <= 1 && ourCandidateKeys(x.opponent).some((c) => sameSurname(c.surname, ok.surname));
+    });
+    if (!near.length) continue;
+    const latest = near.reduce((m, x) => (String(x.date) > m ? String(x.date) : m), '');
+    const at = near.filter((x) => String(x.date) === latest);
+    if (at.length !== 1) continue;
+    const st = core.firstSetState(at[0].sets);
+    if (st !== 'missing') states.push(st);
+  }
+  if (!states.length || states.some((x) => x !== states[0])) return 'm';
+  return states[0] === 'complete' ? 'c' : 'i';
+}
+
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row
   // order and has already moved a painted card 1.42 -> 1.41 on this codebase. A
@@ -399,6 +441,11 @@ function main() {
   // not, or priced differently. Such a match is a dash on every page, Market edge included, so this build leaves its master
   // row out of every player's shard (the tour baseline keeps it: it is the Database's own aggregate). Next run, a match
   // that joins cleanly is not quarantined and comes back by itself.
+  const chDir = path.join(ROOT, 'career-history'), chCache = new Map();
+  const careerRowsOf = (k) => {
+    if (!chCache.has(k)) { let v = null; try { v = JSON.parse(fs.readFileSync(path.join(chDir, k + '.json'), 'utf8')).matches || null; } catch (e) { v = null; } chCache.set(k, v); }
+    return chCache.get(k);
+  };
   const qPath = process.env.PRICE_QUARANTINE || null;
   const qz = qPath && fs.existsSync(qPath) ? (JSON.parse(fs.readFileSync(qPath, 'utf8')).entries || []) : [];
   const qDb = new Set(qz.map((e) => e.db).filter(Boolean));
@@ -420,7 +467,11 @@ function main() {
     const season = String(row.date).slice(0, 4);
     const retired = isRetiredComment(row.comment);
     if (retired) stats.retired += 1;
-    const fsv = retired ? (retFs.get([row.date, row.tournament, row.winner, row.loser].join('|')) || 'm') : null;
+    let fsv = retired ? (retFs.get([row.date, row.tournament, row.winner, row.loser].join('|')) || 'm') : null;
+    if (retired && fsv === 'm') {   // ruling 4 · item 1: the players' own career rows, when the evidence file had no answer
+      fsv = careerFirstSet(row, resolveAt, careerRowsOf);
+      if (fsv !== 'm') stats.retFromCareer = (stats.retFromCareer || 0) + 1;
+    }
     if (retired) {
       if (fsv === 'c') stats.retStands += 1; else if (fsv === 'i') stats.retVoid += 1;
       else { stats.retNoSets += 1; noSetsRows.push(`${row.date} ${row.tournament}: ${row.winner} d. ${row.loser}`); }
@@ -591,7 +642,7 @@ function main() {
     players: index,
   }, null, 1));
 
-  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired (Pinnacle rules: ${stats.retStands} stand, ${stats.retVoid} void, ${stats.retNoSets} no set scores), ${stats.team} team-event matches left out`);
+  log(`master rows ${stats.rows} (${master.meta.counts ? JSON.stringify(master.meta.counts) : ''}), ${stats.retired} retired (Pinnacle rules: ${stats.retStands} stand, ${stats.retVoid} void, ${stats.retNoSets} no set scores; ${stats.retFromCareer || 0} first sets read from the players' own career rows), ${stats.team} team-event matches left out`);
   if (noSetsRows.length) log(`ruling 4 · retired with no set scores (no units): ${noSetsRows.join(' · ')}`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}, latest match ${stats.latest} (master ${master.meta.latest})`);
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
@@ -602,4 +653,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };
+module.exports = { careerFirstSet, pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };
