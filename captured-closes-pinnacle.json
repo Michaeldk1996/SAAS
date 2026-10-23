@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-23T10:50:59.186Z",
+ "generatedAt": "2026-10-23T15:34:46.253Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "f4dab2092d8229654b622dc341eae08521b3e5ee",
-  "at": "2026-10-23T10:34:39Z"
+  "commit": "3ca85428924cb2ff43f003ba0ebb4d8bc31aea31",
+  "at": "2026-10-23T15:15:41Z"
  },
- "commitsScanned": 5729,
+ "commitsScanned": 5750,
  "lastRun": {
-  "from": "2026-10-22T22:43:55Z",
-  "snapshots": 51,
-  "added": 3,
+  "from": "2026-10-23T10:34:39Z",
+  "snapshots": 22,
+  "added": 5,
   "replaced": 0,
-  "series": 77,
-  "kept": 64,
+  "series": 62,
+  "kept": 55,
   "bySource": {
-   "api-tennis-live": 64
+   "api-tennis-live": 55
   },
   "byBook": {
-   "Pinnacle +30s": 64
+   "Pinnacle +30s": 55
   },
   "dropped": {
-   "noStart": 13
+   "noStart": 7
   }
  },
  "stats": {
@@ -10207,6 +10207,23 @@
    "event": "ATP Almaty"
   },
   {
+   "eventKey": 12173359,
+   "date": "2026-10-23",
+   "p1Key": 7102,
+   "p2Key": 1104,
+   "p1Name": "C. Chidekh",
+   "p2Name": "F. Cerundolo",
+   "p1": 2.64,
+   "p2": 1.549,
+   "at": "2026-10-23T11:33:50.365Z",
+   "trueStart": "2026-10-23T11:48:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
    "eventKey": 12173374,
    "date": "2026-10-23",
    "p1Key": 1906,
@@ -10224,6 +10241,40 @@
    "event": "ATP Almaty"
   },
   {
+   "eventKey": 12173428,
+   "date": "2026-10-23",
+   "p1Key": 2674,
+   "p2Key": 1894,
+   "p1Name": "C. Moutet",
+   "p2Name": "T. Paul",
+   "p1": 3.98,
+   "p2": 1.294,
+   "at": "2026-10-23T05:37:28.784Z",
+   "trueStart": "2026-10-23T11:57:05.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12173537,
+   "date": "2026-10-23",
+   "p1Key": 427,
+   "p2Key": 2959,
+   "p1Name": "T. Griekspoor",
+   "p2Name": "J. Lehecka",
+   "p1": 3.49,
+   "p2": 1.355,
+   "at": "2026-10-23T13:38:38.925Z",
+   "trueStart": "2026-10-23T13:44:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
    "eventKey": 12173548,
    "date": "2026-10-23",
    "p1Key": 1093,
@@ -10239,6 +10290,40 @@
    "round": "ATP Almaty - Quarter-finals",
    "qualifying": false,
    "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12173572,
+   "date": "2026-10-23",
+   "p1Key": 1895,
+   "p2Key": 435,
+   "p1Name": "A. Bublik",
+   "p2Name": "K. Khachanov",
+   "p1": 1.909,
+   "p2": 2,
+   "at": "2026-10-23T14:08:18.529Z",
+   "trueStart": "2026-10-23T14:33:04.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12173593,
+   "date": "2026-10-23",
+   "p1Key": 1099,
+   "p2Key": 2832,
+   "p1Name": "D. Altmaier",
+   "p2Name": "T. Fritz",
+   "p1": 4.38,
+   "p2": 1.256,
+   "at": "2026-10-23T11:26:54.492Z",
+   "trueStart": "2026-10-23T15:03:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
   }
  ]
 }
