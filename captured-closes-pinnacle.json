@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-10-22T22:57:40.375Z",
+ "generatedAt": "2026-10-23T10:50:59.186Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "ebb02df035cc5a3764a0de67318627316facb5df",
-  "at": "2026-10-22T22:43:55Z"
+  "commit": "f4dab2092d8229654b622dc341eae08521b3e5ee",
+  "at": "2026-10-23T10:34:39Z"
  },
- "commitsScanned": 5679,
+ "commitsScanned": 5729,
  "lastRun": {
-  "from": "2026-10-22T17:15:43Z",
-  "snapshots": 26,
-  "added": 2,
+  "from": "2026-10-22T22:43:55Z",
+  "snapshots": 51,
+  "added": 3,
   "replaced": 0,
-  "series": 76,
-  "kept": 61,
+  "series": 77,
+  "kept": 64,
   "bySource": {
-   "api-tennis-live": 61
+   "api-tennis-live": 64
   },
   "byBook": {
-   "Pinnacle +30s": 61
+   "Pinnacle +30s": 64
   },
   "dropped": {
-   "noStart": 15
+   "noStart": 13
   }
  },
  "stats": {
@@ -10188,6 +10188,57 @@
    "round": "ATP Brussels - 1/8-finals",
    "qualifying": false,
    "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12173254,
+   "date": "2026-10-23",
+   "p1Key": 424,
+   "p2Key": 438,
+   "p1Name": "N. Basilashvili",
+   "p2Name": "A. Mannarino",
+   "p1": 1.862,
+   "p2": 2.05,
+   "at": "2026-10-23T06:02:33.801Z",
+   "trueStart": "2026-10-23T06:38:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12173374,
+   "date": "2026-10-23",
+   "p1Key": 1906,
+   "p2Key": 1900,
+   "p1Name": "S. Tsitsipas",
+   "p2Name": "J. Duckworth",
+   "p1": 1.247,
+   "p2": 4.49,
+   "at": "2026-10-23T01:49:28.404Z",
+   "trueStart": "2026-10-23T08:02:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
+  },
+  {
+   "eventKey": 12173548,
+   "date": "2026-10-23",
+   "p1Key": 1093,
+   "p2Key": 13091,
+   "p1Name": "D. Medvedev",
+   "p2Name": "T. Atmane",
+   "p1": 1.159,
+   "p2": 6.03,
+   "at": "2026-10-23T08:14:36.978Z",
+   "trueStart": "2026-10-23T09:35:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Almaty - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Almaty"
   }
  ]
 }
