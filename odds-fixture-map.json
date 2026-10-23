@@ -5170,20 +5170,20 @@
     },
     "12173359": {
       "fixtureId": "id1204593575621158",
-      "mappedAt": "2026-10-21T19:31:14Z",
+      "mappedAt": "2026-10-23T08:01:13Z",
       "orient": "same",
       "p1": "C. Chidekh",
       "p2": "F. Cerundolo",
-      "startTime": "2026-10-23T09:45:00.000Z",
+      "startTime": "2026-10-23T12:00:00.000Z",
       "tournamentId": 45935
     },
     "12173374": {
       "fixtureId": "id1204195975620038",
-      "mappedAt": "2026-10-21T19:31:14Z",
+      "mappedAt": "2026-10-23T08:01:13Z",
       "orient": "same",
       "p1": "S. Tsitsipas",
       "p2": "J. Duckworth",
-      "startTime": "2026-10-23T06:15:00.000Z",
+      "startTime": "2026-10-23T08:00:00.000Z",
       "tournamentId": 41959
     },
     "12173394": {
@@ -5287,23 +5287,12 @@
       "observedSpanDays": 18.71,
       "projectedTtlUnitsPerDay": 2.8,
       "runs": 400,
-      "spentRuns": 163,
+      "spentRuns": 164,
       "ttlBitRuns": 52,
       "ttlBitShare": 0.13,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-04T13:53:38Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 24
-      },
       {
         "at": "2026-10-04T14:54:09Z",
         "fixturesUnitsSpent": 1,
@@ -9692,9 +9681,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 13
+      },
+      {
+        "at": "2026-10-23T08:01:13Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 2,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 13
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-23T02:31:21Z"
+  "updatedAt": "2026-10-23T08:01:13Z"
 }
