@@ -2507,21 +2507,10 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6.5,
-        "p2": 7.7
-      },
-      {
-        "set": 2,
-        "p1": 3,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "15 - 15",
-    "liveServer": "p1",
+    "liveStatus": "Set 3",
+    "liveScore": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "oddsMovement": {
@@ -3550,7 +3539,10 @@
       "edgeVsPinnacleP1": -0.0155,
       "edgeVsPinnacleP2": 0.0155,
       "ts": "2026-10-23T16:15:01.356Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173727",
