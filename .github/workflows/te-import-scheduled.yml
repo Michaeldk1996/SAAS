@@ -1,0 +1,60 @@
+name: Tennis Explorer — scheduled import
+# Founder brief 2026-10-23 item 3: every 3 h, a complete te-odds batch in the private store that the archive holds no row of
+# is imported (tools/tdarch.py te-import-new → the same te-import: insert-only, idempotent, a re-run adds 0), and one line
+# per new batch (rows stored, in-play dropped, no-timestamp kept and its share, coverage gained) goes to the founder's
+# Telegram. An import that errors fails the job and sends a FAILED line. Nothing new: nothing written, nothing sent.
+# Main only; it shares historical-archive.yml's concurrency group so two archive writers never run at once.
+on:
+  schedule:
+    - cron: '41 */3 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: historical-archive
+  cancel-in-progress: false
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Refuse to run off main
+        run: |
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then echo "::error::the archive jobs run from main only (got ${GITHUB_REF})"; exit 1; fi
+      - name: Tennis Explorer — check out the private store (read-only token)
+        uses: actions/checkout@v4
+        with:
+          repository: michaeldk1996/stennisfy-te-store
+          token: ${{ secrets.TE_STORE_READ_TOKEN }}
+          path: .te-store
+      - name: Import the batches the archive does not hold yet (insert-only)
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: python3 tools/tdarch.py te-import-new .te-store te-import-lines.txt
+      - name: Send the batch lines (Telegram)
+        if: success() && hashFiles('te-import-lines.txt') != ''
+        run: |
+          set -euo pipefail
+          [ -s te-import-lines.txt ] || { echo "no new batch — nothing sent"; exit 0; }
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ] || { echo "::error::batch imported but no Telegram secret is set: line NOT sent"; cat te-import-lines.txt; exit 1; }
+          msg="Stennisfy: $(cat te-import-lines.txt)"
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${msg}")
+          echo "Telegram: HTTP ${code}"; cat te-import-lines.txt
+          [ "$code" = "200" ] || { echo "::error::batch line Telegram failed (HTTP ${code})"; exit 1; }
+      - name: Alert — the scheduled import FAILED (Telegram)
+        if: failure()
+        run: |
+          msg="Stennisfy: Tennis Explorer scheduled import FAILED · run ${GITHUB_RUN_ID} · $(date -u +%Y-%m-%dT%H:%MZ) · nothing new is on the site until it is fixed"
+          [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_CHAT_ID" ] || { echo "::error::no Telegram secret: failure alert NOT sent"; exit 1; }
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${msg}")
+          echo "Telegram alert: HTTP ${code}"
