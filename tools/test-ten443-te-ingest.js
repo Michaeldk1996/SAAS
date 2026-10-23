@@ -369,6 +369,26 @@ const yr = (p, y) => p.careerByYear.find((r) => String(r.year) === y);
       { date: '2019-02-18', season: 2019, opp: 'Stakhovsky S.', event: 'Marseille', cat: 'ATP qual', round: 'Q-QF', won: true, sets: [{ w: 6, l: 4 }, { w: 3, l: 6 }, { w: 6, l: 3 }] }] }, {});
     assert.strictEqual(m3.rows.filter((x) => /Stakhovsky/.test(x.opponent || '')).length, 2, 'the qualifying match was dropped');
   });
+  check('one match = one row, TE side: an ITF main-draw match TE also files as Q-R16 counts once, our main-draw row kept (founder 2026-10-23)', () => {
+    const TJ = require('../te-join.js');
+    // Compagnucci v De Cuyper, M15 Esch/Alzette 2021-07-20: api-tennis eventKey 11786523 (1/16-finals), TE 1962069 (Q-R16)
+    const ours = [{ year: '2021', surface: 'clay', level: 'chitf', date: '2021-07-20', tournament: 'M15 Esch/Alzette', round: '1/16-finals',
+      opponent: 'J. De Cuyper', result: '2 - 0', won: true, sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }], src: 'fixtures', eventKey: 11786523 }];
+    const rows = (extra) => ({ dob: '19990101', rows: [
+      { date: '2021-07-20', season: 2021, opp: 'De Cuyper J.', event: 'Futures 2021', cat: 'ITF', round: 'R32', won: true, sets: [{ w: 6, l: 3 }, { w: 6, l: 4 }] }].concat(extra) });
+    const qRow = { date: '2021-07-20', season: 2021, opp: 'De Cuyper J.', event: 'Futures 2021', cat: 'ITF', round: 'Q-R16', won: true, sets: [{ w: 6, l: 3 }, { w: 6, l: 4 }], teMatchId: '1962069' };
+    const m = TJ.applyTeHistory(ours, rows([qRow]), {});
+    const rs = m.rows.filter((x) => /Cuyper/.test(x.opponent || ''));
+    assert.strictEqual(rs.length, 1, rs.map((x) => x.src + ' ' + x.round).join(' | '));
+    assert.strictEqual(rs[0].round, '1/16-finals', 'our main-draw row stands');
+    assert.strictEqual(m.diag.teDuplicatesDropped, 1);
+    // TE alone listing it as Q-R16 (no main-draw row): it pairs with ours, one row, the round disagreement on the row
+    const m2 = TJ.applyTeHistory(ours, { dob: '19990101', rows: [qRow] }, {});
+    assert.strictEqual(m2.rows.filter((x) => /Cuyper/.test(x.opponent || '')).length, 1);
+    // a different result the same day is not the same match: both stay
+    const m3 = TJ.applyTeHistory(ours, rows([Object.assign({}, qRow, { won: false, sets: [{ w: 3, l: 6 }, { w: 4, l: 6 }] })]), {});
+    assert.strictEqual(m3.rows.filter((x) => /Cuyper/.test(x.opponent || '')).length, 2);
+  });
   check('2021 hole-fill: the paired row keeps TE indoor and Indoors counts it ONCE (no holeIndoor on top)', () => {
     const r = on.rows.find((x) => x.opponent === 'O. Omicron'); assert.strictEqual(r.indoor, true);
     const y = yr(on.p, '2021'); assert.strictEqual(wl(y.total), '1-0'); assert.strictEqual(wl(y.indoor.total), '1-0');

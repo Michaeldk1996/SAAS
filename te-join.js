@@ -338,6 +338,27 @@ function applyTeHistory(rows, teRec, opts = {}) {
   for (const r of ours) {
     if (r.teExhibition) out.set(orig.get(r), 'exhibition');
   }
+  // One match = one row (founder ruling 2026-10-23): a TE-only row on the day, against the opponent and with the result of
+  // a MATCH-DATED row of ours (api-tennis dates each match; an archive row carries the event's start date) is the same
+  // match — TE files ITF main-draw matches under a qualifying round (Q-R16 v our 1/16-finals, 8 rows roster-wide), and a
+  // Davis Cup rubber twice. Our row stands and is counted (a "not in TE" mark lifted: TE does list it), TE's row is dropped
+  // and counted, and the round disagreement stays on our row.
+  const matchDated = (r) => r.src !== 'archive' && !r.holeFill;
+  const oursDay = new Map();
+  for (const r of ours) {
+    const why = out.get(orig.get(r));
+    if (matchDated(r) && (!why || why === 'not-in-te')) oursDay.set(`${r.date}|${ourSurname(r.opponent)}|${!!r.won}`, r);
+  }
+  for (let i = added.length - 1; i >= 0; i--) {
+    const t = added[i], o = oursDay.get(`${t.date}|${ourSurname(t.opponent)}|${!!t.won}`);
+    if (!o) continue;
+    if (out.get(orig.get(o)) === 'not-in-te') { out.delete(orig.get(o)); diag.notInTeNotCounted--; }
+    if (String(t.round || '') !== String(o.round || '')) {
+      o.conflicts = (o.conflicts || []).concat([{ kind: 'round', te: t.round || null, ours: o.round || null, src: o.src === 'fixtures' ? 'api-tennis' : o.src }]);
+    }
+    added.splice(i, 1);
+    diag.teDuplicatesDropped = (diag.teDuplicatesDropped || 0) + 1;
+  }
   const kept = ours.filter((r) => !out.has(orig.get(r)));
   const copyOf = new Map(kept.map((c) => [orig.get(c), c]));
   // one match = one row, TE's side (founder 2026-10-23): a TE-only row on the same day against the same opponent as a

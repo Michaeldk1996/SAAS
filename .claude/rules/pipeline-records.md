@@ -42,6 +42,14 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
     undercounts Challenger-era players (N. Borges 2019 counted 3, 21 on record). Down: a pre-2021 season where
     the aggregate held more than TE lists. Every moved cell is reported to the founder, old → new, before it goes
     live (TEN-449 doc `moved-cells`).
+  - **One match = one row when TE lists a match twice (founder rulings 2026-10-23, `te-join.js` `applyTeHistory`).** A TE-only
+    row is dropped and counted (`teDuplicatesDropped`) when (a) a row TE already paired with ours has its day and opponent
+    and neither or both are qualifying rounds (Arevalo v Romero, Davis Cup 2008-04-11), or (b) a MATCH-DATED row of ours
+    (api-tennis, not a week-dated archive row) has its day, opponent and result — TE files ITF main-draw matches as
+    Q-R16 (8 roster-wide) and listed a Davis Cup rubber twice (Al Janahi v Elyasi 2022-08-12). Our main-draw row stands and
+    is counted, with the round disagreement on it. A qualifying and a main-draw match against the same opponent in one
+    week stay two matches (Stakhovsky, Marseille 2019; Arguello, Buenos Aires 2013). **Test:** `test-ten443-te-ingest.js`
+    "one match = one row, TE side" (both cases fail without the guard).
   - **For a player joined to TE on his date of birth, the record counts the rows TE lists, plus our api-tennis rows
     dated on or after the day we read his TE current-season page (provisional)** (founder TEN-449, 2026-10-19;
     provisional counting amends ruling 2A, founder 2026-10-19). **Test:** with `PROVISIONAL` on, an api-tennis row TE
