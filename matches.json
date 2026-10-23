@@ -15175,17 +15175,11 @@
         }
       ]
     },
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 4
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/13091_t-atmane.jpg",
     "oddsMovement": {
@@ -16070,7 +16064,27 @@
         "seenAt": "2026-10-23T10:16:25.362Z",
         "since": "2026-10-23T07:51:17.961Z"
       }
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12173572",
@@ -47559,7 +47573,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-7, 7-5",
+      "display": "7-6(3), 6-7(5), 7-5",
       "sets": [
         {
           "p1": 7,
@@ -51743,7 +51757,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-2",
+      "display": "7-6(10), 6-2",
       "sets": [
         {
           "p1": 7,
@@ -56164,7 +56178,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -62541,7 +62555,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(3), 7-6(3)",
       "sets": [
         {
           "p1": 7,
@@ -137595,7 +137609,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-2, 2-6",
+      "display": "6-7(5), 6-2, 2-6",
       "sets": [
         {
           "p1": 6,
@@ -178636,7 +178650,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 6-7",
+      "display": "4-6, 6-7(4)",
       "sets": [
         {
           "p1": 4,
@@ -192362,7 +192376,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 5-7",
+      "display": "6-7(4), 5-7",
       "sets": [
         {
           "p1": 6,
@@ -201004,7 +201018,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-2",
+      "display": "7-6(4), 6-2",
       "sets": [
         {
           "p1": 7,
