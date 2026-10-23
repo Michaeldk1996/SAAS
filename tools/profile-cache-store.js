@@ -22,6 +22,11 @@
  *              committed .gz} by fetchedAt and leaves it at the plain path. Without
  *              the comparison a stale warm cache would shadow a freshly committed
  *              rebuild for up to 14 days.
+ *   keep-failed — founder 2026-10-23 (outage prevention): in a FAILED run, copy the profile cache this run built into
+ *              .failed-run-cache/ for pipeline.yml to save under its own key (bsp-profiles-failed-*), only when the run
+ *              actually built profiles (profile-build-stats.json, opponentsBuilt > 0). hydrate unions it back in: on
+ *              22 Oct a v16 convergence failed the roster floor every run, each run's rebuilt profiles were thrown away
+ *              with the run, and the store could not converge for ~6 h.
  *   freeze   — after the pipeline runs. Minifies + gzips (-n, no mtime header, so
  *              identical content produces an identical blob) and rewrites the .gz
  *              ONLY if the committed copy's fetchedAt is from an earlier UTC day.
@@ -42,6 +47,8 @@ const path = require('path');
 
 // The pairs we keep. Plain path is what bsp-pipeline.js reads/writes; .gz is the
 // committed durable copy.
+// Founder 2026-10-23: where a failed run's profile cache is kept (keep-failed) and restored (pipeline.yml), for hydrate.
+const FAILED_DIR = '.failed-run-cache';
 const PAIRS = [
   { plain: 'player-profiles-cache.json', gz: 'player-profiles-cache.json.gz' },
   { plain: 'player-tournament-history.json', gz: 'player-tournament-history.json.gz' },
@@ -186,15 +193,35 @@ function hydrate(root) {
       console.log(`hydrate: ${pair.plain} <- ${pair.gz} (${census(fromGz)}); nothing was restored.`);
       continue;
     }
-    const merged = mergeStores(fromGz, fromPlain);
+    let merged = mergeStores(fromGz, fromPlain);
+    // a failed run's kept profile cache (keep-failed), when one was restored: the same union, so its newer builds win
+    const fromFailed = readJson(path.join(root, FAILED_DIR, pair.plain));
+    if (fromFailed) merged = mergeStores(merged, fromFailed);
     fs.writeFileSync(plainPath, JSON.stringify(merged));
     changed++;
     console.log(
       `hydrate: ${pair.plain} = restored (${census(fromPlain)}) ` +
-      `UNION committed ${pair.gz} (${census(fromGz)}) -> ${census(merged)}.`
+      `UNION committed ${pair.gz} (${census(fromGz)})` +
+      (fromFailed ? ` UNION failed-run ${FAILED_DIR}/${pair.plain} (${census(fromFailed)})` : '') +
+      ` -> ${census(merged)}.`
     );
   }
   return changed;
+}
+
+// keep-failed (founder 2026-10-23): in a failed run, keep the profiles it built. Returns true when it kept them.
+function keepFailed(root) {
+  const stats = readJson(path.join(root, 'profile-build-stats.json'));
+  const built = stats && Number(stats.opponentsBuilt) > 0;
+  const cache = readJson(path.join(root, PAIRS[0].plain));
+  if (!built || !cache || !cache.players) {
+    console.log(`keep-failed: nothing kept — ${!stats ? 'this run built no profiles (no profile-build-stats.json)' : !built ? 'this run built 0 profiles' : 'no readable profile cache'}.`);
+    return false;
+  }
+  fs.mkdirSync(path.join(root, FAILED_DIR), { recursive: true });
+  fs.writeFileSync(path.join(root, FAILED_DIR, PAIRS[0].plain), JSON.stringify(cache));
+  console.log(`keep-failed: kept ${PAIRS[0].plain} (${census(cache)}; ${stats.opponentsBuilt} built this run) in ${FAILED_DIR}/.`);
+  return true;
 }
 
 function freeze(root, opts) {
@@ -274,10 +301,13 @@ if (require.main === module) {
     hydrate(root);
   } else if (cmd === 'freeze') {
     freeze(root, { force: process.argv.includes('--force') });
+  } else if (cmd === 'keep-failed') {
+    const kept = keepFailed(root);
+    if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `keep=${kept}\n`);
   } else {
-    console.error('usage: profile-cache-store.js <hydrate|freeze> [--force]');
+    console.error('usage: profile-cache-store.js <hydrate|freeze|keep-failed> [--force]');
     process.exit(2);
   }
 }
 
-module.exports = { PAIRS, hydrate, freeze, stampOf, countPlayers, utcDay, maxSchemaVersion, schemaDrift };
+module.exports = { PAIRS, FAILED_DIR, keepFailed, hydrate, freeze, stampOf, countPlayers, utcDay, maxSchemaVersion, schemaDrift };

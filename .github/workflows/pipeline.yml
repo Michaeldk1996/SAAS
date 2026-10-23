@@ -282,6 +282,18 @@ jobs:
             bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-
             bsp-caches-v${{ steps.schema.outputs.v }}-
 
+      # Founder 2026-10-23 (outage prevention, item 4): the profile cache a FAILED run built, saved under its own key
+      # family by "Save the profile cache of a failed run" below. hydrate unions it with the cache restored above and the
+      # committed floor (higher schema wins, then the newer build), so a red run's rebuilt profiles are never lost.
+      # 22 Oct: every run failed the roster floor mid-convergence and, saving nothing, rebuilt the same 60 profiles for ~6 h.
+      - name: Restore the profile cache a failed run saved
+        uses: actions/cache/restore@v4
+        with:
+          path: .failed-run-cache/player-profiles-cache.json
+          key: bsp-profiles-failed-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            bsp-profiles-failed-v${{ steps.schema.outputs.v }}-
+
       # historical-match-stats.json is cached SEPARATELY, keyed by the content hash
       # of the committed floor. It used to sit in the list above, and that quietly
       # made a committed refresh of it a no-op: `restore-keys: bsp-caches-` matches
@@ -1709,6 +1721,21 @@ jobs:
             news-feed.json
             tournament-entries.json
           key: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      # Founder 2026-10-23 (outage prevention, item 4): a failed (or timed-out) run keeps the profiles it built. Only the
+      # profile cache, never the other caches (those may be half-built), and only when this run built profiles
+      # (tools/profile-cache-store.js keep-failed). Its own key family, restored and merged at the next run's hydrate.
+      - name: Keep the profile cache of a failed run
+        id: failedcache
+        if: failure() || cancelled()
+        run: node tools/profile-cache-store.js keep-failed
+
+      - name: Save the profile cache of a failed run
+        if: (failure() || cancelled()) && steps.failedcache.outputs.keep == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .failed-run-cache/player-profiles-cache.json
+          key: bsp-profiles-failed-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}-${{ github.run_id }}-${{ github.run_attempt }}
 
       # Founder ruling 2026-10-18: one Telegram per run listing every match the price check dashed (which match, which page
       # tripped, the likely cause), sent AFTER the upload so the message can never hold a publish back. A message that

@@ -179,3 +179,6 @@ price-quarantine.confirm.json
 .price-alert.txt
 .mutant-started-build.js
 .mutant-capture-fields.js
+
+# founder 2026-10-23: a failed run's kept profile cache (tools/profile-cache-store.js keep-failed), saved to the Actions cache only
+.failed-run-cache/
