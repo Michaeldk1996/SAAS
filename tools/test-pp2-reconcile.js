@@ -4455,6 +4455,70 @@ check('TEN-313: an edition W-L does not count a walkover received (tournViews)',
   const v = I.tournViews(p)[0];
   assert.deepStrictEqual([v.won, v.lost, v.reconciles], [1, 1, true]);
 });
+
+// TEN-344 (founder 2026-10-23, ported from c29dc76af): the same two surfaces over EVERY player of the store under test.
+const isWoRow = (m) => !!(m && (m.walkover || m.res === 'WD'));
+// 1 · Tournament header (stored t.won / t.lost) = the edition rows that were PLAYED.
+function woHeaderViolations(players) {
+  const out = [];
+  for (const p of Object.values(players)) for (const t of (p && p.tournamentHistory) || []) {
+    let w = 0, l = 0;
+    (t.editions || []).forEach((e) => (e.matches || []).forEach((m) => { if (isWoRow(m)) return; if (m.res === 'W') w++; else if (m.res === 'L') l++; }));
+    if ((t.won || 0) !== w || (t.lost || 0) !== l) out.push(`${p.name} / ${t.name}: header ${t.won}-${t.lost}, played ${w}-${l}`);
+  }
+  return out;
+}
+// A real tournament win, flipped to a walkover with its header left alone — precisely a header that counts a walkover.
+function woFirstWin(players) {
+  for (const k of Object.keys(players)) for (const t of (players[k] && players[k].tournamentHistory) || []) for (const e of t.editions || [])
+    for (const m of e.matches || []) if (m.res === 'W' && !isWoRow(m)) return { k, t: t.name, year: e.year, opp: m.opp };
+  return null;
+}
+const WO_WIN = woFirstWin(PLAYERS);
+function woFlipped() {
+  const p = JSON.parse(JSON.stringify(PLAYERS[WO_WIN.k]));
+  const e = p.tournamentHistory.find((t) => t.name === WO_WIN.t).editions.find((x) => x.year === WO_WIN.year);
+  e.matches.find((m) => m.res === 'W' && m.opp === WO_WIN.opp && !isWoRow(m)).walkover = true;
+  return p;
+}
+check('TEN-344 · tournament header: no stored tournament W-L counts a walkover (whole store)', () => {
+  assert.ok(WO_WIN, 'no tournament win anywhere in the store — the scan measured nothing');
+  const v = woHeaderViolations(PLAYERS);
+  assert.strictEqual(v.length, 0, `${v.length} header(s) count a walkover: ${v.slice(0, 3).join('; ')}`);
+  console.log(`        ${Object.values(PLAYERS).reduce((n, p) => n + ((p && p.tournamentHistory) || []).length, 0)} tournament headers scanned`);
+});
+mustFail('TEN-344 · tournament header: a header still counting a win that became a walkover is caught', () => {
+  assert.strictEqual(woHeaderViolations({ [WO_WIN.k]: woFlipped() }).length, 0);
+});
+// 2 · Edition rows as RENDERED (tournViews -> editions[].won / .lost), every player.
+function woEditionViolations(mod, players) {
+  const out = [];
+  for (const p of Object.values(players)) if (p) for (const v of mod.tournViews(p)) for (const e of v.editions || []) {
+    const ms = e.matches || [];
+    const w = ms.filter((m) => m.res === 'W' && !isWoRow(m)).length, l = ms.filter((m) => m.res === 'L' && !isWoRow(m)).length;
+    if (e.won !== w || e.lost !== l) out.push(`${p.name} / ${v.name} ${e.year}: row ${e.won}-${e.lost}, played ${w}-${l}`);
+  }
+  return out;
+}
+const WO_EDITION_ANCHOR = "ms.forEach(function (m) { if (m.walkover) return; if (m.res === 'W') w++; else if (m.res === 'L') l++; });";
+function woEditionMutant() {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  assert.strictEqual(src.split(WO_EDITION_ANCHOR).length - 1, 1, 'TEN-344 edition anchor not found exactly once — the control would be vacuous');
+  const saved = global.window;
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, courtSpeedMap: SPEED_MAP, COURT_CONDITIONS: DASH_SPEED.cc,
+    courtSpeedCategory: DASH_SPEED.cat, TournamentIdentity: require('../tournament-identity.js') };
+  global.window = sb;
+  try { new Function('window', src.replace(WO_EDITION_ANCHOR, WO_EDITION_ANCHOR.replace('if (m.walkover) return; ', '')))(sb); } finally { global.window = saved; }
+  return sb.PlayerProfileV2._internals;
+}
+check('TEN-344 · edition rows: no rendered edition W-L counts a walkover (tournViews, whole store)', () => {
+  const v = woEditionViolations(I, PLAYERS);
+  assert.strictEqual(v.length, 0, `${v.length} edition row(s) count a walkover: ${v.slice(0, 3).join('; ')}`);
+  assert.strictEqual(woEditionViolations(I, { [WO_WIN.k]: woFlipped() }).length, 0, 'a walkover flipped into a real edition was counted');
+});
+mustFail('TEN-344 · edition rows: the edition count without its walkover guard is caught', () => {
+  assert.strictEqual(woEditionViolations(woEditionMutant(), { [WO_WIN.k]: woFlipped() }).length, 0);
+});
 // (TEN-442: the season drill no longer reads tournament-history editions, so drillSpine's walkover skip is gone with
 // it. The store it reads, career-history, carries no walkover by construction — tools/test-ten313-records.js
 // "N2 writer: no walkover (either side, either half) reaches the shard".)
