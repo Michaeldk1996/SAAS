@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-23T16:52:04.003Z",
+ "generatedAt": "2026-10-23T19:57:35.851Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "7ec3834b6e7664ab8b132bcd7db2c76223ff099e",
-  "at": "2026-10-23T16:30:42Z"
+  "commit": "df7a7683f42605177e1569527d945b651d43f7d2",
+  "at": "2026-10-23T19:34:09Z"
  },
- "commitsScanned": 5758,
+ "commitsScanned": 5772,
  "lastRun": {
-  "from": "2026-10-23T15:15:41Z",
-  "snapshots": 9,
-  "added": 0,
-  "replaced": 2,
-  "series": 62,
-  "kept": 55,
+  "from": "2026-10-23T16:30:42Z",
+  "snapshots": 15,
+  "added": 3,
+  "replaced": 0,
+  "series": 65,
+  "kept": 58,
   "bySource": {
-   "api-tennis-live": 55
+   "api-tennis-live": 58
   },
   "byBook": {
-   "Pinnacle +30s": 55
+   "Pinnacle +30s": 58
   },
   "dropped": {
    "noStart": 7
@@ -10309,6 +10309,23 @@
    "event": "ATP Almaty"
   },
   {
+   "eventKey": 12173573,
+   "date": "2026-10-23",
+   "p1Key": 1759,
+   "p2Key": 10884,
+   "p1Name": "A. Fils",
+   "p2Name": "A. Michelsen",
+   "p1": 1.52,
+   "p2": 2.73,
+   "at": "2026-10-23T16:19:05.027Z",
+   "trueStart": "2026-10-23T16:39:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
    "eventKey": 12173593,
    "date": "2026-10-23",
    "p1Key": 1099,
@@ -10319,6 +10336,40 @@
    "p2": 1.256,
    "at": "2026-10-23T15:02:37.184Z",
    "trueStart": "2026-10-23T15:03:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
+  },
+  {
+   "eventKey": 12173612,
+   "date": "2026-10-23",
+   "p1Key": 2831,
+   "p2Key": 1064,
+   "p1Name": "J-L. Struff",
+   "p2Name": "Z. Bergs",
+   "p1": 2.87,
+   "p2": 1.48,
+   "at": "2026-10-23T16:49:06.743Z",
+   "trueStart": "2026-10-23T18:39:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Brussels - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12173645,
+   "date": "2026-10-23",
+   "p1Key": 372,
+   "p2Key": 2838,
+   "p1Name": "F. Cobolli",
+   "p2Name": "B. Nakashima",
+   "p1": 3,
+   "p2": 1.446,
+   "at": "2026-10-23T16:29:38.093Z",
+   "trueStart": "2026-10-23T16:44:59.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
    "round": "ATP Lyon - Quarter-finals",
