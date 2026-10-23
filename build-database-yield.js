@@ -487,7 +487,28 @@ const LOWER_B365_ROOT = process.env.DB_YIELD_B365_ROOT || __dirname;   // bet365
   if (!fs.existsSync(path.join(LOWER_B365_ROOT, 'bet365-history')) || !fs.existsSync(chDir)) { console.log('lower levels: no bet365-history or career-history — no captured Bet365 rows'); return; }
   const mc = require('./build-match-closes.js');
   const st = {};
-  const caps = mc.capturedBet365(LOWER_B365_ROOT, mc.makeCommaResolver(mc.rosterNames(LOWER_B365_ROOT)), st);
+  // founder 2026-10-23: the capture is matched to its player on a STABLE roster — today's board (rosterNames) plus every
+  // ranked player (player-index.json, the ATP standings) and every career-history player — so a player leaving the board at
+  // the day change no longer drops his past captured prices (23 Oct 00:00Z: 185 -> 176 rows, the archive gate's 2 lost
+  // matches). The stable names only find the key; the name a row prints still comes from the board roster, else the capture.
+  // Measured 23 Oct on the live inputs: with the board cut in half, today's code lost 14 lower-level matches and moved 79 to
+  // api-tennis's Bet365; the stable roster lost none (tools/test-b365-stable-roster.js locks it on a fixture).
+  const stable = new Map([...mc.rosterNames(LOWER_B365_ROOT)].map(([k, v]) => [k, new Set(v)]));
+  const addStable = (k, n) => { if (k == null || !n) return; const key = String(k); if (!stable.has(key)) stable.set(key, new Set()); stable.get(key).add(String(n)); };
+  const readOr = (f, d) => { try { return JSON.parse(fs.readFileSync(path.join(LOWER_B365_ROOT, f), 'utf8')); } catch (e) { return d; } };
+  (readOr('player-index.json', {}).players || []).forEach(x => addStable(x.key, x.name));
+  Object.entries(readOr('career-history-index.json', {}).players || {}).forEach(([k, v]) => addStable(k, v && v.name));
+  // every opponent spelling the career-history store holds (the board's form/ shards gave these only for today's players),
+  // for a player we know by key — ranked, or with his own history file — never an opponent-only key (api-tennis files some
+  // players under two keys; an opponent-only twin made a name two keys share, so it joined no one)
+  const known = new Set(stable.keys());
+  if (fs.existsSync(chDir)) for (const f of fs.readdirSync(chDir)) if (/^\d+\.json$/.test(f)) known.add(f.slice(0, -5));
+  if (fs.existsSync(chDir)) for (const f of fs.readdirSync(chDir)) {
+    if (!/^\d+\.json$/.test(f)) continue;
+    const d = readOr(path.join('career-history', f), null);
+    ((d && d.matches) || []).forEach(m => { if (m.oppKey != null && known.has(String(m.oppKey))) addStable(m.oppKey, m.opponent); });
+  }
+  const caps = mc.capturedBet365(LOWER_B365_ROOT, mc.makeCommaResolver(stable), st);
   const shard = new Map(); const rowsOf = k => { if (!shard.has(k)) { let d = null; try { d = JSON.parse(fs.readFileSync(path.join(chDir, `${k}.json`), 'utf8')); } catch (e) { d = null; } shard.set(k, d ? d.matches || [] : null); } return shard.get(k); };
   const dayN = s => Date.parse(String(s).slice(0, 10)) / 864e5;
   for (const c of caps) {
