@@ -1,17 +1,17 @@
 {
- "generatedAt": "2026-10-23T15:34:46.253Z",
+ "generatedAt": "2026-10-23T16:52:04.003Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "3ca85428924cb2ff43f003ba0ebb4d8bc31aea31",
-  "at": "2026-10-23T15:15:41Z"
+  "commit": "7ec3834b6e7664ab8b132bcd7db2c76223ff099e",
+  "at": "2026-10-23T16:30:42Z"
  },
- "commitsScanned": 5750,
+ "commitsScanned": 5758,
  "lastRun": {
-  "from": "2026-10-23T10:34:39Z",
-  "snapshots": 22,
-  "added": 5,
-  "replaced": 0,
+  "from": "2026-10-23T15:15:41Z",
+  "snapshots": 9,
+  "added": 0,
+  "replaced": 2,
   "series": 62,
   "kept": 55,
   "bySource": {
@@ -10298,9 +10298,9 @@
    "p2Key": 435,
    "p1Name": "A. Bublik",
    "p2Name": "K. Khachanov",
-   "p1": 1.909,
-   "p2": 2,
-   "at": "2026-10-23T14:08:18.529Z",
+   "p1": 1.854,
+   "p2": 2.06,
+   "at": "2026-10-23T14:31:53.359Z",
    "trueStart": "2026-10-23T14:33:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
@@ -10317,7 +10317,7 @@
    "p2Name": "T. Fritz",
    "p1": 4.38,
    "p2": 1.256,
-   "at": "2026-10-23T11:26:54.492Z",
+   "at": "2026-10-23T15:02:37.184Z",
    "trueStart": "2026-10-23T15:03:07.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s",
