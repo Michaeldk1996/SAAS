@@ -144,6 +144,16 @@ check('Quotes: no initial with two same-surname entrants, or an initial that fit
 check('Quotes: no edition on record for that season, or no entrant of that surname = monogram (null)', QK('T. Daniel', 'Madrid', 2021) === null && QK('D. Rincon', 'Madrid', 2026) === null);
 check('Quotes: Roland Garros reads the French Open profile (J. Sinner 2025 -> 2072)', QK('J. Sinner', 'Roland Garros', 2025) === '2072');
 
+// ── 7. Ratings: the published store carries the row's player ID (the whitelist, not the push) ───────────────────────
+// 2026-10-23: rows.push carried key, the serialisation whitelist did not, and a real rebuild shipped 0 of 237 IDs.
+const SR = fs.readFileSync(path.join(ROOT, 'surface-ratings.js'), 'utf8');
+const serial = (src) => { const m = src.match(/\n\s*players: rows\.map\(r => \(\{([^}]*)\}\)\)/); return m ? m[1] : null; };
+const names = (fields) => (fields || '').split(',').map((s) => s.split(':')[0].trim()).filter(Boolean);
+check('Ratings: the published store names key (the row\'s player ID) — the field the board resolves its photo by',
+  names(serial(SR)).includes('key') && /rows\.push\(\{ key: meta\.key,/.test(SR), serial(SR));
+check('control: the pre-fix whitelist (no key) is caught',
+  !names(serial("\n    players: rows.map(r => ({ name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),")).includes('key'));
+
 // ── 6. The Wikimedia map is out of the pipeline (founder 2026-10-23) ───────────────────────────────────────────────
 const PIPE = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
 check('player-photos.json: not published, and the map, its generator and its validator are gone',

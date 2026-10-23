@@ -813,7 +813,8 @@ if (require.main === module) (async () => {
     // JSON.stringify discards undefined, so there was no error and no empty field to
     // notice — just a missing key. Locked by tools/test-ten254-chall-resolution.js,
     // which now asserts the serialisation names it.
-    players: rows.map(r => ({ name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),
+    // `key` (founder 2026-10-22): the player ID the Ratings board resolves its photo by — named here or it never ships.
+    players: rows.map(r => ({ key: r.key, name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),
   };
   const dest = path.join(__dirname, 'surface-ratings.json');
   const tmp = dest + '.tmp';

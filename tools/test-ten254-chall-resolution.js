@@ -176,8 +176,8 @@ async function main() {
     const SR = path.join(ROOT, 'surface-ratings.js');
     const orig = fs.readFileSync(SR, 'utf8');
     const mutated = orig.replace(
-      'players: rows.map(r => ({ name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),',
-      'players: rows.map(r => ({ name: r.name, rank: r.rank, surfaces: r.surfaces })),');
+      'players: rows.map(r => ({ key: r.key, name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),',
+      'players: rows.map(r => ({ key: r.key, name: r.name, rank: r.rank, surfaces: r.surfaces })),');
     assert.notStrictEqual(mutated, orig, 'the whitelist mutant did not apply — it proves nothing');
     const ser = /players:\s*rows\.map\(([\s\S]{0,240}?)\)\),/.exec(mutated);
     assert.ok(ser, 'mutant unparseable');
