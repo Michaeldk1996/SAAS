@@ -6534,6 +6534,23 @@
   function lcSpeedOf(v) { return v === 'unrated' || bandById(v) ? v : 'all'; }
   function bandById(id) { for (var i = 0; i < SPEED_BANDS.length; i++) if (SPEED_BANDS[i].id === id) return SPEED_BANDS[i]; return null; }
   function lcSpeedBucket(r) { var b = speedBandForRow(speedRowOf(r)); return b ? b.id : 'unrated'; }
+  // Founder approval 2026-10-23 · the FIELD: this line's cover record over every player in the database under the same
+  // Window, Tier, format, card, Surface and Court speed (derived-field.json, tools/build-derived-field.js — built from the
+  // page's own lineCoverage, so the same exclusions and void rule). Bridged by the host (pp2Field / pp2FieldNeed). Null =
+  // no figure (not loaded, nobody played it, or Challenger & ITF on a favourite / underdog card, where nothing is priced:
+  // left blank by ruling). A field of n < 10 (the player's own thin threshold) is shown dimmed.
+  var LC_TIER_WORD = { all: 'All', atp: 'ATP', chitf: 'Challenger & ITF' };
+  function lcFieldOf(d, fmt, label) {
+    if (d.tier === 'chitf' && d.role !== 'all') return null;
+    var f = typeof window.pp2Field === 'function' ? window.pp2Field() : null;
+    if (!f || f.st !== 'ready' || !f.d) return null;
+    var labels = f.d.lines && f.d.lines[fmt], i = labels ? labels.indexOf(label) : -1;
+    var cell = f.d.cells[[d.win, d.tier, fmt, d.role, d.surf, d.speed].join('|')];
+    var t = i >= 0 && cell ? cell[i] : null;
+    var rn = t ? t[0] + t[1] : 0;
+    if (!rn) return null;
+    return { cover: t[0], miss: t[1], voids: t[2], players: t[3], n: rn, rate: 100 * t[0] / rn, thin: rn < 10 };
+  }
 
   /** A format the lines do not read (founder rulings 2026-10-22: NextGen and match-tiebreak matches are out of
    *  every derived line), or null for a standard one:
@@ -6822,9 +6839,11 @@
         '</div>';
     }
 
-    var GRID = 'display:grid;grid-template-columns:92px 150px minmax(0,1fr) 64px 100px;gap:0 12px;';
+    // Founder 2026-10-23 · Rate · Record · Field · vs Field (the Field header names the active tier)
+    if (typeof window.pp2FieldNeed === 'function') window.pp2FieldNeed();
+    var GRID = 'display:grid;grid-template-columns:92px 150px minmax(0,1fr) 64px 100px 96px 72px;gap:0 12px;';
     var colHead = '<div data-lc="table" style="' + GRID + 'align-items:end;padding:0 4px 8px;border-bottom:1px solid var(--line);">' +
-      ['Family', 'Line', 'Cover rate', 'Rate', 'Record'].map(function (c, i) {
+      ['Family', 'Line', 'Cover rate', 'Rate', 'Record', 'Field (' + LC_TIER_WORD[tier] + ')', 'vs Field'].map(function (c, i) {
         return '<span style="' + MK_CAPS + (i > 2 ? 'text-align:right;' : '') + '">' + esc(c) + '</span>';
       }).join('') + '</div>';
 
@@ -6860,6 +6879,20 @@
             ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n - r.voids) + '</span>'
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
           '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
+          // the Field and the gap to it: a comparison with other players, so neutral ink (never green / red); dimmed when
+          // either side is thin
+          (function () {
+            var fl = lcFieldOf(d, fmt, r.label);
+            var fTxt = fl ? fl.rate.toFixed(1) + '%' : DASH;
+            var gap = fl && r.rate != null ? Math.round((r.rate - fl.rate) * 10) / 10 : null;
+            var gTxt = gap == null ? DASH : (gap > 0 ? '+' : gap < 0 ? MINUS : '') + Math.abs(gap).toFixed(1) + 'pp';
+            var dim = function (thin) { return thin ? 'var(--text-label)' : 'var(--text)'; };
+            return '<span data-lc-field="' + (fl ? fl.cover + '-' + fl.miss : '') + '" title="' + (fl ? esc(fl.cover + ENDASH + fl.miss +
+                (fl.voids ? ' (' + fl.voids + ' void)' : '') + ' over ' + fl.players + ' player' + (fl.players === 1 ? '' : 's')) : '') + '" ' +
+                'style="' + MK_MONO + 'font-size:12.5px;text-align:right;white-space:nowrap;color:' + (fl ? dim(fl.thin) : DASH_COLOUR) + ';">' + fTxt + '</span>' +
+              '<span data-lc-vsfield="' + (gap == null ? '' : gap) + '" style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap;color:' +
+                (gap == null ? DASH_COLOUR : dim(fl.thin || r.thin)) + ';">' + gTxt + '</span>';
+          }()) +
         '</div>' + (open && r.n ? renderLineDrill(p, d, g, r) : '');
       }).join('');
     }).join('');
@@ -6868,7 +6901,10 @@
     var note = 'Lines are derived from set scores, not from settled markets ' + EMDASH + ' these are ' +
       'coverage rates, not results against a priced line. Bo3 and Bo5 are counted separately because the ' +
       'same line means a different bet in each. The tick on every bar marks ' + LC_HOT + '% cover. ' +
-      'Click All matches, As favourite or As underdog to switch the table, and a line to list its matches.';
+      'Click All matches, As favourite or As underdog to switch the table, and a line to list its matches. ' +
+      'Field (' + LC_TIER_WORD[tier] + ') is the same line' + EMDASH + 'same filters, same rules' + EMDASH + 'over every player in our ' +
+      'database, each from his own side; vs Field is this player' + '’' + 's rate minus it, in points.' +
+      (tier === 'chitf' && role !== 'all' ? ' Challenger & ITF matches carry no closing price, so the field has no favourite or underdog.' : '');
     if (fmt === 'bo3') {
       note += ' On ±3 games a match decided by exactly 3 games is a void: the record reads covered' + ENDASH + 'void' +
         ENDASH + 'not covered, and the rate leaves voids out.';
@@ -12232,7 +12268,7 @@
       earlyRoundsRow: earlyRoundsRow,
       drawGrainHtml: drawGrainHtml,
       // §5.8 Derived lines
-      lineCoverage: lineCoverage, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf,
+      lineCoverage: lineCoverage, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf, lcFieldOf: lcFieldOf,
       renderLinesTab: renderLinesTab,
       lineSetCount: lineSetCount,
       lineGames: lineGames,

@@ -3863,6 +3863,22 @@ const STORES = [
         return before + after;
       } finally { W.careerRecord = saved.cr; W.careerRecordMeta = saved.m; }
     } },
+  // Founder approval 2026-10-23 · the Derived lines FIELD (derived-field.json, built each pipeline run by
+  // tools/build-derived-field.js; the host bridges its state as window.pp2Field()). Built by construction and read through
+  // the page's own lcFieldOf: a filled cell resolves its rate, a Challenger & ITF favourite cell stays blank (ruling).
+  { name: 'pp2Field', file: 'derived-field.json', universe: () => 2, floor: 1,
+    resolve: () => {
+      const W = global.window, saved = W.pp2Field;
+      try {
+        const cell = [[7, 3, 0, 4]];
+        W.pp2Field = () => ({ st: 'ready', d: { lines: { bo3: ['−4.5 games'] },
+          cells: { 'career|all|bo3|all|all|all': cell, 'career|chitf|bo3|fav|all|all': cell } } });
+        const d = { win: 'career', tier: 'all', role: 'all', surf: 'all', speed: 'all' };
+        const f = I.lcFieldOf(d, 'bo3', '−4.5 games');
+        const blank = I.lcFieldOf(Object.assign({}, d, { tier: 'chitf', role: 'fav' }), 'bo3', '−4.5 games');
+        return (f && f.rate === 70 && f.players === 4 ? 1 : 0) + (blank === null ? 1 : 0);
+      } finally { W.pp2Field = saved; }
+    } },
 ];
 
 for (const s of STORES) {
@@ -4042,6 +4058,9 @@ check('the all-stores table covers every data store the module reads', () => {
     // price join over the page's already-loaded Database rows + career-history (pp2DrawJoin), and the opponent profile
     // link (pp2HasProfile over the standings, pp2OpenProfile = psOpenProfile) — triggers and logic, no store of their own
     'pp2DrawNeed', 'pp2DrawMatches', 'pp2DrawJoin', 'pp2HasProfile', 'pp2OpenProfile',
+    // founder 2026-10-23: the Derived lines Field's fetch trigger (pp2FieldNeed: one fetch per session) — a trigger; the
+    // field itself (pp2Field) is a store with its own row above
+    'pp2FieldNeed',
     // founder 2026-10-16 (round 3, item 1): the host's one source wording for a price (fhSrcTitle, the Match analysis
     // Tournament tab's words) — Record per tournament's H / A hover reads it; a display function, no rows
     'fhSrcTitle',

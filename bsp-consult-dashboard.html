@@ -22596,6 +22596,23 @@ function pp2DrawNeed(key){
 window.pp2DrawNeed = pp2DrawNeed;
 /** { st: 'pending' | 'ready' | 'none' | 'failed', d } — read only; never starts a fetch. */
 window.pp2DrawMatches = function(key){ return _pp2Draw[String(key)] || { st: 'idle' }; };
+// Founder approval 2026-10-23 · the Derived lines FIELD (derived-field.json: each line's cover record over every player in
+// the database, per Window x Tier x format x card x Surface x Court speed; built each pipeline run by
+// tools/build-derived-field.js). Fetched once, when a Derived lines table first asks (pp2FieldNeed), never at profile
+// open. 404 = no field this run ('none', the column dashes); a failure is asked again on the next paint.
+let _pp2Field = { st: 'idle', d: null };
+function pp2FieldNeed(){
+  if (_pp2Field.st === 'pending' || _pp2Field.st === 'ready' || _pp2Field.st === 'none') return;
+  _pp2Field = { st: 'pending', d: null };
+  fetch('./derived-field.json', { cache: 'no-cache' })
+    .then(r => (r.status === 404 ? null : r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status))))
+    .then(d => { _pp2Field = d && d.cells && d.lines ? { st: 'ready', d } : { st: 'none', d: null }; },
+          () => { _pp2Field = { st: 'failed', d: null }; })
+    .then(() => pp2RepaintIfOpen(ppState.key));
+}
+window.pp2FieldNeed = pp2FieldNeed;
+/** { st: 'idle' | 'pending' | 'ready' | 'none' | 'failed', d } — read only; never starts a fetch. */
+window.pp2Field = function(){ return _pp2Field; };
 // Prices rows [{ date (ISO), won, round, opp }] in place on the one join and sets each row's careerMatch. Returns
 // 'pending' (career-history or the Database rows not answered), 'failed' (either failed) or 'ready'.
 window.pp2DrawJoin = function(key, name, rows){

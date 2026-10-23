@@ -182,3 +182,6 @@ price-quarantine.confirm.json
 
 # founder 2026-10-23: a failed run's kept profile cache (tools/profile-cache-store.js keep-failed), saved to the Actions cache only
 .failed-run-cache/
+# Founder 2026-10-23: Derived lines Field, built each pipeline run (tools/build-derived-field.js), never committed
+derived-field.json
+derived-field.json.tmp
