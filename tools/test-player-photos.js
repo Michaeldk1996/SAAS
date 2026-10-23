@@ -143,6 +143,25 @@ check('Quotes: the initial separates same-surname entrants (F. Cerundolo -> Fran
 check('Quotes: no initial with two same-surname entrants, or an initial that fits neither = monogram (null)', QK('Cerundolo', 'Madrid', 2026) === null && QK('X. Cerundolo', 'Madrid', 2026) === null);
 check('Quotes: no edition on record for that season, or no entrant of that surname = monogram (null)', QK('T. Daniel', 'Madrid', 2021) === null && QK('D. Rincon', 'Madrid', 2026) === null);
 check('Quotes: Roland Garros reads the French Open profile (J. Sinner 2025 -> 2072)', QK('J. Sinner', 'Roland Garros', 2025) === '2072');
+// round 3b: Sackmann main draw for a season the store lacks; qualifying entrants join the pool; a key-null match = monogram
+qctx.tourxQuoteEntrants = {
+  'Monte Carlo|2021': { main: [{ name: 'Daniel Evans', key: '2835' }, { name: 'Novak Djokovic', key: '1' }], qual: [{ name: 'Mackenzie Evans', key: null }] },
+  'Madrid|2026': { qual: [{ name: 'Daniel Rincon', key: null }, { name: 'Felipe Daniel', key: null }] },
+  'Madrid|2023': { qual: [{ name: 'Daniel Rincon', key: null }] } };
+check('Quotes 3b: a pre-2022 season reads Sackmann\'s main draw; the initial separates a qualifier of the same surname (D. Evans -> 2835)', QK('D. Evans', 'Monte Carlo', 2021) === '2835');
+check('Quotes 3b: no initial and a same-surname qualifier = ambiguous = monogram (Evans)', QK('Evans', 'Monte Carlo', 2021) === null);
+check('Quotes 3b: a unique qualifier with no ID chain = monogram, never a guessed ID (D. Rincon, Madrid 2023)', QK('D. Rincon', 'Madrid', 2023) === null);
+check('Quotes 3b: a qualifier sharing a store entrant\'s surname makes it ambiguous unless the initial separates (T. Daniel -> 2406 stays; Daniel alone null)',
+  QK('T. Daniel', 'Madrid', 2026) === '2406' && QK('Daniel', 'Madrid', 2026) === null);
+const QE = JSON.parse(fs.readFileSync(path.join(ROOT, 'quote-entrants.json'), 'utf8'));
+const qeBad = [];
+for (const [k, e] of Object.entries(QE.events || {})) {
+  (e.main || []).forEach((x) => { if (x.key != null && !aliases[x.key]) qeBad.push(k + ' ' + x.name + ' key ' + x.key + ' has no alias (the ID chain is code -> alias)'); });
+  (e.qual || []).forEach((x) => { if (x.key != null) qeBad.push(k + ' qualifier ' + x.name + ' carries a key (no ID chain exists for qualifiers)'); });
+}
+check('quote-entrants.json: every main-draw key came through the alias map; no qualifier carries a key', Object.keys(QE.events || {}).length > 0 && qeBad.length === 0, qeBad.slice(0, 5).join('; '));
+check('quote-entrants.json is published (pipeline copy) — committed but not copied = a silent 404', PIPE_QE());
+function PIPE_QE() { return fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8').includes('cp quote-entrants.json _site/'); }
 
 // ── 7. Ratings: the published store carries the row's player ID (the whitelist, not the push) ───────────────────────
 // 2026-10-23: rows.push carried key, the serialisation whitelist did not, and a real rebuild shipped 0 of 237 IDs.
