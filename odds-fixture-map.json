@@ -5149,7 +5149,7 @@
     },
     "12173254": {
       "fixtureId": "id1204195975620036",
-      "mappedAt": "2026-10-21T14:03:57Z",
+      "mappedAt": "2026-10-23T02:31:21Z",
       "orient": "same",
       "p1": "N. Basilashvili",
       "p2": "A. Mannarino",
@@ -5287,23 +5287,12 @@
       "observedSpanDays": 18.72,
       "projectedTtlUnitsPerDay": 2.8,
       "runs": 400,
-      "spentRuns": 165,
+      "spentRuns": 166,
       "ttlBitRuns": 53,
       "ttlBitShare": 0.133,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-04T08:15:24Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 1,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 7
-      },
       {
         "at": "2026-10-04T09:15:29Z",
         "fixturesUnitsSpent": 1,
@@ -9692,9 +9681,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 13
+      },
+      {
+        "at": "2026-10-23T02:31:21Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 13
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-22T23:01:19Z"
+  "updatedAt": "2026-10-23T02:31:21Z"
 }
