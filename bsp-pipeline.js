@@ -38,7 +38,14 @@ const { attachWue, lookupWue } = require('./atp-entry-fallback');
 // row arrives as a literal "0" for both players; it is read as NOT SENT (null),
 // never as a real 0. One rule, shared with build-point-by-point.js and
 // tools/match-stats-store.js — see match-stat-placeholders.js.
-const { sanitizeFixture, sanitizeFixtures, parseCount, sanitizeMatchStatsStore } = require('./match-stat-placeholders');
+const { sanitizeFixture: sanitizeFixtureStats, parseCount, sanitizeMatchStatsStore } = require('./match-stat-placeholders');
+// Founder 2026-10-23: api-tennis re-imported ITF events with `event_winner: null` on matches still "Finished"; every
+// reader skips a winnerless fixture, so they left career-history. The winner is read back from the vendor's own score —
+// only a complete, unambiguous one (fixture-winner.js) — at the one place every fetched fixture passes, so every reader
+// (records, form, H2H, draws) sees the same fixture.
+const { fillWinnerFromScore } = require('./fixture-winner');
+const sanitizeFixture = (fx) => (fx ? fillWinnerFromScore(sanitizeFixtureStats(fx)) : fx);
+const sanitizeFixtures = (list) => { if (Array.isArray(list)) for (const fx of list) sanitizeFixture(fx); return list; };
 // TEN-371: the pre-publish gate reads these players by key with no stand-in, so
 // their profiles are always built: first, and outside the per-run build budget.
 const PINNED_PROFILE_KEYS = new Set(Object.values(require('./pp2-fixture-players')));
