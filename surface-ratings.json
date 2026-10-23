@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T00:32:53.189Z",
+  "generatedAt": "2026-10-23T01:22:45.265Z",
   "source": "Self-derived — tour-level from Jeff Sackmann tennis_atp schema (Tennismylife/TML-Database), with a Challenger fallback sourced LIVE from api-tennis event_type_key=281 (Challenger Men Singles, dense 2024+, refreshed weekly) folded into serve, return AND under-pressure for players thin at tour level, Challenger success discounted x0.9 — no ATP/Infosys data",
   "scopes": {
     "career": "2010-2026 all qualifying matches",
@@ -39,6 +39,7 @@
   },
   "players": [
     {
+      "key": "2382",
       "name": "C. Alcaraz",
       "rank": 1,
       "challResolved": true,
@@ -526,6 +527,7 @@
       }
     },
     {
+      "key": "2072",
       "name": "J. Sinner",
       "rank": 2,
       "challResolved": true,
@@ -1012,6 +1014,7 @@
       }
     },
     {
+      "key": "1980",
       "name": "A. Zverev",
       "rank": 3,
       "challResolved": true,
@@ -1499,6 +1502,7 @@
       }
     },
     {
+      "key": "1905",
       "name": "N. Djokovic",
       "rank": 4,
       "challResolved": true,
@@ -1985,6 +1989,7 @@
       }
     },
     {
+      "key": "2073",
       "name": "F. Auger-Aliassime",
       "rank": 5,
       "challResolved": true,
@@ -2442,7 +2447,7 @@
               "rating": 240.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 72.4
+              "index": 72.5
             },
             "mental": {
               "pw": 412,
@@ -2472,6 +2477,7 @@
       }
     },
     {
+      "key": "1106",
       "name": "A. De Minaur",
       "rank": 6,
       "challResolved": true,
@@ -2958,6 +2964,7 @@
       }
     },
     {
+      "key": "2849",
       "name": "L. Musetti",
       "rank": 7,
       "challResolved": true,
@@ -3175,7 +3182,7 @@
               "rating": 239.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 73.7
+              "index": 73.9
             },
             "mental": {
               "pw": 160,
@@ -3444,6 +3451,7 @@
       }
     },
     {
+      "key": "2832",
       "name": "T. Fritz",
       "rank": 9,
       "challResolved": true,
@@ -3931,6 +3939,7 @@
       }
     },
     {
+      "key": "2973",
       "name": "B. Shelton",
       "rank": 9,
       "challResolved": true,
@@ -4148,7 +4157,7 @@
               "rating": 271.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.7
+              "index": 79.9
             },
             "mental": {
               "pw": 77,
@@ -4388,7 +4397,7 @@
               "rating": 237.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 84
+              "index": 84.1
             },
             "mental": {
               "pw": 314,
@@ -4418,6 +4427,7 @@
       }
     },
     {
+      "key": "7011",
       "name": "J. Draper",
       "rank": 10,
       "challResolved": true,
@@ -4875,7 +4885,7 @@
               "rating": 234.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 82.5
+              "index": 82.6
             },
             "mental": {
               "pw": 393,
@@ -4905,6 +4915,7 @@
       }
     },
     {
+      "key": "1895",
       "name": "A. Bublik",
       "rank": 11,
       "challResolved": true,
@@ -5392,6 +5403,7 @@
       }
     },
     {
+      "key": "430",
       "name": "C. Ruud",
       "rank": 12,
       "challResolved": true,
@@ -5852,6 +5864,7 @@
       }
     },
     {
+      "key": "1093",
       "name": "D. Medvedev",
       "rank": 13,
       "challResolved": true,
@@ -6338,6 +6351,7 @@
       }
     },
     {
+      "key": "2842",
       "name": "A. Davidovich Fokina",
       "rank": 14,
       "challResolved": true,
@@ -6825,6 +6839,7 @@
       }
     },
     {
+      "key": "437",
       "name": "H. Rune",
       "rank": 15,
       "challResolved": true,
@@ -7312,6 +7327,7 @@
       }
     },
     {
+      "key": "2847",
       "name": "A. Rublev",
       "rank": 16,
       "challResolved": true,
@@ -7799,6 +7815,7 @@
       }
     },
     {
+      "key": "435",
       "name": "K. Khachanov",
       "rank": 17,
       "challResolved": true,
@@ -8286,6 +8303,7 @@
       }
     },
     {
+      "key": "902",
       "name": "J. Mensik",
       "rank": 18,
       "challResolved": true,
@@ -8772,6 +8790,7 @@
       }
     },
     {
+      "key": "2959",
       "name": "J. Lehecka",
       "rank": 19,
       "challResolved": true,
@@ -9258,6 +9277,7 @@
       }
     },
     {
+      "key": "1894",
       "name": "T. Paul",
       "rank": 20,
       "challResolved": true,
@@ -9744,6 +9764,7 @@
       }
     },
     {
+      "key": "1104",
       "name": "F. Cerundolo",
       "rank": 21,
       "challResolved": true,
@@ -10230,6 +10251,7 @@
       }
     },
     {
+      "key": "1759",
       "name": "A. Fils",
       "rank": 21,
       "challResolved": true,
@@ -10689,6 +10711,7 @@
       }
     },
     {
+      "key": "372",
       "name": "F. Cobolli",
       "rank": 22,
       "challResolved": true,
@@ -11176,6 +11199,7 @@
       }
     },
     {
+      "key": "427",
       "name": "T. Griekspoor",
       "rank": 25,
       "challResolved": true,
@@ -11662,6 +11686,7 @@
       }
     },
     {
+      "key": "8781",
       "name": "L. Darderi",
       "rank": 25,
       "challResolved": true,
@@ -12149,6 +12174,7 @@
       }
     },
     {
+      "key": "10520",
       "name": "L. Tien",
       "rank": 26,
       "challResolved": true,
@@ -12634,6 +12660,7 @@
       }
     },
     {
+      "key": "1902",
       "name": "A. Rinderknech",
       "rank": 27,
       "challResolved": true,
@@ -13121,6 +13148,7 @@
       }
     },
     {
+      "key": "1103",
       "name": "C. Norrie",
       "rank": 28,
       "challResolved": true,
@@ -13608,6 +13636,7 @@
       }
     },
     {
+      "key": "40058",
       "name": "J. Fonseca",
       "rank": 29,
       "challResolved": true,
@@ -14095,6 +14124,7 @@
       }
     },
     {
+      "key": "2846",
       "name": "F. Tiafoe",
       "rank": 30,
       "challResolved": true,
@@ -14581,6 +14611,7 @@
       }
     },
     {
+      "key": "1852",
       "name": "V. Vacherot",
       "rank": 31,
       "challResolved": true,
@@ -15014,6 +15045,7 @@
       }
     },
     {
+      "key": "2838",
       "name": "B. Nakashima",
       "rank": 33,
       "challResolved": true,
@@ -15501,6 +15533,7 @@
       }
     },
     {
+      "key": "2674",
       "name": "C. Moutet",
       "rank": 35,
       "challResolved": true,
@@ -15988,6 +16021,7 @@
       }
     },
     {
+      "key": "2982",
       "name": "A. Tabilo",
       "rank": 35,
       "challResolved": true,
@@ -16448,6 +16482,7 @@
       }
     },
     {
+      "key": "1105",
       "name": "U. Humbert",
       "rank": 36,
       "challResolved": true,
@@ -16935,6 +16970,7 @@
       }
     },
     {
+      "key": "39913",
       "name": "A. Blockx",
       "rank": 36,
       "challResolved": true,
@@ -17412,6 +17448,7 @@
       }
     },
     {
+      "key": "431",
       "name": "D. Shapovalov",
       "rank": 37,
       "challResolved": true,
@@ -17899,6 +17936,7 @@
       }
     },
     {
+      "key": "2083",
       "name": "J. Munar",
       "rank": 38,
       "challResolved": true,
@@ -18385,6 +18423,7 @@
       }
     },
     {
+      "key": "1064",
       "name": "Z. Bergs",
       "rank": 39,
       "challResolved": true,
@@ -18872,6 +18911,7 @@
       }
     },
     {
+      "key": "9909",
       "name": "G. Diallo",
       "rank": 40,
       "challResolved": true,
@@ -19359,6 +19399,7 @@
       }
     },
     {
+      "key": "2981",
       "name": "T. Machac",
       "rank": 41,
       "challResolved": true,
@@ -19846,6 +19887,7 @@
       }
     },
     {
+      "key": "10884",
       "name": "A. Michelsen",
       "rank": 42,
       "challResolved": true,
@@ -20333,6 +20375,7 @@
       }
     },
     {
+      "key": "949",
       "name": "M. Navone",
       "rank": 44,
       "challResolved": true,
@@ -20818,6 +20861,7 @@
       }
     },
     {
+      "key": "438",
       "name": "A. Mannarino",
       "rank": 45,
       "challResolved": true,
@@ -21303,6 +21347,7 @@
       }
     },
     {
+      "key": "2840",
       "name": "S. Korda",
       "rank": 46,
       "challResolved": true,
@@ -21763,6 +21808,7 @@
       }
     },
     {
+      "key": "2167",
       "name": "M. Cilic",
       "rank": 47,
       "challResolved": true,
@@ -22248,6 +22294,7 @@
       }
     },
     {
+      "key": "2384",
       "name": "G. Dimitrov",
       "rank": 47,
       "challResolved": true,
@@ -22734,6 +22781,7 @@
       }
     },
     {
+      "key": "9225",
       "name": "E. Quinn",
       "rank": 48,
       "challResolved": true,
@@ -23219,6 +23267,7 @@
       }
     },
     {
+      "key": "10148",
       "name": "F. Marozsan",
       "rank": 49,
       "challResolved": true,
@@ -23674,7 +23723,7 @@
               "rating": 186.1,
               "components": 4,
               "inclChallenger": false,
-              "index": 43.5
+              "index": 43.4
             },
             "mental": {
               "pw": 266,
@@ -23704,6 +23753,7 @@
       }
     },
     {
+      "key": "13091",
       "name": "T. Atmane",
       "rank": 51,
       "challResolved": true,
@@ -23842,7 +23892,7 @@
               "svMatches": 14,
               "rating": 236.1,
               "inclChallenger": true,
-              "index": 20.8
+              "index": 21.2
             },
             "return": {
               "ret1stWonPct": 27.3,
@@ -24159,6 +24209,7 @@
       }
     },
     {
+      "key": "358",
       "name": "N. Borges",
       "rank": 52,
       "challResolved": true,
@@ -24646,6 +24697,7 @@
       }
     },
     {
+      "key": "2841",
       "name": "H. Hurkacz",
       "rank": 53,
       "challResolved": true,
@@ -25132,6 +25184,7 @@
       }
     },
     {
+      "key": "2972",
       "name": "B. Van De Zandschulp",
       "rank": 54,
       "challResolved": true,
@@ -25290,7 +25343,7 @@
               "rating": 211.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 64.7
+              "index": 64.6
             },
             "mental": {
               "pw": 431,
@@ -25618,6 +25671,7 @@
       }
     },
     {
+      "key": "1083",
       "name": "V. Kopriva",
       "rank": 55,
       "challResolved": true,
@@ -26103,6 +26157,7 @@
       }
     },
     {
+      "key": "9596",
       "name": "R. A. Burruchaga",
       "rank": 56,
       "challResolved": true,
@@ -26526,6 +26581,7 @@
       }
     },
     {
+      "key": "1777",
       "name": "T. M. Etcheverry",
       "rank": 57,
       "challResolved": true,
@@ -27013,6 +27069,7 @@
       }
     },
     {
+      "key": "2833",
       "name": "M. Fucsovics",
       "rank": 57,
       "challResolved": true,
@@ -27500,6 +27557,7 @@
       }
     },
     {
+      "key": "9222",
       "name": "G. Mpetshi Perricard",
       "rank": 58,
       "challResolved": true,
@@ -27986,6 +28044,7 @@
       }
     },
     {
+      "key": "1096",
       "name": "K. Majchrzak",
       "rank": 59,
       "challResolved": true,
@@ -28473,6 +28532,7 @@
       }
     },
     {
+      "key": "1764",
       "name": "Y. Hanfmann",
       "rank": 59,
       "challResolved": true,
@@ -28959,6 +29019,7 @@
       }
     },
     {
+      "key": "422",
       "name": "R. Opelka",
       "rank": 60,
       "challResolved": true,
@@ -29446,6 +29507,7 @@
       }
     },
     {
+      "key": "1926",
       "name": "A. Popyrin",
       "rank": 60,
       "challResolved": true,
@@ -29933,6 +29995,7 @@
       }
     },
     {
+      "key": "401",
       "name": "C. Ugo Carabelli",
       "rank": 61,
       "challResolved": true,
@@ -30091,7 +30154,7 @@
               "rating": 231.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 75.1
+              "index": 75.3
             },
             "mental": {
               "pw": 238,
@@ -30150,7 +30213,7 @@
               "rating": 219.2,
               "components": 4,
               "inclChallenger": false,
-              "index": 54.1
+              "index": 54.3
             },
             "mental": {
               "pw": 136,
@@ -30418,6 +30481,7 @@
       }
     },
     {
+      "key": "9514",
       "name": "I. Buse",
       "rank": 62,
       "challResolved": true,
@@ -30634,7 +30698,7 @@
               "rating": 236.1,
               "components": 4,
               "inclChallenger": true,
-              "index": 66.2
+              "index": 66.4
             },
             "mental": {
               "pw": 39,
@@ -30850,6 +30914,7 @@
       }
     },
     {
+      "key": "1067",
       "name": "A. Cazaux",
       "rank": 63,
       "challResolved": true,
@@ -31067,7 +31132,7 @@
               "rating": 241.5,
               "components": 3,
               "inclChallenger": false,
-              "index": 67.5
+              "index": 67.7
             },
             "mental": {
               "pw": 58,
@@ -31335,6 +31400,7 @@
       }
     },
     {
+      "key": "2169",
       "name": "J. Brooksby",
       "rank": 63,
       "challResolved": true,
@@ -31820,6 +31886,7 @@
       }
     },
     {
+      "key": "1099",
       "name": "D. Altmaier",
       "rank": 64,
       "challResolved": true,
@@ -32306,6 +32373,7 @@
       }
     },
     {
+      "key": "1101",
       "name": "S. Baez",
       "rank": 65,
       "challResolved": true,
@@ -32790,6 +32858,7 @@
       }
     },
     {
+      "key": "2843",
       "name": "L. Sonego",
       "rank": 66,
       "challResolved": true,
@@ -33277,6 +33346,7 @@
       }
     },
     {
+      "key": "2677",
       "name": "H. Medjedovic",
       "rank": 67,
       "challResolved": true,
@@ -33762,6 +33832,7 @@
       }
     },
     {
+      "key": "2845",
       "name": "G. Monfils",
       "rank": 68,
       "challResolved": true,
@@ -34249,6 +34320,7 @@
       }
     },
     {
+      "key": "366",
       "name": "T. A. Tirante",
       "rank": 69,
       "challResolved": true,
@@ -34682,6 +34754,7 @@
       }
     },
     {
+      "key": "2848",
       "name": "M. Kecmanovic",
       "rank": 70,
       "challResolved": true,
@@ -35169,6 +35242,7 @@
       }
     },
     {
+      "key": "954",
       "name": "V. Royer",
       "rank": 71,
       "challResolved": true,
@@ -35654,6 +35728,7 @@
       }
     },
     {
+      "key": "388",
       "name": "J. M. Cerundolo",
       "rank": 72,
       "challResolved": true,
@@ -36113,6 +36188,7 @@
       }
     },
     {
+      "key": "1906",
       "name": "S. Tsitsipas",
       "rank": 75,
       "challResolved": true,
@@ -36599,6 +36675,7 @@
       }
     },
     {
+      "key": "1766",
       "name": "M. Giron",
       "rank": 77,
       "challResolved": true,
@@ -37085,6 +37162,7 @@
       }
     },
     {
+      "key": "395",
       "name": "M. Trungelliti",
       "rank": 78,
       "challResolved": true,
@@ -37543,6 +37621,7 @@
       }
     },
     {
+      "key": "594",
       "name": "F. Misolic",
       "rank": 79,
       "challResolved": true,
@@ -38028,6 +38107,7 @@
       }
     },
     {
+      "key": "10869",
       "name": "D. Prizmic",
       "rank": 79,
       "challResolved": true,
@@ -38461,6 +38541,7 @@
       }
     },
     {
+      "key": "2112",
       "name": "M. Bellucci",
       "rank": 80,
       "challResolved": true,
@@ -38947,6 +39028,7 @@
       }
     },
     {
+      "key": "359",
       "name": "S. Ofner",
       "rank": 82,
       "challResolved": true,
@@ -39433,6 +39515,7 @@
       }
     },
     {
+      "key": "2831",
       "name": "J-L. Struff",
       "rank": 83,
       "challResolved": true,
@@ -39919,6 +40002,7 @@
       }
     },
     {
+      "key": "825",
       "name": "R. Collignon",
       "rank": 84,
       "challResolved": true,
@@ -40404,6 +40488,7 @@
       }
     },
     {
+      "key": "566",
       "name": "A. Shevchenko",
       "rank": 85,
       "challResolved": true,
@@ -40859,7 +40944,7 @@
               "rating": 219.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 48
+              "index": 47.9
             },
             "mental": {
               "pw": 192,
@@ -40889,6 +40974,7 @@
       }
     },
     {
+      "key": "1900",
       "name": "J. Duckworth",
       "rank": 86,
       "challResolved": true,
@@ -41375,6 +41461,7 @@
       }
     },
     {
+      "key": "1079",
       "name": "D. Dzumhur",
       "rank": 87,
       "challResolved": true,
@@ -41861,6 +41948,7 @@
       }
     },
     {
+      "key": "2983",
       "name": "E. Spizzirri",
       "rank": 89,
       "challResolved": true,
@@ -42333,6 +42421,7 @@
       }
     },
     {
+      "key": "2986",
       "name": "Z. Svajda",
       "rank": 90,
       "challResolved": true,
@@ -42806,6 +42895,7 @@
       }
     },
     {
+      "key": "434",
       "name": "P. Carreno-Busta",
       "rank": 91,
       "challResolved": true,
@@ -43266,6 +43356,7 @@
       }
     },
     {
+      "key": "1925",
       "name": "Q. Halys",
       "rank": 91,
       "challResolved": true,
@@ -43752,6 +43843,7 @@
       }
     },
     {
+      "key": "1057",
       "name": "R. Safiullin",
       "rank": 94,
       "challResolved": true,
@@ -43969,7 +44061,7 @@
               "rating": 256.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 80.8
+              "index": 80.9
             },
             "mental": {
               "pw": 20,
@@ -44239,6 +44331,7 @@
       }
     },
     {
+      "key": "39864",
       "name": "M. Landaluce",
       "rank": 94,
       "challResolved": true,
@@ -44695,6 +44788,7 @@
       }
     },
     {
+      "key": "2386",
       "name": "L. Djere",
       "rank": 95,
       "challResolved": true,
@@ -45182,6 +45276,7 @@
       }
     },
     {
+      "key": "2978",
       "name": "A. Kovacevic",
       "rank": 95,
       "challResolved": true,
@@ -45667,6 +45762,7 @@
       }
     },
     {
+      "key": "3317",
       "name": "R. Hijikata",
       "rank": 96,
       "challResolved": true,
@@ -46154,6 +46250,7 @@
       }
     },
     {
+      "key": "1066",
       "name": "L. van Assche",
       "rank": 97,
       "challResolved": true,
@@ -46579,7 +46676,7 @@
               "rating": 221.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 68.7
+              "index": 68.8
             },
             "mental": {
               "pw": 35,
@@ -46609,6 +46706,7 @@
       }
     },
     {
+      "key": "1183",
       "name": "T. Schoolkate",
       "rank": 97,
       "challResolved": true,
@@ -47091,6 +47189,7 @@
       }
     },
     {
+      "key": "1974",
       "name": "C. Taberner",
       "rank": 98,
       "challResolved": true,
@@ -47545,6 +47644,7 @@
       }
     },
     {
+      "key": "2734",
       "name": "R. Bautista-Agut",
       "rank": 98,
       "challResolved": true,
@@ -48032,6 +48132,7 @@
       }
     },
     {
+      "key": "360",
       "name": "A. Vukic",
       "rank": 99,
       "challResolved": true,
@@ -48519,6 +48620,7 @@
       }
     },
     {
+      "key": "2844",
       "name": "M. Berrettini",
       "rank": 100,
       "challResolved": true,
@@ -48677,7 +48779,7 @@
               "rating": 246.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 79.1
+              "index": 79.3
             },
             "mental": {
               "pw": 504,
@@ -49005,6 +49107,7 @@
       }
     },
     {
+      "key": "1771",
       "name": "B. Bonzi",
       "rank": 101,
       "challResolved": true,
@@ -49491,6 +49594,7 @@
       }
     },
     {
+      "key": "412",
       "name": "J. De Jong",
       "rank": 102,
       "challResolved": true,
@@ -49977,6 +50081,7 @@
       }
     },
     {
+      "key": "10070",
       "name": "A. Walton",
       "rank": 103,
       "challResolved": true,
@@ -50463,6 +50568,7 @@
       }
     },
     {
+      "key": "2071",
       "name": "C. Garin",
       "rank": 104,
       "challResolved": true,
@@ -50919,7 +51025,7 @@
               "rating": 186.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 41.6
+              "index": 41.4
             },
             "mental": {
               "pw": 87,
@@ -50949,6 +51055,7 @@
       }
     },
     {
+      "key": "374",
       "name": "A. Muller",
       "rank": 105,
       "challResolved": true,
@@ -51434,6 +51541,7 @@
       }
     },
     {
+      "key": "1192",
       "name": "M. Arnaldi",
       "rank": 106,
       "challResolved": true,
@@ -51919,6 +52027,7 @@
       }
     },
     {
+      "key": "3136",
       "name": "B. Coric",
       "rank": 107,
       "challResolved": true,
@@ -52379,6 +52488,7 @@
       }
     },
     {
+      "key": "567",
       "name": "E. Nava",
       "rank": 108,
       "challResolved": true,
@@ -52527,7 +52637,7 @@
               "bpConvPct": 39.7,
               "rating": 142.5,
               "inclChallenger": true,
-              "index": 53.8
+              "index": 54.2
             },
             "underPressure": {
               "bpSavedPct": 56.4,
@@ -52860,6 +52970,7 @@
       }
     },
     {
+      "key": "8158",
       "name": "B. Holt",
       "rank": 109,
       "challResolved": true,
@@ -53344,6 +53455,7 @@
       }
     },
     {
+      "key": "207",
       "name": "J. Thompson",
       "rank": 113,
       "challResolved": true,
@@ -53831,6 +53943,7 @@
       }
     },
     {
+      "key": "2084",
       "name": "F. Comesana",
       "rank": 114,
       "challResolved": true,
@@ -54316,6 +54429,7 @@
       }
     },
     {
+      "key": "1754",
       "name": "D. Svrcina",
       "rank": 116,
       "challResolved": true,
@@ -54749,6 +54863,7 @@
       }
     },
     {
+      "key": "1972",
       "name": "Y. Nishioka",
       "rank": 116,
       "challResolved": true,
@@ -55234,6 +55349,7 @@
       }
     },
     {
+      "key": "424",
       "name": "N. Basilashvili",
       "rank": 117,
       "challResolved": true,
@@ -55720,6 +55836,7 @@
       }
     },
     {
+      "key": "1102",
       "name": "H. Gaston",
       "rank": 118,
       "challResolved": true,
@@ -56206,6 +56323,7 @@
       }
     },
     {
+      "key": "824",
       "name": "J. Faria",
       "rank": 119,
       "challResolved": true,
@@ -56691,6 +56809,7 @@
       }
     },
     {
+      "key": "2385",
       "name": "D. Goffin",
       "rank": 119,
       "challResolved": true,
@@ -57177,6 +57296,7 @@
       }
     },
     {
+      "key": "9385",
       "name": "V. Gaubas",
       "rank": 121,
       "challResolved": true,
@@ -57583,6 +57703,7 @@
       }
     },
     {
+      "key": "5979",
       "name": "J. Choinski",
       "rank": 122,
       "challResolved": true,
@@ -58009,7 +58130,7 @@
               "rating": 214.4,
               "components": 4,
               "inclChallenger": true,
-              "index": 53
+              "index": 53.1
             },
             "mental": {
               "pw": 5,
@@ -58039,6 +58160,7 @@
       }
     },
     {
+      "key": "12951",
       "name": "J. Fearnley",
       "rank": 123,
       "challResolved": true,
@@ -58526,6 +58648,7 @@
       }
     },
     {
+      "key": "55163",
       "name": "N. Budkov Kjaer",
       "rank": 124,
       "challResolved": true,
@@ -59003,6 +59126,7 @@
       }
     },
     {
+      "key": "2168",
       "name": "S. Wawrinka",
       "rank": 125,
       "challResolved": true,
@@ -59463,6 +59587,7 @@
       }
     },
     {
+      "key": "767",
       "name": "O. Virtanen",
       "rank": 127,
       "challResolved": true,
@@ -59950,6 +60075,7 @@
       }
     },
     {
+      "key": "593",
       "name": "R. Carballes Baena",
       "rank": 128,
       "challResolved": true,
@@ -60436,6 +60562,7 @@
       }
     },
     {
+      "key": "1092",
       "name": "L. Riedi",
       "rank": 128,
       "challResolved": true,
@@ -60594,7 +60721,7 @@
               "rating": 209.8,
               "components": 4,
               "inclChallenger": true,
-              "index": 46.4
+              "index": 46.5
             },
             "mental": {
               "pw": 19,
@@ -60917,6 +61044,7 @@
       }
     },
     {
+      "key": "2839",
       "name": "M. McDonald",
       "rank": 129,
       "challResolved": true,
@@ -61403,6 +61531,7 @@
       }
     },
     {
+      "key": "1880",
       "name": "S. Mochizuki",
       "rank": 130,
       "challResolved": true,
@@ -61884,6 +62013,7 @@
       }
     },
     {
+      "key": "2675",
       "name": "D. Lajovic",
       "rank": 132,
       "challResolved": true,
@@ -62370,6 +62500,7 @@
       }
     },
     {
+      "key": "400",
       "name": "N. Jarry",
       "rank": 133,
       "challResolved": true,
@@ -62857,6 +62988,7 @@
       }
     },
     {
+      "key": "2980",
       "name": "H. Dellien",
       "rank": 133,
       "challResolved": true,
@@ -63340,6 +63472,7 @@
       }
     },
     {
+      "key": "396",
       "name": "T. Barrios Vera",
       "rank": 134,
       "challResolved": true,
@@ -63822,6 +63955,7 @@
       }
     },
     {
+      "key": "1775",
       "name": "P. Martinez",
       "rank": 136,
       "challResolved": true,
@@ -64307,6 +64441,7 @@
       }
     },
     {
+      "key": "1091",
       "name": "F. Fognini",
       "rank": 138,
       "challResolved": false,
@@ -64792,6 +64927,7 @@
       }
     },
     {
+      "key": "1187",
       "name": "M. Gigante",
       "rank": 138,
       "challResolved": true,
@@ -65270,6 +65406,7 @@
       }
     },
     {
+      "key": "8442",
       "name": "F. Passaro",
       "rank": 138,
       "challResolved": true,
@@ -65703,6 +65840,7 @@
       }
     },
     {
+      "key": "987",
       "name": "P. Llamas Ruiz",
       "rank": 139,
       "challResolved": true,
@@ -66136,6 +66274,7 @@
       }
     },
     {
+      "key": "1207",
       "name": "M. Echargui",
       "rank": 140,
       "challResolved": true,
@@ -66607,6 +66746,7 @@
       }
     },
     {
+      "key": "1969",
       "name": "L. Klein",
       "rank": 141,
       "challResolved": true,
@@ -67062,6 +67202,7 @@
       }
     },
     {
+      "key": "2672",
       "name": "S. Travaglia",
       "rank": 141,
       "challResolved": true,
@@ -67521,6 +67662,7 @@
       }
     },
     {
+      "key": "1903",
       "name": "U. Blanchet",
       "rank": 144,
       "challResolved": true,
@@ -67998,6 +68140,7 @@
       }
     },
     {
+      "key": "2830",
       "name": "D. Koepfer",
       "rank": 147,
       "challResolved": false,
@@ -68454,7 +68597,7 @@
               "rating": 207.5,
               "components": 4,
               "inclChallenger": false,
-              "index": 50.8
+              "index": 50.9
             },
             "mental": {
               "pw": 236,
@@ -68484,6 +68627,7 @@
       }
     },
     {
+      "key": "9608",
       "name": "S. Shimabukuro",
       "rank": 147,
       "challResolved": true,
@@ -68957,6 +69101,7 @@
       }
     },
     {
+      "key": "1186",
       "name": "B. Harris",
       "rank": 148,
       "challResolved": true,
@@ -69444,6 +69589,7 @@
       }
     },
     {
+      "key": "357",
       "name": "F. Meligeni Alves",
       "rank": 149,
       "challResolved": true,
@@ -69929,6 +70075,7 @@
       }
     },
     {
+      "key": "421",
       "name": "C. O'Connell",
       "rank": 150,
       "challResolved": true,
@@ -70416,6 +70563,7 @@
       }
     },
     {
+      "key": "2227",
       "name": "C. Wong",
       "rank": 150,
       "challResolved": true,
@@ -70895,6 +71043,7 @@
       }
     },
     {
+      "key": "386",
       "name": "L. Nardi",
       "rank": 151,
       "challResolved": true,
@@ -71381,6 +71530,7 @@
       }
     },
     {
+      "key": "796",
       "name": "Y. Bu",
       "rank": 152,
       "challResolved": true,
@@ -71868,6 +72018,7 @@
       }
     },
     {
+      "key": "433",
       "name": "F. Coria",
       "rank": 153,
       "challResolved": true,
@@ -72352,6 +72503,7 @@
       }
     },
     {
+      "key": "39675",
       "name": "E. Moller",
       "rank": 153,
       "challResolved": true,
@@ -72836,6 +72988,7 @@
       }
     },
     {
+      "key": "376",
       "name": "G. Zeppieri",
       "rank": 154,
       "challResolved": true,
@@ -73033,7 +73186,7 @@
               "svMatches": 16,
               "rating": 243.2,
               "inclChallenger": true,
-              "index": 34.8
+              "index": 35.2
             },
             "return": {
               "ret1stWonPct": 27.6,
@@ -73321,6 +73474,7 @@
       }
     },
     {
+      "key": "1748",
       "name": "P. Herbert",
       "rank": 154,
       "challResolved": true,
@@ -73807,6 +73961,7 @@
       }
     },
     {
+      "key": "15270",
       "name": "N. Basavareddy",
       "rank": 154,
       "challResolved": true,
@@ -74024,7 +74179,7 @@
               "rating": 247.5,
               "components": 3,
               "inclChallenger": true,
-              "index": 62.3
+              "index": 62.5
             },
             "mental": {
               "pw": 3,
@@ -74292,6 +74447,7 @@
       }
     },
     {
+      "key": "1735",
       "name": "D. E. Galan",
       "rank": 155,
       "challResolved": true,
@@ -74751,6 +74907,7 @@
       }
     },
     {
+      "key": "731",
       "name": "M. Lajal",
       "rank": 158,
       "challResolved": true,
@@ -75229,6 +75386,7 @@
       }
     },
     {
+      "key": "1097",
       "name": "Y. Watanuki",
       "rank": 161,
       "challResolved": true,
@@ -75683,6 +75841,7 @@
       }
     },
     {
+      "key": "367",
       "name": "Z. Piros",
       "rank": 163,
       "challResolved": true,
@@ -76111,6 +76270,7 @@
       }
     },
     {
+      "key": "1899",
       "name": "V. Sachko",
       "rank": 166,
       "challResolved": true,
@@ -76514,7 +76674,7 @@
               "rating": 194.5,
               "components": 4,
               "inclChallenger": true,
-              "index": 42
+              "index": 41.8
             },
             "mental": {
               "pw": 42,
@@ -76544,6 +76704,7 @@
       }
     },
     {
+      "key": "1189",
       "name": "H. Mayot",
       "rank": 167,
       "challResolved": true,
@@ -77030,6 +77191,7 @@
       }
     },
     {
+      "key": "19536",
       "name": "A. Holmgren",
       "rank": 167,
       "challResolved": true,
@@ -77513,6 +77675,7 @@
       }
     },
     {
+      "key": "7641",
       "name": "N. Mejia",
       "rank": 168,
       "challResolved": true,
@@ -77641,37 +77804,37 @@
           "career": {
             "serve": {
               "firstInPct": 52,
-              "firstWonPct": 63.7,
+              "firstWonPct": 63.8,
               "secondWonPct": 47.2,
               "holdPct": 71.7,
-              "acePct": 5.9,
+              "acePct": 5.8,
               "dfPct": 3.5,
               "acesPerMatch": 4.1,
               "dfPerMatch": 2.7,
               "svMatches": 66,
-              "rating": 236.1,
+              "rating": 236,
               "inclChallenger": true,
               "index": 20.8
             },
             "return": {
-              "ret1stWonPct": 31.3,
-              "ret2ndWonPct": 46.4,
-              "rptWonPct": 37.6,
-              "breakPct": 25.1,
-              "bpConvPct": 39.7,
-              "rating": 142.5,
+              "ret1stWonPct": 31.2,
+              "ret2ndWonPct": 46.3,
+              "rptWonPct": 37.5,
+              "breakPct": 25,
+              "bpConvPct": 39.8,
+              "rating": 142.4,
               "inclChallenger": true,
               "index": 53.8
             },
             "underPressure": {
-              "bpSavedPct": 57.4,
-              "bpConvPct": 39.7,
+              "bpSavedPct": 57.5,
+              "bpConvPct": 39.8,
               "tbWinPct": 65.5,
-              "decWinPct": 77.5,
-              "rating": 240.1,
+              "decWinPct": 73.8,
+              "rating": 236.6,
               "components": 4,
               "inclChallenger": true,
-              "index": 70.7
+              "index": 70.9
             },
             "mental": {
               "pw": 17,
@@ -77690,47 +77853,47 @@
               "bpSaved": 10,
               "bpConverted": 7,
               "challMatches": 62,
-              "challSvpt": 4420,
-              "challBpFaced": 385,
-              "challBpChances": 428,
-              "challBpSaved": 248,
-              "challBpConverted": 188
+              "challSvpt": 4455,
+              "challBpFaced": 388,
+              "challBpChances": 429,
+              "challBpSaved": 250,
+              "challBpConverted": 189
             }
           },
           "last52": {
             "serve": {
-              "firstInPct": 50,
+              "firstInPct": 49.9,
               "firstWonPct": 65.3,
-              "secondWonPct": 47.8,
-              "holdPct": 77.4,
-              "acePct": 7.5,
+              "secondWonPct": 47.7,
+              "holdPct": 77.3,
+              "acePct": 7.3,
               "dfPct": 3.6,
               "acesPerMatch": 5.6,
               "dfPerMatch": 3,
               "svMatches": 23,
-              "rating": 243.2,
+              "rating": 242.8,
               "inclChallenger": true,
-              "index": 34.8
+              "index": 33.9
             },
             "return": {
-              "ret1stWonPct": 29.2,
-              "ret2ndWonPct": 46.5,
-              "rptWonPct": 36.9,
+              "ret1stWonPct": 29.1,
+              "ret2ndWonPct": 46.3,
+              "rptWonPct": 36.7,
               "breakPct": 16.5,
-              "bpConvPct": 34.5,
-              "rating": 126.8,
+              "bpConvPct": 35,
+              "rating": 126.9,
               "inclChallenger": true,
               "index": 29
             },
             "underPressure": {
               "bpSavedPct": 62.3,
-              "bpConvPct": 34.5,
+              "bpConvPct": 35,
               "tbWinPct": 69.2,
-              "decWinPct": 90,
-              "rating": 256,
+              "decWinPct": 78.8,
+              "rating": 245.2,
               "components": 4,
               "inclChallenger": true,
-              "index": 69.6
+              "index": 68.9
             },
             "mental": null,
             "reliable": false,
@@ -77745,11 +77908,11 @@
               "bpSaved": 0,
               "bpConverted": 0,
               "challMatches": 23,
-              "challSvpt": 1713,
-              "challBpFaced": 117,
-              "challBpChances": 120,
-              "challBpSaved": 81,
-              "challBpConverted": 46
+              "challSvpt": 1748,
+              "challBpFaced": 120,
+              "challBpChances": 121,
+              "challBpSaved": 83,
+              "challBpConverted": 47
             }
           }
         },
@@ -77916,47 +78079,47 @@
               "bpSaved": 49,
               "bpConverted": 23,
               "challMatches": 148,
-              "challSvpt": 10378,
-              "challBpFaced": 921,
-              "challBpChances": 983,
-              "challBpSaved": 563,
-              "challBpConverted": 393
+              "challSvpt": 10413,
+              "challBpFaced": 924,
+              "challBpChances": 984,
+              "challBpSaved": 565,
+              "challBpConverted": 394
             }
           },
           "last52": {
             "serve": {
-              "firstInPct": 53,
+              "firstInPct": 52.9,
               "firstWonPct": 63.8,
               "secondWonPct": 47.5,
               "holdPct": 76.3,
-              "acePct": 6.6,
+              "acePct": 6.5,
               "dfPct": 3.1,
               "acesPerMatch": 4.7,
-              "dfPerMatch": 2.4,
+              "dfPerMatch": 2.5,
               "svMatches": 47,
-              "rating": 242.9,
+              "rating": 242.7,
               "inclChallenger": true,
               "index": 16
             },
             "return": {
               "ret1stWonPct": 27.5,
-              "ret2ndWonPct": 44.3,
-              "rptWonPct": 34.6,
+              "ret2ndWonPct": 44.2,
+              "rptWonPct": 34.5,
               "breakPct": 14.6,
-              "bpConvPct": 36,
-              "rating": 122.3,
+              "bpConvPct": 36.2,
+              "rating": 122.5,
               "inclChallenger": true,
               "index": 19
             },
             "underPressure": {
               "bpSavedPct": 59.8,
-              "bpConvPct": 36,
+              "bpConvPct": 36.2,
               "tbWinPct": 49.1,
-              "decWinPct": 73.6,
-              "rating": 218.5,
+              "decWinPct": 67.5,
+              "rating": 212.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 56.8
+              "index": 56.3
             },
             "mental": {
               "pw": 17,
@@ -77975,17 +78138,18 @@
               "bpSaved": 14,
               "bpConverted": 3,
               "challMatches": 44,
-              "challSvpt": 3148,
-              "challBpFaced": 207,
-              "challBpChances": 195,
-              "challBpSaved": 138,
-              "challBpConverted": 77
+              "challSvpt": 3183,
+              "challBpFaced": 210,
+              "challBpChances": 196,
+              "challBpSaved": 140,
+              "challBpConverted": 78
             }
           }
         }
       }
     },
     {
+      "key": "389",
       "name": "C. H. Tseng",
       "rank": 169,
       "challResolved": true,
@@ -78144,7 +78308,7 @@
               "rating": 195.6,
               "components": 4,
               "inclChallenger": true,
-              "index": 46.9
+              "index": 46.8
             },
             "mental": {
               "pw": 95,
@@ -78471,6 +78635,7 @@
       }
     },
     {
+      "key": "3319",
       "name": "A. Bolt",
       "rank": 169,
       "challResolved": true,
@@ -78900,6 +79065,7 @@
       }
     },
     {
+      "key": "1082",
       "name": "E. Ymer",
       "rank": 171,
       "challResolved": true,
@@ -79381,6 +79547,7 @@
       }
     },
     {
+      "key": "1074",
       "name": "T. Monteiro",
       "rank": 172,
       "challResolved": true,
@@ -79539,7 +79706,7 @@
               "rating": 196.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 56.5
+              "index": 56.4
             },
             "mental": {
               "pw": 854,
@@ -79598,7 +79765,7 @@
               "rating": 171.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 27.6
+              "index": 27.5
             },
             "mental": {
               "pw": 54,
@@ -79840,6 +80007,7 @@
       }
     },
     {
+      "key": "1073",
       "name": "H. Grenier",
       "rank": 175,
       "challResolved": true,
@@ -80321,6 +80489,7 @@
       }
     },
     {
+      "key": "1849",
       "name": "Y. Wu",
       "rank": 179,
       "challResolved": true,
@@ -80797,6 +80966,7 @@
       }
     },
     {
+      "key": "2002",
       "name": "F. Diaz Acosta",
       "rank": 179,
       "challResolved": true,
@@ -81282,6 +81452,7 @@
       }
     },
     {
+      "key": "55060",
       "name": "J. Engel",
       "rank": 180,
       "challResolved": true,
@@ -81767,6 +81938,7 @@
       }
     },
     {
+      "key": "1197",
       "name": "A. Kachmazov",
       "rank": 181,
       "challResolved": true,
@@ -82190,6 +82362,7 @@
       }
     },
     {
+      "key": "1059",
       "name": "C. Eubanks",
       "rank": 182,
       "challResolved": true,
@@ -82675,6 +82848,7 @@
       }
     },
     {
+      "key": "1094",
       "name": "R. Gasquet",
       "rank": 182,
       "challResolved": false,
@@ -82872,7 +83046,7 @@
               "svMatches": 6,
               "rating": 242.9,
               "inclChallenger": false,
-              "index": 34.4
+              "index": 34.8
             },
             "return": {
               "ret1stWonPct": 26.7,
@@ -83161,6 +83335,7 @@
       }
     },
     {
+      "key": "2835",
       "name": "D. Evans",
       "rank": 185,
       "challResolved": true,
@@ -83647,6 +83822,7 @@
       }
     },
     {
+      "key": "1304",
       "name": "J. Kym",
       "rank": 187,
       "challResolved": true,
@@ -84124,6 +84300,7 @@
       }
     },
     {
+      "key": "3145",
       "name": "B. Tomic",
       "rank": 194,
       "challResolved": true,
@@ -84606,6 +84783,7 @@
       }
     },
     {
+      "key": "364",
       "name": "J. Kubler",
       "rank": 195,
       "challResolved": true,
@@ -85090,6 +85268,7 @@
       }
     },
     {
+      "key": "416",
       "name": "J. Rodionov",
       "rank": 195,
       "challResolved": true,
@@ -85248,7 +85427,7 @@
               "rating": 147.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 19.4
+              "index": 19.3
             },
             "mental": {
               "pw": 104,
@@ -85567,6 +85746,7 @@
       }
     },
     {
+      "key": "1755",
       "name": "C. Lestienne",
       "rank": 197,
       "challResolved": false,
@@ -86049,6 +86229,7 @@
       }
     },
     {
+      "key": "436",
       "name": "A. Molcan",
       "rank": 202,
       "challResolved": true,
@@ -86504,6 +86685,7 @@
       }
     },
     {
+      "key": "1751",
       "name": "M. Krueger",
       "rank": 203,
       "challResolved": true,
@@ -86963,6 +87145,7 @@
       }
     },
     {
+      "key": "1739",
       "name": "J. Clarke",
       "rank": 207,
       "challResolved": true,
@@ -87437,6 +87620,7 @@
       }
     },
     {
+      "key": "1072",
       "name": "R. Peniston",
       "rank": 218,
       "challResolved": true,
@@ -87891,6 +88075,7 @@
       }
     },
     {
+      "key": "2834",
       "name": "L. Harris",
       "rank": 220,
       "challResolved": true,
@@ -88377,6 +88562,7 @@
       }
     },
     {
+      "key": "1758",
       "name": "D. Popko",
       "rank": 223,
       "challResolved": true,
@@ -88805,6 +88991,7 @@
       }
     },
     {
+      "key": "1095",
       "name": "M. Cecchinato",
       "rank": 228,
       "challResolved": true,
@@ -89289,6 +89476,7 @@
       }
     },
     {
+      "key": "8762",
       "name": "R. Pacheco Mendez",
       "rank": 229,
       "challResolved": true,
@@ -89718,6 +89906,7 @@
       }
     },
     {
+      "key": "362",
       "name": "T. Skatov",
       "rank": 235,
       "challResolved": true,
@@ -90195,6 +90384,7 @@
       }
     },
     {
+      "key": "1205",
       "name": "K. Coppejans",
       "rank": 235,
       "challResolved": true,
@@ -90676,6 +90866,7 @@
       }
     },
     {
+      "key": "585",
       "name": "F. Ferreira Silva",
       "rank": 238,
       "challResolved": true,
@@ -91105,6 +91296,7 @@
       }
     },
     {
+      "key": "2985",
       "name": "K. Nishikori",
       "rank": 238,
       "challResolved": true,
@@ -91535,7 +91727,7 @@
               "rating": 201.8,
               "components": 4,
               "inclChallenger": false,
-              "index": 48
+              "index": 48.1
             },
             "mental": {
               "pw": 155,
@@ -91565,6 +91757,7 @@
       }
     },
     {
+      "key": "590",
       "name": "Z. Zhang",
       "rank": 239,
       "challResolved": true,
@@ -92043,6 +92236,7 @@
       }
     },
     {
+      "key": "379",
       "name": "D. Stricker",
       "rank": 243,
       "challResolved": true,
@@ -92503,6 +92697,7 @@
       }
     },
     {
+      "key": "1746",
       "name": "M. Huesler",
       "rank": 244,
       "challResolved": true,
@@ -92981,6 +93176,7 @@
       }
     },
     {
+      "key": "1949",
       "name": "H. Habib",
       "rank": 244,
       "challResolved": true,
@@ -93435,6 +93631,7 @@
       }
     },
     {
+      "key": "1086",
       "name": "T. Seyboth Wild",
       "rank": 247,
       "challResolved": true,
@@ -93894,6 +94091,7 @@
       }
     },
     {
+      "key": "39862",
       "name": "Y. Zhou",
       "rank": 248,
       "challResolved": true,
@@ -94362,6 +94560,7 @@
       }
     },
     {
+      "key": "1098",
       "name": "S. Kwon",
       "rank": 252,
       "challResolved": true,
@@ -94787,7 +94986,7 @@
               "rating": 241.7,
               "components": 4,
               "inclChallenger": true,
-              "index": 74.8
+              "index": 74.7
             },
             "mental": {
               "pw": 8,
@@ -94817,6 +95016,7 @@
       }
     },
     {
+      "key": "391",
       "name": "J. P. Varillas",
       "rank": 255,
       "challResolved": true,
@@ -95276,6 +95476,7 @@
       }
     },
     {
+      "key": "9037",
       "name": "T. Boyer",
       "rank": 257,
       "challResolved": true,
@@ -95753,6 +95954,7 @@
       }
     },
     {
+      "key": "1896",
       "name": "B. Hassan",
       "rank": 259,
       "challResolved": true,
@@ -96185,6 +96387,7 @@
       }
     },
     {
+      "key": "1056",
       "name": "A. Martin",
       "rank": 269,
       "challResolved": true,
@@ -96402,7 +96605,7 @@
               "rating": 242.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 68
+              "index": 68.2
             },
             "mental": {
               "pw": 125,
@@ -96636,7 +96839,7 @@
               "rating": 219.3,
               "components": 4,
               "inclChallenger": false,
-              "index": 62.5
+              "index": 62.6
             },
             "mental": {
               "pw": 140,
@@ -96666,6 +96869,7 @@
       }
     },
     {
+      "key": "1077",
       "name": "S. Nagal",
       "rank": 275,
       "challResolved": true,
@@ -97125,6 +97329,7 @@
       }
     },
     {
+      "key": "579",
       "name": "B. Zhukayev",
       "rank": 277,
       "challResolved": true,
@@ -97600,6 +97805,7 @@
       }
     },
     {
+      "key": "9219",
       "name": "A. Shelbayh",
       "rank": 279,
       "challResolved": true,
@@ -98059,6 +98265,7 @@
       }
     },
     {
+      "key": "2970",
       "name": "M. Kukushkin",
       "rank": 281,
       "challResolved": true,
@@ -98541,6 +98748,7 @@
       }
     },
     {
+      "key": "439",
       "name": "M. Mmoh",
       "rank": 285,
       "challResolved": true,
@@ -99021,6 +99229,7 @@
       }
     },
     {
+      "key": "392",
       "name": "D. Ajdukovic",
       "rank": 288,
       "challResolved": true,
@@ -99476,6 +99685,7 @@
       }
     },
     {
+      "key": "377",
       "name": "B. Gojo",
       "rank": 293,
       "challResolved": true,
@@ -99935,6 +100145,7 @@
       }
     },
     {
+      "key": "397",
       "name": "N. Gombos",
       "rank": 296,
       "challResolved": true,
@@ -100394,6 +100605,7 @@
       }
     },
     {
+      "key": "884",
       "name": "Y. Uchiyama",
       "rank": 306,
       "challResolved": true,
@@ -100847,6 +101059,7 @@
       }
     },
     {
+      "key": "1206",
       "name": "C. Hemery",
       "rank": 316,
       "challResolved": true,
@@ -101276,6 +101489,7 @@
       }
     },
     {
+      "key": "2406",
       "name": "T. Daniel",
       "rank": 330,
       "challResolved": true,
@@ -101434,7 +101648,7 @@
               "rating": 193.9,
               "components": 4,
               "inclChallenger": false,
-              "index": 49.6
+              "index": 49.5
             },
             "mental": {
               "pw": 644,
@@ -101705,7 +101919,7 @@
               "rating": 143.6,
               "components": 4,
               "inclChallenger": false,
-              "index": 19.8
+              "index": 19.7
             },
             "mental": {
               "pw": 55,
@@ -101735,6 +101949,7 @@
       }
     },
     {
+      "key": "418",
       "name": "A. Vavassori",
       "rank": 334,
       "challResolved": true,
@@ -102188,6 +102403,7 @@
       }
     },
     {
+      "key": "67",
       "name": "D. Schwartzman",
       "rank": 340,
       "challResolved": false,
@@ -102646,6 +102862,7 @@
       }
     },
     {
+      "key": "6983",
       "name": "K. Sultanov",
       "rank": 399,
       "challResolved": true,
@@ -103088,6 +103305,7 @@
       }
     },
     {
+      "key": "2413",
       "name": "J. Shang",
       "rank": 406,
       "challResolved": true,
@@ -103520,6 +103738,7 @@
       }
     },
     {
+      "key": "363",
       "name": "R. Albot",
       "rank": 430,
       "challResolved": true,
@@ -104006,6 +104225,7 @@
       }
     },
     {
+      "key": "1089",
       "name": "F. Bagnis",
       "rank": 431,
       "challResolved": true,
@@ -104434,7 +104654,7 @@
               "rating": 175.6,
               "components": 4,
               "inclChallenger": true,
-              "index": 55.8
+              "index": 55.9
             },
             "mental": {
               "pw": 36,
@@ -104464,6 +104684,7 @@
       }
     },
     {
+      "key": "1070",
       "name": "M. Marterer",
       "rank": 446,
       "challResolved": true,
@@ -104949,6 +105170,7 @@
       }
     },
     {
+      "key": "415",
       "name": "P. Kotov",
       "rank": 454,
       "challResolved": true,
@@ -105434,6 +105656,7 @@
       }
     },
     {
+      "key": "426",
       "name": "T. Kokkinakis",
       "rank": 454,
       "challResolved": true,
@@ -105910,6 +106133,7 @@
       }
     },
     {
+      "key": "408",
       "name": "A. Ritschard",
       "rank": 496,
       "challResolved": true,
@@ -106365,6 +106589,7 @@
       }
     },
     {
+      "key": "1065",
       "name": "J. Kovalik",
       "rank": 515,
       "challResolved": true,
@@ -106823,6 +107048,7 @@
       }
     },
     {
+      "key": "810",
       "name": "L. Borg",
       "rank": 533,
       "challResolved": true,
@@ -107228,6 +107454,7 @@
       }
     },
     {
+      "key": "1879",
       "name": "E. Benchetrit",
       "rank": 615,
       "challResolved": false,
@@ -107629,6 +107856,7 @@
       }
     },
     {
+      "key": "1976",
       "name": "M. Ymer",
       "rank": 617,
       "challResolved": false,
@@ -107786,7 +108014,7 @@
               "rating": 181.4,
               "components": 4,
               "inclChallenger": false,
-              "index": 42.7
+              "index": 42.5
             },
             "mental": {
               "pw": 311,
@@ -107835,7 +108063,7 @@
               "bpConvPct": 50,
               "rating": 126.9,
               "inclChallenger": false,
-              "index": 29.5
+              "index": 29
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -108086,6 +108314,7 @@
       }
     },
     {
+      "key": "3135",
       "name": "H. Chung",
       "rank": 639,
       "challResolved": true,
@@ -108518,6 +108747,7 @@
       }
     },
     {
+      "key": "798",
       "name": "A. Dougaz",
       "rank": 664,
       "challResolved": true,
@@ -108950,6 +109180,7 @@
       }
     },
     {
+      "key": "2984",
       "name": "N. Kyrgios",
       "rank": 670,
       "challResolved": true,
@@ -109381,6 +109612,7 @@
       }
     },
     {
+      "key": "1179",
       "name": "N. Moreno De Alboran",
       "rank": 696,
       "challResolved": true,
@@ -109853,6 +110085,7 @@
       }
     },
     {
+      "key": "5744",
       "name": "B. Balleret",
       "rank": 697,
       "challResolved": false,
@@ -110255,6 +110488,7 @@
       }
     },
     {
+      "key": "440",
       "name": "M. Guinard",
       "rank": 728,
       "challResolved": false,
@@ -110657,6 +110891,7 @@
       }
     },
     {
+      "key": "5969",
       "name": "A. Knaff",
       "rank": 773,
       "challResolved": true,
@@ -111087,6 +111322,7 @@
       }
     },
     {
+      "key": "561",
       "name": "J. Domingues",
       "rank": 781,
       "challResolved": true,
@@ -111510,6 +111746,7 @@
       }
     },
     {
+      "key": "581",
       "name": "G. Brouwer",
       "rank": 1067,
       "challResolved": true,
