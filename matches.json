@@ -2808,7 +2808,7 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 2",
+    "liveStatus": "Set 3",
     "liveScore": [
       {
         "set": 1,
@@ -2817,12 +2817,17 @@
       },
       {
         "set": 2,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 3,
         "p1": 1,
-        "p2": 1
+        "p2": 0
       }
     ],
     "liveGameScore": "15 - 15",
-    "liveServer": "p1",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/427_t-griekspoor.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2959_j-lehecka.jpg",
     "oddsMovement": {
@@ -4973,7 +4978,10 @@
       "edgeVsPinnacleP1": -0.049,
       "edgeVsPinnacleP2": 0.049,
       "ts": "2026-10-23T07:51:17.843Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173572",
@@ -8289,15 +8297,20 @@
       ]
     },
     "live": true,
-    "liveStatus": "Set 1",
+    "liveStatus": "Set 2",
     "liveScore": [
       {
         "set": 1,
-        "p1": 3,
-        "p2": 2
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 3
       }
     ],
-    "liveGameScore": "0 - 15",
+    "liveGameScore": "0 - 0",
     "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1895_a-bublik.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/435_k-khachanov.jpg",
@@ -10173,7 +10186,10 @@
       "edgeVsPinnacleP1": -0.0044,
       "edgeVsPinnacleP2": 0.0044,
       "ts": "2026-10-23T05:11:51.394Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173573",
@@ -19807,11 +19823,17 @@
       "category": "Slow"
     },
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1099_d-altmaier.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2832_t-fritz.jpg",
     "oddsMovement": {
@@ -21962,7 +21984,10 @@
       "edgeVsPinnacleP1": -0.0697,
       "edgeVsPinnacleP2": 0.0697,
       "ts": "2026-10-23T14:23:01.516Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173612",
