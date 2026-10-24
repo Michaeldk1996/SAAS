@@ -5458,35 +5458,33 @@
       "p2": "J-L. Struff",
       "startTime": "2026-10-24T16:30:00.000Z",
       "tournamentId": 45935
+    },
+    "12173863": {
+      "fixtureId": "id1200309775620258",
+      "mappedAt": "2026-10-24T02:32:10Z",
+      "orient": "same",
+      "p1": "F. Cobolli",
+      "p2": "L. Musetti",
+      "startTime": "2026-10-24T14:00:00.000Z",
+      "tournamentId": 3097
     }
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 21.3,
+      "measuredRunsPerDay": 21.4,
       "missResolutionHoursMax": 156.78,
       "missResolutionHoursP50": 38.75,
       "missResolutionsMeasured": 182,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.74,
+      "observedSpanDays": 18.7,
       "projectedTtlUnitsPerDay": 2.8,
       "runs": 400,
-      "spentRuns": 165,
+      "spentRuns": 166,
       "ttlBitRuns": 52,
       "ttlBitShare": 0.13,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-05T07:45:41Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 20,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 43
-      },
       {
         "at": "2026-10-05T09:44:25Z",
         "fixturesUnitsSpent": 1,
@@ -9875,9 +9873,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 22
+      },
+      {
+        "at": "2026-10-24T02:32:10Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 22
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-23T22:32:05Z"
+  "updatedAt": "2026-10-24T02:32:10Z"
 }
