@@ -876,7 +876,7 @@
   var RANK_TONE = 'var(--selected)';
   function renderAvatar(p, rank) {
     // the dashboard's one resolver (playerPhotoUrl): the ATP headshot by player ID, else the initials alone
-    var photo = typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(p.key) : null;
+    var photo = typeof window.playerPhotoUrl === 'function' ? window.playerPhotoUrl(p.key, 'l') : null;   // the 256 px header size
     var img = photo
       ? '<img src="' + esc(photo) + '" alt="' + esc(p.name || '') + '" loading="lazy" referrerpolicy="no-referrer" ' +
         'onerror="this.style.display=\'none\'" ' +

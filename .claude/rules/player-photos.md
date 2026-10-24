@@ -4,8 +4,9 @@ Applies to any task that renders a player avatar, headshot or monogram. Rational
 
 ## The rule (founder 2026-10-22)
 
-- **One source.** A player ID resolves to the ATP headshot through `player-atp-aliases.json`:
-  `player_key -> ATP code -> https://www.atptour.com/-/media/alias/player-headshot/<code>`, else the monogram.
+- **One source.** A player ID resolves to OUR stored copy of its ATP headshot (the alias in `player-atp-aliases.json`
+  picks the ATP photo), else the monogram: `player-photos/s/<id>.webp` (96 px — cards, rows, quotes) or
+  `player-photos/l/<id>.webp` (256 px — the profile header), listed in `player-photos/index.json`.
   Wikimedia (`player-photos.json`) and the api-tennis logo URL are **removed**; nothing else may be added.
   **Test:** every avatar asks `playerPhotoUrl` / `playerPhotoImg` (the dashboard) and nothing else
   (`tools/test-player-photos.js`, retired-source scan + per-surface check).
@@ -15,12 +16,23 @@ Applies to any task that renders a player avatar, headshot or monogram. Rational
   the transparent PNG), `loading="lazy"`, `alt` = the player's name, sizes from each surface's own tokens. A failed load
   removes the photo and the monogram shows — never a broken-image icon. The Player Profile hero keeps its own markup
   (the reference) on the same resolver.
-- **Hosting:** hotlinked from ATP at runtime; nothing is mirrored. Self-hosting is parked until pre-launch.
+- **Hosting (founder 2026-10-24; Michael has an agreement with ATP):** self-hosted. **No page requests ATP's servers.**
+  ATP's CDN challenges every non-browser client (Cloudflare `cf-mitigated: challenge`, 403 to curl, GitHub runners and
+  headless Chrome), so `tools/photos/fetch-headshots.mjs` drives a visible Chrome on the Mac and writes both WebP
+  sizes in the browser. **Test:** `tools/test-player-photos.js` — every index entry has both files at 96 / 256 px with
+  the hash the page cache-busts by; no stray file; no `player-headshot` URL in any page file.
+- **Refresh:** `tools/photos/refresh-photos.sh`, a daily LaunchAgent (`tools/install-photos-agent.sh`) that refreshes
+  weekly or when the alias file changes. A failed fetch keeps the last good photo; only an alias removed from the map
+  loses its file. Commits only `player-photos/` as the photos data bot (`tools/deploy-lane.mjs` counts exactly
+  `player-photos/{s,l}/<id>.webp` + `index.json` as data). **Alert:** a drop in the share of aliased players with a
+  stored photo, versus the published site, is a `::warning::` on the pipeline run (`tools/photos/coverage-check.mjs`)
+  — never a block.
 - **A 200 is not a photo.** ATP serves its grey silhouette with HTTP 200 (4,729 bytes, sha1 `d027bd09f6529734…`).
   **Test:** no mapped code serves a known placeholder, no two codes share one file, and every code's ATP birth year
   agrees with the api-tennis profile for that ID (`player-photo-manifest.json`, checked by `tools/test-player-photos.js`).
 - **Changing the map:** run `tools/atp-photo-probe.browser.js` in a browser on atptour.com (ATP answers 403 to the
   command line) and commit its output as `player-photo-manifest.json` with the map. The test fails until both agree.
+  The photo job then stores the new photos on its next run (it runs when the alias file changes).
 
 ## Surfaces on the resolver
 

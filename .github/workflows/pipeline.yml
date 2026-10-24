@@ -986,6 +986,12 @@ jobs:
           # makes the entire ATP headshot layer disappear (every player falls back to
           # the api-tennis logo). Required — in the assert list below.
           cp player-atp-aliases.json _site/
+          # Self-hosted headshots (founder 2026-10-24): player-photos/{s,l}/<id>.webp + index.json, refreshed by the Mac
+          # photo job (tools/photos/refresh-photos.sh). Committed but not copied = every avatar falls back to initials.
+          cp -r player-photos _site/ 2>/dev/null || true
+          # Stored-photo coverage alert: a drop versus the published site is a ::warning:: annotation, never a failure —
+          # the script exits 0 on every path, including an unreadable index (tools/test-player-photos.js §8).
+          node tools/photos/coverage-check.mjs
           # TEN-225 Part 3: Open / Now / Close, published from the odds_card_state
           # table by ten225-publish-card-state.py (Actions-only — the table has RLS
           # on and zero policies, so the browser reads this FILE, not the database).

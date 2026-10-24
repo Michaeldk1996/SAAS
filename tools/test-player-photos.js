@@ -69,12 +69,14 @@ check('control: an unprobed code is rejected', aliasProblems({ 1: 'ZZZZ' }, mani
 const DASH = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
 const fn = (name) => { const i = DASH.indexOf(`function ${name}(`); if (i < 0) throw new Error('missing ' + name); const j = DASH.indexOf('\n}\n', i); return DASH.slice(i, j + 2); };
 const oneLine = (name) => { const i = DASH.indexOf(`function ${name}(`); return DASH.slice(i, DASH.indexOf('\n', i)); };
-const ctx = { playerAtpAliases: aliases };
+const PI = JSON.parse(fs.readFileSync(path.join(ROOT, 'player-photos', 'index.json'), 'utf8'));
+const ctx = { playerPhotoIndex: PI.players };
 vm.createContext(ctx);
-vm.runInContext([oneLine('escapeHtml'), fn('atpPhotoFor'), oneLine('playerPhotoUrl'), fn('playerPhotoImg')].join('\n'), ctx);
-const anyKey = Object.keys(aliases)[0];
-check(`playerPhotoUrl(ID) = the ATP headshot for that ID's code (${anyKey} -> ${aliases[anyKey]})`,
-  ctx.playerPhotoUrl(anyKey) === `https://www.atptour.com/-/media/alias/player-headshot/${aliases[anyKey]}` && ctx.playerPhotoUrl(Number(anyKey)) === ctx.playerPhotoUrl(anyKey));
+vm.runInContext([oneLine('escapeHtml'), fn('playerPhotoUrl'), fn('playerPhotoImg')].join('\n'), ctx);
+const anyKey = Object.keys(PI.players)[0];
+check(`playerPhotoUrl(ID) = OUR stored copy, small by default and large on request, cache-busted by its hash (${anyKey})`,
+  ctx.playerPhotoUrl(anyKey) === `player-photos/s/${anyKey}.webp?v=${PI.players[anyKey].s}` && ctx.playerPhotoUrl(anyKey, 'l') === `player-photos/l/${anyKey}.webp?v=${PI.players[anyKey].l}`
+  && ctx.playerPhotoUrl(Number(anyKey)) === ctx.playerPhotoUrl(anyKey));
 check('playerPhotoUrl: an ID without an alias, null, empty, or a NAME = null (a monogram, never a guess)',
   [999999999, null, '', 'J. Sinner', 'Jannik Sinner', '1307', '2672'].every((k) => ctx.playerPhotoUrl(k) === null));
 const img = ctx.playerPhotoImg(anyKey, `O'Brien <x>`);
@@ -87,13 +89,14 @@ check('.sf-ph: one cover crop, centred; the circle\'s own fill behind the PNG on
 // ── 3. every surface asks the resolver; no retired source survives ──────────────────────────────────────────────
 const FRONT = ['bsp-consult-dashboard.html', 'trading-report.js', 'series.js', 'draw-view.js', 'player-profile-v2.js', 'live-tab.js', 'drops-page.js'];
 const RETIRED = ['photoCandidatesFor', 'photoOverrideFor', 'player-photos.json', 'resolveProfilePhotoUrl', 'avatarChainNext(', '_player_logo',
-  'p1PhotoUrl', 'p2PhotoUrl', 'logo-tennis', 'wikimedia', 'Special:FilePath'];
+  'p1PhotoUrl', 'p2PhotoUrl', 'logo-tennis', 'wikimedia', 'Special:FilePath',
+  'player-headshot', 'atpPhotoFor', 'loadPlayerAtpAliases'];   // founder 2026-10-24: no page loads a photo from ATP's servers
 const hits = [];
 for (const f of FRONT) { const s = fs.readFileSync(path.join(ROOT, f), 'utf8'); RETIRED.forEach((r) => { if (s.includes(r)) hits.push(`${f}: ${r}`); }); }
 check('no retired photo source anywhere in the frontend (Wikimedia, player-photos.json, the api-tennis logo, the old chain)', hits.length === 0, hits.join('; '));
 const USES = [
   ['Today\'s Matches cards', 'bsp-consult-dashboard.html', 'const img = playerPhotoImg(playerKey, name);'],
-  ['legacy profile hero', 'bsp-consult-dashboard.html', 'const src = playerPhotoUrl(playerKey);'],
+  ['legacy profile hero', 'bsp-consult-dashboard.html', "const src = playerPhotoUrl(playerKey, 'l');"],
   ['Players page cards', 'bsp-consult-dashboard.html', 'const photo = playerPhotoImg(p.key, p.name);'],
   ['Match analysis header + Form/H2H rows', 'bsp-consult-dashboard.html', 'attrs = profileLinkAttrs(key, name), src = playerPhotoUrl(key);'],
   ['Ratings board', 'bsp-consult-dashboard.html', "playerPhotoImg(String(p.key), p.name)"],
@@ -103,13 +106,14 @@ const USES = [
   ['Trading Report', 'trading-report.js', 'playerPhotoImg(String(row.key), row.name)'],
   ['Series cards', 'series.js', "playerPhotoImg(String(key), name)"],
   ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],
-  ['Player Profile (V2)', 'player-profile-v2.js', 'window.playerPhotoUrl(p.key)'],
+  ['Player Profile (V2)', 'player-profile-v2.js', "window.playerPhotoUrl(p.key, 'l')"],
   ['Dropping Odds', 'drops-page.js', 'playerPhotoImg(r.photoKey, r.dSide || r.side)'],
   ['Tournament quotes', 'bsp-consult-dashboard.html', 'playerPhotoImg(String(qt.playerKey), qt.player)'],
 ];
 const missing = USES.filter(([, f, t]) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes(t)).map(([l]) => l);
 check(`every avatar surface reads the one resolver (${USES.length} surfaces)`, missing.length === 0, 'missing: ' + missing.join(', '));
-const mutant = DASH.replace('function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey); }', 'function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey) || photoOverrideFor(playerKey); }');
+const mutant = DASH.replace('  const e = playerPhotoIndex[String(playerKey)];', "  const e = playerPhotoIndex[String(playerKey)]; if (!e) return 'https://www.atptour.com/-/media/alias/player-headshot/' + playerKey;");
+check('control: the mutant applied (an ATP fallback inside the resolver)', mutant !== DASH);
 check('control: a second source slipped into the resolver is caught by the retired-source scan', RETIRED.some((r) => mutant.includes(r)));
 
 // ── 4. Drops: a row's ID only through its one Today's Matches fixture (founder 2026-10-23, Kibl rule) ──────────────
@@ -155,6 +159,67 @@ check('control: the pre-fix whitelist (no key) is caught',
 const PIPE = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
 check('player-photos.json: not published, and the map, its generator and its validator are gone',
   !PIPE.includes('player-photos.json') && !['player-photos.json', 'enrich-player-photos.py', 'validate-player-photos.js'].some((f) => fs.existsSync(path.join(ROOT, f))));
+
+// ── 8. self-hosted headshots (founder 2026-10-24): the stored files, the index, the update rule, the alert ─────────
+const webpDims = (buf) => { // VP8X: canvas width/height minus one, 24-bit LE at bytes 24..29
+  if (buf.slice(0, 4).toString() !== 'RIFF' || buf.slice(8, 12).toString() !== 'WEBP') return null;
+  if (buf.slice(12, 16).toString() === 'VP8X') return [1 + buf.readUIntLE(24, 3), 1 + buf.readUIntLE(27, 3)];
+  if (buf.slice(12, 16).toString() === 'VP8 ') return [buf.readUInt16LE(26) & 0x3fff, buf.readUInt16LE(28) & 0x3fff];
+  if (buf.slice(12, 16).toString() === 'VP8L') { const b = buf.readUInt32LE(21); return [1 + (b & 0x3fff), 1 + ((b >> 14) & 0x3fff)]; }
+  return null; };
+const crypto = require('crypto');
+const bad8 = [];
+for (const [id, e] of Object.entries(PI.players)) {
+  if (aliases[id] !== e.code) bad8.push(`${id}: index code ${e.code} is not the alias ${aliases[id]}`);
+  if ((manifest.placeholders || []).some((p) => p.sha1_16 === e.srcSha1)) bad8.push(`${id}: a known placeholder`);
+  for (const [s, px] of [['s', 96], ['l', 256]]) {
+    const f = path.join(ROOT, 'player-photos', s, id + '.webp');
+    if (!fs.existsSync(f)) { bad8.push(`${id}: missing ${s}`); continue; }
+    const buf = fs.readFileSync(f); const d = webpDims(buf);
+    if (!d || d[0] !== px || d[1] !== px) bad8.push(`${id} ${s}: ${d ? d.join('x') : 'not WebP'} (expected ${px}x${px})`);
+    if (crypto.createHash('sha1').update(buf).digest('hex').slice(0, 10) !== e[s]) bad8.push(`${id} ${s}: hash differs from the index (stale cache-buster)`);
+  }
+}
+check(`stored photos: ${Object.keys(PI.players).length} IDs, each a 96 px and a 256 px WebP whose hash is the index's, under the alias's own code, no placeholder`,
+  Object.keys(PI.players).length > 0 && bad8.length === 0, bad8.slice(0, 6).join('; '));
+check('index coverage is what it lists (stored = entries; aliases = the alias map)',
+  PI.coverage.stored === Object.keys(PI.players).length && PI.coverage.aliases === Object.keys(aliases).length);
+const stray = []; for (const s of ['s', 'l']) for (const f of fs.readdirSync(path.join(ROOT, 'player-photos', s))) if (!PI.players[f.replace(/\.webp$/, '')]) stray.push(s + '/' + f);
+check('no stored photo outside the index (a removed alias leaves no file the page could still reach)', stray.length === 0, stray.slice(0, 6).join(', '));
+// the update rule, through the module the fetcher uses (no browser needed)
+const { execFileSync: xf } = require('child_process');
+const rule = JSON.parse(xf(process.execPath, ['--input-type=module', '-e', `
+  import { nextIndex, coverageDropped } from ${JSON.stringify(require('url').pathToFileURL(path.join(ROOT, 'tools', 'photos', 'photo-index.mjs')).href)};
+  const prev = { 1: { code: 'A1', s: 'old1' }, 2: { code: 'B2', s: 'old2' }, 3: { code: 'C3', s: 'old3' }, 4: { code: 'D4', s: 'old4' } };
+  const aliases = { 1: 'A1', 2: 'B2', 4: 'D9', 5: 'E5' };            // 3 removed from the map; 4 re-pointed to another code
+  const full = nextIndex({ aliases, prev, results: { 1: { ok: false, why: 403 }, 2: { ok: true, entry: { code: 'B2', s: 'new2' } }, 4: { ok: false, why: 403 }, 5: { ok: true, entry: { code: 'E5', s: 'new5' } } } });
+  const part = nextIndex({ aliases, prev, results: { 5: { ok: true, entry: { code: 'E5', s: 'new5' } } }, only: new Set(['5']) });
+  console.log(JSON.stringify({ full, part, drop: coverageDropped({ aliases: 182, stored: 182 }, { aliases: 182, stored: 170 }), same: coverageDropped({ aliases: 182, stored: 182 }, { aliases: 183, stored: 183 }) }));`], { encoding: 'utf8' }));
+check('update rule: a failed fetch keeps the last good photo (with lastError) — never a deletion',
+  rule.full.players[1] && rule.full.players[1].s === 'old1' && rule.full.players[1].lastError === '403' && rule.full.kept.includes('1'));
+check('update rule: a fetched photo replaces; a new alias is added; an alias removed from the map is dropped; a re-pointed alias keeps nothing of the old code',
+  rule.full.players[2].s === 'new2' && rule.full.players[5].s === 'new5' && !rule.full.players[3] && rule.full.removed.includes('3') && !rule.full.players[4] && rule.full.removed.includes('4'));
+check('update rule: a partial run carries every unfetched photo over', rule.part.players[1].s === 'old1' && rule.part.players[2].s === 'old2' && rule.part.players[5].s === 'new5');
+check('coverage alert: a share drop (182/182 -> 170/182) is flagged; a same share on a grown map is not', rule.drop === true && rule.same === false);
+const tmpI = path.join(require('os').tmpdir(), 'pp-cov-' + process.pid + '.json');
+fs.writeFileSync(tmpI, JSON.stringify({ coverage: { aliases: 182, stored: 182 } }));
+const covOut = xf(process.execPath, [path.join(ROOT, 'tools', 'photos', 'coverage-check.mjs'), '--index', tmpI, '--prev', tmpI], { encoding: 'utf8' });
+fs.writeFileSync(tmpI + '2', JSON.stringify({ coverage: { aliases: 182, stored: 150 } }));
+const covDrop = xf(process.execPath, [path.join(ROOT, 'tools', 'photos', 'coverage-check.mjs'), '--index', tmpI + '2', '--prev', tmpI], { encoding: 'utf8' });
+check('coverage-check: an unchanged share prints no warning; a drop prints a ::warning:: and still exits 0 (never blocks the publish)',
+  !/::warning::/.test(covOut) && /::warning::player photos: STORED-PHOTO COVERAGE DROPPED 182\/182 -> 150\/182/.test(covDrop));
+fs.rmSync(tmpI, { force: true }); fs.rmSync(tmpI + '2', { force: true });
+// the lane: the photo job's commits are data, and only the photo files are
+const lane = JSON.parse(xf(process.execPath, ['--input-type=module', '-e', `
+  import { isDataPath, isDataCommit } from ${JSON.stringify(require('url').pathToFileURL(path.join(ROOT, 'tools', 'deploy-lane.mjs')).href)};
+  console.log(JSON.stringify([isDataPath('player-photos/s/1764.webp'), isDataPath('player-photos/l/1764.webp'), isDataPath('player-photos/index.json'),
+    isDataPath('player-photos/s/x.webp'), isDataPath('player-photos/s/1.png'), isDataPath('player-photos/run.js'), isDataPath('player-photos/s/1.webp.js'),
+    isDataCommit({ subject: 'chore(photos): weekly headshot refresh [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['player-photos/s/1.webp', 'player-photos/index.json'] }),
+    isDataCommit({ subject: 'chore(photos): refresh [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['player-photos/s/1.webp', 'bsp-consult-dashboard.html'] })]));`], { encoding: 'utf8' }));
+check('lane: the photo job\'s files are data (s/l <id>.webp + index.json); anything else there, or a commit mixing code in, is not',
+  JSON.stringify(lane) === JSON.stringify([true, true, true, false, false, false, false, true, false]), JSON.stringify(lane));
+const PIPE8 = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
+check('pipeline publishes player-photos/ and runs the coverage alert without blocking', /cp -r player-photos _site\//.test(PIPE8) && /^\s+node tools\/photos\/coverage-check\.mjs\s*$/m.test(PIPE8));
 
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

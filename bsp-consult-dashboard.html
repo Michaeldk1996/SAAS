@@ -6571,8 +6571,8 @@ async function loadMatches(){
   // (awaited so an open Edge Model re-render sees fresh numbers) but never
   // allowed to throw — loadModelOutput swallows its own errors.
   await loadModelOutput();
-  // ATP alias headshots (TEN-136), same critical-path timing. Tiny file, loaded once.
-  await loadPlayerAtpAliases();
+  // Self-hosted headshots (founder 2026-10-24): the index of stored photos, same critical-path timing. Tiny, loaded once.
+  await loadPlayerPhotoIndex();
   // TEN-225 Part 3 — Open / Now / Close. AWAITED and on the critical path, for
   // the same reason the two files above are: every odds accessor consults it,
   // so a card painted before it lands shows the matches.json value and then
@@ -8513,54 +8513,39 @@ function playerAvatarHtml(name, playerKey){
   // The onclick lives on BOTH branches because avatarFallback() swaps the
   // <img> for a <div> on load error and doesn't copy attributes. (T2)
   const attrs = profileLinkAttrs(playerKey, name);
-  // The one photo source (founder 2026-10-22): the ATP headshot by player ID, else the monogram.
-  const src = playerPhotoUrl(playerKey);
+  // The one photo source (founder 2026-10-22/24): our stored headshot by player ID — the large size, this is the
+  // profile hero — else the monogram.
+  const src = playerPhotoUrl(playerKey, 'l');
   if (!src) return `<div class="avatar-fallback"${attrs}>${initials}</div>`;
   return `<img class="avatar"${attrs} src="${src}" alt="${escapeHtml(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`;
 }
 
-// TEN-136 / TEN-151: ATP official headshot by api-tennis player_key, via the
-// committed alias map (player-atp-aliases.json: {player_key: ATP_ALIAS}). Since
-// 2026-10-22 it is the ONLY photo source site-wide (founder: "one player, one photo,
-// on every surface"): the Wikimedia override and the api-tennis logo are retired.
-// Map written by no job (hand-committed); safe from the 15-min player-profiles
-// regeneration.
-//
-// THE DENYLIST IS GONE, AND THE FOUR CODES ARE KEPT HERE RATHER THAN IN CODE.
-// It read `new Set(['J194','E155','W133','G285'])` and was described as skipping
-// known grey-silhouette placeholders. Measured 2026-09-21 on the founder's ask:
-// player-atp-aliases.json holds 184 entries and 184 DISTINCT aliases, and NONE of
-// those four is among them. `git log -S` over the file's entire history returns
-// zero commits for each — they have never been in the map, so the `.has()` call
-// could never have excluded anything. It was a comment pretending to be code.
-//
-// The FACT is worth keeping even though the code was not: if those four ATP codes
-// really do serve silhouettes, the place to act on it is wherever the alias map is
-// CURATED — a guard there stops a bad code being added. In the render path it can
-// only filter values that are already present, which these never were.
-let playerAtpAliases = {};
-let _atpAliasesLoaded = false;
-function atpPhotoFor(playerKey){
-  if (playerKey == null || playerKey === '') return null;
-  const alias = playerAtpAliases[String(playerKey)];
-  if (!alias) return null;
-  return `https://www.atptour.com/-/media/alias/player-headshot/${alias}`;
-}
-async function loadPlayerAtpAliases(){
-  if (_atpAliasesLoaded) return;
+// Self-hosted headshots (founder 2026-10-24; Michael has an agreement with ATP covering this). The ATP headshot of every
+// player ID in player-atp-aliases.json is stored with the site's own files in two WebP sizes by
+// tools/photos/fetch-headshots.mjs (a Mac job: ATP's CDN challenges every non-browser client), and
+// player-photos/index.json lists the IDs that have one. No page loads a photo from ATP's servers.
+let playerPhotoIndex = {};
+let _photoIndexLoaded = false;
+async function loadPlayerPhotoIndex(){
+  if (_photoIndexLoaded) return;
   try {
-    const res = await fetch('./player-atp-aliases.json', { cache: 'no-cache' });
-    if (res.ok){ const d = await res.json(); playerAtpAliases = d || {}; _atpAliasesLoaded = true; }
+    const res = await fetch('./player-photos/index.json', { cache: 'no-cache' });
+    if (res.ok){ const d = await res.json(); playerPhotoIndex = (d && d.players) || {}; _photoIndexLoaded = true; }
   } catch (e) { /* additive; absence = every avatar shows its monogram */ }
 }
 
-// The ONE player-photo resolver (founder 2026-10-22). A player ID resolves to the ATP headshot
-// through player-atp-aliases.json, else null — never a display name, never a second source.
-// Every avatar on every surface asks this function and nothing else (.claude/rules/player-photos.md).
-function playerPhotoUrl(playerKey){ return atpPhotoFor(playerKey); }
+// The ONE player-photo resolver (founder 2026-10-22/24). A player ID resolves to OUR stored copy of its ATP headshot —
+// size 's' 96 px (cards, rows, quotes) or 'l' 256 px (the profile header), cache-busted by the file's content hash —
+// else null: never a display name, never another host. Every avatar asks this function (.claude/rules/player-photos.md).
+function playerPhotoUrl(playerKey, size){
+  if (playerKey == null || playerKey === '') return null;
+  const e = playerPhotoIndex[String(playerKey)];
+  const s = size === 'l' ? 'l' : 's';
+  return e && e[s] ? `player-photos/${s}/${encodeURIComponent(String(playerKey))}.webp?v=${e[s]}` : null;
+}
 // The photo layer every monogram circle shares: lazy, alt = the player's name, one face-centred
 // cover crop (.sf-ph). Once loaded (.sf-on) it carries the circle's own fill behind the transparent
-// PNG so the monogram never shows through it; until then the monogram shows. A failed load removes
+// WebP so the monogram never shows through it; until then the monogram shows. A failed load removes
 // the photo and the monogram underneath shows — never a broken-image icon. '' when there is no photo.
 function playerPhotoImg(playerKey, name){
   const src = playerPhotoUrl(playerKey);

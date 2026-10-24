@@ -2248,3 +2248,14 @@ and show each with the record's corrections — the founder chose the second. On
 on these tabs, so those are the two fields applied; Tournament's edition W–L moves with a corrected result. The two real
 result corrections are retirements the feed scored as wins for the player who retired (TE: a loss, e.g. M15 Pirot 2021
 SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the corrected L reads correctly beside them.
+
+## Player photos self-hosted (2026-10-24)
+- **Why:** measured 24 Oct, ATP's headshot CDN sits behind a Cloudflare challenge. A browser without Cloudflare's
+  clearance cookie (any private window; any browser that has not passed atptour.com's check recently) got 403
+  `cf-mitigated: challenge` for 24 of 24 headshots on Today's Matches, so avatars fell back to initials; cleared, the
+  same page took ~2.2 s for 849 KB of 300 px PNGs. Michael has an agreement with ATP covering stored copies.
+- **Why a visible Chrome on the Mac:** curl, GitHub runners and headless Chrome are all challenged; a normal Chrome
+  window clears it in under a second. Cloudflare re-challenges after ~25 rapid requests, so the job paces (0.7 s) and
+  re-opens a headshot page on any 403. 182 photos take ~3 min.
+- **Why WebP made in the browser:** canvas `convertToBlob('image/webp')` needs no image library in a zero-dependency
+  repo. 96 px mean 3.4 KB, 256 px mean 11.3 KB (n=182); every source byte-identical to the 22 Oct audited manifest.
