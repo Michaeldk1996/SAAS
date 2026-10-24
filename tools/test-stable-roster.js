@@ -27,13 +27,18 @@ const SHARDS = {
   1004: [row('2026-03-30', 'K. Someone', '9999')],
   567: [row('2026-03-27', 'J. Faria', '1001'), row('2026-03-29', 'Z. Third', '1003')],
   2920: [row('2026-03-28', 'Z. Second', '1002'), row('2026-03-29', 'Z. Third', '1003')],
+  // founder 2026-10-24 · a two-key player: api-tennis files Johan Alexander Rodríguez Rodríguez's 11 Jun match under 9221
+  // ("J. A. Rodriguez"); his other key 8372 carries the full spelling. Ribeiro (6712) is profiled; his row names 9221.
+  6712: [row('2026-06-11', 'J. A. Rodriguez', '9221')],
+  1756: [row('2026-06-13', 'J. A. Rodriguez Rodriguez', '8372')],
 };
-const PROFILES = { 1001: { name: 'J. Faria' }, 1002: { name: 'Z. Second' }, 1003: { name: 'Z. Third' }, 1004: { name: 'K. Fourth' } };
+const PROFILES = { 6712: { name: 'E. Ribeiro' }, 1756: { name: 'N. Kicker' }, 1001: { name: 'J. Faria' }, 1002: { name: 'Z. Second' }, 1003: { name: 'Z. Third' }, 1004: { name: 'K. Fourth' } };
 const CAPS = {
   a: cap('Faria, Jaime', 'Nava, Emilio', '2026-03-27', 'Challenger'),
   b: cap('Second, Zed', 'Nava, Eduardo', '2026-03-28', 'Challenger'),
   c: cap('Third, Zak', 'Nava, Emilio', '2026-03-29', 'Challenger'),
   d: cap('Fourth, Kai', 'Nava, Emilio', '2026-03-30', 'Challenger'),
+  e: cap('Ribeiro, Eduardo', 'Rodriguez Rodriguez, Johan Alexander', '2026-06-11', 'Challenger'),
 };
 function store(board) {
   const d = fs.mkdtempSync(path.join(os.tmpdir(), 'stable-roster-'));
@@ -66,6 +71,8 @@ function check(mc) {
   if (noBoard['2026-03-28'] !== '1002-2920') errs.push('Second v Eduardo Nava (one pair met) did not join to 2920: ' + noBoard['2026-03-28']);
   if ('2026-03-29' in noBoard) errs.push('two candidate pairs met, yet the capture joined: ' + noBoard['2026-03-29']);
   if ('2026-03-30' in noBoard) errs.push('no candidate pair met, yet the capture joined: ' + noBoard['2026-03-30']);
+  // founder 2026-10-24: the full spelling resolves to 8372, but Ribeiro's own row that day names 9221 — never keep it
+  if ('2026-06-11' in noBoard) errs.push('a two-key player kept a wrong-key capture: Ribeiro v ' + noBoard['2026-06-11']);
   return errs;
 }
 
@@ -85,6 +92,11 @@ ok(check(load(noSettle)).length > 0, 'CONTROL 2 · a join without the evidence s
 const anyPair = SRC.replace('if (pairs.length === 1) {', 'if (pairs.length >= 1) {');
 ok(anyPair !== SRC, 'control 3 mutation applies');
 ok(check(load(anyPair)).length > 0, 'CONTROL 3 · settling an ambiguous capture on one of two met pairs is caught');
+
+// CONTROL 4 · founder 2026-10-24: without the career confirmation the two-key capture is kept on the wrong key (8372)
+const noConfirm = SRC.replace('if (!confirmedByCareer(k1, k2, Math.floor(trueStart / 86400))) {', 'if (false) {');
+ok(noConfirm !== SRC, 'control 4 mutation applies');
+ok(check(load(noConfirm)).some((e) => /two-key player kept a wrong-key capture/.test(e)), 'CONTROL 4 · keeping an unconfirmed capture for a profiled player is caught (Rodríguez Rodríguez on 8372)');
 
 console.log(`\ntest-stable-roster: ${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

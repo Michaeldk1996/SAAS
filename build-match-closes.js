@@ -228,6 +228,14 @@ function capturedBet365(root, resolver, stats) {
   const chDir = path.join(root, 'career-history'), shards = new Map();
   const rowsOf = (k) => { if (!shards.has(k)) { const d = readJson(path.join(chDir, k + '.json'), null); shards.set(k, (d && d.matches) || []); } return shards.get(k); };
   const met = (a, b, day) => rowsOf(a).some((x) => x && !x.walkover && String(x.oppKey) === String(b) && Math.abs(Date.parse(String(x.date).slice(0, 10)) / 864e5 - day) <= 1);
+  const shardKnown = new Map();
+  const profiled = (k) => { if (!shardKnown.has(k)) shardKnown.set(k, fs.existsSync(path.join(chDir, k + '.json'))); return shardKnown.get(k); };
+  const confirmedByCareer = (k1, k2, day) => {
+    if (!fs.existsSync(chDir)) return true;
+    const p1 = profiled(k1), p2 = profiled(k2);
+    if (!p1 && !p2) return true;
+    return (p1 && met(k1, k2, day)) || (p2 && met(k2, k1, day));
+  };
   const settle = (n1, n2, k1, k2, day) => {
     const c1 = k1 ? [k1] : (resolver.candidates ? resolver.candidates(n1) : []), c2 = k2 ? [k2] : (resolver.candidates ? resolver.candidates(n2) : []);
     if (!c1.length || !c2.length || !fs.existsSync(chDir)) return [k1, k2];
@@ -243,6 +251,12 @@ function capturedBet365(root, resolver, stats) {
     let k1 = keyOf.get(v.p1), k2 = keyOf.get(v.p2);
     if (!k1 || !k2) [k1, k2] = settle(v.p1, v.p2, k1, k2, Math.floor(trueStart / 86400));
     if (!k1 || !k2 || k1 === k2) { stats.capUnresolved++; continue; }
+    // Founder 2026-10-24 (spot-check of the [WALKOVER-GATE] roster): a name can resolve to the OTHER key of a player
+    // api-tennis files under two (Rodríguez Rodríguez 8372 / J. A. Rodriguez 9221, Dedura-Palomero 55858 / 100332): 10 of
+    // 2,619 newly matched captures, plus 4 whose player's row that day names a different opponent. So when either player
+    // has a career-history shard, the capture is kept only if one of them has a row against the other within ±1 day; with
+    // no profiled player (nothing to confirm against, and nothing that can display it) it is kept as before.
+    if (!confirmedByCareer(k1, k2, Math.floor(trueStart / 86400))) { stats.capUnconfirmed = (stats.capUnconfirmed || 0) + 1; continue; }
     const [s1, s2] = dropSuspended(v.s1, v.s2);
     const a = lastAtOrBefore(s1, trueStart), b = lastAtOrBefore(s2, trueStart);
     if (a == null || b == null) { stats.capOneSided++; continue; } // one-sided = no price
