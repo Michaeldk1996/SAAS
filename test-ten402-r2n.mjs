@@ -177,7 +177,7 @@ test('r2.4 Reports: the match-stats sheet header and the empty-state lines print
   assert.doesNotMatch(h, /Tokyo 2026/, 'control: the key is not printed');
   // the "no box scores yet" / "not played yet" / progression empty lines name the event the same way
   const printed = (html.match(/\$\{typeof tourxEventName === 'function' \? tourxEventName\(T\.name\) : T\.name\}/g) || []).length;
-  assert.equal(printed, 5, 'round view (3) + player progression (2) print the event through tourxEventName');
+  assert.equal(printed, 6, 'round view (4) + player progression (2) print the event through tourxEventName');
   assert.doesNotMatch(fnSrc('tourxRoundViewHtml') + fnSrc('tourxPlayerViewHtml'), /\$\{T\.name\}/, 'a raw ${T.name} is printed');
 });
 

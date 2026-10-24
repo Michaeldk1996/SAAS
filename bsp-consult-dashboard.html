@@ -26627,14 +26627,13 @@ function tourxRoundViewHtml(T){
         rIdx, tip: tourxMatchTip(w, rIdx, roundLabel, setsToWin, true) };
     });
     const nAll = entries.length, nPlayed = players.length;
-    const eventName = typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name;
     if (selNames.length) entries = entries.filter(e => selNames.includes(e.name));
     if (!entries.length){
       return filterBar + dnaCard(nAll
         ? `None of the selected players are among the ${nAll} player${nAll === 1 ? '' : 's'} who won ${roundLabel}. Clear the player filter or pick a different round.`
         : nPlayed
-          ? `${nPlayed} player${nPlayed === 1 ? ' has' : 's have'} a ${roundLabel} box score at ${eventName}, but no ${roundLabel} winner is confirmed in the data yet.`
-          : `No ${roundLabel} box scores have been ingested for ${eventName} yet.`);
+          ? `${nPlayed} player${nPlayed === 1 ? ' has' : 's have'} a ${roundLabel} box score at ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name}, but no ${roundLabel} winner is confirmed in the data yet.`
+          : `No ${roundLabel} box scores have been ingested for ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name} yet.`);
     }
     // Dashed line = the round average over TOURX_ROUND_AVG_POP: 'all' = every player with a box score in this round
     // (tournament-progression.json fieldAverage.metrics[key][rIdx]; the derived ratings' client mean over the same
