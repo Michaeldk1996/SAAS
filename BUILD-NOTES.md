@@ -2176,6 +2176,15 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
 - **Targets:** our counting (TEN-449) stands; Tennis Explorer decides which matches exist, not what TEN-449 excludes.
   The brief's first targets (465–302 / 33–25) were TE's own balance, which counts Bundesliga club matches.
 
+## Per-source gate counts: alert for the price join, stop for Database figures (2026-10-24, ruled, not built)
+- **Why:** on 23 Oct the captured-Bet365 name join depended on the day's board. 00:00Z: resolved captures 4,804 → 4,684,
+  captured-Bet365 rows 185 → 176, two matches unpriced, master −2: the total gate stopped every run, naming only "the archive
+  answered short". 18:21Z: the same loss (4,678 / 175) passed, masked by ~1,800 new Tennis Explorer rows. Fixed at the source
+  in [WALKOVER-GATE] `2ee934e50` (first run after: 7,422 captures, 311 rows, gate +34).
+- **What a per-source check would have done:** named the cause at 00:00Z; and at 18:21Z, as a hard stop, kept the site stale
+  ~7 more hours over 10 rows that feed no Database figure. Hence the founder's split: hard stop only where a Database figure
+  moves, an alert where only the price join does.
+
 ## Player photos: one resolver, ATP headshot by player ID (2026-10-22)
 - **Why one source:** eleven surfaces read photos three ways (ATP alias -> Wikimedia -> api-tennis logo; ATP -> monogram;
   initials only), so one player could show three faces, and the api-tennis logo is where a wrong face shipped (TEN-97).
