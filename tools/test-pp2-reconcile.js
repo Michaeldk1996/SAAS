@@ -4025,7 +4025,10 @@ check('the all-stores table covers every data store the module reads', () => {
   // TEN-391: careerSplitsPending is the same in-flight flag for a player's career-splits file (the rows land on
   // careerSplits[key]).
   const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings', 'sfOverlayClosers',
-    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending', 'sfEscLayers']);
+    'TournamentIdentity', 'marketEdgePending', 'tourHistPending', 'careerSplitsPending', 'sfEscLayers',
+    // bet105-line-prices (founder brief 2026-10-24): LinePrices is the one line-price lookup (line-prices.js) and its lazy
+    // per-date shard cache — bet105 prices for UPCOMING matches, no player rows to reconcile; covered by test-line-prices.mjs
+    'LinePrices']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call
@@ -4066,7 +4069,9 @@ check('the all-stores table covers every data store the module reads', () => {
     'fhSrcTitle',
     // founder ruling 2026-10-20 item 1: the host's "Data paused" rule for a Mac-only feed (sfFeedPaused over the
     // career-splits-tour.json build date the page already loaded) — logic, no rows
-    'sfFeedPaused']);
+    'sfFeedPaused',
+    // bet105-line-prices: the host's repaint once a line-price shard lands (Derived lines' price cell) — a trigger, no rows
+    'pp2RepaintIfOpen']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
