@@ -2227,3 +2227,15 @@ unwired `tools/points-at-risk/test-drawer-render.js`) were removed. Nothing rebu
 any more: the daily `points-at-risk.yml` is deleted, `pipeline.yml` no longer copies it into `_site`, and the deploy
 lane no longer lists it as a data-bot file. The last committed copy and `tools/points-at-risk/` stay in the repo
 (`round-classify.js` is still read by `tools/test-pp2-reconcile.js`).
+
+## Form and Tournament read the record's corrections (2026-10-21, option A)
+
+The founder's brief asked that Form and Tournament read "the same verified match data as the career record". They do
+not, by design: TEN-449 payload B keeps the record as its own population (the TE merge never changes the career-history
+files H2H, Lines and the model read). Measured on the deployed records (631 players): 115,560 Tennis-Explorer-only rows,
+11,015 indoor flags, 2,258 surfaces, 568 seasons and 2 results corrected on our rows. Of two readings — move the tabs onto
+the record's whole population (reverses payload B; TE-only rows have no box score or prices) or keep the feed's matches
+and show each with the record's corrections — the founder chose the second. Only result and surface are shown per match
+on these tabs, so those are the two fields applied; Tournament's edition W–L moves with a corrected result. The two real
+result corrections are retirements the feed scored as wins for the player who retired (TE: a loss, e.g. M15 Pirot 2021
+SF, 6-2 3-0 ret.); the set scores are already from the player's side, so the corrected L reads correctly beside them.

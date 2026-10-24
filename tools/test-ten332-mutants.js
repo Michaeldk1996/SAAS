@@ -63,6 +63,20 @@ MUTANTS.push(
   ['Q2: an area fill under the trend', '${guides}${poly}</svg>', '${guides}<path d="M0 0 L1 1 Z" fill="url(#f)"></path>${poly}</svg>'],
   ['Q2: the trend guides dropped', '${guides}${poly}</svg>', '${poly}</svg>'],
 );
+MUTANTS.push(   // option A (founder 2026-10-21): Form and Tournament show the record's corrections
+  ["optA: Form ignores the record's result", "'won' in d ? { won: !!d.won } : null, d.surface", "null, d.surface"],
+  ["optA: Form ignores the record's surface", "d.surface ? { surface: d.surface } : null);", "null);"],
+  ['optA: the career fallback loses its index', "eventKey: x.eventKey, ci }));", "eventKey: x.eventKey }));"],
+  ['optA: Form shows the feed rows', "rows.map(x => fhRecordRow(fix[i], x))", "rows"],
+  ['optA: Form does not load the records', "ch(m.p2Key), rec(m.p1Key), rec(m.p2Key)]);", "ch(m.p2Key)]);"],
+  ['optA: Form never retries a missing record', "(!m._fhFormSrc[i] || !fix[i])", "!m._fhFormSrc[i]"],
+  ['optA: the scramble guard dropped', "if (i == null || !fix.rows[i] || !!fix.rows[i].won !== !!won) return null;", "if (i == null || !fix.rows[i]) return null;"],
+  ["optA: a Tournament row ignores the record", "if (fx && 'won' in fx && !!fx.won !== r.won){", "if (false){"],
+  ["optA: the edition W–L does not move", "won: y.won + flip, lost: y.lost - flip", "won: y.won, lost: y.lost"],
+  ['optA: Key factors without the record', "{ ch: null, cl: null, fix: recordFixFor(i ? m.p2Key : m.p1Key) }", "null"],
+  ['optA: a side ready without its record', "ok = String(key) in _careerHistoryShards && !!fix;", "ok = String(key) in _careerHistoryShards;"],
+  ['optA: no event-key lookup', "if (c && c.eventKey != null && over.has(i)) byEk.set(String(c.eventKey), i);", ""],
+);
 const SUITES = ['test-ten332-tournament.mjs'];
 const run = env => spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, env || {}), encoding: 'utf8' });
 if (run().status !== 0) { console.error('✖ the suite is red on the unmutated page — mutants are meaningless'); process.exit(1); }

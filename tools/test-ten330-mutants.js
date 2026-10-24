@@ -15,7 +15,7 @@ const MUTANTS = [
   ['bars: an unpriced bar prints nothing', "${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div>", "${r.price != null ? fhOdd(r.price) : ''}</span></div>"],
   ['N1: Form opens on All', "      form: { surf: fhSurfName(m.surface) || 'all',", "      form: { surf: 'all',"],
   ['career-history: no cap', "  return (walkovers ? rows : rows.slice(0, FH_FORM_ROW_CAP)).map(", "  return rows.map("],
-  ['career-history: a walkover row counted into the Form rows (2026-10-22)', "filter(x => x && x.date && !!x.walkover === !!walkovers)", "filter(x => x && x.date)"],
+  ['career-history: a walkover row counted into the Form rows (2026-10-22)', "filter(([x]) => x && x.date && !!x.walkover === !!walkovers)", "filter(([x]) => x && x.date)"],
   ['career-history: never read', "  const rowsOf = i => ((m._fhFormRows || [])[i]) || (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];",
     "  const rowsOf = i => (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];"],
   ['rows: group header loses "surface · W–L"', "      entries.push({ isHead: true, tourn: r.tourn, meta: (r.surface || FH_DASHC) + ' · ' + tw + '–' + (tm.length - tw) });",

@@ -13780,6 +13780,35 @@ function fhEnsureStyles(){
 // =====================================================================
 // FORM TAB
 // =====================================================================
+// The career record's corrections on the feed's matches (founder 2026-10-21, option A of TEN-449's two populations): Form
+// and Tournament keep the matches they show, and each one reads as the record counts it — its result and, on Form, its
+// surface. A match is found by its career-history index when the tab joined one, else by its event key, and only while
+// the feed's own result agrees with that career row (a disagreeing row is the feed's name-order scramble, not this
+// match). Season and indoor are not shown per match on either tab; the record's Tennis-Explorer-only rows are not shown.
+function recordFixOf(ch, lay){
+  const rows = Array.isArray(ch) ? ch : [], over = new Map((lay && lay.over) || []), byEk = new Map();
+  rows.forEach((c, i) => { if (c && c.eventKey != null && over.has(i)) byEk.set(String(c.eventKey), i); });
+  return { rows, over, byEk };
+}
+// His corrections once his career history and his record have both answered (no record layer: not joined to Tennis
+// Explorer, so nothing to correct); null while either is outstanding or failed.
+function recordFixFor(key){
+  const k = String(key == null ? '' : key);
+  if (!k || !(k in _careerHistoryShards) || !(k in _careerRecordLayers)) return null;
+  return recordFixOf(_careerHistoryShards[k], _careerRecordLayers[k]);
+}
+function recordFixRow(fix, ci, ek, won){
+  if (!fix) return null;
+  const i = ci != null && ci >= 0 ? ci : (ek != null ? fix.byEk.get(String(ek)) : undefined);
+  if (i == null || !fix.rows[i] || !!fix.rows[i].won !== !!won) return null;
+  return fix.over.get(i) || null;
+}
+// One Form row as the record counts it: a copy, the feed row untouched.
+function fhRecordRow(fix, x){
+  const d = x ? recordFixRow(fix, x.ci, x.eventKey, x.won) : null;
+  if (!d || (!('won' in d) && !d.surface)) return x;
+  return Object.assign({}, x, 'won' in d ? { won: !!d.won } : null, d.surface ? { surface: d.surface } : null);
+}
 function fhRefDay(m){ const d = fhDayNum(m.date); if (d != null) return d; const t = new Date(); return Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()) / 86400000; }
 // Loads what the Form tab needs beyond the form shards: both players' priced archives.
 // TEN-330 (phase0-c §1): the form shards cover the board roster only. A player without one reads the same
@@ -13789,11 +13818,11 @@ const FH_FORM_ROW_CAP = 40;                // = RECENT_FORM_ROW_CAP (bsp-pipelin
 // The cap counts played rows (as the pipeline's form shards do): a walkover row is split off first and listed on its own
 // (`walkovers` true: the walkover rows, uncapped). Self-contained: the Form suites lift this function out by name.
 function fhFormRowsFromCareer(ch, walkovers){
-  const rows = (Array.isArray(ch) ? ch : []).filter(x => x && x.date && !!x.walkover === !!walkovers);
-  return (walkovers ? rows : rows.slice(0, FH_FORM_ROW_CAP)).map(x => ({
+  const rows = (Array.isArray(ch) ? ch : []).map((x, ci) => [x, ci]).filter(([x]) => x && x.date && !!x.walkover === !!walkovers);
+  return (walkovers ? rows : rows.slice(0, FH_FORM_ROW_CAP)).map(([x, ci]) => ({
     opponent: x.opponent, opponentKey: null, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface,
     result: x.result, won: !!x.won, sets: x.sets, retired: !!x.retired, walkover: !!x.walkover, defaulted: !!x.defaulted,
-    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey }));
+    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey, ci }));
 }
 function fhEnsureFormData(m){
   // A keyed side left without a source may be a failed fetch (loadCareerHistory answers [] on one): the next open retries.
@@ -13803,14 +13832,19 @@ function fhEnsureFormData(m){
   // the Database's own where its join holds the match (sfDbPxRows), so the tab waits for it rather than flash another price
   return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory(), (typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null), ch(m.p1Key), ch(m.p2Key)]).then(([, a, b, eh]) => {
     m._fhCloses = [a, b]; m._fhElo = eh;
-    // career-history only for a side the form shards do not cover
-    return Promise.all([m.p1RecentFormMatches ? null : ch(m.p1Key), m.p2RecentFormMatches ? null : ch(m.p2Key)]);
+    // career-history only for a side the form shards do not cover; both players' career records (option A, 2026-10-21)
+    const rec = k => (k == null || k === '' || !(String(k) in _careerHistoryShards) ? null
+      : Promise.resolve().then(() => loadCareerRecord(k, (_careerHistoryShards[String(k)] || []).length)).catch(() => false));
+    return Promise.all([m.p1RecentFormMatches ? null : ch(m.p1Key), m.p2RecentFormMatches ? null : ch(m.p2Key), rec(m.p1Key), rec(m.p2Key)]);
   }).then(([c1, c2]) => {
     m._fhFormSrc = [m.p1RecentFormMatches ? 'form' : (c1 && c1.length ? 'career' : null), m.p2RecentFormMatches ? 'form' : (c2 && c2.length ? 'career' : null)];
-    m._fhFormRows = [m.p1RecentFormMatches || fhFormRowsFromCareer(c1), m.p2RecentFormMatches || fhFormRowsFromCareer(c2)];
+    const fix = [recordFixFor(m.p1Key), recordFixFor(m.p2Key)];
+    m._fhFormRows = [m.p1RecentFormMatches || fhFormRowsFromCareer(c1), m.p2RecentFormMatches || fhFormRowsFromCareer(c2)]
+      .map((rows, i) => (Array.isArray(rows) ? rows.map(x => fhRecordRow(fix[i], x)) : rows));
     m._fhFormWo = [m.p1RecentFormMatches ? (m.p1RecentFormWalkovers || []) : fhFormRowsFromCareer(c1, true),
       m.p2RecentFormMatches ? (m.p2RecentFormWalkovers || []) : fhFormRowsFromCareer(c2, true)];
-    m._fhFormRetry = [m.p1Key, m.p2Key].some((k, i) => k != null && k !== '' && !m._fhFormSrc[i]);
+    // a side whose record did not answer shows the feed rows uncorrected this time: the next open retries
+    m._fhFormRetry = [m.p1Key, m.p2Key].some((k, i) => k != null && k !== '' && (!m._fhFormSrc[i] || !fix[i]));
     m._fhFormData = true; return m;
   });
 }
@@ -16057,9 +16091,14 @@ function trLoad(m){
     if (key == null || !hist){ E.state[i] = 'ready'; E.data[i] = { ch: null, cl: null }; return; }   // nothing to join
     E.state[i] = 'loading';
     loads.push(Promise.resolve(loadCareerHistory(key)).then(ch => {
-      if (_tr !== E) return;
-      const ok = String(key) in _careerHistoryShards;
-      E.state[i] = ok ? 'ready' : 'failed'; E.data[i] = ok ? { ch: ch || _careerHistoryShards[String(key)] || [], cl: null } : null;
+      // option A (2026-10-21): the record's corrections settle with the history — both answered, or the side failed
+      const rec = String(key) in _careerHistoryShards
+        ? Promise.resolve(loadCareerRecord(key, (_careerHistoryShards[String(key)] || []).length)).catch(() => false) : null;
+      return Promise.resolve(rec).then(() => {
+        if (_tr !== E) return;
+        const fix = recordFixFor(key), ok = String(key) in _careerHistoryShards && !!fix;
+        E.state[i] = ok ? 'ready' : 'failed'; E.data[i] = ok ? { ch: ch || _careerHistoryShards[String(key)] || [], cl: null, fix } : null;
+      });
     }).catch(() => { if (_tr === E){ E.state[i] = 'failed'; E.data[i] = null; } }).then(paint));
   });
   if (_sfDbJoinSt !== 'ready') loads.push(sfDbJoinLoad().catch(() => null).then(paint));
@@ -16113,6 +16152,9 @@ function trRowOf(x, season, d, key, name, idx, tourn, names){
   r.round = fhRoundCode(x.round, false);   // the history's main-draw round (N7)
   if (tourn) r.tourn = (typeof sfEventName === 'function' ? sfEventName(tourn) : tourn) + ' ' + season;   // the sheet's meta line names the edition (DF L2609: "Washington 2025"; r1 fix 2: the one event name)
   r.won = !!x.won; r.date = x.date || r.date || null;
+  // option A: the result as the career record counts this match (the joined row by its index, else by event key)
+  const fx = recordFixRow(d && d.fix, ci, x.eventKey, x.won);
+  if (fx && 'won' in fx && !!fx.won !== r.won){ r.won = !!fx.won; r.recWon = true; }
   r.mid = fhSafeId('tr' + key + '_' + idx + '_' + (x.eventKey != null ? x.eventKey : x.date));
   return r;
 }
@@ -16157,7 +16199,8 @@ function trModelOf(hist, d, key, name, clean, names, mYear, state){
     // finished editions; the meta line says so in its own words, no new pattern.
     else if (String(y.year) === mYear) result = 'In progress';
     else result = (TR_RESULT[psRoundAbbr(y.roundReached)] || y.roundReached || '—') + ' · w/o';   // won, then gave a walkover
-    return { year: String(y.year), rows, result, won: y.won, lost: y.lost };
+    const flip = rows.reduce((s, r) => s + (r.recWon ? (r.won ? 1 : -1) : 0), 0);   // a corrected result moves the edition's W–L
+    return { year: String(y.year), rows, result, won: y.won + flip, lost: y.lost - flip };
   });
   // tiles (DF tourRecFor L2622–2628)
   const W = eds.reduce((s, e) => s + e.won, 0), L = eds.reduce((s, e) => s + e.lost, 0), n = W + L;
@@ -18217,7 +18260,8 @@ function kfTourCard(m){
   const tiles = `<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;">${roi('kf-roi-fav', 'ROI fav', mk && mk.roiFav, mk && mk.baseline && mk.baseline.roiFav)}${roi('kf-roi-dog', 'ROI dog', mk && mk.roiDog, mk && mk.baseline && mk.baseline.roiDog)}${fav}</div>`;
   // Record here: the Tournament tab's model over the pipeline history (no shards needed: W–L, best, sets are the history's)
   const names = [clean].concat(trArchiveNames(mk)), yr = String(m.date || '').slice(0, 4);
-  const T = [0, 1].map(i => trModelOf(i ? m.p2TournamentHistory : m.p1TournamentHistory, null, i ? m.p2Key : m.p1Key, i ? m.p2 : m.p1, clean, names, yr, 'idle'));
+  const T = [0, 1].map(i => trModelOf(i ? m.p2TournamentHistory : m.p1TournamentHistory, { ch: null, cl: null, fix: recordFixFor(i ? m.p2Key : m.p1Key) },
+    i ? m.p2Key : m.p1Key, i ? m.p2 : m.p1, clean, names, yr, 'idle'));   // option A: the record's results (fhEnsureFormData loads it)
   const words = t => `<span style="font-family:var(--font-words); font-size:11.5px; font-weight:400; color:${C.t3};">${t}</span>`;
   const wl = (t, hist) => {
     if (!hist) return `<span class="kf-tour-note">${words('first appearance')}</span>`;
