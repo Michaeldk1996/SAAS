@@ -5476,6 +5476,15 @@
       "p2": "J. Paul",
       "startTime": "2026-10-24T13:40:00.000Z",
       "tournamentId": 2613
+    },
+    "12173942": {
+      "fixtureId": "id1200261375991552",
+      "mappedAt": "2026-10-24T13:03:54Z",
+      "orient": "same",
+      "p1": "R. Hijikata",
+      "p2": "Y. Hanfmann",
+      "startTime": "2026-10-25T09:00:00.000Z",
+      "tournamentId": 2613
     }
   },
   "missAudit": {
@@ -5488,23 +5497,12 @@
       "observedSpanDays": 18.57,
       "projectedTtlUnitsPerDay": 2.7,
       "runs": 400,
-      "spentRuns": 165,
+      "spentRuns": 166,
       "ttlBitRuns": 51,
       "ttlBitShare": 0.128,
       "ttlHours": 1.0
     },
     "runs": [
-      {
-        "at": "2026-10-05T22:17:24Z",
-        "fixturesUnitsSpent": 0,
-        "hitExpired": 0,
-        "missExpired": 0,
-        "openMisses": 0,
-        "stale": 0,
-        "ttlBit": false,
-        "unmapped": 0,
-        "upcoming": 24
-      },
       {
         "at": "2026-10-05T23:17:29Z",
         "fixturesUnitsSpent": 0,
@@ -9893,9 +9891,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 21
+      },
+      {
+        "at": "2026-10-24T13:03:54Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 22
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-10-24T10:07:59Z"
+  "updatedAt": "2026-10-24T13:03:54Z"
 }
