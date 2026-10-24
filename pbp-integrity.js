@@ -204,7 +204,69 @@
     return { sets, repairs };
   }
 
-  const api = { UNAVAILABLE, parsePoint, gameReason, tiebreakReason, checkSet, check, annotate, isGame, isTbRow, repair };
+  // ── CARRY-OVER (founder brief 2026-10-23): a just-finished match shows its point log before the pipeline publishes ──
+  // The live store (Supabase live_pbp) keeps a match's row for 6 h after it leaves the live board, and the poller writes
+  // the provider's own log and fixture summary into it. These three helpers turn that row into what the page draws.
+
+  // The provider's raw pointbypoint array -> the shard's { sets } shape. MUST match build-point-by-point.js compactPbp
+  // (tools/test-pbp-carryover.js compares them on real fixtures).
+  const sideOf = l => (l === 'First Player' ? 'p1' : l === 'Second Player' ? 'p2' : null);
+  function compact(raw) {
+    if (!Array.isArray(raw) || raw.length === 0) return null;
+    const setsMap = new Map();
+    for (const g of raw) {
+      const setNo = parseInt(String(g.set_number || 'Set 1').replace(/[^0-9]/g, ''), 10) || 1;
+      if (!setsMap.has(setNo)) setsMap.set(setNo, []);
+      const points = Array.isArray(g.points) ? g.points.map(p => {
+        const o = { n: Number(p.number_point) || null, s: p.score || '' };
+        if (p.break_point) o.bp = true;
+        if (p.set_point) o.sp = true;
+        if (p.match_point) o.mp = true;
+        return o;
+      }) : [];
+      setsMap.get(setNo).push({ g: Number(g.number_game) || null, server: sideOf(g.player_served), winner: sideOf(g.serve_winner), score: g.score || '', points });
+    }
+    return { sets: [...setsMap.keys()].sort((a, b) => a - b).map(n => ({ set: n, games: setsMap.get(n) })) };
+  }
+
+  // The provider's own result, oriented to the board's p1 by player KEY. null when the match is not over in the
+  // provider's words (Finished / Retired / Awarded) or when neither key matches (no orientation is ever guessed).
+  function finalScoreFromFeed(final, p1Key, p2Key) {
+    if (!final || !/finished|retired|awarded/i.test(String(final.event_status || ''))) return null;
+    const fk = String(final.first_player_key), sk = String(final.second_player_key);
+    const flip = String(p1Key) === sk && String(p2Key) === fk;
+    if (!flip && !(String(p1Key) === fk && String(p2Key) === sk)) return null;
+    const rows = (Array.isArray(final.scores) ? final.scores : []).slice().sort((a, b) => Number(a.score_set) - Number(b.score_set));
+    const sets = rows.map(r => {
+      const a = parseInt(r.score_first, 10), b = parseInt(r.score_second, 10);
+      return flip ? { p1: b, p2: a } : { p1: a, p2: b };
+    }).filter(x => Number.isFinite(x.p1) && Number.isFinite(x.p2));
+    if (!sets.length) return null;
+    const w = final.event_winner === 'First Player' ? (flip ? 'p2' : 'p1') : final.event_winner === 'Second Player' ? (flip ? 'p1' : 'p2') : null;
+    const won = side => sets.filter(x => (side === 'p1' ? x.p1 > x.p2 : x.p2 > x.p1)).length;
+    return { display: sets.map(x => `${x.p1}-${x.p2}`).join(', '), sets, p1Sets: won('p1'), p2Sets: won('p2'), winner: w,
+      retired: /retired/i.test(String(final.event_status || '')), source: 'live' };
+  }
+
+  // Whichever log is newer: the published shard (`asOf`, the time its log was fetched) or the live row (final_at, else
+  // updated_at). A shard without asOf predates the stamp and wins (it is the pipeline's copy). The live log is the
+  // provider's as received, put through the same deletion-only repair as a published shard. Returns { p1, p2, sets,
+  // asOf, src } or null — never a blank log over a real one.
+  function chooseLog(shard, row) {
+    const live = row && compact(row.pbp);
+    const liveAt = row ? Date.parse(row.final_at || row.updated_at || '') : NaN;
+    const shardOk = shard && Array.isArray(shard.sets) && shard.sets.length;
+    if (!live || !Number.isFinite(liveAt)) return shardOk ? Object.assign({ src: 'shard' }, shard) : null;
+    if (shardOk) {
+      const shardAt = shard.asOf ? Date.parse(shard.asOf) : Infinity;
+      if (!(liveAt > shardAt)) return Object.assign({ src: 'shard' }, shard);
+    }
+    const f = row.final || {};
+    return { p1: f.event_first_player || (shard && shard.p1) || null, p2: f.event_second_player || (shard && shard.p2) || null,
+      sets: repair(live).sets, asOf: new Date(liveAt).toISOString(), src: 'live' };
+  }
+
+  const api = { UNAVAILABLE, parsePoint, gameReason, tiebreakReason, checkSet, check, annotate, isGame, isTbRow, repair, compact, finalScoreFromFeed, chooseLog };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.PbpIntegrity = api;
 })(typeof window !== 'undefined' ? window : this);

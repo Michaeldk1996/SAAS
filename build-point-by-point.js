@@ -126,12 +126,13 @@ const tiebreakSets = sets => new Set(sets.filter(s => ((s && s.games) || []).fil
 function adoptFeedLog(e, fresh, now = new Date().toISOString()) {
   if (!e || !fresh || !Array.isArray(fresh.sets) || !fresh.sets.length) return 'none';
   const held = Array.isArray(e.sets) ? e.sets : [];
-  if (JSON.stringify(fresh.sets) === JSON.stringify(held)) { e.pbpFeedAt = now; return 'same'; }
+  if (JSON.stringify(fresh.sets) === JSON.stringify(held)) { e.pbpFeedAt = now; e.pbpFetchedAt = now; return 'same'; }
   if (realGames(fresh.sets) < realGames(held)) return 'shorter';
   const ft = tiebreakSets(fresh.sets);
   for (const s of tiebreakSets(held)) if (!ft.has(s)) return 'shorter';
   e.sets = fresh.sets;
   e.pbpFeedAt = now;   // the tiebreak floor leaves a set this log covers alone (see restore's skip below)
+  e.pbpFetchedAt = now;
   return 'replaced';
 }
 // tbFloor.restore skip: a set whose tiebreak came from the provider's own latest log keeps exactly the provider's rows.
@@ -310,7 +311,9 @@ function emitEntry(ek, e, index, setIndex, matchIndex) {
     // 'provider': this log is the provider's latest (replaced by it, or found identical); 'stored': our copy, not yet
     // checked against the provider, so its duplicates may be our own old appends (founder brief 2026-10-23 item 4).
     for (const r of repairs) r.src = e.pbpFeedAt ? 'provider' : 'stored';
-    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets }));
+    // asOf: when this log was fetched from the provider (null for a log stored before the stamp). The page shows the
+    // newer of this and a just-finished match's live copy (pbp-integrity.js chooseLog).
+    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets, asOf: e.pbpFetchedAt || e.pbpFeedAt || null }));
     index.push(ek);
     const remaining = integrity.check({ sets }).filter(i => i.kind !== 'header');
     if (repairs.length || remaining.length) emitIntegrity.set(ek, { repairs, remaining });
@@ -469,6 +472,7 @@ async function main() {
     // The per-set box score rides along in the same fixture, so a match resolved
     // from here needs no backfill pass below.
     const built = buildCacheEntry(got, names);
+    if (built.sets && built.sets.length) built.pbpFetchedAt = new Date().toISOString();   // fetch time, for the shard's asOf (NOT pbpFeedAt: that also stops the tiebreak floor topping up a partial log)
     if (!provisional) cache[ek] = built;   // cache the negative too, avoid refetching
     return built;
   }

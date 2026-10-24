@@ -190,6 +190,8 @@ function modalVM(opts = {}) {
     h2hRoundLabel: () => 'Quarter-finals', maRoundName: () => 'Quarter-finals', _mcCardCloseOf: () => null, aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
     teTrack: undefined,
     maApplyTheme: () => 'night',   // the Night / Day / Auto writer (match-analysis-tokens.css); not under test here
+    // PBP carry-over (2026-10-23): not a candidate, no live row, the view is the match itself; not under test here
+    pbpLiveCandidate: () => false, pbpLiveMark: () => {}, loadPbpLive: () => Promise.resolve(null), pbpLiveView: m => m, eventKeyOfMatch: () => null,
   };
   const names = Object.keys(stubs);
   const body = `

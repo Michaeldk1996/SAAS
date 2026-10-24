@@ -119,6 +119,7 @@ function page(shardJson, warned = []) {
   // eslint-disable-next-line no-new-func
   return new Function('PbpIntegrity', 'fetch', 'console', `
     const _pbpShards = {}, _pbpShardPromises = {};
+    const _pbpLiveRows = {}, _pbpLiveAt = {}, _pbpLiveCand = new Set();   // carry-over state loadPbpShard reads (empty: no candidate)
     ${['escapeHtml', 'fhEsc', 'fhSheetSectionHead', 'pbpParseScore', 'pbpSplitSet', 'pbpPointList', 'pbpRowHtml', 'buildPointByPointHtml',
        'fhPbpSetModel', 'fhPbpMatchCtx', 'fhSheetPbpHtml', 'loadPbpShard', 'pbpStampIntegrity'].map(slice).join('\n')}
     ${konst('FH_MONO')}${konst('FH_DASHC')}${konst('PBP_LOST_TAG')}

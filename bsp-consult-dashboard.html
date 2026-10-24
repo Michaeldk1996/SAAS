@@ -11014,6 +11014,44 @@ function loadPbpIndex(){
 // The integrity verdict (pbp-integrity.js) is stamped onto the shard's rows here, once, and a failing game is logged with
 // the match id. Every game is drawn as stored (founder brief 2026-10-22: no dash on screen); the pipeline has already
 // removed what it can prove is a duplicate (pbp-repairs.json).
+// POINT-BY-POINT CARRY-OVER (founder brief 2026-10-23). A board match that has just finished has no published log until
+// the next pipeline publish (25-60 min; +149 on 24 Oct while the runs were frozen). The live store keeps its row for 6 h
+// after it leaves the live board, and the poller writes the provider's own log + result into it. A match marked a
+// candidate (pbpLiveMark, from the Match Stats tab) reads that row; PbpIntegrity.chooseLog shows the newer of the row and
+// the published shard, never a blank over a log. Same guard as live-tab.js: no Supabase config -> nothing is asked.
+const _pbpLiveRows = {}, _pbpLiveAt = {}, _pbpLiveCand = new Set();
+const PBP_LIVE_TTL_MS = 30000;
+function pbpLiveConfigured(){
+  const u = (window.SUPABASE_URL || ''), k = (window.SUPABASE_ANON_KEY || '');
+  return !!u && !u.startsWith('__') && !!k && !k.startsWith('__');
+}
+function pbpLiveMark(ek){ if (ek) _pbpLiveCand.add(String(ek)); }
+function loadPbpLive(eventKey){
+  const ek = String(eventKey || '');
+  if (!ek || !pbpLiveConfigured()) return Promise.resolve(null);
+  if (_pbpLiveAt[ek] && Date.now() - _pbpLiveAt[ek] < PBP_LIVE_TTL_MS) return Promise.resolve(_pbpLiveRows[ek] || null);
+  const url = `${window.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/live_pbp?event_key=eq.${encodeURIComponent(ek)}&select=pbp,final,ended_at,final_at,updated_at`;
+  return fetch(url, { headers: { apikey: window.SUPABASE_ANON_KEY, Authorization: `Bearer ${window.SUPABASE_ANON_KEY}` }, cache: 'no-store' })
+    .then(r => r.ok ? r.json() : [])
+    .then(a => { _pbpLiveAt[ek] = Date.now(); _pbpLiveRows[ek] = Array.isArray(a) && a.length ? a[0] : null; return _pbpLiveRows[ek]; })
+    .catch(() => { _pbpLiveAt[ek] = Date.now(); return _pbpLiveRows[ek] || null; });
+}
+// A board match the Match Stats tab may carry over: not finished in matches.json yet, or finished within the store's 6 h.
+function pbpLiveCandidate(m){
+  if (!m || m.walkover) return false;
+  if (!m.finalScore) return true;
+  const t = Date.parse(m.finishedAt || '');
+  return Number.isFinite(t) && Date.now() - t < 6 * 3600e3;
+}
+// The Match Stats tab's view of a board match: the match as published, or — while matches.json has no result yet and the
+// live store says the provider has it as finished — a COPY carrying the provider's own result (never edits the board's m).
+function pbpLiveView(m){
+  if (!m || m.finalScore || typeof PbpIntegrity === 'undefined') return m;
+  const row = _pbpLiveRows[String(eventKeyOfMatch(m) || '')];
+  if (!row || !row.ended_at) return m;
+  const fs = PbpIntegrity.finalScoreFromFeed(row.final, m.p1Key, m.p2Key);
+  return fs ? Object.assign({}, m, { finalScore: fs, retired: fs.retired || m.retired, live: false, _pbpLive: true }) : m;
+}
 function pbpStampIntegrity(ek, shard){
   if (!shard || typeof PbpIntegrity === 'undefined') return;
   const issues = PbpIntegrity.annotate(shard);
@@ -11024,6 +11062,11 @@ function pbpStampIntegrity(ek, shard){
 function loadPbpShard(eventKey){
   const ek = String(eventKey || '');
   if (!ek) return Promise.resolve(null);
+  // A carry-over candidate is re-read every time (its log may still be changing) and never cached: newer of shard / live.
+  if (_pbpLiveCand.has(ek) && typeof PbpIntegrity !== 'undefined') {
+    return Promise.all([fetch(`./pbp/${ek}.json`, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null), loadPbpLive(ek)])
+      .then(([shard, row]) => { const d = PbpIntegrity.chooseLog(shard, row); pbpStampIntegrity(ek, d); return d; });
+  }
   if (ek in _pbpShards) return Promise.resolve(_pbpShards[ek]);
   if (_pbpShardPromises[ek]) return _pbpShardPromises[ek];
   _pbpShardPromises[ek] = fetch(`./pbp/${ek}.json`, { cache: 'no-cache' })
@@ -15336,7 +15379,7 @@ function fhSheetInit(e, r, slot){
   if (!ek){ S.matchLoading = S.setsLoading = S.pbpLoading = false; fhSheetRender(sl); return; }
   Promise.all([loadPbpIndex(), loadMatchStatsIndex(), loadSetStatsIndex()]).then(([pbpIdx, msIdx, ssIdx]) => {
     if (!live()) return;
-    S.hasPbp = pbpIdx.has(ek); S.pbpLoading = false;
+    S.hasPbp = pbpIdx.has(ek) || !!(_pbpLiveCand.has(ek) && _pbpLiveRows[ek] && Array.isArray(_pbpLiveRows[ek].pbp) && _pbpLiveRows[ek].pbp.length); S.pbpLoading = false;
     const need = (!S.match && msIdx.has(ek)) || (!S.sets && ssIdx.has(ek));
     const done = shard => {
       if (!live()) return;
@@ -19415,12 +19458,19 @@ const A_TAB_BUILD = {
     return fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });
   },
   matchstats(m){
-    aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m);
+    // carry-over: a just-finished board match reads its live row first, then paints as finished if the provider says so
+    if (pbpLiveCandidate(m)) {
+      const ek = String(eventKeyOfMatch(m) || ''); pbpLiveMark(ek);
+      loadPbpLive(ek).then(() => { if (!aBuilt(m, 'matchstats')) return; const v = pbpLiveView(m); if (v !== m) { aPaint('aSectionMatchStats', buildMatchStatsSection(v)); maMsSheetInit(v); } });
+    }
+    const mv = pbpLiveView(m);
+    aPaint('aSectionMatchStats', buildMatchStatsSection(mv)); maMsSheetInit(mv);
     // ruling 5: the header prices are the master's join — repaint once it (and player A's career history, its step 1) lands
     const ch = m.p1Key != null && typeof loadCareerHistory === 'function' ? Promise.resolve().then(() => loadCareerHistory(m.p1Key)).catch(() => null) : null;
     return Promise.all([(typeof sfDbPxLoad === 'function' ? sfDbPxLoad() : null), ch]).then(() => {
       if (!aBuilt(m, 'matchstats')) return;
-      aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m);
+      const mv2 = pbpLiveView(m);
+      aPaint('aSectionMatchStats', buildMatchStatsSection(mv2)); maMsSheetInit(mv2);
     });
   },
   // TEN-339: loading line, then the two histories, closes and box scores (pgEnsureData); returned so Download report waits.
