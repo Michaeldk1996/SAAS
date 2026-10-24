@@ -22,18 +22,22 @@ build() { # $1 label, $2 code, $3 board dir
 }
 build A A.js good; build AL A.js late; build F F.js good; build FL F.js late
 gzip -c out-A/ledger.json | wc -c | sed 's/^/ledger gz bytes (probe form, incl. outcomes): /'
-node tools/probe-gate/gate-sim.mjs out-A/ledger.json out-AL/ledger.json "day change, today's code (the 22-23 Oct case)"
-node tools/probe-gate/gate-sim.mjs out-F/ledger.json out-FL/ledger.json "day change, PR #71 code"
-MAXSHOW=40 node tools/probe-gate/gate-sim.mjs out-A/ledger.json out-F/ledger.json "today's code -> PR #71 (same inputs)"
 python3 - <<'PY'
 import json
 L=json.load(open('out-F/ledger.json'))
 pi={str(x.get('key')):x for x in json.load(open('player-index.json')).get('players',[])}
 ch=json.load(open('career-history-index.json')).get('players',{})
+amb=[]
 for o in L['outcomes']:
   if o.get('reason')!='name not resolved' or not o.get('cands'): continue
   if not any(len(c)>1 for _,c in o['cands']): continue
+  amb.append(o)
+  if not any(w in (o['p1']+o['p2']) for w in ('Nedic','Karol','Daniel, Taro','Brancaccio')): continue
   print('AMBIG', o['p1'],'v',o['p2'],o.get('cat'))
   for n,c in o['cands']:
     for k in c: x=pi.get(str(k),{}); print('   ',n,'->',k,x.get('name') or (ch.get(str(k)) or {}).get('name'),'rank',x.get('rank'),x.get('country'))
+print('ambiguous-name captures (two+ candidate keys):',len(amb),'distinct names',len({n for o in amb for n,c in o['cands'] if len(c)>1}))
 PY
+node tools/probe-gate/gate-sim.mjs out-A/ledger.json out-AL/ledger.json "day change, today's code (the 22-23 Oct case)"
+node tools/probe-gate/gate-sim.mjs out-F/ledger.json out-FL/ledger.json "day change, PR #71 code"
+MAXSHOW=40 node tools/probe-gate/gate-sim.mjs out-A/ledger.json out-F/ledger.json "today's code -> PR #71 (same inputs)"
