@@ -6539,6 +6539,34 @@
   // page's own lineCoverage, so the same exclusions and void rule). Bridged by the host (pp2Field / pp2FieldNeed). Null =
   // no figure (not loaded, nobody played it, or Challenger & ITF on a favourite / underdog card, where nothing is priced:
   // left blank by ruling). A field of n < 10 (the player's own thin threshold) is shown dimmed.
+  /** A ledger row's vs Field: the Field cell, the gap (rounded to the printed 0.1pp), whether it is within sampling noise
+   *  (founder ruling 2026-10-23: |gap| <= 2 x sqrt(f(1 - f) / n) on the unrounded gap, n = covered + not covered) and
+   *  whether it is dimmed (noise, or either side thin). */
+  function lcVsField(d, fmt, r) {
+    var fl = lcFieldOf(d, fmt, r.label);
+    var gap = fl && r.rate != null ? Math.round((r.rate - fl.rate) * 10) / 10 : null;
+    var rn = r.hit + r.miss;
+    var noise = fl && rn ? 2 * 100 * Math.sqrt((fl.rate / 100) * (1 - fl.rate / 100) / rn) : null;
+    var inNoise = gap != null && noise != null && Math.abs(r.rate - fl.rate) <= noise;
+    return { fl: fl, gap: gap, inNoise: inNoise, dimmed: gap != null && (fl.thin || r.thin || inNoise) };
+  }
+  // Founder 2026-10-24 · the table's ONE green and ONE red: among the vs Field values on screen (this card, these
+  // filters) that are not dimmed, the highest positive is green and the lowest negative red — ties all coloured, a
+  // dimmed value never. Everything else on the row (Rate included) is the default ink. Returns { label: 'pos' | 'neg' }.
+  function lcBestWorst(d, fmt) {
+    var vals = [];
+    d.groups.forEach(function (g) { g.rows.forEach(function (r) {
+      var v = lcVsField(d, fmt, r);
+      if (v.gap != null && !v.dimmed) vals.push({ label: r.label, gap: v.gap });
+    }); });
+    var pos = vals.filter(function (x) { return x.gap > 0; }), neg = vals.filter(function (x) { return x.gap < 0; });
+    var hi = pos.length ? Math.max.apply(null, pos.map(function (x) { return x.gap; })) : null;
+    var lo = neg.length ? Math.min.apply(null, neg.map(function (x) { return x.gap; })) : null;
+    var out = {};
+    pos.forEach(function (x) { if (x.gap === hi) out[x.label] = 'pos'; });
+    neg.forEach(function (x) { if (x.gap === lo) out[x.label] = 'neg'; });
+    return out;
+  }
   function lcFieldOf(d, fmt, label) {
     if (d.tier === 'chitf' && d.role !== 'all') return null;
     var f = typeof window.pp2Field === 'function' ? window.pp2Field() : null;
@@ -6858,6 +6886,7 @@
         return '<span style="' + MK_CAPS + (i > 2 ? 'text-align:right;' : '') + '">' + esc(c) + '</span>';
       }).join('') + '</div>';
 
+    var pick = lcBestWorst(d, fmt);
     var body = d.groups.map(function (g) {
       return g.rows.map(function (r, i) {
         var fam = i ? '<span></span>'
@@ -6872,7 +6901,8 @@
         var bar = '<span style="position:relative;display:block;height:6px;border-radius:3px;background:var(--track);">' +
           fill + '<span style="position:absolute;left:' + LC_HOT + '%;top:-4px;bottom:-4px;width:1px;background:var(--bar-2);"></span></span>';
         var rateTxt = r.rate == null ? DASH : r.rate.toFixed(1) + '%';
-        var rateInk = r.rate == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : r.hot ? 'var(--pos)' : 'var(--text)';
+        // founder 2026-10-24 · the Rate is never coloured: the one green / red on the table is vs Field's (lcBestWorst)
+        var rateInk = r.rate == null ? DASH_COLOUR : r.thin ? 'var(--text-label)' : 'var(--text)';
         var softRow = false;
         // Brief 2026-10-21 · every line with a match behind it opens its matches (renderLineDrill).
         var open = state.lcDrill === r.label;
@@ -6890,25 +6920,20 @@
             ? '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;color:' + rateInk + ';">' + rateOverMark(rateTxt, r.n - r.voids) + '</span>'
             : '<span style="' + MK_MONO + 'font-size:14px;font-weight:700;text-align:right;color:' + rateInk + ';">' + rateTxt + '</span>') +
           '<span style="' + MK_MONO + 'font-size:12px;text-align:right;white-space:nowrap;color:var(--text-label);">' + r.record + '</span>' +
-          // the Field and the gap to it: a comparison with other players, so neutral ink (never green / red); dimmed when
-          // either side is thin
+          // the Field and the gap to it: neutral ink, dimmed when either side is thin or the gap is noise; only the
+          // table's best and worst undimmed gap take green / red (lcBestWorst, founder 2026-10-24)
           (function () {
-            var fl = lcFieldOf(d, fmt, r.label);
+            var v = lcVsField(d, fmt, r), fl = v.fl, gap = v.gap, inNoise = v.inNoise;
             var fTxt = fl ? fl.rate.toFixed(1) + '%' : DASH;
-            var gap = fl && r.rate != null ? Math.round((r.rate - fl.rate) * 10) / 10 : null;
             var gTxt = gap == null ? DASH : (gap > 0 ? '+' : gap < 0 ? MINUS : '') + Math.abs(gap).toFixed(1) + 'pp';
             var dim = function (thin) { return thin ? 'var(--text-label)' : 'var(--text)'; };
-            // Founder ruling 2026-10-23 · noise: a gap no larger than sampling noise explains for the player's sample is
-            // dimmed — |gap| <= 2 x sqrt(f(1 - f) / n), f = the Field rate, n = the player's covered + not covered (voids
-            // and retirements out, as in his rate). Read on the unrounded gap.
-            var rn = r.hit + r.miss;
-            var noise = fl && rn ? 2 * 100 * Math.sqrt((fl.rate / 100) * (1 - fl.rate / 100) / rn) : null;
-            var inNoise = gap != null && noise != null && Math.abs(r.rate - fl.rate) <= noise;
+            var gInk = gap == null ? DASH_COLOUR : v.dimmed ? 'var(--text-label)' : pick[r.label] === 'pos' ? 'var(--pos)' :
+              pick[r.label] === 'neg' ? 'var(--neg)' : 'var(--text)';
             return '<span data-lc-field="' + (fl ? fl.cover + '-' + fl.miss : '') + '" title="' + (fl ? esc(fl.cover + ENDASH + fl.miss +
                 (fl.voids ? ' (' + fl.voids + ' void)' : '') + ' over ' + fl.players + ' player' + (fl.players === 1 ? '' : 's')) : '') + '" ' +
                 'style="' + MK_MONO + 'font-size:12.5px;text-align:right;white-space:nowrap;color:' + (fl ? dim(fl.thin) : DASH_COLOUR) + ';">' + fTxt + '</span>' +
-              '<span data-lc-vsfield="' + (gap == null ? '' : gap) + '" data-lc-noise="' + (inNoise ? 1 : 0) + '" style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap;color:' +
-                (gap == null ? DASH_COLOUR : dim(fl.thin || r.thin || inNoise)) + ';">' + gTxt + '</span>';
+              '<span data-lc-vsfield="' + (gap == null ? '' : gap) + '" data-lc-noise="' + (inNoise ? 1 : 0) + '" data-lc-pick="' + (pick[r.label] || '') +
+                '" style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap;color:' + gInk + ';">' + gTxt + '</span>';
           }()) +
         '</div>' + (open && r.n ? renderLineDrill(p, d, g, r) : '');
       }).join('');
@@ -12286,7 +12311,7 @@
       earlyRoundsRow: earlyRoundsRow,
       drawGrainHtml: drawGrainHtml,
       // §5.8 Derived lines
-      lineCoverage: lineCoverage, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf, lcFieldOf: lcFieldOf,
+      lineCoverage: lineCoverage, lcBestWorst: lcBestWorst, lcVsField: lcVsField, lineFormatOf: lineFormatOf, lineRetiredFormat: lineRetiredFormat, speedRowOf: speedRowOf, lcFieldOf: lcFieldOf,
       renderLinesTab: renderLinesTab,
       lineSetCount: lineSetCount,
       lineGames: lineGames,
