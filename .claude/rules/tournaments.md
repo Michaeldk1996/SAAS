@@ -115,7 +115,9 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 - Pop-up sheet `--card` + 1px `--edge-10`, `--shadow-modal`, over `--backdrop` + blur covering the content area only;
   close button `--inner`; Esc, outside click and a sidebar click close it.
 - Compare all: columns card tone, IND / OUT / CLY / GRS chips `--inner` grey; matched row = selected tile, white text, no
-  blue bar or value; bars `--bar` for the matched event, `--bar-2` for the rest. Quote avatars: initials, `--inner`, grey, with the speaker's photo over them when the speaker resolves to one ID (`tourxQuoteSpeakerKey`, founder 2026-10-23 — `player-photos.md`).
+  blue bar or value; bars `--bar` for the matched event, `--bar-2` for the rest. Quote avatars: initials, `--inner`, grey, with the speaker's photo over them when the speaker resolves to one ID (the importer's `playerKey`, `tools/quotes/quote-speaker.cjs` — the ONE quote rule, founder 2026-10-24; `player-photos.md`).
+  **A note ships only when its speaker resolves to exactly one entrant of that tournament-season** (importer `playerMatch`
+  `entrant`), never against the roster — a roster that grows must not hide a quote. **Test:** `tools/test-quote-speaker.js`.
 
 ## Entry list
 - Week chips on the darker track; tier heads Hanken 10.5 caps on a 10% rule; table = card; rows on 6% hairlines with an

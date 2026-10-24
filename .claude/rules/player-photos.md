@@ -35,7 +35,8 @@ Stennisfy Model head, Dropping Odds rows, Tournament quotes.
   names; a trailing Jr / Sr / II / III / IV dropped first; card start within ±24 h of the row's; exactly one card. The ID
   is that card's key for the row's side. Challenger / ITF rows have no card: initials. **Test:**
   `tools/test-player-photos.js` §4 (Jr, middle names, compound surname, window, two cards, no card).
-- **Tournament quotes** (`tourxQuoteSpeakerKey`): the speaker's surname against that tournament's entrants for the
+- **Tournament quotes** (ONE rule, `tools/quotes/quote-speaker.cjs`, run by the importer — founder 2026-10-24; the page
+  only reads `playerKey`): the speaker's surname against that tournament's entrants for the
   quote's season (`tournament-profiles.json` `allEditionMatches`; Roland Garros = the French Open profile). Several
   same-surname entrants: the initial counts only when it leaves exactly one. No initial, still several, none, or no
   edition on record = initials, and the row is reported. **Test:** `tools/test-player-photos.js` §5.

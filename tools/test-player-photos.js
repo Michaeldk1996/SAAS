@@ -105,7 +105,7 @@ const USES = [
   ['Draw view', 'draw-view.js', 'window.playerPhotoUrl(String(s.playerKey))'],
   ['Player Profile (V2)', 'player-profile-v2.js', 'window.playerPhotoUrl(p.key)'],
   ['Dropping Odds', 'drops-page.js', 'playerPhotoImg(r.photoKey, r.dSide || r.side)'],
-  ['Tournament quotes', 'bsp-consult-dashboard.html', 'tourxQuoteSpeakerKey(qt, c.name)'],
+  ['Tournament quotes', 'bsp-consult-dashboard.html', 'playerPhotoImg(String(qt.playerKey), qt.player)'],
 ];
 const missing = USES.filter(([, f, t]) => !fs.readFileSync(path.join(ROOT, f), 'utf8').includes(t)).map(([l]) => l);
 check(`every avatar surface reads the one resolver (${USES.length} surfaces)`, missing.length === 0, 'missing: ' + missing.join(', '));
@@ -130,29 +130,9 @@ check('Drops: a start more than 24 h from the card = no candidate; an unmeasurab
 check('Drops: two qualifying cards = no ID, never a pick', K(row('Daniel Altmaier', 'Taylor Fritz', 'Daniel Altmaier', 0), BOARD.concat([card('D. Altmaier', 9, 'T. Fritz', 10, 3)])) === null);
 check('Drops: a Challenger / ITF row (no Today\'s Matches card) = no ID, the monogram', K(row('Diego Dedura', 'Felipe Meligeni Alves', 'Diego Dedura', 0)) === null);
 
-// ── 5. Quotes: surname against that season's entrants; the initial only when it leaves exactly one ────────────────
-const qctx = { tournamentProfiles: {
-  Madrid: { allEditionMatches: [{ season: '2026', matches: [{ p1: 'F. Cerundolo', p1Key: 1104, p2: 'J. M. Cerundolo', p2Key: 388 }, { p1: 'C. Alcaraz', p1Key: 2382, p2: 'T. Daniel', p2Key: 2406 }] }] },
-  'French Open': { allEditionMatches: [{ season: '2025', matches: [{ p1: 'J. Sinner', p1Key: 2072, p2: 'A. Zverev', p2Key: 1980 }] }] },
-  'Roland Garros': null } };
-vm.createContext(qctx);
-vm.runInContext(fn('tourxQuoteSpeakerKey').replace(/^function/, "const TOURX_QUOTE_PROFILE_ALIAS = { 'Roland Garros': 'French Open' };\nfunction"), qctx);
-const QK = (player, ev, year) => qctx.tourxQuoteSpeakerKey({ player, year }, ev);
-check('Quotes: a unique surname among that season\'s entrants -> its ID (T. Daniel, Madrid 2026 -> 2406)', QK('T. Daniel', 'Madrid', 2026) === '2406');
-check('Quotes: the initial separates same-surname entrants (F. Cerundolo -> Francisco 1104; J. M. Cerundolo -> 388)', QK('F. Cerundolo', 'Madrid', 2026) === '1104' && QK('J. M. Cerundolo', 'Madrid', 2026) === '388');
-check('Quotes: no initial with two same-surname entrants, or an initial that fits neither = monogram (null)', QK('Cerundolo', 'Madrid', 2026) === null && QK('X. Cerundolo', 'Madrid', 2026) === null);
-check('Quotes: no edition on record for that season, or no entrant of that surname = monogram (null)', QK('T. Daniel', 'Madrid', 2021) === null && QK('D. Rincon', 'Madrid', 2026) === null);
-check('Quotes: Roland Garros reads the French Open profile (J. Sinner 2025 -> 2072)', QK('J. Sinner', 'Roland Garros', 2025) === '2072');
-// round 3b: Sackmann main draw for a season the store lacks; qualifying entrants join the pool; a key-null match = monogram
-qctx.tourxQuoteEntrants = {
-  'Monte Carlo|2021': { main: [{ name: 'Daniel Evans', key: '2835' }, { name: 'Novak Djokovic', key: '1' }], qual: [{ name: 'Mackenzie Evans', key: null }] },
-  'Madrid|2026': { qual: [{ name: 'Daniel Rincon', key: null }, { name: 'Felipe Daniel', key: null }] },
-  'Madrid|2023': { qual: [{ name: 'Daniel Rincon', key: null }] } };
-check('Quotes 3b: a pre-2022 season reads Sackmann\'s main draw; the initial separates a qualifier of the same surname (D. Evans -> 2835)', QK('D. Evans', 'Monte Carlo', 2021) === '2835');
-check('Quotes 3b: no initial and a same-surname qualifier = ambiguous = monogram (Evans)', QK('Evans', 'Monte Carlo', 2021) === null);
-check('Quotes 3b: a unique qualifier with no ID chain = monogram, never a guessed ID (D. Rincon, Madrid 2023)', QK('D. Rincon', 'Madrid', 2023) === null);
-check('Quotes 3b: a qualifier sharing a store entrant\'s surname makes it ambiguous unless the initial separates (T. Daniel -> 2406 stays; Daniel alone null)',
-  QK('T. Daniel', 'Madrid', 2026) === '2406' && QK('Daniel', 'Madrid', 2026) === null);
+// ── 5. Quotes: the speaker rule lives in the importer (tools/test-quote-speaker.js); the page only reads its ID ───────
+check('Quotes: the page carries no copy of the speaker rule and does not load quote-entrants.json (one rule: the importer)',
+  !DASH.includes('function tourxQuoteSpeakerKey') && !DASH.includes("fetch('./quote-entrants.json'"));
 const QE = JSON.parse(fs.readFileSync(path.join(ROOT, 'quote-entrants.json'), 'utf8'));
 const qeBad = [];
 for (const [k, e] of Object.entries(QE.events || {})) {
@@ -160,8 +140,6 @@ for (const [k, e] of Object.entries(QE.events || {})) {
   (e.qual || []).forEach((x) => { if (x.key != null) qeBad.push(k + ' qualifier ' + x.name + ' carries a key (no ID chain exists for qualifiers)'); });
 }
 check('quote-entrants.json: every main-draw key came through the alias map; no qualifier carries a key', Object.keys(QE.events || {}).length > 0 && qeBad.length === 0, qeBad.slice(0, 5).join('; '));
-check('quote-entrants.json is published (pipeline copy) — committed but not copied = a silent 404', PIPE_QE());
-function PIPE_QE() { return fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8').includes('cp quote-entrants.json _site/'); }
 
 // ── 7. Ratings: the published store carries the row's player ID (the whitelist, not the push) ───────────────────────
 // 2026-10-23: rows.push carried key, the serialisation whitelist did not, and a real rebuild shipped 0 of 237 IDs.

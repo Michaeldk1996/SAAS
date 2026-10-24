@@ -25347,9 +25347,6 @@ const tourxState = { section: 'overview', tsQ: '', tsOpen: false, speedPanel: fa
 // card simply does not render (C2). It must never degrade into an empty state or
 // a "coming soon" — nothing may imply quotes exist for an event that has none.
 let tourxQuotes = null, tourxQuotesLoading = false;
-// quote-entrants.json (founder 2026-10-23): Sackmann main draws for seasons the store lacks + qualifying entrants — read
-// only by tourxQuoteSpeakerKey. Absent = the store's entrants alone.
-let tourxQuoteEntrants = null;
 function tourxLoadQuotes(){
   if (tourxQuotes || tourxQuotesLoading) return;
   tourxQuotesLoading = true;
@@ -25357,14 +25354,11 @@ function tourxLoadQuotes(){
     .then(r => r.ok ? r.json() : null)
     .then(j => { tourxQuotes = (j && j.tournaments) || {}; if (tourxState.section === 'overview') renderTourxOverview(); })
     .catch(() => { tourxQuotes = {}; });
-  fetch('./quote-entrants.json', { cache: 'no-cache' })
-    .then(r => r.ok ? r.json() : null)
-    .then(j => { tourxQuoteEntrants = (j && j.events) || {}; if (tourxState.section === 'overview') renderTourxOverview(); })
-    .catch(() => { tourxQuoteEntrants = {}; });
 }
 // TEN-401 Data 3 / lead default L3 (founder: "real quotes only; no real source → hide the card"). A note ships only
-// when its source is traceable: a SPEAKER resolved to one ATP player of ours (importer playerMatch exact | surname —
-// 'unmatched' / 'ambiguous' could be a ball supplier or the wrong man) AND a DATE (the sheet's year; no record carries
+// when its source is traceable: a SPEAKER resolved to exactly one entrant of that tournament-season (importer
+// playerMatch 'entrant', founder 2026-10-24 — tools/quotes/quote-speaker.cjs; 'unmatched' / 'ambiguous' /
+// 'no-entrants' could be a ball supplier or the wrong man) AND a DATE (the sheet's year; no record carries
 // an occasion). The card, its "N notes" and the panel all count only these. Measured on tournament-quotes.json
 // (builtAt 2026-09-21): 161 of 409 notes across 16 of 45 events pass; 229 have no year, 58 no resolved speaker.
 // Flip: TOURX_QUOTE_RULE = 'all' restores every imported note.
@@ -25400,7 +25394,7 @@ function tourxQuoteOtherEvent(q, ev){
   return tourxQuoteEventNames().find(n => n !== ev && has(n)) || null;
 }
 function tourxQuoteTraceable(q, ev){
-  return !!(q && q.player && q.year && (q.playerMatch === 'exact' || q.playerMatch === 'surname')) && !tourxQuoteClean(q).conflict
+  return !!(q && q.player && q.year && q.playerMatch === 'entrant') && !tourxQuoteClean(q).conflict
     && !(ev && (TOURX_QUOTE_EXCLUDE[ev + '|' + q.player + '|' + q.year] || tourxQuoteOtherEvent(q, ev)));
 }
 function tourxQuotesFor(name){
@@ -26300,43 +26294,9 @@ function tourxQuotesCardHtml(c){
     </div>`;
 }
 
-// Founder 2026-10-23 (quotes ruling): a quote's speaker -> ONE player ID, by SURNAME against THAT tournament's entrants
-// for the quote's own season: the tournament store's edition (tournament-profiles.json allEditionMatches: every keyed
-// player), else Sackmann's main draw for a season the store does not hold, plus Sackmann's qualifying entrants
-// (quote-entrants.json — for quote matching only). When several candidates share the surname, the speaker's initial
-// separates them only if it leaves exactly one ("F. Cerundolo" = Francisco, not Juan Manuel). No entrant list, no match,
-// still several, or a matched entrant with no ID chain (key null) = null: the monogram, never a pick.
-const TOURX_QUOTE_PROFILE_ALIAS = { 'Roland Garros': 'French Open' };
-function tourxQuoteSpeakerKey(qt, eventName){
-  const tp = (typeof tournamentProfiles === 'object' && tournamentProfiles) ? tournamentProfiles : {};
-  const prof = tp[eventName] || tp[TOURX_QUOTE_PROFILE_ALIAS[eventName]] || null;
-  if (!qt || qt.year == null) return null;
-  const ed = prof ? (prof.allEditionMatches || []).find(e => String(e.season) === String(qt.year)) : null;
-  const qe = (typeof tourxQuoteEntrants === 'object' && tourxQuoteEntrants && tourxQuoteEntrants[eventName + '|' + qt.year]) || {};
-  if (!ed && !qe.main && !qe.qual) return null;
-  const fold = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.,'\u2019-]/g, ' ').replace(/\s+/g, ' ').trim();
-  const parts = n => { const t = fold(n).split(' ').filter(Boolean); let i = 0; while (i < t.length - 1 && t[i].length === 1) i++;
-    return { ini: t.length > 1 ? t[0][0] : '', sur: t.slice(i).join(' ') }; };
-  const q = parts(qt.player);
-  if (!q.sur) return null;
-  const cands = [];
-  if (ed) {
-    const ent = new Map();
-    (ed.matches || []).forEach(x => { if (x.p1Key != null) ent.set(String(x.p1Key), x.p1); if (x.p2Key != null) ent.set(String(x.p2Key), x.p2); });
-    ent.forEach((n, k) => { const p = parts(n); if (p.sur === q.sur) cands.push({ key: k, ini: p.ini }); });
-  }
-  // Sackmann entrants are full names ("Daniel Evans"): the speaker's surname is their tail, the initial their first letter
-  const sur = q.sur.split(' ');
-  const full = e => { const t = fold(e.name).split(' ').filter(Boolean);
-    if (t.length > sur.length && t.slice(-sur.length).join(' ') === q.sur) cands.push({ key: e.key == null ? null : String(e.key), ini: t[0][0] }); };
-  if (!ed) (qe.main || []).forEach(full);
-  (qe.qual || []).forEach(full);
-  let hits = cands;
-  if (hits.length > 1 && q.ini) { const by = hits.filter(c => c.ini === q.ini); if (by.length === 1) hits = by; }
-  return hits.length === 1 && hits[0].key != null ? hits[0].key : null;
-}
 // §1.3 quotes panel — one row per note, 34px avatar: mono initials grey on --inner, no edge (TEN-401 item 7), with the
-// speaker's photo over them by the ID above (founder 2026-10-23; the dashboard's one resolver).
+// speaker's photo over them by the ID the importer resolved (qt.playerKey: tools/quotes/quote-speaker.cjs, the one quote rule;
+// founder 2026-10-24) through the dashboard's one photo resolver.
 function tourxQuotesPanelHtml(){
   const MONO = "'IBM Plex Mono',monospace";
   const c = tourxResolveCondition(tourxState.tsSel);
@@ -26346,7 +26306,7 @@ function tourxQuotesPanelHtml(){
   const rows = list.map((qt) => {
     const a = tourxQuoteAttrib(qt);
     return `<div style="display:flex;gap:14px;padding:17px 0;border-bottom:1px solid var(--line);">
-        <span style="position:relative;overflow:hidden;width:34px;height:34px;flex:none;border-radius:50%;background:var(--inner);display:inline-flex;align-items:center;justify-content:center;font-family:${MONO};font-size:11px;font-weight:700;color:var(--text-label);">${tourxEscHtml(initials(qt.player))}${(k => (k && typeof playerPhotoImg === 'function') ? playerPhotoImg(k, qt.player) : '')(typeof tourxQuoteSpeakerKey === 'function' ? tourxQuoteSpeakerKey(qt, c.name) : null)}</span>
+        <span style="position:relative;overflow:hidden;width:34px;height:34px;flex:none;border-radius:50%;background:var(--inner);display:inline-flex;align-items:center;justify-content:center;font-family:${MONO};font-size:11px;font-weight:700;color:var(--text-label);">${tourxEscHtml(initials(qt.player))}${(qt.playerKey != null && typeof playerPhotoImg === 'function') ? playerPhotoImg(String(qt.playerKey), qt.player) : ''}</span>
         <span style="flex:1;min-width:0;">
           <span style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
             <span style="font-size:13.5px;font-weight:700;color:var(--text);">${tourxEscHtml(qt.player)}</span>

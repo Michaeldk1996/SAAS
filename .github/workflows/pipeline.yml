@@ -1137,8 +1137,6 @@ jobs:
           node tools/quotes/build-tournament-quotes.mjs \
             || echo "::error::tournament quotes did NOT rebuild (unmapped sponsor name, missing CSV or unreadable roster). The committed artefact is being deployed unchanged — see the step log above."
           cp tournament-quotes.json _site/ 2>/dev/null || true
-          # quote-entrants.json: Sackmann entrants for quote matching only (tools/build-quote-entrants.js, founder 2026-10-23)
-          cp quote-entrants.json _site/ 2>/dev/null || true
           # TEN-151 Trading Report (flag-gated OFF): the module, the splits index +
           # per-player shards, and the tournament→surface map the board joins on.
           # The index gates the shard fetches; committed/built-but-not-copied =

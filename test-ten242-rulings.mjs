@@ -777,11 +777,13 @@ test('TEN-401 Data 3 / L3: a quote ships only with a traceable source (resolved 
   const src = fnSource(DASH, 'function tourxQuoteTraceable(q, ev){') + '\nconst tourxQuoteCleanCache = new WeakMap();\n'
     + fnSource(DASH, 'function tourxQuoteSurname(player){') + '\n' + fnSource(DASH, 'function tourxQuoteClean(qt){');
   const ok = eval(`(function(){ ${src} return tourxQuoteTraceable; })()`);
-  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'surname', year: 2026 }), true);
-  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'exact', year: 2025 }), true);
-  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'surname', year: null }), false, 'no date: not traceable');
+  // founder 2026-10-24: traceable = the importer resolved the speaker to exactly one entrant of that tournament-season
+  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'entrant', year: 2026 }), true);
+  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'surname', year: 2025 }), false, 'a roster match is no longer a source');
+  assert.equal(ok({ player: 'J. Sinner', playerMatch: 'entrant', year: null }), false, 'no date: not traceable');
   assert.equal(ok({ player: 'Ball kid', playerMatch: 'unmatched', year: 2026 }), false, 'speaker not resolved to a player');
   assert.equal(ok({ player: 'Cerundolo', playerMatch: 'ambiguous', year: 2026 }), false, 'speaker ambiguous');
+  assert.equal(ok({ player: 'T. Daniel', playerMatch: 'no-entrants', year: 2019 }), false, 'no entrant list for that season');
   assert.match(DASH, /const TOURX_QUOTE_RULE = 'traceable';/);
   const fr = fnSource(DASH, 'function tourxQuotesFor(name){');
   assert.match(fr, /filter\(q => TOURX_QUOTE_RULE === 'all' \|\| tourxQuoteTraceable\(q, name\)\)/, 'the card, its count and the panel read the filtered list');
