@@ -91,33 +91,32 @@ const T = {
   ],
 };
 
-// Rows of the FIRST metric card: "<W|L|-> <surname>".
+// Rows of the FIRST metric card: surnames, sorted. (Item 9, 2026-10-24: no W/L letter — every row is a winner.)
 function rows(roundIdx) {
   sandbox.tourxState.roundIdx = roundIdx;
   const out = sandbox.view(T);
   const card = out.split('<div style="border:1px solid var(--edge-6)')[1] || '';
   return [...card.matchAll(/<div style="display:grid;grid-template-columns:118px[\s\S]*?(?=<div style="display:grid;grid-template-columns:118px|$)/g)].map(m => {
     const r = m[0];
-    const letter = /color:var\(--pos\);">W</.test(r) ? 'W' : /color:var\(--neg\);">L</.test(r) ? 'L' : '-';
-    const name = (r.match(/text-overflow:ellipsis;">([^<]+)</) || [])[1];
-    return letter + ' ' + name;
+    return (r.match(/text-overflow:ellipsis;">([^<]+)</) || [])[1];
   }).sort();
 }
 
 console.log('=== QF: winners only (item 5) ===');
 const qf = rows(2);
-ok('QF lists only its winner — the two QF losers are removed', JSON.stringify(qf) === '["W Alive"]', qf);
-ok('no L row anywhere in any round', [0, 1, 2].every(i => !rows(i).some(r => r[0] === 'L')));
+ok('QF lists only its winner — the two QF losers are removed', JSON.stringify(qf) === '["Alive"]', qf);
+ok('no L row anywhere: the QF losers Beaten / Walkover are absent from QF', !rows(2).includes('Beaten') && !rows(2).includes('Walkover'));
+ok('item 9: no W/L outcome letter on any row (--pos / --neg letter spans gone)', [0, 1, 2].every(i => { sandbox.tourxState.roundIdx = i; const o = sandbox.view(T); return !/color:var\(--(pos|neg)\);">[WL]</.test(o) && !/margin-right:auto;font-family:'IBM Plex Mono'/.test(o); }));
 
 console.log('=== R32: the match row decides; a walkover in the NEXT round never drops a won round ===');
 const r32 = rows(0);
-ok('R32 lists its 5 winners, the opener loser removed', JSON.stringify(r32) === JSON.stringify(['W Alive', 'W Beaten', 'W Marozsan', 'W Unknown', 'W Walkover']), r32);
-ok('R32 walkover-winner is listed (outcome from the draw, not the next box score)', r32.includes('W Walkover'), r32);
-ok('a stat-less R16 loss never drops the R32 win: the R32 match row lists Marozsan', r32.includes('W Marozsan'), r32);
+ok('R32 lists its 5 winners, the opener loser removed', JSON.stringify(r32) === JSON.stringify(['Alive', 'Beaten', 'Marozsan', 'Unknown', 'Walkover']), r32);
+ok('R32 walkover-winner is listed (outcome from the draw, not the next box score)', r32.includes('Walkover'), r32);
+ok('a stat-less R16 loss never drops the R32 win: the R32 match row lists Marozsan', r32.includes('Marozsan'), r32);
 
 console.log('=== R16: an unknown outcome is not a win ===');
 const r16 = rows(1);
-ok('R16 lists the 2 proven winners; the unknown-flag player is not listed', JSON.stringify(r16) === JSON.stringify(['W Alive', 'W Beaten']), r16);
+ok('R16 lists the 2 proven winners; the unknown-flag player is not listed', JSON.stringify(r16) === JSON.stringify(['Alive', 'Beaten']), r16);
 ok('one predicate: the view filters through tourxWonRound only (no second winners test)',
    (grab('tourxRoundViewHtml').match(/tourxWonRound\(/g) || []).length === 1 && !/tourxRoundOutcome\(/.test(grab('tourxRoundViewHtml')));
 

@@ -282,16 +282,33 @@ test('Q9: the header carries the event hold rate with its n; a dash with the rea
   S.hold = undefined;
 });
 
+// Defect brief 2026-10-24 items 4 + 5. Mutations: the card's tournamentKey ignored (name lookup first) → Lyon 2026 reads the
+// clay Lyon 2024; the tooltip back on "qualifying included".
+test('event hold: a card with its own tournamentKey reads that event or nothing — never a name twin; main draw only', () => {
+  S.hold = { events: { 2752: { name: 'Lyon', names: ['Lyon'], held: 418, games: 554, matches: 25, years: ['2024'] } }, byName: { lyon: '2752' } };
+  const lyon26 = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '14763' } })));
+  assert.match(lyon26, /Hold rate — No box score on file for Lyon/, 'Lyon 2026 (key 14763) never shows the clay Lyon 2024 figure');
+  const clay = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon', tournamentKey: '2752' } })));
+  assert.match(clay, /Hold rate 75% Service hold at [^:]+: 418 of 554 service games held/);
+  assert.match(clay, /main draw only\. Our own box scores\./);
+  assert.doesNotMatch(clay, /qualifying included/);
+  const legacy = text(S.trHeaderHtml(fixture([nMatches(2, () => true)], { m: { tour: 'ATP Lyon' } })));
+  assert.match(legacy, /Hold rate 75%/, 'a card published before the key falls back to the cleaned name');
+  S.hold = undefined;
+});
+
 // Mutations 'trend: a missing season interpolated', 'trend: header span claims 7 years'
-test('seven-season trend: 2020–2026 on the axis, dots only where the sheet holds a value, the rest dashed', () => {
+// Defect brief 2026-10-24 item 6: the axis holds only the seasons the sheet can carry (2023–2025).
+test('court-speed trend: 2023–2025 on the axis, dots only where the sheet holds a value, the rest dashed', () => {
   const m = fixture([], { m: { courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
   S.market = null;
   const h = S.trMarketHtml(m);
   const v = [...h.matchAll(/class="tr-sp-v"[^>]*>([^<]*)</g)].map(x => x[1]);
-  assert.deepEqual(v, ['—', '—', '—', '0.98', '—', '1.02', '—']);
+  assert.deepEqual(v, ['0.98', '—', '1.02']);
+  assert.deepEqual([...h.matchAll(/letter-spacing:0\.06em; color:[^;]+;">(\d{4})</g)].map(x => x[1]), ['2023', '2024', '2025'], 'no 2020–22 or 2026 slot');
   assert.equal((h.match(/<polyline/g) || []).length, 0, 'a hole in 2024 breaks the line: no segment of 2+ adjacent seasons');
   assert.ok(text(h).includes('Trending faster +0.04 over 2 yrs'));
-  assert.ok(text(h).includes('Abstract court speed · 2020–2026'));
+  assert.ok(text(h).includes('Abstract court speed · 2023–2025'));
 });
 
 // Mutations 'ROI: a card clickable with no archive names', 'ROI: a small-n yield in full colour'

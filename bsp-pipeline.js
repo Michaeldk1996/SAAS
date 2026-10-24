@@ -1697,10 +1697,15 @@ function courtConditionsFor(tournamentName) {
 const COURT_CONDITIONS_ALIASES = { 'French Open': 'Roland Garros' };
 
 // The one hint → venue + court-speed join, shared by every match build path.
-function venueAndCourtSpeedFor(name) {
+// Defect brief 2026-10-24 item 4: a hint names a CITY, and one city can host two events on different surfaces — Lyon
+// was a clay 250 to 2024 and is an indoor-hard 250 from 2026. When the match's OWN feed surface (fixtureSurface: the
+// tournament's api-tennis surface, never a 'hard' default) is known and differs from the hint's, the court reading
+// belongs to the other event, so there is no court speed (a dash). An unknown surface keeps the hint's reading.
+function venueAndCourtSpeedFor(name, feedSurface) {
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => String(name || '').includes(k));
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
-  const courtConditions = hintKey ? COURT_CONDITIONS[COURT_CONDITIONS_ALIASES[hintKey] || hintKey] : null;
+  const otherEvent = !!(hint && hint.surface && feedSurface && String(feedSurface).toLowerCase() !== hint.surface);
+  const courtConditions = hintKey && !otherEvent ? COURT_CONDITIONS[COURT_CONDITIONS_ALIASES[hintKey] || hintKey] : null;
   return {
     hintKey,
     venue: hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null,
@@ -2267,9 +2272,12 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // of truth as TOURNAMENT_VENUE_HINTS used for weather above, not a new lookup.
   // Court-conditions data reuses the same hintKey lookup (through the TEN-321
   // alias) — real data from the user's court-conditions sheet, not re-derived.
-  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(venueName);
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(venueName, (surfaceMap ? fixtureSurface(fixture, surfaceMap) : null));
   match.venue = venue;
   match.courtSpeed = courtSpeed;
+  // Defect brief 2026-10-24 item 4: the event's own api-tennis key, so a page reads the event (event-hold.json events[key])
+  // and never another event that shares its city name (Lyon clay 2024 vs Lyon indoor hard 2026).
+  match.tournamentKey = fixture.tournament_key != null ? String(fixture.tournament_key) : null;
 
   match.tournamentRound = fixture.tournament_round;
   match.qualifying = fixture.event_qualification === 'True';
@@ -3424,9 +3432,12 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   // player's `wue.source`. No-op for matches with no stat sheet.
   attachWue(match.matchStats, match.tour, match.p1, match.p2);
 
-  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name);
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name, (surfaceMap ? fixtureSurface(fixture, surfaceMap) : null));
   match.venue = venue;
   match.courtSpeed = courtSpeed;
+  // Defect brief 2026-10-24 item 4: the event's own api-tennis key, so a page reads the event (event-hold.json events[key])
+  // and never another event that shares its city name (Lyon clay 2024 vs Lyon indoor hard 2026).
+  match.tournamentKey = fixture.tournament_key != null ? String(fixture.tournament_key) : null;
 
   // Task 3 — real weather on the day the match was played (historical archive
   // fallback lives inside fetchMatchWeather). Task 4 — pre-match odds recovered
@@ -3650,9 +3661,12 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     if (upOdds.allBooks) match.apiTennisBooks = upOdds.allBooks;
   }
 
-  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name);
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name, (surfaceMap ? fixtureSurface(fixture, surfaceMap) : null));
   match.venue = venue;
   match.courtSpeed = courtSpeed;
+  // Defect brief 2026-10-24 item 4: the event's own api-tennis key, so a page reads the event (event-hold.json events[key])
+  // and never another event that shares its city name (Lyon clay 2024 vs Lyon indoor hard 2026).
+  match.tournamentKey = fixture.tournament_key != null ? String(fixture.tournament_key) : null;
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {

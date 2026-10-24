@@ -54,7 +54,7 @@ const MUTANTS = [
   ['r3: "Record at" prints the city', '  const clean = trName(m);   // r3 fix 1: "Record at Shanghai Masters"', '  const clean = trClean(m);'],
   ['r3: the edition headers print the city', '  const S = _tr.S, clean = trName(m);', '  const S = _tr.S, clean = trClean(m);'],
   ['r3: the hold tip prints the city', '  const ev = trName(m);   // r3 fix 1: the printed name', '  const ev = trClean(m);'],
-  ['r3: the hold lookup reads the printed name', '  const k = _trHoldData.byName[trClean(m).toLowerCase()]', '  const k = _trHoldData.byName[trName(m).toLowerCase()]'],
+  ['r3: the hold lookup reads the printed name', ': _trHoldData.byName[trClean(m).toLowerCase()];', ': _trHoldData.byName[trName(m).toLowerCase()];'],   // the name fallback (a card with no tournamentKey)
   ['r3: the modal subtitle prints the feed name', "  return [ev, roundText, t].filter(Boolean).join(' · ');", "  return [m.tour, roundText, t].filter(Boolean).join(' · ');"],
   ['r3: Key factors\' card title prints the city', '${fhEsc(tier ? `${trName(m)} · ${tier}` : trName(m))}', '${fhEsc(tier ? `${clean} · ${tier}` : clean)}'],
   ['r3: Key factors\' catalog match reads the printed name', 'const catHit = TOURNAMENT_CATALOG.find(t => t.name.toLowerCase() === clean.toLowerCase());',

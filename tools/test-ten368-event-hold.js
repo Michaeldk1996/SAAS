@@ -73,5 +73,28 @@ check('the committed archive: Tokyo carries its 2024 and 2025 editions with n = 
   console.log(`  Tokyo: ${e.held} of ${e.games} service games held (${(100 * e.held / e.games).toFixed(1)}%), ${e.matches} matches, ${e.years.join(', ')}`);
 });
 
+// Defect brief 2026-10-24 item 5: main draw only. Mutations 'qualifying counted', 'own flag ignored', 'flag file ignored'.
+check('qualifying is left out: the entry\'s own flag, else the flag file, else the name (no flag: team events, Finals)', () => {
+  const q = (tn, d, flag) => Object.assign(ent(tn, 11851, d, sg(10, 12), sg(9, 11)), flag === undefined ? {} : { q: flag });
+  const out = B.buildEventHold([{ 1: q('ATP Almaty', '2026-10-18', true), 2: q('ATP Almaty', '2026-10-20', false), 3: q('ATP Almaty', '2025-10-18'),
+    4: q('ATP Almaty', '2025-10-21'), 5: q('ATP Davis Cup - World Group', '2025-09-12'), 6: q('ATP Almaty - Qualification', '2025-10-19') }], { 3: 1, 4: 0 });
+  assert.strictEqual(out.events['11851'].matches, 3, 'own q=false (2), flag file 0 (4), no flag + no "qualif" (5)');
+  assert.strictEqual(out.qualifyingExcluded, 3); assert.strictEqual(out.scope, 'main draw');
+  assert.ok(B.isQualifying('3', { tn: 'ATP Almaty' }, { 3: 1 }) && !B.isQualifying('3', { tn: 'ATP Almaty', q: false }, { 3: 1 }));
+});
+// The committed archive + boxscore-qualifying.json: Almaty's two editions = 54 main-draw matches (78 with its 24 qualifying).
+check('the committed archive: Almaty is main draw only — 54 matches with the flags, 78 without (non-empty control)', () => {
+  const fs = require('fs'), zlib = require('zlib');
+  const dir = path.join(__dirname, '..', 'boxscore-archive'), qf = path.join(__dirname, '..', 'boxscore-qualifying.json');
+  if (!fs.existsSync(dir) || !fs.existsSync(qf)) { console.log('  (skipped: no boxscore-archive/ or boxscore-qualifying.json in this checkout)'); return; }
+  const weeks = fs.readdirSync(dir).filter(f => /^265-\d{4}-(09|10)-\d{2}\.json\.gz$/.test(f)).sort()
+    .map(f => JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(dir, f))).toString('utf8')));
+  const flags = JSON.parse(fs.readFileSync(qf, 'utf8')).q;
+  const all = B.buildEventHold(weeks, null).events['11851'], main = B.buildEventHold(weeks, flags).events['11851'];
+  assert.ok(all && main, 'Almaty (11851) is in the archive');
+  assert.strictEqual(all.matches, 78); assert.strictEqual(main.matches, 54); assert.strictEqual(main.games, 1223);
+  console.log(`  Almaty main draw: ${main.held} of ${main.games} service games held (${(100 * main.held / main.games).toFixed(1)}%), ${main.matches} matches`);
+});
+
 if (failed) { console.error(`\n${failed} check(s) failed`); process.exit(1); }
 console.log('\nTEN-368 event hold builder: all checks passed');

@@ -1548,6 +1548,17 @@ def new_event_meta(key, api, catalog, surfaces, sizes):
             'bestof': '5' if series == 'Grand Slam' else '3', 'K': K, 'year': None, 'newEvent': True}
 
 
+def api_is_qualifying(a):
+    """Qualifying status of an api-tennis fixture (defect brief 2026-10-24 items 1-2). The feed's own flag decides:
+    event_qualification 'True' / 'False'. Its round label never overrides it - api-tennis labels the qualifying bracket's
+    rounds "Semi-finals" / "Final" (Almaty 2026: 12 qualifying matches filed as main-draw SF and F), and names one main draw
+    "Lyon (France) - Qualification". Only a fixture with no flag falls back to the 'qualif' text test."""
+    flag = str(a.get('event_qualification'))
+    if flag in ('True', 'False'):
+        return flag == 'True'
+    return 'qualif' in (str(a.get('tournament_name') or '') + ' ' + str(a.get('tournament_round') or '')).lower()
+
+
 def td_round(api_round, K):
     r = _fold((api_round or '').split(' - ')[-1]).strip()
     if 'qualif' in r:
@@ -1629,7 +1640,7 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         k = (re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip(), e['date'][:4])
         sizes.setdefault(k, []).append(ROUND_SIZE.get(_fold(str(a.get('tournament_round') or '').split(' - ')[-1]).strip(), 0))
     out, rep = [], {'closes': 0, 'beforePinnacleStop': 0, 'override': 0, 'tdHasPinnacle': 0, 'twoTdRows': 0, 'add': 0, 'addRetired': 0,
-                    'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifyingOrRound': 0, 'walkover': 0,
+                    'notInTdWindow': 0, 'capturedOnlyAfterTd': 0, 'notAtpSingles': 0, 'qualifying': 0, 'qualifyingOrRound': 0, 'walkover': 0,
                     'noTdEdition': 0, 'noResult': 0, 'spelledAsTennisData': 0, 'newEvent': 0, 'team': 0, 'teamRetired': 0, 'addAwarded': 0, 'teamAwarded': 0,
                     'teamWalkover': 0, 'teamNoResult': 0}
     for e in export_rows:
@@ -1684,6 +1695,8 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
             rep['walkover'] += 1; continue
         if a.get('event_winner') not in ('First Player', 'Second Player') or st not in FEED_RESULT_STATUSES:
             rep['noResult'] += 1; continue
+        if api_is_qualifying(a):
+            rep['qualifying'] += 1; continue          # the flag decides; a qualifying round label never reads as main draw
         key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
         meta = td_edition_meta(td_rows, alias, key)
         if not meta and catalog is not None:
@@ -1746,7 +1759,7 @@ def cmd_td_feed(export_path, out_csv):
 def lower_level(f):
     """'atp-q' | 'ch' | 'ch-q' | 'itf' | None, from api-tennis's own fields (ATP main draw is Tennis-Data's)."""
     t = f.get('event_type_type')
-    q = str(f.get('event_qualification')) == 'True' or 'qualif' in (str(f.get('tournament_name') or '') + ' ' + str(f.get('tournament_round') or '')).lower()
+    q = api_is_qualifying(f)
     if t == 'Atp Singles':
         return 'atp-q' if q else None
     if t == 'Challenger Men Singles':

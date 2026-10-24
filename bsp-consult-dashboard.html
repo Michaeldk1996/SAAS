@@ -16028,7 +16028,9 @@ function meEnsureStyles(){
 // shared helpers only.
 const TR_LIM = 3;                               // editions shown before "Show N earlier editions" (DF LIM)
 const TR_VS_MKT_MIN = 5;                        // D6: "+Y.Ypt vs market" needs n >= 5 priced rows
-const TR_SPEED_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026];   // DF trend axis; the sheet holds 2023–25 only
+// Defect brief 2026-10-24 item 6: the axis is the seasons the court-conditions sheet can hold (as2023 … as2025) — no
+// slot that can never carry a value. The design drew 2020–2026 over placeholder values.
+const TR_SPEED_YEARS = [2023, 2024, 2025];
 const TR_RG_NOTE = 'Roland Garros court speed: the court-conditions key does not match this event yet (TEN-321), so it is not shown.';
 const TR_NO_SPEED = 'No court-conditions row for this event, so no court speed is shown.';
 const TR_RESULT = { F: 'Final', SF: 'Semi-final', QF: 'Quarter-final', R16: 'Round of 16', R32: 'Round of 32', R64: 'Round of 64', R128: 'Round of 128' };
@@ -16101,7 +16103,11 @@ function trHoldLoad(){
 function trHoldOf(m){
   if (_trHoldData === undefined || (_trHoldData === null && _trHoldP)) return { state: 'loading' };   // a retry in flight
   if (!_trHoldData) return { state: 'failed' };
-  const k = _trHoldData.byName[trClean(m).toLowerCase()], e = k != null ? _trHoldData.events[k] : null;
+  // Defect brief 2026-10-24 item 4: a card carrying its event's api-tennis key reads THAT event (or nothing) — never a name
+  // twin on another surface (byName.lyon is the clay Lyon 2024; the 2026 Lyon is indoor hard). Only a card with no key
+  // (published before the key was added) falls back to the cleaned name.
+  const k = m && m.tournamentKey != null ? String(m.tournamentKey) : _trHoldData.byName[trClean(m).toLowerCase()];
+  const e = k != null ? _trHoldData.events[k] : null;
   if (!e || !(e.games > 0)) return { state: 'none' };
   return { state: 'ok', pct: 100 * e.held / e.games, held: e.held, n: e.games, matches: e.matches, years: e.years || [] };
 }
@@ -16114,7 +16120,7 @@ function trHoldTip(m, H){
   const fmt = v => Number(v).toLocaleString('en-US');
   return `Service hold at ${ev}: ${fmt(H.held)} of ${fmt(H.n)} service games held (n = ${fmt(H.n)}), both players, in ${fmt(H.matches)} `
     + `${H.matches === 1 ? 'match' : 'matches'} with a box score`
-    + (y.length ? ` over ${y.length} ${y.length === 1 ? 'edition' : 'editions'} on file (${span})` : ' on file') + ', qualifying included. Our own box scores.';
+    + (y.length ? ` over ${y.length} ${y.length === 1 ? 'edition' : 'editions'} on file (${span})` : ' on file') + ', main draw only. Our own box scores.';
 }
 function trHoldHtml(m, cls){
   const H = trHoldOf(m);
@@ -16665,7 +16671,7 @@ function trMarketHtml(m){
   const pts = TR_SPEED_YEARS.map((y, i) => ({ y, i, v: val(y) }));
   const have = pts.filter(p => p.v != null);
   const vals = have.map(p => p.v), tMin = vals.length ? Math.min(...vals) : 0, tSpan = vals.length ? (Math.max(...vals) - tMin) || 1 : 1;
-  const X = i => 26 + i * (308 / 6), Y = v => 66 - (v - tMin) / tSpan * 26;
+  const X = i => 26 + i * (308 / Math.max(1, TR_SPEED_YEARS.length - 1)), Y = v => 66 - (v - tMin) / tSpan * 26;
   let word = '—', delta = '';
   if (have.length > 1){
     const d = +(have[have.length - 1].v - have[0].v).toFixed(2), yrs = have[have.length - 1].y - have[0].y;
@@ -16687,7 +16693,7 @@ function trMarketHtml(m){
   }).join('');
   const trend = `<div style="flex:1 1 360px; min-width:0;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
-        <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">Abstract court speed · 2020–2026</span>
+        <span style="font-size:10.5px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:${t3};">Abstract court speed · ${TR_SPEED_YEARS[0]}–${TR_SPEED_YEARS[TR_SPEED_YEARS.length - 1]}</span>
         <span style="display:flex; align-items:baseline; gap:10px;"><span data-tr="trend" style="font-size:14px; font-weight:700;${have.length > 1 ? '' : ' color:' + t3 + ';'}">${word}</span>${delta ? `<span style="${TR_MONO} font-size:12px; color:${t3};">${delta}</span>` : ''}</span>
       </div>
       <div style="position:relative; height:104px; margin-top:6px;">
@@ -26515,7 +26521,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey, grouped){
   // Per-row identity dots were removed (TEN-130): ranking + the leader highlight carry identity here.
   const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
-    const raw = entries.map(e => ({ name: e.name, last: e.last, won: e.won, tip: e.tip, rIdx: e.rIdx, q: e.q, val: e.values[m.key] })).filter(r => r.val != null);
+    const raw = entries.map(e => ({ name: e.name, last: e.last, tip: e.tip, rIdx: e.rIdx, q: e.q, val: e.values[m.key] })).filter(r => r.val != null);
     raw.sort((a, b) => lowerBetter ? a.val - b.val : b.val - a.val);
     // The leader is the best value across the whole card; grouped, rows then run by quarter (ranked inside each).
     const leader = raw.length ? raw[0] : null;
@@ -26544,7 +26550,6 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey, grouped){
       const open = e.rIdx != null ? ` onclick="tourxOpenMatchSheet('${tourxEsc(e.name)}', ${e.rIdx})" title="Open match stats"` : '';
       return `<div style="display:grid;grid-template-columns:118px minmax(0,1fr) 44px;align-items:center;gap:8px;">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;white-space:nowrap;overflow:hidden;">
-          ${e.won == null ? '' : `<span style="margin-right:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:${e.won ? 'var(--pos)' : 'var(--neg)'};">${e.won ? 'W' : 'L'}</span>`}
           <span style="font-weight:${best ? 700 : 600};color:var(--text);overflow:hidden;text-overflow:ellipsis;">${e.last}</span>
           ${tourxRatingSpan(e.name, 11)}
         </div>
@@ -26623,7 +26628,7 @@ function tourxRoundViewHtml(T){
     let entries = winners.map(w => {
       const values = {};
       TOURX_METRICS.forEach(m => { values[m.key] = w.data[m.key][rIdx]; });
-      return { name: w.name, last: tourxSurname(w.name), won: true, values, q: qOf ? qOf(w.playerKey) : null,
+      return { name: w.name, last: tourxSurname(w.name), values, q: qOf ? qOf(w.playerKey) : null,
         rIdx, tip: tourxMatchTip(w, rIdx, roundLabel, setsToWin, true) };
     });
     const nAll = entries.length, nPlayed = players.length;

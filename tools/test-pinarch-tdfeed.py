@@ -25,6 +25,15 @@ check('rounds in Tennis-Data words: a 96-draw (K=4) R64 = "2nd Round", R128 = "1
       P.td_round('ATP Shanghai - 1/32-finals', 4) == '2nd Round' and P.td_round('ATP Shanghai - 1/64-finals', 4) == '1st Round'
       and P.td_round('ATP Chengdu - 1/16-finals', 2) == '1st Round' and P.td_round('X - 1/8-finals', 2) == '2nd Round'
       and P.td_round('X - Quarter-finals', 2) == 'Quarterfinals' and P.td_round('X - Final', 2) == 'The Final')
+# Mutation: let the 'qualif' text test win over the feed's flag → the Lyon main draw reads qualifying → red.
+check('items 1-2: the feed flag decides; the text test is only a fallback when the flag is absent',
+      P.api_is_qualifying({'event_qualification': 'True', 'tournament_round': 'ATP Almaty - Semi-finals'})
+      and not P.api_is_qualifying({'event_qualification': 'False', 'tournament_name': 'ATP Lyon (France) - Qualification'})
+      and P.api_is_qualifying({'tournament_round': 'ATP X - Qualification Final'})
+      and not P.api_is_qualifying({'tournament_round': 'ATP X - 1/16-finals'}))
+check('items 1-2: lower_level files the Lyon main draw (flag False) as ATP main draw, and Almaty qualifying (flag True) as atp-q',
+      P.lower_level({'event_type_type': 'Atp Singles', 'event_qualification': 'False', 'tournament_name': 'ATP Lyon (France) - Qualification'}) is None
+      and P.lower_level({'event_type_type': 'Atp Singles', 'event_qualification': 'True', 'tournament_round': 'ATP Almaty - Final'}) == 'atp-q')
 check('qualifying and an unknown round have no Tennis-Data round', P.td_round('X - Qualification Final', 4) is None and P.td_round('X - Group A', 0) is None)
 H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl'
 TD25 = [
@@ -58,6 +67,10 @@ E = [
      'apiTennis': api(tournament_name='ATP Nowhere')},
     {'eventKey': 10, 'date': '2026-10-10', 'p1Name': 'K. Walk', 'p2Name': 'L. Over', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 20,
      'apiTennis': api(event_status='Walk Over')},
+    # Defect brief 2026-10-24 item 1 (Almaty 2026): a QUALIFYING match flagged by the feed, whose round label reads as a
+    # main-draw "Semi-finals" — it must never become a Database row.
+    {'eventKey': 12, 'date': '2026-10-10', 'p1Name': 'M. Almaty', 'p2Name': 'N. Qual', 'p1': 1.6, 'p2': 2.4, 'label': 'from Pinnacle history', 'archiveId': 22,
+     'apiTennis': api(event_qualification='True', tournament_round='ATP Shanghai - Semi-finals')},
     {'eventKey': 11, 'date': '2026-01-10', 'p1Name': 'P. Pin', 'p2Name': 'O. Odd', 'p1': 1.5, 'p2': 2.7, 'label': 'captured', 'archiveId': 21},
 ]
 tmp = tempfile.mkdtemp(prefix='pinarch-td-')
@@ -81,7 +94,10 @@ try:
     check('add: a retirement is a "Retired" row (the Database voids it; the join settles it)', by.get(5, {}).get('comment') == 'Retired' and by[5]['round'] == '3rd Round', by.get(5))
     check('a captured-only close after Tennis-Data is not added (no result on record yet)', 6 not in by and rep['capturedOnlyAfterTd'] == 1, rep)
     check('Challenger, qualifying, an event with no Tennis-Data edition, a walkover: counted, never added',
-          not any(k in by for k in (7, 8, 9, 10)) and rep['notAtpSingles'] == 1 and rep['qualifyingOrRound'] == 1 and rep['noTdEdition'] == 1 and rep['walkover'] == 1, rep)
+          not any(k in by for k in (7, 8, 9, 10)) and rep['notAtpSingles'] == 1 and rep['qualifying'] == 2 and rep['noTdEdition'] == 1 and rep['walkover'] == 1, rep)
+    # Mutation: drop the api_is_qualifying guard in td_feed_rows → event 12 is added as a main-draw Semifinals row → red.
+    check('item 1: a feed-flagged qualifying match with a "Semi-finals" round label is never a main-draw row (Almaty 2026)',
+          12 not in by and rep['qualifyingOrRound'] == 0, by.get(12))
     feed = os.path.join(tmp, 'feed.csv')
     with open(feed, 'w') as fh:
         fh.write(','.join(P.FEED_COLS) + '\n')

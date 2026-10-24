@@ -48,5 +48,25 @@ check('every match build path joins through venueAndCourtSpeedFor (no inline COU
   assert.strictEqual((src.match(/= venueAndCourtSpeedFor\(/g) || []).length, 3);
 });
 
+// Defect brief 2026-10-24 item 4: Lyon 2026 is indoor hard; the 'Lyon' hint + sheet row are the clay Lyon (0.70, 2023).
+// Mutation: drop the feed-surface check in venueAndCourtSpeedFor → Lyon hard reads 0.70 → red.
+check('a match whose feed surface contradicts the hint gets NO court speed (Lyon 2026 hard → dash)', () => {
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon - 1/16-finals', 'hard').courtSpeed, null);
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon', 'Hard').courtSpeed, null);
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon', 'hard').hintKey, 'Lyon', 'the venue hint itself still resolves');
+});
+// Mutation: dash on ANY passed surface (or treat an unknown surface as 'hard') → the clay Lyon / unknown read null → red.
+check('the matching surface, or an unknown one, keeps the reading (clay Lyon 0.70; no guessed surface)', () => {
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon', 'clay').courtSpeed.abstractSpeed, 0.7);
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon', null).courtSpeed.abstractSpeed, 0.7);
+  assert.strictEqual(P.venueAndCourtSpeedFor('ATP Lyon').courtSpeed.abstractSpeed, 0.7);
+  assert.strictEqual(P.venueAndCourtSpeedFor('French Open', 'clay').courtSpeed.abstractSpeed, 0.68);
+});
+// Mutation: a build path that calls the join without the fixture's own surface → red.
+check('all three build paths pass the fixture\'s own feed surface (fixtureSurface), never a default', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+  assert.strictEqual((src.match(/= venueAndCourtSpeedFor\([^;]*, \(surfaceMap \? fixtureSurface\(fixture, surfaceMap\) : null\)\);/g) || []).length, 3);
+});
+
 console.log(`\nten321-rg-court-speed: ${pass} passed, ${fail} failed.`);
 process.exit(fail ? 1 : 0);

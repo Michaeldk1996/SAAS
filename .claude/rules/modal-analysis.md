@@ -81,7 +81,10 @@ this file wins.
 - **No figure without a count** (founder, same comment). **The event hold rate** (founder Q9, 2026-09-30) = service
   games held ÷ service games played at this event, from **our own box scores over every edition on file**
   (`event-hold.json`, built by `build-event-hold.js` from `boxscore-archive/` in every pipeline run), n = service games,
-  both players, qualifying included (the archive carries no round). The Tournament tab (header meta cell) and Key
+  both players, **main draw only** (defect brief 2026-10-24 item 5, replacing "qualifying included"): the feed's own
+  qualifying flag decides (`q` on the entry, else `boxscore-qualifying.json`; team events and the Finals carry none and
+  count). A card reads its event by `m.tournamentKey` (item 4) and falls back to the cleaned name only without one, so a
+  city's other event (clay Lyon 2024 for indoor-hard Lyon 2026) is never read. The Tournament tab (header meta cell) and Key
   factors' Tournament card print the same cell (`trHoldHtml`); its tooltip always states n. It replaces the
   court-conditions sheet's count-less `COURT_CONDITIONS.serviceHold`, which no modal surface prints. No box score for
   the event → "—" with the reason. **Test:** `test-ten341-key-factors.mjs` "Q9" (Key factors = the Tournament tab,
@@ -244,8 +247,10 @@ this file wins.
   "Q11" (no paragraph node; the header card ends at its meta grid).
 - **Hold rate:** a fifth header meta cell (DESIGN GAP G43: the file draws no hold rate on this tab), the event hold
   rate of Palette "No figure without a count" (founder Q9).
-- **Seven-season trend:** the axis is 2020–2026 as drawn; only seasons the sheet holds (2023–25) get a dot and a value, the
-  rest a dash; a hole breaks the line; the delta states the real span. Roland Garros speed and altitude dash with the
+- **Court-speed trend** (defect brief 2026-10-24 item 6, replacing "2020–2026 as drawn"): the axis is exactly the seasons
+  the court-conditions sheet can hold, `TR_SPEED_YEARS` = 2023–2025, with its header span built from that array. A season the
+  sheet leaves empty is a dash; a hole breaks the line; the delta states the real span. **Test:** is there an axis slot that
+  can never carry a value? Then it is wrong. Divergence: the design file draws 2020–2026 over placeholder values. Roland Garros speed and altitude dash with the
   TEN-321 note until its key lands.
 - **Prices — ONE join with the player profile and Head to Head (founder ruling 2026-10-09, TEN-402 card 7bc622d5,
   "same join"; supersedes the 2026-10-08 "this tab keeps its own R8 closes join").** Every price the tab shows — each

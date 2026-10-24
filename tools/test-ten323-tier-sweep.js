@@ -160,5 +160,21 @@ check('8. writeWeek is byte-deterministic regardless of insertion order', () => 
   assert.ok(sweep.FILE_RE.test(path.basename(file)));
 }));
 
+// Defect brief 2026-10-24 item 5. Mutation: drop `q` from archiveEntry (or read any non-'True' as false) → red.
+check('9. archiveEntry stores the feed\'s qualifying flag: True → true, False → false, absent → null (never a guess)', () => {
+  const f = (o) => ({ event_key: 1, event_type_type: 'Atp Singles', event_status: 'Finished', first_player_key: 1, second_player_key: 2,
+    event_first_player: 'A', event_second_player: 'B', statistics: [], pointbypoint: [], event_date: '2025-01-01', ...o });
+  assert.strictEqual(sweep.archiveEntry(f({ event_qualification: 'True' }), 265).q, true);
+  assert.strictEqual(sweep.archiveEntry(f({ event_qualification: 'False' }), 265).q, false);
+  assert.strictEqual(sweep.archiveEntry(f({}), 265).q, null);
+});
+// Mutation: flag a key the week's archive does not hold, or read a missing flag as 0 → red.
+check('10. the qualifying backfill keeps the archive\'s own keys only; a fixture with no flag stays unknown', () => {
+  const B = require(path.join(ROOT, 'tools', 'backfill-qualifying-flags.js'));
+  const got = B.flagsForWeek(['1', '2', '3'], [{ event_key: 1, event_qualification: 'True' }, { event_key: 2, event_qualification: 'False' },
+    { event_key: 3 }, { event_key: 9, event_qualification: 'True' }]);
+  assert.deepStrictEqual(got, { 1: 1, 2: 0 });
+});
+
 console.log(`\ntest-ten323-tier-sweep: ${pass} passed, ${fails.length} failed`);
 if (fails.length) process.exit(1);
