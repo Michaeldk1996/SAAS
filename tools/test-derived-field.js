@@ -6,7 +6,9 @@
 //   R · RENDER: the header reads "Field" with the note "Field = tracked players under the same filters"; Field = the cell's rate; vs Field = the player's rate minus it, in points;
 //       Challenger & ITF on a favourite / underdog card is blank (no prices there); a field of n < 10 is dimmed; neither
 //       Field column is ever green or red (a comparison with other players); no field file = a dash, never a number.
-//   [neg] a builder that counts retirements, or a page that shows a Challenger & ITF favourite field, is caught.
+//   N · vs Field dims exactly when |gap| <= 2 x sqrt(f(1 - f) / n) (founder ruling 2026-10-23).
+//   [neg] a builder that counts retirements, a page without the noise dimming, or one that shows a Challenger & ITF
+//   favourite field, is caught.
 //
 // Run: node tools/test-derived-field.js
 'use strict';
@@ -123,6 +125,37 @@ function main() {
     return k + ' rows';
   });
 
+  H.check('N · vs Field dims exactly when |gap| <= 2 x sqrt(f(1 - f) / n) (founder ruling 2026-10-23), and only then', () => {
+    // a synthetic field around the player's own rates: one line far from him (beyond noise), one near (within)
+    const { I, p } = page(null);
+    const c = I.lineCoverage(p, 'bo3', 'all');
+    const rows = rowsOf(c).filter((r) => r.hit + r.miss >= 30);
+    assert(rows.length >= 2, 'the fixture has no two lines with 30+ matches');
+    const fld = JSON.parse(JSON.stringify(field));
+    const key = 'career|all|bo3|all|all|all';
+    let dimmed = 0, bright = 0;
+    rows.forEach((r, j) => {
+      const n = r.hit + r.miss, pr = r.hit / n, se = Math.sqrt(pr * (1 - pr) / n);
+      // far: the field 5 SE away from him; near: 0.5 SE away (clamped inside 1–99%)
+      const f = Math.min(0.99, Math.max(0.01, j % 2 ? pr - 0.5 * se : (pr > 0.5 ? pr - 5 * se : pr + 5 * se)));
+      fld.cells[key][fld.lines.bo3.indexOf(r.label)] = [Math.round(f * 100000), Math.round((1 - f) * 100000), 0, 500];
+    });
+    const m = page(fld);
+    Object.assign(m.I.state, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null });
+    const html = m.I.renderLinesTab(m.p);
+    rows.forEach((r) => {
+      const t = fld.cells[key][fld.lines.bo3.indexOf(r.label)], f = t[0] / (t[0] + t[1]), n = r.hit + r.miss;
+      const want = Math.abs(r.rate - 100 * f) <= 2 * 100 * Math.sqrt(f * (1 - f) / n);
+      const seg = html.slice(html.indexOf('data-lc-line="' + r.label + '"'));
+      const v = /data-lc-vsfield="[^"]*" data-lc-noise="(\d)" style="([^"]*)"/.exec(seg);
+      assert.strictEqual(v[1] === '1', want, r.label + ': noise flag');
+      if (!r.thin) assert.strictEqual(/text-label/.test(v[2]), want, r.label + ': dimmed ink');
+      if (want) dimmed++; else bright++;
+    });
+    assert(dimmed && bright, 'both cases: dimmed ' + dimmed + ', bright ' + bright);
+    return dimmed + ' within noise (dimmed) · ' + bright + ' beyond noise (full ink)';
+  });
+
   H.check('R · no field file: every Field and vs Field cell is a dash, never a number', () => {
     const { I, p } = page(null);
     Object.assign(I.state, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null });
@@ -138,6 +171,19 @@ function main() {
     const f = path.join(os.tmpdir(), 'build-derived-field-mutant-' + process.pid + '.js');
     fs.writeFileSync(f, src.replace("require('./ten384-figures-lib.js')", 'require(' + JSON.stringify(path.join(__dirname, 'ten384-figures-lib.js')) + ')'));
     try { oneDefinition(build(f)); } finally { fs.unlinkSync(f); }
+  });
+  H.mustFail('vs Field without the noise dimming is caught', () => {
+    const SRC = fs.readFileSync(path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');
+    const f = path.join(os.tmpdir(), 'pp2-noise-mutant-' + process.pid + '.js');
+    fs.writeFileSync(f, SRC.replace('dim(fl.thin || r.thin || inNoise)', 'dim(fl.thin || r.thin)'));
+    try {
+      const p = Object.assign({}, FX.profile, { tournamentHistory: FX.tournamentHistory });
+      const m = L.loadPp2({ src: f, players: { [KEY]: p }, careerHistory: { [KEY]: FX.careerHistory }, marketEdge: { [KEY]: FX.marketEdge }, bet365History: FX.bet365History });
+      m.W.pp2Field = () => ({ st: 'ready', d: field }); m.W.pp2FieldNeed = () => {};   // one player: every gap 0, so every cell is noise
+      Object.assign(m.I.state, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: 'all', lcWin: 'career', lcTier: 'all', lcSurf: 'all', lcSpeed: 'all', lcDrill: null });
+      const html = m.I.renderLinesTab(p);
+      (html.match(/data-lc-noise="1" style="([^"]*)"/g) || []).forEach((x) => assert(/text-label/.test(x), 'a noise gap in full ink'));
+    } finally { fs.unlinkSync(f); }
   });
   H.mustFail('a page that shows a Challenger & ITF favourite field is caught', () => {
     const SRC = fs.readFileSync(path.join(L.ROOT, 'player-profile-v2.js'), 'utf8');

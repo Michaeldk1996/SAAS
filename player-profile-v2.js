@@ -6898,11 +6898,17 @@
             var gap = fl && r.rate != null ? Math.round((r.rate - fl.rate) * 10) / 10 : null;
             var gTxt = gap == null ? DASH : (gap > 0 ? '+' : gap < 0 ? MINUS : '') + Math.abs(gap).toFixed(1) + 'pp';
             var dim = function (thin) { return thin ? 'var(--text-label)' : 'var(--text)'; };
+            // Founder ruling 2026-10-23 · noise: a gap no larger than sampling noise explains for the player's sample is
+            // dimmed — |gap| <= 2 x sqrt(f(1 - f) / n), f = the Field rate, n = the player's covered + not covered (voids
+            // and retirements out, as in his rate). Read on the unrounded gap.
+            var rn = r.hit + r.miss;
+            var noise = fl && rn ? 2 * 100 * Math.sqrt((fl.rate / 100) * (1 - fl.rate / 100) / rn) : null;
+            var inNoise = gap != null && noise != null && Math.abs(r.rate - fl.rate) <= noise;
             return '<span data-lc-field="' + (fl ? fl.cover + '-' + fl.miss : '') + '" title="' + (fl ? esc(fl.cover + ENDASH + fl.miss +
                 (fl.voids ? ' (' + fl.voids + ' void)' : '') + ' over ' + fl.players + ' player' + (fl.players === 1 ? '' : 's')) : '') + '" ' +
                 'style="' + MK_MONO + 'font-size:12.5px;text-align:right;white-space:nowrap;color:' + (fl ? dim(fl.thin) : DASH_COLOUR) + ';">' + fTxt + '</span>' +
-              '<span data-lc-vsfield="' + (gap == null ? '' : gap) + '" style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap;color:' +
-                (gap == null ? DASH_COLOUR : dim(fl.thin || r.thin)) + ';">' + gTxt + '</span>';
+              '<span data-lc-vsfield="' + (gap == null ? '' : gap) + '" data-lc-noise="' + (inNoise ? 1 : 0) + '" style="' + MK_MONO + 'font-size:12.5px;font-weight:600;text-align:right;white-space:nowrap;color:' +
+                (gap == null ? DASH_COLOUR : dim(fl.thin || r.thin || inNoise)) + ';">' + gTxt + '</span>';
           }()) +
         '</div>' + (open && r.n ? renderLineDrill(p, d, g, r) : '');
       }).join('');
@@ -6913,7 +6919,8 @@
       'coverage rates, not results against a priced line. Bo3 and Bo5 are counted separately because the ' +
       'same line means a different bet in each. The tick on every bar marks ' + LC_HOT + '% cover. ' +
       'Click All matches, As favourite or As underdog to switch the table, and a line to list its matches. ' +
-      'vs Field is this player' + '’' + 's rate minus the Field' + '’' + 's, in points.';
+      'vs Field is this player' + '’' + 's rate minus the Field' + '’' + 's, in points, dimmed where the gap is within sampling ' +
+      'noise for his sample (no more than two standard errors of the Field rate on his matches).';
     if (fmt === 'bo3') {
       note += ' On ±3 games a match decided by exactly 3 games is a void: the record reads covered' + ENDASH + 'void' +
         ENDASH + 'not covered, and the rate leaves voids out.';
