@@ -19,6 +19,9 @@ MUTANTS = {
     'NO_LADDER': ("            if not rising_ok(x['price'], y['price']):", "            if False:"),
     'NO_STARTED': ("        if m.get('status') not in AT_NOT_STARTED or e.get('is_live'):", "        if False:"),
     'JOIN_ONE_SURNAME': ("            if {ka, kb} != {k2, k3}:", "            if not ({ka, kb} & {k2, k3}):"),
+    'NO_COLLAPSE': ("        if k in best:", "        if False:"),
+    'PAIR_BY_ABS': ("                key = (e['event_key'], mk) + tuple(sorted([(str(e['side']), e['line']), (next(iter(others)), -e['line'])]))",
+                    "                key = (e['event_key'], mk, abs(e['line']))"),
     'OPEN_ANY_LINE': ("        same_line = op is not None and (mk in ('ml', 'ml1') or _num(op.get('point')) == line)",
                       "        same_line = op is not None"),
 }

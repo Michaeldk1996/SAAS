@@ -136,6 +136,11 @@ def main():
     print(f'normalise: {dict(nst)}')
     print('status by market: ' + json.dumps({f'{k[0]}:{k[1]}': v for k, v in sorted(status.items())}))
 
+    dup = collections.Counter((e['event_key'], e['market'], str(e['side']), e['line']) for e in entries)
+    dup = [k for k, n in dup.items() if n > 1]
+    if dup:
+        print(f'::error::{len(dup)} line key(s) twice after normalise (e.g. {dup[0]}) — no write, no shard.')
+        return 1
     prev, err = read_current([e['event_key'] for e in entries])
     if prev is None:
         print(f'::error::line_prices_current unreadable ({err}) — no write, no shard.')

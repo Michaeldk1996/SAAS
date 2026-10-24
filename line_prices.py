@@ -174,17 +174,45 @@ def normalise(rows, mapping):
                     'open_ts': op.get('inserted_on') if same_line else None,
                     'is_opener': bool(cur.get('is_opener')), 'max_limit': _num(cur.get('max_limit')),
                     'inserted_on': cur.get('inserted_on'), 'is_live': bool(cur.get('is_live'))})
+    # Two alternate slots can sit on the SAME line (measured 2026-10-24, run 40115201276: the upsert refused a batch that
+    # carried one key twice). A line is one price: keep the newest Kibl insert per (event, market, side, line), counted.
+    best = {}
+    for e in out:
+        k = (e['event_key'], e['market'], e['side'], e['line'])
+        if k in best:
+            st['same_line_slots_collapsed'] += 1
+            if (e['inserted_on'] or '') <= (best[k]['inserted_on'] or ''):
+                continue
+        best[k] = e
+    out = list(best.values())
     st['slots'] = len(out)
     return out, st
 
 
 # --------------------------------------------------------------------------------------------------- 3. guards
 def _pairs(entries):
-    """Two sides of one line, same book: spreads/ml by (event, market, alt_id) with lines that cancel; totals by
-    (event, market, alt_id) with the same line, Over + Under."""
+    """Two sides of one line, same book, keyed by the LINE (not Kibl's slot number, which two slots can share): a spread
+    pairs a player's line with the other player's opposite line; a total pairs Over and Under at one line; a match / set
+    winner pairs the two players."""
+    players = collections.defaultdict(set)
+    for e in entries:
+        if e['market'] in PLAYER_MARKETS:
+            players[e['event_key']].add(str(e['side']))
     g = collections.defaultdict(list)
     for e in entries:
-        g[(e['event_key'], e['market'], e['alt_id'] if e['market'] not in ('ml', 'ml1') else 0)].append(e)
+        mk = e['market']
+        if mk in ('gh', 'sh'):
+            others = players[e['event_key']] - {str(e['side'])}
+            if len(others) != 1:
+                key = (e['event_key'], mk, 'unpaired', str(e['side']), e['line'])
+            else:
+                # the pair {(s, l), (o, −l)}, named the same way from either member
+                key = (e['event_key'], mk) + tuple(sorted([(str(e['side']), e['line']), (next(iter(others)), -e['line'])]))
+        elif mk in ('tg', 'ts'):
+            key = (e['event_key'], mk, e['line'])
+        else:
+            key = (e['event_key'], mk)
+        g[key].append(e)
     pairs = []
     for k, es in g.items():
         if len(es) != 2:

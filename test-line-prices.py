@@ -11,6 +11,9 @@ that turns it red; tools/test-line-prices-mutants.py applies each one to a copy 
   P  pre-match only: an api-tennis live / finished status dashes as started  (mutant NO_STARTED)
   J  join: both surnames, one candidate, initials agree; else unmatched      (mutant JOIN_ONE_SURNAME)
   X  an opener on a different line is no opening price for this line       (mutant OPEN_ANY_LINE)
+  U  two Kibl slots on the SAME line are one price, the newest (run 40115201276 upserted one key twice)
+                                                                             (mutant NO_COLLAPSE)
+  Q  a spread pairs (A, L) with (B, −L), never with (B, +L), when both directions are offered  (mutant PAIR_BY_ABS)
 """
 import importlib.util
 import json
@@ -149,6 +152,25 @@ rows = BASE + [row(2, 1, 2, -3.0, 2.20, alt=1, opener=True, ins='2026-10-23T09:0
                row(2, 1, 3, 3.0, 1.70, alt=1, opener=True, ins='2026-10-23T09:00:00Z')]
 E, _, _ = run(rows)
 check('X  an opener on the same line is its opening price', E[('gh', '1093', -3.0)]['open_price'] == 2.20 and E[('gh', '1093', -3.0)]['price'] == 2.29)
+
+print('\nU  same line, two slots')
+rows = BASE + [row(2, 1, 2, -2.5, 2.05, alt=3, ins='2026-10-24T11:20:00Z'), row(2, 1, 3, 2.5, 1.83, alt=3, ins='2026-10-24T11:20:00Z')]
+mapping, _ = LP.join_fixtures(KFX, at())
+ents, nst = LP.normalise(rows, mapping)
+keys = [(e['market'], e['side'], e['line']) for e in ents]
+check('U  one entry per (market, side, line) — no key twice', len(keys) == len(set(keys)), [k for k in keys if keys.count(k) > 1][:3])
+LP.apply_guards(ents, {m['event_key']: m for m in mapping.values()})
+E = {(e['market'], str(e['side']), e['line']): e for e in ents}
+check('U  the newest slot wins: Medvedev −2.5 = 2.05 (11:20), paired, de-vigged', E[('gh', '1093', -2.5)]['price'] == 2.05
+      and E[('gh', '1093', -2.5)]['status'] == 'ok' and abs(E[('gh', '1093', -2.5)]['implied'] - (1/2.05)/(1/2.05 + 1/1.83)) < 1e-9, E[('gh', '1093', -2.5)])
+check('U  the collapse is counted', nst.get('same_line_slots_collapsed') == 2, dict(nst))
+
+print('\nQ  both directions offered')
+rows = BASE + [row(2, 1, 2, 3.0, 1.30, alt=5), row(2, 1, 3, -3.0, 3.60, alt=5)]   # Medvedev +3 / Bublik −3
+E, _, _ = run(rows)
+a, b = E[('gh', '1093', -3.0)], E[('gh', '1093', 3.0)]
+check('Q  Medvedev −3 pairs with Bublik +3 (implied from 2.29 / 1.662)', a['status'] == 'ok' and abs(a['implied'] - (1/2.29)/(1/2.29 + 1/1.662)) < 1e-9, a)
+check('Q  Medvedev +3 pairs with Bublik −3 (implied from 1.30 / 3.60)', b['status'] == 'ok' and abs(b['implied'] - (1/1.30)/(1/1.30 + 1/3.60)) < 1e-9, b)
 
 print('\nshard')
 E, mapping, _ = run(BASE)
