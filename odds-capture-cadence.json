@@ -3,18 +3,11 @@
     "maxGapMin": 22.0,
     "medianGapMin": 15.0,
     "note": "Measured gap between consecutive captures. Compare against the configured interval; the difference IS the delivery shortfall.",
-    "spanHours": 99.69,
+    "spanHours": 99.68,
     "ticks": 400
   },
   "schema": "odds-capture-cadence/1",
   "ticks": [
-    {
-      "at": "2026-10-20T11:49:15Z",
-      "iter": 4,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "39408641321/1"
-    },
     {
       "at": "2026-10-20T12:04:38Z",
       "iter": 5,
@@ -2805,6 +2798,13 @@
       "at": "2026-10-24T15:30:43Z",
       "iter": 7,
       "mode": "free+metered-deferred+redo",
+      "outcome": "captured",
+      "run": "40090895205/1"
+    },
+    {
+      "at": "2026-10-24T15:45:27Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
       "outcome": "captured",
       "run": "40090895205/1"
     }
