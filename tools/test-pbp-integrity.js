@@ -171,12 +171,13 @@ check('page · the loader logs the match id of a log that still fails the check'
 
 // ── 4. BUILDER: build-point-by-point.js main(), stubbed feed ────────────────────
 const realFetch = global.fetch;
-async function runBuilder({ cache, matches, feed, prev = null }) {
+async function runBuilder({ cache, matches, feed, prev = null, once = null }) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pbp-integrity-'));
   const cwd = process.cwd();
   fs.writeFileSync(path.join(dir, 'matches.json'), JSON.stringify({ matches }));
   fs.writeFileSync(path.join(dir, 'point-by-point-cache.json'), JSON.stringify(cache));
   if (prev) fs.writeFileSync(path.join(dir, '.pbp-prev-cache.json'), JSON.stringify(prev));
+  if (once) fs.writeFileSync(path.join(dir, 'pbp-refetch-once.json'), JSON.stringify({ keys: once }));
   const calls = [], logs = [];
   global.fetch = async url => { const ek = /match_key=(\d+)/.exec(url)[1]; calls.push(ek); return { ok: true, status: 200, json: async () => ({ success: 1, result: [feed(ek)] }) }; };
   const log = console.log; console.log = (...a) => logs.push(a.join(' '));
@@ -307,6 +308,14 @@ check('ledger · a replayed game is tagged by source: our stored copy, or the pr
   const prov = await runBuilder({ cache: { [EK]: storedEntry() }, matches: windowMatch(daysAgo(1)), feed: bad });
   assert.strictEqual(prov.repairs.byRuleSource['replayed-game:provider'], 1, JSON.stringify(prov.repairs.byRuleSource));
   assert.ok(!prov.repairs.byRuleSource['replayed-game:stored'], 'a provider-checked log was tagged as our stored copy');
+});
+check('one-off · a listed log the store lacks is fetched and published; one it holds costs no call', async () => {
+  const r = await runBuilder({ cache: {}, matches: [], once: [EK], feed: () => FEED() });
+  assert.deepStrictEqual(r.calls.filter(k => k === EK).length >= 1, true, `the listed log was not fetched (calls: ${r.calls})`);
+  assert.ok(r.index.includes(EK), 'the fetched log was not published');
+  assert.deepStrictEqual(shape(r.shard.sets), shape(FEED_SETS()));
+  const held = await runBuilder({ cache: { [EK]: { ...storedEntry(), sets: FEED_SETS(), pbpRecheckAt: new Date().toISOString(), pbpFeedAt: new Date().toISOString() } }, matches: [], once: [EK], feed: () => FEED() });
+  assert.deepStrictEqual(held.calls, [], 'a log the store holds was fetched again');
 });
 check('cache save · a run that replaced stored logs asks for a save; one that did not, does not', async () => {
   const { decide } = await import(path.join(ROOT, 'tools', 'cache-save-decision.mjs'));

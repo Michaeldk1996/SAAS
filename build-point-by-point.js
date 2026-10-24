@@ -54,7 +54,8 @@ const INDEX_PATH = 'pbp-index.json';
 // The previous cache version's store, restored by pipeline.yml beside the current one (a version bump must never
 // wipe the logs). Merged UNDER the current cache: an entry the current store holds always wins.
 const PREV_CACHE_PATH = '.pbp-prev-cache.json';
-const REPAIRS_PATH = 'pbp-repairs.json';   // the repair ledger, published beside the shards
+const REPAIRS_PATH = 'pbp-repairs.json';
+const REFETCH_ONCE_PATH = 'pbp-refetch-once.json';   // committed: event keys to fetch once if the store lacks them   // the repair ledger, published beside the shards
 // Per-set box scores ride the same shard-plus-index shape as the point log, and
 // for the same reason: ~3.5 KB of set stats per match across ~730 recent-form
 // rows would add ~2.5 MB to matches.json (3.4 MB today) on every page load, to
@@ -471,6 +472,19 @@ async function main() {
     if (!provisional) cache[ek] = built;   // cache the negative too, avoid refetching
     return built;
   }
+
+  // ONE-OFF FETCHES (pbp-refetch-once.json, committed): event keys the store must hold that no fetch path asks for any
+  // more (2026-10-23: 11 logs the 15 -> 16 cache wipe lost; founder-approved). A key whose named log the store already
+  // holds costs nothing, so the list is harmless to leave in place. Same resolve(), same budget as every new log.
+  let onceAsked = 0, onceHeld = 0;
+  for (const ek of (() => { try { return JSON.parse(fs.readFileSync(REFETCH_ONCE_PATH, 'utf8')).keys || []; } catch (e) { return []; } })()) {
+    const e = cache[String(ek)];
+    if (e && e.p1 && e.sets && e.sets.length) { onceHeld++; continue; }
+    if (cache[String(ek)]) delete cache[String(ek)];   // a cached negative from an earlier ask must not block the fetch
+    try { const got = await resolve(String(ek)); onceAsked++; if (got && got.p1 && got.sets && got.sets.length) onceHeld++; }
+    catch (err) { console.error(`pbp-refetch-once: ${ek}: ${err.message}`); }
+  }
+  if (onceAsked || onceHeld) console.log(`::notice title=pbp one-off::${onceHeld} of the listed logs held after this run (${onceAsked} fetched this run).`);
 
   for (const m of matches) {
     // An interrupted match has a real point log frozen at the suspension, so it
