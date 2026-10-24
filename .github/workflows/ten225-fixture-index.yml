@@ -1,0 +1,100 @@
+name: TEN-225 fixture index refresh
+
+# hotlines-mtb-and-loader (founder-authorised 2026-10-24). `.ten225-fixture-index.json.gz` gives the line-summary
+# loader, build-match-closes.js, build-captured-pinnacle.js and tools/pinarch.py Oddspapi's trueStart / trueEnd. It
+# was read once, on 17 Sep, so nothing after 16 Sep had a start and the summary could give it no close.
+#
+# Daily: sweep the last 12 days (2 metered /v4/fixtures units, ~62/month) and MERGE into the committed index —
+# never pruned, a held value never overwritten (ten225-fixture-index.py merge_index). A full 180-day sweep (~31
+# units) is a manual dispatch with days=180.
+#
+# Closing-price capture keeps the key and the budget: the run goes through the shared blocking budget gate
+# (oddspapi_budget.py, 150/day) and additionally steps aside unless RESERVE units of today's cap would still be
+# left after it, so odds-now and the Pinnacle closing capture are never the ones starved. 05:50 UTC: after
+# bet365-archive (04:40), before the line-summary load (06:25) that reads it.
+on:
+  schedule:
+    - cron: '50 5 * * *'
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Sweep the last N days (12 = the daily refresh, 180 = a full sweep, ~31 units)'
+        default: '12'
+
+concurrency:
+  group: ten225-fixture-index
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      DAYS: ${{ github.event.inputs.days || '12' }}
+      RESERVE: '20'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Offline harness (no network)
+        run: python3 test-ten225-fixture-index.py
+
+      - name: Plan (6-day slices)
+        id: plan
+        run: |
+          set -euo pipefail
+          case "$DAYS" in ''|*[!0-9]*) echo "::error::days must be a whole number, got '$DAYS'"; exit 1;; esac
+          echo "units=$(( (DAYS + 5) / 6 ))" >> "$GITHUB_OUTPUT"
+
+      - name: Budget gate (blocking, shared 150/day)
+        id: budget
+        run: python3 oddspapi_budget.py preflight --job ten225-fixture-index --plan ${{ steps.plan.outputs.units }}
+
+      - name: Step aside for closing capture
+        id: room
+        run: |
+          set -euo pipefail
+          plan=${{ steps.plan.outputs.units }}
+          left="${{ steps.budget.outputs.remaining_today }}"
+          if [ "${{ steps.budget.outputs.allowed }}" != "true" ]; then
+            echo "::warning::budget gate refused (${{ steps.budget.outputs.reason }}) — index NOT refreshed today; the held index stays."
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # 'unknown' (ledger down) or '-' cannot prove the reserve: step aside rather than guess.
+          case "$left" in ''|*[!0-9]*) left_n=-1;; *) left_n=$left;; esac
+          if [ "$left_n" -lt $(( plan + RESERVE )) ]; then
+            echo "::warning::only ${left:-?} units left today; refreshing would leave under $RESERVE for odds-now and the closing capture — index NOT refreshed today."
+            echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "go=true" >> "$GITHUB_OUTPUT"
+
+      - name: Sweep and merge
+        if: steps.room.outputs.go == 'true'
+        run: python3 -u ten225-fixture-index.py --days "$DAYS"
+
+      - name: Record spend
+        if: always() && steps.room.outputs.go == 'true'
+        run: python3 oddspapi_budget.py commit --job ten225-fixture-index
+
+      - name: Commit the index (only if changed)
+        if: steps.room.outputs.go == 'true'
+        run: |
+          if git diff --quiet -- .ten225-fixture-index.json.gz; then
+            echo "Index unchanged."
+            exit 0
+          fi
+          git config user.name "bsp-bot"
+          git config user.email "bsp-bot@users.noreply.github.com"
+          git add .ten225-fixture-index.json.gz
+          git commit -m "chore(odds): refresh the Oddspapi fixture index [skip ci]"
+          git pull --rebase --autostash origin main
+          git push origin HEAD:main

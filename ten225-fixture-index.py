@@ -87,12 +87,56 @@ def meter(key, when):
     return s.get('request_count'), s.get('request_limit')
 
 
+# 2026-10-24 (hotlines-mtb-and-loader, founder-authorised refresh): the index had been read ONCE, on 17 Sep
+# (21 Mar – 16 Sep), so every fixture archived after 16 Sep had no start and the line summary could give it no
+# close. A sweep now MERGES into the committed index:
+#   * a fixture not held is added;
+#   * a fixture held keeps every value it has — a sweep only fills a field that is missing (trueStart, trueEnd,
+#     names, …). A value that disagrees with the held one is KEPT and counted, never overwritten, because
+#     tools/pinarch.py, build-match-closes.js and build-captured-pinnacle.js already cut closes on the held values;
+#   * nothing is ever pruned (pinarch's ruled 13–30 Apr window lives in the oldest entries).
+# The scheduled run sweeps the last INCREMENTAL_DAYS (2 metered units); a full RETENTION_DAYS sweep (~31) is a
+# manual dispatch.
+INCREMENTAL_DAYS = 12
+FILL_FIELDS = ('cat', 'start', 'startSched', 'trueStart', 'trueEnd', 'p1', 'p2', 'tourn')
+
+
+def merge_index(held, swept):
+    """(merged, stats). `held` and `swept` are fixtureId -> entry dicts; neither is modified."""
+    merged = {fid: dict(v) for fid, v in held.items()}
+    st = collections.Counter()
+    for fid, new in swept.items():
+        old = merged.get(fid)
+        if old is None:
+            merged[fid] = dict(new)
+            st['added'] += 1
+            continue
+        filled = False
+        for k in FILL_FIELDS:
+            nv, ov = new.get(k), old.get(k)
+            if nv in (None, '') or nv == ov:
+                continue
+            if ov in (None, ''):
+                old[k] = nv
+                filled = True
+            else:
+                st['kept_disagreeing_' + k] += 1
+        st['filled' if filled else 'unchanged'] += 1
+    return merged, st
+
+
 def main():
     key = read_key()
     if not key:
         print('::error::ODDSPAPI_KEY is not set.')
         return 1
-    need = (RETENTION_DAYS // WINDOW_DAYS) + 2
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--days', type=int, default=RETENTION_DAYS,
+                    help=f'sweep the last N days (scheduled: {INCREMENTAL_DAYS}; full: {RETENTION_DAYS})')
+    a = ap.parse_args()
+    days = max(1, min(a.days, RETENTION_DAYS))
+    need = -(-days // WINDOW_DAYS) + 2
     used, limit = meter(key, 'before')
     if used is None or not limit:
         print('::error::refusing to spend metered units without a meter read.')
@@ -103,7 +147,7 @@ def main():
         return 1
 
     now = datetime.now(timezone.utc)
-    cur = now - timedelta(days=RETENTION_DAYS)
+    cur = now - timedelta(days=days)
     index, mix, units, errs = {}, collections.Counter(), 0, 0
     while cur < now:
         end = min(cur + timedelta(days=WINDOW_DAYS), now)
@@ -159,25 +203,39 @@ def main():
         print(f'::warning::{errs} of {units} slices FAILED — the index is '
               f'INCOMPLETE and any projection off it is a LOWER bound.')
 
+    held, prev = {}, {}
+    if os.path.exists(OUT):
+        with gzip.open(OUT, 'rt', encoding='utf-8') as fh:
+            prev = json.load(fh)
+        held = prev.get('fixtures') or {}
+    merged, mst = merge_index(held, index)
+    print(f'\n  merge: {len(held)} held + {len(index)} swept -> {len(merged)} '
+          f'({dict(mst)})')
+    mix = collections.Counter((v.get('cat') or 'unknown') for v in merged.values())
     payload = {
         'generatedAt': now.strftime('%Y-%m-%dT%H:%M:%SZ'),
+        'firstSweepAt': prev.get('firstSweepAt') or prev.get('generatedAt') or now.strftime('%Y-%m-%dT%H:%M:%SZ'),
         'spanDays': RETENTION_DAYS,
         'units': units,
         'sliceErrors': errs,
+        'lastSweep': {'days': days, 'from': (now - timedelta(days=days)).strftime('%Y-%m-%d'),
+                      'to': now.strftime('%Y-%m-%d'), 'units': units, 'sliceErrors': errs,
+                      'swept': len(index), 'merge': dict(mst)},
         'levelMix': dict(mix),
-        'fixtures': index,
+        'fixtures': merged,
     }
     with gzip.open(OUT, 'wt', encoding='utf-8') as fh:
         json.dump(payload, fh)
 
-    print(f'\n  {len(index)} non-synthetic tennis fixtures over {RETENTION_DAYS}d '
-          f'({units} metered units, {errs} slice errors)')
+    print(f'\n  {len(merged)} non-synthetic tennis fixtures held '
+          f'({units} metered units this sweep, {errs} slice errors)')
     for k, v in mix.most_common():
         print(f'    {k:<28} {v:>7}  ({v/RETENTION_DAYS:>7.2f}/day -> '
               f'{v/RETENTION_DAYS*365:>8.0f}/yr)')
     meter(key, 'after')
     print(f'\nwrote {OUT} ({os.path.getsize(OUT)/1e6:.2f} MB gz)')
-    return 0
+    # A partial sweep still adds what it read (each entry is real), but never reads green.
+    return 1 if errs else 0
 
 
 if __name__ == '__main__':
