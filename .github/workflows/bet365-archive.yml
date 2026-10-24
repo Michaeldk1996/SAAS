@@ -32,8 +32,11 @@ name: BSP bet365 history archive
 # ~1-2 units nightly, ~30 for a full sweep.
 
 on:
-  schedule:
-    - cron: '40 4 * * *'      # nightly, after the day's matches have settled
+  # STOPPED 2026-10-24 (founder brief bet105-line-prices, Part 1 item 1): Oddspapi has refused bet365 (403 Restricted
+  # bookmakers) since 26 Sep. Every nightly run since made ~2,100–2,700 refused calls, spent ~40 billable units (11
+  # runs, 13–23 Oct: 11–49 each) for 0 prices, and committed an empty October shard. The schedule is gone; the
+  # workflow, archive-bet365-history.py and the frozen bet365-history/ shards stay (history, still read by the site).
+  # Manual dispatch only — and only if the subscription carries bet365 again.
   workflow_dispatch:
     inputs:
       mode:
