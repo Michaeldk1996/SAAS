@@ -114,6 +114,17 @@ function drawRoundTotals(draw) {
 // "TBD (A v B)" with blank stats (a side not decided yet is "TBD" — never a guessed name); finished without stats →
 // the winner, dashes, flagged [NO STATS]. A match is placed by its two players' OWN draw positions — never inferred.
 const TBD = 'TBD';
+// Draw quarter (1–4) of draw position `pos` in a `size`-slot draw — the ONE mapping behind the sheet's Q1–Q4 headers
+// and the Reports quarter grouping (founder brief 2026-10-24, item 3: same function, not a copy).
+function quarterOfPos(size, pos) { return 1 + Math.floor((pos - 1) / (size / 4)); }
+// A player's quarter in a posted official draw, found by the draw's own playerKey. null when there is no posted draw or
+// the player holds no slot in it — never inferred from seeding.
+function playerQuarter(draw, playerKey) {
+  const main = draw && draw.main;
+  if (!main || main.status !== 'posted' || !Array.isArray(main.slots) || !(main.size >= 4) || playerKey == null || playerKey === '') return null;
+  const s = main.slots.find(x => x && x.playerKey != null && String(x.playerKey) === String(playerKey));
+  return s && s.pos >= 1 && s.pos <= main.size ? quarterOfPos(main.size, s.pos) : null;
+}
 function winnerSide(m) { return m.winner === 1 ? m.p1 : m.winner === 2 ? m.p2 : null; }
 
 function sheetRounds(entry, draw) {
@@ -131,7 +142,6 @@ function sheetRounds(entry, draw) {
 
 function roundsWithDraw(byRound, tabs, draw) {
   const main = draw.main, size = main.size, slots = main.slots, order = drawRounds(size);
-  const quarterOfPos = pos => 1 + Math.floor((pos - 1) / (size / 4));
   const posByKey = new Map(slots.filter(s => s.playerKey).map(s => [String(s.playerKey), s.pos]));
   const nameOf = (side) => side ? side.name : TBD;
   // decided[k][j] = the side object that won match slot j of round k (null = not decided yet). Round k's slot j covers
@@ -161,7 +171,7 @@ function roundsWithDraw(byRound, tabs, draw) {
     if (k >= 0) {
       const n = size / Math.pow(2, k + 1), perQ = n / 4;
       for (let j = 0; j < n; j++) {
-        if (perQ >= 1 && j % perQ === 0) rows.push({ header: `Q${quarterOfPos(j * Math.pow(2, k + 1) + 1)}` });
+        if (perQ >= 1 && j % perQ === 0) rows.push({ header: `Q${quarterOfPos(size, j * Math.pow(2, k + 1) + 1)}` });
         else if (n === 2) rows.push({ header: j === 0 ? 'TOP HALF' : 'BOTTOM HALF' });   // SF: one row per half; F: no header
         const m = matchAt[k][j];
         if (m) { const w = winnerSide(m); rows.push(w ? playerRow(w, m.status, m.hasStats) : { player: DASH, flag: null, values: Array(7).fill(null) }); continue; }
@@ -371,7 +381,7 @@ async function copyRound(tour, round) {
   return text.split('\n').length;
 }
 
-const WUE_SHEET = { COLUMNS, DASH, BLANK, NO_STATS, drawFor, slotName, drawRounds, drawRoundTotals, roundStatus, prefetchDraws, cachedDraw, dominanceRatio, playerRow, sheetRounds, roundTsv, workbookFiles, zipStore, crc32, buildXlsx, fileName, fetchLatest, download, copyRound };
+const WUE_SHEET = { COLUMNS, DASH, BLANK, NO_STATS, drawFor, slotName, drawRounds, drawRoundTotals, quarterOfPos, playerQuarter, roundStatus, prefetchDraws, cachedDraw, dominanceRatio, playerRow, sheetRounds, roundTsv, workbookFiles, zipStore, crc32, buildXlsx, fileName, fetchLatest, download, copyRound };
 if (typeof module !== 'undefined' && module.exports) module.exports = WUE_SHEET;
 if (typeof window !== 'undefined') window.WueSheet = WUE_SHEET;
 if (typeof window !== 'undefined' && typeof fetch === 'function') prefetchDraws();

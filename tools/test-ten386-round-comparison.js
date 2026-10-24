@@ -1,15 +1,12 @@
 'use strict';
 // TEN-386 regression guard — Tournaments → Reports → Round comparison.
 //
-// Founder ruling (2026-10-05, interaction eaf078f8): a selected round lists EVERY
-// player with a box score in it — the QF losers (Zverev, Rublev, Khachanov,
-// Cerundolo at Beijing) belong in the QF comparison — and each row carries the
-// round's outcome as a W/L letter (`--pos` / `--neg`). The name is never dimmed.
-//
-// The outcome comes from the draw-structure `maxWonIdx` (tourxBuildTournament),
-// not from the next round's metrics: a walkover or stat-less next match must not
-// flip a won round to L (independent review, TEN-386). An unknown eliminated flag
-// prints no letter at the player's latest round.
+// Founder ruling (2026-10-24, tournament-page brief item 5 — REPLACES TEN-386's 2026-10-05 winners-and-losers
+// list): a selected round lists only the players who WON it, the W/UE sheet's rule. The one predicate is
+// tourxWonRound: the round's match row (`matches`, winner 1|2) names the winner; with no row it falls back to the
+// draw-structure `maxWonIdx` (tourxBuildTournament), never the next round's metrics, so a walkover in the next round
+// never drops a won round. An unknown outcome is not a win. The "Round avg" marker averages over EVERYONE with a box
+// score in the round and prints its count; TOURX_ROUND_AVG_POP is the one-line switch to winners only.
 //
 // This test SLICES the real tourxRoundChartsHtml + tourxRoundViewHtml out of the
 // dashboard and executes them on a fixture; it does not re-implement the rule.
@@ -59,15 +56,19 @@ const sandbox = {
   tourxTournamentCategory: () => 'ATP 500',
 };
 vm.createContext(sandbox);
-vm.runInContext(['tourxSurname', 'tourxRpEsc', 'tourxRoundOutcome', 'tourxPlayerScore', 'tourxSetsToWin', 'tourxMatchTip', 'tourxRoundChartsHtml', 'tourxRoundViewHtml']
-  .map(grab).join('\n') + '\nthis.view = tourxRoundViewHtml; this.score = tourxPlayerScore; this.setsToWin = tourxSetsToWin;', sandbox);
+// The page's own constants (the avg-population switch + the no-draw note), sliced as written.
+const constLine = name => { const m = html.match(new RegExp('^const ' + name + ' = [^\\n]*;$', 'm')); if (!m) throw new Error('missing const ' + name); return m[0]; };
+const RC_SRC = [constLine('TOURX_ROUND_AVG_POP'), constLine('TOURX_NO_DRAW_NOTE')].join('\n') + '\n'
+  + ['tourxSurname', 'tourxRpEsc', 'tourxRoundOutcome', 'tourxWonRound', 'tourxQuarterFn', 'tourxQuarterLabel', 'tourxByQuarter', 'tourxPlayerScore', 'tourxSetsToWin', 'tourxMatchTip', 'tourxRoundChartsHtml', 'tourxRoundViewHtml']
+  .map(grab).join('\n') + '\nthis.view = tourxRoundViewHtml; this.score = tourxPlayerScore; this.setsToWin = tourxSetsToWin; this.tip = tourxMatchTip;';
+vm.runInContext(RC_SRC, sandbox);
 
 // Rounds R1,R2,QF = R32,R16,QF. data[key][i] = value at round i (null = no box score).
-function player(name, boxes, eliminated, maxWonIdx, known = true, results = []) {
+function player(name, boxes, eliminated, maxWonIdx, known = true, results = [], playerKey = 'k' + name[0]) {
   const data = {};
   KEYS.forEach((k, j) => { data[k] = boxes.map(b => (b ? 200 + j + name.charCodeAt(0) : null)); });
   const played = boxes.map((b, i) => (b ? i : -1)).filter(i => i >= 0);
-  return { name, data, eliminated, eliminatedKnown: known, maxWonIdx,
+  return { name, playerKey, data, eliminated, eliminatedKnown: known, maxWonIdx,
            opponents: boxes.map((b, i) => (b ? 'Opp' + i : null)), results,
            drawDepth: played.length ? played[played.length - 1] + 1 : 0, nRounds: played.length };
 }
@@ -79,6 +80,14 @@ const T = {
     player('C. Walkover', [1, 0, 1], true, 0),        // R16 walkover win (no box), lost QF
     player('D. Opener', [1, 0, 0], true, -1),         // lost R32
     player('E. Unknown', [1, 1, 0], false, 1, false), // eliminated flag unknown (coerced false)
+    // Won R32, then lost R16 with NO box score (Marozsan, Almaty 2026): R32 is his deepest ingested round, so the
+    // draw-structure outcome reads it as lost — only the R32 match row says he won it.
+    player('F. Marozsan', [1, 0, 0], true, -1),
+  ],
+  // The per-match rows (winner 1|2). D. Opener lost to F.; the R16 row F. lost has no stats, so no box score above.
+  matches: [
+    { round: 'R1', winner: 2, p1: { name: 'D. Opener', playerKey: 'kD' }, p2: { name: 'F. Marozsan', playerKey: 'kF' } },
+    { round: 'R2', winner: 1, hasStats: false, p1: { name: 'A. Alive', playerKey: 'kA' }, p2: { name: 'F. Marozsan', playerKey: 'kF' } },
   ],
 };
 
@@ -95,42 +104,61 @@ function rows(roundIdx) {
   }).sort();
 }
 
-console.log('=== QF: winners AND losers, each with its outcome ===');
+console.log('=== QF: winners only (item 5) ===');
 const qf = rows(2);
-ok('QF lists all 3 players with a QF box score (losers included)', qf.length === 3, qf);
-ok('QF winner reads W', qf.includes('W Alive'), qf);
-ok('QF loser reads L (shown, not hidden)', qf.includes('L Beaten'), qf);
-ok('QF loser after an R16 walkover reads L', qf.includes('L Walkover'), qf);
+ok('QF lists only its winner — the two QF losers are removed', JSON.stringify(qf) === '["W Alive"]', qf);
+ok('no L row anywhere in any round', [0, 1, 2].every(i => !rows(i).some(r => r[0] === 'L')));
 
-console.log('=== R32: a walkover in the NEXT round never flips a won round to L ===');
+console.log('=== R32: the match row decides; a walkover in the NEXT round never drops a won round ===');
 const r32 = rows(0);
-ok('R32 lists all 5 players', r32.length === 5, r32);
-ok('R32 walkover-winner reads W (outcome from the draw, not the next box score)', r32.includes('W Walkover'), r32);
-ok('R32 opener loser reads L', r32.includes('L Opener'), r32);
-ok('R32 unknown-flag player who advanced reads W', r32.includes('W Unknown'), r32);
+ok('R32 lists its 5 winners, the opener loser removed', JSON.stringify(r32) === JSON.stringify(['W Alive', 'W Beaten', 'W Marozsan', 'W Unknown', 'W Walkover']), r32);
+ok('R32 walkover-winner is listed (outcome from the draw, not the next box score)', r32.includes('W Walkover'), r32);
+ok('a stat-less R16 loss never drops the R32 win: the R32 match row lists Marozsan', r32.includes('W Marozsan'), r32);
 
-console.log('=== R16: unknown eliminated flag prints no letter at the latest round ===');
+console.log('=== R16: an unknown outcome is not a win ===');
 const r16 = rows(1);
-ok('R16 lists the 3 players with an R16 box score', r16.length === 3, r16);
-ok('R16 unknown-flag player has no W/L letter', r16.includes('- Unknown'), r16);
+ok('R16 lists the 2 proven winners; the unknown-flag player is not listed', JSON.stringify(r16) === JSON.stringify(['W Alive', 'W Beaten']), r16);
+ok('one predicate: the view filters through tourxWonRound only (no second winners test)',
+   (grab('tourxRoundViewHtml').match(/tourxWonRound\(/g) || []).length === 1 && !/tourxRoundOutcome\(/.test(grab('tourxRoundViewHtml')));
 
-console.log('=== copy + no stale winners-only state ===');
+console.log('=== subtitle + Round avg over everyone who played the round ===');
 sandbox.tourxState.roundIdx = 2;
 const out = sandbox.view(T);
-ok('note says W won the round, L lost it', /3 players with a box score in QF — W won the round, L lost it\./.test(out));
-ok('name is never dimmed for losing (surname stays --text)', !/color:var\(--text-label\);overflow:hidden;text-overflow:ellipsis;/.test(out));
+ok('subtitle: "1 player won QF — winners only. Round avg covers all 3 players with a box score in QF."',
+   /1 player won QF — winners only\. Round avg covers all 3 players with a box score in QF\. Quarters appear once the official draw is posted\./.test(out), (out.match(/margin-bottom:12px;">([^<]+)</) || [])[1]);
+ok('the old W/L subtitle is gone', !/W won the round, L lost it/.test(out));
+ok('title: "QF · winners ranked by metric"', /QF · winners ranked by metric/.test(out));
+const avgOf = o => [...o.matchAll(/Round avg([^<]*)<b style="color:var\(--text\);">([^<]+)<\/b>/g)].map(m => [m[1], m[2]]);
+// serveRating at QF: Alive 265, Beaten 266, Walkover 267 → mean of ALL three = 266 (winner alone would be 265)
+ok('Round avg = mean over all 3 QF players, labelled with its count', JSON.stringify(avgOf(out)[0]) === JSON.stringify([' · 3 players ', '266']), avgOf(out)[0]);
+T.field = { metrics: { serveRating: [null, null, 999] } };
+ok('a stored field average (fieldAverage) is the figure; the count still prints', JSON.stringify(avgOf(sandbox.view(T))[0]) === JSON.stringify([' · 3 players ', '999']), avgOf(sandbox.view(T))[0]);
+T.field = { metrics: {} };
+{ // the one-line switch: TOURX_ROUND_AVG_POP = 'winners' → the avg covers the round's winners only
+  const box = Object.assign({}, sandbox, { tourxState: { roundIdx: 2, rvMetrics: [], cmpPlayers: [] } });
+  vm.createContext(box);
+  vm.runInContext(RC_SRC.replace(/^const TOURX_ROUND_AVG_POP = '[a-z]+';$/m, "const TOURX_ROUND_AVG_POP = 'winners';"), box);
+  const o = box.view(Object.assign({}, T, { field: { metrics: { serveRating: [null, null, 999] } } }));
+  ok("switch = 'winners' (one line): avg over the 1 winner (265), the stored all-player average ignored, note says so",
+     JSON.stringify(avgOf(o)[0]) === JSON.stringify([' · 1 player ', '265']) && /Round avg covers these 1 winner\./.test(o), avgOf(o)[0]);
+}
+ok("the shipped switch is 'all'", /^const TOURX_ROUND_AVG_POP = 'all';$/m.test(html));
+ok('name is never dimmed (surname stays --text)', !/color:var\(--text-label\);overflow:hidden;text-overflow:ellipsis;/.test(out));
 
 
 // ======================================================================
 // TEN-401 · step 7 Tournaments → Reports (founder ticket item 9 + Data 4)
 // ======================================================================
-sandbox.tourxState.roundIdx = 2;
+// Bars are read on the R32 card (5 winners since item 5); the QF card holds its single winner.
+sandbox.tourxState.roundIdx = 0;
 const qfOut = sandbox.view(T);
 const qfCard = qfOut.split('<div style="border:1px solid var(--edge-6)')[1] || '';
+sandbox.tourxState.roundIdx = 2;
+const qfOnlyCard = sandbox.view(T).split('<div style="border:1px solid var(--edge-6)')[1] || '';
 const bars = [...qfCard.matchAll(/class="tourx-rbar" style="[^"]*background:(var\(--bar(?:-2)?\))/g)].map(m => m[1]);
 console.log('=== TEN-401 item 9: Round comparison bars ===');
 ok('every bar is Ring blue: the leader --bar solid, the rest --bar-2 (45%)',
-   bars.length === 3 && bars[0] === 'var(--bar)' && bars.slice(1).every(b => b === 'var(--bar-2)'), bars);
+   bars.length === 5 && bars[0] === 'var(--bar)' && bars.slice(1).every(b => b === 'var(--bar-2)'), bars);
 ok('no white / grey bar fills survive (the pre-TEN-401 --text / --text-label bars)',
    !/background:var\(--text(?:-label)?\);border-radius:5px;/.test(qfOut));
 ok('bar track is --track', /class="tourx-rtrack" style="[^"]*background:var\(--track\);"/.test(qfCard));
@@ -138,13 +166,15 @@ ok('the dashed average marker is white 35%', /border-left:1px dashed color-mix\(
 const vals = [...qfCard.matchAll(/text-align:right;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:(var\([^)]+\))/g)].map(m => m[1]);
 ok("the leader's value is white, the rest grey", vals[0] === 'var(--text)' && vals.slice(1).every(v => v === 'var(--text-label)'), vals);
 ok('each bar opens the match-stats sheet for that player and round',
-   /class="tourx-rcell" onclick="tourxOpenMatchSheet\('A\. Alive', 2\)"/.test(qfCard));
+   /class="tourx-rcell" onclick="tourxOpenMatchSheet\('A\. Alive', 0\)"/.test(qfCard) && /class="tourx-rcell" onclick="tourxOpenMatchSheet\('A\. Alive', 2\)"/.test(qfOnlyCard));
 
 console.log('=== TEN-401 item 9: bar tooltip (player-oriented outcome + score) ===');
-const tips = [...qfCard.matchAll(/<span class="tourx-rmeta">([^<]+)<\/span>/g)].map(m => m[1]);
+const tips = [...qfOnlyCard.matchAll(/<span class="tourx-rmeta">([^<]+)<\/span>/g)].map(m => m[1]);
 ok('QF winner tooltip: "A. Alive vs Opp2 · QF · won 2–0" (feed "0 - 2" oriented to the winner)', tips.includes('A. Alive vs Opp2 · QF · won 2–0'), tips);
-ok('a retirement score (winner below 2 sets) is never oriented: "lost" with no score', tips.includes('B. Beaten vs Opp2 · QF · lost'), tips);
-ok('no outcome known → no won/lost word', (() => { sandbox.tourxState.roundIdx = 1; const o = sandbox.view(T); sandbox.tourxState.roundIdx = 2; return /E\. Unknown vs Opp1 · R16<\/span>/.test(o); })());
+ok('a retirement score (winner below 2 sets) is never oriented: "lost" with no score', sandbox.tip(T.players[1], 2, 'QF', 2) === 'B. Beaten vs Opp2 · QF · lost');
+ok('no outcome known → no won/lost word', sandbox.tip(T.players[4], 1, 'R16', 2) === 'E. Unknown vs Opp1 · R16');
+ok('the view passes the winners predicate\'s outcome: Marozsan\'s R32 tooltip reads "won", not the draw-structure "lost"',
+   /F\. Marozsan vs Opp0 · R32 · won<\/span>/.test(qfCard));
 ok('score orientation: won 2–1 / lost 1–2 / walkover-ish "1 - 0" → null / Slam needs 3',
    sandbox.score('1 - 2', true, 2) === '2–1' && sandbox.score('2 - 1', false, 2) === '1–2' && sandbox.score('1 - 0', true, 2) === null
    && sandbox.score('2 - 1', true, 3) === null && sandbox.score('3 - 1', false, 3) === '1–3' && sandbox.score('2 - 0', null, 2) === null);
@@ -273,7 +303,7 @@ const ppBox = { tourxActiveLabels: ['R32', 'R16', 'QF', 'SF', 'F'], tourxState: 
   TOURX_METRICS: [{ key: 'serveRating', label: 'Serve rating', kind: 'rating' }], TOURX_SERVE_KEYS: ['serveRating'], TOURX_RALLY_KEYS: [],
   TOURX_GREYS: ['var(--text)', 'var(--text-soft)'], tourxRating: () => null, tourxEsc: s => String(s), tourxHexA: c => c, tourxRpEsc: s => String(s) };
 vm.createContext(ppBox);
-vm.runInContext(['tourxFmt', 'tourxSurname', 'tourxPPRoundsShown', 'tourxPPRoundNote', 'tourxProgressionHeatHtml', 'tourxProgressionTablesHtml'].map(grab).join('\n')
+vm.runInContext(constLine('TOURX_NO_DRAW_NOTE') + '\n' + ['tourxFmt', 'tourxSurname', 'tourxQuarterFn', 'tourxQuarterLabel', 'tourxByQuarter', 'tourxPPRoundsShown', 'tourxPPRoundNote', 'tourxProgressionHeatHtml', 'tourxProgressionTablesHtml'].map(grab).join('\n')
   + '\nthis.tables = tourxProgressionTablesHtml; this.shown = tourxPPRoundsShown; this.note = tourxPPRoundNote;', ppBox);
 const ppT = { field: { metrics: { serveRating: [250, 260, 270, 280, 290] } } };
 const ppPl = [{ name: 'A. Alive', data: { serveRating: [300, 301, 302, 303, 304] } }, { name: 'B. Beaten', data: { serveRating: [280, 281, 282, 283, null] } }];
@@ -339,7 +369,7 @@ ok('the sheet rows format through tourxMsFmt', /tourxMsFmt\(x, m\.kind\)/.test(g
 console.log('=== TEN-401 r1 fix 14: non-leader bars composite to 45% on the card ===');
 const rowsHtml = [...qfCard.matchAll(/<div class="tourx-rcell"[\s\S]*?<\/div>\s*<\/div>/g)].map(m => m[0]);
 const geo = rowsHtml.map(r => [(r.match(/class="tourx-rtrack" style="[^"]*left:([\d.]+)%/) || [])[1], (r.match(/class="tourx-rbar" style="[^"]*width:([\d.]+)%/) || [])[1]]);
-ok('the --track starts where the bar ends (never under the bar)', geo.length === 3 && geo.every(g => g[0] != null && g[0] === g[1]), geo);
+ok('the --track starts where the bar ends (never under the bar)', geo.length === 5 && geo.every(g => g[0] != null && g[0] === g[1]), geo);
 ok('the bar\'s wrapper carries no fill (nothing stacks under a --bar-2 bar but the card)', rowsHtml.every(r => /<div style="position:absolute;inset:0;border-radius:5px;overflow:hidden;">/.test(r)));
 ok('no gradient / opacity / filter on Round comparison bars or their hover', !/class="tourx-rbar" style="[^"]*(gradient|opacity|filter)/.test(qfCard) && !/\.tourx-rcell[^{]*\{[^}]*(filter|opacity)/.test(html) && !/\.tourx-rbar\s*\{/.test(html));
 

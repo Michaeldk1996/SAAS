@@ -25955,7 +25955,7 @@ function tourxBuildTournament(name){
       return key === 'dominanceRatio' ? Math.round(mean * 100) / 100 : Math.round(mean);
     });
   });
-  return { name, rounds, roundLabels, players, field };
+  return { name, rounds, roundLabels, players, field, matches: Array.isArray(t.matches) ? t.matches : [] };
 }
 // Map a finish round to a player-view group + "Reached" label. Rounds earlier
 // than R16 are not shown individually (return null), matching the design.
@@ -26450,6 +26450,33 @@ function tourxRoundFilterBarHtml(T){
 // TEN-386 outcome of round i for a built player: the draw-structure maxWonIdx (never resultDisplay, never "does the
 // next round have a box score"); an unknown eliminated flag leaves the player's latest round with no outcome (null).
 function tourxRoundOutcome(p, i){ return (!p.eliminatedKnown && i === p.drawDepth - 1) ? null : i <= p.maxWonIdx; }
+// Item 5 (founder ruling 2026-10-24): Reports lists only the players who WON a round — the W/UE sheet's rule. The ONE
+// predicate the winners filter uses: the round's match row (tournament-progression.json `matches`, winner 1|2) names
+// the winner; only with no such row does it fall back to the draw-structure outcome above. The match row matters when
+// the NEXT match has no box score: a player who won R1 and then lost R2 without stats has R1 as his deepest ingested
+// round, so tourxRoundOutcome reads R1 as lost (Marozsan, Almaty 2026). An unknown outcome is never a win.
+function tourxWonRound(T, p, i){
+  const r = T.rounds[i], k = p.playerKey != null && p.playerKey !== '' ? String(p.playerKey) : null;
+  const m = k ? (T.matches || []).find(x => x.round === r && x.p1 && x.p2 && (String(x.p1.playerKey) === k || String(x.p2.playerKey) === k)) : null;
+  if (m && (m.winner === 1 || m.winner === 2)) return String((m.winner === 1 ? m.p1 : m.p2).playerKey) === k;
+  return tourxRoundOutcome(p, i) === true;
+}
+// Who the "Round avg" marker averages over (founder ruling 2026-10-24): 'all' = everyone with a box score in the
+// round, 'winners' = only the round's winners. This one line is the switch.
+const TOURX_ROUND_AVG_POP = 'all';
+// Item 3 (founder brief 2026-10-24): Reports players are grouped by draw quarter from the official protennislive
+// draw, through the W/UE sheet's own mapping (WueSheet.playerQuarter). Returns playerKey → 1–4 (null = not placed in
+// the draw), or null when no draw is posted for the event — the views then stay ungrouped and say so. Never inferred
+// from seeding.
+function tourxQuarterFn(T){
+  const W = typeof WueSheet !== 'undefined' ? WueSheet : null;
+  const draw = W && W.cachedDraw && W.playerQuarter && T ? W.cachedDraw(T.name) : null;
+  return draw ? (k => W.playerQuarter(draw, k)) : null;
+}
+const TOURX_NO_DRAW_NOTE = 'Quarters appear once the official draw is posted.';
+function tourxQuarterLabel(q){ return q ? `Quarter ${q}` : 'Not placed in the draw'; }
+// Stable quarter order (Quarter 1 … 4, then anyone not placed in the draw); the order inside a quarter is kept.
+function tourxByQuarter(list, qOf){ return list.slice().sort((a, b) => (qOf(a) || 5) - (qOf(b) || 5)); }
 // The feed's set score ("2 - 0") is first-player oriented and the same string sits on both players' rows, so it
 // cannot say whose sets are whose. It is oriented to the player only when the outcome is known AND the score is a
 // completed match: the higher count equals the sets needed to win (3 at a Grand Slam, else 2) — then the winner
@@ -26471,8 +26498,8 @@ function tourxSetsToWin(T){
 }
 // "Full name vs Opponent · QF · won 2–0" — the bar tooltip line (reference .rmeta). Outcome / score drop out when
 // they cannot be proved; the opponent is the feed's own name for that match.
-function tourxMatchTip(p, i, roundLabel, setsToWin){
-  const won = tourxRoundOutcome(p, i);
+function tourxMatchTip(p, i, roundLabel, setsToWin, wonKnown){
+  const won = wonKnown !== undefined ? wonKnown : tourxRoundOutcome(p, i);
   const sc = tourxPlayerScore(p.results && p.results[i], won, setsToWin);
   const res = won == null ? '' : (won ? 'won' : 'lost') + (sc ? ' ' + sc : '');
   return [`${p.name} vs ${(p.opponents && p.opponents[i]) || '—'}`, roundLabel, res].filter(Boolean).join(' · ');
@@ -26484,26 +26511,36 @@ function tourxMatchTip(p, i, roundLabel, setsToWin){
 // TEN-401 item 9: bars are Ring blue — the leader --bar solid, everyone else --bar-2 (45%) — on a --track; the dashed
 // average marker is white 35%; the leader's value is white, the rest grey. Each bar shows its match on hover (tooltip,
 // --card + 1px --edge-10) and opens the match-stats sheet on click.
-function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
+function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey, grouped){
   // Per-row identity dots were removed (TEN-130): ranking + the leader highlight carry identity here.
   const grid = tourxGridOrder(shownMetrics).map(m => {
     const lowerBetter = m.key === 'unforcedErrorsPct';
-    const raw = entries.map(e => ({ name: e.name, last: e.last, won: e.won, tip: e.tip, rIdx: e.rIdx, val: e.values[m.key] })).filter(r => r.val != null);
+    const raw = entries.map(e => ({ name: e.name, last: e.last, won: e.won, tip: e.tip, rIdx: e.rIdx, q: e.q, val: e.values[m.key] })).filter(r => r.val != null);
     raw.sort((a, b) => lowerBetter ? a.val - b.val : b.val - a.val);
+    // The leader is the best value across the whole card; grouped, rows then run by quarter (ranked inside each).
+    const leader = raw.length ? raw[0] : null;
+    const ordered = grouped ? tourxByQuarter(raw, r => r.q) : raw;
     const vals = raw.map(e => e.val);
     // Dashed reference line: the field average across all players in this round
     // when provided; otherwise fall back to the mean of the shown players.
-    const fieldAvg = (roundAvgByKey && roundAvgByKey[m.key] != null) ? roundAvgByKey[m.key] : null;
+    const fieldAvg = (roundAvgByKey && roundAvgByKey[m.key] && roundAvgByKey[m.key].avg != null) ? roundAvgByKey[m.key] : null;
     const shownAvg = vals.reduce((a, b) => a + b, 0) / (vals.length || 1);
-    const avg = fieldAvg != null ? fieldAvg : shownAvg;
+    const avg = fieldAvg != null ? fieldAvg.avg : shownAvg;
+    const avgN = fieldAvg != null ? fieldAvg.n : vals.length;
     const hasAvg = raw.length > 0 || fieldAvg != null;
     const lo = Math.min.apply(null, vals.concat([avg])), hi = Math.max.apply(null, vals.concat([avg]));
     const dMin = lo - (hi - lo) * 0.35 - 0.001, dMax = hi + (hi - lo) * 0.12 + 0.001;
     // Bar length honours direction: for unforced errors the lowest value is the
     // longest bar (best), matching the leader-first ordering above.
     const pct = v => Math.max(3, Math.min(100, (lowerBetter ? (dMax - v) : (v - dMin)) / (dMax - dMin) * 100));
-    const rows = raw.map((e, i) => {
-      const best = i === 0;
+    let lastQ;
+    const rows = ordered.map(e => {
+      const best = e === leader;
+      const qHead = grouped && e.q !== lastQ ? `<div class="tourx-qhead" style="font-size:10px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);font-family:var(--font-words);padding-top:4px;">${tourxQuarterLabel(e.q)}</div>` : '';
+      lastQ = e.q;
+      return qHead + tourxRoundBarRowHtml(e, best);
+    }).join('');
+    function tourxRoundBarRowHtml(e, best){
       const open = e.rIdx != null ? ` onclick="tourxOpenMatchSheet('${tourxEsc(e.name)}', ${e.rIdx})" title="Open match stats"` : '';
       return `<div style="display:grid;grid-template-columns:118px minmax(0,1fr) 44px;align-items:center;gap:8px;">
         <div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;font-size:12px;white-space:nowrap;overflow:hidden;">
@@ -26521,7 +26558,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
         </div>
         <span style="text-align:right;font-size:11px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${best ? 'var(--text)' : 'var(--text-label)'};">${tourxFmt(e.val, m.kind)}</span>
       </div>`;
-    }).join('');
+    }
     return `
       <div style="border:1px solid var(--edge-6);border-radius:13px;background:var(--card);padding:14px 15px 8px;">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;gap:10px;">
@@ -26529,7 +26566,7 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
             <span class="tourx-mtitle" style="font-size:13px;font-weight:700;color:var(--text);font-family:var(--font-words);">${m.label}</span>
             ${lowerBetter ? `<span style="font-size:10px;letter-spacing:normal;text-transform:none;color:var(--text-label);">lower is better</span>` : ''}
           </span>
-          <span style="font-size:10.5px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">Round avg <b style="color:var(--text);">${hasAvg ? tourxFmt(avg, m.kind) : '—'}</b></span>
+          <span style="font-size:10.5px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">Round avg${hasAvg && avgN ? ` · ${avgN} player${avgN === 1 ? '' : 's'}` : ''} <b style="color:var(--text);">${hasAvg ? tourxFmt(avg, m.kind) : '—'}</b></span>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px;">${rows || `<div style="font-size:12px;color:var(--text-label);padding:4px 0;">—</div>`}</div>
       </div>`;
@@ -26538,8 +26575,8 @@ function tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey){
   return `<div class="tourx-chartgrid" style="display:grid;grid-template-columns:${cols};gap:14px;">${grid}</div>`;
 }
 // Round view. "All rounds" shows the latest played round; a specific round shows
-// everyone who played that round as ranked bars, each row carrying a W/L outcome
-// letter (TEN-386; identified from the draw structure).
+// the players who WON that round as ranked bars (item 5, 2026-10-24; tourxWonRound),
+// grouped by draw quarter when the official draw is posted (item 3).
 function tourxRoundViewHtml(T){
   const rounds = T.rounds;
   const selIdx = tourxState.roundIdx;
@@ -26557,18 +26594,17 @@ function tourxRoundViewHtml(T){
         <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);font-weight:700;font-family:var(--font-words); ">${label}</span>
         <span style="flex:1;height:1px;background:var(--edge-7);"></span>
       </div>`;
-  const barBlock = (label, note, entries, roundAvgByKey) => filterBar + `<div style="margin-top:16px;">${header(label)}<div style="font-size:12px;color:var(--text-label);margin-bottom:12px;">${note}</div>${tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey)}</div>`;
+  const barBlock = (label, note, entries, roundAvgByKey, grouped) => filterBar + `<div style="margin-top:16px;">${header(label)}<div style="font-size:12px;color:var(--text-label);margin-bottom:12px;">${note}</div>${tourxRoundChartsHtml(entries, shownMetrics, roundAvgByKey, grouped)}</div>`;
 
   // Latest round index that actually has an ingested box score for anyone. Bounds
   // the round selector and drives "hasn't been played yet" for rounds beyond it.
-  // Each row's W/L comes from tourxRoundOutcome() inside renderRound.
   const key0 = TOURX_METRICS[0].key;
   const hasBox = (p, i) => p.data && p.data[key0] && p.data[key0][i] != null;
   let frontierIdx = -1;
   for (let i = 0; i < rounds.length; i++) if (T.players.some(p => hasBox(p, i))) frontierIdx = i;
 
-  // Renders the per-round box-score comparison grid for one round: every player
-  // with a box score in that round, winners and losers alike (TEN-386).
+  // Renders the per-round box-score comparison grid for one round: the round's
+  // winners, against the average of everyone who played it.
   const renderRound = (rIdx) => {
     const roundLabel = tourxActiveLabels[rIdx] || rounds[rIdx] || `Round ${rIdx + 1}`;
     // Round hasn't been played yet — nothing exists beyond the frontier round, so
@@ -26578,44 +26614,50 @@ function tourxRoundViewHtml(T){
       const latest = frontierIdx >= 0 ? (tourxActiveLabels[frontierIdx] || rounds[frontierIdx]) : null;
       return filterBar + dnaCard(`<b style="color:var(--text-soft);">${roundLabel}</b> hasn't been played yet at ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name} — those matches haven't taken place, so there's no box-score data to show.${latest ? ` The latest completed round is <b style="color:var(--text-soft);">${latest}</b>.` : ''}`);
     }
-    // TEN-386 (founder, 2026-10-05): a round shows EVERY player with a box score
-    // in it, not just its winners — the QF losers belong in the QF comparison. The
-    // outcome is carried by a W/L letter on the row (identity vs outcome stay
-    // separate: the name is never dimmed for losing). Outcome = the draw-structure
-    // maxWonIdx from tourxBuildTournament (deepest round WON, from round labels and
-    // the event_winner-derived eliminated flag — resultDisplay is first-player
-    // oriented and can't say who won). Reading labels, not the next round's
-    // metrics, keeps a walkover or stat-less next match from flipping a won round
-    // to L. An unknown eliminated flag leaves the player's latest round blank.
+    // Item 5 (founder ruling 2026-10-24, replacing TEN-386's winners-and-losers list): only the round's WINNERS are
+    // listed, through the one predicate tourxWonRound. Item 3: each winner carries his draw quarter.
     const players = T.players.filter(p => hasBox(p, rIdx));
+    const winners = players.filter(p => tourxWonRound(T, p, rIdx));
+    const qOf = tourxQuarterFn(T);
     const setsToWin = tourxSetsToWin(T);
-    let entries = players.map(w => {
+    let entries = winners.map(w => {
       const values = {};
       TOURX_METRICS.forEach(m => { values[m.key] = w.data[m.key][rIdx]; });
-      return { name: w.name, last: tourxSurname(w.name), won: tourxRoundOutcome(w, rIdx), values,
-        rIdx, tip: tourxMatchTip(w, rIdx, roundLabel, setsToWin) };
+      return { name: w.name, last: tourxSurname(w.name), won: true, values, q: qOf ? qOf(w.playerKey) : null,
+        rIdx, tip: tourxMatchTip(w, rIdx, roundLabel, setsToWin, true) };
     });
-    const nAll = entries.length;
+    const nAll = entries.length, nPlayed = players.length;
+    const eventName = typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name;
     if (selNames.length) entries = entries.filter(e => selNames.includes(e.name));
     if (!entries.length){
       return filterBar + dnaCard(nAll
-        ? `None of the selected players are among the ${nAll} ${roundLabel} player${nAll === 1 ? '' : 's'}. Clear the player filter or pick a different round.`
-        : `No ${roundLabel} box scores have been ingested for ${typeof tourxEventName === 'function' ? tourxEventName(T.name) : T.name} yet.`);
+        ? `None of the selected players are among the ${nAll} player${nAll === 1 ? '' : 's'} who won ${roundLabel}. Clear the player filter or pick a different round.`
+        : nPlayed
+          ? `${nPlayed} player${nPlayed === 1 ? ' has' : 's have'} a ${roundLabel} box score at ${eventName}, but no ${roundLabel} winner is confirmed in the data yet.`
+          : `No ${roundLabel} box scores have been ingested for ${eventName} yet.`);
     }
-    // Dashed line = field average across ALL players who played this round
-    // (tournament-progression.json fieldAverage.metrics[key][rIdx]).
+    // Dashed line = the round average over TOURX_ROUND_AVG_POP: 'all' = every player with a box score in this round
+    // (tournament-progression.json fieldAverage.metrics[key][rIdx]; the derived ratings' client mean over the same
+    // players), 'winners' = the round's winners only. `n` = players with a value for that metric, printed on the card.
+    const avgPop = TOURX_ROUND_AVG_POP === 'winners' ? winners : players;
     const roundAvgByKey = {};
     TOURX_METRICS.forEach(m => {
-      const arr = T.field && T.field.metrics && T.field.metrics[m.key];
-      roundAvgByKey[m.key] = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
+      const vals = avgPop.map(p => p.data[m.key][rIdx]).filter(v => v != null);
+      const arr = TOURX_ROUND_AVG_POP === 'winners' ? null : (T.field && T.field.metrics && T.field.metrics[m.key]);
+      const stored = (arr && arr[rIdx] != null) ? arr[rIdx] : null;
+      roundAvgByKey[m.key] = vals.length ? { avg: stored != null ? stored : vals.reduce((a, b) => a + b, 0) / vals.length, n: vals.length } : null;
     });
-    // Count = players who actually played this round in the data (a box score),
-    // not a theoretical 2^k — byes and non-power-of-two draws (a 96-draw Masters)
-    // break that assumption, which is how "15 of 8 reached QF" once arose.
-    const titleLabel = `${roundLabel} · players ranked by metric`;
-    const baseNote = `${nAll} player${nAll === 1 ? '' : 's'} with a box score in ${roundLabel} — W won the round, L lost it.`;
-    const note = selNames.length ? `Filtered to ${entries.length} of ${nAll} players with a box score in ${roundLabel} — W won the round, L lost it.` : baseNote;
-    return barBlock(titleLabel, note, entries, roundAvgByKey);
+    // Counts = players who actually played / won this round in the data (a box score), not a theoretical 2^k — byes
+    // and non-power-of-two draws (a 96-draw Masters) break that assumption, which is how "15 of 8 reached QF" arose.
+    const titleLabel = `${roundLabel} · winners ranked by metric`;
+    const avgLine = TOURX_ROUND_AVG_POP === 'winners'
+      ? `Round avg covers these ${nAll} winner${nAll === 1 ? '' : 's'}.`
+      : `Round avg covers all ${nPlayed} player${nPlayed === 1 ? '' : 's'} with a box score in ${roundLabel}.`;
+    const lead = selNames.length
+      ? `Filtered to ${entries.length} of the ${nAll} player${nAll === 1 ? '' : 's'} who won ${roundLabel}.`
+      : `${nAll} player${nAll === 1 ? '' : 's'} won ${roundLabel} — winners only.`;
+    const note = `${lead} ${avgLine}${qOf ? '' : ' ' + TOURX_NO_DRAW_NOTE}`;
+    return barBlock(titleLabel, note, entries, roundAvgByKey, !!qOf);
   };
 
   // Round comparison is bar-only by design: it ranks each round's players on
@@ -26725,7 +26767,11 @@ function tourxProgressionHeatHtml(rows, rounds, kind, lower, field, showAvg){
     : `<div title="${avgTip(a.n)}" style="display:flex;align-items:center;justify-content:center;height:34px;${AVG_SEP}font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:12.5px;color:var(--text);opacity:${dim ? 0.26 : 1};">${tourxFmt(a.v, kind)}${avgMark(a.n, 'var(--text-label)')}</div>`;
   const avgHead = showAvg ? `<div style="display:flex;align-items:center;justify-content:center;${AVG_SEP}text-align:center;font-size:10.5px;font-family:var(--font-words); letter-spacing:0.10em; text-transform:uppercase;color:var(--text-label);font-weight:700;">AVG</div>` : '';
   const header = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:7px;"><div></div>${rounds.map(r => `<div style="text-align:center;font-size:10.5px;font-family:var(--font-words); letter-spacing:0.10em; text-transform:uppercase;color:var(--text-label);font-weight:700;">${r}</div>`).join('')}${avgHead}</div>`;
+  let lastQ;
   const body = rows.map((r, si) => {
+    // Item 3: a quarter heading wherever the quarter changes (rows carry `q` only when the draw is posted).
+    const qHead = r.q !== undefined && r.q !== lastQ ? `<div class="tourx-qhead" style="font-size:10px;letter-spacing:0.10em;text-transform:uppercase;font-weight:700;color:var(--text-label);font-family:var(--font-words);padding:${si ? 6 : 0}px 0 5px 12px;">${tourxQuarterLabel(r.q)}</div>` : '';
+    lastQ = r.q;
     const dim = anyFocus && !r.focused;
     const nameCell = `<div onclick="tourxFocusPP('${tourxEsc(r.full)}')" title="Focus ${tourxEsc(r.name)}" style="display:flex;align-items:center;gap:9px;min-width:0;border-left:2px solid ${r.focused ? r.color : tourxHexA(r.color, 0.6)};padding-left:10px;cursor:pointer;opacity:${dim ? 0.5 : 1};">
         <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;font-weight:600;color:var(--text-label);flex:none;width:${rows.length > 9 ? 20 : 11}px;">${si + 1}</span>
@@ -26734,7 +26780,7 @@ function tourxProgressionHeatHtml(rows, rounds, kind, lower, field, showAvg){
       </div>`;
     const valCells = rounds.map((_, i) => `<div>${cell(r.vals[i], dim, r.vals[i] != null && r.vals[i] === colBest[i], r.full, i)}</div>`).join('');
     const avgC = showAvg ? avgCell(rowAvgs[si], dim) : '';
-    return `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:center;">${nameCell}${valCells}${avgC}</div>`;
+    return `${qHead}<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:center;">${nameCell}${valCells}${avgC}</div>`;
   }).join('');
   let fieldRow = '';
   if (field && field.length){
@@ -26765,9 +26811,12 @@ function tourxProgressionTablesHtml(players, T){
   // TEN-170: the per-player AVG column (mean of the rounds shown) needs at least two round columns to summarise.
   const showAvg = rounds.length >= 2;
   const byKey = k => TOURX_METRICS.find(m => m.key === k);
+  // Item 3: grouped by draw quarter when the official draw is posted (quarter order, the depth order kept inside).
+  const qOf = tourxQuarterFn(T);
+  if (qOf) players = tourxByQuarter(players, p => qOf(p.playerKey));
   const cardFor = m => {
     const lower = (m.key === 'unforcedErrorsPct'); // best = lowest UE; every other metric (incl. Total Points Won) = highest
-    const rows = players.map((p, i) => ({
+    const rows = players.map((p, i) => ({ q: qOf ? qOf(p.playerKey) : undefined,
       full: p.name, name: lastName(p.name), rating: tourxRating(p.name),
       vals: (p.data[m.key] || []).slice(0, rounds.length),
       color: TOURX_GREYS[i % TOURX_GREYS.length], focused: tourxState.ppFocus === p.name,
@@ -26795,7 +26844,7 @@ function tourxProgressionTablesHtml(players, T){
   if (rallyKeys.length) cols.push(`<div style="${colStyle}">${grpLabel('Rally')}${rallyKeys.map(k => cardFor(byKey(k))).join('')}</div>`);
   const gridCols = cols.length === 1 ? 'minmax(0,1fr)' : 'repeat(2,minmax(0,1fr))';
   const avgNote = showAvg ? ` <b style="color:var(--text-label);">AVG</b> is each player's mean across the rounds they have played; a superscript (e.g. <b style="color:var(--text-label);">(2)</b>) flags a player averaged over fewer rounds. The AVG column is not a round and is never highlighted.` : '';
-  const footer = `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:var(--text-label);margin-top:12px;">Highlighted cell marks the best value in that round among the selected players.${avgNote}</div>`;
+  const footer = `<div style="font-family:'Hanken Grotesk',sans-serif;font-size:12px;color:var(--text-label);margin-top:12px;">Highlighted cell marks the best value in that round among the selected players.${avgNote}${qOf ? '' : ' ' + TOURX_NO_DRAW_NOTE}</div>`;
   return `<div class="tourx-ppgrid" style="display:grid;grid-template-columns:${gridCols};gap:16px;margin-top:24px;">${cols.join('')}</div>${footer}`;
 }
 
