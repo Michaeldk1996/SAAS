@@ -1,24 +1,24 @@
 {
- "generatedAt": "2026-10-23T19:57:35.851Z",
+ "generatedAt": "2026-10-24T01:27:45.160Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "df7a7683f42605177e1569527d945b651d43f7d2",
-  "at": "2026-10-23T19:34:09Z"
+  "commit": "30c09261a866287eb5b39993270ac578cd647149",
+  "at": "2026-10-24T01:03:11Z"
  },
- "commitsScanned": 5772,
+ "commitsScanned": 5798,
  "lastRun": {
-  "from": "2026-10-23T16:30:42Z",
-  "snapshots": 15,
-  "added": 3,
+  "from": "2026-10-23T19:34:09Z",
+  "snapshots": 26,
+  "added": 1,
   "replaced": 0,
-  "series": 65,
-  "kept": 58,
+  "series": 66,
+  "kept": 59,
   "bySource": {
-   "api-tennis-live": 58
+   "api-tennis-live": 59
   },
   "byBook": {
-   "Pinnacle +30s": 58
+   "Pinnacle +30s": 59
   },
   "dropped": {
    "noStart": 7
@@ -10324,6 +10324,23 @@
    "round": "ATP Brussels - Quarter-finals",
    "qualifying": false,
    "event": "ATP Brussels"
+  },
+  {
+   "eventKey": 12173574,
+   "date": "2026-10-23",
+   "p1Key": 1066,
+   "p2Key": 2849,
+   "p1Name": "L. van Assche",
+   "p2Name": "L. Musetti",
+   "p1": 2.92,
+   "p2": 1.467,
+   "at": "2026-10-23T18:18:15.433Z",
+   "trueStart": "2026-10-23T19:29:57.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s",
+   "round": "ATP Lyon - Quarter-finals",
+   "qualifying": false,
+   "event": "ATP Lyon"
   },
   {
    "eventKey": 12173593,
