@@ -1,0 +1,23 @@
+name: probe-gate
+on:
+  push:
+    branches: ['claude/probe-gate-*']
+    paths: [tools/probe-gate/**]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: npm ci --ignore-scripts
+      - run: bash tools/probe-gate/run.sh
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          GH_TOKEN: ${{ github.token }}
