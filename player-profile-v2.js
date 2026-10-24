@@ -6539,7 +6539,6 @@
   // page's own lineCoverage, so the same exclusions and void rule). Bridged by the host (pp2Field / pp2FieldNeed). Null =
   // no figure (not loaded, nobody played it, or Challenger & ITF on a favourite / underdog card, where nothing is priced:
   // left blank by ruling). A field of n < 10 (the player's own thin threshold) is shown dimmed.
-  var LC_TIER_WORD = { all: 'All', atp: 'ATP', chitf: 'Challenger & ITF' };
   function lcFieldOf(d, fmt, label) {
     if (d.tier === 'chitf' && d.role !== 'all') return null;
     var f = typeof window.pp2Field === 'function' ? window.pp2Field() : null;
@@ -6806,11 +6805,16 @@
           mkSeg('lc-surf', LC_SURFACES, surf, true) + mkSeg('lc-speed', LC_SPEEDS, speed, true) + '</span></span></div>';
 
     function pctOf(n) { return d.all ? Math.round(100 * n / d.all) + '% of ' + d.all.toLocaleString('en-US') : DASH; }
+    // Founder 2026-10-23 · Challenger & ITF matches carry effectively no closing price (2 of 222,732 player-sides in the
+    // database): there is no favourite or underdog at that tier, so those cards and their tables read a dash — never a
+    // rate off a match or two.
+    var noRoles = tier === 'chitf';
     var tiles = '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:18px;">' +
       LC_ROLES.map(function (t) {
         var on = role === t[0];
         var n = t[0] === 'fav' ? d.favN : t[0] === 'dog' ? d.dogN : d.all;
         var sub = t[0] === 'all' ? d.fmtLabel + ' ' + MIDDOT + ' set scores on record'
+          : noRoles ? 'no closing prices at this tier'
           : t[0] === 'fav' ? pctOf(d.favN) + ' ' + MIDDOT + ' closed under 2.00'
           : pctOf(d.dogN) + ' ' + MIDDOT + ' closed 2.00 or longer';
         // Founder 2026-10-22 · a card's height never follows its numbers: the subtitle shares its cell with a hidden
@@ -6821,13 +6825,20 @@
         return mkTile('lc-role', 'data-v', t[0], on,
           '<span style="' + MK_CAPS + '">' + esc(t[1]) + '</span>' +
           '<span style="' + MK_MONO + 'font-size:24px;font-weight:700;line-height:24px;color:' +
-            (on ? 'var(--text)' : 'var(--text-soft)') + ';">' + n.toLocaleString('en-US') + '</span>' +
+            (on ? 'var(--text)' : 'var(--text-soft)') + ';">' + (noRoles && t[0] !== 'all' ? DASH : n.toLocaleString('en-US')) + '</span>' +
           '<span style="display:grid;font-size:11px;color:var(--text-label);">' +
             '<span style="grid-area:1 / 1;">' + esc(sub) + '</span>' +
             '<span aria-hidden="true" style="grid-area:1 / 1;visibility:hidden;">' + esc(reserve) + '</span></span>',
           '14px 16px', 7);
       }).join('') + '</div>';
 
+    if (noRoles && role !== 'all') {
+      return head + tiles +
+        '<div data-lc="table" style="border:1px dashed var(--edge-6);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:var(--text-label);">' +
+          'Challenger & ITF matches carry no closing price, so there is no favourite or underdog at this tier.' +
+        '</div>';
+    }
     if (!d.n) {
       var inScope = scopeWord ? ' in this window and tier' : '';
       return head + tiles +
@@ -6839,11 +6850,11 @@
         '</div>';
     }
 
-    // Founder 2026-10-23 · Rate · Record · Field · vs Field (the Field header names the active tier)
+    // Founder 2026-10-23 · Rate · Record · Field · vs Field; "Field = tracked players under the same filters" under the table
     if (typeof window.pp2FieldNeed === 'function') window.pp2FieldNeed();
     var GRID = 'display:grid;grid-template-columns:92px 150px minmax(0,1fr) 64px 100px 96px 72px;gap:0 12px;';
     var colHead = '<div data-lc="table" style="' + GRID + 'align-items:end;padding:0 4px 8px;border-bottom:1px solid var(--line);">' +
-      ['Family', 'Line', 'Cover rate', 'Rate', 'Record', 'Field (' + LC_TIER_WORD[tier] + ')', 'vs Field'].map(function (c, i) {
+      ['Family', 'Line', 'Cover rate', 'Rate', 'Record', 'Field', 'vs Field'].map(function (c, i) {
         return '<span style="' + MK_CAPS + (i > 2 ? 'text-align:right;' : '') + '">' + esc(c) + '</span>';
       }).join('') + '</div>';
 
@@ -6902,9 +6913,7 @@
       'coverage rates, not results against a priced line. Bo3 and Bo5 are counted separately because the ' +
       'same line means a different bet in each. The tick on every bar marks ' + LC_HOT + '% cover. ' +
       'Click All matches, As favourite or As underdog to switch the table, and a line to list its matches. ' +
-      'Field (' + LC_TIER_WORD[tier] + ') is the same line' + EMDASH + 'same filters, same rules' + EMDASH + 'over every player in our ' +
-      'database, each from his own side; vs Field is this player' + '’' + 's rate minus it, in points.' +
-      (tier === 'chitf' && role !== 'all' ? ' Challenger & ITF matches carry no closing price, so the field has no favourite or underdog.' : '');
+      'vs Field is this player' + '’' + 's rate minus the Field' + '’' + 's, in points.';
     if (fmt === 'bo3') {
       note += ' On ±3 games a match decided by exactly 3 games is a void: the record reads covered' + ENDASH + 'void' +
         ENDASH + 'not covered, and the rate leaves voids out.';
@@ -6937,7 +6946,9 @@
     if (d.withGames < d.n) note += ' Games lines rest on the ' + d.withGames + ' of ' + d.n + ' with per-set games' +
       // TEN-443: the matches whose feed list lacks a set, named until they are repaired (0 = the clause drops)
       (d.setMissing ? '; ' + d.setMissing + ' with a set missing in the feed' : '') + '.';
-    return head + tiles + colHead + body +
+    var fieldNote = '<div data-lc="field-note" style="font-size:11px;color:var(--text-label);margin-top:8px;">' +
+      'Field = tracked players under the same filters</div>';
+    return head + tiles + colHead + body + fieldNote +
       '<div data-lc="note" style="font-size:11.5px;line-height:18.4px;color:var(--text-label);margin-top:16px;">' + esc(note) + '</div>';
   }
 

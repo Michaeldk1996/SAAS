@@ -263,6 +263,22 @@ function shapeChecks(A, shape) {
     return k + ' states';
   });
 
+  H.check(tag('C · Challenger & ITF: the favourite / underdog cards and tables read a dash, never a rate (founder 2026-10-23)'), () => {
+    let k = 0;
+    WINS.forEach((win) => FMTS.forEach((f) => ['all', 'fav', 'dog'].forEach((role) => {
+      const html = withState(I, { key: p.key, marketTab: 'lines', lcFmt: f, lcRole: role, lcWin: win, lcTier: 'chitf', lcDrill: null }, () => I.renderLinesTab(p));
+      const cards = html.match(/data-pp2="lc-role"[\s\S]*?<\/span><\/span><\/div>/g) || [];
+      const count = (c) => (/font-size:24px[^>]*>([^<]*)</.exec(c) || [])[1];
+      assert.strictEqual(count(cards[1]), '—', win + '/' + f + ': favourite card ' + count(cards[1]));
+      assert.strictEqual(count(cards[2]), '—', win + '/' + f + ': underdog card ' + count(cards[2]));
+      if (role !== 'all') {
+        assert(!/data-lc-line=/.test(html) && /no favourite or underdog at this tier/.test(T(html)), win + '/' + f + '/' + role + ': a rated table under no prices');
+      }
+      k++;
+    })));
+    return k + ' Challenger & ITF states';
+  });
+
   H.check(tag('B · the bettable side: As favourite shows only − handicaps, As underdog only +, All every line (founder 2026-10-23)'), () => {
     let k = 0;
     each((f, role, win, tier) => {

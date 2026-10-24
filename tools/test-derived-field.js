@@ -3,7 +3,7 @@
 //   F · ONE DEFINITION: built over a database of one player (the pinned TEN-384 fixture, Korda), every cell of the field
 //       equals that player's own line tally from the page (lineCoverage) under the same Window × Tier × format × card ×
 //       Surface × Court speed — covered, not covered, void — so the builder adds the page's lines up and defines none.
-//   R · RENDER: the Field header names the tier; Field = the cell's rate; vs Field = the player's rate minus it, in points;
+//   R · RENDER: the header reads "Field" with the note "Field = tracked players under the same filters"; Field = the cell's rate; vs Field = the player's rate minus it, in points;
 //       Challenger & ITF on a favourite / underdog card is blank (no prices there); a field of n < 10 is dimmed; neither
 //       Field column is ever green or red (a comparison with other players); no field file = a dash, never a number.
 //   [neg] a builder that counts retirements, or a page that shows a Challenger & ITF favourite field, is caught.
@@ -95,10 +95,14 @@ function main() {
     let k = 0;
     for (const tier of TIERS) for (const role of ROLES) {
       const html = (() => { Object.assign(I.state, { key: p.key, marketTab: 'lines', lcFmt: 'bo3', lcRole: role, lcWin: 'career', lcTier: tier, lcSurf: 'all', lcSpeed: 'all', lcDrill: null }); return I.renderLinesTab(p); })();
-      const word = { all: 'All', atp: 'ATP', chitf: 'Challenger & ITF' }[tier];
       const c = I.lineCoverage(p, 'bo3', role, { tier });
+      // Challenger & ITF has no favourite / underdog (no closing prices): those cards draw no table at all
+      if (tier === 'chitf' && role !== 'all') {
+        assert(!/data-lc-field=/.test(html) && /no favourite or underdog at this tier/.test(T(html)), tier + '/' + role + ': a table under no prices');
+        continue;
+      }
       if (!c.n) continue;
-      assert(T(html).replace(/&amp;/g, '&').includes('Field (' + word + ')'), tier + ': header');
+      assert(/>Field</.test(html) && T(html).includes('Field = tracked players under the same filters') && !/Field \(/.test(T(html)), tier + ': header and note');
       const cell = field.cells[['career', tier, 'bo3', role, 'all', 'all'].join('|')];
       rowsOf(c).forEach((r) => {
         const seg = html.slice(html.indexOf('data-lc-line="' + r.label + '"'));
