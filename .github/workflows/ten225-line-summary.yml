@@ -88,6 +88,7 @@ jobs:
             echo '## TEN-225 loader — offline harness'
             echo '```'
             python3 test-ten225-load-line-summary.py
+            python3 test-ten225-line-summary-incremental.py
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -136,7 +137,7 @@ jobs:
             FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE n.nspname='public'
              AND c.relname IN ('oddspapi_line_summary','oddspapi_fixtures',
-                               'odds_card_state')
+                               'odds_card_state','oddspapi_line_summary_objects')
            ORDER BY 1;
           SQL
           resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
@@ -147,9 +148,9 @@ jobs:
           body=$(printf '%s' "$resp" | sed '$d')
           { echo '## TEN-225 — RLS posture'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
             | tee -a "$GITHUB_STEP_SUMMARY"
-          printf '%s\n' "$body" | jq -e 'type=="array" and length==3
+          printf '%s\n' "$body" | jq -e 'type=="array" and length==4
             and all(.[]; .rls_enabled == true and (.policies|tonumber) == 0)' >/dev/null \
-            || { echo "::error::RLS is not on with zero policies on all three tables"; exit 1; }
+            || { echo "::error::RLS is not on with zero policies on all four tables"; exit 1; }
 
       - name: Load the summary
         run: |
@@ -169,7 +170,7 @@ jobs:
           {
             echo '## TEN-225 oddspapi_line_summary — load'
             echo '```'
-            python3 ten225-load-line-summary.py $ARGS
+            python3 -u ten225-load-line-summary.py $ARGS
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 

@@ -13643,12 +13643,28 @@ function fhNameLink(name, key, style){
 // =====================================================================
 const FH_HOT_FAM = [['hc', 'Handicap'], ['tot', 'Totals'], ['st', 'Sets & tiebreaks']];
 function fhFamOf(g){ return (g === 'gh' || g === 'sh') ? 'hc' : g; }
+// Founder brief 2026-10-24 (hotlines-mtb): a best-of-3 decided by a match tiebreak (a 10-8 decider stored as a set) is out
+// of every games-based Hot line — its points are not games. ONE rule with Derived lines: player-profile-v2.js lineFormatOf over
+// lineSetCount, the same reading Derived lines makes. Set-based lines are unchanged (a methodology call, not this rule).
+// Returns true / false, or null while that module is not loaded — then a games line counts nothing (fail closed), never a
+// match tiebreak's points.
+function fhMtbOf(r){
+  if (r._mtb !== undefined) return r._mtb;
+  const P = typeof window !== 'undefined' && window.PlayerProfileV2 ? window.PlayerProfileV2._internals : null;
+  if (!P || typeof P.lineFormatOf !== 'function' || typeof P.lineSetCount !== 'function') return null;   // unknown: not cached
+  if (!r.sets) return (r._mtb = false);
+  const rec = { sets: r.result, setGames: r.sets.map(x => ({ p: x[0], o: x[1] })), tournament: String(r.tournRaw || r.tourn || '') };
+  const sc = P.lineSetCount(rec);
+  return (r._mtb = !!sc && P.lineFormatOf(rec, sc) === 'mtb');
+}
 // Why a match is not eligible for a line (the dot tooltip).
 function fhIneligibleWhy(r, def){
   if (r.wo) return 'W/O';
   if (r.ret) return 'RET';
   if (def.need === 'games' && !r.sets) return 'no set scores';
   if (def.need === 'games' && r.ng) return 'Next Gen format';   // TEN-437 S1: 4-game sets — no games-based line
+  if (def.need === 'games' && fhMtbOf(r) === true) return 'match tiebreak';
+  if (def.need === 'games' && fhMtbOf(r) === null) return 'format not checked';
   if (def.bo3 && r.bo === 5) return 'Bo5';
   return '';
 }
@@ -13658,6 +13674,7 @@ function fhEligible(r, def){
   if (r.ret) return false;
   if (def.need === 'games' && !r.sets) return false;
   if (def.need === 'games' && r.ng) return false;   // TEN-437 S1 (review): a games-based line (Tiebreak in match too) never reads a 4-game-set match
+  if (def.need === 'games' && fhMtbOf(r) !== false) return false;   // a match-tiebreak decider (or the rule unreadable): no games line
   if (def.bo3 && r.bo !== 3) return false;
   return true;
 }

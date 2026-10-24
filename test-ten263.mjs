@@ -47,6 +47,17 @@ assert.ok(PS_TOUR_META_SRC, 'PS_TOUR_META not found');
 
 const HELPERS = ['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName',
   'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel', 'maRoundName', 'eventKeyOfMatch'];
+// hotlines-mtb (2026-10-24): fhEligible reads Derived lines' match-tiebreak rule from the REAL player-profile-v2.js
+// (PlayerProfileV2._internals.lineFormatOf); without it every games-based Hot line fails closed. The sliced page code
+// below resolves `window` to this global.
+function hlmtbLoadPP2() {
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, matches: [], addEventListener() {},
+    document: { addEventListener() {}, getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] } };
+  const prev = globalThis.window; globalThis.window = sb;
+  try { new Function('window', readFileSync(join(HERE, 'player-profile-v2.js'), 'utf8'))(sb); } finally { globalThis.window = prev; }
+  return sb.PlayerProfileV2;
+}
+globalThis.window = Object.assign(globalThis.window || {}, { PlayerProfileV2: hlmtbLoadPP2() });
 function sandbox() {
   return new Function(`
     const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; },

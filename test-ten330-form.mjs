@@ -34,7 +34,7 @@ function constSrc(name) {
 const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'maRoundName', 'psRoundAbbr', 'fhRoundCode',
   'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhRowFromForm', 'fhDayNum', 'fhDDMM', 'fhLongDate', 'fhIsInitial', 'fhNameKey',
   'fhPickBook', 'fhCloseFor', 'fhEloKey', 'fhEloKeyOwners', 'fhEloAt', 'fhRefDay', 'tourxSampleGate', 'maGate', 'maGateBar', 'maSmallNote', 'fhMedian',
-  'fhOdd', 'fhSigned', 'fhSourceNote', 'fhB365Approx', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
+  'fhOdd', 'fhSigned', 'fhSourceNote', 'fhB365Approx', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhMtbOf', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
   'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesHead', 'fhHotRateHtml', 'fhHotLinesTable', 'fhHotMoreHtml',
   'maPct', 'maRate', 'maRateHtml', 'fhFormRowsFromCareer',
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
@@ -42,6 +42,17 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_B365_APPROX_HOVER', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
   'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'FH_FORM_EVENTS_NOT_COUNTED', 'FH_FORM_NOT_ATP_RECORD', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_GAP', 'FH_HOT_COLS', 'FH_HOT_FOOT'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
+// hotlines-mtb (2026-10-24): fhEligible reads Derived lines' match-tiebreak rule from the REAL player-profile-v2.js
+// (PlayerProfileV2._internals.lineFormatOf); without it every games-based Hot line fails closed. The sliced page code
+// below resolves `window` to this global.
+function hlmtbLoadPP2() {
+  const sb = { FEATURE_PP2: true, playerProfiles: { players: {} }, matches: [], addEventListener() {},
+    document: { addEventListener() {}, getElementById: () => null, querySelector: () => null, querySelectorAll: () => [] } };
+  const prev = globalThis.window; globalThis.window = sb;
+  try { new Function('window', readFileSync(join(HERE, 'player-profile-v2.js'), 'utf8'))(sb); } finally { globalThis.window = prev; }
+  return sb.PlayerProfileV2;
+}
+globalThis.window = Object.assign(globalThis.window || {}, { PlayerProfileV2: hlmtbLoadPP2() });
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
   function eventKeyOfMatch(m){ return m.eventKey || null; }

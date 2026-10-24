@@ -115,6 +115,8 @@ Expand at **display only**; identity tests use `canon()`, never the display name
 
 > **Bet105 / Kibl (rank 1) > bet365 via Oddspapi (rank 2) > bet365 via api-tennis (rank 3) > other api-tennis books (rank 4)**
 
+Rank 2 is `source = 'oddspapi'`, whatever book its `oddspapi_line_summary` row carries. Oddspapi is **Pinnacle +30 only** since 26 Sep 2026 (bet365 403s), so new rank-2 rows are `pinnacle+30`; bet365 rows there are frozen history (last tick 25 Sep).
+
 Bet105 is the **top** of this ladder. Test: for any fixture `odds-card-state.json` covers, the book it names is the one the card shows.
 
 **2. The `matches.json` ladder** orders api-tennis books only, and only where the card state does not cover a fixture:
