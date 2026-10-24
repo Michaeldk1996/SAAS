@@ -2506,11 +2506,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6.5,
+        "p2": 7.7
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "15 - 15",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1066_l-van-assche.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2849_l-musetti.jpg",
     "oddsMovement": {
@@ -3511,31 +3522,7 @@
       "edgeVsPinnacleP1": -0.0155,
       "edgeVsPinnacleP2": 0.0155,
       "ts": "2026-10-23T16:15:01.356Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-7, 7-6, 4-6",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 7
-        },
-        {
-          "p1": 7,
-          "p2": 6
-        },
-        {
-          "p1": 4,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 1,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12173727",
@@ -7460,6 +7447,10 @@
               [
                 "2026-10-24T00:49:22.593Z",
                 3.2
+              ],
+              [
+                "2026-10-24T01:25:03.769Z",
+                3.25
               ]
             ],
             "p2": [
@@ -7558,6 +7549,10 @@
               [
                 "2026-10-24T00:49:22.593Z",
                 1.44
+              ],
+              [
+                "2026-10-24T01:25:03.769Z",
+                1.43
               ]
             ]
           },
@@ -7767,13 +7762,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -7848,7 +7843,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -11488,6 +11483,22 @@
               [
                 "2026-10-24T00:49:35.517Z",
                 1.52
+              ],
+              [
+                "2026-10-24T01:16:38.942Z",
+                1.54
+              ],
+              [
+                "2026-10-24T01:18:28.278Z",
+                1.58
+              ],
+              [
+                "2026-10-24T01:20:13.073Z",
+                1.57
+              ],
+              [
+                "2026-10-24T01:27:15.836Z",
+                1.55
               ]
             ],
             "p2": [
@@ -11522,6 +11533,22 @@
               [
                 "2026-10-24T00:49:35.517Z",
                 2.52
+              ],
+              [
+                "2026-10-24T01:16:38.942Z",
+                2.47
+              ],
+              [
+                "2026-10-24T01:18:28.278Z",
+                2.37
+              ],
+              [
+                "2026-10-24T01:20:13.073Z",
+                2.4
+              ],
+              [
+                "2026-10-24T01:27:15.836Z",
+                2.45
               ]
             ]
           },
@@ -11586,6 +11613,18 @@
               [
                 "2026-10-24T01:04:58.286Z",
                 1.55
+              ],
+              [
+                "2026-10-24T01:16:43.595Z",
+                1.57
+              ],
+              [
+                "2026-10-24T01:19:58.680Z",
+                1.59
+              ],
+              [
+                "2026-10-24T01:27:43.835Z",
+                1.58
               ]
             ],
             "p2": [
@@ -11640,6 +11679,14 @@
               [
                 "2026-10-24T01:04:58.286Z",
                 2.78
+              ],
+              [
+                "2026-10-24T01:16:43.595Z",
+                2.66
+              ],
+              [
+                "2026-10-24T01:27:43.835Z",
+                2.68
               ]
             ]
           },
@@ -11784,6 +11831,22 @@
               [
                 "2026-10-24T01:17:00.636Z",
                 1.588
+              ],
+              [
+                "2026-10-24T01:17:21.804Z",
+                1.592
+              ],
+              [
+                "2026-10-24T01:19:26.049Z",
+                1.595
+              ],
+              [
+                "2026-10-24T01:19:56.962Z",
+                1.581
+              ],
+              [
+                "2026-10-24T01:26:40.526Z",
+                1.549
               ]
             ],
             "p2": [
@@ -11910,6 +11973,26 @@
               [
                 "2026-10-24T01:16:54.710Z",
                 2.5
+              ],
+              [
+                "2026-10-24T01:17:16.288Z",
+                2.48
+              ],
+              [
+                "2026-10-24T01:17:21.815Z",
+                2.47
+              ],
+              [
+                "2026-10-24T01:19:26.057Z",
+                2.46
+              ],
+              [
+                "2026-10-24T01:19:56.970Z",
+                2.49
+              ],
+              [
+                "2026-10-24T01:26:40.534Z",
+                2.58
               ]
             ]
           },
@@ -11978,6 +12061,50 @@
               [
                 "2026-10-24T01:16:32.250Z",
                 1.584
+              ],
+              [
+                "2026-10-24T01:16:39.994Z",
+                1.574
+              ],
+              [
+                "2026-10-24T01:16:51.312Z",
+                1.588
+              ],
+              [
+                "2026-10-24T01:16:52.831Z",
+                1.568
+              ],
+              [
+                "2026-10-24T01:16:53.141Z",
+                1.574
+              ],
+              [
+                "2026-10-24T01:17:13.243Z",
+                1.584
+              ],
+              [
+                "2026-10-24T01:17:17.280Z",
+                1.595
+              ],
+              [
+                "2026-10-24T01:17:47.286Z",
+                1.598
+              ],
+              [
+                "2026-10-24T01:19:01.767Z",
+                1.602
+              ],
+              [
+                "2026-10-24T01:20:14.676Z",
+                1.584
+              ],
+              [
+                "2026-10-24T01:20:14.987Z",
+                1.588
+              ],
+              [
+                "2026-10-24T01:27:07.691Z",
+                1.555
               ]
             ],
             "p2": [
@@ -12036,6 +12163,50 @@
               [
                 "2026-10-24T01:16:32.250Z",
                 2.51
+              ],
+              [
+                "2026-10-24T01:16:39.994Z",
+                2.54
+              ],
+              [
+                "2026-10-24T01:16:51.312Z",
+                2.51
+              ],
+              [
+                "2026-10-24T01:16:52.831Z",
+                2.56
+              ],
+              [
+                "2026-10-24T01:16:53.141Z",
+                2.54
+              ],
+              [
+                "2026-10-24T01:17:13.243Z",
+                2.51
+              ],
+              [
+                "2026-10-24T01:17:17.280Z",
+                2.49
+              ],
+              [
+                "2026-10-24T01:17:47.286Z",
+                2.48
+              ],
+              [
+                "2026-10-24T01:19:01.767Z",
+                2.47
+              ],
+              [
+                "2026-10-24T01:20:14.676Z",
+                2.51
+              ],
+              [
+                "2026-10-24T01:20:14.987Z",
+                2.5
+              ],
+              [
+                "2026-10-24T01:27:07.691Z",
+                2.59
               ]
             ]
           }
@@ -12045,13 +12216,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -12126,7 +12297,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -15283,6 +15454,10 @@
               [
                 "2026-10-24T01:02:03.280Z",
                 2.64
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                2.62
               ]
             ]
           },
@@ -15431,6 +15606,10 @@
               [
                 "2026-10-24T00:49:44.794Z",
                 1.555
+              ],
+              [
+                "2026-10-24T01:21:19.195Z",
+                1.561
               ]
             ],
             "p2": [
@@ -15573,6 +15752,10 @@
               [
                 "2026-10-24T00:49:44.794Z",
                 2.59
+              ],
+              [
+                "2026-10-24T01:21:19.195Z",
+                2.58
               ]
             ]
           },
@@ -15828,13 +16011,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -15909,7 +16092,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -19991,13 +20174,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -20072,7 +20255,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -20117,19 +20300,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.5,
-      "p2": 1.5,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.5,
-        "bookmaker": "WilliamHill"
-      },
-      "p2": {
-        "price": 1.5,
-        "bookmaker": "WilliamHill"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -23796,6 +23973,14 @@
               [
                 "2026-10-24T00:18:36.754Z",
                 2.48
+              ],
+              [
+                "2026-10-24T01:19:23.641Z",
+                2.4
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                2.42
               ]
             ],
             "p2": [
@@ -23830,6 +24015,14 @@
               [
                 "2026-10-24T00:18:36.754Z",
                 1.57
+              ],
+              [
+                "2026-10-24T01:19:23.641Z",
+                1.56
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                1.57
               ]
             ]
           }
@@ -23839,19 +24032,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -23940,19 +24133,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.57,
-      "p2": 2.25,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.62,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.25,
-        "bookmaker": "WilliamHill"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -26850,6 +27037,14 @@
               [
                 "2026-10-24T00:24:06.839Z",
                 2.34
+              ],
+              [
+                "2026-10-24T01:19:23.641Z",
+                2.06
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                2.04
               ]
             ]
           }
@@ -26859,19 +27054,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -26960,19 +27155,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.37,
-      "p2": 1.53,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.4,
-        "bookmaker": "Marathon"
-      },
-      "p2": {
-        "price": 1.57,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -29572,6 +29761,10 @@
               [
                 "2026-10-24T00:18:41.797Z",
                 2.46
+              ],
+              [
+                "2026-10-24T01:19:23.641Z",
+                2.42
               ]
             ],
             "p2": [
@@ -29627,19 +29820,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -29728,19 +29921,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.66,
-      "p2": 2.1,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.67,
-        "bookmaker": "WilliamHill"
-      },
-      "p2": {
-        "price": 2.25,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -32106,6 +32293,10 @@
               [
                 "2026-10-24T00:37:47.248Z",
                 1.71
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                1.72
               ]
             ],
             "p2": [
@@ -32153,19 +32344,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -32254,19 +32445,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.83,
-      "p2": 1.83,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.87,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 1.87,
-        "bookmaker": "Betano"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -34865,6 +35050,10 @@
               [
                 "2026-10-24T01:04:23.221Z",
                 1.89
+              ],
+              [
+                "2026-10-24T01:19:13.604Z",
+                1.94
               ]
             ],
             "p2": [
@@ -34912,19 +35101,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -35013,19 +35202,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.5,
-      "p2": 1.5,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.5,
-        "bookmaker": "bet365"
-      },
-      "p2": {
-        "price": 1.57,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -37511,6 +37694,14 @@
               [
                 "2026-10-24T00:18:41.797Z",
                 2.42
+              ],
+              [
+                "2026-10-24T01:19:23.641Z",
+                2.36
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                2.38
               ]
             ],
             "p2": [
@@ -37533,6 +37724,10 @@
               [
                 "2026-10-23T23:34:35.468Z",
                 1.63
+              ],
+              [
+                "2026-10-24T01:19:23.641Z",
+                1.64
               ]
             ]
           }
@@ -37542,19 +37737,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -37643,19 +37838,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.44,
-      "p2": 2.62,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.52,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.62,
-        "bookmaker": "bet365"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -41423,6 +41612,10 @@
               [
                 "2026-10-24T01:12:28.590Z",
                 1.51
+              ],
+              [
+                "2026-10-24T01:18:53.766Z",
+                1.55
               ]
             ],
             "p2": [
@@ -41513,6 +41706,10 @@
               [
                 "2026-10-24T01:12:28.590Z",
                 2.46
+              ],
+              [
+                "2026-10-24T01:18:53.766Z",
+                2.52
               ]
             ]
           }
@@ -41522,13 +41719,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -41604,7 +41801,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -41623,19 +41820,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.57,
-      "p2": 2.25,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.57,
-        "bookmaker": "WilliamHill"
-      },
-      "p2": {
-        "price": 2.38,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -44842,19 +45033,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -44943,19 +45134,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.72,
-      "p2": 2.0,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.75,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.01,
-        "bookmaker": "Marathon"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -47667,19 +47852,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -47768,19 +47953,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.72,
-      "p2": 2.0,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.75,
-        "bookmaker": "Betano"
-      },
-      "p2": {
-        "price": 2.0,
-        "bookmaker": "WilliamHill"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -50368,19 +50547,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -50469,19 +50648,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.75,
-      "p2": 1.25,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 3.75,
-        "bookmaker": "WilliamHill"
-      },
-      "p2": {
-        "price": 1.29,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -52948,6 +53121,14 @@
               [
                 "2026-10-24T01:14:54.180Z",
                 3.6
+              ],
+              [
+                "2026-10-24T01:18:28.278Z",
+                3.5
+              ],
+              [
+                "2026-10-24T01:21:59.323Z",
+                3.55
               ]
             ],
             "p2": [
@@ -53057,6 +53238,14 @@
               ],
               [
                 "2026-10-24T01:14:54.180Z",
+                1.24
+              ],
+              [
+                "2026-10-24T01:18:28.278Z",
+                1.25
+              ],
+              [
+                "2026-10-24T01:21:59.323Z",
                 1.24
               ]
             ]
@@ -53413,19 +53602,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -53514,19 +53703,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.1,
-      "p2": 1.66,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.2,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.67,
-        "bookmaker": "WilliamHill"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -56209,19 +56392,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -56310,19 +56493,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.11,
-      "p2": 6.5,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.12,
-        "bookmaker": "WilliamHill"
-      },
-      "p2": {
-        "price": 6.5,
-        "bookmaker": "bet365"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -58387,6 +58564,10 @@
               [
                 "2026-10-24T00:18:31.781Z",
                 1.11
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                1.1
               ]
             ],
             "p2": [
@@ -58430,19 +58611,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -58531,19 +58712,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.2,
-      "p2": 1.61,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 2.25,
-        "bookmaker": "Betfair"
-      },
-      "p2": {
-        "price": 1.62,
-        "bookmaker": "WilliamHill"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -61285,6 +61460,10 @@
               [
                 "2026-10-24T01:12:38.554Z",
                 2.14
+              ],
+              [
+                "2026-10-24T01:19:08.589Z",
+                2.38
               ]
             ],
             "p2": [
@@ -61311,6 +61490,10 @@
               [
                 "2026-10-24T00:18:31.781Z",
                 1.68
+              ],
+              [
+                "2026-10-24T01:24:33.732Z",
+                1.69
               ]
             ]
           }
@@ -61320,13 +61503,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -61402,7 +61585,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -61421,19 +61604,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.8,
-      "p2": 1.9,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.83,
-        "bookmaker": "WilliamHill"
-      },
-      "p2": {
-        "price": 2.0,
-        "bookmaker": "Betfair"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -65283,6 +65460,10 @@
               [
                 "2026-10-24T01:15:53.711Z",
                 1.6
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                1.55
               ]
             ],
             "p2": [
@@ -65357,6 +65538,14 @@
               [
                 "2026-10-24T01:09:23.570Z",
                 2.14
+              ],
+              [
+                "2026-10-24T01:21:58.781Z",
+                2.16
+              ],
+              [
+                "2026-10-24T01:29:33.895Z",
+                2.18
               ]
             ]
           }
@@ -65366,19 +65555,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -65467,19 +65656,13 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.2,
-      "p2": 4.5,
-      "bookmaker": "bet365"
+      "p1": null,
+      "p2": null,
+      "bookmaker": null
     },
     "bestOdds": {
-      "p1": {
-        "price": 1.2,
-        "bookmaker": "bet365"
-      },
-      "p2": {
-        "price": 5.22,
-        "bookmaker": "Pncl"
-      }
+      "p1": null,
+      "p2": null
     },
     "tournamentRound": null,
     "qualifying": false,
@@ -69099,13 +69282,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-10-24T01:16:47.561Z"
+            "checkedAt": "2026-10-24T01:31:47.983Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -69180,7 +69363,7 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-10-24T01:15:01.000Z"
+            "checkedAt": "2026-10-24T01:30:01.000Z"
           }
         }
       }
@@ -333639,7 +333822,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 7-6",
+      "display": "4-6, 7-6(5), 7-6(5)",
       "sets": [
         {
           "p1": 4,
@@ -338230,7 +338413,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(12)",
       "sets": [
         {
           "p1": 6,
@@ -343072,7 +343255,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 2-6",
+      "display": "6-7(5), 2-6",
       "sets": [
         {
           "p1": 6,
@@ -349225,7 +349408,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-3, 7-6",
+      "display": "6-3, 7-6(6)",
       "sets": [
         {
           "p1": 6,
