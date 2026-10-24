@@ -13734,6 +13734,7 @@ function fhHotLinesTable(rows, sc, opts){
         <span style="display:flex; flex-direction:column; gap:2px;">
           <span class="fh-hl-cov" style="${FH_MONO} font-size:12.5px; font-weight:600; color:var(--text); white-space:nowrap;">${x.c} of ${x.n}</span>
           ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:var(--text-label); white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
+          ${opts.price ? opts.price(x) : ''}
         </span>
         <span style="display:grid; grid-template-columns:${cols}; align-items:center;${jc}">${dots}</span>
       </div>`;
@@ -13749,6 +13750,26 @@ function fhHotLinesTable(rows, sc, opts){
     FH_HOT_FAM.forEach(f => { const best = sc.scored.find(x => fhFamOf(x.L.g) === f[0]); if (best) out.push(lineHtml(best, f[1])); });
   }
   return { head, lines: out.join(''), shown: opts.showAll ? sc.scored.length : out.length };
+}
+// bet105 line price under a Hot line's record (founder brief 2026-10-24, bet105-line-prices): ONE lookup for every view —
+// line-prices.js linePrice(eventKey, playerKey, market, signedLine). ctx = { ek, date, aKey, bKey, started, repaint }: the
+// upcoming match the price is for (no match -> a dash). A line with no bet105 market (Tiebreak in match) dashes. While the
+// date's shard loads the cell is empty — not a dash, nothing is known yet — and its arrival repaints once.
+function fhLinePx(L, ctx){
+  if (!ctx || typeof LinePrices === 'undefined') return '';
+  const px = L && L.px;
+  const side = !px ? null : px.side || (px.who === 'A' ? ctx.aKey : px.who === 'B' ? ctx.bKey : null);
+  const r = LinePrices.linePrice(ctx.ek, side, px ? px.mk : null, px ? px.line : null, { date: ctx.date, started: !!ctx.started });
+  if (r.state === 'loading'){ LinePrices.load(ctx.date).then(() => { if (ctx.repaint) ctx.repaint(); }); return ''; }
+  const body = LinePrices.hoverLines(r, L.name).map(fhEsc).join('<br>');
+  const face = `<span class="fh-hl-px" data-lp-state="${r.state}" data-lp-reason="${fhEsc(r.reason || '')}" style="${FH_MONO} font-size:10.5px; color:${r.state === 'ok' ? 'var(--text-soft)' : 'var(--text-label)'}; white-space:nowrap;">${fhEsc(LinePrices.faceText(r))}</span>`;
+  return maTipHtml(face, `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px; line-height:1.5;">${body}</span>`, { below: true, start: true });
+}
+// The match a matchup view prices: the modal's own match (not started), or null.
+function fhLinePxCtx(m, repaint){
+  if (!m) return null;
+  const ek = typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : (m.eventKey || null);
+  return { ek, date: m.date || null, aKey: m.p1Key, bKey: m.p2Key, started: !!m.live || m.finalScore != null || String(m.id || '').startsWith('past-'), repaint };
 }
 // The "Show all lines (N)" / "Best line per family" toggle (README §5): --text, centred under the table, both tabs.
 function fhHotMoreHtml(on, n, onclick){
@@ -13772,19 +13793,19 @@ function fhFormLineDefs(sur){
 }
 function fhH2hLineDefs(aS, bS){
   const d = [
-    { g: 'tot', name: 'Over 22.5 games', need: 'games', bo3: true, cov: m => m.tot > 22.5, basis: 'Bo3 completed' },
-    { g: 'tot', name: 'Over 24.5 games', need: 'games', bo3: true, cov: m => m.tot > 24.5, basis: 'Bo3 completed' },
-    { g: 'tot', name: 'Under 20.5 games', need: 'games', bo3: true, cov: m => m.tot < 20.5, basis: 'Bo3 completed' },
-    { g: 'gh', name: aS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff >= 3, basis: 'Bo3 completed' },
-    { g: 'gh', name: bS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed' },
-    { g: 'gh', name: aS + ' +3.5 games', need: 'games', bo3: true, cov: m => m.diff >= -3, basis: 'Bo3 completed' },
-    { g: 'sh', name: aS + ' −1.5 sets', need: 'sets', bo3: true, cov: m => m.pS === 2 && m.oS === 0, basis: 'Bo3 completed' },
-    { g: 'sh', name: bS + ' −1.5 sets', need: 'sets', bo3: true, cov: m => m.oS === 2 && m.pS === 0, basis: 'Bo3 completed' },
-    { g: 'st', name: 'Match goes to a deciding set', need: 'sets', cov: m => m.decider, basis: 'completed' },
+    { g: 'tot', name: 'Over 22.5 games', need: 'games', bo3: true, cov: m => m.tot > 22.5, basis: 'Bo3 completed', px: { mk: 'tg', side: 'over', line: 22.5 } },
+    { g: 'tot', name: 'Over 24.5 games', need: 'games', bo3: true, cov: m => m.tot > 24.5, basis: 'Bo3 completed', px: { mk: 'tg', side: 'over', line: 24.5 } },
+    { g: 'tot', name: 'Under 20.5 games', need: 'games', bo3: true, cov: m => m.tot < 20.5, basis: 'Bo3 completed', px: { mk: 'tg', side: 'under', line: 20.5 } },
+    { g: 'gh', name: aS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff >= 3, basis: 'Bo3 completed', px: { mk: 'gh', who: 'A', line: -2.5 } },
+    { g: 'gh', name: bS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed', px: { mk: 'gh', who: 'B', line: -2.5 } },
+    { g: 'gh', name: aS + ' +3.5 games', need: 'games', bo3: true, cov: m => m.diff >= -3, basis: 'Bo3 completed', px: { mk: 'gh', who: 'A', line: 3.5 } },
+    { g: 'sh', name: aS + ' −1.5 sets', need: 'sets', bo3: true, cov: m => m.pS === 2 && m.oS === 0, basis: 'Bo3 completed', px: { mk: 'sh', who: 'A', line: -1.5 } },
+    { g: 'sh', name: bS + ' −1.5 sets', need: 'sets', bo3: true, cov: m => m.oS === 2 && m.pS === 0, basis: 'Bo3 completed', px: { mk: 'sh', who: 'B', line: -1.5 } },
+    { g: 'st', name: 'Match goes to a deciding set', need: 'sets', cov: m => m.decider, basis: 'completed', px: { mk: 'ts', side: 'over', line: 2.5 } },
     { g: 'st', name: 'Tiebreak in match', need: 'games', cov: m => m.tbN > 0, basis: 'completed' },
-    { g: 'st', name: aS + ' wins set 1', need: 'set1', cov: m => m.sets[0][0] > m.sets[0][1], basis: '' },
+    { g: 'st', name: aS + ' wins set 1', need: 'set1', cov: m => m.sets[0][0] > m.sets[0][1], basis: '', px: { mk: 'ml1', who: 'A', line: null } },
   ];
-  if (FH_H2H_SET1_MIRROR) d.push({ g: 'st', name: bS + ' wins set 1', need: 'set1', cov: m => m.sets[0][1] > m.sets[0][0], basis: '' });
+  if (FH_H2H_SET1_MIRROR) d.push({ g: 'st', name: bS + ' wins set 1', need: 'set1', cov: m => m.sets[0][1] > m.sets[0][0], basis: '', px: { mk: 'ml1', who: 'B', line: null } });
   return d;
 }
 
@@ -14703,7 +14724,9 @@ function fhBuildH2H(m){
   const withSets = F.filter(r => r.pS != null).length;
   const hotFew = F.length < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + F.length + ')'
     : (!sc.scored.length ? 'Not enough scored meetings to rank lines (n=' + withSets + ')' : '');
+  const pxCtx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'h2h')) fhH2h({}); });
   const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, today: fhSurfName(m.surface), showAll: !!S.allLines, shortPriced: null,
+    price: x => fhLinePx(x.L, pxCtx),
     lineCls: k => `h2hl hl-${k}`,
     colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
     dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
@@ -18478,11 +18501,12 @@ function kfH2HCard(m){
   // hot lines: the H2H tab's ranking over the same meetings (a line needs FH_HOT_MIN_ELIGIBLE eligible meetings)
   const sc = fhScoreLines(counted, fhH2hLineDefs(A, B));
   const hotOk = n >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
+  const kfPx = fhLinePxCtx(m, () => { if (_fh && _fh.m === m && aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
   const hot = hotOk ? Object.keys(KF_HOT_FAM).map(f => sc.scored.find(x => fhFamOf(x.L.g) === f)).filter(Boolean).map(x => {
     const rate = maRateHtml(x.c, x.n, { nopct: '', note: false, color: C.text });
     return `<div class="kf-h2h-hot" style="display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 14px; align-items:center; padding:8px 12px; ${KF_PANEL} border-radius:8px; min-width:0;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;"><span style="${KF_CAP} line-height:13.65px;">${KF_HOT_FAM[fhFamOf(x.L.g)]}</span><span style="font-size:12.5px; font-weight:700; line-height:16.875px; color:${C.text};">${fhEsc(x.name)}</span></span>
-        <span style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">${rate ? `<span style="${M} font-size:16px; font-weight:800; line-height:16px;">${rate}</span>` : ''}<span style="${M} font-size:10.5px; color:${C.t3}; white-space:nowrap;">${x.c} of ${x.n}</span></span>
+        <span style="display:flex; flex-direction:column; align-items:flex-end; gap:3px;">${rate ? `<span style="${M} font-size:16px; font-weight:800; line-height:16px;">${rate}</span>` : ''}<span style="${M} font-size:10.5px; color:${C.t3}; white-space:nowrap;">${x.c} of ${x.n}</span>${fhLinePx(x.L, kfPx)}</span>
       </div>`;
   }).join('') : kfNote(n < FH_HOT_MIN_ELIGIBLE ? `Not enough meetings to rank lines (n=${n})` : `Not enough scored meetings to rank lines (n=${counted.filter(r => r.pS != null).length})`);
   return kfCard('h2h', `${kfHead('Head to head', fhEsc(meta))}
@@ -22365,7 +22389,10 @@ window.pp2NextMatchFor = function(key){
   const rd = m.tournamentRound ? roundBadgeText(m.tournamentRound) : null;
   const where = [event, rd].filter(Boolean).join(' ');
   return { label: [day, where].filter(Boolean).join(' · ') || null, opponent: (best.side === 1 ? m.p2 : m.p1) || null,
-    opponentKey: best.side === 1 ? m.p2Key : m.p1Key };
+    opponentKey: best.side === 1 ? m.p2Key : m.p1Key,
+    // bet105-line-prices: the match Derived lines prices (line-prices.js linePrice) — additive fields
+    eventKey: typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null, date: m.date || null, tour: m.tour || null,
+    round: m.tournamentRound || null, qualifying: !!m.qualifying, live: !!m.live };
 };
 // TEN-384 · the header's "Elo N": the Players card's own source (pgEloFor over elo-ratings.json). The lookup
 // file is lazy; a profile opened before it lands repaints once it does.
@@ -28300,7 +28327,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const surf = ['all', 'Hard', 'Clay', 'Grass'].includes(state.h2hSurf) ? state.h2hSurf : 'all';
     S.rows.forEach(r => { _h2hSheet[r.mid] = { pm: S.pm, r, aName: a.short, aKey: a.key, bName: b.short, bKey: b.key }; });
     return { S, all: S.rows, F: S.rows.filter(r => surf === 'all' || r.surface === surf), surf,
-      aS: fhSurname(a.short), bS: fhSurname(b.short), aName: a.short, bName: b.short, bFull: b.full };
+      aS: fhSurname(a.short), bS: fhSurname(b.short), aName: a.short, bName: b.short, bFull: b.full, aKey: a.key, bKey: b.key };
   }
   // TEN-402 · Head-to-head record (ticket "What changes" 3, 4, 5, 8, 10; measured on OFFICIAL VERSION 1 at 1512, night):
   // a top-level card (--card, no outline) with the section title + the scope chips on one line; the OVERALL panel (white
@@ -28370,7 +28397,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // Its dots call fhOpenSheet; here they go through h2hOpenMeeting, which registers the entry first.
     const sc = fhScoreLines(F, fhH2hLineDefs(h.aS, h.bS));
     const hotOk = n >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
+    const meet = typeof LinePrices !== 'undefined' && typeof matches !== 'undefined' ? LinePrices.meetingOf(matches, h.aKey, h.bKey) : null;
+    const h2hPx = meet ? Object.assign(fhLinePxCtx(meet, () => setState({})), meet.p1Key == h.aKey ? {} : { aKey: meet.p2Key, bKey: meet.p1Key })
+      : { ek: null, date: null, aKey: h.aKey, bKey: h.bKey, started: false, repaint: null };
     const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, today: null, showAll: !!state.h2hAllLines, shortPriced: null,
+      price: x => fhLinePx(x.L, h2hPx),
       lineCls: k => `h2hl hl-${k}`, colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round, dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
     const hotMore = hotOk && (sc.scored.length > table.shown || state.h2hAllLines);
     const hotFew = n < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + n + ')' : 'Not enough scored meetings to rank lines (n=' + F.filter(r => r.pS != null).length + ')';
@@ -34117,6 +34148,7 @@ window.DatabaseTab = (function(){
      module body to run. It is set in the inline block above for that reason.
      Not deferred: showPlayerProfile() may fire from a deep link on first paint
      and a deferred module would not have defined window.PlayerProfileV2 yet. -->
+<script src="line-prices.js"></script>
 <script src="player-profile-v2.js"></script>
 
 <!-- TEN-151: Trading Report feature flag. DEFAULT ON (founder 2026-09-05 "Turn it

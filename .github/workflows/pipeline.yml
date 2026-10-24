@@ -834,6 +834,8 @@ jobs:
           # TEN-270: the Kibl stream -> live "Now" client. Same public creds as the
           # Live tab; reads kibl_now_price only (SELECT-only policy).
           cp kibl-now-stream.js _site/
+          # bet105-line-prices: the ONE line-price lookup (Derived lines + every Hot lines view). Required; asserted below.
+          cp line-prices.js _site/
           cp price-history-box.js _site/
           # TEN-206 ruling 7: the shared hold/break engine, lifted OUT of the
           # dashboard so the Live tab and the Player Profile run one engine. The
@@ -1002,6 +1004,13 @@ jobs:
           # its matches.json binding and dashes what it does not have), so a hard
           # assert would red the deploy over a degradation rather than a break. The
           # warning is what stops its absence passing unnoticed.
+          # bet105-line-prices: line-prices/<date>.json, committed every 15 min by line-prices.yml. Tolerant like the card
+          # state: absent = every price cell dashes (line-prices.js), a degradation, not a break.
+          if [ -d line-prices ] && ls line-prices/*.json >/dev/null 2>&1; then
+            cp -R line-prices _site/
+          else
+            echo "::warning::line-prices/ absent — every bet105 line price dashes"
+          fi
           if [ -s odds-card-state.json ]; then
             cp odds-card-state.json _site/
           else
@@ -1229,7 +1238,7 @@ jobs:
           # every match and nothing else complains. bsp-pipeline.js writes it on
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
-                   live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js \
+                   live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js line-prices.js \
                    holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js \
                    esc-nav.js pbp-integrity.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
