@@ -19,6 +19,11 @@ What it proves, and the mutation that turns each check red:
      next run loads only the rest                                          mutant:
      `return 0` when remaining > 0
   6. an unreadable object state is not "nothing loaded": exit 1, nothing written
+  7. sb_download reads an object served as gzip bytes AND one served decoded (plain
+     JSON, as storage has served every object archived since 2026-10-08)   mutant:
+     gunzip unconditionally (3,425 objects unread on 2026-10-24)
+  8. an unreadable object turns the run red; the readable ones still load   mutant:
+     drop the `if unread: return 1`
 """
 import gzip
 import json
@@ -90,6 +95,8 @@ class FakeSB:
 
         def sb_download(url, key, path):
             fake.downloads += 1
+            if fake.objects[path][0] is None:
+                return None, (0, 'unreadable: BadGzipFile')
             return fake.objects[path][0], None
 
         def upsert(url, key, table, rows, conflict):
@@ -211,6 +218,27 @@ with tempfile.TemporaryDirectory() as td:
     check('run 6 exits 1', rc == 1, rc)
     check('run 6 writes nothing', not fake6.tables['oddspapi_line_summary'] and fake6.downloads == 0,
           (len(fake6.tables['oddspapi_line_summary']), fake6.downloads))
+
+    print('\nrun 7 — sb_download: gzip bytes and decoded bytes both read')
+    L7 = load()
+    body = json.dumps(payload('idZ', 'pinnacle+30')).encode()
+    for label, blob in (('gzip', gzip.compress(body)), ('decoded', body)):
+        L7.sb = lambda method, path, url, key, body=None, headers=None, timeout=300, _b=blob: (_b, None)
+        got, err = L7.sb_download('u', 'k', '2026-10/idZ.json.gz')
+        check(f'an object served as {label} is read', isinstance(got, dict) and got.get('fixtureId') == 'idZ', err)
+    L7.sb = lambda method, path, url, key, body=None, headers=None, timeout=300: (b'\x1f\x8bnot-gzip', None)
+    got, err = L7.sb_download('u', 'k', 'x')
+    check('a corrupt object is unreadable, never a payload', got is None and err is not None, err)
+
+    print('\nrun 8 — one unreadable object among five')
+    objs8 = dict(objs)
+    objs8['2026-10/idE.json.gz'] = (None, objs['2026-10/idE.json.gz'][1])
+    fake8 = FakeSB(objs8)
+    rc = run(L, fake8, td, idx)
+    check('run 8 exits 1 (unread objects never read green)', rc == 1, rc)
+    st8 = fake8.tables.get('oddspapi_line_summary_objects', {})
+    check('the 4 readable objects still load and get state; the unread one gets none',
+          len(st8) == 4 and not any('idE' in k[0] for k in st8), sorted(k[0] for k in st8))
 
 print('\n' + ('all checks passed' if not FAILED else f'{len(FAILED)} FAILED: {FAILED}'))
 sys.exit(1 if FAILED else 0)

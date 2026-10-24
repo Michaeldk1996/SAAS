@@ -137,10 +137,16 @@ def sb_download(url, key, path):
                   + urllib.parse.quote(path), url, key)
     if got is None:
         return None, err
+    # Measured 2026-10-24: every object archived from 2026-10-08 on (uploaded, as
+    # always, with Content-Encoding: gzip) is served DECODED — plain JSON, no
+    # gzip magic — while older objects still come back as gzip bytes. Decompress
+    # only what is gzip (the same magic-byte rule as archive-oddspapi-raw.py
+    # payload_of and tools/pinarch.py payload_parts).
     try:
-        return json.loads(gzip.decompress(got).decode('utf-8')), None
+        raw = gzip.decompress(got) if got[:2] == b'\x1f\x8b' else got
+        return json.loads(raw.decode('utf-8')), None
     except Exception as e:                      # noqa: BLE001 — reported
-        return None, (0, f'unreadable: {e}')
+        return None, (0, f'unreadable: {type(e).__name__}')
 
 
 def fetch_flips(url, key, page=1000):
@@ -1231,6 +1237,7 @@ def main():
             loaded_now = set()
             brows, bst, bcorr = [], collections.Counter(), []
             unindexed = unreadable = norow = chunks = 0
+            unread_why = collections.Counter()
             deadline_s = a.deadline_min * 60.0
             done_n = 0
             for ci in range(0, len(pending), CHUNK_OBJECTS):
@@ -1242,6 +1249,7 @@ def main():
                 for (path, fid, created, start, fp), (payload, err) in zip(chunk, got):
                     if payload is None:
                         unreadable += 1          # no state row: retried next run
+                        unread_why[str(err)[:80]] += 1
                         continue
                     if not fx_index.get(fid):
                         unindexed += 1
@@ -1306,7 +1314,8 @@ def main():
                 'unchanged': len(unchanged), 'pending': len(pending),
                 'pendingWhy': dict(why), 'loaded': done_n, 'remaining': remaining,
                 'chunks': chunks, 'rows': len(brows), 'unindexed': unindexed,
-                'unreadable': unreadable, 'noKeeplistSeries': norow,
+                'unreadable': unreadable, 'unreadWhy': dict(unread_why),
+                'noKeeplistSeries': norow,
                 'reliableClose': rel, 'byFamily': dict(fam), 'stats': dict(bst)}
             report_rows.extend(brows)
 
@@ -1478,6 +1487,13 @@ def main():
     result['elapsedMinutes'] = round((time.monotonic() - t0) / 60, 2)
     json.dump(result, open(OUT, 'w'), indent=1)
     print(f'wrote {OUT} ({result["elapsedMinutes"]} min)')
+    unread = result.get('bucket', {}).get('unreadable')
+    if unread:
+        # A run that could not read objects is not a clean run, whatever else it
+        # loaded: 3,425 unread objects sat under green runs on 2026-10-24.
+        print(f"::error::{unread} bucket object(s) unreadable "
+              f"{result['bucket'].get('unreadWhy')} — no state row, they retry next run.")
+        return 1
     if remaining:
         # Committed chunks stay; the rest load next run. Red on purpose: a load
         # that did not finish must never read as a green run (nor as "cancelled").
