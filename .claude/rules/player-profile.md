@@ -1,12 +1,20 @@
 # Player Profile page: founder rulings
 
-Applies to the Player Profile page in `bsp-consult-dashboard.html` (`buildPlayerProfileHtml` — the legacy
-renderer — and the TEN-206 renderer behind the `pp2` flag, default ON).
+Applies to the Player Profile page: the TEN-206 renderer (`player-profile-v2.js`, mounted from
+`bsp-consult-dashboard.html`), the only player profile since the legacy renderer was retired (2026-10-21).
 Restored from CLAUDE.md before 011e3e20 (2026-09-21 trim); TEN-312 N13, founder-approved 2026-09-28.
 Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and retirements" (the TEN-8
 "W/O received = win" rule is superseded on the profile too) and "Overview career spine"; `modal-market-edge.md`
 (player-profile Market edge basis).
 
+- **No legacy fallback (founder, 2026-10-21).** The TEN-206 renderer is the only player profile: the legacy
+  full-page view (`buildPlayerProfileHtml`, `ppCareerYears`) and its `?pp2=0` / `stennisfy.flags.pp2` switch are
+  retired. A profile that cannot paint — the module did not load, or its mount refused or threw — shows
+  "Couldn't load this profile" and a Retry (a missing module is fetched again first), nothing else.
+  **Points at Risk is retired with it** (TEN-172/173: the tile, its breakdown drawer and the profile's
+  `points-at-risk.json` loader lived only in the legacy view); no profile shows a Points at Risk figure.
+  **Test:** force a failed mount — the view holds only that message and Retry, no digit, and a lazy repaint
+  leaves it (`tools/test-pp-load-error.mjs`).
 - **Player Profile — export parity (founder ruling 2026-08-01).** The Player Profile page
   (`buildPlayerProfileHtml`) drops three intentional enrichments the export lacks. **(1) No "Surface record"
   rail card** — the Layer #4A career + rolling-52-week per-surface card is removed; the left rail carries
@@ -17,8 +25,8 @@ Newer rulings that also bind the profile: `modal-analysis.md` "Walkovers and ret
   **primary text** — never brand blue (Blue rule). These are the **fourth** export-has-not / product-had
   divergence resolved toward the export, alongside Extra-stats, the Summary view and the H2H trend.
   *Colour value (TEN-376 foundation):* primary text is `--text`; every colour is a `tokens.css` token.
-  *Scope note (2026-09-28):* this ruling names `buildPlayerProfileHtml`, now the legacy renderer; the TEN-206
-  renderer is the default. Whether the three parity points bind the TEN-206 renderer has not been re-ruled.
+  *Scope note:* this ruling named `buildPlayerProfileHtml`, retired 2026-10-21. Whether the three parity points
+  bind the TEN-206 renderer has not been re-ruled.
   **Test:** the profile rail has no "Surface record" card; Recent form shows no tournament group headers;
   the archetype line is one label in primary text, not blue and with no Specialist suffix.
 - **Recent form counts the Form list** (founder TEN-383, 2026-10-04): Laver Cup and exhibitions are never a Recent form

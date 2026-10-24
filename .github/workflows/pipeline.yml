@@ -941,10 +941,6 @@ jobs:
           fi
           cp profiles/*.json _site/profiles/
           echo "published $SHARDS profile shard(s)."
-          # TEN-173 Points at Risk: static artifact refreshed daily by
-          # points-at-risk.yml (its own fail-closed workflow). The profile "Points
-          # at Risk" tile reads it once, keyed by player_key. Assert-gated below.
-          cp points-at-risk.json _site/
           # TEN-162: per-player match lists behind each split row (the profile
           # splits drawer). Committed by the local career-splits refresh alongside
           # career-splits/ (TA-sourced, CI can't fetch it). Index-gated on the
@@ -1214,7 +1210,6 @@ jobs:
                    esc-nav.js pbp-integrity.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \
-                   points-at-risk.json \
                    player-atp-aliases.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
                    dna-apitennis-ratings.json \

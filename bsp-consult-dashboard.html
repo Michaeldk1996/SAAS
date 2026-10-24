@@ -20339,14 +20339,6 @@ function ppInsightsSplits(key){
   if (!own || !careerSplitsTour || !careerSplitsTour.pooled) return null;
   return Object.assign({}, careerSplitsTour.pooled, { [k]: own });
 }
-// The legacy profile's splits loads: his file + the tour pool, repainting once
-// whichever lands while his profile is still the one on screen.
-function ppLegacySplitsLoads(key){
-  const k = String(key);
-  const repaint = () => { if (ppState.key === k) ppRepaint(); };
-  if (!Object.prototype.hasOwnProperty.call(careerSplits, k)) loadCareerSplitsFor(k).then(repaint);
-  if (!careerSplitsTour) loadCareerSplitsTour().then(t => { if (t) repaint(); });
-}
 // TEN-8 ASAP Sports — "Player's own words" pre-match readiness signal, keyed by
 // profile key (tools/asapsports-signal.js output). Loaded lazily; the profile
 // card renders the section only for players with a current-tournament transcript.
@@ -20394,26 +20386,6 @@ async function loadSituational(){
     const res = await fetch('./situational.json', { cache: 'no-cache' });
     if (res.ok){ situational = await res.json(); }
   } catch (err) { /* additive; absence just omits the eight rows */ }
-  const _ppView = document.getElementById('playerProfileView');
-  if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
-      && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
-}
-// TEN-173 Points at Risk — points-at-risk.json (build-points-at-risk.js output):
-// { _meta, players:{ key:{ points, coverage, resolvedCount, gapCount, perEvent[],
-// dashed[] } } }. One small global artifact (like elo-ratings.json), keyed by
-// api-tennis player_key. Pre-computed, ZERO live API at render; loaded lazily on
-// first profile open. Absent player => the tile dashes, never a 0.
-let _parData = null, _parLoading = false;
-async function loadPointsAtRisk(){
-  if (_parData || _parLoading) return;
-  _parLoading = true;
-  try {
-    const res = await fetch('./points-at-risk.json', { cache: 'no-cache' });
-    _parData = res.ok ? await res.json() : { players: {} };
-  } catch (err) { _parData = { players: {} }; }
-  _parLoading = false;
-  // Lazy-race fix (same idiom as loadHoldbreak): repaint an open profile so the
-  // Points at Risk tile fills in place instead of holding on the loading dash.
   const _ppView = document.getElementById('playerProfileView');
   if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
       && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
@@ -21742,119 +21714,6 @@ function renderPpSplitDrawerBody(shard, which, cat){
   body.innerHTML = rows;
   body.scrollTop = 0;
 }
-// ---- TEN-172 Points at Risk breakdown drawer --------------------------------
-// Clickable Points at Risk tile -> per-event breakdown, reusing the TEN-162
-// #ppSplitDrawer panel + `.ppsd-*` styles (no new visual language). Loads from
-// the already-fetched points-at-risk.json (_parData) — no new network call.
-// One row per event, ordered by drop date ascending (soonest first); dateless
-// rows (real data gaps + dash-by-rule / team events) append after (founder
-// ruling: Option A + append). Foot total reconciles exactly to the tile figure.
-const PAR_TIER_LABEL = {
-  GrandSlam: 'Grand Slam', Masters1000: 'Masters 1000', ATP500: 'ATP 500', ATP250: 'ATP 250',
-  NittoATPFinals: 'ATP Finals', NextGenFinals: 'Next Gen Finals', UnitedCup: 'United Cup',
-  WTL: 'World Tennis League', DavisCup: 'Davis Cup', Olympics: 'Olympics', LaverCup: 'Laver Cup',
-};
-function parTierLabel(t){ return PAR_TIER_LABEL[t] || (t ? String(t) : '—'); }
-// Round chip label. Champion => 'W'; qualifying loss codes => 'Q'; else reuse
-// the split-drawer round convention (F -> FINAL etc.).
-function parRoundLabel(rd){
-  const k = String(rd || '').toUpperCase();
-  if (k === 'W') return 'W';
-  if (k.startsWith('Q_')) return 'Q';
-  return (typeof ppSplitRoundLabel === 'function') ? ppSplitRoundLabel(k) : k;
-}
-// ISO YYYY-MM-DD -> "Jul 2026" (string-sliced, never Date-parsed: no TZ shift).
-function parMonthYear(iso){
-  const s = String(iso || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
-  return `${PP_MONTHS[Number(s.slice(5, 7)) - 1] || ''} ${s.slice(0, 4)}`;
-}
-// ISO YYYY-MM-DD -> "12 Jul 2027".
-function parFullDate(iso){
-  const s = String(iso || ''); if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return '';
-  return `${String(Number(s.slice(8, 10)))} ${PP_MONTHS[Number(s.slice(5, 7)) - 1] || ''} ${s.slice(0, 4)}`;
-}
-function openParDrawer(playerKey){
-  const key = String(playerKey || '');
-  const row = (_parData && _parData.players) ? _parData.players[key] : null;
-  ensurePpSplitDrawer();
-  ppSplitDrawerState.open = true;
-  ppSplitDrawerState.key = key;
-  const el = document.getElementById('ppSplitDrawer');
-  el.classList.add('open');
-  const p = (typeof playerProfiles !== 'undefined' && playerProfiles[key]) || {};
-  const name = ppAbbrevName(p.name || (row && row.player) || '');
-  document.getElementById('ppsdHead').innerHTML =
-    `<div style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);font-family:var(--font-words); ">Points at Risk</div>
-     <div style="font-size:19px;font-weight:800;color:var(--text);margin-top:4px;">${escapeHtml(name)}</div>
-     <div id="ppsdSub" style="font-size:12.5px;color:var(--text-label);margin-top:4px;"></div>`;
-  renderParDrawerBody(row);
-}
-function renderParDrawerBody(row){
-  const body = document.getElementById('ppsdBody');
-  const sub = document.getElementById('ppsdSub');
-  if (!body) return;
-  if (!row){
-    if (sub) sub.textContent = 'No main-tour events in window';
-    body.innerHTML = `<div style="padding:26px 8px;font-size:13px;color:var(--text-label);">No main-tour events in the trailing 52 weeks.</div>`;
-    return;
-  }
-  const resolved = Array.isArray(row.perEvent) ? row.perEvent.slice() : [];
-  // Dated rows ascending by drop date (soonest first); dateless rows append.
-  resolved.sort((a, b) => String(a.dropDate || '').localeCompare(String(b.dropDate || '')));
-  const gaps = Array.isArray(row.dashed) ? row.dashed : [];
-  const rule = Array.isArray(row.benignDashed) ? row.benignDashed : [];
-  const dateless = [...gaps, ...rule];
-  const total = resolved.reduce((a, e) => a + (Number(e.points) || 0), 0);
-  const reconciles = total === Number(row.points);
-  if (sub){
-    const parts = [`${resolved.length} event${resolved.length === 1 ? '' : 's'}`];
-    if (gaps.length) parts.push(`${gaps.length} gap`);
-    if (rule.length) parts.push(`${rule.length} by rule`);
-    sub.textContent = `${parts.join(' · ')} · trailing 52 weeks`;
-  }
-  const resolvedRows = resolved.map(e => {
-    const meta = [parMonthYear(e.date), parTierLabel(e.tier), e.dropDate ? `drops ${parFullDate(e.dropDate)}` : '']
-      .filter(Boolean).join(' &middot; ');
-    return `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:start;gap:11px;padding:12px 8px;border-top:1px solid var(--line);">
-      <span style="min-width:40px;height:24px;padding:0 7px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--text);background:${ppHexA('var(--bar)',0.14)};border:1px solid ${ppHexA('var(--bar)',0.3)};">${escapeHtml(parRoundLabel(e.round))}</span>
-      <span style="min-width:0;">
-        <span style="display:block;font-size:13.5px;color:var(--text);line-height:1.35;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(e.event || '—')} <span style="color:var(--text-label);">'${String(e.season || '').slice(2)}</span></span>
-        <span style="display:block;font-size:10.5px;color:var(--text-label);margin-top:3px;font-family:var(--font-words); text-transform:uppercase; font-weight:700;letter-spacing:0.10em;">${meta}</span>
-      </span>
-      <span style="font-size:14px;font-weight:700;color:var(--text);font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;">${Number(e.points).toLocaleString()}</span>
-    </div>`;
-  }).join('');
-  const dashRows = dateless.map(e => {
-    const meta = [parMonthYear(e.date), parTierLabel(e.tier), escapeHtml(e.reason || '')].filter(Boolean).join(' &middot; ');
-    return `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:start;gap:11px;padding:12px 8px;border-top:1px solid var(--line);opacity:.72;">
-      <span style="min-width:40px;height:24px;padding:0 7px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--text-label);background:var(--inner);border:1px solid var(--edge-6);">—</span>
-      <span style="min-width:0;">
-        <span style="display:block;font-size:13.5px;color:var(--text-soft);line-height:1.35;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(e.event || '—')} <span style="color:var(--text-label);">'${String(e.season || '').slice(2)}</span></span>
-        <span style="display:block;font-size:11px;color:var(--text-label);margin-top:3px;line-height:1.35;">${meta}</span>
-      </span>
-      <span style="font-size:14px;font-weight:700;color:var(--text-label);font-family:'IBM Plex Mono',monospace;white-space:nowrap;text-align:right;">—</span>
-    </div>`;
-  }).join('');
-  // With nothing resolved, `total` is 0 only because there was nothing to add —
-  // printing it asserts "zero points at risk" when the truth is "we could not
-  // resolve any of it", and it would contradict the tile, which dashes this case.
-  // Missing data is a dash, never a zero (founder ruling, confirmation
-  // confirmation:TEN-172:drawer-foot-dash:v1, accepted 2026-09-08). A genuine
-  // resolved 0 — a lone first-round loss — still prints, because it has rows.
-  const footTotal = resolved.length ? total.toLocaleString() : '—';
-  const foot = `<div style="display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:11px;padding:14px 8px;border-top:2px solid var(--edge-10);margin-top:2px;">
-      <span></span>
-      <span style="font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);font-family:var(--font-words); ">Points at Risk</span>
-      <span style="font-size:18px;font-weight:800;color:${resolved.length ? 'var(--bar)' : 'var(--text-label)'};font-family:'IBM Plex Mono',monospace;text-align:right;">${footTotal}</span>
-    </div>
-    ${reconciles ? '' : `<div style="padding:8px;color:var(--neg);font-size:11.5px;">⚠ Breakdown total ${total.toLocaleString()} does not match tile ${Number(row.points).toLocaleString()} — reporting rather than reconciling.</div>`}`;
-  if (!resolved.length && !dateless.length){
-    body.innerHTML = `<div style="padding:26px 8px;font-size:13px;color:var(--text-label);">No main-tour events in the trailing 52 weeks.</div>`;
-    return;
-  }
-  body.innerHTML = resolvedRows + dashRows + foot;
-  body.scrollTop = 0;
-}
 // ---- TEN-126 Break/Hold heatmap (display-only, flag-gated) --------------------
 // Two heatmaps per player from the holdbreak.json rollup: service hold% and return
 // break%, rows = service-game bucket within the set (Early 1st–2nd / Mid 3rd–4th /
@@ -22229,18 +22088,6 @@ function ppTrendSvg(series, color){
 // tests, so none of the rebuild was on the site. This block is the whole host
 // side of it — a flag, a store bridge and one lazy shard fetch.
 //
-// FLAG. Default ON: TEN-206 is the player profile now. `?pp2=0` (or
-// localStorage stennisfy.flags.pp2=0) restores the legacy renderer instantly,
-// without a deploy, which is the revert path if anything is wrong live.
-function pp2FlagOn(){
-  try {
-    const q = new URLSearchParams(location.search);
-    if (q.has('pp2')) return q.get('pp2') !== '0';
-    const ls = localStorage.getItem('stennisfy.flags.pp2');
-    if (ls != null) return ls !== '0';
-  } catch (e) { /* private mode — fall through to the default */ }
-  return true;
-}
 // The module reads its data off `window`. The dashboard holds these in `let`
 // bindings, which do NOT create window properties — so without this bridge
 // every store reads undefined and the page renders a full grid of dashes that
@@ -22492,7 +22339,7 @@ function pp2PrefetchFeedIndexes(key){
 }
 function pp2RepaintIfOpen(key){
   const view = document.getElementById('playerProfileView');
-  if (view && view.style.display !== 'none' && window.PlayerProfileV2
+  if (view && view.style.display !== 'none' && view.querySelector('.pp2-main') && window.PlayerProfileV2
       && window.PlayerProfileV2.repaint && ppState.key === String(key)) {
     pp2Bridge();
     window.PlayerProfileV2.repaint();
@@ -22817,7 +22664,9 @@ function pp2MountNow(key){
   const view = document.getElementById('playerProfileView');
   view.style.display = '';
   pp2Bridge();
-  if (!window.PlayerProfileV2.mount(view, key)) return false;
+  let ok = false;
+  try { ok = !!window.PlayerProfileV2.mount(view, key); } catch (e) { console.warn('player profile mount failed:', key, e && e.message); }
+  if (!ok) { ppShowLoadError(key); return false; }
   window.scrollTo(0, 0);
   pp2DbJoinAfterPaint(key);   // TEN-402 R2: the Database join is requested only after this paint
   return true;
@@ -22827,31 +22676,34 @@ function showPlayerProfile(key){
   if (!profile) return;
   // ESC brief: remember the view this profile was opened from (not for a re-open of the profile already showing).
   if (globalThis.SfNav && !(ppState.key === String(key) && document.getElementById('playerListView').style.display === 'none')) SfNav.push('players');
-  // v2 first; a false return (module absent, key unknown) falls through to the
-  // legacy renderer rather than leaving the reader on a blank page.
-  if (pp2FlagOn() && showPlayerProfileV2(key)) return;
-  pp2CancelPendingMount();   // fx2 item 2: a pending v2 mount must not land over the legacy profile
+  // v2 is the only renderer (legacy retired 2026-10-21). A false return (module absent, mount failed) is a load
+  // error with a Retry — no figures, and no older page behind it.
+  if (showPlayerProfileV2(key)) return;
+  ppShowLoadError(key);
+}
+// The player profile could not paint: the message and a Retry, nothing else. A module that never loaded is
+// fetched again before the retry; otherwise the retry is the same open.
+function ppShowLoadError(key){
+  pp2CancelPendingMount();
   ppState.key = String(key);
-  if (typeof loadPointsAtRisk === 'function') loadPointsAtRisk();  // lazy; repaints tile on completion
-  if (typeof ppLegacySplitsLoads === 'function') ppLegacySplitsLoads(key);  // TEN-391: his splits file + the tour pool
-  ppState.surface = 'All';
-  ppState.tournamentQuery = '';
-  ppState.tournamentPicked = null;
-  ppState.formExpanded = false;
-  ppState.formSurface = 'All';
-  // Each player's Career record box is a different height, so the previous
-  // player's lock must not carry over.
-  ppState.careerLockPx = null;
-  // A splits drawer left open for the previous player would show his matches
-  // under the new name — close it on every profile switch (TEN-162).
   if (typeof closePpSplitDrawer === 'function') closePpSplitDrawer();
   document.getElementById('playerListView').style.display = 'none';
   const view = document.getElementById('playerProfileView');
   view.style.display = '';
-  view.innerHTML = buildPlayerProfileHtml(profile);
-  ppSyncCareerHeight();
-  ppUpgradeFormRows();
+  view.innerHTML = `<div class="pp-load-error" style="border:1px solid var(--edge-6); border-radius:16px; background:var(--card); padding:26px 24px; margin:4px 10px 22px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px;">
+      <span style="font-size:15px; font-weight:800; color:var(--text);">Couldn't load this profile</span>
+      <span class="seg pp-load-retry" role="button" tabindex="0" onclick="ppRetryProfile()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();ppRetryProfile();}" style="font-size:12.5px; font-weight:700; color:var(--text); cursor:pointer;">Retry</span>
+    </div>`;
   window.scrollTo(0, 0);
+}
+function ppRetryProfile(){
+  const key = ppState.key;
+  if (!key) return;
+  if (window.PlayerProfileV2 && window.PlayerProfileV2.mount) { showPlayerProfile(key); return; }
+  const tag = document.createElement('script');
+  tag.src = 'player-profile-v2.js?retry=' + Date.now();
+  tag.onload = tag.onerror = () => { if (ppState.key === key) showPlayerProfile(key); };
+  document.head.appendChild(tag);
 }
 function showPlayerList(){
   pp2CancelPendingMount();   // TEN-384 fx2 item 2: back within the first-paint wait cancels the mount
@@ -22860,33 +22712,6 @@ function showPlayerList(){
   if (view){ view.style.display = 'none'; view.innerHTML = ''; }
   const lv = document.getElementById('playerListView');
   if (lv) lv.style.display = '';
-}
-function setPpSurface(s){
-  ppState.surface = s;
-  const profile = playerProfiles[ppState.key];
-  if (profile) ppRepaint();
-}
-function togglePpFollow(){
-  ppState.following[ppState.key] = !ppState.following[ppState.key];
-  const profile = playerProfiles[ppState.key];
-  if (profile) ppRepaint();
-}
-// Expand/collapse the full current-season results list inside the Recent form
-// card. Only the card is re-rendered logically; we re-render the whole profile
-// for simplicity since buildPlayerProfileHtml reads ppState.formExpanded.
-function togglePpFormExpanded(){
-  ppState.formExpanded = !ppState.formExpanded;
-  const profile = playerProfiles[ppState.key];
-  if (profile) ppRepaint();
-}
-// Surface filter local to the Recent form card (All / Grass / Hard / Clay).
-// Independent of the profile-wide surface tab. Collapse any open season list so
-// the count/label always match the newly filtered surface.
-function setPpFormSurface(s){
-  ppState.formSurface = s;
-  ppState.formExpanded = false;
-  const profile = playerProfiles[ppState.key];
-  if (profile) ppRepaint();
 }
 
 // Minimum sample before a percentage is presented as a rate — mirrors
@@ -23303,99 +23128,6 @@ const CAREER_ROUND_DEPTH = {
 function careerRoundDepth(round){
   return CAREER_ROUND_DEPTH[String(round || '').trim().toLowerCase()] || 0;
 }
-async function ppShowYearSurface(year, surface, expWon, expLost){
-  const key = String(ppState.key || '');
-  const container = document.getElementById('ppYrDrill-' + year);
-  if (!container) return;
-  const token = `${key}|${year}|${surface}`;
-  if (container.dataset.token === token && container.innerHTML){   // toggle off
-    container.innerHTML = ''; container.dataset.token = ''; return;
-  }
-  // One drill-down open at a time across the whole card.
-  document.querySelectorAll('#playerProfileView div[id^="ppYrDrill-"]').forEach(el => {
-    if (el !== container){ el.innerHTML = ''; el.dataset.token = ''; }
-  });
-  container.dataset.token = token;
-  container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
-  const hist = await loadCareerHistory(key);
-  // TEN-449: the season count is the career record's, so the list is its counted rows (the record file's overlay)
-  const recOk = (key in _careerHistoryShards) && await loadCareerRecord(key, (hist || []).length);
-  if (container.dataset.token !== token) return;   // superseded by a newer click
-  if (!recOk) { container.innerHTML = `<div class="yr-drill-note">The match list did not load. Open the count again.</div>`; container.dataset.token = ''; return; }
-  const pool = careerRecordCountedRows(key).map(([x]) => x);
-  const profile = playerProfiles[key] || {};
-  const surf = String(surface || 'all').toLowerCase();
-  // founder 2026-10-22 · the season's walkover / unconfirmed rows: listed after the count's matches, counted nowhere
-  const listedOnly = careerRecordListedRows(key).map(([x]) => x)
-    .filter(m => String(m.year || String(m.date || '').slice(0, 4)) === String(year))
-    .filter(m => surf === 'all' || String(m.surface || '').toLowerCase() === surf);
-  const list = pool
-    .filter(m => String(m.year || String(m.date || '').slice(0, 4)) === String(year))
-    .filter(m => surf === 'all' || String(m.surface || '').toLowerCase() === surf)
-    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))
-                 || (careerRoundDepth(b.round) - careerRoundDepth(a.round)));
-  const surfLabel = surf === 'all' ? 'All surfaces' : surf.charAt(0).toUpperCase() + surf.slice(1);
-  const won = list.filter(m => m.won).length, lost = list.length - won;
-  const closeBtn = `<span class="yr-drill-close" onclick="ppShowYearSurface('${year}','${surface}')" title="Close">✕</span>`;
-  const shownRows = listedOnly.length ? list.concat(listedOnly).sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))) : list;
-  // Inside the fixture window the count and the list are two views of one set of
-  // matches, so there is nothing to explain and no note is drawn. Outside it the
-  // rows are ATP tour-level only against an all-tier count — say which, so a
-  // season that legitimately lists fewer matches than it counts doesn't read as
-  // a bug.
-  const expTotal = (Number(expWon) || 0) + (Number(expLost) || 0);
-  const surfWord = surf === 'all' ? '' : surf + ' ';
-  const yrMeta = (profile.careerByYear || []).find(r => String(r.year) === String(year)) || {};
-  let gapNote = '';
-  if (expTotal && list.length < expTotal){
-    gapNote = yrMeta.atpOnly
-      ? `<div class="yr-drill-note">${list.length} tour-level ${year} ${surfWord}matches. The ${expTotal} above is his full season — Challenger and ITF results before ${new Date().getFullYear() - 5} aren't in the historical archive.</div>`
-      : `<div class="yr-drill-note">Showing the ${list.length} of ${expTotal} ${year} ${surfWord}matches that have an individual record on file.</div>`;
-  } else if (expTotal && list.length > expTotal){
-    gapNote = `<div class="yr-drill-note">${list.length} ${year} ${surfWord}matches on file — more than the ${expTotal} in the summary above, which undercounts this season.</div>`;
-  }
-  if (!list.length){
-    container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${closeBtn}</div>` +
-      `<div class="yr-drill-note">No individual match records on file for this selection${expTotal ? ` — the ${expWon}/${expLost} above comes from the season summary` : ''}.</div>`;
-    return;
-  }
-  const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
-  if (container.dataset.token !== token) return;
-  const playerName = profile.name || '';
-  const rows = shownRows.map((m, i) => {
-    const w = m.won;
-    // a walkover / unconfirmed row: listed, never opened (no stats), its W / L kept on a walkover, none on an unconfirmed
-    if (m.walkover || m.unconfirmed) return `<div class="yr-drill-row"${m.walkover ? ' data-yr-wo="1"' : ''}>
-        <span class="yr-drill-wl ${m.unconfirmed ? '' : w ? 'win' : 'loss'}">${m.unconfirmed ? '—' : w ? 'W' : 'L'}</span>
-        <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
-        ${careerScoreHtml(m)}
-        <span class="yr-drill-meta">${escapeHtml([m.tournament || '', m.round || ''].filter(Boolean).join(' · '))}${m.date ? ' · ' + formatShortDate(new Date(m.date + 'T00:00:00')) : ''}</span>
-      </div>`;
-    const meta = [m.tournament || '', m.round || ''].filter(Boolean).join(' · ');
-    const dateStr = m.date ? formatShortDate(new Date(m.date + 'T00:00:00')) : '';
-    const ek = String(m.eventKey || '');
-    const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-    if (!canOpen){
-      return `<div class="yr-drill-row">
-        <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
-        <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
-        ${careerScoreHtml(m)}
-        <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
-      </div>`;
-    }
-    // Suffix must stay `ppc<i>` — toggleFormPanel strips it to derive the
-    // accordion group, so every row here shares one group.
-    const idPrefix = `ppcareerppc${i}`;
-    return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
-      <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
-      <span class="yr-drill-opp">${escapeHtml(m.opponent || '')}</span>
-      ${careerScoreHtml(m)}
-      <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
-      <span class="yr-drill-chev" id="formChev-${idPrefix}">▸</span>
-    </div>${formPanelHtml(m, idPrefix, key, playerName)}`;
-  }).join('');
-  container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year} · <b>${won}-${lost}</b>${closeBtn}</div>${gapNote}${rows}`;
-}
 // Every profile-local control repaints the whole profile, which destroys the
 // form rows and any panel open inside them. Centralising the repaint keeps the
 // post-paint upgrade pass (and the stale-accordion cleanup) from being
@@ -23422,125 +23154,7 @@ function ppRepaint(){
     window.PlayerProfileV2.repaint();
     return;
   }
-  formOpenPanel['ppform'] = null;
-  formOpenPanel['ppcareer'] = null;
-  view.innerHTML = buildPlayerProfileHtml(profile);
-  ppSyncCareerHeight();
-  ppUpgradeFormRows();
-}
-// The Career record box is the reference height for the row, in both states.
-//
-// Collapsed (the locked initial state): Recent form is set to the Career record
-// box's own natural height — exactly, not taller and not shorter. Left to grid
-// stretch the taller card wins, so a player with a long form list would push
-// the Career box down into a column of dead space. Recent form clips instead,
-// and only the explicit "See more" click may grow it.
-//
-// Expanded: the roles swap. Recent form flows at its natural height and the
-// Career box holds the height measured while collapsed — an expanded
-// measurement would bake in the tall value and never recover.
-function ppSyncCareerHeight(){
-  const grid = document.querySelector('#playerProfileView .pp-form-career');
-  const career = document.getElementById('ppCareerRecordCard');
-  const form = document.getElementById('ppRecentFormCard');
-  if (!grid || !career) return;
-  // Single-column below 820px (see the .pp-form-career media query): the cards
-  // are stacked, so there is no shared height to hold and a lock would just
-  // clip one of them.
-  if (window.matchMedia('(max-width:820px)').matches){
-    grid.style.alignItems = '';
-    career.style.height = '';
-    if (form) form.style.height = '';
-    return;
-  }
-  // align-items:start stops the grid stretching either card past its lock, and
-  // is what lets the Career box report its own content height below.
-  grid.style.alignItems = 'start';
-  if (!ppState.formExpanded){
-    // Clear first so the natural height is what gets measured, not a
-    // previously locked value.
-    career.style.height = '';
-    if (form) form.style.height = '';
-    ppState.careerLockPx = Math.round(career.getBoundingClientRect().height) || null;
-    if (form && ppState.careerLockPx) form.style.height = ppState.careerLockPx + 'px';
-    return;
-  }
-  if (form) form.style.height = '';
-  if (!ppState.careerLockPx) return;
-  career.style.height = ppState.careerLockPx + 'px';
-}
-// buildPlayerProfileHtml is synchronous but the chevron gate needs two indexes,
-// so the Recent form rows paint inert and are upgraded a beat later. Rows whose
-// match has neither a box score nor a point log keep no chevron and stay
-// unclickable, per the house rule that a chevron promises content.
-async function ppUpgradeFormRows(){
-  const key = ppState.key;
-  const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
-  if (ppState.key !== key) return;   // profile switched while the indexes loaded
-  document.querySelectorAll('#playerProfileView div[data-ppek]').forEach(row => {
-    const ek = row.getAttribute('data-ppek');
-    if (!ek || !(msIdx.has(ek) || pbpIdx.has(ek))) return;
-    const id = row.getAttribute('data-ppid');
-    row.classList.add('pp-openable');
-    row.style.cursor = 'pointer';
-    row.onclick = () => toggleFormPanel(id);
-    const chev = document.getElementById('formChev-' + id);
-    if (chev) chev.style.visibility = '';
-  });
-}
-// Year-by-year career W/L, split by surface, derived from the player's tour
-// match history (recentForm.matches — the app's canonical match record). Returns
-// rows newest-first plus a summed Total. Pre-debut years render as "not yet on
-// tour"; in-range years with no match data on record render muted (coverage is
-// sparse before PP_FULL_HISTORY_FROM, so those are gaps, not absences).
-function ppCareerYears(p){
-  const byYear = {};
-  // Preferred source: the pipeline's full-career year-by-year breakdown
-  // (per surface + total W-L). recentForm.matches is capped to current-year +
-  // last-10, so it can only be a fallback for older data lacking careerByYear.
-  const cby = Array.isArray(p.careerByYear) ? p.careerByYear : null;
-  if (cby && cby.length){
-    const cell = r => (r && (r.won != null || r.lost != null)) ? [r.won || 0, r.lost || 0] : [0, 0];
-    cby.forEach(row => {
-      const y = String(row.year || '');
-      if (!/^\d{4}$/.test(y)) return;
-      byYear[y] = { total: cell(row.total), clay: cell(row.clay), hard: cell(row.hard), grass: cell(row.grass) };
-    });
-  } else {
-    const matches = (p.recentForm && p.recentForm.matches) || [];
-    matches.forEach(m => {
-      const y = String(m.date || '').slice(0, 4);
-      if (!/^\d{4}$/.test(y)) return;
-      const s = (m.surface || '').toLowerCase();
-      if (!byYear[y]) byYear[y] = { total:[0,0], clay:[0,0], hard:[0,0], grass:[0,0] };
-      const i = m.won ? 0 : 1;
-      byYear[y].total[i]++;
-      if (byYear[y][s]) byYear[y][s][i]++;
-    });
-  }
-  const trendYears = (p.seasonTrend || []).map(t => String(t.year)).filter(y => /^\d{4}$/.test(y));
-  const matchYears = Object.keys(byYear);
-  const onTourYears = [...new Set([...matchYears, ...trendYears])].map(Number).filter(Boolean);
-  if (!onTourYears.length) return null;
-  const debut = Math.min.apply(null, onTourYears);
-  const nowYear = new Date().getFullYear();
-  const tot = { total:[0,0], clay:[0,0], hard:[0,0], grass:[0,0] };
-  const rows = [];
-  for (let y = nowYear; y >= debut; y--){
-    const key = String(y);
-    const d = byYear[key];
-    if (d){
-      ['total','clay','hard','grass'].forEach(k => { tot[k][0] += d[k][0]; tot[k][1] += d[k][1]; });
-      rows.push({ onTour: true, hasData: true, year: key, tag: (y === debut ? 'ATP' : ''),
-        total: d.total, clay: d.clay, hard: d.hard, grass: d.grass });
-    } else {
-      // On tour that season (seasonTrend) but no match-level rows on record.
-      rows.push({ onTour: true, hasData: false, year: key, tag: (y === debut ? 'ATP' : '') });
-    }
-  }
-  // Two pre-debut context rows, matching the reference's "not yet on tour" rows.
-  for (let y = debut - 1; y >= debut - 2; y--) rows.push({ onTour: false, year: String(y) });
-  return { rows, total: tot };
+  // nothing else paints here: the legacy page is retired, and a load error stays until its Retry
 }
 // ---- Market performance: real closing prices, lazily sharded -------------------
 //
@@ -23577,19 +23191,6 @@ function loadOddsPerfShard(playerKey){
     .then(d => { _oddsPerfShards[pk] = d || null; return _oddsPerfShards[pk]; })
     .catch(err => { console.warn(`odds performance shard ${pk} load failed:`, err.message); _oddsPerfShards[pk] = null; return null; });
   return _oddsPerfPromises[pk];
-}
-// Re-render the open profile once the shard lands, so the block fills in place.
-function loadOddsPerfShardThenRerender(playerKey){
-  loadOddsPerfShard(playerKey).then(() => {
-    if (String(ppState.key) !== String(playerKey)) return;
-    const view = document.getElementById('playerProfileView');
-    const profile = playerProfiles[String(playerKey)];
-    // Must be ppRepaint(), not a raw innerHTML write: this lands asynchronously AFTER
-    // showPlayerProfile() already locked the Recent form card's height, and rebuilding
-    // the markup without re-running ppSyncCareerHeight() drops that inline lock — the
-    // card then springs to its full natural height on its own, seconds after open.
-    if (view && profile && view.style.display !== 'none') ppRepaint();
-  });
 }
 
 // ---- Whole-career tournament history, lazily sharded (TEN-207) ----------------
@@ -23645,526 +23246,6 @@ function loadTourHistShard(playerKey){
     .catch(err => { console.warn(`tournament history shard ${pk} load failed:`, err.message); _tourHistShards[pk] = null; return null; });
   return _tourHistPromises[pk];
 }
-// Re-render the open profile once the shard lands, so the record card fills in
-// place. Same ppRepaint() reasoning as loadOddsPerfShardThenRerender above.
-function loadTourHistShardThenRerender(playerKey){
-  loadTourHistShard(playerKey).then(() => {
-    if (String(ppState.key) !== String(playerKey)) return;
-    const view = document.getElementById('playerProfileView');
-    const profile = playerProfiles[String(playerKey)];
-    if (view && profile && view.style.display !== 'none') ppRepaint();
-  });
-}
-
-function buildPlayerProfileHtml(p){
-  const BLUE = 'var(--bar)';
-  const surf = ppState.surface || 'All';
-  const initials = playerInitials(p.name);
-  const seasonYear = String(new Date().getFullYear());
-  const contextLabel = surf === 'All' ? 'Full season · all surfaces' : `Career ${surf.toLowerCase()}-court profile`;
-  const fmt = n => (Math.round(n * 10) / 10);
-
-  // Surface chips (drive the whole page via setPpSurface -> full re-render).
-  // Order the three surfaces by this player's best career win rate first (dynamic
-  // per player); "All surfaces" always leads.
-  const surfWrOf = s => { const k = p.kpis && p.kpis[s]; return k ? (k.winRate != null ? k.winRate : (k.record && k.record.winRate != null ? k.record.winRate : 0)) : 0; };
-  const ppSurfOrder = ['Grass','Hard','Clay'].slice().sort((a, b) => surfWrOf(b) - surfWrOf(a));
-  const chips = ['All', ...ppSurfOrder].map(s => {
-    const active = s === surf;
-    return `<span onclick="setPpSurface('${s}')" style="font-size:12px;font-weight:${active?700:600};color:${active?'var(--text)':'var(--text-label)'};background:${active?'var(--inner)':'transparent'};border:1px solid ${active?'var(--inner)':'transparent'};border-radius:8px;padding:6px 13px;cursor:pointer;">${s==='All'?'All surfaces':s}</span>`;
-  }).join('');
-
-  // ---- Recent-form-derived figures (shared by the Recent Form tile + card) ----
-  const rf = p.recentForm || { pct: 0, matches: [] };
-  const recentMatches = rf.matches || [];
-  // TEN-383 (founder 2026-10-04, "profile too"): the Recent form tile, strip and list count the Form list
-  // (FH_FORM_NOT_ATP_RECORD: Laver Cup + exhibitions out); the season record keeps every match.
-  const formRows = recentMatches.filter(m => !FH_FORM_NOT_ATP_RECORD.test(String(m.tournament || '')));
-  const last10 = formRows.slice(0, 10);
-  const last10Pct = last10.length ? Math.round((last10.filter(m => m.won).length / last10.length) * 1000) / 10 : null;
-  const last10Sub = last10.length >= 10 ? 'Last 10 matches' : (last10.length ? `Last ${last10.length} match${last10.length === 1 ? '' : 'es'}` : 'No recent matches');
-
-  // ---- Career + season records ----
-  let careerWon = 0, careerLost = 0;
-  ['Grass','Hard','Clay'].forEach(s => { const k = p.kpis && p.kpis[s]; if (k && k.record){ careerWon += k.record.won||0; careerLost += k.record.lost||0; } });
-  const careerTotal = careerWon + careerLost;
-  const careerWR = careerTotal ? Math.round(careerWon / careerTotal * 1000) / 10 : null;
-
-  const seasonMatches = recentMatches.filter(m => String(m.date || '').startsWith(seasonYear));
-  const tallyRec = ms => { const w = ms.filter(m => m.won).length; return { won: w, lost: ms.length - w, total: ms.length }; };
-  const seasonAllRec = tallyRec(seasonMatches);
-  const seasonSurfRec = {
-    Grass: tallyRec(seasonMatches.filter(m => (m.surface || '').toLowerCase() === 'grass')),
-    Hard: tallyRec(seasonMatches.filter(m => (m.surface || '').toLowerCase() === 'hard')),
-    Clay: tallyRec(seasonMatches.filter(m => (m.surface || '').toLowerCase() === 'clay')),
-  };
-  const seasonWinRate = seasonAllRec.total ? Math.round(seasonAllRec.won / seasonAllRec.total * 1000) / 10 : null;
-
-  const isAll = surf === 'All';
-  const recStrOf = r => { if (!r) return '—'; const total = r.total != null ? r.total : (r.won || 0) + (r.lost || 0); return total ? `${r.won}–${r.lost}` : '—'; };
-
-  const surfCareer = (!isAll && p.kpis[surf] && p.kpis[surf].record) ? p.kpis[surf].record : null;
-  const careerValue = isAll ? recStrOf({ won: careerWon, lost: careerLost, total: careerTotal }) : recStrOf(surfCareer);
-  const careerLabel = isAll ? 'Career Record' : surf + ' Record';
-  const careerSub = isAll ? (careerWR != null ? `${careerWR}% all-time · all surfaces` : 'All-time · all surfaces') : `Career on ${surf.toLowerCase()}`;
-
-  const seasonRec = isAll ? seasonAllRec : seasonSurfRec[surf];
-  const seasonValue = recStrOf(seasonRec);
-  const seasonSub = isAll ? `${seasonYear} season · all surfaces` : (seasonRec.total ? `${seasonYear} on ${surf.toLowerCase()}` : `No ${surf.toLowerCase()} matches in ${seasonYear}`);
-
-  const surfCareerWR = (!isAll && p.kpis[surf]) ? (p.kpis[surf].winRate != null ? p.kpis[surf].winRate : (p.kpis[surf].record && p.kpis[surf].record.winRate != null ? p.kpis[surf].record.winRate : 0)) : 0;
-  const winRateValue = isAll ? (seasonWinRate != null ? seasonWinRate : 0) : surfCareerWR;
-  const winRateLabel = isAll ? 'Win Rate' : surf + ' Win Rate';
-  const winRateSub = isAll ? 'This season · all tiers' : 'Career on ' + surf;
-
-  // ---- Left-rail stat tiles (2-col mini grid, handoff order) ----
-  // Elo tile tracks the active surface filter: All -> general Elo + rank; a
-  // surface -> that surface's Elo + rank (from tennisabstract via elo-ratings).
-  const eloTile = ppEloForSurface(p, surf);
-  const eloTileLabel = isAll ? 'Elo Rating' : surf + ' Elo';
-  const eloTileSub = eloTile.illustrative
-    ? `Illustrative · ATP #${p.rank||'—'}`
-    : (isAll ? `Elo rank #${eloTile.rank} · ATP #${p.rank||'—'}` : (eloTile.degraded ? `No ${surf.toLowerCase()} Elo · general #${eloTile.rank}` : `${surf} Elo rank #${eloTile.rank}`));
-  // TEN-173 Points at Risk: ATP ranking points earned in the trailing 52 weeks
-  // (= points that will drop off over the next 52 weeks). Resolvable FLOOR from
-  // the fail-closed engine (excludes Challengers, team/finals, unconfirmed tiers);
-  // a player with no in-window main-tour footprint is absent -> dash, never 0.
-  // A row with resolvedCount 0 carries points 0 — but that 0 is "nothing could be
-  // resolved", not "nothing is at risk". Rendering it bare reads as a real figure,
-  // so it dashes too (standing rule: missing data is a dash, never a zero). The two
-  // dash cases stay distinguishable in the sub-line: absent row = no footprint at
-  // all; present row with 0 resolved = footprint present, none of it resolvable yet.
-  const parRow = (typeof _parData !== 'undefined' && _parData && _parData.players) ? _parData.players[String(p.key)] : null;
-  const parResolved = parRow ? (Number(parRow.resolvedCount) || 0) : 0;
-  // points is only a figure when something was actually resolved AND the value is
-  // a real number — a null/absent points must dash, not print "null" at 26px.
-  // The null check is explicit: Number(null) is 0, which would pass isFinite and
-  // print "null" through String() — the same Number(null)===0 trap that has
-  // silently swallowed values elsewhere in this codebase.
-  const parPoints = (parRow && parRow.points != null) ? Number(parRow.points) : NaN;
-  const parValue = (parRow && parResolved > 0 && Number.isFinite(parPoints)) ? String(parRow.points) : '—';
-  const parAccounted = parRow ? ((Number(parRow.gapCount) || 0) + (Number(parRow.benignDashCount) || 0)) : 0;
-  const parSub = parRow
-    ? (parResolved <= 0
-        ? (parAccounted > 0
-            ? `0 of ${parAccounted} event${parAccounted === 1 ? '' : 's'} resolved`
-            : 'No events resolved')
-        : (parRow.coverage === 'complete'
-            ? `${parResolved} event${parResolved === 1 ? '' : 's'} · next 52wk`
-            : `${parResolved} event${parResolved === 1 ? '' : 's'} · ${parRow.gapCount} gap`))
-    : ((typeof _parData === 'undefined' || !_parData) ? 'Loading…' : 'No main-tour events in window');
-  const tileDefs = [
-    { label: eloTileLabel, value: String(eloTile.rating), sub: eloTileSub, accent: 'var(--text)', icon: BSP_ICONS.trophy },
-    { label: careerLabel, value: careerValue, sub: careerSub, accent: 'var(--text)', icon: BSP_ICONS.chart },
-    { label: 'Season Record', value: seasonValue, sub: seasonSub, accent: 'var(--text)', icon: AKC_ICONS.form },
-    { label: winRateLabel, value: (winRateValue||0)+'%', sub: winRateSub, accent: 'var(--text)', icon: AKC_ICONS.form },
-    { label: 'Recent Form', value: last10Pct != null ? last10Pct+'%' : '—', sub: last10Sub, accent: 'var(--text)', icon: AKC_ICONS.form },
-    { label: 'Titles in '+seasonYear, value: String(p.titlesThisYear||0), sub: `${p.titlesCareer||0} career`, accent: 'var(--text)', icon: BSP_ICONS.trophy },
-    // TEN-172 drawer: the Points at Risk tile is clickable when the player has a
-    // resolved row (parRow present) — opens the per-event breakdown drawer. When
-    // the player is absent (tile dashes) the tile is inert.
-    { label: 'Points at Risk', value: parValue, sub: parSub, accent: 'var(--text)', icon: BSP_ICONS.chart,
-      onclick: parRow ? `openParDrawer('${String(p.key)}')` : null },
-  ];
-  const tilesHtml = tileDefs.map(k => {
-    const inter = k.onclick
-      ? ` role="button" tabindex="0" aria-label="${escapeHtml(k.label)} — open breakdown" onclick="${k.onclick}" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${k.onclick}}"`
-      : '';
-    const cur = k.onclick ? 'cursor:pointer;' : '';
-    const subHtml = k.onclick
-      ? `<div style="font-size:10px;color:var(--link);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub} &middot; view breakdown &rsaquo;</div>`
-      : `<div style="font-size:10px;color:var(--text-label);margin-top:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${k.sub}</div>`;
-    return `
-    <div${inter} style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:13px;min-width:0;${cur}">
-      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;">
-        <span style="width:22px;height:22px;border-radius:7px;background:${ppHexA(k.accent,0.14)};border:1px solid ${ppHexA(k.accent,0.3)};display:flex;align-items:center;justify-content:center;color:${k.accent};flex:none;"><span style="width:13px;height:13px;display:flex;">${k.icon}</span></span>
-        <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); line-height:1.2;">${k.label}</span>
-      </div>
-      <div style="font-size:26px;font-weight:700;letter-spacing:-0.02em;font-family:'IBM Plex Mono',monospace;line-height:1;overflow:hidden;text-overflow:ellipsis;">${k.value}</div>
-      ${subHtml}
-    </div>`;
-  }).join('');
-
-  // ---- Left-rail surface performance (compact cards, best career win rate first) ----
-  const surfData = ['Grass','Hard','Clay'].map(s => {
-    const k = p.kpis[s];
-    const wr = k ? (k.winRate != null ? k.winRate : (k.record && k.record.winRate != null ? k.record.winRate : 0)) : 0;
-    const rc = k && k.record ? `${k.record.won}–${k.record.lost}` : '—';
-    const sr = seasonSurfRec[s];
-    const seasonWr = sr.total ? Math.round(sr.won / sr.total * 1000) / 10 : null;
-    const seasonRc = sr.total ? `${sr.won}–${sr.lost}` : null;
-    return { s, wr, rc, color: PP_SURF_COLORS[s], seasonWr, seasonRc };
-  }).sort((a, b) => b.wr - a.wr);
-  const surfHtml = surfData.map(d => {
-    const active = surf !== 'All' && surf === d.s;
-    return `
-      <div style="background:${active?ppHexA(d.color,0.08):'var(--card)'};border:1px solid ${active?ppHexA(d.color,0.4):'color-mix(in srgb, var(--text) 4.5%, transparent)'};border-radius:14px;padding:14px 16px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">
-          <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
-          <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${d.color};">${d.wr}%</span>
-        </div>
-        <span style="height:6px;border-radius:4px;background:var(--track);display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
-        <div style="margin-top:8px;font-size:11.5px;color:var(--text-label);">${d.rc} career · ${d.wr}%</div>
-        <div style="margin-top:2px;font-size:11.5px;color:var(--text-label);">${d.seasonRc ? `${d.seasonRc} · <span style="color:${d.color};">${d.seasonWr}%</span> in ${seasonYear}` : `No matches in ${seasonYear}`}</div>
-      </div>`;
-  }).join('');
-
-  // The odds-performance shard still feeds the Key insights market card (ppDynamicInsights).
-  // TEN-384 removed the Market performance section (with Favourite vs underdog reliability and
-  // Read on the market; they live in Database only), which used to trigger this lazy load.
-  if (oddsPerfIndex[String(p.key)] && _oddsPerfShards[String(p.key)] === undefined) loadOddsPerfShardThenRerender(p.key);
-
-  // ---- Recent form card (carries its own surface filter, expandable season list) ----
-  // Computed here rather than with the Career record card below because the form
-  // card sizes its row list off the career table's length — see ppFormRowTarget.
-  const cy = ppCareerYears(p);
-  const formSurf = ppState.formSurface || 'All';
-  const formMatches = formSurf === 'All' ? formRows : formRows.filter(m => (m.surface || '').toLowerCase() === formSurf.toLowerCase());
-  const formLast10 = formMatches.slice(0, 10);
-  const formLast10Pct = formLast10.length ? Math.round((formLast10.filter(m => m.won).length / formLast10.length) * 1000) / 10 : null;
-  const formEmptyLabel = formSurf === 'All' ? 'recent' : formSurf.toLowerCase();
-  const formChips = ['All','Grass','Hard','Clay'].map(s => {
-    const activeChip = s === formSurf;
-    return `<span onclick="setPpFormSurface('${s}')" style="font-size:11px;font-weight:${activeChip?700:600};color:${activeChip?'var(--text)':'var(--text-label)'};background:${activeChip?'var(--inner)':'transparent'};border:1px solid ${activeChip?'var(--inner)':'transparent'};border-radius:7px;padding:4px 10px;cursor:pointer;font-family:'Hanken Grotesk',sans-serif;">${s}</span>`;
-  }).join('');
-  const pillsSrc = formLast10.slice().reverse();
-  // Export composition: a thin chronological form STRIP (oldest→newest) — solid
-  // green (win) / red (loss) segments, not filled W/L letter pills. pillsSrc is
-  // already oldest-first (formLast10 is newest-first, reversed), matching the
-  // "N ago → now" reading below the strip.
-  const pillsHtml = pillsSrc.map(m => {
-    const w = m.won;
-    return `<span style="flex:1;height:8px;border-radius:2px;background:${w?'var(--pos)':'var(--neg)'};"></span>`;
-  }).join('') || `<span style="font-size:12px;color:var(--text-label);">No ${formEmptyLabel} matches.</span>`;
-  // Every form row is an expandable panel carrying the same Match Stats /
-  // Point by point tabs as the Match Analysis modal. formPanelHtml does all the
-  // work (shard join, set filter, tabs); this only has to hand it a form-row
-  // shape, which recentForm.matches already is. The chevron starts hidden and is
-  // revealed by ppUpgradeFormRows() for the rows whose match is actually in the
-  // stats/point-log indexes — the chevron is a promise that something is there.
-  const ppPlayerName = p.name || '';
-  const ppFormRow = (m, seq, metaText) => {
-    const w = m.won;
-    const idPrefix = `ppformpp${seq}`;
-    const ek = String(m.eventKey || '');
-    return `
-      <div id="formRow-${idPrefix}" data-ppek="${ek}" data-ppid="${idPrefix}" style="display:flex;align-items:center;gap:12px;padding:9px 0;border-top:1px solid var(--line);border-radius:6px;">
-        <span style="width:22px;height:22px;border-radius:6px;background:${w?'color-mix(in srgb, var(--pos) 14%, transparent)':'color-mix(in srgb, var(--neg) 14%, transparent)'};border:1px solid ${w?'color-mix(in srgb, var(--pos) 40%, transparent)':'color-mix(in srgb, var(--neg) 42%, transparent)'};color:${w?'var(--pos)':'var(--neg)'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;flex:none;">${w?'W':'L'}</span>
-        <span style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${m.opponent||'—'}</span>
-        <span style="display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-label);white-space:nowrap;"><span style="width:6px;height:6px;border-radius:50%;flex:none;background:${(PP_SURF_COLORS[((m.surface||'').charAt(0).toUpperCase()+(m.surface||'').slice(1).toLowerCase())]||'var(--text-label)')};"></span>${fmtTournament(m)}</span>
-        <span style="font-size:12.5px;font-family:'IBM Plex Mono',monospace;color:var(--text-soft);min-width:44px;text-align:right;">${m.result||''}</span>
-        <span class="pp-form-chev" id="formChev-${idPrefix}" style="flex:none;width:10px;color:var(--text-label);font-size:10px;visibility:hidden;transition:transform 150ms ease;">▸</span>
-      </div>${formPanelHtml(m, idPrefix, ppState.key, ppPlayerName)}`;
-  };
-  // The card renders EVERY match the surface filter admits, in both states, and
-  // the collapsed card scrolls instead of truncating. It used to render only
-  // the first ppFormRowTarget rows and clip them, which left the wheel nothing
-  // to move: browsing past the fold required clicking "See more" first.
-  //
-  // ppFormRowTarget survives only as the estimate of how many rows the locked
-  // height shows, and so of whether there is anything below the fold worth
-  // offering an expander for. It is one row per career year (Djokovic 14,
-  // Vallejo 7), bounded so a debut player still gets a useful list.
-  const ppFormRowTarget = Math.max(8, Math.min((cy && cy.rows ? cy.rows.length : 8), 14));
-  // Flat, most-recent-first list matching the export — no per-tournament group
-  // headers. Each row is one match, labelled inline with its tournament. (The
-  // grouped-by-tournament layout the Match Analysis modal Form tab uses via
-  // ppGroupMatchesByTournament is intentionally NOT used here; the export drops it.)
-  let ppFormSeq = 0;
-  // Most-recent-first by date, with a round tiebreaker WITHIN a tournament so
-  // same-date matches at one event order later-round-on-top (TEN-93: a stable
-  // date-only sort kept ingest/draw order, showing e.g. a QF above the SF played
-  // the same day). recentForm rounds are the composite "{Event} - {round}" form
-  // (e.g. "Ilkley - Semi-finals"), so strip the prefix before ranking — passing
-  // the composite to careerRoundDepth returns 0 and the tiebreak silently no-ops.
-  // Guard to same tournament: two different events sharing a date must NOT be
-  // round-reordered (a player can lose a qualifier at one event the same week he
-  // reaches a final at another — outer order there stays date/ingest).
-  const ppFormRoundDepth = (m) => careerRoundDepth(String(m && m.round || '').split(' - ').pop());
-  const flatMatches = formMatches.slice()
-    .sort((a, b) => String(b.date || '').localeCompare(String(a.date || ''))
-      || (String(a.tournament || '') === String(b.tournament || '')
-          ? ppFormRoundDepth(b) - ppFormRoundDepth(a)
-          : 0));
-  const rowsHtml = flatMatches.map(m => ppFormRow(m, ppFormSeq++, m.tournament || '')).join('')
-    || `<div style="padding:12px 0;font-size:12.5px;color:var(--text-label);border-top:1px solid var(--line);">No ${formEmptyLabel} matches on record.</div>`;
-  const formHeaderPct = formLast10Pct != null ? `${formLast10Pct}% form` : '';
-
-  // One list, two states. Collapsed it scrolls inside the height the Career
-  // record box sets (see ppSyncCareerHeight); expanded it flows at its natural
-  // height and the lock moves to the Career box instead. Both states hold the
-  // same rows, in the same order, through the same renderer — so scrolling the
-  // collapsed card and expanding it reach the same matches, and a row opened in
-  // one stays where it was when the other paints.
-  //
-  // The rows carry the shared "ppform" accordion prefix, so opening one closes
-  // any other open row in the card, and ppFormSeq is unique across the whole
-  // list so the panel ids never collide.
-  const hiddenFormCount = Math.max(0, formMatches.length - ppFormRowTarget);
-  // ppFormRowTarget is an estimate of what the locked height shows, so this is
-  // an estimate of whether anything sits below the fold. It only decides
-  // whether to OFFER the expander — every match is reachable by wheel either
-  // way, so guessing slightly wrong costs nothing.
-  const showFormTrigger = !ppState.formExpanded && hiddenFormCount > 0;
-  const formTriggerHtml = showFormTrigger
-    ? `<div style="flex:none;padding:12px 0 2px;margin-top:6px;border-top:1px solid var(--line);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;">See all ${formMatches.length} results</span><div style="font-size:10.5px;color:var(--text-label);margin-top:3px;">or scroll the list</div></div>`
-    : '';
-  // The collapse control sits at the FOOT of the expanded list, in the same
-  // place and style as the "See more" link it replaces. A header-mounted
-  // control would reintroduce exactly the mid-list chrome this task removes.
-  const formCollapseHtml = `<div style="padding:12px 0 2px;margin-top:6px;border-top:1px solid var(--line);text-align:center;"><span onclick="togglePpFormExpanded()" style="font-size:12.5px;font-weight:600;color:var(--text);cursor:pointer;">Show less</span></div>`;
-  // Collapsed: min-height:0 lets the list shrink inside the locked card height,
-  // and overflow-y:auto turns the overflow into a scroll instead of a clip.
-  // overscroll-behavior:contain stops the page scrolling on from the last row.
-  const formBodyHtml = ppState.formExpanded
-    ? `<div style="display:flex;flex-direction:column;">${rowsHtml}</div>${formCollapseHtml}`
-    : `<div class="pp-form-scroll" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;">${rowsHtml}</div>${formTriggerHtml}`;
-
-  const recentFormCard = `
-    <div id="ppRecentFormCard" style="border:1px solid var(--edge-6);border-radius:16px;background:var(--card);padding:18px 20px;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-        <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Recent form</div>
-        <span style="display:inline-flex;align-items:baseline;gap:6px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:var(--text-label);"><span style="color:var(--text);font-weight:700;">${formHeaderPct}</span> <span style="font-size:10.5px;color:var(--text-label);">· last ${pillsSrc.length}</span></span>
-      </div>
-      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">${formChips}</div>
-      <div style="display:flex;gap:4px;margin-bottom:6px;">${pillsHtml}</div>
-      ${pillsSrc.length ? `<div style="display:flex;justify-content:space-between;margin-bottom:16px;"><span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); ">${pillsSrc.length} ago</span><span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); ">now →</span></div>` : '<div style="margin-bottom:16px;"></div>'}
-      ${formBodyHtml}
-    </div>`;
-
-  // ---- Career record table (clickable year-by-year, derived from match history) ----
-  // Each cell drills into its own year AND surface. The underline already
-  // advertised the cells as clickable, but only the row carried a handler and it
-  // discarded the surface — clicking clay 15/3 opened every 2022 match on every
-  // surface. stopPropagation keeps the cell from also firing the row's handler.
-  const cellHtml = (rec, year, surfKey) => {
-    const has = rec && (rec[0] + rec[1]) > 0;
-    const val = has ? `${rec[0]}/${rec[1]}` : '—';
-    const click = has && year
-      ? ` onclick="event.stopPropagation();ppShowYearSurface('${year}','${surfKey}',${rec[0]},${rec[1]})" title="${surfKey === 'all' ? 'All' : surfKey.charAt(0).toUpperCase()+surfKey.slice(1)} matches in ${year}" style="cursor:pointer;`
-      : ` style="`;
-    return `<span${click}font-size:13.5px;font-family:'IBM Plex Mono',monospace;color:${has?'var(--text)':'var(--text-label)'};text-align:right;">${val}</span>`;
-  };
-  let careerRecordCard;
-  if (cy){
-    const hcol = (t, c, right) => `<span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:${c};font-family:'IBM Plex Mono',monospace;text-align:${right?'right':'left'};">${t}</span>`;
-    const rowsCr = cy.rows.map(r => {
-      if (r.onTour && r.hasData){
-        return `<div onclick="ppShowYearSurface('${r.year}','all',${r.total[0]},${r.total[1]})" style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line);border-radius:8px;cursor:pointer;" onmouseover="this.style.background='color-mix(in srgb, var(--bar) 8%, transparent)';" onmouseout="this.style.background='transparent';">
-          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:700;color:var(--text);">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:var(--text-label);background:var(--inner);border:1px solid var(--edge-6);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
-          ${cellHtml(r.total, r.year, 'all')}
-          ${cellHtml(r.clay, r.year, 'clay')}
-          ${cellHtml(r.hard, r.year, 'hard')}
-          ${cellHtml(r.grass, r.year, 'grass')}
-        </div><div class="yr-drill pp-yr-drill" id="ppYrDrill-${r.year}"></div>`;
-      }
-      if (r.onTour && !r.hasData){
-        return `<div style="display:grid;grid-template-columns:58px 1fr;column-gap:8px;align-items:center;padding:8px 10px;border-bottom:1px dashed var(--line);">
-          <span style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--text-label);">${r.year}${r.tag?`<span style="font-size:8.5px;font-weight:700;color:var(--text-label);background:var(--inner);border:1px solid var(--edge-6);border-radius:4px;padding:1px 5px;font-family:'IBM Plex Mono',monospace;">${r.tag}</span>`:''}</span>
-          <span style="font-size:12px;font-style:italic;color:var(--text-label);">no match data on record</span>
-        </div>`;
-      }
-      return `<div style="display:grid;grid-template-columns:58px 1fr;column-gap:8px;align-items:center;padding:8px 10px;border-bottom:1px dashed var(--line);">
-        <span style="font-size:13px;font-weight:600;color:var(--text-label);">${r.year}</span>
-        <span style="font-size:12px;font-style:italic;color:var(--text-label);">not yet on tour</span>
-      </div>`;
-    }).join('');
-    const t = cy.total;
-    const totCell = (rec, color) => `<span style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${color};text-align:right;">${(rec[0]+rec[1])>0?`${rec[0]}/${rec[1]}`:'—'}</span>`;
-    careerRecordCard = `
-      <div id="ppCareerRecordCard" style="border:1px solid var(--edge-6);border-radius:16px;background:var(--card);padding:18px 20px;display:flex;flex-direction:column;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
-          <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;">Record by season</div>
-          <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); ">wins / losses</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-label);margin-bottom:12px;">Click any record to browse those matches — a surface cell for that surface alone, the year for all of them.</div>
-        <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;padding:0 10px 8px;border-bottom:1px solid var(--line);">
-          ${hcol('Year','var(--text-label)',false)}${hcol('Total','var(--text-label)',true)}${hcol('Clay','var(--text-soft)',true)}${hcol('Hard','var(--bar)',true)}${hcol('Grass','var(--text-soft)',true)}
-        </div>
-        <div style="flex:1;">${rowsCr}</div>
-        <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid var(--line);margin-top:4px;">
-          <span style="font-size:14px;font-weight:800;color:var(--text);">Total</span>
-          ${totCell(t.total,'var(--text)')}${totCell(t.clay,'var(--text)')}${totCell(t.hard,'var(--text)')}${totCell(t.grass,'var(--text)')}
-        </div>
-      </div>`;
-  } else {
-    careerRecordCard = `<div id="ppCareerRecordCard" style="border:1px solid var(--edge-6);border-radius:16px;background:var(--card);padding:18px 20px;">
-      <div style="font-size:20px;font-weight:800;letter-spacing:-0.01em;margin-bottom:8px;">Career record</div>
-      <div style="font-size:12.5px;color:var(--text-label);">No year-by-year match history on record for this player yet.</div>
-    </div>`;
-  }
-
-  // ---- Key insights ----
-  const accentMap = { blue: { c: 'var(--text)', icon: BSP_ICONS.chart }, green: { c: 'var(--text)', icon: BSP_ICONS.trophy }, gold: { c: 'var(--text)', icon: BSP_ICONS.bulb }, red: { c: 'var(--text)', icon: BSP_ICONS.chart } };   // U1.4: icons white, no category colours
-  // Dynamic first, pipeline insights as the fallback/top-up (see ppDynamicInsights).
-  // Market shard is lazy: undefined on first paint, so the market card simply doesn't
-  // appear yet. loadOddsPerfShardThenRerender() already repaints the profile when it
-  // lands, which fills the card in place. tourBaseline is not published by the builder
-  // yet — passing null makes the engine use its measured INS_TOUR_FALLBACK medians, and
-  // it upgrades automatically the day the index starts carrying one.
-  const ppInsights = ppDynamicInsights(
-    p.key, p.name, ppInsightsSplits(p.key), ppStyleFor(p.name, p.key), p.insights,
-    _oddsPerfShards[String(p.key)] || null,
-    oddsPerfMeta.tourBaseline || null,
-    (playerStyles.data || {}).tourAverage,
-    oddsPerfMeta.archiveLatest || null
-  );
-  const insightsHtml = ppInsights.map(x => {
-    const a = accentMap[x.accent] || accentMap.blue;
-    return `
-      <div style="border:1px solid var(--edge-6);border-radius:14px;background:var(--card);padding:18px 20px;display:flex;flex-direction:column;gap:11px;">
-        <span style="width:32px;height:32px;border-radius:9px;background:${ppHexA(a.c,0.14)};border:1px solid ${ppHexA(a.c,0.32)};display:flex;align-items:center;justify-content:center;color:${a.c};"><span style="width:16px;height:16px;display:flex;">${a.icon}</span></span>
-        <div style="font-size:13.5px;font-weight:700;color:var(--text);">${x.title}</div>
-        <div style="font-size:12.5px;color:var(--text-label);line-height:1.55;">${x.text}</div>
-      </div>`;
-  }).join('') || `<div style="color:var(--text-label);font-size:12.5px;">No insights available.</div>`;
-
-  // ---- Record by tournament (whole-career history) ----
-  const surname = (p.name || '').split(' ').pop();
-  // TEN-207: kick the lazy shard on profile open and repaint when it lands.
-  // Same shape as the market-performance fetch below: index gates the request, so
-  // a player with no history on record never fires one.
-  if (ppCareerHistoryPending(p)) loadTourHistShardThenRerender(p.key);
-  const careerHistory = ppCareerHistory(p);
-  // Count comes from the INDEX while the shard is in flight, so the header reads
-  // the true number immediately instead of flashing "0 on record".
-  const tournamentCount = careerHistory.length || tourHistCount(p.key);
-  const tournamentDropdownHtml = ppTournamentDropdownHtml(p, ppState.tournamentQuery || '');
-  const tournamentResultHtml = ppTournamentResultHtml(p, ppState.tournamentPicked);
-  // Split to match the export: the SEARCH card lives in the left rail (beneath
-  // the playing-style radar); the picked-tournament RESULT renders full-width
-  // below the two-column overview (ppTournResultBlock). onPpTournamentInput /
-  // ppShowTournament update #ppTournResult by id wherever it sits in the DOM.
-  const recordSearchCard = `
-    <div style="border:1px solid var(--edge-6);border-radius:16px;background:var(--card);position:relative;z-index:5;flex:1;">
-      <div style="padding:18px 20px;border-bottom:1px solid var(--line);">
-        <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;">
-          <div style="font-size:20px;font-weight:800;">Record by tournament</div>
-          <span style="font-size:10.5px;color:var(--text-label);font-family:'IBM Plex Mono',monospace;white-space:nowrap;">${tournamentCount} on record</span>
-        </div>
-        <div style="font-size:12px;color:var(--text-label);margin-top:4px;line-height:1.5;">Search a tournament to see ${pesc(surname)}'s full career win–loss record there.</div>
-      </div>
-      <div style="padding:16px 20px 18px;">
-        <div id="ppTournBox" style="position:relative;">
-          <input id="ppTournSearch" oninput="onPpTournamentInput(this.value)" onfocus="onPpTournamentInput(this.value)" value="${pesc(ppState.tournamentQuery||'')}" placeholder="Search a tournament…" autocomplete="off" style="width:100%;box-sizing:border-box;background:var(--card);border:1px solid var(--edge-6);border-radius:10px;padding:10px 13px;color:var(--text);font-size:13px;font-family:'Hanken Grotesk',sans-serif;outline:none;">
-          <div id="ppTournDropdown" style="display:${tournamentDropdownHtml?'block':'none'};position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:9999;background:var(--card);border:1px solid var(--edge-6);border-radius:10px;max-height:320px;overflow-y:auto;">${tournamentDropdownHtml}</div>
-        </div>
-      </div>
-    </div>`;
-  const ppTournResultBlock = `<div id="ppTournResult">${tournamentResultHtml}</div>`;
-
-  // ---- Header: Elo pill, playing-style line, meta ----
-  const eloInfo = ppEloFor(p);
-  const eloTitle = eloInfo.illustrative ? 'Illustrative Elo estimate (no live rating on record)' : 'Live Elo rating · tennisabstract.com';
-  const eloPill = `<span title="${eloTitle}" style="white-space:nowrap;display:inline-flex;align-items:center;font-size:11px;font-weight:700;color:var(--text-label);background:var(--inner);border:none;border-radius:7px;padding:4px 10px;font-family:'IBM Plex Mono',monospace;">ELO ${eloInfo.elo} · No. ${eloInfo.rank}</span>`;
-  // Playing-style line: the archetype label alone, matching the export (which
-  // shows a single archetype such as "Counter Puncher / Solid Defender" with no
-  // surface-specialist tag appended). Rendered in primary text — brand blue is
-  // reserved for navigation/identity and must not colour body copy.
-  const _ppStyle = ppStyleFor(p.name, p.key);
-  // Board taxonomy (TEN-12): the header carries ONLY the board archetype_label.
-  // The old `p.archetype` pipeline field is retired taxonomy — never fall back to
-  // it. An unclassified player shows no header style line (the "Playing style" card
-  // below carries the explicit "Not yet classified" state instead).
-  const styleLine = (_ppStyle && _ppStyle.archetype_label) || '';
-  const metaParts = [p.country, p.age != null ? 'Age ' + p.age : null, p.hand || null, p.backhand || null].filter(Boolean);
-  const metaHtml = metaParts.map((m, i) => `${i>0?'<span style="width:1px;height:13px;background:var(--line);"></span>':''}<span>${pesc(m)}</span>`).join('');
-
-  return `
-  <div style="margin-bottom:16px;">
-    <span onclick="sfDetailBack()" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--text-label);cursor:pointer;"><span style="display:flex;width:15px;height:15px;">${BSP_ICONS.back}</span> ${escapeHtml(sfDetailBackLabel())}</span>
-  </div>
-  <style>
-    @media (max-width: 1000px){
-      .pp-shell{ grid-template-columns:1fr !important; }
-      .pp-rail{ border-right:none !important; border-bottom:1px solid var(--line) !important; }
-    }
-    @media (max-width: 820px){
-      .pp-form-career{ grid-template-columns:1fr !important; }
-      .pp-odds-tiles{ grid-template-columns:1fr 1fr !important; }
-      .pp-insights{ grid-template-columns:1fr !important; }
-    }
-    /* Profile hero avatar — real photo (reuses playerAvatarHtml) with initials
-       fallback. Sized to match the original 96x96 circle EXACTLY so layout never
-       shifts; the rank pill sibling keeps overlaying the bottom-center. */
-    .pp-hero-av .avatar,
-    .pp-hero-av .avatar-fallback{
-      width:96px; height:96px; border-radius:50%; flex:none; box-sizing:border-box;
-      border:1px solid var(--edge-10);
-    }
-    .pp-hero-av .avatar{ object-fit:cover; display:block; background:var(--card); }
-    .pp-hero-av .avatar-fallback{
-      background:var(--inner);
-      display:flex; align-items:center; justify-content:center;
-      font-size:30px; font-weight:700; color:var(--text); font-family:'IBM Plex Mono',monospace;
-    }
-  </style>
-  <div style="width:100%;background:var(--card);border:1px solid var(--edge-6);border-radius:18px;overflow:hidden;">
-
-    <!-- HERO -->
-    <div style="padding:20px 26px 26px;display:flex;align-items:flex-start;gap:26px;border-bottom:1px solid var(--line);flex-wrap:wrap;">
-      <div class="pp-hero-av" style="position:relative;flex:none;">
-        ${playerAvatarHtml(p.name, p.key)}
-        <span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);min-width:30px;height:24px;padding:0 8px;border-radius:999px;background:var(--bar);border:2px solid var(--card);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text);font-family:'IBM Plex Mono',monospace;">${p.rank||'—'}</span>
-      </div>
-      <div style="min-width:0;flex:1;">
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <h1 style="margin:0;font-size:44px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">${pesc(ppAbbrevName(p.name))}</h1>
-          <span style="font-size:13px;font-weight:600;color:var(--text-label);background:var(--inner);border:1px solid var(--edge-6);border-radius:8px;padding:6px 12px;font-family:'IBM Plex Mono',monospace;">ATP No. ${p.rank||'—'}</span>
-        </div>
-        ${styleLine ? `<div style="margin-top:9px;font-size:18px;font-weight:700;color:var(--text);">${pesc(styleLine)}</div>` : ''}
-        <div style="display:flex;align-items:center;gap:14px;margin-top:11px;font-size:14px;color:var(--text-label);flex-wrap:wrap;">${metaHtml}</div>
-      </div>
-    </div>
-
-    <!-- TOP OVERVIEW: the two-column split is scoped to this region only. The
-         export closes the grid here so every section below runs full page width. -->
-    <div class="pp-shell" style="display:grid;grid-template-columns:360px 1fr;align-items:stretch;">
-
-      <!-- LEFT RAIL -->
-      <div class="pp-rail" style="border-right:1px solid var(--line);padding:22px;display:flex;flex-direction:column;gap:18px;min-width:0;">
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); ">View by surface</span>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;">${chips}</div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">${tilesHtml}</div>
-        <div style="display:flex;flex-direction:column;gap:9px;">
-          <span style="font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);font-family:var(--font-words); ">Surface performance</span>
-          ${surfHtml}
-        </div>
-        ${ppStyleCard(p)}
-        ${recordSearchCard}
-      </div>
-
-      <!-- RIGHT: player signals -->
-      <div style="padding:22px 24px 28px;display:flex;flex-direction:column;gap:20px;min-width:0;">
-        ${ppAsapSignalHtml(p)}
-      </div>
-    </div>
-
-    <!-- FULL-WIDTH SECTIONS (below the two-column overview) -->
-    <div style="padding:6px 24px 28px;display:flex;flex-direction:column;gap:24px;min-width:0;">
-      ${ppTournResultBlock}
-      <div>
-        <div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;margin-bottom:14px;">Key insights</div>
-        <div class="pp-insights" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${insightsHtml}</div>
-      </div>
-      <!-- align-items defaults to stretch: both cards take the row's height, so the
-           taller one (usually Record by season, which renders a row per career year)
-           sets the height and the other fills to match. -->
-      <div class="pp-form-career" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">${recentFormCard}${careerRecordCard}</div>
-      ${ppCareerSplitsHtml(p)}
-      ${ppHoldBreakHtml(p)}
-    </div>
-
-    <!-- FOOTER -->
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 26px;border-top:1px solid var(--line);background:var(--inner);font-size:11.5px;color:var(--text-label);">
-      <span>Percentiles &amp; ratings are BSP model estimates for informational purposes only.</span>
-      <span style="font-family:'IBM Plex Mono',monospace;">BSP Consult</span>
-    </div>
-  </div>`;
-}
-
 /* ---------- TOURNAMENTS ---------- */
 // Curated static reference facts (category, surface, indoor/outdoor) — same
 // source of truth as TOURNAMENT_VENUE_HINTS in bsp-pipeline.js. Not pulled
@@ -34845,7 +33926,7 @@ window.DatabaseTab = (function(){
   // it there and the module would return early, never define
   // window.PlayerProfileV2, and every open would silently fall back to the
   // legacy page: the rebuild would look shipped and be unreachable.
-  window.FEATURE_PP2 = (typeof pp2FlagOn === 'function') ? pp2FlagOn() : false;
+  window.FEATURE_PP2 = true;   // the legacy renderer is retired (2026-10-21): v2 is the only player profile
 </script>
 <script src="live-tab.js" defer></script>
 <!-- TEN-270: Kibl stream -> live "Now". Reads kibl_now_price with the publishable

@@ -177,14 +177,15 @@ const notFound = () => Promise.resolve({ ok: false, status: 404, json: () => Pro
     const body = heavy.slice(0, heavy.indexOf('};'));
     assert(!/[Ss]plits/.test(body), 'loadHeavyDatasets starts a splits load: ' + body);
     assert(!/function loadCareerSplits\(\)/.test(DASH), 'the eager loader is still defined');
-    // The only callers: the v2 profile open, the H2H page's enrich, and the legacy profile (with the tour file).
+    // The only callers: the v2 profile open and the H2H page's enrich (the legacy profile's tour-file load was retired with
+    // it, 2026-10-21).
     // Founder ruling 2026-10-20 item 1 adds ONE on-request site: the v2 profile open (pp2LoadSplits) also loads the small
     // tour file, whose build date drives "Data paused" on Draw record. Still on request — never on the dashboard load path
     // (the loadHeavyDatasets assertion above is unchanged).
     const callers = [...DASH.matchAll(/loadCareerSplitsTour\(\)/g)].length;
-    assert.strictEqual(callers, 3, 'loadCareerSplitsTour is called from somewhere new (' + callers + ' sites incl. its own body)');
+    assert.strictEqual(callers, 2, 'loadCareerSplitsTour is called from somewhere new (' + callers + ' sites incl. its own body)');
     const pp2 = DASH.slice(DASH.indexOf('function pp2LoadSplits(key){'));
-    assert(/loadCareerSplitsTour\(\)/.test(pp2.slice(0, pp2.indexOf('\n}'))), 'the third site is not the v2 profile open (pp2LoadSplits)');
+    assert(/loadCareerSplitsTour\(\)/.test(pp2.slice(0, pp2.indexOf('\n}'))), 'the call site is not the v2 profile open (pp2LoadSplits)');
     const enrich = slice('  function enrich(pkey) {', '  function buildH2HData() {');
     assert(/fn\('loadCareerSplitsFor'\)/.test(enrich), 'the H2H page does not load the shown player\'s file');
     const v2 = slice('function pp2StartLoads(key){', 'function pp2MountNow(key){');

@@ -160,7 +160,7 @@ export const DATA_FILES = new Set([
   'odds-card-state.json', 'kibl-entitlement-baseline.json',                       // ten232-kibl-archive.yml
   '.bet365-history-targets.json.gz', '.oddspapi-raw-targets.json.gz',             // bet365-archive / oddspapi-raw-archive
   'asapsports-signal.json', 'archetypes-classified.json', 'clutch-rating.json',   // weekly bots
-  'elo-ratings.json', 'elo-history.json', 'points-at-risk.json', 'surface-ratings.json', 'wue-store.json',
+  'elo-ratings.json', 'elo-history.json', 'surface-ratings.json', 'wue-store.json',
   'radar-calibration.json', 'style-radar.json',                                   // style-radar.yml writes both
   'atp-entry-harvest-state.json', 'atp-entry-harvest-queue.json',
   'career-splits-tour.json', 'splits-matches-index.json',                         // refresh-career-splits.sh / career-splits.yml (TEN-391)

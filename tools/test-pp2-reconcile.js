@@ -4348,17 +4348,13 @@ mustFail('the bridge check would catch a store left unassigned', () => {
 // Reproduced live before this guard existed: opening a v2 profile and then
 // firing ppRepaint() (which three lazy loaders do when they resolve) replaced
 // the rebuilt page with the LEGACY one, mid-session, in front of the reader.
-check('ppRepaint hands back to v2 instead of overwriting it with the legacy page', () => {
+check('ppRepaint hands back to v2 and never paints the retired legacy page', () => {
   const body = DASHBOARD.slice(DASHBOARD.indexOf('function ppRepaint()'));
   const fn = body.slice(0, body.indexOf('\n}'));
-  const guardAt = fn.indexOf('PlayerProfileV2.repaint()');
-  const legacyAt = fn.indexOf('buildPlayerProfileHtml(profile)');
-  assert(guardAt > -1, 'ppRepaint does not delegate to v2 — a lazy loader will clobber the page');
-  assert(legacyAt > -1, 'ppRepaint no longer paints the legacy page at all — verify that was intended');
-  assert(guardAt < legacyAt,
-    'the v2 delegation comes AFTER the legacy innerHTML write, so it cannot prevent the clobber');
-  assert(/return;/.test(fn.slice(guardAt, legacyAt)),
-    'the v2 branch does not return — it falls through and repaints legacy anyway');
+  assert(fn.indexOf('PlayerProfileV2.repaint()') > -1, 'ppRepaint does not delegate to v2 — a lazy loader will clobber the page');
+  // the legacy renderer is retired (2026-10-21): with no v2 page painted (a load error) ppRepaint writes nothing
+  const code = fn.split('\n').filter(l => !/^\s*\/\//.test(l)).join('\n');   // its comments name innerHTML
+  assert(!/innerHTML|buildPlayerProfileHtml/.test(code), 'ppRepaint writes the view — it would paint over the load error');
 });
 
 mustFail('the ppRepaint-guard check would catch the guard being removed', () => {

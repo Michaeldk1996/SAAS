@@ -44,8 +44,6 @@ const MUTANTS = [
   ['TEN-325: no settlement note on Flat 1u', "  metrics.flat.ret = true;", "  metrics.flat.ret = false;"],
   ['hot lines: header loses the role', "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}", "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}"],
   ["review 2: Laver Cup back in Form", "&& !FH_FORM_NOT_ATP_RECORD.test(", "&& !/^$/.test("],
-  ['TEN-383: legacy profile tile back on every match', '  const last10 = formRows.slice(0, 10);', '  const last10 = recentMatches.slice(0, 10);'],
-  ['TEN-383: legacy profile list back on every match', "  const formMatches = formSurf === 'All' ? formRows : formRows.filter(", "  const formMatches = formSurf === 'All' ? recentMatches : recentMatches.filter("],
 ];
 const SUITES = ['test-ten330-form.mjs'];
 // Control: the unmutated page must pass, or every "caught" below means nothing.

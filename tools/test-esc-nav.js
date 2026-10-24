@@ -286,9 +286,9 @@ t('G5 the dashboard label: sidebar names per origin; "Back to Players" only with
   assert.strictEqual(run(W0.win.SfNav), 'Back to Players', 'no trail: the link goes to the list');
   assert.strictEqual(run(undefined), 'Back to Players', 'no SfNav at all: same fallback');
 });
-t('G6 both Back links print the label (escaped), not a fixed page name', () => {
+t('G6 the profile Back link prints the label (escaped), not a fixed page name', () => {
   const H = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
-  assert.ok(/<span onclick="sfDetailBack\(\)"[^>]*>[\s\S]{0,200}\$\{escapeHtml\(sfDetailBackLabel\(\)\)\}<\/span>/.test(H), 'legacy link');
+  assert.ok(!/function buildPlayerProfileHtml\(/.test(H), 'the legacy profile (and its Back link) is retired 2026-10-21');
   const v2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const body = v2.slice(v2.indexOf('function renderBackLink()'), v2.indexOf('function renderBackLink()') + 700);
   assert.ok(/esc\(backLabel\(\)\) \+ '<\/a>'/.test(body) && !/'Back to Players<\/a>'/.test(body), 'v2 link');
@@ -339,8 +339,9 @@ t('F3 esc-nav.js loads in <head>, before every other script that registers a key
   assert.ok(at > 0 && at < HTML.indexOf('</head>'), 'in <head>');
   assert.ok(at < HTML.indexOf('document.addEventListener(\'keydown\''), 'before the first inline keydown listener');
 });
-t('F4 both Back links go through sfDetailBack; no pushState (browser Back unchanged)', () => {
-  assert.ok(/<span onclick="sfDetailBack\(\)"[^>]*>[\s\S]{0,200}sfDetailBackLabel\(\)/.test(HTML), 'legacy Back link');
+t('F4 the profile Back link goes through sfDetailBack; no pushState (browser Back unchanged)', () => {
+  // the legacy profile and its own Back link were retired 2026-10-21; v2's is the only profile Back link
+  assert.ok(!/function buildPlayerProfileHtml\(/.test(HTML), 'the legacy profile (and its Back link) is retired');
   const v2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   assert.ok(/kind === 'back'\) \{[\s\S]{0,300}window\.sfDetailBack\(\)/.test(v2), 'v2 Back link');
   for (const f of [HTML_FILE, ...new Set(scripts)]) {

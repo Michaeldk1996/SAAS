@@ -127,15 +127,10 @@ test('card surfaces: no outline, no hover lift, avatar + odds tile --selected (r
   assert.ok(!/border-bottom:1px dotted/.test(cssRule('.playercard .pc-elo-lab')), 'ELO has no dotted underline');
 });
 
-test('item 8: the legacy renderer carries no Market performance, Favourite vs underdog reliability or Read on the market', () => {
-  const src = slice('buildPlayerProfileHtml');
-  for (const re of [/Market performance</, /Favourite vs underdog reliability</, /Read on the market</, /ppMarketPanel/, /\$\{oddsHtml\}/])
-    assert.ok(!re.test(src), `legacy profile still renders ${re}`);
+test('item 8: the legacy renderer is retired (2026-10-21) and the removed market panel stays gone', () => {
+  assert.ok(!html.includes('function buildPlayerProfileHtml('), 'the legacy player view is retired');
   for (const fn of ['setPpMktPeriod', 'setPpMktSurface', 'setPpMktSide', 'setPpMktRole', 'setPpMktWindow', 'ppMktSliderInput', 'ppMktBaseCount', 'surname0'])
     assert.ok(!html.includes(`function ${fn}(`), `${fn} only served the removed panel`);
-  // Kept intent: Key insights' market card reads the odds shard, so the legacy renderer must still request it.
-  assert.match(src, /if \(oddsPerfIndex\[String\(p\.key\)\] && _oddsPerfShards\[String\(p\.key\)\] === undefined\) loadOddsPerfShardThenRerender\(p\.key\);/);
-  assert.match(src, /_oddsPerfShards\[String\(p\.key\)\] \|\| null,/, 'ppDynamicInsights still gets the shard');
 });
 
 test('ruling Q9: whole draw per event, losers kept, ordered by rank, header = whole draw + events', () => {

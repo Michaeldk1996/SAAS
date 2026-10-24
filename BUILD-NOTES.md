@@ -2207,3 +2207,23 @@ modal-progression, odds, player-profile). Reasoning, where it is not in the ruli
 - **Why player-photos.json could go:** nothing read it after 5456dee9d. Its only consumers were its own generator (run by
   no job) and validate-player-photos.js (in no suite or workflow, and already failing on main since it required the
   retired photoOverrideFor); the pipeline copy was `|| true` and outside the required-file asserts.
+
+## Legacy player view retired (2026-10-21)
+
+The full-page legacy renderer (`buildPlayerProfileHtml`, ~500 lines, with `ppCareerYears` and the helpers only it
+called) was reachable only as a fallback: `?pp2=0`, or the TEN-206 module failing to open. Its Record by season
+disagreed with the verified Career record — Hard included indoor matches, no Indoors or Surface-not-known column, no
+tier — and an empty year cell printed `0-0`. Founder chose to retire it rather than fix it: a profile that cannot paint
+now shows a load error with a Retry and no figures, so no reader can land on an older, different record. The `pp2`
+switch went with it (`FEATURE_PP2` is always true); there are no members, so no revert path is kept (CLAUDE.md
+rule 12). Removed with it: the six handlers and loaders left with no caller (`ppLegacySplitsLoads`,
+`loadOddsPerfShardThenRerender`, `setPpSurface`, `togglePpFollow`, `togglePpFormExpanded`, `setPpFormSurface`).
+Not swept: code those in turn fed, now unreachable too (`ppInsightsSplits`, `loadPointsAtRisk`, the legacy splits
+tables) — dead, not live, and left for a separate pass rather than chased through the file in one change.
+
+Points at Risk (TEN-172/173) went with it (founder, 2026-10-21): its tile, breakdown drawer and loader existed only in
+the legacy view — the TEN-206 profile never showed it — so its two tests (`tools/test-points-at-risk-dash.js`, the
+unwired `tools/points-at-risk/test-drawer-render.js`) were removed. Nothing rebuilds or publishes `points-at-risk.json`
+any more: the daily `points-at-risk.yml` is deleted, `pipeline.yml` no longer copies it into `_site`, and the deploy
+lane no longer lists it as a data-bot file. The last committed copy and `tools/points-at-risk/` stay in the repo
+(`round-classify.js` is still read by `tools/test-pp2-reconcile.js`).

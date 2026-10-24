@@ -359,13 +359,3 @@ test('TEN-383: the Player Profile Recent form (ribbon, chips, ledger) counts the
   assert.equal((led.match(/class="pp2-ledger-row"/g) || []).length, 11, 'the ledger draws the 11 form rows');
 });
 
-// The legacy renderer (buildPlayerProfileHtml, reached on ?pp2=0) is ~900 lines of page-coupled template and is not
-// executed here; these source checks pin its two TEN-383 reads so a revert cannot pass silently. Mutations: the tile's
-// last10 or the list's formMatches back on the unfiltered recentMatches.
-test('TEN-383: the legacy profile renderer reads the Form list for its tile and list, every match for the season', () => {
-  const src = slice('buildPlayerProfileHtml');
-  assert.match(src, /const formRows = recentMatches\.filter\(m => !FH_FORM_NOT_ATP_RECORD\.test\(/);
-  assert.match(src, /const last10 = formRows\.slice\(0, 10\);/);
-  assert.match(src, /const formMatches = formSurf === 'All' \? formRows : formRows\.filter\(/);
-  assert.match(src, /const seasonMatches = recentMatches\.filter\(/, 'the season record keeps every match');
-});
