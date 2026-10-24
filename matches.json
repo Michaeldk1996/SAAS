@@ -3645,10 +3645,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/424_n-basilashvili.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
@@ -4713,7 +4719,10 @@
         "seenAt": "2026-10-24T08:32:09.216Z",
         "since": "2026-10-24T08:32:09.216Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173801",
@@ -21720,11 +21729,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "30 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1766_m-giron.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1764_y-hanfmann.jpg",
     "oddsMovement": {
@@ -22328,7 +22348,10 @@
         "seenAt": "2026-10-24T08:32:09.216Z",
         "since": "2026-10-24T06:37:46.755Z"
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173809",
@@ -25136,11 +25159,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/3317_r-hijikata.jpg",
     "oddsMovement": {
@@ -25713,7 +25742,10 @@
       "edgeVsPinnacleP1": -0.0511,
       "edgeVsPinnacleP2": 0.0511,
       "ts": "2026-10-24T06:37:46.647Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173810",
@@ -252635,11 +252667,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/12951_j-fearnley.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/434_p-carreno-busta.jpg",
     "oddsMovement": {
@@ -253348,7 +253386,10 @@
           }
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173816",
@@ -255927,11 +255968,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1083_v-kopriva.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2022_l-neumayer.jpg",
     "oddsMovement": {
@@ -256504,7 +256551,10 @@
           }
         }
       }
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12173817",
