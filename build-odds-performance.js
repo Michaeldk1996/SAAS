@@ -34,6 +34,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const Settlement = require('./settlement.js');   // founder 2026-10-25: the two retirement rules, one module
 
 const ROOT = __dirname;
 const ARCHIVE_DIR = path.join(ROOT, 'odds-archive');
@@ -394,26 +395,36 @@ function devig(priceFor, priceAgainst) {
   return total > 0 ? a / total : null;
 }
 
+// Founder ruling 2026-10-25 (round 2 item 1.3): two populations per bucket, decided by settlement.js. The win-rate
+// figures (matches, wins, expected, vsMarket, ci95, z) count every match with an official winner (matchWinner: a
+// retirement counts); the money figures (roi, roiBest, avgPrice, avgPriceBest) count the bets that stand (settleBet,
+// Pinnacle rules: a retirement after the first set was completed). On a completed match both are the same row, so a
+// bucket with no retirement is unchanged. `inWin` / `inBet` default to true (callers that pass neither are unchanged).
 function emptyBucket() {
-  return { matches: 0, wins: 0, expSum: 0, varSum: 0, profit: 0, profitBest: 0, priceSum: 0, priceBestSum: 0 };
+  return { matches: 0, wins: 0, expSum: 0, varSum: 0, bets: 0, profit: 0, profitBest: 0, priceSum: 0, priceBestSum: 0 };
 }
 
-function addToBucket(b, won, p, price, priceBest) {
-  b.matches += 1;
-  if (won) b.wins += 1;
-  b.expSum += p;
-  b.varSum += p * (1 - p);
-  b.profit += won ? price - 1 : -1;
-  b.profitBest += won ? priceBest - 1 : -1;
-  // Carried so the line-shopping block can quote a real price gap ("1.94 average vs 2.03
-  // best") rather than only the ROI difference, which is unreadable without the prices.
-  b.priceSum += price;
-  b.priceBestSum += priceBest;
+function addToBucket(b, won, p, price, priceBest, inWin, inBet) {
+  if (inWin !== false) {
+    b.matches += 1;
+    if (won) b.wins += 1;
+    b.expSum += p;
+    b.varSum += p * (1 - p);
+  }
+  if (inBet !== false) {
+    b.bets += 1;
+    b.profit += won ? price - 1 : -1;
+    b.profitBest += won ? priceBest - 1 : -1;
+    // Carried so the line-shopping block can quote a real price gap ("1.94 average vs 2.03
+    // best") rather than only the ROI difference, which is unreadable without the prices.
+    b.priceSum += price;
+    b.priceBestSum += priceBest;
+  }
 }
 
 function summarize(b, minMatches) {
   if (!b || b.matches < minMatches) return null;
-  const n = b.matches;
+  const n = b.matches, nb = b.bets;
   const actual = (b.wins / n) * 100;
   const expected = (b.expSum / n) * 100;
   const delta = actual - expected;
@@ -430,10 +441,12 @@ function summarize(b, minMatches) {
     // from correctly priced, and the UI must say so rather than showing a bare number.
     ci95: [round1(delta - 1.96 * se), round1(delta + 1.96 * se)],
     z: se > 0 ? Math.round((delta / se) * 100) / 100 : null,
-    roi: round1((b.profit / n) * 100),
-    roiBest: round1((b.profitBest / n) * 100),
-    avgPrice: Math.round((b.priceSum / n) * 100) / 100,
-    avgPriceBest: Math.round((b.priceBestSum / n) * 100) / 100,
+    // the money figures over the bets that stand (settlement.js settleBet); `bets` is their n
+    bets: nb,
+    roi: nb ? round1((b.profit / nb) * 100) : null,
+    roiBest: nb ? round1((b.profitBest / nb) * 100) : null,
+    avgPrice: nb ? Math.round((b.priceSum / nb) * 100) / 100 : null,
+    avgPriceBest: nb ? Math.round((b.priceBestSum / nb) * 100) / 100 : null,
   };
 }
 
@@ -524,7 +537,7 @@ function main() {
   let archiveLatest = '';
   const masterRows = master.rows.filter((m) => !/[tl]/.test(String(m[MC.flags] || ''))).map((m) => ({
     date: m[MC.date], tournament: m[MC.tournament], series: m[MC.series], surface: m[MC.surface], round: m[MC.round],
-    winner: m[MC.winner], loser: m[MC.loser], comment: m[MC.comment], wrank: MC.wrank != null ? m[MC.wrank] : '', lrank: MC.lrank != null ? m[MC.lrank] : '',
+    winner: m[MC.winner], loser: m[MC.loser], comment: m[MC.comment], set: m[MC.set], fs: MC.fs != null ? m[MC.fs] : '', wrank: MC.wrank != null ? m[MC.wrank] : '', lrank: MC.lrank != null ? m[MC.lrank] : '',
     // the match's ONE price pair (winner first): both the "average" and the "best" slots read it — no cross-book figure
     avgw: m[MC.pw], avgl: m[MC.pl], maxw: m[MC.pw], maxl: m[MC.pl] }));
   masterRows.forEach((r) => { if (r.date && r.date > archiveLatest) archiveLatest = r.date; });
@@ -535,9 +548,15 @@ function main() {
   seasons.forEach((season) => {
     bySeason.get(season).forEach((row) => {
       stats.rows += 1;
-      // Retirements and walkovers are ~3.5% of a season and bias the result: the price
-      // was struck for a match that was never really played out.
-      if (row.comment && row.comment.toLowerCase() !== 'completed') { stats.incomplete += 1; return; }
+      // Founder ruling 2026-10-25 (round 2 item 1.3) — settlement.js, never re-derived here. A Database row (set 'db') is a
+      // played result (Completed, or a non-result its sources show played out). Win-rate figures: matchWinner (a
+      // retirement counts on the official result). Money figures and the per-match sides (P&L, curve, recent form):
+      // settleBet (Pinnacle rules). The master carries each retirement's first set (fs, the shared lookup).
+      const cm = row.set === 'db' ? 'Completed' : row.comment;
+      const inWin = Settlement.matchWinner({ comment: cm, winnerSide: 'w' }) != null;
+      const inBet = Settlement.betCounts({ comment: cm, fs: row.fs });
+      if (!inWin && !inBet) { stats.incomplete += 1; return; }
+      if (Settlement.kindOf(cm) === 'retired') { stats.retired = (stats.retired || 0) + 1; if (inBet) stats.retiredStands = (stats.retiredStands || 0) + 1; }
 
       const aw = num(row.avgw);
       const al = num(row.avgl);
@@ -576,7 +595,7 @@ function main() {
         if (!player) return;
         stats.matchedSides += 1;
         const b = bucketsFor(player.key);
-        const add = (bucket) => addToBucket(bucket, side.won, side.p, side.price, side.best);
+        const add = (bucket) => addToBucket(bucket, side.won, side.p, side.price, side.best, inWin, inBet);
         const into = (group, k) => { if (k == null) return; group[k] = group[k] || emptyBucket(); add(group[k]); };
         add(b.all);
         into(b.surface, surface);
@@ -593,7 +612,8 @@ function main() {
         // Carries round and level as well as the aggregate inputs: the profile lets the
         // reader pick their own match window, and every split shown has to be recomputable
         // inside it, so a side has to be self-describing rather than pre-bucketed.
-        b.sides.push({
+        // Founder 2026-10-25: the sides are the BETS (settleBet) — the page sums their P&L and curve from them.
+        if (inBet) b.sides.push({
           date: row.date, won: side.won, p: side.p, price: side.price, best: side.best,
           fav: side.fav, surface, round: roundExact, level,
           oppBand: side.oppRank ? (OPP_BANDS.find((x) => x.test(side.oppRank)) || {}).id : null,
@@ -748,7 +768,7 @@ function main() {
   })).filter((r) => r.rank);
 
   log(`\nParsed ${stats.rows} archive rows across ${seasons.length} seasons`);
-  log(`  ${stats.incomplete} retired/walkover excluded, ${stats.impossible} dropped for best<avg price, ${stats.priced} priced, ${stats.matchedSides} player-sides joined`);
+  log(`  ${stats.retired || 0} retirements (settlement.js: all in the win rates, ${stats.retiredStands || 0} in the money figures), ${stats.incomplete} other non-results excluded, ${stats.impossible} dropped for best<avg price, ${stats.priced} priced, ${stats.matchedSides} player-sides joined`);
   log(`\nShards written: ${shipped} of ${Object.keys(profiles).length} profiled players (gate: >=${minMatches} priced matches)`);
   log('\nCoverage by rank band:');
   bands.forEach(([lo, hi]) => {

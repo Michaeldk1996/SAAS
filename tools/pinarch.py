@@ -616,10 +616,41 @@ HELD_BACK_RULES = {
 CAPTURED_VERIFIED_SOURCES = ('api-tennis-live',)   # build-captured-pinnacle.js startSource = our live-flip (the card state's)
 
 
+# Founder ruling 2026-10-25 (round 2 item 1.4): the 13 Apr - 16 Sep ATP main-draw fill. Measured against our live-flip,
+# Oddspapi's gated trueStart becomes a close cut for the rows that fill writes — at trueStart itself ('trueStart') or at
+# trueStart - X min ('trueStart-buffer', X = ceil(p98 lateness)). Those rows, and ONLY those (their own start_source AND a
+# valid closeCut in detail), export as closes: this supersedes the start-alone hold-back for them alone. Every other
+# start-alone row (derive-held, NO_FLIP_SOURCE) stays held back exactly as before. Writer: tools/archive-fill-probe.py.
+FILL_START_SOURCE = 'oddspapi trueStart (fill rule 2026-10-25)'
+FILL_CUTS = ('trueStart', 'trueStart-buffer')
+
+
+def fill_cut(r):
+    """The row's closeCut when it is a fill-rule close (label, start_source and detail.closeCut all agree; a buffered cut
+    must name a whole-minute buffer > 0), else None."""
+    if r.get('label') != ARCHIVE_LABEL or r.get('start_source') != FILL_START_SOURCE:
+        return None
+    d = r.get('detail') or {}
+    if isinstance(d, str):
+        try:
+            d = json.loads(d)
+        except ValueError:
+            return None
+    c = d.get('closeCut')
+    if c == 'trueStart':
+        return c
+    if c == 'trueStart-buffer' and isinstance(d.get('bufferMin'), int) and not isinstance(d.get('bufferMin'), bool) and d['bufferMin'] > 0:
+        return c
+    return None
+
+
 def verified_start(r):
     """Founder ruling 2026-10-17 item 3: a price may be labelled a close only when cut at a VERIFIED start — our live-flip,
     or the earlier-of rule (live-flip vs the gated trueStart) from 17 Sep. Archive closes name it in start_source; a
-    captured close is verified only from 17 Sep and only when its start is the live-flip."""
+    captured close is verified only from 17 Sep and only when its start is the live-flip. Founder ruling 2026-10-25: a
+    fill-rule close (fill_cut) counts as verified — the trueStart was measured against our live-flip."""
+    if fill_cut(r):
+        return True
     if r.get('label') == ARCHIVE_LABEL:
         return r.get('start_source') in (CUT_SOURCE, TRUE_START_SOURCE)
     if r.get('label') == 'captured':
@@ -1698,6 +1729,9 @@ def td_feed_rows(export_rows, td_rows, alias, pin_stop, table_names=None, catalo
         if api_is_qualifying(a):
             rep['qualifying'] += 1; continue          # the flag decides; a qualifying round label never reads as main draw
         key = re.sub(r'^ATP\s+', '', str(a.get('tournament_name') or '')).strip()
+        # round 2 item 1.1: a main-draw event api-tennis names "… - Qualification" (Lyon (France), key 14763) is keyed
+        # without the suffix — the flag above already said it is not qualifying.
+        key = re.sub(r'\s*-\s*Qualification$', '', key, flags=re.I).strip()
         meta = td_edition_meta(td_rows, alias, key)
         if not meta and catalog is not None:
             meta = new_event_meta(key, a, catalog, surfaces, sizes.get((key, d[:4])))

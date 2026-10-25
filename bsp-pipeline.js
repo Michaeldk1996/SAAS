@@ -1549,6 +1549,10 @@ const TOURNAMENT_VENUE_HINTS = {
   'Estoril': { city: 'Estoril', country: 'PT', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Geneva': { city: 'Geneva', country: 'CH', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Lyon': { city: 'Lyon', country: 'FR', category: 'ATP 250', indoor: false, surface: 'clay' },
+  // Round 2 item 1.1 (founder 2026-10-25): Lyon October 2026 is a NEW event — api-tennis key 14763 "Lyon (France)",
+  // surface "Hard (Indoor)" — with no lineage to the clay Lyon above (May, to 2025). Its own key, so no clay edition,
+  // palmares or court reading feeds it (venueHintKeyFor takes the longest key a name contains).
+  'Lyon (France)': { city: 'Lyon', country: 'FR', category: 'ATP 250', indoor: true, surface: 'hard' },
   'Gstaad': { city: 'Gstaad', country: 'CH', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Bastad': { city: 'Bastad', country: 'SE', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Newport': { city: 'Newport', country: 'US', category: 'ATP 250', indoor: false, surface: 'grass' },
@@ -1696,13 +1700,20 @@ function courtConditionsFor(tournamentName) {
 // never fall through to 'Paris' — that row is Bercy, indoor hard 0.97.
 const COURT_CONDITIONS_ALIASES = { 'French Open': 'Roland Garros' };
 
+// The venue-hint key a tournament name contains — the LONGEST one, so a specific key wins over a city it contains
+// ("Lyon (France) - Qualification" is the October event, never the clay 'Lyon'). Round 2 item 1.1.
+function venueHintKeyFor(name, keys) {
+  const n = String(name || '');
+  return (keys || Object.keys(TOURNAMENT_VENUE_HINTS)).filter(k => n.includes(k)).sort((a, b) => b.length - a.length)[0];
+}
+
 // The one hint → venue + court-speed join, shared by every match build path.
 // Defect brief 2026-10-24 item 4: a hint names a CITY, and one city can host two events on different surfaces — Lyon
 // was a clay 250 to 2024 and is an indoor-hard 250 from 2026. When the match's OWN feed surface (fixtureSurface: the
 // tournament's api-tennis surface, never a 'hard' default) is known and differs from the hint's, the court reading
 // belongs to the other event, so there is no court speed (a dash). An unknown surface keeps the hint's reading.
 function venueAndCourtSpeedFor(name, feedSurface) {
-  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => String(name || '').includes(k));
+  const hintKey = venueHintKeyFor(name);
   const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
   const otherEvent = !!(hint && hint.surface && feedSurface && String(feedSurface).toLowerCase() !== hint.surface);
   const courtConditions = hintKey && !otherEvent ? COURT_CONDITIONS[COURT_CONDITIONS_ALIASES[hintKey] || hintKey] : null;
@@ -1857,7 +1868,7 @@ async function loadTournamentProfiles() {
       const fixtures = await fetchAtpFixturesForMonth(year, month);
       for (const f of fixtures) {
         if (!f.tournament_round || f.event_qualification === 'True') continue;
-        const key = hintKeys.find(k => f.tournament_name && f.tournament_name.includes(k));
+        const key = f.tournament_name ? venueHintKeyFor(f.tournament_name, hintKeys) : undefined;
         if (!key) continue;
         const season = f.tournament_season || String(year);
         if (!matchesByTournament[key][season]) matchesByTournament[key][season] = [];
@@ -2039,7 +2050,7 @@ function buildForecastWeek(daily, hourly, matchDateStr) {
 // on match day" instead of "Forecast". A future match with no forecast still
 // returns null (genuine no-data) — we only reach the archive for past matches.
 async function fetchMatchWeather(tournamentName, matchDateTimeISO, venueMap) {
-  const key = Object.keys(venueMap).find(k => tournamentName.includes(k));
+  const key = venueHintKeyFor(tournamentName, Object.keys(venueMap));
   if (!key) return null;
   const { lat, lon } = venueMap[key];
 
@@ -8278,7 +8289,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { venueHintKeyFor, buildDrawMatchesStore, feedSetScores, drawFixtureRow, feedRoundCode, liveCardCheck, isCardableFixture, fixtureLiveState, olympicSurface, fixtureSurface, modelH2hMatches, modelMatchStarted, modelEventKey, modelPreMatchCandidates, buildModelOutput, isUnplayedFinishedFixture, buildMatchObject, buildUpcomingMatchObject, buildOneProfile, profileNameFromFixtures, findApiTennisFixture, fixtureFirstIsHome, pinnacleOrFirst, normalizeName, venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, FORM_NOT_ATP_RECORD, recentFormPct, capRecentFormMatches, PROFILE_FORM_WINDOW, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, progressionSheetMatches, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

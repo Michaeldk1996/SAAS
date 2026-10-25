@@ -232,7 +232,8 @@ closes, odds performance and started-evidence.
   `close_at`, `archive_close_row`; rules and jobs: `.claude/rules/pinnacle-archive.md`.
   **Test:** `tools/test-pinarch-close.py` (the earlier cut wins; a later trueStart never moves it; the gate's rejects; the
   in-play control; the correction row).
-- **A close cut at Oddspapi's `trueStartTime` ALONE is held back — never shown as a close** (founder ruling 2026-10-16,
+- **A close cut at Oddspapi's `trueStartTime` ALONE is held back — never shown as a close**, with ONE exception: the
+  13 Apr – 16 Sep ATP main-draw fill rows (founder ruling 2026-10-25, below) export as closes. (Founder ruling 2026-10-16,
   round 3 item 2; REPLACES TEN-437 item 6's "derive closes … using oddspapi's own start time as the cut": the start-alone
   cut was rejected on 1,211 matches, 48% exact). The `derive-held` rows (13–30 Apr, `start_source` = `oddspapi trueStart
   (no live-flip held)`) stay in the archive as their own source (append-only, never deleted or rewritten) and the export
@@ -242,6 +243,17 @@ closes, odds performance and started-evidence.
   that adds more such rows changes nothing a reader sees. **Test:** `tools/test-pinarch-close.py` "hold-back" (the
   trueStart-only close never exported; an event it superseded keeps its captured close; control: without the rule it
   would be the export).
+- **The 13 Apr – 16 Sep ATP main-draw fill (founder ruling 2026-10-25, round 2 item 1.4).** Measure first: over every
+  `live_flip_log` match with a gated Oddspapi `trueStartTime` (17 Sep on), d = trueStart − the flip's LOWER edge
+  (`last_not_live_seen_at`), flips with `gap_seconds` ≤ 300 only (both edges and every gap reported beside). **Test:**
+  overlap n < 50 → no fill. trueStart later in ≤ 2% of matches AND never by > 2 min → cut at trueStart (`closeCut`
+  `trueStart`); else cut at trueStart − X min, X = the nearest-rank p98 of the later matches' d, rounded up to a whole
+  minute (`closeCut` `trueStart-buffer`, `bufferMin` X). Close = last active pinnacle+30 pair ≥ 1.01 at or before the cut,
+  both sides, `close_lag` (trueStart − close) ≤ 60 min, else a dash. Rows: `start_source` `oddspapi trueStart (fill rule
+  2026-10-25)` + `detail.closeCut` (+ `bufferMin`, `cutTs`) — that pair, and only that pair, exempts a row from the
+  start-alone hold-back (`pinarch.fill_cut`); a `derive-held` row stays held back. Only events with NO held close row
+  are filled (append-only; nothing superseded). Written only by `archive-fill-probe.yml` with `write=true` and the plan's
+  digest. **Test:** `tools/test-archive-fill-probe.py`.
 - **Our captured closes of 12 Jul – 16 Sep are held back — never shown as a close** (founder ruling 2026-10-17 item 1). The
   420 `captured` rows dated on or before 16 Sep were cut at Oddspapi's start alone (the plain-Pinnacle series was read every
   3 h from `/v4/historical-odds`; 298 of 408 closing prices first appeared after the start), the method held back for

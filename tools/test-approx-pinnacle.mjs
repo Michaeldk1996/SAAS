@@ -211,7 +211,7 @@ check('control: a store without snapshot rows paints the footnote as before', !/
 // the real builder on a synthetic feed: order Tennis-Data Pinnacle > archive close > snapshot > Bet365
 const d = mkdtempSync(join(tmpdir(), 'approx-'));
 mkdirSync(join(d, 'odds-archive'));
-for (const f of ['build-database-yield.js', 'build-odds-performance.js']) copyFileSync(join(ROOT, f), join(d, f));
+for (const f of ['build-database-yield.js', 'build-odds-performance.js', 'settlement.js']) copyFileSync(join(ROOT, f), join(d, f));
 const H26 = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl\n';
 writeFileSync(join(d, 'odds-archive', '2026.csv'), H26 + [
   '2026-01-13,Adelaide International,ATP250,Outdoor,Hard,1st Round,3,Pin P.,Ned N.,1,2,Completed,1.5,2.6,1.55,2.62',   // TD Pinnacle: kept

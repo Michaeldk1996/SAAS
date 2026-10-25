@@ -228,15 +228,16 @@ test('Q14: court speed — abstract 2 dp, the N4 category, the knob on the 0–1
   assert.doesNotMatch(h, /usual/);
   assert.doesNotMatch(S.kfTourCard(match({ courtSpeed: { abstractSpeed: 1.18, category: 'Fast' } })), /kf-knob/, 'no index: no knob, never a guess');
 });
-// Mutation: the ROI tiles ungated, or coloured by the delta instead of the sign.
+// Mutation: the ROI tiles ungated, or coloured by the delta instead of the sign. Fixture shape = build-tournament-market.js
+// (round 2 item 1.3): n = the ROI figure rows (settleBet), nRel = Fav wins' own n (matchWinner, retirements counted).
 test('Tournament: ROI fav / ROI dog / Fav wins = tournament-market.json, gated on n, "±x.xpp vs tour avg" (Q14)', () => {
   setup();
-  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 120, roiFav: -2.2, roiDog: 1.04, favRel: 69, archiveNames: ['Swiss Indoors'] } } };
+  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 120, roiFav: -2.2, roiDog: 1.04, favRel: 69, nRel: 124, archiveNames: ['Swiss Indoors'] } } };
   const h = S.kfTourCard(match({ courtSpeed: null }));
   assert.match(vis(h), /−2\.2% ROI fav in line with tour avg \+1\.0% ROI dog \+6\.0pp vs tour avg 69% Fav wins/);
   assert.match(h, /class="kf-roi-fav"[\s\S]*?color:var\(--neg\)/, 'a negative ROI is red');
   assert.match(h, /class="kf-roi-dog"[\s\S]*?color:var\(--pos\)/);
-  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 3, roiFav: 9, roiDog: 9, favRel: 90 } } };
+  S.market = { baseline: { roiFav: -3, roiDog: -5, favRel: 66 }, tournaments: { Basel: { n: 3, roiFav: 9, roiDog: 9, favRel: 90, nRel: 3 } } };
   assert.match(vis(S.kfTourCard(match())), /— ROI fav too few settled — ROI dog too few settled — Fav wins too few settled/, 'n = 3: no rate');
 });
 // Founder Q9: the event hold rate is the Tournament tab's own cell. Mutation: Key factors back on a count-less figure.

@@ -168,6 +168,11 @@ lines-field.json
 .dna-boxscores/
 # TEN-368: built by build-event-hold.js in pipeline.yml from boxscore-archive/, published, never committed
 event-hold.json
+# Round 2 item 2.2: built by build-favourites-by-round.js in pipeline.yml, published, never committed
+favourites-by-round.json
+# Round 2 item 2.1: built by build-how-it-plays.js in pipeline.yml (box scores + how-it-plays-history.json), published, never committed
+how-it-plays.json
+.howplays-mutant-*.js
 
 # Python bytecode (never committed)
 __pycache__/

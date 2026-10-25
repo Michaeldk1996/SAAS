@@ -605,6 +605,13 @@ jobs:
           node build-database-yield.js || { echo "build-database-yield failed" > .archive-failed; exit 1; }
           node tools/archive-gate.mjs --dir . --baseline-url https://michaeldk1996.github.io/SAAS/database-yield-master-meta.json
 
+      # Round 2 item 1.2 (founder 2026-10-25): a finished board card's Pinnacle close is the archive's close when the
+      # archive holds one, else the captured close stays. READ-ONLY toward the archive — it reads this run's export
+      # (pinnacle-closes.json) and rewrites matches.json only, atomically. Best-effort: a failure leaves the captured close.
+      - name: Board cards take the archive's Pinnacle close (best-effort)
+        run: |
+          node tools/apply-archive-pinclose.mjs --closes pinnacle-closes.json --matches matches.json || echo "::warning::apply-archive-pinclose failed — board cards keep the captured close"
+
       - name: Alert — the Pinnacle archive gate failed (Telegram)
         if: failure() && hashFiles('.archive-failed') != ''
         env:
@@ -642,11 +649,30 @@ jobs:
       # service games played from the committed box-score archive (boxscore-archive/),
       # all editions on file, n = service games. No network calls. Best-effort: a
       # failure leaves the Tournament tab's and Key factors' hold cells dashed.
+      # Round 2 item 2.2: favourites vs underdogs by round (cumulative) for the tournament page — current season, same-venue
+      # past editions and the ATP best-of-three hard baseline, priced from database-yield-master.json (the one master),
+      # winners by Settlement.matchWinner. No network calls. Best-effort: a failure dashes the block with its reason.
+      - name: Build favourites by round (best-effort)
+        run: |
+          t0=$(date +%s); rc=0
+          node build-favourites-by-round.js || rc=$?
+          node tools/step-check.mjs --step "Build favourites by round (best-effort)" --rc "$rc" --since "$t0" --fresh favourites-by-round.json
+
       - name: Build event hold rate (best-effort)
         run: |
           t0=$(date +%s); rc=0
           node build-event-hold.js || rc=$?
           node tools/step-check.mjs --step "Build event hold rate (best-effort)" --rc "$rc" --since "$t0" --fresh event-hold.json
+
+      # How it plays (round 2 item 2.1): per ATP hard event, hold / 1st / 2nd serve won, aces per match, tiebreaks per
+      # set with n, vs the 2016-2025 indoor/outdoor hard baseline. Reads the committed boxscore-archive/,
+      # how-it-plays-history.json (Sackmann sums), odds-archive/, and this run's tournament-surfaces.json,
+      # tournament-progression.json and matches.json. No network calls. Best-effort: a failure dashes the panel.
+      - name: Build how it plays (best-effort)
+        run: |
+          t0=$(date +%s); rc=0
+          node build-how-it-plays.js || rc=$?
+          node tools/step-check.mjs --step "Build how it plays (best-effort)" --rc "$rc" --since "$t0" --fresh how-it-plays.json
 
       # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
       # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
@@ -850,6 +876,9 @@ jobs:
           cp player-profile-v2.js _site/
           # TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). Not
           # copied = 404 => the tab renders nothing. Required; asserted below.
+          # Round 2 item 1.3 (founder 2026-10-25): the two retirement rules (window.Settlement). market-edge-core.js delegates
+          # to it and throws without it, so not copied = 404 => Market edge and the Database figures break. Required.
+          cp settlement.js _site/
           cp market-edge-core.js _site/
           # TEN-384 fx2: the canonical tournament identity table (window.TournamentIdentity). The page
           # merges a served tournament-history shard's same-event rows through it ("London" + "Queen's
@@ -1146,6 +1175,12 @@ jobs:
           # Event hold rate (TEN-368, built above). Fetched by the Match analysis Tournament
           # tab and Key factors; a missing file dashes the hold cells with the reason.
           cp event-hold.json _site/ 2>/dev/null || true
+          # Favourites vs underdogs by round (round 2 item 2.2, built above); a missing file dashes the block.
+          cp favourites-by-round.json _site/ 2>/dev/null || true
+          # How it plays (round 2 item 2.1, built above). A missing file dashes the panel.
+          cp how-it-plays.json _site/ 2>/dev/null || true
+          # Points to defend (round 2 item 2.3): committed by points-to-defend.yml twice a day; a missing file hides the block.
+          cp points-to-defend.json _site/ 2>/dev/null || true
           # TEN-263 match-close shards (built above). Lazily fetched per player by the
           # Match analysis Form/H2H tabs; a missing shard dashes the price cells.
           cp match-closes-index.json _site/ 2>/dev/null || true
@@ -1239,7 +1274,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js house-ratings.js line-prices.js \
-                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js \
+                   holdbreak-heatmap.js player-profile-v2.js settlement.js market-edge-core.js tournament-identity.js h2h-core.js wue-sheet.js draw-view.js \
                    esc-nav.js pbp-integrity.js \
                    matches.json player-profiles.json career-splits-tour.json form-index.json \
                    player-index.json \

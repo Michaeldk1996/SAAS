@@ -45,7 +45,7 @@ const EVIDENCE = { matches: [], retired: [
 function runBuilder(builderSrc, dbSrc = DB_BUILDER, evidence = EVIDENCE) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten325-'));
   if (evidence) fs.writeFileSync(path.join(dir, 'started-evidence.json'), JSON.stringify(evidence));
-  for (const f of ['build-odds-performance.js', 'market-edge-core.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
+  for (const f of ['build-odds-performance.js', 'settlement.js', 'market-edge-core.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(dir, f));
   fs.writeFileSync(path.join(dir, 'build-market-edge.js'), builderSrc);
   fs.writeFileSync(path.join(dir, 'build-database-yield.js'), dbSrc);
   fs.mkdirSync(path.join(dir, 'odds-archive'));
@@ -182,10 +182,11 @@ function controls() {
   // [name, from, to, which builder]: the population filter lives in the master's builder now (build-database-yield.js)
   const BM = [
     ['master: back to "Completed" only', "const RETIRED = new Set(['Retired', 'Rrtired']);", 'const RETIRED = new Set([]);', 'db'],
-    ['builder: typo row missed', "new Set(['retired', 'rrtired'])", "new Set(['retired'])", 'me'],
+    // founder 2026-10-25 (round 2 item 1.3): the builder reads settlement.js; the mutants break its calls into it
+    ['builder: typo row missed', "const isRetiredComment = (c) => Settlement.kindOf(c) === 'retired';", "const isRetiredComment = (c) => String(c || '').trim() === 'Retired';", 'me'],
     ['master: non-results let in', "else if (!RESULT_STANDS.has(comment) && !completedNonResult) { bucket.edge++; if (!startedNonResult) return; }", 'else if (false) { bucket.edge++; }', 'db'],
     ['builder: ret not stamped', 'ret: !!s.ret,', '', 'me'],
-    ['builder: void rows stay on the basis', "core.bandOf(side.price) >= 0 && core.retSettlement(side) !== 'void' &&", "core.bandOf(side.price) >= 0 && true &&", 'me'],
+    ['builder: void rows stay on the basis', "core.bandOf(side.price) >= 0 && Settlement.betCounts(side);", "core.bandOf(side.price) >= 0 && true;", 'me'],
   ];
   const HM = [
     ['Form: void retirements priced again', 'const priced = win.filter(r => r.price != null && fhSettles(r)), np', 'const priced = win.filter(r => r.price != null), np'],

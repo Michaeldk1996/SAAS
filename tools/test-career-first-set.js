@@ -58,7 +58,9 @@ function run(mod) {
 console.log('\nRuling 4 · item 1 · the first set from the players\' own career rows\n');
 const real = run(require(path.join(ROOT, 'build-market-edge.js')));
 for (const [label, , want] of CASES) ok(!real.some((b) => b.startsWith(label + ':')), `${label} → ${want}`);
-ok(/let fsv = retired \? \(retFs\.get[^\n]*\n\s*if \(retired && fsv === 'm'\) \{[^\n]*\n\s*fsv = careerFirstSet\(row, resolveAt, careerRowsOf\);/.test(SRC),
+// founder 2026-10-25 (round 2 item 1.3): the lookup is shared (firstSetLookup — Market edge and the Database read it)
+ok(/const fs0 = retFs\.get\([^\n]*\) \|\| 'm';\n\s*if \(fs0 !== 'm'\) return \{ fs: fs0, fromCareer: false \};[\s\S]{0,400}?const v = careerFirstSet\(row, resolveAt, rowsOf\);/.test(SRC) &&
+  /const fsHit = retired \? firstSet\.of\(row\) : null;/.test(SRC),
   'the builder consults it only where the evidence file had no answer (\'m\')');
 
 // CONTROL 1 · a fallback that ignores the two sides disagreeing settles the disagreement case
@@ -68,8 +70,8 @@ ok(noAgree !== SRC && run(load(noAgree)).length > 0, 'CONTROL 1 · a fallback th
 const exact = SRC.replace('sameSurname(c.surname, ok.surname)', 'c.surname === ok.surname');
 ok(exact !== SRC && run(load(exact)).length > 0, 'CONTROL 2 · exact-surname matching is caught (Del Potro J.M.)');
 // CONTROL 3 · the builder without the fallback: the call site is gone
-const noCall = SRC.replace("fsv = careerFirstSet(row, resolveAt, careerRowsOf);", "fsv = 'm';");
-ok(noCall !== SRC && !/fsv = careerFirstSet\(row, resolveAt, careerRowsOf\);/.test(noCall), 'CONTROL 3 · removing the call site is detected by the call-site check');
+const noCall = SRC.replace("const v = careerFirstSet(row, resolveAt, rowsOf);", "const v = 'm';");
+ok(noCall !== SRC && !/const v = careerFirstSet\(row, resolveAt, rowsOf\);/.test(noCall), 'CONTROL 3 · removing the call site is detected by the call-site check');
 
 console.log(`\ntest-career-first-set: ${pass} passed, ${fail} failed\n`);
 process.exit(fail ? 1 : 0);

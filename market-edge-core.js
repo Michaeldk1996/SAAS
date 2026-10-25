@@ -54,27 +54,18 @@
    *  profit (Market edge, Form, H2H, Tournament Backing, the profile ledger) prints this one line. */
   const RET_SETTLE_NOTE = 'Retirements settle on Pinnacle rules for all rows.';
 
-  /** The first set of a stored set list: 'complete' (6-0 … 6-4, 7-5, 7-6), 'incomplete' (anything short of that — 6-5,
-   *  and 6-6, a retirement during the first-set tiebreak) or 'missing' (no list, an empty list, a non-numeric game).
-   *  Takes every set shape the stores carry: [a, b], { p, o }, { a, b }, { w, l }. Order-free: completeness is symmetric. */
-  function firstSetState(sets) {
-    if (!Array.isArray(sets) || !sets.length || sets[0] == null) return 'missing';
-    const s = sets[0];
-    const a = Array.isArray(s) ? s[0] : s.p != null ? s.p : s.a != null ? s.a : s.w;
-    const b = Array.isArray(s) ? s[1] : s.o != null ? s.o : s.b != null ? s.b : s.l;
-    const x = Number(a), y = Number(b);
-    if (!Number.isFinite(x) || !Number.isFinite(y) || a === '' || b === '' || a == null || b == null) return 'missing';
-    const hi = Math.max(x, y), lo = Math.min(x, y);
-    return (hi === 6 && lo <= 4) || (hi === 7 && (lo === 5 || lo === 6)) ? 'complete' : 'incomplete';
-  }
-  /** A row's retirement settlement: null (not a retirement), 'stands' (first set completed), 'void' (not completed) or
-   *  'no-sets' (no stored set scores: no units, listed by name in the build report — never guessed). A precomputed
-   *  `fs` ('c' / 'i' / 'm', the Market edge shard's own) wins over the row's sets. */
+  /** Retirement settlement lives in settlement.js (founder ruling 2026-10-25, round 2 item 1.3: one module for the two
+   *  rules — settleBet, Pinnacle rules; matchWinner, the official result). This file delegates; it never re-derives.
+   *  firstSetState = Settlement.firstSetState. retSettlement keeps this file's contract: null (not a retirement — and a
+   *  walkover, which every caller here has already left out as 'walkover'), else Settlement.settleBet: 'stands' (first set
+   *  completed), 'void' (not completed) or 'no-sets' (no stored set scores: no units, never guessed). A precomputed `fs`
+   *  ('c' / 'i' / 'm', the Market edge shard's own) wins over the row's sets. */
+  const S = (typeof module !== 'undefined' && module.exports) ? require('./settlement.js') : root.Settlement;
+  if (!S || typeof S.settleBet !== 'function') throw new Error('market-edge-core.js: settlement.js (window.Settlement) must load first');
+  const firstSetState = S.firstSetState;
   function retSettlement(r) {
-    if (!r || r.wo || !(r.retSettle || r.retired || r.ret)) return null;
-    const st = r.fs === 'c' ? 'complete' : r.fs === 'i' ? 'incomplete' : r.fs === 'm' ? 'missing'
-      : firstSetState(r.sets || r.setGames || null);
-    return st === 'complete' ? 'stands' : st === 'incomplete' ? 'void' : 'no-sets';
+    if (!r || r.wo) return null;
+    return S.settleBet(r);
   }
 
   /** Flat 1u P&L of one row in integer cents (a decimal price is exact in cents). */

@@ -95,7 +95,7 @@ function build(root) {
   const files = fs.readdirSync(path.join(root, 'odds-archive')).filter(f => /^\d{4}\.csv$/.test(f)).sort();
   const out = [], retired = [];
   // ruling 4 (founder 2026-10-22): a retired row's first set, from the career rows that speak; they must agree
-  const { firstSetState } = require('../market-edge-core.js');
+  const { firstSetState } = require('../settlement.js');   // the one first-set rule (founder 2026-10-25)
   const fsOf = (...looks) => {
     const st = looks.filter((x) => x && x.row).map((x) => firstSetState(x.row.sets)).filter((s) => s !== 'missing');
     if (!st.length || st.some((s) => s !== st[0])) return 'm';

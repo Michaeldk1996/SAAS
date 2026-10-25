@@ -429,3 +429,13 @@ Only 0 lets you push. Codes 4 and 5 (TEN-261) are retired; no path returns them.
 
 Change the numbers only on a founder ruling, in the tool and here together. Tests:
 `test-ten261-deploy-lane.mjs`, `test-ten273-deploy-batch.mjs`, `tools/test-ten273-lane-alert.js`.
+
+## Archive gate exceptions (founder 2026-10-25)
+- **A deliberate row removal lands with its gate exception in the SAME push.** Before landing anything that lowers
+  `masterRows` / `exportEvents` / `feedRows` / `approxRows` / `xRows`, measure the new count and commit
+  `node tools/archive-gate.mjs accept --key <k> --expect <n> --reason "…"` with the change. **Test:** is there a code
+  change that drops a gate count without an `archive-gate-accept.json` entry in the same commit range? Then it is wrong.
+  (fbe32022f dropped feedRows 298 → 286 without one and every pipeline run failed for ~3.5 h.)
+- **Bot data paths:** `line-prices/*.json` and `.ten225-fixture-index.json.gz` are data (`DATA_DIRS` / `DATA_FILES`),
+  so their 15-min / daily bot commits never make a claim "not rebased".
+

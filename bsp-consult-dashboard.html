@@ -18329,7 +18329,7 @@ function kfTourCard(m){
   };
   const relHas = rateOk && mk.favRel != null && mk.baseline && mk.baseline.favRel != null;
   const fav = tile('kf-favwins', relHas ? mk.favRel + '%' : FH_DASHC, !relHas ? C.t3 : g === 'small' ? MA_GREY : C.text, 'Fav wins',
-    relHas ? `<span tabindex="0" data-aotip="${escapeHtml(fhEsc(`Favourites win ${mk.favRel}% of matches here (n = ${mk.n}) versus ${mk.baseline.favRel}% across the tour (the tick).`))}" style="position:relative; display:block; height:3px; margin-top:3px; border-radius:3px; background:${C.track};"><span style="display:block; height:3px; width:${Math.max(0, Math.min(100, mk.favRel))}%; border-radius:3px; background:${g === 'small' ? MA_GREY : C.white};"></span><span style="position:absolute; top:-2px; bottom:-2px; left:${Math.max(0, Math.min(100, mk.baseline.favRel))}%; width:1px; background:${C.tick};"></span></span>`
+    relHas ? `<span tabindex="0" data-aotip="${escapeHtml(fhEsc(`Favourites win ${mk.favRel}% of matches here (n = ${mk.nRel != null ? mk.nRel : mk.n}) versus ${mk.baseline.favRel}% across the tour (the tick).`))}" style="position:relative; display:block; height:3px; margin-top:3px; border-radius:3px; background:${C.track};"><span style="display:block; height:3px; width:${Math.max(0, Math.min(100, mk.favRel))}%; border-radius:3px; background:${g === 'small' ? MA_GREY : C.white};"></span><span style="position:absolute; top:-2px; bottom:-2px; left:${Math.max(0, Math.min(100, mk.baseline.favRel))}%; width:1px; background:${C.tick};"></span></span>`
       : `<span style="font-size:10.5px; color:${C.t3};">${fhEsc(pending ? 'loading' : mk ? 'too few settled' : 'no settled prices')}</span>`);
   const tiles = `<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px;">${roi('kf-roi-fav', 'ROI fav', mk && mk.roiFav, mk && mk.baseline && mk.baseline.roiFav)}${roi('kf-roi-dog', 'ROI dog', mk && mk.roiDog, mk && mk.baseline && mk.baseline.roiDog)}${fav}</div>`;
   // Record here: the Tournament tab's model over the pipeline history (no shards needed: W–L, best, sets are the history's)
@@ -23450,7 +23450,11 @@ const TOURNAMENT_CATALOG = [
   { name: 'Bucharest', category: 'ATP 250', surface: 'clay', indoor: false, country: 'RO' },
   { name: 'Estoril', category: 'ATP 250', surface: 'clay', indoor: false, country: 'PT' },
   { name: 'Geneva', category: 'ATP 250', surface: 'clay', indoor: false, country: 'CH' },
-  { name: 'Lyon', category: 'ATP 250', surface: 'clay', indoor: false, country: 'FR' },
+  { name: 'Lyon', category: 'ATP 250', surface: 'clay', indoor: false, country: 'FR', pointsKey: null },   // no 2026 edition: points-to-defend's lyon-* is the October event
+  // Round 2 item 1.1 (founder 2026-10-25): Lyon October 2026 — a new event (api-tennis 14763, Hard (Indoor)), no lineage
+  // to the clay Lyon above; Brussels — the European Open since 2025 (its own editions, never Antwerp's).
+  { name: 'Lyon (France)', category: 'ATP 250', surface: 'hard', indoor: true, country: 'FR', tournamentKeys: ['14763'], firstEdition: 2026, pointsKey: 'lyon' },
+  { name: 'Brussels', category: 'ATP 250', surface: 'hard', indoor: true, country: 'BE', tournamentKeys: ['3669'] },
   { name: 'Gstaad', category: 'ATP 250', surface: 'clay', indoor: false, country: 'CH' },
   { name: 'Bastad', category: 'ATP 250', surface: 'clay', indoor: false, country: 'SE' },
   { name: 'Newport', category: 'ATP 250', surface: 'grass', indoor: false, country: 'US' },
@@ -23477,7 +23481,7 @@ const TOURNAMENT_CATALOG = [
 // city, but Wimbledon = London where the hint holds the geocoding suburb); the country is the catalog's ISO code in English (Intl), the UK / USA / UAE
 // in their short forms; a country whose name starts with the city (Hong Kong) prints the city alone. Not in the catalog
 // → null (callers print "—").
-const TOURNAMENT_CITY = { 'Australian Open': 'Melbourne', 'French Open': 'Paris', 'Roland Garros': 'Paris', 'Wimbledon': 'London', 'US Open': 'New York' };
+const TOURNAMENT_CITY = { 'Lyon (France)': 'Lyon', 'Australian Open': 'Melbourne', 'French Open': 'Paris', 'Roland Garros': 'Paris', 'Wimbledon': 'London', 'US Open': 'New York' };
 const TOURNAMENT_COUNTRY_SHORT = { GB: 'UK', US: 'USA', AE: 'UAE' };
 function tournamentLocation(cat){
   if (!cat || !cat.name) return null;
@@ -25277,14 +25281,15 @@ function tourxRevealRailSel(){
 function tourxOverviewListHtml(){
   // README §1.1 - search, then two groups: "This week" then "Season". The export
   // has no scope toggle; both groups always render and search filters both.
-  const reg = tourxConditionRegistry();
+  const reg = tpPageEvents();   // round 2: every catalog event (court speed no longer decides who is listed)
   const q = tourxState.tsQ.trim().toLowerCase();
   // §1.1: "Search filters both groups by case-insensitive substring on the NAME" — TEN-402 r2: the printed name, the
   // official name, the city key or another catalog spelling (tourxEventSearchText).
   const match = t => !q || (typeof tourxEventSearchText === 'function' ? tourxEventSearchText(t.name) : t.name.toLowerCase()).includes(q);
   const weekNames = tourxActiveWeekNames();
-  const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
-  const season = reg.filter(t => !weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
+  const byLabel = (a, b) => tpEventLabel(a.name).localeCompare(tpEventLabel(b.name));
+  const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort(byLabel);
+  const season = reg.filter(t => !weekNames.has(t.name) && match(t)).sort(byLabel);
   const row = t => {
     const seld = t.name === tourxState.tsSel;
     // TEN-401 ticket item 3: the selected row is the selected tile (.tourx-ovrow.on — --selected + inset 16% ring,
@@ -25302,7 +25307,6 @@ function tourxOverviewListHtml(){
     return `<div class="tourx-ovrow${seld ? ' on' : ''}" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;cursor:pointer;">
         <span style="min-width:42px;height:22px;padding:0 7px;border-radius:6px;background:${chipBg};border:none;color:var(--text-label);${chipFont}font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex:none;">${code}</span>
         <span style="flex:1;min-width:0;font-size:13.5px;font-weight:${seld ? 600 : 700};color:var(--text);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.3;">${typeof tourxEventName === 'function' ? tourxEventName(t.name) : t.name}</span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;color:var(--text);flex:none;">${t.abstractSpeed.toFixed(2)}</span>
       </div>`;
   };
   // Search = control (ticket item 3): --inner, no edge; focus lifts to --edge-16 (.tourx-search:focus-within).
@@ -25318,7 +25322,7 @@ function tourxOverviewListHtml(){
     // two empty headings read as a rendering failure, not as "no results".
     body = q
       ? `<div style="padding:16px 8px;font-size:12.5px;color:var(--text-label);">No tournament matches “${tourxState.tsQ}”.</div>`
-      : `<div style="padding:16px 8px;font-size:12.5px;color:var(--text-label);">No rated tournaments to show.</div>`;
+      : `<div style="padding:16px 8px;font-size:12.5px;color:var(--text-label);">No tournaments to show.</div>`;
   } else {
     // A4 (founder, phase 2): a heading with nothing under it is noise. "This
     // week" is empty for most of the calendar — between events, and all of the
@@ -25337,7 +25341,6 @@ function tourxConditionsPanelHtml(){
   const c = tourxResolveCondition(tourxState.tsSel);
   if (!c) return `<div style="padding:40px 26px;color:var(--text-label);font-size:14px;">Select a tournament to view its conditions.</div>`;
   const MONO = "'IBM Plex Mono',monospace";
-  const as = c.abstractSpeed;
   const EY = `font-family:var(--font-words); font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);`;
   const CARD = `background:var(--card);border:1px solid var(--edge-6);`;
 
@@ -25348,33 +25351,7 @@ function tourxConditionsPanelHtml(){
     ? `<span style="font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);background:var(--inner);border:1px solid transparent;border-radius:6px;padding:3px 10px;">Completed</span>` : '';
   const title = `<div>
       <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;"><span style="font-size:29px;font-weight:800;letter-spacing:-0.015em;color:var(--text);">${typeof tourxEventName === 'function' ? tourxEventName(c.name) : c.name}</span>${badge}</div>
-      <div style="font-size:13px;color:var(--text-label);margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court</div>
-    </div>`;
-
-  // ---- court-speed hero (§1.2) -------------------------------------------
-  // FOUNDER RULING 2026-09-19: the band word is courtSpeedCategory()'s, not the
-  // README's four bands. c.speedCat IS that function's output, and the Conditions
-  // read below is generated from the same value - one function, one word. The
-  // README's ">=1.10 Fast / >=0.95 Medium / >=0.82 Medium-slow" is overruled; it
-  // disagreed with courtSpeedCategory() on 4 of 64 venues and with the word we
-  // shipped on 12 of 64, which would have printed "Medium" over a paragraph
-  // describing a fast court at the Australian Open.
-  const bandWord = c.speedCat || '—';
-  // §1.2 knob, rescaled to the observed range per the founder's ruling —
-  // see tourxKnobPct(). The registry is the same one the rank line uses.
-  const knob = tourxKnobPct(as, tourxConditionRegistry().map(t => t.abstractSpeed));
-  const hero = `<div>
-      <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">
-        <span style="font-family:${MONO};font-size:52px;font-weight:700;line-height:0.9;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:var(--text);">${as.toFixed(2)}</span>
-        <span style="font-size:13px;color:var(--text-label);">abstract court speed · <span style="color:var(--text);font-weight:600;">${bandWord}</span></span>
-      </div>
-      <!-- TEN-401 ticket item 4 (override, closes the step-1 court-speed scale item): an 8px track at 6% white, no
-           gradient; a white knob with a 3px card-tone ring and nothing else. -->
-      <div onclick="tourxOpenSpeedPanel()" title="Compare every rated event" style="position:relative;margin-top:18px;height:8px;border-radius:5px;background:var(--track);cursor:pointer;">
-        <span style="position:absolute;top:50%;left:${knob}%;width:16px;height:16px;border-radius:50%;background:var(--text);border:3px solid var(--card);transform:translate(-50%,-50%);"></span>
-      </div>
-      <div style="margin-top:9px;display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:0.10em;text-transform:uppercase; font-weight:700;color:var(--text-label);"><span>Slow</span><span>Medium</span><span>Fast</span></div>
-      ${tourxRankLineHtml(as)}
+      <div style="font-size:13px;color:var(--text-label);margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court${c.indoor === true ? ' · Indoor' : c.indoor === false ? ' · Outdoor' : ''}</div>
     </div>`;
 
   // ---- three condition tiles (§1.2) --------------------------------------
@@ -25384,14 +25361,6 @@ function tourxConditionsPanelHtml(){
   const tile = (label, val) => `<div style="${CARD}border-radius:11px;padding:15px 16px;"><div style="${EY}">${label}</div><div style="font-family:${MONO};font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:${val == null ? 'var(--text-label)' : 'var(--text)'};margin-top:10px;">${val == null ? '—' : val}</div></div>`;
   const tiles = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;${CARD}border-radius:12px;padding:14px;">
       ${tile('Altitude', c.altitude != null ? c.altitude + ' m' : null)}
-      ${tile('1st serve point won', c.firstServeWon != null ? c.firstServeWon + '%' : null)}
-      ${tile('Service hold', c.serviceHold != null ? c.serviceHold + '%' : null)}
-    </div>`;
-
-  // ---- conditions read (§1.2) --------------------------------------------
-  const read = `<div style="${CARD}border-radius:12px;padding:16px 18px;">
-      <div style="${EY}margin-bottom:11px;">Conditions read</div>
-      <p style="margin:0;font-size:13.5px;line-height:1.7;color:var(--text);text-wrap:pretty;">${tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
     </div>`;
 
   // README §1.2 "What players say" sits between the conditions read and the
@@ -25402,7 +25371,7 @@ function tourxConditionsPanelHtml(){
   // spacer to remove.
 
   return `<div style="display:flex;flex-direction:column;gap:16px;min-width:0;padding-left:24px;">
-      ${title}${hero}${tiles}${read}${tourxQuotesCardHtml(c)}${tourxSpeedSeriesHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
+      ${title}${tpPointsDefendHtml(c)}${tpHowItPlaysHtml(c)}${tpFavDogHtml(c)}${tiles}${tourxQuotesCardHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
     </div>`;
 }
 
@@ -25728,7 +25697,7 @@ function tourxReportCtaHtml(c){
 }
 // Join conditions + catalog + this-week status + defending champion for one name.
 function tourxResolveCondition(name){
-  const c = tourxConditionRegistry().find(t => t.name === name);
+  const c = tpPageEvents().find(t => t.name === name);   // round 2: every catalog event
   if (!c) return null;
   const wk = tourxWeeklyTiles().find(t => t.name === name) || null;
   const prof = (tournamentProfiles && tournamentProfiles[name]) || null;
@@ -25786,15 +25755,232 @@ function tourxSelectCondition(name){
 
 // Build one tile per tournament present in the current match feed (this
 // week), reading the courtSpeed/venue fields embedded on each match.
+// ===== Tournament page (round 2, founder 2026-10-25) ===================================================================
+// The page lists EVERY catalog event (TOURNAMENT_CATALOG), with the court-conditions sheet's fields merged where a row
+// exists — the Tennis Abstract reading stays in the data but the page no longer prints it (no court speed on tournament
+// pages). tourxConditionRegistry() is unchanged for the rest of the site.
+function tpPageEvents(){
+  // One row per printed event: two catalog spellings of one event (French Open / Roland Garros) list once — the entry
+  // with a court-conditions row first, so its data rides along.
+  const seen = new Set(), out = [];
+  TOURNAMENT_CATALOG.map((t, i) => ({ t, i, rated: COURT_CONDITIONS[t.name] ? 0 : 1 })).sort((a, b) => a.rated - b.rated || a.i - b.i).forEach(({ t }) => {
+    const l = tpEventLabel(t.name);
+    if (seen.has(l)) return;
+    seen.add(l); out.push(Object.assign({}, COURT_CONDITIONS[t.name] || {}, t));
+  });
+  return out;
+}
+function tpEventLabel(name){ return typeof tourxEventName === 'function' ? tourxEventName(name) : name; }
+// A card's event: the catalog entry that lists the card's own api-tennis tournament key (Lyon 2026 = 14763 → 'Lyon
+// (France)', never the clay 'Lyon'), else the venue city as before. null when neither resolves.
+function tpEventOfCard(m){
+  const k = m && m.tournamentKey != null ? String(m.tournamentKey) : null;
+  if (k) { const hit = TOURNAMENT_CATALOG.find(t => Array.isArray(t.tournamentKeys) && t.tournamentKeys.includes(k)); if (hit) return hit.name; }
+  const v = m && m.venue;
+  return v && v.city ? v.city : null;
+}
+// One loader for the page's published files: undefined = not asked, null = failed / absent (the block says so), else
+// the parsed file. A finished load repaints the Overview.
+const _tpData = {}, _tpLoad = {};
+function tpData(file){
+  if (_tpData[file] !== undefined) return _tpData[file];
+  if (!_tpLoad[file] && typeof fetch === 'function') {
+    _tpLoad[file] = fetch('./' + file, { cache: 'no-cache' }).then(r => (r.ok ? r.json() : null)).catch(() => null).then(d => {
+      _tpData[file] = d || null; _tpLoad[file] = null;
+      try { if (typeof renderTourxOverview === 'function' && document.getElementById('tourxOverview')) renderTourxOverview(); } catch (e) { /* not on the page */ }
+      return d;
+    });
+  }
+  return undefined;
+}
+const TP_SAMPLE_FLOOR = 15;   // founder default 2026-10-25: below 15 matches a % is a dash with its count (one line to change)
+const tpPct = (k, n, floor) => (n >= (floor == null ? TP_SAMPLE_FLOOR : floor) && n > 0 ? Math.round(100 * k / n) + '%' : '—');
+
+// Round 2 item 2.3 — Points to defend (points-to-defend.json, tools/points-to-defend/, refreshed twice a day): last year's
+// points at this event per player — order, IOC code, player, live rank (api-tennis standings), result badge, points
+// (bar = points), and this year's status. A lucky loser shows his main-draw points only (the qualifying part is a dash
+// until the ATP rule is confirmed), an "LL" badge; an inferred withdrawal says so. Lyon (France) = first edition.
+const TP_PTS_SHOW = 8;   // rows before "Show all"
+function tpPointsKey(c, year){
+  const base = Object.prototype.hasOwnProperty.call(c, 'pointsKey') ? c.pointsKey : String(c.name).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return base ? `${base}-${year}` : null;
+}
+function tpPointsDefendHtml(c){
+  const d = tpData('points-to-defend.json');
+  const EY = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+  const MONO = "font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;";
+  const fmtDay = iso => { const x = new Date(iso + 'T00:00:00Z'); return isNaN(x) ? iso : x.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' }); };
+  const shell = (right, body) => `<div class="tp-block tp-points" style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:16px 18px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <span style="${EY}">Last year's points here</span>${right ? `<span style="font-size:12px;color:var(--text-label);">${right}</span>` : ''}</div>${body}</div>`;
+  if (d === undefined) return shell('', `<div style="font-size:12.5px;color:var(--text-label);">Loading…</div>`);
+  if (!d || !d.events) return shell('', `<div style="font-size:12.5px;color:var(--text-label);">The points file did not load, so this block is not shown.</div>`);
+  const year = String(d.asOf || '').slice(0, 4) || String(new Date().getUTCFullYear());
+  const k = tpPointsKey(c, year), key = k && d.index ? (d.index[k] || null) : null, e = key ? d.events[key] : null;
+  if (!e) return '';                                       // no 2026 edition on file for this event: no block
+  if (e.firstEdition || e.state === 'first-edition') return shell('', `<div style="font-size:13px;color:var(--text);">First edition — no points to defend here.</div>`);
+  if (e.nonRound || e.state === 'non-round') return shell('', `<div style="font-size:12.5px;color:var(--text-label);">— No round-by-round ranking points at this event.</div>`);
+  if (e.state !== 'ok' || !Array.isArray(e.rows) || !e.rows.length) return shell('', `<div style="font-size:12.5px;color:var(--text-label);">— ${e.state === 'fetch-failed' ? 'Last year\'s results could not be read.' : 'No points to defend found for this event.'}</div>`);
+  const today = new Date().toISOString().slice(0, 10);
+  const right = e.dropDate ? `Points ${e.dropDate <= today ? 'dropped' : 'drop'} ${fmtDay(e.dropDate)}` : '';
+  const all = !!(tourxState && tourxState.tpPtsAll === key);
+  const rows = all ? e.rows : e.rows.slice(0, TP_PTS_SHOW);
+  const max = Math.max(...e.rows.map(r => r.points || 0), 1);
+  const ioc = n => (typeof window !== 'undefined' && window.SfCountryIoc && n) ? (window.SfCountryIoc.of(n) || '—') : '—';
+  const chip = (t, tip) => `<span${tip ? ` title="${tourxRpEsc(tip)}"` : ''} style="font-family:var(--font-words);font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--text-label);background:var(--inner);border-radius:6px;padding:3px 7px;white-space:nowrap;">${t}</span>`;
+  const statusTip = r => r.status === 'Withdrew' && r.statusInferred ? 'On the entry list, not in the draw' + (r.withdrawalReason ? ` (${r.withdrawalReason})` : '')
+    : r.status === 'Withdrew' ? `Withdrew per the draw sheet${r.withdrawalReason ? ` (${r.withdrawalReason})` : ''}` : r.status === 'Not entered' ? 'Not on this year\'s entry list or draw' : r.status === 'Playing' ? 'In this year\'s draw' : '';
+  const line = r => {
+    const pts = r.points == null ? '—' : r.points;
+    const ptsTip = r.ll ? `Main draw ${r.mainPoints == null ? '—' : r.mainPoints} · qualifying — (lucky loser: the ATP rule for his qualifying points is not confirmed)`
+      : `Main draw ${r.mainPoints == null ? '—' : r.mainPoints} · qualifying ${r.qualifyingPoints == null ? '—' : r.qualifyingPoints}${r.qualRound ? ` (${r.qualRound})` : ''}`;
+    return `<div style="position:relative;display:grid;grid-template-columns:24px 34px minmax(0,1fr) auto auto 44px;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;background:var(--inner);overflow:hidden;">
+        <span style="position:absolute;left:0;top:0;bottom:0;width:${r.points ? Math.max(2, r.points / max * 100) : 0}%;background:color-mix(in srgb, var(--bar) 18%, transparent);"></span>
+        <span style="position:relative;${MONO}font-size:11px;color:var(--text-label);">${r.order}</span>
+        <span style="position:relative;${MONO}font-size:10.5px;font-weight:600;color:var(--text-label);">${ioc(r.country)}</span>
+        <span style="position:relative;font-size:13px;font-weight:600;color:var(--text);">${tourxRpEsc(r.name || r.apiName || '—')} <span style="${MONO}font-size:11px;font-weight:500;color:var(--text-label);">${r.rank != null ? '#' + r.rank : '—'}</span></span>
+        <span style="position:relative;display:inline-flex;gap:5px;">${r.status ? chip(r.status, statusTip(r)) : ''}</span>
+        <span style="position:relative;display:inline-flex;gap:5px;">${chip(r.resultBadge || r.result || '—')}${r.ll ? chip('LL', 'Lucky loser') : ''}</span>
+        <span title="${tourxRpEsc(ptsTip)}" style="position:relative;${MONO}font-size:14px;font-weight:700;color:var(--text);text-align:right;">${pts}</span>
+      </div>`;
+  };
+  const more = e.rows.length > TP_PTS_SHOW
+    ? `<div style="text-align:center;margin-top:10px;"><span class="tx-seg" onclick="tourxState.tpPtsAll=${all ? 'null' : `'${tourxEsc(key)}'`};renderTourxOverview();" style="font-size:12px;padding:7px 14px;font-family:'Hanken Grotesk',sans-serif;cursor:pointer;">${all ? 'Show fewer' : `Show all ${e.rows.length}`}</span></div>` : '';
+  const foot = `Main-draw plus qualifying points this player earned here last year (${e.prior && e.prior.season ? e.prior.season : '—'}). Rank: live ATP standings. Status from this year's draw; a "Withdrew" not on the draw sheet is inferred (on the entry list, not in the draw) — hover it.`;
+  return shell(right, `<div style="display:flex;flex-direction:column;gap:6px;">${rows.map(line).join('')}</div>${more}
+      <div style="font-size:11.5px;line-height:1.6;color:var(--text-label);margin-top:10px;">${foot}</div>`);
+}
+
+// Round 2 item 2.1 — How it plays (how-it-plays.json, build-how-it-plays.js): this event's main draw over its own past
+// editions (same venue) against the ATP best-of-three hard baseline on the event's court, plus this year once it reaches
+// the floor. Five metrics, every figure with its n (and num / den in the tooltip); below the floor a dash with the count.
+// No court speed, no verdict words. Bars: this event = --bar (whose number: the event), the tour = --track.
+const TP_HIP_METRICS = [
+  ['hold', 'Service games held', v => (100 * v).toFixed(1) + '%', 'service games'],
+  ['firstServeWon', '1st serve points won', v => (100 * v).toFixed(1) + '%', '1st-serve points'],
+  ['secondServeWon', '2nd serve points won', v => (100 * v).toFixed(1) + '%', '2nd-serve points'],
+  ['acesPerMatch', 'Aces per match', v => v.toFixed(1), 'matches'],
+  ['tiebreaksPerSet', 'Tiebreaks per set', v => v.toFixed(2), 'sets'],
+];
+// The event's key in how-it-plays.json (api-tennis tournament_key): the catalog's own keys first, else a unique name match.
+function tpHipEventOf(d, c){
+  if (!d || !d.events) return null;
+  for (const k of (c.tournamentKeys || [])) if (d.events[k]) return d.events[k];
+  const clean = n => String(n || '').replace(/^ATP\s+/i, '').replace(/\s*-\s*Qualification$/i, '').trim().toLowerCase();
+  const hits = Object.values(d.events).filter(e => clean(e.name) === String(c.name).toLowerCase());
+  return hits.length === 1 ? hits[0] : null;
+}
+function tpHowItPlaysHtml(c){
+  const d = tpData('how-it-plays.json');
+  const EY = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+  const MONO = "font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;";
+  const shell = (sub, body) => `<div class="tp-block tp-hip" style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:16px 18px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+        <span style="${EY}">How it plays</span>${sub ? `<span style="font-size:12px;color:var(--text-label);">${sub}</span>` : ''}</div>${body}</div>`;
+  if (d === undefined) return shell('', `<div style="font-size:12.5px;color:var(--text-label);">Loading…</div>`);
+  if (!d || !d.events) return shell('', `<div style="font-size:12.5px;color:var(--text-label);">The how-it-plays file did not load, so this block is not shown.</div>`);
+  const floor = d.floor || TP_SAMPLE_FLOOR;
+  const e = tpHipEventOf(d, c);
+  if (!e || String(e.surface || 'hard') !== 'hard' || String(c.surface).toLowerCase() !== 'hard') {
+    return shell('', `<div style="font-size:12.5px;color:var(--text-label);">${String(c.surface).toLowerCase() !== 'hard' ? 'Built for hard-court events so far — no figures for this surface yet.' : 'No main-draw box scores on file for this event yet.'}</div>`);
+  }
+  const base = e.baseline && d.baseline ? d.baseline[e.baseline] : null;
+  const courtWord = e.indoor === true ? 'indoor' : e.indoor === false ? 'outdoor' : '';
+  const yrs = sl => (sl && sl.years && sl.years.length ? (sl.years.length > 1 ? `${sl.years[0]}–${sl.years[sl.years.length - 1]}` : String(sl.years[0])) : '');
+  const past = e.past, cur = e.current;
+  const sub = (past ? `Main draw, ${yrs(past)}, ${past.n} match${past.n === 1 ? '' : 'es'}` : (c.firstEdition ? 'First edition — no past edition' : 'No past edition on file'))
+    + (base ? ` · compared with ATP ${courtWord} hard, best-of-three` : '');
+  const val = (sl, key) => (sl && sl.metrics && sl.metrics[key]) || null;
+  const shown = (m, n, fmt) => (m && m.value != null && n >= floor ? fmt(m.value) : '—');
+  const tile = ([key, label, fmt, unit]) => {
+    const pm = val(past, key), bm = val(base, key), cm = val(cur, key);
+    const pn = pm ? pm.n : 0, bn = bm ? bm.n : 0, cn = cm ? cm.n : 0;
+    const pv = pm && pm.value != null && pn >= floor ? pm.value : null, bv = bm && bm.value != null && bn >= floor ? bm.value : null;
+    const hi = Math.max(pv || 0, bv || 0) || 1;
+    const bar = (v, col) => `<div style="height:5px;border-radius:4px;background:var(--track);overflow:hidden;margin-top:6px;"><span style="display:block;height:100%;width:${v == null ? 0 : Math.max(2, v / hi * 100)}%;background:${col};border-radius:4px;"></span></div>`;
+    const tipOf = (lbl, m, n) => m ? `${lbl}: ${m.value == null ? '—' : fmt(m.value)} (${m.num} / ${m.den} ${unit}; ${n} match${n === 1 ? '' : 'es'})${n < floor ? ` — fewer than ${floor} matches, shown as —` : ''}` : `${lbl}: no data`;
+    const excl = (past && past.excludedPartial) || 0;
+    const tip = [tipOf('This event', pm, pn), tipOf('ATP tour', bm, bn), cm ? tipOf(`${cur.years ? yrs(cur) : 'This year'} so far`, cm, cn) : null,
+      excl ? `${excl} match${excl === 1 ? '' : 'es'} left out: partial box score` : null].filter(Boolean).join(' · ');
+    return `<div title="${tourxRpEsc(tip)}" style="background:var(--inner);border-radius:10px;padding:12px 13px;min-width:0;">
+        <div style="font-size:12.5px;font-weight:600;color:var(--text);">${label}</div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:8px;font-size:11px;color:var(--text-label);">
+          <span>This event${pm && pn < floor ? ` · n ${pn}` : ''}</span><span style="${MONO}font-size:14px;font-weight:700;color:${pv == null ? 'var(--text-label)' : 'var(--text)'};">${shown(pm, pn, fmt)}</span></div>
+        ${bar(pv, 'var(--bar)')}
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;font-size:11px;color:var(--text-label);">
+          <span>ATP tour</span><span style="${MONO}font-size:12px;font-weight:600;">${shown(bm, bn, fmt)}</span></div>
+        ${bar(bv, 'var(--text-label)')}
+        ${cm ? `<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:7px;font-size:11px;color:var(--text-label);"><span>This year so far · n ${cn}</span><span style="${MONO}font-size:12px;font-weight:600;color:${cn >= floor ? 'var(--text)' : 'var(--text-label)'};">${shown(cm, cn, fmt)}</span></div>` : ''}
+      </div>`;
+  };
+  const foot = `Our own box scores (2025 on) and Sackmann match stats (2016–24), main draw. A figure shows from ${floor} matches; below that it is — with its count. Hover a tile for every n.`;
+  return shell(sub, `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;">${TP_HIP_METRICS.map(tile).join('')}</div>
+      <div style="font-size:11.5px;line-height:1.6;color:var(--text-label);margin-top:10px;">${foot}</div>`);
+}
+
+// Round 2 item 2.2 — Favourites vs underdogs by round, cumulative (favourites-by-round.json, build-favourites-by-round.js).
+// Favourite = the shorter Pinnacle close (one master price); winner = Settlement.matchWinner (official result,
+// retirements count, walkovers out). Three columns: this event this season · its past editions (same venue) · the ATP
+// best-of-three hard baseline on the event's own court. Counts always; a % only at n ≥ the floor. Tone only — a
+// favourite's win is not "better" than an underdog's (no green / red).
+function tpFavDogHtml(c){
+  const d = tpData('favourites-by-round.json');
+  const EY = 'font-family:var(--font-words);font-size:10.5px;font-weight:700;letter-spacing:0.10em;text-transform:uppercase;color:var(--text-label);';
+  const MONO = "font-family:'IBM Plex Mono',monospace;font-variant-numeric:tabular-nums;";
+  const shell = (body) => `<div class="tp-block tp-favdog" style="background:var(--card);border:1px solid var(--edge-6);border-radius:12px;padding:16px 18px;">
+      <div style="${EY}margin-bottom:12px;">Favourites vs underdogs · by round</div>${body}</div>`;
+  if (d === undefined) return shell(`<div style="font-size:12.5px;color:var(--text-label);">Loading…</div>`);
+  if (!d || !d.events) return shell(`<div style="font-size:12.5px;color:var(--text-label);">The favourites file did not load, so this block is not shown.</div>`);
+  const e = d.events[c.name] || null, floor = d.floor || TP_SAMPLE_FLOOR;
+  const base = e && e.court && d.baseline ? d.baseline[e.court] : null;
+  const cur = e && e.current, past = e && e.past;
+  const ladder = (cur && cur.rows) || (past && past.rows) || [];
+  if (!ladder.length) return shell(`<div style="font-size:12.5px;color:var(--text-label);">${c.firstEdition ? 'First edition — ' : ''}no priced match on file for this event yet, so there is nothing to compare.</div>`);
+  const pick = (scope, through) => (scope && scope.rows ? scope.rows.find(r => r.through === through) || null : null);
+  const cell = r => {
+    if (!r || !(r.n > 0)) return `<td style="padding:7px 8px;${MONO}font-size:12px;color:var(--text-label);text-align:right;">—</td>`;
+    const tip = `${r.fav} of ${r.n} won by the favourite, ${r.dog} of ${r.n} by the underdog`
+      + (r.n < floor ? ` · fewer than ${floor} matches: % not shown` : '') + (r.retirements ? ` · ${r.retirements} retirement${r.retirements === 1 ? '' : 's'} (official result)` : '')
+      + (r.b365 ? ` · ${r.b365} priced on the Bet365 close (B)` : '');
+    return `<td title="${tourxRpEsc(tip)}" style="padding:7px 8px;${MONO}font-size:12px;color:var(--text);text-align:right;white-space:nowrap;">
+        <div>Fav ${r.fav} · ${tpPct(r.fav, r.n, floor)}</div><div style="color:var(--text-label);">Dog ${r.dog} · ${tpPct(r.dog, r.n, floor)}</div>
+        <div style="color:var(--text-label);font-size:11px;">of ${r.n}${r.b365 ? ' · B' : ''}</div></td>`;
+  };
+  const yr = cur ? String(cur.year) : String(new Date().getFullYear());
+  const pastYears = past && past.years && past.years.length ? (past.years.length > 1 ? `${past.years[0]}–${past.years[past.years.length - 1]}` : String(past.years[0])) : '';
+  const head = (t, sub) => `<th style="${EY}padding:0 8px 8px;text-align:right;vertical-align:bottom;">${t}${sub ? `<div style="font-size:10px;letter-spacing:0.04em;text-transform:none;font-weight:600;margin-top:3px;">${sub}</div>` : ''}</th>`;
+  const courtWord = e && e.court ? e.court.toLowerCase() : '';
+  const rows = ladder.map(r => `<tr style="border-top:1px solid var(--line);">
+      <td style="padding:7px 8px 7px 0;font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;">${r.label}</td>
+      ${cell(pick(cur, r.through))}${cell(pick(past, r.through))}${cell(pick(base, r.through))}</tr>`).join('');
+  const last = sc => (sc && sc.rows && sc.rows.length ? sc.rows[sc.rows.length - 1] : null);
+  const foot = [];
+  const lc = last(cur), lp = last(past);
+  const noClose = [lc ? `${yr} ${lc.noClose}` : null, lp ? `past ${lp.noClose}` : null].filter(Boolean).join(' · ');
+  if (noClose) foot.push(`No Pinnacle close (dash, not counted above): ${noClose}.`);
+  const ties = (lc ? lc.ties : 0) + (lp ? lp.ties : 0);
+  foot.push(`Exact closing ties with no first-captured price to break them: ${ties} (dash, counted).`);
+  const wo = [cur && cur.walkovers != null ? `${yr} ${cur.walkovers}` : null, past && past.walkovers != null ? `past ${past.walkovers}` : null].filter(Boolean).join(' · ');
+  if (wo) foot.push(`Walkovers excluded: ${wo}.`);
+  foot.push(`Favourite = shorter Pinnacle close; B = the Bet365 close (Jan–Apr 2026). Retirements count on the official result. A % shows from ${floor} matches.`);
+  return shell(`<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
+      <thead><tr><th style="${EY}padding:0 8px 8px 0;text-align:left;vertical-align:bottom;">Round</th>
+        ${head('This event', yr)}${head('Past editions', pastYears || '—')}${head('ATP tour', base ? `${courtWord} hard · best of 3 · ${base.years[0]}–${base.years[1]}` : '—')}</tr></thead>
+      <tbody>${rows}</tbody></table></div>
+      <div style="font-size:11.5px;line-height:1.6;color:var(--text-label);margin-top:10px;">${foot.join(' ')}</div>`);
+}
+
 function tourxWeeklyTiles(){
   if (!Array.isArray(matches) || !matches.length) return [];
   const today = new Date().toISOString().slice(0, 10);
   const byT = new Map();
   matches.forEach(m => {
-    const cs = m.courtSpeed, v = m.venue;
-    if (!cs || !v || !v.city) return;
-    const key = v.city;
-    if (!byT.has(key)) byT.set(key, { name: v.city, category: v.category || '', surface: m.surface, cs, minD: m.date, maxD: m.date });
+    // Round 2 (founder 2026-10-25): no court-speed requirement — Brussels has no sheet row and Lyon 2026's is dashed, yet
+    // both are this week's events. The event = tpEventOfCard (its own tournament key first, else the venue city).
+    const cs = m.courtSpeed || null, v = m.venue;
+    const key = tpEventOfCard(m);
+    if (!key) return;
+    if (!byT.has(key)) byT.set(key, { name: key, category: (v && v.category) || '', surface: m.surface, cs, minD: m.date, maxD: m.date });
     const g = byT.get(key);
     if (m.date && m.date < g.minD) g.minD = m.date;
     if (m.date && m.date > g.maxD) g.maxD = m.date;
@@ -25803,7 +25989,7 @@ function tourxWeeklyTiles(){
   return [...byT.values()].map(g => {
     const status = g.maxD < today ? 'Completed' : (g.minD > today ? 'Upcoming' : 'In progress');
     return { ...g, status, hasReport: hasReport(g.name) };
-  }).sort((a, b) => b.cs.abstractSpeed - a.cs.abstractSpeed);
+  }).sort((a, b) => tpEventLabel(a.name).localeCompare(tpEventLabel(b.name)));
 }
 // Whole hours elapsed since a YYYY-MM-DD date (start-of-day basis). Missing → ∞.
 function tourxHoursSince(dateStr){ if (!dateStr) return Infinity; const t = new Date(dateStr + 'T00:00:00').getTime(); return (Date.now() - t) / 3600000; }
@@ -29737,6 +29923,20 @@ window.DatabaseTab = (function(){
   // immutable once loaded. Two mounts reading one cache is the point of
   // embedding, not a bug. `built` and `state` are the per-instance parts.
   var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null, namesBound=false;
+  // Founder ruling 2026-10-25 (round 2 item 1.3): every Database figure reads the FIGURE rows — the store's rows plus the
+  // retirements whose bet stands on Pinnacle rules (window.Settlement.betCounts over each retRow's retComment / retFs; the
+  // builder's tour-baselines.json and tournament-market.json ROI read the same list, rows first, in retRows order). DATA /
+  // NAMES are that view; RAW / RAW_NAMES are the store as served, read only by the one price join (dbPriceJoinRows), which
+  // joins every retirement and lets each surface settle it. A store without retComment / retFs (served before the
+  // rebuild) or no settlement.js = the rows alone, as before. The page never re-derives the rule.
+  var RAW=null, RAW_NAMES=null;
+  function dbFigureView(j){
+    var rr=j.retRows||[], rc=j.retComment, rf=j.retFs, S=window.Settlement;
+    if(!rr.length || !S || !Array.isArray(rc) || !Array.isArray(rf) || rc.length!==rr.length || rf.length!==rr.length) return Object.assign({}, j, { figRet: [] });
+    var idx=[];
+    for(var i=0;i<rr.length;i++) if(S.betCounts({ comment: rc[i], fs: rf[i] })) idx.push(i);
+    return Object.assign({}, j, { rows: j.rows.concat(idx.map(function(i){ return rr[i]; })), figRet: idx });
+  }
 
   // ---- instances -------------------------------------------------------
   // `I` is the ACTIVE instance. use() repoints `state` and `built` at it before
@@ -29940,7 +30140,7 @@ window.DatabaseTab = (function(){
   function loadBase(){
     if(basePromise) return basePromise;
     basePromise = fetch(BASE_URL,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
-      .then(function(j){ DATA=j; M=j.meta; return j; })
+      .then(function(j){ RAW=j; DATA=dbFigureView(j); M=j.meta; return j; })
       .catch(function(e){ basePromise=null; throw e; });   // a transient failure must stay retryable
     return basePromise;
   }
@@ -30183,7 +30383,10 @@ window.DatabaseTab = (function(){
   function loadNames(){
     if(namesPromise) return namesPromise;
     namesPromise = fetch(NAMES_URL,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
-      .then(function(j){ NAMES=j; buildPlayerIndex(); return j; })
+      .then(function(j){ return loadBase().then(function(){ return j; }); })
+      .then(function(j){ RAW_NAMES=j; var rn=j.retNames||[];
+        // the figure view's names, parallel to DATA.rows (founder 2026-10-25): the standing retirements' names follow the rows'
+        NAMES=Object.assign({}, j, { names: j.names.concat(DATA.figRet.map(function(i){ return rn[i]; })) }); buildPlayerIndex(); return j; })
       .catch(function(e){ namesPromise=null; throw e; });
     return namesPromise;
   }
@@ -32540,7 +32743,8 @@ window.DatabaseTab = (function(){
   // (renderChrome), never a second line under Updated (the archive refresh is a manual drop-in).
   function dbHeadStats(){
     var seasons = DATA && DATA.rows ? presentYears().length : null;
-    return [['Matches', fmtInt(M.used)], ['Seasons', fmtInt(seasons)], ['Updated', fmtDate(M.dateRange[1])]];
+    // the figure rows (founder 2026-10-25: completed matches + retirements standing on Pinnacle rules) = the Tour All count
+    return [['Matches', fmtInt(M.settlement && M.settlement.figureRows != null ? M.settlement.figureRows : M.used)], ['Seasons', fmtInt(seasons)], ['Updated', fmtDate(M.dateRange[1])]];
   }
   function renderChrome(){
     var sub=q('subtitle'), fr=q('fresh');
@@ -33823,6 +34027,8 @@ window.DatabaseTab = (function(){
   // ---------- footnote (S1) + disclaimer ----------
   function renderFootnote(body){
     var ex=M.exclusions, bc=M.bookCounts, f=el('div','db-footnote');
+    // founder 2026-10-25: how the retRows settled (meta.settlement: the builder's figure rows = the page's figure view)
+    var stl = M.settlement && M.settlement.retired ? M.settlement : null;
     f.innerHTML=
       '<p><b>How this is built.</b> Closing prices from our own ATP archive, '+fmtDate(M.dateRange[0])+' to '+fmtDate(M.dateRange[1])+'. '+
       // TEN-384 founder ruling (2026-10-07, option "me"): one join, per match, every season.
@@ -33832,7 +34038,10 @@ window.DatabaseTab = (function(){
       '; prices are never de-vigged. '+
       'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. '+
       'Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
-      '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+
+      '<p><b>What is included.</b> '+fmtInt(stl ? stl.figureRows : M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows'+
+      // founder ruling 2026-10-25 (round 2 item 1.3): retirements settle on Pinnacle rules (settlement.js settleBet)
+      (stl && stl.retired.stands ? ', '+fmtInt(stl.retired.stands)+' of them retirements after the first set was completed (settled on the result, Pinnacle rules)' : '')+
+      (stl && stl.started ? ' and '+fmtInt(stl.started)+' that started and ended in a default or award (settled on the result)' : '')+' — '+
       fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' (where '+esc(M.books[0])+' has no price)'+
       (dbApproxN() ? ', and '+fmtInt(dbApproxN())+' on '+esc(M.books[2])+' — '+esc(dbApproxHover())+' (ATP main draw, 13 Jan to 16 Sep 2026, where neither Tennis-Data nor our Pinnacle archive holds a close)' : '')+'. '+
       '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the '+M.windowStart+' window, '+fmtInt(ex.noResolvingBookPrice)+
@@ -33842,7 +34051,9 @@ window.DatabaseTab = (function(){
       // never have had. The footnote used to name walkovers and say nothing about
       // retirements, which reads as "retirements were excluded too" when they were
       // being counted. It now says what it does with them, either way.
-      fmtInt(ex.retired)+' retirements (voided, as a book would), '+fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(ex.edge)+
+      (stl ? fmtInt(ex.retired-stl.retired.stands)+' retirements (void on Pinnacle rules: retired before the first set was completed, or no set scores to show it was — '+
+        fmtInt(stl.retired.void+stl.retired.noSets)+' of them priced), ' : fmtInt(ex.retired)+' retirements (voided, as a book would), ')+
+      fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(stl ? ex.edge-stl.started : ex.edge)+
       ' non-results, and '+fmtInt(ex.overroundGt115)+' with an overround above 1.15. Missing data is shown as a dash, never a zero.</p>';
     body.appendChild(f);
     body.appendChild(el('div','db-disclaimer','Historical analysis for informational purposes only. Past results do not guarantee future results.'));
@@ -34075,7 +34286,7 @@ window.DatabaseTab = (function(){
   }
   var PRICE_JOIN = null;
   function priceRows(){ return loadBase().then(function(){ return loadNames(); }).then(function(){ return loadX(); }).then(function(){ return loadQ(); })
-    .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(DATA, NAMES, XDATA, QDATA)); }); }
+    .then(function(){ return PRICE_JOIN || (PRICE_JOIN = dbPriceJoinRows(RAW, RAW_NAMES, XDATA, QDATA)); }); }
   // the city the Database page groups a Tennis-Data event name under ("Adelaide International 2" → "Adelaide 2"), read by the
   // price join's event test (founder brief 2026-10-19 item 1); null for a name it does not list
   function tdCity(n){ return Object.prototype.hasOwnProperty.call(TOURN_SPLIT, n) ? TOURN_SPLIT[n] : Object.prototype.hasOwnProperty.call(TOURN_COMMON, n) ? TOURN_COMMON[n] : null; }
@@ -34138,6 +34349,9 @@ window.DatabaseTab = (function(){
      exist yet. It is ~6 KB of pure functions with no side effects. -->
 <script src="holdbreak-heatmap.js"></script>
 <!-- TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). -->
+<!-- Founder ruling 2026-10-25 (round 2 item 1.3): the two retirement rules (window.Settlement: settleBet, matchWinner).
+     Before market-edge-core.js, which delegates its retirement settlement to it (it throws without it). -->
+<script src="settlement.js"></script>
 <script src="market-edge-core.js"></script>
 <!-- TEN-384 fx2: the canonical tournament identity table (window.TournamentIdentity) the builders group on;
      the page folds a served tournament-history shard's same-event rows through it. -->

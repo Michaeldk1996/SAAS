@@ -32,8 +32,9 @@ check('an RG fixture counts toward the player\'s Slow court-speed record', () =>
 
 // The full scan, pinned. Every hint key either joins a sheet row or is a venue the sheet does not rate.
 // Mutation: add a hint key whose sheet row is spelled differently (or rename a COURT_CONDITIONS key) → red.
-const UNRATED = ['Sydney', 'Zhuhai', 'Pune', 'Tel Aviv', 'Astana', 'Belgrade', 'Ho Chi Minh City', 'Jeddah', 'Brussels'];
-check('74 hint keys: 65 join a sheet row, the 9 unrated venues have none; all 64 sheet rows are reached', () => {
+// 'Lyon (France)' (round 2 item 1.1): the October event, new — the sheet's 'Lyon' row is the clay event, so it joins none.
+const UNRATED = ['Sydney', 'Zhuhai', 'Pune', 'Lyon (France)', 'Tel Aviv', 'Astana', 'Belgrade', 'Ho Chi Minh City', 'Jeddah', 'Brussels'];
+check('75 hint keys: 65 join a sheet row, the 10 unrated venues have none; all 64 sheet rows are reached', () => {
   const hints = Object.keys(P.TOURNAMENT_VENUE_HINTS);
   const joined = hints.filter(k => P.venueAndCourtSpeedFor(k).courtSpeed);
   assert.deepStrictEqual(hints.filter(k => !joined.includes(k)), UNRATED);

@@ -9,6 +9,8 @@ const cases = [
   ['odds bot: matches.json', { subject: 'chore(odds): capture tick 9 (free+metered) [skip ci]', authorEmail: 'bsp-odds-bot@users.noreply.github.com', files: ['matches.json'] }, true],
   ['Draws Bot identity, code file', { subject: 'chore(draws): x [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['draws.json', 'tools/draws/build-draws.py'] }, false],
   ['draws.json under an agent identity', { subject: 'draws [skip ci]', authorEmail: 'bsp-ceo-bot@users.noreply.github.com', files: ['draws.json'] }, false],
+  ['Points Bot: points-to-defend.json', { subject: 'chore(points): points-to-defend content changed [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['points-to-defend.json'] }, true],
+  ['Points Bot identity, builder file', { subject: 'chore(points): x [skip ci]', authorEmail: 'bot@bspconsult.local', files: ['points-to-defend.json', 'tools/points-to-defend/build-points-to-defend.js'] }, false],
   ['draws.json without [skip ci]', { subject: 'chore(draws): official draw content changed', authorEmail: 'bot@bspconsult.local', files: ['draws.json'] }, false],
   // 2026-10-25: line-prices.yml (bsp-bot, every 15 min) commits only line-prices/<date>.json; read as code it made every
   // `claim` during a 30-min suite run return 7 "not rebased". Real shape: 12221fbac (four date shards, nothing else).

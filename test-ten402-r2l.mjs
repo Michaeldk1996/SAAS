@@ -62,6 +62,9 @@ function page(opt) {
     var BASE_URL = './database-yield.json', NAMES_URL = './database-yield-players.json', X_URL = './database-yield-x.json';
     var Q_URL = './price-quarantine.json', QDATA=null, qPromise=null;
     var DATA=null, NAMES=null, XDATA=null, M=null, basePromise=null, namesPromise=null, xPromise=null, playerIndex=null;
+    // founder 2026-10-25 (round 2 item 1.3): the Database figure view (window.Settlement absent here → the rows alone)
+    var RAW=null, RAW_NAMES=null, window = {};
+    ${slice('dbFigureView')}
     function buildPlayerIndex(){ playerIndex = {}; }
     function dbPriceJoinRows(d, n){ return { rows: d.rows, names: n.names, meta: d.meta }; }
     ${slice('loadBase')}

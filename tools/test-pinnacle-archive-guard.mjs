@@ -14,6 +14,8 @@ const MIGRATION = 'supabase/migrations/20261014120000_pinnacle_archive.sql';
 const ALLOWED = new Set([MIGRATION, 'tools/pinarch.py', 'tools/pinarch-guard.mjs', '.github/workflows/pinnacle-archive.yml',
   'tools/test-pinnacle-archive-guard.mjs', 'tools/test-pinnacle-archive-sql.py', 'tools/test-pinarch-roundtrip.py',
   'tools/test-pinarch-guard-check.mjs', 'tools/test-pinarch-close.py',
+  // round 2 item 1.4: the READ-ONLY fill probe (GET-only guard) — scanned for write paths like the rest
+  'tools/archive-fill-probe.py', '.github/workflows/archive-fill-probe.yml', 'tools/test-archive-fill-probe.py',
   // name the table in comments only (they read the export file, never the table): scanned for write paths like the rest
   'build-match-closes.js', '.github/workflows/pipeline.yml']);
 const isDoc = f => /^\.claude\/rules\/.*\.md$/.test(f) || f === 'CLAUDE.md';

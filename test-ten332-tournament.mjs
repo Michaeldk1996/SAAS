@@ -238,7 +238,7 @@ test('the season + opponent fallback joins only a row of this event (name or arc
   let P = S.trModelFor(m, 0);
   assert.equal(P.all[0].sets, null, 'a Toronto row never joins a Washington edition');
   E.data[0].ch[0].tournament = 'Citi Open';                                                 // an archive name of this event
-  S.market = { baseline: { roiFav: 0, roiDog: 0, favRel: 70 }, tournaments: { Washington: { n: 50, roiFav: 1, roiDog: 1, favRel: 70, archiveNames: ['Citi Open'] } } };
+  S.market = { baseline: { roiFav: 0, roiDog: 0, favRel: 70 }, tournaments: { Washington: { n: 50, roiFav: 1, roiDog: 1, favRel: 70, nRel: 52, archiveNames: ['Citi Open'] } } };
   P = S.trModelFor(m, 0);
   assert.ok(P.all[0].sets && P.all[0].sets.length === 2, 'the archive name joins');
   S.market = null;
@@ -317,12 +317,12 @@ test('ROI + reliability: tournament-market.json figures, dashed when absent, gre
   S.market = null;
   let h = S.trMarketHtml(m);
   assert.ok(!/onclick="trSet\(\{roi/.test(h) && text(h).includes('ROI backing favourites — flat-stake yield'));
-  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -9, favRel: 74, archiveNames: ['Citi Open'] } } };
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -9, favRel: 74, nRel: 123, archiveNames: ['Citi Open'] } } };
   h = S.trMarketHtml(m);
   assert.ok(text(h).includes('+2.5% flat-stake yield +4.3pp vs tour avg'));
   assert.ok(/data-tr="roi-fav" onclick="trSet\(\{roi:'fav'\}\)"/.test(h));
   assert.ok(text(h).includes('74% Reliable'));
-  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74 } } };
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74, nRel: 7 } } };
   h = S.trMarketHtml(m);
   assert.ok(text(h).includes('small sample') && !/data-tr="roi-fav" onclick/.test(h));
   assert.match(h, /color:var\(--text-label\);">\+2\.5%</, 'a 5–9 yield is greyed');
@@ -468,7 +468,7 @@ test('Q8: two meetings with one opponent in an edition resolve by round; a profi
 // Bug 2: the Backing tile's hidden 280px pop, centred on the row's last tile, ran past the column → a horizontal scrollbar.
 test('TEN-380: ROI values --text (never green on a negative yield); Backing pop opens leftwards; panels, chip, toggle, bar', () => {
   const m = fixture([nMatches(6, i => i % 2 === 0, null)]);
-  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -3.7, favRel: 74, archiveNames: ['Citi Open'] } } };
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -3.7, favRel: 74, nRel: 123, archiveNames: ['Citi Open'] } } };
   const h = S.trMarketHtml(m);
   const val = side => new RegExp(`data-tr="roi-${side}"[^]*?font-size:26px;[^"]*color:([^;"]+);">([^<]*)<`).exec(h);
   assert.equal(val('dog')[2], '−3.7%'); assert.equal(val('dog')[1], 'var(--text)', 'a negative yield is not green');

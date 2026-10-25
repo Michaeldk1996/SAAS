@@ -49,6 +49,9 @@ const base = require('./build-odds-performance.js');
 // TEN-310 (founder ruling 2026-09-27): the profile's Market edge uses the Match analysis Market edge
 // tab's rules, through the same compute — bands, role and P&L come from market-edge-core.js.
 const core = require('./market-edge-core.js');
+// Founder ruling 2026-10-25 (round 2 item 1.3): the retirement rules live in settlement.js — settleBet (Pinnacle rules)
+// decides every unit / yield figure here; this file never re-derives it.
+const Settlement = require('./settlement.js');
 const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES, archiveOverride } = base;
 
 const { buildIdentityGate } = require('./td-identity.js');
@@ -210,8 +213,7 @@ const DB_BOOK = {
 };
 // ruling 4 (founder 2026-10-22): a retirement is on the basis only when its first set was completed (Pinnacle's rule) —
 // void, or no set scores, leaves every aggregate (player, band, curve, tour)
-const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0 && core.retSettlement(side) !== 'void' &&
-  core.retSettlement(side) !== 'no-sets';
+const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0 && Settlement.betCounts(side);
 
 // Ruling 4 · item 1 (founder 2026-10-23): the first set of a retirement from the PLAYERS' OWN career rows, when
 // tools/started-evidence.js left it unknown. The evidence join is narrower than the page's (measured 23 Oct: 30 of the 1,282
@@ -248,7 +250,7 @@ function careerFirstSet(row, resolveAt, rowsOf) {
     const latest = near.reduce((m, x) => (String(x.date) > m ? String(x.date) : m), '');
     const at = near.filter((x) => String(x.date) === latest);
     if (at.length !== 1) continue;
-    const st = core.firstSetState(at[0].sets);
+    const st = Settlement.firstSetState(at[0].sets);
     if (st !== 'missing') states.push(st);
   }
   if (!states.length || states.some((x) => x !== states[0])) return 'm';
@@ -309,44 +311,27 @@ function summarise(a) {
   };
 }
 
-/** Tennis-Data `comment` of an in-match retirement: "Retired", and the archive's one "Rrtired" typo. */
-const RETIRED_COMMENTS = new Set(['retired', 'rrtired']);
-const isRetiredComment = (c) => RETIRED_COMMENTS.has(String(c || '').trim().toLowerCase());
+/** Tennis-Data `comment` of an in-match retirement: "Retired", and the archive's one "Rrtired" typo (settlement.js kindOf). */
+const isRetiredComment = (c) => Settlement.kindOf(c) === 'retired';
 
-function median(xs) {
-  if (!xs.length) return null;
-  const s = xs.slice().sort((a, b) => a - b);
-  const m = Math.floor(s.length / 2);
-  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
-}
-
-function main() {
-  const args = process.argv.slice(2);
-  const quiet = args.includes('--quiet');
-  const onlyIdx = args.indexOf('--only');
-  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
-  const log = (...a) => { if (!quiet) console.log(...a); };
-  // Build stamp (TEN-263 follow-up, founder 2026-09-24): when this run built the files, and
-  // from which commit. "Assert site completeness" WARNS (does not fail) when the shipped index was
-  // not built by this run (the committed floor carries an older stamp, or none), and the
-  // Market edge modal prints it as "rebuilt DD Mon HH:MMZ".
-  const stamp = { builtAt: new Date().toISOString(), builtFromCommit: process.env.GITHUB_SHA || null };
-
-  const profiles = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8')).players || {};
-  // TEN-263 (ruling 2026-09-24): market-edge is a per-run pipeline output. The pipeline's
-  // player-profiles.json is the eager board roster, so without this a run would refresh only
-  // the players on today's board and leave every other published shard as it was. Every
-  // player that already has a shard stays on the roster (its shard carries its name).
-  if (fs.existsSync(OUT_DIR)) {
-    for (const f of fs.readdirSync(OUT_DIR)) {
+/** The player-profile roster this builder joins on: player-profiles.json, plus every player that already has a
+ *  market-edge shard (TEN-263, ruling 2026-09-24 — the pipeline's profiles are the eager board roster). */
+function rosterProfiles(root) {
+  const profiles = JSON.parse(fs.readFileSync(path.join(root, 'player-profiles.json'), 'utf8')).players || {};
+  const outDir = path.join(root, 'market-edge');
+  if (fs.existsSync(outDir)) {
+    for (const f of fs.readdirSync(outDir)) {
       const m = /^(\d+)\.json$/.exec(f);
       if (!m || profiles[m[1]]) continue;
-      try { const s = JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), 'utf8')); if (s && s.name) profiles[m[1]] = { name: s.name }; } catch (e) { /* unreadable shard: rebuilt only if the profile roster has it */ }
+      try { const s = JSON.parse(fs.readFileSync(path.join(outDir, f), 'utf8')); if (s && s.name) profiles[m[1]] = { name: s.name }; } catch (e) { /* unreadable shard: rebuilt only if the profile roster has it */ }
     }
   }
-  const speedMap = loadSpeedMap();
-  log(speedMap ? 'court-speed map loaded' : 'court-speed map absent — venue/speed will be null on every row');
+  return profiles;
+}
 
+/** The archive-name → player join (TEN-263 §2c alias table first, then the full key, then a unique surname + initials
+ *  prefix), gated by the identity gate (founder 2026-10-18, td-identity.js). Returns { resolve, resolveAt, idGate }. */
+function makeResolver(root, profiles) {
   const byFullKey = new Map();
   const bySurname = new Map();
   Object.entries(profiles).forEach(([key, p]) => {
@@ -380,9 +365,73 @@ function main() {
   }
 
   // founder ruling 2026-10-18 (the Martín mix-up): one identity gate on every Tennis-Data name join (td-identity.js)
-  const idGate = buildIdentityGate(ROOT, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
-  log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
+  const idGate = buildIdentityGate(root, new Map(Object.entries(profiles).map(([k, p]) => [k, p && p.name])));
   const resolveAt = (archiveName, date, opp) => { const h = resolve(archiveName); return h && idGate && date && !idGate.allow(h.key, archiveName, date, opp) ? null : h; };   // opp: the row's other side (gate rule 4)
+  return { resolve, resolveAt, idGate };
+}
+
+/** Ruling 4 (founder 2026-10-22): a retired master row's first set — 'c' complete, 'i' incomplete, 'm' unknown, never
+ *  guessed. tools/started-evidence.js's answer first (written earlier in the same run; keyed date|tournament|winner|loser),
+ *  else the players' own career rows (careerFirstSet, ruling 4 · item 1). ONE lookup: this builder and
+ *  build-database-yield.js (the Database's retRows, founder 2026-10-25) both read it, so a retirement can never settle
+ *  one way on Market edge and another on the Database. Returns { of(row) → { fs, fromCareer }, evidence: bool }. */
+function firstSetLookup(root, opts) {
+  const o = opts || {};
+  const evPath = o.evidencePath || path.join(root, 'started-evidence.json');
+  const retFs = new Map();
+  const evidence = fs.existsSync(evPath);
+  if (evidence) {
+    const ev = JSON.parse(fs.readFileSync(evPath, 'utf8'));
+    (ev.retired || []).forEach((x) => retFs.set([x.date, x.tournament, x.winner, x.loser].join('|'), x.fs));
+  }
+  const chDir = path.join(root, 'career-history'), chCache = new Map();
+  const rowsOf = (k) => {
+    if (!chCache.has(k)) { let v = null; try { v = JSON.parse(fs.readFileSync(path.join(chDir, k + '.json'), 'utf8')).matches || null; } catch (e) { v = null; } chCache.set(k, v); }
+    return chCache.get(k);
+  };
+  let resolveAt = o.resolveAt || null;
+  const of = (row) => {
+    const fs0 = retFs.get([row.date, row.tournament, row.winner, row.loser].join('|')) || 'm';
+    if (fs0 !== 'm') return { fs: fs0, fromCareer: false };
+    if (!resolveAt) {
+      if (!fs.existsSync(path.join(root, 'player-profiles.json'))) return { fs: 'm', fromCareer: false };
+      resolveAt = makeResolver(root, rosterProfiles(root)).resolveAt;
+    }
+    const v = careerFirstSet(row, resolveAt, rowsOf);
+    return { fs: v, fromCareer: v !== 'm' };
+  };
+  return { of, evidence, evidencePath: evPath };
+}
+
+function median(xs) {
+  if (!xs.length) return null;
+  const s = xs.slice().sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const quiet = args.includes('--quiet');
+  const onlyIdx = args.indexOf('--only');
+  const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
+  const log = (...a) => { if (!quiet) console.log(...a); };
+  // Build stamp (TEN-263 follow-up, founder 2026-09-24): when this run built the files, and
+  // from which commit. "Assert site completeness" WARNS (does not fail) when the shipped index was
+  // not built by this run (the committed floor carries an older stamp, or none), and the
+  // Market edge modal prints it as "rebuilt DD Mon HH:MMZ".
+  const stamp = { builtAt: new Date().toISOString(), builtFromCommit: process.env.GITHUB_SHA || null };
+
+  // TEN-263 (ruling 2026-09-24): market-edge is a per-run pipeline output. The pipeline's
+  // player-profiles.json is the eager board roster, so without this a run would refresh only
+  // the players on today's board and leave every other published shard as it was. Every
+  // player that already has a shard stays on the roster (its shard carries its name) — rosterProfiles().
+  const profiles = rosterProfiles(ROOT);
+  const speedMap = loadSpeedMap();
+  log(speedMap ? 'court-speed map loaded' : 'court-speed map absent — venue/speed will be null on every row');
+
+  const { resolveAt, idGate } = makeResolver(ROOT, profiles);
+  log(idGate ? 'identity gate: career-history store loaded' : 'SKIP identity gate: no career-history store (names joined as before)');
 
   /**
    * TEN-206 §5.6 — the OPPONENT's archetype, stamped per row.
@@ -427,11 +476,8 @@ function main() {
   // ruling 4: each retired Tennis-Data row's first set (tools/started-evidence.js, written earlier in the same run). No file
   // = no evidence: every retirement then carries no units — never guessed — and the log says so.
   const EV_PATH = process.env.DB_YIELD_STARTED || path.join(ROOT, 'started-evidence.json');
-  const retFs = new Map();
-  if (fs.existsSync(EV_PATH)) {
-    const ev = JSON.parse(fs.readFileSync(EV_PATH, 'utf8'));
-    (ev.retired || []).forEach((x) => retFs.set([x.date, x.tournament, x.winner, x.loser].join('|'), x.fs));
-  } else log(`ruling 4: ${EV_PATH} absent — every retirement carries no units this run`);
+  const firstSet = firstSetLookup(ROOT, { evidencePath: EV_PATH, resolveAt });
+  if (!firstSet.evidence) log(`ruling 4: ${EV_PATH} absent — every retirement carries no units this run`);
   const noSetsRows = [];
   const pinnacleEnd = {};
   const bet365End = {};
@@ -441,11 +487,6 @@ function main() {
   // not, or priced differently. Such a match is a dash on every page, Market edge included, so this build leaves its master
   // row out of every player's shard (the tour baseline keeps it: it is the Database's own aggregate). Next run, a match
   // that joins cleanly is not quarantined and comes back by itself.
-  const chDir = path.join(ROOT, 'career-history'), chCache = new Map();
-  const careerRowsOf = (k) => {
-    if (!chCache.has(k)) { let v = null; try { v = JSON.parse(fs.readFileSync(path.join(chDir, k + '.json'), 'utf8')).matches || null; } catch (e) { v = null; } chCache.set(k, v); }
-    return chCache.get(k);
-  };
   const qPath = process.env.PRICE_QUARANTINE || null;
   const qz = qPath && fs.existsSync(qPath) ? (JSON.parse(fs.readFileSync(qPath, 'utf8')).entries || []) : [];
   const qDb = new Set(qz.map((e) => e.db).filter(Boolean));
@@ -467,13 +508,13 @@ function main() {
     const season = String(row.date).slice(0, 4);
     const retired = isRetiredComment(row.comment);
     if (retired) stats.retired += 1;
-    let fsv = retired ? (retFs.get([row.date, row.tournament, row.winner, row.loser].join('|')) || 'm') : null;
-    if (retired && fsv === 'm') {   // ruling 4 · item 1: the players' own career rows, when the evidence file had no answer
-      fsv = careerFirstSet(row, resolveAt, careerRowsOf);
-      if (fsv !== 'm') stats.retFromCareer = (stats.retFromCareer || 0) + 1;
-    }
+    // ruling 4: the evidence file's first set, else (item 1) the players' own career rows — the shared lookup
+    const fsHit = retired ? firstSet.of(row) : null;
+    const fsv = fsHit ? fsHit.fs : null;
+    if (fsHit && fsHit.fromCareer) stats.retFromCareer = (stats.retFromCareer || 0) + 1;
     if (retired) {
-      if (fsv === 'c') stats.retStands += 1; else if (fsv === 'i') stats.retVoid += 1;
+      const st = Settlement.settleBet({ ret: true, fs: fsv });
+      if (st === 'stands') stats.retStands += 1; else if (st === 'void') stats.retVoid += 1;
       else { stats.retNoSets += 1; noSetsRows.push(`${row.date} ${row.tournament}: ${row.winner} d. ${row.loser}`); }
     }
     const level = LEVEL_ALIASES[row.series] || null;
@@ -614,10 +655,10 @@ function main() {
         band: bandFor(s.price) ? bandFor(s.price).band.id : null,
         // Per-row P&L in units, struck in cents (the shared core's formula). Ruling 4: a void retirement, or one with no
         // set scores, carries its prices and NO units (pl null), with the reason in `settle`.
-        pl: core.retSettlement(s) === 'void' || core.retSettlement(s) === 'no-sets' ? null : core.plCents(s) / 100,
+        pl: Settlement.betCounts(s) ? core.plCents(s) / 100 : null,
         inBasis: isYieldBasis(s),
         ret: !!s.ret,
-        ...(s.ret ? { fs: s.fs, settle: core.retSettlement(s) } : {}),
+        ...(s.ret ? { fs: s.fs, settle: Settlement.settleBet(s) } : {}),
       })),
     };
 
@@ -653,4 +694,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { careerFirstSet, pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };
+module.exports = { careerFirstSet, firstSetLookup, makeResolver, rosterProfiles, pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL, emptyAgg, addTo };

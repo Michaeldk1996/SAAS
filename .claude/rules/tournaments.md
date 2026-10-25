@@ -8,7 +8,9 @@ night, 1512px; the reference wins except where a rule below says *(override)*. T
 colours are superseded by `foundation.md`. Reviews are night only; day tokens stay wired.
 
 ## Data
-- **ROI cards and Favourite reliability come from `tournament-market.json`, built from `database-yield.json` rows** — the
+- **ROI cards and Favourite reliability come from `tournament-market.json`, built from `database-yield.json` rows** (round 2
+  item 1.3: ROI = `Settlement.settleBet` population `n`; Favourite reliability = `Settlement.matchWinner`, retirements
+  count, its own `nRel`) — the
   Database page's own rows (Pinnacle closing, else Bet365, per match; favourite = shorter price). Card = the Database →
   Tournament All row for the same event. No speed-derived formula (`roiFav = (speed − 1) × 8 − 2` …) exists anywhere.
   **Test:** the card's yields equal the Database All row (Wimbledon +0.30 / −11.96, n 1,949; `test-ten242-rulings.mjs`).
@@ -19,14 +21,46 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
 - **Shared archive strings are split by row** (founder card c572b773 "canada = split", + review fix): `build-tournament-market.js`
   `ROW_SPLIT` pools "Rogers Masters" / "Canadian Open" by the men's host year (to 2019 Toronto even / Montreal odd; from
   2021 Toronto odd / Montreal even — every edition 2010–26 checked against the Wikipedia infobox; 2020 not held, 0
-  unplaced), "Masters Cup" = Turin 2021+ only, and "European Open" by surface + month (clay in July = Hamburg's editions 2021–24,
-  hard in October = Antwerp; founder follow-up 697cbed9). Each split event emits `archiveFilter`; the ROI panel locks to those rows (`DatabaseTab`
+  unplaced), "Masters Cup" = Turin 2021+ only, and "European Open" by surface + month + year (clay in July = Hamburg's editions 2021–24,
+  hard in October to 2024 = Antwerp, from 2025 = Brussels; founder follow-up 697cbed9, round 2 2026-10-25). Each split event emits `archiveFilter`; the ROI panel locks to those rows (`DatabaseTab`
   `initialTournamentFilter` → `rowLockFor` / `rowLockOk`, dropped on any new pick); Match analysis never joins career rows
   on a split string (`trArchiveNames`). Measured: Montreal 460 + Toronto 446 = Canada 906; Turin 73; Hamburg 565
   (−4.8 / +4.6); Antwerp 260. **Test:** `test-ten242-rulings.mjs` "row lock" + `test-ten401-f1a.mjs` "review 3" (month branch, synthetic rows) (runs the panel's functions against a
   fixed host-city table) + the card-equals-panel recompute.
-- **One court-speed registry** (`tourxConditionRegistry()`) feeds the rail, hero, rank / median and Compare all.
+- **The tournament page lists every catalog event** (round 2, founder 2026-10-25, replacing "one court-speed registry feeds
+  the rail"): `tpPageEvents()` = `TOURNAMENT_CATALOG`, one row per printed event (French Open / Roland Garros once), the
+  court-conditions fields merged where a row exists. So events without a Tennis Abstract reading are on the page
+  (Brussels, Lyon (France), Sydney, Zhuhai, Pune, Tel Aviv, Astana, Belgrade, Ho Chi Minh City, Jeddah) and the rail
+  sorts by name. `tourxConditionRegistry()` still feeds the rest of the site (news, quotes, the speed overlay).
   *Known limit:* the page's `COURT_CONDITIONS` is a hand copy of the pipeline's table, held identical by a drift test.
+- **No court speed on tournament pages** (founder 2026-10-25): no hero, knob, band word, rank line, speed-derived
+  "Conditions read" or speed trend, and no speed figure in the rail. The Tennis Abstract field stays in the data, and
+  other surfaces keep showing it unchanged (Match analysis Tournament tab header + trend, Key factors' Tournament and
+  Weather cards, the player profile, the speed overlay). The sheet's count-less "1st serve point won" / "Service hold"
+  tiles are off the page too: How it plays prints our own figures with n. **Test:** `tools/test-tournament-page.js`.
+- **A card's event = its own api-tennis `tournamentKey`** (`tpEventOfCard`: a catalog entry's `tournamentKeys`, else the
+  venue city). Lyon October 2026 (key 14763, "Lyon (France)", Hard (Indoor)) is a NEW event with no lineage to the
+  clay Lyon (to 2025), the Grand Prix de Lyon or Marseille — every past-edition figure is a dash.
+- **Lineage = same venue only** (founder default 2026-10-25): Almaty = Almaty 2024–25 (not Astana / Nur-Sultan);
+  Brussels = Brussels only (2025+; `ROW_SPLIT` gives Antwerp "European Open" ≤2024, Brussels ≥2025 — a name / price
+  join, not a lineage merge).
+- **SAMPLE_FLOOR = 15 matches** (`TP_SAMPLE_FLOOR`, one line; the builders carry the same value): below it a % / figure is
+  a dash with its count.
+- **How it plays** (`tpHowItPlaysHtml`, `how-it-plays.json`): service games held, 1st / 2nd serve points won, aces per
+  match, tiebreaks per set — this event's main draw over its past editions vs ATP best-of-three hard on the event's own
+  indoor / outdoor court, 2016–25 (Sackmann 2016–24, our box scores 2025+), plus this year once at the floor. Header:
+  "Main draw, [years], [n] matches · compared with ATP [indoor/outdoor] hard, best-of-three". Partial box scores (off by
+  ≥3) are excluded and counted. No verdict text. **Test:** `tools/test-how-it-plays.js` (+ mutants), `test-tournament-page.js`.
+- **Favourites vs underdogs by round** (`tpFavDogHtml`, `favourites-by-round.json`): cumulative R1 / R1–R2 / … / F;
+  favourite = shorter Pinnacle close from the master (Bet365 "B" Jan–Apr 2026); exact tie with no first-captured price =
+  dash, counted; winner = `Settlement.matchWinner`; no-close and walkovers counted in the footnote. Tone only.
+  **Test:** `tools/test-favourites-by-round.js`, `test-tournament-page.js`.
+- **Points to defend** (`tpPointsDefendHtml`, `points-to-defend.json`, `points-to-defend.yml` twice a day; Points at Risk
+  stays retired): order, IOC, player, live rank, badge ("SF | Q"), status, points (bar = points), drop date in the
+  header. Q1 / Q2 losers score their actual qualifying round; qualifying rows drop with the main draw (ATP Rulebook
+  §9.01 E). **Lucky losers** (founder confirmed 2026-10-25): main-draw points only, qualifying "—", an "LL" badge.
+  "Withdrew" from entry-list history is inferred: tooltip "On the entry list, not in the draw". Lyon (France): "First
+  edition — no points to defend here." **Test:** `tools/test-points-to-defend.js` (+ mutants), `test-tournament-page.js`.
 - **What players say = real, traceable notes only** (speaker matched to one of our players + a year); an event with none
   shows no card. `TOURX_QUOTE_RULE` flips it. No placeholder quote ships. A note whose own lead-in names its credited
   speaker as the opponent ("after his win over McDonald" under M. McDonald) is someone else's words — not traceable; so is
@@ -103,12 +137,10 @@ colours are superseded by `foundation.md`. Reviews are night only; day tokens st
   shorter list clamps and visible tiles jump); a fully visible tile never moves. **Test:** `test-ten401-f1a.mjs` f1.5 +
   "review: re-rendering keeps the spacer".
 - What players say card: one quote, clamped to 3 lines (`-webkit-line-clamp:3`), meta = player · year · context.
-- **Court-speed hero *(override)*:** 8px `--track`, no gradient, white 16px knob with a 3px `--card` ring; Slow / Medium /
-  Fast Hanken 10.5 caps grey; band word white; "Compare all →", "Read all N →", "Open … graphics →" are `--link`.
+- "Read all N →", "Open … graphics →" are `--link`.
 - Condition tiles + Favourite reliability = panels (`--edge-6`), figures mono white; reliability bar `--bar` on `--track`.
   "Completed" badge `--inner`, grey caps, no edge. ROI cards = clickable tiles (`--edge-7`, hover `--tile-hover` +
   `--edge-16`). "View tournament report →" = `--inner` button, white, `--edge-10` on hover.
-- Seven-year chart: no area fill, white 2.4px line, white dots with a `--card` ring, values white mono, years grey.
 - **Test:** `test-ten242-rulings.mjs` (TEN-401 blocks: rail, scale, blocks, chart).
 
 ## Overlays (Compare all · What players say · ROI)

@@ -164,15 +164,26 @@ function resolveEdition({ editionFixtures, playerKey, tierInfo, pointsTable, com
       finalScore: fx.event_final_result, status: fx.event_status,
     });
     const won = matchWon(fx, pk);
-    mine.push({ code: cls.code, qualifying: cls.qualifying, won, date: fx.event_date, status: fx.event_status });
+    mine.push({ code: cls.code, qualifying: cls.qualifying, qualRound: cls.qualRound || null, won, date: fx.event_date, status: fx.event_status });
   }
   if (!mine.length) {
     return { points: null, key: null, dash: false, flags: ['not-in-draw'], reason: 'player has no fixtures at this edition', awardMs: null };
   }
 
-  const awardMs = awardMonday(mine.map((m) => m.date).sort().slice(-1)[0]);
+  // DROP DATE = the EDITION's award Monday (round 2 item 2.3 error 3): every row of one event — a qualifying-only
+  // loser included — enters the ranking on the Monday after the event and leaves 52 weeks later (ATP Rulebook §9.01 E:
+  // "Once entered, all tournaments … remain in the system for 52 consecutive weeks"; the tournament is the unit).
+  // Dating a row from the player's OWN last match put every qualifying-only row one week early (Almaty 2025: 10-12
+  // instead of 10-19).
+  const awardMs = editionAwardMs(editionFixtures) != null ? editionAwardMs(editionFixtures) : awardMonday(mine.map((m) => m.date).sort().slice(-1)[0]);
   const mainMatches = mine.filter((m) => !m.qualifying && ROUND_RANK[m.code] != null);
   const qualMatches = mine.filter((m) => m.qualifying);
+  // LUCKY LOSER (error 2): lost a qualifying match, then played the main draw. The ATP rule for a lucky loser's
+  // qualifying points is NOT confirmed from an official source (founder ruling: do not encode the reference page's
+  // 25 + 7) — so his qualifying portion is null (a dash) and only his main-draw points are credited.
+  const luckyLoser = mainMatches.length > 0 && qualMatches.some((q) => q.won === false);
+  // QUALIFIER: came through qualifying — won a qualifying match and lost none.
+  const qualifier = mainMatches.length > 0 && !luckyLoser && qualMatches.some((q) => q.won === true);
 
   // ---- MAIN-DRAW result ----------------------------------------------------
   if (mainMatches.length) {
@@ -213,30 +224,48 @@ function resolveEdition({ editionFixtures, playerKey, tierInfo, pointsTable, com
       return { points: null, key, dash: true, flags: [...flags, 'round-cell-null'], reason: `${key} not applicable to a ${drawSize} draw`, awardMs };
     }
 
-    // qualifier bonus (§9.03 G.3): came through qualifying into the main draw.
-    if (qualMatches.length && qualMatches.some((q) => q.won)) {
+    // qualifier bonus (§9.03 G.3): came through qualifying into the main draw. A lucky loser did NOT (he lost in
+    // qualifying): no Q_into_MD, qualifying portion null.
+    const mainPoints = pts;
+    let qualPoints = 0;
+    if (luckyLoser) {
+      qualPoints = null;
+      flags.push('lucky-loser', 'll-qualifying-unconfirmed');
+    } else if (qualifier) {
       const bonus = cells.Q_into_MD;
-      if (typeof bonus === 'number') { pts += bonus; flags.push('qualifier-bonus'); }
+      if (typeof bonus === 'number') { pts += bonus; qualPoints = bonus; flags.push('qualifier-bonus'); }
+      else qualPoints = null;
     }
-    return { points: pts, key, dash: false, flags, reason: 'main-draw result', awardMs };
+    return { points: pts, mainPoints, qualPoints, qualRound: null, key, dash: false, flags, reason: 'main-draw result', awardMs };
   }
 
   // ---- QUALIFYING-only result (lost in qualifying, never reached MD) --------
   if (qualMatches.length) {
-    // deepest qualifying round the player played; did they lose it?
-    qualMatches.sort((a, b) => (ROUND_RANK[a.code] || 0) - (ROUND_RANK[b.code] || 0));
+    // ERROR 1 FIX (round 2 item 2.3): the qualifying ROUND comes from the qualifying bracket's label (qualRound:
+    // F = last qualifying round, SF = one before, QF = two before) — every qualifying row used to be code 'Q', so
+    // the "lost the final round" test was always true and a Q1 loser got final-round points.
+    const qrank = (m) => (m.qualRound && ROUND_RANK[m.qualRound] != null ? ROUND_RANK[m.qualRound] : null);
+    if (qualMatches.some((m) => qrank(m) == null)) {
+      return { points: null, key: null, dash: true, flags: ['qual-round-unlabelled'], reason: 'a qualifying match carries no qualifying-round label', awardMs };
+    }
+    qualMatches.sort((a, b) => qrank(a) - qrank(b));
     const deepestQ = qualMatches[qualMatches.length - 1];
-    // final qualifying round in the edition = deepest qualifying round present.
-    const finalQCode = editionFinalQualRound(editionFixtures);
-    const lostFinalQ = deepestQ.code === finalQCode && !deepestQ.won;
-    const key = lostFinalQ ? 'Q_final_round_loss' : 'Q_earlier_round_loss';
-    let pts = cells[key];
+    const { finalRank, firstRank } = editionQualRanks(editionFixtures);
+    if (deepestQ.won !== false) {
+      // won his last qualifying match but no main-draw match: a coverage gap, never a guessed round.
+      return { points: null, key: null, dash: true, flags: ['qualifier-no-main-draw-match'], reason: 'won his last qualifying match but has no main-draw match', awardMs };
+    }
+    const fromEnd = finalRank - qrank(deepestQ);            // 0 = lost the last qualifying round
+    const qualRound = 'Q' + (finalRank - firstRank + 1 - fromEnd);   // Q1 / Q2 / Q3 (edition's own depth)
+    // §9.03 G.4: last-round loss → Q_final_round_loss; the round before → Q_earlier_round_loss (Grand Slam Q2 = 8;
+    // null elsewhere = 0 by rule); any earlier round → 0.
+    const key = fromEnd === 0 ? 'Q_final_round_loss' : (fromEnd === 1 ? 'Q_earlier_round_loss' : 'Q_first_round_loss');
+    let pts = key === 'Q_first_round_loss' ? null : cells[key];
     if (pts == null) {
-      // non-Slam earlier qualifying loss is 0 by rule (table null) — real 0.
-      pts = 0;
+      pts = 0;   // the rulebook awards nothing for this qualifying loss — a real 0
       flags.push('qual-early-zero');
     }
-    return { points: pts, key, dash: false, flags, reason: 'qualifying-only result', awardMs };
+    return { points: pts, mainPoints: null, qualPoints: pts, qualRound, key, dash: false, flags, reason: 'qualifying-only result', awardMs };
   }
 
   return { points: null, key: null, dash: true, flags: ['no-classifiable-match'], reason: 'no main or qualifying match resolved', awardMs };
@@ -271,6 +300,40 @@ function editionFirstRound(editionFixtures) {
   return best;
 }
 
+/** The edition's qualifying depth: ROUND_RANK of its last (finalRank) and first (firstRank) qualifying rounds. */
+function editionQualRanks(editionFixtures) {
+  let finalRank = -Infinity; let firstRank = Infinity;
+  for (const fx of editionFixtures) {
+    if (!isPlayed(fx)) continue;
+    const cls = classifyRound({
+      tournamentRound: fx.tournament_round, qualification: fx.event_qualification,
+      isGrandSlam: fx.isGrandSlam, tournamentName: fx.tournament_name,
+      finalScore: fx.event_final_result, status: fx.event_status,
+    });
+    if (!cls.qualifying || !cls.qualRound || ROUND_RANK[cls.qualRound] == null) continue;
+    const r = ROUND_RANK[cls.qualRound];
+    if (r > finalRank) finalRank = r;
+    if (r < firstRank) firstRank = r;
+  }
+  return { finalRank, firstRank };
+}
+
+/** The edition's award Monday (ms): the Monday after its last PLAYED main-draw match; null if it has none. */
+function editionAwardMs(editionFixtures) {
+  let last = '';
+  for (const fx of editionFixtures) {
+    if (!isPlayed(fx) || !fx.event_date) continue;
+    const cls = classifyRound({
+      tournamentRound: fx.tournament_round, qualification: fx.event_qualification,
+      isGrandSlam: fx.isGrandSlam, tournamentName: fx.tournament_name,
+      finalScore: fx.event_final_result, status: fx.event_status,
+    });
+    if (cls.qualifying || ROUND_RANK[cls.code] == null) continue;
+    if (fx.event_date > last) last = fx.event_date;
+  }
+  return last ? awardMonday(last) : null;
+}
+
 /** The edition's final (deepest) qualifying round code. */
 function editionFinalQualRound(editionFixtures) {
   let best = null; let bestRank = -Infinity;
@@ -289,6 +352,6 @@ function editionFinalQualRound(editionFixtures) {
 }
 
 module.exports = {
-  resolveEdition, drawSizeKey, awardMonday, mondayOf, editionFirstRound,
+  resolveEdition, drawSizeKey, awardMonday, mondayOf, editionFirstRound, editionQualRanks, editionAwardMs,
   matchWon, MS_PER_WEEK, NON_ROUND_TIERS,
 };

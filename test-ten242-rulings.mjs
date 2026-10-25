@@ -28,11 +28,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DASH = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+// founder ruling 2026-10-25 (round 2 item 1.3): the two retirement rules, read from the one module
+const Settlement = createRequire(import.meta.url)(join(HERE, 'settlement.js'));
 const PIPE = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
 const ADV = readFileSync(join(HERE, 'tools/entry-lists/build-entry-lists-advance.mjs'), 'utf8');
 
@@ -67,13 +70,13 @@ test('ruling 1: the hero band word derives from courtSpeedCategory(), not the RE
   assert.match(PIPE, /function courtSpeedCategory\(speed\)/,
     'courtSpeedCategory() is the ruled single source of truth and must exist in the pipeline');
 
-  // The Tournaments detail column must read speedCat (courtSpeedCategory's output
-  // via tourxConditionRegistry), NOT a locally re-derived ladder.
+  // Round 2 (founder 2026-10-25, replacing the hero ruling on this page): the tournament page prints NO court speed —
+  // no hero, band word, knob or rank line. The detail column must not re-derive a band either.
   const detail = DASH.slice(DASH.indexOf('function tourxConditionsPanelHtml()'),
                             DASH.indexOf('function tourxRankLineHtml'));
   assert.ok(detail.length > 500, 'could not isolate the detail-column renderer');
-  assert.match(detail, /const bandWord = c\.speedCat/,
-    'the hero word must come from c.speedCat (courtSpeedCategory), not a local threshold');
+  assert.ok(!/bandWord|c\.speedCat|abstractSpeed|tourxKnobPct/.test(detail),
+    'the tournament page prints no court speed (round 2): a hero / band word / knob survives');
 
   // and the README's ladder must not be reintroduced anywhere on the page.
   assert.ok(!/Medium-slow/.test(DASH_CODE),
@@ -566,6 +569,12 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
   const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
   const names = y.meta.tournaments;
   const idx = new Map(names.map((n, i) => [n, i]));
+  assert.ok(Array.isArray(y.retComment) && y.retComment.length === y.retRows.length && Array.isArray(y.retFs) && y.retFs.length === y.retRows.length,
+    'the store carries each retirement\'s comment and first set (settlement.js decides every figure)');
+  const tagged = y.rows.map((r) => ({ r, bet: true, win: true })).concat(y.retRows.map((r, i) => ({ r,
+    bet: Settlement.betCounts({ comment: y.retComment[i], fs: y.retFs[i] }),
+    win: Settlement.matchWinner({ comment: y.retComment[i], winnerSide: 1 }) != null })));
+  assert.ok(tagged.some((x) => !x.bet && x.win), 'control: the store holds retirements that count in favRel only (else the two populations are not compared)');
 
   assert.match(mkt.source, /database-yield\.json/,
     'the market artefact no longer declares the yield store as its source — if it went back to parsing the CSVs, the window/book divergence is back');
@@ -579,17 +588,21 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
     if (!want.length) continue;
     // TEN-401 row split (Montreal / Toronto / Turin / Hamburg / Antwerp share archive strings): the card pools only the
     // rows its archiveFilter names, and the panel locks to the same rows (DatabaseTab rowLockOk).
-    const rs = y.rows.filter((r) => want.includes(r[4]) && lockOk(t.archiveFilter, names, r));
-    let sf = 0, sd = 0, fw = 0;
-    for (const r of rs) { const w = !!r[7]; sf += (w ? r[5] : 0) - 1; sd += (w ? 0 : r[6]) - 1; if (w) fw++; }
+    // Founder ruling 2026-10-25 (round 2 item 1.3, replaces the rows-only definition): the ROI figures and n read the
+    // Database's figure rows (rows + the retRows settleBet lets stand — what the panel shows); favRel and nRel read
+    // rows + every retRow matchWinner gives a winner (retirements count on the official result).
+    const rs = tagged.filter(({ r }) => want.includes(r[4]) && lockOk(t.archiveFilter, names, r));
+    let sf = 0, sd = 0, fw = 0, nb = 0, nw = 0;
+    for (const { r, bet, win } of rs) { const w = !!r[7]; if (bet) { nb++; sf += (w ? r[5] : 0) - 1; sd += (w ? 0 : r[6]) - 1; } if (win) { nw++; if (w) fw++; } }
     const exp = {
-      n: rs.length,
-      roiFav: +(sf / rs.length * 100).toFixed(1),
-      roiDog: +(sd / rs.length * 100).toFixed(1),
-      favRel: Math.round(fw / rs.length * 100),
+      n: nb,
+      roiFav: +(sf / nb * 100).toFixed(1),
+      roiDog: +(sd / nb * 100).toFixed(1),
+      favRel: Math.round(fw / nw * 100),
+      nRel: nw,
     };
     checked++;
-    for (const k of ['n', 'roiFav', 'roiDog', 'favRel']) {
+    for (const k of ['n', 'roiFav', 'roiDog', 'favRel', 'nRel']) {
       if (exp[k] !== t[k]) mismatches.push(`${name}.${k}: card ${t[k]} vs store ${exp[k]}`);
     }
   }
@@ -601,7 +614,7 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
   // card and confirm the same comparison catches it.
   const probe = Object.entries(mkt.tournaments)[0];
   const want = probe[1].archiveNames.map((n) => idx.get(n)).filter((i) => i !== undefined);
-  const rs = y.rows.filter((r) => want.includes(r[4]) && lockOk(probe[1].archiveFilter, names, r));
+  const rs = tagged.filter(({ r, bet }) => bet && want.includes(r[4]) && lockOk(probe[1].archiveFilter, names, r));
   assert.notEqual(rs.length, probe[1].n + 1,
     'control setup is degenerate');
   assert.ok(rs.length === probe[1].n,
@@ -612,35 +625,34 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
 // FOUNDER RULING 2026-09-20, gate `33f71aab` — three decisions, three guards.
 // ---------------------------------------------------------------------------
 
-test('RULING: retirements are VOIDED, not settled, and the footnote says so', () => {
+// Founder ruling 2026-10-25 (round 2 item 1.3) REPLACES the 2026-09-20 "retirements are VOIDED" ruling for every figure:
+// settlement.js decides — settleBet (Pinnacle rules) for yields, matchWinner (the official result) for win rates.
+test('RULING: retirements settle through settlement.js (yields: Pinnacle rules; win rates: the official result), and the footnote says so', () => {
   const b = readFileSync(join(HERE, 'build-database-yield.js'), 'utf8');
-  // The classification, not a comment about it.
-  const m = /const RESULT_STANDS = new Set\(\[([^\]]*)\]\)/.exec(b);
-  assert.ok(m, 'RESULT_STANDS not found');
-  assert.ok(!/Retired/.test(m[1]),
-    `RESULT_STANDS still settles retirements (${m[1].trim()}) — a book voids that market, so settling it prices a bet the reader could never have had`);
-  assert.match(b, /const RETIRED = new Set\(\['Retired', 'Rrtired'\]\)/);
-  // TEN-402 (founder 2026-10-08): a retirement is still counted into its own bucket and kept OUT of the Database rows; the
-  // priced ones ride behind a flag (retRows) for the site's price join only, and leave the loop before rows.push.
-  assert.match(b, /const isRet = RETIRED\.has\(comment\);\n\s*if \(isRet\) bucket\.retired\+\+;/,
-    'retirements must be counted into their own bucket');
-  // founder 2026-10-17 (odds master close-out item 1): a non-result that started rides the same flagged path (behindFlag)
+  // a retirement is still counted into its own bucket and kept out of `rows`; the figure rows add the ones whose bet stands
+  assert.match(b, /const isRet = RETIRED\.has\(comment\);\n\s*if \(isRet\) bucket\.retired\+\+;/, 'retirements must be counted into their own bucket');
   assert.match(b, /const behindFlag = isRet \|\| startedNonResult;/, 'the flagged path is retirements + started non-results only');
   const retPath = b.slice(b.indexOf('    if (behindFlag) {'), b.indexOf('rows.push(['));
-  // (founder brief 2026-10-14: the per-row body is a function shared with the archive feed, so it leaves by `return`)
-  assert.match(retPath, /retRaw\.push\([\s\S]*?(continue|return);\n    \}/, 'a retirement leaves the loop before it can reach rows.push (never a Database row)');
+  assert.match(retPath, /retRaw\.push\([\s\S]*?(continue|return);\n    \}/, 'a retirement leaves the loop before rows.push (the store keeps it in retRows)');
+  assert.match(b, /const retStands = retRows\.map\(\(r, i\) => Settlement\.betCounts\(\{ comment: retComment\[i\], fs: retFs\[i\] \}\)\);/,
+    'the figure rows are decided by settlement.js settleBet, never a local rule');
 
-  // The store must actually carry the count, or the footnote has nothing to print.
   const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
-  assert.ok(y.meta.exclusions.retired > 0,
-    'meta.exclusions.retired is absent or zero — rebuild database-yield.json');
-  assert.equal(y.rows.length, y.meta.used, 'rows = the used (completed) rows only — the flagged retirements live in retRows');
-  assert.ok(!/Retired/.test(JSON.stringify(y.meta.books || [])), 'sanity');
+  assert.ok(y.meta.exclusions.retired > 0, 'meta.exclusions.retired is absent or zero — rebuild database-yield.json');
+  assert.equal(y.rows.length, y.meta.used, 'rows = the used (completed) rows; retirements live in retRows with retComment / retFs');
+  const st = y.meta.settlement;
+  assert.ok(st && st.retired, 'meta.settlement is absent — rebuild database-yield.json');
+  const stands = y.retRows.filter((r, i) => Settlement.betCounts({ comment: y.retComment[i], fs: y.retFs[i] })).length;
+  assert.equal(st.figureRows, y.rows.length + stands, 'meta.settlement.figureRows = rows + the retRows whose bet stands');
+  const tb = JSON.parse(readFileSync(join(HERE, 'tour-baselines.json'), 'utf8'));
+  assert.equal(tb.roles.all.matches, st.figureRows, 'tour-baselines = the Database figure rows');
 
-  // The footnote named walkovers and stayed silent on retirements, which reads
-  // as "retirements were excluded too" while they were being counted.
-  assert.match(DASH, /fmtInt\(ex\.retired\)\+' retirements \(voided, as a book would\)/,
-    'the What-is-included footnote does not state what happens to retirements');
+  // the page builds the same figure view through window.Settlement, and the footnote states the rule and its counts
+  assert.match(DASH, /if\(S\.betCounts\(\{ comment: rc\[i\], fs: rf\[i\] \}\)\) idx\.push\(i\);/, 'the Database figure view goes through window.Settlement');
+  assert.match(DASH, /' retirements \(void on Pinnacle rules: retired before the first set was completed, or no set scores to show it was — '/,
+    'the What-is-excluded footnote does not state the Pinnacle rule');
+  assert.match(DASH, / of them retirements after the first set was completed \(settled on the result, Pinnacle rules\)/,
+    'the What-is-included footnote does not name the retirements that stand');
 });
 
 test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
@@ -724,10 +736,9 @@ test('TEN-401 items 3–5: rail, hero scale and Overview blocks', () => {
   assert.match(rail, /class="tourx-search" style="display:flex;align-items:center;gap:10px;background:var\(--inner\);/);
   assert.match(DASH, /#tourxOverview \.tourx-search\{ border:1px solid transparent; \}/);
   const panel = fnSource(DASH, 'function tourxConditionsPanelHtml(){');
-  // item 4 (override): 8px track at 6% white, no gradient; white knob + 3px card ring, nothing else
-  assert.match(panel, /height:8px;border-radius:5px;background:var\(--track\);cursor:pointer;/);
-  assert.ok(!/linear-gradient/.test(code(panel)), 'the court-speed scale still carries a gradient');
-  assert.match(panel, /width:16px;height:16px;border-radius:50%;background:var\(--text\);border:3px solid var\(--card\);transform:translate\(-50%,-50%\);"/);
+  // item 4's court-speed scale is gone with the hero (round 2, founder 2026-10-25: no court speed on tournament pages)
+  assert.ok(!/tourxOpenSpeedPanel|border:3px solid var\(--card\);transform:translate\(-50%,-50%\)/.test(panel), 'the court-speed knob / scale survives on the page');
+  assert.ok(!/linear-gradient/.test(code(panel)), 'a gradient appears on the page');
   // Completed badge: inner, grey caps, no edge
   assert.match(panel, /text-transform:uppercase;color:var\(--text-label\);background:var\(--inner\);border:1px solid transparent;[^`]*>Completed</);
   // ROI cards: clickable tiles when they open something; report button: inner, white, 10% edge on hover only
@@ -870,8 +881,10 @@ test('TEN-401: the ROI panel row lock reproduces Montreal / Toronto / Turin / Ha
     for (let k = j; k < DASH.length; k++) { if (DASH[k] === '{') d++; else if (DASH[k] === '}' && --d === 0) return DASH.slice(i, k + 1); } };
   const { rowLockFor, rowLockOk } = eval(`(function(){ ${grab('function rowLockFor(filter){')} ${grab('function rowLockOk(lock, r){')} return { rowLockFor, rowLockOk }; })()`);
   const HOST = { Toronto: [2010, 2012, 2014, 2016, 2018, 2021, 2023, 2025], Montreal: [2011, 2013, 2015, 2017, 2019, 2022, 2024, 2026] };
+  // founder 2026-10-25 (round 2 item 1.3): a card's n is the Database figure rows (rows + the retRows whose bet stands)
+  const fig = y.rows.concat(y.retRows.filter((r, i) => Settlement.betCounts({ comment: y.retComment[i], fs: y.retFs[i] })));
   const count = (ev) => { const t = mkt.tournaments[ev]; const ix = t.archiveNames.map((n) => M.tournaments.indexOf(n)); const lock = rowLockFor(t.archiveFilter);
-    return y.rows.filter((r) => ix.includes(r[4]) && rowLockOk(lock, r)).length; };
+    return fig.filter((r) => ix.includes(r[4]) && rowLockOk(lock, r)).length; };
   for (const city of ['Montreal', 'Toronto']) {
     const f = mkt.tournaments[city].archiveFilter;
     const yrs = [...new Set(Object.values(f).flatMap((x) => x.years))].sort();
@@ -888,7 +901,11 @@ test('TEN-401: the ROI panel row lock reproduces Montreal / Toronto / Turin / Ha
   assert.deepEqual(eoA.surfaces, [M.surfaces.indexOf('Hard')], 'Antwerp takes European Open hard only');
   assert.deepEqual(eoH.months, [7], 'Hamburg takes European Open in July only'); assert.deepEqual(eoA.months, [10], 'Antwerp takes European Open in October only');
   const eoRows = (f) => y.rows.filter((r) => M.tournaments[r[4]] === 'European Open' && lockOk({ 'European Open': f }, M.tournaments, r)).length;
-  assert.equal(eoRows(eoH) + eoRows(eoA), eo, 'Hamburg + Antwerp must partition every European Open row');
+  // Round 2 item 1.1 (founder 2026-10-25): Brussels takes the European Open's own 2025+ October hard rows (ROW_SPLIT); under
+  // 30 matches it has no card yet, so its share is counted by the ruling itself
+  const eoB = y.rows.filter((r) => M.tournaments[r[4]] === 'European Open' && r[2] === M.surfaces.indexOf('Hard') && Math.floor(r[0] / 100) % 100 === 10 && Math.floor(r[0] / 10000) >= 2025).length;
+  assert.ok(Object.values(eoA.years || []).every((v) => v <= 2024), 'Antwerp pools a Brussels (2025+) season');
+  assert.equal(eoRows(eoH) + eoRows(eoA) + eoB, eo, 'Hamburg + Antwerp + Brussels must partition every European Open row');
   assert.equal(count('Hamburg'), mkt.tournaments.Hamburg.n); assert.equal(count('Antwerp'), mkt.tournaments.Antwerp.n);
   // the lock is wired into filteredRows and dies with its subject (a new pick)
   const fr = grab('function filteredRows(names){');

@@ -171,6 +171,7 @@ export const DATA_FILES = new Set([
 ]);
 export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'career-splits/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304); career-splits/: refresh-career-splits.sh (TEN-391)
 DATA_FILES.add('draws.json');   // draws.yml commit-back, BSP Draws Bot (bot@bspconsult.local): its only output. Missing, it refused a land on 2026-10-22 (66cbec83)
+DATA_FILES.add('points-to-defend.json');   // points-to-defend.yml commit-back, BSP Points Bot (bot@bspconsult.local): its only output (round 2 item 2.3)
 DATA_DIRS.push('te-history/');
 DATA_DIRS.push('line-prices/');   // line-prices.yml commit-back, bsp-bot (git add -A -- line-prices): line-prices/<date>.json only, every 15 min. Missing, every `claim` during a suite run returned 7 "not rebased" (2026-10-25). line-prices.js / build-line-prices.py sit at the root and stay code
 DATA_FILES.add('.ten225-fixture-index.json.gz');   // ten225-fixture-index.yml commit-back, bsp-bot (daily 05:50Z, [skip ci]): its only output (coordinator 2026-10-25). ten225-fixture-index.py stays code

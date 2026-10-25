@@ -58,16 +58,23 @@ take styling from it, structure from the rules below.
   never stored (`odds.md`, in-play rule). No Database figure reads book 8. **Test:**
   `tools/test-approx-pinnacle.mjs` (the exact words, no time anywhere on the page), `tools/test-lower-master.js` (book 8's rank,
   Database byte-identical, the era shard's shape unchanged, mutant), `tools/test-tdarch.py` (switch on, order, in-play rule).
-- **Retirements behind a flag (founder ruling 2026-10-08, TEN-402 card 01102d24).** The Database voids a retirement
-  (2026-09-20) — none is in `rows` / `names`, `meta.exclusions.retired` counts them. The same build keeps the priced ones
-  in `retRows` / `retNames` (same row shape, same book rule, tie / overround / pre-2010 filters; `meta.retired`: 1,297 of
-  1,850 on 8 Oct 2026), read ONLY by the site's one price join (`DatabaseTab.priceRows()` → `dbPriceJoinRows`: the Head
-  to Head ledgers and the Player Profile per-event Backing), which settles them on Pinnacle rules (founder 2026-10-22,
-  `modal-analysis.md` "Retirements in price figures"). No Database
-  figure, `tour-baselines.json` or `tournament-market.json` reads them: before = after on Tour All (40,972; Favourites
-  −1.78% · Underdogs −6.96%). Size: +44 KB raw / +10 KB gz (`database-yield.json`), +37 KB / +8 KB (names shard).
-  **Test:** `test-ten402-b.mjs` "the store keeps retirements BEHIND A FLAG" (rows = used, parallel arrays, each flagged
-  row a Retired archive match, each Database row a Completed one); the Database suites below run unchanged.
+- **Retirements settle through settlement.js (founder ruling 2026-10-25, round 2 item 1.3; replaces the 2026-09-20 "void
+  them" and 2026-10-08 "behind a flag, no Database figure" rulings).** Two rules, two functions, one module (`settlement.js`,
+  UMD, `window.Settlement`): **yields / ROI / units → `settleBet`** (Pinnacle rules: a retirement after the first set was
+  completed stands on the result; before it void; no set scores = no units, never guessed; a walkover void); **win rates →
+  `matchWinner`** (the official ATP result: every retirement counts; walkovers never). The store keeps retirements out of
+  `rows`, in `retRows` / `retNames`, each with `retComment` and `retFs` ('c' / 'i' / 'm', from `build-market-edge.js`
+  `firstSetLookup`: started-evidence, else the players' career rows — the lookup Market edge uses). Every Database figure,
+  `tour-baselines.json` and `tournament-market.json`'s ROI read the **figure rows** = `rows` + the retRows `settleBet` lets
+  stand (`meta.settlement`; the page's `dbFigureView`, rows first then retRows order); `tournament-market.json` favRel reads
+  `rows` + every retRow `matchWinner` gives a winner (its own n, `nRel`); the price join still reads the raw store and settles
+  each surface through `MarketEdgeCore.retSettlement` → `settleBet`. A started "Awarded" / "Disqualified" settles on the
+  result in yields (settleBet null, as Market edge always did) and is out of win rates (matchWinner null). Measured on the
+  deployed store 25 Oct 2026: 1,313 retRows → 652 stand, 115 void, 538 no set scores, 8 started; Tour Favourites −1.72% →
+  −1.97%, Underdogs −6.81% → −5.95% (41,238 → 41,898); tour favRel 70% (41,238) → 69% (42,543). **Test:**
+  `tools/test-settlement.js` (rules, a fixture build of the Database / tour baselines / tournament market / odds performance,
+  the source guard, 10 mutants); `test-ten242-rulings.mjs` "every ROI card equals the panel" (two populations) and
+  "retirements settle through settlement.js".
 - **Test:** no chart draws a seam line, a Bet365 pill or a "book artefact" footnote; `renderCurveCard` takes no seam.
   The per-book split paragraph is on the **Player tab only** and opens with the join (founder, card 52bf5cc5
   "split" = player-only, 2026-10-08). **Test:** a Tour or Tournament band panel paints no `db-split` line

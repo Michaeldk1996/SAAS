@@ -1,0 +1,28 @@
+{
+  "_meta": {
+    "version": 1,
+    "purpose": "Tournament lineage for points-to-defend.json: which api-tennis edition a target event's 'last year' is. Everything not named here joins by atpId (tier-map source_url) or by name.",
+    "rulings": "Founder brief round 2 item 2.3 (2026-10-25): Brussels lineage = Brussels only, never Antwerp; Lyon 2026 (atpId 496, October, hard) is a NEW tournament — never mapped to Lyon (May, clay), Marseille or Stockholm."
+  },
+  "byName": {
+    "brussels": {
+      "name": "Brussels",
+      "atpId": 7485,
+      "tierEvent": "Antwerp",
+      "priorNameRe": "^(ATP )?Brussels$",
+      "note": "The European Open moved Antwerp -> Brussels in 2025; api-tennis keeps Antwerp's tournament_key 3669 and names the 2025 edition 'Brussels'. Only editions NAMED Brussels count, so no Antwerp edition is ever a prior."
+    },
+    "lyon": {
+      "name": "Lyon",
+      "atpId": 496,
+      "firstEditionSeasons": [2026],
+      "note": "Lyon 2026 (October, indoor hard) is a new event: firstEdition, no rows. Not Lyon May (clay), not Marseille, not Stockholm."
+    },
+    "nanterre": {
+      "name": "Paris",
+      "atpId": 352,
+      "tierEvent": "Paris",
+      "note": "draws.json names the Paris Masters by its 2026 venue city (Paris La Defense Arena, Nanterre)."
+    }
+  }
+}

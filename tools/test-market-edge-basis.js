@@ -181,7 +181,7 @@ console.log('build stamp');
   const ROOT = path.join(__dirname, '..');
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-stamp-'));
   try {
-    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js', 'build-database-yield.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(tmp, f));
+    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'settlement.js', 'market-edge-core.js', 'build-database-yield.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(tmp, f));
     for (const f of ['odds-archive', 'court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(ROOT, f))) fs.symlinkSync(path.join(ROOT, f), path.join(tmp, f));
     fs.writeFileSync(path.join(tmp, 'player-profiles.json'), JSON.stringify({ players: { 47: { name: 'J. Sinner' } } }));
     // Market edge reads the master the Database builder writes in the same run (founder ruling 2026-10-17).
@@ -238,7 +238,7 @@ console.log('build stamp');
   {
     const t2 = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-db-'));
     try {
-      for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(t2, f));
+      for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'settlement.js', 'market-edge-core.js', 'td-identity.js']) fs.copyFileSync(path.join(ROOT, f), path.join(t2, f));
       for (const f of ['court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(ROOT, f))) fs.symlinkSync(path.join(ROOT, f), path.join(t2, f));
       // A Tennis-Data file with OTHER prices for the same matches: if the builder ever read it again, the checks go red.
       fs.mkdirSync(path.join(t2, 'odds-archive'));

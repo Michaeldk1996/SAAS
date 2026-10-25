@@ -251,6 +251,8 @@ test('§6 check 7: one-line mutants of the band bucketing / P&L make checks 1–
     ['derived lines: retirements admitted', "    if (r.retSettle) return 'retired';\n    if (r.alt) return 'format';", "    if (r.alt) return 'format';"],
   ];
   const dir = mkdtempSync(join(tmpdir(), 'ten310-mut-'));
+  // founder 2026-10-25 (round 2 item 1.3): the core requires ./settlement.js (its retirement rule) — the mutant copy needs it beside it
+  writeFileSync(join(dir, 'settlement.js'), readFileSync(join(HERE, 'settlement.js'), 'utf8'));
   // control: the unmutated core must pass the same child run, or a "caught" mutant proves nothing
   const ctl = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--mutant-run'], { encoding: 'utf8' });
   assert.equal(ctl.status, 0, `control run must pass: ${(ctl.stderr || '').slice(0, 300)}`);

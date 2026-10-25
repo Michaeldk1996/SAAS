@@ -1,0 +1,62 @@
+# Points to defend → points-to-defend.json (founder brief round 2, item 2.3; tournament page block).
+# For every current / upcoming ATP main-tour event: last year's edition re-resolved from api-tennis fixtures (one
+# get_fixtures call per prior edition, ~10 a run) through tools/points-at-risk/{round-classify,points-resolver}.js, with
+# each defender's live rank (deployed player-index.json) and his status at this year's event (committed draws.json +
+# entry_lists_advance.json; the previous points-to-defend.json carries the entry-list memory and the statuses frozen
+# once a draw leaves draws.json, so this must keep reading the committed copy).
+# Points at Risk stays retired: nothing here reads or writes points-at-risk.json.
+# Commits points-to-defend.json ONLY when its content (minus generatedAt) changed. Serving it needs the
+# `cp points-to-defend.json _site/` line in pipeline.yml's site assembly (not added here).
+name: points-to-defend
+on:
+  schedule:
+    - cron: '35 5 * * *'      # after the Americas' last matches settle and the overnight draws/entry-list refreshes
+    - cron: '35 17 * * *'     # second slot: this repo's schedules are throttled
+  workflow_dispatch:
+concurrency:
+  group: points-to-defend
+  cancel-in-progress: false
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Our roster (the deployed site — our own file)
+        run: curl -sf -o player-index.json "https://michaeldk1996.github.io/SAAS/player-index.json?_=$(date +%s)"
+      - name: Build points-to-defend.json
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node tools/points-to-defend/build-points-to-defend.js --player-index player-index.json
+      - name: Sanity check (a failed fetch or an empty build never replaces a good file)
+        run: |
+          node -e '
+            const d = require("./points-to-defend.json");
+            const ev = Object.values(d.events || {});
+            const failed = ev.filter((e) => e.state === "fetch-failed").map((e) => e.key);
+            if (!ev.length) { console.error("::error title=points-to-defend::no events built"); process.exit(1); }
+            if (failed.length) { console.error("::error title=points-to-defend::api-tennis fetch failed for " + failed.join(", ")); process.exit(1); }
+            console.log(ev.map((e) => e.key + ":" + e.state + (e.state === "ok" ? "(" + e.rowCount + ")" : "")).join(" "));
+          '
+      - name: Run the points-to-defend suite
+        run: node tools/test-points-to-defend.js
+      - name: Commit points-to-defend.json on a content change only
+        run: |
+          rm -f player-index.json
+          node -e '
+            const cp = require("child_process");
+            let old = null; try { old = JSON.parse(cp.execSync("git show HEAD:points-to-defend.json", { stdio: ["ignore", "pipe", "ignore"], maxBuffer: 1 << 28 })); } catch (e) {}
+            const now = require("./points-to-defend.json");
+            const strip = (x) => { if (!x) return null; const { generatedAt, ...rest } = x; return JSON.stringify(rest); };
+            if (old && strip(old) === strip(now)) { console.log("content unchanged"); cp.execSync("git checkout -- points-to-defend.json"); }
+          '
+          git add points-to-defend.json
+          if git diff --cached --quiet -- points-to-defend.json; then echo "points-to-defend.json unchanged — nothing to commit"; exit 0; fi
+          git -c user.name='BSP Points Bot' -c user.email='bot@bspconsult.local' commit -q -m "chore(points): points-to-defend content changed [skip ci]"
+          for i in 1 2 3; do git pull -q --rebase origin main && git push -q origin HEAD:main && exit 0; sleep 5; done
+          echo "::error title=points-to-defend::could not push points-to-defend.json after 3 attempts"; exit 1
